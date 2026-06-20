@@ -1,0 +1,59 @@
+import React from "react";
+import Link from "next/link";
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen bg-slate-950 text-white selection:bg-red-500 selection:text-white">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-red-900/30 bg-slate-900/50 backdrop-blur-md flex flex-col">
+        <div className="h-16 flex items-center px-6 border-b border-red-900/30">
+          <Link href="/admin" className="text-xl font-bold tracking-tight text-red-500">
+            Uellix Admin
+          </Link>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          <Link
+            href="/admin"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+          >
+            Consola del Sistema
+          </Link>
+          <span className="flex items-center px-4 py-2 text-xs font-medium text-slate-500">
+            Organizaciones (Soon)
+          </span>
+          <span className="flex items-center px-4 py-2 text-xs font-medium text-slate-500">
+            Proxies Globales (Soon)
+          </span>
+          <span className="flex items-center px-4 py-2 text-xs font-medium text-slate-500">
+            Logs Globales (Soon)
+          </span>
+        </nav>
+        <div className="p-4 border-t border-red-900/30">
+          <Link
+            href="/"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            Volver a la App
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 border-b border-red-900/30 flex items-center justify-between px-8 bg-slate-900/30">
+          <h2 className="text-lg font-semibold text-red-500">Consola de Control Global</h2>
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20">
+              SuperAdmin
+            </span>
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      </div>
+    </div>
+  );
+}
