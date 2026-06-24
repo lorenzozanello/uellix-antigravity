@@ -1,7 +1,7 @@
 # Checklist de Migración y Políticas RLS - Supabase Staging
 
 > [!IMPORTANT]
-> Este checklist debe completarse en el entorno de staging de Supabase antes de usar datos reales. El estado actual está **PENDIENTE**.
+> Este checklist fue completado en el entorno de staging de Supabase. El estado actual está **COMPLETADO**.
 
 ## 1. Migraciones en Orden (Drizzle Kit)
 Las siguientes migraciones deben correrse en orden utilizando `DATABASE_URL` del entorno staging:
