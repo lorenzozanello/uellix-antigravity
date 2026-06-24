@@ -387,6 +387,47 @@ WITH CHECK (
   OR current_user_is_super_admin()
 );
 
+-- EVIDENCE ITEMS
+ALTER TABLE evidence_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "evidence_items_select" ON evidence_items;
+CREATE POLICY "evidence_items_select" ON evidence_items FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "evidence_items_insert" ON evidence_items;
+CREATE POLICY "evidence_items_insert" ON evidence_items FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "evidence_items_update" ON evidence_items;
+CREATE POLICY "evidence_items_update" ON evidence_items FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- DELETE is strictly denied for evidence_items. Archiving must be performed via UPDATE to status='archived'.
+DROP POLICY IF EXISTS "evidence_items_delete" ON evidence_items;
+
+-- ============================================================
+-- STORAGE CONFIGURATION (Declarative)
+-- ============================================================
+-- The 'uellix-evidence' bucket must be created in Supabase Storage with:
+-- - Public Access: False
+-- - File Size Limit: Enforced per plan
+-- - Allowed MIME Types: Images, PDFs, Documents (TBD)
+-- RLS Policies for Storage should map to organization_ids in the file path
+-- or be validated against the evidence_items table via function.
+
 -- ============================================================
 -- NOTES
 -- ============================================================

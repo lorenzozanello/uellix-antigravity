@@ -11,6 +11,8 @@ export default function Stepper() {
     { name: 'Stakeholders', href: './stakeholders' },
     { name: 'Outcomes', href: './outcomes' },
     { name: 'Indicadores', href: './indicators' },
+    { name: 'Evidencias', href: './evidence' },
+    { name: 'Trust Center', href: '/trust-center' },
   ];
   return (
     <nav className="flex space-x-4 mb-4">
@@ -19,9 +21,9 @@ export default function Stepper() {
           key={s.name}
           href={s.href}
           className={
-            pathname?.endsWith(s.href)
-              ? 'font-bold underline'
-              : 'text-gray-600'
+            pathname?.endsWith(s.href.replace('.', ''))
+              ? 'font-bold underline text-teal-600'
+              : 'text-gray-600 hover:text-teal-500'
           }
         >
           {s.name}
