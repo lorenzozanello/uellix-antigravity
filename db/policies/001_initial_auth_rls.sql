@@ -275,6 +275,119 @@ WITH CHECK (
 );
 
 -- ============================================================
+-- SROI PIPELINE CORE TABLES
+-- ============================================================
+
+ALTER TABLE impact_narratives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stakeholder_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outcomes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE indicators ENABLE ROW LEVEL SECURITY;
+
+-- IMPACT NARRATIVES
+DROP POLICY IF EXISTS "impact_narratives_select" ON impact_narratives;
+CREATE POLICY "impact_narratives_select" ON impact_narratives FOR SELECT
+USING (
+  project_id IN (SELECT id FROM projects WHERE organization_id = ANY(current_user_org_ids()))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "impact_narratives_insert" ON impact_narratives;
+CREATE POLICY "impact_narratives_insert" ON impact_narratives FOR INSERT
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "impact_narratives_update" ON impact_narratives;
+CREATE POLICY "impact_narratives_update" ON impact_narratives FOR UPDATE
+USING (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+-- STAKEHOLDER GROUPS
+DROP POLICY IF EXISTS "stakeholder_groups_select" ON stakeholder_groups;
+CREATE POLICY "stakeholder_groups_select" ON stakeholder_groups FOR SELECT
+USING (
+  project_id IN (SELECT id FROM projects WHERE organization_id = ANY(current_user_org_ids()))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "stakeholder_groups_insert" ON stakeholder_groups;
+CREATE POLICY "stakeholder_groups_insert" ON stakeholder_groups FOR INSERT
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "stakeholder_groups_update" ON stakeholder_groups;
+CREATE POLICY "stakeholder_groups_update" ON stakeholder_groups FOR UPDATE
+USING (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+-- OUTCOMES
+DROP POLICY IF EXISTS "outcomes_select" ON outcomes;
+CREATE POLICY "outcomes_select" ON outcomes FOR SELECT
+USING (
+  project_id IN (SELECT id FROM projects WHERE organization_id = ANY(current_user_org_ids()))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "outcomes_insert" ON outcomes;
+CREATE POLICY "outcomes_insert" ON outcomes FOR INSERT
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "outcomes_update" ON outcomes;
+CREATE POLICY "outcomes_update" ON outcomes FOR UPDATE
+USING (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+-- INDICATORS
+DROP POLICY IF EXISTS "indicators_select" ON indicators;
+CREATE POLICY "indicators_select" ON indicators FOR SELECT
+USING (
+  project_id IN (SELECT id FROM projects WHERE organization_id = ANY(current_user_org_ids()))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "indicators_insert" ON indicators;
+CREATE POLICY "indicators_insert" ON indicators FOR INSERT
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "indicators_update" ON indicators;
+CREATE POLICY "indicators_update" ON indicators FOR UPDATE
+USING (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  project_id IN (SELECT id FROM projects WHERE current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst'))
+  OR current_user_is_super_admin()
+);
+
+-- ============================================================
 -- NOTES
 -- ============================================================
 -- 1. Application-side validation in lib/auth/session.ts must still be enforced
