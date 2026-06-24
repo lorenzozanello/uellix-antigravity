@@ -1,10 +1,12 @@
-import { pgTable, uuid, text, timestamp, varchar, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().notNull(), // References auth.users
   email: varchar('email', { length: 255 }).notNull().unique(),
   fullName: varchar('full_name', { length: 255 }),
   avatarUrl: varchar('avatar_url', { length: 255 }),
+  isSuperAdmin: boolean('is_super_admin').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -25,13 +27,17 @@ export const organizationMembers = pgTable('organization_members', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
   userId: uuid('user_id').references(() => users.id).notNull(),
-  role: varchar('role', { length: 50 }).notNull(), // 'SuperAdmin', 'OrgAdmin', 'ImpactManager', 'Analyst', 'Reviewer', 'Viewer'
+  role: varchar('role', { length: 50 }).notNull(), // 'super_admin' | 'organization_admin' | 'impact_manager' | 'analyst' | 'reviewer' | 'viewer'
   status: varchar('status', { length: 50 }).default('active').notNull(),
   invitedBy: uuid('invited_by').references(() => users.id),
   joinedAt: timestamp('joined_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  unique('organization_members_org_user_unique').on(table.organizationId, table.userId),
+  uniqueIndex('user_single_active_membership').on(table.userId).where(sql`${table.status} = 'active'`),
+  check('role_check', sql`${table.role} IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst', 'reviewer', 'viewer')`),
+])
 
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),

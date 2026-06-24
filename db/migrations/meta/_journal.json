@@ -15,6 +15,20 @@
       "when": 1781923097968,
       "tag": "0001_noisy_chameleon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782267968855,
+      "tag": "0002_huge_namorita",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782308179567,
+      "tag": "0003_curvy_tempest",
+      "breakpoints": true
     }
   ]
 }

@@ -33,30 +33,33 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // Refresh the session token. IMPORTANT: do not add logic between createServerClient
+  // and auth.getUser() — it may cause random logout issues.
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isProtected = request.nextUrl.pathname.startsWith('/app') || request.nextUrl.pathname.startsWith('/admin')
+  const pathname = request.nextUrl.pathname
+  const isProtected =
+    pathname.startsWith('/app') || pathname.startsWith('/admin')
 
+  // Unauthenticated users cannot access protected routes
   if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Admin route preparation
-  if (user && request.nextUrl.pathname.startsWith('/admin')) {
-    // TODO: Verify user role is 'super_admin' from DB or custom JWT claims.
-    // For now, we block access to non-authenticated users above, and assume
-    // further role checks will happen inside the /admin Server Components or API routes.
-  }
-
-  if (user && request.nextUrl.pathname === '/login') {
+  // Authenticated users should not land on /login
+  if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/app/dashboard'
     return NextResponse.redirect(url)
   }
+
+  // NOTE: Role-based protection for /admin (super_admin check) is enforced in
+  // app/admin/layout.tsx via requireAdminAccess(), which can use Drizzle ORM.
+  // The proxy only handles authentication — not authorization.
 
   return supabaseResponse
 }

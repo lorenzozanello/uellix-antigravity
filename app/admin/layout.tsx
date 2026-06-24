@@ -1,11 +1,14 @@
-import React from "react";
-import Link from "next/link";
+import React from 'react'
+import Link from 'next/link'
+import { requireAdminAccess } from '@/lib/auth/session'
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
+  const user = await requireAdminAccess()
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-white selection:bg-red-500 selection:text-white">
       {/* Sidebar */}
@@ -32,13 +35,21 @@ export default function AdminLayout({
             Logs Globales (Soon)
           </span>
         </nav>
-        <div className="p-4 border-t border-red-900/30">
+        <div className="p-4 border-t border-red-900/30 space-y-2">
           <Link
-            href="/"
-            className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-red-400 hover:bg-red-500/10 transition-colors"
+            href="/app/dashboard"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:bg-slate-800 transition-colors"
           >
             Volver a la App
           </Link>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-red-400 hover:bg-red-500/10 transition-colors text-left"
+            >
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </aside>
 
@@ -47,13 +58,14 @@ export default function AdminLayout({
         <header className="h-16 border-b border-red-900/30 flex items-center justify-between px-8 bg-slate-900/30">
           <h2 className="text-lg font-semibold text-red-500">Consola de Control Global</h2>
           <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-400">{user.email}</span>
             <span className="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20">
-              SuperAdmin
+              Super Administrador
             </span>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-8">{children}</main>
       </div>
     </div>
-  );
+  )
 }

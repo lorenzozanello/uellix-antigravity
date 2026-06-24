@@ -1,11 +1,16 @@
-import React from "react";
-import Link from "next/link";
+import React from 'react'
+import Link from 'next/link'
+import { requireOrganizationAccess } from '@/lib/auth/session'
+import { ROLE_LABELS } from '@/lib/auth/roles'
 
-export default function PrivateLayout({
+export default async function PrivateLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
+  const { organization, membership } = await requireOrganizationAccess()
+  const roleLabel = ROLE_LABELS[membership.role] ?? membership.role
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-white selection:bg-teal-500 selection:text-slate-950">
       {/* Sidebar */}
@@ -46,27 +51,31 @@ export default function PrivateLayout({
           </div>
         </nav>
         <div className="p-4 border-t border-slate-800">
-          <Link
-            href="/"
-            className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            Cerrar sesión
-          </Link>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-red-400 hover:bg-red-500/10 transition-colors text-left"
+            >
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/30">
-          <h2 className="text-lg font-semibold text-slate-200">Organización: Demo Corp</h2>
+          <h2 className="text-lg font-semibold text-slate-200">
+            Organización: {organization.name}
+          </h2>
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center rounded-full bg-teal-500/10 px-2.5 py-0.5 text-xs font-medium text-teal-400 ring-1 ring-inset ring-teal-500/20">
-              Impact Manager
+              {roleLabel}
             </span>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-8">{children}</main>
       </div>
     </div>
-  );
+  )
 }
