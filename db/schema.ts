@@ -69,3 +69,36 @@ export const invitations = pgTable('invitations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+export const portfolios = pgTable('portfolios', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('status_check', sql`${table.status} IN ('active', 'archived')`),
+])
+
+export const projects = pgTable('projects', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  portfolioId: uuid('portfolio_id').references(() => portfolios.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  thematicArea: varchar('thematic_area', { length: 255 }),
+  territory: varchar('territory', { length: 255 }),
+  country: varchar('country', { length: 2 }),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  targetPopulationDescription: text('target_population_description'),
+  status: varchar('status', { length: 50 }).default('draft').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('status_check', sql`${table.status} IN ('draft', 'active', 'completed', 'archived')`),
+])

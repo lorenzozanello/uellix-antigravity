@@ -207,6 +207,74 @@ USING (
 -- This is enforced by RLS: without a permissive policy, the operation is rejected.
 
 -- ============================================================
+-- PORTFOLIOS TABLE
+-- ============================================================
+
+ALTER TABLE portfolios ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "portfolios_select_member_or_admin" ON portfolios;
+CREATE POLICY "portfolios_select_member_or_admin"
+ON portfolios FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "portfolios_insert_allowed_roles" ON portfolios;
+CREATE POLICY "portfolios_insert_allowed_roles"
+ON portfolios FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "portfolios_update_allowed_roles" ON portfolios;
+CREATE POLICY "portfolios_update_allowed_roles"
+ON portfolios FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- ============================================================
+-- PROJECTS TABLE
+-- ============================================================
+
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "projects_select_member_or_admin" ON projects;
+CREATE POLICY "projects_select_member_or_admin"
+ON projects FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "projects_insert_allowed_roles" ON projects;
+CREATE POLICY "projects_insert_allowed_roles"
+ON projects FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "projects_update_allowed_roles" ON projects;
+CREATE POLICY "projects_update_allowed_roles"
+ON projects FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- ============================================================
 -- NOTES
 -- ============================================================
 -- 1. Application-side validation in lib/auth/session.ts must still be enforced

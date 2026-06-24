@@ -9,6 +9,7 @@ Las siguientes migraciones deben correrse en orden utilizando `DATABASE_URL` del
 2. `0001_noisy_chameleon.sql`
 3. `0002_huge_namorita.sql`
 4. `0003_curvy_tempest.sql`
+5. `0004_thick_mentor.sql`
 
 ## 2. Políticas SQL RLS y Seguridad (Acción Humana)
 Una vez aplicadas las migraciones, se debe ejecutar el script de políticas RLS:
