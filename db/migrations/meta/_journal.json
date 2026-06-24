@@ -43,6 +43,13 @@
       "when": 1782315529638,
       "tag": "0005_daffy_dreaming_celestial",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782326560708,
+      "tag": "0006_outstanding_vindicator",
+      "breakpoints": true
     }
   ]
 }

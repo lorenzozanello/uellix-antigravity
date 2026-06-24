@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, integer } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -158,3 +158,29 @@ export const indicators = pgTable('indicators', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+export const evidenceItems = pgTable('evidence_items', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id),
+  indicatorId: uuid('indicator_id').references(() => indicators.id),
+  type: varchar('type', { length: 50 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  url: text('url'),
+  filePath: text('file_path'),
+  fileSize: integer('file_size'),
+  mimeType: varchar('mime_type', { length: 255 }),
+  contentHash: varchar('content_hash', { length: 255 }),
+  status: varchar('status', { length: 50 }).default('draft').notNull(),
+  reviewerId: uuid('reviewer_id').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  reviewNotes: text('review_notes'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('evidence_items_type_check', sql`${table.type} IN ('file', 'url', 'text')`),
+  check('evidence_items_status_check', sql`${table.status} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+])
