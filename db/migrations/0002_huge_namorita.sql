@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "is_super_admin" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_org_user_unique" UNIQUE("organization_id","user_id");

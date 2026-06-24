@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "user_single_active_membership" ON "organization_members" USING btree ("user_id") WHERE "organization_members"."status" = 'active';--> statement-breakpoint
+ALTER TABLE "organization_members" ADD CONSTRAINT "role_check" CHECK ("organization_members"."role" IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst', 'reviewer', 'viewer'));

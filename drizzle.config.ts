@@ -1,12 +1,10 @@
-// Placeholder drizzle config for Sprint 0.
-// This will be properly configured once drizzle-kit is installed in Sprint 1.
-const config = {
-  schema: './db/schema/*',
-  out: './db/migrations',
-  dialect: 'postgresql' as const,
-  dbCredentials: {
-    url: process.env.DATABASE_URL || '',
-  },
-};
+import { defineConfig } from 'drizzle-kit'
 
-export default config;
+export default defineConfig({
+  schema: './db/schema.ts',
+  out: './db/migrations',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres',
+  },
+})
