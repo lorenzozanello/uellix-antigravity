@@ -102,3 +102,59 @@ export const projects = pgTable('projects', {
 }, (table) => [
   check('status_check', sql`${table.status} IN ('draft', 'active', 'completed', 'archived')`),
 ])
+
+export const impactNarratives = pgTable('impact_narratives', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  version: varchar('version', { length: 50 }).notNull(),
+  narrativeText: text('narrative_text'),
+  theoryOfChangeSummary: text('theory_of_change_summary'),
+  assumptions: text('assumptions'),
+  status: varchar('status', { length: 50 }).default('draft').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const stakeholderGroups = pgTable('stakeholder_groups', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  type: varchar('type', { length: 100 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const outcomes = pgTable('outcomes', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  stakeholderGroupId: uuid('stakeholder_group_id').references(() => stakeholderGroups.id).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  outcomeType: varchar('outcome_type', { length: 100 }),
+  materialityNotes: text('materiality_notes'),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const indicators = pgTable('indicators', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  indicatorType: varchar('indicator_type', { length: 100 }),
+  unit: varchar('unit', { length: 50 }),
+  baselineValue: varchar('baseline_value', { length: 255 }),
+  targetValue: varchar('target_value', { length: 255 }),
+  actualValue: varchar('actual_value', { length: 255 }),
+  dataSource: text('data_source'),
+  measurementPeriod: varchar('measurement_period', { length: 100 }),
+  confidenceLevel: varchar('confidence_level', { length: 50 }),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
