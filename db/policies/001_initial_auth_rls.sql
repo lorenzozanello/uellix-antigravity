@@ -650,3 +650,116 @@ WITH CHECK (
   current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
   OR current_user_is_super_admin()
 );
+
+-- ============================================================
+-- SROI RESULTS HARDENING & REPORT FOUNDATION
+-- ============================================================
+
+ALTER TABLE sroi_run_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_run_review_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_report_sections ENABLE ROW LEVEL SECURITY;
+
+-- SROI RUN REVIEWS
+DROP POLICY IF EXISTS "sroi_run_reviews_select" ON sroi_run_reviews;
+CREATE POLICY "sroi_run_reviews_select" ON sroi_run_reviews FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_run_reviews_insert" ON sroi_run_reviews;
+CREATE POLICY "sroi_run_reviews_insert" ON sroi_run_reviews FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_run_reviews_update" ON sroi_run_reviews;
+CREATE POLICY "sroi_run_reviews_update" ON sroi_run_reviews FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR current_user_is_super_admin()
+);
+
+-- SROI RUN REVIEW ITEMS
+DROP POLICY IF EXISTS "sroi_run_review_items_select" ON sroi_run_review_items;
+CREATE POLICY "sroi_run_review_items_select" ON sroi_run_review_items FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_run_review_items_insert" ON sroi_run_review_items;
+CREATE POLICY "sroi_run_review_items_insert" ON sroi_run_review_items FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_run_review_items_update" ON sroi_run_review_items;
+CREATE POLICY "sroi_run_review_items_update" ON sroi_run_review_items FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR current_user_is_super_admin()
+);
+
+-- SROI REPORTS
+DROP POLICY IF EXISTS "sroi_reports_select" ON sroi_reports;
+CREATE POLICY "sroi_reports_select" ON sroi_reports FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_reports_insert" ON sroi_reports;
+CREATE POLICY "sroi_reports_insert" ON sroi_reports FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_reports_update" ON sroi_reports;
+CREATE POLICY "sroi_reports_update" ON sroi_reports FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- SROI REPORT SECTIONS
+DROP POLICY IF EXISTS "sroi_report_sections_select" ON sroi_report_sections;
+CREATE POLICY "sroi_report_sections_select" ON sroi_report_sections FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_report_sections_insert" ON sroi_report_sections;
+CREATE POLICY "sroi_report_sections_insert" ON sroi_report_sections FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_report_sections_update" ON sroi_report_sections;
+CREATE POLICY "sroi_report_sections_update" ON sroi_report_sections FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);

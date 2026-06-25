@@ -3,6 +3,8 @@ import { calculateSroiRunAction } from './calculateSroiRun.action';
 import { upsertProjectInvestmentAction } from './upsertProjectInvestment.action';
 import { upsertSroiAssignmentInputAction } from './upsertSroiAssignmentInput.action';
 import { upsertSroiFilterSetAction } from './upsertSroiFilterSet.action';
+import Link from 'next/link';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
@@ -105,6 +107,34 @@ export default async function CalculationPage({ params }: { params: { projectId:
     <div className="p-4 space-y-8">
       <h1 className="text-2xl font-bold">Cálculo SROI</h1>
       <Stepper />
+
+      {/* Navigation Cards */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href={`/app/projects/${params.projectId}/pipeline/calculation/compare`}>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle>Corridas SROI</CardTitle>
+            </CardHeader>
+            <CardContent>Historial de corridas y detalle de cada cálculo registrado.</CardContent>
+          </Card>
+        </Link>
+        <Link href={`/app/projects/${params.projectId}/pipeline/calculation/compare`}>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle>Comparar Corridas</CardTitle>
+            </CardHeader>
+            <CardContent>Compare dos corridas para analizar diferencias.</CardContent>
+          </Card>
+        </Link>
+        <Link href={`/app/projects/${params.projectId}/report`}>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle>Reportes SROI</CardTitle>
+            </CardHeader>
+            <CardContent>Gestión de borradores de reporte vinculados a corridas SROI.</CardContent>
+          </Card>
+        </Link>
+      </section>
 
       {/* Methodology and Limits Header */}
       <section className="bg-gray-50 p-4 rounded text-sm text-gray-700 space-y-2">

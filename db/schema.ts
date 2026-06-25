@@ -339,3 +339,75 @@ export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
   year: integer('year'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const sroiRunReviews = pgTable('sroi_run_reviews', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  reviewerId: uuid('reviewer_id').references(() => users.id).notNull(),
+  status: varchar('status', { length: 50 }).default('draft').notNull(),
+  readinessScore: integer('readiness_score'),
+  overallNotes: text('overall_notes'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_run_reviews_status_check', sql`${table.status} IN ('draft', 'reviewed', 'approved', 'flagged', 'archived')`),
+  check('sroi_run_reviews_score_check', sql`${table.readinessScore} >= 0 AND ${table.readinessScore} <= 100`),
+])
+
+export const sroiRunReviewItems = pgTable('sroi_run_review_items', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  reviewId: uuid('review_id').references(() => sroiRunReviews.id).notNull(),
+  itemKey: varchar('item_key', { length: 255 }).notNull(),
+  status: varchar('status', { length: 50 }).default('warning').notNull(),
+  severity: varchar('severity', { length: 50 }).default('medium').notNull(),
+  notes: text('notes'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_run_review_items_status_check', sql`${table.status} IN ('pass', 'warning', 'fail', 'not_applicable')`),
+  check('sroi_run_review_items_severity_check', sql`${table.severity} IN ('low', 'medium', 'high')`),
+])
+
+export const sroiReports = pgTable('sroi_reports', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  summary: text('summary'),
+  status: varchar('status', { length: 50 }).default('draft').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  lockedBy: uuid('locked_by').references(() => users.id),
+  lockedAt: timestamp('locked_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_reports_status_check', sql`${table.status} IN ('draft', 'under_review', 'locked', 'archived')`),
+])
+
+export const sroiReportSections = pgTable('sroi_report_sections', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  reportId: uuid('report_id').references(() => sroiReports.id).notNull(),
+  sectionType: varchar('section_type', { length: 100 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content'),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_report_sections_sort_order_check', sql`${table.sortOrder} >= 0`),
+])
