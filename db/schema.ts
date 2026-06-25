@@ -241,3 +241,101 @@ export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   archivedBy: uuid('archived_by').references(() => users.id),
   archivedAt: timestamp('archived_at')
 })
+
+export const projectInvestments = pgTable('project_investments', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  amount: varchar('amount', { length: 255 }).notNull(),
+  currency: varchar('currency', { length: 10 }).notNull(),
+  year: integer('year'),
+  description: text('description'),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('project_investments_amount_check', sql`cast(nullif(${table.amount}, '') as numeric) > 0`),
+  check('project_investments_status_check', sql`${table.status} IN ('active', 'archived')`),
+])
+
+export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  assignmentId: uuid('assignment_id').references(() => outcomeProxyAssignments.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  quantity: varchar('quantity', { length: 255 }).notNull(),
+  unit: varchar('unit', { length: 50 }).notNull(),
+  year: integer('year'),
+  notes: text('notes'),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_assignment_inputs_quantity_check', sql`cast(nullif(${table.quantity}, '') as numeric) > 0`),
+  check('sroi_assignment_inputs_status_check', sql`${table.status} IN ('active', 'archived')`),
+])
+
+export const sroiFilterSets = pgTable('sroi_filter_sets', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  assignmentId: uuid('assignment_id').references(() => outcomeProxyAssignments.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  deadweightPct: varchar('deadweight_pct', { length: 255 }),
+  displacementPct: varchar('displacement_pct', { length: 255 }),
+  attributionPct: varchar('attribution_pct', { length: 255 }),
+  dropoffPct: varchar('dropoff_pct', { length: 255 }),
+  durationYears: integer('duration_years'),
+  justification: text('justification'),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_filter_sets_deadweight_pct_check', sql`cast(nullif(${table.deadweightPct}, '') as numeric) >= 0 AND cast(nullif(${table.deadweightPct}, '') as numeric) <= 100`),
+  check('sroi_filter_sets_displacement_pct_check', sql`cast(nullif(${table.displacementPct}, '') as numeric) >= 0 AND cast(nullif(${table.displacementPct}, '') as numeric) <= 100`),
+  check('sroi_filter_sets_attribution_pct_check', sql`cast(nullif(${table.attributionPct}, '') as numeric) >= 0 AND cast(nullif(${table.attributionPct}, '') as numeric) <= 100`),
+  check('sroi_filter_sets_dropoff_pct_check', sql`cast(nullif(${table.dropoffPct}, '') as numeric) >= 0 AND cast(nullif(${table.dropoffPct}, '') as numeric) <= 100`),
+  check('sroi_filter_sets_duration_years_check', sql`${table.durationYears} >= 1 AND ${table.durationYears} <= 50`),
+  check('sroi_filter_sets_status_check', sql`${table.status} IN ('active', 'archived')`),
+])
+
+export const sroiCalculationRuns = pgTable('sroi_calculation_runs', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  version: integer('version').notNull().default(1),
+  currency: varchar('currency', { length: 10 }),
+  totalInvestment: varchar('total_investment', { length: 255 }),
+  grossSocialValue: varchar('gross_social_value', { length: 255 }),
+  netSocialValue: varchar('net_social_value', { length: 255 }),
+  sroiRatio: varchar('sroi_ratio', { length: 255 }),
+  snapshotJson: jsonb('snapshot_json'),
+  runDate: timestamp('run_date').defaultNow().notNull(),
+  status: varchar('status', { length: 50 }).default('calculated').notNull(),
+  calculatedBy: uuid('calculated_by').references(() => users.id).notNull(),
+  calculatedAt: timestamp('calculated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('sroi_calculation_runs_status_check', sql`${table.status} IN ('calculated', 'failed', 'pending')`),
+])
+
+export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  runId: uuid('run_id').references(() => sroiCalculationRuns.id).notNull(),
+  assignmentId: uuid('assignment_id').references(() => outcomeProxyAssignments.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id),
+  proxyId: uuid('proxy_id').references(() => financialProxies.id),
+  quantity: varchar('quantity', { length: 255 }),
+  proxyValue: varchar('proxy_value', { length: 255 }),
+  currency: varchar('currency', { length: 10 }),
+  grossValue: varchar('gross_value', { length: 255 }),
+  adjustedValue: varchar('adjusted_value', { length: 255 }),
+  deadweightPct: varchar('deadweight_pct', { length: 255 }),
+  attributionPct: varchar('attribution_pct', { length: 255 }),
+  displacementPct: varchar('displacement_pct', { length: 255 }),
+  dropoffPct: varchar('dropoff_pct', { length: 255 }),
+  durationYears: integer('duration_years'),
+  year: integer('year'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})

@@ -14,6 +14,7 @@ export default function Stepper() {
     { name: 'Evidencias', href: './evidence' },
     { name: 'Proxies', href: './proxies' },
     { name: 'Trust Center', href: '/trust-center' },
+    { name: 'Cálculo SROI', href: './calculation' },
   ];
   return (
     <nav className="flex space-x-4 mb-4">

@@ -64,6 +64,20 @@
       "when": 1782344537325,
       "tag": "0008_bored_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782349533715,
+      "tag": "0009_motionless_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782351711692,
+      "tag": "0010_crazy_warhawk",
+      "breakpoints": true
     }
   ]
 }

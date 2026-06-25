@@ -1,7 +1,7 @@
 # Checklist de Migración y Políticas RLS - Supabase Staging
 
 > [!IMPORTANT]
-> Este checklist fue completado en el entorno de staging de Supabase. El estado actual está **COMPLETADO**.
+> Este checklist tiene actualizaciones pendientes para el entorno de staging de Supabase. El estado actual está **PENDIENTE**.
 
 ## 1. Migraciones en Orden (Drizzle Kit)
 Las siguientes migraciones deben correrse en orden utilizando `DATABASE_URL` del entorno staging:
@@ -14,6 +14,9 @@ Las siguientes migraciones deben correrse en orden utilizando `DATABASE_URL` del
 7. `0006_outstanding_vindicator.sql`
 8. `0007_black_imperial_guard.sql`
 9. `0008_bored_pretty_boy.sql`
+10. `0009_motionless_peter_parker.sql` (PENDIENTE)
+11. `0010_crazy_warhawk.sql` (PENDIENTE)
+
 ## 2. Políticas SQL RLS y Seguridad (Acción Humana)
 Una vez aplicadas las migraciones, se debe ejecutar el script de políticas RLS:
 * Archivo: `db/policies/001_initial_auth_rls.sql`
