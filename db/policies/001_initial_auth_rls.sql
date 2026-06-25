@@ -438,3 +438,97 @@ DROP POLICY IF EXISTS "evidence_items_delete" ON evidence_items;
 --    RLS. This is intentional for the initial org+member creation.
 -- 3. logAuditAction() also uses the service-level Drizzle client, which is
 --    correct since audit logging should never be blocked by RLS.
+
+-- ============================================================
+-- PROXY INTELLIGENCE
+-- ============================================================
+
+ALTER TABLE proxy_sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE financial_proxies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outcome_proxy_assignments ENABLE ROW LEVEL SECURITY;
+
+-- PROXY SOURCES
+DROP POLICY IF EXISTS "proxy_sources_select" ON proxy_sources;
+CREATE POLICY "proxy_sources_select" ON proxy_sources FOR SELECT
+USING (
+  (auth.uid() IS NOT NULL AND organization_id IS NULL AND status = 'active')
+  OR organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "proxy_sources_insert" ON proxy_sources;
+CREATE POLICY "proxy_sources_insert" ON proxy_sources FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "proxy_sources_update" ON proxy_sources;
+CREATE POLICY "proxy_sources_update" ON proxy_sources FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- DELETE explicitly denied (no policy)
+
+-- FINANCIAL PROXIES
+DROP POLICY IF EXISTS "financial_proxies_select" ON financial_proxies;
+CREATE POLICY "financial_proxies_select" ON financial_proxies FOR SELECT
+USING (
+  (auth.uid() IS NOT NULL AND organization_id IS NULL AND review_status = 'approved')
+  OR organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "financial_proxies_insert" ON financial_proxies;
+CREATE POLICY "financial_proxies_insert" ON financial_proxies FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "financial_proxies_update" ON financial_proxies;
+CREATE POLICY "financial_proxies_update" ON financial_proxies FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- DELETE explicitly denied (no policy)
+
+-- OUTCOME PROXY ASSIGNMENTS
+DROP POLICY IF EXISTS "outcome_proxy_assignments_select" ON outcome_proxy_assignments;
+CREATE POLICY "outcome_proxy_assignments_select" ON outcome_proxy_assignments FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "outcome_proxy_assignments_insert" ON outcome_proxy_assignments;
+CREATE POLICY "outcome_proxy_assignments_insert" ON outcome_proxy_assignments FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "outcome_proxy_assignments_update" ON outcome_proxy_assignments;
+CREATE POLICY "outcome_proxy_assignments_update" ON outcome_proxy_assignments FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- DELETE explicitly denied (no policy)
