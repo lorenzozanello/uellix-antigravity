@@ -50,6 +50,20 @@
       "when": 1782326560708,
       "tag": "0006_outstanding_vindicator",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782332217822,
+      "tag": "0007_black_imperial_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782344537325,
+      "tag": "0008_bored_pretty_boy",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,7 @@ export default function Stepper() {
     { name: 'Outcomes', href: './outcomes' },
     { name: 'Indicadores', href: './indicators' },
     { name: 'Evidencias', href: './evidence' },
+    { name: 'Proxies', href: './proxies' },
     { name: 'Trust Center', href: '/trust-center' },
   ];
   return (

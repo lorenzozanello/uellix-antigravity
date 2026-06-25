@@ -184,3 +184,60 @@ export const evidenceItems = pgTable('evidence_items', {
   check('evidence_items_type_check', sql`${table.type} IN ('file', 'url', 'text')`),
   check('evidence_items_status_check', sql`${table.status} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
 ])
+
+export const proxySources = pgTable('proxy_sources', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  url: text('url'),
+  status: varchar('status', { length: 50 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const financialProxies = pgTable('financial_proxies', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
+  sourceId: uuid('source_id').references(() => proxySources.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  proxyType: varchar('proxy_type', { length: 100 }),
+  country: varchar('country', { length: 2 }),
+  territory: varchar('territory', { length: 255 }),
+  currency: varchar('currency', { length: 10 }),
+  value: varchar('value', { length: 255 }),
+  unit: varchar('unit', { length: 50 }),
+  referenceYear: integer('reference_year'),
+  thematicArea: varchar('thematic_area', { length: 255 }),
+  methodology: text('methodology'),
+  confidenceLevel: varchar('confidence_level', { length: 50 }),
+  methodologicalRisk: varchar('methodological_risk', { length: 50 }),
+  reviewStatus: varchar('review_status', { length: 50 }).default('suggested').notNull(),
+  reviewerId: uuid('reviewer_id').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('confidence_level_check', sql`${table.confidenceLevel} IN ('high', 'medium', 'low')`),
+  check('methodological_risk_check', sql`${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
+  check('review_status_check', sql`${table.reviewStatus} IN ('suggested', 'pending_review', 'approved', 'rejected', 'archived')`),
+  check('approved_proxy_check', sql`${table.reviewStatus} != 'approved' OR (${table.value} IS NOT NULL AND ${table.currency} IS NOT NULL AND ${table.unit} IS NOT NULL AND ${table.referenceYear} IS NOT NULL)`),
+])
+
+export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  proxyId: uuid('proxy_id').references(() => financialProxies.id).notNull(),
+  justification: text('justification'),
+  territorialAdjustmentNotes: text('territorial_adjustment_notes'),
+  assignedBy: uuid('assigned_by').references(() => users.id).notNull(),
+  assignedAt: timestamp('assigned_at').defaultNow().notNull(),
+  assignmentStatus: varchar('assignment_status', { length: 20 }).default('active').notNull(),
+  archivedBy: uuid('archived_by').references(() => users.id),
+  archivedAt: timestamp('archived_at')
+})
