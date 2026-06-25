@@ -1,7 +1,7 @@
 # Checklist de Migración y Políticas RLS - Supabase Staging
 
 > [!IMPORTANT]
-> Este checklist tiene actualizaciones pendientes para el entorno de staging de Supabase. El estado actual está **PENDIENTE**.
+> Este checklist ha sido actualizado para el Sprint 6 en Supabase Staging. El estado actual está **COMPLETADO**.
 
 ## 1. Migraciones en Orden (Drizzle Kit)
 Las siguientes migraciones deben correrse en orden utilizando `DATABASE_URL` del entorno staging:
@@ -14,19 +14,20 @@ Las siguientes migraciones deben correrse en orden utilizando `DATABASE_URL` del
 7. `0006_outstanding_vindicator.sql`
 8. `0007_black_imperial_guard.sql`
 9. `0008_bored_pretty_boy.sql`
-10. `0009_motionless_peter_parker.sql` (PENDIENTE)
-11. `0010_crazy_warhawk.sql` (PENDIENTE)
+10. `0009_motionless_peter_parker.sql` (COMPLETADO en Staging)
+11. `0010_crazy_warhawk.sql` (COMPLETADO en Staging)
 
 ## 2. Políticas SQL RLS y Seguridad (Acción Humana)
 Una vez aplicadas las migraciones, se debe ejecutar el script de políticas RLS:
-* Archivo: `db/policies/001_initial_auth_rls.sql`
+* Archivo: `db/policies/001_initial_auth_rls.sql` (RE-APLICADO en Staging)
 
 ## 3. Orden Recomendado de Aplicación
 1. **Backup/Snapshot**: Tomar un snapshot/backup de la base de datos de staging.
-2. **Aplicar Migraciones**: Correr `pnpm db:migrate` apuntando a staging.
-3. **Aplicar RLS**: Copiar el contenido de `db/policies/001_initial_auth_rls.sql` y ejecutarlo en el SQL Editor de Supabase.
-4. **Validar Constraints**: Confirmar que la restricción `role_check` y el índice único parcial `user_single_active_membership` estén creados.
-5. **Verificación Funcional**: Probar los flujos de login, onboarding de organización y visualización del panel administrativo (`/admin`).
+2. **Aplicar Migraciones**: Correr `pnpm db:migrate` apuntando a staging. (Completado)
+3. **Aplicar RLS**: Copiar el contenido de `db/policies/001_initial_auth_rls.sql` y ejecutarlo en el SQL Editor de Supabase. (Completado)
+4. **Validar Constraints**: Confirmar que la restricción `role_check` y el índice único parcial `user_single_active_membership` estén creados. (Completado)
+5. **Verificación Funcional**: Probar los flujos de login, onboarding de organización y visualización del panel administrativo (`/admin`). (Smoke Test: COMPLETADO en Staging)
+
 
 ## 4. Riesgos Identificados
 * **DATABASE_URL Incorrecta**: Apuntar accidentalmente a producción o desarrollo local.

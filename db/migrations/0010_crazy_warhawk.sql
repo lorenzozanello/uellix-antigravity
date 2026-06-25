@@ -9,6 +9,10 @@ ALTER TABLE "sroi_calculation_runs"
   ADD COLUMN IF NOT EXISTS "calculated_by" uuid REFERENCES "public"."users"("id"),
   ADD COLUMN IF NOT EXISTS "calculated_at" timestamp DEFAULT now();
 --> statement-breakpoint
+ALTER TABLE "sroi_calculation_runs" DROP CONSTRAINT IF EXISTS "sroi_calculation_runs_run_by_users_id_fk";
+--> statement-breakpoint
+ALTER TABLE "sroi_calculation_runs" DROP COLUMN IF EXISTS "run_by";
+--> statement-breakpoint
 -- Renombrar columnas legacy si existen (run_by -> calculated_by ya gestionado arriba como nueva columna)
 -- total_value -> net_social_value ya se añade como nueva columna
 -- Ajustar constraint de status para incluir 'calculated'
