@@ -532,3 +532,121 @@ WITH CHECK (
 );
 
 -- DELETE explicitly denied (no policy)
+
+-- ============================================================
+-- SROI FILTERS & CALCULATION FOUNDATION
+-- ============================================================
+
+ALTER TABLE project_investments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_assignment_inputs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_filter_sets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_calculation_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sroi_calculation_line_items ENABLE ROW LEVEL SECURITY;
+
+-- PROJECT INVESTMENTS
+DROP POLICY IF EXISTS "project_investments_select" ON project_investments;
+CREATE POLICY "project_investments_select" ON project_investments FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "project_investments_insert" ON project_investments;
+CREATE POLICY "project_investments_insert" ON project_investments FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "project_investments_update" ON project_investments;
+CREATE POLICY "project_investments_update" ON project_investments FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- SROI ASSIGNMENT INPUTS
+DROP POLICY IF EXISTS "sroi_assignment_inputs_select" ON sroi_assignment_inputs;
+CREATE POLICY "sroi_assignment_inputs_select" ON sroi_assignment_inputs FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_assignment_inputs_insert" ON sroi_assignment_inputs;
+CREATE POLICY "sroi_assignment_inputs_insert" ON sroi_assignment_inputs FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_assignment_inputs_update" ON sroi_assignment_inputs;
+CREATE POLICY "sroi_assignment_inputs_update" ON sroi_assignment_inputs FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- SROI FILTER SETS
+DROP POLICY IF EXISTS "sroi_filter_sets_select" ON sroi_filter_sets;
+CREATE POLICY "sroi_filter_sets_select" ON sroi_filter_sets FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_filter_sets_insert" ON sroi_filter_sets;
+CREATE POLICY "sroi_filter_sets_insert" ON sroi_filter_sets FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_filter_sets_update" ON sroi_filter_sets;
+CREATE POLICY "sroi_filter_sets_update" ON sroi_filter_sets FOR UPDATE
+USING (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+)
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- SROI CALCULATION RUNS
+DROP POLICY IF EXISTS "sroi_calculation_runs_select" ON sroi_calculation_runs;
+CREATE POLICY "sroi_calculation_runs_select" ON sroi_calculation_runs FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_calculation_runs_insert" ON sroi_calculation_runs;
+CREATE POLICY "sroi_calculation_runs_insert" ON sroi_calculation_runs FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
+
+-- SROI CALCULATION LINE ITEMS
+DROP POLICY IF EXISTS "sroi_calculation_line_items_select" ON sroi_calculation_line_items;
+CREATE POLICY "sroi_calculation_line_items_select" ON sroi_calculation_line_items FOR SELECT
+USING (
+  organization_id = ANY(current_user_org_ids())
+  OR current_user_is_super_admin()
+);
+
+DROP POLICY IF EXISTS "sroi_calculation_line_items_insert" ON sroi_calculation_line_items;
+CREATE POLICY "sroi_calculation_line_items_insert" ON sroi_calculation_line_items FOR INSERT
+WITH CHECK (
+  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR current_user_is_super_admin()
+);
