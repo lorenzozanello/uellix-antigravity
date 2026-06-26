@@ -1,6 +1,7 @@
 import React from 'react'
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
+import { StellaAdvisorPanel } from '@/components/stella'
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions'
 import { fetchIndicators } from '@/app/app/projects/[projectId]/pipeline/indicators.actions'
 import { createFileEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createFileEvidence.action'
@@ -137,6 +138,8 @@ export default async function EvidencePage({ params }: { params: { projectId: st
       />
 
       <Stepper />
+
+      <StellaAdvisorPanel projectId={params.projectId} step="Evidence" />
 
       {/* Evidence list */}
       <section aria-labelledby="evidence-list-heading">

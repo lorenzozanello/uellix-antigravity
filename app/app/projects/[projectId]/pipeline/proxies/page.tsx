@@ -2,6 +2,7 @@
 
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
+import { StellaAdvisorPanel } from '@/components/stella'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import {
   listFinancialProxies,
@@ -168,6 +169,8 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
       />
 
       <Stepper />
+
+      <StellaAdvisorPanel projectId={params.projectId} step="Proxies" />
 
       {/* Proxy Bank */}
       <section aria-labelledby="proxy-bank-heading">
