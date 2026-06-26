@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/outcomes/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import StellaPlaceholder from '@/components/sroi/StellaPlaceholder';
+import { StellaAdvisorPanel } from '@/components/stella';
 import { fetchOutcomes, addOutcome } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { z } from 'zod';
@@ -47,7 +47,7 @@ export default async function OutcomesPage({ params }: { params: { projectId: st
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-2">Outcomes</h2>
       <Stepper />
-      <StellaPlaceholder step="Outcomes" />
+      <StellaAdvisorPanel projectId={params.projectId} step="Outcomes" />
       <ul className="list-disc pl-5 mb-4">
         {outcomes?.length ? (
           outcomes.map((o) => (
