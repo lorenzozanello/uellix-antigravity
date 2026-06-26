@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/narrative/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import StellaPlaceholder from '@/components/sroi/StellaPlaceholder';
+import { StellaAdvisorPanel } from '@/components/stella';
 import { fetchNarrative, saveNarrative } from '@/app/app/projects/[projectId]/pipeline/narrative.actions';
 import { z } from 'zod';
 
@@ -33,7 +33,7 @@ export default async function NarrativePage({ params }: { params: { projectId: s
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-2">Narrativa</h2>
       <Stepper />
-      <StellaPlaceholder step="Narrativa" />
+      <StellaAdvisorPanel projectId={params.projectId} step="Narrativa" />
       <form action={action} className="space-y-4">
         <input type="hidden" name="projectId" value={params.projectId} />
         <label>

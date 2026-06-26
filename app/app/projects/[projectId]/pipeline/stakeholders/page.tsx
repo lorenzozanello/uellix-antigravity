@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/stakeholders/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import StellaPlaceholder from '@/components/sroi/StellaPlaceholder';
+import { StellaAdvisorPanel } from '@/components/stella';
 import { fetchStakeholders, addStakeholder } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { z } from 'zod';
 
@@ -34,7 +34,7 @@ export default async function StakeholdersPage({ params }: { params: { projectId
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-2">Stakeholders</h2>
       <Stepper />
-      <StellaPlaceholder step="Stakeholders" />
+      <StellaAdvisorPanel projectId={params.projectId} step="Stakeholders" />
       <ul className="list-disc pl-5 mb-4">
         {stakeholders?.length ? (
           stakeholders.map((s) => (

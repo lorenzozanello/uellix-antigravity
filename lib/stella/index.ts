@@ -43,6 +43,7 @@ export {
 // Context
 export type { StellaProjectContext, OutcomeRef, IndicatorRef, EvidenceMeta, ProxyRef, FilterRef, CalculationSnapshot, SectionRef } from './context/types'
 export { sanitizeString, sanitizeNarrative, sanitizeOutcome, markAsData, hasForbiddenPattern } from './context/sanitize'
+export { buildAdvisorContext, StellaBuildContextError } from './context/build-advisor-context'
 
 // Fallbacks
 export {
