@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Breadcrumbs } from './Breadcrumbs'
+import { MobileNav } from './MobileNav'
 
 interface TopBarProps {
   orgName: string
@@ -9,6 +10,8 @@ interface TopBarProps {
 export function TopBar({ orgName, roleLabel }: TopBarProps) {
   return (
     <header className="h-16 shrink-0 border-b border-border bg-background flex items-center px-6 gap-4">
+      <MobileNav />
+
       {/* Breadcrumbs fill available space */}
       <div className="flex-1 min-w-0">
         <Breadcrumbs />

@@ -281,7 +281,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
           >
             Add to Proxy Bank
           </h2>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Create Source */}
             <Card>
               <CardHeader>

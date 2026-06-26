@@ -27,7 +27,7 @@ export default function Stepper() {
 
   return (
     <nav aria-label="Pipeline steps" className="mb-6">
-      <ol className="relative flex overflow-x-auto pb-3">
+      <ol className="relative flex overflow-x-auto pb-3 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
         {STEPS.map((step, idx) => {
           const isActive = activeSegment === step.segment
           const isLast = idx === STEPS.length - 1

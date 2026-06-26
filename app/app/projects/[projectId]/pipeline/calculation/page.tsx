@@ -51,7 +51,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
   const canEdit = ctx && ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role)
 
   const readiness = await getSroiCalculationReadiness(params.projectId)
-  const preview   = await calculateSroiPreview(params.projectId)
+  const preview   = await calculateSroiPreview(params.projectId).catch(() => null)
   const runs      = await listSroiCalculationRuns(params.projectId)
 
   const investment = await db
