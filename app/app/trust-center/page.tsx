@@ -1,159 +1,284 @@
-import React from 'react';
-import { db } from '@/db/client';
-import { projects } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { requireOrganizationAccess } from '@/lib/auth/session';
-import { listEvidenceForOrganizationWithProject } from '@/lib/pipeline/evidence';
-import Link from 'next/link';
+import React from 'react'
+import { db } from '@/db/client'
+import { projects } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { requireOrganizationAccess } from '@/lib/auth/session'
+import { listEvidenceForOrganizationWithProject } from '@/lib/pipeline/evidence'
+import Link from 'next/link'
+import { Filter, ShieldCheck } from 'lucide-react'
+import { Select } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
+import { EmptyState } from '@/components/states/EmptyState'
+
+const EVIDENCE_STATUS: Record<
+  string,
+  { variant: 'neutral' | 'warning' | 'info' | 'success' | 'danger'; label: string }
+> = {
+  draft: { variant: 'neutral', label: 'Draft' },
+  under_review: { variant: 'info', label: 'Under Review' },
+  approved: { variant: 'success', label: 'Approved' },
+  rejected: { variant: 'danger', label: 'Rejected' },
+  archived: { variant: 'neutral', label: 'Archived' },
+}
+
+const EVIDENCE_TYPE: Record<
+  string,
+  { variant: 'neutral' | 'info' | 'teal'; label: string }
+> = {
+  file: { variant: 'neutral', label: 'File' },
+  url: { variant: 'info', label: 'URL' },
+  text: { variant: 'neutral', label: 'Text' },
+}
 
 export default async function TrustCenterPage({
   searchParams,
 }: {
-  searchParams: { status?: string; type?: string; projectId?: string };
+  searchParams: { status?: string; type?: string; projectId?: string }
 }) {
-  const { organization } = await requireOrganizationAccess();
+  const { organization } = await requireOrganizationAccess()
 
-  // Fetch all projects for the filter dropdown
   const orgProjects = await db
     .select()
     .from(projects)
-    .where(eq(projects.organizationId, organization.id));
+    .where(eq(projects.organizationId, organization.id))
 
-  // Fetch all evidence items for the organization
-  const evidences = await listEvidenceForOrganizationWithProject();
+  const evidences = await listEvidenceForOrganizationWithProject()
 
-  const statusFilter = searchParams.status || '';
-  const typeFilter = searchParams.type || '';
-  const projectFilter = searchParams.projectId || '';
+  const statusFilter = searchParams.status || ''
+  const typeFilter = searchParams.type || ''
+  const projectFilter = searchParams.projectId || ''
 
   const filteredEvidences = evidences.filter((ev) => {
-    if (statusFilter && ev.status !== statusFilter) return false;
-    if (typeFilter && ev.type !== typeFilter) return false;
-    if (projectFilter && ev.projectId !== projectFilter) return false;
-    return true;
-  });
+    if (statusFilter && ev.status !== statusFilter) return false
+    if (typeFilter && ev.type !== typeFilter) return false
+    if (projectFilter && ev.projectId !== projectFilter) return false
+    return true
+  })
+
+  const activeFilterCount = [statusFilter, typeFilter, projectFilter].filter(Boolean).length
 
   return (
-    <section className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Trust Center</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Espacio audit‑ready para la verificación y trazabilidad de los proyectos de la organización.
-          Cada evidencia asociada cuenta con un hash SHA‑256 único y requiere revisión humana para su validación final.
-        </p>
+    <div className="space-y-6 max-w-7xl">
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600"
+          aria-hidden="true"
+        >
+          <ShieldCheck className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Trust Center</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Audit-ready evidence repository for{' '}
+            <span className="font-medium text-foreground">{organization.name}</span>. Each
+            evidence item carries a SHA-256 content hash and requires human review before use
+            in external reporting.
+          </p>
+        </div>
       </div>
 
-      {/* Filters Form */}
-      <form method="GET" action="/app/trust-center" className="flex flex-wrap gap-4 items-end mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <div>
-          <label htmlFor="projectId" className="block text-xs font-semibold text-gray-500 mb-1">Proyecto</label>
-          <select
-            id="projectId"
-            name="projectId"
-            defaultValue={projectFilter}
-            className="block w-48 rounded border-gray-300 text-sm focus:border-teal-500 focus:ring-teal-500"
-          >
-            <option value="">Todos los proyectos</option>
-            {orgProjects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
+      {/* Methodology notice */}
+      <div
+        role="note"
+        className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+      >
+        <span className="font-medium text-foreground">Audit notice: </span>
+        Evidence registered here does not constitute automatic certification or audit clearance.
+        Each item provides a{' '}
+        <span className="font-medium text-foreground">traceable evidence foundation</span> for
+        methodological review and requires human validation before external use.
+      </div>
 
-        <div>
-          <label htmlFor="status" className="block text-xs font-semibold text-gray-500 mb-1">Estado de revisión</label>
-          <select
-            id="status"
-            name="status"
-            defaultValue={statusFilter}
-            className="block w-40 rounded border-gray-300 text-sm focus:border-teal-500 focus:ring-teal-500"
-          >
-            <option value="">Todos los estados</option>
-            <option value="draft">Borrador</option>
-            <option value="under_review">En revisión humana</option>
-            <option value="approved">Aprobado</option>
-            <option value="rejected">Rechazado</option>
-            <option value="archived">Archivado</option>
-          </select>
+      {/* Filters */}
+      <form
+        method="GET"
+        action="/app/trust-center"
+        className="rounded-lg border border-border bg-muted/30 p-4"
+        aria-label="Filter evidence"
+      >
+        <div className="mb-3 flex items-center gap-2">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Filters
+          </span>
+          {activeFilterCount > 0 && (
+            <span
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white"
+              aria-label={`${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`}
+            >
+              {activeFilterCount}
+            </span>
+          )}
         </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label htmlFor="projectId" className="block text-xs font-medium text-foreground">
+              Project
+            </label>
+            <Select
+              id="projectId"
+              name="projectId"
+              defaultValue={projectFilter}
+              className="mt-1"
+            >
+              <option value="">All projects</option>
+              {orgProjects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </div>
 
-        <div>
-          <label htmlFor="type" className="block text-xs font-semibold text-gray-500 mb-1">Tipo de evidencia</label>
-          <select
-            id="type"
-            name="type"
-            defaultValue={typeFilter}
-            className="block w-40 rounded border-gray-300 text-sm focus:border-teal-500 focus:ring-teal-500"
-          >
-            <option value="">Todos los tipos</option>
-            <option value="file">Archivo</option>
-            <option value="url">Enlace URL</option>
-            <option value="text">Texto / Declaración</option>
-          </select>
-        </div>
+          <div>
+            <label htmlFor="status" className="block text-xs font-medium text-foreground">
+              Review status
+            </label>
+            <Select
+              id="status"
+              name="status"
+              defaultValue={statusFilter}
+              className="mt-1"
+            >
+              <option value="">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="under_review">Under Review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="archived">Archived</option>
+            </Select>
+          </div>
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-          >
-            Filtrar
-          </button>
-          <Link
-            href="/app/trust-center"
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium transition-colors text-center"
-          >
-            Limpiar
-          </Link>
+          <div>
+            <label htmlFor="type" className="block text-xs font-medium text-foreground">
+              Evidence type
+            </label>
+            <Select
+              id="type"
+              name="type"
+              defaultValue={typeFilter}
+              className="mt-1"
+            >
+              <option value="">All types</option>
+              <option value="file">File</option>
+              <option value="url">URL</option>
+              <option value="text">Text / Statement</option>
+            </Select>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <button
+              type="submit"
+              className="inline-flex items-center rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+            >
+              Apply
+            </button>
+            <Link
+              href="/app/trust-center"
+              className="inline-flex items-center rounded-md border border-border bg-background px-4 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Clear
+            </Link>
+          </div>
         </div>
       </form>
 
-      {/* Evidences Table */}
+      {/* Result count */}
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {filteredEvidences.length === evidences.length
+          ? `${evidences.length} evidence item${evidences.length !== 1 ? 's' : ''}`
+          : `${filteredEvidences.length} of ${evidences.length} evidence items`}
+        {activeFilterCount > 0 ? ' matching current filters' : ''}
+      </p>
+
+      {/* Evidence table */}
       {filteredEvidences.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-          <p className="text-gray-500 text-sm">No se encontraron evidencias asociadas trazables con los filtros seleccionados.</p>
-        </div>
+        <EmptyState
+          icon={<ShieldCheck className="h-6 w-6 text-neutral-500" />}
+          title="No evidence found"
+          description={
+            activeFilterCount > 0
+              ? 'No items match the selected filters. Adjust or clear filters to see all evidence.'
+              : 'No traceable evidence has been registered for this organization yet.'
+          }
+        />
       ) : (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-            <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-3">Proyecto</th>
-                <th className="px-6 py-3">Título de evidencia</th>
-                <th className="px-6 py-3">Tipo</th>
-                <th className="px-6 py-3">Hash SHA‑256</th>
-                <th className="px-6 py-3">Estado</th>
-                <th className="px-6 py-3">Fecha de registro</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-gray-700">
-              {filteredEvidences.map((ev) => (
-                <tr key={ev.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{ev.projectName}</td>
-                  <td className="px-6 py-4">{ev.title}</td>
-                  <td className="px-6 py-4 uppercase font-mono text-xs">{ev.type}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500" title={ev.contentHash || ''}>
-                    {ev.contentHash ? `${ev.contentHash.slice(0, 12)}…` : '—'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      ev.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      ev.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      ev.status === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
-                      ev.status === 'archived' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {ev.status === 'under_review' ? 'En revisión humana' : ev.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {new Date(ev.createdAt).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <section aria-labelledby="evidence-table-heading">
+          <h2 id="evidence-table-heading" className="sr-only">
+            Evidence items
+          </h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project</TableHead>
+                <TableHead>Evidence Title</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>SHA-256 Hash</TableHead>
+                <TableHead>Review Status</TableHead>
+                <TableHead>Registered</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEvidences.map((ev) => {
+                const statusConfig =
+                  EVIDENCE_STATUS[ev.status] ?? {
+                    variant: 'neutral' as const,
+                    label: ev.status,
+                  }
+                const typeConfig =
+                  EVIDENCE_TYPE[ev.type] ?? { variant: 'neutral' as const, label: ev.type }
+                return (
+                  <TableRow key={ev.id}>
+                    <TableCell className="font-medium text-foreground max-w-[140px]">
+                      <span className="line-clamp-1">{ev.projectName}</span>
+                    </TableCell>
+                    <TableCell className="max-w-[200px]">
+                      <span className="line-clamp-2 text-sm">{ev.title}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={typeConfig.variant}>{typeConfig.label}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {ev.contentHash ? (
+                        <code
+                          className="font-mono text-xs text-muted-foreground"
+                          title={ev.contentHash}
+                          aria-label={`SHA-256 hash: ${ev.contentHash.slice(0, 12)} (truncated)`}
+                        >
+                          {ev.contentHash.slice(0, 12)}…
+                        </code>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/60" aria-label="No hash">
+                          —
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                      {new Date(ev.createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </section>
       )}
-    </section>
-  );
+    </div>
+  )
 }
