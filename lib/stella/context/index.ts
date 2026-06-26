@@ -10,3 +10,4 @@ export type {
   SectionRef,
 } from './types'
 export { sanitizeString, sanitizeNarrative, sanitizeOutcome, markAsData, hasForbiddenPattern } from './sanitize'
+export { buildAdvisorContext, StellaBuildContextError } from './build-advisor-context'
