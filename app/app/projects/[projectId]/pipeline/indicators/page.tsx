@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/indicators/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import StellaPlaceholder from '@/components/sroi/StellaPlaceholder';
+import { StellaAdvisorPanel } from '@/components/stella';
 import { fetchIndicators, addIndicator } from '@/app/app/projects/[projectId]/pipeline/indicators.actions';
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { z } from 'zod';
@@ -60,7 +60,7 @@ export default async function IndicatorsPage({ params }: { params: { projectId: 
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-2">Indicadores</h2>
       <Stepper />
-      <StellaPlaceholder step="Indicadores" />
+      <StellaAdvisorPanel projectId={params.projectId} step="Indicadores" />
       <ul className="list-disc pl-5 mb-4">
         {indicators?.length ? (
           indicators.map((i) => (
