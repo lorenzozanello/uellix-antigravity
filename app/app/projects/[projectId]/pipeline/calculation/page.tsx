@@ -1,17 +1,29 @@
-import Stepper from '@/components/sroi/Stepper';
-import { calculateSroiRunAction } from './calculateSroiRun.action';
-import { upsertProjectInvestmentAction } from './upsertProjectInvestment.action';
-import { upsertSroiAssignmentInputAction } from './upsertSroiAssignmentInput.action';
-import { upsertSroiFilterSetAction } from './upsertSroiFilterSet.action';
-import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import Stepper from '@/components/sroi/Stepper'
+import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
+import { calculateSroiRunAction } from './calculateSroiRun.action'
+import { upsertProjectInvestmentAction } from './upsertProjectInvestment.action'
+import { upsertSroiAssignmentInputAction } from './upsertSroiAssignmentInput.action'
+import { upsertSroiFilterSetAction } from './upsertSroiFilterSet.action'
+import Link from 'next/link'
+import { BarChart2, GitCompare, FileText, CheckCircle2, AlertTriangle, Info, Calculator } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
+import { EmptyState } from '@/components/states/EmptyState'
 import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
   calculateSroiPreview,
-} from '@/lib/pipeline/sroi-calculation';
-import { requireOrganizationAccess } from '@/lib/auth/session';
-import { db } from '@/db/client';
+} from '@/lib/pipeline/sroi-calculation'
+import { requireOrganizationAccess } from '@/lib/auth/session'
+import { db } from '@/db/client'
 import {
   outcomeProxyAssignments,
   projectInvestments,
@@ -19,22 +31,29 @@ import {
   sroiFilterSets,
   financialProxies,
   outcomes,
-} from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
+} from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
+
+const RUN_STATUS: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
+  calculated: { variant: 'success', label: 'Calculated' },
+  pending:    { variant: 'warning', label: 'Pending' },
+  failed:     { variant: 'danger',  label: 'Failed' },
+}
+
+const INPUT_CLASS =
+  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 export default async function CalculationPage({ params }: { params: { projectId: string } }) {
-  const ctx = await requireOrganizationAccess();
-  const canEdit = ctx && ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role);
+  const ctx = await requireOrganizationAccess()
+  const canEdit = ctx && ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role)
 
-  // Load readiness, preview and previous runs server‑side
-  const readiness = await getSroiCalculationReadiness(params.projectId);
-  const preview = await calculateSroiPreview(params.projectId);
-  const runs = await listSroiCalculationRuns(params.projectId);
+  const readiness = await getSroiCalculationReadiness(params.projectId)
+  const preview   = await calculateSroiPreview(params.projectId).catch(() => null)
+  const runs      = await listSroiCalculationRuns(params.projectId)
 
-  // Load current investment
   const investment = await db
     .select()
     .from(projectInvestments)
@@ -45,9 +64,8 @@ export default async function CalculationPage({ params }: { params: { projectId:
       )
     )
     .limit(1)
-    .then((rows) => rows[0] ?? null);
+    .then((rows) => rows[0] ?? null)
 
-  // Load assignments and inputs/filters to render inline forms
   const assignmentsData = await db
     .select({
       assignment: outcomeProxyAssignments,
@@ -63,466 +81,720 @@ export default async function CalculationPage({ params }: { params: { projectId:
         eq(outcomeProxyAssignments.organizationId, ctx.organization.id),
         eq(outcomeProxyAssignments.assignmentStatus, 'active')
       )
-    );
+    )
 
   const inputs = await db
     .select()
     .from(sroiAssignmentInputs)
-    .where(eq(sroiAssignmentInputs.organizationId, ctx.organization.id));
+    .where(eq(sroiAssignmentInputs.organizationId, ctx.organization.id))
 
   const filterSets = await db
     .select()
     .from(sroiFilterSets)
-    .where(eq(sroiFilterSets.organizationId, ctx.organization.id));
+    .where(eq(sroiFilterSets.organizationId, ctx.organization.id))
 
-  const inputMap = new Map(inputs.map((i) => [i.assignmentId, i]));
-  const filterSetMap = new Map(filterSets.map((f) => [f.assignmentId, f]));
+  const inputMap     = new Map(inputs.map((i) => [i.assignmentId, i]))
+  const filterSetMap = new Map(filterSets.map((f) => [f.assignmentId, f]))
 
-  // Server Actions for mutation
+  // Lookup map for preview line items: assignmentId → display names
+  const assignmentLookup = new Map(
+    assignmentsData.map(({ assignment, outcome, proxy }) => [
+      assignment.id,
+      { outcomeName: outcome.title, proxyName: proxy.name },
+    ])
+  )
+
+  // Server Actions — wiring unchanged
   async function handleUpsertInvestment(formData: FormData) {
-    'use server';
-    await upsertProjectInvestmentAction(formData);
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`);
+    'use server'
+    await upsertProjectInvestmentAction(formData)
+    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
   }
 
   async function handleUpsertAssignmentInput(formData: FormData) {
-    'use server';
-    await upsertSroiAssignmentInputAction(formData);
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`);
+    'use server'
+    await upsertSroiAssignmentInputAction(formData)
+    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
   }
 
   async function handleUpsertFilterSet(formData: FormData) {
-    'use server';
-    await upsertSroiFilterSetAction(formData);
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`);
+    'use server'
+    await upsertSroiFilterSetAction(formData)
+    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
   }
 
   async function handleCalculateRun(formData: FormData) {
-    'use server';
-    await calculateSroiRunAction(formData);
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`);
+    'use server'
+    await calculateSroiRunAction(formData)
+    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
   }
 
   return (
-    <div className="p-4 space-y-8">
-      <h1 className="text-2xl font-bold">Cálculo SROI</h1>
+    <div className="space-y-8 max-w-5xl">
+      <PipelineStepHeader
+        step={8}
+        title="SROI Calculation"
+        description="Configure investment, assign impact quantities and SROI filters, then generate a traceable calculation run."
+        methodologyNote="Based on Social Value International SROI Standard Principles 3–7: value the things that matter, only include what is material, do not over-claim."
+      />
+
       <Stepper />
 
-      {/* Navigation Cards */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href={`/app/projects/${params.projectId}/pipeline/calculation/compare`}>
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle>Corridas SROI</CardTitle>
-            </CardHeader>
-            <CardContent>Historial de corridas y detalle de cada cálculo registrado.</CardContent>
+      {/* Quick navigation */}
+      <section aria-label="Related views" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link
+          href={`/app/projects/${params.projectId}/pipeline`}
+          className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+        >
+          <Card className="h-full hover:shadow-md transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-ring">
+            <CardContent className="p-5 flex gap-3 items-start">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600" aria-hidden="true">
+                <BarChart2 className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground">Pipeline Steps</p>
+                <p className="text-xs text-muted-foreground mt-0.5">View all SROI pipeline stages and current progress</p>
+              </div>
+            </CardContent>
           </Card>
         </Link>
-        <Link href={`/app/projects/${params.projectId}/pipeline/calculation/compare`}>
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle>Comparar Corridas</CardTitle>
-            </CardHeader>
-            <CardContent>Compare dos corridas para analizar diferencias.</CardContent>
+
+        <Link
+          href={`/app/projects/${params.projectId}/pipeline/calculation/compare`}
+          className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+        >
+          <Card className="h-full hover:shadow-md transition-shadow">
+            <CardContent className="p-5 flex gap-3 items-start">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden="true">
+                <GitCompare className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground">Compare Runs</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Analyse differences between two runs</p>
+              </div>
+            </CardContent>
           </Card>
         </Link>
-        <Link href={`/app/projects/${params.projectId}/report`}>
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle>Reportes SROI</CardTitle>
-            </CardHeader>
-            <CardContent>Gestión de borradores de reporte vinculados a corridas SROI.</CardContent>
+
+        <Link
+          href={`/app/projects/${params.projectId}/report`}
+          className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+        >
+          <Card className="h-full hover:shadow-md transition-shadow">
+            <CardContent className="p-5 flex gap-3 items-start">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden="true">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground">SROI Reports</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Manage report drafts linked to runs</p>
+              </div>
+            </CardContent>
           </Card>
         </Link>
       </section>
 
-      {/* Methodology and Limits Header */}
-      <section className="bg-gray-50 p-4 rounded text-sm text-gray-700 space-y-2">
-        <p>
-          Este panel permite realizar un <strong>cálculo metodológico trazable</strong> del retorno social de la inversión (SROI).
-        </p>
-        <p>
-          El resultado obtenido corresponde a un <strong>ratio SROI preliminar</strong> y <strong>requiere revisión humana</strong> para su validación final. No constituye una certificación automática ni auditoría independiente.
-        </p>
-      </section>
+      {/* Methodology notice */}
+      <div className="flex gap-3 rounded-lg border border-border bg-muted/30 p-4" role="note">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" />
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <p>
+            This panel performs a{' '}
+            <strong className="font-semibold text-foreground">traceable methodological calculation</strong>{' '}
+            of social return on investment (SROI).
+          </p>
+          <p>
+            Results represent a{' '}
+            <strong className="font-semibold text-foreground">preliminary SROI ratio</strong>{' '}
+            that requires{' '}
+            <strong className="font-semibold text-foreground">human review</strong>{' '}
+            before final validation. This output does not constitute independent certification or audit.
+          </p>
+        </div>
+      </div>
 
-      {/* Readiness Panel */}
-      <section className="border rounded p-4 bg-white shadow-sm space-y-3">
-        <h2 className="text-lg font-semibold">Estado de Preparación (Readiness)</h2>
-        {readiness.canCalculate ? (
-          <div className="p-3 bg-green-50 text-green-800 rounded font-medium">
-            ¡Listo para calcular! Todos los requerimientos mínimos están completos.
-          </div>
-        ) : (
-          <div className="p-3 bg-red-50 text-red-800 rounded space-y-2">
-            <p className="font-semibold">Requerimientos faltantes para habilitar el cálculo:</p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              {readiness.blockingReasons.map((reason, idx) => (
-                <li key={idx}>{reason}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
-
-      {/* Inversión Section */}
-      <section className="border rounded p-4 bg-white shadow-sm space-y-4">
-        <h2 className="text-lg font-semibold">Inversión del Proyecto</h2>
-        {investment ? (
-          <div className="p-3 bg-gray-50 rounded text-sm space-y-1">
-            <p><strong>Monto Actual:</strong> {investment.amount} {investment.currency}</p>
-            {investment.year && <p><strong>Año:</strong> {investment.year}</p>}
-            {investment.description && <p><strong>Descripción:</strong> {investment.description}</p>}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 italic">No se ha registrado ninguna inversión para este proyecto.</p>
-        )}
-
-        <form action={handleUpsertInvestment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="hidden" name="projectId" value={params.projectId} />
-          <label className="block text-sm font-medium text-gray-700">
-            Monto de Inversión:
-            <input
-              name="amount"
-              type="text"
-              required
-              disabled={!canEdit}
-              defaultValue={investment?.amount ?? ''}
-              className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
-            />
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Moneda:
-            <input
-              name="currency"
-              type="text"
-              required
-              disabled={!canEdit}
-              defaultValue={investment?.currency ?? ''}
-              className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
-            />
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Año de Referencia (opcional):
-            <input
-              name="year"
-              type="number"
-              disabled={!canEdit}
-              defaultValue={investment?.year ?? ''}
-              className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
-            />
-          </label>
-          <label className="block text-sm font-medium text-gray-700">
-            Descripción/Notas (opcional):
-            <input
-              name="description"
-              type="text"
-              disabled={!canEdit}
-              defaultValue={investment?.description ?? ''}
-              className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
-            />
-          </label>
-          {canEdit && (
-            <div className="md:col-span-2">
-              <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-medium">
-                Guardar Inversión
-              </button>
+      {/* Readiness */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Calculation Readiness</CardTitle>
+          <CardDescription>Minimum requirements to generate a valid SROI calculation run</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {readiness.canCalculate ? (
+            <div className="flex items-start gap-3 rounded-md border border-green-200 bg-green-50 p-4">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-700" aria-hidden="true" />
+              <div>
+                <p className="font-semibold text-green-800">Ready to calculate</p>
+                <p className="text-sm text-green-700 mt-0.5">
+                  All minimum requirements are complete. You can now save a calculation run.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-red-200 bg-red-50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-700" aria-hidden="true" />
+                <p className="font-semibold text-red-800 text-sm">Requirements missing to enable calculation:</p>
+              </div>
+              <ul className="space-y-1 pl-6 list-disc">
+                {readiness.blockingReasons.map((reason, idx) => (
+                  <li key={idx} className="text-sm text-red-700">{reason}</li>
+                ))}
+              </ul>
             </div>
           )}
-        </form>
-      </section>
+        </CardContent>
+      </Card>
 
-      {/* Active Assignments & Inputs/Filters Section */}
-      <section className="border rounded p-4 bg-white shadow-sm space-y-6">
-        <h2 className="text-lg font-semibold">Inputs y Filtros por Asignación</h2>
+      {/* Investment */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Investment</CardTitle>
+          <CardDescription>
+            Total capital deployed in the intervention period. Used as the denominator in the SROI ratio.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {investment && (
+            <div className="rounded-md border border-border bg-muted/30 p-4 text-sm space-y-1">
+              <p>
+                <span className="font-medium text-foreground">Current amount:</span>{' '}
+                <span className="text-foreground">{investment.amount} {investment.currency}</span>
+              </p>
+              {investment.year && (
+                <p>
+                  <span className="font-medium text-foreground">Reference year:</span>{' '}
+                  <span className="text-muted-foreground">{investment.year}</span>
+                </p>
+              )}
+              {investment.description && (
+                <p>
+                  <span className="font-medium text-foreground">Notes:</span>{' '}
+                  <span className="text-muted-foreground">{investment.description}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          <form action={handleUpsertInvestment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="hidden" name="projectId" value={params.projectId} />
+
+            <div>
+              <label htmlFor="inv-amount" className="block text-sm font-medium text-foreground">
+                Investment Amount <span className="text-red-500" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="inv-amount"
+                name="amount"
+                type="text"
+                required
+                disabled={!canEdit}
+                defaultValue={investment?.amount ?? ''}
+                className={INPUT_CLASS}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="inv-currency" className="block text-sm font-medium text-foreground">
+                Currency <span className="text-red-500" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="inv-currency"
+                name="currency"
+                type="text"
+                required
+                disabled={!canEdit}
+                defaultValue={investment?.currency ?? ''}
+                className={INPUT_CLASS}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="inv-year" className="block text-sm font-medium text-foreground">
+                Reference Year
+                <span className="ml-1 text-xs text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <input
+                id="inv-year"
+                name="year"
+                type="number"
+                disabled={!canEdit}
+                defaultValue={investment?.year ?? ''}
+                className={INPUT_CLASS}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="inv-description" className="block text-sm font-medium text-foreground">
+                Notes
+                <span className="ml-1 text-xs text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <input
+                id="inv-description"
+                name="description"
+                type="text"
+                disabled={!canEdit}
+                defaultValue={investment?.description ?? ''}
+                className={INPUT_CLASS}
+              />
+            </div>
+
+            {canEdit && (
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                >
+                  Save Investment
+                </button>
+              </div>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Assignment Inputs & SROI Filters */}
+      <section aria-labelledby="assignments-heading">
+        <h2
+          id="assignments-heading"
+          className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+        >
+          Assignment Inputs &amp; SROI Filters
+        </h2>
+
         {assignmentsData.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">No hay asignaciones de proxies activas para este proyecto.</p>
+          <EmptyState
+            title="No active proxy assignments"
+            description="Assign financial proxies to outcomes in the Proxies step before configuring inputs and filters."
+          />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {assignmentsData.map(({ assignment, outcome, proxy }) => {
-              const currentInput = inputMap.get(assignment.id);
-              const currentFilter = filterSetMap.get(assignment.id);
+              const currentInput  = inputMap.get(assignment.id)
+              const currentFilter = filterSetMap.get(assignment.id)
 
               return (
-                <div key={assignment.id} className="border rounded p-4 bg-gray-50 space-y-4">
-                  <div className="border-b pb-2">
-                    <h3 className="font-semibold text-teal-800">{outcome.title}</h3>
-                    <p className="text-xs text-gray-600">
-                      <strong>Proxy:</strong> {proxy.name} ({proxy.value} {proxy.currency} / {proxy.unit})
-                    </p>
-                  </div>
+                <Card key={assignment.id}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-teal-800">{outcome.title}</CardTitle>
+                    <CardDescription>
+                      Proxy: <strong className="text-foreground">{proxy.name}</strong>
+                      {' '}— {proxy.value} {proxy.currency} / {proxy.unit}
+                    </CardDescription>
+                  </CardHeader>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Assignment Input Form */}
-                    <form action={handleUpsertAssignmentInput} className="space-y-3">
-                      <h4 className="text-sm font-semibold text-gray-700">Cantidad e Inputs</h4>
-                      <input type="hidden" name="projectId" value={params.projectId} />
-                      <input type="hidden" name="assignmentId" value={assignment.id} />
-                      <div className="grid grid-cols-2 gap-2">
-                        <label className="text-xs font-medium text-gray-600">
-                          Cantidad:
-                          <input
-                            name="quantity"
-                            type="text"
-                            required
-                            disabled={!canEdit}
-                            defaultValue={currentInput?.quantity ?? ''}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                        <label className="text-xs font-medium text-gray-600">
-                          Unidad:
-                          <input
-                            name="unit"
-                            type="text"
-                            required
-                            disabled={!canEdit}
-                            defaultValue={currentInput?.unit ?? proxy.unit ?? ''}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <label className="text-xs font-medium text-gray-600">
-                          Año (opcional):
-                          <input
-                            name="year"
-                            type="number"
-                            disabled={!canEdit}
-                            defaultValue={currentInput?.year ?? ''}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                        <label className="text-xs font-medium text-gray-600">
-                          Notas (opcional):
-                          <input
-                            name="notes"
-                            type="text"
-                            disabled={!canEdit}
-                            defaultValue={currentInput?.notes ?? ''}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                      </div>
-                      {canEdit && (
-                        <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded text-xs font-medium">
-                          Guardar Inputs
-                        </button>
-                      )}
-                    </form>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Quantities & Inputs */}
+                      <form action={handleUpsertAssignmentInput} className="space-y-3">
+                        <p className="text-sm font-semibold text-foreground">Quantities &amp; Inputs</p>
+                        <input type="hidden" name="projectId" value={params.projectId} />
+                        <input type="hidden" name="assignmentId" value={assignment.id} />
 
-                    {/* Assignment Filter Set Form */}
-                    <form action={handleUpsertFilterSet} className="space-y-3">
-                      <h4 className="text-sm font-semibold text-gray-700">Filtros de Impacto</h4>
-                      <input type="hidden" name="projectId" value={params.projectId} />
-                      <input type="hidden" name="assignmentId" value={assignment.id} />
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <label className="text-xs font-medium text-gray-600">
-                          Deadweight %:
-                          <input
-                            name="deadweightPct"
-                            type="text"
-                            disabled={!canEdit}
-                            defaultValue={currentFilter?.deadweightPct ?? '0'}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                        <label className="text-xs font-medium text-gray-600">
-                          Attribution %:
-                          <input
-                            name="attributionPct"
-                            type="text"
-                            disabled={!canEdit}
-                            defaultValue={currentFilter?.attributionPct ?? '0'}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                        <label className="text-xs font-medium text-gray-600">
-                          Displacement %:
-                          <input
-                            name="displacementPct"
-                            type="text"
-                            disabled={!canEdit}
-                            defaultValue={currentFilter?.displacementPct ?? '0'}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                        <label className="text-xs font-medium text-gray-600">
-                          Dropoff %:
-                          <input
-                            name="dropoffPct"
-                            type="text"
-                            disabled={!canEdit}
-                            defaultValue={currentFilter?.dropoffPct ?? '0'}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <label className="text-xs font-medium text-gray-600">
-                          Duración (años):
-                          <input
-                            name="durationYears"
-                            type="number"
-                            disabled={!canEdit}
-                            defaultValue={currentFilter?.durationYears ?? 1}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                        <label className="text-xs font-medium text-gray-600">
-                          Justificación (opcional):
-                          <input
-                            name="justification"
-                            type="text"
-                            disabled={!canEdit}
-                            defaultValue={currentFilter?.justification ?? ''}
-                            className="mt-1 block w-full text-xs rounded border-gray-300"
-                          />
-                        </label>
-                      </div>
-                      {canEdit && (
-                        <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded text-xs font-medium">
-                          Guardar Filtros
-                        </button>
-                      )}
-                    </form>
-                  </div>
-                </div>
-              );
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label
+                              htmlFor={`qty-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Quantity <span className="text-red-500" aria-hidden="true">*</span>
+                            </label>
+                            <input
+                              id={`qty-${assignment.id}`}
+                              name="quantity"
+                              type="text"
+                              required
+                              disabled={!canEdit}
+                              defaultValue={currentInput?.quantity ?? ''}
+                              className={INPUT_CLASS}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`unit-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Unit <span className="text-red-500" aria-hidden="true">*</span>
+                            </label>
+                            <input
+                              id={`unit-${assignment.id}`}
+                              name="unit"
+                              type="text"
+                              required
+                              disabled={!canEdit}
+                              defaultValue={currentInput?.unit ?? proxy.unit ?? ''}
+                              className={INPUT_CLASS}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`inp-year-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Year
+                              <span className="ml-1 text-[10px] text-muted-foreground font-normal">(optional)</span>
+                            </label>
+                            <input
+                              id={`inp-year-${assignment.id}`}
+                              name="year"
+                              type="number"
+                              disabled={!canEdit}
+                              defaultValue={currentInput?.year ?? ''}
+                              className={INPUT_CLASS}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`inp-notes-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Notes
+                              <span className="ml-1 text-[10px] text-muted-foreground font-normal">(optional)</span>
+                            </label>
+                            <input
+                              id={`inp-notes-${assignment.id}`}
+                              name="notes"
+                              type="text"
+                              disabled={!canEdit}
+                              defaultValue={currentInput?.notes ?? ''}
+                              className={INPUT_CLASS}
+                            />
+                          </div>
+                        </div>
+
+                        {canEdit && (
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                          >
+                            Save Inputs
+                          </button>
+                        )}
+                      </form>
+
+                      {/* SROI Filters */}
+                      <form action={handleUpsertFilterSet} className="space-y-3">
+                        <p className="text-sm font-semibold text-foreground">SROI Impact Filters</p>
+                        <p className="text-xs text-muted-foreground">
+                          Percentage adjustments that account for methodological assumptions about impact attribution.
+                        </p>
+                        <input type="hidden" name="projectId" value={params.projectId} />
+                        <input type="hidden" name="assignmentId" value={assignment.id} />
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label
+                              htmlFor={`dw-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Deadweight %
+                            </label>
+                            <input
+                              id={`dw-${assignment.id}`}
+                              name="deadweightPct"
+                              type="text"
+                              disabled={!canEdit}
+                              defaultValue={currentFilter?.deadweightPct ?? '0'}
+                              className={INPUT_CLASS}
+                            />
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              % that would have occurred without the intervention
+                            </p>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`at-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Attribution %
+                            </label>
+                            <input
+                              id={`at-${assignment.id}`}
+                              name="attributionPct"
+                              type="text"
+                              disabled={!canEdit}
+                              defaultValue={currentFilter?.attributionPct ?? '0'}
+                              className={INPUT_CLASS}
+                            />
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              % attributable to other actors
+                            </p>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`dp-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Displacement %
+                            </label>
+                            <input
+                              id={`dp-${assignment.id}`}
+                              name="displacementPct"
+                              type="text"
+                              disabled={!canEdit}
+                              defaultValue={currentFilter?.displacementPct ?? '0'}
+                              className={INPUT_CLASS}
+                            />
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              % of positive effects offset elsewhere
+                            </p>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`do-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Drop-off %
+                            </label>
+                            <input
+                              id={`do-${assignment.id}`}
+                              name="dropoffPct"
+                              type="text"
+                              disabled={!canEdit}
+                              defaultValue={currentFilter?.dropoffPct ?? '0'}
+                              className={INPUT_CLASS}
+                            />
+                            <p className="mt-0.5 text-[10px] text-muted-foreground">
+                              % annual reduction in impact after year 1
+                            </p>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`dur-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Duration (years)
+                            </label>
+                            <input
+                              id={`dur-${assignment.id}`}
+                              name="durationYears"
+                              type="number"
+                              disabled={!canEdit}
+                              defaultValue={currentFilter?.durationYears ?? 1}
+                              className={INPUT_CLASS}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`just-${assignment.id}`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Justification
+                              <span className="ml-1 text-[10px] text-muted-foreground font-normal">(optional)</span>
+                            </label>
+                            <input
+                              id={`just-${assignment.id}`}
+                              name="justification"
+                              type="text"
+                              disabled={!canEdit}
+                              defaultValue={currentFilter?.justification ?? ''}
+                              className={INPUT_CLASS}
+                            />
+                          </div>
+                        </div>
+
+                        {canEdit && (
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                          >
+                            Save Filters
+                          </button>
+                        )}
+                      </form>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
             })}
           </div>
         )}
       </section>
 
-      {/* Preview Section */}
+      {/* Preview Results */}
       {preview?.canCalculate && preview.result && (
-        <section className="border rounded p-4 bg-white shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Vista Previa de Resultados</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="p-3 bg-gray-50 rounded">
-              <span className="text-xs text-gray-500 block">Ratio SROI Preliminar</span>
-              <span className="text-xl font-bold text-teal-700">
-                {parseFloat(preview.result.sroiRatio.toString()).toFixed(2)}:1
-              </span>
+        <Card>
+          <CardHeader>
+            <CardTitle>Preview Results</CardTitle>
+            <CardDescription>
+              Preliminary calculation based on current inputs. Requires human review before use in reports.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* KPI summary */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-md border border-border bg-muted/30 p-4">
+                <p className="text-xs font-medium text-muted-foreground">Preliminary SROI Ratio</p>
+                <p className="mt-1 text-2xl font-bold text-teal-700">
+                  {parseFloat(preview.result.sroiRatio.toString()).toFixed(2)}:1
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-muted/30 p-4">
+                <p className="text-xs font-medium text-muted-foreground">Net Social Value</p>
+                <p className="mt-1 text-xl font-bold text-foreground">
+                  {parseFloat(preview.result.netSocialValue.toString()).toLocaleString()}{' '}
+                  <span className="text-sm font-normal text-muted-foreground">{preview.result.currency}</span>
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-muted/30 p-4">
+                <p className="text-xs font-medium text-muted-foreground">Gross Social Value</p>
+                <p className="mt-1 text-xl font-bold text-foreground">
+                  {parseFloat(preview.result.grossSocialValue.toString()).toLocaleString()}{' '}
+                  <span className="text-sm font-normal text-muted-foreground">{preview.result.currency}</span>
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-muted/30 p-4">
+                <p className="text-xs font-medium text-muted-foreground">Total Investment</p>
+                <p className="mt-1 text-xl font-bold text-foreground">
+                  {parseFloat(preview.result.totalInvestment.toString()).toLocaleString()}{' '}
+                  <span className="text-sm font-normal text-muted-foreground">{preview.result.currency}</span>
+                </p>
+              </div>
             </div>
-            <div className="p-3 bg-gray-50 rounded">
-              <span className="text-xs text-gray-500 block">Valor Social Neto</span>
-              <span className="text-xl font-bold text-gray-800">
-                {parseFloat(preview.result.netSocialValue.toString()).toLocaleString()} {preview.result.currency}
-              </span>
-            </div>
-            <div className="p-3 bg-gray-50 rounded">
-              <span className="text-xs text-gray-500 block">Valor Social Bruto</span>
-              <span className="text-xl font-bold text-gray-800">
-                {parseFloat(preview.result.grossSocialValue.toString()).toLocaleString()} {preview.result.currency}
-              </span>
-            </div>
-            <div className="p-3 bg-gray-50 rounded">
-              <span className="text-xs text-gray-500 block">Inversión Total</span>
-              <span className="text-xl font-bold text-gray-800">
-                {parseFloat(preview.result.totalInvestment.toString()).toLocaleString()} {preview.result.currency}
-              </span>
-            </div>
-          </div>
 
-          <h3 className="font-semibold text-sm mt-3">Desglose de Líneas de Cálculo</h3>
-          <table className="w-full table-auto border text-xs">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-2 py-1 text-left">Outcome / Proxy</th>
-                <th className="px-2 py-1 text-right">Cantidad</th>
-                <th className="px-2 py-1 text-right">Valor Proxy</th>
-                <th className="px-2 py-1 text-right">Bruto</th>
-                <th className="px-2 py-1 text-right">Ajustado (Neto)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.result.lineItems.map((li, idx) => (
-                <tr key={idx} className="border-t">
-                  <td className="px-2 py-1">
-                    <p className="font-medium text-gray-800">ID Asignación: {li.assignmentId}</p>
-                    <p className="text-[10px] text-gray-500">
-                      DW: {li.deadweightPct}%, AT: {li.attributionPct}%, DP: {li.displacementPct}%, DO: {li.dropoffPct}%, Años: {li.durationYears}
-                    </p>
-                  </td>
-                  <td className="px-2 py-1 text-right">{li.quantity}</td>
-                  <td className="px-2 py-1 text-right">{li.proxyValue.toLocaleString()} {li.currency}</td>
-                  <td className="px-2 py-1 text-right">{li.grossValue.toLocaleString()} {li.currency}</td>
-                  <td className="px-2 py-1 text-right font-medium text-teal-700">{li.adjustedValue.toLocaleString()} {li.currency}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            {/* Line items breakdown */}
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Calculation Line Items</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Outcome / Proxy</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead className="text-right">Proxy Value</TableHead>
+                    <TableHead className="text-right">Gross</TableHead>
+                    <TableHead className="text-right">Adjusted (Net)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {preview.result.lineItems.map((li, idx) => {
+                    const info = assignmentLookup.get(li.assignmentId)
+                    return (
+                      <TableRow key={idx}>
+                        <TableCell>
+                          <p className="font-medium text-foreground text-sm">
+                            {info?.outcomeName ?? `Assignment ${li.assignmentId.slice(0, 8)}…`}
+                          </p>
+                          {info?.proxyName && (
+                            <p className="text-xs text-muted-foreground">{info.proxyName}</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            DW {li.deadweightPct}% · AT {li.attributionPct}% · DP {li.displacementPct}% · DO {li.dropoffPct}% · {li.durationYears}yr
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-right">{li.quantity}</TableCell>
+                        <TableCell className="text-right">
+                          {li.proxyValue.toLocaleString()} {li.currency}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {li.grossValue.toLocaleString()} {li.currency}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-teal-700">
+                          {li.adjustedValue.toLocaleString()} {li.currency}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
 
-          {/* Action to calculate and persist run */}
-          {canEdit && (
-            <form action={handleCalculateRun} className="pt-2">
-              <input type="hidden" name="projectId" value={params.projectId} />
-              <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded text-sm font-semibold shadow">
-                Guardar y Registrar Corrida Oficial
-              </button>
-            </form>
-          )}
-        </section>
+            {/* Register run */}
+            {canEdit && (
+              <div className="border-t border-border pt-4">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Registering a run persists the current calculation with its full audit trail. This cannot be undone.
+                </p>
+                <form action={handleCalculateRun}>
+                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors shadow-sm"
+                  >
+                    <Calculator className="h-4 w-4" aria-hidden="true" />
+                    Save Calculation Run
+                  </button>
+                </form>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Historial de Corridas */}
-      <section className="border rounded p-4 bg-white shadow-sm space-y-4">
-        <h2 className="text-lg font-semibold">Historial de Corridas SROI</h2>
-        {runs.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">No se han registrado corridas SROI para este proyecto.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border text-sm text-left">
-              <thead className="bg-gray-100 text-xs font-semibold">
-                <tr>
-                  <th className="px-3 py-2">Versión</th>
-                  <th className="px-3 py-2">Fecha</th>
-                  <th className="px-3 py-2">Inversión</th>
-                  <th className="px-3 py-2">Valor Bruto</th>
-                  <th className="px-3 py-2">Valor Neto</th>
-                  <th className="px-3 py-2">Ratio SROI</th>
-                  <th className="px-3 py-2">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {runs.map((run) => (
-                  <tr key={run.id} className="border-t hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium">v{run.version}</td>
-                    <td className="px-3 py-2 text-xs text-gray-600">
-                      {new Date(run.createdAt).toLocaleString()}
-                    </td>
-                    <td className="px-3 py-2">
-                      {run.totalInvestment ? parseFloat(run.totalInvestment).toLocaleString() : '0'} {run.currency}
-                    </td>
-                    <td className="px-3 py-2">
-                      {run.grossSocialValue ? parseFloat(run.grossSocialValue).toLocaleString() : '0'} {run.currency}
-                    </td>
-                    <td className="px-3 py-2">
-                      {run.netSocialValue ? parseFloat(run.netSocialValue).toLocaleString() : '0'} {run.currency}
-                    </td>
-                    <td className="px-3 py-2 font-bold text-teal-700">
-                      {run.sroiRatio ? parseFloat(run.sroiRatio).toFixed(2) : '0.00'}:1
-                    </td>
-                    <td className="px-3 py-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full font-medium ${
-                        run.status === 'calculated'
-                          ? 'bg-green-100 text-green-800'
-                          : run.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {run.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* Run History */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Calculation Run History</CardTitle>
+          <CardDescription>
+            All registered SROI calculation runs for this project. Each run is immutable and audit-traceable.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {runs.length === 0 ? (
+            <EmptyState
+              title="No calculation runs yet"
+              description="Complete the investment and assignment inputs above, then save your first calculation run."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Version</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Investment</TableHead>
+                  <TableHead className="text-right">Gross Value</TableHead>
+                  <TableHead className="text-right">Net Value</TableHead>
+                  <TableHead className="text-right">SROI Ratio</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {runs.map((run) => {
+                  const statusConfig = RUN_STATUS[run.status] ?? { variant: 'neutral' as const, label: run.status }
+                  return (
+                    <TableRow key={run.id}>
+                      <TableCell className="font-medium">v{run.version}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(run.createdAt).toLocaleString('en-US', {
+                          year: 'numeric', month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {run.totalInvestment ? parseFloat(run.totalInvestment).toLocaleString() : '0'}{' '}
+                        <span className="text-xs text-muted-foreground">{run.currency}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {run.grossSocialValue ? parseFloat(run.grossSocialValue).toLocaleString() : '0'}{' '}
+                        <span className="text-xs text-muted-foreground">{run.currency}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {run.netSocialValue ? parseFloat(run.netSocialValue).toLocaleString() : '0'}{' '}
+                        <span className="text-xs text-muted-foreground">{run.currency}</span>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-teal-700">
+                        {run.sroiRatio ? parseFloat(run.sroiRatio).toFixed(2) : '0.00'}:1
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link
+                          href={`/app/projects/${params.projectId}/pipeline/calculation/runs/${run.id}`}
+                          className="text-xs font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          aria-label={`View run v${run.version} details`}
+                        >
+                          View →
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }
-

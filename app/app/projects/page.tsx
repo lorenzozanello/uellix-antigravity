@@ -1,49 +1,87 @@
-import { getCurrentOrganizationContext } from '@/lib/auth/session';
-import { listProjectsForCurrentOrganization } from '@/lib/projects/service';
-import Link from 'next/link';
+import Link from 'next/link'
+import { Plus, FolderKanban } from 'lucide-react'
+import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
+import { ProjectCard } from '@/components/projects/ProjectCard'
+import { EmptyState } from '@/components/states/EmptyState'
 
 export default async function ProjectsPage() {
-  const ctx = await getCurrentOrganizationContext();
-  if (!ctx) return <p>Unauthenticated. Please log in.</p>;
+  const ctx = await getCurrentOrganizationContext()
+  if (!ctx) return <p>Unauthenticated. Please log in.</p>
 
-  const projects = await listProjectsForCurrentOrganization();
+  const projects = await listProjectsForCurrentOrganization()
 
-  const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role);
+  const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(
+    ctx.membership.role
+  )
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Proyectos</h1>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">SROI Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {projects.length} project{projects.length !== 1 ? 's' : ''} in {ctx.organization.name}
+          </p>
+        </div>
         {canCreate && (
-          <Link href="/app/projects/new" className="rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-teal-400">
-            Nuevo proyecto
+          <Link
+            href="/app/projects/new"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New Project
           </Link>
         )}
       </div>
+
+      {/* Content */}
       {projects.length === 0 ? (
-        <p className="text-slate-400">No hay proyectos registrados.</p>
+        <div className="space-y-4">
+          <EmptyState
+            icon={<FolderKanban className="h-6 w-6 text-neutral-500" />}
+            title="No SROI projects yet"
+            description="Each project walks your team through the full SROI pipeline — from theory of change to a defensible impact ratio."
+          />
+          {canCreate && (
+            <div className="flex justify-center">
+              <Link
+                href="/app/projects/new"
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Create First Project
+              </Link>
+            </div>
+          )}
+        </div>
       ) : (
-        <table className="min-w-full divide-y divide-slate-800 bg-slate-900/10">
-          <thead className="bg-slate-900/50">
-            <tr>
-              <th className="px-6 py-3.5 text-left text-sm font-semibold text-slate-200">Nombre</th>
-              <th className="px-6 py-3.5 text-left text-sm font-semibold text-slate-200">Estado</th>
-              <th className="px-6 py-3.5 text-left text-sm font-semibold text-slate-200">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800">
-            {projects.map((project) => (
-              <tr key={project.id}>
-                <td className="px-6 py-4 text-sm font-medium text-white">{project.name}</td>
-                <td className="px-6 py-4 text-sm text-slate-400">{project.status}</td>
-                <td className="px-6 py-4 text-sm">
-                  <Link href={`/app/projects/${project.id}`} className="text-teal-300 underline">Ver</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {projects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              id={project.id}
+              name={project.name}
+              description={project.description}
+              status={project.status}
+              territory={project.territory}
+              country={project.country}
+              startDate={project.startDate}
+            />
+          ))}
+          {canCreate && (
+            <Link
+              href="/app/projects/new"
+              className="flex min-h-[160px] items-center justify-center gap-2 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:border-teal-400 hover:text-teal-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Create new SROI project"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              New Project
+            </Link>
+          )}
+        </div>
       )}
     </div>
-  );
+  )
 }
