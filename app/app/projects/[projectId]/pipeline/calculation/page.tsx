@@ -17,6 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/states/EmptyState'
+import { StellaValidatorPanel } from '@/components/stella'
 import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
@@ -245,6 +246,8 @@ export default async function CalculationPage({ params }: { params: { projectId:
           )}
         </CardContent>
       </Card>
+
+      <StellaValidatorPanel projectId={params.projectId} step="Calculation" />
 
       {/* Investment */}
       <Card>

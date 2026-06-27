@@ -11,3 +11,4 @@ export type {
 } from './types'
 export { sanitizeString, sanitizeNarrative, sanitizeOutcome, markAsData, hasForbiddenPattern } from './sanitize'
 export { buildAdvisorContext, StellaBuildContextError } from './build-advisor-context'
+export { buildValidatorContext, StellaBuildValidatorContextError } from './build-validator-context'

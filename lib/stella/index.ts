@@ -44,6 +44,11 @@ export {
 export type { StellaProjectContext, OutcomeRef, IndicatorRef, EvidenceMeta, ProxyRef, FilterRef, CalculationSnapshot, SectionRef } from './context/types'
 export { sanitizeString, sanitizeNarrative, sanitizeOutcome, markAsData, hasForbiddenPattern } from './context/sanitize'
 export { buildAdvisorContext, StellaBuildContextError } from './context/build-advisor-context'
+export { buildValidatorContext, StellaBuildValidatorContextError } from './context/build-validator-context'
+
+// Rate limiting
+export { checkStellaRateLimit, recordStellaRequest, resetStellaRateLimitForTests } from './rate-limit'
+export type { RateLimitResult } from './rate-limit'
 
 // Fallbacks
 export {

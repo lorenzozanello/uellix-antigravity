@@ -395,6 +395,25 @@ export const sroiReports = pgTable('sroi_reports', {
   check('sroi_reports_status_check', sql`${table.status} IN ('draft', 'under_review', 'locked', 'archived')`),
 ])
 
+export const stellaInteractions = pgTable('stella_interactions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  stellaRole: varchar('stella_role', { length: 50 }).notNull(),
+  pipelineStep: varchar('pipeline_step', { length: 100 }).notNull(),
+  contextHash: varchar('context_hash', { length: 64 }).notNull(),
+  responseJson: jsonb('response_json').notNull(),
+  modelUsed: varchar('model_used', { length: 100 }).default('gemini-2.0-flash').notNull(),
+  tokensUsed: integer('tokens_used'),
+  riskLevel: varchar('risk_level', { length: 50 }),
+  riskFlags: text('risk_flags').array(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('stella_interactions_stella_role_check', sql`${table.stellaRole} IN ('advisor', 'validator', 'composer')`),
+  check('stella_interactions_risk_level_check', sql`${table.riskLevel} IS NULL OR ${table.riskLevel} IN ('low', 'medium', 'high')`),
+])
+
 export const sroiReportSections = pgTable('sroi_report_sections', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
