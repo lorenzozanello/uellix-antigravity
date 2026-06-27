@@ -45,6 +45,10 @@ export type { StellaProjectContext, OutcomeRef, IndicatorRef, EvidenceMeta, Prox
 export { sanitizeString, sanitizeNarrative, sanitizeOutcome, markAsData, hasForbiddenPattern } from './context/sanitize'
 export { buildAdvisorContext, StellaBuildContextError } from './context/build-advisor-context'
 
+// Rate limiting
+export { checkStellaRateLimit, recordStellaRequest, resetStellaRateLimitForTests } from './rate-limit'
+export type { RateLimitResult } from './rate-limit'
+
 // Fallbacks
 export {
   ADVISOR_FALLBACK,
