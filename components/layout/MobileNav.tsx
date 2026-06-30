@@ -56,9 +56,16 @@ export function MobileNav() {
               <Link
                 href="/app/dashboard"
                 onClick={close}
-                className="text-xl font-bold tracking-tight text-sidebar-primary-foreground hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring rounded"
+                aria-label="Uellix — Inicio"
+                className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring rounded"
               >
-                Uellix
+                <img
+                  src="/brand/uellix-logo-horizontal-reversed.svg"
+                  alt="Uellix"
+                  width="120"
+                  height="30"
+                  className="h-7 w-auto"
+                />
               </Link>
               <button
                 type="button"
@@ -81,11 +88,11 @@ export function MobileNav() {
                     onClick={close}
                     aria-current={active ? 'page' : undefined}
                     className={[
-                      'flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-md transition-colors min-h-11',
+                      'flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-md transition-colors min-h-11 border-l-2',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                       active
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
+                        ? 'bg-sidebar-accent text-white border-[#FF6A00]'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground border-transparent',
                     ].join(' ')}
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
