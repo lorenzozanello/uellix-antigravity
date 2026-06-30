@@ -67,16 +67,24 @@ export default async function ReportListPage({
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to Calculation
         </Link>
-        <div className="mt-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">SROI Reports</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Audit-ready report drafts linked to immutable SROI calculation runs.
-            {reports.length > 0 && (
-              <span className="ml-1">
-                {reports.length} report{reports.length !== 1 ? 's' : ''} on record.
-              </span>
-            )}
-          </p>
+        <div className="mt-3 flex items-start gap-4">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
+            aria-hidden="true"
+          >
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">SROI Reports</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Audit-ready report drafts linked to immutable SROI calculation runs.
+              {reports.length > 0 && (
+                <span className="ml-1">
+                  {reports.length} report{reports.length !== 1 ? 's' : ''} on record.
+                </span>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -113,7 +121,7 @@ export default async function ReportListPage({
               </p>
               <Link
                 href={`/app/projects/${projectId}/pipeline/calculation`}
-                className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
                 Go to Calculation
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -222,14 +230,20 @@ export default async function ReportListPage({
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
                       {linkedRun ? (
-                        <span className="font-mono">
+                        <span
+                          className="tabular-nums"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                        >
                           v{linkedRun.version}
                           {linkedRun.sroiRatio
                             ? ` · ${parseFloat(linkedRun.sroiRatio).toFixed(2)}:1`
                             : ''}
                         </span>
                       ) : (
-                        <span className="font-mono text-muted-foreground/60">
+                        <span
+                          className="tabular-nums text-muted-foreground/60"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                        >
                           {report.calculationRunId.slice(0, 8)}…
                         </span>
                       )}
@@ -244,7 +258,7 @@ export default async function ReportListPage({
                     <TableCell className="text-right">
                       <Link
                         href={`/app/projects/${projectId}/report/${report.id}`}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                         aria-label={`Open report: ${report.title}`}
                       >
                         Open
