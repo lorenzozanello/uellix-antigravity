@@ -253,19 +253,72 @@
 .edge-delay-7  { animation-delay: 1.5s; }
 .edge-delay-8  { animation-delay: 1.7s; }
 
-/* Card hover lift system */
+/* Card hover lift system — brand-aligned (Naranja Impacto) */
 .card-lift {
   transition: border-color 150ms ease-out,
               box-shadow 150ms ease-out,
               transform 150ms ease-out;
 }
 .card-lift:hover {
-  border-color: rgba(20, 184, 166, 0.28);
-  box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.12),
-              0 8px 32px rgba(20, 184, 166, 0.08),
-              0 2px 8px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 106, 0, 0.22);
+  box-shadow: 0 0 0 1px rgba(255, 106, 0, 0.08),
+              0 8px 28px rgba(15, 23, 42, 0.10),
+              0 2px 6px rgba(15, 23, 42, 0.04);
   transform: translateY(-2px);
 }
 @media (prefers-reduced-motion: reduce) {
   .card-lift:hover { transform: none; }
+}
+
+/* ─── Uellix Brand Tokens ─── */
+:root {
+  --uellix-deep:        #0F172A;
+  --uellix-orange:      #FF6A00;
+  --uellix-gray-mid:    #64748B;
+  --uellix-gray-light:  #E2E8F0;
+  --uellix-mist:        #FBFAFC;
+}
+
+/* Brand font utilities */
+@layer utilities {
+  .font-sora {
+    font-family: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  }
+  .font-manrope {
+    font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  }
+  .font-ibm-plex-mono {
+    font-family: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, monospace;
+  }
+}
+
+/* Smooth scroll — CSS only, no JS needed for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Landing scroll progress bar — CSS scroll-driven animation */
+.landing-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #FF6A00;
+  transform: scaleX(0);
+  transform-origin: left center;
+  z-index: 100;
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  @keyframes uellix-scroll-grow {
+    to { transform: scaleX(1); }
+  }
+  .landing-scroll-progress {
+    animation: uellix-scroll-grow linear both;
+    animation-timeline: scroll(root);
+  }
 }
