@@ -61,13 +61,13 @@ export function UseCasesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {useCases.map(({ icon: Icon, title, description }) => (
             <div
               key={title}
-              className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900 p-6 hover:border-slate-700 transition-colors"
+              className="group flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900 p-6 card-lift"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-500/10">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 transition-colors group-hover:bg-teal-500/15">
                 <Icon className="h-5 w-5 text-teal-400" aria-hidden="true" />
               </div>
               <h3 className="text-base font-semibold text-white">{title}</h3>

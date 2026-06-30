@@ -175,3 +175,97 @@
   --color-info: oklch(0.739 0.174 250);
   --color-info-light: oklch(0.375 0.08 250);
 }
+
+/* ─── Uellix: Cinematic landing motion system ─── */
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0%, 0%) scale(1); opacity: 1; }
+  50%       { transform: translate(-4%, 3%) scale(1.08); opacity: 0.85; }
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 1; }
+}
+
+@keyframes draw-line {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50%       { transform: translateY(-8px) rotate(-1deg); }
+}
+
+.animate-aurora-drift  { animation: aurora-drift 20s ease-in-out infinite; }
+.animate-float-soft    { animation: float-soft 7s ease-in-out infinite; }
+.animate-pulse-glow    { animation: pulse-glow 2.8s ease-in-out infinite; }
+.animate-draw-line     {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw-line 2s ease-out forwards;
+}
+.animate-fade-up       { animation: fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-card-float    { animation: card-float 6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-aurora-drift,
+  .animate-float-soft,
+  .animate-pulse-glow,
+  .animate-draw-line,
+  .animate-fade-up,
+  .animate-card-float {
+    animation: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+/* Pipeline step stagger delays */
+.pipeline-delay-1  { animation-delay: 0ms; }
+.pipeline-delay-2  { animation-delay: 60ms; }
+.pipeline-delay-3  { animation-delay: 120ms; }
+.pipeline-delay-4  { animation-delay: 180ms; }
+.pipeline-delay-5  { animation-delay: 240ms; }
+.pipeline-delay-6  { animation-delay: 300ms; }
+.pipeline-delay-7  { animation-delay: 360ms; }
+.pipeline-delay-8  { animation-delay: 420ms; }
+.pipeline-delay-9  { animation-delay: 480ms; }
+.pipeline-delay-10 { animation-delay: 540ms; }
+
+/* Evidence graph draw delays */
+.edge-delay-1  { animation-delay: 0.1s; }
+.edge-delay-2  { animation-delay: 0.35s; }
+.edge-delay-3  { animation-delay: 0.6s; }
+.edge-delay-4  { animation-delay: 0.85s; }
+.edge-delay-5  { animation-delay: 1.1s; }
+.edge-delay-6  { animation-delay: 1.3s; }
+.edge-delay-7  { animation-delay: 1.5s; }
+.edge-delay-8  { animation-delay: 1.7s; }
+
+/* Card hover lift system */
+.card-lift {
+  transition: border-color 150ms ease-out,
+              box-shadow 150ms ease-out,
+              transform 150ms ease-out;
+}
+.card-lift:hover {
+  border-color: rgba(20, 184, 166, 0.28);
+  box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.12),
+              0 8px 32px rgba(20, 184, 166, 0.08),
+              0 2px 8px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:hover { transform: none; }
+}
