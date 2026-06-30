@@ -7,9 +7,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/states/EmptyState'
 
-const STATUS_BADGE: Record<string, { variant: 'neutral' | 'teal' | 'success'; label: string }> = {
+const STATUS_BADGE: Record<string, { variant: 'neutral' | 'accent' | 'success'; label: string }> = {
   draft: { variant: 'neutral', label: 'Draft' },
-  active: { variant: 'teal', label: 'Active' },
+  active: { variant: 'accent', label: 'Active' },
   completed: { variant: 'success', label: 'Completed' },
   archived: { variant: 'neutral', label: 'Archived' },
 }
@@ -53,7 +53,7 @@ export default async function DashboardPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
-                  <p className="mt-1 text-3xl font-bold tracking-tight text-teal-700">
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
                     {activeProjects.length}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
                   </p>
                 </div>
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-50 text-teal-600"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
                   aria-hidden="true"
                 >
                   <FolderKanban className="h-5 w-5" />
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
                     {organization.name}
                   </p>
                 </div>
-                <Badge variant="teal" className="shrink-0 mt-0.5">
+                <Badge variant="accent" className="shrink-0 mt-0.5">
                   {membership.role}
                 </Badge>
               </div>
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
               </div>
               <Link
                 href="/app/trust-center"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
                 Open Trust Center
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
           {projects.length > 0 && (
             <Link
               href="/app/projects"
-              className="text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              className="text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
               View all →
             </Link>
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
                     </div>
                     <Link
                       href={`/app/projects/${project.id}/pipeline`}
-                      className="mt-3 flex items-center gap-1 text-xs font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                      className="mt-3 flex items-center gap-1 text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                       aria-label={`Open pipeline for ${project.name}`}
                     >
                       Open Pipeline
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             {canCreate && (
               <Link
                 href="/app/projects/new"
-                className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border p-4 text-sm font-medium text-muted-foreground hover:border-teal-400 hover:text-teal-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border p-4 text-sm font-medium text-muted-foreground hover:border-[#B85200]/40 hover:text-[#B85200] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Create new SROI project"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />

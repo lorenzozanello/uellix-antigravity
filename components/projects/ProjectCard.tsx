@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge'
 
 type ProjectStatus = 'draft' | 'active' | 'completed' | 'archived'
 
-const STATUS_CONFIG: Record<ProjectStatus, { variant: 'neutral' | 'teal' | 'success'; label: string }> = {
+const STATUS_CONFIG: Record<ProjectStatus, { variant: 'neutral' | 'accent' | 'success'; label: string }> = {
   draft: { variant: 'neutral', label: 'Draft' },
-  active: { variant: 'teal', label: 'Active' },
+  active: { variant: 'accent', label: 'Active' },
   completed: { variant: 'success', label: 'Completed' },
   archived: { variant: 'neutral', label: 'Archived' },
 }
@@ -67,7 +67,7 @@ export function ProjectCard({ id, name, description, status, territory, country,
         </Link>
         <Link
           href={`/app/projects/${id}/pipeline`}
-          className="ml-auto flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="ml-auto flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           aria-label={`Open SROI pipeline for ${name}`}
         >
           Open Pipeline

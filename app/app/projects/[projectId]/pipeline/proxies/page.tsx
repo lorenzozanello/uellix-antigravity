@@ -61,9 +61,9 @@ const RISK_BADGE: Record<
 
 const ASSIGNMENT_STATUS: Record<
   string,
-  { variant: 'teal' | 'neutral'; label: string }
+  { variant: 'info' | 'neutral'; label: string }
 > = {
-  active: { variant: 'teal', label: 'Active' },
+  active: { variant: 'info', label: 'Active' },
   archived: { variant: 'neutral', label: 'Archived' },
 }
 
@@ -224,13 +224,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       <span className="line-clamp-1">
                         {p.sourceId
                           ? (sourceById.get(p.sourceId) ?? (
-                              <span className="font-mono">{p.sourceId.slice(0, 8)}…</span>
+                              <span className="tabular-nums text-xs" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>{p.sourceId.slice(0, 8)}…</span>
                             ))
                           : <span className="text-muted-foreground/50">—</span>}
                       </span>
                     </TableCell>
                     <TableCell className="tabular-nums text-foreground">
-                      <span className="font-mono text-sm">
+                      <span className="tabular-nums text-sm" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
                         {p.value != null
                           ? parseFloat(p.value).toLocaleString('en-US', {
                               minimumFractionDigits: 0,
@@ -289,7 +289,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-teal-600" aria-hidden="true" />
+                  <BookOpen className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
                   <CardTitle className="text-sm">Register Source</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -370,7 +370,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-teal-600" aria-hidden="true" />
+                  <DollarSign className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
                   <CardTitle className="text-sm">Create Financial Proxy</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -565,7 +565,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <GitMerge className="h-4 w-4 text-teal-600" aria-hidden="true" />
+                  <GitMerge className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
                   <CardTitle className="text-sm">Assign Proxy to Outcome</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -717,7 +717,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       {outcomeName ? (
                         <span className="line-clamp-2">{outcomeName}</span>
                       ) : (
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="tabular-nums text-xs text-muted-foreground" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
                           {a.outcomeId.slice(0, 8)}…
                         </span>
                       )}
@@ -731,7 +731,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                           </span>
                         </span>
                       ) : (
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="tabular-nums text-xs text-muted-foreground" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
                           {a.proxyId.slice(0, 8)}…
                         </span>
                       )}

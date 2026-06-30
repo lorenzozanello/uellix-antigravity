@@ -5,29 +5,34 @@ import { ChevronDown } from "lucide-react"
 
 const faqs = [
   {
-    question: "¿Uellix certifica el impacto?",
+    question: "¿Uellix está alineado con SROI 2020?",
     answer:
-      "No. Uellix no es un certificador. Es una plataforma que te ayuda a estructurar tu metodología, asociar evidencias y calcular el ratio SROI de forma trazable y audit-ready. La validación del análisis la realiza siempre un experto humano. Uellix te da la estructura y el rastro; la certificación formal depende del organismo o proceso que aplique en tu caso.",
+      "El pipeline de Uellix está diseñado siguiendo los principios del SROI 2020: trazabilidad de resultados, evidencias asociadas, proxies con fuente declarada y filtros aplicados con justificación. El análisis generado está estructurado para ser revisable según esos estándares.",
   },
   {
-    question: "¿Stella calcula el SROI?",
+    question: "¿Qué tan trazable es la evidencia?",
     answer:
-      "No. Stella no calcula el SROI. El cálculo lo realiza el motor determinístico de Uellix en función de los datos, proxies y filtros que tú defines. Stella Validator revisa los riesgos metodológicos del contexto del cálculo e identifica posibles brechas de evidencia, riesgos de proxy o riesgos en los claims. Stella es asistencia metodológica, no cálculo automático.",
+      "Cada evidencia queda vinculada a su fuente original con hash de integridad. El rastro metodológico es completo y exportable: fuente, supuesto, proxy, indicador y cálculo están conectados en cada paso del pipeline.",
   },
   {
-    question: "¿Qué significa audit-ready?",
+    question: "¿Quién realiza la revisión final?",
     answer:
-      "Audit-ready significa que el análisis tiene la estructura necesaria para ser revisado por un tercero: cada resultado está asociado a su evidencia, cada proxy tiene su fuente declarada, cada filtro aplicado queda registrado, y el rastro metodológico es completo y exportable. No implica que el análisis haya sido auditado, sino que está preparado para serlo.",
+      "Siempre un experto humano. Uellix no reemplaza el juicio experto. Stella puede identificar riesgos metodológicos y orientar la construcción del análisis, pero la validación y el uso externo del análisis siempre requieren revisión humana.",
   },
   {
-    question: "¿Qué tipo de evidencia puedo asociar?",
+    question: "¿Puedo exportar mis informes?",
     answer:
-      "Puedes asociar documentos, referencias, informes de campo, fuentes secundarias y cualquier material que respalde tus resultados e indicadores. La plataforma registra la fuente y permite documentar el vínculo entre la evidencia y el resultado al que corresponde. La calidad y pertinencia de la evidencia es responsabilidad del equipo metodológico.",
+      "Sí. La plataforma genera reportes audit-ready exportables con supuestos explícitos, fuentes citadas y el rastro completo de decisiones metodológicas. El Impact Deck está diseñado para ser revisable por terceros.",
   },
   {
-    question: "¿Puedo usar Uellix antes de una revisión externa?",
+    question: "¿Qué nivel de soporte ofrecen?",
     answer:
-      "Sí. Uellix está diseñado precisamente para preparar el análisis antes de una revisión externa o auditoría de impacto. La plataforma te ayuda a organizar el rastro metodológico, identificar riesgos con Stella Validator y generar reportes revisables. El análisis generado en Uellix es un insumo para la revisión humana, no un sustituto de ella.",
+      "Ofrecemos implementación guiada, capacitación en buenas prácticas metodológicas y soporte metodológico continuo. Nuestro equipo acompaña la adopción de la plataforma y responde consultas sobre metodología SROI.",
+  },
+  {
+    question: "¿Es segura mi información?",
+    answer:
+      "Sí. La plataforma está construida con controles de acceso y seguridad de datos enterprise. Cada organización accede únicamente a su propia información. Para más detalles, contáctanos en hola@uellix.com.",
   },
 ]
 
@@ -42,19 +47,19 @@ export function FAQSection() {
     <section
       id="faq"
       aria-label="Preguntas frecuentes"
-      className="bg-slate-900 px-4 py-20 sm:py-28"
+      className="bg-[#0F172A] px-4 py-20 sm:py-28"
     >
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-14">
-          <span className="inline-flex items-center rounded-full bg-teal-500/10 px-4 py-1.5 text-xs font-medium text-teal-400 ring-1 ring-inset ring-teal-500/20 mb-5">
+          <span className="inline-flex items-center rounded-full border border-[#FF6A00]/30 bg-[#FF6A00]/10 px-4 py-1.5 text-xs font-semibold text-[#FF6A00] mb-5 font-ibm-plex-mono tracking-wide uppercase">
             Preguntas frecuentes
           </span>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-white">
-            Todo lo que necesitas saber
+          <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-white">
+            Lo que necesitas saber.
           </h2>
         </div>
 
-        <dl className="flex flex-col gap-3">
+        <dl className="flex flex-col gap-2">
           {faqs.map(({ question, answer }, index) => {
             const isOpen = openIndex === index
             const panelId = `faq-panel-${index}`
@@ -63,7 +68,11 @@ export function FAQSection() {
             return (
               <div
                 key={question}
-                className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden"
+                className={`rounded-xl border overflow-hidden transition-colors ${
+                  isOpen
+                    ? "border-[#FF6A00]/25 bg-[#FF6A00]/5"
+                    : "border-[#1E293B] bg-[#0A1220]"
+                }`}
               >
                 <dt>
                   <button
@@ -71,12 +80,12 @@ export function FAQSection() {
                     aria-expanded={isOpen}
                     aria-controls={panelId}
                     onClick={() => toggle(index)}
-                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left text-sm font-semibold text-white hover:text-teal-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500 focus-visible:outline-offset-[-2px] transition-colors min-h-[44px]"
+                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left text-sm font-semibold text-white hover:text-[#FF6A00]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF6A00] focus-visible:outline-offset-[-2px] transition-colors min-h-[44px] font-sora"
                   >
                     <span>{question}</span>
                     <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
-                        isOpen ? "rotate-180" : ""
+                      className={`h-4 w-4 shrink-0 text-[#64748B] transition-transform duration-200 motion-reduce:transition-none ${
+                        isOpen ? "rotate-180 text-[#FF6A00]" : ""
                       }`}
                       aria-hidden="true"
                     />
@@ -89,7 +98,7 @@ export function FAQSection() {
                   hidden={!isOpen}
                   className="px-6 pb-5"
                 >
-                  <p className="text-sm text-slate-400 leading-relaxed">{answer}</p>
+                  <p className="text-sm text-[#94A3B8] leading-relaxed font-manrope">{answer}</p>
                 </dd>
               </div>
             )

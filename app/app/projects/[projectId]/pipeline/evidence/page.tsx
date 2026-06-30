@@ -182,7 +182,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       <span className="line-clamp-1">{ev.title}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs uppercase text-muted-foreground">
+                      <span
+                        className="tabular-nums text-xs uppercase text-muted-foreground"
+                        style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                      >
                         {ev.type}
                       </span>
                     </TableCell>
@@ -192,7 +195,8 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                     <TableCell>
                       {ev.contentHash ? (
                         <code
-                          className="font-mono text-xs text-muted-foreground"
+                          className="tabular-nums text-xs text-muted-foreground"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
                           title={ev.contentHash}
                           aria-label={`SHA-256 hash (truncated): ${ev.contentHash.slice(0, 8)}`}
                         >
@@ -277,7 +281,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-teal-600" aria-hidden="true" />
+                  <FileText className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
                   <CardTitle className="text-sm">Upload File</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -389,7 +393,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-teal-600" aria-hidden="true" />
+                  <Link2 className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
                   <CardTitle className="text-sm">Register URL</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -502,7 +506,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlignLeft className="h-4 w-4 text-teal-600" aria-hidden="true" />
+                  <AlignLeft className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
                   <CardTitle className="text-sm">Register Text Statement</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">

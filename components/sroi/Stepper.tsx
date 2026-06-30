@@ -66,8 +66,8 @@ export default function Stepper() {
                   className={cn(
                     'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background text-xs font-bold transition-colors',
                     isActive
-                      ? 'border-teal-600 bg-teal-600 text-white shadow-sm'
-                      : 'border-border text-muted-foreground group-hover:border-teal-400 group-hover:text-teal-700'
+                      ? 'border-[#FF6A00] bg-[#FF6A00] text-white shadow-sm'
+                      : 'border-border text-muted-foreground group-hover:border-[#FF6A00]/60 group-hover:text-foreground'
                   )}
                 >
                   {idx + 1}
@@ -77,7 +77,7 @@ export default function Stepper() {
                   className={cn(
                     'max-w-[80px] px-0.5 text-center text-[10px] font-medium leading-snug',
                     isActive
-                      ? 'font-semibold text-teal-700'
+                      ? 'font-semibold text-foreground'
                       : 'text-muted-foreground group-hover:text-foreground'
                   )}
                 >

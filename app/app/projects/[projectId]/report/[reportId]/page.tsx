@@ -175,7 +175,7 @@ export default async function ReportDetailPage({
                 Run:{' '}
                 <Link
                   href={`/app/projects/${projectId}/pipeline/calculation/runs/${report.calculationRunId}`}
-                  className="font-mono text-teal-700 hover:text-teal-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                  className="tabular-nums font-ibm-plex-mono text-[#B85200] hover:text-[#B85200]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                 >
                   {report.calculationRunId.slice(0, 8)}…
                 </Link>

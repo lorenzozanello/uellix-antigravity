@@ -13,7 +13,7 @@ export default async function PrivateLayout({
   const roleLabel = ROLE_LABELS[membership.role] ?? membership.role
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background font-manrope">
       <Sidebar />
 
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
