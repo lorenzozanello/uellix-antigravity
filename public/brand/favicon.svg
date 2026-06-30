@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 256 256" role="img" aria-label="Uellix icon">
+  <title>Uellix icon</title>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision">
+    <path d="M128 20 L228 78 L128 136 L28 78 Z" stroke="#FF6A00" stroke-width="14"/>
+    <path d="M56 104 L128 146 L200 104" stroke="#0F172A" stroke-width="14"/>
+    <path d="M56 104 L28 120 L128 178 L228 120 L200 104" stroke="#0F172A" stroke-width="14"/>
+    <path d="M56 154 L128 196 L200 154" stroke="#64748B" stroke-width="14" opacity="0.92"/>
+    <path d="M56 154 L28 170 L128 228 L228 170 L200 154" stroke="#64748B" stroke-width="14" opacity="0.92"/>
+  </g>
+</svg>

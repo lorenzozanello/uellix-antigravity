@@ -15,6 +15,83 @@
       "when": 1781923097968,
       "tag": "0001_noisy_chameleon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782267968855,
+      "tag": "0002_huge_namorita",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782308179567,
+      "tag": "0003_curvy_tempest",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782311207462,
+      "tag": "0004_thick_mentor",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782315529638,
+      "tag": "0005_daffy_dreaming_celestial",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782326560708,
+      "tag": "0006_outstanding_vindicator",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782332217822,
+      "tag": "0007_black_imperial_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782344537325,
+      "tag": "0008_bored_pretty_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782349533715,
+      "tag": "0009_motionless_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782351711692,
+      "tag": "0010_crazy_warhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1782352800000,
+      "tag": "0011_sroi_results_report_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782432000000,
+      "tag": "0012_stella_interactions",
+      "breakpoints": true
     }
   ]
 }
