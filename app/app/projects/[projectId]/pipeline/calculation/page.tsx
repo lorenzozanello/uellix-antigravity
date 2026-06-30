@@ -149,7 +149,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
         >
           <Card className="h-full hover:shadow-md transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-ring">
             <CardContent className="p-5 flex gap-3 items-start">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600" aria-hidden="true">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]" aria-hidden="true">
                 <BarChart2 className="h-4 w-4" />
               </div>
               <div>
@@ -197,7 +197,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
 
       {/* Methodology notice */}
       <div className="flex gap-3 rounded-lg border border-border bg-muted/30 p-4" role="note">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" aria-hidden="true" />
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <div className="space-y-1 text-sm text-muted-foreground">
           <p>
             This panel performs a{' '}
@@ -379,7 +379,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
               return (
                 <Card key={assignment.id}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base text-teal-800">{outcome.title}</CardTitle>
+                    <CardTitle className="text-base text-foreground">{outcome.title}</CardTitle>
                     <CardDescription>
                       Proxy: <strong className="text-foreground">{proxy.name}</strong>
                       {' '}— {proxy.value} {proxy.currency} / {proxy.unit}
@@ -628,7 +628,10 @@ export default async function CalculationPage({ params }: { params: { projectId:
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="rounded-md border border-border bg-muted/30 p-4">
                 <p className="text-xs font-medium text-muted-foreground">Preliminary SROI Ratio</p>
-                <p className="mt-1 text-2xl font-bold text-teal-700">
+                <p
+                  className="mt-1 text-2xl font-bold text-foreground tabular-nums"
+                  style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                >
                   {parseFloat(preview.result.sroiRatio.toString()).toFixed(2)}:1
                 </p>
               </div>
@@ -691,7 +694,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                         <TableCell className="text-right">
                           {li.grossValue.toLocaleString()} {li.currency}
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-teal-700">
+                        <TableCell className="text-right font-semibold text-foreground">
                           {li.adjustedValue.toLocaleString()} {li.currency}
                         </TableCell>
                       </TableRow>
@@ -775,8 +778,13 @@ export default async function CalculationPage({ params }: { params: { projectId:
                         {run.netSocialValue ? parseFloat(run.netSocialValue).toLocaleString() : '0'}{' '}
                         <span className="text-xs text-muted-foreground">{run.currency}</span>
                       </TableCell>
-                      <TableCell className="text-right font-bold text-teal-700">
-                        {run.sroiRatio ? parseFloat(run.sroiRatio).toFixed(2) : '0.00'}:1
+                      <TableCell className="text-right">
+                        <span
+                          className="font-bold text-foreground tabular-nums"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                        >
+                          {run.sroiRatio ? parseFloat(run.sroiRatio).toFixed(2) : '0.00'}:1
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
@@ -784,7 +792,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                       <TableCell className="text-right">
                         <Link
                           href={`/app/projects/${params.projectId}/pipeline/calculation/runs/${run.id}`}
-                          className="text-xs font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          className="text-xs font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                           aria-label={`View run v${run.version} details`}
                         >
                           View →
