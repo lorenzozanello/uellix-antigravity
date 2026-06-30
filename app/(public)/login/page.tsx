@@ -30,10 +30,10 @@ export default async function LoginPage(props: { searchParams: Promise<{ error?:
           </div>
 
           <div className="flex flex-col gap-3 pt-2">
-            <Button formAction={login} className="w-full">
+            <Button type="submit" formAction={login} className="w-full">
               Sign in
             </Button>
-            <Button formAction={signup} variant="outline" className="w-full">
+            <Button type="submit" formAction={signup} variant="outline" className="w-full">
               Create account
             </Button>
           </div>
