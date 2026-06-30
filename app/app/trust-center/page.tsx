@@ -31,7 +31,7 @@ const EVIDENCE_STATUS: Record<
 
 const EVIDENCE_TYPE: Record<
   string,
-  { variant: 'neutral' | 'info' | 'teal'; label: string }
+  { variant: 'neutral' | 'info'; label: string }
 > = {
   file: { variant: 'neutral', label: 'File' },
   url: { variant: 'info', label: 'URL' },
@@ -70,7 +70,7 @@ export default async function TrustCenterPage({
       {/* Header */}
       <div className="flex items-start gap-4">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
           aria-hidden="true"
         >
           <ShieldCheck className="h-5 w-5" />
@@ -112,7 +112,7 @@ export default async function TrustCenterPage({
           </span>
           {activeFilterCount > 0 && (
             <span
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white"
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6A00] text-[10px] font-bold text-white"
               aria-label={`${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`}
             >
               {activeFilterCount}
@@ -250,7 +250,8 @@ export default async function TrustCenterPage({
                     <TableCell>
                       {ev.contentHash ? (
                         <code
-                          className="font-mono text-xs text-muted-foreground"
+                          className="text-xs text-muted-foreground tabular-nums"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
                           title={ev.contentHash}
                           aria-label={`SHA-256 hash: ${ev.contentHash.slice(0, 12)} (truncated)`}
                         >
