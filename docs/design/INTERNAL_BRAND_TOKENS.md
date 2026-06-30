@@ -95,6 +95,21 @@ The following components and pages must migrate to use these new accent colors i
 | 11G | Pipeline steps content (narrative, stakeholders, etc.) |
 | 11H | Typography (Sora, Manrope, IBM Plex Mono), responsive polish |
 
+### Sprint 11H: Accessible Orange & Typography Utility
+
+Sprint 11H introduced **Naranja Accesible** (`#B85200`) for small text links on light backgrounds, since `#FF6A00` at body/link text sizes falls short of WCAG AA contrast on `--background` (Niebla). The rule applied:
+
+- **`#FF6A00` (Naranja Impacto)** stays on icon containers, badges, borders, and large brand elements (`bg-[#FF6A00]/10 text-[#FF6A00]` icon chips, `bg-[#FF6A00]` solid backgrounds with white text) — these are not small text-on-light-background cases.
+- **`#B85200` (Naranja Accesible)** replaces `#FF6A00` wherever the color appears as small link/text color directly on `--background` or `--card` (e.g. "Open Pipeline →", "View all →", run/report detail links). Hover state uses `/80` opacity of the same token.
+
+```css
+--uellix-orange-accessible: #B85200; /* small text/links on light backgrounds */
+```
+
+Migrated in this sprint: `app/app/dashboard/page.tsx`, `app/app/projects/page.tsx`, `components/projects/ProjectCard.tsx`, `pipeline/calculation/page.tsx`, `pipeline/calculation/compare/page.tsx`, `report/page.tsx`, `report/[reportId]/page.tsx`.
+
+Sprint 11H also retired remaining inline `style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}` usages in the files above in favor of the existing `font-ibm-plex-mono` utility class (already defined in `globals.css` `@layer utilities`, no new token added). Inline-style instances in `evidence`, `indicators`, `proxies`, and `calculation/runs/[runId]` pages are visually equivalent and were left as-is — deferred to a follow-up pass since they carry zero accessibility or functional impact, in order to keep this sprint's diff scoped to ≤10 files.
+
 ### Legacy Teal
 
 The following **no longer** represents "Uellix primary":

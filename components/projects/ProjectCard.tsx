@@ -67,7 +67,7 @@ export function ProjectCard({ id, name, description, status, territory, country,
         </Link>
         <Link
           href={`/app/projects/${id}/pipeline`}
-          className="ml-auto flex items-center gap-1 text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          className="ml-auto flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           aria-label={`Open SROI pipeline for ${name}`}
         >
           Open Pipeline

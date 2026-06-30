@@ -121,7 +121,7 @@ export default async function ReportListPage({
               </p>
               <Link
                 href={`/app/projects/${projectId}/pipeline/calculation`}
-                className="inline-flex items-center gap-1 text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
                 Go to Calculation
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -230,20 +230,14 @@ export default async function ReportListPage({
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
                       {linkedRun ? (
-                        <span
-                          className="tabular-nums"
-                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
-                        >
+                        <span className="tabular-nums font-ibm-plex-mono">
                           v{linkedRun.version}
                           {linkedRun.sroiRatio
                             ? ` · ${parseFloat(linkedRun.sroiRatio).toFixed(2)}:1`
                             : ''}
                         </span>
                       ) : (
-                        <span
-                          className="tabular-nums text-muted-foreground/60"
-                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
-                        >
+                        <span className="tabular-nums text-muted-foreground/60 font-ibm-plex-mono">
                           {report.calculationRunId.slice(0, 8)}…
                         </span>
                       )}
@@ -258,7 +252,7 @@ export default async function ReportListPage({
                     <TableCell className="text-right">
                       <Link
                         href={`/app/projects/${projectId}/report/${report.id}`}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                         aria-label={`Open report: ${report.title}`}
                       >
                         Open

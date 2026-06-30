@@ -628,10 +628,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="rounded-md border border-border bg-muted/30 p-4">
                 <p className="text-xs font-medium text-muted-foreground">Preliminary SROI Ratio</p>
-                <p
-                  className="mt-1 text-2xl font-bold text-foreground tabular-nums"
-                  style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
-                >
+                <p className="mt-1 text-2xl font-bold text-foreground tabular-nums font-ibm-plex-mono">
                   {parseFloat(preview.result.sroiRatio.toString()).toFixed(2)}:1
                 </p>
               </div>
@@ -779,10 +776,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                         <span className="text-xs text-muted-foreground">{run.currency}</span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span
-                          className="font-bold text-foreground tabular-nums"
-                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
-                        >
+                        <span className="font-bold text-foreground tabular-nums font-ibm-plex-mono">
                           {run.sroiRatio ? parseFloat(run.sroiRatio).toFixed(2) : '0.00'}:1
                         </span>
                       </TableCell>
@@ -792,7 +786,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                       <TableCell className="text-right">
                         <Link
                           href={`/app/projects/${params.projectId}/pipeline/calculation/runs/${run.id}`}
-                          className="text-xs font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          className="text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                           aria-label={`View run v${run.version} details`}
                         >
                           View →

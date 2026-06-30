@@ -328,10 +328,7 @@ export default async function ComparePage({
                         <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span
-                          className="font-semibold text-foreground tabular-nums"
-                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
-                        >
+                        <span className="font-semibold text-foreground tabular-nums font-ibm-plex-mono">
                           {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}
                         </span>
                       </TableCell>
@@ -341,7 +338,7 @@ export default async function ComparePage({
                       <TableCell>
                         <Link
                           href={`/app/projects/${projectId}/pipeline/calculation/runs/${r.id}`}
-                          className="text-xs font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          className="text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                         >
                           Ver detalle
                         </Link>

@@ -73,7 +73,7 @@ export default async function ProjectsPage() {
           {canCreate && (
             <Link
               href="/app/projects/new"
-              className="flex min-h-[160px] items-center justify-center gap-2 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:border-[#FF6A00]/40 hover:text-[#FF6A00] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-h-[160px] items-center justify-center gap-2 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:border-[#B85200]/40 hover:text-[#B85200] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Create new SROI project"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />

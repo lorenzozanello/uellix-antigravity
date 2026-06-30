@@ -109,7 +109,7 @@ export default async function DashboardPage() {
               </div>
               <Link
                 href="/app/trust-center"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
                 Open Trust Center
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
           {projects.length > 0 && (
             <Link
               href="/app/projects"
-              className="text-sm font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              className="text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
               View all →
             </Link>
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
                     </div>
                     <Link
                       href={`/app/projects/${project.id}/pipeline`}
-                      className="mt-3 flex items-center gap-1 text-xs font-medium text-[#FF6A00] hover:text-[#FF6A00]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                      className="mt-3 flex items-center gap-1 text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                       aria-label={`Open pipeline for ${project.name}`}
                     >
                       Open Pipeline
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             {canCreate && (
               <Link
                 href="/app/projects/new"
-                className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border p-4 text-sm font-medium text-muted-foreground hover:border-[#FF6A00]/40 hover:text-[#FF6A00] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border p-4 text-sm font-medium text-muted-foreground hover:border-[#B85200]/40 hover:text-[#B85200] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Create new SROI project"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
