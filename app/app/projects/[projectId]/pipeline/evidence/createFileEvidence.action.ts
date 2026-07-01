@@ -2,7 +2,11 @@
 
 'use server'
 
-import { createFileEvidenceForProject } from '@/lib/pipeline/evidence'
+import {
+  createFileEvidenceForProject,
+  ALLOWED_EVIDENCE_MIME_TYPES,
+  MAX_EVIDENCE_FILE_SIZE_BYTES,
+} from '@/lib/pipeline/evidence'
 import { z } from 'zod'
 
 const InputSchema = z.object({
@@ -12,8 +16,8 @@ const InputSchema = z.object({
   indicatorId: z.string().uuid().optional(),
   file: z.object({
     name: z.string().min(1),
-    mimeType: z.string().min(1),
-    size: z.number().int().positive(),
+    mimeType: z.enum(ALLOWED_EVIDENCE_MIME_TYPES),
+    size: z.number().int().positive().max(MAX_EVIDENCE_FILE_SIZE_BYTES),
     buffer: z.instanceof(Buffer),
   }),
 })

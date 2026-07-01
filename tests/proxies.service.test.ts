@@ -190,6 +190,31 @@ describe('Financial Proxies Service', () => {
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
   });
+
+  it('updateFinancialProxyReviewStatus rejects a proxy owned by a different organization (IDOR regression)', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    const { canApproveProxy } = await import('@/lib/auth/permissions');
+    // Caller belongs to org-99, but the proxy belongs to org-3
+    const ctx = { organization: { id: 'org-99' }, user: { isSuperAdmin: false }, membership: { role: 'organization_admin' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(canApproveProxy).mockReturnValue(true);
+    const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
+    mockDbData.financialProxies = [proxy];
+
+    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved')).rejects.toThrow('Forbidden');
+  });
+
+  it('updateFinancialProxyReviewStatus rejects a non-super-admin acting on a system (org-less) proxy', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    const { canApproveProxy } = await import('@/lib/auth/permissions');
+    const ctx = { organization: { id: 'org-1' }, user: { isSuperAdmin: false }, membership: { role: 'organization_admin' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(canApproveProxy).mockReturnValue(true);
+    const proxy = { id: PROXY_UUID, organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
+    mockDbData.financialProxies = [proxy];
+
+    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved')).rejects.toThrow('Forbidden');
+  });
 });
 
 /*** Proxy Assignments ***/

@@ -220,6 +220,8 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
   if (!allowed.includes(newStatus)) throw new Error('Invalid status');
   const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then(r => r[0]);
   if (!proxy) throw new Error('Proxy not found');
+  if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+  if (!proxy.organizationId && !ctx.user.isSuperAdmin) throw new Error('Forbidden');
   if (!canApproveProxy(ctx.membership.role) && !ctx.user.isSuperAdmin) throw new Error('Forbidden');
   if (newStatus === 'approved') {
     const required = ['value', 'currency', 'unit', 'referenceYear'];

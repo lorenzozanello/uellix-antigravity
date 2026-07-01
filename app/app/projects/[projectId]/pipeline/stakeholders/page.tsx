@@ -42,17 +42,17 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Stakeholders</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Grupos de interés</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Identifica los grupos afectados y participantes en esta iniciativa de impacto.
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Stakeholders" />
+      <StellaAdvisorPanel projectId={projectId} step="Grupos de interés" />
       {stakeholders?.length ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Stakeholders registrados ({stakeholders.length})</CardTitle>
+            <CardTitle className="text-base">Grupos de interés registrados ({stakeholders.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -77,13 +77,13 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
       ) : (
         <EmptyState
           icon={<Users className="h-6 w-6 text-neutral-500" />}
-          title="No hay stakeholders registrados"
+          title="No hay grupos de interés registrados"
           description="Agrega grupos afectados y participantes para documentar el alcance de esta iniciativa."
         />
       )}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Agregar stakeholder</CardTitle>
+          <CardTitle className="text-base">Agregar grupo de interés</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={action} className="space-y-4">

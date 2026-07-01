@@ -20,7 +20,7 @@ type PanelState =
 
 interface StellaValidatorPanelProps {
   projectId: string
-  step?: 'Calculation'
+  step?: 'Calculation' | 'Cálculo'
   title?: string
   className?: string
 }

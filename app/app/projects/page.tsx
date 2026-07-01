@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/states/EmptyState'
 
 export default async function ProjectsPage() {
   const ctx = await getCurrentOrganizationContext()
-  if (!ctx) return <p>Unauthenticated. Please log in.</p>
+  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>
 
   const projects = await listProjectsForCurrentOrganization()
 
@@ -20,9 +20,9 @@ export default async function ProjectsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">SROI Projects</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Proyectos SROI</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {projects.length} project{projects.length !== 1 ? 's' : ''} in {ctx.organization.name}
+            {projects.length} proyecto{projects.length !== 1 ? 's' : ''} en {ctx.organization.name}
           </p>
         </div>
         {canCreate && (
@@ -31,7 +31,7 @@ export default async function ProjectsPage() {
             className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            New Project
+            Nuevo proyecto
           </Link>
         )}
       </div>
@@ -41,8 +41,8 @@ export default async function ProjectsPage() {
         <div className="space-y-4">
           <EmptyState
             icon={<FolderKanban className="h-6 w-6 text-neutral-500" />}
-            title="No SROI projects yet"
-            description="Each project walks your team through the full SROI pipeline — from theory of change to a defensible impact ratio."
+            title="Aún no hay proyectos SROI"
+            description="Cada proyecto guía a tu equipo por el pipeline SROI completo — desde la teoría del cambio hasta un ratio de impacto defendible."
           />
           {canCreate && (
             <div className="flex justify-center">
@@ -51,7 +51,7 @@ export default async function ProjectsPage() {
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
-                Create First Project
+                Crear primer proyecto
               </Link>
             </div>
           )}
@@ -74,10 +74,10 @@ export default async function ProjectsPage() {
             <Link
               href="/app/projects/new"
               className="flex min-h-[160px] items-center justify-center gap-2 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:border-[#B85200]/40 hover:text-[#B85200] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Create new SROI project"
+              aria-label="Crear nuevo proyecto SROI"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              New Project
+              Nuevo proyecto
             </Link>
           )}
         </div>

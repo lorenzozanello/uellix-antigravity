@@ -14,6 +14,23 @@ import crypto from 'crypto'
 export type EvidenceStatus = 'draft' | 'under_review' | 'approved' | 'rejected' | 'archived'
 export type EvidenceType = 'file' | 'url' | 'text'
 
+// Upload constraints — enforced here so every caller (Server Action wrappers,
+// future API routes) inherits the same limits regardless of what checks the
+// UI layer happens to run before calling in.
+export const MAX_EVIDENCE_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
+export const ALLOWED_EVIDENCE_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+] as const
+
 // Validation schemas
 const CreateFileEvidenceSchema = z.object({
   title: z.string().min(1),
@@ -22,11 +39,27 @@ const CreateFileEvidenceSchema = z.object({
   indicatorId: z.string().uuid().optional(),
   file: z.object({
     name: z.string().min(1),
-    mimeType: z.string().min(1),
-    size: z.number().int().positive(),
+    mimeType: z.enum(ALLOWED_EVIDENCE_MIME_TYPES, {
+      message: `File type not allowed. Accepted types: ${ALLOWED_EVIDENCE_MIME_TYPES.join(', ')}`,
+    }),
+    size: z
+      .number()
+      .int()
+      .positive()
+      .max(MAX_EVIDENCE_FILE_SIZE_BYTES, { message: 'File exceeds the 25 MB upload limit' }),
     buffer: z.instanceof(Buffer),
   }),
 })
+
+// Strips any path components and dangerous characters from a client-supplied
+// filename before it's used as (part of) a Supabase Storage key — prevents
+// path traversal via crafted names like "../../other-project/evidence.pdf".
+function sanitizeFileName(name: string): string {
+  const base = name.split(/[\\/]/).pop() ?? 'file'
+  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.{2,}/g, '_')
+  const trimmed = cleaned.replace(/^[._-]+/, '') || 'file'
+  return trimmed.slice(0, 150)
+}
 
 const CreateUrlEvidenceSchema = z.object({
   title: z.string().min(1),
@@ -122,7 +155,7 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
 
   const supabase = await createClient()
   const bucket = 'uellix-evidence'
-  const filePath = `${projectId}/${evidence.id}/${parsed.file.name}`
+  const filePath = `${projectId}/${evidence.id}/${sanitizeFileName(parsed.file.name)}`
   const { error } = await supabase.storage.from(bucket).upload(filePath, parsed.file.buffer, {
     contentType: parsed.file.mimeType,
     upsert: false,

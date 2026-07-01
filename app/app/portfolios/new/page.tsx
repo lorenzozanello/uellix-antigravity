@@ -1,10 +1,18 @@
 import { createPortfolioForCurrentOrganization } from '@/lib/portfolios/service';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { ErrorState } from '@/components/states/ErrorState';
+
+const TEXTAREA_CLASS =
+  'mt-1.5 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y';
 
 export default async function NewPortfolioPage() {
   const ctx = await getCurrentOrganizationContext();
-  if (!ctx) return <p>Unauthenticated. Please log in.</p>;
+  if (!ctx) return <p>No autenticado. Por favor inicia sesión.</p>;
 
   const canCreate = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'].includes(
     ctx.membership.role,
@@ -14,38 +22,39 @@ export default async function NewPortfolioPage() {
     'use server';
     const input = {
       name: formData.get('name') as string,
-      description: (formData.get('description') as string) ?? undefined,
+      description: (formData.get('description') as string) || undefined,
     };
-    try {
-      await createPortfolioForCurrentOrganization(input);
-      redirect('/app/portfolios');
-    } catch (e) {
-      throw new Error(e instanceof Error ? e.message : 'Error creating portfolio');
-    }
+    await createPortfolioForCurrentOrganization(input);
+    redirect('/app/portfolios');
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Crear Nuevo Portafolio</h1>
+    <div className="space-y-6 max-w-2xl">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">Crear nuevo portafolio</h1>
+
       {canCreate ? (
-        <form action={handleCreate} className="flex flex-col gap-4 max-w-lg">
-          <label className="flex flex-col">
-            <span className="text-slate-300">Nombre *</span>
-            <input name="name" type="text" required className="rounded border p-2" />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-slate-300">Descripción</span>
-            <textarea name="description" rows={3} className="rounded border p-2" />
-          </label>
-          <button
-            type="submit"
-            className="rounded-md bg-teal-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-teal-400"
-          >
-            Crear
-          </button>
-        </form>
+        <Card>
+          <CardContent className="pt-6">
+            <form action={handleCreate} className="space-y-5">
+              <div>
+                <Label htmlFor="name">
+                  Nombre <span className="text-danger">*</span>
+                </Label>
+                <Input id="name" name="name" type="text" required className="mt-1.5" />
+              </div>
+              <div>
+                <Label htmlFor="description">Descripción</Label>
+                <textarea id="description" name="description" rows={3} className={TEXTAREA_CLASS} />
+              </div>
+              <Button type="submit">Crear portafolio</Button>
+            </form>
+          </CardContent>
+        </Card>
       ) : (
-        <p className="text-red-500">Acceso denegado: no tienes permiso para crear portafolios.</p>
+        <ErrorState
+          title="Acceso denegado"
+          message="No tienes permiso para crear portafolios."
+        />
       )}
     </div>
   );

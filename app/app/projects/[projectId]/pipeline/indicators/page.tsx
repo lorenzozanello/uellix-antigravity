@@ -71,7 +71,7 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Indicadores</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Define indicadores medibles vinculados a cada outcome para verificar y cuantificar el cambio.
+          Define indicadores medibles vinculados a cada resultado para verificar y cuantificar el cambio.
         </p>
       </div>
       <Stepper />
@@ -135,7 +135,7 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
         <EmptyState
           icon={<Activity className="h-6 w-6 text-neutral-500" />}
           title="No hay indicadores registrados"
-          description="Define indicadores medibles vinculados a cada outcome para verificar el cambio."
+          description="Define indicadores medibles vinculados a cada resultado para verificar el cambio."
         />
       )}
 
@@ -148,10 +148,10 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
             <input type="hidden" name="projectId" value={projectId} />
             <div>
               <label htmlFor="outcomeId" className="block text-sm font-medium text-foreground">
-                Outcome
+                Resultado
               </label>
               <select id="outcomeId" name="outcomeId" className={INPUT_CLASS} required>
-                <option value="">Seleccione un outcome...</option>
+                <option value="">Seleccione un resultado...</option>
                 {outcomes?.map((o) => (
                   <option key={o.id} value={o.id}>{o.title}</option>
                 ))}

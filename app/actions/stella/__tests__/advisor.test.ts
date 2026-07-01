@@ -6,6 +6,7 @@ import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 import type { StellaProjectContext } from '@/lib/stella/context/types'
 import type { OrganizationContext } from '@/lib/auth/session'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import type { RateLimitResult } from '@/lib/stella/rate-limit'
 
 // ---------------------------------------------------------------------------
 // Mocks — must be at top level so vitest hoists them before imports
@@ -59,6 +60,13 @@ vi.mock('@/lib/stella/adapter/gemini-client', () => ({
   getGeminiAdapter: () => mockAdapter,
 }))
 
+const mockCheckStellaRateLimit = vi.fn()
+const mockRecordStellaRequest = vi.fn()
+vi.mock('@/lib/stella/rate-limit', () => ({
+  checkStellaRateLimit: (...args: unknown[]) => mockCheckStellaRateLimit(...args),
+  recordStellaRequest: (...args: unknown[]) => mockRecordStellaRequest(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
 // ---------------------------------------------------------------------------
@@ -100,11 +108,26 @@ const MOCK_CONTEXT: StellaProjectContext = {
   lastUpdatedAt: '2026-06-01T00:00:00.000Z',
 }
 
+const RATE_LIMIT_OK: RateLimitResult = {
+  allowed: true,
+  remaining: 95,
+  limit: 100,
+  resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+}
+
+const RATE_LIMIT_EXCEEDED: RateLimitResult = {
+  allowed: false,
+  remaining: 0,
+  limit: 100,
+  resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+}
+
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
 
 function setupSuccessfulCall() {
+  mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
   mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
   mockAdapterGenerate.mockResolvedValue({
@@ -245,6 +268,7 @@ describe('getStellaAdvisor server action', () => {
 
   describe('Error handling', () => {
     it('returns PARSE_ERROR on StellaParseError from parseResponse', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockResolvedValue({
@@ -260,6 +284,7 @@ describe('getStellaAdvisor server action', () => {
     })
 
     it('returns TIMEOUT on StellaTimeoutError', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockRejectedValue(new StellaTimeoutError())
@@ -271,6 +296,7 @@ describe('getStellaAdvisor server action', () => {
     })
 
     it('returns GEMINI_ERROR on StellaGeminiError', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockRejectedValue(new StellaGeminiError('API failure'))
@@ -283,6 +309,7 @@ describe('getStellaAdvisor server action', () => {
 
     it('returns UNSUPPORTED_STEP when context builder rejects for calculation', async () => {
       const { StellaBuildContextError } = await import('@/lib/stella/context/build-advisor-context')
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockBuildAdvisorContext.mockRejectedValue(
         new StellaBuildContextError('UNSUPPORTED_STEP', 'Calculation not supported.')
@@ -292,6 +319,65 @@ describe('getStellaAdvisor server action', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('UNSUPPORTED_STEP')
+    })
+  })
+
+  describe('Rate limiting', () => {
+    it('returns RATE_LIMITED when org has exceeded hourly limit', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBe('RATE_LIMITED')
+        expect(result.message).toContain('2026-06-26T15:00:00.000Z')
+      }
+    })
+
+    it('passes organization.id (not project id) to checkStellaRateLimit', async () => {
+      setupSuccessfulCall()
+
+      await getStellaAdvisor('proj-different-id', 'narrative')
+
+      expect(mockCheckStellaRateLimit).toHaveBeenCalledWith('org-1')
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalledWith('proj-different-id')
+    })
+
+    it('does NOT record request when rate limited', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+    })
+
+    it('does NOT call Gemini when rate limited', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it('records request after context built, with organization.id', async () => {
+      setupSuccessfulCall()
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(mockRecordStellaRequest).toHaveBeenCalledWith('org-1')
+    })
+
+    it('does NOT record rate limit when auth fails', async () => {
+      mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
+      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
     })
   })
 

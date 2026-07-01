@@ -55,17 +55,17 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Outcomes</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Resultados</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Define los cambios esperados y observados que esta iniciativa busca lograr.
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Outcomes" />
+      <StellaAdvisorPanel projectId={projectId} step="Resultados" />
       {outcomes?.length ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Outcomes registrados ({outcomes.length})</CardTitle>
+            <CardTitle className="text-base">Resultados registrados ({outcomes.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -90,7 +90,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
       ) : (
         <EmptyState
           icon={<Target className="h-6 w-6 text-neutral-500" />}
-          title="No hay outcomes registrados"
+          title="No hay resultados registrados"
           description="Define los cambios esperados y observables que busca lograr esta iniciativa."
         />
       )}
@@ -103,7 +103,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
             <input type="hidden" name="projectId" value={projectId} />
             <div>
               <label htmlFor="stakeholderGroupId" className="block text-sm font-medium text-foreground">
-                Stakeholder Group
+                Grupo de interés
               </label>
               <select
                 id="stakeholderGroupId"
@@ -119,7 +119,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
             </div>
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-foreground">
-                Título del Outcome
+                Título del resultado
               </label>
               <input
                 id="title"
@@ -141,7 +141,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
             </div>
             <div>
               <label htmlFor="outcomeType" className="block text-sm font-medium text-foreground">
-                Tipo de Outcome
+                Tipo de resultado
               </label>
               <input
                 id="outcomeType"

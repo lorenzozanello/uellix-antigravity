@@ -14,97 +14,97 @@ const REPORT_STATUS: Record<
   string,
   { variant: 'neutral' | 'warning' | 'info' | 'success'; label: string }
 > = {
-  draft: { variant: 'warning', label: 'Draft' },
-  under_review: { variant: 'info', label: 'Under Review' },
-  locked: { variant: 'success', label: 'Locked' },
-  archived: { variant: 'neutral', label: 'Archived' },
+  draft: { variant: 'warning', label: 'Borrador' },
+  under_review: { variant: 'info', label: 'En revisión' },
+  locked: { variant: 'success', label: 'Bloqueado' },
+  archived: { variant: 'neutral', label: 'Archivado' },
 }
 
 const SECTION_META: Record<string, { label: string; helper: string }> = {
   executive_summary: {
-    label: 'Executive Summary',
+    label: 'Resumen ejecutivo',
     helper:
-      'High-level narrative of the SROI process and key findings. Written for a non-technical, executive audience.',
+      'Narrativa de alto nivel del proceso SROI y hallazgos clave. Escrita para una audiencia ejecutiva no técnica.',
   },
   project_context: {
-    label: 'Project Context',
+    label: 'Contexto del proyecto',
     helper:
-      'Description of the organization, the initiative, geographic scope, and measurement period.',
+      'Descripción de la organización, la iniciativa, el alcance geográfico y el período de medición.',
   },
   theory_of_change: {
-    label: 'Theory of Change',
+    label: 'Teoría del cambio',
     helper:
-      'Logic model connecting activities → outputs → outcomes. Document assumptions and causal pathways explicitly.',
+      'Modelo lógico que conecta actividades → productos → resultados. Documenta explícitamente los supuestos y las rutas causales.',
   },
   stakeholders: {
-    label: 'Stakeholders',
+    label: 'Grupos de interés',
     helper:
-      'Identification of stakeholder groups included or excluded, with justification for scope decisions.',
+      'Identificación de los grupos de interés incluidos o excluidos, con justificación de las decisiones de alcance.',
   },
   outcomes: {
-    label: 'Outcomes',
+    label: 'Resultados',
     helper:
-      'List of social outcomes measured, including materiality rationale for each outcome included in the analysis.',
+      'Lista de resultados sociales medidos, incluyendo la justificación de materialidad de cada resultado incluido en el análisis.',
   },
   evidence_summary: {
-    label: 'Evidence Summary',
-    helper: 'Data collection methods, sources, sample sizes, and quality limitations.',
+    label: 'Resumen de evidencia',
+    helper: 'Métodos de recolección de datos, fuentes, tamaños de muestra y limitaciones de calidad.',
   },
   proxy_methodology: {
-    label: 'Proxy Methodology',
+    label: 'Metodología de proxies',
     helper:
-      'Financial proxies selected (SVI values, SROI Network sources, or custom research) with full attribution.',
+      'Proxies financieros seleccionados (valores SVI, fuentes de SROI Network o investigación propia) con atribución completa.',
   },
   sroi_filters: {
-    label: 'SROI Filters',
+    label: 'Filtros SROI',
     helper:
-      'Documented methodological assumptions for deadweight, attribution, displacement, and drop-off per outcome.',
+      'Supuestos metodológicos documentados de deadweight, atribución, desplazamiento y decaimiento por resultado.',
   },
   calculation_results: {
-    label: 'Calculation Results',
+    label: 'Resultados del cálculo',
     helper:
-      'Summary of SROI ratio and social value figures, linked to the immutable calculation run. Include sensitivity notes if applicable.',
+      'Resumen del ratio SROI y las cifras de valor social, vinculadas a la corrida de cálculo inmutable. Incluye notas de sensibilidad si aplica.',
   },
   limitations: {
-    label: 'Limitations',
+    label: 'Limitaciones',
     helper:
-      'Material limitations in data quality, scope exclusions, untested causal assumptions, or measurement gaps.',
+      'Limitaciones materiales en la calidad de los datos, exclusiones de alcance, supuestos causales no probados o vacíos de medición.',
   },
   review_notes: {
-    label: 'Review Notes',
+    label: 'Notas de revisión',
     helper:
-      'Methodological reviewer comments, outstanding items for human verification, or audit trail notes.',
+      'Comentarios del revisor metodológico, elementos pendientes de verificación humana o notas de auditoría.',
   },
   appendix: {
-    label: 'Appendix',
+    label: 'Apéndice',
     helper:
-      'Supporting data tables, data sources, stakeholder consent records, or supplementary evidence.',
+      'Tablas de datos de soporte, fuentes de datos, registros de consentimiento de grupos de interés o evidencia complementaria.',
   },
 }
 
 const SECTION_GROUPS = [
   {
     id: 'group-overview',
-    label: 'Overview',
-    description: 'Executive narrative and project context',
+    label: 'Resumen',
+    description: 'Narrativa ejecutiva y contexto del proyecto',
     types: ['executive_summary', 'project_context', 'theory_of_change'],
   },
   {
     id: 'group-evidence',
-    label: 'Evidence & Data',
-    description: 'Stakeholders, outcomes, proxies, and source evidence',
+    label: 'Evidencia y datos',
+    description: 'Grupos de interés, resultados, proxies y evidencia de origen',
     types: ['stakeholders', 'outcomes', 'evidence_summary', 'proxy_methodology'],
   },
   {
     id: 'group-calculation',
-    label: 'Calculation',
-    description: 'SROI filter assumptions and final results',
+    label: 'Cálculo',
+    description: 'Supuestos de filtros SROI y resultados finales',
     types: ['sroi_filters', 'calculation_results'],
   },
   {
     id: 'group-review',
-    label: 'Review & Appendix',
-    description: 'Limitations, reviewer notes, and supporting material',
+    label: 'Revisión y apéndice',
+    description: 'Limitaciones, notas del revisor y material de soporte',
     types: ['limitations', 'review_notes', 'appendix'],
   },
 ]
@@ -120,9 +120,9 @@ type Section = ReportDraft['sections'][number]
 export default async function ReportDetailPage({
   params,
 }: {
-  params: { projectId: string; reportId: string }
+  params: Promise<{ projectId: string; reportId: string }>
 }) {
-  const { projectId, reportId } = params
+  const { projectId, reportId } = await params
 
   let report: ReportDraft
   try {
@@ -164,7 +164,7 @@ export default async function ReportDetailPage({
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Back to Reports
+          Volver a reportes
         </Link>
         <div className="mt-3 flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -172,7 +172,7 @@ export default async function ReportDetailPage({
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
               <span className="text-xs text-muted-foreground">
-                Run:{' '}
+                Corrida:{' '}
                 <Link
                   href={`/app/projects/${projectId}/pipeline/calculation/runs/${report.calculationRunId}`}
                   className="tabular-nums font-ibm-plex-mono text-[#B85200] hover:text-[#B85200]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
@@ -181,8 +181,8 @@ export default async function ReportDetailPage({
                 </Link>
               </span>
               <span className="text-xs text-muted-foreground">
-                Created{' '}
-                {new Date(report.createdAt).toLocaleDateString('en-GB', {
+                Creado el{' '}
+                {new Date(report.createdAt).toLocaleDateString('es-MX', {
                   day: 'numeric',
                   month: 'short',
                   year: 'numeric',
@@ -198,7 +198,7 @@ export default async function ReportDetailPage({
                 className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <Lock className="h-4 w-4" aria-hidden="true" />
-                Lock Report
+                Bloquear reporte
               </button>
             </form>
           )}
@@ -218,16 +218,16 @@ export default async function ReportDetailPage({
           />
           <div className="space-y-1 text-sm">
             <p className="font-medium text-foreground">
-              This report is locked and preserves an audit-ready version for methodological review.
+              Este reporte está bloqueado y preserva una versión lista para auditoría, para revisión metodológica.
             </p>
             <p className="text-muted-foreground text-xs">
-              Locking does not constitute automatic certification. Human review is required before
-              external use.
+              El bloqueo no constituye certificación automática. Se requiere revisión humana antes
+              de su uso externo.
             </p>
             {report.lockedAt && (
               <p className="text-muted-foreground text-xs">
-                Locked on{' '}
-                {new Date(report.lockedAt).toLocaleString('en-GB', {
+                Bloqueado el{' '}
+                {new Date(report.lockedAt).toLocaleString('es-MX', {
                   day: 'numeric',
                   month: 'short',
                   year: 'numeric',
@@ -252,9 +252,9 @@ export default async function ReportDetailPage({
             aria-hidden="true"
           />
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Locking is irreversible.</span> Once
-            locked, this report cannot be edited. It will preserve a defensible, audit-traceable
-            version for human review. Ensure all sections are complete before locking.
+            <span className="font-medium text-foreground">Bloquear es irreversible.</span> Una vez
+            bloqueado, este reporte no se puede editar. Preservará una versión defendible y trazable
+            para auditoría, para revisión humana. Asegúrate de que todas las secciones estén completas antes de bloquear.
           </p>
         </div>
       )}
@@ -263,7 +263,7 @@ export default async function ReportDetailPage({
       {report.summary && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Summary</CardTitle>
+            <CardTitle className="text-sm font-semibold">Resumen</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-foreground leading-relaxed">{report.summary}</p>
@@ -272,7 +272,7 @@ export default async function ReportDetailPage({
       )}
 
       {/* Section group anchor nav */}
-      <nav aria-label="Jump to section group" className="flex flex-wrap gap-2">
+      <nav aria-label="Ir a grupo de secciones" className="flex flex-wrap gap-2">
         {SECTION_GROUPS.map((group) => (
           <a
             key={group.id}
@@ -310,7 +310,7 @@ export default async function ReportDetailPage({
               <div className="space-y-4">
                 {groupSections.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">
-                    No sections available in this group.
+                    No hay secciones disponibles en este grupo.
                   </p>
                 ) : (
                   groupSections.map((section) => {
@@ -329,7 +329,7 @@ export default async function ReportDetailPage({
                             <div className="min-w-0">
                               <span
                                 className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-mono font-medium bg-muted text-muted-foreground border border-border mb-1"
-                                aria-label={`Section type: ${section.sectionType}`}
+                                aria-label={`Tipo de sección: ${section.sectionType}`}
                               >
                                 {section.sectionType}
                               </span>
@@ -343,7 +343,7 @@ export default async function ReportDetailPage({
                             {isLocked && (
                               <Lock
                                 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
-                                aria-label="Section is read-only"
+                                aria-label="Sección de solo lectura"
                               />
                             )}
                           </div>
@@ -363,7 +363,7 @@ export default async function ReportDetailPage({
                                 </p>
                               ) : (
                                 <p className="text-sm text-muted-foreground italic">
-                                  No content recorded for this section.
+                                  No hay contenido registrado para esta sección.
                                 </p>
                               )}
                             </div>
@@ -379,7 +379,7 @@ export default async function ReportDetailPage({
                                   htmlFor={titleInputId}
                                   className="block text-xs font-medium text-foreground"
                                 >
-                                  Section title
+                                  Título de la sección
                                 </label>
                                 <input
                                   id={titleInputId}
@@ -395,7 +395,7 @@ export default async function ReportDetailPage({
                                   htmlFor={contentInputId}
                                   className="block text-xs font-medium text-foreground"
                                 >
-                                  Content
+                                  Contenido
                                 </label>
                                 <textarea
                                   id={contentInputId}
@@ -404,7 +404,7 @@ export default async function ReportDetailPage({
                                   defaultValue={section.content ?? ''}
                                   placeholder={
                                     meta.helper ||
-                                    'Methodological documentation for this section…'
+                                    'Documentación metodológica para esta sección…'
                                   }
                                   className={TEXTAREA_CLASS}
                                 />
@@ -418,7 +418,7 @@ export default async function ReportDetailPage({
                                 type="submit"
                                 className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               >
-                                Save section
+                                Guardar sección
                               </button>
                             </form>
                           )}
@@ -442,13 +442,13 @@ export default async function ReportDetailPage({
           id="record-heading"
           className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Record
+          Registro
         </h2>
         <dl className="grid grid-cols-2 gap-3 text-xs md:grid-cols-3">
           <div>
-            <dt className="text-muted-foreground">Created</dt>
+            <dt className="text-muted-foreground">Creado</dt>
             <dd className="mt-0.5 font-medium text-foreground">
-              {new Date(report.createdAt).toLocaleString('en-GB', {
+              {new Date(report.createdAt).toLocaleString('es-MX', {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
@@ -458,9 +458,9 @@ export default async function ReportDetailPage({
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Last updated</dt>
+            <dt className="text-muted-foreground">Última actualización</dt>
             <dd className="mt-0.5 font-medium text-foreground">
-              {new Date(report.updatedAt).toLocaleString('en-GB', {
+              {new Date(report.updatedAt).toLocaleString('es-MX', {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
@@ -471,9 +471,9 @@ export default async function ReportDetailPage({
           </div>
           {isLocked && report.lockedAt && (
             <div>
-              <dt className="text-muted-foreground">Locked</dt>
+              <dt className="text-muted-foreground">Bloqueado</dt>
               <dd className="mt-0.5 font-medium text-foreground">
-                {new Date(report.lockedAt).toLocaleString('en-GB', {
+                {new Date(report.lockedAt).toLocaleString('es-MX', {
                   day: 'numeric',
                   month: 'short',
                   year: 'numeric',
