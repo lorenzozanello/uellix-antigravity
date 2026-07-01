@@ -61,9 +61,10 @@ const INPUT_CLASS =
 const TEXTAREA_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y';
 
-export default async function IndicatorsPage({ params }: { params: { projectId: string } }) {
-  const indicators = await fetchIndicators(params.projectId) as IndicatorRow[];
-  const outcomes = await fetchOutcomes(params.projectId) as OutcomeRow[];
+export default async function IndicatorsPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
+  const indicators = await fetchIndicators(projectId) as IndicatorRow[];
+  const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -74,7 +75,7 @@ export default async function IndicatorsPage({ params }: { params: { projectId: 
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={params.projectId} step="Indicadores" />
+      <StellaAdvisorPanel projectId={projectId} step="Indicadores" />
 
       {indicators?.length ? (
         <Card>
@@ -144,7 +145,7 @@ export default async function IndicatorsPage({ params }: { params: { projectId: 
         </CardHeader>
         <CardContent>
           <form action={action} className="space-y-4">
-            <input type="hidden" name="projectId" value={params.projectId} />
+            <input type="hidden" name="projectId" value={projectId} />
             <div>
               <label htmlFor="outcomeId" className="block text-sm font-medium text-foreground">
                 Outcome

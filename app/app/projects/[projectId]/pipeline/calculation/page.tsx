@@ -47,20 +47,21 @@ const RUN_STATUS: Record<string, { variant: 'success' | 'warning' | 'danger' | '
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
-export default async function CalculationPage({ params }: { params: { projectId: string } }) {
+export default async function CalculationPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params
   const ctx = await requireOrganizationAccess()
   const canEdit = ctx && ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role)
 
-  const readiness = await getSroiCalculationReadiness(params.projectId)
-  const preview   = await calculateSroiPreview(params.projectId).catch(() => null)
-  const runs      = await listSroiCalculationRuns(params.projectId)
+  const readiness = await getSroiCalculationReadiness(projectId)
+  const preview   = await calculateSroiPreview(projectId).catch(() => null)
+  const runs      = await listSroiCalculationRuns(projectId)
 
   const investment = await db
     .select()
     .from(projectInvestments)
     .where(
       and(
-        eq(projectInvestments.projectId, params.projectId),
+        eq(projectInvestments.projectId, projectId),
         eq(projectInvestments.status, 'active')
       )
     )
@@ -78,7 +79,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
     .innerJoin(financialProxies, eq(financialProxies.id, outcomeProxyAssignments.proxyId))
     .where(
       and(
-        eq(outcomeProxyAssignments.projectId, params.projectId),
+        eq(outcomeProxyAssignments.projectId, projectId),
         eq(outcomeProxyAssignments.organizationId, ctx.organization.id),
         eq(outcomeProxyAssignments.assignmentStatus, 'active')
       )
@@ -109,25 +110,25 @@ export default async function CalculationPage({ params }: { params: { projectId:
   async function handleUpsertInvestment(formData: FormData) {
     'use server'
     await upsertProjectInvestmentAction(formData)
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
   async function handleUpsertAssignmentInput(formData: FormData) {
     'use server'
     await upsertSroiAssignmentInputAction(formData)
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
   async function handleUpsertFilterSet(formData: FormData) {
     'use server'
     await upsertSroiFilterSetAction(formData)
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
   async function handleCalculateRun(formData: FormData) {
     'use server'
     await calculateSroiRunAction(formData)
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/calculation`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
   return (
@@ -144,7 +145,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
       {/* Quick navigation */}
       <section aria-label="Related views" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link
-          href={`/app/projects/${params.projectId}/pipeline`}
+          href={`/app/projects/${projectId}/pipeline`}
           className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
         >
           <Card className="h-full hover:shadow-md transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-ring">
@@ -161,7 +162,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
         </Link>
 
         <Link
-          href={`/app/projects/${params.projectId}/pipeline/calculation/compare`}
+          href={`/app/projects/${projectId}/pipeline/calculation/compare`}
           className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
         >
           <Card className="h-full hover:shadow-md transition-shadow">
@@ -178,7 +179,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
         </Link>
 
         <Link
-          href={`/app/projects/${params.projectId}/report`}
+          href={`/app/projects/${projectId}/report`}
           className="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
         >
           <Card className="h-full hover:shadow-md transition-shadow">
@@ -247,7 +248,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
         </CardContent>
       </Card>
 
-      <StellaValidatorPanel projectId={params.projectId} step="Calculation" />
+      <StellaValidatorPanel projectId={projectId} step="Calculation" />
 
       {/* Investment */}
       <Card>
@@ -280,7 +281,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
           )}
 
           <form action={handleUpsertInvestment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="hidden" name="projectId" value={params.projectId} />
+            <input type="hidden" name="projectId" value={projectId} />
 
             <div>
               <label htmlFor="inv-amount" className="block text-sm font-medium text-foreground">
@@ -391,7 +392,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                       {/* Quantities & Inputs */}
                       <form action={handleUpsertAssignmentInput} className="space-y-3">
                         <p className="text-sm font-semibold text-foreground">Quantities &amp; Inputs</p>
-                        <input type="hidden" name="projectId" value={params.projectId} />
+                        <input type="hidden" name="projectId" value={projectId} />
                         <input type="hidden" name="assignmentId" value={assignment.id} />
 
                         <div className="grid grid-cols-2 gap-3">
@@ -481,7 +482,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                         <p className="text-xs text-muted-foreground">
                           Percentage adjustments that account for methodological assumptions about impact attribution.
                         </p>
-                        <input type="hidden" name="projectId" value={params.projectId} />
+                        <input type="hidden" name="projectId" value={projectId} />
                         <input type="hidden" name="assignmentId" value={assignment.id} />
 
                         <div className="grid grid-cols-2 gap-3">
@@ -708,7 +709,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                   Registering a run persists the current calculation with its full audit trail. This cannot be undone.
                 </p>
                 <form action={handleCalculateRun}>
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
                   <button
                     type="submit"
                     className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors shadow-sm"
@@ -785,7 +786,7 @@ export default async function CalculationPage({ params }: { params: { projectId:
                       </TableCell>
                       <TableCell className="text-right">
                         <Link
-                          href={`/app/projects/${params.projectId}/pipeline/calculation/runs/${run.id}`}
+                          href={`/app/projects/${projectId}/pipeline/calculation/runs/${run.id}`}
                           className="text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                           aria-label={`View run v${run.version} details`}
                         >

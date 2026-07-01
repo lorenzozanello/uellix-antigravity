@@ -72,7 +72,8 @@ const INPUT_CLASS =
 const TEXTAREA_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y'
 
-export default async function ProxiesPage({ params }: { params: { projectId: string } }) {
+export default async function ProxiesPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params
   const ctx = await getCurrentOrganizationContext()
   const canEdit =
     ctx &&
@@ -81,8 +82,8 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
   const [financialProxies, proxySources, assignments, outcomes] = await Promise.all([
     listFinancialProxies(),
     listProxySources(),
-    listProxyAssignmentsForProject(params.projectId),
-    fetchOutcomes(params.projectId),
+    listProxyAssignmentsForProject(projectId),
+    fetchOutcomes(projectId),
   ])
 
   // O(1) lookup maps — resolve UUIDs to display names without extra DB calls
@@ -90,19 +91,19 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
   const outcomeById = new Map(outcomes.map((o) => [o.id, o.title]))
   const proxyById = new Map(financialProxies.map((p) => [p.id, p]))
 
-  // Server Actions — declared inside component for closure access to params.projectId
+  // Server Actions — declared inside component for closure access to projectId
   async function handleCreateSource(formData: FormData) {
     'use server'
     const name = formData.get('name') as string
     const url = formData.get('url') as string
     const description = formData.get('description') as string
 
-    await createProxySourceAction(params.projectId, {
+    await createProxySourceAction(projectId, {
       name,
       url: url || undefined,
       description: description || undefined,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   async function handleCreateProxy(formData: FormData) {
@@ -117,7 +118,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
     const confidenceLevel = formData.get('confidenceLevel') as string
     const methodologicalRisk = formData.get('methodologicalRisk') as string
 
-    await createFinancialProxyAction(params.projectId, {
+    await createFinancialProxyAction(projectId, {
       sourceId,
       name,
       description: description || undefined,
@@ -128,7 +129,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
       confidenceLevel: confidenceLevel || undefined,
       methodologicalRisk: methodologicalRisk || undefined,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   async function handleAssignProxy(formData: FormData) {
@@ -140,23 +141,23 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
       'territorialAdjustmentNotes'
     ) as string
 
-    await assignProxyToOutcomeAction(params.projectId, {
+    await assignProxyToOutcomeAction(projectId, {
       outcomeId,
       proxyId,
       justification,
       territorialAdjustmentNotes: territorialAdjustmentNotes || undefined,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   async function handleArchiveAssignment(formData: FormData) {
     'use server'
     const assignmentId = formData.get('assignmentId') as string
 
-    await archiveOutcomeProxyAssignmentAction(params.projectId, {
+    await archiveOutcomeProxyAssignmentAction(projectId, {
       assignmentId,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   return (
@@ -170,7 +171,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={params.projectId} step="Proxies" />
+      <StellaAdvisorPanel projectId={projectId} step="Proxies" />
 
       {/* Proxy Bank */}
       <section aria-labelledby="proxy-bank-heading">
@@ -299,7 +300,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
               </CardHeader>
               <CardContent>
                 <form action={handleCreateSource} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
@@ -380,7 +381,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
               </CardHeader>
               <CardContent>
                 <form action={handleCreateProxy} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
@@ -575,7 +576,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
               </CardHeader>
               <CardContent>
                 <form action={handleAssignProxy} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label

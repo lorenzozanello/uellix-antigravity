@@ -118,15 +118,16 @@ const TEXTAREA_CLASS =
 const FILE_INPUT_CLASS =
   'mt-1 block w-full text-sm text-foreground file:mr-3 file:rounded file:border file:border-border file:bg-muted file:px-3 file:py-1 file:text-xs file:font-medium file:text-foreground hover:file:bg-muted/80 focus:outline-none'
 
-export default async function EvidencePage({ params }: { params: { projectId: string } }) {
+export default async function EvidencePage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params
   const { membership } = await requireOrganizationAccess()
   const canCreate = canUploadEvidence(membership.role)
   const canArchive = hasRole(membership.role, 'analyst')
   const canReview = hasRole(membership.role, 'impact_manager')
 
-  const evidences = await listEvidenceForProject(params.projectId)
-  const outcomes = await fetchOutcomes(params.projectId)
-  const indicators = await fetchIndicators(params.projectId)
+  const evidences = await listEvidenceForProject(projectId)
+  const outcomes = await fetchOutcomes(projectId)
+  const indicators = await fetchIndicators(projectId)
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -139,7 +140,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={params.projectId} step="Evidence" />
+      <StellaAdvisorPanel projectId={projectId} step="Evidence" />
 
       {/* Evidence list */}
       <section aria-labelledby="evidence-list-heading">
@@ -217,7 +218,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       <div className="flex flex-wrap items-center gap-2">
                         {canReview && ev.status !== 'archived' && (
                           <form action={updateStatusAction} className="inline-flex items-center gap-1">
-                            <input type="hidden" name="projectId" value={params.projectId} />
+                            <input type="hidden" name="projectId" value={projectId} />
                             <input type="hidden" name="evidenceId" value={ev.id} />
                             <label htmlFor={reviewSelectId} className="sr-only">
                               Update review status
@@ -245,7 +246,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                         )}
                         {canArchive && ev.status !== 'archived' && (
                           <form action={archiveAction} className="inline-flex">
-                            <input type="hidden" name="projectId" value={params.projectId} />
+                            <input type="hidden" name="projectId" value={projectId} />
                             <input type="hidden" name="evidenceId" value={ev.id} />
                             <button
                               type="submit"
@@ -291,7 +292,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
               </CardHeader>
               <CardContent>
                 <form action={fileAction} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
@@ -403,7 +404,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
               </CardHeader>
               <CardContent>
                 <form action={urlAction} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
@@ -516,7 +517,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
               </CardHeader>
               <CardContent>
                 <form action={textAction} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label

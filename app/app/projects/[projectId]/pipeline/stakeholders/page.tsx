@@ -36,8 +36,9 @@ interface StakeholderRow {
   description: string | null;
 }
 
-export default async function StakeholdersPage({ params }: { params: { projectId: string } }) {
-  const stakeholders = await fetchStakeholders(params.projectId) as StakeholderRow[];
+export default async function StakeholdersPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
+  const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
@@ -47,7 +48,7 @@ export default async function StakeholdersPage({ params }: { params: { projectId
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={params.projectId} step="Stakeholders" />
+      <StellaAdvisorPanel projectId={projectId} step="Stakeholders" />
       {stakeholders?.length ? (
         <Card>
           <CardHeader>
@@ -86,7 +87,7 @@ export default async function StakeholdersPage({ params }: { params: { projectId
         </CardHeader>
         <CardContent>
           <form action={action} className="space-y-4">
-            <input type="hidden" name="projectId" value={params.projectId} />
+            <input type="hidden" name="projectId" value={projectId} />
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-foreground">
                 Nombre

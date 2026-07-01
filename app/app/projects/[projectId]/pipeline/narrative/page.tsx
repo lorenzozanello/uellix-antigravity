@@ -31,8 +31,9 @@ const INPUT_CLASS =
 const TEXTAREA_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y'
 
-export default async function NarrativePage({ params }: { params: { projectId: string } }) {
-  const narrative = await fetchNarrative(params.projectId);
+export default async function NarrativePage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
+  const narrative = await fetchNarrative(projectId);
   const data = narrative ?? {};
   return (
     <div className="space-y-6 max-w-5xl">
@@ -43,9 +44,9 @@ export default async function NarrativePage({ params }: { params: { projectId: s
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={params.projectId} step="Narrativa" />
+      <StellaAdvisorPanel projectId={projectId} step="Narrativa" />
       <form action={action} className="space-y-6">
-        <input type="hidden" name="projectId" value={params.projectId} />
+        <input type="hidden" name="projectId" value={projectId} />
         <div>
           <label htmlFor="version" className="block text-sm font-medium text-foreground">
             Versión

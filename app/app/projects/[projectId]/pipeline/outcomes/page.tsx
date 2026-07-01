@@ -47,9 +47,10 @@ const INPUT_CLASS =
 const TEXTAREA_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y';
 
-export default async function OutcomesPage({ params }: { params: { projectId: string } }) {
-  const outcomes = await fetchOutcomes(params.projectId) as OutcomeRow[];
-  const stakeholders = await fetchStakeholders(params.projectId) as StakeholderRow[];
+export default async function OutcomesPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
+  const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
+  const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -60,7 +61,7 @@ export default async function OutcomesPage({ params }: { params: { projectId: st
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={params.projectId} step="Outcomes" />
+      <StellaAdvisorPanel projectId={projectId} step="Outcomes" />
       {outcomes?.length ? (
         <Card>
           <CardHeader>
@@ -99,7 +100,7 @@ export default async function OutcomesPage({ params }: { params: { projectId: st
         </CardHeader>
         <CardContent>
           <form action={action} className="space-y-4">
-            <input type="hidden" name="projectId" value={params.projectId} />
+            <input type="hidden" name="projectId" value={projectId} />
             <div>
               <label htmlFor="stakeholderGroupId" className="block text-sm font-medium text-foreground">
                 Stakeholder Group

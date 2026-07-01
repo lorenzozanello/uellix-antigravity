@@ -3,10 +3,11 @@ import Stepper from '@/components/sroi/Stepper';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service';
 
-export default async function PipelineHome({ params }: { params: { projectId: string } }) {
+export default async function PipelineHome({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
   const ctx = await getCurrentOrganizationContext();
   if (!ctx) return <p>Unauthenticated. Please log in.</p>;
-  const project = await getProjectByIdForCurrentOrganization(params.projectId);
+  const project = await getProjectByIdForCurrentOrganization(projectId);
   if (!project) return <p>Project not found or access denied.</p>;
 
   return (
