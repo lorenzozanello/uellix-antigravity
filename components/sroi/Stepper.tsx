@@ -5,14 +5,14 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
-  { name: 'Narrative', segment: 'narrative', href: './narrative' },
-  { name: 'Stakeholders', segment: 'stakeholders', href: './stakeholders' },
-  { name: 'Outcomes', segment: 'outcomes', href: './outcomes' },
-  { name: 'Indicators', segment: 'indicators', href: './indicators' },
-  { name: 'Evidence', segment: 'evidence', href: './evidence' },
-  { name: 'Proxies', segment: 'proxies', href: './proxies' },
+  { name: 'Narrative', segment: 'narrative' },
+  { name: 'Stakeholders', segment: 'stakeholders' },
+  { name: 'Outcomes', segment: 'outcomes' },
+  { name: 'Indicators', segment: 'indicators' },
+  { name: 'Evidence', segment: 'evidence' },
+  { name: 'Proxies', segment: 'proxies' },
   { name: 'Trust Center', segment: 'trust-center', href: '/app/trust-center' },
-  { name: 'Calculation', segment: 'calculation', href: './calculation' },
+  { name: 'Calculation', segment: 'calculation' },
 ]
 
 // Extract the first path segment after /pipeline/
@@ -21,9 +21,20 @@ function getPipelineSegment(pathname: string): string {
   return match?.[1] ?? ''
 }
 
+// Base path up to and including /pipeline, e.g. /app/projects/<id>/pipeline.
+// Steps use this (rather than a relative href like "./narrative") because a
+// relative href resolves against the *current* URL per standard URL
+// resolution: from the hub itself (".../pipeline", no trailing slash) "./narrative"
+// resolves to ".../narrative" — a sibling of "pipeline", not a child — which 404s.
+function getPipelineBase(pathname: string): string {
+  const match = pathname.match(/^(\/app\/projects\/[^/]+\/pipeline)/)
+  return match?.[1] ?? ''
+}
+
 export default function Stepper() {
   const pathname = usePathname() ?? ''
   const activeSegment = getPipelineSegment(pathname)
+  const pipelineBase = getPipelineBase(pathname)
 
   return (
     <nav aria-label="Pipeline steps" className="mb-6">
@@ -31,6 +42,7 @@ export default function Stepper() {
         {STEPS.map((step, idx) => {
           const isActive = activeSegment === step.segment
           const isLast = idx === STEPS.length - 1
+          const href = step.href ?? `${pipelineBase}/${step.segment}`
 
           return (
             <li
@@ -56,7 +68,7 @@ export default function Stepper() {
               )}
 
               <Link
-                href={step.href}
+                href={href}
                 aria-current={isActive ? 'step' : undefined}
                 aria-label={`Step ${idx + 1}: ${step.name}${isActive ? ' — current step' : ''}`}
                 className="group flex flex-col items-center gap-1.5 rounded-sm px-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
