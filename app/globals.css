@@ -7,7 +7,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* Was `var(--font-sans)` — a self-reference that never resolves, so any
+     element relying on the base `font-sans` utility (applied to <html> in
+     the @layer base block below) silently fell back to the browser's
+     default serif font. Any page outside app/(public) or app/app — which
+     both explicitly apply `font-manrope` — was affected, e.g. /invite/accept
+     and the entire /admin/* console. Manrope is the brand's primary UI
+     sans-serif (see app/(public)/layout.tsx, app/app/layout.tsx), so it's
+     the correct default here too. */
+  --font-sans: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
