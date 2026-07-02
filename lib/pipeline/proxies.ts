@@ -85,7 +85,15 @@ export async function updateOrganizationProxySource(sourceId: string, input: unk
   const source = await db.select().from(proxySources).where(eq(proxySources.id, sourceId)).then(r => r[0]);
   if (!source) throw new Error('Source not found');
   if (source.organizationId && source.organizationId !== ctx.organization.id) throw new Error('Forbidden');
-  if (!source.organizationId && !ctx.user.isSuperAdmin) throw new Error('Forbidden');
+  // System sources (organizationId: null) are managed exclusively via
+  // lib/admin/proxies.ts (requireAdminAccess(), no org context needed) —
+  // never through this org-scoped path. A caller who reaches this function
+  // already passed requireOrganizationAccess(), which redirects a
+  // super_admin with no org membership away before it ever runs, so an
+  // isSuperAdmin bypass here was unreachable for that case and would only
+  // ever fire for a super_admin who also happens to be an org member —
+  // not a case this function should special-case.
+  if (!source.organizationId) throw new Error('Forbidden');
 
   const updated = await db.update(proxySources).set({
     ...data,
@@ -109,7 +117,9 @@ export async function archiveProxySource(sourceId: string) {
   const source = await db.select().from(proxySources).where(eq(proxySources.id, sourceId)).then(r => r[0]);
   if (!source) throw new Error('Source not found');
   if (source.organizationId && source.organizationId !== ctx.organization.id) throw new Error('Forbidden');
-  if (!source.organizationId && !ctx.user.isSuperAdmin) throw new Error('Forbidden');
+  // See updateOrganizationProxySource above — system sources go through
+  // lib/admin/proxies.ts only.
+  if (!source.organizationId) throw new Error('Forbidden');
 
   const updated = await db.update(proxySources).set({ status: 'archived', updatedAt: new Date() })
     .where(eq(proxySources.id, sourceId))
@@ -221,8 +231,12 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
   const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then(r => r[0]);
   if (!proxy) throw new Error('Proxy not found');
   if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
-  if (!proxy.organizationId && !ctx.user.isSuperAdmin) throw new Error('Forbidden');
-  if (!canApproveProxy(ctx.membership.role) && !ctx.user.isSuperAdmin) throw new Error('Forbidden');
+  // System proxies (organizationId: null) are reviewed/approved exclusively
+  // via lib/admin/proxies.ts — see updateOrganizationProxySource above for
+  // why an isSuperAdmin bypass here was dead code, not a working escape
+  // hatch.
+  if (!proxy.organizationId) throw new Error('Forbidden');
+  if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
   if (newStatus === 'approved') {
     const required = ['value', 'currency', 'unit', 'referenceYear'];
     for (const f of required) {

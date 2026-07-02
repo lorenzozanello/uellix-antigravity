@@ -147,6 +147,16 @@ describe('Proxy Sources Service', () => {
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
   });
+
+  it('archiveProxySource rejects a system (org-less) source even for isSuperAdmin=true (admin-only via lib/admin/proxies.ts)', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-1' }, user: { id: 'user-2', isSuperAdmin: true } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    const source = { id: SOURCE_UUID, organizationId: null, status: 'active' };
+    mockDbData.proxySources = [source];
+
+    await expect(archiveProxySource(SOURCE_UUID)).rejects.toThrow('Forbidden');
+  });
 });
 
 /*** Financial Proxies ***/
@@ -208,6 +218,23 @@ describe('Financial Proxies Service', () => {
     const { requireOrganizationAccess } = await import('@/lib/auth/session');
     const { canApproveProxy } = await import('@/lib/auth/permissions');
     const ctx = { organization: { id: 'org-1' }, user: { isSuperAdmin: false }, membership: { role: 'organization_admin' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(canApproveProxy).mockReturnValue(true);
+    const proxy = { id: PROXY_UUID, organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
+    mockDbData.financialProxies = [proxy];
+
+    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved')).rejects.toThrow('Forbidden');
+  });
+
+  it('updateFinancialProxyReviewStatus rejects a system (org-less) proxy even for isSuperAdmin=true (system proxies are admin-only via lib/admin/proxies.ts)', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    const { canApproveProxy } = await import('@/lib/auth/permissions');
+    // Caller is flagged isSuperAdmin, but is also an org member (the only
+    // way this org-scoped function is reachable at all — a pure super_admin
+    // with no membership is redirected away by requireOrganizationAccess()
+    // before this function body runs). Even so, system proxies must not be
+    // approvable through this path; lib/admin/proxies.ts is the only route.
+    const ctx = { organization: { id: 'org-1' }, user: { isSuperAdmin: true }, membership: { role: 'organization_admin' } } as any;
     vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
     vi.mocked(canApproveProxy).mockReturnValue(true);
     const proxy = { id: PROXY_UUID, organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
