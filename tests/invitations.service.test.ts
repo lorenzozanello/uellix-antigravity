@@ -29,6 +29,10 @@ vi.mock('@/lib/audit/logger', () => ({
   },
 }));
 
+vi.mock('@/lib/invitations/email', () => ({
+  sendInvitationEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/db/client', () => {
   return {
     db: {
@@ -68,10 +72,11 @@ import {
 import { requireOrganizationAccess, getCurrentUser, getCurrentMembership } from '@/lib/auth/session';
 import { canInviteUsers } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
+import { sendInvitationEmail } from '@/lib/invitations/email';
 
 const ORG_CTX = {
   user: { id: 'user-1', email: 'admin@org.com', isSuperAdmin: false },
-  organization: { id: 'org-1' },
+  organization: { id: 'org-1', name: 'Test Org' },
   membership: { role: 'organization_admin' },
 } as any;
 
@@ -98,6 +103,9 @@ describe('createInvitation', () => {
     expect(result.invitation.id).toBe('inv-1');
     expect(result.rawToken).toHaveLength(64); // 32 bytes hex
     expect(logAuditAction).toHaveBeenCalled();
+    expect(sendInvitationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'new@user.com', role: 'analyst', rawToken: result.rawToken }),
+    );
   });
 
   it('rejects when caller lacks organization_admin+ role', async () => {

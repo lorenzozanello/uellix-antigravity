@@ -2,11 +2,13 @@
 //
 // Invitation lifecycle: create (org_admin+), list, revoke, accept.
 //
-// Email delivery is intentionally NOT wired up here — ANTIGRAVITY.md forbids
-// introducing external services without approval, and no provider has been
-// chosen yet. `createInvitation` returns the raw (unhashed) token so the
-// caller can build an accept URL and hand it off manually until a provider
-// is approved. Only the SHA-256 hash of the token is ever persisted.
+// createInvitation sends the email via Resend (lib/invitations/email.ts)
+// best-effort — a delivery failure never blocks or rolls back the
+// invitation, since it's already persisted with a valid token by the time
+// the email is attempted. Only the SHA-256 hash of the token is persisted;
+// the raw token is also returned so the accept URL can be shared manually
+// as a fallback if email delivery isn't configured (no RESEND_API_KEY) or
+// fails.
 
 import { db } from '@/db/client'
 import { invitations, organizationMembers } from '@/db/schema'
@@ -21,6 +23,7 @@ import {
 import { canInviteUsers } from '@/lib/auth/permissions'
 import { isValidRole, ROLES, type Role } from '@/lib/auth/roles'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
+import { sendInvitationEmail } from './email'
 
 const INVITATION_TTL_DAYS = 7
 
@@ -84,6 +87,13 @@ export async function createInvitation(input: unknown) {
     entityId: invitation.id,
     action: AUDIT_ACTIONS.INVITATION_SENT,
     afterJson: { email: normalizedEmail, role: data.role, expiresAt: expiresAt.toISOString() },
+  })
+
+  await sendInvitationEmail({
+    email: normalizedEmail,
+    organizationName: ctx.organization.name,
+    role: data.role as Role,
+    rawToken,
   })
 
   return { invitation, rawToken }
