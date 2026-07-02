@@ -254,7 +254,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                           {confidenceConfig.label}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground/60" aria-label="Not set">
+                        <span className="text-xs text-muted-foreground/60" aria-label="Sin definir">
                           —
                         </span>
                       )}
@@ -263,7 +263,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                       {riskConfig ? (
                         <Badge variant={riskConfig.variant}>{riskConfig.label}</Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground/60" aria-label="Not set">
+                        <span className="text-xs text-muted-foreground/60" aria-label="Sin definir">
                           —
                         </span>
                       )}

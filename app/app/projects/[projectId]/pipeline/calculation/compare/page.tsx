@@ -18,9 +18,9 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 const RUN_STATUS_BADGE: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
-  calculated: { variant: 'success', label: 'Calculated' },
-  pending: { variant: 'warning', label: 'Pending' },
-  failed: { variant: 'danger', label: 'Failed' },
+  calculated: { variant: 'success', label: 'Calculado' },
+  pending: { variant: 'warning', label: 'Pendiente' },
+  failed: { variant: 'danger', label: 'Fallido' },
 };
 
 const INPUT_CLASS =
@@ -30,12 +30,11 @@ export default async function ComparePage({
   params,
   searchParams,
 }: {
-  params: { projectId: string };
-  searchParams: { runA?: string; runB?: string };
+  params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ runA?: string; runB?: string }>;
 }) {
-  const { projectId } = params;
-  const runAId = searchParams.runA;
-  const runBId = searchParams.runB;
+  const { projectId } = await params;
+  const { runA: runAId, runB: runBId } = await searchParams;
 
   const runs = await getRunList(projectId);
 

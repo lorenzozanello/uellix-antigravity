@@ -24,22 +24,22 @@ export const dynamic = 'force-dynamic';
 const REVIEW_ROLES = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
 
 const RUN_STATUS_BADGE: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
-  calculated: { variant: 'success', label: 'Calculated' },
-  pending: { variant: 'warning', label: 'Pending' },
+  calculated: { variant: 'success', label: 'Calculado' },
+  pending: { variant: 'warning', label: 'Pendiente' },
   error: { variant: 'danger', label: 'Error' },
 };
 
 const REVIEW_STATUS_BADGE: Record<string, { variant: 'success' | 'danger' | 'info' | 'neutral'; label: string }> = {
-  approved: { variant: 'success', label: 'Approved' },
-  flagged: { variant: 'danger', label: 'Flagged' },
-  reviewed: { variant: 'info', label: 'Reviewed' },
-  draft: { variant: 'neutral', label: 'Draft' },
+  approved: { variant: 'success', label: 'Aprobado' },
+  flagged: { variant: 'danger', label: 'Marcado' },
+  reviewed: { variant: 'info', label: 'Revisado' },
+  draft: { variant: 'neutral', label: 'Borrador' },
 };
 
 const REVIEW_ITEM_BADGE: Record<string, { variant: 'success' | 'danger' | 'warning' | 'neutral'; label: string }> = {
-  pass: { variant: 'success', label: 'Pass' },
-  fail: { variant: 'danger', label: 'Fail' },
-  warning: { variant: 'warning', label: 'Warning' },
+  pass: { variant: 'success', label: 'Correcto' },
+  fail: { variant: 'danger', label: 'Fallido' },
+  warning: { variant: 'warning', label: 'Advertencia' },
 };
 
 const INPUT_CLASS =
@@ -48,9 +48,9 @@ const INPUT_CLASS =
 export default async function RunDetailPage({
   params,
 }: {
-  params: { projectId: string; runId: string };
+  params: Promise<{ projectId: string; runId: string }>;
 }) {
-  const { projectId, runId } = params;
+  const { projectId, runId } = await params;
 
   let detail: Awaited<ReturnType<typeof getCalculationRunDetail>>;
   try {
@@ -135,7 +135,7 @@ export default async function RunDetailPage({
         <strong className="font-medium text-foreground">requiere revisión humana</strong> para
         su validación final. No constituye certificación automática ni auditoría independiente.
         Constituye una{' '}
-        <strong className="font-medium text-foreground">audit-ready foundation</strong> para el
+        <strong className="font-medium text-foreground">base lista para auditoría</strong> para el
         proceso de revisión metodológica.
       </div>
 
@@ -367,10 +367,10 @@ export default async function RunDetailPage({
                     Estado
                   </label>
                   <select id="review-status" name="status" className={INPUT_CLASS}>
-                    <option value="draft">Draft</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="approved">Approved</option>
-                    <option value="flagged">Flagged</option>
+                    <option value="draft">Borrador</option>
+                    <option value="reviewed">Revisado</option>
+                    <option value="approved">Aprobado</option>
+                    <option value="flagged">Marcado</option>
                   </select>
                 </div>
                 <div>
