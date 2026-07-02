@@ -1,8 +1,6 @@
 import React from 'react'
-import { db } from '@/db/client'
-import { projects } from '@/db/schema'
-import { eq } from 'drizzle-orm'
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
 import { listEvidenceForOrganizationWithProject } from '@/lib/pipeline/evidence'
 import Link from 'next/link'
 import { Filter, ShieldCheck } from 'lucide-react'
@@ -22,39 +20,37 @@ const EVIDENCE_STATUS: Record<
   string,
   { variant: 'neutral' | 'warning' | 'info' | 'success' | 'danger'; label: string }
 > = {
-  draft: { variant: 'neutral', label: 'Draft' },
-  under_review: { variant: 'info', label: 'Under Review' },
-  approved: { variant: 'success', label: 'Approved' },
-  rejected: { variant: 'danger', label: 'Rejected' },
-  archived: { variant: 'neutral', label: 'Archived' },
+  draft: { variant: 'neutral', label: 'Borrador' },
+  under_review: { variant: 'info', label: 'En revisión' },
+  approved: { variant: 'success', label: 'Aprobado' },
+  rejected: { variant: 'danger', label: 'Rechazado' },
+  archived: { variant: 'neutral', label: 'Archivado' },
 }
 
 const EVIDENCE_TYPE: Record<
   string,
-  { variant: 'neutral' | 'info' | 'teal'; label: string }
+  { variant: 'neutral' | 'info'; label: string }
 > = {
-  file: { variant: 'neutral', label: 'File' },
+  file: { variant: 'neutral', label: 'Archivo' },
   url: { variant: 'info', label: 'URL' },
-  text: { variant: 'neutral', label: 'Text' },
+  text: { variant: 'neutral', label: 'Texto' },
 }
 
 export default async function TrustCenterPage({
   searchParams,
 }: {
-  searchParams: { status?: string; type?: string; projectId?: string }
+  searchParams: Promise<{ status?: string; type?: string; projectId?: string }>
 }) {
   const { organization } = await requireOrganizationAccess()
+  const resolvedSearchParams = await searchParams
 
-  const orgProjects = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.organizationId, organization.id))
+  const orgProjects = await listProjectsForCurrentOrganization()
 
   const evidences = await listEvidenceForOrganizationWithProject()
 
-  const statusFilter = searchParams.status || ''
-  const typeFilter = searchParams.type || ''
-  const projectFilter = searchParams.projectId || ''
+  const statusFilter = resolvedSearchParams.status || ''
+  const typeFilter = resolvedSearchParams.type || ''
+  const projectFilter = resolvedSearchParams.projectId || ''
 
   const filteredEvidences = evidences.filter((ev) => {
     if (statusFilter && ev.status !== statusFilter) return false
@@ -70,18 +66,18 @@ export default async function TrustCenterPage({
       {/* Header */}
       <div className="flex items-start gap-4">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
           aria-hidden="true"
         >
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Trust Center</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Centro de confianza</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Audit-ready evidence repository for{' '}
-            <span className="font-medium text-foreground">{organization.name}</span>. Each
-            evidence item carries a SHA-256 content hash and requires human review before use
-            in external reporting.
+            Repositorio de evidencia lista para auditoría de{' '}
+            <span className="font-medium text-foreground">{organization.name}</span>. Cada
+            elemento de evidencia lleva un hash de contenido SHA-256 y requiere revisión humana
+            antes de usarse en reportes externos.
           </p>
         </div>
       </div>
@@ -91,11 +87,11 @@ export default async function TrustCenterPage({
         role="note"
         className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
       >
-        <span className="font-medium text-foreground">Audit notice: </span>
-        Evidence registered here does not constitute automatic certification or audit clearance.
-        Each item provides a{' '}
-        <span className="font-medium text-foreground">traceable evidence foundation</span> for
-        methodological review and requires human validation before external use.
+        <span className="font-medium text-foreground">Aviso de auditoría: </span>
+        La evidencia registrada aquí no constituye certificación automática ni aprobación de
+        auditoría. Cada elemento provee una{' '}
+        <span className="font-medium text-foreground">base de evidencia trazable</span> para
+        revisión metodológica y requiere validación humana antes de su uso externo.
       </div>
 
       {/* Filters */}
@@ -103,17 +99,17 @@ export default async function TrustCenterPage({
         method="GET"
         action="/app/trust-center"
         className="rounded-lg border border-border bg-muted/30 p-4"
-        aria-label="Filter evidence"
+        aria-label="Filtrar evidencia"
       >
         <div className="mb-3 flex items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Filters
+            Filtros
           </span>
           {activeFilterCount > 0 && (
             <span
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white"
-              aria-label={`${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`}
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6A00] text-[10px] font-bold text-white"
+              aria-label={`${activeFilterCount} filtro${activeFilterCount !== 1 ? 's' : ''} activo${activeFilterCount !== 1 ? 's' : ''}`}
             >
               {activeFilterCount}
             </span>
@@ -122,7 +118,7 @@ export default async function TrustCenterPage({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <label htmlFor="projectId" className="block text-xs font-medium text-foreground">
-              Project
+              Proyecto
             </label>
             <Select
               id="projectId"
@@ -130,7 +126,7 @@ export default async function TrustCenterPage({
               defaultValue={projectFilter}
               className="mt-1"
             >
-              <option value="">All projects</option>
+              <option value="">Todos los proyectos</option>
               {orgProjects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -141,7 +137,7 @@ export default async function TrustCenterPage({
 
           <div>
             <label htmlFor="status" className="block text-xs font-medium text-foreground">
-              Review status
+              Estado de revisión
             </label>
             <Select
               id="status"
@@ -149,18 +145,18 @@ export default async function TrustCenterPage({
               defaultValue={statusFilter}
               className="mt-1"
             >
-              <option value="">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="under_review">Under Review</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="archived">Archived</option>
+              <option value="">Todos los estados</option>
+              <option value="draft">Borrador</option>
+              <option value="under_review">En revisión</option>
+              <option value="approved">Aprobado</option>
+              <option value="rejected">Rechazado</option>
+              <option value="archived">Archivado</option>
             </Select>
           </div>
 
           <div>
             <label htmlFor="type" className="block text-xs font-medium text-foreground">
-              Evidence type
+              Tipo de evidencia
             </label>
             <Select
               id="type"
@@ -168,10 +164,10 @@ export default async function TrustCenterPage({
               defaultValue={typeFilter}
               className="mt-1"
             >
-              <option value="">All types</option>
-              <option value="file">File</option>
+              <option value="">Todos los tipos</option>
+              <option value="file">Archivo</option>
               <option value="url">URL</option>
-              <option value="text">Text / Statement</option>
+              <option value="text">Texto / Declaración</option>
             </Select>
           </div>
 
@@ -180,13 +176,13 @@ export default async function TrustCenterPage({
               type="submit"
               className="inline-flex items-center rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
             >
-              Apply
+              Aplicar
             </button>
             <Link
               href="/app/trust-center"
               className="inline-flex items-center rounded-md border border-border bg-background px-4 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Clear
+              Limpiar
             </Link>
           </div>
         </div>
@@ -195,36 +191,36 @@ export default async function TrustCenterPage({
       {/* Result count */}
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {filteredEvidences.length === evidences.length
-          ? `${evidences.length} evidence item${evidences.length !== 1 ? 's' : ''}`
-          : `${filteredEvidences.length} of ${evidences.length} evidence items`}
-        {activeFilterCount > 0 ? ' matching current filters' : ''}
+          ? `${evidences.length} elemento${evidences.length !== 1 ? 's' : ''} de evidencia`
+          : `${filteredEvidences.length} de ${evidences.length} elementos de evidencia`}
+        {activeFilterCount > 0 ? ' coinciden con los filtros actuales' : ''}
       </p>
 
       {/* Evidence table */}
       {filteredEvidences.length === 0 ? (
         <EmptyState
           icon={<ShieldCheck className="h-6 w-6 text-neutral-500" />}
-          title="No evidence found"
+          title="No se encontró evidencia"
           description={
             activeFilterCount > 0
-              ? 'No items match the selected filters. Adjust or clear filters to see all evidence.'
-              : 'No traceable evidence has been registered for this organization yet.'
+              ? 'Ningún elemento coincide con los filtros seleccionados. Ajusta o limpia los filtros para ver toda la evidencia.'
+              : 'Aún no se ha registrado evidencia trazable para esta organización.'
           }
         />
       ) : (
         <section aria-labelledby="evidence-table-heading">
           <h2 id="evidence-table-heading" className="sr-only">
-            Evidence items
+            Elementos de evidencia
           </h2>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead>Evidence Title</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>SHA-256 Hash</TableHead>
-                <TableHead>Review Status</TableHead>
-                <TableHead>Registered</TableHead>
+                <TableHead>Proyecto</TableHead>
+                <TableHead>Título de evidencia</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Hash SHA-256</TableHead>
+                <TableHead>Estado de revisión</TableHead>
+                <TableHead>Registrado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -250,14 +246,15 @@ export default async function TrustCenterPage({
                     <TableCell>
                       {ev.contentHash ? (
                         <code
-                          className="font-mono text-xs text-muted-foreground"
+                          className="text-xs text-muted-foreground tabular-nums"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
                           title={ev.contentHash}
-                          aria-label={`SHA-256 hash: ${ev.contentHash.slice(0, 12)} (truncated)`}
+                          aria-label={`Hash SHA-256: ${ev.contentHash.slice(0, 12)} (truncado)`}
                         >
                           {ev.contentHash.slice(0, 12)}…
                         </code>
                       ) : (
-                        <span className="text-xs text-muted-foreground/60" aria-label="No hash">
+                        <span className="text-xs text-muted-foreground/60" aria-label="Sin hash">
                           —
                         </span>
                       )}
@@ -266,7 +263,7 @@ export default async function TrustCenterPage({
                       <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                      {new Date(ev.createdAt).toLocaleDateString('en-GB', {
+                      {new Date(ev.createdAt).toLocaleDateString('es-MX', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',

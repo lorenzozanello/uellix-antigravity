@@ -128,6 +128,80 @@ describe('Evidence service', () => {
     expect(logAuditAction).toHaveBeenCalled();
   });
 
+  it('rejects createFileEvidenceForProject with a disallowed MIME type (SEC-003)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Evidence SVG',
+      file: {
+        name: 'payload.svg',
+        mimeType: 'image/svg+xml',
+        size: 100,
+        buffer: Buffer.from('<svg onload="alert(1)"></svg>'),
+      },
+    };
+
+    await expect(createFileEvidenceForProject('proj-1', input)).rejects.toThrow();
+  });
+
+  it('rejects createFileEvidenceForProject with a file over the size limit (SEC-003)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Huge file',
+      file: {
+        name: 'huge.pdf',
+        mimeType: 'application/pdf',
+        size: 26 * 1024 * 1024, // 26 MB, over the 25 MB limit
+        buffer: Buffer.from('irrelevant'),
+      },
+    };
+
+    await expect(createFileEvidenceForProject('proj-1', input)).rejects.toThrow();
+  });
+
+  it('sanitizes a path-traversal filename before building the storage key (SEC-004)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const { createClient } = await import('@/lib/supabase/server');
+    const uploadSpy = vi.fn().mockResolvedValue({ error: null });
+    vi.mocked(createClient).mockResolvedValue({
+      storage: { from: vi.fn().mockReturnValue({ upload: uploadSpy }) },
+    } as any);
+
+    const input = {
+      title: 'Traversal attempt',
+      file: {
+        name: '../../../etc/passwd',
+        mimeType: 'application/pdf',
+        size: 100,
+        buffer: Buffer.from('hello world'),
+      },
+    };
+
+    await createFileEvidenceForProject('proj-1', input);
+
+    const uploadedPath = uploadSpy.mock.calls[0][0] as string;
+    expect(uploadedPath).not.toContain('..');
+    expect(uploadedPath).not.toContain('/etc/');
+    expect(uploadedPath.endsWith('passwd')).toBe(true);
+  });
+
   it('allows createUrlEvidenceForProject with analyst role and normalizes URL hash', async () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({
       user: { id: 'u1' },
@@ -192,5 +266,34 @@ describe('Evidence service', () => {
     const result = await archiveEvidenceForProject('proj-1', 'ev-1');
     expect(result).toBeDefined();
     expect(logAuditAction).toHaveBeenCalled();
+  });
+
+  it('rejects createUrlEvidenceForProject when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    const input = { title: 'Cross-org attempt', url: 'https://example.com/evidence' };
+    await expect(createUrlEvidenceForProject('proj-1', input)).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
+
+  it('rejects listEvidenceForProject when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    const { listEvidenceForProject } = await import('@/lib/pipeline/evidence');
+    await expect(listEvidenceForProject('proj-1')).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
   });
 });

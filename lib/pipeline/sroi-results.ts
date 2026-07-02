@@ -16,6 +16,7 @@ import {
   projects,
 } from '@/db/schema';
 import { z } from 'zod';
+import { SECTION_ORDER } from '@/lib/reports/report-sections';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -343,20 +344,10 @@ export async function listSroiRunReviews(projectId: string, runId: string) {
 // 4. Report Foundation
 // ---------------------------------------------------------------------------
 
-const initialSections = [
-  'executive_summary',
-  'project_context',
-  'theory_of_change',
-  'stakeholders',
-  'outcomes',
-  'evidence_summary',
-  'proxy_methodology',
-  'sroi_filters',
-  'calculation_results',
-  'limitations',
-  'review_notes',
-  'appendix',
-];
+// Single source of truth for which sections a report has and their order —
+// shared with the editable detail view and the print/PDF view so a report's
+// stored sections always match what those views render.
+const initialSections = SECTION_ORDER;
 
 export async function createReportDraftFromRun(projectId: string, runId: string, input: ReportDraftInput) {
   const ctx = await authorizeProject(projectId);

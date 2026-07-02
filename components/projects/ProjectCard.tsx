@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge'
 
 type ProjectStatus = 'draft' | 'active' | 'completed' | 'archived'
 
-const STATUS_CONFIG: Record<ProjectStatus, { variant: 'neutral' | 'teal' | 'success'; label: string }> = {
-  draft: { variant: 'neutral', label: 'Draft' },
-  active: { variant: 'teal', label: 'Active' },
-  completed: { variant: 'success', label: 'Completed' },
-  archived: { variant: 'neutral', label: 'Archived' },
+const STATUS_CONFIG: Record<ProjectStatus, { variant: 'neutral' | 'accent' | 'success'; label: string }> = {
+  draft: { variant: 'neutral', label: 'Borrador' },
+  active: { variant: 'accent', label: 'Activo' },
+  completed: { variant: 'success', label: 'Completado' },
+  archived: { variant: 'neutral', label: 'Archivado' },
 }
 
 interface ProjectCardProps {
@@ -26,7 +26,7 @@ export function ProjectCard({ id, name, description, status, territory, country,
   const config = STATUS_CONFIG[status as ProjectStatus] ?? { variant: 'neutral' as const, label: status }
   const locationLabel = [territory, country].filter(Boolean).join(' · ')
   const dateLabel = startDate
-    ? new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+    ? new Date(startDate).toLocaleDateString('es-MX', { year: 'numeric', month: 'short' })
     : null
 
   return (
@@ -53,7 +53,7 @@ export function ProjectCard({ id, name, description, status, territory, country,
         {dateLabel && (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3 shrink-0" aria-hidden="true" />
-            Started {dateLabel}
+            Iniciado en {dateLabel}
           </p>
         )}
       </CardContent>
@@ -63,14 +63,14 @@ export function ProjectCard({ id, name, description, status, territory, country,
           href={`/app/projects/${id}`}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
         >
-          Details
+          Detalles
         </Link>
         <Link
           href={`/app/projects/${id}/pipeline`}
-          className="ml-auto flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-          aria-label={`Open SROI pipeline for ${name}`}
+          className="ml-auto flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          aria-label={`Abrir pipeline SROI de ${name}`}
         >
-          Open Pipeline
+          Abrir pipeline
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
       </CardFooter>

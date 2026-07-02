@@ -92,6 +92,13 @@
       "when": 1782432000000,
       "tag": "0012_stella_interactions",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1782518400000,
+      "tag": "0013_performance_indexes",
+      "breakpoints": true
     }
   ]
 }

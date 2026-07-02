@@ -23,10 +23,10 @@ const REPORT_STATUS: Record<
   string,
   { variant: 'neutral' | 'warning' | 'info' | 'success'; label: string }
 > = {
-  draft: { variant: 'warning', label: 'Draft' },
-  under_review: { variant: 'info', label: 'Under Review' },
-  locked: { variant: 'success', label: 'Locked' },
-  archived: { variant: 'neutral', label: 'Archived' },
+  draft: { variant: 'warning', label: 'Borrador' },
+  under_review: { variant: 'info', label: 'En revisión' },
+  locked: { variant: 'success', label: 'Bloqueado' },
+  archived: { variant: 'neutral', label: 'Archivado' },
 }
 
 const INPUT_CLASS =
@@ -35,9 +35,9 @@ const INPUT_CLASS =
 export default async function ReportListPage({
   params,
 }: {
-  params: { projectId: string }
+  params: Promise<{ projectId: string }>
 }) {
-  const { projectId } = params
+  const { projectId } = await params
 
   const [reports, runs] = await Promise.all([
     listProjectReports(projectId),
@@ -65,18 +65,26 @@ export default async function ReportListPage({
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Back to Calculation
+          Volver a cálculo
         </Link>
-        <div className="mt-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">SROI Reports</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Audit-ready report drafts linked to immutable SROI calculation runs.
-            {reports.length > 0 && (
-              <span className="ml-1">
-                {reports.length} report{reports.length !== 1 ? 's' : ''} on record.
-              </span>
-            )}
-          </p>
+        <div className="mt-3 flex items-start gap-4">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
+            aria-hidden="true"
+          >
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Reportes SROI</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Borradores de reporte listos para auditoría, vinculados a corridas de cálculo SROI inmutables.
+              {reports.length > 0 && (
+                <span className="ml-1">
+                  {reports.length} reporte{reports.length !== 1 ? 's' : ''} registrado{reports.length !== 1 ? 's' : ''}.
+                </span>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -85,37 +93,37 @@ export default async function ReportListPage({
         role="note"
         className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
       >
-        <span className="font-medium text-foreground">Methodology notice: </span>
-        Each report is anchored to an immutable calculation run. Reports do not constitute
-        automatic certification or audit clearance. They provide an{' '}
-        <span className="font-medium text-foreground">audit-ready foundation</span> requiring
-        human methodological review before external use.
+        <span className="font-medium text-foreground">Aviso metodológico: </span>
+        Cada reporte está anclado a una corrida de cálculo inmutable. Los reportes no constituyen
+        certificación automática ni aprobación de auditoría. Proveen una{' '}
+        <span className="font-medium text-foreground">base lista para auditoría</span> que requiere
+        revisión metodológica humana antes de su uso externo.
       </div>
 
       {/* Create draft */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Create Report Draft</CardTitle>
+          <CardTitle className="text-base">Crear borrador de reporte</CardTitle>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Select a completed calculation run to anchor this report to an immutable,
-            audit-traceable SROI result.
+            Selecciona una corrida de cálculo completada para anclar este reporte a un resultado
+            SROI inmutable y trazable para auditoría.
           </p>
         </CardHeader>
         <CardContent>
           {calculatedRuns.length === 0 ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                No completed calculation runs available. A run with status{' '}
+              <div className="text-sm text-muted-foreground">
+                No hay corridas de cálculo completadas disponibles. Se requiere una corrida con estado{' '}
                 <Badge variant="success" className="inline-flex align-middle mx-0.5">
-                  Calculated
+                  Calculado
                 </Badge>{' '}
-                is required before a report draft can be created.
-              </p>
+                antes de poder crear un borrador de reporte.
+              </div>
               <Link
                 href={`/app/projects/${projectId}/pipeline/calculation`}
-                className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
-                Go to Calculation
+                Ir a cálculo
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
             </div>
@@ -124,17 +132,17 @@ export default async function ReportListPage({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="runId" className="block text-sm font-medium text-foreground">
-                    Reference calculation run
+                    Corrida de cálculo de referencia
                   </label>
                   <Select id="runId" name="runId" required className="mt-1">
-                    <option value="">— Select run —</option>
+                    <option value="">— Seleccionar corrida —</option>
                     {calculatedRuns.map((r) => (
                       <option key={r.id} value={r.id}>
                         v{r.version}
                         {r.sroiRatio ? ` — SROI ${parseFloat(r.sroiRatio).toFixed(2)}:1` : ''}
                         {r.currency ? ` (${r.currency})` : ''}
                         {' · '}
-                        {new Date(r.createdAt).toLocaleDateString('en-GB', {
+                        {new Date(r.createdAt).toLocaleDateString('es-MX', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',
@@ -143,7 +151,7 @@ export default async function ReportListPage({
                     ))}
                   </Select>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    The run&apos;s SROI data will be immutably referenced throughout this report.
+                    Los datos SROI de la corrida se referenciarán de forma inmutable en todo el reporte.
                   </p>
                 </div>
                 <div>
@@ -151,18 +159,18 @@ export default async function ReportListPage({
                     htmlFor="report-title"
                     className="block text-sm font-medium text-foreground"
                   >
-                    Report title
+                    Título del reporte
                   </label>
                   <input
                     id="report-title"
                     name="title"
                     type="text"
                     required
-                    placeholder="e.g. SROI Impact Report 2024"
+                    placeholder="ej. Reporte de Impacto SROI 2024"
                     className={INPUT_CLASS}
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Use a descriptive title that identifies the project period or geographic scope.
+                    Usa un título descriptivo que identifique el período del proyecto o el alcance geográfico.
                   </p>
                 </div>
               </div>
@@ -171,7 +179,7 @@ export default async function ReportListPage({
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
-                Create Draft Report
+                Crear borrador de reporte
               </button>
             </form>
           )}
@@ -184,24 +192,24 @@ export default async function ReportListPage({
           id="reports-table-heading"
           className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Project Reports
+          Reportes del proyecto
         </h2>
 
         {reports.length === 0 ? (
           <EmptyState
             icon={<FileText className="h-6 w-6 text-neutral-500" />}
-            title="No reports yet"
-            description="Create a draft from a completed calculation run above. Each report preserves a methodologically defensible, audit-traceable record."
+            title="Aún no hay reportes"
+            description="Crea un borrador a partir de una corrida de cálculo completada arriba. Cada reporte preserva un registro metodológicamente defendible y trazable para auditoría."
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Run</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Corrida</TableHead>
+                <TableHead>Creado</TableHead>
+                <TableHead className="text-right">Acción</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -222,20 +230,20 @@ export default async function ReportListPage({
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
                       {linkedRun ? (
-                        <span className="font-mono">
+                        <span className="tabular-nums font-ibm-plex-mono">
                           v{linkedRun.version}
                           {linkedRun.sroiRatio
                             ? ` · ${parseFloat(linkedRun.sroiRatio).toFixed(2)}:1`
                             : ''}
                         </span>
                       ) : (
-                        <span className="font-mono text-muted-foreground/60">
+                        <span className="tabular-nums text-muted-foreground/60 font-ibm-plex-mono">
                           {report.calculationRunId.slice(0, 8)}…
                         </span>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                      {new Date(report.createdAt).toLocaleDateString('en-GB', {
+                      {new Date(report.createdAt).toLocaleDateString('es-MX', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
@@ -244,10 +252,10 @@ export default async function ReportListPage({
                     <TableCell className="text-right">
                       <Link
                         href={`/app/projects/${projectId}/report/${report.id}`}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:text-teal-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                        aria-label={`Open report: ${report.title}`}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        aria-label={`Abrir reporte: ${report.title}`}
                       >
-                        Open
+                        Abrir
                         <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                       </Link>
                     </TableCell>

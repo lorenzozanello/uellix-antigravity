@@ -25,15 +25,24 @@ export default async function AdminLayout({
           >
             Consola del Sistema
           </Link>
-          <span className="flex items-center px-4 py-2 text-xs font-medium text-slate-500">
-            Organizaciones (Soon)
-          </span>
-          <span className="flex items-center px-4 py-2 text-xs font-medium text-slate-500">
-            Proxies Globales (Soon)
-          </span>
-          <span className="flex items-center px-4 py-2 text-xs font-medium text-slate-500">
-            Logs Globales (Soon)
-          </span>
+          <Link
+            href="/admin/organizations"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+          >
+            Organizaciones
+          </Link>
+          <Link
+            href="/admin/proxies"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+          >
+            Proxies Globales
+          </Link>
+          <Link
+            href="/admin/logs"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+          >
+            Logs Globales
+          </Link>
         </nav>
         <div className="p-4 border-t border-red-900/30 space-y-2">
           <Link

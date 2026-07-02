@@ -13,12 +13,12 @@ export default async function PrivateLayout({
   const roleLabel = ROLE_LABELS[membership.role] ?? membership.role
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background font-manrope print:block print:h-auto print:overflow-visible">
       <Sidebar />
 
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:overflow-visible">
         <TopBar orgName={organization.name} roleLabel={roleLabel} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 print:overflow-visible print:p-0">
           {children}
         </main>
       </div>

@@ -10,31 +10,31 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const SKIP_SEGMENTS = new Set(['app', 'runs'])
 
 const SEGMENT_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard',
-  projects: 'SROI Projects',
+  dashboard: 'Panel',
+  projects: 'Proyectos SROI',
   pipeline: 'Pipeline',
-  narrative: 'Narrative',
-  stakeholders: 'Stakeholders',
-  outcomes: 'Outcomes',
-  indicators: 'Indicators',
-  evidence: 'Evidence',
-  proxies: 'Proxy Intelligence',
-  calculation: 'SROI Calculation',
-  compare: 'Compare Runs',
-  report: 'Reports',
-  'trust-center': 'Trust Center',
-  portfolios: 'Portfolios',
-  new: 'New',
-  onboarding: 'Onboarding',
+  narrative: 'Narrativa',
+  stakeholders: 'Grupos de interés',
+  outcomes: 'Resultados',
+  indicators: 'Indicadores',
+  evidence: 'Evidencia',
+  proxies: 'Proxies',
+  calculation: 'Cálculo SROI',
+  compare: 'Comparar corridas',
+  report: 'Reportes',
+  'trust-center': 'Centro de confianza',
+  portfolios: 'Portafolios',
+  new: 'Nuevo',
+  onboarding: 'Configuración inicial',
 }
 
 /** Returns a human label for a UUID segment, based on the preceding segment. */
 function labelForDynamicSegment(prevSegment: string | undefined): string {
   switch (prevSegment) {
-    case 'projects': return 'Project'
-    case 'runs': return 'Run Detail'
-    case 'report': return 'Report'
-    default: return 'Detail'
+    case 'projects': return 'Proyecto'
+    case 'runs': return 'Detalle de corrida'
+    case 'report': return 'Reporte'
+    default: return 'Detalle'
   }
 }
 

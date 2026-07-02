@@ -84,12 +84,12 @@ describe('StellaAdvisorPanel', () => {
   describe('Idle state', () => {
     it('renders in idle state with Ask Stella button', () => {
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      expect(screen.queryByText(/ask stella/i)).not.toBeNull()
+      expect(screen.queryByText(/preguntar a stella/i)).not.toBeNull()
     })
 
     it('shows the Ask Stella button as enabled in idle state', () => {
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      const btn = screen.getByText(/ask stella/i).closest('button')
+      const btn = screen.getByText(/preguntar a stella/i).closest('button')
       expect(btn).not.toBeNull()
       expect(btn?.disabled).toBe(false)
     })
@@ -107,10 +107,10 @@ describe('StellaAdvisorPanel', () => {
     it('shows disclaimer copy in idle state', () => {
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
       expect(
-        screen.queryByText(/stella provides advisory guidance only/i)
+        screen.queryByText(/stella brinda orientación consultiva únicamente/i)
       ).not.toBeNull()
       expect(
-        screen.queryByText(/human review is required before external use/i)
+        screen.queryByText(/se requiere revisión humana antes de su uso externo/i)
       ).not.toBeNull()
     })
   })
@@ -133,7 +133,7 @@ describe('StellaAdvisorPanel', () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-abc" step="outcomes" />)
 
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaAdvisor).toHaveBeenCalledWith('proj-abc', 'outcomes')
@@ -144,7 +144,7 @@ describe('StellaAdvisorPanel', () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
 
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaAdvisor).toHaveBeenCalledTimes(1)
@@ -158,10 +158,10 @@ describe('StellaAdvisorPanel', () => {
       mockGetStellaAdvisor.mockReturnValue(new Promise((res) => { resolve = res }))
 
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        const btn = screen.getByText(/loading/i).closest('button')
+        const btn = screen.getByText(/cargando/i).closest('button')
         expect(btn?.disabled).toBe(true)
       })
 
@@ -175,7 +175,7 @@ describe('StellaAdvisorPanel', () => {
       mockGetStellaAdvisor.mockReturnValue(new Promise((res) => { resolve = res }))
 
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
@@ -191,71 +191,71 @@ describe('StellaAdvisorPanel', () => {
     it('renders What to do section', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/what to do/i)).not.toBeNull()
+        expect(screen.queryByText(/qué hacer/i)).not.toBeNull()
       })
     })
 
     it('renders Why it matters section', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/why it matters/i)).not.toBeNull()
+        expect(screen.queryByText(/por qué importa/i)).not.toBeNull()
       })
     })
 
     it('renders How to do it section', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/how to do it/i)).not.toBeNull()
+        expect(screen.queryByText(/cómo hacerlo/i)).not.toBeNull()
       })
     })
 
     it('renders Common mistakes section', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/common mistakes/i)).not.toBeNull()
+        expect(screen.queryByText(/errores comunes/i)).not.toBeNull()
       })
     })
 
     it('renders Suggested next actions section', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/suggested next actions/i)).not.toBeNull()
+        expect(screen.queryByText(/próximos pasos sugeridos/i)).not.toBeNull()
       })
     })
 
     it('renders all 5 advisory sections together', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/what to do/i)).not.toBeNull()
-        expect(screen.queryByText(/why it matters/i)).not.toBeNull()
-        expect(screen.queryByText(/how to do it/i)).not.toBeNull()
-        expect(screen.queryByText(/common mistakes/i)).not.toBeNull()
-        expect(screen.queryByText(/suggested next actions/i)).not.toBeNull()
+        expect(screen.queryByText(/qué hacer/i)).not.toBeNull()
+        expect(screen.queryByText(/por qué importa/i)).not.toBeNull()
+        expect(screen.queryByText(/cómo hacerlo/i)).not.toBeNull()
+        expect(screen.queryByText(/errores comunes/i)).not.toBeNull()
+        expect(screen.queryByText(/próximos pasos sugeridos/i)).not.toBeNull()
       })
     })
 
     it('renders common mistakes as list items', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText('Being too vague')).not.toBeNull()
@@ -266,7 +266,7 @@ describe('StellaAdvisorPanel', () => {
     it('renders suggested next actions as list items', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText('Define at least 3 outcomes')).not.toBeNull()
@@ -277,7 +277,7 @@ describe('StellaAdvisorPanel', () => {
     it('renders success content from advisor output', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(
@@ -289,10 +289,10 @@ describe('StellaAdvisorPanel', () => {
     it('shows disclaimer copy in success state', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        const disclaimers = screen.queryAllByText(/stella provides advisory guidance only/i)
+        const disclaimers = screen.queryAllByText(/stella brinda orientación consultiva únicamente/i)
         expect(disclaimers.length).toBeGreaterThan(0)
       })
     })
@@ -300,14 +300,14 @@ describe('StellaAdvisorPanel', () => {
     it('allows retry after success (Ask Stella button still present)', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/what to do/i)).not.toBeNull()
+        expect(screen.queryByText(/qué hacer/i)).not.toBeNull()
       })
 
       // Button should still be available for retry
-      expect(screen.queryByText(/ask stella/i)).not.toBeNull()
+      expect(screen.queryByText(/preguntar a stella/i)).not.toBeNull()
     })
   })
 
@@ -315,11 +315,11 @@ describe('StellaAdvisorPanel', () => {
     it('shows error fallback message on GEMINI_ERROR', async () => {
       geminiError()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella guidance is temporarily unavailable/i)
+          screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
     })
@@ -327,11 +327,11 @@ describe('StellaAdvisorPanel', () => {
     it('shows "pipeline data is unaffected" in error message', async () => {
       geminiError()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/your pipeline data is unaffected/i)
+          screen.queryByText(/los datos de tu pipeline no se ven afectados/i)
         ).not.toBeNull()
       })
     })
@@ -339,7 +339,7 @@ describe('StellaAdvisorPanel', () => {
     it('error message has role="alert" for screen readers', async () => {
       geminiError()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(document.querySelector('[role="alert"]')).not.toBeNull()
@@ -349,26 +349,26 @@ describe('StellaAdvisorPanel', () => {
     it('allows retry after error', async () => {
       geminiError()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella guidance is temporarily unavailable/i)
+          screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
 
       // "Ask Stella" should still be present for retry
-      expect(screen.queryByText(/ask stella/i)).not.toBeNull()
+      expect(screen.queryByText(/preguntar a stella/i)).not.toBeNull()
     })
 
     it('handles thrown exceptions gracefully', async () => {
       mockGetStellaAdvisor.mockRejectedValue(new Error('Network error'))
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella guidance is temporarily unavailable/i)
+          screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
     })
@@ -378,7 +378,7 @@ describe('StellaAdvisorPanel', () => {
     it('renders null when action returns DISABLED', async () => {
       disabled()
       const { container } = render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(container.firstChild).toBeNull()
@@ -388,7 +388,7 @@ describe('StellaAdvisorPanel', () => {
     it('does not render any content when DISABLED', async () => {
       disabled()
       const { container } = render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(container.innerHTML).toBe('')
@@ -408,10 +408,10 @@ describe('StellaAdvisorPanel', () => {
     it('does not claim certification in rendered content', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/what to do/i)).not.toBeNull()
+        expect(screen.queryByText(/qué hacer/i)).not.toBeNull()
       })
 
       const text = document.body.textContent ?? ''
@@ -424,7 +424,7 @@ describe('StellaAdvisorPanel', () => {
     it('does not make real Gemini calls — action is fully mocked', async () => {
       success()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
-      fireEvent.click(screen.getByText(/ask stella/i))
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaAdvisor).toHaveBeenCalled()

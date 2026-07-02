@@ -1,7 +1,7 @@
 'use client'
 // components/stella/StellaAdvisorPanel.tsx
 // Sprint 9C-2: On-demand Stella Advisor panel
-// Never auto-invokes. User triggers via "Ask Stella" button.
+// Never auto-invokes. User triggers via "Preguntar a Stella" button.
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -70,7 +70,7 @@ export function StellaAdvisorPanel({
         <div className="min-w-0">
           <p className="font-medium text-foreground">{title ?? 'Stella Advisor'}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Stella provides advisory guidance only. Human review is required before external use.
+            Stella brinda orientación consultiva únicamente. Se requiere revisión humana antes de su uso externo.
           </p>
         </div>
         <Button
@@ -80,7 +80,7 @@ export function StellaAdvisorPanel({
           disabled={isLoading}
           className="shrink-0"
         >
-          {isLoading ? 'Loading…' : 'Ask Stella'}
+          {isLoading ? 'Cargando…' : 'Preguntar a Stella'}
         </Button>
       </div>
 
@@ -105,21 +105,21 @@ export function StellaAdvisorPanel({
           role="alert"
           className="mt-3 text-muted-foreground"
         >
-          Stella guidance is temporarily unavailable. Your pipeline data is unaffected.
+          La orientación de Stella no está disponible temporalmente. Los datos de tu pipeline no se ven afectados.
         </p>
       )}
 
       {/* Success state */}
       {panelState.status === 'success' && (
         <div aria-live="polite" className="mt-3 space-y-3">
-          <AdvisorSection title="What to do" content={panelState.data.what_to_do} />
-          <AdvisorSection title="Why it matters" content={panelState.data.why_it_matters} />
-          <AdvisorSection title="How to do it" content={panelState.data.how_to_do_it} />
+          <AdvisorSection title="Qué hacer" content={panelState.data.what_to_do} />
+          <AdvisorSection title="Por qué importa" content={panelState.data.why_it_matters} />
+          <AdvisorSection title="Cómo hacerlo" content={panelState.data.how_to_do_it} />
 
           {panelState.data.common_mistakes.length > 0 && (
             <div>
               <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
-                Common mistakes
+                Errores comunes
               </h4>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                 {panelState.data.common_mistakes.map((mistake, i) => (
@@ -132,7 +132,7 @@ export function StellaAdvisorPanel({
           {panelState.data.suggested_next_actions.length > 0 && (
             <div>
               <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
-                Suggested next actions
+                Próximos pasos sugeridos
               </h4>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                 {panelState.data.suggested_next_actions.map((action, i) => (
@@ -143,7 +143,7 @@ export function StellaAdvisorPanel({
           )}
 
           <p className="border-t border-border pt-2 text-xs text-muted-foreground/70">
-            Stella provides advisory guidance only. Human review is required before external use.
+            Stella brinda orientación consultiva únicamente. Se requiere revisión humana antes de su uso externo.
           </p>
         </div>
       )}

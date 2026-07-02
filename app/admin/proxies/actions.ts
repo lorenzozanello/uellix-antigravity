@@ -1,0 +1,83 @@
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+import { createGlobalProxySource, createGlobalFinancialProxy, updateGlobalProxyReviewStatus } from '@/lib/admin/proxies'
+
+const PROXIES_PATH = '/admin/proxies'
+
+function errorToSlug(message: string): string {
+  const known: Record<string, string> = {
+    'Not a global proxy — manage it from the owning organization': 'not_global',
+    'Cannot approve without value': 'missing_fields',
+    'Cannot approve without currency': 'missing_fields',
+    'Cannot approve without unit': 'missing_fields',
+    'Cannot approve without referenceYear': 'missing_fields',
+    'Invalid status': 'invalid_status',
+    'Proxy not found': 'not_found',
+  }
+  return known[message] ?? 'unknown_error'
+}
+
+export async function createGlobalProxySourceAction(formData: FormData) {
+  const name = (formData.get('name') as string | null)?.trim()
+  const description = (formData.get('description') as string | null)?.trim() || undefined
+  const url = (formData.get('url') as string | null)?.trim() || undefined
+
+  if (!name) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  try {
+    await createGlobalProxySource({ name, description, url })
+  } catch {
+    redirect(`${PROXIES_PATH}?error=invalid_input`)
+  }
+
+  revalidatePath(PROXIES_PATH)
+  redirect(`${PROXIES_PATH}?success=source_created`)
+}
+
+export async function createGlobalFinancialProxyAction(formData: FormData) {
+  const sourceId = formData.get('sourceId') as string | null
+  const name = (formData.get('name') as string | null)?.trim()
+  const currency = (formData.get('currency') as string | null)?.trim()
+  const value = (formData.get('value') as string | null)?.trim()
+  const unit = (formData.get('unit') as string | null)?.trim()
+  const referenceYearRaw = formData.get('referenceYear') as string | null
+
+  if (!sourceId || !name || !currency || !value || !unit || !referenceYearRaw) {
+    redirect(`${PROXIES_PATH}?error=invalid_input`)
+  }
+
+  try {
+    await createGlobalFinancialProxy({
+      sourceId,
+      name,
+      currency,
+      value,
+      unit,
+      referenceYear: Number(referenceYearRaw),
+    })
+  } catch {
+    redirect(`${PROXIES_PATH}?error=invalid_input`)
+  }
+
+  revalidatePath(PROXIES_PATH)
+  redirect(`${PROXIES_PATH}?success=proxy_created`)
+}
+
+export async function updateGlobalProxyReviewStatusAction(formData: FormData) {
+  const proxyId = formData.get('proxyId') as string | null
+  const status = formData.get('status') as string | null
+
+  if (!proxyId || !status) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  try {
+    await updateGlobalProxyReviewStatus(proxyId, status)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown_error'
+    redirect(`${PROXIES_PATH}?error=${errorToSlug(message)}`)
+  }
+
+  revalidatePath(PROXIES_PATH)
+  redirect(`${PROXIES_PATH}?success=status_updated`)
+}

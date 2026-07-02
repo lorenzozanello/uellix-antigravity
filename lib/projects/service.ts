@@ -30,6 +30,16 @@ export async function listProjectsForCurrentOrganization() {
   return db.select().from(projects).where(eq(projects.organizationId, ctx.organization.id));
 }
 
+/** List projects belonging to a specific portfolio, scoped to the current org */
+export async function listProjectsForPortfolio(portfolioId: string) {
+  const ctx = await getCurrentOrganizationContext();
+  if (!ctx) throw new Error('Unauthenticated');
+  return db
+    .select()
+    .from(projects)
+    .where(and(eq(projects.portfolioId, portfolioId), eq(projects.organizationId, ctx.organization.id)));
+}
+
 /** Get a project by ID, scoped to the current org */
 export async function getProjectByIdForCurrentOrganization(id: string) {
   const ctx = await getCurrentOrganizationContext();

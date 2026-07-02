@@ -12,6 +12,7 @@ import {
   listEvidenceForProject,
   archiveEvidenceForProject,
   updateEvidenceReviewStatus,
+  MAX_EVIDENCE_FILE_SIZE_BYTES,
 } from '@/lib/pipeline/evidence'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
@@ -36,6 +37,13 @@ export const fileAction = async (formData: FormData) => {
   const fileEntry = formData.get('file')
   if (!fileEntry || !(fileEntry instanceof File) || fileEntry.size === 0) {
     throw new Error('Archivo no provisto o vacío.')
+  }
+  // Reject oversized files using File.size (available without reading the
+  // body) before ever buffering the content into memory.
+  if (fileEntry.size > MAX_EVIDENCE_FILE_SIZE_BYTES) {
+    throw new Error(
+      `El archivo supera el límite de ${MAX_EVIDENCE_FILE_SIZE_BYTES / (1024 * 1024)} MB.`
+    )
   }
   const buffer = Buffer.from(await fileEntry.arrayBuffer())
   const rawInput = {
@@ -104,11 +112,11 @@ const EVIDENCE_STATUS: Record<
   string,
   { variant: 'neutral' | 'warning' | 'info' | 'success' | 'danger'; label: string }
 > = {
-  draft: { variant: 'neutral', label: 'Draft' },
-  under_review: { variant: 'info', label: 'Under Review' },
-  approved: { variant: 'success', label: 'Approved' },
-  rejected: { variant: 'danger', label: 'Rejected' },
-  archived: { variant: 'neutral', label: 'Archived' },
+  draft: { variant: 'neutral', label: 'Borrador' },
+  under_review: { variant: 'info', label: 'En revisión' },
+  approved: { variant: 'success', label: 'Aprobado' },
+  rejected: { variant: 'danger', label: 'Rechazado' },
+  archived: { variant: 'neutral', label: 'Archivado' },
 }
 
 const INPUT_CLASS =
@@ -118,28 +126,29 @@ const TEXTAREA_CLASS =
 const FILE_INPUT_CLASS =
   'mt-1 block w-full text-sm text-foreground file:mr-3 file:rounded file:border file:border-border file:bg-muted file:px-3 file:py-1 file:text-xs file:font-medium file:text-foreground hover:file:bg-muted/80 focus:outline-none'
 
-export default async function EvidencePage({ params }: { params: { projectId: string } }) {
+export default async function EvidencePage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params
   const { membership } = await requireOrganizationAccess()
   const canCreate = canUploadEvidence(membership.role)
   const canArchive = hasRole(membership.role, 'analyst')
   const canReview = hasRole(membership.role, 'impact_manager')
 
-  const evidences = await listEvidenceForProject(params.projectId)
-  const outcomes = await fetchOutcomes(params.projectId)
-  const indicators = await fetchIndicators(params.projectId)
+  const evidences = await listEvidenceForProject(projectId)
+  const outcomes = await fetchOutcomes(projectId)
+  const indicators = await fetchIndicators(projectId)
 
   return (
     <div className="space-y-6 max-w-5xl">
       <PipelineStepHeader
         step={5}
-        title="Evidence"
-        description="Register traceable evidence items linked to outcomes and indicators. Each item receives an immutable SHA-256 hash for audit traceability."
-        methodologyNote="Evidence registered here does not constitute automatic certification. All items require human review before use in external SROI reporting."
+        title="Evidencia"
+        description="Registra elementos de evidencia trazables vinculados a resultados e indicadores. Cada elemento recibe un hash SHA-256 inmutable para trazabilidad de auditoría."
+        methodologyNote="La evidencia registrada aquí no constituye certificación automática. Todos los elementos requieren revisión humana antes de usarse en reportes SROI externos."
       />
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={params.projectId} step="Evidence" />
+      <StellaAdvisorPanel projectId={projectId} step="Evidencia" />
 
       {/* Evidence list */}
       <section aria-labelledby="evidence-list-heading">
@@ -147,25 +156,25 @@ export default async function EvidencePage({ params }: { params: { projectId: st
           id="evidence-list-heading"
           className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Registered Evidence
+          Evidencia registrada
         </h2>
 
         {evidences.length === 0 ? (
           <EmptyState
             icon={<FileText className="h-6 w-6 text-neutral-500" />}
-            title="No evidence registered"
-            description="No evidence items have been submitted for this project. Use the forms below to register file, URL, or text evidence."
+            title="No hay evidencia registrada"
+            description="No se ha enviado evidencia para este proyecto. Usa los formularios de abajo para registrar evidencia de archivo, URL o texto."
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Review Status</TableHead>
-                <TableHead>SHA-256 Hash</TableHead>
-                <TableHead>Registered</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Estado de revisión</TableHead>
+                <TableHead>Hash SHA-256</TableHead>
+                <TableHead>Registrado</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -182,7 +191,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       <span className="line-clamp-1">{ev.title}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs uppercase text-muted-foreground">
+                      <span
+                        className="tabular-nums text-xs uppercase text-muted-foreground"
+                        style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                      >
                         {ev.type}
                       </span>
                     </TableCell>
@@ -192,9 +204,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                     <TableCell>
                       {ev.contentHash ? (
                         <code
-                          className="font-mono text-xs text-muted-foreground"
+                          className="tabular-nums text-xs text-muted-foreground"
+                          style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
                           title={ev.contentHash}
-                          aria-label={`SHA-256 hash (truncated): ${ev.contentHash.slice(0, 8)}`}
+                          aria-label={`Hash SHA-256 (truncado): ${ev.contentHash.slice(0, 8)}`}
                         >
                           {ev.contentHash.slice(0, 8)}…
                         </code>
@@ -203,7 +216,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                      {new Date(ev.createdAt).toLocaleDateString('en-GB', {
+                      {new Date(ev.createdAt).toLocaleDateString('es-MX', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
@@ -213,10 +226,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       <div className="flex flex-wrap items-center gap-2">
                         {canReview && ev.status !== 'archived' && (
                           <form action={updateStatusAction} className="inline-flex items-center gap-1">
-                            <input type="hidden" name="projectId" value={params.projectId} />
+                            <input type="hidden" name="projectId" value={projectId} />
                             <input type="hidden" name="evidenceId" value={ev.id} />
                             <label htmlFor={reviewSelectId} className="sr-only">
-                              Update review status
+                              Actualizar estado de revisión
                             </label>
                             <Select
                               id={reviewSelectId}
@@ -225,31 +238,31 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                               className="h-7 text-xs"
                             >
                               <option value="" disabled>
-                                Review…
+                                Revisar…
                               </option>
-                              <option value="approved">Approve</option>
-                              <option value="rejected">Reject</option>
-                              <option value="under_review">Under Review</option>
+                              <option value="approved">Aprobar</option>
+                              <option value="rejected">Rechazar</option>
+                              <option value="under_review">En revisión</option>
                             </Select>
                             <button
                               type="submit"
                               className="inline-flex items-center rounded border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                              OK
+                              Guardar
                             </button>
                           </form>
                         )}
                         {canArchive && ev.status !== 'archived' && (
                           <form action={archiveAction} className="inline-flex">
-                            <input type="hidden" name="projectId" value={params.projectId} />
+                            <input type="hidden" name="projectId" value={projectId} />
                             <input type="hidden" name="evidenceId" value={ev.id} />
                             <button
                               type="submit"
                               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                              aria-label={`Archive evidence: ${ev.title}`}
+                              aria-label={`Archivar evidencia: ${ev.title}`}
                             >
                               <Archive className="h-3 w-3" aria-hidden="true" />
-                              Archive
+                              Archivar
                             </button>
                           </form>
                         )}
@@ -270,34 +283,34 @@ export default async function EvidencePage({ params }: { params: { projectId: st
             id="add-evidence-heading"
             className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
           >
-            Add Evidence
+            Agregar evidencia
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* File form */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-teal-600" aria-hidden="true" />
-                  <CardTitle className="text-sm">Upload File</CardTitle>
+                  <FileText className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Subir archivo</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Upload a document. A SHA-256 hash will be computed and stored for integrity
-                  verification.
+                  Sube un documento. Se calculará y almacenará un hash SHA-256 para verificación
+                  de integridad.
                 </p>
               </CardHeader>
               <CardContent>
                 <form action={fileAction} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
                       htmlFor="file-outcome"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Link to outcome
+                      Vincular a resultado
                     </label>
                     <Select id="file-outcome" name="outcomeId" className="mt-1">
-                      <option value="">None</option>
+                      <option value="">Ninguno</option>
                       {outcomes?.map((o) => (
                         <option key={o.id} value={o.id}>
                           {o.title}
@@ -311,10 +324,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="file-indicator"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Link to indicator
+                      Vincular a indicador
                     </label>
                     <Select id="file-indicator" name="indicatorId" className="mt-1">
-                      <option value="">None</option>
+                      <option value="">Ninguno</option>
                       {indicators?.map((i) => (
                         <option key={i.id} value={i.id}>
                           {i.name}
@@ -328,14 +341,14 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="file-title"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Title <span className="text-danger" aria-hidden="true">*</span>
+                      Título <span className="text-danger" aria-hidden="true">*</span>
                     </label>
                     <input
                       id="file-title"
                       name="title"
                       type="text"
                       required
-                      placeholder="Descriptive evidence title"
+                      placeholder="Título descriptivo de la evidencia"
                       className={INPUT_CLASS}
                     />
                   </div>
@@ -345,13 +358,13 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="file-description"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Description
+                      Descripción
                     </label>
                     <textarea
                       id="file-description"
                       name="description"
                       rows={2}
-                      placeholder="Optional methodological context"
+                      placeholder="Contexto metodológico opcional"
                       className={TEXTAREA_CLASS}
                     />
                   </div>
@@ -361,7 +374,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="file-file"
                       className="block text-xs font-medium text-foreground"
                     >
-                      File <span className="text-danger" aria-hidden="true">*</span>
+                      Archivo <span className="text-danger" aria-hidden="true">*</span>
                     </label>
                     <input
                       id="file-file"
@@ -371,7 +384,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       className={FILE_INPUT_CLASS}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      SHA-256 hash computed automatically on upload.
+                      El hash SHA-256 se calcula automáticamente al subir el archivo.
                     </p>
                   </div>
 
@@ -379,7 +392,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                   >
-                    Upload File
+                    Subir archivo
                   </button>
                 </form>
               </CardContent>
@@ -389,27 +402,27 @@ export default async function EvidencePage({ params }: { params: { projectId: st
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-teal-600" aria-hidden="true" />
-                  <CardTitle className="text-sm">Register URL</CardTitle>
+                  <Link2 className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Registrar URL</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Register an external URL as a traceable evidence source. URL content is not
-                  fetched or stored.
+                  Registra una URL externa como fuente de evidencia trazable. El contenido de la
+                  URL no se descarga ni se almacena.
                 </p>
               </CardHeader>
               <CardContent>
                 <form action={urlAction} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
                       htmlFor="url-outcome"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Link to outcome
+                      Vincular a resultado
                     </label>
                     <Select id="url-outcome" name="outcomeId" className="mt-1">
-                      <option value="">None</option>
+                      <option value="">Ninguno</option>
                       {outcomes?.map((o) => (
                         <option key={o.id} value={o.id}>
                           {o.title}
@@ -423,10 +436,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="url-indicator"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Link to indicator
+                      Vincular a indicador
                     </label>
                     <Select id="url-indicator" name="indicatorId" className="mt-1">
-                      <option value="">None</option>
+                      <option value="">Ninguno</option>
                       {indicators?.map((i) => (
                         <option key={i.id} value={i.id}>
                           {i.name}
@@ -440,14 +453,14 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="url-title"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Title <span className="text-danger" aria-hidden="true">*</span>
+                      Título <span className="text-danger" aria-hidden="true">*</span>
                     </label>
                     <input
                       id="url-title"
                       name="title"
                       type="text"
                       required
-                      placeholder="Descriptive evidence title"
+                      placeholder="Título descriptivo de la evidencia"
                       className={INPUT_CLASS}
                     />
                   </div>
@@ -457,13 +470,13 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="url-description"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Description
+                      Descripción
                     </label>
                     <textarea
                       id="url-description"
                       name="description"
                       rows={2}
-                      placeholder="Optional methodological context"
+                      placeholder="Contexto metodológico opcional"
                       className={TEXTAREA_CLASS}
                     />
                   </div>
@@ -480,11 +493,11 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       type="url"
                       name="url"
                       required
-                      placeholder="https://example.com/source"
+                      placeholder="https://ejemplo.com/fuente"
                       className={INPUT_CLASS}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      URL content is not fetched. Only the reference is stored.
+                      El contenido de la URL no se descarga. Solo se almacena la referencia.
                     </p>
                   </div>
 
@@ -492,7 +505,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                   >
-                    Register URL
+                    Registrar URL
                   </button>
                 </form>
               </CardContent>
@@ -502,27 +515,27 @@ export default async function EvidencePage({ params }: { params: { projectId: st
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlignLeft className="h-4 w-4 text-teal-600" aria-hidden="true" />
-                  <CardTitle className="text-sm">Register Text Statement</CardTitle>
+                  <AlignLeft className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Registrar declaración de texto</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Register a text statement or declaration as evidence. Content is hashed for
-                  immutable audit traceability.
+                  Registra una declaración o afirmación de texto como evidencia. El contenido se
+                  hashea para trazabilidad de auditoría inmutable.
                 </p>
               </CardHeader>
               <CardContent>
                 <form action={textAction} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
                       htmlFor="text-outcome"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Link to outcome
+                      Vincular a resultado
                     </label>
                     <Select id="text-outcome" name="outcomeId" className="mt-1">
-                      <option value="">None</option>
+                      <option value="">Ninguno</option>
                       {outcomes?.map((o) => (
                         <option key={o.id} value={o.id}>
                           {o.title}
@@ -536,10 +549,10 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="text-indicator"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Link to indicator
+                      Vincular a indicador
                     </label>
                     <Select id="text-indicator" name="indicatorId" className="mt-1">
-                      <option value="">None</option>
+                      <option value="">Ninguno</option>
                       {indicators?.map((i) => (
                         <option key={i.id} value={i.id}>
                           {i.name}
@@ -553,14 +566,14 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="text-title"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Title <span className="text-danger" aria-hidden="true">*</span>
+                      Título <span className="text-danger" aria-hidden="true">*</span>
                     </label>
                     <input
                       id="text-title"
                       name="title"
                       type="text"
                       required
-                      placeholder="Descriptive evidence title"
+                      placeholder="Título descriptivo de la evidencia"
                       className={INPUT_CLASS}
                     />
                   </div>
@@ -570,13 +583,13 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="text-description"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Description
+                      Descripción
                     </label>
                     <textarea
                       id="text-description"
                       name="description"
                       rows={2}
-                      placeholder="Optional methodological context"
+                      placeholder="Contexto metodológico opcional"
                       className={TEXTAREA_CLASS}
                     />
                   </div>
@@ -586,18 +599,18 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                       htmlFor="text-text"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Statement text <span className="text-danger" aria-hidden="true">*</span>
+                      Texto de la declaración <span className="text-danger" aria-hidden="true">*</span>
                     </label>
                     <textarea
                       id="text-text"
                       name="text"
                       rows={3}
                       required
-                      placeholder="Methodological declaration or data statement…"
+                      placeholder="Declaración metodológica o afirmación de datos…"
                       className={TEXTAREA_CLASS}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      This text will be SHA-256 hashed for audit traceability.
+                      Este texto se hasheará con SHA-256 para trazabilidad de auditoría.
                     </p>
                   </div>
 
@@ -605,7 +618,7 @@ export default async function EvidencePage({ params }: { params: { projectId: st
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                   >
-                    Register Statement
+                    Registrar declaración
                   </button>
                 </form>
               </CardContent>

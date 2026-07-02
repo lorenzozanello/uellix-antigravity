@@ -3,19 +3,38 @@ import {
   getRunList,
   compareCalculationRuns,
 } from '@/lib/pipeline/sroi-results';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+const RUN_STATUS_BADGE: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
+  calculated: { variant: 'success', label: 'Calculado' },
+  pending: { variant: 'warning', label: 'Pendiente' },
+  failed: { variant: 'danger', label: 'Fallido' },
+};
+
+const INPUT_CLASS =
+  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 export default async function ComparePage({
   params,
   searchParams,
 }: {
-  params: { projectId: string };
-  searchParams: { runA?: string; runB?: string };
+  params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ runA?: string; runB?: string }>;
 }) {
-  const { projectId } = params;
-  const runAId = searchParams.runA;
-  const runBId = searchParams.runB;
+  const { projectId } = await params;
+  const { runA: runAId, runB: runBId } = await searchParams;
 
   const runs = await getRunList(projectId);
 
@@ -40,7 +59,7 @@ export default async function ComparePage({
   function deltaColor(val: number) {
     if (val > 0) return 'text-emerald-700';
     if (val < 0) return 'text-red-700';
-    return 'text-gray-600';
+    return 'text-muted-foreground';
   }
 
   function formatDelta(val: number, decimals = 2) {
@@ -49,126 +68,142 @@ export default async function ComparePage({
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div>
-        <div className="text-sm text-gray-500 mb-1">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           <Link
             href={`/app/projects/${projectId}/pipeline/calculation`}
-            className="hover:text-teal-700 underline"
+            className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           >
-            ← Volver al Cálculo SROI
+            Volver al Cálculo SROI
           </Link>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Comparación de Corridas SROI</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Comparación de Corridas SROI
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Vista de diferencias entre dos corridas históricas. No recalcula SROI ni persiste
           resultados.
         </p>
       </div>
 
       {/* Disclaimer */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-        <p>
-          <strong>Nota metodológica:</strong> Esta vista es informativa. Las corridas son
-          inmutables. No se realiza conversión de moneda (FX). Si las corridas tienen distintas
-          monedas, la comparación numérica puede no ser directamente comparable.
-        </p>
+      <div
+        role="note"
+        className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+      >
+        <span className="font-medium text-foreground">Nota metodológica: </span>
+        Esta vista es informativa. Las corridas son inmutables. No se realiza conversión de
+        moneda (FX). Si las corridas tienen distintas monedas, la comparación numérica puede no
+        ser directamente comparable.
       </div>
 
       {/* Run selector */}
-      <section className="bg-white border rounded-lg shadow-sm p-4 space-y-4">
-        <h2 className="text-lg font-semibold">Seleccionar Corridas</h2>
-        {runs.length < 2 ? (
-          <p className="text-sm text-gray-500 italic">
-            Se necesitan al menos 2 corridas SROI registradas para comparar.
-          </p>
-        ) : (
-          <form method="GET" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Corrida A (referencia)
-              <select
-                name="runA"
-                defaultValue={runAId ?? ''}
-                className="mt-1 block w-full rounded border-gray-300 text-sm shadow-sm focus:border-teal-500"
-              >
-                <option value="">— Seleccionar —</option>
-                {runs.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    v{r.version} — {r.status} — {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}{' '}
-                    ({new Date(r.createdAt).toLocaleDateString()})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium text-gray-700">
-              Corrida B (comparada)
-              <select
-                name="runB"
-                defaultValue={runBId ?? ''}
-                className="mt-1 block w-full rounded border-gray-300 text-sm shadow-sm focus:border-teal-500"
-              >
-                <option value="">— Seleccionar —</option>
-                {runs.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    v{r.version} — {r.status} — {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}{' '}
-                    ({new Date(r.createdAt).toLocaleDateString()})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
-              >
-                Comparar
-              </button>
-            </div>
-          </form>
-        )}
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Seleccionar Corridas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {runs.length < 2 ? (
+            <p className="text-sm text-muted-foreground italic">
+              Se necesitan al menos 2 corridas SROI registradas para comparar.
+            </p>
+          ) : (
+            <form method="GET" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="select-runA" className="block text-xs font-medium text-foreground">
+                  Corrida A (referencia)
+                </label>
+                <select
+                  id="select-runA"
+                  name="runA"
+                  defaultValue={runAId ?? ''}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">— Seleccionar —</option>
+                  {runs.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      v{r.version} — {r.status} —{' '}
+                      {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}{' '}
+                      ({new Date(r.createdAt).toLocaleDateString()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="select-runB" className="block text-xs font-medium text-foreground">
+                  Corrida B (comparada)
+                </label>
+                <select
+                  id="select-runB"
+                  name="runB"
+                  defaultValue={runBId ?? ''}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">— Seleccionar —</option>
+                  {runs.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      v{r.version} — {r.status} —{' '}
+                      {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}{' '}
+                      ({new Date(r.createdAt).toLocaleDateString()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                >
+                  Comparar
+                </button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Error state */}
       {compareError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <strong>Error:</strong> {compareError}
         </div>
       )}
 
       {/* Currency mismatch warning */}
       {comparison?.warning?.currencyMismatch && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-sm text-orange-800">
-          <strong>⚠ Advertencia de moneda:</strong> {comparison.warning.message}. Las
-          diferencias numéricas no son directamente comparables sin conversión FX (no
-          disponible en esta vista).
+        <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <p>
+            <strong>Advertencia de moneda:</strong> {comparison.warning.message}. Las diferencias
+            numéricas no son directamente comparables sin conversión FX (no disponible en esta
+            vista).
+          </p>
         </div>
       )}
 
       {/* Comparison table */}
       {comparison && runA && runB && (
-        <section className="bg-white border rounded-lg shadow-sm overflow-hidden">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Resultados de Comparación</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Resultados de Comparación</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Diferencias calculadas como A − B. Solo orientativo, requiere revisión humana.
             </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Métrica</th>
-                  <th className="px-4 py-3 text-right">
-                    Corrida A (v{runA.version})
-                  </th>
-                  <th className="px-4 py-3 text-right">
-                    Corrida B (v{runB.version})
-                  </th>
-                  <th className="px-4 py-3 text-right">Diferencia A − B</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Métrica</TableHead>
+                  <TableHead className="text-right">Corrida A (v{runA.version})</TableHead>
+                  <TableHead className="text-right">Corrida B (v{runB.version})</TableHead>
+                  <TableHead className="text-right">Diferencia A − B</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {[
                   {
                     label: 'Ratio SROI',
@@ -206,103 +241,114 @@ export default async function ComparePage({
                     suffix: '',
                   },
                 ].map(({ label, valA, valB, delta, suffix }) => (
-                  <tr key={label} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-800">{label}</td>
-                    <td className="px-4 py-3 text-right text-gray-700">
+                  <TableRow key={label}>
+                    <TableCell className="font-medium text-foreground">{label}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
                       {valA.toLocaleString()}
                       {suffix}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-700">
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
                       {valB.toLocaleString()}
                       {suffix}
-                    </td>
-                    <td className={`px-4 py-3 text-right font-semibold ${deltaColor(delta)}`}>
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${deltaColor(delta)}`}>
                       {formatDelta(delta)}
                       {suffix}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-4 border-t bg-gray-50">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              <div>
-                <span className="text-gray-500 block text-xs">Estado Corrida A</span>
-                <span className="font-medium">{runA.status}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 block text-xs">Calculado A</span>
-                <span className="font-medium">{new Date(runA.createdAt).toLocaleDateString()}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 block text-xs">Estado Corrida B</span>
-                <span className="font-medium">{runB.status}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 block text-xs">Calculado B</span>
-                <span className="font-medium">{new Date(runB.createdAt).toLocaleDateString()}</span>
+              </TableBody>
+            </Table>
+            <div className="p-4 border-t border-border bg-muted/30">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground block text-xs">Estado Corrida A</span>
+                  <span className="font-medium text-foreground">{runA.status}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-xs">Calculado A</span>
+                  <span className="font-medium text-foreground">
+                    {new Date(runA.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-xs">Estado Corrida B</span>
+                  <span className="font-medium text-foreground">{runB.status}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-xs">Calculado B</span>
+                  <span className="font-medium text-foreground">
+                    {new Date(runB.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Empty state - no selection yet */}
+      {/* Empty state — no selection yet */}
       {!runAId && !runBId && runs.length >= 2 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-500">
+        <div className="rounded-lg border border-border bg-muted/30 p-8 text-center text-muted-foreground">
           <p className="text-sm">Selecciona dos corridas arriba para ver la comparación.</p>
         </div>
       )}
 
       {/* Run list for reference */}
       {runs.length > 0 && (
-        <section className="bg-white border rounded-lg shadow-sm overflow-hidden">
-          <div className="p-4 border-b">
-            <h2 className="text-base font-semibold text-gray-800">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
               Corridas disponibles ({runs.length})
-            </h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
-                <tr>
-                  <th className="px-4 py-2">Versión</th>
-                  <th className="px-4 py-2">Estado</th>
-                  <th className="px-4 py-2 text-right">Ratio SROI</th>
-                  <th className="px-4 py-2">Creada</th>
-                  <th className="px-4 py-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {runs.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium">v{r.version}</td>
-                    <td className="px-4 py-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 text-right font-semibold text-teal-700">
-                      {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Link
-                        href={`/app/projects/${projectId}/pipeline/calculation/runs/${r.id}`}
-                        className="text-teal-700 hover:underline text-xs"
-                      >
-                        Ver detalle
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Versión</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Ratio SROI</TableHead>
+                  <TableHead>Creada</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {runs.map((r) => {
+                  const statusConfig =
+                    RUN_STATUS_BADGE[r.status ?? ''] ?? {
+                      variant: 'neutral' as const,
+                      label: r.status ?? '—',
+                    };
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium text-foreground">v{r.version}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-semibold text-foreground tabular-nums font-ibm-plex-mono">
+                          {r.sroiRatio ? `${parseFloat(r.sroiRatio).toFixed(2)}:1` : '—'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {new Date(r.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/app/projects/${projectId}/pipeline/calculation/runs/${r.id}`}
+                          className="text-xs font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        >
+                          Ver detalle
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

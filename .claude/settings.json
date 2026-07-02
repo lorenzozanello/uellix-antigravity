@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm lint*)",
+      "Bash(pnpm typecheck*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm build*)",
+      "Bash(pnpm list*)",
+
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git fetch*)",
+      "Bash(git show*)",
+      "Bash(git remote -v)",
+
+      "Bash(grep *)",
+      "Bash(find . -name *)",
+      "Bash(ls *)",
+      "Bash(wc -l *)"
+    ],
+    "deny": [
+      "Bash(cat .env*)",
+      "Bash(cat *.env)"
+    ]
+  }
+}

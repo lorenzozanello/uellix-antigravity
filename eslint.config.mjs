@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Nested git worktrees created under .claude/worktrees by spawned
+    // background sessions — otherwise lint runs (and duplicates warnings)
+    // against another worktree's full copy of the source tree.
+    ".claude/**",
   ]),
 ]);
 

@@ -10,6 +10,7 @@
  * Always use these helpers to verify the user's identity and role.
  */
 
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { db } from '@/db/client'
@@ -178,7 +179,7 @@ export async function requireRole(
  *
  * Returns the full `OrganizationContext`.
  */
-export async function requireOrganizationAccess(): Promise<OrganizationContext> {
+export const requireOrganizationAccess = cache(async (): Promise<OrganizationContext> => {
   const user = await requireAuth()
 
   // SuperAdmin may not have a membership — redirect to admin
@@ -212,7 +213,7 @@ export async function requireOrganizationAccess(): Promise<OrganizationContext> 
       status: org.status,
     },
   }
-}
+})
 
 // ---------------------------------------------------------------------------
 // requireAdminAccess
@@ -237,7 +238,7 @@ export async function requireAdminAccess(): Promise<AuthUser> {
  * Non-redirecting version of `requireOrganizationAccess`.
  * Returns `null` when the context cannot be built (no auth, no org, etc.).
  */
-export async function getCurrentOrganizationContext(): Promise<OrganizationContext | null> {
+export const getCurrentOrganizationContext = cache(async (): Promise<OrganizationContext | null> => {
   const user = await getCurrentUser()
   if (!user) return null
 
@@ -266,7 +267,7 @@ export async function getCurrentOrganizationContext(): Promise<OrganizationConte
       status: org.status,
     },
   }
-}
+})
 
 // ---------------------------------------------------------------------------
 // syncUserProfile

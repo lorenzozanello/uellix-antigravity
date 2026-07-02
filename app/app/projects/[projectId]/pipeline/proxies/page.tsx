@@ -35,36 +35,36 @@ const PROXY_STATUS: Record<
   string,
   { variant: 'neutral' | 'info' | 'success' | 'danger'; label: string }
 > = {
-  suggested: { variant: 'neutral', label: 'Suggested' },
-  under_review: { variant: 'info', label: 'Under Review' },
-  approved: { variant: 'success', label: 'Approved' },
-  rejected: { variant: 'danger', label: 'Rejected' },
+  suggested: { variant: 'neutral', label: 'Sugerido' },
+  under_review: { variant: 'info', label: 'En revisión' },
+  approved: { variant: 'success', label: 'Aprobado' },
+  rejected: { variant: 'danger', label: 'Rechazado' },
 }
 
 const CONFIDENCE_BADGE: Record<
   string,
   { variant: 'success' | 'warning' | 'danger'; label: string }
 > = {
-  high: { variant: 'success', label: 'High' },
-  medium: { variant: 'warning', label: 'Medium' },
-  low: { variant: 'danger', label: 'Low' },
+  high: { variant: 'success', label: 'Alta' },
+  medium: { variant: 'warning', label: 'Media' },
+  low: { variant: 'danger', label: 'Baja' },
 }
 
 const RISK_BADGE: Record<
   string,
   { variant: 'success' | 'warning' | 'danger'; label: string }
 > = {
-  low: { variant: 'success', label: 'Low Risk' },
-  medium: { variant: 'warning', label: 'Medium Risk' },
-  high: { variant: 'danger', label: 'High Risk' },
+  low: { variant: 'success', label: 'Riesgo bajo' },
+  medium: { variant: 'warning', label: 'Riesgo medio' },
+  high: { variant: 'danger', label: 'Riesgo alto' },
 }
 
 const ASSIGNMENT_STATUS: Record<
   string,
-  { variant: 'teal' | 'neutral'; label: string }
+  { variant: 'info' | 'neutral'; label: string }
 > = {
-  active: { variant: 'teal', label: 'Active' },
-  archived: { variant: 'neutral', label: 'Archived' },
+  active: { variant: 'info', label: 'Activo' },
+  archived: { variant: 'neutral', label: 'Archivado' },
 }
 
 const INPUT_CLASS =
@@ -72,7 +72,8 @@ const INPUT_CLASS =
 const TEXTAREA_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y'
 
-export default async function ProxiesPage({ params }: { params: { projectId: string } }) {
+export default async function ProxiesPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params
   const ctx = await getCurrentOrganizationContext()
   const canEdit =
     ctx &&
@@ -81,8 +82,8 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
   const [financialProxies, proxySources, assignments, outcomes] = await Promise.all([
     listFinancialProxies(),
     listProxySources(),
-    listProxyAssignmentsForProject(params.projectId),
-    fetchOutcomes(params.projectId),
+    listProxyAssignmentsForProject(projectId),
+    fetchOutcomes(projectId),
   ])
 
   // O(1) lookup maps — resolve UUIDs to display names without extra DB calls
@@ -90,19 +91,19 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
   const outcomeById = new Map(outcomes.map((o) => [o.id, o.title]))
   const proxyById = new Map(financialProxies.map((p) => [p.id, p]))
 
-  // Server Actions — declared inside component for closure access to params.projectId
+  // Server Actions — declared inside component for closure access to projectId
   async function handleCreateSource(formData: FormData) {
     'use server'
     const name = formData.get('name') as string
     const url = formData.get('url') as string
     const description = formData.get('description') as string
 
-    await createProxySourceAction(params.projectId, {
+    await createProxySourceAction(projectId, {
       name,
       url: url || undefined,
       description: description || undefined,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   async function handleCreateProxy(formData: FormData) {
@@ -117,7 +118,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
     const confidenceLevel = formData.get('confidenceLevel') as string
     const methodologicalRisk = formData.get('methodologicalRisk') as string
 
-    await createFinancialProxyAction(params.projectId, {
+    await createFinancialProxyAction(projectId, {
       sourceId,
       name,
       description: description || undefined,
@@ -128,7 +129,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
       confidenceLevel: confidenceLevel || undefined,
       methodologicalRisk: methodologicalRisk || undefined,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   async function handleAssignProxy(formData: FormData) {
@@ -140,37 +141,37 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
       'territorialAdjustmentNotes'
     ) as string
 
-    await assignProxyToOutcomeAction(params.projectId, {
+    await assignProxyToOutcomeAction(projectId, {
       outcomeId,
       proxyId,
       justification,
       territorialAdjustmentNotes: territorialAdjustmentNotes || undefined,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   async function handleArchiveAssignment(formData: FormData) {
     'use server'
     const assignmentId = formData.get('assignmentId') as string
 
-    await archiveOutcomeProxyAssignmentAction(params.projectId, {
+    await archiveOutcomeProxyAssignmentAction(projectId, {
       assignmentId,
     })
-    revalidatePath(`/app/projects/${params.projectId}/pipeline/proxies`)
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
   return (
     <div className="space-y-6 max-w-6xl">
       <PipelineStepHeader
         step={6}
-        title="Proxy Intelligence"
-        description="Select and assign defensible financial proxies to outcomes. All proxies are traceable to vetted sources and require human methodological review before use in SROI calculation."
-        methodologyNote="Proxy values do not represent guaranteed impact monetisation. They are methodological assumptions requiring human validation and peer review before external reporting."
+        title="Inteligencia de Proxies"
+        description="Selecciona y asigna proxies financieros defendibles a los resultados. Todos los proxies son trazables a fuentes verificadas y requieren revisión metodológica humana antes de usarse en el cálculo SROI."
+        methodologyNote="Los valores de proxy no representan una monetización de impacto garantizada. Son supuestos metodológicos que requieren validación humana y revisión por pares antes de reportar externamente."
       />
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={params.projectId} step="Proxies" />
+      <StellaAdvisorPanel projectId={projectId} step="Proxies" />
 
       {/* Proxy Bank */}
       <section aria-labelledby="proxy-bank-heading">
@@ -178,27 +179,27 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
           id="proxy-bank-heading"
           className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Proxy Bank
+          Banco de proxies
         </h2>
 
         {financialProxies.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="h-6 w-6 text-neutral-500" />}
-            title="No proxies available"
-            description="No financial proxies have been added to the organisation bank yet. Use the form below to create the first proxy with a traceable source."
+            title="No hay proxies disponibles"
+            description="Aún no se han agregado proxies financieros al banco de la organización. Usa el formulario de abajo para crear el primer proxy con una fuente trazable."
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Proxy Name</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Ref. Year</TableHead>
-                <TableHead>Review Status</TableHead>
-                <TableHead>Confidence</TableHead>
-                <TableHead>Risk</TableHead>
+                <TableHead>Nombre del proxy</TableHead>
+                <TableHead>Fuente</TableHead>
+                <TableHead>Valor</TableHead>
+                <TableHead>Unidad</TableHead>
+                <TableHead>Año de referencia</TableHead>
+                <TableHead>Estado de revisión</TableHead>
+                <TableHead>Confianza</TableHead>
+                <TableHead>Riesgo</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -224,13 +225,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       <span className="line-clamp-1">
                         {p.sourceId
                           ? (sourceById.get(p.sourceId) ?? (
-                              <span className="font-mono">{p.sourceId.slice(0, 8)}…</span>
+                              <span className="tabular-nums text-xs" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>{p.sourceId.slice(0, 8)}…</span>
                             ))
                           : <span className="text-muted-foreground/50">—</span>}
                       </span>
                     </TableCell>
                     <TableCell className="tabular-nums text-foreground">
-                      <span className="font-mono text-sm">
+                      <span className="tabular-nums text-sm" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
                         {p.value != null
                           ? parseFloat(p.value).toLocaleString('en-US', {
                               minimumFractionDigits: 0,
@@ -253,7 +254,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                           {confidenceConfig.label}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground/60" aria-label="Not set">
+                        <span className="text-xs text-muted-foreground/60" aria-label="Sin definir">
                           —
                         </span>
                       )}
@@ -262,7 +263,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       {riskConfig ? (
                         <Badge variant={riskConfig.variant}>{riskConfig.label}</Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground/60" aria-label="Not set">
+                        <span className="text-xs text-muted-foreground/60" aria-label="Sin definir">
                           —
                         </span>
                       )}
@@ -282,31 +283,31 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
             id="add-proxy-heading"
             className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
           >
-            Add to Proxy Bank
+            Agregar al banco de proxies
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Create Source */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-teal-600" aria-hidden="true" />
-                  <CardTitle className="text-sm">Register Source</CardTitle>
+                  <BookOpen className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Registrar fuente</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Register a vetted reference source for proxy values (e.g., HACT, ONS,
-                  government statistical databases).
+                  Registra una fuente de referencia verificada para valores de proxy (ej. HACT, ONS,
+                  bases de datos estadísticas gubernamentales).
                 </p>
               </CardHeader>
               <CardContent>
                 <form action={handleCreateSource} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
                       htmlFor="src-name"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Source name{' '}
+                      Nombre de la fuente{' '}
                       <span className="text-danger" aria-hidden="true">
                         *
                       </span>
@@ -316,7 +317,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       name="name"
                       type="text"
                       required
-                      placeholder="e.g. HACT Financial Proxy Database"
+                      placeholder="ej. Base de datos de proxies financieros HACT"
                       className={INPUT_CLASS}
                     />
                   </div>
@@ -326,7 +327,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="src-url"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Reference URL
+                      URL de referencia
                     </label>
                     <input
                       id="src-url"
@@ -336,7 +337,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       className={INPUT_CLASS}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Optional link to the official source publication.
+                      Enlace opcional a la publicación oficial de la fuente.
                     </p>
                   </div>
 
@@ -345,13 +346,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="src-description"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Description
+                      Descripción
                     </label>
                     <textarea
                       id="src-description"
                       name="description"
                       rows={2}
-                      placeholder="Brief description of scope and provenance"
+                      placeholder="Breve descripción del alcance y procedencia"
                       className={TEXTAREA_CLASS}
                     />
                   </div>
@@ -360,7 +361,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                   >
-                    Register Source
+                    Registrar fuente
                   </button>
                 </form>
               </CardContent>
@@ -370,30 +371,30 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-teal-600" aria-hidden="true" />
-                  <CardTitle className="text-sm">Create Financial Proxy</CardTitle>
+                  <DollarSign className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Crear proxy financiero</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Add a financial proxy value traceable to a registered source. Confidence and
-                  risk ratings support defensible proxy selection.
+                  Agrega un valor de proxy financiero trazable a una fuente registrada. Las
+                  calificaciones de confianza y riesgo respaldan una selección de proxy defendible.
                 </p>
               </CardHeader>
               <CardContent>
                 <form action={handleCreateProxy} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
                       htmlFor="proxy-source"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Source{' '}
+                      Fuente{' '}
                       <span className="text-danger" aria-hidden="true">
                         *
                       </span>
                     </label>
                     <Select id="proxy-source" name="sourceId" required className="mt-1">
-                      <option value="">— Select source —</option>
+                      <option value="">— Seleccionar fuente —</option>
                       {proxySources.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
@@ -407,7 +408,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="proxy-name"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Proxy name{' '}
+                      Nombre del proxy{' '}
                       <span className="text-danger" aria-hidden="true">
                         *
                       </span>
@@ -417,7 +418,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       name="name"
                       type="text"
                       required
-                      placeholder="e.g. Cost of treating mild depression"
+                      placeholder="ej. Costo de tratar depresión leve"
                       className={INPUT_CLASS}
                     />
                   </div>
@@ -427,13 +428,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="proxy-description"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Description
+                      Descripción
                     </label>
                     <textarea
                       id="proxy-description"
                       name="description"
                       rows={2}
-                      placeholder="Methodological basis for this proxy value"
+                      placeholder="Base metodológica de este valor de proxy"
                       className={TEXTAREA_CLASS}
                     />
                   </div>
@@ -444,7 +445,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         htmlFor="proxy-value"
                         className="block text-xs font-medium text-foreground"
                       >
-                        Value{' '}
+                        Valor{' '}
                         <span className="text-danger" aria-hidden="true">
                           *
                         </span>
@@ -454,7 +455,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         name="value"
                         type="text"
                         required
-                        placeholder="e.g. 1200.00"
+                        placeholder="ej. 1200.00"
                         className={INPUT_CLASS}
                       />
                     </div>
@@ -463,7 +464,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         htmlFor="proxy-currency"
                         className="block text-xs font-medium text-foreground"
                       >
-                        Currency{' '}
+                        Moneda{' '}
                         <span className="text-danger" aria-hidden="true">
                           *
                         </span>
@@ -473,7 +474,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         name="currency"
                         type="text"
                         required
-                        placeholder="GBP"
+                        placeholder="MXN"
                         className={INPUT_CLASS}
                       />
                     </div>
@@ -485,7 +486,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         htmlFor="proxy-unit"
                         className="block text-xs font-medium text-foreground"
                       >
-                        Unit{' '}
+                        Unidad{' '}
                         <span className="text-danger" aria-hidden="true">
                           *
                         </span>
@@ -495,7 +496,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         name="unit"
                         type="text"
                         required
-                        placeholder="per person per year"
+                        placeholder="por persona por año"
                         className={INPUT_CLASS}
                       />
                     </div>
@@ -504,7 +505,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         htmlFor="proxy-year"
                         className="block text-xs font-medium text-foreground"
                       >
-                        Ref. year{' '}
+                        Año de referencia{' '}
                         <span className="text-danger" aria-hidden="true">
                           *
                         </span>
@@ -526,13 +527,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         htmlFor="proxy-confidence"
                         className="block text-xs font-medium text-foreground"
                       >
-                        Confidence
+                        Confianza
                       </label>
                       <Select id="proxy-confidence" name="confidenceLevel" className="mt-1">
-                        <option value="">Not set</option>
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
+                        <option value="">Sin definir</option>
+                        <option value="high">Alta</option>
+                        <option value="medium">Media</option>
+                        <option value="low">Baja</option>
                       </Select>
                     </div>
                     <div>
@@ -540,13 +541,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                         htmlFor="proxy-risk"
                         className="block text-xs font-medium text-foreground"
                       >
-                        Method. risk
+                        Riesgo metodológico
                       </label>
                       <Select id="proxy-risk" name="methodologicalRisk" className="mt-1">
-                        <option value="">Not set</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
+                        <option value="">Sin definir</option>
+                        <option value="low">Bajo</option>
+                        <option value="medium">Medio</option>
+                        <option value="high">Alto</option>
                       </Select>
                     </div>
                   </div>
@@ -555,7 +556,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                   >
-                    Create Proxy
+                    Crear proxy
                   </button>
                 </form>
               </CardContent>
@@ -565,30 +566,30 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <GitMerge className="h-4 w-4 text-teal-600" aria-hidden="true" />
-                  <CardTitle className="text-sm">Assign Proxy to Outcome</CardTitle>
+                  <GitMerge className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <CardTitle className="text-sm">Asignar proxy a resultado</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Link a financial proxy to a project outcome with a defensible justification
-                  and optional territorial adjustment notes.
+                  Vincula un proxy financiero a un resultado del proyecto con una justificación
+                  defendible y notas opcionales de ajuste territorial.
                 </p>
               </CardHeader>
               <CardContent>
                 <form action={handleAssignProxy} className="space-y-3">
-                  <input type="hidden" name="projectId" value={params.projectId} />
+                  <input type="hidden" name="projectId" value={projectId} />
 
                   <div>
                     <label
                       htmlFor="assign-outcome"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Outcome{' '}
+                      Resultado{' '}
                       <span className="text-danger" aria-hidden="true">
                         *
                       </span>
                     </label>
                     <Select id="assign-outcome" name="outcomeId" required className="mt-1">
-                      <option value="">— Select outcome —</option>
+                      <option value="">— Seleccionar resultado —</option>
                       {outcomes.map((o) => (
                         <option key={o.id} value={o.id}>
                           {o.title}
@@ -602,13 +603,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="assign-proxy"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Financial proxy{' '}
+                      Proxy financiero{' '}
                       <span className="text-danger" aria-hidden="true">
                         *
                       </span>
                     </label>
                     <Select id="assign-proxy" name="proxyId" required className="mt-1">
-                      <option value="">— Select proxy —</option>
+                      <option value="">— Seleccionar proxy —</option>
                       {financialProxies.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.currency})
@@ -622,7 +623,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="assign-justification"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Justification{' '}
+                      Justificación{' '}
                       <span className="text-danger" aria-hidden="true">
                         *
                       </span>
@@ -632,11 +633,11 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       name="justification"
                       rows={3}
                       required
-                      placeholder="Explain why this proxy is methodologically appropriate for this outcome…"
+                      placeholder="Explica por qué este proxy es metodológicamente apropiado para este resultado…"
                       className={TEXTAREA_CLASS}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
-                      A written justification is required for audit-traceable proxy selection.
+                      Se requiere una justificación escrita para una selección de proxy trazable para auditoría.
                     </p>
                   </div>
 
@@ -645,13 +646,13 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       htmlFor="assign-territorial"
                       className="block text-xs font-medium text-foreground"
                     >
-                      Territorial adjustment notes
+                      Notas de ajuste territorial
                     </label>
                     <textarea
                       id="assign-territorial"
                       name="territorialAdjustmentNotes"
                       rows={2}
-                      placeholder="Optional notes on geographic or demographic adjustments applied"
+                      placeholder="Notas opcionales sobre ajustes geográficos o demográficos aplicados"
                       className={TEXTAREA_CLASS}
                     />
                   </div>
@@ -660,7 +661,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                   >
-                    Assign Proxy
+                    Asignar proxy
                   </button>
                 </form>
               </CardContent>
@@ -675,29 +676,29 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
           id="assignments-heading"
           className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
         >
-          Proxy Assignments
+          Asignaciones de proxies
         </h2>
 
         {assignments.length === 0 ? (
           <EmptyState
             icon={<GitMerge className="h-6 w-6 text-neutral-500" />}
-            title="No proxy assignments"
+            title="No hay asignaciones de proxies"
             description={
               canEdit
-                ? 'No proxies have been assigned to outcomes yet. Use the form above to create a defensible proxy assignment with a written justification.'
-                : 'No proxies have been assigned to outcomes for this project yet.'
+                ? 'Aún no se han asignado proxies a resultados. Usa el formulario de arriba para crear una asignación de proxy defendible con una justificación escrita.'
+                : 'Aún no se han asignado proxies a resultados para este proyecto.'
             }
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Outcome</TableHead>
+                <TableHead>Resultado</TableHead>
                 <TableHead>Proxy</TableHead>
-                <TableHead>Justification</TableHead>
-                <TableHead>Territorial Adjustment</TableHead>
-                <TableHead>Status</TableHead>
-                {canEdit && <TableHead>Actions</TableHead>}
+                <TableHead>Justificación</TableHead>
+                <TableHead>Ajuste territorial</TableHead>
+                <TableHead>Estado</TableHead>
+                {canEdit && <TableHead>Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -717,7 +718,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       {outcomeName ? (
                         <span className="line-clamp-2">{outcomeName}</span>
                       ) : (
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="tabular-nums text-xs text-muted-foreground" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
                           {a.outcomeId.slice(0, 8)}…
                         </span>
                       )}
@@ -731,7 +732,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                           </span>
                         </span>
                       ) : (
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className="tabular-nums text-xs text-muted-foreground" style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}>
                           {a.proxyId.slice(0, 8)}…
                         </span>
                       )}
@@ -743,7 +744,7 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                       {a.territorialAdjustmentNotes ? (
                         <span className="line-clamp-2">{a.territorialAdjustmentNotes}</span>
                       ) : (
-                        <span className="text-muted-foreground/50" aria-label="No adjustment notes">
+                        <span className="text-muted-foreground/50" aria-label="Sin notas de ajuste">
                           —
                         </span>
                       )}
@@ -759,10 +760,10 @@ export default async function ProxiesPage({ params }: { params: { projectId: str
                             <button
                               type="submit"
                               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                              aria-label={`Archive proxy assignment for: ${outcomeName ?? a.outcomeId}`}
+                              aria-label={`Archivar asignación de proxy para: ${outcomeName ?? a.outcomeId}`}
                             >
                               <Archive className="h-3 w-3" aria-hidden="true" />
-                              Archive
+                              Archivar
                             </button>
                           </form>
                         )}

@@ -7,17 +7,50 @@ import {
 } from '@/lib/pipeline/sroi-results';
 import { createSroiRunReviewAction } from '../createSroiRunReview.action';
 import { revalidatePath } from 'next/cache';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 const REVIEW_ROLES = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
 
+const RUN_STATUS_BADGE: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
+  calculated: { variant: 'success', label: 'Calculado' },
+  pending: { variant: 'warning', label: 'Pendiente' },
+  error: { variant: 'danger', label: 'Error' },
+};
+
+const REVIEW_STATUS_BADGE: Record<string, { variant: 'success' | 'danger' | 'info' | 'neutral'; label: string }> = {
+  approved: { variant: 'success', label: 'Aprobado' },
+  flagged: { variant: 'danger', label: 'Marcado' },
+  reviewed: { variant: 'info', label: 'Revisado' },
+  draft: { variant: 'neutral', label: 'Borrador' },
+};
+
+const REVIEW_ITEM_BADGE: Record<string, { variant: 'success' | 'danger' | 'warning' | 'neutral'; label: string }> = {
+  pass: { variant: 'success', label: 'Correcto' },
+  fail: { variant: 'danger', label: 'Fallido' },
+  warning: { variant: 'warning', label: 'Advertencia' },
+};
+
+const INPUT_CLASS =
+  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+
 export default async function RunDetailPage({
   params,
 }: {
-  params: { projectId: string; runId: string };
+  params: Promise<{ projectId: string; runId: string }>;
 }) {
-  const { projectId, runId } = params;
+  const { projectId, runId } = await params;
 
   let detail: Awaited<ReturnType<typeof getCalculationRunDetail>>;
   try {
@@ -45,330 +78,345 @@ export default async function RunDetailPage({
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
   }
 
-  const statusColors: Record<string, string> = {
-    calculated: 'bg-emerald-100 text-emerald-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    error: 'bg-red-100 text-red-800',
-  };
+  const runStatusConfig =
+    RUN_STATUS_BADGE[run.status ?? ''] ?? { variant: 'neutral' as const, label: run.status ?? '—' };
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             <Link
               href={`/app/projects/${projectId}/pipeline/calculation`}
-              className="hover:text-teal-700 underline"
+              className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
-              ← Volver al Cálculo SROI
+              Volver al Cálculo SROI
             </Link>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Corrida SROI — v{run.version}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            ID: <code className="font-mono text-xs bg-gray-100 px-1 rounded">{run.id}</code>
+          <p className="text-sm text-muted-foreground mt-1">
+            ID:{' '}
+            <code
+              className="text-xs text-muted-foreground tabular-nums"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.id}
+            </code>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link
             href={`/app/projects/${projectId}/pipeline/calculation/compare?runA=${runId}`}
-            className="text-sm bg-white border border-gray-300 hover:border-teal-500 text-gray-700 px-4 py-2 rounded font-medium transition-colors"
+            className="inline-flex items-center rounded-md border border-border bg-background px-4 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Comparar con otra corrida
           </Link>
           <Link
             href={`/app/projects/${projectId}/report`}
-            className="text-sm bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded font-medium transition-colors"
+            className="inline-flex items-center rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Ver Reportes
           </Link>
         </div>
       </div>
 
-      {/* Immutability banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 space-y-1">
-        <p className="font-semibold">📌 Esta es una corrida histórica e inmutable.</p>
-        <p>
-          El resultado corresponde a un <strong>ratio SROI preliminar</strong> y{' '}
-          <strong>requiere revisión humana</strong> para su validación final. No constituye
-          certificación automática ni auditoría independiente. Constituye una{' '}
-          <strong>audit-ready foundation</strong> para el proceso de revisión metodológica.
-        </p>
+      {/* Immutability notice */}
+      <div
+        role="note"
+        className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+      >
+        <span className="font-medium text-foreground">Corrida histórica e inmutable: </span>
+        El resultado corresponde a un{' '}
+        <strong className="font-medium text-foreground">ratio SROI preliminar</strong> y{' '}
+        <strong className="font-medium text-foreground">requiere revisión humana</strong> para
+        su validación final. No constituye certificación automática ni auditoría independiente.
+        Constituye una{' '}
+        <strong className="font-medium text-foreground">base lista para auditoría</strong> para el
+        proceso de revisión metodológica.
       </div>
 
       {/* KPI Summary */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          {
-            label: 'Ratio SROI Preliminar',
-            value: run.sroiRatio ? `${parseFloat(run.sroiRatio).toFixed(2)}:1` : '—',
-            highlight: true,
-          },
-          {
-            label: 'Valor Social Neto',
-            value: run.netSocialValue
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="KPI de la corrida">
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-xs font-medium text-muted-foreground">Ratio SROI Preliminar</p>
+          <p
+            className="mt-1 text-2xl font-bold text-foreground tabular-nums"
+            style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+          >
+            {run.sroiRatio ? `${parseFloat(run.sroiRatio).toFixed(2)}:1` : '—'}
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-xs font-medium text-muted-foreground">Valor Social Neto</p>
+          <p className="mt-1 text-xl font-bold text-foreground">
+            {run.netSocialValue
               ? `${parseFloat(run.netSocialValue).toLocaleString()} ${run.currency}`
-              : '—',
-          },
-          {
-            label: 'Valor Social Bruto',
-            value: run.grossSocialValue
+              : '—'}
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-xs font-medium text-muted-foreground">Valor Social Bruto</p>
+          <p className="mt-1 text-xl font-bold text-foreground">
+            {run.grossSocialValue
               ? `${parseFloat(run.grossSocialValue).toLocaleString()} ${run.currency}`
-              : '—',
-          },
-          {
-            label: 'Inversión Total',
-            value: run.totalInvestment
+              : '—'}
+          </p>
+        </div>
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-xs font-medium text-muted-foreground">Inversión Total</p>
+          <p className="mt-1 text-xl font-bold text-foreground">
+            {run.totalInvestment
               ? `${parseFloat(run.totalInvestment).toLocaleString()} ${run.currency}`
-              : '—',
-          },
-        ].map(({ label, value, highlight }) => (
-          <div key={label} className="bg-white border rounded-lg p-4 shadow-sm">
-            <span className="block text-xs text-gray-500 mb-1">{label}</span>
-            <span
-              className={`text-xl font-bold ${highlight ? 'text-teal-700' : 'text-gray-800'}`}
-            >
-              {value}
-            </span>
-          </div>
-        ))}
+              : '—'}
+          </p>
+        </div>
       </section>
 
       {/* Metadata */}
-      <section className="bg-white border rounded-lg p-4 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div>
-          <span className="text-gray-500 block">Versión</span>
-          <span className="font-medium">v{run.version}</span>
-        </div>
-        <div>
-          <span className="text-gray-500 block">Estado</span>
-          <span
-            className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-              statusColors[run.status ?? ''] ?? 'bg-gray-100 text-gray-700'
-            }`}
-          >
-            {run.status}
-          </span>
-        </div>
-        <div>
-          <span className="text-gray-500 block">Calculado el</span>
-          <span className="font-medium">
-            {run.calculatedAt ? new Date(run.calculatedAt).toLocaleString() : '—'}
-          </span>
-        </div>
-        <div>
-          <span className="text-gray-500 block">Moneda</span>
-          <span className="font-medium">{run.currency ?? '—'}</span>
-        </div>
-      </section>
+      <Card>
+        <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground block text-xs">Versión</span>
+            <span className="font-medium text-foreground">v{run.version}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs mb-1">Estado</span>
+            <Badge variant={runStatusConfig.variant}>{runStatusConfig.label}</Badge>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs">Calculado el</span>
+            <span className="font-medium text-foreground">
+              {run.calculatedAt ? new Date(run.calculatedAt).toLocaleString() : '—'}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs">Moneda</span>
+            <span className="font-medium text-foreground">{run.currency ?? '—'}</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Line items */}
-      <section className="bg-white border rounded-lg shadow-sm overflow-hidden">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Líneas de Cálculo</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
+      <Card>
+        <CardHeader>
+          <CardTitle>Líneas de Cálculo</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Detalle inmutable de los ítems que componen esta corrida.
           </p>
-        </div>
-        {lineItems.length === 0 ? (
-          <p className="p-4 text-sm text-gray-500 italic">
-            No hay líneas de cálculo registradas.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Asignación</th>
-                  <th className="px-4 py-3 text-right">Cantidad</th>
-                  <th className="px-4 py-3 text-right">Valor Proxy</th>
-                  <th className="px-4 py-3 text-right">Bruto</th>
-                  <th className="px-4 py-3 text-right">Ajustado</th>
-                  <th className="px-4 py-3 text-right">Filtros</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+        </CardHeader>
+        <CardContent className="p-0">
+          {lineItems.length === 0 ? (
+            <p className="px-6 py-4 text-sm text-muted-foreground italic">
+              No hay líneas de cálculo registradas.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Asignación</TableHead>
+                  <TableHead className="text-right">Cantidad</TableHead>
+                  <TableHead className="text-right">Valor Proxy</TableHead>
+                  <TableHead className="text-right">Bruto</TableHead>
+                  <TableHead className="text-right">Ajustado</TableHead>
+                  <TableHead className="text-right">Filtros</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {lineItems.map((li) => (
-                  <tr key={li.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {li.assignmentId}
-                    </td>
-                    <td className="px-4 py-3 text-right">{li.quantity}</td>
-                    <td className="px-4 py-3 text-right">
+                  <TableRow key={li.id}>
+                    <TableCell>
+                      <code
+                        className="text-xs text-muted-foreground tabular-nums"
+                        style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                      >
+                        {li.assignmentId}
+                      </code>
+                    </TableCell>
+                    <TableCell className="text-right">{li.quantity}</TableCell>
+                    <TableCell className="text-right">
                       {parseFloat(li.proxyValue ?? '0').toLocaleString()} {li.currency}
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       {parseFloat(li.grossValue ?? '0').toLocaleString()} {li.currency}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-teal-700">
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-foreground">
                       {parseFloat(li.adjustedValue ?? '0').toLocaleString()} {li.currency}
-                    </td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
                       DW:{li.deadweightPct}% AT:{li.attributionPct}% DP:{li.displacementPct}%
                       DO:{li.dropoffPct}%
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Snapshot JSON */}
       {snapshotJson && (
-        <section className="bg-white border rounded-lg shadow-sm">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Snapshot de Inputs</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Snapshot de Inputs</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Fotografía inmutable de los inputs al momento del cálculo.
             </p>
-          </div>
-          <pre className="p-4 text-xs bg-gray-50 overflow-x-auto rounded-b-lg text-gray-700 leading-relaxed">
-            {JSON.stringify(snapshotJson, null, 2)}
-          </pre>
-        </section>
+          </CardHeader>
+          <CardContent className="p-0">
+            <pre
+              className="px-6 py-4 text-xs bg-muted/40 overflow-x-auto rounded-b-lg text-foreground leading-relaxed"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {JSON.stringify(snapshotJson, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
       )}
 
       {/* Reviews */}
-      <section className="bg-white border rounded-lg shadow-sm">
-        <div className="p-4 border-b flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Revisiones Metodológicas</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Solo los revisores autorizados pueden crear o modificar revisiones.
-            </p>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Revisiones Metodológicas</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Solo los revisores autorizados pueden crear o modificar revisiones.
+          </p>
+        </CardHeader>
 
         {reviews.length === 0 ? (
-          <p className="p-4 text-sm text-gray-500 italic">
-            No hay revisiones registradas para esta corrida.
-          </p>
+          <CardContent>
+            <p className="text-sm text-muted-foreground italic">
+              No hay revisiones registradas para esta corrida.
+            </p>
+          </CardContent>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {reviews.map((review) => (
-              <div key={review.id} className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      review.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : review.status === 'flagged'
-                        ? 'bg-red-100 text-red-800'
-                        : review.status === 'reviewed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {review.status}
-                  </span>
-                  {review.readinessScore !== null && review.readinessScore !== undefined && (
-                    <span className="text-xs text-gray-500">
-                      Score: {review.readinessScore}/100
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-400 ml-auto">
-                    {new Date(review.createdAt).toLocaleString()}
-                  </span>
-                </div>
-                {review.overallNotes && (
-                  <p className="text-sm text-gray-700">{review.overallNotes}</p>
-                )}
-                {review.items && review.items.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {review.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-2 text-xs text-gray-600"
-                      >
-                        <span className="font-mono bg-gray-100 px-1 rounded">
-                          {item.itemKey}
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
+              {reviews.map((review) => {
+                const reviewBadge =
+                  REVIEW_STATUS_BADGE[review.status ?? ''] ?? {
+                    variant: 'neutral' as const,
+                    label: review.status ?? '—',
+                  };
+                return (
+                  <div key={review.id} className="px-6 py-4 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={reviewBadge.variant}>{reviewBadge.label}</Badge>
+                      {review.readinessScore !== null && review.readinessScore !== undefined && (
+                        <span className="text-xs text-muted-foreground">
+                          Score: {review.readinessScore}/100
                         </span>
-                        <span
-                          className={`px-1.5 py-0.5 rounded ${
-                            item.status === 'pass'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : item.status === 'fail'
-                              ? 'bg-red-100 text-red-700'
-                              : item.status === 'warning'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                        <span className="text-gray-500">{item.severity}</span>
-                        {item.notes && <span className="text-gray-400">— {item.notes}</span>}
+                      )}
+                      <span className="text-xs text-muted-foreground/60 ml-auto">
+                        {new Date(review.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    {review.overallNotes && (
+                      <p className="text-sm text-foreground">{review.overallNotes}</p>
+                    )}
+                    {review.items && review.items.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {review.items.map((item) => {
+                          const itemBadge =
+                            REVIEW_ITEM_BADGE[item.status ?? ''] ?? {
+                              variant: 'neutral' as const,
+                              label: item.status ?? '—',
+                            };
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap"
+                            >
+                              <code
+                                className="tabular-nums bg-muted px-1.5 py-0.5 rounded text-foreground text-[10px]"
+                                style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+                              >
+                                {item.itemKey}
+                              </code>
+                              <Badge variant={itemBadge.variant}>{itemBadge.label}</Badge>
+                              <span className="text-muted-foreground">{item.severity}</span>
+                              {item.notes && (
+                                <span className="text-muted-foreground/60">— {item.notes}</span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          </CardContent>
         )}
 
         {/* New review form — only for authorized roles */}
         {canReview ? (
-          <div className="p-4 border-t bg-gray-50">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+          <div className="p-6 border-t border-border bg-muted/30">
+            <h3 className="text-sm font-semibold text-foreground mb-3">
               Nueva Revisión Metodológica
             </h3>
             <form action={handleCreateReview} className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Estado
-                  <select
-                    name="status"
-                    className="mt-1 block w-full rounded border-gray-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-200"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="approved">Approved</option>
-                    <option value="flagged">Flagged</option>
+                <div>
+                  <label htmlFor="review-status" className="block text-xs font-medium text-foreground">
+                    Estado
+                  </label>
+                  <select id="review-status" name="status" className={INPUT_CLASS}>
+                    <option value="draft">Borrador</option>
+                    <option value="reviewed">Revisado</option>
+                    <option value="approved">Aprobado</option>
+                    <option value="flagged">Marcado</option>
                   </select>
-                </label>
-                <label className="block text-sm font-medium text-gray-700">
-                  Score de Preparación (0–100)
+                </div>
+                <div>
+                  <label htmlFor="review-score" className="block text-xs font-medium text-foreground">
+                    Score de Preparación (0–100)
+                  </label>
                   <input
+                    id="review-score"
                     name="readinessScore"
                     type="number"
                     min="0"
                     max="100"
                     placeholder="ej. 80"
-                    className="mt-1 block w-full rounded border-gray-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-200"
+                    className={INPUT_CLASS}
                   />
-                </label>
+                </div>
               </div>
-              <label className="block text-sm font-medium text-gray-700">
-                Notas generales
+              <div>
+                <label htmlFor="review-notes" className="block text-xs font-medium text-foreground">
+                  Notas generales
+                </label>
                 <textarea
+                  id="review-notes"
                   name="overallNotes"
                   rows={3}
                   placeholder="Observaciones metodológicas..."
-                  className="mt-1 block w-full rounded border-gray-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-200"
+                  className={INPUT_CLASS}
                 />
-              </label>
+              </div>
               <button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
               >
                 Registrar Revisión
               </button>
             </form>
           </div>
         ) : (
-          <div className="p-4 border-t bg-gray-50">
-            <p className="text-sm text-gray-500 italic">
+          <div className="p-4 border-t border-border bg-muted/30">
+            <p className="text-sm text-muted-foreground italic">
               Solo los revisores y gestores autorizados pueden crear revisiones. Contacte a un
               impact manager o reviewer.
             </p>
           </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

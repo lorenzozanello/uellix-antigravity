@@ -140,4 +140,32 @@ describe('Narrative service', () => {
     const narrative = await getNarrativeForProject('proj-1');
     expect(narrative?.id).toBe('narr-1');
   });
+
+  it('rejects upsert when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'user-1', email: 'u@test.com', isSuperAdmin: false },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    const input = { version: 'v2', narrativeText: 'Cross-org attempt' };
+    await expect(upsertNarrativeForProject('proj-1', input)).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
+
+  it('rejects read when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'user-1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'viewer' },
+    } as any);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    await expect(getNarrativeForProject('proj-1')).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
 });

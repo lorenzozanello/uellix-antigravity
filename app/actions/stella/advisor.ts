@@ -10,12 +10,14 @@ import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
 import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 
 export type StellaAdvisorErrorCode =
   | 'DISABLED'
   | 'UNAUTHORIZED'
   | 'UNSUPPORTED_STEP'
+  | 'RATE_LIMITED'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
@@ -50,9 +52,23 @@ export async function getStellaAdvisor(
     }
   }
 
+  // Rate limit check — enforced per org, per hour, in-memory (shared budget with Validator)
+  const rateLimit = checkStellaRateLimit(ctx.organization.id)
+  if (!rateLimit.allowed) {
+    return {
+      ok: false,
+      error: 'RATE_LIMITED',
+      message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
+    }
+  }
+
   // Build project context (validates project ownership, metadata only)
   try {
     const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
+
+    // Record after context built — prevents gaming via repeated context errors,
+    // allows retries on Gemini/parse failures
+    recordStellaRequest(ctx.organization.id)
 
     // Build prompts from existing builders
     const systemPrompt = buildAdvisorSystemPrompt(step)
