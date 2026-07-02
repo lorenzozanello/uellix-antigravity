@@ -96,7 +96,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
       )}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Agregar outcome</CardTitle>
+          <CardTitle className="text-base">Agregar resultado</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={action} className="space-y-4">
