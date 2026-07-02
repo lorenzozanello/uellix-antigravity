@@ -8,6 +8,7 @@ import { syncUserProfile, getCurrentMembership } from '@/lib/auth/session'
 import { createClient } from '@/lib/supabase/server'
 import { logAuditAction } from '@/lib/audit/logger'
 import { ROLES } from '@/lib/auth/roles'
+import { isEmailAllowlisted } from '@/lib/admin/signup-allowlist'
 
 export async function createFirstOrganization(formData: FormData) {
   const supabase = await createClient()
@@ -24,6 +25,13 @@ export async function createFirstOrganization(formData: FormData) {
   const existingMembership = await getCurrentMembership(authUser.id)
   if (existingMembership) {
     redirect('/app/dashboard')
+  }
+
+  // Self-serve org creation is gated: only allowlisted emails/domains may
+  // create a brand-new organization. Invited users never reach this action
+  // (acceptInvitation joins an existing org via a separate code path).
+  if (!authUser.email || !(await isEmailAllowlisted(authUser.email))) {
+    redirect('/app/onboarding?error=not_allowlisted')
   }
 
   // Validate inputs
