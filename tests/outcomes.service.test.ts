@@ -134,4 +134,32 @@ describe('Outcome service', () => {
     expect(outcomes.length).toBeGreaterThan(0);
     expect(outcomes[0].projectId).toBe('proj-1');
   });
+
+  it('rejects creation when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    const input = { title: 'Cross-org attempt', stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000' };
+    await expect(createOutcome('proj-1', input)).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
+
+  it('rejects listing when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'viewer' },
+    } as any);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    await expect(listOutcomes('proj-1')).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
 });

@@ -267,4 +267,33 @@ describe('Evidence service', () => {
     expect(result).toBeDefined();
     expect(logAuditAction).toHaveBeenCalled();
   });
+
+  it('rejects createUrlEvidenceForProject when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    const input = { title: 'Cross-org attempt', url: 'https://example.com/evidence' };
+    await expect(createUrlEvidenceForProject('proj-1', input)).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
+
+  it('rejects listEvidenceForProject when the project belongs to a different organization (IDOR regression)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    mockDbData.project = { id: 'proj-1', organizationId: 'org-OTHER' };
+
+    const { listEvidenceForProject } = await import('@/lib/pipeline/evidence');
+    await expect(listEvidenceForProject('proj-1')).rejects.toThrow(
+      'Project does not belong to your organization'
+    );
+  });
 });
