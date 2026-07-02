@@ -112,13 +112,13 @@ export default async function ReportListPage({
         <CardContent>
           {calculatedRuns.length === 0 ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 No hay corridas de cálculo completadas disponibles. Se requiere una corrida con estado{' '}
                 <Badge variant="success" className="inline-flex align-middle mx-0.5">
                   Calculado
                 </Badge>{' '}
                 antes de poder crear un borrador de reporte.
-              </p>
+              </div>
               <Link
                 href={`/app/projects/${projectId}/pipeline/calculation`}
                 className="inline-flex items-center gap-1 text-sm font-medium text-[#B85200] hover:text-[#B85200]/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
