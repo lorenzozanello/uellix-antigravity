@@ -21,7 +21,7 @@ export function Sidebar() {
 
   return (
     // Scoped dark class so sidebar-* tokens resolve to the dark palette
-    <aside className="dark hidden lg:flex w-64 shrink-0 border-r border-sidebar-border bg-sidebar flex-col">
+    <aside className="dark hidden lg:flex w-64 shrink-0 border-r border-sidebar-border bg-sidebar flex-col print:hidden">
       {/* Brand */}
       <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
         <Link

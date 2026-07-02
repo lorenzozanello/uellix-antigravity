@@ -9,7 +9,7 @@ interface TopBarProps {
 
 export function TopBar({ orgName, roleLabel }: TopBarProps) {
   return (
-    <header className="h-16 shrink-0 border-b border-border bg-background flex items-center px-6 gap-4">
+    <header className="h-16 shrink-0 border-b border-border bg-background flex items-center px-6 gap-4 print:hidden">
       <MobileNav />
 
       {/* Breadcrumbs fill available space */}

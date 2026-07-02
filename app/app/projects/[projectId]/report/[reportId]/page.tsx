@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { AlertTriangle, ArrowLeft, CheckCircle2, Lock } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileDown, Lock } from 'lucide-react'
 import { getReportDraft } from '@/lib/pipeline/sroi-results'
 import { updateReportSectionAction } from '../updateReportSection.action'
 import { lockReportDraftAction } from '../lockReportDraft.action'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SECTION_META, SECTION_GROUPS } from '@/lib/reports/report-sections'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,95 +20,6 @@ const REPORT_STATUS: Record<
   locked: { variant: 'success', label: 'Bloqueado' },
   archived: { variant: 'neutral', label: 'Archivado' },
 }
-
-const SECTION_META: Record<string, { label: string; helper: string }> = {
-  executive_summary: {
-    label: 'Resumen ejecutivo',
-    helper:
-      'Narrativa de alto nivel del proceso SROI y hallazgos clave. Escrita para una audiencia ejecutiva no técnica.',
-  },
-  project_context: {
-    label: 'Contexto del proyecto',
-    helper:
-      'Descripción de la organización, la iniciativa, el alcance geográfico y el período de medición.',
-  },
-  theory_of_change: {
-    label: 'Teoría del cambio',
-    helper:
-      'Modelo lógico que conecta actividades → productos → resultados. Documenta explícitamente los supuestos y las rutas causales.',
-  },
-  stakeholders: {
-    label: 'Grupos de interés',
-    helper:
-      'Identificación de los grupos de interés incluidos o excluidos, con justificación de las decisiones de alcance.',
-  },
-  outcomes: {
-    label: 'Resultados',
-    helper:
-      'Lista de resultados sociales medidos, incluyendo la justificación de materialidad de cada resultado incluido en el análisis.',
-  },
-  evidence_summary: {
-    label: 'Resumen de evidencia',
-    helper: 'Métodos de recolección de datos, fuentes, tamaños de muestra y limitaciones de calidad.',
-  },
-  proxy_methodology: {
-    label: 'Metodología de proxies',
-    helper:
-      'Proxies financieros seleccionados (valores SVI, fuentes de SROI Network o investigación propia) con atribución completa.',
-  },
-  sroi_filters: {
-    label: 'Filtros SROI',
-    helper:
-      'Supuestos metodológicos documentados de deadweight, atribución, desplazamiento y decaimiento por resultado.',
-  },
-  calculation_results: {
-    label: 'Resultados del cálculo',
-    helper:
-      'Resumen del ratio SROI y las cifras de valor social, vinculadas a la corrida de cálculo inmutable. Incluye notas de sensibilidad si aplica.',
-  },
-  limitations: {
-    label: 'Limitaciones',
-    helper:
-      'Limitaciones materiales en la calidad de los datos, exclusiones de alcance, supuestos causales no probados o vacíos de medición.',
-  },
-  review_notes: {
-    label: 'Notas de revisión',
-    helper:
-      'Comentarios del revisor metodológico, elementos pendientes de verificación humana o notas de auditoría.',
-  },
-  appendix: {
-    label: 'Apéndice',
-    helper:
-      'Tablas de datos de soporte, fuentes de datos, registros de consentimiento de grupos de interés o evidencia complementaria.',
-  },
-}
-
-const SECTION_GROUPS = [
-  {
-    id: 'group-overview',
-    label: 'Resumen',
-    description: 'Narrativa ejecutiva y contexto del proyecto',
-    types: ['executive_summary', 'project_context', 'theory_of_change'],
-  },
-  {
-    id: 'group-evidence',
-    label: 'Evidencia y datos',
-    description: 'Grupos de interés, resultados, proxies y evidencia de origen',
-    types: ['stakeholders', 'outcomes', 'evidence_summary', 'proxy_methodology'],
-  },
-  {
-    id: 'group-calculation',
-    label: 'Cálculo',
-    description: 'Supuestos de filtros SROI y resultados finales',
-    types: ['sroi_filters', 'calculation_results'],
-  },
-  {
-    id: 'group-review',
-    label: 'Revisión y apéndice',
-    description: 'Limitaciones, notas del revisor y material de soporte',
-    types: ['limitations', 'review_notes', 'appendix'],
-  },
-]
 
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
@@ -191,17 +103,26 @@ export default async function ReportDetailPage({
             </div>
           </div>
 
-          {!isLocked && (
-            <form action={handleLock}>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <Lock className="h-4 w-4" aria-hidden="true" />
-                Bloquear reporte
-              </button>
-            </form>
-          )}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/app/projects/${projectId}/report/${reportId}/print`}
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <FileDown className="h-4 w-4" aria-hidden="true" />
+              Exportar PDF
+            </Link>
+            {!isLocked && (
+              <form action={handleLock}>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <Lock className="h-4 w-4" aria-hidden="true" />
+                  Bloquear reporte
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
 
