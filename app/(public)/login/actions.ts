@@ -5,6 +5,10 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { syncUserProfile, getCurrentMembership } from '@/lib/auth/session'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
+import { checkAndRecordRateLimit } from '@/lib/security/rate-limit'
+
+const LOGIN_RATE_LIMIT = { maxAttempts: 5, windowMs: 15 * 60 * 1000 }
+const SIGNUP_RATE_LIMIT = { maxAttempts: 5, windowMs: 15 * 60 * 1000 }
 
 function loginErrorRedirect(slug: string, redirectTo: string | null): never {
   const suffix = redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ''
@@ -12,13 +16,17 @@ function loginErrorRedirect(slug: string, redirectTo: string | null): never {
 }
 
 export async function login(formData: FormData) {
-  const email = (formData.get('email') as string | null)?.trim()
+  const email = (formData.get('email') as string | null)?.trim().toLowerCase()
   const password = formData.get('password') as string | null
   const redirectParam = formData.get('redirect') as string | null
   const redirectTo = isSafeRedirectPath(redirectParam) ? redirectParam : null
 
   if (!email || !password || password.length < 6) {
     loginErrorRedirect('invalid_credentials', redirectTo)
+  }
+
+  if (!checkAndRecordRateLimit(`login:${email}`, LOGIN_RATE_LIMIT).allowed) {
+    loginErrorRedirect('rate_limited', redirectTo)
   }
 
   const supabase = await createClient()
@@ -51,13 +59,17 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const email = (formData.get('email') as string | null)?.trim()
+  const email = (formData.get('email') as string | null)?.trim().toLowerCase()
   const password = formData.get('password') as string | null
   const redirectParam = formData.get('redirect') as string | null
   const redirectTo = isSafeRedirectPath(redirectParam) ? redirectParam : null
 
   if (!email || !password || password.length < 6) {
     loginErrorRedirect('invalid_credentials', redirectTo)
+  }
+
+  if (!checkAndRecordRateLimit(`signup:${email}`, SIGNUP_RATE_LIMIT).allowed) {
+    loginErrorRedirect('rate_limited', redirectTo)
   }
 
   const supabase = await createClient()

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_credentials: 'Ingresa un correo y una contraseña válidos (mínimo 6 caracteres).',
   auth_failed: 'No se pudo iniciar sesión. Verifica tu correo y contraseña.',
+  rate_limited: 'Demasiados intentos. Espera unos minutos antes de volver a intentarlo.',
 }
 
 const SUCCESS_MESSAGES: Record<string, string> = {
