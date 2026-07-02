@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { login, signup } from './actions'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { Button } from '@/components/ui/button'
@@ -9,11 +10,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: 'No se pudo iniciar sesión. Verifica tu correo y contraseña.',
 }
 
-export default async function LoginPage(props: { searchParams: Promise<{ error?: string; redirect?: string }> }) {
+const SUCCESS_MESSAGES: Record<string, string> = {
+  password_updated: 'Tu contraseña se actualizó correctamente. Inicia sesión con tu nueva contraseña.',
+}
+
+export default async function LoginPage(props: {
+  searchParams: Promise<{ error?: string; redirect?: string; success?: string }>
+}) {
   const searchParams = await props.searchParams
   const errorMessage = searchParams?.error
     ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error. Intenta de nuevo.'
     : null
+  const successMessage = searchParams?.success ? SUCCESS_MESSAGES[searchParams.success] : null
   const redirectTo = isSafeRedirectPath(searchParams?.redirect) ? searchParams.redirect : null
 
   return (
@@ -29,6 +37,11 @@ export default async function LoginPage(props: { searchParams: Promise<{ error?:
               {errorMessage}
             </div>
           )}
+          {successMessage && (
+            <div className="text-sm text-success text-center">
+              {successMessage}
+            </div>
+          )}
           {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -36,7 +49,12 @@ export default async function LoginPage(props: { searchParams: Promise<{ error?:
               <Input id="email" name="email" type="email" required placeholder="nombre@empresa.com" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium leading-none text-foreground">Contraseña</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium leading-none text-foreground">Contraseña</Label>
+                <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <Input id="password" name="password" type="password" required />
             </div>
           </div>
