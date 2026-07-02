@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, integer } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -53,7 +53,11 @@ export const auditLogs = pgTable('audit_logs', {
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (table) => [
+  // Admin global log viewer: ORDER BY created_at DESC LIMIT n
+  index('idx_audit_logs_created_at').on(table.createdAt),
+  index('idx_audit_logs_organization_id').on(table.organizationId),
+])
 
 export const invitations = pgTable('invitations', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -68,7 +72,11 @@ export const invitations = pgTable('invitations', {
   revokedAt: timestamp('revoked_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  // acceptInvitation() looks up by raw token's SHA-256 on the accept path
+  index('idx_invitations_token_hash').on(table.tokenHash),
+  index('idx_invitations_organization_id').on(table.organizationId),
+])
 
 export const portfolios = pgTable('portfolios', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -81,6 +89,7 @@ export const portfolios = pgTable('portfolios', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('status_check', sql`${table.status} IN ('active', 'archived')`),
+  index('idx_portfolios_organization_id').on(table.organizationId),
 ])
 
 export const projects = pgTable('projects', {
@@ -101,6 +110,8 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('status_check', sql`${table.status} IN ('draft', 'active', 'completed', 'archived')`),
+  index('idx_projects_organization_id').on(table.organizationId),
+  index('idx_projects_portfolio_id').on(table.portfolioId),
 ])
 
 export const impactNarratives = pgTable('impact_narratives', {
@@ -114,7 +125,9 @@ export const impactNarratives = pgTable('impact_narratives', {
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_impact_narratives_project_id').on(table.projectId),
+])
 
 export const stakeholderGroups = pgTable('stakeholder_groups', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -124,7 +137,9 @@ export const stakeholderGroups = pgTable('stakeholder_groups', {
   type: varchar('type', { length: 100 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_stakeholder_groups_project_id').on(table.projectId),
+])
 
 export const outcomes = pgTable('outcomes', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -138,7 +153,10 @@ export const outcomes = pgTable('outcomes', {
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_outcomes_project_id').on(table.projectId),
+  index('idx_outcomes_stakeholder_group_id').on(table.stakeholderGroupId),
+])
 
 export const indicators = pgTable('indicators', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -157,7 +175,10 @@ export const indicators = pgTable('indicators', {
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_indicators_project_id').on(table.projectId),
+  index('idx_indicators_outcome_id').on(table.outcomeId),
+])
 
 export const evidenceItems = pgTable('evidence_items', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -183,6 +204,10 @@ export const evidenceItems = pgTable('evidence_items', {
 }, (table) => [
   check('evidence_items_type_check', sql`${table.type} IN ('file', 'url', 'text')`),
   check('evidence_items_status_check', sql`${table.status} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+  index('idx_evidence_items_project_id').on(table.projectId),
+  index('idx_evidence_items_organization_id').on(table.organizationId),
+  index('idx_evidence_items_outcome_id').on(table.outcomeId),
+  index('idx_evidence_items_indicator_id').on(table.indicatorId),
 ])
 
 export const proxySources = pgTable('proxy_sources', {
@@ -195,7 +220,9 @@ export const proxySources = pgTable('proxy_sources', {
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_proxy_sources_organization_id').on(table.organizationId),
+])
 
 export const financialProxies = pgTable('financial_proxies', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -225,6 +252,8 @@ export const financialProxies = pgTable('financial_proxies', {
   check('methodological_risk_check', sql`${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
   check('review_status_check', sql`${table.reviewStatus} IN ('suggested', 'pending_review', 'approved', 'rejected', 'archived')`),
   check('approved_proxy_check', sql`${table.reviewStatus} != 'approved' OR (${table.value} IS NOT NULL AND ${table.currency} IS NOT NULL AND ${table.unit} IS NOT NULL AND ${table.referenceYear} IS NOT NULL)`),
+  index('idx_financial_proxies_organization_id').on(table.organizationId),
+  index('idx_financial_proxies_source_id').on(table.sourceId),
 ])
 
 export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
@@ -240,7 +269,12 @@ export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   assignmentStatus: varchar('assignment_status', { length: 20 }).default('active').notNull(),
   archivedBy: uuid('archived_by').references(() => users.id),
   archivedAt: timestamp('archived_at')
-})
+}, (table) => [
+  index('idx_opa_project_id').on(table.projectId),
+  index('idx_opa_organization_id').on(table.organizationId),
+  index('idx_opa_outcome_id').on(table.outcomeId),
+  index('idx_opa_proxy_id').on(table.proxyId),
+])
 
 export const projectInvestments = pgTable('project_investments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -257,6 +291,7 @@ export const projectInvestments = pgTable('project_investments', {
 }, (table) => [
   check('project_investments_amount_check', sql`cast(nullif(${table.amount}, '') as numeric) > 0`),
   check('project_investments_status_check', sql`${table.status} IN ('active', 'archived')`),
+  index('idx_project_investments_project_id').on(table.projectId),
 ])
 
 export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {
@@ -274,6 +309,7 @@ export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {
 }, (table) => [
   check('sroi_assignment_inputs_quantity_check', sql`cast(nullif(${table.quantity}, '') as numeric) > 0`),
   check('sroi_assignment_inputs_status_check', sql`${table.status} IN ('active', 'archived')`),
+  index('idx_sroi_assignment_inputs_assignment_id').on(table.assignmentId),
 ])
 
 export const sroiFilterSets = pgTable('sroi_filter_sets', {
@@ -297,6 +333,7 @@ export const sroiFilterSets = pgTable('sroi_filter_sets', {
   check('sroi_filter_sets_dropoff_pct_check', sql`cast(nullif(${table.dropoffPct}, '') as numeric) >= 0 AND cast(nullif(${table.dropoffPct}, '') as numeric) <= 100`),
   check('sroi_filter_sets_duration_years_check', sql`${table.durationYears} >= 1 AND ${table.durationYears} <= 50`),
   check('sroi_filter_sets_status_check', sql`${table.status} IN ('active', 'archived')`),
+  index('idx_sroi_filter_sets_assignment_id').on(table.assignmentId),
 ])
 
 export const sroiCalculationRuns = pgTable('sroi_calculation_runs', {
@@ -317,6 +354,7 @@ export const sroiCalculationRuns = pgTable('sroi_calculation_runs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   check('sroi_calculation_runs_status_check', sql`${table.status} IN ('calculated', 'failed', 'pending')`),
+  index('idx_sroi_calculation_runs_project_id').on(table.projectId),
 ])
 
 export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
@@ -338,7 +376,10 @@ export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
   durationYears: integer('duration_years'),
   year: integer('year'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (table) => [
+  index('idx_sroi_line_items_run_id').on(table.runId),
+  index('idx_sroi_line_items_assignment_id').on(table.assignmentId),
+])
 
 export const sroiRunReviews = pgTable('sroi_run_reviews', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -357,6 +398,8 @@ export const sroiRunReviews = pgTable('sroi_run_reviews', {
 }, (table) => [
   check('sroi_run_reviews_status_check', sql`${table.status} IN ('draft', 'reviewed', 'approved', 'flagged', 'archived')`),
   check('sroi_run_reviews_score_check', sql`${table.readinessScore} >= 0 AND ${table.readinessScore} <= 100`),
+  index('idx_sroi_run_reviews_calculation_run_id').on(table.calculationRunId),
+  index('idx_sroi_run_reviews_project_id').on(table.projectId),
 ])
 
 export const sroiRunReviewItems = pgTable('sroi_run_review_items', {
@@ -375,6 +418,7 @@ export const sroiRunReviewItems = pgTable('sroi_run_review_items', {
 }, (table) => [
   check('sroi_run_review_items_status_check', sql`${table.status} IN ('pass', 'warning', 'fail', 'not_applicable')`),
   check('sroi_run_review_items_severity_check', sql`${table.severity} IN ('low', 'medium', 'high')`),
+  index('idx_sroi_run_review_items_review_id').on(table.reviewId),
 ])
 
 export const sroiReports = pgTable('sroi_reports', {
@@ -393,6 +437,8 @@ export const sroiReports = pgTable('sroi_reports', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('sroi_reports_status_check', sql`${table.status} IN ('draft', 'under_review', 'locked', 'archived')`),
+  index('idx_sroi_reports_project_id').on(table.projectId),
+  index('idx_sroi_reports_calculation_run_id').on(table.calculationRunId),
 ])
 
 export const stellaInteractions = pgTable('stella_interactions', {
@@ -412,6 +458,13 @@ export const stellaInteractions = pgTable('stella_interactions', {
 }, (table) => [
   check('stella_interactions_stella_role_check', sql`${table.stellaRole} IN ('advisor', 'validator', 'composer')`),
   check('stella_interactions_risk_level_check', sql`${table.riskLevel} IS NULL OR ${table.riskLevel} IN ('low', 'medium', 'high')`),
+  // These already exist in the DB via migration 0012 — declared here so
+  // schema.ts reflects reality (they were previously missing from the model).
+  index('stella_interactions_org_created_idx').on(table.organizationId, table.createdAt),
+  index('stella_interactions_project_role_idx').on(table.projectId, table.stellaRole),
+  index('stella_interactions_created_by_created_idx').on(table.createdBy, table.createdAt),
+  index('stella_interactions_context_hash_idx').on(table.contextHash),
+  index('stella_interactions_risk_level_idx').on(table.riskLevel).where(sql`${table.riskLevel} IS NOT NULL`),
 ])
 
 export const sroiReportSections = pgTable('sroi_report_sections', {
@@ -429,4 +482,5 @@ export const sroiReportSections = pgTable('sroi_report_sections', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('sroi_report_sections_sort_order_check', sql`${table.sortOrder} >= 0`),
+  index('idx_sroi_report_sections_report_id').on(table.reportId),
 ])
