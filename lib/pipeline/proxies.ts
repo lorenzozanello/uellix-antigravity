@@ -297,13 +297,13 @@ export async function assignProxyToOutcome(projectId: string, input: unknown) {
   // Verify outcome belongs to the same project
   const outcome = await db.select().from(outcomes).where(eq(outcomes.id, data.outcomeId)).then(r => r[0]);
   if (!outcome || outcome.projectId !== projectId) throw new Error('Outcome not found or forbidden');
-  // Verify proxy visibility
+  // Verify proxy visibility. getFinancialProxyById already returns null for
+  // any proxy owned by another org (only org-owned-by-caller or approved
+  // system proxies are ever returned), so no further org-mismatch check is
+  // needed here — only the system-proxy approval status remains to check.
   const proxy = await getFinancialProxyById(data.proxyId);
   if (!proxy) throw new Error('Proxy not visible');
-  if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) {
-    // proxy belongs to another organization and is not a system proxy approved
-    if (proxy.reviewStatus !== 'approved') throw new Error('Proxy not visible');
-  } else if (!proxy.organizationId && proxy.reviewStatus !== 'approved') {
+  if (!proxy.organizationId && proxy.reviewStatus !== 'approved') {
     throw new Error('System proxy not approved');
   }
   // Ensure justification is provided (already validated by Zod)

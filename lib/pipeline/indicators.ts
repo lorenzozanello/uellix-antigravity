@@ -1,6 +1,6 @@
 // lib/pipeline/indicators.ts
 import { db } from '@/db/client';
-import { indicators, projects } from '@/db/schema';
+import { indicators, projects, outcomes } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
@@ -62,6 +62,14 @@ export async function createIndicatorForProject(
     throw new Error('Insufficient permissions to create indicator');
   }
   const parsed = indicatorInputSchema.parse(input);
+
+  const outcome = await db
+    .select()
+    .from(outcomes)
+    .where(and(eq(outcomes.id, parsed.outcomeId), eq(outcomes.projectId, projectId)))
+    .limit(1);
+  if (outcome.length === 0) throw new Error('Outcome does not belong to this project');
+
   const result = await db
     .insert(indicators)
     .values({

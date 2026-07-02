@@ -131,8 +131,10 @@ export async function upsertSroiAssignmentInput(projectId: string, assignmentId:
 
 export async function upsertSroiFilterSet(projectId: string, assignmentId: string, input: FilterSetInput) {
   const ctx = await authorize(projectId)
+  const assign = await db.select().from(outcomeProxyAssignments).where(and(eq(outcomeProxyAssignments.id, assignmentId), eq(outcomeProxyAssignments.projectId, projectId)))
+  if (assign.length === 0) throw new Error('Assignment not found for project')
   const validated = FilterSetSchema.parse(input)
-  const existing = await db.select().from(sroiFilterSets).where(eq(sroiFilterSets.assignmentId, assignmentId))
+  const existing = await db.select().from(sroiFilterSets).where(and(eq(sroiFilterSets.assignmentId, assignmentId), eq(sroiFilterSets.organizationId, ctx.organization.id)))
 
   if (existing.length > 0) {
     await db.update(sroiFilterSets).set({ ...validated, updatedAt: new Date() }).where(eq(sroiFilterSets.id, existing[0].id))

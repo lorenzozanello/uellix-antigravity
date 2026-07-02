@@ -80,7 +80,9 @@ describe('Outcome service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDbData.project = { id: 'proj-1', organizationId: 'org-1' };
-    mockDbData.entities = [];
+    // Default: the stakeholder-group-ownership lookup finds a match, so
+    // existing happy-path tests (which don't care about this check) pass.
+    mockDbData.entities = [{ id: '550e8400-e29b-41d4-a716-446655440000', projectId: 'proj-1' }];
     mockDbData.inserted = { id: 'out-1', projectId: 'proj-1', stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000' };
   });
 
@@ -160,6 +162,23 @@ describe('Outcome service', () => {
 
     await expect(listOutcomes('proj-1')).rejects.toThrow(
       'Project does not belong to your organization'
+    );
+  });
+
+  it('rejects creation when stakeholderGroupId does not belong to this project (SEC-001 regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    // No stakeholder group matches (projectId, stakeholderGroupId) — simulates
+    // a UUID belonging to another org's stakeholder group.
+    mockDbData.entities = [];
+
+    const input = { title: 'Cross-org group hijack', stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000' };
+    await expect(createOutcome('proj-1', input)).rejects.toThrow(
+      'Stakeholder group does not belong to this project'
     );
   });
 });

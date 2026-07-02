@@ -1,6 +1,6 @@
 // lib/pipeline/outcomes.ts
 import { db } from '@/db/client';
-import { outcomes, projects } from '@/db/schema';
+import { outcomes, projects, stakeholderGroups } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
@@ -57,6 +57,14 @@ export async function createOutcomeForProject(
     throw new Error('Insufficient permissions to create outcome');
   }
   const parsed = outcomeInputSchema.parse(input);
+
+  const group = await db
+    .select()
+    .from(stakeholderGroups)
+    .where(and(eq(stakeholderGroups.id, parsed.stakeholderGroupId), eq(stakeholderGroups.projectId, projectId)))
+    .limit(1);
+  if (group.length === 0) throw new Error('Stakeholder group does not belong to this project');
+
   const result = await db
     .insert(outcomes)
     .values({

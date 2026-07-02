@@ -456,8 +456,9 @@ export async function updateReportSection(projectId: string, reportId: string, s
       updatedAt: new Date(),
       updatedBy: ctx.user.id,
     })
-    .where(eq(sroiReportSections.id, sectionId))
+    .where(and(eq(sroiReportSections.id, sectionId), eq(sroiReportSections.reportId, reportId)))
     .returning();
+  if (updated.length === 0) throw new Error('Report section not found for this report');
 
   await logAuditAction({
     organizationId: ctx.organization.id,
