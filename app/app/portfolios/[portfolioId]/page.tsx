@@ -1,9 +1,12 @@
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { getPortfolioByIdForCurrentOrganization } from '@/lib/portfolios/service';
+import { listProjectsForPortfolio } from '@/lib/projects/service';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FolderKanban } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ProjectCard } from '@/components/projects/ProjectCard';
+import { EmptyState } from '@/components/states/EmptyState';
 
 const STATUS_CONFIG: Record<string, { variant: 'success' | 'neutral'; label: string }> = {
   active: { variant: 'success', label: 'Activo' },
@@ -22,10 +25,12 @@ export default async function PortfolioDetailPage({
   const portfolio = await getPortfolioByIdForCurrentOrganization(portfolioId);
   if (!portfolio) return <p>Portafolio no encontrado o acceso denegado.</p>;
 
+  const projects = await listProjectsForPortfolio(portfolioId);
+
   const statusConfig = STATUS_CONFIG[portfolio.status] ?? { variant: 'neutral' as const, label: portfolio.status };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl">
       <div>
         <Link
           href="/app/portfolios"
@@ -60,6 +65,34 @@ export default async function PortfolioDetailPage({
           </dl>
         </CardContent>
       </Card>
+
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground mb-3">
+          Proyectos SROI ({projects.length})
+        </h2>
+        {projects.length === 0 ? (
+          <EmptyState
+            icon={<FolderKanban className="h-6 w-6 text-neutral-500" />}
+            title="Sin proyectos en este portafolio"
+            description="Los proyectos SROI se asocian a un portafolio al crearlos."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                id={project.id}
+                name={project.name}
+                description={project.description}
+                status={project.status}
+                territory={project.territory}
+                country={project.country}
+                startDate={project.startDate}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
