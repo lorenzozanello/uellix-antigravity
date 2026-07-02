@@ -34,7 +34,10 @@ export default async function AcceptInvitationPage(props: {
               Necesitas iniciar sesión con el correo al que se envió esta invitación antes de poder aceptarla.
               Después de iniciar sesión, regresa a este mismo enlace.
             </p>
-            <Link href="/login" className={LINK_BUTTON_CLASS}>
+            <Link
+              href={`/login?redirect=${encodeURIComponent(`/invite/accept?token=${token}`)}`}
+              className={LINK_BUTTON_CLASS}
+            >
               Iniciar sesión
             </Link>
           </CardContent>

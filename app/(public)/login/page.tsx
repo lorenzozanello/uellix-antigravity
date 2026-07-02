@@ -1,4 +1,5 @@
 import { login, signup } from './actions'
+import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,11 +9,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: 'No se pudo iniciar sesión. Verifica tu correo y contraseña.',
 }
 
-export default async function LoginPage(props: { searchParams: Promise<{ error?: string }> }) {
+export default async function LoginPage(props: { searchParams: Promise<{ error?: string; redirect?: string }> }) {
   const searchParams = await props.searchParams
   const errorMessage = searchParams?.error
     ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error. Intenta de nuevo.'
     : null
+  const redirectTo = isSafeRedirectPath(searchParams?.redirect) ? searchParams.redirect : null
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -27,6 +29,7 @@ export default async function LoginPage(props: { searchParams: Promise<{ error?:
               {errorMessage}
             </div>
           )}
+          {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium leading-none text-foreground">Correo electrónico</Label>
