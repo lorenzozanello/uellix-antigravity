@@ -107,12 +107,12 @@ describe('StellaValidatorPanel', () => {
   describe('Idle state', () => {
     it('renders in idle state with Review with Stella button', () => {
       render(<StellaValidatorPanel projectId="proj-1" />)
-      expect(screen.queryByText(/review with stella/i)).not.toBeNull()
+      expect(screen.queryByText(/revisar con stella/i)).not.toBeNull()
     })
 
     it('shows the Review with Stella button as enabled in idle state', () => {
       render(<StellaValidatorPanel projectId="proj-1" />)
-      const btn = screen.getByText(/review with stella/i).closest('button')
+      const btn = screen.getByText(/revisar con stella/i).closest('button')
       expect(btn).not.toBeNull()
       expect(btn?.disabled).toBe(false)
     })
@@ -130,21 +130,21 @@ describe('StellaValidatorPanel', () => {
     it('shows required disclaimer: advisory risk review only', () => {
       render(<StellaValidatorPanel projectId="proj-1" />)
       expect(
-        screen.queryByText(/stella validator provides advisory risk review only/i)
+        screen.queryByText(/stella validator ofrece únicamente una revisión de riesgo consultiva/i)
       ).not.toBeNull()
     })
 
     it('shows required disclaimer: human review required', () => {
       render(<StellaValidatorPanel projectId="proj-1" />)
       expect(
-        screen.queryByText(/human review is required before external use/i)
+        screen.queryByText(/se requiere revisión humana antes de su uso externo/i)
       ).not.toBeNull()
     })
 
     it('does not show success content in idle state', () => {
       render(<StellaValidatorPanel projectId="proj-1" />)
-      expect(screen.queryByText(/summary/i)).toBeNull()
-      expect(screen.queryByText(/risk level/i)).toBeNull()
+      expect(screen.queryByText(/resumen/i)).toBeNull()
+      expect(screen.queryByText(/nivel de riesgo/i)).toBeNull()
     })
   })
 
@@ -172,7 +172,7 @@ describe('StellaValidatorPanel', () => {
       success()
       render(<StellaValidatorPanel projectId="proj-abc" />)
 
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-abc', 'Calculation')
@@ -183,7 +183,7 @@ describe('StellaValidatorPanel', () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
 
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         const [, step] = mockGetStellaValidator.mock.calls[0]
@@ -195,7 +195,7 @@ describe('StellaValidatorPanel', () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" step="Calculation" />)
 
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-1', 'Calculation')
@@ -206,7 +206,7 @@ describe('StellaValidatorPanel', () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
 
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaValidator).toHaveBeenCalledTimes(1)
@@ -223,10 +223,10 @@ describe('StellaValidatorPanel', () => {
       mockGetStellaValidator.mockReturnValue(new Promise((res) => { resolve = res }))
 
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        const btn = screen.getByText(/loading/i).closest('button')
+        const btn = screen.getByText(/cargando/i).closest('button')
         expect(btn?.disabled).toBe(true)
       })
 
@@ -240,7 +240,7 @@ describe('StellaValidatorPanel', () => {
       mockGetStellaValidator.mockReturnValue(new Promise((res) => { resolve = res }))
 
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
@@ -259,17 +259,17 @@ describe('StellaValidatorPanel', () => {
     it('renders Summary section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/summary/i)).not.toBeNull()
+        expect(screen.queryByText(/resumen/i)).not.toBeNull()
       })
     })
 
     it('renders summary content from ValidatorOutput', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(VALID_OUTPUT.summary)).not.toBeNull()
@@ -279,47 +279,47 @@ describe('StellaValidatorPanel', () => {
     it('renders Risk Level section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/risk level/i)).not.toBeNull()
+        expect(screen.queryByText(/nivel de riesgo/i)).not.toBeNull()
       })
     })
 
     it('renders risk_level badge with correct value', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText('medium')).not.toBeNull()
+        expect(screen.queryByText('Medio')).not.toBeNull()
       })
     })
 
     it('renders high risk level badge', async () => {
       success(VALID_OUTPUT_HIGH_RISK)
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText('high')).not.toBeNull()
+        expect(screen.queryByText('Alto')).not.toBeNull()
       })
     })
 
     it('renders Evidence gaps section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/evidence gaps/i)).not.toBeNull()
+        expect(screen.queryByText(/vacíos de evidencia/i)).not.toBeNull()
       })
     })
 
     it('renders evidence gap items as list', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText('Indicator 2 lacks supporting documentation')).not.toBeNull()
@@ -329,17 +329,17 @@ describe('StellaValidatorPanel', () => {
     it('renders Proxy risks section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/proxy risks/i)).not.toBeNull()
+        expect(screen.queryByText(/riesgos de proxies/i)).not.toBeNull()
       })
     })
 
     it('renders proxy risk items as list', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText('Proxy for Outcome 1 has low confidence level')).not.toBeNull()
@@ -349,38 +349,38 @@ describe('StellaValidatorPanel', () => {
     it('renders Attribution risks section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/attribution risks/i)).not.toBeNull()
+        expect(screen.queryByText(/riesgos de atribución/i)).not.toBeNull()
       })
     })
 
     it('renders Claim risks section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         // "claim risks" appears in both the <h4> heading and "No claim risks identified" empty text
-        expect(screen.queryAllByText(/claim risks/i).length).toBeGreaterThan(0)
+        expect(screen.queryAllByText(/riesgos de afirmaciones/i).length).toBeGreaterThan(0)
       })
     })
 
     it('renders Recommendations section', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/recommendations/i)).not.toBeNull()
+        expect(screen.queryByText(/recomendaciones/i)).not.toBeNull()
       })
     })
 
     it('renders recommendation items as list', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText('Obtain additional evidence for Indicator 2')).not.toBeNull()
@@ -390,53 +390,53 @@ describe('StellaValidatorPanel', () => {
     it('renders all 7 output sections together', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/summary/i)).not.toBeNull()
-        expect(screen.queryByText(/risk level/i)).not.toBeNull()
-        expect(screen.queryByText(/evidence gaps/i)).not.toBeNull()
-        expect(screen.queryByText(/proxy risks/i)).not.toBeNull()
-        expect(screen.queryByText(/attribution risks/i)).not.toBeNull()
+        expect(screen.queryByText(/resumen/i)).not.toBeNull()
+        expect(screen.queryByText(/nivel de riesgo/i)).not.toBeNull()
+        expect(screen.queryByText(/vacíos de evidencia/i)).not.toBeNull()
+        expect(screen.queryByText(/riesgos de proxies/i)).not.toBeNull()
+        expect(screen.queryByText(/riesgos de atribución/i)).not.toBeNull()
         // "claim risks" appears in both heading and empty-state text — use queryAllByText
-        expect(screen.queryAllByText(/claim risks/i).length).toBeGreaterThan(0)
-        expect(screen.queryByText(/recommendations/i)).not.toBeNull()
+        expect(screen.queryAllByText(/riesgos de afirmaciones/i).length).toBeGreaterThan(0)
+        expect(screen.queryByText(/recomendaciones/i)).not.toBeNull()
       })
     })
 
     it('renders human review banner', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/human review required/i)).not.toBeNull()
+        expect(screen.queryByText(/se requiere revisión humana/i)).not.toBeNull()
       })
     })
 
     it('human review banner contains required copy', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/summary/i)).not.toBeNull()
+        expect(screen.queryByText(/resumen/i)).not.toBeNull()
       })
 
       // "does not certify..." appears in both banner and footer — check textContent
       expect(document.body.textContent).toMatch(
-        /this review does not certify, audit, approve, or guarantee impact/i
+        /esta revisión no certifica, audita, aprueba ni garantiza el impacto/i
       )
     })
 
     it('shows disclaimer footer in success state', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         const disclaimers = screen.queryAllByText(
-          /stella validator provides advisory risk review only/i
+          /stella validator ofrece únicamente una revisión de riesgo consultiva/i
         )
         expect(disclaimers.length).toBeGreaterThan(0)
       })
@@ -445,22 +445,22 @@ describe('StellaValidatorPanel', () => {
     it('allows retry after success (button still present)', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/summary/i)).not.toBeNull()
+        expect(screen.queryByText(/resumen/i)).not.toBeNull()
       })
 
-      expect(screen.queryByText(/review with stella/i)).not.toBeNull()
+      expect(screen.queryByText(/revisar con stella/i)).not.toBeNull()
     })
 
     it('empty list sections show "no X identified" text', async () => {
       success() // VALID_OUTPUT has empty claim_risks
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/no claim risks identified/i)).not.toBeNull()
+        expect(screen.queryByText(/no se identificaron riesgos de afirmaciones/i)).not.toBeNull()
       })
     })
   })
@@ -472,11 +472,11 @@ describe('StellaValidatorPanel', () => {
     it('shows error fallback message on GEMINI_ERROR', async () => {
       geminiError()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella review is temporarily unavailable/i)
+          screen.queryByText(/la revisión de stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
     })
@@ -484,17 +484,17 @@ describe('StellaValidatorPanel', () => {
     it('shows "pipeline data is unaffected" in error message', async () => {
       geminiError()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/your pipeline data is unaffected/i)).not.toBeNull()
+        expect(screen.queryByText(/los datos de tu pipeline no se ven afectados/i)).not.toBeNull()
       })
     })
 
     it('error message has role="alert" for screen readers', async () => {
       geminiError()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(document.querySelector('[role="alert"]')).not.toBeNull()
@@ -504,25 +504,25 @@ describe('StellaValidatorPanel', () => {
     it('allows retry after error', async () => {
       geminiError()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella review is temporarily unavailable/i)
+          screen.queryByText(/la revisión de stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
 
-      expect(screen.queryByText(/review with stella/i)).not.toBeNull()
+      expect(screen.queryByText(/revisar con stella/i)).not.toBeNull()
     })
 
     it('handles thrown exceptions gracefully', async () => {
       mockGetStellaValidator.mockRejectedValue(new Error('Network error'))
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella review is temporarily unavailable/i)
+          screen.queryByText(/la revisión de stella no está disponible temporalmente/i)
         ).not.toBeNull()
       })
     })
@@ -535,7 +535,7 @@ describe('StellaValidatorPanel', () => {
     it('renders null when action returns DISABLED', async () => {
       disabled()
       const { container } = render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(container.firstChild).toBeNull()
@@ -545,7 +545,7 @@ describe('StellaValidatorPanel', () => {
     it('does not render any content when DISABLED', async () => {
       disabled()
       const { container } = render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(container.innerHTML).toBe('')
@@ -560,11 +560,11 @@ describe('StellaValidatorPanel', () => {
     it('shows rate limited message when RATE_LIMITED error returned', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella validator request limit reached/i)
+          screen.queryByText(/se alcanzó el límite de solicitudes a stella validator/i)
         ).not.toBeNull()
       })
     })
@@ -572,7 +572,7 @@ describe('StellaValidatorPanel', () => {
     it('shows reset time from error message', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/2026-06-26T15:00:00/)).not.toBeNull()
@@ -582,7 +582,7 @@ describe('StellaValidatorPanel', () => {
     it('rate limited message has role="alert"', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(document.querySelector('[role="alert"]')).not.toBeNull()
@@ -592,25 +592,25 @@ describe('StellaValidatorPanel', () => {
     it('shows calculation data unaffected message in rate limited state', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/your calculation data is unaffected/i)).not.toBeNull()
+        expect(screen.queryByText(/los datos de tu cálculo no se ven afectados/i)).not.toBeNull()
       })
     })
 
     it('allows retry after rate limit (button remains visible)', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella validator request limit reached/i)
+          screen.queryByText(/se alcanzó el límite de solicitudes a stella validator/i)
         ).not.toBeNull()
       })
 
-      expect(screen.queryByText(/review with stella/i)).not.toBeNull()
+      expect(screen.queryByText(/revisar con stella/i)).not.toBeNull()
     })
 
     it('does not block the rest of the UI in rate limited state', async () => {
@@ -621,11 +621,11 @@ describe('StellaValidatorPanel', () => {
           <p data-testid="outside-content">Calculation data here</p>
         </div>
       )
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/stella validator request limit reached/i)
+          screen.queryByText(/se alcanzó el límite de solicitudes a stella validator/i)
         ).not.toBeNull()
       })
 
@@ -648,10 +648,10 @@ describe('StellaValidatorPanel', () => {
     it('does not claim certification in rendered content', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/summary/i)).not.toBeNull()
+        expect(screen.queryByText(/resumen/i)).not.toBeNull()
       })
 
       const text = document.body.textContent ?? ''
@@ -668,22 +668,22 @@ describe('StellaValidatorPanel', () => {
     it('shows required "does not certify" disclaimer in success state', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/summary/i)).not.toBeNull()
+        expect(screen.queryByText(/resumen/i)).not.toBeNull()
       })
 
       // Disclaimer appears in both banner and footer — verify via body textContent
       expect(document.body.textContent).toMatch(
-        /this review does not certify, audit, approve, or guarantee impact/i
+        /esta revisión no certifica, audita, aprueba ni garantiza el impacto/i
       )
     })
 
     it('does not make real Gemini calls — action is fully mocked', async () => {
       success()
       render(<StellaValidatorPanel projectId="proj-1" />)
-      fireEvent.click(screen.getByText(/review with stella/i))
+      fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
         expect(mockGetStellaValidator).toHaveBeenCalled()

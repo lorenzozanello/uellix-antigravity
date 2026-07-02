@@ -31,6 +31,12 @@ const RISK_LEVEL_STYLES: Record<'low' | 'medium' | 'high', string> = {
   high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 }
 
+const RISK_LEVEL_LABELS: Record<'low' | 'medium' | 'high', string> = {
+  low: 'Bajo',
+  medium: 'Medio',
+  high: 'Alto',
+}
+
 export function StellaValidatorPanel({
   projectId,
   step = 'Calculation',
@@ -76,8 +82,8 @@ export function StellaValidatorPanel({
         <div className="min-w-0">
           <p className="font-medium text-foreground">{title ?? 'Stella Validator'}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Stella Validator provides advisory risk review only. Human review is required before
-            external use.
+            Stella Validator ofrece únicamente una revisión de riesgo consultiva. Se requiere
+            revisión humana antes de su uso externo.
           </p>
         </div>
         <Button
@@ -87,7 +93,7 @@ export function StellaValidatorPanel({
           disabled={isLoading}
           className="shrink-0"
         >
-          {isLoading ? 'Loading…' : 'Review with Stella'}
+          {isLoading ? 'Cargando…' : 'Revisar con Stella'}
         </Button>
       </div>
 
@@ -109,10 +115,10 @@ export function StellaValidatorPanel({
       {panelState.status === 'rate_limited' && (
         <div aria-live="assertive" role="alert" className="mt-3">
           <p className="text-muted-foreground">
-            Stella Validator request limit reached for this hour. {panelState.message}
+            Se alcanzó el límite de solicitudes a Stella Validator por esta hora. {panelState.message}
           </p>
           <p className="mt-1 text-xs text-muted-foreground/70">
-            Your calculation data is unaffected.
+            Los datos de tu cálculo no se ven afectados.
           </p>
         </div>
       )}
@@ -120,7 +126,7 @@ export function StellaValidatorPanel({
       {/* Error — non-blocking, pipeline unaffected */}
       {panelState.status === 'error' && (
         <p aria-live="assertive" role="alert" className="mt-3 text-muted-foreground">
-          Stella review is temporarily unavailable. Your pipeline data is unaffected.
+          La revisión de Stella no está disponible temporalmente. Los datos de tu pipeline no se ven afectados.
         </p>
       )}
 
@@ -128,12 +134,12 @@ export function StellaValidatorPanel({
       {panelState.status === 'success' && (
         <div aria-live="polite" className="mt-3 space-y-3">
           {/* Summary */}
-          <ValidatorSection title="Summary" content={panelState.data.summary} />
+          <ValidatorSection title="Resumen" content={panelState.data.summary} />
 
           {/* Risk level badge */}
           <div>
             <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
-              Risk Level
+              Nivel de riesgo
             </h4>
             <span
               className={cn(
@@ -141,43 +147,43 @@ export function StellaValidatorPanel({
                 RISK_LEVEL_STYLES[panelState.data.risk_level]
               )}
             >
-              {panelState.data.risk_level}
+              {RISK_LEVEL_LABELS[panelState.data.risk_level]}
             </span>
           </div>
 
           {/* Evidence gaps */}
           <ValidatorList
-            title="Evidence gaps"
+            title="Vacíos de evidencia"
             items={panelState.data.evidence_gaps}
-            emptyText="No evidence gaps identified"
+            emptyText="No se identificaron vacíos de evidencia"
           />
 
           {/* Proxy risks */}
           <ValidatorList
-            title="Proxy risks"
+            title="Riesgos de proxies"
             items={panelState.data.proxy_risks}
-            emptyText="No proxy risks identified"
+            emptyText="No se identificaron riesgos de proxies"
           />
 
           {/* Attribution risks */}
           <ValidatorList
-            title="Attribution risks"
+            title="Riesgos de atribución"
             items={panelState.data.attribution_risks}
-            emptyText="No attribution risks identified"
+            emptyText="No se identificaron riesgos de atribución"
           />
 
           {/* Claim risks */}
           <ValidatorList
-            title="Claim risks"
+            title="Riesgos de afirmaciones"
             items={panelState.data.claim_risks}
-            emptyText="No claim risks identified"
+            emptyText="No se identificaron riesgos de afirmaciones"
           />
 
           {/* Recommendations */}
           <ValidatorList
-            title="Recommendations"
+            title="Recomendaciones"
             items={panelState.data.recommendations}
-            emptyText="No recommendations"
+            emptyText="Sin recomendaciones"
           />
 
           {/* Human review banner — requires_human_review is always true (z.literal) */}
@@ -186,18 +192,18 @@ export function StellaValidatorPanel({
             className="rounded border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/20"
           >
             <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
-              Human review required
+              Se requiere revisión humana
             </p>
             <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-500">
-              Human review is required before external use. This review does not certify, audit,
-              approve, or guarantee impact.
+              Se requiere revisión humana antes de su uso externo. Esta revisión no certifica,
+              audita, aprueba ni garantiza el impacto.
             </p>
           </div>
 
           {/* Disclaimer footer */}
           <p className="border-t border-border pt-2 text-xs text-muted-foreground/70">
-            Stella Validator provides advisory risk review only. This review does not certify,
-            audit, approve, or guarantee impact.
+            Stella Validator ofrece únicamente una revisión de riesgo consultiva. Esta revisión no
+            certifica, audita, aprueba ni garantiza el impacto.
           </p>
         </div>
       )}
