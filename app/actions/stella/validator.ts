@@ -14,7 +14,7 @@ import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ValidatorOutputSchema } from '@/lib/stella/schemas/validator-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
 import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
-import { checkStellaQuota, nextQuotaResetIso } from '@/lib/stella/quota'
+import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
@@ -100,7 +100,7 @@ export async function getStellaValidator(
     const message =
       quotaCheck.reason === 'no_quota'
         ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
-        : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${nextQuotaResetIso()}.`
+        : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
     return { ok: false, error: 'QUOTA_EXCEEDED', message }
   }
 

@@ -65,3 +65,13 @@ export function nextQuotaResetIso(): string {
   const now = new Date()
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0)).toISOString()
 }
+
+/** Formats an ISO-8601 string as human-readable Spanish (es-MX), e.g. "1 de agosto de 2026". */
+export function formatQuotaResetDate(isoString: string): string {
+  return new Date(isoString).toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}

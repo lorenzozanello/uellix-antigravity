@@ -15,6 +15,7 @@ type PanelState =
   | { status: 'success'; data: AdvisorOutput }
   | { status: 'error' }
   | { status: 'disabled' }
+  | { status: 'quota_exceeded'; message: string }
 
 interface StellaAdvisorPanelProps {
   projectId: string
@@ -39,6 +40,8 @@ export function StellaAdvisorPanel({
         setPanelState({ status: 'success', data: result.data })
       } else if (result.error === 'DISABLED') {
         setPanelState({ status: 'disabled' })
+      } else if (result.error === 'QUOTA_EXCEEDED') {
+        setPanelState({ status: 'quota_exceeded', message: result.message })
       } else {
         setPanelState({ status: 'error' })
       }
@@ -55,7 +58,8 @@ export function StellaAdvisorPanel({
   const canRetry =
     panelState.status === 'idle' ||
     panelState.status === 'error' ||
-    panelState.status === 'success'
+    panelState.status === 'success' ||
+    panelState.status === 'quota_exceeded'
 
   return (
     <section
@@ -108,6 +112,13 @@ export function StellaAdvisorPanel({
         >
           La orientación de Stella no está disponible temporalmente. Los datos de tu pipeline no se ven afectados.
         </p>
+      )}
+
+      {/* Quota exceeded state */}
+      {panelState.status === 'quota_exceeded' && (
+        <div aria-live="assertive" role="alert" className="mt-3">
+          <p className="text-muted-foreground">{panelState.message}</p>
+        </div>
       )}
 
       {/* Success state */}

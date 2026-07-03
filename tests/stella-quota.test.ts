@@ -30,7 +30,7 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
-import { checkStellaQuota } from '@/lib/stella/quota'
+import { checkStellaQuota, formatQuotaResetDate } from '@/lib/stella/quota'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -88,5 +88,15 @@ describe('checkStellaQuota', () => {
     const result = await checkStellaQuota('org-missing')
     expect(result.allowed).toBe(false)
     if (!result.allowed) expect(result.reason).toBe('no_quota')
+  })
+})
+
+describe('formatQuotaResetDate', () => {
+  it('formats a known ISO string as human-readable Spanish (es-MX)', () => {
+    expect(formatQuotaResetDate('2026-08-01T00:00:00.000Z')).toBe('1 de agosto de 2026')
+  })
+
+  it('formats a different month/year correctly', () => {
+    expect(formatQuotaResetDate('2027-01-01T00:00:00.000Z')).toBe('1 de enero de 2027')
   })
 })

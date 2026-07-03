@@ -67,6 +67,9 @@ function geminiError() {
     message: 'AI service error.',
   })
 }
+function quotaExceeded(message = 'Alcanzaste el límite mensual de 50 consultas a Stella (usadas: 50). Se renueva el 1 de agosto de 2026.') {
+  return mockGetStellaAdvisor.mockResolvedValue({ ok: false, error: 'QUOTA_EXCEEDED', message })
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -370,6 +373,15 @@ describe('StellaAdvisorPanel', () => {
         expect(
           screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
         ).not.toBeNull()
+      })
+    })
+
+    it('shows the quota message when QUOTA_EXCEEDED', async () => {
+      quotaExceeded()
+      render(<StellaAdvisorPanel projectId="proj-1" step="Narrativa" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+      await waitFor(() => {
+        expect(screen.queryByText(/límite mensual/i)).not.toBeNull()
       })
     })
   })

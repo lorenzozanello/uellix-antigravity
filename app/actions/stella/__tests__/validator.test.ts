@@ -71,6 +71,7 @@ const mockCheckStellaQuota = vi.fn()
 vi.mock('@/lib/stella/quota', () => ({
   checkStellaQuota: (...args: unknown[]) => mockCheckStellaQuota(...args),
   nextQuotaResetIso: () => '2026-08-01T00:00:00.000Z',
+  formatQuotaResetDate: () => '1 de agosto de 2026',
 }))
 
 const mockInsertValues = vi.fn().mockResolvedValue([])
