@@ -403,6 +403,15 @@ describe('buildComposerContext', () => {
       expect(ctx.evidenceTotal).toBe(2)
     })
 
+    it('truncates evidence content hash to 8 characters', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      const ev = ctx.evidenceMetadata.find((e) => e.contentHashTruncated)
+      expect(ev?.contentHashTruncated).toBe('abcdef12')
+      expect(ev?.contentHashTruncated?.length).toBe(8)
+    })
+
     it('includes readinessScore from latest review', async () => {
       await setupFullMockSequence({ withReview: true })
       const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
