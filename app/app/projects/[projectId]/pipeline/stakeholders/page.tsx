@@ -48,7 +48,7 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Grupos de interés" />
+      <StellaAdvisorPanel projectId={projectId} step="Grupos de interés" highlightHint={!stakeholders?.length} />
       {stakeholders?.length ? (
         <Card>
           <CardHeader>

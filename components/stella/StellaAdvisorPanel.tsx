@@ -22,6 +22,7 @@ interface StellaAdvisorPanelProps {
   step: string
   title?: string
   className?: string
+  highlightHint?: boolean
 }
 
 export function StellaAdvisorPanel({
@@ -29,6 +30,7 @@ export function StellaAdvisorPanel({
   step,
   title,
   className,
+  highlightHint = false,
 }: StellaAdvisorPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
 
@@ -64,7 +66,10 @@ export function StellaAdvisorPanel({
   return (
     <section
       className={cn(
-        'rounded-lg border border-border bg-muted/20 p-4 my-4 text-sm',
+        'rounded-lg border p-4 my-4 text-sm',
+        highlightHint
+          ? 'border-[#FF6A00]/40 bg-[#FF6A00]/5'
+          : 'border-border bg-muted/20',
         className
       )}
       aria-label={title ?? 'Stella Advisor'}
@@ -76,6 +81,11 @@ export function StellaAdvisorPanel({
           <p className="mt-0.5 text-xs text-muted-foreground">
             Stella brinda orientación consultiva únicamente. Se requiere revisión humana antes de su uso externo.
           </p>
+          {highlightHint && (
+            <p className="mt-1 text-xs font-medium text-[#B85200]">
+              💡 Recién estás empezando este paso — Stella puede orientarte.
+            </p>
+          )}
         </div>
         <Button
           variant="outline"

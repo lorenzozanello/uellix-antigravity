@@ -408,6 +408,19 @@ describe('StellaAdvisorPanel', () => {
     })
   })
 
+  describe('Empty-step highlight', () => {
+    it('applies a highlighted style when highlightHint is true', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="Narrativa" highlightHint />)
+      const hint = screen.queryByText(/recién estás empezando/i)
+      expect(hint).not.toBeNull()
+    })
+
+    it('does NOT show the hint by default', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="Narrativa" />)
+      expect(screen.queryByText(/recién estás empezando/i)).toBeNull()
+    })
+  })
+
   describe('Security invariants', () => {
     it('does not read GEMINI_API_KEY env var', () => {
       expect(process.env.GEMINI_API_KEY).toBeUndefined()
