@@ -1,7 +1,7 @@
 'use server'
 // app/actions/stella/advisor.ts
 // Sprint 9C-1: Stella Advisor server action
-// Security: feature-flagged, auth-gated, metadata-only context, no DB writes, no secret logging
+// Security: feature-flagged, auth-gated, metadata-only context, audit-logged, no secret logging
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
