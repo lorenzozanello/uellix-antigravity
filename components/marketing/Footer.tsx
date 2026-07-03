@@ -16,8 +16,8 @@ const resourceLinks = [
 const companyLinks = [
   { label: "Sobre Uellix", href: "mailto:hola@uellix.com" },
   { label: "Contacto",     href: "mailto:hola@uellix.com" },
-  { label: "Privacidad",   href: "#" },
-  { label: "Términos",     href: "#" },
+  { label: "Privacidad",   href: "/privacidad" },
+  { label: "Términos",     href: "/terminos" },
 ]
 
 export function Footer() {
