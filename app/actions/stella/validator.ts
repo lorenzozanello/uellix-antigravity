@@ -14,6 +14,7 @@ import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ValidatorOutputSchema } from '@/lib/stella/schemas/validator-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
 import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
+import { checkStellaQuota, nextQuotaResetIso } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
@@ -24,6 +25,7 @@ export type StellaValidatorErrorCode =
   | 'UNAUTHORIZED'
   | 'UNSUPPORTED_STEP'
   | 'RATE_LIMITED'
+  | 'QUOTA_EXCEEDED'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
@@ -83,6 +85,23 @@ export async function getStellaValidator(
       error: 'RATE_LIMITED',
       message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
     }
+  }
+
+  // Quota check — enforced per org, per calendar month, DB-backed.
+  // Every org defaults to quota 0 (blocked) until a super_admin assigns one.
+  // Note: this check and the later audit insert (stella_interactions row)
+  // are not transactionally consistent — a request that straddles a UTC
+  // month rollover between this check and the insert could be counted
+  // against the new month instead of the one it was checked against. This
+  // is a narrow, low-severity race (sub-second window, once a month) and
+  // an accepted tradeoff, not a bug.
+  const quotaCheck = await checkStellaQuota(ctx.organization.id)
+  if (!quotaCheck.allowed) {
+    const message =
+      quotaCheck.reason === 'no_quota'
+        ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
+        : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${nextQuotaResetIso()}.`
+    return { ok: false, error: 'QUOTA_EXCEEDED', message }
   }
 
   try {

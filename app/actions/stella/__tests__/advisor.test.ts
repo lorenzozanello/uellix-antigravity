@@ -67,6 +67,12 @@ vi.mock('@/lib/stella/rate-limit', () => ({
   recordStellaRequest: (...args: unknown[]) => mockRecordStellaRequest(...args),
 }))
 
+const mockCheckStellaQuota = vi.fn()
+vi.mock('@/lib/stella/quota', () => ({
+  checkStellaQuota: (...args: unknown[]) => mockCheckStellaQuota(...args),
+  nextQuotaResetIso: () => '2026-08-01T00:00:00.000Z',
+}))
+
 const mockInsertValues = vi.fn().mockResolvedValue([])
 const mockDbInsert = vi.fn().mockReturnValue({ values: mockInsertValues })
 vi.mock('@/db/client', () => ({
@@ -137,6 +143,7 @@ const RATE_LIMIT_EXCEEDED: RateLimitResult = {
 function setupSuccessfulCall() {
   mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+  mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 2, quota: 50 })
   mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
   mockAdapterGenerate.mockResolvedValue({
     role: 'advisor',
@@ -162,6 +169,9 @@ describe('getStellaAdvisor server action', () => {
     mockStellaState.canUseStella = true
     mockInsertValues.mockResolvedValue([])
     mockDbInsert.mockReturnValue({ values: mockInsertValues })
+    // Default: quota allowed, so tests unrelated to quota don't need to set it up.
+    // Tests in the "Quota enforcement" describe block override this per-case.
+    mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
   })
 
   describe('Feature flag gate', () => {
@@ -427,6 +437,66 @@ describe('getStellaAdvisor server action', () => {
 
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
       expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Quota enforcement', () => {
+    it('returns QUOTA_EXCEEDED when org has no quota assigned', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 0, quota: 0, reason: 'no_quota' })
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
+    })
+
+    it('returns QUOTA_EXCEEDED when org used up its monthly quota', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBe('QUOTA_EXCEEDED')
+        expect(result.message).toContain('50')
+      }
+    })
+
+    it('does NOT call Gemini when quota exceeded', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+
+      await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it('checks quota with organization.id', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      expect(mockCheckStellaQuota).toHaveBeenCalledWith(MOCK_ORG_CONTEXT.organization.id)
+    })
+
+    it('allows unlimited orgs (quota: null) through', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: null })
+      mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockAdapterGenerate.mockResolvedValue({
+        role: 'advisor', rawOutput: JSON.stringify(VALID_ADVISOR_OUTPUT), parsedOutput: null,
+        modelUsed: 'gemini-2.0-flash', timestamp: new Date(),
+      })
+      mockAdapterParseResponse.mockResolvedValue(VALID_ADVISOR_OUTPUT)
+      mockInsertValues.mockResolvedValue([])
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(true)
     })
   })
 
