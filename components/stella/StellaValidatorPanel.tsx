@@ -17,6 +17,7 @@ type PanelState =
   | { status: 'error' }
   | { status: 'disabled' }
   | { status: 'rate_limited'; message: string }
+  | { status: 'quota_exceeded'; message: string }
 
 interface StellaValidatorPanelProps {
   projectId: string
@@ -55,6 +56,8 @@ export function StellaValidatorPanel({
         setPanelState({ status: 'disabled' })
       } else if (result.error === 'RATE_LIMITED') {
         setPanelState({ status: 'rate_limited', message: result.message })
+      } else if (result.error === 'QUOTA_EXCEEDED') {
+        setPanelState({ status: 'quota_exceeded', message: result.message })
       } else {
         setPanelState({ status: 'error' })
       }
@@ -117,6 +120,16 @@ export function StellaValidatorPanel({
           <p className="text-muted-foreground">
             Se alcanzó el límite de solicitudes a Stella Validator por esta hora. {panelState.message}
           </p>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            Los datos de tu cálculo no se ven afectados.
+          </p>
+        </div>
+      )}
+
+      {/* Quota exceeded — non-blocking, calculation unaffected */}
+      {panelState.status === 'quota_exceeded' && (
+        <div aria-live="assertive" role="alert" className="mt-3">
+          <p className="text-muted-foreground">{panelState.message}</p>
           <p className="mt-1 text-xs text-muted-foreground/70">
             Los datos de tu cálculo no se ven afectados.
           </p>

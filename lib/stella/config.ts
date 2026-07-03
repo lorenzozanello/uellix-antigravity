@@ -6,8 +6,9 @@ export const stellaConfig = {
   // API Key: read from environment, never log or expose
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
 
-  // Model: default to gemini-2.0-flash, override via GEMINI_MODEL env var
-  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
+  // Model: default to gemini-2.5-flash, override via GEMINI_MODEL env var
+  // Note: gemini-2.0-flash was retired by Google (returns 404 NOT_FOUND as of 2026-07).
+  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
 
   // Feature flags: all default to false in MVP
   // Enabled only if explicitly set to 'true' (string)

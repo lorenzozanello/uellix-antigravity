@@ -1,8 +1,8 @@
-// app/actions/stella/__tests__/validator.test.ts
-// Sprint 9D-2: Validator server action tests — no real Gemini, no real DB, no real auth
+// app/actions/stella/__tests__/composer.test.ts
+// Composer server action tests — no real Gemini, no real DB, no real auth
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
+import type { ComposerOutput } from '@/lib/stella/schemas/composer-output'
 import type { StellaProjectContext } from '@/lib/stella/context/types'
 import type { OrganizationContext } from '@/lib/auth/session'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
@@ -15,7 +15,7 @@ import type { RateLimitResult } from '@/lib/stella/rate-limit'
 // Mutable config object for per-test flag overrides
 const mockStellaConfig = {
   isEnabled: true,
-  isValidatorEnabled: true,
+  isComposerEnabled: true,
   geminiApiKey: 'test-key',
   geminiModel: 'gemini-2.0-flash',
   requestTimeoutMs: 15000,
@@ -33,20 +33,20 @@ vi.mock('@/lib/auth/session', () => ({
   requireOrganizationAccess: (...args: unknown[]) => mockRequireOrganizationAccess(...args),
 }))
 
-const mockBuildValidatorContext = vi.fn()
-vi.mock('@/lib/stella/context/build-validator-context', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/lib/stella/context/build-validator-context')>()
+const mockBuildComposerContext = vi.fn()
+vi.mock('@/lib/stella/context/build-composer-context', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/stella/context/build-composer-context')>()
   return {
     ...original,
-    buildValidatorContext: (...args: unknown[]) => mockBuildValidatorContext(...args),
+    buildComposerContext: (...args: unknown[]) => mockBuildComposerContext(...args),
   }
 })
 
-const mockBuildValidatorSystemPrompt = vi.fn().mockReturnValue('mock validator system prompt')
-const mockBuildValidatorUserMessage = vi.fn().mockReturnValue('mock validator user message')
-vi.mock('@/lib/stella/prompts/validator-system', () => ({
-  buildValidatorSystemPrompt: (...args: unknown[]) => mockBuildValidatorSystemPrompt(...args),
-  buildValidatorUserMessage: (...args: unknown[]) => mockBuildValidatorUserMessage(...args),
+const mockBuildComposerSystemPrompt = vi.fn().mockReturnValue('mock composer system prompt')
+const mockBuildComposerUserMessage = vi.fn().mockReturnValue('mock composer user message')
+vi.mock('@/lib/stella/prompts/composer-system', () => ({
+  buildComposerSystemPrompt: (...args: unknown[]) => mockBuildComposerSystemPrompt(...args),
+  buildComposerUserMessage: (...args: unknown[]) => mockBuildComposerUserMessage(...args),
 }))
 
 const mockAdapterGenerate = vi.fn()
@@ -85,25 +85,24 @@ vi.mock('@/db/client', () => ({
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
 // ---------------------------------------------------------------------------
-import { getStellaValidator } from '../validator'
+import { getStellaComposer } from '../composer'
 
 // ---------------------------------------------------------------------------
 // Test fixtures
 // ---------------------------------------------------------------------------
 
-const VALID_VALIDATOR_OUTPUT: ValidatorOutput = {
-  summary: 'The SROI analysis shows a ratio of 3.6:1 with moderate methodological risks.',
-  risk_level: 'medium',
-  evidence_gaps: ['Indicator 2 has no supporting documentation'],
-  proxy_risks: ['Proxy for Outcome 1 has low confidence level'],
-  attribution_risks: [],
-  claim_risks: [],
-  recommendations: ['Obtain additional evidence for Indicator 2', 'Review proxy methodology'],
-  requires_human_review: true,
+const VALID_COMPOSER_OUTPUT: ComposerOutput = {
+  section_key: 'executive_summary',
+  draft_title: 'Resumen Ejecutivo',
+  draft_content: 'Este proyecto generó un retorno social de 3.6x la inversión...',
+  assumptions: ['Se asume que los beneficiarios reportados completaron el programa'],
+  limitations: ['Datos de seguimiento a 12 meses aún no disponibles'],
+  evidence_references: [{ evidenceId: 'ev-1', title: 'Encuesta de seguimiento', context: 'Fuente de la tasa de empleo' }],
+  proxy_references: [{ proxyId: 'proxy-1', name: 'Costo de tratar depresión', context: 'Usado para valorar el outcome de salud mental' }],
 }
 
 const MOCK_ORG_CONTEXT: OrganizationContext = {
-  user: { id: 'user-uuid-001', email: 'validator@org.com', fullName: 'Validator User', avatarUrl: null, isSuperAdmin: false },
+  user: { id: 'user-uuid-001', email: 'composer@org.com', fullName: 'Composer User', avatarUrl: null, isSuperAdmin: false },
   membership: { id: 'mem-1', organizationId: 'org-uuid-001', userId: 'user-uuid-001', role: 'impact_manager', status: 'active' },
   organization: { id: 'org-uuid-001', name: 'Test Org', slug: 'test-org', legalName: null, country: null, sector: null, status: 'active' },
 }
@@ -156,16 +155,16 @@ function setupSuccessfulCall() {
   mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
   mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 2, quota: 50 })
-  mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+  mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
   mockAdapterGenerate.mockResolvedValue({
-    role: 'validator',
-    rawOutput: JSON.stringify(VALID_VALIDATOR_OUTPUT),
+    role: 'composer',
+    rawOutput: JSON.stringify(VALID_COMPOSER_OUTPUT),
     parsedOutput: null,
     modelUsed: 'gemini-2.0-flash',
     tokensUsed: 1234,
     timestamp: new Date(),
   })
-  mockAdapterParseResponse.mockResolvedValue(VALID_VALIDATOR_OUTPUT)
+  mockAdapterParseResponse.mockResolvedValue(VALID_COMPOSER_OUTPUT)
   mockInsertValues.mockResolvedValue([])
 }
 
@@ -173,11 +172,11 @@ function setupSuccessfulCall() {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('getStellaValidator server action', () => {
+describe('getStellaComposer server action', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockStellaConfig.isEnabled = true
-    mockStellaConfig.isValidatorEnabled = true
+    mockStellaConfig.isComposerEnabled = true
     mockStellaState.canUseStella = true
     mockInsertValues.mockResolvedValue([])
     mockDbInsert.mockReturnValue({ values: mockInsertValues })
@@ -194,16 +193,16 @@ describe('getStellaValidator server action', () => {
       mockStellaConfig.isEnabled = false
       mockStellaState.canUseStella = false
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('DISABLED')
     })
 
-    it('returns DISABLED when isValidatorEnabled is false', async () => {
-      mockStellaConfig.isValidatorEnabled = false
+    it('returns DISABLED when isComposerEnabled is false', async () => {
+      mockStellaConfig.isComposerEnabled = false
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('DISABLED')
@@ -212,7 +211,7 @@ describe('getStellaValidator server action', () => {
     it('returns DISABLED when canUseStella is false (missing API key)', async () => {
       mockStellaState.canUseStella = false
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('DISABLED')
@@ -221,7 +220,7 @@ describe('getStellaValidator server action', () => {
     it('does NOT check rate limit when disabled', async () => {
       mockStellaConfig.isEnabled = false
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
     })
@@ -234,7 +233,7 @@ describe('getStellaValidator server action', () => {
     it('calls requireOrganizationAccess', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockRequireOrganizationAccess).toHaveBeenCalled()
     })
@@ -243,7 +242,7 @@ describe('getStellaValidator server action', () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
@@ -253,7 +252,7 @@ describe('getStellaValidator server action', () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockRecordStellaRequest).not.toHaveBeenCalled()
     })
@@ -267,7 +266,7 @@ describe('getStellaValidator server action', () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -279,10 +278,10 @@ describe('getStellaValidator server action', () => {
     it('passes organization.id (not project id) to checkStellaRateLimit', async () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockRejectedValue(new StellaGeminiError('error'))
 
-      await getStellaValidator('proj-different-id', 'calculation')
+      await getStellaComposer('proj-different-id', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockCheckStellaRateLimit).toHaveBeenCalledWith('org-uuid-001')
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalledWith('proj-different-id')
@@ -292,7 +291,7 @@ describe('getStellaValidator server action', () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockRecordStellaRequest).not.toHaveBeenCalled()
     })
@@ -301,7 +300,7 @@ describe('getStellaValidator server action', () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
     })
@@ -316,7 +315,7 @@ describe('getStellaValidator server action', () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 0, quota: 0, reason: 'no_quota' })
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
@@ -327,7 +326,7 @@ describe('getStellaValidator server action', () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -341,14 +340,14 @@ describe('getStellaValidator server action', () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
     })
 
     it('checks quota with organization.id', async () => {
       setupSuccessfulCall()
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
       expect(mockCheckStellaQuota).toHaveBeenCalledWith(MOCK_ORG_CONTEXT.organization.id)
     })
 
@@ -356,15 +355,15 @@ describe('getStellaValidator server action', () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: null })
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockResolvedValue({
-        role: 'validator', rawOutput: JSON.stringify(VALID_VALIDATOR_OUTPUT), parsedOutput: null,
+        role: 'composer', rawOutput: JSON.stringify(VALID_COMPOSER_OUTPUT), parsedOutput: null,
         modelUsed: 'gemini-2.0-flash', timestamp: new Date(),
       })
-      mockAdapterParseResponse.mockResolvedValue(VALID_VALIDATOR_OUTPUT)
+      mockAdapterParseResponse.mockResolvedValue(VALID_COMPOSER_OUTPUT)
       mockInsertValues.mockResolvedValue([])
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(true)
     })
@@ -378,21 +377,21 @@ describe('getStellaValidator server action', () => {
       let recordCalledBeforeGenerate = false
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockRecordStellaRequest.mockImplementation(() => {
         recordCalledBeforeGenerate = !mockAdapterGenerate.mock.calls.length
       })
       mockAdapterGenerate.mockResolvedValue({
-        role: 'validator',
-        rawOutput: JSON.stringify(VALID_VALIDATOR_OUTPUT),
+        role: 'composer',
+        rawOutput: JSON.stringify(VALID_COMPOSER_OUTPUT),
         parsedOutput: null,
         modelUsed: 'gemini-2.0-flash',
         timestamp: new Date(),
       })
-      mockAdapterParseResponse.mockResolvedValue(VALID_VALIDATOR_OUTPUT)
+      mockAdapterParseResponse.mockResolvedValue(VALID_COMPOSER_OUTPUT)
       mockInsertValues.mockResolvedValue([])
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(recordCalledBeforeGenerate).toBe(true)
     })
@@ -400,7 +399,7 @@ describe('getStellaValidator server action', () => {
     it('records with organization.id (not project id)', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-uuid-001', 'calculation')
+      await getStellaComposer('proj-uuid-001', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockRecordStellaRequest).toHaveBeenCalledWith('org-uuid-001')
       expect(mockRecordStellaRequest).not.toHaveBeenCalledWith('proj-uuid-001')
@@ -409,20 +408,20 @@ describe('getStellaValidator server action', () => {
     it('does NOT record when feature flags are off', async () => {
       mockStellaConfig.isEnabled = false
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockRecordStellaRequest).not.toHaveBeenCalled()
     })
 
-    it('does NOT record when context build fails (UNSUPPORTED_STEP)', async () => {
-      const { StellaBuildValidatorContextError } = await import('@/lib/stella/context/build-validator-context')
+    it('does NOT record when context build fails', async () => {
+      const { StellaBuildComposerContextError } = await import('@/lib/stella/context/build-composer-context')
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockRejectedValue(
-        new StellaBuildValidatorContextError('UNSUPPORTED_STEP', 'Only Calculation step.')
+      mockBuildComposerContext.mockRejectedValue(
+        new StellaBuildComposerContextError('NOT_FOUND', 'Report not found.')
       )
 
-      await getStellaValidator('proj-1', 'narrative')
+      await getStellaComposer('proj-1', 'report-missing', 'section-1', 'executive_summary')
 
       expect(mockRecordStellaRequest).not.toHaveBeenCalled()
     })
@@ -432,37 +431,37 @@ describe('getStellaValidator server action', () => {
   // Context builder integration
   // -------------------------------------------------------------------------
   describe('Context builder integration', () => {
-    it('passes projectId and organization.id to buildValidatorContext', async () => {
+    it('passes projectId, organization.id, and reportId to buildComposerContext', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-different', 'calculation')
+      await getStellaComposer('proj-different', 'report-different', 'section-1', 'executive_summary')
 
-      expect(mockBuildValidatorContext).toHaveBeenCalledWith('proj-different', 'org-uuid-001', 'calculation')
+      expect(mockBuildComposerContext).toHaveBeenCalledWith('proj-different', 'org-uuid-001', 'report-different')
     })
 
-    it('returns UNSUPPORTED_STEP when step is not Calculation', async () => {
-      const { StellaBuildValidatorContextError } = await import('@/lib/stella/context/build-validator-context')
+    it('returns UNAUTHORIZED when report not found', async () => {
+      const { StellaBuildComposerContextError } = await import('@/lib/stella/context/build-composer-context')
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockRejectedValue(
-        new StellaBuildValidatorContextError('UNSUPPORTED_STEP', 'Only Calculation step supported.')
+      mockBuildComposerContext.mockRejectedValue(
+        new StellaBuildComposerContextError('NOT_FOUND', 'Report not found.')
       )
 
-      const result = await getStellaValidator('proj-1', 'narrative')
+      const result = await getStellaComposer('proj-1', 'report-missing', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
-      if (!result.ok) expect(result.error).toBe('UNSUPPORTED_STEP')
+      if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
     })
 
-    it('returns UNAUTHORIZED when project not found', async () => {
-      const { StellaBuildValidatorContextError } = await import('@/lib/stella/context/build-validator-context')
+    it('returns UNAUTHORIZED when project/report access denied', async () => {
+      const { StellaBuildComposerContextError } = await import('@/lib/stella/context/build-composer-context')
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockRejectedValue(
-        new StellaBuildValidatorContextError('PROJECT_NOT_FOUND', 'Project not found.')
+      mockBuildComposerContext.mockRejectedValue(
+        new StellaBuildComposerContextError('UNAUTHORIZED', 'Report does not belong to this project/organization')
       )
 
-      const result = await getStellaValidator('proj-missing', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
@@ -473,33 +472,23 @@ describe('getStellaValidator server action', () => {
   // Gemini integration
   // -------------------------------------------------------------------------
   describe('Gemini integration', () => {
-    it('calls adapter with validator role', async () => {
+    it('calls adapter with composer role', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockAdapterGenerate).toHaveBeenCalledWith(
-        expect.objectContaining({ role: 'validator' })
+        expect.objectContaining({ role: 'composer' })
       )
-    })
-
-    it('passes contextHash to adapter.generate', async () => {
-      setupSuccessfulCall()
-
-      await getStellaValidator('proj-1', 'calculation')
-
-      const generateCall = mockAdapterGenerate.mock.calls[0][0]
-      expect(typeof generateCall.contextHash).toBe('string')
-      expect(generateCall.contextHash.length).toBe(64)
     })
 
     it('returns TIMEOUT on StellaTimeoutError', async () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockRejectedValue(new StellaTimeoutError())
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('TIMEOUT')
@@ -508,10 +497,10 @@ describe('getStellaValidator server action', () => {
     it('returns GEMINI_ERROR on StellaGeminiError', async () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockRejectedValue(new StellaGeminiError('Gemini unavailable'))
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('GEMINI_ERROR')
@@ -520,14 +509,14 @@ describe('getStellaValidator server action', () => {
     it('returns PARSE_ERROR on StellaParseError', async () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockResolvedValue({
-        role: 'validator', rawOutput: 'invalid json', parsedOutput: null,
+        role: 'composer', rawOutput: 'invalid json', parsedOutput: null,
         modelUsed: 'gemini-2.0-flash', timestamp: new Date(),
       })
       mockAdapterParseResponse.mockRejectedValue(new StellaParseError('Bad JSON'))
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('PARSE_ERROR')
@@ -541,25 +530,34 @@ describe('getStellaValidator server action', () => {
     it('inserts into stellaInteractions after successful parse', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockDbInsert).toHaveBeenCalled()
       expect(mockInsertValues).toHaveBeenCalled()
     })
 
-    it('inserts with validator role', async () => {
+    it('inserts with composer role', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       const insertPayload = mockInsertValues.mock.calls[0][0]
-      expect(insertPayload.stellaRole).toBe('validator')
+      expect(insertPayload.stellaRole).toBe('composer')
+    })
+
+    it('inserts with pipelineStep = sectionType', async () => {
+      setupSuccessfulCall()
+
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'methodology')
+
+      const insertPayload = mockInsertValues.mock.calls[0][0]
+      expect(insertPayload.pipelineStep).toBe('methodology')
     })
 
     it('inserts with organization.id from auth context', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       const insertPayload = mockInsertValues.mock.calls[0][0]
       expect(insertPayload.organizationId).toBe('org-uuid-001')
@@ -568,59 +566,27 @@ describe('getStellaValidator server action', () => {
     it('inserts with createdBy from auth user.id', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       const insertPayload = mockInsertValues.mock.calls[0][0]
       expect(insertPayload.createdBy).toBe('user-uuid-001')
     })
 
-    it('inserts with 64-char contextHash', async () => {
-      setupSuccessfulCall()
-
-      await getStellaValidator('proj-1', 'calculation')
-
-      const insertPayload = mockInsertValues.mock.calls[0][0]
-      expect(typeof insertPayload.contextHash).toBe('string')
-      expect(insertPayload.contextHash.length).toBe(64)
-    })
-
-    it('inserts with pipelineStep = Calculation', async () => {
-      setupSuccessfulCall()
-
-      await getStellaValidator('proj-1', 'calculation')
-
-      const insertPayload = mockInsertValues.mock.calls[0][0]
-      expect(insertPayload.pipelineStep).toBe('Calculation')
-    })
-
-    it('inserts riskFlags based on non-empty output arrays', async () => {
-      setupSuccessfulCall()
-
-      await getStellaValidator('proj-1', 'calculation')
-
-      const insertPayload = mockInsertValues.mock.calls[0][0]
-      // VALID_VALIDATOR_OUTPUT has evidence_gaps and proxy_risks non-empty
-      expect(insertPayload.riskFlags).toContain('evidence_gap')
-      expect(insertPayload.riskFlags).toContain('proxy_risk')
-      expect(insertPayload.riskFlags).not.toContain('attribution_risk')
-      expect(insertPayload.riskFlags).not.toContain('claim_risk')
-    })
-
     it('returns AUDIT_ERROR when insert fails', async () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-      mockBuildValidatorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
       mockAdapterGenerate.mockResolvedValue({
-        role: 'validator',
-        rawOutput: JSON.stringify(VALID_VALIDATOR_OUTPUT),
+        role: 'composer',
+        rawOutput: JSON.stringify(VALID_COMPOSER_OUTPUT),
         parsedOutput: null,
         modelUsed: 'gemini-2.0-flash',
         timestamp: new Date(),
       })
-      mockAdapterParseResponse.mockResolvedValue(VALID_VALIDATOR_OUTPUT)
+      mockAdapterParseResponse.mockResolvedValue(VALID_COMPOSER_OUTPUT)
       mockInsertValues.mockRejectedValue(new Error('DB connection error'))
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
@@ -631,29 +597,20 @@ describe('getStellaValidator server action', () => {
   // Successful call
   // -------------------------------------------------------------------------
   describe('Successful call', () => {
-    it('returns ok:true with parsed ValidatorOutput', async () => {
+    it('returns ok:true with parsed ComposerOutput', async () => {
       setupSuccessfulCall()
 
-      const result = await getStellaValidator('proj-1', 'calculation')
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.summary).toBeDefined()
-        expect(result.data.risk_level).toBe('medium')
-        expect(result.data.requires_human_review).toBe(true)
-        expect(Array.isArray(result.data.evidence_gaps)).toBe(true)
-        expect(Array.isArray(result.data.proxy_risks)).toBe(true)
-        expect(Array.isArray(result.data.recommendations)).toBe(true)
-      }
-    })
-
-    it('requires_human_review is always true in successful output', async () => {
-      setupSuccessfulCall()
-
-      const result = await getStellaValidator('proj-1', 'calculation')
-
-      if (result.ok) {
-        expect(result.data.requires_human_review).toBe(true)
+        expect(result.data.section_key).toBe('executive_summary')
+        expect(result.data.draft_title).toBeDefined()
+        expect(result.data.draft_content).toBeDefined()
+        expect(Array.isArray(result.data.assumptions)).toBe(true)
+        expect(Array.isArray(result.data.limitations)).toBe(true)
+        expect(Array.isArray(result.data.evidence_references)).toBe(true)
+        expect(Array.isArray(result.data.proxy_references)).toBe(true)
       }
     })
   })
@@ -662,35 +619,26 @@ describe('getStellaValidator server action', () => {
   // Security invariants
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
-    it('does NOT import from lib/pipeline/sroi-calculation', () => {
-      // Structural: if the import existed it would trigger module resolution in test env.
-      // The action loads without error = no sroi-calculation import.
-      expect(getStellaValidator).toBeDefined()
-    })
-
     it('does NOT expose GEMINI_API_KEY', () => {
       expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
     })
 
-    it('does NOT approve evidence or proxies (no approval writes)', async () => {
+    it('does NOT save draft automatically (exactly one DB insert on success)', async () => {
       setupSuccessfulCall()
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
-      // db.insert is only called once — for stella_interactions
-      // No other DB writes happen (no evidence/proxy approval mutations)
+      // db.insert is only called once — for stella_interactions.
+      // No sroi_report_sections write happens (draft is returned, not saved).
       expect(mockDbInsert).toHaveBeenCalledTimes(1)
       const insertArg = mockDbInsert.mock.calls[0][0]
-      // The inserted table is stellaInteractions (not evidence or proxies)
-      // We can't check the table name directly in the mock, but verifying only one
-      // insert call confirms no extra pipeline writes occurred.
       expect(insertArg).toBeDefined()
     })
 
     it('does NOT make audit insert when disabled (no DB calls at all)', async () => {
       mockStellaConfig.isEnabled = false
 
-      await getStellaValidator('proj-1', 'calculation')
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
       expect(mockDbInsert).not.toHaveBeenCalled()
     })

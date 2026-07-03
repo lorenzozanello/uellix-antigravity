@@ -1,25 +1,25 @@
 'use server'
-// app/actions/stella/advisor.ts
-// Sprint 9C-1: Stella Advisor server action
-// Security: feature-flagged, auth-gated, metadata-only context, audit-logged, no secret logging
+// app/actions/stella/composer.ts
+// Stella Composer server action — drafts one report section at a time.
+// Security: feature-flagged, auth-gated, quota-enforced, rate-limited,
+// metadata-only context, no automatic saves (draft returned to UI only).
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
-import { buildAdvisorContext, StellaBuildContextError } from '@/lib/stella/context/build-advisor-context'
-import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/prompts/advisor-system'
+import { buildComposerContext, StellaBuildComposerContextError } from '@/lib/stella/context/build-composer-context'
+import { buildComposerSystemPrompt, buildComposerUserMessage } from '@/lib/stella/prompts/composer-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
-import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
+import { ComposerOutputSchema } from '@/lib/stella/schemas/composer-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
 import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
-import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
+import type { ComposerOutput } from '@/lib/stella/schemas/composer-output'
 
-export type StellaAdvisorErrorCode =
+export type StellaComposerErrorCode =
   | 'DISABLED'
   | 'UNAUTHORIZED'
-  | 'UNSUPPORTED_STEP'
   | 'RATE_LIMITED'
   | 'QUOTA_EXCEEDED'
   | 'GEMINI_ERROR'
@@ -28,43 +28,40 @@ export type StellaAdvisorErrorCode =
   | 'AUDIT_ERROR'
   | 'UNKNOWN_ERROR'
 
-export type StellaAdvisorResult =
-  | { ok: true; data: AdvisorOutput }
-  | { ok: false; error: StellaAdvisorErrorCode; message: string }
+export type StellaComposerResult =
+  | { ok: true; data: ComposerOutput }
+  | { ok: false; error: StellaComposerErrorCode; message: string }
 
-export async function getStellaAdvisor(
+export async function getStellaComposer(
   projectId: string,
-  step: string
-): Promise<StellaAdvisorResult> {
+  reportId: string,
+  // sectionId identifies which report section the UI is drafting (matches the
+  // call signature the Composer panel will use in a later task). It is not
+  // referenced below — buildComposerContext already verifies report-level
+  // ownership, and all sections of a given report belong to the same
+  // verified project/org, so no separate per-section check is needed here.
+  // Mirrors how build-advisor-context.ts's now-unused `step` param is kept
+  // and documented rather than renamed/removed.
+  sectionId: string,
+  sectionType: string
+): Promise<StellaComposerResult> {
   // Feature flag gate — all flags default to false
-  if (!stellaConfig.isEnabled || !stellaConfig.isAdvisorEnabled || !stellaState.canUseStella) {
-    return {
-      ok: false,
-      error: 'DISABLED',
-      message: 'Stella Advisor is not enabled.',
-    }
+  if (!stellaConfig.isEnabled || !stellaConfig.isComposerEnabled || !stellaState.canUseStella) {
+    return { ok: false, error: 'DISABLED', message: 'Stella Composer is not enabled.' }
   }
 
-  // Auth + org context — redirects if unauthenticated
+  // Auth + org context
   let ctx: Awaited<ReturnType<typeof requireOrganizationAccess>>
   try {
     ctx = await requireOrganizationAccess()
   } catch {
-    return {
-      ok: false,
-      error: 'UNAUTHORIZED',
-      message: 'Authentication required.',
-    }
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
   }
 
-  // Rate limit check — enforced per org, per hour, in-memory (shared budget with Validator)
+  // Rate limit check — enforced per org, per hour, in-memory
   const rateLimit = checkStellaRateLimit(ctx.organization.id)
   if (!rateLimit.allowed) {
-    return {
-      ok: false,
-      error: 'RATE_LIMITED',
-      message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
-    }
+    return { ok: false, error: 'RATE_LIMITED', message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.` }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
@@ -84,60 +81,50 @@ export async function getStellaAdvisor(
     return { ok: false, error: 'QUOTA_EXCEEDED', message }
   }
 
-  // Build project context (validates project ownership, metadata only)
   try {
-    const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
+    // Build context — validates project + report ownership before consuming rate limit
+    const context = await buildComposerContext(projectId, ctx.organization.id, reportId)
 
     // Record after context built — prevents gaming via repeated context errors,
     // allows retries on Gemini/parse failures
     recordStellaRequest(ctx.organization.id)
 
-    // Build prompts from existing builders
-    const systemPrompt = buildAdvisorSystemPrompt(step)
-    const userMessage = buildAdvisorUserMessage(step, context)
+    // Build prompts
+    const systemPrompt = buildComposerSystemPrompt(sectionType)
+    const userMessage = buildComposerUserMessage(sectionType, context)
 
     // Generate via Gemini adapter (real or mock in tests)
     const adapter = getGeminiAdapter()
     const response = await adapter.generate({
-      role: 'advisor',
+      role: 'composer',
       systemPrompt,
       userMessage,
     })
 
     // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
-    const data = await adapter.parseResponse(response.rawOutput, AdvisorOutputSchema)
+    const data = await adapter.parseResponse(response.rawOutput, ComposerOutputSchema)
 
-    // Audit insert — required for compliance and for quota measurement;
-    // surface failure rather than swallow (mirrors validator.ts).
+    // Audit insert — required for compliance; surface failure rather than swallow
     try {
       await db.insert(stellaInteractions).values({
         organizationId: ctx.organization.id,
         projectId,
         createdBy: ctx.user.id,
-        stellaRole: 'advisor',
-        pipelineStep: step,
+        stellaRole: 'composer',
+        pipelineStep: sectionType,
         contextHash: '',
         responseJson: data as unknown,
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,
       })
     } catch {
-      return {
-        ok: false,
-        error: 'AUDIT_ERROR',
-        message: 'Failed to record Stella interaction. Please try again.',
-      }
+      return { ok: false, error: 'AUDIT_ERROR', message: 'Failed to record Stella interaction. Please try again.' }
     }
 
     return { ok: true, data }
   } catch (error) {
-    if (error instanceof StellaBuildContextError) {
-      if (error.code === 'UNSUPPORTED_STEP') {
-        return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
-      }
-      if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') {
-        return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
-      }
+    if (error instanceof StellaBuildComposerContextError) {
+      return { ok: false, error: 'UNAUTHORIZED', message: 'Report or project access denied.' }
     }
 
     if (error instanceof StellaTimeoutError) {

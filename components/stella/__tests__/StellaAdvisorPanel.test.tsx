@@ -67,6 +67,9 @@ function geminiError() {
     message: 'AI service error.',
   })
 }
+function quotaExceeded(message = 'Alcanzaste el límite mensual de 50 consultas a Stella (usadas: 50). Se renueva el 1 de agosto de 2026.') {
+  return mockGetStellaAdvisor.mockResolvedValue({ ok: false, error: 'QUOTA_EXCEEDED', message })
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -372,6 +375,15 @@ describe('StellaAdvisorPanel', () => {
         ).not.toBeNull()
       })
     })
+
+    it('shows the quota message when QUOTA_EXCEEDED', async () => {
+      quotaExceeded()
+      render(<StellaAdvisorPanel projectId="proj-1" step="Narrativa" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+      await waitFor(() => {
+        expect(screen.queryByText(/límite mensual/i)).not.toBeNull()
+      })
+    })
   })
 
   describe('Disabled state', () => {
@@ -393,6 +405,19 @@ describe('StellaAdvisorPanel', () => {
       await waitFor(() => {
         expect(container.innerHTML).toBe('')
       })
+    })
+  })
+
+  describe('Empty-step highlight', () => {
+    it('applies a highlighted style when highlightHint is true', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="Narrativa" highlightHint />)
+      const hint = screen.queryByText(/recién estás empezando/i)
+      expect(hint).not.toBeNull()
+    })
+
+    it('does NOT show the hint by default', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="Narrativa" />)
+      expect(screen.queryByText(/recién estás empezando/i)).toBeNull()
     })
   })
 

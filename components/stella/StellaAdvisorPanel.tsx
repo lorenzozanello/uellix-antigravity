@@ -15,12 +15,14 @@ type PanelState =
   | { status: 'success'; data: AdvisorOutput }
   | { status: 'error' }
   | { status: 'disabled' }
+  | { status: 'quota_exceeded'; message: string }
 
 interface StellaAdvisorPanelProps {
   projectId: string
   step: string
   title?: string
   className?: string
+  highlightHint?: boolean
 }
 
 export function StellaAdvisorPanel({
@@ -28,6 +30,7 @@ export function StellaAdvisorPanel({
   step,
   title,
   className,
+  highlightHint = false,
 }: StellaAdvisorPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
 
@@ -39,6 +42,8 @@ export function StellaAdvisorPanel({
         setPanelState({ status: 'success', data: result.data })
       } else if (result.error === 'DISABLED') {
         setPanelState({ status: 'disabled' })
+      } else if (result.error === 'QUOTA_EXCEEDED') {
+        setPanelState({ status: 'quota_exceeded', message: result.message })
       } else {
         setPanelState({ status: 'error' })
       }
@@ -55,12 +60,16 @@ export function StellaAdvisorPanel({
   const canRetry =
     panelState.status === 'idle' ||
     panelState.status === 'error' ||
-    panelState.status === 'success'
+    panelState.status === 'success' ||
+    panelState.status === 'quota_exceeded'
 
   return (
     <section
       className={cn(
-        'rounded-lg border border-border bg-muted/20 p-4 my-4 text-sm',
+        'rounded-lg border p-4 my-4 text-sm',
+        highlightHint
+          ? 'border-[#FF6A00]/40 bg-[#FF6A00]/5'
+          : 'border-border bg-muted/20',
         className
       )}
       aria-label={title ?? 'Stella Advisor'}
@@ -72,6 +81,11 @@ export function StellaAdvisorPanel({
           <p className="mt-0.5 text-xs text-muted-foreground">
             Stella brinda orientación consultiva únicamente. Se requiere revisión humana antes de su uso externo.
           </p>
+          {highlightHint && (
+            <p className="mt-1 text-xs font-medium text-[#B85200]">
+              <span aria-hidden="true">💡</span> Recién estás empezando este paso — Stella puede orientarte.
+            </p>
+          )}
         </div>
         <Button
           variant="outline"
@@ -108,6 +122,13 @@ export function StellaAdvisorPanel({
         >
           La orientación de Stella no está disponible temporalmente. Los datos de tu pipeline no se ven afectados.
         </p>
+      )}
+
+      {/* Quota exceeded state */}
+      {panelState.status === 'quota_exceeded' && (
+        <div aria-live="assertive" role="alert" className="mt-3">
+          <p className="text-muted-foreground">{panelState.message}</p>
+        </div>
       )}
 
       {/* Success state */}

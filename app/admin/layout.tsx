@@ -49,6 +49,12 @@ export default async function AdminLayout({
           >
             Acceso (Signup)
           </Link>
+          <Link
+            href="/admin/services"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+          >
+            Servicios Stella
+          </Link>
         </nav>
         <div className="p-4 border-t border-red-900/30 space-y-2">
           <Link

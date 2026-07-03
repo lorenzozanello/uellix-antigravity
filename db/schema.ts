@@ -19,6 +19,11 @@ export const organizations = pgTable('organizations', {
   country: varchar('country', { length: 2 }),
   sector: varchar('sector', { length: 255 }),
   status: varchar('status', { length: 50 }).default('active').notNull(),
+  // Stella usage quota: null = unlimited (internal/Uellix use only); 0 = blocked
+  // (default — no plan assigned yet); N = monthly cap on Stella calls. Assigned
+  // manually by a super_admin via /admin/services — no payment gateway.
+  stellaMonthlyQuota: integer('stella_monthly_quota').default(0),
+  stellaPlanLabel: varchar('stella_plan_label', { length: 100 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

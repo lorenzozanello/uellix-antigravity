@@ -171,7 +171,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={projectId} step="Proxies" />
+      <StellaAdvisorPanel projectId={projectId} step="Proxies" highlightHint={assignments.length === 0} />
 
       {/* Proxy Bank */}
       <section aria-labelledby="proxy-bank-heading">

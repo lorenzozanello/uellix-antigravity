@@ -148,7 +148,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={projectId} step="Evidencia" />
+      <StellaAdvisorPanel projectId={projectId} step="Evidencia" highlightHint={evidences.length === 0} />
 
       {/* Evidence list */}
       <section aria-labelledby="evidence-list-heading">
