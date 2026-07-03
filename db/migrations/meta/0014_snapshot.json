@@ -1,6 +1,6 @@
 {
-  "id": "f42de9ae-f6e2-4a94-aac7-fceb130706b4",
-  "prevId": "f8f5f564-5c83-412f-8aee-0021e7bb8870",
+  "id": "4f8e615d-d5f9-48e3-9d95-fb953a97a0e3",
+  "prevId": "f42de9ae-f6e2-4a94-aac7-fceb130706b4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1330,6 +1330,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'active'"
+        },
+        "stella_monthly_quota": {
+          "name": "stella_monthly_quota",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "stella_plan_label": {
+          "name": "stella_plan_label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
