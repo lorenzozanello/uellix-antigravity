@@ -51,6 +51,23 @@ function getTableData(table: any): any[] {
   return (mockDb as any)[camelName] ?? (mockDb as any)[pgName] ?? [];
 }
 
+function extractEqValues(val: any): string[] {
+  if (!val) return [];
+  if (typeof val === 'string') return [val];
+  if (Array.isArray(val)) return val.flatMap(extractEqValues);
+  const res: string[] = [];
+  if (val.value !== undefined) {
+    if (typeof val.value === 'string') res.push(val.value);
+    else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues));
+    else res.push(...extractEqValues(val.value));
+  }
+  if (val.right !== undefined) res.push(...extractEqValues(val.right));
+  if (val.left !== undefined) res.push(...extractEqValues(val.left));
+  if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues));
+  if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues));
+  return res;
+}
+
 vi.mock('@/db/client', () => ({
   db: {
     select: vi.fn().mockImplementation(() => ({
@@ -59,22 +76,6 @@ vi.mock('@/db/client', () => ({
         const queryResult = {
           where: vi.fn().mockImplementation((cond) => {
             if (cond) {
-              const extractEqValues = (val: any): string[] => {
-                if (!val) return [];
-                if (typeof val === 'string') return [val];
-                if (Array.isArray(val)) return val.flatMap(extractEqValues);
-                const res: string[] = [];
-                if (val.value !== undefined) {
-                  if (typeof val.value === 'string') res.push(val.value);
-                  else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues));
-                  else res.push(...extractEqValues(val.value));
-                }
-                if (val.right !== undefined) res.push(...extractEqValues(val.right));
-                if (val.left !== undefined) res.push(...extractEqValues(val.left));
-                if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues));
-                if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues));
-                return res;
-              };
               const eqValues = extractEqValues(cond);
               if (eqValues.length > 0) {
                 const matchedById = data.filter(item => item.id !== undefined && eqValues.includes(String(item.id)));
@@ -122,10 +123,32 @@ vi.mock('@/db/client', () => ({
     })),
     update: vi.fn().mockImplementation((table) => ({
       set: vi.fn().mockImplementation((values) => ({
-        where: vi.fn().mockImplementation(() => {
+        where: vi.fn().mockImplementation((cond) => {
           const data = getTableData(table);
-          if (data.length > 0) Object.assign(data[0], values);
-          return { returning: vi.fn().mockImplementation(() => Promise.resolve([data[0]])) };
+          const pgName = (table as any)?._?.name || (table as any)[Symbol.for('drizzle:Name')];
+          let matched = data;
+          // sroi_report_sections needs precise (id AND reportId) matching to
+          // exercise the SEC-004 cross-report regression test below; every
+          // other table keeps the original permissive "just use data[0]"
+          // behavior other tests already rely on.
+          if (pgName === 'sroi_report_sections' && cond) {
+            // extractEqValues also picks up raw SQL syntax fragments
+            // (e.g. "(", " = ", " and ") mixed in with real values from
+            // queryChunks — keep only tokens that look like real ids/values.
+            const SQL_NOISE = new Set(['and', 'or', 'not', 'select', 'from', 'where']);
+            const eqValues = extractEqValues(cond).filter(
+              (v) => /^[\w-]+$/.test(v.trim()) && !SQL_NOISE.has(v.trim().toLowerCase())
+            );
+            if (eqValues.length > 0) {
+              matched = data.filter(item =>
+                eqValues.every((v) => Object.values(item).some((val) => String(val) === v))
+              );
+            }
+          } else {
+            matched = data.length > 0 ? [data[0]] : [];
+          }
+          matched.forEach((item) => Object.assign(item, values));
+          return { returning: vi.fn().mockImplementation(() => Promise.resolve(matched)) };
         }),
       })),
     })),
@@ -258,6 +281,17 @@ describe('report foundation', () => {
     // lock report and try updating section
     report.status = 'locked';
     await expect(updateReportSection(PROJECT_ID, 'rep-1', 'sec-1', { title: 'No' })).rejects.toThrow('Report is locked');
+  });
+  it('rejects updating a section that belongs to a different report (SEC-004 regression)', async () => {
+    const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft' };
+    const otherReportSection = { id: 'sec-OTHER', reportId: 'rep-OTHER', title: 'Not yours', content: 'Not yours' };
+    mockDb.sroiReports.push(report);
+    mockDb.sroiReportSections.push(otherReportSection);
+
+    await expect(
+      updateReportSection(PROJECT_ID, 'rep-1', 'sec-OTHER', { title: 'Hijacked' })
+    ).rejects.toThrow('Report section not found for this report');
+    expect(otherReportSection.title).toBe('Not yours');
   });
   it('lockReportDraft restricts to manager role', async () => {
     const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft' };
