@@ -83,7 +83,7 @@ export function StellaAdvisorPanel({
           </p>
           {highlightHint && (
             <p className="mt-1 text-xs font-medium text-[#B85200]">
-              💡 Recién estás empezando este paso — Stella puede orientarte.
+              <span aria-hidden="true">💡</span> Recién estás empezando este paso — Stella puede orientarte.
             </p>
           )}
         </div>
