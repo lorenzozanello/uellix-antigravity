@@ -11,6 +11,8 @@ import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
 import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
+import { db } from '@/db/client'
+import { stellaInteractions } from '@/db/schema'
 import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 
 export type StellaAdvisorErrorCode =
@@ -21,6 +23,7 @@ export type StellaAdvisorErrorCode =
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
+  | 'AUDIT_ERROR'
   | 'UNKNOWN_ERROR'
 
 export type StellaAdvisorResult =
@@ -84,6 +87,28 @@ export async function getStellaAdvisor(
 
     // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
     const data = await adapter.parseResponse(response.rawOutput, AdvisorOutputSchema)
+
+    // Audit insert — required for compliance and for quota measurement;
+    // surface failure rather than swallow (mirrors validator.ts).
+    try {
+      await db.insert(stellaInteractions).values({
+        organizationId: ctx.organization.id,
+        projectId,
+        createdBy: ctx.user.id,
+        stellaRole: 'advisor',
+        pipelineStep: step,
+        contextHash: '',
+        responseJson: data as unknown,
+        modelUsed: response.modelUsed,
+        tokensUsed: response.tokensUsed,
+      })
+    } catch {
+      return {
+        ok: false,
+        error: 'AUDIT_ERROR',
+        message: 'Failed to record Stella interaction. Please try again.',
+      }
+    }
 
     return { ok: true, data }
   } catch (error) {
