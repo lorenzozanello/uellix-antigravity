@@ -46,7 +46,7 @@ export function TrustLayerSection() {
       <div className="mx-auto max-w-7xl">
         <div className="text-center mb-14">
           <span className="inline-flex items-center rounded-full bg-[#0F172A]/5 border border-[#E2E8F0] px-4 py-1.5 text-xs font-semibold text-[#64748B] mb-5 font-ibm-plex-mono tracking-wide uppercase">
-            Trust Layer
+            Centro de Confianza
           </span>
           <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-[#0F172A]">
             Cada dato tiene origen, huella y contexto.

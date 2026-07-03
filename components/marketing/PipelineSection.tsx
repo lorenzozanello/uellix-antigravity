@@ -19,7 +19,7 @@ const fullSteps: Array<{ label: string; number: number; stella?: boolean; output
   { label: "Proxies",        number: 6 },
   { label: "Filtros SROI",   number: 7 },
   { label: "Cálculo",        number: 8 },
-  { label: "Stella Review",  number: 9,  stella: true },
+  { label: "Stella Validator", number: 9,  stella: true },
   { label: "Impact Deck",    number: 10, output: true },
 ]
 
@@ -152,7 +152,7 @@ export function PipelineSection() {
         </ol>
 
         <p className="mt-10 text-center text-xs text-[#94A3B8] max-w-xl mx-auto leading-relaxed font-manrope">
-          Stella Review identifica riesgos metodológicos en el paso de Cálculo.
+          Stella Validator identifica riesgos metodológicos en el paso de Cálculo.
           No calcula el SROI ni reemplaza la revisión humana.
         </p>
       </div>

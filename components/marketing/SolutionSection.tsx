@@ -16,7 +16,7 @@ const tiles = [
     id: "trust-center",
     icon: ShieldCheck,
     badge: null,
-    title: "Trust Center",
+    title: "Centro de confianza",
     description:
       "Hashes de integridad, fuentes verificables y supuestos explícitos consolidados en un rastro auditable para revisión externa.",
     highlight: false,
