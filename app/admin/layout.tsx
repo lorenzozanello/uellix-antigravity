@@ -43,6 +43,12 @@ export default async function AdminLayout({
           >
             Logs Globales
           </Link>
+          <Link
+            href="/admin/access"
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+          >
+            Acceso (Signup)
+          </Link>
         </nav>
         <div className="p-4 border-t border-red-900/30 space-y-2">
           <Link
