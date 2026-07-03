@@ -37,6 +37,9 @@ export class StellaBuildContextError extends Error {
 export async function buildAdvisorContext(
   projectId: string,
   organizationId: string,
+  // Accepted for call-signature compatibility with callers (e.g. advisor.ts,
+  // which always passes the current pipeline step) — no longer branches on
+  // it now that every step (including Calculation) is supported.
   step: string
 ): Promise<StellaProjectContext> {
   // Project ownership check — structural cross-org boundary
