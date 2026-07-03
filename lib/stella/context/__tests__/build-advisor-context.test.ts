@@ -134,22 +134,21 @@ describe('buildAdvisorContext', () => {
     vi.clearAllMocks()
   })
 
-  describe('UNSUPPORTED_STEP: calculation', () => {
-    it('throws UNSUPPORTED_STEP for "calculation" without touching DB', async () => {
+  describe('Calculation step support', () => {
+    it('does NOT throw for "calculation" — Advisor now supports this step', async () => {
+      await setupFullMockSequence()
+
       await expect(
         buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
-      ).rejects.toThrow(StellaBuildContextError)
+      ).resolves.toBeDefined()
     })
 
-    it('throws UNSUPPORTED_STEP for "Calculation" (case-insensitive)', async () => {
-      let thrown: StellaBuildContextError | null = null
-      try {
-        await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'Calculation')
-      } catch (e) {
-        thrown = e as StellaBuildContextError
-      }
-      expect(thrown).toBeInstanceOf(StellaBuildContextError)
-      expect(thrown?.code).toBe('UNSUPPORTED_STEP')
+    it('does NOT throw for "Cálculo" (Spanish label)', async () => {
+      await setupFullMockSequence()
+
+      await expect(
+        buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'Cálculo')
+      ).resolves.toBeDefined()
     })
   })
 

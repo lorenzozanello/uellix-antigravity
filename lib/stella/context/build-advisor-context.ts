@@ -39,15 +39,6 @@ export async function buildAdvisorContext(
   organizationId: string,
   step: string
 ): Promise<StellaProjectContext> {
-  // Reject calculation step — Stella Advisor is not used there (Validator role, Sprint 9D)
-  const stepLower = step.toLowerCase()
-  if (stepLower === 'calculation' || stepLower === 'cálculo') {
-    throw new StellaBuildContextError(
-      'UNSUPPORTED_STEP',
-      'Stella Advisor does not support the Calculation step. Use Stella Validator instead (Sprint 9D).'
-    )
-  }
-
   // Project ownership check — structural cross-org boundary
   const project = await db
     .select({
