@@ -42,7 +42,7 @@ const floatingCards = [
   },
   {
     icon: Sparkles,
-    label: "Stella Review",
+    label: "Stella Validator",
     cls: "bottom-8 right-6 animate-card-float motion-reduce:animate-none [animation-delay:0.8s]",
   },
   {

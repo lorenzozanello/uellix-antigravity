@@ -4,7 +4,7 @@ import Link from "next/link"
 const productLinks = [
   { label: "Plataforma",   href: "#producto" },
   { label: "Metodología",  href: "#metodologia" },
-  { label: "Trust Center", href: "#confianza" },
+  { label: "Centro de confianza", href: "#confianza" },
   { label: "Stella",       href: "#stella" },
 ]
 

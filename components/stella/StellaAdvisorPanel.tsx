@@ -89,6 +89,7 @@ export function StellaAdvisorPanel({
         <div
           aria-live="polite"
           aria-busy="true"
+          aria-label="Cargando asesoría de Stella…"
           data-testid="stella-loading"
           className="mt-3 space-y-2"
         >

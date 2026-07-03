@@ -74,7 +74,7 @@ export default async function MembersPage(props: {
 
       {errorMessage && <ErrorState title="No se pudo completar la acción" message={errorMessage} />}
       {successMessage && (
-        <div className="rounded-lg border border-success/20 bg-success-light p-4 text-sm text-success">
+        <div role="status" aria-live="polite" className="rounded-lg border border-success/20 bg-success-light p-4 text-sm text-success">
           {successMessage}
         </div>
       )}
