@@ -296,16 +296,8 @@ export default async function ReportDetailPage({
                                 reportId={reportId}
                                 sectionId={section.id}
                                 sectionType={section.sectionType}
-                                onUseDraft={({ title, content }) => {
-                                  const titleEl = document.getElementById(
-                                    titleInputId
-                                  ) as HTMLInputElement | null
-                                  const contentEl = document.getElementById(
-                                    contentInputId
-                                  ) as HTMLTextAreaElement | null
-                                  if (titleEl) titleEl.value = title
-                                  if (contentEl) contentEl.value = content
-                                }}
+                                titleInputId={titleInputId}
+                                contentInputId={contentInputId}
                               />
                               <form
                                 action={handleUpdateSection}

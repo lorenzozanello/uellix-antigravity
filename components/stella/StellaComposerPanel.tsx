@@ -2,7 +2,7 @@
 // components/stella/StellaComposerPanel.tsx
 // On-demand Stella Composer panel — drafts one report section at a time.
 // Never auto-invokes, never auto-saves. User reviews and explicitly loads
-// the draft into the section's edit form via onUseDraft.
+// the draft into the section's edit form (matched by titleInputId/contentInputId).
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -23,7 +23,12 @@ interface StellaComposerPanelProps {
   reportId: string
   sectionId: string
   sectionType: string
-  onUseDraft: (draft: { title: string; content: string }) => void
+  // Plain element IDs rather than a callback: Server Components cannot pass
+  // event-handler-shaped functions to Client Component props (Next.js RSC
+  // throws "Event handlers cannot be passed to Client Component props" at
+  // render time). IDs are serializable, so the DOM write happens locally.
+  titleInputId: string
+  contentInputId: string
   className?: string
 }
 
@@ -32,7 +37,8 @@ export function StellaComposerPanel({
   reportId,
   sectionId,
   sectionType,
-  onUseDraft,
+  titleInputId,
+  contentInputId,
   className,
 }: StellaComposerPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
@@ -60,6 +66,13 @@ export function StellaComposerPanel({
   }
 
   const isLoading = panelState.status === 'loading'
+
+  function handleUseDraft(draft: { title: string; content: string }) {
+    const titleEl = document.getElementById(titleInputId) as HTMLInputElement | null
+    const contentEl = document.getElementById(contentInputId) as HTMLTextAreaElement | null
+    if (titleEl) titleEl.value = draft.title
+    if (contentEl) contentEl.value = draft.content
+  }
 
   return (
     <section
@@ -139,7 +152,7 @@ export function StellaComposerPanel({
             variant="outline"
             size="sm"
             onClick={() =>
-              onUseDraft({ title: panelState.data.draft_title, content: panelState.data.draft_content })
+              handleUseDraft({ title: panelState.data.draft_title, content: panelState.data.draft_content })
             }
           >
             Usar este borrador

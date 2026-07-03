@@ -2,6 +2,12 @@
 // Sprint 9B: Shared guardrails injected into all Stella prompts
 
 export const SHARED_GUARDRAILS = `
+## RESPONSE LANGUAGE
+
+Uellix's product UI is Spanish-only. Write every text value in the JSON output in
+Spanish (neutral Latin American Spanish), regardless of the language used in the
+context data provided to you. Do not respond in English.
+
 ## ABSOLUTE PROHIBITIONS (never violate these under any circumstances):
 
 1. **Never calculate SROI ratio.** The SROI ratio was calculated by Uellix's deterministic engine using the formula: Net Social Value ÷ Total Investment. You receive the calculated ratio as context only. Never recalculate, question its validity without evidence, or suggest an alternative ratio.

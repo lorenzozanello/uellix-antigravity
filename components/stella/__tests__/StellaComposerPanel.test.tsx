@@ -70,7 +70,24 @@ const defaultProps = {
   reportId: 'report-1',
   sectionId: 'section-1',
   sectionType: 'executive_summary',
-  onUseDraft: vi.fn(),
+  titleInputId: 'title-section-1',
+  contentInputId: 'content-section-1',
+}
+
+// The component writes the draft into sibling DOM inputs by ID (see
+// titleInputId/contentInputId) rather than via a callback prop, since a
+// Server Component cannot pass an event-handler function to this Client
+// Component. Tests that exercise "Usar este borrador" render these inputs
+// alongside the panel to observe the write.
+function renderWithSectionInputs(props: Partial<typeof defaultProps> = {}) {
+  const merged = { ...defaultProps, ...props }
+  return render(
+    <>
+      <StellaComposerPanel {...merged} />
+      <input id={merged.titleInputId} defaultValue="" />
+      <textarea id={merged.contentInputId} defaultValue="" />
+    </>
+  )
 }
 
 function success(output = VALID_COMPOSER_OUTPUT) {
@@ -432,26 +449,25 @@ describe('StellaComposerPanel', () => {
   })
 
   // -------------------------------------------------------------------------
-  // onUseDraft callback
+  // "Usar este borrador" — writes into sibling DOM inputs by ID
   // -------------------------------------------------------------------------
-  describe('onUseDraft callback', () => {
-    it('does not call onUseDraft automatically on success', async () => {
-      const onUseDraft = vi.fn()
+  describe('Usar este borrador', () => {
+    it('does not modify the section inputs automatically on success', async () => {
       success()
-      render(<StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />)
+      renderWithSectionInputs()
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/usar este borrador/i)).not.toBeNull()
       })
 
-      expect(onUseDraft).not.toHaveBeenCalled()
+      expect((document.getElementById(defaultProps.titleInputId) as HTMLInputElement).value).toBe('')
+      expect((document.getElementById(defaultProps.contentInputId) as HTMLTextAreaElement).value).toBe('')
     })
 
-    it('calls onUseDraft with exact {title, content} when "Usar este borrador" is clicked', async () => {
-      const onUseDraft = vi.fn()
+    it('writes draft_title and draft_content into the section inputs when clicked', async () => {
       success()
-      render(<StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />)
+      renderWithSectionInputs()
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
@@ -460,26 +476,24 @@ describe('StellaComposerPanel', () => {
 
       fireEvent.click(screen.getByText(/usar este borrador/i))
 
-      expect(onUseDraft).toHaveBeenCalledTimes(1)
-      expect(onUseDraft).toHaveBeenCalledWith({
-        title: VALID_COMPOSER_OUTPUT.draft_title,
-        content: VALID_COMPOSER_OUTPUT.draft_content,
-      })
+      expect((document.getElementById(defaultProps.titleInputId) as HTMLInputElement).value).toBe(
+        VALID_COMPOSER_OUTPUT.draft_title
+      )
+      expect((document.getElementById(defaultProps.contentInputId) as HTMLTextAreaElement).value).toBe(
+        VALID_COMPOSER_OUTPUT.draft_content
+      )
     })
 
-    it('calls onUseDraft only once per click', async () => {
-      const onUseDraft = vi.fn()
+    it('does nothing if the target inputs are not present in the DOM', async () => {
       success()
-      render(<StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />)
+      render(<StellaComposerPanel {...defaultProps} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/usar este borrador/i)).not.toBeNull()
       })
 
-      fireEvent.click(screen.getByText(/usar este borrador/i))
-
-      expect(onUseDraft).toHaveBeenCalledTimes(1)
+      expect(() => fireEvent.click(screen.getByText(/usar este borrador/i))).not.toThrow()
     })
   })
 
@@ -501,22 +515,21 @@ describe('StellaComposerPanel', () => {
       })
     })
 
-    it('does not auto-save: onUseDraft is only ever invoked from explicit click', async () => {
-      const onUseDraft = vi.fn()
+    it('does not auto-save: section inputs are only ever written from explicit click', async () => {
       success()
-      render(<StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />)
+      renderWithSectionInputs()
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/borrador propuesto/i)).not.toBeNull()
       })
 
-      // Wait an additional tick to ensure no deferred auto-call happens
+      // Wait an additional tick to ensure no deferred auto-write happens
       await act(async () => {
         await new Promise((r) => setTimeout(r, 0))
       })
 
-      expect(onUseDraft).not.toHaveBeenCalled()
+      expect((document.getElementById(defaultProps.titleInputId) as HTMLInputElement).value).toBe('')
     })
   })
 })
