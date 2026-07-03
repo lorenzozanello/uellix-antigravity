@@ -4,12 +4,12 @@
 // lib/stella/quota.ts for how the quota is enforced at call time.
 
 import { db } from '@/db/client'
-import { organizations } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { organizations, stellaInteractions } from '@/db/schema'
+import { eq, and, gte, count } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdminAccess } from '@/lib/auth/session'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
-import { checkStellaQuota } from '@/lib/stella/quota'
+import { startOfCurrentUtcMonth } from '@/lib/stella/quota'
 
 const StellaServiceInput = z.object({
   planLabel: z.string().max(100).optional(),
@@ -31,8 +31,18 @@ export async function listOrganizationsWithStellaUsage() {
 
   const results = []
   for (const org of orgs) {
-    const quotaResult = await checkStellaQuota(org.id)
-    results.push({ ...org, usedThisMonth: quotaResult.used })
+    const usedThisMonth = await db
+      .select({ value: count() })
+      .from(stellaInteractions)
+      .where(
+        and(
+          eq(stellaInteractions.organizationId, org.id),
+          gte(stellaInteractions.createdAt, startOfCurrentUtcMonth())
+        )
+      )
+      .then((rows) => rows[0]?.value ?? 0)
+
+    results.push({ ...org, usedThisMonth })
   }
 
   return results
@@ -46,7 +56,16 @@ export async function updateOrganizationStellaService(
   const admin = await requireAdminAccess()
   const data = StellaServiceInput.parse(input)
 
-  const beforeQuota = await checkStellaQuota(organizationId)
+  const before = await db
+    .select({
+      stellaMonthlyQuota: organizations.stellaMonthlyQuota,
+      stellaPlanLabel: organizations.stellaPlanLabel,
+    })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .then((rows) => rows[0])
+
+  if (!before) throw new Error('Organization not found')
 
   const [updated] = await db
     .update(organizations)
@@ -65,7 +84,7 @@ export async function updateOrganizationStellaService(
     entityType: 'organization',
     entityId: organizationId,
     action: AUDIT_ACTIONS.STELLA_SERVICE_UPDATED,
-    beforeJson: { stellaMonthlyQuota: beforeQuota.quota },
+    beforeJson: { stellaMonthlyQuota: before.stellaMonthlyQuota, stellaPlanLabel: before.stellaPlanLabel },
     afterJson: { stellaMonthlyQuota: updated.stellaMonthlyQuota, stellaPlanLabel: updated.stellaPlanLabel },
   })
 

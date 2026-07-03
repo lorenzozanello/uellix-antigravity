@@ -13,7 +13,7 @@ export type StellaQuotaResult =
   | { allowed: true; used: number; quota: number | null }
   | { allowed: false; used: number; quota: number; reason: 'no_quota' | 'quota_exceeded' }
 
-function startOfCurrentUtcMonth(): Date {
+export function startOfCurrentUtcMonth(): Date {
   const now = new Date()
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
 }
