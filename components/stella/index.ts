@@ -3,3 +3,4 @@
 
 export { StellaAdvisorPanel } from './StellaAdvisorPanel'
 export { StellaValidatorPanel } from './StellaValidatorPanel'
+export { StellaComposerPanel } from './StellaComposerPanel'
