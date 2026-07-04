@@ -18,6 +18,15 @@
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+  /* Brand palette as theme tokens — generates bg/text/border/from/via/outline
+     -uellix-* utilities (with opacity modifiers), so components stop hardcoding
+     hex. Values mirror the :root brand tokens defined lower in this file. */
+  --color-uellix-orange: #FF6A00;
+  --color-uellix-orange-strong: #e05e00;
+  --color-uellix-deep: #0F172A;
+  --color-uellix-carbon: #0A101E;
+  --color-uellix-copper: #C2703F;
+  --color-uellix-ink: #14181F;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -343,6 +352,29 @@
 @media (prefers-reduced-motion: reduce) {
   .btn-premium:hover,
   .btn-premium:active { transform: none; }
+}
+
+/* ─── Editorial keyword mark ─── */
+/* A hand-marked, highlighter-style underline for the single most important
+   phrase in the hero H1 ("evidencia defendible") — an alternative to a serif
+   display treatment: typographic emphasis via a physical "marked as
+   evidence" motif instead of a different typeface. Deliberately used once,
+   not repeated across every accent phrase on the page. */
+.text-keyword-mark {
+  position: relative;
+  display: inline-block;
+}
+.text-keyword-mark::after {
+  content: "";
+  position: absolute;
+  left: -0.05em;
+  right: -0.05em;
+  bottom: 0.06em;
+  height: 0.22em;
+  background: rgba(255, 106, 0, 0.16);
+  border-radius: 2px;
+  transform: rotate(-0.6deg);
+  z-index: -1;
 }
 
 /* Brand font utilities */

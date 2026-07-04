@@ -22,18 +22,18 @@ export function HeroSection() {
       />
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 xl:gap-16">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 xl:gap-16">
 
           {/* ── Left: editorial copy column ── */}
           <div className="flex flex-col items-start text-left animate-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#FF6A00]/25 bg-[#FF6A00]/8 px-3.5 py-1.5 text-[11px] font-semibold text-[#B85200] mb-7 font-ibm-plex-mono tracking-[0.14em] uppercase">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#FF6A00] shrink-0" aria-hidden="true" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-uellix-orange/25 bg-uellix-orange/8 px-3.5 py-1.5 text-[11px] font-semibold text-[#B85200] mb-7 font-ibm-plex-mono tracking-[0.14em] uppercase">
+              <span className="h-1.5 w-1.5 rounded-full bg-uellix-orange shrink-0" aria-hidden="true" />
               Ledger cívico de impacto
             </span>
 
-            <h1 className="font-sora font-semibold tracking-[-0.02em] text-[#0F172A] mb-6 text-[clamp(2.6rem,6vw,5.5rem)] leading-[0.98]">
+            <h1 className="font-sora font-bold tracking-[-0.025em] text-[#0F172A] mb-6 text-[clamp(2.8rem,6.5vw,6rem)] leading-[0.96]">
               Convierte el impacto social en{" "}
-              <span className="text-[#FF6A00]">evidencia defendible.</span>
+              <span className="text-uellix-orange text-keyword-mark">evidencia defendible.</span>
             </h1>
 
             <p className="font-manrope text-base sm:text-lg text-[#475569] max-w-xl mb-9 leading-relaxed">
@@ -45,20 +45,20 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center w-full sm:w-auto">
               <Link
                 href="/demo"
-                className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-[#FF6A00] px-7 py-3.5 text-base font-semibold text-white hover:bg-[#e05e00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[48px] w-full sm:w-auto shadow-[0_6px_20px_-6px_rgba(255,106,0,0.55)]"
+                className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-7 py-3.5 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] w-full sm:w-auto shadow-[0_6px_20px_-6px_rgba(255,106,0,0.55)]"
               >
                 Solicitar demo
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <a
                 href="#metodologia"
-                className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg border border-[#0F172A]/12 bg-white/70 px-7 py-3.5 text-base font-semibold text-[#0F172A] hover:bg-white hover:border-[#0F172A]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[48px] w-full sm:w-auto"
+                className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg border border-[#0F172A]/12 bg-white/70 px-7 py-3.5 text-base font-semibold text-[#0F172A] hover:bg-white hover:border-[#0F172A]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] w-full sm:w-auto"
               >
                 Ver metodología
               </a>
             </div>
 
-            <p className="mt-7 max-w-md text-xs leading-relaxed font-manrope text-[#5B6472] border-l-2 border-[#FF6A00]/30 pl-3">
+            <p className="mt-7 max-w-md text-xs leading-relaxed font-manrope text-[#5B6472] border-l-2 border-uellix-orange/30 pl-3">
               Stella ayuda a identificar riesgos metodológicos. La validación final
               permanece en manos del equipo experto.
             </p>

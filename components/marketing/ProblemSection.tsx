@@ -35,10 +35,10 @@ export function ProblemSection() {
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-28">
               <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#5B6472] mb-6">
-                <span className="h-px w-8 bg-[#FF6A00]/50" aria-hidden="true" />
+                <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
                 El desafío
               </span>
-              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-semibold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
                 La evidencia está dispersa. El impacto es difícil de defender.
               </h2>
               <p className="mt-6 text-base text-[#475569] max-w-md leading-relaxed font-manrope">
@@ -61,7 +61,7 @@ export function ProblemSection() {
                 >
                   <span
                     aria-hidden="true"
-                    className="font-sora text-4xl sm:text-5xl font-semibold text-[#0F172A]/12 tabular-nums leading-none transition-premium group-hover:text-[#FF6A00]/60"
+                    className="font-sora text-4xl sm:text-5xl font-semibold text-[#0F172A]/12 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60"
                   >
                     {n}
                   </span>

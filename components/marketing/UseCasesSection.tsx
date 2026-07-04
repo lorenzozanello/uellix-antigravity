@@ -44,10 +44,10 @@ export function UseCasesSection() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl mb-14">
           <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#5B6472] mb-6">
-            <span className="h-px w-8 bg-[#FF6A00]/50" aria-hidden="true" />
+            <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
             Para quién
           </span>
-          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-semibold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
             Para quienes generan impacto y deben demostrarlo.
           </h2>
         </div>
@@ -67,8 +67,8 @@ export function UseCasesSection() {
                   <span className="font-sora text-6xl font-semibold text-white/12 tabular-nums leading-none" aria-hidden="true">
                     {featured.n}
                   </span>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#FF6A00]/30 bg-[#FF6A00]/12">
-                    <featured.icon className="h-5 w-5 text-[#FF6A00]" aria-hidden="true" />
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-uellix-orange/30 bg-uellix-orange/12">
+                    <featured.icon className="h-5 w-5 text-uellix-orange" aria-hidden="true" />
                   </span>
                 </div>
                 <h3 className="mt-8 font-sora text-2xl sm:text-3xl font-semibold text-white leading-tight">
@@ -78,7 +78,7 @@ export function UseCasesSection() {
                   {featured.description}
                 </p>
               </div>
-              <p className="relative mt-8 flex items-center gap-2 font-ibm-plex-mono text-[11px] uppercase tracking-[0.14em] text-[#FF6A00]">
+              <p className="relative mt-8 flex items-center gap-2 font-ibm-plex-mono text-[11px] uppercase tracking-[0.14em] text-uellix-orange">
                 <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 {featured.result}
               </p>
@@ -96,11 +96,11 @@ export function UseCasesSection() {
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <span className="font-sora text-2xl font-semibold text-[#0F172A]/15 tabular-nums leading-none transition-premium group-hover:text-[#FF6A00]/60" aria-hidden="true">
+                    <span className="font-sora text-2xl font-semibold text-[#0F172A]/15 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60" aria-hidden="true">
                       {n}
                     </span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0F172A]/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-[#FF6A00]/30 group-hover:bg-[#FF6A00]/5">
-                      <Icon className="h-4 w-4 text-[#0F172A] transition-premium group-hover:text-[#FF6A00]" aria-hidden="true" />
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0F172A]/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-uellix-orange/30 group-hover:bg-uellix-orange/5">
+                      <Icon className="h-4 w-4 text-[#0F172A] transition-premium group-hover:text-uellix-orange" aria-hidden="true" />
                     </span>
                   </div>
                   <div>

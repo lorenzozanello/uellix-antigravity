@@ -33,7 +33,7 @@ export function Footer() {
           <div className="col-span-2 lg:col-span-1">
             <Link
               href="/"
-              className="mb-4 w-fit inline-block transition-premium hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+              className="mb-4 w-fit inline-block transition-premium hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange"
               aria-label="Uellix — Inicio"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -58,7 +58,7 @@ export function Footer() {
             <ul className="flex flex-col gap-2.5">
               {productLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <a href={href} className="text-sm text-[#94A3B8] hover:text-white transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]">
+                  <a href={href} className="text-sm text-[#94A3B8] hover:text-white transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange">
                     {label}
                   </a>
                 </li>
@@ -74,7 +74,7 @@ export function Footer() {
             <ul className="flex flex-col gap-2.5">
               {resourceLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <a href={href} className="text-sm text-[#94A3B8] hover:text-white transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]">
+                  <a href={href} className="text-sm text-[#94A3B8] hover:text-white transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange">
                     {label}
                   </a>
                 </li>
@@ -82,7 +82,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/demo"
-                  className="btn-premium inline-flex items-center gap-1.5 rounded-md bg-[#FF6A00] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#e05e00] mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+                  className="btn-premium inline-flex items-center gap-1.5 rounded-md bg-uellix-orange px-3 py-1.5 text-xs font-semibold text-white hover:bg-uellix-orange-strong mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange"
                 >
                   Solicitar demo
                 </Link>
@@ -98,7 +98,7 @@ export function Footer() {
             <ul className="flex flex-col gap-2.5">
               {companyLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <a href={href} className="text-sm text-[#94A3B8] hover:text-white transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]">
+                  <a href={href} className="text-sm text-[#94A3B8] hover:text-white transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange">
                     {label}
                   </a>
                 </li>

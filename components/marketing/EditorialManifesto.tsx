@@ -23,14 +23,14 @@ export function EditorialManifesto() {
       </span>
 
       <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <p className="font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.28em] text-[#FF6A00] mb-8">
+        <p className="font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.28em] text-uellix-orange mb-8">
           Manifiesto
         </p>
         <p className="font-sora text-white font-normal leading-[1.12] tracking-[-0.01em] text-[clamp(1.9rem,5vw,3.6rem)]">
           El impacto no falla por falta de intención.
           <br className="hidden sm:block" />{" "}
           <span className="text-white/55">Falla cuando</span>{" "}
-          <span className="text-[#FF6A00]">no puede defenderse.</span>
+          <span className="text-uellix-orange">no puede defenderse.</span>
         </p>
       </div>
     </section>

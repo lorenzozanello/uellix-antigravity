@@ -2,6 +2,7 @@ import React from "react";
 import { Navbar } from "@/components/marketing/Navbar";
 import { Footer } from "@/components/marketing/Footer";
 import { NavigationProgress } from "@/components/marketing/visuals/NavigationProgress";
+import { siteUrl } from "@/lib/site";
 
 // JSON-LD Organization — no invented claims, only verifiable brand facts.
 const organizationJsonLd = {
@@ -9,7 +10,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "Uellix",
   legalName: "The Balance Corp",
-  url: "https://uellix-antigravity.vercel.app",
+  url: siteUrl,
   description:
     "Plataforma de inteligencia de impacto social audit-ready: estructura proyectos, conecta evidencias, documenta proxies y filtros SROI y genera reportes preparados para revisión externa.",
   email: "hola@uellix.com",

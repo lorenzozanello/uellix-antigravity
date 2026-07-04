@@ -7,9 +7,33 @@ const capabilities = [
 ]
 
 const reviewRows = [
-  { label: "Riesgo de evidencia",  level: "Medio", dot: "bg-amber-400",  tone: "text-amber-300" },
-  { label: "Riesgo de proxy",      level: "Bajo",  dot: "bg-emerald-400", tone: "text-emerald-300" },
-  { label: "Riesgo de atribución", level: "Medio", dot: "bg-amber-400",  tone: "text-amber-300" },
+  {
+    label: "Riesgo de evidencia",
+    level: "Medio",
+    value: 2,
+    dot: "bg-amber-400",
+    tone: "text-amber-200",
+    badge: "border-amber-400/35 bg-amber-400/12",
+    meter: "bg-amber-400",
+  },
+  {
+    label: "Riesgo de proxy",
+    level: "Bajo",
+    value: 1,
+    dot: "bg-emerald-400",
+    tone: "text-emerald-200",
+    badge: "border-emerald-400/35 bg-emerald-400/12",
+    meter: "bg-emerald-400",
+  },
+  {
+    label: "Riesgo de atribución",
+    level: "Medio",
+    value: 2,
+    dot: "bg-amber-400",
+    tone: "text-amber-200",
+    badge: "border-amber-400/35 bg-amber-400/12",
+    meter: "bg-amber-400",
+  },
 ]
 
 export function StellaSection() {
@@ -30,13 +54,13 @@ export function StellaSection() {
 
           {/* Left — narrative */}
           <div>
-            <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF6A00] mb-6">
-              <span className="h-px w-8 bg-[#FF6A00]/50" aria-hidden="true" />
+            <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-uellix-orange mb-6">
+              <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
               Stella
             </span>
-            <h2 className="font-sora text-[clamp(2rem,4.2vw,3.4rem)] font-semibold leading-[1.04] tracking-[-0.015em] text-white">
+            <h2 className="font-sora text-[clamp(2rem,4.2vw,3.4rem)] font-bold leading-[1.04] tracking-[-0.015em] text-white">
               Criterio aumentado.{" "}
-              <span className="text-[#FF6A00]">Nunca delegado.</span>
+              <span className="text-uellix-orange">Nunca delegado.</span>
             </h2>
             <p className="mt-6 text-base text-[#94A3B8] max-w-md leading-relaxed font-manrope">
               Stella apoya con orientación metodológica y revisión de riesgos.
@@ -48,9 +72,9 @@ export function StellaSection() {
                 <div key={role} className="flex gap-4">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/[0.04]">
                     {role === "Advisor" ? (
-                      <MessageSquare className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                      <MessageSquare className="h-4 w-4 text-uellix-orange" aria-hidden="true" />
                     ) : (
-                      <ShieldAlert className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                      <ShieldAlert className="h-4 w-4 text-uellix-orange" aria-hidden="true" />
                     )}
                   </span>
                   <div>
@@ -67,11 +91,11 @@ export function StellaSection() {
           {/* Right — review sheet (glass) */}
           <div className="relative">
             <div className="rounded-2xl border border-white/12 bg-white/[0.05] backdrop-blur-md p-6 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.7)]">
-              <div className="h-[3px] w-full rounded-full bg-gradient-to-r from-[#FF6A00] via-[#C2703F] to-transparent mb-5" />
+              <div className="h-[3px] w-full rounded-full bg-gradient-to-r from-uellix-orange via-[#C2703F] to-transparent mb-5" />
 
               <div className="flex items-center justify-between gap-3 mb-5">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <ShieldAlert className="h-4 w-4 text-uellix-orange" aria-hidden="true" />
                   <span className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/80">
                     Hoja de revisión · Stella
                   </span>
@@ -80,21 +104,34 @@ export function StellaSection() {
               </div>
 
               <div className="flex flex-col divide-y divide-white/8">
-                {reviewRows.map(({ label, level, dot, tone }) => (
-                  <div key={label} className="flex items-center justify-between gap-3 py-3">
+                {reviewRows.map(({ label, level, value, dot, tone, badge, meter }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 py-3.5">
                     <span className="flex items-center gap-2.5 text-sm text-[#CBD5E1] font-manrope">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
                       {label}
                     </span>
-                    <span className={`font-ibm-plex-mono text-xs font-semibold uppercase tracking-wide ${tone}`}>
-                      {level}
+                    <span className="flex items-center gap-3">
+                      {/* risk meter — 3 ticks, filled by severity */}
+                      <span className="flex items-center gap-1" aria-hidden="true">
+                        {[1, 2, 3].map((tick) => (
+                          <span
+                            key={tick}
+                            className={`h-3.5 w-1 rounded-full ${tick <= value ? meter : "bg-white/10"}`}
+                          />
+                        ))}
+                      </span>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 font-ibm-plex-mono text-[10px] font-bold uppercase tracking-wide ${badge} ${tone}`}
+                      >
+                        {level}
+                      </span>
                     </span>
                   </div>
                 ))}
               </div>
 
               <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.03] p-4">
-                <p className="font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#FF6A00] mb-1.5">
+                <p className="font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.16em] text-uellix-orange mb-1.5">
                   Recomendación metodológica
                 </p>
                 <p className="text-sm text-[#CBD5E1] leading-relaxed font-manrope">
@@ -103,11 +140,18 @@ export function StellaSection() {
                 </p>
               </div>
 
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3">
-                <span className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.14em] text-amber-200">
-                  Estado
+              <div className="mt-4 flex items-center gap-4 rounded-xl border border-amber-400/40 bg-amber-400/10 px-5 py-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/15">
+                  <AlertTriangle className="h-4 w-4 text-amber-300" aria-hidden="true" />
                 </span>
-                <span className="text-sm font-semibold text-amber-100 font-manrope">Requiere revisión humana</span>
+                <div>
+                  <p className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-amber-200/80 mb-0.5">
+                    Estado
+                  </p>
+                  <p className="text-base font-semibold text-amber-100 font-sora leading-tight">
+                    Requiere revisión humana
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -119,7 +163,7 @@ export function StellaSection() {
           aria-label="Aclaración sobre los límites de Stella"
           className="mt-12 rounded-xl border border-white/10 bg-white/[0.03] px-6 py-5 flex flex-col sm:flex-row items-start gap-4"
         >
-          <AlertTriangle className="h-5 w-5 shrink-0 text-[#FF6A00] mt-0.5" aria-hidden="true" />
+          <AlertTriangle className="h-5 w-5 shrink-0 text-uellix-orange mt-0.5" aria-hidden="true" />
           <p className="text-sm text-[#94A3B8] leading-relaxed font-manrope">
             Stella{" "}
             <strong className="text-white font-semibold">sugiere, orienta y detecta riesgos metodológicos</strong>.

@@ -16,7 +16,7 @@ export function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full bg-[var(--uellix-paper)]/85 backdrop-blur-xl border-b border-[#0F172A]/8"
+      className="sticky top-0 z-50 w-full bg-[var(--uellix-paper)]/92 backdrop-blur-md border-b border-[#0F172A]/8"
       role="banner"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -25,7 +25,7 @@ export function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="shrink-0 group transition-premium hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+            className="shrink-0 group transition-premium hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange"
             aria-label="Uellix — Inicio"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -47,7 +47,7 @@ export function Navbar() {
               <a
                 key={label}
                 href={href}
-                className="px-3.5 py-1.5 text-sm font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 rounded-md transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+                className="px-3.5 py-1.5 text-sm font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 rounded-md transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange"
               >
                 {label}
               </a>
@@ -58,13 +58,13 @@ export function Navbar() {
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             <Link
               href="/login"
-              className="px-3 py-1.5 text-sm font-medium text-[#475569] hover:text-[#0F172A] rounded-md transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+              className="px-3 py-1.5 text-sm font-medium text-[#475569] hover:text-[#0F172A] rounded-md transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange"
             >
               Iniciar sesión
             </Link>
             <Link
               href="/demo"
-              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-[#FF6A00] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#e05e00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[36px] shadow-[0_1px_2px_rgba(15,23,42,0.12)]"
+              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-uellix-orange px-4 py-1.5 text-sm font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[36px] shadow-[0_1px_2px_rgba(15,23,42,0.12)]"
             >
               Solicitar demo
             </Link>
@@ -77,7 +77,7 @@ export function Navbar() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             onClick={() => setOpen(!open)}
-            className="lg:hidden flex items-center justify-center h-10 w-10 rounded-lg border border-[#0F172A]/10 text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+            className="lg:hidden flex items-center justify-center h-10 w-10 rounded-lg border border-[#0F172A]/10 text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange"
           >
             {open
               ? <X className="h-5 w-5" aria-hidden="true" />
@@ -102,7 +102,7 @@ export function Navbar() {
                 key={label}
                 href={href}
                 onClick={() => setOpen(false)}
-                className="flex items-center px-4 py-3 text-base font-medium text-[#0F172A] hover:bg-[#0F172A]/5 rounded-lg transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
+                className="flex items-center px-4 py-3 text-base font-medium text-[#0F172A] hover:bg-[#0F172A]/5 rounded-lg transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[44px]"
               >
                 {label}
               </a>
@@ -112,14 +112,14 @@ export function Navbar() {
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-center px-4 py-3 text-base font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 rounded-lg transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
+              className="flex items-center justify-center px-4 py-3 text-base font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 rounded-lg transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[44px]"
             >
               Iniciar sesión
             </Link>
             <Link
               href="/demo"
               onClick={() => setOpen(false)}
-              className="btn-premium flex items-center justify-center gap-2 rounded-lg bg-[#FF6A00] px-4 py-3 text-base font-semibold text-white hover:bg-[#e05e00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
+              className="btn-premium flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-4 py-3 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[44px]"
             >
               Solicitar demo
             </Link>

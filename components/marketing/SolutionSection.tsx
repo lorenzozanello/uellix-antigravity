@@ -47,6 +47,7 @@ const layers = [
     description:
       "Reportes audit-ready revisables por terceros, con supuestos explícitos, fuentes citadas y el rastro completo de decisiones metodológicas exportable.",
     accent: true,
+    output: true,
   },
 ]
 
@@ -69,11 +70,11 @@ export function SolutionSection() {
           {/* Heading — left, asymmetric */}
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-28">
-              <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF6A00] mb-6">
-                <span className="h-px w-8 bg-[#FF6A00]/50" aria-hidden="true" />
+              <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-uellix-orange mb-6">
+                <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
                 La plataforma
               </span>
-              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-semibold leading-[1.05] tracking-[-0.015em] text-white">
+              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-white">
                 Un sistema operativo metodológico para evidencia de impacto.
               </h2>
               <p className="mt-6 text-base text-[#94A3B8] max-w-sm leading-relaxed font-manrope">
@@ -90,34 +91,49 @@ export function SolutionSection() {
               {/* vertical spine */}
               <span
                 aria-hidden="true"
-                className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-[#FF6A00]/40 via-white/10 to-[#FF6A00]/40"
+                className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-uellix-orange/40 via-white/10 to-uellix-orange/40"
               />
-              {layers.map(({ id, icon: Icon, secondaryIcon: Secondary, layer, title, description, accent }) => (
+              {layers.map(({ id, icon: Icon, secondaryIcon: Secondary, layer, title, description, accent, output }) => (
                 <li key={id} className="relative grid grid-cols-[40px_1fr] gap-5 py-4 group">
-                  {/* node */}
+                  {/* node — the output node is a filled orange chip, marking the deliverable */}
                   <span
                     className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm transition-premium ${
-                      accent
-                        ? "border-[#FF6A00]/35 bg-[#FF6A00]/12 group-hover:bg-[#FF6A00]/20"
+                      output
+                        ? "border-uellix-orange bg-uellix-orange shadow-[0_8px_22px_-6px_rgba(255,106,0,0.6)] group-hover:-translate-y-0.5"
+                        : accent
+                        ? "border-uellix-orange/35 bg-uellix-orange/12 group-hover:bg-uellix-orange/20"
                         : "border-white/12 bg-white/[0.04] group-hover:border-white/25"
                     }`}
                   >
                     <Icon
-                      className={`h-[18px] w-[18px] ${accent ? "text-[#FF6A00]" : "text-[#94A3B8] group-hover:text-white"} transition-premium`}
+                      className={`h-[18px] w-[18px] transition-premium ${
+                        output ? "text-white" : accent ? "text-uellix-orange" : "text-[#94A3B8] group-hover:text-white"
+                      }`}
                       aria-hidden="true"
                     />
                   </span>
-                  <div className="rounded-xl border border-white/8 bg-white/[0.03] px-5 py-4 transition-premium hover:border-white/16 hover:bg-white/[0.05]">
+                  <div
+                    className={`rounded-xl border px-5 py-4 transition-premium ${
+                      output
+                        ? "border-uellix-orange/30 bg-gradient-to-br from-uellix-orange/[0.10] to-uellix-orange/[0.02] hover:border-uellix-orange/45"
+                        : "border-white/8 bg-white/[0.03] hover:border-white/16 hover:bg-white/[0.05]"
+                    }`}
+                  >
                     <div className="flex items-center gap-2 mb-1.5">
                       <span
                         className={`font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.18em] ${
-                          accent ? "text-[#FF6A00]" : "text-[#64748B]"
+                          accent ? "text-uellix-orange" : "text-[#64748B]"
                         }`}
                       >
                         {layer}
                       </span>
+                      {output && (
+                        <span className="font-ibm-plex-mono text-[8px] font-bold uppercase tracking-[0.16em] text-uellix-orange/70 rounded-full border border-uellix-orange/30 px-1.5 py-0.5">
+                          Entregable
+                        </span>
+                      )}
                       {Secondary && (
-                        <Secondary className="h-3 w-3 text-[#FF6A00]/70" aria-hidden="true" />
+                        <Secondary className="h-3 w-3 text-uellix-orange/70" aria-hidden="true" />
                       )}
                     </div>
                     <h3 className="font-sora text-lg font-semibold text-white mb-1.5">{title}</h3>

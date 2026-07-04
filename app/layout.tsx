@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Sora, Manrope, IBM_Plex_Mono } from "next/font/google";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistMono = Geist_Mono({
@@ -10,8 +11,10 @@ const geistMono = Geist_Mono({
 const sora = Sora({
   variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  // 400/600/700 are the only weights used across the app; 800 was dead weight.
+  weight: ["400", "600", "700"],
   display: "swap",
+  preload: true,
 });
 
 const manrope = Manrope({
@@ -27,8 +30,6 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "700"],
   display: "swap",
 });
-
-const siteUrl = "https://uellix-antigravity.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

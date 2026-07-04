@@ -68,11 +68,11 @@ export function FAQSection() {
       <div className="texture-grain-b" aria-hidden="true" />
       <div className="relative z-10 mx-auto max-w-3xl">
         <div className="mb-14">
-          <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF6A00] mb-6">
-            <span className="h-px w-8 bg-[#FF6A00]/50" aria-hidden="true" />
+          <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-uellix-orange mb-6">
+            <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
             Preguntas frecuentes
           </span>
-          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-semibold tracking-[-0.015em] leading-[1.05] text-white">
+          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold tracking-[-0.015em] leading-[1.05] text-white">
             Lo que un equipo riguroso necesita saber.
           </h2>
         </div>
@@ -88,7 +88,7 @@ export function FAQSection() {
                 key={question}
                 className={`rounded-xl border overflow-hidden transition-colors ${
                   isOpen
-                    ? "border-[#FF6A00]/25 bg-[#FF6A00]/5"
+                    ? "border-uellix-orange/25 bg-uellix-orange/5"
                     : "border-[#1E293B] bg-[#0A1220]"
                 }`}
               >
@@ -98,12 +98,12 @@ export function FAQSection() {
                     aria-expanded={isOpen}
                     aria-controls={panelId}
                     onClick={() => toggle(index)}
-                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left text-sm font-semibold text-white hover:text-[#FF6A00]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF6A00] focus-visible:outline-offset-[-2px] transition-colors min-h-[44px] font-sora"
+                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left text-sm font-semibold text-white hover:text-uellix-orange/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-uellix-orange focus-visible:outline-offset-[-2px] transition-colors min-h-[44px] font-sora"
                   >
                     <span>{question}</span>
                     <ChevronDown
                       className={`h-4 w-4 shrink-0 text-[#94A3B8] transition-premium motion-reduce:transition-none ${
-                        isOpen ? "rotate-180 text-[#FF6A00]" : ""
+                        isOpen ? "rotate-180 text-uellix-orange" : ""
                       }`}
                       aria-hidden="true"
                     />

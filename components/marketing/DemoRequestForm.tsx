@@ -11,7 +11,7 @@ type FormState =
   | { status: "error"; message: string }
 
 const inputClass =
-  "w-full rounded-lg border border-[#0F172A]/12 bg-white/80 px-4 py-3 text-sm text-[#0F172A] placeholder:text-[#5B6472] transition-premium focus:outline-none focus:border-[#FF6A00]/50 focus:ring-2 focus:ring-[#FF6A00]/15 font-manrope"
+  "w-full rounded-lg border border-[#0F172A]/12 bg-white/80 px-4 py-3 text-sm text-[#0F172A] placeholder:text-[#5B6472] transition-premium focus:outline-none focus:border-uellix-orange/50 focus:ring-2 focus:ring-uellix-orange/15 font-manrope"
 
 export function DemoRequestForm() {
   const [state, setState] = useState<FormState>({ status: "idle" })
@@ -101,7 +101,7 @@ export function DemoRequestForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-[#FF6A00] px-7 py-3.5 text-base font-semibold text-white hover:bg-[#e05e00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_6px_20px_-6px_rgba(255,106,0,0.55)]"
+        className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-7 py-3.5 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_6px_20px_-6px_rgba(255,106,0,0.55)]"
       >
         {isLoading ? "Enviando…" : "Enviar solicitud"}
         {!isLoading && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
