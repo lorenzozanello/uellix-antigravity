@@ -49,10 +49,15 @@ export const metadata: Metadata = {
     "trazabilidad metodológica",
   ],
   authors: [{ name: "The Balance Corp" }],
-  alternates: { canonical: "/" },
+  // NOTE: no `alternates.canonical` here. In the App Router, metadata is merged
+  // down the tree, so a canonical set on the root layout is inherited by EVERY
+  // route that doesn't override it — which would point /demo, /privacidad and
+  // /terminos at the homepage. Canonicals are declared per-page instead.
   openGraph: {
     type: "website",
-    locale: "es_ES",
+    // Product is Latin-America-focused (SROI, es-LATAM). es_ES (Spain) was the
+    // wrong territory; es_LA is neutral Spanish across LatAm markets.
+    locale: "es_LA",
     url: siteUrl,
     siteName: "Uellix",
     title: "Uellix | Ledger Cívico de Impacto Social",

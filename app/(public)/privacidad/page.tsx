@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad · Uellix",
+  // Plain string → the root template ("%s | Uellix") appends the brand. Do NOT
+  // repeat "Uellix" here or the title renders as "… · Uellix | Uellix".
+  title: "Política de Privacidad",
+  description:
+    "Política de Privacidad de Uellix: cómo la plataforma trata y protege los datos de cada organización.",
+  alternates: { canonical: "/privacidad" },
+  // Draft pending legal review (see on-page banner). Keep it reachable for users
+  // but out of Google's index until it's a binding document. Flip to `index: true`
+  // and re-add to app/sitemap.ts once legal signs off.
+  robots: { index: false, follow: true },
 };
 
 export default function PrivacidadPage() {
