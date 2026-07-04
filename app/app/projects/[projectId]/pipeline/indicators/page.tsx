@@ -75,7 +75,7 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Indicadores" />
+      <StellaAdvisorPanel projectId={projectId} step="Indicadores" highlightHint={!indicators?.length} />
 
       {indicators?.length ? (
         <Card>

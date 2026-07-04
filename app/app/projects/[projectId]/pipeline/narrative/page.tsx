@@ -44,7 +44,7 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Narrativa" />
+      <StellaAdvisorPanel projectId={projectId} step="Narrativa" highlightHint={!narrative} />
       <form action={action} className="space-y-6">
         <input type="hidden" name="projectId" value={projectId} />
         <div>

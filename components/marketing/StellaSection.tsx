@@ -1,161 +1,177 @@
 import React from "react"
-import { MessageSquare, ShieldAlert, AlertTriangle, CheckCircle } from "lucide-react"
+import { MessageSquare, ShieldAlert, AlertTriangle } from "lucide-react"
 
-const advisorCapabilities = [
-  "Acompaña buenas prácticas metodológicas y guías SROI",
-  "Sugiere indicadores y proxies relevantes para el contexto",
-  "Orienta la definición de resultados y stakeholders",
+const capabilities = [
+  { role: "Advisor",   text: "Orienta la definición de resultados, stakeholders, indicadores y proxies. Sugiere; tú decides qué incluir." },
+  { role: "Validator", text: "Detecta riesgos metodológicos en el paso de Cálculo: evidencia, proxy, atribución y claims. No modifica el cálculo." },
 ]
 
-const validatorCapabilities = [
-  "Detecta riesgos metodológicos y brechas de evidencia",
-  "Señala riesgos de atribución y claims metodológicos",
-  "Genera reporte de revisión con nivel de riesgo metodológico",
-]
-
-const riskFlags = [
-  { label: "Riesgo de evidencia",   severity: "Medio", dot: "bg-amber-400" },
-  { label: "Riesgo de proxy",       severity: "Bajo",  dot: "bg-emerald-400" },
-  { label: "Riesgo de atribución",  severity: "Medio", dot: "bg-amber-400" },
+const reviewRows = [
+  {
+    label: "Riesgo de evidencia",
+    level: "Medio",
+    value: 2,
+    dot: "bg-amber-400",
+    tone: "text-amber-200",
+    badge: "border-amber-400/35 bg-amber-400/12",
+    meter: "bg-amber-400",
+  },
+  {
+    label: "Riesgo de proxy",
+    level: "Bajo",
+    value: 1,
+    dot: "bg-emerald-400",
+    tone: "text-emerald-200",
+    badge: "border-emerald-400/35 bg-emerald-400/12",
+    meter: "bg-emerald-400",
+  },
+  {
+    label: "Riesgo de atribución",
+    level: "Medio",
+    value: 2,
+    dot: "bg-amber-400",
+    tone: "text-amber-200",
+    badge: "border-amber-400/35 bg-amber-400/12",
+    meter: "bg-amber-400",
+  },
 ]
 
 export function StellaSection() {
   return (
     <section
       id="stella"
-      aria-label="Stella: asesoría y revisión metodológica"
-      className="bg-[#FBFAFC] px-4 py-20 sm:py-28 border-b border-[#E2E8F0]"
+      aria-label="Stella: criterio metodológico aumentado"
+      className="section-seam relative overflow-hidden bg-[var(--uellix-carbon)] px-4 py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0F172A]/5 border border-[#E2E8F0] px-4 py-1.5 text-xs font-semibold text-[#64748B] mb-5 font-ibm-plex-mono tracking-wide uppercase">
-            Stella
-          </span>
-          <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-[#0F172A]">
-            Asesoría y revisión metodológica,
-            <br className="hidden sm:block" /> no magia.
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed font-manrope">
-            Stella apoya con orientación metodológica y revisión de riesgos,
-            pero no reemplaza la revisión humana.
-          </p>
-        </div>
+      <div className="texture-grain-c" aria-hidden="true" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_15%_20%,rgba(255,106,0,0.06),transparent_60%)]"
+      />
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-8">
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-14 lg:grid-cols-2 lg:items-center">
 
-          {/* Stella Advisor */}
-          <div className="group relative rounded-xl border border-[#E2E8F0] bg-white p-8 flex flex-col gap-5 card-lift overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] transition-colors group-hover:border-[#FF6A00]/25 group-hover:bg-[#FF6A00]/5">
-                <MessageSquare className="h-5 w-5 text-[#0F172A]" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#64748B]">
-                  Stella Advisor
-                </p>
-                <h3 className="font-sora text-lg font-semibold text-[#0F172A]">
-                  Orientación paso a paso
-                </h3>
-              </div>
-            </div>
-
-            <p className="text-sm text-[#64748B] leading-relaxed font-manrope">
-              Stella Advisor te acompaña durante la construcción del análisis: te orienta al
-              definir stakeholders, resultados, indicadores y proxies. Sus sugerencias son
-              orientativas; tú decides qué incluir.
+          {/* Left — narrative */}
+          <div>
+            <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-uellix-orange mb-6">
+              <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
+              Stella
+            </span>
+            <h2 className="font-sora text-[clamp(2rem,4.2vw,3.4rem)] font-bold leading-[1.04] tracking-[-0.015em] text-white">
+              Criterio aumentado.{" "}
+              <span className="text-uellix-orange">Nunca delegado.</span>
+            </h2>
+            <p className="mt-6 text-base text-[#94A3B8] max-w-md leading-relaxed font-manrope">
+              Stella apoya con orientación metodológica y revisión de riesgos.
+              Sugiere, orienta y detecta — pero no reemplaza la revisión humana.
             </p>
 
-            <ul className="flex flex-col gap-2.5" aria-label="Capacidades de Stella Advisor">
-              {advisorCapabilities.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-[#0F172A] font-manrope">
-                  <CheckCircle
-                    className="h-4 w-4 shrink-0 text-[#FF6A00] mt-0.5"
-                    aria-hidden="true"
-                  />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Stella Validator */}
-          <div className="group relative rounded-xl border border-[#E2E8F0] bg-white p-8 flex flex-col gap-5 card-lift overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] transition-colors group-hover:border-[#FF6A00]/25 group-hover:bg-[#FF6A00]/5">
-                <ShieldAlert className="h-5 w-5 text-[#0F172A]" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#64748B]">
-                  Stella Validator
-                </p>
-                <h3 className="font-sora text-lg font-semibold text-[#0F172A]">
-                  Revisión de riesgos en Cálculo
-                </h3>
-              </div>
-            </div>
-
-            <p className="text-sm text-[#64748B] leading-relaxed font-manrope">
-              Stella Validator analiza el contexto del paso de Cálculo e identifica posibles
-              riesgos metodológicos: brechas de evidencia, riesgos de proxy, riesgos de
-              atribución y riesgos en los claims. No modifica el cálculo.
-            </p>
-
-            <ul className="flex flex-col gap-2.5" aria-label="Capacidades de Stella Validator">
-              {validatorCapabilities.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm text-[#0F172A] font-manrope">
-                  <CheckCircle
-                    className="h-4 w-4 shrink-0 text-[#FF6A00] mt-0.5"
-                    aria-hidden="true"
-                  />
-                  {item}
-                </li>
-              ))}
-            </ul>
-
-            {/* Risk flags — illustrative */}
-            <div className="mt-1 rounded-lg border border-[#E2E8F0] bg-[#FBFAFC] p-4 flex flex-col gap-2">
-              <p className="font-ibm-plex-mono text-[9px] font-bold uppercase tracking-widest text-[#94A3B8] mb-1">
-                Ejemplo de reporte de revisión
-              </p>
-              {riskFlags.map(({ label, severity, dot }) => (
-                <div key={label} className="flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-[#64748B] font-manrope">
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
-                    {label}
+            <div className="mt-8 flex flex-col gap-4">
+              {capabilities.map(({ role, text }) => (
+                <div key={role} className="flex gap-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/[0.04]">
+                    {role === "Advisor" ? (
+                      <MessageSquare className="h-4 w-4 text-uellix-orange" aria-hidden="true" />
+                    ) : (
+                      <ShieldAlert className="h-4 w-4 text-uellix-orange" aria-hidden="true" />
+                    )}
+                  </span>
+                  <div>
+                    <p className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#64748B] mb-1">
+                      Stella {role}
+                    </p>
+                    <p className="text-sm text-[#CBD5E1] leading-relaxed font-manrope max-w-sm">{text}</p>
                   </div>
-                  <span className="font-medium text-[#94A3B8] font-ibm-plex-mono capitalize">{severity}</span>
                 </div>
               ))}
-              <p className="font-ibm-plex-mono text-[9px] text-[#CBD5E1] mt-1 italic">
-                Ejemplo ilustrativo — no datos reales
-              </p>
+            </div>
+          </div>
+
+          {/* Right — review sheet (glass) */}
+          <div className="relative">
+            <div className="rounded-2xl border border-white/12 bg-white/[0.05] backdrop-blur-md p-6 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.7)]">
+              <div className="h-[3px] w-full rounded-full bg-gradient-to-r from-uellix-orange via-[#C2703F] to-transparent mb-5" />
+
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-uellix-orange" aria-hidden="true" />
+                  <span className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/80">
+                    Hoja de revisión · Stella
+                  </span>
+                </div>
+                <span className="font-ibm-plex-mono text-[9px] text-white/40 uppercase tracking-wide">Muestra conceptual</span>
+              </div>
+
+              <div className="flex flex-col divide-y divide-white/8">
+                {reviewRows.map(({ label, level, value, dot, tone, badge, meter }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 py-3.5">
+                    <span className="flex items-center gap-2.5 text-sm text-[#CBD5E1] font-manrope">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
+                      {label}
+                    </span>
+                    <span className="flex items-center gap-3">
+                      {/* risk meter — 3 ticks, filled by severity */}
+                      <span className="flex items-center gap-1" aria-hidden="true">
+                        {[1, 2, 3].map((tick) => (
+                          <span
+                            key={tick}
+                            className={`h-3.5 w-1 rounded-full ${tick <= value ? meter : "bg-white/10"}`}
+                          />
+                        ))}
+                      </span>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 font-ibm-plex-mono text-[10px] font-bold uppercase tracking-wide ${badge} ${tone}`}
+                      >
+                        {level}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                <p className="font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.16em] text-uellix-orange mb-1.5">
+                  Recomendación metodológica
+                </p>
+                <p className="text-sm text-[#CBD5E1] leading-relaxed font-manrope">
+                  Ampliar la base de evidencia del outcome principal y documentar el
+                  supuesto de atribución antes de la validación final.
+                </p>
+              </div>
+
+              <div className="mt-4 flex items-center gap-4 rounded-xl border border-amber-400/40 bg-amber-400/10 px-5 py-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/15">
+                  <AlertTriangle className="h-4 w-4 text-amber-300" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="font-ibm-plex-mono text-[10px] font-bold uppercase tracking-[0.16em] text-amber-200/80 mb-0.5">
+                    Estado
+                  </p>
+                  <p className="text-base font-semibold text-amber-100 font-sora leading-tight">
+                    Requiere revisión humana
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Disclaimer — guardrail prominente */}
+        {/* Guardrail */}
         <div
           role="note"
           aria-label="Aclaración sobre los límites de Stella"
-          className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-5 flex flex-col sm:flex-row items-start gap-4"
+          className="mt-12 rounded-xl border border-white/10 bg-white/[0.03] px-6 py-5 flex flex-col sm:flex-row items-start gap-4"
         >
-          <AlertTriangle
-            className="h-5 w-5 shrink-0 text-amber-500 mt-0.5"
-            aria-hidden="true"
-          />
-          <div className="flex flex-col gap-1.5">
-            <p className="text-sm font-semibold text-amber-800 font-sora">
-              Sobre los límites de Stella
-            </p>
-            <p className="text-sm text-amber-700 leading-relaxed font-manrope">
-              Stella{" "}
-              <strong className="text-amber-900">no calcula el SROI</strong>,{" "}
-              <strong className="text-amber-900">no certifica el impacto</strong>,{" "}
-              <strong className="text-amber-900">no realiza auditorías automáticas</strong>.
-              Su función es orientar y señalar riesgos metodológicos. La revisión humana
-              es siempre el paso final requerido antes de cualquier uso externo del análisis.
-            </p>
-          </div>
+          <AlertTriangle className="h-5 w-5 shrink-0 text-uellix-orange mt-0.5" aria-hidden="true" />
+          <p className="text-sm text-[#94A3B8] leading-relaxed font-manrope">
+            Stella{" "}
+            <strong className="text-white font-semibold">sugiere, orienta y detecta riesgos metodológicos</strong>.
+            No calcula el SROI, no certifica el impacto, no realiza auditorías
+            automáticas y{" "}
+            <strong className="text-white font-semibold">no reemplaza la revisión humana</strong>.
+            La validación final permanece siempre en manos del equipo experto.
+          </p>
         </div>
       </div>
     </section>

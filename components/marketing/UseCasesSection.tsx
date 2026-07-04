@@ -1,42 +1,36 @@
 import React from "react"
-import { Building2, Briefcase, GraduationCap, Globe, BarChart3, Users } from "lucide-react"
+import { Building2, TrendingUp, GraduationCap, Compass, ArrowUpRight } from "lucide-react"
 
-const useCases = [
+const featured = {
+  n: "01",
+  icon: Building2,
+  title: "Fundaciones y cooperación",
+  description:
+    "Estructura análisis de impacto con evidencias trazables y metodología revisable por donantes, aliados de cooperación e inversores — lista para escrutinio externo.",
+  result: "De relatos de programa a evidencia defendible.",
+}
+
+const segments = [
   {
-    icon: Building2,
-    title: "Fundaciones",
-    description:
-      "Estructura análisis de impacto para programas sociales con evidencias trazables y metodología revisable por donantes e inversores.",
-  },
-  {
-    icon: Briefcase,
-    title: "Empresas sociales",
+    n: "02",
+    icon: TrendingUp,
+    title: "Empresas e inversión social / ESG",
     description:
       "Documenta el retorno social de iniciativas corporativas con un rastro metodológico sólido para reportes ESG y stakeholders externos.",
   },
   {
+    n: "03",
     icon: GraduationCap,
-    title: "Universidades",
+    title: "Universidades y extensión",
     description:
-      "Mide el impacto de proyectos de investigación aplicada, vinculación comunitaria y extensión con rigor metodológico verificable.",
+      "Mide el impacto de investigación aplicada y vinculación comunitaria con rigor metodológico verificable.",
   },
   {
-    icon: Globe,
-    title: "Sector público",
+    n: "04",
+    icon: Compass,
+    title: "Consultores de impacto",
     description:
-      "Cumple con estándares de trazabilidad y rendición de cuentas para proyectos financiados por organizaciones internacionales o gobiernos.",
-  },
-  {
-    icon: BarChart3,
-    title: "Cooperativas",
-    description:
-      "Genera evidencia de impacto social estructurada y defendible para marcos de reporte, con supuestos explícitos y fuentes verificables.",
-  },
-  {
-    icon: Users,
-    title: "ONGs",
-    description:
-      "Apoya a organizaciones con una plataforma que centraliza la metodología, la evidencia y el cálculo SROI de forma trazable.",
+      "Entrega análisis SROI defendibles a tus clientes, con supuestos explícitos y fuentes verificables en cada paso.",
   },
 ]
 
@@ -45,39 +39,78 @@ export function UseCasesSection() {
     <section
       id="casos"
       aria-label="Casos de uso y audiencias"
-      className="bg-white px-4 py-20 sm:py-28 border-b border-[#E2E8F0]"
+      className="bg-[var(--uellix-paper)] px-4 py-24 sm:py-32"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center rounded-full bg-[#0F172A]/5 border border-[#E2E8F0] px-4 py-1.5 text-xs font-semibold text-[#64748B] mb-5 font-ibm-plex-mono tracking-wide uppercase">
+        <div className="max-w-2xl mb-14">
+          <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#5B6472] mb-6">
+            <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
             Para quién
           </span>
-          <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-[#0F172A]">
-            Diseñado para quienes generan impacto
-            <br className="hidden sm:block" /> y deben demostrarlo.
+          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+            Para quienes generan impacto y deben demostrarlo.
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed font-manrope">
-            Uellix está pensado para organizaciones que necesitan metodología sólida,
-            evidencia trazable y análisis SROI revisables por terceros.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {useCases.map(({ icon: Icon, title, description }) => (
-            <div
-              key={title}
-              className="group flex flex-col gap-4 rounded-xl border border-[#E2E8F0] bg-[#FBFAFC] p-6 card-lift hover:bg-white"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-[#E2E8F0] shadow-sm transition-colors group-hover:border-[#FF6A00]/25 group-hover:bg-[#FF6A00]/5">
-                <Icon
-                  className="h-5 w-5 text-[#0F172A] transition-colors group-hover:text-[#FF6A00]"
-                  aria-hidden="true"
-                />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+
+          {/* Featured segment — large */}
+          <div className="lg:col-span-6">
+            <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#0F172A]/10 bg-[var(--uellix-carbon)] p-8 sm:p-10 card-lift">
+              <div className="texture-grain" aria-hidden="true" />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(255,106,0,0.10),transparent_60%)]"
+              />
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <span className="font-sora text-6xl font-semibold text-white/12 tabular-nums leading-none" aria-hidden="true">
+                    {featured.n}
+                  </span>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-uellix-orange/30 bg-uellix-orange/12">
+                    <featured.icon className="h-5 w-5 text-uellix-orange" aria-hidden="true" />
+                  </span>
+                </div>
+                <h3 className="mt-8 font-sora text-2xl sm:text-3xl font-semibold text-white leading-tight">
+                  {featured.title}
+                </h3>
+                <p className="mt-4 text-[15px] text-[#94A3B8] leading-relaxed font-manrope max-w-md">
+                  {featured.description}
+                </p>
               </div>
-              <h3 className="text-base font-semibold text-[#0F172A] font-sora">{title}</h3>
-              <p className="text-sm text-[#64748B] leading-relaxed font-manrope">{description}</p>
+              <p className="relative mt-8 flex items-center gap-2 font-ibm-plex-mono text-[11px] uppercase tracking-[0.14em] text-uellix-orange">
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                {featured.result}
+              </p>
             </div>
-          ))}
+          </div>
+
+          {/* Three editorial segments — hairline divided */}
+          <div className="lg:col-span-6">
+            <div className="flex h-full flex-col rounded-2xl border border-[#0F172A]/10 bg-white/70 backdrop-blur-sm px-6 sm:px-8">
+              {segments.map(({ n, icon: Icon, title, description }, i) => (
+                <div
+                  key={n}
+                  className={`group grid grid-cols-[auto_1fr] gap-5 py-7 ${
+                    i !== 0 ? "border-t border-[#0F172A]/10" : ""
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="font-sora text-2xl font-semibold text-[#0F172A]/15 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60" aria-hidden="true">
+                      {n}
+                    </span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0F172A]/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-uellix-orange/30 group-hover:bg-uellix-orange/5">
+                      <Icon className="h-4 w-4 text-[#0F172A] transition-premium group-hover:text-uellix-orange" aria-hidden="true" />
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-sora text-lg font-semibold text-[#0F172A] mb-1.5">{title}</h3>
+                    <p className="text-sm text-[#5B6472] leading-relaxed font-manrope">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

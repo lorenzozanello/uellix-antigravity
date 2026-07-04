@@ -61,7 +61,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Resultados" />
+      <StellaAdvisorPanel projectId={projectId} step="Resultados" highlightHint={!outcomes?.length} />
       {outcomes?.length ? (
         <Card>
           <CardHeader>

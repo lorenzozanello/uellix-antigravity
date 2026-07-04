@@ -1,66 +1,53 @@
 import React from "react"
 import { Workflow, ShieldCheck, Database, Sparkles, ShieldAlert, FileCheck2 } from "lucide-react"
 
-const tiles = [
+const layers = [
   {
     id: "sroi-pipeline",
     icon: Workflow,
-    badge: "Core",
+    layer: "Core",
     title: "SROI Pipeline",
     description:
-      "De la narrativa al cálculo en un único flujo trazable. Cada paso conectado y registrado: narrativa, stakeholders, resultados, indicadores, evidencias, proxies y cálculo.",
-    highlight: true,
-    size: "lg:col-span-2 lg:row-span-2",
+      "De la narrativa al cálculo en un único flujo trazable: narrativa, stakeholders, resultados, indicadores, evidencias, proxies y cálculo, todo conectado y registrado.",
+    accent: true,
   },
   {
     id: "trust-center",
     icon: ShieldCheck,
-    badge: null,
-    title: "Trust Center",
+    layer: "Confianza",
+    title: "Centro de confianza",
     description:
-      "Hashes de integridad, fuentes verificables y supuestos explícitos consolidados en un rastro auditable para revisión externa.",
-    highlight: false,
-    size: "lg:col-span-1 lg:row-span-1",
+      "Huellas de integridad, fuentes verificables y supuestos explícitos consolidados en un rastro auditable para revisión externa.",
+    accent: false,
   },
   {
     id: "proxy-intelligence",
     icon: Database,
-    badge: null,
+    layer: "Inteligencia",
     title: "Proxy Intelligence",
     description:
-      "Selecciona proxies financieros de fuentes reconocidas. Cada supuesto queda registrado con su justificación y fuente verificable.",
-    highlight: false,
-    size: "lg:col-span-1 lg:row-span-1",
+      "Proxies financieros de fuentes reconocidas. Cada supuesto queda registrado con su justificación y fuente verificable.",
+    accent: false,
   },
   {
-    id: "stella-advisor",
+    id: "stella",
     icon: Sparkles,
-    badge: "Stella",
-    title: "Stella Advisor",
+    layer: "Stella",
+    title: "Advisor + Validator",
     description:
-      "Orientación metodológica paso a paso durante la construcción del análisis. Sugiere, no decide. La revisión humana es siempre tuya.",
-    highlight: false,
-    size: "lg:col-span-1 lg:row-span-1",
-  },
-  {
-    id: "stella-validator",
-    icon: ShieldAlert,
-    badge: "Stella",
-    title: "Stella Validator",
-    description:
-      "Identifica riesgos metodológicos en el paso de Cálculo: brechas de evidencia, riesgos de proxy y de atribución. Revisión humana requerida.",
-    highlight: false,
-    size: "lg:col-span-1 lg:row-span-1",
+      "Orientación metodológica paso a paso y detección de riesgos en el cálculo. Sugiere y señala; la revisión humana es siempre tuya.",
+    accent: false,
+    secondaryIcon: ShieldAlert,
   },
   {
     id: "impact-deck",
     icon: FileCheck2,
-    badge: "Output",
+    layer: "Output",
     title: "Impact Deck",
     description:
       "Reportes audit-ready revisables por terceros, con supuestos explícitos, fuentes citadas y el rastro completo de decisiones metodológicas exportable.",
-    highlight: true,
-    size: "lg:col-span-2 lg:row-span-1",
+    accent: true,
+    output: true,
   },
 ]
 
@@ -69,77 +56,93 @@ export function SolutionSection() {
     <section
       id="producto"
       aria-label="Módulos de la plataforma Uellix"
-      className="bg-[#0F172A] px-4 py-20 sm:py-28"
+      className="section-seam relative overflow-hidden bg-[var(--uellix-carbon)] px-4 py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center rounded-full border border-[#FF6A00]/30 bg-[#FF6A00]/10 px-4 py-1.5 text-xs font-semibold text-[#FF6A00] mb-5 font-ibm-plex-mono tracking-wide uppercase">
-            La plataforma
-          </span>
-          <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-white">
-            Un sistema operativo metodológico
-            <br className="hidden sm:block" />
-            para evidencia de impacto.
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed font-manrope">
-            No un certificador. La infraestructura que conecta narrativa, evidencia,
-            proxies y cálculo en un rastro metodológico coherente, trazable y audit-ready.
-          </p>
-        </div>
+      <div className="texture-grain-b" aria-hidden="true" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_85%_0%,rgba(255,106,0,0.05),transparent_60%)]"
+      />
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(180px,auto)]">
-          {tiles.map(({ id, icon: Icon, badge, title, description, highlight, size }) => (
-            <div
-              key={id}
-              className={`group relative flex flex-col gap-4 overflow-hidden rounded-xl border p-6 transition-all duration-200 card-lift ${
-                highlight
-                  ? "border-[#FF6A00]/20 bg-[#0F172A] hover:border-[#FF6A00]/35"
-                  : "border-[#1E293B] bg-[#0A1220] hover:border-[#334155]"
-              } ${size}`}
-            >
-              {/* Highlight accent glow */}
-              {highlight && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(ellipse_80%_60%_at_0%_0%,rgba(255,106,0,0.06),transparent)]"
-                />
-              )}
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-12 lg:items-start">
 
-              <div className="relative flex items-start justify-between gap-3">
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                    highlight
-                      ? "bg-[#FF6A00]/12 border border-[#FF6A00]/20 group-hover:bg-[#FF6A00]/18"
-                      : "bg-[#1E293B] border border-[#334155] group-hover:bg-[#243048]"
-                  }`}
-                >
-                  <Icon
-                    className={`h-5 w-5 ${highlight ? "text-[#FF6A00]" : "text-[#64748B] group-hover:text-[#94A3B8]"} transition-colors`}
-                    aria-hidden="true"
-                  />
-                </div>
-                {badge && (
+          {/* Heading — left, asymmetric */}
+          <div className="lg:col-span-4">
+            <div className="lg:sticky lg:top-28">
+              <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-uellix-orange mb-6">
+                <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
+                La plataforma
+              </span>
+              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-white">
+                Un sistema operativo metodológico para evidencia de impacto.
+              </h2>
+              <p className="mt-6 text-base text-[#94A3B8] max-w-sm leading-relaxed font-manrope">
+                No un certificador. Una arquitectura que conecta narrativa,
+                evidencia, proxies y cálculo en un rastro coherente, trazable y
+                audit-ready.
+              </p>
+            </div>
+          </div>
+
+          {/* Architecture layers — connected strata, not a card grid */}
+          <div className="lg:col-span-8">
+            <ol className="relative flex flex-col">
+              {/* vertical spine */}
+              <span
+                aria-hidden="true"
+                className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-uellix-orange/40 via-white/10 to-uellix-orange/40"
+              />
+              {layers.map(({ id, icon: Icon, secondaryIcon: Secondary, layer, title, description, accent, output }) => (
+                <li key={id} className="relative grid grid-cols-[40px_1fr] gap-5 py-4 group">
+                  {/* node — the output node is a filled orange chip, marking the deliverable */}
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider font-ibm-plex-mono ${
-                      badge === "Stella"
-                        ? "bg-[#FF6A00]/10 text-[#FF6A00] border border-[#FF6A00]/20"
-                        : badge === "Output"
-                        ? "bg-white/8 text-white/60 border border-white/12"
-                        : "bg-[#1E293B] text-[#64748B] border border-[#334155]"
+                    className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm transition-premium ${
+                      output
+                        ? "border-uellix-orange bg-uellix-orange shadow-[0_8px_22px_-6px_rgba(255,106,0,0.6)] group-hover:-translate-y-0.5"
+                        : accent
+                        ? "border-uellix-orange/35 bg-uellix-orange/12 group-hover:bg-uellix-orange/20"
+                        : "border-white/12 bg-white/[0.04] group-hover:border-white/25"
                     }`}
                   >
-                    {badge}
+                    <Icon
+                      className={`h-[18px] w-[18px] transition-premium ${
+                        output ? "text-white" : accent ? "text-uellix-orange" : "text-[#94A3B8] group-hover:text-white"
+                      }`}
+                      aria-hidden="true"
+                    />
                   </span>
-                )}
-              </div>
-
-              <div className="relative flex flex-col gap-2">
-                <h3 className="text-base font-semibold text-white font-sora">{title}</h3>
-                <p className="text-sm text-[#64748B] leading-relaxed font-manrope">{description}</p>
-              </div>
-            </div>
-          ))}
+                  <div
+                    className={`rounded-xl border px-5 py-4 transition-premium ${
+                      output
+                        ? "border-uellix-orange/30 bg-gradient-to-br from-uellix-orange/[0.10] to-uellix-orange/[0.02] hover:border-uellix-orange/45"
+                        : "border-white/8 bg-white/[0.03] hover:border-white/16 hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span
+                        className={`font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.18em] ${
+                          accent ? "text-uellix-orange" : "text-[#64748B]"
+                        }`}
+                      >
+                        {layer}
+                      </span>
+                      {output && (
+                        <span className="font-ibm-plex-mono text-[8px] font-bold uppercase tracking-[0.16em] text-uellix-orange/70 rounded-full border border-uellix-orange/30 px-1.5 py-0.5">
+                          Entregable
+                        </span>
+                      )}
+                      {Secondary && (
+                        <Secondary className="h-3 w-3 text-uellix-orange/70" aria-hidden="true" />
+                      )}
+                    </div>
+                    <h3 className="font-sora text-lg font-semibold text-white mb-1.5">{title}</h3>
+                    <p className="text-sm text-[#94A3B8] leading-relaxed font-manrope">{description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
     </section>

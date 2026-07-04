@@ -8,6 +8,7 @@ import { lockReportDraftAction } from '../lockReportDraft.action'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SECTION_META, SECTION_GROUPS } from '@/lib/reports/report-sections'
+import { StellaComposerPanel } from '@/components/stella'
 
 export const dynamic = 'force-dynamic'
 
@@ -289,59 +290,69 @@ export default async function ReportDetailPage({
                               )}
                             </div>
                           ) : (
-                            <form
-                              action={handleUpdateSection}
-                              className="space-y-3"
-                              aria-labelledby={sectionHeadingId}
-                            >
-                              <input type="hidden" name="sectionId" value={section.id} />
-                              <div>
-                                <label
-                                  htmlFor={titleInputId}
-                                  className="block text-xs font-medium text-foreground"
-                                >
-                                  Título de la sección
-                                </label>
-                                <input
-                                  id={titleInputId}
-                                  name="title"
-                                  type="text"
-                                  required
-                                  defaultValue={section.title}
-                                  className={INPUT_CLASS}
-                                />
-                              </div>
-                              <div>
-                                <label
-                                  htmlFor={contentInputId}
-                                  className="block text-xs font-medium text-foreground"
-                                >
-                                  Contenido
-                                </label>
-                                <textarea
-                                  id={contentInputId}
-                                  name="content"
-                                  rows={5}
-                                  defaultValue={section.content ?? ''}
-                                  placeholder={
-                                    meta.helper ||
-                                    'Documentación metodológica para esta sección…'
-                                  }
-                                  className={TEXTAREA_CLASS}
-                                />
-                                {meta.helper && (
-                                  <p className="mt-1 text-xs text-muted-foreground">
-                                    {meta.helper}
-                                  </p>
-                                )}
-                              </div>
-                              <button
-                                type="submit"
-                                className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            <>
+                              <StellaComposerPanel
+                                projectId={projectId}
+                                reportId={reportId}
+                                sectionId={section.id}
+                                sectionType={section.sectionType}
+                                titleInputId={titleInputId}
+                                contentInputId={contentInputId}
+                              />
+                              <form
+                                action={handleUpdateSection}
+                                className="space-y-3"
+                                aria-labelledby={sectionHeadingId}
                               >
-                                Guardar sección
-                              </button>
-                            </form>
+                                <input type="hidden" name="sectionId" value={section.id} />
+                                <div>
+                                  <label
+                                    htmlFor={titleInputId}
+                                    className="block text-xs font-medium text-foreground"
+                                  >
+                                    Título de la sección
+                                  </label>
+                                  <input
+                                    id={titleInputId}
+                                    name="title"
+                                    type="text"
+                                    required
+                                    defaultValue={section.title}
+                                    className={INPUT_CLASS}
+                                  />
+                                </div>
+                                <div>
+                                  <label
+                                    htmlFor={contentInputId}
+                                    className="block text-xs font-medium text-foreground"
+                                  >
+                                    Contenido
+                                  </label>
+                                  <textarea
+                                    id={contentInputId}
+                                    name="content"
+                                    rows={5}
+                                    defaultValue={section.content ?? ''}
+                                    placeholder={
+                                      meta.helper ||
+                                      'Documentación metodológica para esta sección…'
+                                    }
+                                    className={TEXTAREA_CLASS}
+                                  />
+                                  {meta.helper && (
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {meta.helper}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  type="submit"
+                                  className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                >
+                                  Guardar sección
+                                </button>
+                              </form>
+                            </>
                           )}
                         </CardContent>
                       </Card>

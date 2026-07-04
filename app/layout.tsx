@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Sora, Manrope, IBM_Plex_Mono } from "next/font/google";
+import { Geist_Mono, Sora, Manrope, IBM_Plex_Mono } from "next/font/google";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -15,8 +11,10 @@ const geistMono = Geist_Mono({
 const sora = Sora({
   variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  // 400/600/700 are the only weights used across the app; 800 was dead weight.
+  weight: ["400", "600", "700"],
   display: "swap",
+  preload: true,
 });
 
 const manrope = Manrope({
@@ -34,8 +32,43 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Uellix | Ledger Cívico de Impacto Social",
-  description: "Uellix convierte el impacto social en evidencia defendible.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Uellix | Ledger Cívico de Impacto Social",
+    template: "%s | Uellix",
+  },
+  description:
+    "Uellix estructura proyectos, conecta evidencias, documenta proxies y filtros SROI, y genera reportes audit-ready preparados para revisión externa.",
+  applicationName: "Uellix",
+  keywords: [
+    "SROI",
+    "impacto social",
+    "evidencia defendible",
+    "audit-ready",
+    "medición de impacto",
+    "trazabilidad metodológica",
+  ],
+  authors: [{ name: "The Balance Corp" }],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: siteUrl,
+    siteName: "Uellix",
+    title: "Uellix | Ledger Cívico de Impacto Social",
+    description:
+      "Convierte el impacto social en evidencia defendible: proyectos estructurados, evidencias conectadas y reportes audit-ready para revisión externa.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Uellix | Ledger Cívico de Impacto Social",
+    description:
+      "Convierte el impacto social en evidencia defendible. Audit-ready, trazable, defendible.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -46,7 +79,8 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} ${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${geistMono.variable} ${sora.variable} ${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

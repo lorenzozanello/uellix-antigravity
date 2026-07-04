@@ -67,6 +67,21 @@ vi.mock('@/lib/stella/rate-limit', () => ({
   recordStellaRequest: (...args: unknown[]) => mockRecordStellaRequest(...args),
 }))
 
+const mockCheckStellaQuota = vi.fn()
+vi.mock('@/lib/stella/quota', () => ({
+  checkStellaQuota: (...args: unknown[]) => mockCheckStellaQuota(...args),
+  nextQuotaResetIso: () => '2026-08-01T00:00:00.000Z',
+  formatQuotaResetDate: () => '1 de agosto de 2026',
+}))
+
+const mockInsertValues = vi.fn().mockResolvedValue([])
+const mockDbInsert = vi.fn().mockReturnValue({ values: mockInsertValues })
+vi.mock('@/db/client', () => ({
+  db: {
+    insert: (...args: unknown[]) => mockDbInsert(...args),
+  },
+}))
+
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
 // ---------------------------------------------------------------------------
@@ -129,6 +144,7 @@ const RATE_LIMIT_EXCEEDED: RateLimitResult = {
 function setupSuccessfulCall() {
   mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+  mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 2, quota: 50 })
   mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
   mockAdapterGenerate.mockResolvedValue({
     role: 'advisor',
@@ -138,6 +154,7 @@ function setupSuccessfulCall() {
     timestamp: new Date(),
   })
   mockAdapterParseResponse.mockResolvedValue(VALID_ADVISOR_OUTPUT)
+  mockInsertValues.mockResolvedValue([])
 }
 
 // ---------------------------------------------------------------------------
@@ -151,6 +168,11 @@ describe('getStellaAdvisor server action', () => {
     mockStellaConfig.isEnabled = true
     mockStellaConfig.isAdvisorEnabled = true
     mockStellaState.canUseStella = true
+    mockInsertValues.mockResolvedValue([])
+    mockDbInsert.mockReturnValue({ values: mockInsertValues })
+    // Default: quota allowed, so tests unrelated to quota don't need to set it up.
+    // Tests in the "Quota enforcement" describe block override this per-case.
+    mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
   })
 
   describe('Feature flag gate', () => {
@@ -322,6 +344,44 @@ describe('getStellaAdvisor server action', () => {
     })
   })
 
+  describe('Audit insert', () => {
+    it('inserts into stellaInteractions after successful parse', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      expect(mockDbInsert).toHaveBeenCalled()
+      expect(mockInsertValues).toHaveBeenCalled()
+    })
+
+    it('inserts with advisor role', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      const insertPayload = mockInsertValues.mock.calls[0][0]
+      expect(insertPayload.stellaRole).toBe('advisor')
+    })
+
+    it('inserts with organization.id from auth context', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      const insertPayload = mockInsertValues.mock.calls[0][0]
+      expect(insertPayload.organizationId).toBe('org-1')
+    })
+
+    it('inserts with the given step as pipelineStep', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      const insertPayload = mockInsertValues.mock.calls[0][0]
+      expect(insertPayload.pipelineStep).toBe('Narrativa')
+    })
+
+    it('returns AUDIT_ERROR when insert fails', async () => {
+      setupSuccessfulCall()
+      mockInsertValues.mockRejectedValue(new Error('DB connection error'))
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
+    })
+  })
+
   describe('Rate limiting', () => {
     it('returns RATE_LIMITED when org has exceeded hourly limit', async () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
@@ -381,6 +441,66 @@ describe('getStellaAdvisor server action', () => {
     })
   })
 
+  describe('Quota enforcement', () => {
+    it('returns QUOTA_EXCEEDED when org has no quota assigned', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 0, quota: 0, reason: 'no_quota' })
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
+    })
+
+    it('returns QUOTA_EXCEEDED when org used up its monthly quota', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBe('QUOTA_EXCEEDED')
+        expect(result.message).toContain('50')
+      }
+    })
+
+    it('does NOT call Gemini when quota exceeded', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+
+      await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it('checks quota with organization.id', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      expect(mockCheckStellaQuota).toHaveBeenCalledWith(MOCK_ORG_CONTEXT.organization.id)
+    })
+
+    it('allows unlimited orgs (quota: null) through', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: null })
+      mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockAdapterGenerate.mockResolvedValue({
+        role: 'advisor', rawOutput: JSON.stringify(VALID_ADVISOR_OUTPUT), parsedOutput: null,
+        modelUsed: 'gemini-2.0-flash', timestamp: new Date(),
+      })
+      mockAdapterParseResponse.mockResolvedValue(VALID_ADVISOR_OUTPUT)
+      mockInsertValues.mockResolvedValue([])
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(true)
+    })
+  })
+
   describe('Security invariants', () => {
     it('does NOT import from lib/pipeline/sroi-calculation', async () => {
       // Verified structurally: if the import existed it would trigger a forbidden module error
@@ -392,16 +512,15 @@ describe('getStellaAdvisor server action', () => {
       expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
     })
 
-    it('does NOT write to DB on a successful call', async () => {
+    it('writes only the audit insert to DB on a successful call (no pipeline writes)', async () => {
       setupSuccessfulCall()
 
       await getStellaAdvisor('proj-1', 'narrative')
 
-      // Verify: no DB import was called from the action itself
-      // (DB access is confined to buildAdvisorContext which is mocked)
+      // Context building is DB-backed but mocked here; the action itself only
+      // performs the single stella_interactions audit insert — no pipeline writes.
       expect(mockBuildAdvisorContext).toHaveBeenCalled()
-      // The action never calls DB directly — context builder does (which is mocked)
-      // This is the correct boundary.
+      expect(mockDbInsert).toHaveBeenCalledTimes(1)
     })
   })
 })

@@ -19,6 +19,11 @@ export const organizations = pgTable('organizations', {
   country: varchar('country', { length: 2 }),
   sector: varchar('sector', { length: 255 }),
   status: varchar('status', { length: 50 }).default('active').notNull(),
+  // Stella usage quota: null = unlimited (internal/Uellix use only); 0 = blocked
+  // (default — no plan assigned yet); N = monthly cap on Stella calls. Assigned
+  // manually by a super_admin via /admin/services — no payment gateway.
+  stellaMonthlyQuota: integer('stella_monthly_quota').default(0),
+  stellaPlanLabel: varchar('stella_plan_label', { length: 100 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -483,4 +488,20 @@ export const sroiReportSections = pgTable('sroi_report_sections', {
 }, (table) => [
   check('sroi_report_sections_sort_order_check', sql`${table.sortOrder} >= 0`),
   index('idx_sroi_report_sections_report_id').on(table.reportId),
+])
+
+// Gates self-serve org creation in onboarding (createFirstOrganization):
+// a user with no pending invitation can only create a new organization if
+// their email matches an entry here. Invited users bypass this entirely
+// (acceptInvitation is a separate code path). Managed by super_admins only.
+export const signupAllowlist = pgTable('signup_allowlist', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  type: varchar('type', { length: 20 }).notNull(),
+  pattern: varchar('pattern', { length: 255 }).notNull(),
+  notes: text('notes'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('signup_allowlist_pattern_unique').on(table.pattern),
+  check('signup_allowlist_type_check', sql`${table.type} IN ('email', 'domain')`),
 ])

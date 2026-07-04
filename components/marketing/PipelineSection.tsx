@@ -1,157 +1,157 @@
 import React from "react"
-import { FileCheck2 } from "lucide-react"
+import { FileCheck2, Sparkles } from "lucide-react"
 
-const flowSteps = [
-  { label: "Definir alcance", number: 1 },
-  { label: "Mapear cambio",   number: 2 },
-  { label: "Evidenciar",      number: 3 },
-  { label: "Valorar",         number: 4 },
-  { label: "Revisar",         number: 5 },
-  { label: "Reportar",        number: 6, output: true },
+// MethodTraceMap — a traceability map, not a basic stepper. Grouped into four
+// phases (fuente → evidencia → cálculo → reporte) so the ten steps read as a
+// coherent methodology rather than a flat list. Static for this sprint;
+// structure is animation-ready (nodes + hairline connectors).
+type Node = { n: number; label: string; kind?: "stella" | "output" }
+
+const phases: Array<{ phase: string; nodes: Node[] }> = [
+  {
+    phase: "Definición",
+    nodes: [
+      { n: 1, label: "Narrativa" },
+      { n: 2, label: "Stakeholders" },
+      { n: 3, label: "Resultados" },
+      { n: 4, label: "Indicadores" },
+    ],
+  },
+  {
+    phase: "Evidencia",
+    nodes: [
+      { n: 5, label: "Evidencias" },
+      { n: 6, label: "Proxies" },
+      { n: 7, label: "Filtros SROI" },
+    ],
+  },
+  {
+    phase: "Cálculo y revisión",
+    nodes: [
+      { n: 8, label: "Cálculo" },
+      { n: 9, label: "Stella Review", kind: "stella" },
+    ],
+  },
+  {
+    phase: "Reporte",
+    nodes: [
+      { n: 10, label: "Impact Deck", kind: "output" },
+    ],
+  },
 ]
 
-const fullSteps: Array<{ label: string; number: number; stella?: boolean; output?: boolean }> = [
-  { label: "Narrativa",      number: 1 },
-  { label: "Stakeholders",   number: 2 },
-  { label: "Resultados",     number: 3 },
-  { label: "Indicadores",    number: 4 },
-  { label: "Evidencias",     number: 5 },
-  { label: "Proxies",        number: 6 },
-  { label: "Filtros SROI",   number: 7 },
-  { label: "Cálculo",        number: 8 },
-  { label: "Stella Review",  number: 9,  stella: true },
-  { label: "Impact Deck",    number: 10, output: true },
-]
+function NodeCircle({ n, kind, size }: Omit<Node, "label"> & { size: "lg" | "sm" }) {
+  const dims = size === "lg" ? "h-12 w-12 text-base" : "h-9 w-9 text-sm"
+  return (
+    <span
+      className={`flex ${dims} shrink-0 items-center justify-center rounded-full border-2 font-sora font-bold transition-premium group-hover:-translate-y-0.5 ${
+        kind === "output"
+          ? "border-uellix-orange bg-uellix-orange text-white shadow-[0_8px_20px_-6px_rgba(255,106,0,0.65)]"
+          : kind === "stella"
+          ? "border-uellix-orange/40 bg-uellix-orange/10 text-[#B85200]"
+          : "border-[#0F172A]/14 bg-white text-[#0F172A] shadow-sm"
+      }`}
+    >
+      {kind === "output" ? (
+        <FileCheck2 className={size === "lg" ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
+      ) : kind === "stella" ? (
+        <Sparkles className={size === "lg" ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
+      ) : (
+        <span className="tabular-nums">{n}</span>
+      )}
+    </span>
+  )
+}
 
 export function PipelineSection() {
   return (
     <section
       id="metodologia"
-      aria-label="Flujo de trazabilidad de impacto"
-      className="bg-[#FBFAFC] px-4 py-20 sm:py-28 border-b border-[#E2E8F0]"
+      aria-label="Mapa de trazabilidad del método"
+      className="bg-[var(--uellix-paper-deep)] px-4 py-28 sm:py-36"
     >
-      {/* Hidden sub-anchor for #flujo */}
       <span id="flujo" aria-hidden="true" className="absolute -mt-20" />
 
-      <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-16">
-          <span className="inline-flex items-center rounded-full bg-[#0F172A]/5 border border-[#E2E8F0] px-4 py-1.5 text-xs font-semibold text-[#64748B] mb-5 font-ibm-plex-mono tracking-wide uppercase">
-            Metodología
+      <div className="mx-auto max-w-6xl">
+        <div className="max-w-2xl mb-20">
+          <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#5B6472] mb-6">
+            <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
+            Método · Mapa de trazabilidad
           </span>
-          <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-[#0F172A]">
+          <h2 className="font-sora text-[clamp(2.1rem,4.3vw,3.4rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
             Un camino claro, rastreable y defendible.
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed font-manrope">
-            Cada paso del análisis queda registrado, conectado y disponible para revisión.
+          <p className="mt-6 text-base text-[#475569] max-w-xl leading-relaxed font-manrope">
+            Cada paso queda registrado, conectado y disponible para revisión.
             Ningún supuesto queda oculto. Ninguna evidencia, desvinculada.
           </p>
         </div>
 
-        {/* Desktop: horizontal flow */}
-        <div className="hidden sm:block mb-12" aria-label="Flujo de pasos del pipeline">
-          <div className="flex items-start justify-center gap-0">
-            {flowSteps.map((step, i) => (
-              <div key={step.label} className="flex items-start">
-                <div className="flex flex-col items-center gap-2 px-2 w-[110px]">
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 font-sora text-sm font-bold transition-colors ${
-                      step.output
-                        ? "border-[#FF6A00] bg-[#FF6A00] text-white"
-                        : "border-[#E2E8F0] bg-white text-[#0F172A] shadow-sm"
-                    }`}
-                  >
-                    {step.output
-                      ? <FileCheck2 className="h-4 w-4" aria-hidden="true" />
-                      : step.number
-                    }
-                  </div>
-                  <p className={`text-xs font-medium text-center leading-snug font-manrope ${
-                    step.output ? "text-[#FF6A00]" : "text-[#64748B]"
-                  }`}>
-                    {step.label}
-                  </p>
-                </div>
-
-                {/* Connector line */}
-                {i < flowSteps.length - 1 && (
-                  <div
-                    aria-hidden="true"
-                    className="mt-5 h-px flex-1 min-w-[16px] bg-gradient-to-r from-[#E2E8F0] via-[#FF6A00]/30 to-[#E2E8F0]"
-                  />
-                )}
+        {/* Desktop / tablet: horizontal trace map, grouped by phase */}
+        <div className="hidden md:block" aria-label="Nodos del método">
+          <div className="relative flex items-start">
+            {/* baseline connector — draws in as the section scrolls into view */}
+            <span
+              aria-hidden="true"
+              className="trace-line-draw absolute left-4 right-4 top-6 h-px bg-gradient-to-r from-[#CBD5E1] via-uellix-orange/40 to-uellix-orange"
+            />
+            {phases.map(({ phase, nodes }, gi) => (
+              <div
+                key={phase}
+                className={`relative flex flex-1 flex-col items-center ${
+                  gi !== 0 ? "border-l border-dashed border-[#0F172A]/12 pl-2" : ""
+                }`}
+              >
+                <p className="mb-5 font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#5B6472]">
+                  {phase}
+                </p>
+                <ol className="flex items-start justify-center gap-1 w-full">
+                  {nodes.map((node) => (
+                    <li key={node.n} className="relative z-10 flex flex-1 flex-col items-center gap-2.5 group">
+                      <NodeCircle {...node} size="lg" />
+                      <span
+                        className={`font-ibm-plex-mono text-[10px] font-medium text-center leading-tight tracking-tight px-1 ${
+                          node.kind ? "text-[#B85200]" : "text-[#5B6472]"
+                        }`}
+                      >
+                        {node.label}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Full 10-step pipeline detail — desktop */}
-        <div className="hidden sm:block">
-          <div className="mx-auto max-w-4xl">
-            <p className="font-ibm-plex-mono text-[10px] font-bold tracking-[0.16em] text-[#94A3B8] uppercase text-center mb-5">
-              Pipeline completo
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2" role="list" aria-label="Pasos del pipeline de análisis">
-              {fullSteps.map(({ label, number, stella, output }) => (
-                <div
-                  key={label}
-                  role="listitem"
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium font-manrope transition-colors ${
-                    output
-                      ? "border-[#FF6A00]/40 bg-[#FF6A00] text-white"
-                      : stella
-                      ? "border-[#FF6A00]/25 bg-[#FF6A00]/8 text-[#FF6A00]"
-                      : "border-[#E2E8F0] bg-white text-[#0F172A] shadow-sm"
-                  }`}
-                >
-                  {!stella && !output && (
+        {/* Mobile: vertical trace map with spine, grouped by phase */}
+        <div className="md:hidden flex flex-col gap-8">
+          {phases.map(({ phase, nodes }) => (
+            <div key={phase}>
+              <p className="mb-3 font-ibm-plex-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#5B6472]">
+                {phase}
+              </p>
+              <ol className="relative flex flex-col gap-1 pl-2" aria-label={`Nodos de la fase ${phase}`}>
+                <span
+                  aria-hidden="true"
+                  className="absolute left-[22px] top-4 bottom-4 w-px bg-gradient-to-b from-[#CBD5E1] via-uellix-orange/40 to-uellix-orange"
+                />
+                {nodes.map((node) => (
+                  <li key={node.n} className="relative z-10 flex items-center gap-4 py-2">
+                    <NodeCircle {...node} size="sm" />
                     <span
-                      className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F1F5F9] text-[9px] font-bold text-[#64748B] font-ibm-plex-mono"
-                      aria-hidden="true"
+                      className={`font-manrope text-sm font-medium ${node.kind ? "text-[#B85200]" : "text-[#0F172A]"}`}
                     >
-                      {number}
+                      {node.label}
                     </span>
-                  )}
-                  {stella && (
-                    <span className="font-ibm-plex-mono text-[9px] font-bold tracking-wide text-[#FF6A00]" aria-hidden="true">S</span>
-                  )}
-                  {output && (
-                    <FileCheck2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  )}
-                  {label}
-                </div>
-              ))}
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Mobile: vertical ordered list */}
-        <ol aria-label="Pasos del pipeline" className="flex flex-col gap-3 sm:hidden">
-          {fullSteps.map(({ label, number, stella, output }) => (
-            <li key={label} className="flex items-center gap-3">
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold font-ibm-plex-mono ${
-                  output
-                    ? "bg-[#FF6A00] text-white"
-                    : stella
-                    ? "border border-[#FF6A00]/30 bg-[#FF6A00]/10 text-[#FF6A00]"
-                    : "bg-white border border-[#E2E8F0] text-[#0F172A] shadow-sm"
-                }`}
-                aria-hidden="true"
-              >
-                {number}
-              </span>
-              <span
-                className={`text-sm font-medium font-manrope ${
-                  output ? "text-[#FF6A00]" : stella ? "text-[#FF6A00]" : "text-[#0F172A]"
-                }`}
-              >
-                {label}
-              </span>
-            </li>
-          ))}
-        </ol>
-
-        <p className="mt-10 text-center text-xs text-[#94A3B8] max-w-xl mx-auto leading-relaxed font-manrope">
+        <p className="mt-16 max-w-xl text-sm text-[#5B6472] leading-relaxed font-manrope border-l-2 border-uellix-orange/30 pl-4">
           Stella Review identifica riesgos metodológicos en el paso de Cálculo.
           No calcula el SROI ni reemplaza la revisión humana.
         </p>

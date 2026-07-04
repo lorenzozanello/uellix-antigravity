@@ -37,17 +37,11 @@ export class StellaBuildContextError extends Error {
 export async function buildAdvisorContext(
   projectId: string,
   organizationId: string,
+  // Accepted for call-signature compatibility with callers (e.g. advisor.ts,
+  // which always passes the current pipeline step) — no longer branches on
+  // it now that every step (including Calculation) is supported.
   step: string
 ): Promise<StellaProjectContext> {
-  // Reject calculation step — Stella Advisor is not used there (Validator role, Sprint 9D)
-  const stepLower = step.toLowerCase()
-  if (stepLower === 'calculation' || stepLower === 'cálculo') {
-    throw new StellaBuildContextError(
-      'UNSUPPORTED_STEP',
-      'Stella Advisor does not support the Calculation step. Use Stella Validator instead (Sprint 9D).'
-    )
-  }
-
   // Project ownership check — structural cross-org boundary
   const project = await db
     .select({

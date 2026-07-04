@@ -27,6 +27,13 @@ export const AUDIT_ACTIONS = {
   USER_PROFILE_SYNCED: 'user.profile_synced',
   USER_LOGGED_IN: 'user.logged_in',
   USER_LOGGED_OUT: 'user.logged_out',
+
+  // Signup allowlist
+  SIGNUP_ALLOWLIST_CREATED: 'signup_allowlist.created',
+  SIGNUP_ALLOWLIST_REMOVED: 'signup_allowlist.removed',
+
+  // Stella service/quota management
+  STELLA_SERVICE_UPDATED: 'stella_service.updated',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
