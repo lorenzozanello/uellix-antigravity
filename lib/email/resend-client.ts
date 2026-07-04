@@ -31,6 +31,7 @@ export class ResendEmailProvider implements EmailProvider {
       to: message.to,
       subject: message.subject,
       html: message.html,
+      ...(message.replyTo ? { replyTo: message.replyTo } : {}),
     })
 
     if (error) {

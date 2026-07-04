@@ -1,5 +1,6 @@
 import React from "react"
 import { HeroSection } from "@/components/marketing/HeroSection"
+import { EditorialManifesto } from "@/components/marketing/EditorialManifesto"
 import { ProblemSection } from "@/components/marketing/ProblemSection"
 import { SolutionSection } from "@/components/marketing/SolutionSection"
 import { PipelineSection } from "@/components/marketing/PipelineSection"
@@ -13,6 +14,7 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
+      <EditorialManifesto />
       <ProblemSection />
       <SolutionSection />
       <PipelineSection />

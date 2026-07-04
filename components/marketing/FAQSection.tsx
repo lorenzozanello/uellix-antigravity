@@ -36,6 +36,18 @@ const faqs = [
   },
 ]
 
+// FAQPage structured data — generated from the same `faqs` source so the
+// rich-snippet schema can never drift from the rendered content.
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(({ question, answer }) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: { "@type": "Answer", text: answer },
+  })),
+}
+
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
@@ -47,15 +59,21 @@ export function FAQSection() {
     <section
       id="faq"
       aria-label="Preguntas frecuentes"
-      className="bg-[#0F172A] px-4 py-20 sm:py-28"
+      className="section-seam relative overflow-hidden bg-[var(--uellix-carbon)] px-4 py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-3xl">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center rounded-full border border-[#FF6A00]/30 bg-[#FF6A00]/10 px-4 py-1.5 text-xs font-semibold text-[#FF6A00] mb-5 font-ibm-plex-mono tracking-wide uppercase">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <div className="texture-grain-b" aria-hidden="true" />
+      <div className="relative z-10 mx-auto max-w-3xl">
+        <div className="mb-14">
+          <span className="inline-flex items-center gap-2 font-ibm-plex-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF6A00] mb-6">
+            <span className="h-px w-8 bg-[#FF6A00]/50" aria-hidden="true" />
             Preguntas frecuentes
           </span>
-          <h2 className="font-sora text-3xl font-bold tracking-tight sm:text-4xl text-white">
-            Lo que necesitas saber.
+          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-semibold tracking-[-0.015em] leading-[1.05] text-white">
+            Lo que un equipo riguroso necesita saber.
           </h2>
         </div>
 
@@ -84,7 +102,7 @@ export function FAQSection() {
                   >
                     <span>{question}</span>
                     <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-[#64748B] transition-transform duration-200 motion-reduce:transition-none ${
+                      className={`h-4 w-4 shrink-0 text-[#94A3B8] transition-premium motion-reduce:transition-none ${
                         isOpen ? "rotate-180 text-[#FF6A00]" : ""
                       }`}
                       aria-hidden="true"

@@ -5,11 +5,10 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 
 const navLinks = [
-  { label: "Producto",     href: "#producto" },
-  { label: "Metodología",  href: "#metodologia" },
-  { label: "Casos de uso", href: "#casos" },
-  { label: "Recursos",     href: "#faq" },
-  { label: "Sobre Uellix", href: "mailto:hola@uellix.com" },
+  { label: "Plataforma", href: "#producto" },
+  { label: "Método",     href: "#metodologia" },
+  { label: "Stella",     href: "#stella" },
+  { label: "Confianza",  href: "#confianza" },
 ]
 
 export function Navbar() {
@@ -17,7 +16,7 @@ export function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full bg-[#FBFAFC]/95 backdrop-blur-md border-b border-[#E2E8F0]"
+      className="sticky top-0 z-50 w-full bg-[var(--uellix-paper)]/85 backdrop-blur-xl border-b border-[#0F172A]/8"
       role="banner"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -26,9 +25,10 @@ export function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="shrink-0 group hover:opacity-80 transition-opacity duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+            className="shrink-0 group transition-premium hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
             aria-label="Uellix — Inicio"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/uellix-logo-horizontal.svg"
               alt="Uellix"
@@ -47,7 +47,7 @@ export function Navbar() {
               <a
                 key={label}
                 href={href}
-                className="px-3.5 py-1.5 text-sm font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/60 rounded-md transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+                className="px-3.5 py-1.5 text-sm font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 rounded-md transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
               >
                 {label}
               </a>
@@ -58,16 +58,16 @@ export function Navbar() {
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             <Link
               href="/login"
-              className="px-3 py-1.5 text-sm font-medium text-[#64748B] hover:text-[#0F172A] rounded-md transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+              className="px-3 py-1.5 text-sm font-medium text-[#475569] hover:text-[#0F172A] rounded-md transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
             >
               Iniciar sesión
             </Link>
-            <a
-              href="mailto:hola@uellix.com?subject=Solicitud%20de%20demo"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF6A00] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#e05e00] active:bg-[#cc5500] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] transition-colors duration-150 min-h-[36px]"
+            <Link
+              href="/demo"
+              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-[#FF6A00] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#e05e00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[36px] shadow-[0_1px_2px_rgba(15,23,42,0.12)]"
             >
               Solicitar demo
-            </a>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -77,7 +77,7 @@ export function Navbar() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             onClick={() => setOpen(!open)}
-            className="lg:hidden flex items-center justify-center h-10 w-10 rounded-lg border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/60 transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
+            className="lg:hidden flex items-center justify-center h-10 w-10 rounded-lg border border-[#0F172A]/10 text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00]"
           >
             {open
               ? <X className="h-5 w-5" aria-hidden="true" />
@@ -94,7 +94,7 @@ export function Navbar() {
           role="dialog"
           aria-modal="false"
           aria-label="Menú de navegación"
-          className="lg:hidden border-t border-[#E2E8F0] bg-[#FBFAFC]"
+          className="lg:hidden border-t border-[#0F172A]/8 bg-[var(--uellix-paper)]"
         >
           <nav aria-label="Navegación móvil" className="flex flex-col px-4 py-3 gap-0.5">
             {navLinks.map(({ label, href }) => (
@@ -102,27 +102,27 @@ export function Navbar() {
                 key={label}
                 href={href}
                 onClick={() => setOpen(false)}
-                className="flex items-center px-4 py-3 text-base font-medium text-[#0F172A] hover:bg-[#E2E8F0]/60 rounded-lg transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
+                className="flex items-center px-4 py-3 text-base font-medium text-[#0F172A] hover:bg-[#0F172A]/5 rounded-lg transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
               >
                 {label}
               </a>
             ))}
           </nav>
-          <div className="px-4 pb-5 pt-3 flex flex-col gap-2.5 border-t border-[#E2E8F0]">
+          <div className="px-4 pb-5 pt-3 flex flex-col gap-2.5 border-t border-[#0F172A]/8">
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-center px-4 py-3 text-base font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]/60 rounded-lg transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
+              className="flex items-center justify-center px-4 py-3 text-base font-medium text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/5 rounded-lg transition-premium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
             >
               Iniciar sesión
             </Link>
-            <a
-              href="mailto:hola@uellix.com?subject=Solicitud%20de%20demo"
+            <Link
+              href="/demo"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-lg bg-[#FF6A00] px-4 py-3 text-base font-semibold text-white hover:bg-[#e05e00] transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
+              className="btn-premium flex items-center justify-center gap-2 rounded-lg bg-[#FF6A00] px-4 py-3 text-base font-semibold text-white hover:bg-[#e05e00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] min-h-[44px]"
             >
               Solicitar demo
-            </a>
+            </Link>
           </div>
         </div>
       )}

@@ -3,13 +3,40 @@ import { Navbar } from "@/components/marketing/Navbar";
 import { Footer } from "@/components/marketing/Footer";
 import { NavigationProgress } from "@/components/marketing/visuals/NavigationProgress";
 
+// JSON-LD Organization — no invented claims, only verifiable brand facts.
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Uellix",
+  legalName: "The Balance Corp",
+  url: "https://uellix-antigravity.vercel.app",
+  description:
+    "Plataforma de inteligencia de impacto social audit-ready: estructura proyectos, conecta evidencias, documenta proxies y filtros SROI y genera reportes preparados para revisión externa.",
+  email: "hola@uellix.com",
+  slogan: "Convierte el impacto social en evidencia defendible.",
+};
+
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#FBFAFC] text-[#0F172A] font-manrope selection:bg-[#FF6A00]/20 selection:text-[#0F172A]">
+    <div className="flex min-h-screen flex-col bg-[var(--uellix-paper)] text-[var(--uellix-ink)] font-manrope selection:bg-[#FF6A00]/20 selection:text-[#0F172A]">
+      <script
+        type="application/ld+json"
+        // Static, trusted content — safe to inline.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+
+      {/* Skip link — visible on focus */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-[#0F172A] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#FF6A00]"
+      >
+        Saltar al contenido
+      </a>
+
       {/* CSS scroll progress bar — decorative, aria-hidden */}
       <div className="landing-scroll-progress" aria-hidden="true" />
 
