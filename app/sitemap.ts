@@ -16,17 +16,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
-    {
-      url: `${siteUrl}/privacidad`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${siteUrl}/terminos`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    // /privacidad and /terminos are intentionally omitted while they are drafts
+    // marked `robots: { index: false }`. Listing a noindexed URL in the sitemap
+    // triggers "Submitted URL marked noindex" warnings in Search Console. Re-add
+    // them here once legal review is complete and the noindex is lifted.
   ];
 }

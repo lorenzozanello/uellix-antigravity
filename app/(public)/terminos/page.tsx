@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Términos de Servicio · Uellix",
+  // Plain string → the root template ("%s | Uellix") appends the brand. Do NOT
+  // repeat "Uellix" here or the title renders as "… · Uellix | Uellix".
+  title: "Términos de Servicio",
+  description:
+    "Términos de Servicio de Uellix: condiciones de uso de la plataforma de inteligencia de impacto social audit-ready.",
+  alternates: { canonical: "/terminos" },
+  // Draft pending legal review (see on-page banner). Keep it reachable for users
+  // but out of Google's index until it's a binding document. Flip to `index: true`
+  // and re-add to app/sitemap.ts once legal signs off.
+  robots: { index: false, follow: true },
 };
 
 export default function TerminosPage() {

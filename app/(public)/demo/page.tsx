@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Solicitar demo",
   description:
     "Solicitá una demo privada de Uellix: implementación guiada, capacitación metodológica y soporte continuo.",
+  alternates: { canonical: "/demo" },
 }
 
 const benefits = [
