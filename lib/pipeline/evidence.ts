@@ -160,7 +160,13 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
     contentType: parsed.file.mimeType,
     upsert: false,
   })
-  if (error) throw new Error(`Storage upload failed: ${error.message}`)
+  if (error) {
+    // Atomicity: the DB row was created before the upload. If the upload fails
+    // we must not leave an orphaned evidence row that points at a file which
+    // does not exist, so roll the row back before surfacing the error.
+    await db.delete(evidenceItems).where(eq(evidenceItems.id, evidence.id))
+    throw new Error(`Storage upload failed: ${error.message}`)
+  }
 
   await db.update(evidenceItems).set({ filePath }).where(eq(evidenceItems.id, evidence.id))
 
@@ -170,7 +176,7 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
     actorUserId: user.id,
     entityType: 'evidence_item',
     entityId: evidence.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.EVIDENCE_CREATED,
     afterJson: { type: 'file', title: parsed.title, sha256 },
   })
 
@@ -187,6 +193,10 @@ export async function createUrlEvidenceForProject(projectId: string, input: unkn
   await verifyOutcomeIndicator(projectId, parsed.outcomeId, parsed.indicatorId)
 
   const normalizedUrl = parsed.url.trim().toLowerCase()
+  // NOTE: for URL evidence this hashes the *reference* (the URL string), not the
+  // content the URL points to — the remote page can change with the hash
+  // unchanged. It is a stable identifier/dedupe key, not tamper-evidence of the
+  // linked content. Only file evidence carries true content integrity.
   const sha256 = crypto.createHash('sha256').update(normalizedUrl).digest('hex')
 
   const [evidence] = await db
@@ -212,7 +222,7 @@ export async function createUrlEvidenceForProject(projectId: string, input: unkn
     actorUserId: user.id,
     entityType: 'evidence_item',
     entityId: evidence.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.EVIDENCE_CREATED,
     afterJson: { type: 'url', title: parsed.title, sha256 },
   })
 
@@ -253,7 +263,7 @@ export async function createTextEvidenceForProject(projectId: string, input: unk
     actorUserId: user.id,
     entityType: 'evidence_item',
     entityId: evidence.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.EVIDENCE_CREATED,
     afterJson: { type: 'text', title: parsed.title, sha256 },
   })
 
@@ -283,7 +293,7 @@ export async function updateEvidenceReviewStatus(projectId: string, evidenceId: 
     actorUserId: user.id,
     entityType: 'evidence_item',
     entityId: evidenceId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.EVIDENCE_REVIEW_STATUS_CHANGED,
     beforeJson: before,
     afterJson: after,
   })
@@ -313,12 +323,47 @@ export async function archiveEvidenceForProject(projectId: string, evidenceId: s
     actorUserId: user.id,
     entityType: 'evidence_item',
     entityId: evidenceId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.EVIDENCE_ARCHIVED,
     beforeJson: before,
     afterJson: after,
   })
 
   return after
+}
+
+/**
+ * Re-computes the SHA-256 of the stored file and compares it to the hash
+ * recorded at upload time. This is the verification path that makes the
+ * "any later modification is detectable" guarantee real rather than merely
+ * recorded — call it from the Trust Center or a scheduled integrity sweep.
+ * Only applies to file evidence (URL/text hashes are reference identifiers).
+ */
+export async function verifyFileEvidenceIntegrity(
+  projectId: string,
+  evidenceId: string,
+): Promise<{ verified: boolean; reason?: string; storedHash: string | null; computedHash: string | null }> {
+  const { organization } = await requireOrganizationAccess()
+  await verifyProjectOwnership(projectId, organization.id)
+  const evidence = await getEvidenceByIdForProject(projectId, evidenceId)
+
+  if (evidence.type !== 'file') {
+    return { verified: false, reason: 'Integrity verification only applies to file evidence', storedHash: evidence.contentHash, computedHash: null }
+  }
+  if (!evidence.filePath) {
+    return { verified: false, reason: 'Evidence has no stored file path', storedHash: evidence.contentHash, computedHash: null }
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.storage.from('uellix-evidence').download(evidence.filePath)
+  if (error || !data) {
+    return { verified: false, reason: `Stored file unreadable: ${error?.message ?? 'not found'}`, storedHash: evidence.contentHash, computedHash: null }
+  }
+
+  const buffer = Buffer.from(await data.arrayBuffer())
+  const computedHash = crypto.createHash('sha256').update(buffer).digest('hex')
+  const verified = computedHash === evidence.contentHash
+
+  return { verified, storedHash: evidence.contentHash, computedHash }
 }
 
 export async function listEvidenceForOrganizationWithProject() {

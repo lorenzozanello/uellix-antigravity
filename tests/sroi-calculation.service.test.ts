@@ -32,6 +32,7 @@ const mockDb = {
   financialProxies: [] as any[],
   sroiCalculationRuns: [] as any[],
   sroiCalculationLineItems: [] as any[],
+  evidenceItems: [] as any[],
 };
 
 function getTableData(table: any): any[] {
@@ -41,8 +42,8 @@ function getTableData(table: any): any[] {
   return (mockDb as any)[camelName] ?? (mockDb as any)[pgName] ?? [];
 }
 
-vi.mock('@/db/client', () => ({
-  db: {
+vi.mock('@/db/client', () => {
+  const dbMock: any = {
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockImplementation((table) => {
         const data = getTableData(table);
@@ -84,8 +85,13 @@ vi.mock('@/db/client', () => ({
         }),
       })),
     })),
-  },
-}));
+  };
+  // The calculation engine persists inside db.transaction(cb); run the callback
+  // against the same mock so select/insert/update (and their spies) behave
+  // identically inside and outside the transaction.
+  dbMock.transaction = vi.fn().mockImplementation(async (cb: any) => cb(dbMock));
+  return { db: dbMock };
+});
 
 import {
   calculateSroiPreview,
@@ -110,6 +116,7 @@ beforeEach(() => {
     financialProxies: [],
     sroiCalculationRuns: [],
     sroiCalculationLineItems: [],
+    evidenceItems: [],
   });
   vi.mocked(requireOrganizationAccess).mockResolvedValue({
     organization: { id: ORG_ID },
@@ -169,6 +176,15 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
   mockDb.outcomeProxyAssignments.push(assignment);
   mockDb.sroiAssignmentInputs.push(input);
   mockDb.sroiFilterSets.push(filter);
+  // Evidence gate: the outcome that feeds the calculation must be backed by at
+  // least one non-archived evidence item for readiness to pass.
+  mockDb.evidenceItems.push({
+    id: 'ev-1',
+    projectId: PROJECT_ID,
+    organizationId: ORG_ID,
+    outcomeId: assignment.outcomeId,
+    status: 'approved',
+  });
   return { investment, proxy, assignment, input, filter };
 }
 
@@ -279,6 +295,15 @@ describe('Readiness edge cases', () => {
     const readiness = await getSroiCalculationReadiness(PROJECT_ID);
     expect(readiness.canCalculate).toBe(false);
     expect(readiness.blockingReasons).toContain('Invalid filter values in 1 assignment(s)');
+  });
+
+  it('fails when the outcome has no supporting evidence (evidence gate)', async () => {
+    seedHappyData();
+    mockDb.evidenceItems = []; // remove the evidence seeded by seedHappyData
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.outcomesWithoutEvidence).toContain('out-1');
+    expect(readiness.blockingReasons).toContain('1 outcome(s) with no supporting evidence');
   });
 
   it('fails when duration out of bounds', async () => {

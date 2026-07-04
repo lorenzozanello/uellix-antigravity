@@ -2,7 +2,8 @@
 // Sprint 6B – Deterministic SROI Calculation Engine
 // No mocks. No placeholders. No FX conversion. No AI/Stella.
 
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, sql } from 'drizzle-orm'
+import Decimal from 'decimal.js'
 import { db } from '@/db/client'
 import { z } from 'zod'
 import {
@@ -15,6 +16,7 @@ import {
   financialProxies,
   outcomes,
   projects,
+  evidenceItems,
 } from '@/db/schema'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
@@ -217,6 +219,7 @@ export interface SroiReadiness {
   currencyMismatch: boolean
   invalidQuantities: string[]
   invalidFilters: string[]
+  outcomesWithoutEvidence: string[]
   canCalculate: boolean
   blockingReasons: string[]
 }
@@ -289,6 +292,30 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
   if (invalidQuantities.length > 0) blockingReasons.push(`Invalid quantities in ${invalidQuantities.length} item(s)`)
   if (invalidFilters.length > 0) blockingReasons.push(`Invalid filter values in ${invalidFilters.length} assignment(s)`)
 
+  // Evidence gate — every outcome that feeds the calculation must be backed by
+  // at least one non-archived, non-rejected evidence item. This enforces the
+  // fuente → evidencia → proxy → cálculo chain: an assignment cannot contribute
+  // social value if the outcome it monetises has no supporting evidence.
+  const activeOutcomeIds = [...new Set(allAssignments.map(a => a.outcomeId))]
+  const outcomesWithoutEvidence: string[] = []
+  if (activeOutcomeIds.length > 0) {
+    const evidenceRows = await db
+      .select({ outcomeId: evidenceItems.outcomeId })
+      .from(evidenceItems)
+      .where(and(
+        eq(evidenceItems.projectId, projectId),
+        inArray(evidenceItems.outcomeId, activeOutcomeIds),
+        inArray(evidenceItems.status, ['draft', 'under_review', 'approved']),
+      ))
+    const outcomesWithEvidence = new Set(evidenceRows.map(e => e.outcomeId))
+    for (const outcomeId of activeOutcomeIds) {
+      if (!outcomesWithEvidence.has(outcomeId)) outcomesWithoutEvidence.push(outcomeId)
+    }
+  }
+  if (outcomesWithoutEvidence.length > 0) {
+    blockingReasons.push(`${outcomesWithoutEvidence.length} outcome(s) with no supporting evidence`)
+  }
+
   // Currency consistency
   const invCurrency = investment?.currency ?? null
   if (invCurrency) proxyCurrencies.add(invCurrency)
@@ -307,6 +334,7 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     currencyMismatch,
     invalidQuantities,
     invalidFilters,
+    outcomesWithoutEvidence,
     canCalculate,
     blockingReasons,
   }
@@ -314,6 +342,9 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
 
 // ─── Calculation core ────────────────────────────────────────────────────────
 
+// Number fields are for display/preview (backward-compatible API). The `*Exact`
+// string fields carry the full-precision decimal result and are what gets
+// persisted, so audit-ready records never inherit binary-float artefacts.
 interface LineItemCalc {
   assignmentId: string
   outcomeId: string
@@ -323,6 +354,10 @@ interface LineItemCalc {
   currency: string
   grossValue: number
   adjustedValue: number
+  quantityExact: string
+  proxyValueExact: string
+  grossValueExact: string
+  adjustedValueExact: string
   deadweightPct: number
   attributionPct: number
   displacementPct: number
@@ -336,23 +371,42 @@ interface CalcResult {
   grossSocialValue: number
   netSocialValue: number
   sroiRatio: number
+  totalInvestmentExact: string
+  grossSocialValueExact: string
+  netSocialValueExact: string
+  sroiRatioExact: string
   lineItems: LineItemCalc[]
 }
 
+// Precision of the numeric DB columns (see manual-migration 003). Money and
+// quantities carry 4 decimals; the SROI ratio carries 6.
+const MONEY_DP = 4
+const RATIO_DP = 6
+
+// Tolerant Decimal constructor: readiness has already validated these values,
+// but never throw inside the engine over a stray string.
+function dec(v: string | number | null | undefined): Decimal {
+  try {
+    return new Decimal(v ?? 0)
+  } catch {
+    return new Decimal(0)
+  }
+}
+
 function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect, assignmentData: AssignmentData[]): CalcResult {
-  const totalInvestment = parseNum(investment.amount)
-  if (totalInvestment <= 0) throw new Error('Investment amount must be > 0')
+  const totalInvestment = dec(investment.amount)
+  if (totalInvestment.lte(0)) throw new Error('Investment amount must be > 0')
 
   const currency = investment.currency
 
-  let grossSocialValue = 0
-  let netSocialValue = 0
+  let grossSocialValue = new Decimal(0)
+  let netSocialValue = new Decimal(0)
   const lineItems: LineItemCalc[] = []
 
   for (const { assignment, input, filterSet, proxy } of assignmentData) {
-    const quantity = parseNum(input.quantity)
-    const proxyValue = parseNum(proxy.value ?? '0')
-    if (quantity <= 0 || proxyValue <= 0) continue
+    const quantity = dec(input.quantity)
+    const proxyValue = dec(proxy.value ?? '0')
+    if (quantity.lte(0) || proxyValue.lte(0)) continue
 
     const deadweightPct = clamp(parseNum(filterSet.deadweightPct), 0, 100)
     const attributionPct = clamp(parseNum(filterSet.attributionPct), 0, 100)
@@ -360,32 +414,36 @@ function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect
     const dropoffPct = clamp(parseNum(filterSet.dropoffPct), 0, 100)
     const durationYears = Math.min(Math.max(filterSet.durationYears ?? 1, 1), 50)
 
-    const baseGrossValue = quantity * proxyValue
-    const baseAdjustmentFactor =
-      (1 - deadweightPct / 100) *
-      (1 - attributionPct / 100) *
-      (1 - displacementPct / 100)
+    const baseGrossValue = quantity.mul(proxyValue)
+    const baseAdjustmentFactor = new Decimal(1).minus(dec(deadweightPct).div(100))
+      .mul(new Decimal(1).minus(dec(attributionPct).div(100)))
+      .mul(new Decimal(1).minus(dec(displacementPct).div(100)))
 
-    let adjustedValue = 0
+    const dropoffBase = new Decimal(1).minus(dec(dropoffPct).div(100))
+    let adjustedValue = new Decimal(0)
     for (let yr = 1; yr <= durationYears; yr++) {
-      const dropoffFactor = Math.pow(1 - dropoffPct / 100, yr - 1)
-      adjustedValue += baseGrossValue * baseAdjustmentFactor * dropoffFactor
+      const dropoffFactor = dropoffBase.pow(yr - 1)
+      adjustedValue = adjustedValue.plus(baseGrossValue.mul(baseAdjustmentFactor).mul(dropoffFactor))
     }
 
-    const grossValue = baseGrossValue * durationYears
+    const grossValue = baseGrossValue.mul(durationYears)
 
-    grossSocialValue += grossValue
-    netSocialValue += adjustedValue
+    grossSocialValue = grossSocialValue.plus(grossValue)
+    netSocialValue = netSocialValue.plus(adjustedValue)
 
     lineItems.push({
       assignmentId: assignment.id,
       outcomeId: assignment.outcomeId,
       proxyId: proxy.id,
-      quantity,
-      proxyValue,
+      quantity: quantity.toNumber(),
+      proxyValue: proxyValue.toNumber(),
       currency,
-      grossValue,
-      adjustedValue,
+      grossValue: grossValue.toNumber(),
+      adjustedValue: adjustedValue.toNumber(),
+      quantityExact: quantity.toString(),
+      proxyValueExact: proxyValue.toString(),
+      grossValueExact: grossValue.toFixed(MONEY_DP),
+      adjustedValueExact: adjustedValue.toFixed(MONEY_DP),
       deadweightPct,
       attributionPct,
       displacementPct,
@@ -394,10 +452,20 @@ function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect
     })
   }
 
-  if (totalInvestment === 0) throw new Error('Division by zero: totalInvestment is 0')
-  const sroiRatio = netSocialValue / totalInvestment
+  const sroiRatio = netSocialValue.div(totalInvestment)
 
-  return { currency, totalInvestment, grossSocialValue, netSocialValue, sroiRatio, lineItems }
+  return {
+    currency,
+    totalInvestment: totalInvestment.toNumber(),
+    grossSocialValue: grossSocialValue.toNumber(),
+    netSocialValue: netSocialValue.toNumber(),
+    sroiRatio: sroiRatio.toNumber(),
+    totalInvestmentExact: totalInvestment.toFixed(MONEY_DP),
+    grossSocialValueExact: grossSocialValue.toFixed(MONEY_DP),
+    netSocialValueExact: netSocialValue.toFixed(MONEY_DP),
+    sroiRatioExact: sroiRatio.toFixed(RATIO_DP),
+    lineItems,
+  }
 }
 
 // ─── Preview (non-persisted) ─────────────────────────────────────────────────
@@ -445,84 +513,98 @@ export async function calculateAndPersistSroiRun(projectId: string) {
 
   const result = runDeterministicCalc(investment, assignmentData)
 
-  // Determine next version for this project
-  const existingRuns = await db.select().from(sroiCalculationRuns).where(eq(sroiCalculationRuns.projectId, projectId))
-  const version = existingRuns.length + 1
-
   const calculatedAt = new Date()
 
-  const snapshotJson = {
-    version,
-    currency: result.currency,
-    totalInvestment: result.totalInvestment,
-    grossSocialValue: result.grossSocialValue,
-    netSocialValue: result.netSocialValue,
-    sroiRatio: result.sroiRatio,
-    investment: { id: investment.id, amount: investment.amount, currency: investment.currency, year: investment.year },
-    assignments: result.lineItems.map(li => ({
-      assignmentId: li.assignmentId,
-      outcomeId: li.outcomeId,
-      proxyId: li.proxyId,
-      quantity: li.quantity,
-      proxyValue: li.proxyValue,
-      grossValue: li.grossValue,
-      adjustedValue: li.adjustedValue,
-      filters: {
-        deadweightPct: li.deadweightPct,
-        attributionPct: li.attributionPct,
-        displacementPct: li.displacementPct,
-        dropoffPct: li.dropoffPct,
-        durationYears: li.durationYears,
-      },
-    })),
-    formulaNotes: 'No discount rate applied (Sprint 6B). FX conversion not supported.',
-    calculatedBy: ctx.user.id,
-    calculatedAt: calculatedAt.toISOString(),
-    readiness,
-  }
+  // Atomicity: version assignment, run row and all line items are persisted in
+  // a single transaction. Previously these were separate awaits, so a line-item
+  // failure could leave an orphaned run marked 'calculated' with no items.
+  const { run, lineItems: lineItemRows } = await db.transaction(async (tx) => {
+    // Compute the next version inside the transaction to shrink the race window.
+    // The authoritative guard is the (project_id, version) unique index added in
+    // the accompanying migration; without it, two concurrent runs could still
+    // collide — the unique index turns that collision into a clean retryable
+    // error instead of a duplicate version.
+    const maxRow = await tx
+      .select({ maxV: sql<number>`coalesce(max(${sroiCalculationRuns.version}), 0)` })
+      .from(sroiCalculationRuns)
+      .where(eq(sroiCalculationRuns.projectId, projectId))
+    const version = (Number(maxRow[0]?.maxV) || 0) + 1
 
-  const runInsert = await db
-    .insert(sroiCalculationRuns)
-    .values({
-      projectId,
-      organizationId: ctx.organization.id,
+    const snapshotJson = {
       version,
       currency: result.currency,
-      totalInvestment: result.totalInvestment.toString(),
-      grossSocialValue: result.grossSocialValue.toString(),
-      netSocialValue: result.netSocialValue.toString(),
-      sroiRatio: result.sroiRatio.toString(),
-      snapshotJson,
-      status: 'calculated',
+      totalInvestment: result.totalInvestmentExact,
+      grossSocialValue: result.grossSocialValueExact,
+      netSocialValue: result.netSocialValueExact,
+      sroiRatio: result.sroiRatioExact,
+      investment: { id: investment.id, amount: investment.amount, currency: investment.currency, year: investment.year },
+      assignments: result.lineItems.map(li => ({
+        assignmentId: li.assignmentId,
+        outcomeId: li.outcomeId,
+        proxyId: li.proxyId,
+        quantity: li.quantityExact,
+        proxyValue: li.proxyValueExact,
+        grossValue: li.grossValueExact,
+        adjustedValue: li.adjustedValueExact,
+        filters: {
+          deadweightPct: li.deadweightPct,
+          attributionPct: li.attributionPct,
+          displacementPct: li.displacementPct,
+          dropoffPct: li.dropoffPct,
+          durationYears: li.durationYears,
+        },
+      })),
+      formulaNotes: 'No discount rate applied (Sprint 6B). FX conversion not supported.',
       calculatedBy: ctx.user.id,
-      calculatedAt,
-    })
-    .returning()
+      calculatedAt: calculatedAt.toISOString(),
+      readiness,
+    }
 
-  const run = runInsert[0]
+    const runInsert = await tx
+      .insert(sroiCalculationRuns)
+      .values({
+        projectId,
+        organizationId: ctx.organization.id,
+        version,
+        currency: result.currency,
+        totalInvestment: result.totalInvestmentExact,
+        grossSocialValue: result.grossSocialValueExact,
+        netSocialValue: result.netSocialValueExact,
+        sroiRatio: result.sroiRatioExact,
+        snapshotJson,
+        status: 'calculated',
+        calculatedBy: ctx.user.id,
+        calculatedAt,
+      })
+      .returning()
 
-  // Persist real line items – one per calculable assignment
-  const lineItemInserts = result.lineItems.map(li => ({
-    runId: run.id,
-    assignmentId: li.assignmentId,
-    organizationId: ctx.organization.id,
-    outcomeId: li.outcomeId,
-    proxyId: li.proxyId,
-    quantity: li.quantity.toString(),
-    proxyValue: li.proxyValue.toString(),
-    currency: li.currency,
-    grossValue: li.grossValue.toString(),
-    adjustedValue: li.adjustedValue.toString(),
-    deadweightPct: li.deadweightPct.toString(),
-    attributionPct: li.attributionPct.toString(),
-    displacementPct: li.displacementPct.toString(),
-    dropoffPct: li.dropoffPct.toString(),
-    durationYears: li.durationYears,
-  }))
+    const insertedRun = runInsert[0]
 
-  const lineItemRows = lineItemInserts.length > 0
-    ? await db.insert(sroiCalculationLineItems).values(lineItemInserts).returning()
-    : []
+    // Persist real line items – one per calculable assignment
+    const lineItemInserts = result.lineItems.map(li => ({
+      runId: insertedRun.id,
+      assignmentId: li.assignmentId,
+      organizationId: ctx.organization.id,
+      outcomeId: li.outcomeId,
+      proxyId: li.proxyId,
+      quantity: li.quantityExact,
+      proxyValue: li.proxyValueExact,
+      currency: li.currency,
+      grossValue: li.grossValueExact,
+      adjustedValue: li.adjustedValueExact,
+      deadweightPct: li.deadweightPct.toString(),
+      attributionPct: li.attributionPct.toString(),
+      displacementPct: li.displacementPct.toString(),
+      dropoffPct: li.dropoffPct.toString(),
+      durationYears: li.durationYears,
+    }))
+
+    const insertedItems = lineItemInserts.length > 0
+      ? await tx.insert(sroiCalculationLineItems).values(lineItemInserts).returning()
+      : []
+
+    return { run: insertedRun, lineItems: insertedItems }
+  })
 
   await logAuditAction({
     organizationId: ctx.organization.id,
@@ -530,7 +612,7 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     entityType: 'sroi_calculation_runs',
     entityId: run.id,
     action: 'sroi_calculation_run.created',
-    afterJson: { runId: run.id, version, sroiRatio: result.sroiRatio } as Record<string, unknown>,
+    afterJson: { runId: run.id, version: run.version, sroiRatio: result.sroiRatio } as Record<string, unknown>,
   })
 
   return { run, lineItems: lineItemRows }

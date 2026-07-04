@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer, numeric } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -239,7 +239,7 @@ export const financialProxies = pgTable('financial_proxies', {
   country: varchar('country', { length: 2 }),
   territory: varchar('territory', { length: 255 }),
   currency: varchar('currency', { length: 10 }),
-  value: varchar('value', { length: 255 }),
+  value: numeric('value', { precision: 20, scale: 4 }),
   unit: varchar('unit', { length: 50 }),
   referenceYear: integer('reference_year'),
   thematicArea: varchar('thematic_area', { length: 255 }),
@@ -285,7 +285,7 @@ export const projectInvestments = pgTable('project_investments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
-  amount: varchar('amount', { length: 255 }).notNull(),
+  amount: numeric('amount', { precision: 20, scale: 4 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull(),
   year: integer('year'),
   description: text('description'),
@@ -294,7 +294,7 @@ export const projectInvestments = pgTable('project_investments', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
-  check('project_investments_amount_check', sql`cast(nullif(${table.amount}, '') as numeric) > 0`),
+  check('project_investments_amount_check', sql`${table.amount} > 0`),
   check('project_investments_status_check', sql`${table.status} IN ('active', 'archived')`),
   index('idx_project_investments_project_id').on(table.projectId),
 ])
@@ -303,7 +303,7 @@ export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   assignmentId: uuid('assignment_id').references(() => outcomeProxyAssignments.id).notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
-  quantity: varchar('quantity', { length: 255 }).notNull(),
+  quantity: numeric('quantity', { precision: 20, scale: 4 }).notNull(),
   unit: varchar('unit', { length: 50 }).notNull(),
   year: integer('year'),
   notes: text('notes'),
@@ -312,7 +312,7 @@ export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
-  check('sroi_assignment_inputs_quantity_check', sql`cast(nullif(${table.quantity}, '') as numeric) > 0`),
+  check('sroi_assignment_inputs_quantity_check', sql`${table.quantity} > 0`),
   check('sroi_assignment_inputs_status_check', sql`${table.status} IN ('active', 'archived')`),
   index('idx_sroi_assignment_inputs_assignment_id').on(table.assignmentId),
 ])
@@ -347,10 +347,10 @@ export const sroiCalculationRuns = pgTable('sroi_calculation_runs', {
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
   version: integer('version').notNull().default(1),
   currency: varchar('currency', { length: 10 }),
-  totalInvestment: varchar('total_investment', { length: 255 }),
-  grossSocialValue: varchar('gross_social_value', { length: 255 }),
-  netSocialValue: varchar('net_social_value', { length: 255 }),
-  sroiRatio: varchar('sroi_ratio', { length: 255 }),
+  totalInvestment: numeric('total_investment', { precision: 20, scale: 4 }),
+  grossSocialValue: numeric('gross_social_value', { precision: 20, scale: 4 }),
+  netSocialValue: numeric('net_social_value', { precision: 20, scale: 4 }),
+  sroiRatio: numeric('sroi_ratio', { precision: 20, scale: 6 }),
   snapshotJson: jsonb('snapshot_json'),
   runDate: timestamp('run_date').defaultNow().notNull(),
   status: varchar('status', { length: 50 }).default('calculated').notNull(),
@@ -369,11 +369,11 @@ export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
   outcomeId: uuid('outcome_id').references(() => outcomes.id),
   proxyId: uuid('proxy_id').references(() => financialProxies.id),
-  quantity: varchar('quantity', { length: 255 }),
-  proxyValue: varchar('proxy_value', { length: 255 }),
+  quantity: numeric('quantity', { precision: 20, scale: 4 }),
+  proxyValue: numeric('proxy_value', { precision: 20, scale: 4 }),
   currency: varchar('currency', { length: 10 }),
-  grossValue: varchar('gross_value', { length: 255 }),
-  adjustedValue: varchar('adjusted_value', { length: 255 }),
+  grossValue: numeric('gross_value', { precision: 20, scale: 4 }),
+  adjustedValue: numeric('adjusted_value', { precision: 20, scale: 4 }),
   deadweightPct: varchar('deadweight_pct', { length: 255 }),
   attributionPct: varchar('attribution_pct', { length: 255 }),
   displacementPct: varchar('displacement_pct', { length: 255 }),
