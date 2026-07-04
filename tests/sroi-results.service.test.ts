@@ -294,14 +294,22 @@ describe('report foundation', () => {
     expect(otherReportSection.title).toBe('Not yours');
   });
   it('lockReportDraft restricts to manager role', async () => {
-    const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft' };
+    const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-1', status: 'draft' };
     mockDb.sroiReports.push(report);
+    // Human-review gate: an approved methodological review must exist for the run.
+    mockDb.sroiRunReviews.push({ id: 'rev-lock', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-1', status: 'approved' });
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'analyst' } } as any);
     await expect(lockReportDraft(PROJECT_ID, report.id)).rejects.toThrow('Insufficient role');
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
     const locked = await lockReportDraft(PROJECT_ID, report.id);
     expect(locked.status).toBe('locked');
     expect(locked.lockedBy).toBe(USER_ID);
+  });
+  it('lockReportDraft is blocked without an approved methodological review', async () => {
+    const report = { id: 'rep-noreview', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-2', status: 'draft' };
+    mockDb.sroiReports.push(report);
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
+    await expect(lockReportDraft(PROJECT_ID, report.id)).rejects.toThrow('no approved methodological review');
   });
   it('lists project reports', async () => {
     const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID };

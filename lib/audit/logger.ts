@@ -34,6 +34,26 @@ export const AUDIT_ACTIONS = {
 
   // Stella service/quota management
   STELLA_SERVICE_UPDATED: 'stella_service.updated',
+
+  // Proxy sources
+  PROXY_SOURCE_CREATED: 'proxy_source.created',
+  PROXY_SOURCE_UPDATED: 'proxy_source.updated',
+  PROXY_SOURCE_ARCHIVED: 'proxy_source.archived',
+
+  // Financial proxies
+  FINANCIAL_PROXY_CREATED: 'financial_proxy.created',
+  FINANCIAL_PROXY_UPDATED: 'financial_proxy.updated',
+  FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy.review_status_changed',
+  FINANCIAL_PROXY_ARCHIVED: 'financial_proxy.archived',
+
+  // Proxy assignments
+  PROXY_ASSIGNMENT_CREATED: 'proxy_assignment.created',
+  PROXY_ASSIGNMENT_ARCHIVED: 'proxy_assignment.archived',
+
+  // Evidence items
+  EVIDENCE_CREATED: 'evidence_item.created',
+  EVIDENCE_REVIEW_STATUS_CHANGED: 'evidence_item.review_status_changed',
+  EVIDENCE_ARCHIVED: 'evidence_item.archived',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

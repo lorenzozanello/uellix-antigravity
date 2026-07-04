@@ -489,6 +489,23 @@ export async function lockReportDraft(projectId: string, reportId: string) {
   if (report.length === 0) throw new Error('Report not found');
   if (report[0].status === 'locked') throw new Error('Report already locked');
 
+  // Human-review gate: a report cannot be finalized (locked/"audit-ready")
+  // unless the calculation run it is built on carries an approved methodological
+  // review. This makes "human review is the final step" an enforced invariant
+  // rather than an optional side table.
+  const approvedReview = await db
+    .select({ id: sroiRunReviews.id })
+    .from(sroiRunReviews)
+    .where(and(
+      eq(sroiRunReviews.calculationRunId, report[0].calculationRunId),
+      eq(sroiRunReviews.organizationId, ctx.organization.id),
+      eq(sroiRunReviews.status, 'approved'),
+    ))
+    .then(r => r[0]);
+  if (!approvedReview) {
+    throw new Error('Cannot lock: the calculation run has no approved methodological review');
+  }
+
   const locked = await db
     .update(sroiReports)
     .set({

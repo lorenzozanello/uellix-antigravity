@@ -73,7 +73,7 @@ export async function createOrganizationProxySource(input: unknown) {
     actorUserId: ctx.user.id,
     entityType: 'proxy_source',
     entityId: row.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.PROXY_SOURCE_CREATED,
     afterJson: row,
   });
   return row;
@@ -105,7 +105,7 @@ export async function updateOrganizationProxySource(sourceId: string, input: unk
     actorUserId: ctx.user.id,
     entityType: 'proxy_source',
     entityId: sourceId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.PROXY_SOURCE_UPDATED,
     beforeJson: source,
     afterJson: updated,
   });
@@ -130,7 +130,7 @@ export async function archiveProxySource(sourceId: string) {
     actorUserId: ctx.user.id,
     entityType: 'proxy_source',
     entityId: sourceId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.PROXY_SOURCE_ARCHIVED,
     beforeJson: source,
     afterJson: updated,
   });
@@ -194,11 +194,16 @@ export async function createOrganizationFinancialProxy(input: unknown) {
     actorUserId: ctx.user.id,
     entityType: 'financial_proxy',
     entityId: row.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_CREATED,
     afterJson: row,
   });
   return row;
 }
+
+// Fields whose change invalidates a prior human approval: an approved proxy
+// whose value/currency/unit/reference year is edited no longer reflects what
+// the reviewer signed off on, so its review status is reset.
+const PROXY_MATERIAL_FIELDS = ['value', 'currency', 'unit', 'referenceYear'] as const;
 
 export async function updateOrganizationFinancialProxy(proxyId: string, input: unknown) {
   const ctx = await requireOrganizationAccess();
@@ -207,8 +212,17 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
   if (!proxy) throw new Error('Proxy not found');
   if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
 
+  // Re-review gate: if an approved proxy's material fields change, drop it back
+  // to pending_review so no calculation uses an unreviewed value under an
+  // "approved" label.
+  const materialChange = PROXY_MATERIAL_FIELDS.some(
+    (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
+  );
+  const resetReview = proxy.reviewStatus === 'approved' && materialChange;
+
   const updated = await db.update(financialProxies).set({
     ...data,
+    ...(resetReview ? { reviewStatus: 'pending_review' as const } : {}),
     updatedAt: new Date(),
   }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
 
@@ -217,7 +231,10 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
     actorUserId: ctx.user.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: resetReview
+      ? AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED
+      : AUDIT_ACTIONS.FINANCIAL_PROXY_UPDATED,
+    reason: resetReview ? 'Approval reset: material field changed after approval' : undefined,
     beforeJson: proxy,
     afterJson: updated,
   });
@@ -242,6 +259,12 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
     for (const f of required) {
       if (!proxy[f as keyof typeof proxy]) throw new Error(`Cannot approve without ${f}`);
     }
+    // A proxy value of 0 (or non-positive / non-numeric) is methodologically
+    // invalid — it would zero out or corrupt every line item that uses it.
+    const numericValue = Number(proxy.value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      throw new Error('Cannot approve a proxy with a non-positive value');
+    }
   }
   const updated = await db.update(financialProxies).set({ reviewStatus: newStatus, updatedAt: new Date() })
     .where(eq(financialProxies.id, proxyId))
@@ -252,7 +275,7 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
     actorUserId: ctx.user.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED,
     beforeJson: proxy,
     afterJson: updated,
   });
@@ -273,7 +296,7 @@ export async function archiveFinancialProxy(proxyId: string) {
     actorUserId: ctx.user.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_ARCHIVED,
     beforeJson: proxy,
     afterJson: updated,
   });
@@ -308,6 +331,18 @@ export async function assignProxyToOutcome(projectId: string, input: unknown) {
   }
   // Ensure justification is provided (already validated by Zod)
 
+  // Prevent duplicate active assignments of the same proxy to the same outcome:
+  // two identical active rows would be double-counted by the calculation loader.
+  const duplicate = await db.select({ id: outcomeProxyAssignments.id }).from(outcomeProxyAssignments)
+    .where(and(
+      eq(outcomeProxyAssignments.projectId, projectId),
+      eq(outcomeProxyAssignments.outcomeId, data.outcomeId),
+      eq(outcomeProxyAssignments.proxyId, data.proxyId),
+      eq(outcomeProxyAssignments.assignmentStatus, 'active'),
+    ))
+    .then(r => r[0]);
+  if (duplicate) throw new Error('This proxy is already assigned to this outcome');
+
   const row = await db.insert(outcomeProxyAssignments).values({
     projectId,
     organizationId: ctx.organization.id,
@@ -324,7 +359,7 @@ export async function assignProxyToOutcome(projectId: string, input: unknown) {
     actorUserId: ctx.user.id,
     entityType: 'proxy_assignment',
     entityId: row.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.PROXY_ASSIGNMENT_CREATED,
     afterJson: row,
   });
   return row;
@@ -352,7 +387,7 @@ export async function archiveOutcomeProxyAssignment(projectId: string, assignmen
     actorUserId: ctx.user.id,
     entityType: 'proxy_assignment',
     entityId: assignmentId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.PROXY_ASSIGNMENT_ARCHIVED,
     beforeJson: assignment,
     afterJson: updated,
   });
