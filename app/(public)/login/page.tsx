@@ -1,9 +1,20 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { login, signup } from './actions'
 import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+
+// Auth surface: robots.txt already Disallows this path, but that only blocks
+// crawling — a route linked internally (Navbar links /login on every public
+// page) can still be indexed as a bare URL. `noindex` is the second, decisive
+// barrier. Plain-string title → root template appends "| Uellix".
+export const metadata: Metadata = {
+  title: 'Iniciar sesión',
+  description: 'Accedé a tu cuenta de Uellix.',
+  robots: { index: false, follow: true },
+}
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_credentials: 'Ingresa un correo y una contraseña válidos (mínimo 6 caracteres).',
