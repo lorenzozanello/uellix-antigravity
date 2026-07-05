@@ -1,8 +1,16 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requestPasswordReset } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+
+// Auth surface — noindex for the same reason as /login (see that file's note).
+export const metadata: Metadata = {
+  title: 'Recuperar contraseña',
+  description: 'Restablecé el acceso a tu cuenta de Uellix.',
+  robots: { index: false, follow: true },
+}
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_email: 'Ingresa un correo electrónico válido.',
