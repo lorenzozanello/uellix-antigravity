@@ -199,10 +199,17 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
                     </form>
                   </div>
                   {(linksByFromNode.get(n.id) ?? []).map((l) => (
-                    <p key={l.id} className="mt-1 text-xs text-muted-foreground">
-                      → {nodeById.get(l.toNodeId)?.title ?? '—'}
-                      {l.assumption && <span className="italic"> ({l.assumption})</span>}
-                    </p>
+                    <div key={l.id} className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <p>
+                        → {nodeById.get(l.toNodeId)?.title ?? '—'}
+                        {l.assumption && <span className="italic"> ({l.assumption})</span>}
+                      </p>
+                      <form action={handleArchiveLink}>
+                        <input type="hidden" name="projectId" value={projectId} />
+                        <input type="hidden" name="linkId" value={l.id} />
+                        <button type="submit" className="text-red-600 hover:text-red-700 whitespace-nowrap">Quitar</button>
+                      </form>
+                    </div>
                   ))}
                 </li>
               ))}
@@ -230,10 +237,17 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
                     </form>
                   </div>
                   {(linksByFromNode.get(n.id) ?? []).map((l) => (
-                    <p key={l.id} className="mt-1 text-xs text-muted-foreground">
-                      → {nodeById.get(l.toNodeId)?.title ?? '—'}
-                      {l.assumption && <span className="italic"> ({l.assumption})</span>}
-                    </p>
+                    <div key={l.id} className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <p>
+                        → {nodeById.get(l.toNodeId)?.title ?? '—'}
+                        {l.assumption && <span className="italic"> ({l.assumption})</span>}
+                      </p>
+                      <form action={handleArchiveLink}>
+                        <input type="hidden" name="projectId" value={projectId} />
+                        <input type="hidden" name="linkId" value={l.id} />
+                        <button type="submit" className="text-red-600 hover:text-red-700 whitespace-nowrap">Quitar</button>
+                      </form>
+                    </div>
                   ))}
                 </li>
               ))}
