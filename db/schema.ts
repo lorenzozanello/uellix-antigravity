@@ -457,6 +457,10 @@ export const sroiReports = pgTable('sroi_reports', {
   title: varchar('title', { length: 255 }).notNull(),
   summary: text('summary'),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // Fase 1f — chosen at draft-creation time ("Incluir desglose financiero por
+  // financiador"), immutable after creation like other report-anchoring
+  // decisions. Determines whether the funder_breakdown section is generated.
+  includeFunderBreakdown: boolean('include_funder_breakdown').default(false).notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   updatedBy: uuid('updated_by').references(() => users.id),
   lockedBy: uuid('locked_by').references(() => users.id),

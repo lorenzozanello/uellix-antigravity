@@ -16,7 +16,7 @@ import {
   projects,
 } from '@/db/schema';
 import { z } from 'zod';
-import { SECTION_ORDER } from '@/lib/reports/report-sections';
+import { getInitialSectionTypes } from '@/lib/reports/report-sections';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -41,9 +41,10 @@ type ReviewItemInput = z.infer<typeof ReviewItemInputSchema>;
 
 const ReportDraftInputSchema = z.object({
   title: z.string().min(1),
+  includeFunderBreakdown: z.boolean().optional().default(false),
 });
 
-type ReportDraftInput = z.infer<typeof ReportDraftInputSchema>;
+type ReportDraftInput = z.input<typeof ReportDraftInputSchema>;
 
 const ReportSectionInputSchema = z.object({
   title: z.string().min(1),
@@ -344,11 +345,6 @@ export async function listSroiRunReviews(projectId: string, runId: string) {
 // 4. Report Foundation
 // ---------------------------------------------------------------------------
 
-// Single source of truth for which sections a report has and their order —
-// shared with the editable detail view and the print/PDF view so a report's
-// stored sections always match what those views render.
-const initialSections = SECTION_ORDER;
-
 export async function createReportDraftFromRun(projectId: string, runId: string, input: ReportDraftInput) {
   const ctx = await authorizeProject(projectId);
   const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'];
@@ -375,11 +371,18 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
       calculationRunId: runId,
       title: validated.title,
       status: 'draft',
+      includeFunderBreakdown: validated.includeFunderBreakdown,
       createdBy: ctx.user.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
     .returning();
+
+  // Single source of truth for which sections a report has and their order —
+  // shared with the editable detail view and the print/PDF view so a report's
+  // stored sections always match what those views render. funder_breakdown is
+  // only included when the report opts in.
+  const initialSections = getInitialSectionTypes(validated.includeFunderBreakdown);
 
   const sections = initialSections.map((type, idx) => ({
     organizationId: ctx.organization.id,

@@ -3,6 +3,7 @@ import {
   createGlobalProxySourceAction,
   createGlobalFinancialProxyAction,
   updateGlobalProxyReviewStatusAction,
+  setGlobalProxyManualFxRateAction,
 } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -11,6 +12,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   missing_fields: 'No se puede aprobar: faltan valor, moneda, unidad o año de referencia.',
   invalid_status: 'Estado inválido.',
   not_found: 'Proxy no encontrado.',
+  fx_not_needed: 'Los proxies en USD no necesitan una tasa de conversión.',
+  invalid_rate: 'La tasa debe ser un número mayor a 0.',
+  fx_rate_missing: 'No se puede aprobar: falta la conversión a USD para este proxy.',
   unknown_error: 'Ocurrió un error. Intenta de nuevo.',
 }
 
@@ -147,6 +151,7 @@ export default async function AdminProxiesPage(props: {
             <tr>
               <th className="text-left px-4 py-3 font-medium">Nombre</th>
               <th className="text-left px-4 py-3 font-medium">Valor</th>
+              <th className="text-left px-4 py-3 font-medium">USD</th>
               <th className="text-left px-4 py-3 font-medium">Año</th>
               <th className="text-left px-4 py-3 font-medium">Estado</th>
               <th className="text-right px-4 py-3 font-medium">Acciones</th>
@@ -155,43 +160,81 @@ export default async function AdminProxiesPage(props: {
           <tbody className="divide-y divide-slate-800">
             {proxies.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                   Aún no hay proxies globales.
                 </td>
               </tr>
             ) : (
-              proxies.map((proxy) => (
-                <tr key={proxy.id}>
-                  <td className="px-4 py-3 text-white">{proxy.name}</td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {proxy.value} {proxy.currency}/{proxy.unit}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">{proxy.referenceYear ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {REVIEW_STATUS_LABEL[proxy.reviewStatus] ?? proxy.reviewStatus}
-                  </td>
-                  <td className="px-4 py-3 text-right space-x-3">
-                    {proxy.reviewStatus !== 'approved' && (
-                      <form action={updateGlobalProxyReviewStatusAction} className="inline">
-                        <input type="hidden" name="proxyId" value={proxy.id} />
-                        <input type="hidden" name="status" value="approved" />
-                        <button type="submit" className="text-xs font-medium text-green-400 hover:underline">
-                          Aprobar
-                        </button>
-                      </form>
-                    )}
-                    {proxy.reviewStatus !== 'rejected' && (
-                      <form action={updateGlobalProxyReviewStatusAction} className="inline">
-                        <input type="hidden" name="proxyId" value={proxy.id} />
-                        <input type="hidden" name="status" value="rejected" />
-                        <button type="submit" className="text-xs font-medium text-red-400 hover:underline">
-                          Rechazar
-                        </button>
-                      </form>
-                    )}
-                  </td>
-                </tr>
-              ))
+              proxies.map((proxy) => {
+                const needsManualFx = Boolean(proxy.currency && proxy.currency !== 'USD' && proxy.currency !== 'COP' && !proxy.valueUsd)
+                return (
+                  <tr key={proxy.id}>
+                    <td className="px-4 py-3 text-white">{proxy.name}</td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {proxy.value} {proxy.currency}/{proxy.unit}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {proxy.currency === 'USD' ? (
+                        <span className="text-slate-500">— (ya USD)</span>
+                      ) : proxy.valueUsd ? (
+                        <span className="text-green-400">{proxy.valueUsd} USD</span>
+                      ) : proxy.currency === 'COP' ? (
+                        <span className="text-slate-500">Auto (TRM) al aprobar</span>
+                      ) : (
+                        <form action={setGlobalProxyManualFxRateAction} className="flex flex-wrap items-center gap-1.5">
+                          <input type="hidden" name="proxyId" value={proxy.id} />
+                          <input
+                            name="rateToUsd"
+                            type="text"
+                            required
+                            placeholder={`Tasa (${proxy.currency}/USD)`}
+                            className="w-28 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white placeholder:text-slate-500"
+                          />
+                          <input
+                            name="source"
+                            type="text"
+                            required
+                            placeholder="Fuente"
+                            className="w-24 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white placeholder:text-slate-500"
+                          />
+                          <button type="submit" className="text-xs font-medium text-amber-400 hover:underline whitespace-nowrap">
+                            Fijar tasa
+                          </button>
+                        </form>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">{proxy.referenceYear ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {REVIEW_STATUS_LABEL[proxy.reviewStatus] ?? proxy.reviewStatus}
+                    </td>
+                    <td className="px-4 py-3 text-right space-x-3">
+                      {proxy.reviewStatus !== 'approved' && (
+                        <form action={updateGlobalProxyReviewStatusAction} className="inline">
+                          <input type="hidden" name="proxyId" value={proxy.id} />
+                          <input type="hidden" name="status" value="approved" />
+                          <button
+                            type="submit"
+                            disabled={needsManualFx}
+                            className="text-xs font-medium text-green-400 hover:underline disabled:text-slate-600 disabled:no-underline disabled:cursor-not-allowed"
+                            title={needsManualFx ? 'Fija primero la tasa a USD' : undefined}
+                          >
+                            Aprobar
+                          </button>
+                        </form>
+                      )}
+                      {proxy.reviewStatus !== 'rejected' && (
+                        <form action={updateGlobalProxyReviewStatusAction} className="inline">
+                          <input type="hidden" name="proxyId" value={proxy.id} />
+                          <input type="hidden" name="status" value="rejected" />
+                          <button type="submit" className="text-xs font-medium text-red-400 hover:underline">
+                            Rechazar
+                          </button>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

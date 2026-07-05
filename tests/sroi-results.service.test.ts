@@ -268,6 +268,18 @@ describe('report foundation', () => {
     expect(draft.title).toBe('My Report');
     const fetched = await getReportDraft(PROJECT_ID, draft.id);
     expect(fetched.sections).toHaveLength(12);
+    expect(fetched.sections.some((s: any) => s.sectionType === 'funder_breakdown')).toBe(false);
+  });
+
+  it('includes the funder_breakdown section when requested (13 sections)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'analyst' } } as any);
+    const run = { id: 'run-2', projectId: PROJECT_ID, organizationId: ORG_ID };
+    mockDb.sroiCalculationRuns.push(run);
+    const draft = await createReportDraftFromRun(PROJECT_ID, 'run-2', { title: 'Funder Report', includeFunderBreakdown: true });
+    expect(draft.includeFunderBreakdown).toBe(true);
+    const fetched = await getReportDraft(PROJECT_ID, draft.id);
+    expect(fetched.sections).toHaveLength(13);
+    expect(fetched.sections.some((s: any) => s.sectionType === 'funder_breakdown')).toBe(true);
   });
   it('updates report section if not locked', async () => {
     const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft' };
