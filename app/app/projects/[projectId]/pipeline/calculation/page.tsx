@@ -24,6 +24,9 @@ import {
   getSroiCalculationReadiness,
   calculateSroiPreview,
 } from '@/lib/pipeline/sroi-calculation'
+import { listFundersForCurrentOrganization, FUNDER_TYPES } from '@/lib/pipeline/funders'
+import { listAllocationsForProject, sumPct } from '@/lib/pipeline/allocations'
+import { createFunderAction, addAllocationAction, archiveAllocationAction } from './funderAllocation.actions'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { db } from '@/db/client'
 import {
@@ -113,6 +116,20 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
   const inputMap     = new Map(inputs.map((i) => [i.assignmentId, i]))
   const filterSetMap = new Map(filterSets.map((f) => [f.assignmentId, f]))
 
+  // Fase 1c — funders + funder↔outcome attribution.
+  const fundersList = await listFundersForCurrentOrganization()
+  const allocations = await listAllocationsForProject(projectId)
+  // Outcomes that actually feed the calculation (unique, in assignment order).
+  const calcOutcomes = Array.from(
+    new Map(assignmentsData.map(({ outcome }) => [outcome.id, outcome])).values()
+  )
+  const allocationsByOutcome = new Map<string, typeof allocations>()
+  for (const a of allocations) {
+    const list = allocationsByOutcome.get(a.outcomeId) ?? []
+    list.push(a)
+    allocationsByOutcome.set(a.outcomeId, list)
+  }
+
   // Lookup map for preview line items: assignmentId → display names
   const assignmentLookup = new Map(
     assignmentsData.map(({ assignment, outcome, proxy }) => [
@@ -143,6 +160,24 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
   async function handleCalculateRun(formData: FormData) {
     'use server'
     await calculateSroiRunAction(formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  async function handleCreateFunder(formData: FormData) {
+    'use server'
+    await createFunderAction(formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  async function handleAddAllocation(formData: FormData) {
+    'use server'
+    await addAllocationAction(formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  async function handleArchiveAllocation(formData: FormData) {
+    'use server'
+    await archiveAllocationAction(formData)
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
@@ -282,6 +317,14 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                 <span className="font-medium text-foreground">Monto actual:</span>{' '}
                 <span className="text-foreground">{investment.amount} {investment.currency}</span>
               </p>
+              <p>
+                <span className="font-medium text-foreground">Equivalente USD:</span>{' '}
+                {investment.amountUsd ? (
+                  <span className="text-foreground tabular-nums">{parseFloat(investment.amountUsd).toLocaleString()} USD</span>
+                ) : (
+                  <span className="text-red-600">pendiente de conversión</span>
+                )}
+              </p>
               {investment.year && (
                 <p>
                   <span className="font-medium text-foreground">Año de referencia:</span>{' '}
@@ -299,6 +342,40 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
 
           <form action={handleUpsertInvestment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="hidden" name="projectId" value={projectId} />
+
+            <div>
+              <label htmlFor="inv-funder" className="block text-sm font-medium text-foreground">
+                Financiador
+              </label>
+              <select
+                id="inv-funder"
+                name="funderId"
+                disabled={!canEdit}
+                defaultValue={investment?.funderId ?? ''}
+                className={INPUT_CLASS}
+              >
+                <option value="">— Sin especificar —</option>
+                {fundersList.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="inv-ctype" className="block text-sm font-medium text-foreground">
+                Tipo de aporte
+              </label>
+              <select
+                id="inv-ctype"
+                name="contributionType"
+                disabled={!canEdit}
+                defaultValue={investment?.contributionType ?? 'cash'}
+                className={INPUT_CLASS}
+              >
+                <option value="cash">Efectivo</option>
+                <option value="in_kind">En especie</option>
+              </select>
+            </div>
 
             <div>
               <label htmlFor="inv-amount" className="block text-sm font-medium text-foreground">
@@ -371,6 +448,96 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
               </div>
             )}
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Fase 1c — Funder attribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Atribución por financiador</CardTitle>
+          <CardDescription>
+            Asigna qué porcentaje del valor social de cada resultado corresponde a cada financiador.
+            El remanente sin asignar queda como <strong className="text-foreground">valor no atribuido</strong>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {canEdit && (
+            <form action={handleCreateFunder} className="flex flex-wrap items-end gap-3 border-b border-border pb-4">
+              <div className="flex-1 min-w-[180px]">
+                <label htmlFor="new-funder-name" className="block text-xs font-medium text-foreground">Nuevo financiador</label>
+                <input id="new-funder-name" name="name" type="text" placeholder="Nombre del financiador" className={INPUT_CLASS} />
+              </div>
+              <div>
+                <label htmlFor="new-funder-type" className="block text-xs font-medium text-foreground">Tipo</label>
+                <select id="new-funder-type" name="funderType" defaultValue="foundation" className={INPUT_CLASS}>
+                  {FUNDER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <button type="submit" className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                Agregar financiador
+              </button>
+            </form>
+          )}
+
+          {calcOutcomes.length === 0 ? (
+            <EmptyState
+              title="No hay resultados en el cálculo"
+              description="Asigna proxies a resultados para poder atribuir su valor social a financiadores."
+            />
+          ) : (
+            <div className="space-y-4">
+              {calcOutcomes.map((outcome) => {
+                const outcomeAllocs = allocationsByOutcome.get(outcome.id) ?? []
+                const allocated = sumPct(outcomeAllocs.map((a) => String(a.allocationPct)))
+                const remaining = (100 - parseFloat(allocated)).toFixed(2)
+                return (
+                  <div key={outcome.id} className="rounded-md border border-border p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-sm text-foreground">{outcome.title}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        Atribuido {allocated}% · Disponible {remaining}%
+                      </p>
+                    </div>
+
+                    {outcomeAllocs.length > 0 && (
+                      <ul className="space-y-1">
+                        {outcomeAllocs.map((a) => (
+                          <li key={a.id} className="flex items-center justify-between text-sm">
+                            <span className="text-foreground">{a.funderName} — <span className="tabular-nums">{a.allocationPct}%</span></span>
+                            {canEdit && (
+                              <form action={handleArchiveAllocation}>
+                                <input type="hidden" name="projectId" value={projectId} />
+                                <input type="hidden" name="allocationId" value={a.id} />
+                                <button type="submit" className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Quitar</button>
+                              </form>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {canEdit && fundersList.length > 0 && parseFloat(remaining) > 0 && (
+                      <form action={handleAddAllocation} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="projectId" value={projectId} />
+                        <input type="hidden" name="outcomeId" value={outcome.id} />
+                        <div className="flex-1 min-w-[160px]">
+                          <label htmlFor={`alloc-funder-${outcome.id}`} className="block text-[10px] font-medium text-muted-foreground">Financiador</label>
+                          <select id={`alloc-funder-${outcome.id}`} name="funderId" className={INPUT_CLASS}>
+                            {fundersList.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                          </select>
+                        </div>
+                        <div className="w-24">
+                          <label htmlFor={`alloc-pct-${outcome.id}`} className="block text-[10px] font-medium text-muted-foreground">%</label>
+                          <input id={`alloc-pct-${outcome.id}`} name="allocationPct" type="text" placeholder="0" className={INPUT_CLASS} />
+                        </div>
+                        <button type="submit" className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Atribuir</button>
+                      </form>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -727,6 +894,39 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                 </TableBody>
               </Table>
             </div>
+
+            {/* Per-funder breakdown */}
+            {preview.result.fundersBreakdown && preview.result.fundersBreakdown.length > 0 && (
+              <div>
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Desglose por financiador (USD)</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Financiador</TableHead>
+                      <TableHead className="text-right">Inversión</TableHead>
+                      <TableHead className="text-right">Valor atribuido</TableHead>
+                      <TableHead className="text-right">Ratio SROI</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {preview.result.fundersBreakdown.map((f) => (
+                      <TableRow key={f.funderId}>
+                        <TableCell className="font-medium text-foreground">{f.funderName || '—'}</TableCell>
+                        <TableCell className="text-right tabular-nums">{parseFloat(f.investmentUsd).toLocaleString()} USD</TableCell>
+                        <TableCell className="text-right tabular-nums">{parseFloat(f.attributedNsvUsd).toLocaleString()} USD</TableCell>
+                        <TableCell className="text-right font-semibold tabular-nums font-ibm-plex-mono">{parseFloat(f.sroiRatio).toFixed(2)}:1</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Valor social no atribuido:{' '}
+                  <span className="font-medium text-foreground tabular-nums">
+                    {parseFloat(preview.result.unattributedNsvUsd).toLocaleString()} USD
+                  </span>
+                </p>
+              </div>
+            )}
 
             {/* Register run */}
             {canEdit && (
