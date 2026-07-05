@@ -6,6 +6,7 @@
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildAdvisorContext, StellaBuildContextError } from '@/lib/stella/context/build-advisor-context'
+import { buildContextHash } from '@/lib/stella/context/build-context-hash'
 import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/prompts/advisor-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
@@ -95,6 +96,7 @@ export async function getStellaAdvisor(
     // Build prompts from existing builders
     const systemPrompt = buildAdvisorSystemPrompt(step)
     const userMessage = buildAdvisorUserMessage(step, context)
+    const contextHash = buildContextHash(context)
 
     // Generate via Gemini adapter (real or mock in tests)
     const adapter = getGeminiAdapter()
@@ -102,6 +104,7 @@ export async function getStellaAdvisor(
       role: 'advisor',
       systemPrompt,
       userMessage,
+      contextHash,
     })
 
     // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
@@ -116,7 +119,7 @@ export async function getStellaAdvisor(
         createdBy: ctx.user.id,
         stellaRole: 'advisor',
         pipelineStep: step,
-        contextHash: '',
+        contextHash,
         responseJson: data as unknown,
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,

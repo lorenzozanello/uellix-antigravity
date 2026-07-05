@@ -572,6 +572,15 @@ describe('getStellaComposer server action', () => {
       expect(insertPayload.createdBy).toBe('user-uuid-001')
     })
 
+    it('inserts a populated 64-char SHA-256 contextHash (not empty)', async () => {
+      setupSuccessfulCall()
+
+      await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
+
+      const insertPayload = mockInsertValues.mock.calls[0][0]
+      expect(insertPayload.contextHash).toMatch(/^[a-f0-9]{64}$/)
+    })
+
     it('returns AUDIT_ERROR when insert fails', async () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
