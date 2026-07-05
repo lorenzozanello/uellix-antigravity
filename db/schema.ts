@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer, numeric, date } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -504,4 +504,70 @@ export const signupAllowlist = pgTable('signup_allowlist', {
 }, (table) => [
   unique('signup_allowlist_pattern_unique').on(table.pattern),
   check('signup_allowlist_type_check', sql`${table.type} IN ('email', 'domain')`),
+])
+
+// ─── Fase 1: Multi-funder investments + FX-to-USD normalization ───────────────
+// Foundation tables (Etapa 1a). The calculation-engine wiring and the
+// project_investments / financial_proxies column additions land in Etapa 1b.
+// Design: docs/superpowers/specs/2026-07-03-multi-funder-investment-usd-design.md
+
+// Per-organization catalog of funding entities. No approval workflow (unlike
+// financial_proxies) — any analyst+ can create one. Not shared across orgs.
+export const funders = pgTable('funders', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  funderType: varchar('funder_type', { length: 50 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('funders_funder_type_check', sql`${table.funderType} IN ('public', 'private', 'foundation', 'multilateral', 'individual', 'other')`),
+  index('idx_funders_organization_id').on(table.organizationId),
+])
+
+// Reusable, cached lookup of historical exchange rates to USD. Conversion:
+// amount_usd = amount / rate_to_usd (rate_to_usd = units of `currency` per 1 USD).
+// organization_id is NULL for auto-fetched COP rates (shared/global, cached once)
+// and NOT NULL for manual entries of other currencies (org-scoped, so one org's
+// typo cannot corrupt another org's calculation).
+export const fxRates = pgTable('fx_rates', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  currency: varchar('currency', { length: 10 }).notNull(),
+  rateDate: date('rate_date').notNull(),
+  rateToUsd: numeric('rate_to_usd', { precision: 20, scale: 6 }).notNull(),
+  source: text('source').notNull(),
+  sourceType: varchar('source_type', { length: 20 }).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('fx_rates_source_type_check', sql`${table.sourceType} IN ('auto_fetched', 'manual')`),
+  check('fx_rates_rate_to_usd_check', sql`${table.rateToUsd} > 0`),
+  // Cache key for the shared auto-fetched rates (org NULL): one row per
+  // (currency, date). Manual per-org rates are deduped separately below.
+  uniqueIndex('fx_rates_shared_currency_date_unique').on(table.currency, table.rateDate).where(sql`${table.organizationId} IS NULL`),
+  uniqueIndex('fx_rates_org_currency_date_unique').on(table.organizationId, table.currency, table.rateDate).where(sql`${table.organizationId} IS NOT NULL`),
+  index('idx_fx_rates_currency_date').on(table.currency, table.rateDate),
+])
+
+// Many-to-many attribution of funders to outcomes with a percentage split.
+// The sum of active allocation_pct per outcome must not exceed 100% — enforced
+// in application code (requires summing across rows), not as a DB constraint.
+export const outcomeFunderAllocations = pgTable('outcome_funder_allocations', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  funderId: uuid('funder_id').references(() => funders.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  allocationPct: numeric('allocation_pct', { precision: 7, scale: 4 }).notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('outcome_funder_allocations_pct_check', sql`${table.allocationPct} > 0 AND ${table.allocationPct} <= 100`),
+  check('outcome_funder_allocations_status_check', sql`${table.status} IN ('active', 'archived')`),
+  index('idx_ofa_outcome_id').on(table.outcomeId),
+  index('idx_ofa_funder_id').on(table.funderId),
+  index('idx_ofa_organization_id').on(table.organizationId),
 ])
