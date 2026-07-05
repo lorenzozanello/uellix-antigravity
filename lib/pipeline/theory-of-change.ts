@@ -6,6 +6,15 @@
 // feeds the SROI calculation, instead of becoming a parallel narrative.
 // Design: docs/superpowers/specs/2026-07-05-theory-of-change-structured-design.md
 
+import { db } from '@/db/client'
+import { theoryOfChangeNodes, theoryOfChangeLinks, outcomes } from '@/db/schema'
+import { and, eq, inArray } from 'drizzle-orm'
+import { z } from 'zod'
+import { requireOrganizationAccess } from '@/lib/auth/session'
+import { hasRole } from '@/lib/auth/permissions'
+import { type Role } from '@/lib/auth/roles'
+import { logAuditAction } from '@/lib/audit/logger'
+
 export type ToCNodeType = 'activity' | 'output' | 'outcome'
 
 /**
@@ -17,15 +26,6 @@ export type ToCNodeType = 'activity' | 'output' | 'outcome'
 export function isValidLinkTransition(fromType: ToCNodeType, toType: ToCNodeType): boolean {
   return (fromType === 'activity' && toType === 'output') || (fromType === 'output' && toType === 'outcome')
 }
-
-import { db } from '@/db/client'
-import { theoryOfChangeNodes, theoryOfChangeLinks, outcomes } from '@/db/schema'
-import { and, eq, inArray } from 'drizzle-orm'
-import { z } from 'zod'
-import { requireOrganizationAccess } from '@/lib/auth/session'
-import { hasRole } from '@/lib/auth/permissions'
-import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
 
 const CreateNodeSchema = z.object({
   nodeType: z.enum(['activity', 'output', 'outcome']),
