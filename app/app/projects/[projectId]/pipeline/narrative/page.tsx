@@ -301,16 +301,16 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
             <form action={handleCreateLink} className="flex flex-wrap items-end gap-2">
               <input type="hidden" name="projectId" value={projectId} />
               <div>
-                <label className="block text-xs text-muted-foreground">Desde</label>
-                <select name="fromNodeId" required className={INPUT_CLASS}>
+                <label htmlFor="toc-from-node" className="block text-xs text-muted-foreground">Desde</label>
+                <select id="toc-from-node" name="fromNodeId" required className={INPUT_CLASS}>
                   {[...activities, ...outputs].map((n) => (
                     <option key={n.id} value={n.id}>{n.title} ({n.nodeType})</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-muted-foreground">Hacia</label>
-                <select name="toNodeId" required className={INPUT_CLASS}>
+                <label htmlFor="toc-to-node" className="block text-xs text-muted-foreground">Hacia</label>
+                <select id="toc-to-node" name="toNodeId" required className={INPUT_CLASS}>
                   {[...outputs, ...outcomeNodes].map((n) => (
                     <option key={n.id} value={n.id}>
                       {n.nodeType === 'outcome' ? outcomeById.get(n.outcomeId ?? '')?.title ?? n.title : n.title} ({n.nodeType})
@@ -319,8 +319,8 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
                 </select>
               </div>
               <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs text-muted-foreground">Supuesto (opcional)</label>
-                <input name="assumption" type="text" className={INPUT_CLASS} />
+                <label htmlFor="toc-assumption" className="block text-xs text-muted-foreground">Supuesto (opcional)</label>
+                <input id="toc-assumption" name="assumption" type="text" className={INPUT_CLASS} />
               </div>
               <button type="submit" className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                 Enlazar
