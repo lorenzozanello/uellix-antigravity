@@ -11,6 +11,9 @@ const organizationJsonLd = {
   name: "Uellix",
   legalName: "The Balance Corp",
   url: siteUrl,
+  // 1024x1024 raster, matches Google's Logo structured-data requirement
+  // (square, PNG/JPG/GIF, min 112x112 — the SVG brand marks don't qualify).
+  logo: `${siteUrl}/brand/uellix-logo-icon-from-guide.png`,
   description:
     "Plataforma de inteligencia de impacto social audit-ready: estructura proyectos, conecta evidencias, documenta proxies y filtros SROI y genera reportes preparados para revisión externa.",
   email: "hola@uellix.com",
