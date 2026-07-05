@@ -157,6 +157,32 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
   return inserted[0]
 }
 
+// ─── Project discount rate (Fase 1e) ─────────────────────────────────────────
+
+export async function setProjectDiscountRate(projectId: string, discountRatePct: string | null) {
+  const ctx = await authorize(projectId)
+  let value: string | null = null
+  if (discountRatePct !== null && discountRatePct !== '') {
+    const n = parseFloat(discountRatePct)
+    if (isNaN(n) || n < 0 || n > 100) throw new Error('La tasa de descuento debe estar entre 0 y 100%')
+    value = String(n)
+  }
+  await db
+    .update(projects)
+    .set({ discountRatePct: value, updatedAt: new Date() })
+    .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)))
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    actorUserId: ctx.user.id,
+    entityType: 'project',
+    entityId: projectId,
+    action: 'project.discount_rate_updated',
+    afterJson: { discountRatePct: value },
+  })
+  return { discountRatePct: value }
+}
+
 // ─── Assignment Input ────────────────────────────────────────────────────────
 
 export async function upsertSroiAssignmentInput(projectId: string, assignmentId: string, input: AssignmentInput) {
@@ -214,6 +240,7 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
   assignmentData: AssignmentData[]
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[]
   fundersList: (typeof funders.$inferSelect)[]
+  discountRatePct: string | null
 }> {
   // Load ALL active investment contributions (Fase 1b — a project can have many).
   const investments = await db
@@ -221,13 +248,21 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
     .from(projectInvestments)
     .where(and(eq(projectInvestments.projectId, projectId), eq(projectInvestments.organizationId, orgId), eq(projectInvestments.status, 'active')))
 
+  // Fase 1e — project-level annual discount rate (NULL = no discounting).
+  const projRow = await db
+    .select({ discountRatePct: projects.discountRatePct })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.organizationId, orgId)))
+    .then(r => r[0])
+  const discountRatePct = projRow?.discountRatePct ?? null
+
   // Load active assignments
   const assignments = await db
     .select()
     .from(outcomeProxyAssignments)
     .where(and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.organizationId, orgId), eq(outcomeProxyAssignments.assignmentStatus, 'active')))
 
-  if (assignments.length === 0) return { investments, assignmentData: [], allocations: [], fundersList: [] }
+  if (assignments.length === 0) return { investments, assignmentData: [], allocations: [], fundersList: [], discountRatePct }
 
   const assignmentIds = assignments.map(a => a.id)
   const proxyIds = assignments.map(a => a.proxyId)
@@ -268,7 +303,7 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
     ? await db.select().from(funders).where(inArray(funders.id, funderIds))
     : []
 
-  return { investments, assignmentData, allocations, fundersList }
+  return { investments, assignmentData, allocations, fundersList, discountRatePct }
 }
 
 // ─── Readiness ───────────────────────────────────────────────────────────────
@@ -483,6 +518,7 @@ function runDeterministicCalc(
   assignmentData: AssignmentData[],
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[],
   fundersList: (typeof funders.$inferSelect)[],
+  discountRatePct: string | null,
 ): CalcResult {
   // All contributions are normalized to USD (amount_usd, frozen at save time);
   // readiness guarantees every active contribution has one.
@@ -491,6 +527,10 @@ function runDeterministicCalc(
   if (totalInvestment.lte(0)) throw new Error('Investment amount must be > 0')
 
   const currency = 'USD'
+  // Fase 1e — present value: year `yr` is discounted by 1/(1+r)^(yr-1), so year 1
+  // is undiscounted (consistent with the dropoff base year). r = 0 → factor 1
+  // for every year, i.e. exactly the pre-1e result (zero regression).
+  const onePlusDiscount = new Decimal(1).plus(dec(discountRatePct).div(100))
 
   let grossSocialValue = new Decimal(0)
   let netSocialValue = new Decimal(0)
@@ -518,7 +558,8 @@ function runDeterministicCalc(
     let adjustedValue = new Decimal(0)
     for (let yr = 1; yr <= durationYears; yr++) {
       const dropoffFactor = dropoffBase.pow(yr - 1)
-      adjustedValue = adjustedValue.plus(baseGrossValue.mul(baseAdjustmentFactor).mul(dropoffFactor))
+      const discountFactor = new Decimal(1).div(onePlusDiscount.pow(yr - 1))
+      adjustedValue = adjustedValue.plus(baseGrossValue.mul(baseAdjustmentFactor).mul(dropoffFactor).mul(discountFactor))
     }
 
     const grossValue = baseGrossValue.mul(durationYears)
@@ -587,10 +628,10 @@ export async function calculateSroiPreview(projectId: string) {
     return { canCalculate: false, readiness, result: null }
   }
 
-  const { investments, assignmentData, allocations, fundersList } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
-  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList)
+  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
 
   return {
     canCalculate: true,
@@ -604,7 +645,10 @@ export async function calculateSroiPreview(projectId: string) {
       lineItems: result.lineItems,
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
-      formulaNotes: 'Values normalized to USD (Fase 1b). No discount rate applied.',
+      discountRatePct: discountRatePct,
+      formulaNotes: discountRatePct && parseNum(discountRatePct) > 0
+        ? `Values normalized to USD; multi-year outcomes present-valued at ${discountRatePct}% annual discount rate.`
+        : 'Values normalized to USD. No discount rate applied.',
     },
   }
 }
@@ -631,7 +675,7 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
     return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
   }
 
-  const { investments, assignmentData, allocations, fundersList } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
@@ -645,7 +689,7 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
         dropoffPct: String(scenarioFilterPct(parseNum(d.filterSet.dropoffPct), sc, deltaPp)),
       },
     }))
-    const result = runDeterministicCalc(investments, adjusted, allocations, fundersList)
+    const result = runDeterministicCalc(investments, adjusted, allocations, fundersList, discountRatePct)
     return {
       scenario: sc,
       currency: result.currency,
@@ -669,10 +713,10 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     throw new Error(`Cannot calculate: ${readiness.blockingReasons.join('; ')}`)
   }
 
-  const { investments, assignmentData, allocations, fundersList } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
-  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList)
+  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
 
   const calculatedAt = new Date()
 
@@ -726,7 +770,10 @@ export async function calculateAndPersistSroiRun(projectId: string) {
           durationYears: li.durationYears,
         },
       })),
-      formulaNotes: 'Values normalized to USD (Fase 1b). No discount rate applied.',
+      discountRatePct: discountRatePct,
+      formulaNotes: discountRatePct && parseNum(discountRatePct) > 0
+        ? `Values normalized to USD; multi-year outcomes present-valued at ${discountRatePct}% annual discount rate.`
+        : 'Values normalized to USD. No discount rate applied.',
       calculatedBy: ctx.user.id,
       calculatedAt: calculatedAt.toISOString(),
       readiness,

@@ -1,0 +1,2 @@
+ALTER TABLE "projects" ADD COLUMN "discount_rate_pct" numeric(5, 2);--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_discount_rate_check" CHECK ("projects"."discount_rate_pct" IS NULL OR ("projects"."discount_rate_pct" >= 0 AND "projects"."discount_rate_pct" <= 100));

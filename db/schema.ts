@@ -109,12 +109,17 @@ export const projects = pgTable('projects', {
   startDate: timestamp('start_date'),
   endDate: timestamp('end_date'),
   targetPopulationDescription: text('target_population_description'),
+  // Fase 1e — annual discount rate (%) for present-valuing multi-year outcomes.
+  // NULL / 0 = no discounting (prior behavior). Additive & nullable — safe to
+  // apply to prod any time; pre-1e code simply ignores it.
+  discountRatePct: numeric('discount_rate_pct', { precision: 5, scale: 2 }),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('status_check', sql`${table.status} IN ('draft', 'active', 'completed', 'archived')`),
+  check('projects_discount_rate_check', sql`${table.discountRatePct} IS NULL OR (${table.discountRatePct} >= 0 AND ${table.discountRatePct} <= 100)`),
   index('idx_projects_organization_id').on(table.organizationId),
   index('idx_projects_portfolio_id').on(table.portfolioId),
 ])

@@ -383,6 +383,24 @@ describe('Per-funder breakdown (engine wiring)', () => {
   });
 });
 
+describe('NPV / discount rate', () => {
+  it('present-values a multi-year stream at the project discount rate', async () => {
+    seedHappyData({ filter: { durationYears: 3, dropoffPct: '0' } });
+    mockDb.projects.forEach((p) => { p.discountRatePct = '10'; });
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    // 1000/1.1^0 + 1000/1.1^1 + 1000/1.1^2 = 2735.5372
+    expect(preview.result!.netSocialValue).toBeCloseTo(2735.5372, 2);
+    expect(preview.result!.sroiRatio).toBeCloseTo(2.7355, 3);
+  });
+
+  it('does not discount when the rate is null (zero regression)', async () => {
+    seedHappyData({ filter: { durationYears: 3, dropoffPct: '0' } });
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    expect(preview.result!.netSocialValue).toBeCloseTo(3000);
+    expect(preview.result!.sroiRatio).toBeCloseTo(3);
+  });
+});
+
 describe('Sensitivity scenarios', () => {
   it('computes conservative < base < optimistic ratios (uniform ±delta shift)', async () => {
     seedHappyData({ filter: { deadweightPct: '20' } });

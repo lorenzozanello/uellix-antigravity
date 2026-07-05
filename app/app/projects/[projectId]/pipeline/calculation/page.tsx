@@ -28,6 +28,7 @@ import {
 import { listFundersForCurrentOrganization, FUNDER_TYPES } from '@/lib/pipeline/funders'
 import { listAllocationsForProject, sumPct } from '@/lib/pipeline/allocations'
 import { createFunderAction, addAllocationAction, archiveAllocationAction } from './funderAllocation.actions'
+import { setDiscountRateAction } from './setDiscountRate.action'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { db } from '@/db/client'
 import {
@@ -37,6 +38,7 @@ import {
   sroiFilterSets,
   financialProxies,
   outcomes,
+  projects,
 } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -145,6 +147,14 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     allocationsByOutcome.set(a.outcomeId, list)
   }
 
+  // Fase 1e — project-level discount rate for present-valuing multi-year outcomes.
+  const projectRow = await db
+    .select({ discountRatePct: projects.discountRatePct })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)))
+    .limit(1)
+    .then((rows) => rows[0] ?? null)
+
   // Lookup map for preview line items: assignmentId → display names
   const assignmentLookup = new Map(
     assignmentsData.map(({ assignment, outcome, proxy }) => [
@@ -193,6 +203,12 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
   async function handleArchiveAllocation(formData: FormData) {
     'use server'
     await archiveAllocationAction(formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  async function handleSetDiscountRate(formData: FormData) {
+    'use server'
+    await setDiscountRateAction(formData)
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
@@ -462,6 +478,47 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                 </button>
               </div>
             )}
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Fase 1e — Discount rate */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tasa de descuento</CardTitle>
+          <CardDescription>
+            Tasa anual para traer a valor presente los resultados que se extienden varios años.
+            0% o vacío = sin descuento. El año 1 no se descuenta; el año N se divide por (1 + tasa)<sup>N−1</sup>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={handleSetDiscountRate} className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="projectId" value={projectId} />
+            <div className="w-40">
+              <label htmlFor="discount-rate" className="block text-sm font-medium text-foreground">
+                Tasa anual (%)
+              </label>
+              <input
+                id="discount-rate"
+                name="discountRatePct"
+                type="text"
+                inputMode="decimal"
+                disabled={!canEdit}
+                defaultValue={projectRow?.discountRatePct ?? ''}
+                placeholder="0"
+                className={INPUT_CLASS}
+              />
+            </div>
+            {canEdit && (
+              <button type="submit" className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                Guardar tasa
+              </button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {projectRow?.discountRatePct && parseFloat(projectRow.discountRatePct) > 0
+                ? `Aplicando ${projectRow.discountRatePct}% anual.`
+                : 'Sin descuento (valores nominales).'}
+            </p>
           </form>
         </CardContent>
       </Card>
