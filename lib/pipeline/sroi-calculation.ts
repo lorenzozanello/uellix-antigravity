@@ -27,6 +27,7 @@ import { logAuditAction } from '@/lib/audit/logger'
 import { computeFundersBreakdown, type FunderBreakdownRow } from '@/lib/pipeline/sroi-funders'
 import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
+import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -606,6 +607,56 @@ export async function calculateSroiPreview(projectId: string) {
       formulaNotes: 'Values normalized to USD (Fase 1b). No discount rate applied.',
     },
   }
+}
+
+// ─── Sensitivity: conservative / base / optimistic scenarios ──────────────────
+
+export interface SroiScenarioResult {
+  scenario: Scenario
+  currency: string
+  netSocialValue: number
+  netSocialValueExact: string
+  sroiRatio: number
+  sroiRatioExact: string
+}
+
+// Non-persisted sensitivity band: re-runs the deterministic engine with every
+// SROI filter shifted uniformly by ±deltaPp (conservative up, optimistic down),
+// leaving the audited persist path untouched. Reuses the same runDeterministicCalc
+// so the scenarios can never drift from the real formula.
+export async function calculateSroiScenarios(projectId: string, deltaPp: number = SCENARIO_DELTA_PP) {
+  const ctx = await authorize(projectId)
+  const readiness = await getSroiCalculationReadiness(projectId)
+  if (!readiness.canCalculate) {
+    return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
+  }
+
+  const { investments, assignmentData, allocations, fundersList } = await loadCalculationData(projectId, ctx.organization.id)
+  if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
+
+  const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
+    const adjusted: AssignmentData[] = assignmentData.map((d) => ({
+      ...d,
+      filterSet: {
+        ...d.filterSet,
+        deadweightPct: String(scenarioFilterPct(parseNum(d.filterSet.deadweightPct), sc, deltaPp)),
+        attributionPct: String(scenarioFilterPct(parseNum(d.filterSet.attributionPct), sc, deltaPp)),
+        displacementPct: String(scenarioFilterPct(parseNum(d.filterSet.displacementPct), sc, deltaPp)),
+        dropoffPct: String(scenarioFilterPct(parseNum(d.filterSet.dropoffPct), sc, deltaPp)),
+      },
+    }))
+    const result = runDeterministicCalc(investments, adjusted, allocations, fundersList)
+    return {
+      scenario: sc,
+      currency: result.currency,
+      netSocialValue: result.netSocialValue,
+      netSocialValueExact: result.netSocialValueExact,
+      sroiRatio: result.sroiRatio,
+      sroiRatioExact: result.sroiRatioExact,
+    }
+  })
+
+  return { canCalculate: true as const, readiness, scenarios, deltaPp }
 }
 
 // ─── Persist calculation run ──────────────────────────────────────────────────

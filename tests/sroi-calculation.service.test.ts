@@ -99,6 +99,7 @@ import {
   calculateSroiPreview,
   calculateAndPersistSroiRun,
   getSroiCalculationReadiness,
+  calculateSroiScenarios,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -379,6 +380,32 @@ describe('Per-funder breakdown (engine wiring)', () => {
     // funder-1 invested but has no allocation → attributed 0, all unattributed.
     expect(preview.result!.fundersBreakdown[0].attributedNsvUsd).toBe('0.0000');
     expect(preview.result!.unattributedNsvUsd).toBe('1000.0000');
+  });
+});
+
+describe('Sensitivity scenarios', () => {
+  it('computes conservative < base < optimistic ratios (uniform ±delta shift)', async () => {
+    seedHappyData({ filter: { deadweightPct: '20' } });
+    const res = await calculateSroiScenarios(PROJECT_ID, 10);
+    expect(res.canCalculate).toBe(true);
+    const byName = Object.fromEntries(res.scenarios!.map((s) => [s.scenario, s.sroiRatio]));
+    // ALL four filters shift uniformly by ±10pp (base others = 0):
+    //   base:         (1-.20) = 0.80
+    //   conservative: (1-.30)(1-.10)(1-.10) = 0.567
+    //   optimistic:   (1-.10) = 0.90  (attribution/displacement/dropoff clamp at 0)
+    expect(byName.conservative).toBeCloseTo(0.567);
+    expect(byName.base).toBeCloseTo(0.8);
+    expect(byName.optimistic).toBeCloseTo(0.9);
+    expect(byName.conservative).toBeLessThan(byName.base);
+    expect(byName.base).toBeLessThan(byName.optimistic);
+  });
+
+  it('returns canCalculate false (no scenarios) when readiness fails', async () => {
+    // no data seeded → not ready
+    mockDb.projects.push({ id: PROJECT_ID, organizationId: ORG_ID });
+    const res = await calculateSroiScenarios(PROJECT_ID, 10);
+    expect(res.canCalculate).toBe(false);
+    expect(res.scenarios).toBeNull();
   });
 });
 

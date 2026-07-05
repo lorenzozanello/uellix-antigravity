@@ -23,6 +23,7 @@ import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
   calculateSroiPreview,
+  calculateSroiScenarios,
 } from '@/lib/pipeline/sroi-calculation'
 import { listFundersForCurrentOrganization, FUNDER_TYPES } from '@/lib/pipeline/funders'
 import { listAllocationsForProject, sumPct } from '@/lib/pipeline/allocations'
@@ -51,6 +52,12 @@ const RUN_STATUS: Record<string, { variant: 'success' | 'warning' | 'danger' | '
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
+const SCENARIO_META: Record<string, { label: string; border: string }> = {
+  conservative: { label: 'Conservador', border: 'border-amber-300 bg-amber-50' },
+  base:         { label: 'Base',        border: 'border-border bg-muted/30' },
+  optimistic:   { label: 'Optimista',   border: 'border-green-300 bg-green-50' },
+}
+
 export default async function CalculationPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
   const ctx = await requireOrganizationAccess()
@@ -70,6 +77,14 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     preview = await calculateSroiPreview(projectId)
   } catch (err) {
     previewError = err instanceof Error ? err.message : 'Unknown error'
+  }
+
+  // Sensitivity band (non-persisted). Same non-throwing "not ready" contract.
+  let scenarios: Awaited<ReturnType<typeof calculateSroiScenarios>> | null = null
+  try {
+    scenarios = await calculateSroiScenarios(projectId)
+  } catch {
+    scenarios = null
   }
 
   const runs      = await listSroiCalculationRuns(projectId)
@@ -946,6 +961,38 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                 </form>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sensitivity band */}
+      {scenarios?.canCalculate && scenarios.scenarios && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Análisis de sensibilidad</CardTitle>
+            <CardDescription>
+              Banda conservador / base / optimista del ratio SROI, desplazando todos los filtros
+              (deadweight, atribución, desplazamiento, decaimiento) ±{scenarios.deltaPp} puntos
+              porcentuales de forma uniforme. Es un análisis exploratorio — no modifica el cálculo base.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {scenarios.scenarios.map((s) => {
+                const meta = SCENARIO_META[s.scenario] ?? { label: s.scenario, border: 'border-border bg-muted/30' }
+                return (
+                  <div key={s.scenario} className={`rounded-md border p-4 ${meta.border}`}>
+                    <p className="text-xs font-medium text-muted-foreground">{meta.label}</p>
+                    <p className="mt-1 text-2xl font-bold text-foreground tabular-nums font-ibm-plex-mono">
+                      {parseFloat(s.sroiRatioExact).toFixed(2)}:1
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Valor neto {parseFloat(s.netSocialValueExact).toLocaleString()} {s.currency}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
