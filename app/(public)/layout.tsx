@@ -20,6 +20,18 @@ const organizationJsonLd = {
   slogan: "Convierte el impacto social en evidencia defendible.",
 };
 
+// JSON-LD WebSite — anchors the site name/language as an entity. No
+// `potentialAction: SearchAction`: there is no public site search, and the
+// schema must not claim a capability that doesn't exist.
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Uellix",
+  url: siteUrl,
+  inLanguage: "es",
+  publisher: { "@type": "Organization", name: "Uellix" },
+};
+
 export default function PublicLayout({
   children,
 }: {
@@ -31,6 +43,11 @@ export default function PublicLayout({
         type="application/ld+json"
         // Static, trusted content — safe to inline.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // Static, trusted content — safe to inline.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
 
       {/* Skip link — visible on focus */}

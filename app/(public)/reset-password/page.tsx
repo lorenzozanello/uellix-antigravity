@@ -1,7 +1,15 @@
+import type { Metadata } from 'next'
 import { updatePassword } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+
+// Auth surface — noindex for the same reason as /login (see that file's note).
+export const metadata: Metadata = {
+  title: 'Nueva contraseña',
+  description: 'Definí una nueva contraseña para tu cuenta de Uellix.',
+  robots: { index: false, follow: true },
+}
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_password: 'La contraseña debe tener al menos 6 caracteres.',
