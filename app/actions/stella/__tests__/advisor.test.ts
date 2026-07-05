@@ -373,6 +373,13 @@ describe('getStellaAdvisor server action', () => {
       expect(insertPayload.pipelineStep).toBe('Narrativa')
     })
 
+    it('inserts a populated 64-char SHA-256 contextHash (not empty)', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'Narrativa')
+      const insertPayload = mockInsertValues.mock.calls[0][0]
+      expect(insertPayload.contextHash).toMatch(/^[a-f0-9]{64}$/)
+    })
+
     it('returns AUDIT_ERROR when insert fails', async () => {
       setupSuccessfulCall()
       mockInsertValues.mockRejectedValue(new Error('DB connection error'))
