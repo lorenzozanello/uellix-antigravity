@@ -9,7 +9,9 @@
 // lives here behind requireAdminAccess() instead.
 
 import { db } from '@/db/client'
-import { proxySources, financialProxies } from '@/db/schema'
+import { proxySources, financialProxies, fxRates } from '@/db/schema'
+import { resolveProxyValueUsd } from '@/lib/pipeline/proxies'
+import { convertToUsd } from '@/lib/pipeline/fx'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdminAccess } from '@/lib/auth/session'
@@ -39,6 +41,11 @@ const FinancialProxyInput = z.object({
 })
 
 const REVIEW_STATUSES = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'] as const
+
+const ManualFxRateInput = z.object({
+  rateToUsd: z.string().min(1),
+  source: z.string().min(1),
+})
 
 export async function listGlobalProxySources() {
   await requireAdminAccess()
@@ -125,16 +132,77 @@ export async function updateGlobalProxyReviewStatus(proxyId: string, newStatus: 
   if (!proxy) throw new Error('Proxy not found')
   if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
 
+  let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
   if (newStatus === 'approved') {
     const required = ['value', 'currency', 'unit', 'referenceYear'] as const
     for (const f of required) {
       if (!proxy[f]) throw new Error(`Cannot approve without ${f}`)
     }
+    // Freeze the USD equivalent on approval (required by approved_proxy_check).
+    usdFields = await resolveProxyValueUsd(proxy)
   }
 
   const [updated] = await db
     .update(financialProxies)
-    .set({ reviewStatus: newStatus, updatedAt: new Date() })
+    .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
+    .where(eq(financialProxies.id, proxyId))
+    .returning()
+
+  await logAuditAction({
+    actorUserId: admin.id,
+    entityType: 'financial_proxy',
+    entityId: proxyId,
+    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    beforeJson: proxy,
+    afterJson: updated,
+  })
+
+  return updated
+}
+
+/**
+ * Manually set the USD conversion for a global proxy whose currency has no
+ * auto-fetch source (anything other than USD/COP — see resolveProxyValueUsd).
+ * Inserts a new fx_rates row every call (organizationId: null, sourceType:
+ * 'manual') rather than caching/reusing one: each manual entry is a deliberate,
+ * citable action, so preserving every one is more useful for methodological
+ * transparency than deduping them.
+ */
+export async function setGlobalProxyManualFxRate(proxyId: string, input: { rateToUsd: string; source: string }) {
+  const admin = await requireAdminAccess()
+  const validated = ManualFxRateInput.parse(input)
+
+  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
+  if (!proxy) throw new Error('Proxy not found')
+  if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
+  if (!proxy.value || !proxy.currency) throw new Error('Cannot set an FX rate without value and currency')
+  if (proxy.currency === 'USD') throw new Error('USD proxies do not need an FX rate')
+
+  const rateNum = Number(validated.rateToUsd)
+  if (!Number.isFinite(rateNum) || rateNum <= 0) throw new Error('La tasa debe ser un número mayor a 0')
+
+  // Same lookup-date convention as the automatic path: Dec 31 of the proxy's
+  // reference year (proxies only carry a year, not an exact date).
+  const rateDate = proxy.referenceYear ? `${proxy.referenceYear}-12-31` : new Date().toISOString().slice(0, 10)
+
+  const [fxRate] = await db
+    .insert(fxRates)
+    .values({
+      currency: proxy.currency,
+      rateDate,
+      rateToUsd: validated.rateToUsd,
+      source: validated.source,
+      sourceType: 'manual',
+      organizationId: null,
+      createdBy: admin.id,
+    })
+    .returning()
+
+  const valueUsd = convertToUsd(proxy.value, validated.rateToUsd)
+
+  const [updated] = await db
+    .update(financialProxies)
+    .set({ valueUsd, fxRateId: fxRate.id, updatedAt: new Date() })
     .where(eq(financialProxies.id, proxyId))
     .returning()
 

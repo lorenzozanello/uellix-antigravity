@@ -53,6 +53,11 @@ export const SECTION_META: Record<string, SectionMeta> = {
     helper:
       'Resumen del ratio SROI y las cifras de valor social, vinculadas a la corrida de cálculo inmutable. Incluye notas de sensibilidad si aplica.',
   },
+  funder_breakdown: {
+    label: 'Desglose financiero por financiador',
+    helper:
+      'Ratio SROI individual por financiador, valor social atribuido y valor sin atribuir. Vinculado a la corrida de cálculo inmutable.',
+  },
   limitations: {
     label: 'Limitaciones',
     helper:
@@ -94,7 +99,7 @@ export const SECTION_GROUPS: SectionGroup[] = [
     id: 'group-calculation',
     label: 'Cálculo',
     description: 'Supuestos de filtros SROI y resultados finales',
-    types: ['sroi_filters', 'calculation_results'],
+    types: ['sroi_filters', 'calculation_results', 'funder_breakdown'],
   },
   {
     id: 'group-review',
@@ -106,3 +111,14 @@ export const SECTION_GROUPS: SectionGroup[] = [
 
 /** Canonical flat order of section types, derived from the group order. */
 export const SECTION_ORDER: string[] = SECTION_GROUPS.flatMap((g) => g.types)
+
+/**
+ * Section types to generate for a new report draft. `funder_breakdown` is only
+ * included when the report opts in ("Incluir desglose financiero por
+ * financiador") — every other report gets the fixed list unchanged. Reports
+ * that don't include it simply never get that section row, and the detail /
+ * print views already skip any section type absent from `report.sections`.
+ */
+export function getInitialSectionTypes(includeFunderBreakdown: boolean): string[] {
+  return SECTION_ORDER.filter((type) => type !== 'funder_breakdown' || includeFunderBreakdown)
+}

@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { createGlobalProxySource, createGlobalFinancialProxy, updateGlobalProxyReviewStatus } from '@/lib/admin/proxies'
+import { createGlobalProxySource, createGlobalFinancialProxy, updateGlobalProxyReviewStatus, setGlobalProxyManualFxRate } from '@/lib/admin/proxies'
 
 const PROXIES_PATH = '/admin/proxies'
 
@@ -15,6 +15,11 @@ function errorToSlug(message: string): string {
     'Cannot approve without referenceYear': 'missing_fields',
     'Invalid status': 'invalid_status',
     'Proxy not found': 'not_found',
+    'Cannot set an FX rate without value and currency': 'missing_fields',
+    'USD proxies do not need an FX rate': 'fx_not_needed',
+    'La tasa debe ser un número mayor a 0': 'invalid_rate',
+    'Cannot approve a non-USD/COP proxy without a manual USD conversion': 'fx_rate_missing',
+    'Cannot approve: COP→USD rate unavailable for the reference year': 'fx_rate_missing',
   }
   return known[message] ?? 'unknown_error'
 }
@@ -80,4 +85,22 @@ export async function updateGlobalProxyReviewStatusAction(formData: FormData) {
 
   revalidatePath(PROXIES_PATH)
   redirect(`${PROXIES_PATH}?success=status_updated`)
+}
+
+export async function setGlobalProxyManualFxRateAction(formData: FormData) {
+  const proxyId = formData.get('proxyId') as string | null
+  const rateToUsd = (formData.get('rateToUsd') as string | null)?.trim()
+  const source = (formData.get('source') as string | null)?.trim()
+
+  if (!proxyId || !rateToUsd || !source) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  try {
+    await setGlobalProxyManualFxRate(proxyId, { rateToUsd, source })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown_error'
+    redirect(`${PROXIES_PATH}?error=${errorToSlug(message)}`)
+  }
+
+  revalidatePath(PROXIES_PATH)
+  redirect(`${PROXIES_PATH}?success=fx_rate_set`)
 }

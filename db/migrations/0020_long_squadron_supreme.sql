@@ -1,0 +1,1 @@
+ALTER TABLE "sroi_reports" ADD COLUMN "include_funder_breakdown" boolean DEFAULT false NOT NULL;

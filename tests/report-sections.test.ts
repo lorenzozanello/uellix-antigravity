@@ -10,6 +10,7 @@ import {
   SECTION_META,
   SECTION_GROUPS,
   SECTION_ORDER,
+  getInitialSectionTypes,
 } from '@/lib/reports/report-sections'
 
 describe('report section metadata invariants', () => {
@@ -37,10 +38,29 @@ describe('report section metadata invariants', () => {
     }
   })
 
-  it('matches the canonical 12-section report structure', () => {
-    // A report draft is created with exactly these sections (see
-    // createReportDraftFromRun) — the count is asserted there too; this
-    // pins the shared constant so both can't drift apart silently.
-    expect(SECTION_ORDER).toHaveLength(12)
+  it('matches the canonical 13-section catalog (Fase 1f adds funder_breakdown)', () => {
+    // The full catalog is 13; a given report only gets funder_breakdown when
+    // it opts in — see getInitialSectionTypes below.
+    expect(SECTION_ORDER).toHaveLength(13)
+  })
+})
+
+describe('getInitialSectionTypes', () => {
+  it('excludes funder_breakdown by default (12 sections)', () => {
+    const types = getInitialSectionTypes(false)
+    expect(types).toHaveLength(12)
+    expect(types).not.toContain('funder_breakdown')
+  })
+
+  it('includes funder_breakdown when requested (13 sections)', () => {
+    const types = getInitialSectionTypes(true)
+    expect(types).toHaveLength(13)
+    expect(types).toContain('funder_breakdown')
+  })
+
+  it('places funder_breakdown right after calculation_results', () => {
+    const types = getInitialSectionTypes(true)
+    const idx = types.indexOf('calculation_results')
+    expect(types[idx + 1]).toBe('funder_breakdown')
   })
 })

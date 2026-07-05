@@ -120,6 +120,34 @@
       "when": 1783218329804,
       "tag": "0016_fat_mac_gargan",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1783219122804,
+      "tag": "0017_striped_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1783219693580,
+      "tag": "0018_redundant_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1783258034849,
+      "tag": "0019_lazy_overlord",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1783275081137,
+      "tag": "0020_long_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

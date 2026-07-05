@@ -10,6 +10,9 @@ const InvestmentSchema = z.object({
   currency: z.string().min(1),
   year: z.number().int().optional(),
   description: z.string().optional(),
+  funderId: z.string().uuid().optional(),
+  contributionType: z.enum(['cash', 'in_kind']).optional(),
+  inKindValuationNotes: z.string().optional(),
 });
 
 export async function upsertProjectInvestmentAction(formData: FormData) {
@@ -18,6 +21,9 @@ export async function upsertProjectInvestmentAction(formData: FormData) {
     currency: formData.get('currency'),
     year: formData.get('year') ? Number(formData.get('year')) : undefined,
     description: (formData.get('description') as string | null) || undefined,
+    funderId: (formData.get('funderId') as string | null) || undefined,
+    contributionType: (formData.get('contributionType') as string | null) || undefined,
+    inKindValuationNotes: (formData.get('inKindValuationNotes') as string | null) || undefined,
   };
 
   const parsed = InvestmentSchema.parse(raw);
