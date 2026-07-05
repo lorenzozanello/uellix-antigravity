@@ -10,6 +10,7 @@
 
 import { db } from '@/db/client'
 import { proxySources, financialProxies } from '@/db/schema'
+import { resolveProxyValueUsd } from '@/lib/pipeline/proxies'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdminAccess } from '@/lib/auth/session'
@@ -125,16 +126,19 @@ export async function updateGlobalProxyReviewStatus(proxyId: string, newStatus: 
   if (!proxy) throw new Error('Proxy not found')
   if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
 
+  let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
   if (newStatus === 'approved') {
     const required = ['value', 'currency', 'unit', 'referenceYear'] as const
     for (const f of required) {
       if (!proxy[f]) throw new Error(`Cannot approve without ${f}`)
     }
+    // Freeze the USD equivalent on approval (required by approved_proxy_check).
+    usdFields = await resolveProxyValueUsd(proxy)
   }
 
   const [updated] = await db
     .update(financialProxies)
-    .set({ reviewStatus: newStatus, updatedAt: new Date() })
+    .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
     .where(eq(financialProxies.id, proxyId))
     .returning()
 

@@ -240,6 +240,10 @@ export const financialProxies = pgTable('financial_proxies', {
   territory: varchar('territory', { length: 255 }),
   currency: varchar('currency', { length: 10 }),
   value: numeric('value', { precision: 20, scale: 4 }),
+  // Frozen USD equivalent + the fx_rate used (null when currency is already USD).
+  // FX lookup date for a proxy is Dec 31 of its reference_year.
+  valueUsd: numeric('value_usd', { precision: 20, scale: 4 }),
+  fxRateId: uuid('fx_rate_id').references(() => fxRates.id),
   unit: varchar('unit', { length: 50 }),
   referenceYear: integer('reference_year'),
   thematicArea: varchar('thematic_area', { length: 255 }),
@@ -256,7 +260,10 @@ export const financialProxies = pgTable('financial_proxies', {
   check('confidence_level_check', sql`${table.confidenceLevel} IN ('high', 'medium', 'low')`),
   check('methodological_risk_check', sql`${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
   check('review_status_check', sql`${table.reviewStatus} IN ('suggested', 'pending_review', 'approved', 'rejected', 'archived')`),
-  check('approved_proxy_check', sql`${table.reviewStatus} != 'approved' OR (${table.value} IS NOT NULL AND ${table.currency} IS NOT NULL AND ${table.unit} IS NOT NULL AND ${table.referenceYear} IS NOT NULL)`),
+  // An approved proxy must resolve to USD (value_usd) so the calculation's two
+  // sides can both be normalized. Safe to enforce: no approved non-USD proxy
+  // exists at migration time (all are backfilled value_usd = value first).
+  check('approved_proxy_check', sql`${table.reviewStatus} != 'approved' OR (${table.value} IS NOT NULL AND ${table.currency} IS NOT NULL AND ${table.unit} IS NOT NULL AND ${table.referenceYear} IS NOT NULL AND ${table.valueUsd} IS NOT NULL)`),
   index('idx_financial_proxies_organization_id').on(table.organizationId),
   index('idx_financial_proxies_source_id').on(table.sourceId),
 ])
@@ -285,8 +292,16 @@ export const projectInvestments = pgTable('project_investments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  // Fase 1b: a project can now have multiple investment contributions (list
+  // semantics via status active/archived), each from a funder, cash or in-kind.
+  funderId: uuid('funder_id').references(() => funders.id).notNull(),
+  contributionType: varchar('contribution_type', { length: 20 }).default('cash').notNull(),
+  inKindValuationNotes: text('in_kind_valuation_notes'),
   amount: numeric('amount', { precision: 20, scale: 4 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull(),
+  // Frozen USD equivalent + the fx_rate used (null when currency is already USD).
+  amountUsd: numeric('amount_usd', { precision: 20, scale: 4 }),
+  fxRateId: uuid('fx_rate_id').references(() => fxRates.id),
   year: integer('year'),
   description: text('description'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
@@ -296,7 +311,10 @@ export const projectInvestments = pgTable('project_investments', {
 }, (table) => [
   check('project_investments_amount_check', sql`${table.amount} > 0`),
   check('project_investments_status_check', sql`${table.status} IN ('active', 'archived')`),
+  check('project_investments_contribution_type_check', sql`${table.contributionType} IN ('cash', 'in_kind')`),
+  check('project_investments_in_kind_notes_check', sql`${table.contributionType} <> 'in_kind' OR ${table.inKindValuationNotes} IS NOT NULL`),
   index('idx_project_investments_project_id').on(table.projectId),
+  index('idx_project_investments_funder_id').on(table.funderId),
 ])
 
 export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {

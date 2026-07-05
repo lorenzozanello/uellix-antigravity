@@ -12,6 +12,9 @@
 // Source verified live 2026-07-04 (see the multi-funder design spec).
 
 import Decimal from 'decimal.js'
+import { and, eq, isNull } from 'drizzle-orm'
+import { db } from '@/db/client'
+import { fxRates } from '@/db/schema'
 
 export const COP_TRM_ENDPOINT = 'https://www.datos.gov.co/resource/32sa-8pi3.json'
 export const COP_TRM_SOURCE = 'Superintendencia Financiera de Colombia — TRM oficial (datos.gov.co)'
@@ -79,5 +82,51 @@ export async function fetchCopTrmRate(
     return { rateToUsd: String(valor), source: COP_TRM_SOURCE, rateDate: iso }
   } catch {
     return null
+  }
+}
+
+/**
+ * Get the shared (organization_id NULL) auto-fetched COP→USD rate for a date,
+ * from the fx_rates cache; on a miss, fetch it from the TRM and cache it.
+ * Returns null if the rate cannot be fetched (caller then requires manual entry).
+ */
+export async function getOrCreateSharedCopRate(
+  date: Date | string,
+): Promise<typeof fxRates.$inferSelect | null> {
+  const iso = toIsoDate(date)
+
+  const cached = await db
+    .select()
+    .from(fxRates)
+    .where(and(eq(fxRates.currency, 'COP'), eq(fxRates.rateDate, iso), isNull(fxRates.organizationId)))
+    .limit(1)
+  if (cached[0]) return cached[0]
+
+  const fetched = await fetchCopTrmRate(iso)
+  if (!fetched) return null
+
+  try {
+    const inserted = await db
+      .insert(fxRates)
+      .values({
+        currency: 'COP',
+        rateDate: fetched.rateDate,
+        rateToUsd: fetched.rateToUsd,
+        source: fetched.source,
+        sourceType: 'auto_fetched',
+        organizationId: null,
+        createdBy: null,
+      })
+      .returning()
+    return inserted[0]
+  } catch {
+    // Lost a race to another concurrent insert (partial unique index) — the row
+    // now exists, so re-read it rather than fail.
+    const raced = await db
+      .select()
+      .from(fxRates)
+      .where(and(eq(fxRates.currency, 'COP'), eq(fxRates.rateDate, iso), isNull(fxRates.organizationId)))
+      .limit(1)
+    return raced[0] ?? null
   }
 }

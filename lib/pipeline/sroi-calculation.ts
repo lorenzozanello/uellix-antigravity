@@ -17,11 +17,16 @@ import {
   outcomes,
   projects,
   evidenceItems,
+  outcomeFunderAllocations,
+  funders,
 } from '@/db/schema'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
 import { logAuditAction } from '@/lib/audit/logger'
+import { computeFundersBreakdown, type FunderBreakdownRow } from '@/lib/pipeline/sroi-funders'
+import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
+import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -30,6 +35,11 @@ export const ProjectInvestmentSchema = z.object({
   currency: z.string().min(1),
   year: z.number().int().optional(),
   description: z.string().optional(),
+  // Fase 1b — optional here so the existing single-investment form keeps
+  // working; funder defaults to the org's placeholder, type defaults to cash.
+  funderId: z.string().uuid().optional(),
+  contributionType: z.enum(['cash', 'in_kind']).optional(),
+  inKindValuationNotes: z.string().optional(),
 })
 export type ProjectInvestmentInput = z.infer<typeof ProjectInvestmentSchema>
 
@@ -77,13 +87,51 @@ function clamp(val: number, lo: number, hi: number) {
 
 // ─── Investment ─────────────────────────────────────────────────────────────
 
+// Resolve the frozen USD equivalent of a contribution at save time.
+// USD passes through; COP auto-fetches the TRM (Dec 31 of `year`, or today);
+// any other currency needs a manual rate (1c UI) and is left null here, which
+// the readiness check surfaces as a blocker.
+async function resolveAmountUsd(
+  amount: string,
+  currency: string,
+  year: number | undefined,
+): Promise<{ amountUsd: string | null; fxRateId: string | null }> {
+  if (currency === 'USD') return { amountUsd: amount, fxRateId: null }
+  if (currency === 'COP') {
+    const date = year ? `${year}-12-31` : new Date().toISOString().slice(0, 10)
+    const rate = await getOrCreateSharedCopRate(date)
+    if (!rate?.rateToUsd) return { amountUsd: null, fxRateId: null }
+    return { amountUsd: convertToUsd(amount, rate.rateToUsd), fxRateId: rate.id }
+  }
+  return { amountUsd: null, fxRateId: null }
+}
+
 export async function upsertProjectInvestment(projectId: string, input: ProjectInvestmentInput) {
   const ctx = await authorize(projectId)
   const validated = ProjectInvestmentSchema.parse(input)
+
+  // Every investment must carry a funder — default to the org's placeholder.
+  const funderId =
+    validated.funderId ?? (await getOrCreatePlaceholderFunder(ctx.organization.id, ctx.user.id)).id
+  const contributionType = validated.contributionType ?? 'cash'
+  const { amountUsd, fxRateId } = await resolveAmountUsd(validated.amount, validated.currency, validated.year)
+
+  const values = {
+    amount: validated.amount,
+    currency: validated.currency,
+    year: validated.year,
+    description: validated.description,
+    funderId,
+    contributionType,
+    inKindValuationNotes: validated.inKindValuationNotes,
+    amountUsd,
+    fxRateId,
+  }
+
   const existing = await db.select().from(projectInvestments).where(eq(projectInvestments.projectId, projectId))
 
   if (existing.length > 0) {
-    await db.update(projectInvestments).set({ ...validated, updatedAt: new Date() }).where(eq(projectInvestments.id, existing[0].id))
+    await db.update(projectInvestments).set({ ...values, updatedAt: new Date() }).where(eq(projectInvestments.id, existing[0].id))
     const updated = await db.select().from(projectInvestments).where(eq(projectInvestments.id, existing[0].id))
     await logAuditAction({
       organizationId: ctx.organization.id,
@@ -96,7 +144,7 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
     return updated[0]
   }
 
-  const inserted = await db.insert(projectInvestments).values({ ...validated, projectId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
+  const inserted = await db.insert(projectInvestments).values({ ...values, projectId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
   await logAuditAction({
     organizationId: ctx.organization.id,
     actorUserId: ctx.user.id,
@@ -161,12 +209,16 @@ interface AssignmentData {
 }
 
 async function loadCalculationData(projectId: string, orgId: string): Promise<{
-  investment: typeof projectInvestments.$inferSelect | null
+  investments: (typeof projectInvestments.$inferSelect)[]
   assignmentData: AssignmentData[]
+  allocations: (typeof outcomeFunderAllocations.$inferSelect)[]
+  fundersList: (typeof funders.$inferSelect)[]
 }> {
-  // Load investment
-  const invRows = await db.select().from(projectInvestments).where(and(eq(projectInvestments.projectId, projectId), eq(projectInvestments.organizationId, orgId)))
-  const investment = invRows[0] ?? null
+  // Load ALL active investment contributions (Fase 1b — a project can have many).
+  const investments = await db
+    .select()
+    .from(projectInvestments)
+    .where(and(eq(projectInvestments.projectId, projectId), eq(projectInvestments.organizationId, orgId), eq(projectInvestments.status, 'active')))
 
   // Load active assignments
   const assignments = await db
@@ -174,7 +226,7 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
     .from(outcomeProxyAssignments)
     .where(and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.organizationId, orgId), eq(outcomeProxyAssignments.assignmentStatus, 'active')))
 
-  if (assignments.length === 0) return { investment, assignmentData: [] }
+  if (assignments.length === 0) return { investments, assignmentData: [], allocations: [], fundersList: [] }
 
   const assignmentIds = assignments.map(a => a.id)
   const proxyIds = assignments.map(a => a.proxyId)
@@ -204,7 +256,18 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
     }
   }
 
-  return { investment, assignmentData }
+  // Funder attribution: only outcomes that actually feed the calculation matter.
+  const calcOutcomeIds = [...new Set(assignmentData.map(d => d.assignment.outcomeId))]
+  const allocations = calcOutcomeIds.length > 0
+    ? await db.select().from(outcomeFunderAllocations).where(and(eq(outcomeFunderAllocations.organizationId, orgId), inArray(outcomeFunderAllocations.outcomeId, calcOutcomeIds), eq(outcomeFunderAllocations.status, 'active')))
+    : []
+
+  const funderIds = [...new Set([...investments.map(i => i.funderId), ...allocations.map(a => a.funderId)])]
+  const fundersList = funderIds.length > 0
+    ? await db.select().from(funders).where(inArray(funders.id, funderIds))
+    : []
+
+  return { investments, assignmentData, allocations, fundersList }
 }
 
 // ─── Readiness ───────────────────────────────────────────────────────────────
@@ -219,6 +282,9 @@ export interface SroiReadiness {
   currencyMismatch: boolean
   invalidQuantities: string[]
   invalidFilters: string[]
+  investmentsMissingUsd: string[]
+  proxiesMissingUsd: string[]
+  overAllocatedOutcomes: string[]
   outcomesWithoutEvidence: string[]
   canCalculate: boolean
   blockingReasons: string[]
@@ -226,15 +292,19 @@ export interface SroiReadiness {
 
 export async function getSroiCalculationReadiness(projectId: string): Promise<SroiReadiness> {
   const ctx = await authorize(projectId)
-  const { investment } = await loadCalculationData(projectId, ctx.organization.id)
-
+  const { investments, allocations } = await loadCalculationData(projectId, ctx.organization.id)
 
   const blockingReasons: string[] = []
 
-  const hasInvestment = investment !== null
-  const zeroOrInvalidInvestment = !hasInvestment || parseNum(investment!.amount) <= 0
+  // Investment: at least one active contribution with amount > 0.
+  const hasInvestment = investments.length > 0
+  const zeroOrInvalidInvestment = !hasInvestment || investments.some(i => parseNum(i.amount) <= 0)
   if (!hasInvestment) blockingReasons.push('Missing project investment')
   if (zeroOrInvalidInvestment && hasInvestment) blockingReasons.push('Investment amount must be > 0')
+
+  // Every active contribution must resolve to USD (frozen at save time).
+  const investmentsMissingUsd = investments.filter(i => i.amountUsd === null || i.amountUsd === undefined).map(i => i.id)
+  if (investmentsMissingUsd.length > 0) blockingReasons.push(`Falta conversión a USD para ${investmentsMissingUsd.length} aporte(s)`)
 
   // Load active assignments count (total, not just those with all data)
   const allAssignments = await db.select().from(outcomeProxyAssignments).where(and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.organizationId, ctx.organization.id), eq(outcomeProxyAssignments.assignmentStatus, 'active')))
@@ -258,7 +328,7 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
   const unapprovedProxies: string[] = []
   const invalidQuantities: string[] = []
   const invalidFilters: string[] = []
-  const proxyCurrencies = new Set<string>()
+  const proxiesMissingUsd: string[] = []
 
   for (const a of allAssignments) {
     const input = inputByAssignment.get(a.id)
@@ -271,6 +341,8 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
 
     if (input && parseNum(input.quantity) <= 0) invalidQuantities.push(a.id)
     if (proxy?.value && parseNum(proxy.value) <= 0) invalidQuantities.push(`proxy:${proxy.id}`)
+    // Approved proxies must resolve to USD (the calc uses value_usd).
+    if (proxy && proxy.reviewStatus === 'approved' && (proxy.valueUsd === null || proxy.valueUsd === undefined)) proxiesMissingUsd.push(proxy.id)
 
     if (filterSet) {
       const duration = filterSet.durationYears ?? 1
@@ -282,15 +354,23 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
         }
       }
     }
-
-    if (proxy?.currency) proxyCurrencies.add(proxy.currency)
   }
+
+  // Funder attribution per outcome must not exceed 100% (defensive re-check;
+  // also enforced on write). Legitimately may be < 100% — that's unattributed.
+  const allocByOutcome = new Map<string, number>()
+  for (const alloc of allocations) {
+    allocByOutcome.set(alloc.outcomeId, (allocByOutcome.get(alloc.outcomeId) ?? 0) + parseNum(alloc.allocationPct))
+  }
+  const overAllocatedOutcomes = [...allocByOutcome.entries()].filter(([, sum]) => sum > 100).map(([oid]) => oid)
 
   if (missingInputs.length > 0) blockingReasons.push(`Missing inputs for ${missingInputs.length} assignment(s)`)
   if (missingFilterSets.length > 0) blockingReasons.push(`Missing filter sets for ${missingFilterSets.length} assignment(s)`)
   if (unapprovedProxies.length > 0) blockingReasons.push(`${unapprovedProxies.length} unapproved proxy(ies)`)
   if (invalidQuantities.length > 0) blockingReasons.push(`Invalid quantities in ${invalidQuantities.length} item(s)`)
   if (invalidFilters.length > 0) blockingReasons.push(`Invalid filter values in ${invalidFilters.length} assignment(s)`)
+  if (proxiesMissingUsd.length > 0) blockingReasons.push(`Falta conversión a USD para ${proxiesMissingUsd.length} proxy(ies)`)
+  if (overAllocatedOutcomes.length > 0) blockingReasons.push(`${overAllocatedOutcomes.length} resultado(s) con atribución de financiadores > 100%`)
 
   // Evidence gate — every outcome that feeds the calculation must be backed by
   // at least one non-archived, non-rejected evidence item. This enforces the
@@ -316,11 +396,9 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     blockingReasons.push(`${outcomesWithoutEvidence.length} outcome(s) with no supporting evidence`)
   }
 
-  // Currency consistency
-  const invCurrency = investment?.currency ?? null
-  if (invCurrency) proxyCurrencies.add(invCurrency)
-  const currencyMismatch = proxyCurrencies.size > 1
-  if (currencyMismatch) blockingReasons.push(`Mixed currencies detected: ${[...proxyCurrencies].join(', ')} – FX conversion not supported`)
+  // Mixed currencies no longer block — everything is normalized to USD before
+  // the ratio math (Fase 1b). Field kept (always false) for API compatibility.
+  const currencyMismatch = false
 
   const canCalculate = blockingReasons.length === 0
 
@@ -334,6 +412,9 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     currencyMismatch,
     invalidQuantities,
     invalidFilters,
+    investmentsMissingUsd,
+    proxiesMissingUsd,
+    overAllocatedOutcomes,
     outcomesWithoutEvidence,
     canCalculate,
     blockingReasons,
@@ -366,6 +447,7 @@ interface LineItemCalc {
 }
 
 interface CalcResult {
+  // currency is always 'USD' post Fase 1b — all inputs are normalized first.
   currency: string
   totalInvestment: number
   grossSocialValue: number
@@ -376,6 +458,8 @@ interface CalcResult {
   netSocialValueExact: string
   sroiRatioExact: string
   lineItems: LineItemCalc[]
+  fundersBreakdown: FunderBreakdownRow[]
+  unattributedNsvUsd: string
 }
 
 // Precision of the numeric DB columns (see manual-migration 003). Money and
@@ -393,19 +477,29 @@ function dec(v: string | number | null | undefined): Decimal {
   }
 }
 
-function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect, assignmentData: AssignmentData[]): CalcResult {
-  const totalInvestment = dec(investment.amount)
+function runDeterministicCalc(
+  investments: (typeof projectInvestments.$inferSelect)[],
+  assignmentData: AssignmentData[],
+  allocations: (typeof outcomeFunderAllocations.$inferSelect)[],
+  fundersList: (typeof funders.$inferSelect)[],
+): CalcResult {
+  // All contributions are normalized to USD (amount_usd, frozen at save time);
+  // readiness guarantees every active contribution has one.
+  let totalInvestment = new Decimal(0)
+  for (const inv of investments) totalInvestment = totalInvestment.plus(dec(inv.amountUsd))
   if (totalInvestment.lte(0)) throw new Error('Investment amount must be > 0')
 
-  const currency = investment.currency
+  const currency = 'USD'
 
   let grossSocialValue = new Decimal(0)
   let netSocialValue = new Decimal(0)
+  // Per-outcome net social value (USD) — drives the per-funder attribution.
+  const outcomeNsv = new Map<string, Decimal>()
   const lineItems: LineItemCalc[] = []
 
   for (const { assignment, input, filterSet, proxy } of assignmentData) {
     const quantity = dec(input.quantity)
-    const proxyValue = dec(proxy.value ?? '0')
+    const proxyValue = dec(proxy.valueUsd ?? '0') // USD-normalized proxy value
     if (quantity.lte(0) || proxyValue.lte(0)) continue
 
     const deadweightPct = clamp(parseNum(filterSet.deadweightPct), 0, 100)
@@ -430,6 +524,7 @@ function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect
 
     grossSocialValue = grossSocialValue.plus(grossValue)
     netSocialValue = netSocialValue.plus(adjustedValue)
+    outcomeNsv.set(assignment.outcomeId, (outcomeNsv.get(assignment.outcomeId) ?? new Decimal(0)).plus(adjustedValue))
 
     lineItems.push({
       assignmentId: assignment.id,
@@ -454,6 +549,17 @@ function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect
 
   const sroiRatio = netSocialValue.div(totalInvestment)
 
+  // Per-funder attribution (all in USD, 4dp — consistent with the money model).
+  const outcomeNsvUsd: Record<string, string> = {}
+  for (const [oid, v] of outcomeNsv) outcomeNsvUsd[oid] = v.toFixed(MONEY_DP)
+  const { fundersBreakdown, unattributedNsvUsd } = computeFundersBreakdown({
+    netSocialValueUsd: netSocialValue.toFixed(MONEY_DP),
+    outcomeNsvUsd,
+    investments: investments.map(i => ({ funderId: i.funderId, amountUsd: dec(i.amountUsd).toFixed(MONEY_DP) })),
+    allocations: allocations.map(a => ({ outcomeId: a.outcomeId, funderId: a.funderId, allocationPct: String(a.allocationPct ?? '0') })),
+    funders: fundersList.map(f => ({ id: f.id, name: f.name, funderType: f.funderType })),
+  })
+
   return {
     currency,
     totalInvestment: totalInvestment.toNumber(),
@@ -465,6 +571,8 @@ function runDeterministicCalc(investment: typeof projectInvestments.$inferSelect
     netSocialValueExact: netSocialValue.toFixed(MONEY_DP),
     sroiRatioExact: sroiRatio.toFixed(RATIO_DP),
     lineItems,
+    fundersBreakdown,
+    unattributedNsvUsd,
   }
 }
 
@@ -478,10 +586,10 @@ export async function calculateSroiPreview(projectId: string) {
     return { canCalculate: false, readiness, result: null }
   }
 
-  const { investment, assignmentData } = await loadCalculationData(projectId, ctx.organization.id)
-  if (!investment) throw new Error('Investment disappeared after readiness check')
+  const { investments, assignmentData, allocations, fundersList } = await loadCalculationData(projectId, ctx.organization.id)
+  if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
-  const result = runDeterministicCalc(investment, assignmentData)
+  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList)
 
   return {
     canCalculate: true,
@@ -493,7 +601,9 @@ export async function calculateSroiPreview(projectId: string) {
       netSocialValue: result.netSocialValue,
       sroiRatio: result.sroiRatio,
       lineItems: result.lineItems,
-      formulaNotes: 'No discount rate applied (Sprint 6B). FX conversion not supported.',
+      fundersBreakdown: result.fundersBreakdown,
+      unattributedNsvUsd: result.unattributedNsvUsd,
+      formulaNotes: 'Values normalized to USD (Fase 1b). No discount rate applied.',
     },
   }
 }
@@ -508,10 +618,10 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     throw new Error(`Cannot calculate: ${readiness.blockingReasons.join('; ')}`)
   }
 
-  const { investment, assignmentData } = await loadCalculationData(projectId, ctx.organization.id)
-  if (!investment) throw new Error('Investment disappeared after readiness check')
+  const { investments, assignmentData, allocations, fundersList } = await loadCalculationData(projectId, ctx.organization.id)
+  if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
-  const result = runDeterministicCalc(investment, assignmentData)
+  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList)
 
   const calculatedAt = new Date()
 
@@ -537,7 +647,18 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       grossSocialValue: result.grossSocialValueExact,
       netSocialValue: result.netSocialValueExact,
       sroiRatio: result.sroiRatioExact,
-      investment: { id: investment.id, amount: investment.amount, currency: investment.currency, year: investment.year },
+      investments: investments.map(inv => ({
+        id: inv.id,
+        funderId: inv.funderId,
+        contributionType: inv.contributionType,
+        amount: inv.amount,
+        currency: inv.currency,
+        amountUsd: inv.amountUsd,
+        fxRateId: inv.fxRateId,
+        year: inv.year,
+      })),
+      fundersBreakdown: result.fundersBreakdown,
+      unattributedNsvUsd: result.unattributedNsvUsd,
       assignments: result.lineItems.map(li => ({
         assignmentId: li.assignmentId,
         outcomeId: li.outcomeId,
@@ -554,7 +675,7 @@ export async function calculateAndPersistSroiRun(projectId: string) {
           durationYears: li.durationYears,
         },
       })),
-      formulaNotes: 'No discount rate applied (Sprint 6B). FX conversion not supported.',
+      formulaNotes: 'Values normalized to USD (Fase 1b). No discount rate applied.',
       calculatedBy: ctx.user.id,
       calculatedAt: calculatedAt.toISOString(),
       readiness,

@@ -33,6 +33,8 @@ const mockDb = {
   sroiCalculationRuns: [] as any[],
   sroiCalculationLineItems: [] as any[],
   evidenceItems: [] as any[],
+  funders: [] as any[],
+  outcomeFunderAllocations: [] as any[],
 };
 
 function getTableData(table: any): any[] {
@@ -117,6 +119,8 @@ beforeEach(() => {
     sroiCalculationRuns: [],
     sroiCalculationLineItems: [],
     evidenceItems: [],
+    funders: [],
+    outcomeFunderAllocations: [],
   });
   vi.mocked(requireOrganizationAccess).mockResolvedValue({
     organization: { id: ORG_ID },
@@ -131,10 +135,17 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
     id: 'inv-1',
     projectId: PROJECT_ID,
     organizationId: ORG_ID,
+    funderId: 'funder-1',
+    contributionType: 'cash',
     amount: '1000',
     currency: 'USD',
+    status: 'active',
     ...overrides?.investment,
-  };
+  } as any;
+  // USD contributions freeze amount_usd = amount unless the override sets it.
+  if (investment.amountUsd === undefined) {
+    investment.amountUsd = investment.currency === 'USD' ? investment.amount : null;
+  }
   const proxy = {
     id: 'proxy-1',
     organizationId: null,
@@ -142,7 +153,10 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
     value: '100',
     currency: 'USD',
     ...overrides?.proxy,
-  };
+  } as any;
+  if (proxy.valueUsd === undefined) {
+    proxy.valueUsd = proxy.currency === 'USD' ? proxy.value : null;
+  }
   const assignment = {
     id: ASSIGNMENT_ID,
     projectId: PROJECT_ID,
@@ -171,6 +185,7 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
   };
   mockDb.projects.push({ id: PROJECT_ID, organizationId: ORG_ID });
   mockDb.outcomes.push({ id: 'out-1', projectId: PROJECT_ID, organizationId: ORG_ID });
+  mockDb.funders.push({ id: 'funder-1', organizationId: ORG_ID, name: 'Fundación Test', funderType: 'foundation' });
   mockDb.projectInvestments.push(investment);
   mockDb.financialProxies.push(proxy);
   mockDb.outcomeProxyAssignments.push(assignment);
@@ -320,11 +335,50 @@ describe('Readiness edge cases', () => {
     expect(readiness.blockingReasons).toContain('1 unapproved proxy(ies)');
   });
 
-  it('fails when currency mismatch', async () => {
-    seedHappyData({ investment: { currency: 'USD' }, proxy: { currency: 'EUR' } });
+  it('no longer blocks on mixed currencies — everything is normalized to USD', async () => {
+    // Different source currencies, but both carry a frozen USD equivalent.
+    seedHappyData({
+      investment: { currency: 'COP', amountUsd: '1000' },
+      proxy: { currency: 'EUR', valueUsd: '100' },
+    });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(true);
+    expect(readiness.currencyMismatch).toBe(false);
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    expect(preview.result!.currency).toBe('USD');
+    expect(preview.result!.totalInvestment).toBe(1000);
+    expect(preview.result!.sroiRatio).toBeCloseTo(1);
+  });
+
+  it('blocks when a contribution has no USD conversion', async () => {
+    seedHappyData({ investment: { currency: 'COP', amountUsd: null } });
     const readiness = await getSroiCalculationReadiness(PROJECT_ID);
     expect(readiness.canCalculate).toBe(false);
-    expect(readiness.blockingReasons.some(r => r.includes('Mixed currencies detected'))).toBe(true);
+    expect(readiness.blockingReasons.some(r => r.includes('Falta conversión a USD'))).toBe(true);
+  });
+});
+
+describe('Per-funder breakdown (engine wiring)', () => {
+  it('attributes net value to a funder via an active allocation', async () => {
+    seedHappyData();
+    mockDb.outcomeFunderAllocations.push({
+      id: 'alloc-1', organizationId: ORG_ID, outcomeId: 'out-1', funderId: 'funder-1', allocationPct: '100', status: 'active',
+    });
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    const bd = preview.result!.fundersBreakdown;
+    expect(bd).toHaveLength(1);
+    expect(bd[0].funderId).toBe('funder-1');
+    expect(bd[0].attributedNsvUsd).toBe('1000.0000');
+    expect(bd[0].sroiRatio).toBe('1.000000'); // 1000 attributed / 1000 invested
+    expect(preview.result!.unattributedNsvUsd).toBe('0.0000');
+  });
+
+  it('reports full net value as unattributed when there is no allocation', async () => {
+    seedHappyData();
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    // funder-1 invested but has no allocation → attributed 0, all unattributed.
+    expect(preview.result!.fundersBreakdown[0].attributedNsvUsd).toBe('0.0000');
+    expect(preview.result!.unattributedNsvUsd).toBe('1000.0000');
   });
 });
 

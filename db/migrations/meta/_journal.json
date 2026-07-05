@@ -127,6 +127,13 @@
       "when": 1783219122804,
       "tag": "0017_striped_legion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1783219693580,
+      "tag": "0018_redundant_firebird",
+      "breakpoints": true
     }
   ]
 }
