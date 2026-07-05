@@ -110,3 +110,83 @@ export async function archiveNode(projectId: string, nodeId: string) {
   })
   return { id: nodeId, status: 'archived' as const }
 }
+
+const CreateLinkSchema = z.object({
+  fromNodeId: z.string().uuid(),
+  toNodeId: z.string().uuid(),
+  assumption: z.string().optional(),
+})
+export type CreateLinkInput = z.infer<typeof CreateLinkSchema>
+
+export async function listLinksForProject(projectId: string) {
+  const ctx = await requireOrganizationAccess()
+  const links = await db.select().from(theoryOfChangeLinks).where(and(
+    eq(theoryOfChangeLinks.projectId, projectId),
+    eq(theoryOfChangeLinks.organizationId, ctx.organization.id),
+    eq(theoryOfChangeLinks.status, 'active'),
+  ))
+  if (links.length === 0) return []
+
+  const nodeIds = [...new Set(links.flatMap((l) => [l.fromNodeId, l.toNodeId]))]
+  const relatedNodes = await db.select().from(theoryOfChangeNodes).where(inArray(theoryOfChangeNodes.id, nodeIds))
+  const activeNodeIds = new Set(relatedNodes.filter((n) => n.status === 'active').map((n) => n.id))
+
+  return links.filter((l) => activeNodeIds.has(l.fromNodeId) && activeNodeIds.has(l.toNodeId))
+}
+
+export async function createLink(projectId: string, input: CreateLinkInput) {
+  const ctx = await authorizeWrite()
+  const validated = CreateLinkSchema.parse(input)
+
+  if (validated.fromNodeId === validated.toNodeId) throw new Error('A node cannot link to itself')
+
+  const [fromNode, toNode] = await Promise.all([
+    db.select().from(theoryOfChangeNodes).where(eq(theoryOfChangeNodes.id, validated.fromNodeId)).then((r) => r[0]),
+    db.select().from(theoryOfChangeNodes).where(eq(theoryOfChangeNodes.id, validated.toNodeId)).then((r) => r[0]),
+  ])
+  if (!fromNode || fromNode.projectId !== projectId) throw new Error('From-node not found for project')
+  if (!toNode || toNode.projectId !== projectId) throw new Error('To-node not found for project')
+
+  if (!isValidLinkTransition(fromNode.nodeType as ToCNodeType, toNode.nodeType as ToCNodeType)) {
+    throw new Error(`Invalid link: ${fromNode.nodeType} -> ${toNode.nodeType} is not allowed (only activity->output or output->outcome)`)
+  }
+
+  const inserted = await db.insert(theoryOfChangeLinks).values({
+    projectId,
+    organizationId: ctx.organization.id,
+    fromNodeId: validated.fromNodeId,
+    toNodeId: validated.toNodeId,
+    assumption: validated.assumption,
+    createdBy: ctx.user.id,
+  }).returning()
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'theory_of_change_link',
+    entityId: inserted[0].id,
+    action: 'theory_of_change_link.created',
+    afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
+  return inserted[0]
+}
+
+export async function archiveLink(projectId: string, linkId: string) {
+  const ctx = await authorizeWrite()
+  const existing = await db.select().from(theoryOfChangeLinks).where(eq(theoryOfChangeLinks.id, linkId)).then((r) => r[0])
+  if (!existing || existing.organizationId !== ctx.organization.id) throw new Error('Link not found')
+
+  await db.update(theoryOfChangeLinks).set({ status: 'archived', updatedAt: new Date() }).where(eq(theoryOfChangeLinks.id, linkId))
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'theory_of_change_link',
+    entityId: linkId,
+    action: 'theory_of_change_link.archived',
+    beforeJson: existing as unknown as Record<string, unknown>,
+  })
+  return { id: linkId, status: 'archived' as const }
+}

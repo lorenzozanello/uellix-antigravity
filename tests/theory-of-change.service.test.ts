@@ -101,6 +101,9 @@ import {
   listNodesForProject,
   createNode,
   archiveNode,
+  listLinksForProject,
+  createLink,
+  archiveLink,
 } from '@/lib/pipeline/theory-of-change';
 import { requireOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
@@ -205,5 +208,93 @@ describe('listNodesForProject', () => {
     ];
     const nodes = await listNodesForProject(PROJECT_ID);
     expect(nodes).toHaveLength(1);
+  });
+});
+
+const ACT_1_ID = '55555555-5555-4555-8555-555555555555';
+const OUT_1_ID = '66666666-6666-4666-8666-666666666666';
+const OC_1_ID = '77777777-7777-4777-8777-777777777777';
+
+describe('createLink', () => {
+  it('creates a valid activity -> output link', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: ACT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: OUT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'output', status: 'active' },
+    ];
+    const link = await createLink(PROJECT_ID, { fromNodeId: ACT_1_ID, toNodeId: OUT_1_ID, assumption: 'Asistencia mínima 80%' });
+    expect(link.fromNodeId).toBe(ACT_1_ID);
+    expect(link.toNodeId).toBe(OUT_1_ID);
+    expect(link.assumption).toBe('Asistencia mínima 80%');
+  });
+
+  it('creates a valid output -> outcome link', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: OUT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'output', status: 'active' },
+      { id: OC_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'outcome', outcomeId: OUTCOME_ID, status: 'active' },
+    ];
+    const link = await createLink(PROJECT_ID, { fromNodeId: OUT_1_ID, toNodeId: OC_1_ID });
+    expect(link.toNodeId).toBe(OC_1_ID);
+  });
+
+  it('rejects a direct activity -> outcome link', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: ACT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: OC_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'outcome', outcomeId: OUTCOME_ID, status: 'active' },
+    ];
+    await expect(createLink(PROJECT_ID, { fromNodeId: ACT_1_ID, toNodeId: OC_1_ID })).rejects.toThrow('Invalid link');
+  });
+
+  it('rejects a reversed-order link (output -> activity)', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: ACT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: OUT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'output', status: 'active' },
+    ];
+    await expect(createLink(PROJECT_ID, { fromNodeId: OUT_1_ID, toNodeId: ACT_1_ID })).rejects.toThrow('Invalid link');
+  });
+
+  it('rejects a self-link', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: ACT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+    ];
+    await expect(createLink(PROJECT_ID, { fromNodeId: ACT_1_ID, toNodeId: ACT_1_ID })).rejects.toThrow('cannot link to itself');
+  });
+
+  it('rejects linking to a node from another project', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: ACT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: OUT_1_ID, projectId: 'other-project', organizationId: ORG_ID, nodeType: 'output', status: 'active' },
+    ];
+    await expect(createLink(PROJECT_ID, { fromNodeId: ACT_1_ID, toNodeId: OUT_1_ID })).rejects.toThrow('To-node not found for project');
+  });
+});
+
+describe('archiveLink', () => {
+  it('marks a link archived', async () => {
+    mockDbData.theoryOfChangeLinks = [{ id: 'link-1', projectId: PROJECT_ID, organizationId: ORG_ID, fromNodeId: 'a', toNodeId: 'b', status: 'active' }];
+    const result = await archiveLink(PROJECT_ID, 'link-1');
+    expect(result.status).toBe('archived');
+    expect(mockDbData.theoryOfChangeLinks[0].status).toBe('archived');
+  });
+});
+
+describe('listLinksForProject', () => {
+  it('returns an active link whose endpoints are both active', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: 'act-1', projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: 'out-1', projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'output', status: 'active' },
+    ];
+    mockDbData.theoryOfChangeLinks = [{ id: 'link-1', projectId: PROJECT_ID, organizationId: ORG_ID, fromNodeId: 'act-1', toNodeId: 'out-1', status: 'active' }];
+    const links = await listLinksForProject(PROJECT_ID);
+    expect(links).toHaveLength(1);
+  });
+
+  it('excludes a link when one endpoint node has been archived', async () => {
+    mockDbData.theoryOfChangeNodes = [
+      { id: 'act-1', projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: 'out-1', projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'output', status: 'archived' },
+    ];
+    mockDbData.theoryOfChangeLinks = [{ id: 'link-1', projectId: PROJECT_ID, organizationId: ORG_ID, fromNodeId: 'act-1', toNodeId: 'out-1', status: 'active' }];
+    const links = await listLinksForProject(PROJECT_ID);
+    expect(links).toHaveLength(0);
   });
 });
