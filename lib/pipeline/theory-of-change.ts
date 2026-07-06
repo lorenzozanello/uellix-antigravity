@@ -7,13 +7,13 @@
 // Design: docs/superpowers/specs/2026-07-05-theory-of-change-structured-design.md
 
 import { db } from '@/db/client'
-import { theoryOfChangeNodes, theoryOfChangeLinks, outcomes } from '@/db/schema'
+import { theoryOfChangeNodes, theoryOfChangeLinks, outcomes, projects } from '@/db/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 
 export type ToCNodeType = 'activity' | 'output' | 'outcome'
 
@@ -35,14 +35,22 @@ const CreateNodeSchema = z.object({
 })
 export type CreateNodeInput = z.infer<typeof CreateNodeSchema>
 
-async function authorizeWrite() {
+async function verifyProjectAccess(projectId: string) {
   const ctx = await requireOrganizationAccess()
+  const project = await db.select().from(projects).where(eq(projects.id, projectId)).then((r) => r[0])
+  if (!project) throw new Error('Project not found')
+  if (project.organizationId !== ctx.organization.id) throw new Error('Project does not belong to your organization')
+  return ctx
+}
+
+async function authorizeWrite(projectId: string) {
+  const ctx = await verifyProjectAccess(projectId)
   if (!hasRole(ctx.membership.role as Role, 'analyst')) throw new Error('Insufficient role')
   return ctx
 }
 
 export async function listNodesForProject(projectId: string) {
-  const ctx = await requireOrganizationAccess()
+  const ctx = await verifyProjectAccess(projectId)
   return db
     .select()
     .from(theoryOfChangeNodes)
@@ -54,7 +62,7 @@ export async function listNodesForProject(projectId: string) {
 }
 
 export async function createNode(projectId: string, input: CreateNodeInput) {
-  const ctx = await authorizeWrite()
+  const ctx = await authorizeWrite(projectId)
   const validated = CreateNodeSchema.parse(input)
 
   if (validated.nodeType === 'outcome') {
@@ -86,14 +94,14 @@ export async function createNode(projectId: string, input: CreateNodeInput) {
     actorUserId: ctx.user.id,
     entityType: 'theory_of_change_node',
     entityId: inserted[0].id,
-    action: 'theory_of_change_node.created',
+    action: AUDIT_ACTIONS.THEORY_OF_CHANGE_NODE_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
 }
 
 export async function archiveNode(projectId: string, nodeId: string) {
-  const ctx = await authorizeWrite()
+  const ctx = await authorizeWrite(projectId)
   const existing = await db.select().from(theoryOfChangeNodes).where(eq(theoryOfChangeNodes.id, nodeId)).then((r) => r[0])
   if (!existing || existing.organizationId !== ctx.organization.id) throw new Error('Node not found')
 
@@ -105,7 +113,7 @@ export async function archiveNode(projectId: string, nodeId: string) {
     actorUserId: ctx.user.id,
     entityType: 'theory_of_change_node',
     entityId: nodeId,
-    action: 'theory_of_change_node.archived',
+    action: AUDIT_ACTIONS.THEORY_OF_CHANGE_NODE_ARCHIVED,
     beforeJson: existing as unknown as Record<string, unknown>,
   })
   return { id: nodeId, status: 'archived' as const }
@@ -119,7 +127,7 @@ const CreateLinkSchema = z.object({
 export type CreateLinkInput = z.infer<typeof CreateLinkSchema>
 
 export async function listLinksForProject(projectId: string) {
-  const ctx = await requireOrganizationAccess()
+  const ctx = await verifyProjectAccess(projectId)
   const links = await db.select().from(theoryOfChangeLinks).where(and(
     eq(theoryOfChangeLinks.projectId, projectId),
     eq(theoryOfChangeLinks.organizationId, ctx.organization.id),
@@ -135,7 +143,7 @@ export async function listLinksForProject(projectId: string) {
 }
 
 export async function createLink(projectId: string, input: CreateLinkInput) {
-  const ctx = await authorizeWrite()
+  const ctx = await authorizeWrite(projectId)
   const validated = CreateLinkSchema.parse(input)
 
   if (validated.fromNodeId === validated.toNodeId) throw new Error('A node cannot link to itself')
@@ -166,14 +174,14 @@ export async function createLink(projectId: string, input: CreateLinkInput) {
     actorUserId: ctx.user.id,
     entityType: 'theory_of_change_link',
     entityId: inserted[0].id,
-    action: 'theory_of_change_link.created',
+    action: AUDIT_ACTIONS.THEORY_OF_CHANGE_LINK_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
 }
 
 export async function archiveLink(projectId: string, linkId: string) {
-  const ctx = await authorizeWrite()
+  const ctx = await authorizeWrite(projectId)
   const existing = await db.select().from(theoryOfChangeLinks).where(eq(theoryOfChangeLinks.id, linkId)).then((r) => r[0])
   if (!existing || existing.organizationId !== ctx.organization.id) throw new Error('Link not found')
 
@@ -185,7 +193,7 @@ export async function archiveLink(projectId: string, linkId: string) {
     actorUserId: ctx.user.id,
     entityType: 'theory_of_change_link',
     entityId: linkId,
-    action: 'theory_of_change_link.archived',
+    action: AUDIT_ACTIONS.THEORY_OF_CHANGE_LINK_ARCHIVED,
     beforeJson: existing as unknown as Record<string, unknown>,
   })
   return { id: linkId, status: 'archived' as const }

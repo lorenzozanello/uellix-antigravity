@@ -3,6 +3,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 const mockDbData = vi.hoisted(() => ({
+  projects: [] as any[],
   outcomes: [] as any[],
   theoryOfChangeNodes: [] as any[],
   theoryOfChangeLinks: [] as any[],
@@ -18,6 +19,12 @@ vi.mock('@/lib/auth/permissions', () => ({
 
 vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
+  AUDIT_ACTIONS: {
+    THEORY_OF_CHANGE_NODE_CREATED: 'theory_of_change_node.created',
+    THEORY_OF_CHANGE_NODE_ARCHIVED: 'theory_of_change_node.archived',
+    THEORY_OF_CHANGE_LINK_CREATED: 'theory_of_change_link.created',
+    THEORY_OF_CHANGE_LINK_ARCHIVED: 'theory_of_change_link.archived',
+  },
 }));
 
 // Extracts every literal value embedded in a drizzle eq()/and() condition tree
@@ -48,6 +55,7 @@ vi.mock('@/db/client', () => {
   }
   function dataFor(table: any): any[] {
     const name = tableName(table);
+    if (name === 'projects') return mockDbData.projects;
     if (name === 'outcomes') return mockDbData.outcomes;
     if (name === 'theory_of_change_nodes') return mockDbData.theoryOfChangeNodes;
     if (name === 'theory_of_change_links') return mockDbData.theoryOfChangeLinks;
@@ -115,6 +123,7 @@ const OUTCOME_ID = '44444444-4444-4444-8444-444444444444';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockDbData.projects = [{ id: PROJECT_ID, organizationId: ORG_ID }];
   mockDbData.outcomes = [];
   mockDbData.theoryOfChangeNodes = [];
   mockDbData.theoryOfChangeLinks = [];
@@ -185,6 +194,16 @@ describe('createNode', () => {
   it('rejects setting outcomeId on an activity node', async () => {
     await expect(createNode(PROJECT_ID, { nodeType: 'activity', outcomeId: OUTCOME_ID, title: 'X' })).rejects.toThrow('must not be set');
   });
+
+  it('rejects creating a node against a project owned by another organization', async () => {
+    mockDbData.projects = [{ id: PROJECT_ID, organizationId: 'other-org' }];
+    await expect(createNode(PROJECT_ID, { nodeType: 'activity', title: 'Capacitación' })).rejects.toThrow('does not belong to your organization');
+  });
+
+  it('rejects creating a node against a nonexistent project', async () => {
+    mockDbData.projects = [];
+    await expect(createNode(PROJECT_ID, { nodeType: 'activity', title: 'Capacitación' })).rejects.toThrow('Project not found');
+  });
 });
 
 describe('archiveNode', () => {
@@ -208,6 +227,11 @@ describe('listNodesForProject', () => {
     ];
     const nodes = await listNodesForProject(PROJECT_ID);
     expect(nodes).toHaveLength(1);
+  });
+
+  it('rejects listing nodes for a project owned by another organization', async () => {
+    mockDbData.projects = [{ id: PROJECT_ID, organizationId: 'other-org' }];
+    await expect(listNodesForProject(PROJECT_ID)).rejects.toThrow('does not belong to your organization');
   });
 });
 
@@ -266,6 +290,15 @@ describe('createLink', () => {
     ];
     await expect(createLink(PROJECT_ID, { fromNodeId: ACT_1_ID, toNodeId: OUT_1_ID })).rejects.toThrow('To-node not found for project');
   });
+
+  it('rejects creating a link against a project owned by another organization', async () => {
+    mockDbData.projects = [{ id: PROJECT_ID, organizationId: 'other-org' }];
+    mockDbData.theoryOfChangeNodes = [
+      { id: ACT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'activity', status: 'active' },
+      { id: OUT_1_ID, projectId: PROJECT_ID, organizationId: ORG_ID, nodeType: 'output', status: 'active' },
+    ];
+    await expect(createLink(PROJECT_ID, { fromNodeId: ACT_1_ID, toNodeId: OUT_1_ID })).rejects.toThrow('does not belong to your organization');
+  });
 });
 
 describe('archiveLink', () => {
@@ -296,5 +329,10 @@ describe('listLinksForProject', () => {
     mockDbData.theoryOfChangeLinks = [{ id: 'link-1', projectId: PROJECT_ID, organizationId: ORG_ID, fromNodeId: 'act-1', toNodeId: 'out-1', status: 'active' }];
     const links = await listLinksForProject(PROJECT_ID);
     expect(links).toHaveLength(0);
+  });
+
+  it('rejects listing links for a project owned by another organization', async () => {
+    mockDbData.projects = [{ id: PROJECT_ID, organizationId: 'other-org' }];
+    await expect(listLinksForProject(PROJECT_ID)).rejects.toThrow('does not belong to your organization');
   });
 });

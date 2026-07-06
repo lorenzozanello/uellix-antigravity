@@ -54,6 +54,12 @@ export const AUDIT_ACTIONS = {
   EVIDENCE_CREATED: 'evidence_item.created',
   EVIDENCE_REVIEW_STATUS_CHANGED: 'evidence_item.review_status_changed',
   EVIDENCE_ARCHIVED: 'evidence_item.archived',
+
+  // Theory of change (nodes + links)
+  THEORY_OF_CHANGE_NODE_CREATED: 'theory_of_change_node.created',
+  THEORY_OF_CHANGE_NODE_ARCHIVED: 'theory_of_change_node.archived',
+  THEORY_OF_CHANGE_LINK_CREATED: 'theory_of_change_link.created',
+  THEORY_OF_CHANGE_LINK_ARCHIVED: 'theory_of_change_link.archived',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
