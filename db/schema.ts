@@ -114,14 +114,25 @@ export const projects = pgTable('projects', {
   // apply to prod any time; pre-1e code simply ignores it.
   discountRatePct: numeric('discount_rate_pct', { precision: 5, scale: 2 }),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // Soft delete fields: tracks deletion requests and deletions with full audit trail
+  deletionRequestedAt: timestamp('deletion_requested_at'),
+  deletionRequestedBy: uuid('deletion_requested_by').references(() => users.id),
+  deletionReason: text('deletion_reason'),
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by').references(() => users.id),
+  deleteReason: text('delete_reason'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
-  check('status_check', sql`${table.status} IN ('draft', 'active', 'completed', 'archived')`),
+  check('status_check', sql`${table.status} IN ('draft', 'active', 'paused', 'completed', 'archived')`),
   check('projects_discount_rate_check', sql`${table.discountRatePct} IS NULL OR (${table.discountRatePct} >= 0 AND ${table.discountRatePct} <= 100)`),
+  check('deletion_request_consistency_check', sql`(${table.deletionRequestedAt} IS NULL AND ${table.deletionRequestedBy} IS NULL AND ${table.deletionReason} IS NULL) OR (${table.deletionRequestedAt} IS NOT NULL AND ${table.deletionRequestedBy} IS NOT NULL AND ${table.deletionReason} IS NOT NULL)`),
+  check('deletion_consistency_check', sql`(${table.deletedAt} IS NULL AND ${table.deletedBy} IS NULL AND ${table.deleteReason} IS NULL) OR (${table.deletedAt} IS NOT NULL AND ${table.deletedBy} IS NOT NULL AND ${table.deleteReason} IS NOT NULL)`),
   index('idx_projects_organization_id').on(table.organizationId),
   index('idx_projects_portfolio_id').on(table.portfolioId),
+  index('idx_projects_deletion_requested_at').on(table.deletionRequestedAt).where(sql`${table.deletionRequestedAt} IS NOT NULL`),
+  index('idx_projects_deleted_at').on(table.deletedAt).where(sql`${table.deletedAt} IS NOT NULL`),
 ])
 
 export const impactNarratives = pgTable('impact_narratives', {
