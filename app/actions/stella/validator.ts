@@ -5,10 +5,10 @@
 // Security: feature-flagged, auth-gated, rate-limited, metadata-only context,
 //           no pipeline writes, no certification claims, requires_human_review always true.
 
-import { createHash } from 'crypto'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildValidatorContext, StellaBuildValidatorContextError } from '@/lib/stella/context/build-validator-context'
+import { buildContextHash } from '@/lib/stella/context/build-context-hash'
 import { buildValidatorSystemPrompt, buildValidatorUserMessage } from '@/lib/stella/prompts/validator-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ValidatorOutputSchema } from '@/lib/stella/schemas/validator-output'
@@ -18,7 +18,6 @@ import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
-import type { StellaProjectContext } from '@/lib/stella/context/types'
 
 export type StellaValidatorErrorCode =
   | 'DISABLED'
@@ -35,21 +34,6 @@ export type StellaValidatorErrorCode =
 export type StellaValidatorResult =
   | { ok: true; data: ValidatorOutput }
   | { ok: false; error: StellaValidatorErrorCode; message: string }
-
-function buildContextHash(context: StellaProjectContext): string {
-  // Privacy-safe stable subset — no PII, no file paths, no financial details
-  const input = JSON.stringify({
-    projectId: context.projectId,
-    organizationId: context.organizationId,
-    outcomesCount: context.outcomesSnapshot.length,
-    indicatorsCount: context.indicatorsSnapshot.length,
-    evidenceCount: context.evidenceTotal,
-    proxiesCount: context.proxySummary.length,
-    hasCalculation: context.calculationSnapshot !== null,
-    sroiRatio: context.calculationSnapshot?.sroiRatio ?? null,
-  })
-  return createHash('sha256').update(input).digest('hex').slice(0, 64)
-}
 
 function buildRiskFlags(output: ValidatorOutput): string[] {
   const flags: string[] = []

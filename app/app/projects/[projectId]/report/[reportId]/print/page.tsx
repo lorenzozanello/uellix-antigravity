@@ -6,6 +6,7 @@ import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { SECTION_GROUPS, SECTION_META } from '@/lib/reports/report-sections'
 import { PrintButton } from './PrintButton'
+import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,6 +48,8 @@ export default async function ReportPrintPage({
   ])
 
   const run = runDetail?.run ?? null
+  const snapshotJson = report.snapshotJson
+  const currency = report.currency ?? 'USD'
   const sectionByType = new Map(report.sections.map((s) => [s.sectionType, s]))
   const generatedAt = new Date().toLocaleString('es-MX', {
     day: 'numeric',
@@ -182,15 +185,15 @@ export default async function ReportPrintPage({
                   return (
                     <div key={section.id} className="break-inside-avoid">
                       <h3 className="text-sm font-semibold text-slate-900">{meta.label}</h3>
-                      {section.content ? (
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
-                          {section.content}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-sm italic text-slate-400">
-                          Sin contenido registrado.
-                        </p>
-                      )}
+                      <div className="mt-1 text-sm text-slate-800">
+                        <ReportSectionRenderer
+                          section={section}
+                          snapshotJson={snapshotJson}
+                          currency={currency}
+                          isLocked={true}
+                          sectionLabel={meta.label}
+                        />
+                      </div>
                     </div>
                   )
                 })}

@@ -33,6 +33,8 @@ const mockDb = {
   sroiCalculationRuns: [] as any[],
   sroiCalculationLineItems: [] as any[],
   evidenceItems: [] as any[],
+  funders: [] as any[],
+  outcomeFunderAllocations: [] as any[],
 };
 
 function getTableData(table: any): any[] {
@@ -97,6 +99,7 @@ import {
   calculateSroiPreview,
   calculateAndPersistSroiRun,
   getSroiCalculationReadiness,
+  calculateSroiScenarios,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -117,6 +120,8 @@ beforeEach(() => {
     sroiCalculationRuns: [],
     sroiCalculationLineItems: [],
     evidenceItems: [],
+    funders: [],
+    outcomeFunderAllocations: [],
   });
   vi.mocked(requireOrganizationAccess).mockResolvedValue({
     organization: { id: ORG_ID },
@@ -131,10 +136,17 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
     id: 'inv-1',
     projectId: PROJECT_ID,
     organizationId: ORG_ID,
+    funderId: 'funder-1',
+    contributionType: 'cash',
     amount: '1000',
     currency: 'USD',
+    status: 'active',
     ...overrides?.investment,
-  };
+  } as any;
+  // USD contributions freeze amount_usd = amount unless the override sets it.
+  if (investment.amountUsd === undefined) {
+    investment.amountUsd = investment.currency === 'USD' ? investment.amount : null;
+  }
   const proxy = {
     id: 'proxy-1',
     organizationId: null,
@@ -142,7 +154,10 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
     value: '100',
     currency: 'USD',
     ...overrides?.proxy,
-  };
+  } as any;
+  if (proxy.valueUsd === undefined) {
+    proxy.valueUsd = proxy.currency === 'USD' ? proxy.value : null;
+  }
   const assignment = {
     id: ASSIGNMENT_ID,
     projectId: PROJECT_ID,
@@ -171,6 +186,7 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
   };
   mockDb.projects.push({ id: PROJECT_ID, organizationId: ORG_ID });
   mockDb.outcomes.push({ id: 'out-1', projectId: PROJECT_ID, organizationId: ORG_ID });
+  mockDb.funders.push({ id: 'funder-1', organizationId: ORG_ID, name: 'Fundación Test', funderType: 'foundation' });
   mockDb.projectInvestments.push(investment);
   mockDb.financialProxies.push(proxy);
   mockDb.outcomeProxyAssignments.push(assignment);
@@ -320,11 +336,94 @@ describe('Readiness edge cases', () => {
     expect(readiness.blockingReasons).toContain('1 unapproved proxy(ies)');
   });
 
-  it('fails when currency mismatch', async () => {
-    seedHappyData({ investment: { currency: 'USD' }, proxy: { currency: 'EUR' } });
+  it('no longer blocks on mixed currencies — everything is normalized to USD', async () => {
+    // Different source currencies, but both carry a frozen USD equivalent.
+    seedHappyData({
+      investment: { currency: 'COP', amountUsd: '1000' },
+      proxy: { currency: 'EUR', valueUsd: '100' },
+    });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(true);
+    expect(readiness.currencyMismatch).toBe(false);
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    expect(preview.result!.currency).toBe('USD');
+    expect(preview.result!.totalInvestment).toBe(1000);
+    expect(preview.result!.sroiRatio).toBeCloseTo(1);
+  });
+
+  it('blocks when a contribution has no USD conversion', async () => {
+    seedHappyData({ investment: { currency: 'COP', amountUsd: null } });
     const readiness = await getSroiCalculationReadiness(PROJECT_ID);
     expect(readiness.canCalculate).toBe(false);
-    expect(readiness.blockingReasons.some(r => r.includes('Mixed currencies detected'))).toBe(true);
+    expect(readiness.blockingReasons.some(r => r.includes('Falta conversión a USD'))).toBe(true);
+  });
+});
+
+describe('Per-funder breakdown (engine wiring)', () => {
+  it('attributes net value to a funder via an active allocation', async () => {
+    seedHappyData();
+    mockDb.outcomeFunderAllocations.push({
+      id: 'alloc-1', organizationId: ORG_ID, outcomeId: 'out-1', funderId: 'funder-1', allocationPct: '100', status: 'active',
+    });
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    const bd = preview.result!.fundersBreakdown;
+    expect(bd).toHaveLength(1);
+    expect(bd[0].funderId).toBe('funder-1');
+    expect(bd[0].attributedNsvUsd).toBe('1000.0000');
+    expect(bd[0].sroiRatio).toBe('1.000000'); // 1000 attributed / 1000 invested
+    expect(preview.result!.unattributedNsvUsd).toBe('0.0000');
+  });
+
+  it('reports full net value as unattributed when there is no allocation', async () => {
+    seedHappyData();
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    // funder-1 invested but has no allocation → attributed 0, all unattributed.
+    expect(preview.result!.fundersBreakdown[0].attributedNsvUsd).toBe('0.0000');
+    expect(preview.result!.unattributedNsvUsd).toBe('1000.0000');
+  });
+});
+
+describe('NPV / discount rate', () => {
+  it('present-values a multi-year stream at the project discount rate', async () => {
+    seedHappyData({ filter: { durationYears: 3, dropoffPct: '0' } });
+    mockDb.projects.forEach((p) => { p.discountRatePct = '10'; });
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    // 1000/1.1^0 + 1000/1.1^1 + 1000/1.1^2 = 2735.5372
+    expect(preview.result!.netSocialValue).toBeCloseTo(2735.5372, 2);
+    expect(preview.result!.sroiRatio).toBeCloseTo(2.7355, 3);
+  });
+
+  it('does not discount when the rate is null (zero regression)', async () => {
+    seedHappyData({ filter: { durationYears: 3, dropoffPct: '0' } });
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    expect(preview.result!.netSocialValue).toBeCloseTo(3000);
+    expect(preview.result!.sroiRatio).toBeCloseTo(3);
+  });
+});
+
+describe('Sensitivity scenarios', () => {
+  it('computes conservative < base < optimistic ratios (uniform ±delta shift)', async () => {
+    seedHappyData({ filter: { deadweightPct: '20' } });
+    const res = await calculateSroiScenarios(PROJECT_ID, 10);
+    expect(res.canCalculate).toBe(true);
+    const byName = Object.fromEntries(res.scenarios!.map((s) => [s.scenario, s.sroiRatio]));
+    // ALL four filters shift uniformly by ±10pp (base others = 0):
+    //   base:         (1-.20) = 0.80
+    //   conservative: (1-.30)(1-.10)(1-.10) = 0.567
+    //   optimistic:   (1-.10) = 0.90  (attribution/displacement/dropoff clamp at 0)
+    expect(byName.conservative).toBeCloseTo(0.567);
+    expect(byName.base).toBeCloseTo(0.8);
+    expect(byName.optimistic).toBeCloseTo(0.9);
+    expect(byName.conservative).toBeLessThan(byName.base);
+    expect(byName.base).toBeLessThan(byName.optimistic);
+  });
+
+  it('returns canCalculate false (no scenarios) when readiness fails', async () => {
+    // no data seeded → not ready
+    mockDb.projects.push({ id: PROJECT_ID, organizationId: ORG_ID });
+    const res = await calculateSroiScenarios(PROJECT_ID, 10);
+    expect(res.canCalculate).toBe(false);
+    expect(res.scenarios).toBeNull();
   });
 });
 

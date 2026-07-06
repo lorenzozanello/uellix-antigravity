@@ -2,12 +2,14 @@ import Link from 'next/link'
 import { ArrowRight, Calendar, MapPin } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ProjectActionsMenu } from './ProjectActionsMenu'
 
-type ProjectStatus = 'draft' | 'active' | 'completed' | 'archived'
+type ProjectStatus = 'draft' | 'active' | 'paused' | 'completed' | 'archived'
 
 const STATUS_CONFIG: Record<ProjectStatus, { variant: 'neutral' | 'accent' | 'success'; label: string }> = {
   draft: { variant: 'neutral', label: 'Borrador' },
   active: { variant: 'accent', label: 'Activo' },
+  paused: { variant: 'neutral', label: 'En pausa' },
   completed: { variant: 'success', label: 'Completado' },
   archived: { variant: 'neutral', label: 'Archivado' },
 }
@@ -20,9 +22,10 @@ interface ProjectCardProps {
   territory?: string | null
   country?: string | null
   startDate?: Date | string | null
+  userRole?: string
 }
 
-export function ProjectCard({ id, name, description, status, territory, country, startDate }: ProjectCardProps) {
+export function ProjectCard({ id, name, description, status, territory, country, startDate, userRole }: ProjectCardProps) {
   const config = STATUS_CONFIG[status as ProjectStatus] ?? { variant: 'neutral' as const, label: status }
   const locationLabel = [territory, country].filter(Boolean).join(' · ')
   const dateLabel = startDate
@@ -34,9 +37,17 @@ export function ProjectCard({ id, name, description, status, territory, country,
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base leading-snug line-clamp-2">{name}</CardTitle>
-          <Badge variant={config.variant} className="shrink-0">
-            {config.label}
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant={config.variant}>
+              {config.label}
+            </Badge>
+            <ProjectActionsMenu
+              projectId={id}
+              projectName={name}
+              status={status}
+              userRole={userRole}
+            />
+          </div>
         </div>
       </CardHeader>
 

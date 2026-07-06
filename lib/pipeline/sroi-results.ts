@@ -16,7 +16,7 @@ import {
   projects,
 } from '@/db/schema';
 import { z } from 'zod';
-import { SECTION_ORDER } from '@/lib/reports/report-sections';
+import { getInitialSectionTypes } from '@/lib/reports/report-sections';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -41,9 +41,10 @@ type ReviewItemInput = z.infer<typeof ReviewItemInputSchema>;
 
 const ReportDraftInputSchema = z.object({
   title: z.string().min(1),
+  includeFunderBreakdown: z.boolean().optional().default(false),
 });
 
-type ReportDraftInput = z.infer<typeof ReportDraftInputSchema>;
+type ReportDraftInput = z.input<typeof ReportDraftInputSchema>;
 
 const ReportSectionInputSchema = z.object({
   title: z.string().min(1),
@@ -89,10 +90,12 @@ export async function getCalculationRunDetail(projectId: string, runId: string) 
     .from(sroiCalculationLineItems)
     .where(eq(sroiCalculationLineItems.runId, runId));
   const snapshot = run[0].snapshotJson as Record<string, unknown> | null; // column name from schema
+  const currency = run[0].currency ?? 'USD';
   return {
     run: run[0],
     lineItems,
     snapshotJson: snapshot,
+    currency,
     projectContext: { id: projectId, organizationId: ctx.organization.id },
   };
 }
@@ -344,11 +347,6 @@ export async function listSroiRunReviews(projectId: string, runId: string) {
 // 4. Report Foundation
 // ---------------------------------------------------------------------------
 
-// Single source of truth for which sections a report has and their order —
-// shared with the editable detail view and the print/PDF view so a report's
-// stored sections always match what those views render.
-const initialSections = SECTION_ORDER;
-
 export async function createReportDraftFromRun(projectId: string, runId: string, input: ReportDraftInput) {
   const ctx = await authorizeProject(projectId);
   const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'analyst'];
@@ -375,11 +373,18 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
       calculationRunId: runId,
       title: validated.title,
       status: 'draft',
+      includeFunderBreakdown: validated.includeFunderBreakdown,
       createdBy: ctx.user.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
     .returning();
+
+  // Single source of truth for which sections a report has and their order —
+  // shared with the editable detail view and the print/PDF view so a report's
+  // stored sections always match what those views render. funder_breakdown is
+  // only included when the report opts in.
+  const initialSections = getInitialSectionTypes(validated.includeFunderBreakdown);
 
   const sections = initialSections.map((type, idx) => ({
     organizationId: ctx.organization.id,
@@ -425,7 +430,18 @@ export async function getReportDraft(projectId: string, reportId: string) {
     .from(sroiReportSections)
     .where(eq(sroiReportSections.reportId, reportId))
     .orderBy(sroiReportSections.sortOrder);
-  return { ...report[0], sections };
+
+  // Fetch calculation run to include snapshotJson for rendering funder_breakdown
+  const run = await db
+    .select({ snapshotJson: sroiCalculationRuns.snapshotJson, currency: sroiCalculationRuns.currency })
+    .from(sroiCalculationRuns)
+    .where(eq(sroiCalculationRuns.id, report[0].calculationRunId))
+    .then(rows => rows[0] ?? null);
+
+  const snapshotJson = (run?.snapshotJson as Record<string, unknown> | null) ?? null;
+  const currency = run?.currency ?? 'USD';
+
+  return { ...report[0], sections, snapshotJson, currency };
 }
 
 export async function updateReportSection(projectId: string, reportId: string, sectionId: string, input: ReportSectionInput) {

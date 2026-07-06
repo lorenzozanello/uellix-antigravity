@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // tests/outcomes.service.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createOutcome, listOutcomes } from '@/lib/pipeline/outcomes';
+import { createOutcome, listOutcomes, setOutcomeMateriality } from '@/lib/pipeline/outcomes';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
@@ -16,6 +16,7 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
   },
 }));
 
@@ -29,6 +30,13 @@ const mockDbData = {
   project: { id: 'proj-1', organizationId: 'org-1' } as any | null,
   entities: [] as any[],
   inserted: { id: 'out-1', projectId: 'proj-1', stakeholderGroupId: 'sg-1' } as any,
+  outcome: null as any,
+  // Distinguishes "this test doesn't care about the setOutcomeMateriality
+  // select-by-id path" (fall back to `entities`, used by listOutcomes tests)
+  // from "this test explicitly wants the outcome lookup to miss" (outcome:
+  // null with useOutcomeLookup: true, used by the IDOR regression test).
+  // Without this flag, `outcome: null` is ambiguous between those two cases.
+  useOutcomeLookup: false,
 };
 
 vi.mock('@/db/client', () => {
@@ -66,12 +74,30 @@ vi.mock('@/db/client', () => {
               }),
             };
           }
+          if (tableName === 'outcomes' && mockDbData.useOutcomeLookup) {
+            return {
+              where: vi.fn().mockImplementation(() => ({
+                limit: vi.fn().mockReturnThis(),
+                then: vi.fn().mockImplementation((callback) => {
+                  return Promise.resolve(callback(mockDbData.outcome ? [mockDbData.outcome] : []));
+                }),
+              })),
+            };
+          }
           return queryBuilder;
         }),
       }),
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
       returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.inserted])),
+      update: vi.fn().mockImplementation(() => ({
+        set: vi.fn().mockImplementation((values: any) => ({
+          where: vi.fn().mockImplementation(() => {
+            if (mockDbData.outcome) Object.assign(mockDbData.outcome, values);
+            return Promise.resolve([mockDbData.outcome]);
+          }),
+        })),
+      })),
     },
   };
 });
@@ -84,6 +110,8 @@ describe('Outcome service', () => {
     // existing happy-path tests (which don't care about this check) pass.
     mockDbData.entities = [{ id: '550e8400-e29b-41d4-a716-446655440000', projectId: 'proj-1' }];
     mockDbData.inserted = { id: 'out-1', projectId: 'proj-1', stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000' };
+    mockDbData.outcome = null;
+    mockDbData.useOutcomeLookup = false;
   });
 
   it('allows creation with permitted role', async () => {
@@ -180,5 +208,200 @@ describe('Outcome service', () => {
     await expect(createOutcome('proj-1', input)).rejects.toThrow(
       'Stakeholder group does not belong to this project'
     );
+  });
+
+  it('accepts creation with a valid materiality score + rationale', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Outcome with materiality',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 4,
+      materialityRationale: 'Directly tied to the primary funder mandate.',
+    };
+    const result = await createOutcome('proj-1', input);
+    expect(result.id).toBe('out-1');
+  });
+
+  it('rejects a materiality score without a rationale', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 3,
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  it('rejects a materiality rationale without a score', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality 2',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityRationale: 'Orphaned rationale',
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  it('rejects a materiality score outside 1-5', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality 3',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 6,
+      materialityRationale: 'Out of range',
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  // Additional coverage (not from the plan): lower-bound rejection for
+  // materialityScore, mirroring the existing upper-bound test above.
+  it('rejects a materiality score below 1 (e.g. 0)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality 4',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 0,
+      materialityRationale: 'Below range',
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  // Additional coverage (not from the plan): an empty-string rationale is
+  // "present" (not undefined), so the .refine() pairing rule is satisfied;
+  // this should instead fail Zod's .min(1) on the rationale string itself.
+  it('rejects a materiality rationale that is present but empty', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality 5',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 3,
+      materialityRationale: '',
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  it('persists a materiality score and rationale via setOutcomeMateriality', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityScore: null, materialityRationale: null };
+    mockDbData.useOutcomeLookup = true;
+
+    const result = await setOutcomeMateriality('proj-1', 'out-1', {
+      materialityScore: 5,
+      materialityRationale: 'Highest-priority outcome for this cohort.',
+    });
+
+    expect(result.materialityScore).toBe(5);
+    expect(result.materialityRationale).toBe('Highest-priority outcome for this cohort.');
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        beforeJson: { materialityScore: null, materialityRationale: null },
+        afterJson: { materialityScore: 5, materialityRationale: 'Highest-priority outcome for this cohort.' },
+      })
+    );
+  });
+
+  it('clears both fields when materialityScore is null, ignoring any rationale passed', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityScore: 3, materialityRationale: 'Old rationale' };
+    mockDbData.useOutcomeLookup = true;
+
+    const result = await setOutcomeMateriality('proj-1', 'out-1', {
+      materialityScore: null,
+      materialityRationale: 'This text should be ignored',
+    } as any);
+
+    expect(result.materialityScore).toBeNull();
+    expect(result.materialityRationale).toBeNull();
+  });
+
+  it('rejects setOutcomeMateriality with a score but no rationale', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityScore: null, materialityRationale: null };
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMateriality('proj-1', 'out-1', { materialityScore: 2 } as any)
+    ).rejects.toThrow();
+  });
+
+  it('rejects setOutcomeMateriality for an unauthorized role', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u2' },
+      organization: { id: 'org-1' },
+      membership: { role: 'viewer' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(false);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityScore: null, materialityRationale: null };
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMateriality('proj-1', 'out-1', { materialityScore: 3, materialityRationale: 'x' })
+    ).rejects.toThrow('Insufficient permissions');
+  });
+
+  it('rejects setOutcomeMateriality when the outcome does not belong to the project (IDOR regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = null; // simulates no row matching (projectId, outcomeId)
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMateriality('proj-1', 'out-1', { materialityScore: 3, materialityRationale: 'x' })
+    ).rejects.toThrow('Outcome not found for project');
   });
 });

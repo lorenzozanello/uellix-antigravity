@@ -7,6 +7,7 @@ const mockDbData = vi.hoisted(() => ({
   financialProxies: [] as any[],
   inserted: {} as any,
   updated: {} as any,
+  insertedFxRate: {} as any,
 }));
 
 vi.mock('@/lib/auth/session', () => ({
@@ -37,11 +38,16 @@ vi.mock('@/db/client', () => {
           };
         }),
       })),
-      insert: vi.fn().mockImplementation(() => ({
-        values: vi.fn().mockImplementation(() => ({
-          returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.inserted])),
-        })),
-      })),
+      insert: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
+        return {
+          values: vi.fn().mockImplementation(() => ({
+            returning: vi.fn().mockImplementation(() =>
+              Promise.resolve([tableName === 'fx_rates' ? mockDbData.insertedFxRate : mockDbData.inserted])
+            ),
+          })),
+        };
+      }),
       update: vi.fn().mockImplementation(() => ({
         set: vi.fn().mockImplementation(() => ({
           where: vi.fn().mockImplementation(() => ({
@@ -59,6 +65,7 @@ import {
   createGlobalProxySource,
   createGlobalFinancialProxy,
   updateGlobalProxyReviewStatus,
+  setGlobalProxyManualFxRate,
 } from '@/lib/admin/proxies';
 import { requireAdminAccess } from '@/lib/auth/session';
 import { logAuditAction } from '@/lib/audit/logger';
@@ -150,5 +157,45 @@ describe('updateGlobalProxyReviewStatus', () => {
     mockDbData.financialProxies = [{ id: 'proxy-1', organizationId: null, reviewStatus: 'suggested' }];
 
     await expect(updateGlobalProxyReviewStatus('proxy-1', 'not_a_status')).rejects.toThrow('Invalid status');
+  });
+});
+
+describe('setGlobalProxyManualFxRate', () => {
+  it('rejects proxies that belong to an organization', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
+    mockDbData.financialProxies = [{ id: 'proxy-1', organizationId: 'org-1', value: '100', currency: 'EUR' }];
+
+    await expect(setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0.92', source: 'ECB' })).rejects.toThrow(
+      'Not a global proxy'
+    );
+  });
+
+  it('rejects a USD proxy (no conversion needed)', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
+    mockDbData.financialProxies = [{ id: 'proxy-1', organizationId: null, value: '100', currency: 'USD' }];
+
+    await expect(setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '1', source: 'n/a' })).rejects.toThrow(
+      'do not need an FX rate'
+    );
+  });
+
+  it('rejects a non-positive rate', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
+    mockDbData.financialProxies = [{ id: 'proxy-1', organizationId: null, value: '100', currency: 'EUR', referenceYear: 2024 }];
+
+    await expect(setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0', source: 'ECB' })).rejects.toThrow();
+  });
+
+  it('freezes value_usd using the manual rate and the reference-year Dec 31 date', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
+    const proxy = { id: 'proxy-1', organizationId: null, value: '92', currency: 'EUR', referenceYear: 2024 };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.insertedFxRate = { id: 'fxrate-1', currency: 'EUR', rateDate: '2024-12-31', rateToUsd: '0.92', source: 'ECB', sourceType: 'manual' };
+    mockDbData.updated = { ...proxy, valueUsd: '100.0000', fxRateId: 'fxrate-1' };
+
+    const result = await setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0.92', source: 'ECB' });
+    expect(result.valueUsd).toBe('100.0000');
+    expect(result.fxRateId).toBe('fxrate-1');
+    expect(logAuditAction).toHaveBeenCalled();
   });
 });

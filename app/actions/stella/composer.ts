@@ -7,6 +7,7 @@
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildComposerContext, StellaBuildComposerContextError } from '@/lib/stella/context/build-composer-context'
+import { buildContextHash } from '@/lib/stella/context/build-context-hash'
 import { buildComposerSystemPrompt, buildComposerUserMessage } from '@/lib/stella/prompts/composer-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ComposerOutputSchema } from '@/lib/stella/schemas/composer-output'
@@ -92,6 +93,7 @@ export async function getStellaComposer(
     // Build prompts
     const systemPrompt = buildComposerSystemPrompt(sectionType)
     const userMessage = buildComposerUserMessage(sectionType, context)
+    const contextHash = buildContextHash(context)
 
     // Generate via Gemini adapter (real or mock in tests)
     const adapter = getGeminiAdapter()
@@ -99,6 +101,7 @@ export async function getStellaComposer(
       role: 'composer',
       systemPrompt,
       userMessage,
+      contextHash,
     })
 
     // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
@@ -112,7 +115,7 @@ export async function getStellaComposer(
         createdBy: ctx.user.id,
         stellaRole: 'composer',
         pipelineStep: sectionType,
-        contextHash: '',
+        contextHash,
         responseJson: data as unknown,
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,

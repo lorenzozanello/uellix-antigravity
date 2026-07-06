@@ -51,7 +51,8 @@ export default async function ReportListPage({
     'use server'
     const runId = formData.get('runId') as string
     const title = formData.get('title') as string
-    const result = await createReportDraftFromRunAction(projectId, runId, { title })
+    const includeFunderBreakdown = formData.get('includeFunderBreakdown') === 'on'
+    const result = await createReportDraftFromRunAction(projectId, runId, { title, includeFunderBreakdown })
     revalidatePath(`/app/projects/${projectId}/report`)
     redirect(`/app/projects/${projectId}/report/${result.id}`)
   }
@@ -173,6 +174,21 @@ export default async function ReportListPage({
                     Usa un título descriptivo que identifique el período del proyecto o el alcance geográfico.
                   </p>
                 </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <input
+                  id="includeFunderBreakdown"
+                  name="includeFunderBreakdown"
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-input"
+                />
+                <label htmlFor="includeFunderBreakdown" className="text-sm text-foreground">
+                  Incluir desglose financiero por financiador
+                  <span className="block text-xs text-muted-foreground font-normal">
+                    Agrega una sección con el ratio SROI individual por financiador, el valor
+                    atribuido y el valor social sin atribuir.
+                  </span>
+                </label>
               </div>
               <button
                 type="submit"

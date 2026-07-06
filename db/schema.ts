@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, varchar, jsonb, boolean, unique, check, uniqueIndex, index, integer, numeric, date } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const users = pgTable('users', {
@@ -109,14 +109,30 @@ export const projects = pgTable('projects', {
   startDate: timestamp('start_date'),
   endDate: timestamp('end_date'),
   targetPopulationDescription: text('target_population_description'),
+  // Fase 1e — annual discount rate (%) for present-valuing multi-year outcomes.
+  // NULL / 0 = no discounting (prior behavior). Additive & nullable — safe to
+  // apply to prod any time; pre-1e code simply ignores it.
+  discountRatePct: numeric('discount_rate_pct', { precision: 5, scale: 2 }),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // Soft delete fields: tracks deletion requests and deletions with full audit trail
+  deletionRequestedAt: timestamp('deletion_requested_at'),
+  deletionRequestedBy: uuid('deletion_requested_by').references(() => users.id),
+  deletionReason: text('deletion_reason'),
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by').references(() => users.id),
+  deleteReason: text('delete_reason'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
-  check('status_check', sql`${table.status} IN ('draft', 'active', 'completed', 'archived')`),
+  check('status_check', sql`${table.status} IN ('draft', 'active', 'paused', 'completed', 'archived')`),
+  check('projects_discount_rate_check', sql`${table.discountRatePct} IS NULL OR (${table.discountRatePct} >= 0 AND ${table.discountRatePct} <= 100)`),
+  check('deletion_request_consistency_check', sql`(${table.deletionRequestedAt} IS NULL AND ${table.deletionRequestedBy} IS NULL AND ${table.deletionReason} IS NULL) OR (${table.deletionRequestedAt} IS NOT NULL AND ${table.deletionRequestedBy} IS NOT NULL AND ${table.deletionReason} IS NOT NULL)`),
+  check('deletion_consistency_check', sql`(${table.deletedAt} IS NULL AND ${table.deletedBy} IS NULL AND ${table.deleteReason} IS NULL) OR (${table.deletedAt} IS NOT NULL AND ${table.deletedBy} IS NOT NULL AND ${table.deleteReason} IS NOT NULL)`),
   index('idx_projects_organization_id').on(table.organizationId),
   index('idx_projects_portfolio_id').on(table.portfolioId),
+  index('idx_projects_deletion_requested_at').on(table.deletionRequestedAt).where(sql`${table.deletionRequestedAt} IS NOT NULL`),
+  index('idx_projects_deleted_at').on(table.deletedAt).where(sql`${table.deletedAt} IS NOT NULL`),
 ])
 
 export const impactNarratives = pgTable('impact_narratives', {
@@ -154,11 +170,15 @@ export const outcomes = pgTable('outcomes', {
   description: text('description'),
   outcomeType: varchar('outcome_type', { length: 100 }),
   materialityNotes: text('materiality_notes'),
+  materialityScore: integer('materiality_score'),
+  materialityRationale: text('materiality_rationale'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
+  check('outcomes_materiality_score_check', sql`${table.materialityScore} IS NULL OR (${table.materialityScore} >= 1 AND ${table.materialityScore} <= 5)`),
+  check('outcomes_materiality_pair_check', sql`(${table.materialityScore} IS NULL AND ${table.materialityRationale} IS NULL) OR (${table.materialityScore} IS NOT NULL AND ${table.materialityRationale} IS NOT NULL)`),
   index('idx_outcomes_project_id').on(table.projectId),
   index('idx_outcomes_stakeholder_group_id').on(table.stakeholderGroupId),
 ])
@@ -203,12 +223,17 @@ export const evidenceItems = pgTable('evidence_items', {
   reviewerId: uuid('reviewer_id').references(() => users.id),
   reviewedAt: timestamp('reviewed_at'),
   reviewNotes: text('review_notes'),
+  confidenceScore: integer('confidence_score'),
+  confidenceCalculatedAt: timestamp('confidence_calculated_at'),
+  integrityVerified: boolean('integrity_verified'),
+  integrityVerifiedAt: timestamp('integrity_verified_at'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('evidence_items_type_check', sql`${table.type} IN ('file', 'url', 'text')`),
   check('evidence_items_status_check', sql`${table.status} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+  check('evidence_items_confidence_score_check', sql`${table.confidenceScore} IS NULL OR (${table.confidenceScore} >= 0 AND ${table.confidenceScore} <= 100)`),
   index('idx_evidence_items_project_id').on(table.projectId),
   index('idx_evidence_items_organization_id').on(table.organizationId),
   index('idx_evidence_items_outcome_id').on(table.outcomeId),
@@ -240,6 +265,10 @@ export const financialProxies = pgTable('financial_proxies', {
   territory: varchar('territory', { length: 255 }),
   currency: varchar('currency', { length: 10 }),
   value: numeric('value', { precision: 20, scale: 4 }),
+  // Frozen USD equivalent + the fx_rate used (null when currency is already USD).
+  // FX lookup date for a proxy is Dec 31 of its reference_year.
+  valueUsd: numeric('value_usd', { precision: 20, scale: 4 }),
+  fxRateId: uuid('fx_rate_id').references(() => fxRates.id),
   unit: varchar('unit', { length: 50 }),
   referenceYear: integer('reference_year'),
   thematicArea: varchar('thematic_area', { length: 255 }),
@@ -256,7 +285,10 @@ export const financialProxies = pgTable('financial_proxies', {
   check('confidence_level_check', sql`${table.confidenceLevel} IN ('high', 'medium', 'low')`),
   check('methodological_risk_check', sql`${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
   check('review_status_check', sql`${table.reviewStatus} IN ('suggested', 'pending_review', 'approved', 'rejected', 'archived')`),
-  check('approved_proxy_check', sql`${table.reviewStatus} != 'approved' OR (${table.value} IS NOT NULL AND ${table.currency} IS NOT NULL AND ${table.unit} IS NOT NULL AND ${table.referenceYear} IS NOT NULL)`),
+  // An approved proxy must resolve to USD (value_usd) so the calculation's two
+  // sides can both be normalized. Safe to enforce: no approved non-USD proxy
+  // exists at migration time (all are backfilled value_usd = value first).
+  check('approved_proxy_check', sql`${table.reviewStatus} != 'approved' OR (${table.value} IS NOT NULL AND ${table.currency} IS NOT NULL AND ${table.unit} IS NOT NULL AND ${table.referenceYear} IS NOT NULL AND ${table.valueUsd} IS NOT NULL)`),
   index('idx_financial_proxies_organization_id').on(table.organizationId),
   index('idx_financial_proxies_source_id').on(table.sourceId),
 ])
@@ -285,8 +317,16 @@ export const projectInvestments = pgTable('project_investments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  // Fase 1b: a project can now have multiple investment contributions (list
+  // semantics via status active/archived), each from a funder, cash or in-kind.
+  funderId: uuid('funder_id').references(() => funders.id).notNull(),
+  contributionType: varchar('contribution_type', { length: 20 }).$type<'cash' | 'in_kind'>().default('cash').notNull(),
+  inKindValuationNotes: text('in_kind_valuation_notes'),
   amount: numeric('amount', { precision: 20, scale: 4 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull(),
+  // Frozen USD equivalent + the fx_rate used (null when currency is already USD).
+  amountUsd: numeric('amount_usd', { precision: 20, scale: 4 }),
+  fxRateId: uuid('fx_rate_id').references(() => fxRates.id),
   year: integer('year'),
   description: text('description'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
@@ -296,7 +336,10 @@ export const projectInvestments = pgTable('project_investments', {
 }, (table) => [
   check('project_investments_amount_check', sql`${table.amount} > 0`),
   check('project_investments_status_check', sql`${table.status} IN ('active', 'archived')`),
+  check('project_investments_contribution_type_check', sql`${table.contributionType} IN ('cash', 'in_kind')`),
+  check('project_investments_in_kind_notes_check', sql`${table.contributionType} <> 'in_kind' OR ${table.inKindValuationNotes} IS NOT NULL`),
   index('idx_project_investments_project_id').on(table.projectId),
+  index('idx_project_investments_funder_id').on(table.funderId),
 ])
 
 export const sroiAssignmentInputs = pgTable('sroi_assignment_inputs', {
@@ -434,6 +477,10 @@ export const sroiReports = pgTable('sroi_reports', {
   title: varchar('title', { length: 255 }).notNull(),
   summary: text('summary'),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // Fase 1f — chosen at draft-creation time ("Incluir desglose financiero por
+  // financiador"), immutable after creation like other report-anchoring
+  // decisions. Determines whether the funder_breakdown section is generated.
+  includeFunderBreakdown: boolean('include_funder_breakdown').default(false).notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   updatedBy: uuid('updated_by').references(() => users.id),
   lockedBy: uuid('locked_by').references(() => users.id),
@@ -504,4 +551,128 @@ export const signupAllowlist = pgTable('signup_allowlist', {
 }, (table) => [
   unique('signup_allowlist_pattern_unique').on(table.pattern),
   check('signup_allowlist_type_check', sql`${table.type} IN ('email', 'domain')`),
+])
+
+// ─── Fase 1: Multi-funder investments + FX-to-USD normalization ───────────────
+// Foundation tables (Etapa 1a). The calculation-engine wiring and the
+// project_investments / financial_proxies column additions land in Etapa 1b.
+// Design: docs/superpowers/specs/2026-07-03-multi-funder-investment-usd-design.md
+
+// Per-organization catalog of funding entities. No approval workflow (unlike
+// financial_proxies) — any analyst+ can create one. Not shared across orgs.
+export const funders = pgTable('funders', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  funderType: varchar('funder_type', { length: 50 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('funders_funder_type_check', sql`${table.funderType} IN ('public', 'private', 'foundation', 'multilateral', 'individual', 'other')`),
+  index('idx_funders_organization_id').on(table.organizationId),
+])
+
+// Reusable, cached lookup of historical exchange rates to USD. Conversion:
+// amount_usd = amount / rate_to_usd (rate_to_usd = units of `currency` per 1 USD).
+// organization_id is NULL for auto-fetched COP rates (shared/global, cached once)
+// and NOT NULL for manual entries of other currencies (org-scoped, so one org's
+// typo cannot corrupt another org's calculation).
+export const fxRates = pgTable('fx_rates', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  currency: varchar('currency', { length: 10 }).notNull(),
+  rateDate: date('rate_date').notNull(),
+  rateToUsd: numeric('rate_to_usd', { precision: 20, scale: 6 }).notNull(),
+  source: text('source').notNull(),
+  sourceType: varchar('source_type', { length: 20 }).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('fx_rates_source_type_check', sql`${table.sourceType} IN ('auto_fetched', 'manual')`),
+  check('fx_rates_rate_to_usd_check', sql`${table.rateToUsd} > 0`),
+  // Cache key for the shared auto-fetched rates (org NULL): one row per
+  // (currency, date). Manual per-org rates are deduped separately below.
+  uniqueIndex('fx_rates_shared_currency_date_unique').on(table.currency, table.rateDate).where(sql`${table.organizationId} IS NULL`),
+  uniqueIndex('fx_rates_org_currency_date_unique').on(table.organizationId, table.currency, table.rateDate).where(sql`${table.organizationId} IS NOT NULL`),
+  index('idx_fx_rates_currency_date').on(table.currency, table.rateDate),
+])
+
+// Many-to-many attribution of funders to outcomes with a percentage split.
+// The sum of active allocation_pct per outcome must not exceed 100% — enforced
+// in application code (requires summing across rows), not as a DB constraint.
+export const outcomeFunderAllocations = pgTable('outcome_funder_allocations', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  funderId: uuid('funder_id').references(() => funders.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  allocationPct: numeric('allocation_pct', { precision: 7, scale: 4 }).notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('outcome_funder_allocations_pct_check', sql`${table.allocationPct} > 0 AND ${table.allocationPct} <= 100`),
+  check('outcome_funder_allocations_status_check', sql`${table.status} IN ('active', 'archived')`),
+  index('idx_ofa_outcome_id').on(table.outcomeId),
+  index('idx_ofa_funder_id').on(table.funderId),
+  index('idx_ofa_organization_id').on(table.organizationId),
+])
+
+// ─── Fase 2a: Structured theory of change ─────────────────────────────────────
+// A simple activity → output → outcome graph with typed causal links and
+// optional per-link assumptions. Coexists with (does not replace)
+// impact_narratives.theoryOfChangeSummary. Outcome-type nodes reference real
+// `outcomes` rows so the graph stays connected to the pipeline that actually
+// feeds the SROI calculation.
+// Design: docs/superpowers/specs/2026-07-05-theory-of-change-structured-design.md
+
+export const theoryOfChangeNodes = pgTable('theory_of_change_nodes', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  nodeType: varchar('node_type', { length: 20 }).notNull(),
+  // NOT NULL only when nodeType = 'outcome' (enforced by the check below);
+  // that the referenced outcome belongs to this project is validated in the
+  // service layer (an FK alone can't express cross-column project matching).
+  outcomeId: uuid('outcome_id').references(() => outcomes.id),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('theory_of_change_nodes_type_check', sql`${table.nodeType} IN ('activity', 'output', 'outcome')`),
+  check('theory_of_change_nodes_status_check', sql`${table.status} IN ('active', 'archived')`),
+  check('theory_of_change_nodes_outcome_ref_check', sql`(${table.nodeType} = 'outcome' AND ${table.outcomeId} IS NOT NULL) OR (${table.nodeType} != 'outcome' AND ${table.outcomeId} IS NULL)`),
+  // An active outcome-type node is unique per outcome per project — archiving
+  // one frees the slot for a new node referencing the same outcome.
+  uniqueIndex('theory_of_change_nodes_outcome_unique').on(table.projectId, table.outcomeId).where(sql`${table.outcomeId} IS NOT NULL AND ${table.status} = 'active'`),
+  index('idx_toc_nodes_project_id').on(table.projectId),
+  index('idx_toc_nodes_organization_id').on(table.organizationId),
+  index('idx_toc_nodes_outcome_id').on(table.outcomeId),
+])
+
+export const theoryOfChangeLinks = pgTable('theory_of_change_links', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  fromNodeId: uuid('from_node_id').references(() => theoryOfChangeNodes.id).notNull(),
+  toNodeId: uuid('to_node_id').references(() => theoryOfChangeNodes.id).notNull(),
+  assumption: text('assumption'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('theory_of_change_links_status_check', sql`${table.status} IN ('active', 'archived')`),
+  check('theory_of_change_links_no_self_check', sql`${table.fromNodeId} != ${table.toNodeId}`),
+  // Link-type validity (activity->output, output->outcome only) is NOT a DB
+  // constraint — it would require a self-join, not expressible as a portable
+  // CHECK. Enforced in lib/pipeline/theory-of-change.ts's isValidLinkTransition.
+  index('idx_toc_links_project_id').on(table.projectId),
+  index('idx_toc_links_organization_id').on(table.organizationId),
+  index('idx_toc_links_from_node_id').on(table.fromNodeId),
+  index('idx_toc_links_to_node_id').on(table.toNodeId),
 ])

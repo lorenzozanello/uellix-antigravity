@@ -11,10 +11,25 @@ const organizationJsonLd = {
   name: "Uellix",
   legalName: "The Balance Corp",
   url: siteUrl,
+  // 1024x1024 raster, matches Google's Logo structured-data requirement
+  // (square, PNG/JPG/GIF, min 112x112 — the SVG brand marks don't qualify).
+  logo: `${siteUrl}/brand/uellix-logo-icon-from-guide.png`,
   description:
     "Plataforma de inteligencia de impacto social audit-ready: estructura proyectos, conecta evidencias, documenta proxies y filtros SROI y genera reportes preparados para revisión externa.",
   email: "hola@uellix.com",
   slogan: "Convierte el impacto social en evidencia defendible.",
+};
+
+// JSON-LD WebSite — anchors the site name/language as an entity. No
+// `potentialAction: SearchAction`: there is no public site search, and the
+// schema must not claim a capability that doesn't exist.
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Uellix",
+  url: siteUrl,
+  inLanguage: "es",
+  publisher: { "@type": "Organization", name: "Uellix" },
 };
 
 export default function PublicLayout({
@@ -28,6 +43,11 @@ export default function PublicLayout({
         type="application/ld+json"
         // Static, trusted content — safe to inline.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // Static, trusted content — safe to inline.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
 
       {/* Skip link — visible on focus */}

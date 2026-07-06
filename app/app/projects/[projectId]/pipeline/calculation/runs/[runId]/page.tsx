@@ -17,6 +17,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
+import { CalculationResultsCard } from '@/components/calculation-results/CalculationResultsCard';
 import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -257,6 +258,13 @@ export default async function RunDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Calculation Results with Per-Funder Breakdown */}
+      <CalculationResultsCard
+        snapshotJson={snapshotJson}
+        currency={run.currency || 'USD'}
+        showFxAudit={true}
+      />
 
       {/* Snapshot JSON */}
       {snapshotJson && (

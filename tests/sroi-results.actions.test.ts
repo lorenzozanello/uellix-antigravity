@@ -91,13 +91,21 @@ describe('upsertSroiRunReviewItemAction', () => {
 });
 
 describe('createReportDraftFromRunAction', () => {
-  it('validates and delegates', async () => {
+  it('validates and delegates, defaulting includeFunderBreakdown to false', async () => {
     const payload = { title: 'Annual SROI Report' };
     vi.mocked(createReportDraftFromRun).mockResolvedValue({ id: REPORT_ID, title: 'Annual SROI Report' } as any);
 
     const result = await createReportDraftFromRunAction(PROJECT_ID, RUN_ID, payload);
     expect(result.id).toBe(REPORT_ID);
-    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, payload);
+    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, { title: 'Annual SROI Report', includeFunderBreakdown: false });
+  });
+
+  it('passes includeFunderBreakdown through when true', async () => {
+    const payload = { title: 'Multi-Funder Report', includeFunderBreakdown: true };
+    vi.mocked(createReportDraftFromRun).mockResolvedValue({ id: REPORT_ID, title: 'Multi-Funder Report' } as any);
+
+    await createReportDraftFromRunAction(PROJECT_ID, RUN_ID, payload);
+    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, { title: 'Multi-Funder Report', includeFunderBreakdown: true });
   });
 
   it('fails validation on empty title', async () => {

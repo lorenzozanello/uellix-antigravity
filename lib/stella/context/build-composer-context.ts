@@ -251,7 +251,7 @@ export async function buildComposerContext(
     durationYears: f.durationYears ?? undefined,
   }))
 
-  // Latest SROI calculation run — totals only, snapshotJson NEVER included
+  // Latest SROI calculation run — totals only, snapshotJson NEVER included directly
   const latestRun = await db
     .select({
       id: sroiCalculationRuns.id,
@@ -261,6 +261,7 @@ export async function buildComposerContext(
       grossSocialValue: sroiCalculationRuns.grossSocialValue,
       netSocialValue: sroiCalculationRuns.netSocialValue,
       sroiRatio: sroiCalculationRuns.sroiRatio,
+      snapshotJson: sroiCalculationRuns.snapshotJson,
     })
     .from(sroiCalculationRuns)
     .where(
@@ -282,6 +283,31 @@ export async function buildComposerContext(
       .from(sroiCalculationLineItems)
       .where(eq(sroiCalculationLineItems.runId, latestRun.id))
 
+    // Extract funder breakdown from snapshotJson if available
+    const snapshot = latestRun.snapshotJson as Record<string, unknown> | null
+    const fundersBreakdownRaw = snapshot?.fundersBreakdown as Array<{
+      funderId: string
+      funderName: string
+      funderType: string
+      investmentUsd: string
+      attributedNsvUsd: string
+      sroiRatio: string
+    }> | undefined
+    const unattributedNsvUsdRaw = snapshot?.unattributedNsvUsd as string | undefined
+
+    const fundersBreakdown = fundersBreakdownRaw
+      ? fundersBreakdownRaw.map((row) => ({
+          funderId: row.funderId,
+          funderName: sanitizeString(row.funderName, 200),
+          funderType: sanitizeString(row.funderType, 100),
+          investmentUsd: parseFloat(row.investmentUsd),
+          attributedNsvUsd: parseFloat(row.attributedNsvUsd),
+          sroiRatio: parseFloat(row.sroiRatio),
+        }))
+      : undefined
+
+    const unattributedNsvUsd = unattributedNsvUsdRaw ? parseFloat(unattributedNsvUsdRaw) : undefined
+
     calculationSnapshot = {
       totalInvestment: parseFloat(latestRun.totalInvestment ?? '0'),
       grossSocialValue: parseFloat(latestRun.grossSocialValue ?? '0'),
@@ -290,6 +316,8 @@ export async function buildComposerContext(
       currency: latestRun.currency ?? 'USD',
       lineItemCount: lineItems.length,
       version: latestRun.version,
+      fundersBreakdown,
+      unattributedNsvUsd,
     }
   }
 

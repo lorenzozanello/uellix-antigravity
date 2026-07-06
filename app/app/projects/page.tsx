@@ -68,6 +68,7 @@ export default async function ProjectsPage() {
               territory={project.territory}
               country={project.country}
               startDate={project.startDate}
+              userRole={ctx.membership.role}
             />
           ))}
           {canCreate && (

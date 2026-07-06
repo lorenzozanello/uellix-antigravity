@@ -69,9 +69,36 @@ export function buildComposerUserMessage(
 **Proxies assigned:** ${context.proxySummary.length} proxies
 `
 
+  let funderContext = ''
+  if (sectionType === 'funder_breakdown' && context.calculationSnapshot?.fundersBreakdown) {
+    const fb = context.calculationSnapshot.fundersBreakdown
+    const funderBreakdownSummary = fb
+      .map(
+        (f) =>
+          `- ${f.funderName} (${f.funderType}): ${context.calculationSnapshot?.currency} ${f.investmentUsd.toFixed(2)} invested → SROI ${f.sroiRatio.toFixed(2)}:1`
+      )
+      .join('\n')
+
+    const unattributedNote =
+      context.calculationSnapshot.unattributedNsvUsd && context.calculationSnapshot.unattributedNsvUsd > 0
+        ? `\n\nUnattributed impact (not yet allocated to funders): ${context.calculationSnapshot.currency} ${context.calculationSnapshot.unattributedNsvUsd.toFixed(2)}`
+        : ''
+
+    funderContext = `
+
+**Funder Breakdown:**
+${funderBreakdownSummary}${unattributedNote}
+
+For this section, provide:
+1. Clear summary of each funder's financial contribution and attributed impact (SROI ratio)
+2. Comparison of returns across funder types (if relevant)
+3. Explanation of any unattributed impact
+4. Methodology note that ratios are based on outcome allocations`
+  }
+
   return `Please write the "${sectionType}" section of our SROI impact report.
 
-${contextSummary}
+${contextSummary}${funderContext}
 
 Generate a draft that is clear, audit-ready, and cites evidence/proxies explicitly. Remember that this is a DRAFT - the user will review and edit before publication.
 

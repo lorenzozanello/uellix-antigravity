@@ -7,6 +7,30 @@ import { z } from 'zod';
 import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/auth/session';
 import { canApproveProxy } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
+import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx';
+
+// Fase 1b — an approved proxy must resolve to USD (value_usd) so the calc's two
+// sides normalize. USD passes through; COP auto-fetches the TRM (Dec 31 of the
+// reference year); any other currency needs a manual rate (1c) and cannot be
+// auto-approved yet.
+export async function resolveProxyValueUsd(proxy: {
+  value: string | null
+  currency: string | null
+  referenceYear: number | null
+  valueUsd: string | null
+  fxRateId: string | null
+}): Promise<{ valueUsd: string; fxRateId: string | null }> {
+  if (proxy.valueUsd) return { valueUsd: proxy.valueUsd, fxRateId: proxy.fxRateId }
+  if (!proxy.value) throw new Error('Cannot resolve USD value without a value')
+  if (proxy.currency === 'USD') return { valueUsd: proxy.value, fxRateId: null }
+  if (proxy.currency === 'COP') {
+    const date = proxy.referenceYear ? `${proxy.referenceYear}-12-31` : new Date().toISOString().slice(0, 10)
+    const rate = await getOrCreateSharedCopRate(date)
+    if (!rate?.rateToUsd) throw new Error('Cannot approve: COP→USD rate unavailable for the reference year')
+    return { valueUsd: convertToUsd(proxy.value, rate.rateToUsd), fxRateId: rate.id }
+  }
+  throw new Error('Cannot approve a non-USD/COP proxy without a manual USD conversion')
+}
 
 /*** Validation schemas ***/
 const ProxySourceInput = z.object({
@@ -266,7 +290,13 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
       throw new Error('Cannot approve a proxy with a non-positive value');
     }
   }
-  const updated = await db.update(financialProxies).set({ reviewStatus: newStatus, updatedAt: new Date() })
+
+  // On approval, freeze the USD equivalent (required by approved_proxy_check).
+  const usdFields = newStatus === 'approved'
+    ? await resolveProxyValueUsd(proxy)
+    : {};
+
+  const updated = await db.update(financialProxies).set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
     .where(eq(financialProxies.id, proxyId))
     .returning().then(r => r[0]);
 
