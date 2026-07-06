@@ -61,6 +61,9 @@ export const AUDIT_ACTIONS = {
   THEORY_OF_CHANGE_NODE_ARCHIVED: 'theory_of_change_node.archived',
   THEORY_OF_CHANGE_LINK_CREATED: 'theory_of_change_link.created',
   THEORY_OF_CHANGE_LINK_ARCHIVED: 'theory_of_change_link.archived',
+
+  // Outcomes
+  OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

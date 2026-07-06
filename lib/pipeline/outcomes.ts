@@ -111,6 +111,69 @@ export async function getOutcomeByIdForProject(projectId: string, outcomeId: str
   return outcome;
 }
 
+const setMaterialitySchema = z.object({
+  materialityScore: z.number().int().min(1).max(5).nullable(),
+  materialityRationale: z.string().min(1).optional(),
+}).refine(
+  (data) => data.materialityScore === null || (data.materialityRationale !== undefined && data.materialityRationale.length > 0),
+  { message: 'materialityRationale is required when materialityScore is set', path: ['materialityRationale'] },
+);
+type SetMaterialityInput = z.infer<typeof setMaterialitySchema>;
+
+/** Assign or clear an outcome's materiality score + rationale. The only edit path `outcomes` has today — deliberately scoped to just these two fields. */
+export async function setOutcomeMateriality(projectId: string, outcomeId: string, input: SetMaterialityInput) {
+  const ctx = await verifyProjectAccess(projectId);
+  if (!hasRole(ctx.membership.role, 'analyst')) {
+    throw new Error('Insufficient permissions to set outcome materiality');
+  }
+  const parsed = setMaterialitySchema.parse(input);
+
+  const before = await db
+    .select()
+    .from(outcomes)
+    .where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+    .then((rows) => rows[0] ?? null);
+  if (!before) throw new Error('Outcome not found for project');
+
+  // Captured into local primitives before the update runs. With a real
+  // Drizzle client this doesn't strictly matter (an UPDATE never mutates a
+  // JS object returned by an earlier SELECT), but it avoids relying on that
+  // guarantee — see the Fase 2b lesson where a test mock that mutates
+  // objects by reference made this exact ordering matter for correctness.
+  const previousScore = before.materialityScore
+  const previousRationale = before.materialityRationale
+
+  // Clearing the score always clears the rationale too, regardless of what
+  // the caller passed for it — the atomic pair can never be broken from
+  // this single write path.
+  const finalScore = parsed.materialityScore
+  const finalRationale = finalScore === null ? null : parsed.materialityRationale ?? null
+
+  await db
+    .update(outcomes)
+    .set({ materialityScore: finalScore, materialityRationale: finalRationale, updatedAt: new Date() })
+    .where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+
+  const after = await db
+    .select()
+    .from(outcomes)
+    .where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+    .then((rows) => rows[0] ?? null)
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'outcome',
+    entityId: outcomeId,
+    action: AUDIT_ACTIONS.OUTCOME_MATERIALITY_UPDATED,
+    beforeJson: { materialityScore: previousScore, materialityRationale: previousRationale },
+    afterJson: { materialityScore: after?.materialityScore ?? null, materialityRationale: after?.materialityRationale ?? null },
+  })
+
+  return after
+}
+
 // Alias exports for test compatibility
 export const listOutcomes = listOutcomesForProject;
 export const createOutcome = createOutcomeForProject;
