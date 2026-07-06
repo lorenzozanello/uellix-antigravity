@@ -1,5 +1,5 @@
 // lib/pipeline/fx.ts
-// Fase 1a — FX adapter: normalize contributions/proxies to USD.
+// Fase 1a — FX adapter: server-only DB operations for exchange rates.
 //
 // COP is auto-fetched from the official Colombian TRM (Tasa Representativa del
 // Mercado) via the datos.gov.co Socrata dataset. The validity RANGE
@@ -16,11 +16,30 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { fxRates } from '@/db/schema'
 
-export const COP_TRM_ENDPOINT = 'https://www.datos.gov.co/resource/32sa-8pi3.json'
-export const COP_TRM_SOURCE = 'Superintendencia Financiera de Colombia — TRM oficial (datos.gov.co)'
-
 // USD amounts carry 4 decimals, matching the numeric(20,4) money columns.
 const USD_DP = 4
+
+/**
+ * Convert an amount in a source currency to USD (pure function).
+ * amount_usd = amount / rate_to_usd, rounded HALF_UP to 4 decimals.
+ */
+export function convertToUsd(amount: string, rateToUsd: string): string {
+  const rate = new Decimal(rateToUsd)
+  if (rate.lte(0)) throw new Error('rate_to_usd must be > 0')
+  return new Decimal(amount).div(rate).toFixed(USD_DP)
+}
+
+/**
+ * Convert USD back to source currency (pure function).
+ */
+export function convertFromUsd(amountUsd: string, rateToUsd: string): string {
+  const rate = new Decimal(rateToUsd)
+  if (rate.lte(0)) throw new Error('rate_to_usd must be > 0')
+  return new Decimal(amountUsd).times(rate).toFixed(USD_DP)
+}
+
+export const COP_TRM_ENDPOINT = 'https://www.datos.gov.co/resource/32sa-8pi3.json'
+export const COP_TRM_SOURCE = 'Superintendencia Financiera de Colombia — TRM oficial (datos.gov.co)'
 
 export interface CopTrmResult {
   /** Units of COP per 1 USD, as returned by the TRM (e.g. "4158.1"). */
@@ -39,17 +58,6 @@ function toIsoDate(date: Date | string): string {
     date = new Date(date)
   }
   return date.toISOString().slice(0, 10)
-}
-
-/**
- * Convert an amount in a source currency to USD.
- * amount_usd = amount / rate_to_usd, rounded HALF_UP to 4 decimals.
- * Throws on a non-positive rate (guards divide-by-zero / bad data).
- */
-export function convertToUsd(amount: string, rateToUsd: string): string {
-  const rate = new Decimal(rateToUsd)
-  if (rate.lte(0)) throw new Error('rate_to_usd must be > 0')
-  return new Decimal(amount).div(rate).toFixed(USD_DP)
 }
 
 /**

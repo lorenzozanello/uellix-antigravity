@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Trash2, RefreshCw } from 'lucide-react'
-import { convertToUsd } from '@/lib/pipeline/fx'
+import { convertToUsd } from '@/lib/pipeline/fx-math'
 
 interface Funder {
   id: string
@@ -70,7 +70,7 @@ export default function InvestmentRow({
     currency: investment.currency,
     contributionType: investment.contributionType,
     inKindValuationNotes: investment.inKindValuationNotes ?? '',
-    year: investment.year,
+    year: investment.year ?? undefined,
     description: investment.description ?? '',
   })
 
