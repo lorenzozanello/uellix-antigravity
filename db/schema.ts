@@ -598,3 +598,61 @@ export const outcomeFunderAllocations = pgTable('outcome_funder_allocations', {
   index('idx_ofa_funder_id').on(table.funderId),
   index('idx_ofa_organization_id').on(table.organizationId),
 ])
+
+// ─── Fase 2a: Structured theory of change ─────────────────────────────────────
+// A simple activity → output → outcome graph with typed causal links and
+// optional per-link assumptions. Coexists with (does not replace)
+// impact_narratives.theoryOfChangeSummary. Outcome-type nodes reference real
+// `outcomes` rows so the graph stays connected to the pipeline that actually
+// feeds the SROI calculation.
+// Design: docs/superpowers/specs/2026-07-05-theory-of-change-structured-design.md
+
+export const theoryOfChangeNodes = pgTable('theory_of_change_nodes', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  nodeType: varchar('node_type', { length: 20 }).notNull(),
+  // NOT NULL only when nodeType = 'outcome' (enforced by the check below);
+  // that the referenced outcome belongs to this project is validated in the
+  // service layer (an FK alone can't express cross-column project matching).
+  outcomeId: uuid('outcome_id').references(() => outcomes.id),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('theory_of_change_nodes_type_check', sql`${table.nodeType} IN ('activity', 'output', 'outcome')`),
+  check('theory_of_change_nodes_status_check', sql`${table.status} IN ('active', 'archived')`),
+  check('theory_of_change_nodes_outcome_ref_check', sql`(${table.nodeType} = 'outcome' AND ${table.outcomeId} IS NOT NULL) OR (${table.nodeType} != 'outcome' AND ${table.outcomeId} IS NULL)`),
+  // An active outcome-type node is unique per outcome per project — archiving
+  // one frees the slot for a new node referencing the same outcome.
+  uniqueIndex('theory_of_change_nodes_outcome_unique').on(table.projectId, table.outcomeId).where(sql`${table.outcomeId} IS NOT NULL AND ${table.status} = 'active'`),
+  index('idx_toc_nodes_project_id').on(table.projectId),
+  index('idx_toc_nodes_organization_id').on(table.organizationId),
+  index('idx_toc_nodes_outcome_id').on(table.outcomeId),
+])
+
+export const theoryOfChangeLinks = pgTable('theory_of_change_links', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  fromNodeId: uuid('from_node_id').references(() => theoryOfChangeNodes.id).notNull(),
+  toNodeId: uuid('to_node_id').references(() => theoryOfChangeNodes.id).notNull(),
+  assumption: text('assumption'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('theory_of_change_links_status_check', sql`${table.status} IN ('active', 'archived')`),
+  check('theory_of_change_links_no_self_check', sql`${table.fromNodeId} != ${table.toNodeId}`),
+  // Link-type validity (activity->output, output->outcome only) is NOT a DB
+  // constraint — it would require a self-join, not expressible as a portable
+  // CHECK. Enforced in lib/pipeline/theory-of-change.ts's isValidLinkTransition.
+  index('idx_toc_links_project_id').on(table.projectId),
+  index('idx_toc_links_organization_id').on(table.organizationId),
+  index('idx_toc_links_from_node_id').on(table.fromNodeId),
+  index('idx_toc_links_to_node_id').on(table.toNodeId),
+])
