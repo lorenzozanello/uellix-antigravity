@@ -1,7 +1,7 @@
 // app/app/projects/[projectId]/pipeline/outcomes/page.tsx
 import Stepper from '@/components/sroi/Stepper';
 import { StellaAdvisorPanel } from '@/components/stella';
-import { fetchOutcomes, addOutcome } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
+import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/states/EmptyState';
@@ -15,10 +15,13 @@ const outcomeSchema = z.object({
   outcomeType: z.string().optional(),
   materialityNotes: z.string().optional(),
   status: z.enum(['active', 'inactive']).optional(),
+  materialityScore: z.number().int().min(1).max(5).optional(),
+  materialityRationale: z.string().min(1).optional(),
 });
 
 export const action = async (formData: FormData) => {
   'use server';
+  const rawScore = formData.get('materialityScore');
   const parsed = outcomeSchema.parse({
     stakeholderGroupId: formData.get('stakeholderGroupId'),
     title: formData.get('title'),
@@ -26,15 +29,32 @@ export const action = async (formData: FormData) => {
     outcomeType: formData.get('outcomeType'),
     materialityNotes: formData.get('materialityNotes'),
     status: formData.get('status'),
+    materialityScore: rawScore && rawScore !== '' ? Number(rawScore) : undefined,
+    materialityRationale: (formData.get('materialityRationale') as string) || undefined,
   });
   const projectId = formData.get('projectId') as string;
   await addOutcome(projectId, parsed);
 };
+
+export const materialityAction = async (formData: FormData) => {
+  'use server';
+  const projectId = formData.get('projectId') as string;
+  const outcomeId = formData.get('outcomeId') as string;
+  const rawScore = formData.get('materialityScore') as string;
+  const score = rawScore === '' ? null : Number(rawScore);
+  await updateOutcomeMateriality(projectId, outcomeId, {
+    materialityScore: score,
+    materialityRationale: (formData.get('materialityRationale') as string) || undefined,
+  });
+};
+
 interface OutcomeRow {
   id: string;
   title: string;
   outcomeType: string | null;
   description: string | null;
+  materialityScore: number | null;
+  materialityRationale: string | null;
 }
 
 interface StakeholderRow {
@@ -82,6 +102,55 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                   {o.description && (
                     <p className="mt-2 text-sm text-muted-foreground">{o.description}</p>
                   )}
+                  <div className="mt-3 rounded-md border border-border/60 bg-muted/30 p-2">
+                    <p className="text-xs font-medium text-foreground">
+                      Materialidad:{' '}
+                      {o.materialityScore === null ? (
+                        <span className="text-muted-foreground">Sin evaluar</span>
+                      ) : (
+                        <span>{o.materialityScore}/5 — {o.materialityRationale}</span>
+                      )}
+                    </p>
+                    <form action={materialityAction} className="mt-2 flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="projectId" value={projectId} />
+                      <input type="hidden" name="outcomeId" value={o.id} />
+                      <div>
+                        <label htmlFor={`materiality-score-${o.id}`} className="block text-xs text-muted-foreground">
+                          Score
+                        </label>
+                        <select
+                          id={`materiality-score-${o.id}`}
+                          name="materialityScore"
+                          defaultValue={o.materialityScore ?? ''}
+                          className={`${INPUT_CLASS} h-8 text-xs`}
+                        >
+                          <option value="">Sin evaluar</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="4">4</option>
+                          <option value="5">5</option>
+                        </select>
+                      </div>
+                      <div className="flex-1 min-w-[160px]">
+                        <label htmlFor={`materiality-rationale-${o.id}`} className="block text-xs text-muted-foreground">
+                          Justificación
+                        </label>
+                        <input
+                          id={`materiality-rationale-${o.id}`}
+                          name="materialityRationale"
+                          defaultValue={o.materialityRationale ?? ''}
+                          className={`${INPUT_CLASS} h-8 text-xs`}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="h-8 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground hover:bg-muted"
+                      >
+                        Guardar
+                      </button>
+                    </form>
+                  </div>
                 </div>
               ))}
             </div>
@@ -158,6 +227,36 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                 name="materialityNotes"
                 className={TEXTAREA_CLASS}
                 rows={2}
+              />
+            </div>
+            <div>
+              <label htmlFor="materialityScore" className="block text-sm font-medium text-foreground">
+                Score de materialidad (1-5)
+              </label>
+              <select
+                id="materialityScore"
+                name="materialityScore"
+                defaultValue=""
+                className={INPUT_CLASS}
+              >
+                <option value="">Sin evaluar</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="materialityRationale" className="block text-sm font-medium text-foreground">
+                Justificación de materialidad
+              </label>
+              <textarea
+                id="materialityRationale"
+                name="materialityRationale"
+                className={TEXTAREA_CLASS}
+                rows={2}
+                placeholder="Obligatoria si se asigna un score"
               />
             </div>
             <div>

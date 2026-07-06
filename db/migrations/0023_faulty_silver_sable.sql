@@ -1,0 +1,4 @@
+ALTER TABLE "outcomes" ADD COLUMN "materiality_score" integer;--> statement-breakpoint
+ALTER TABLE "outcomes" ADD COLUMN "materiality_rationale" text;--> statement-breakpoint
+ALTER TABLE "outcomes" ADD CONSTRAINT "outcomes_materiality_score_check" CHECK ("outcomes"."materiality_score" IS NULL OR ("outcomes"."materiality_score" >= 1 AND "outcomes"."materiality_score" <= 5));--> statement-breakpoint
+ALTER TABLE "outcomes" ADD CONSTRAINT "outcomes_materiality_pair_check" CHECK (("outcomes"."materiality_score" IS NULL AND "outcomes"."materiality_rationale" IS NULL) OR ("outcomes"."materiality_score" IS NOT NULL AND "outcomes"."materiality_rationale" IS NOT NULL));
