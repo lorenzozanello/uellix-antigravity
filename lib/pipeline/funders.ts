@@ -8,7 +8,7 @@ import { db } from '@/db/client'
 import { funders } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
 import { logAuditAction } from '@/lib/audit/logger'
@@ -68,4 +68,41 @@ export async function createFunderForCurrentOrganization(input: CreateFunderInpu
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
+}
+
+/**
+ * TDD-style exported functions matching the exact test interface.
+ * These use getCurrentOrganizationContext for session context.
+ */
+export async function createFunder(name: string, funderType: typeof FUNDER_TYPES[number]) {
+  const ctx = await getCurrentOrganizationContext()
+  if (!ctx) throw new Error('No organization context')
+
+  const validated = CreateFunderSchema.parse({ name, funderType })
+
+  const inserted = await db
+    .insert(funders)
+    .values({ organizationId: ctx.organization.id, name: validated.name, funderType: validated.funderType, createdBy: ctx.user.id })
+    .returning()
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    actorUserId: ctx.user.id,
+    entityType: 'funder',
+    entityId: inserted[0].id,
+    action: 'funder.created',
+    afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
+  return inserted[0]
+}
+
+export async function listFundersForOrganization() {
+  const ctx = await getCurrentOrganizationContext()
+  if (!ctx) throw new Error('No organization context')
+
+  return db
+    .select()
+    .from(funders)
+    .where(eq(funders.organizationId, ctx.organization.id))
+    .execute()
 }
