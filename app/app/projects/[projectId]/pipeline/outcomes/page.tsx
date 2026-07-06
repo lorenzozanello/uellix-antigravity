@@ -3,6 +3,7 @@ import Stepper from '@/components/sroi/Stepper';
 import { StellaAdvisorPanel } from '@/components/stella';
 import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
+import { OutcomeAllocationWrapper } from '@/app/components/allocation-form/OutcomeAllocationWrapper';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/states/EmptyState';
 import { Target } from 'lucide-react';
@@ -151,6 +152,10 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                       </button>
                     </form>
                   </div>
+                  <OutcomeAllocationWrapper
+                    outcomeId={o.id}
+                    projectId={projectId}
+                  />
                 </div>
               ))}
             </div>

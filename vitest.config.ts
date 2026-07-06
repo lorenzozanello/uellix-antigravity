@@ -3,7 +3,7 @@ import path from "path";
 
 export default defineConfig({
   test: {
-    environment: "node",
+    environment: "jsdom",
     // Exclude nested git worktrees (created under .claude/worktrees by
     // spawned background sessions) in addition to vitest's own defaults —
     // otherwise a worktree's copy of tests/ gets picked up and every test
