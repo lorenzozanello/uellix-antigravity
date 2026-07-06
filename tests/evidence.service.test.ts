@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // tests/evidence.service.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import crypto from 'crypto';
 import {
   createFileEvidenceForProject,
   createUrlEvidenceForProject,
@@ -11,6 +12,11 @@ import {
 import { requireOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
+import { recalculateConfidenceScore } from '@/lib/pipeline/confidence-score';
+
+vi.mock('@/lib/pipeline/confidence-score', () => ({
+  recalculateConfidenceScore: vi.fn(),
+}));
 
 // Mock auth session
 vi.mock('@/lib/auth/session', () => ({
@@ -37,6 +43,10 @@ vi.mock('@/lib/supabase/server', () => ({
       storage: {
         from: vi.fn().mockReturnValue({
           upload: vi.fn().mockResolvedValue({ error: null }),
+          download: vi.fn().mockResolvedValue({
+            data: { arrayBuffer: () => Promise.resolve(Buffer.from('hello world')) },
+            error: null,
+          }),
         }),
       },
     });
@@ -85,10 +95,16 @@ vi.mock('@/db/client', () => {
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
       returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.evidence])),
-      update: vi.fn().mockImplementation(() => {
+      update: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
         return {
-          set: vi.fn().mockImplementation(() => ({
-            where: vi.fn().mockResolvedValue([mockDbData.evidence]),
+          set: vi.fn().mockImplementation((values: any) => ({
+            where: vi.fn().mockImplementation(() => {
+              if (tableName === 'evidence_items' && mockDbData.evidence) {
+                Object.assign(mockDbData.evidence, values);
+              }
+              return Promise.resolve([mockDbData.evidence]);
+            }),
           })),
         };
       }),
@@ -181,7 +197,15 @@ describe('Evidence service', () => {
     const { createClient } = await import('@/lib/supabase/server');
     const uploadSpy = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(createClient).mockResolvedValue({
-      storage: { from: vi.fn().mockReturnValue({ upload: uploadSpy }) },
+      storage: {
+        from: vi.fn().mockReturnValue({
+          upload: uploadSpy,
+          download: vi.fn().mockResolvedValue({
+            data: { arrayBuffer: () => Promise.resolve(Buffer.from('hello world')) },
+            error: null,
+          }),
+        }),
+      },
     } as any);
 
     const input = {
@@ -295,5 +319,146 @@ describe('Evidence service', () => {
     await expect(listEvidenceForProject('proj-1')).rejects.toThrow(
       'Project does not belong to your organization'
     );
+  });
+
+  it('triggers a confidence score recalculation after creating file evidence', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Evidence 1',
+      file: { name: 'test.pdf', mimeType: 'application/pdf', size: 100, buffer: Buffer.from('hello world') },
+    };
+    await createFileEvidenceForProject('proj-1', input);
+    expect(recalculateConfidenceScore).toHaveBeenCalledWith('proj-1', 'ev-1');
+  });
+
+  it('triggers a confidence score recalculation after creating URL evidence', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    await createUrlEvidenceForProject('proj-1', { title: 'Evidence 2', url: 'https://example.com/e' });
+    expect(recalculateConfidenceScore).toHaveBeenCalledWith('proj-1', 'ev-1');
+  });
+
+  it('triggers a confidence score recalculation after creating text evidence', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    await createTextEvidenceForProject('proj-1', { title: 'Evidence 3', text: 'a statement' });
+    expect(recalculateConfidenceScore).toHaveBeenCalledWith('proj-1', 'ev-1');
+  });
+
+  it('triggers a confidence score recalculation after a review status change', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
+
+    await updateEvidenceReviewStatus('proj-1', 'ev-1', { status: 'approved' });
+    expect(recalculateConfidenceScore).toHaveBeenCalledWith('proj-1', 'ev-1');
+  });
+
+  it('does NOT trigger a confidence score recalculation on archive', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'analyst' && required === 'analyst');
+
+    await archiveEvidenceForProject('proj-1', 'ev-1');
+    expect(recalculateConfidenceScore).not.toHaveBeenCalled();
+  });
+
+  it('verifyFileEvidenceIntegrity persists the result and triggers recalculation on a match', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
+    mockDbData.evidence = {
+      id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft',
+      type: 'file', filePath: 'proj-1/ev-1/test.pdf',
+      contentHash: crypto.createHash('sha256').update('hello world').digest('hex'),
+    };
+
+    const { verifyFileEvidenceIntegrity } = await import('@/lib/pipeline/evidence');
+    const result = await verifyFileEvidenceIntegrity('proj-1', 'ev-1');
+
+    expect(result.verified).toBe(true);
+    expect(mockDbData.evidence.integrityVerified).toBe(true);
+    expect(mockDbData.evidence.integrityVerifiedAt).toBeInstanceOf(Date);
+    expect(recalculateConfidenceScore).toHaveBeenCalledWith('proj-1', 'ev-1');
+  });
+
+  it('verifyFileEvidenceIntegrity persists a mismatch without throwing', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
+    mockDbData.evidence = {
+      id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft',
+      type: 'file', filePath: 'proj-1/ev-1/test.pdf',
+      contentHash: 'a-hash-that-will-not-match',
+    };
+
+    const { verifyFileEvidenceIntegrity } = await import('@/lib/pipeline/evidence');
+    const result = await verifyFileEvidenceIntegrity('proj-1', 'ev-1');
+
+    expect(result.verified).toBe(false);
+    expect(mockDbData.evidence.integrityVerified).toBe(false);
+    expect(recalculateConfidenceScore).toHaveBeenCalledWith('proj-1', 'ev-1');
+  });
+
+  it('verifyFileEvidenceIntegrity does NOT persist anything for non-file evidence', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
+    mockDbData.evidence = { id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft', type: 'url', contentHash: 'x' };
+
+    const { verifyFileEvidenceIntegrity } = await import('@/lib/pipeline/evidence');
+    const result = await verifyFileEvidenceIntegrity('proj-1', 'ev-1');
+
+    expect(result.verified).toBe(false);
+    expect(mockDbData.evidence.integrityVerified).toBeUndefined();
+    expect(recalculateConfidenceScore).not.toHaveBeenCalled();
+  });
+
+  it('rejects verifyFileEvidenceIntegrity for a role below impact_manager (SEC regression)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
+    mockDbData.evidence = {
+      id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft',
+      type: 'file', filePath: 'proj-1/ev-1/test.pdf', contentHash: 'x',
+    };
+
+    const { verifyFileEvidenceIntegrity } = await import('@/lib/pipeline/evidence');
+    await expect(verifyFileEvidenceIntegrity('proj-1', 'ev-1')).rejects.toThrow('Insufficient permissions');
+    expect(recalculateConfidenceScore).not.toHaveBeenCalled();
   });
 });

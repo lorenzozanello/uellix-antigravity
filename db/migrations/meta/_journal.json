@@ -155,6 +155,13 @@
       "when": 1783281265369,
       "tag": "0021_glorious_sandman",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783301877024,
+      "tag": "0022_abandoned_karma",
+      "breakpoints": true
     }
   ]
 }

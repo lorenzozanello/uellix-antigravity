@@ -7,6 +7,7 @@ import { fetchIndicators } from '@/app/app/projects/[projectId]/pipeline/indicat
 import { createFileEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createFileEvidence.action'
 import { createUrlEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createUrlEvidence.action'
 import { createTextEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createTextEvidence.action'
+import { verifyEvidenceIntegrityAction } from '@/app/app/projects/[projectId]/pipeline/evidence/verifyEvidenceIntegrity.action'
 import { canUploadEvidence, hasRole } from '@/lib/auth/permissions'
 import {
   listEvidenceForProject,
@@ -108,6 +109,14 @@ export const updateStatusAction = async (formData: FormData) => {
   revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
+export const verifyIntegrityAction = async (formData: FormData) => {
+  'use server'
+  const projectId = formData.get('projectId') as string
+  const evidenceId = formData.get('evidenceId') as string
+  await verifyEvidenceIntegrityAction(projectId, evidenceId)
+  revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
+}
+
 const EVIDENCE_STATUS: Record<
   string,
   { variant: 'neutral' | 'warning' | 'info' | 'success' | 'danger'; label: string }
@@ -117,6 +126,12 @@ const EVIDENCE_STATUS: Record<
   approved: { variant: 'success', label: 'Aprobado' },
   rejected: { variant: 'danger', label: 'Rechazado' },
   archived: { variant: 'neutral', label: 'Archivado' },
+}
+
+function confidenceBadgeVariant(score: number): 'danger' | 'warning' | 'success' {
+  if (score < 40) return 'danger'
+  if (score < 70) return 'warning'
+  return 'success'
 }
 
 const INPUT_CLASS =
@@ -172,6 +187,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
                 <TableHead>Título</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Estado de revisión</TableHead>
+                <TableHead>Confianza</TableHead>
                 <TableHead>Hash SHA-256</TableHead>
                 <TableHead>Registrado</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -200,6 +216,42 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {ev.confidenceScore === null ? (
+                          <span className="text-xs text-muted-foreground/60">—</span>
+                        ) : (
+                          <Badge variant={confidenceBadgeVariant(ev.confidenceScore)}>{ev.confidenceScore}</Badge>
+                        )}
+                        {ev.type === 'file' && ev.integrityVerifiedAt && (
+                          <span
+                            className="text-[10px] text-muted-foreground"
+                            aria-label={`Integridad ${ev.integrityVerified === false ? 'fallida' : 'verificada'} ${new Date(ev.integrityVerifiedAt).toLocaleDateString('es-MX', {
+                              day: 'numeric',
+                              month: 'short',
+                            })}`}
+                          >
+                            <span aria-hidden="true">{ev.integrityVerified === false ? '✗' : '✓'}</span> verificado{' '}
+                            {new Date(ev.integrityVerifiedAt).toLocaleDateString('es-MX', {
+                              day: 'numeric',
+                              month: 'short',
+                            })}
+                          </span>
+                        )}
+                        {ev.type === 'file' && canReview && ev.status !== 'archived' && (
+                          <form action={verifyIntegrityAction}>
+                            <input type="hidden" name="projectId" value={projectId} />
+                            <input type="hidden" name="evidenceId" value={ev.id} />
+                            <button
+                              type="submit"
+                              className="text-left text-[10px] text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                            >
+                              Verificar integridad
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {ev.contentHash ? (
