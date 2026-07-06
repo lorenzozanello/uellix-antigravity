@@ -159,11 +159,15 @@ export const outcomes = pgTable('outcomes', {
   description: text('description'),
   outcomeType: varchar('outcome_type', { length: 100 }),
   materialityNotes: text('materiality_notes'),
+  materialityScore: integer('materiality_score'),
+  materialityRationale: text('materiality_rationale'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
+  check('outcomes_materiality_score_check', sql`${table.materialityScore} IS NULL OR (${table.materialityScore} >= 1 AND ${table.materialityScore} <= 5)`),
+  check('outcomes_materiality_pair_check', sql`(${table.materialityScore} IS NULL AND ${table.materialityRationale} IS NULL) OR (${table.materialityScore} IS NOT NULL AND ${table.materialityRationale} IS NOT NULL)`),
   index('idx_outcomes_project_id').on(table.projectId),
   index('idx_outcomes_stakeholder_group_id').on(table.stakeholderGroupId),
 ])
