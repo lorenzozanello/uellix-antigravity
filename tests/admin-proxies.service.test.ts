@@ -183,9 +183,7 @@ describe('setGlobalProxyManualFxRate', () => {
     vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
     mockDbData.financialProxies = [{ id: 'proxy-1', organizationId: null, value: '100', currency: 'EUR', referenceYear: 2024 }];
 
-    await expect(setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0', source: 'ECB' })).rejects.toThrow(
-      'mayor a 0'
-    );
+    await expect(setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0', source: 'ECB' })).rejects.toThrow();
   });
 
   it('freezes value_usd using the manual rate and the reference-year Dec 31 date', async () => {

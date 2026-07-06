@@ -90,10 +90,12 @@ export async function getCalculationRunDetail(projectId: string, runId: string) 
     .from(sroiCalculationLineItems)
     .where(eq(sroiCalculationLineItems.runId, runId));
   const snapshot = run[0].snapshotJson as Record<string, unknown> | null; // column name from schema
+  const currency = run[0].currency ?? 'USD';
   return {
     run: run[0],
     lineItems,
     snapshotJson: snapshot,
+    currency,
     projectContext: { id: projectId, organizationId: ctx.organization.id },
   };
 }
@@ -428,7 +430,18 @@ export async function getReportDraft(projectId: string, reportId: string) {
     .from(sroiReportSections)
     .where(eq(sroiReportSections.reportId, reportId))
     .orderBy(sroiReportSections.sortOrder);
-  return { ...report[0], sections };
+
+  // Fetch calculation run to include snapshotJson for rendering funder_breakdown
+  const run = await db
+    .select({ snapshotJson: sroiCalculationRuns.snapshotJson, currency: sroiCalculationRuns.currency })
+    .from(sroiCalculationRuns)
+    .where(eq(sroiCalculationRuns.id, report[0].calculationRunId))
+    .then(rows => rows[0] ?? null);
+
+  const snapshotJson = (run?.snapshotJson as Record<string, unknown> | null) ?? null;
+  const currency = run?.currency ?? 'USD';
+
+  return { ...report[0], sections, snapshotJson, currency };
 }
 
 export async function updateReportSection(projectId: string, reportId: string, sectionId: string, input: ReportSectionInput) {

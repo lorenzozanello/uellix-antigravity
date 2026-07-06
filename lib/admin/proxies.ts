@@ -7,6 +7,21 @@
 // own `isSuperAdmin` bypass branches are ever reached. Rather than touch
 // that already-tested, in-use code path, admin-only global proxy curation
 // lives here behind requireAdminAccess() instead.
+//
+// === USD CONVERSION WORKFLOW (Fase 1e) ===
+// Proxies are stored with a frozen USD equivalent (value_usd) for SROI calculation.
+//
+// 1. Create proxy with value, currency, unit, referenceYear
+// 2. Set USD conversion based on currency:
+//    - USD: Direct pass-through (valueUsd = value, fxRateId = null)
+//    - COP: Auto-fetch Dec 31 TRM on approval (setGlobalProxyManualFxRate not needed)
+//    - Other: Manual rate entry REQUIRED via setGlobalProxyManualFxRate()
+// 3. Approval constraint (approved_proxy_check in schema):
+//    - Requires value, currency, unit, referenceYear, AND valueUsd all NOT NULL
+//    - Enforced at DB level; updateGlobalProxyReviewStatus calls resolveProxyValueUsd
+//
+// Rate lookup date convention: Dec 31 of proxy's referenceYear (proxies only carry year, not date)
+// Manual entry persists every rate in fx_rates for audit trail (no dedup)
 
 import { db } from '@/db/client'
 import { proxySources, financialProxies, fxRates } from '@/db/schema'
@@ -43,8 +58,13 @@ const FinancialProxyInput = z.object({
 const REVIEW_STATUSES = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'] as const
 
 const ManualFxRateInput = z.object({
-  rateToUsd: z.string().min(1),
-  source: z.string().min(1),
+  rateToUsd: z
+    .string()
+    .min(1, 'La tasa debe ser un número mayor a 0')
+    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, {
+      message: 'La tasa debe ser un número positivo',
+    }),
+  source: z.string().min(1, 'Se requiere fuente para documentación'),
 })
 
 export async function listGlobalProxySources() {

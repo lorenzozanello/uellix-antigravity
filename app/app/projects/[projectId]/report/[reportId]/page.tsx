@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SECTION_META, SECTION_GROUPS } from '@/lib/reports/report-sections'
 import { StellaComposerPanel } from '@/components/stella'
+import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -279,15 +280,13 @@ export default async function ReportDetailPage({
                         <CardContent className="pt-3">
                           {isLocked ? (
                             <div aria-labelledby={sectionHeadingId}>
-                              {section.content ? (
-                                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                                  {section.content}
-                                </p>
-                              ) : (
-                                <p className="text-sm text-muted-foreground italic">
-                                  No hay contenido registrado para esta sección.
-                                </p>
-                              )}
+                              <ReportSectionRenderer
+                                section={section}
+                                snapshotJson={report.snapshotJson}
+                                currency={report.currency}
+                                isLocked={true}
+                                sectionLabel={meta.label}
+                              />
                             </div>
                           ) : (
                             <>
@@ -299,6 +298,17 @@ export default async function ReportDetailPage({
                                 titleInputId={titleInputId}
                                 contentInputId={contentInputId}
                               />
+                              {section.sectionType === 'funder_breakdown' && (
+                                <div className="mb-4 rounded-md border border-border bg-muted/10 p-3">
+                                  <ReportSectionRenderer
+                                    section={section}
+                                    snapshotJson={report.snapshotJson}
+                                    currency={report.currency}
+                                    isLocked={false}
+                                    sectionLabel={meta.label}
+                                  />
+                                </div>
+                              )}
                               <form
                                 action={handleUpdateSection}
                                 className="space-y-3"

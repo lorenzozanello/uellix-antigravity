@@ -85,58 +85,82 @@ export default async function AdminProxiesPage(props: {
           {sources.length === 0 ? (
             <p className="text-sm text-slate-500">Crea al menos una fuente antes de agregar un proxy.</p>
           ) : (
-            <form action={createGlobalFinancialProxyAction} className="space-y-3">
-              <select
-                name="sourceId"
-                required
-                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-              >
-                {sources.map((source) => (
-                  <option key={source.id} value={source.id}>
-                    {source.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                name="name"
-                type="text"
-                required
-                placeholder="Nombre del proxy"
-                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
-              />
-              <div className="grid grid-cols-2 gap-3">
+            <form action={createGlobalFinancialProxyAction} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Fuente oficial</label>
+                <select
+                  name="sourceId"
+                  required
+                  className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+                >
+                  {sources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Nombre del proxy</label>
                 <input
-                  name="value"
+                  name="name"
                   type="text"
                   required
-                  placeholder="Valor"
-                  className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                  placeholder="Ej: Salario mínimo, 1 hectárea de bosque"
+                  className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
                 />
-                <input
-                  name="currency"
-                  type="text"
-                  required
-                  placeholder="Moneda (USD)"
-                  className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
-                />
-                <input
-                  name="unit"
-                  type="text"
-                  required
-                  placeholder="Unidad"
-                  className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
-                />
-                <input
-                  name="referenceYear"
-                  type="number"
-                  required
-                  placeholder="Año"
-                  className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
-                />
+              </div>
+              <div className="border-t border-slate-700 pt-4">
+                <h4 className="text-xs font-semibold text-slate-300 mb-3">Valor y moneda</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Valor</label>
+                    <input
+                      name="value"
+                      type="text"
+                      required
+                      placeholder="100"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Moneda</label>
+                    <input
+                      name="currency"
+                      type="text"
+                      required
+                      placeholder="USD, COP, EUR, GBP…"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Unidad</label>
+                    <input
+                      name="unit"
+                      type="text"
+                      required
+                      placeholder="mes, hectárea…"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Año de referencia</label>
+                    <input
+                      name="referenceYear"
+                      type="number"
+                      required
+                      placeholder="2024"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400 bg-slate-950/50 rounded px-3 py-2 border border-slate-800">
+                <strong>Nota:</strong> Si la moneda es USD se usará directamente. Si es COP se auto-convertirá al aprobar usando la TRM oficial del 31 de diciembre del año de referencia. Otras monedas requieren entrada manual de la tasa después de crear el proxy.
               </div>
               <button
                 type="submit"
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 transition-colors"
+                className="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 transition-colors"
               >
                 Crear proxy
               </button>
@@ -171,36 +195,49 @@ export default async function AdminProxiesPage(props: {
                   <tr key={proxy.id}>
                     <td className="px-4 py-3 text-white">{proxy.name}</td>
                     <td className="px-4 py-3 text-slate-400">
-                      {proxy.value} {proxy.currency}/{proxy.unit}
+                      <div className="text-sm">{proxy.value}</div>
+                      <div className="text-xs text-slate-500">{proxy.currency}/{proxy.unit}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-400">
+                    <td className="px-4 py-3">
                       {proxy.currency === 'USD' ? (
-                        <span className="text-slate-500">— (ya USD)</span>
+                        <div className="text-sm text-slate-500">
+                          <div className="text-slate-400">{proxy.value} USD</div>
+                          <div className="text-xs text-slate-600">(directo)</div>
+                        </div>
                       ) : proxy.valueUsd ? (
-                        <span className="text-green-400">{proxy.valueUsd} USD</span>
+                        <div className="text-sm">
+                          <div className="text-green-400 font-medium">{proxy.valueUsd} USD</div>
+                          <div className="text-xs text-green-600">✓ Convertido</div>
+                        </div>
                       ) : proxy.currency === 'COP' ? (
-                        <span className="text-slate-500">Auto (TRM) al aprobar</span>
+                        <div className="text-sm text-slate-400">
+                          <div>Auto (TRM)</div>
+                          <div className="text-xs text-slate-600">al aprobar</div>
+                        </div>
                       ) : (
-                        <form action={setGlobalProxyManualFxRateAction} className="flex flex-wrap items-center gap-1.5">
-                          <input type="hidden" name="proxyId" value={proxy.id} />
-                          <input
-                            name="rateToUsd"
-                            type="text"
-                            required
-                            placeholder={`Tasa (${proxy.currency}/USD)`}
-                            className="w-28 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white placeholder:text-slate-500"
-                          />
-                          <input
-                            name="source"
-                            type="text"
-                            required
-                            placeholder="Fuente"
-                            className="w-24 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white placeholder:text-slate-500"
-                          />
-                          <button type="submit" className="text-xs font-medium text-amber-400 hover:underline whitespace-nowrap">
-                            Fijar tasa
-                          </button>
-                        </form>
+                        <div className="space-y-2">
+                          <div className="text-xs text-amber-600 font-medium">Requiere tasa manual</div>
+                          <form action={setGlobalProxyManualFxRateAction} className="flex flex-col gap-2">
+                            <input type="hidden" name="proxyId" value={proxy.id} />
+                            <input
+                              name="rateToUsd"
+                              type="text"
+                              required
+                              placeholder={`Tasa ${proxy.currency}→USD`}
+                              className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white placeholder:text-slate-500"
+                            />
+                            <input
+                              name="source"
+                              type="text"
+                              required
+                              placeholder="Fuente (ej: ECB)"
+                              className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white placeholder:text-slate-500"
+                            />
+                            <button type="submit" className="text-xs font-medium text-amber-400 hover:text-amber-300 transition">
+                              Fijar tasa
+                            </button>
+                          </form>
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-slate-400">{proxy.referenceYear ?? '—'}</td>
@@ -215,7 +252,7 @@ export default async function AdminProxiesPage(props: {
                           <button
                             type="submit"
                             disabled={needsManualFx}
-                            className="text-xs font-medium text-green-400 hover:underline disabled:text-slate-600 disabled:no-underline disabled:cursor-not-allowed"
+                            className="text-xs font-medium text-green-400 hover:underline disabled:text-slate-600 disabled:no-underline disabled:cursor-not-allowed transition"
                             title={needsManualFx ? 'Fija primero la tasa a USD' : undefined}
                           >
                             Aprobar
@@ -226,7 +263,7 @@ export default async function AdminProxiesPage(props: {
                         <form action={updateGlobalProxyReviewStatusAction} className="inline">
                           <input type="hidden" name="proxyId" value={proxy.id} />
                           <input type="hidden" name="status" value="rejected" />
-                          <button type="submit" className="text-xs font-medium text-red-400 hover:underline">
+                          <button type="submit" className="text-xs font-medium text-red-400 hover:underline transition">
                             Rechazar
                           </button>
                         </form>

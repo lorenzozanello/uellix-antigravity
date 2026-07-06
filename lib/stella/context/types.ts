@@ -46,6 +46,15 @@ export interface FilterRef {
   durationYears?: number
 }
 
+export interface FunderBreakdownRef {
+  funderId: string
+  funderName: string
+  funderType: string
+  investmentUsd: number
+  attributedNsvUsd: number
+  sroiRatio: number
+}
+
 export interface CalculationSnapshot {
   totalInvestment: number
   grossSocialValue: number
@@ -55,6 +64,8 @@ export interface CalculationSnapshot {
   lineItemCount: number
   version: number
   // NEVER include full snapshotJson
+  fundersBreakdown?: FunderBreakdownRef[]
+  unattributedNsvUsd?: number
 }
 
 export interface SectionRef {
