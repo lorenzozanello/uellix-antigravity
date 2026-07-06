@@ -9,6 +9,7 @@ import { hasRole } from '@/lib/auth/permissions'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { z } from 'zod'
 import crypto from 'crypto'
+import { recalculateConfidenceScore } from '@/lib/pipeline/confidence-score'
 
 // Types
 export type EvidenceStatus = 'draft' | 'under_review' | 'approved' | 'rejected' | 'archived'
@@ -180,6 +181,8 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
     afterJson: { type: 'file', title: parsed.title, sha256 },
   })
 
+  await recalculateConfidenceScore(projectId, evidence.id)
+
   return evidence
 }
 
@@ -226,6 +229,8 @@ export async function createUrlEvidenceForProject(projectId: string, input: unkn
     afterJson: { type: 'url', title: parsed.title, sha256 },
   })
 
+  await recalculateConfidenceScore(projectId, evidence.id)
+
   return evidence
 }
 
@@ -267,6 +272,8 @@ export async function createTextEvidenceForProject(projectId: string, input: unk
     afterJson: { type: 'text', title: parsed.title, sha256 },
   })
 
+  await recalculateConfidenceScore(projectId, evidence.id)
+
   return evidence
 }
 
@@ -297,6 +304,8 @@ export async function updateEvidenceReviewStatus(projectId: string, evidenceId: 
     beforeJson: before,
     afterJson: after,
   })
+
+  await recalculateConfidenceScore(projectId, evidenceId)
 
   return after
 }
@@ -362,6 +371,12 @@ export async function verifyFileEvidenceIntegrity(
   const buffer = Buffer.from(await data.arrayBuffer())
   const computedHash = crypto.createHash('sha256').update(buffer).digest('hex')
   const verified = computedHash === evidence.contentHash
+
+  await db
+    .update(evidenceItems)
+    .set({ integrityVerified: verified, integrityVerifiedAt: new Date() })
+    .where(eq(evidenceItems.id, evidenceId))
+  await recalculateConfidenceScore(projectId, evidenceId)
 
   return { verified, storedHash: evidence.contentHash, computedHash }
 }
