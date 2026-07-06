@@ -352,13 +352,17 @@ export async function archiveEvidenceForProject(projectId: string, evidenceId: s
  * `recalculateConfidenceScore`, which may itself write `confidenceScore` and
  * append an audit_log entry. A periodic sweep that loops this over many
  * evidence items will produce a write (and possibly an audit entry) per item
- * checked, not just reads.
+ * checked, not just reads. Requires `impact_manager`+ (same threshold as
+ * `updateEvidenceReviewStatus`), since it is a write path, not a read one.
  */
 export async function verifyFileEvidenceIntegrity(
   projectId: string,
   evidenceId: string,
 ): Promise<{ verified: boolean; reason?: string; storedHash: string | null; computedHash: string | null }> {
-  const { organization } = await requireOrganizationAccess()
+  const { membership, organization } = await requireOrganizationAccess()
+  if (!hasRole(membership.role, 'impact_manager')) {
+    throw new Error('Insufficient permissions to verify evidence integrity')
+  }
   await verifyProjectOwnership(projectId, organization.id)
   const evidence = await getEvidenceByIdForProject(projectId, evidenceId)
 
@@ -382,7 +386,7 @@ export async function verifyFileEvidenceIntegrity(
   await db
     .update(evidenceItems)
     .set({ integrityVerified: verified, integrityVerifiedAt: new Date() })
-    .where(eq(evidenceItems.id, evidenceId))
+    .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.id, evidenceId)))
   await recalculateConfidenceScore(projectId, evidenceId)
 
   return { verified, storedHash: evidence.contentHash, computedHash }

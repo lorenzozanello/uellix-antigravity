@@ -389,8 +389,9 @@ describe('Evidence service', () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({
       user: { id: 'u1' },
       organization: { id: 'org-1' },
-      membership: { role: 'analyst' },
+      membership: { role: 'impact_manager' },
     } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
     mockDbData.evidence = {
       id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft',
       type: 'file', filePath: 'proj-1/ev-1/test.pdf',
@@ -410,8 +411,9 @@ describe('Evidence service', () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({
       user: { id: 'u1' },
       organization: { id: 'org-1' },
-      membership: { role: 'analyst' },
+      membership: { role: 'impact_manager' },
     } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
     mockDbData.evidence = {
       id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft',
       type: 'file', filePath: 'proj-1/ev-1/test.pdf',
@@ -430,8 +432,9 @@ describe('Evidence service', () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({
       user: { id: 'u1' },
       organization: { id: 'org-1' },
-      membership: { role: 'analyst' },
+      membership: { role: 'impact_manager' },
     } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
     mockDbData.evidence = { id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft', type: 'url', contentHash: 'x' };
 
     const { verifyFileEvidenceIntegrity } = await import('@/lib/pipeline/evidence');
@@ -439,6 +442,23 @@ describe('Evidence service', () => {
 
     expect(result.verified).toBe(false);
     expect(mockDbData.evidence.integrityVerified).toBeUndefined();
+    expect(recalculateConfidenceScore).not.toHaveBeenCalled();
+  });
+
+  it('rejects verifyFileEvidenceIntegrity for a role below impact_manager (SEC regression)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'analyst' },
+    } as any);
+    vi.mocked(hasRole).mockImplementation((role, required) => role === 'impact_manager' && required === 'impact_manager');
+    mockDbData.evidence = {
+      id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'draft',
+      type: 'file', filePath: 'proj-1/ev-1/test.pdf', contentHash: 'x',
+    };
+
+    const { verifyFileEvidenceIntegrity } = await import('@/lib/pipeline/evidence');
+    await expect(verifyFileEvidenceIntegrity('proj-1', 'ev-1')).rejects.toThrow('Insufficient permissions');
     expect(recalculateConfidenceScore).not.toHaveBeenCalled();
   });
 });
