@@ -5,6 +5,11 @@
 // which remain manually declared and are out of scope here).
 // Design: docs/superpowers/specs/2026-07-06-evidence-confidence-score-design.md
 
+import { db } from '@/db/client'
+import { evidenceItems } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { requireOrganizationAccess } from '@/lib/auth/session'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import type { EvidenceType, EvidenceStatus } from '@/lib/pipeline/evidence'
 
 export type ConfidenceScoreInput = {
@@ -32,4 +37,38 @@ export function computeConfidenceScore(input: ConfidenceScoreInput): number {
   if (input.hasLinkage) score += LINKAGE_POINTS
   if (input.type === 'file' && input.integrityVerified === true) score += INTEGRITY_VERIFIED_POINTS
   return score
+}
+
+export async function recalculateConfidenceScore(projectId: string, evidenceId: string): Promise<void> {
+  const { organization, user } = await requireOrganizationAccess()
+
+  const row = await db.select().from(evidenceItems).where(eq(evidenceItems.id, evidenceId)).then((r) => r[0])
+  if (!row) return
+
+  const newScore = computeConfidenceScore({
+    type: row.type as EvidenceType,
+    status: row.status as EvidenceStatus,
+    hasLinkage: row.outcomeId !== null || row.indicatorId !== null,
+    integrityVerified: row.integrityVerified,
+  })
+
+  const previousScore = row.confidenceScore
+
+  if (newScore === previousScore) return
+
+  await db
+    .update(evidenceItems)
+    .set({ confidenceScore: newScore, confidenceCalculatedAt: new Date() })
+    .where(eq(evidenceItems.id, evidenceId))
+
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_item',
+    entityId: evidenceId,
+    action: AUDIT_ACTIONS.EVIDENCE_CONFIDENCE_SCORE_UPDATED,
+    beforeJson: { confidenceScore: previousScore },
+    afterJson: { confidenceScore: newScore },
+  })
 }

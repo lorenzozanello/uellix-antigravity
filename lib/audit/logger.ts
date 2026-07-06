@@ -54,6 +54,7 @@ export const AUDIT_ACTIONS = {
   EVIDENCE_CREATED: 'evidence_item.created',
   EVIDENCE_REVIEW_STATUS_CHANGED: 'evidence_item.review_status_changed',
   EVIDENCE_ARCHIVED: 'evidence_item.archived',
+  EVIDENCE_CONFIDENCE_SCORE_UPDATED: 'evidence_item.confidence_score_updated',
 
   // Theory of change (nodes + links)
   THEORY_OF_CHANGE_NODE_CREATED: 'theory_of_change_node.created',
