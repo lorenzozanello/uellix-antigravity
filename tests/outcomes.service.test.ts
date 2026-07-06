@@ -181,4 +181,71 @@ describe('Outcome service', () => {
       'Stakeholder group does not belong to this project'
     );
   });
+
+  it('accepts creation with a valid materiality score + rationale', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Outcome with materiality',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 4,
+      materialityRationale: 'Directly tied to the primary funder mandate.',
+    };
+    const result = await createOutcome('proj-1', input);
+    expect(result.id).toBe('out-1');
+  });
+
+  it('rejects a materiality score without a rationale', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 3,
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  it('rejects a materiality rationale without a score', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality 2',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityRationale: 'Orphaned rationale',
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
+
+  it('rejects a materiality score outside 1-5', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Bad materiality 3',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 6,
+      materialityRationale: 'Out of range',
+    };
+    await expect(createOutcome('proj-1', input as any)).rejects.toThrow();
+  });
 });

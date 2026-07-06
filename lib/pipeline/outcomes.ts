@@ -14,7 +14,12 @@ const outcomeInputSchema = z.object({
   outcomeType: z.string().optional(),
   materialityNotes: z.string().optional(),
   status: z.enum(['active', 'inactive']).optional(),
-});
+  materialityScore: z.number().int().min(1).max(5).optional(),
+  materialityRationale: z.string().min(1).optional(),
+}).refine(
+  (data) => (data.materialityScore === undefined) === (data.materialityRationale === undefined),
+  { message: 'materialityScore and materialityRationale must both be provided together', path: ['materialityScore'] },
+);
 
 type OutcomeInput = z.infer<typeof outcomeInputSchema>;
 
@@ -74,6 +79,8 @@ export async function createOutcomeForProject(
       description: parsed.description,
       outcomeType: parsed.outcomeType,
       materialityNotes: parsed.materialityNotes,
+      materialityScore: parsed.materialityScore ?? null,
+      materialityRationale: parsed.materialityRationale ?? null,
       status: parsed.status ?? 'active',
       createdBy: ctx.user.id,
       createdAt: new Date(),
