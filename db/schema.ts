@@ -309,7 +309,7 @@ export const projectInvestments = pgTable('project_investments', {
   // Fase 1b: a project can now have multiple investment contributions (list
   // semantics via status active/archived), each from a funder, cash or in-kind.
   funderId: uuid('funder_id').references(() => funders.id).notNull(),
-  contributionType: varchar('contribution_type', { length: 20 }).default('cash').notNull(),
+  contributionType: varchar('contribution_type', { length: 20 }).$type<'cash' | 'in_kind'>().default('cash').notNull(),
   inKindValuationNotes: text('in_kind_valuation_notes'),
   amount: numeric('amount', { precision: 20, scale: 4 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull(),

@@ -226,18 +226,18 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       vi.mocked(getCurrentOrganizationContext).mockResolvedValue(null);
 
       await expect(
-        createAllocation(createUUID('00000001'), createUUID('00000002'), 50),
+        createAllocation(createUUID(1), createUUID(2), 50),
       ).rejects.toThrow(/no organization context/i);
 
-      await expect(listAllocations(createUUID('00000001'))).rejects.toThrow(
+      await expect(listAllocations(createUUID(1))).rejects.toThrow(
         /no organization context/i,
       );
 
-      await expect(updateAllocation(createUUID('aaaaaaaa'), 50)).rejects.toThrow(
+      await expect(updateAllocation(createUUID(10), 50)).rejects.toThrow(
         /no organization context/i,
       );
 
-      await expect(deleteAllocation(createUUID('aaaaaaaa'))).rejects.toThrow(
+      await expect(deleteAllocation(createUUID(10))).rejects.toThrow(
         /no organization context/i,
       );
     });
