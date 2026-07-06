@@ -225,8 +225,14 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
                           <Badge variant={confidenceBadgeVariant(ev.confidenceScore)}>{ev.confidenceScore}</Badge>
                         )}
                         {ev.type === 'file' && ev.integrityVerifiedAt && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {ev.integrityVerified ? '✓' : '✗'} verificado{' '}
+                          <span
+                            className="text-[10px] text-muted-foreground"
+                            aria-label={`Integridad ${ev.integrityVerified === false ? 'fallida' : 'verificada'} ${new Date(ev.integrityVerifiedAt).toLocaleDateString('es-MX', {
+                              day: 'numeric',
+                              month: 'short',
+                            })}`}
+                          >
+                            <span aria-hidden="true">{ev.integrityVerified === false ? '✗' : '✓'}</span> verificado{' '}
                             {new Date(ev.integrityVerifiedAt).toLocaleDateString('es-MX', {
                               day: 'numeric',
                               month: 'short',
