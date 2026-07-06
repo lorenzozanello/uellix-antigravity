@@ -346,6 +346,13 @@ export async function archiveEvidenceForProject(projectId: string, evidenceId: s
  * "any later modification is detectable" guarantee real rather than merely
  * recorded — call it from the Trust Center or a scheduled integrity sweep.
  * Only applies to file evidence (URL/text hashes are reference identifiers).
+ *
+ * NOT read-only: on every call it persists `integrityVerified` /
+ * `integrityVerifiedAt` on the evidence row and triggers
+ * `recalculateConfidenceScore`, which may itself write `confidenceScore` and
+ * append an audit_log entry. A periodic sweep that loops this over many
+ * evidence items will produce a write (and possibly an audit entry) per item
+ * checked, not just reads.
  */
 export async function verifyFileEvidenceIntegrity(
   projectId: string,

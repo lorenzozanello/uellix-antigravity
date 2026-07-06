@@ -39,36 +39,45 @@ export function computeConfidenceScore(input: ConfidenceScoreInput): number {
   return score
 }
 
+// Best-effort by design: this recalculation must never cause a caller's
+// otherwise-successful operation (evidence creation, review status change,
+// integrity verification, ...) to appear failed. Any error during access
+// checks, computation, persistence, or audit logging is caught and logged
+// here rather than propagated.
 export async function recalculateConfidenceScore(projectId: string, evidenceId: string): Promise<void> {
-  const { organization, user } = await requireOrganizationAccess()
+  try {
+    const { organization, user } = await requireOrganizationAccess()
 
-  const row = await db.select().from(evidenceItems).where(eq(evidenceItems.id, evidenceId)).then((r) => r[0])
-  if (!row) return
+    const row = await db.select().from(evidenceItems).where(eq(evidenceItems.id, evidenceId)).then((r) => r[0])
+    if (!row) return
 
-  const newScore = computeConfidenceScore({
-    type: row.type as EvidenceType,
-    status: row.status as EvidenceStatus,
-    hasLinkage: row.outcomeId !== null || row.indicatorId !== null,
-    integrityVerified: row.integrityVerified,
-  })
+    const newScore = computeConfidenceScore({
+      type: row.type as EvidenceType,
+      status: row.status as EvidenceStatus,
+      hasLinkage: row.outcomeId !== null || row.indicatorId !== null,
+      integrityVerified: row.integrityVerified,
+    })
 
-  const previousScore = row.confidenceScore
+    const previousScore = row.confidenceScore
 
-  if (newScore === previousScore) return
+    if (newScore === previousScore) return
 
-  await db
-    .update(evidenceItems)
-    .set({ confidenceScore: newScore, confidenceCalculatedAt: new Date() })
-    .where(eq(evidenceItems.id, evidenceId))
+    await db
+      .update(evidenceItems)
+      .set({ confidenceScore: newScore, confidenceCalculatedAt: new Date() })
+      .where(eq(evidenceItems.id, evidenceId))
 
-  await logAuditAction({
-    organizationId: organization.id,
-    projectId,
-    actorUserId: user.id,
-    entityType: 'evidence_item',
-    entityId: evidenceId,
-    action: AUDIT_ACTIONS.EVIDENCE_CONFIDENCE_SCORE_UPDATED,
-    beforeJson: { confidenceScore: previousScore },
-    afterJson: { confidenceScore: newScore },
-  })
+    await logAuditAction({
+      organizationId: organization.id,
+      projectId,
+      actorUserId: user.id,
+      entityType: 'evidence_item',
+      entityId: evidenceId,
+      action: AUDIT_ACTIONS.EVIDENCE_CONFIDENCE_SCORE_UPDATED,
+      beforeJson: { confidenceScore: previousScore },
+      afterJson: { confidenceScore: newScore },
+    })
+  } catch (error) {
+    console.error('[confidence-score] recalculation failed', { evidenceId, error })
+  }
 }

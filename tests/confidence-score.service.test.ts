@@ -150,4 +150,10 @@ describe('recalculateConfidenceScore', () => {
     await expect(recalculateConfidenceScore('proj-1', 'missing')).resolves.toBeUndefined();
     expect(logAuditAction).not.toHaveBeenCalled();
   });
+
+  it('never throws when requireOrganizationAccess rejects — swallows the error and does not audit', async () => {
+    vi.mocked(requireOrganizationAccess).mockRejectedValue(new Error('boom'));
+    await expect(recalculateConfidenceScore('proj-1', 'ev-1')).resolves.toBeUndefined();
+    expect(logAuditAction).not.toHaveBeenCalled();
+  });
 });
