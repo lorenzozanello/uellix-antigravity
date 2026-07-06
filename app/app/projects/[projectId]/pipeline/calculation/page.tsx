@@ -4,6 +4,7 @@ import { calculateSroiRunAction } from './calculateSroiRun.action'
 import { upsertProjectInvestmentAction } from './upsertProjectInvestment.action'
 import { upsertSroiAssignmentInputAction } from './upsertSroiAssignmentInput.action'
 import { upsertSroiFilterSetAction } from './upsertSroiFilterSet.action'
+import InvestmentFormIntegration from '@/app/components/investment-form/InvestmentFormIntegration'
 import Link from 'next/link'
 import { BarChart2, GitCompare, FileText, CheckCircle2, AlertTriangle, Info, Calculator } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
@@ -29,6 +30,8 @@ import { listFundersForCurrentOrganization, FUNDER_TYPES } from '@/lib/pipeline/
 import { listAllocationsForProject, sumPct } from '@/lib/pipeline/allocations'
 import { createFunderAction, addAllocationAction, archiveAllocationAction } from './funderAllocation.actions'
 import { setDiscountRateAction } from './setDiscountRate.action'
+import { createInvestmentAction, updateInvestmentAction, deleteInvestmentAction } from './manageInvestment.action'
+import { listInvestments } from '@/lib/pipeline/investments'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { db } from '@/db/client'
 import {
@@ -91,7 +94,8 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
 
   const runs      = await listSroiCalculationRuns(projectId)
 
-  const investment = await db
+  // Fetch all active investments for the project
+  const investments = await db
     .select()
     .from(projectInvestments)
     .where(
@@ -100,8 +104,10 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         eq(projectInvestments.status, 'active')
       )
     )
-    .limit(1)
-    .then((rows) => rows[0] ?? null)
+    .orderBy(projectInvestments.createdAt)
+
+  // For backward compatibility, also get the "primary" investment (first one)
+  const investment = investments[0] ?? null
 
   const assignmentsData = await db
     .select({
@@ -209,6 +215,48 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
   async function handleSetDiscountRate(formData: FormData) {
     'use server'
     await setDiscountRateAction(formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  // Investment CRUD handlers (for multi-row form)
+  async function handleCreateInvestment(data: any) {
+    'use server'
+    const formData = new FormData()
+    formData.append('funderId', data.funderId)
+    formData.append('amount', data.amount)
+    formData.append('currency', data.currency)
+    formData.append('contributionType', data.contributionType)
+    if (data.inKindValuationNotes) {
+      formData.append('inKindValuationNotes', data.inKindValuationNotes)
+    }
+    if (data.year) {
+      formData.append('year', String(data.year))
+    }
+    if (data.description) {
+      formData.append('description', data.description)
+    }
+    await createInvestmentAction(projectId, formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  async function handleUpdateInvestment(investmentId: string, data: any) {
+    'use server'
+    const formData = new FormData()
+    if (data.amount) formData.append('amount', data.amount)
+    if (data.currency) formData.append('currency', data.currency)
+    if (data.contributionType) formData.append('contributionType', data.contributionType)
+    if (data.inKindValuationNotes !== undefined) {
+      formData.append('inKindValuationNotes', data.inKindValuationNotes)
+    }
+    if (data.year) formData.append('year', String(data.year))
+    if (data.description) formData.append('description', data.description)
+    await updateInvestmentAction(investmentId, formData)
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
+  }
+
+  async function handleDeleteInvestment(investmentId: string) {
+    'use server'
+    await deleteInvestmentAction(investmentId)
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
@@ -333,152 +381,42 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
 
       <StellaValidatorPanel projectId={projectId} step="Cálculo" />
 
-      {/* Investment */}
+      {/* Investment — Multi-row form (Task 11) */}
       <Card>
         <CardHeader>
           <CardTitle>Inversión del proyecto</CardTitle>
           <CardDescription>
-            Capital total invertido en el período de intervención. Se usa como denominador en el ratio SROI.
+            Aportes de financiadores al período de intervención. El total USD se usa como denominador en el ratio SROI.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {investment && (
-            <div className="rounded-md border border-border bg-muted/30 p-4 text-sm space-y-1">
-              <p>
-                <span className="font-medium text-foreground">Monto actual:</span>{' '}
-                <span className="text-foreground">{investment.amount} {investment.currency}</span>
-              </p>
-              <p>
-                <span className="font-medium text-foreground">Equivalente USD:</span>{' '}
-                {investment.amountUsd ? (
-                  <span className="text-foreground tabular-nums">{parseFloat(investment.amountUsd).toLocaleString()} USD</span>
-                ) : (
-                  <span className="text-red-600">pendiente de conversión</span>
-                )}
-              </p>
-              {investment.year && (
-                <p>
-                  <span className="font-medium text-foreground">Año de referencia:</span>{' '}
-                  <span className="text-muted-foreground">{investment.year}</span>
-                </p>
-              )}
-              {investment.description && (
-                <p>
-                  <span className="font-medium text-foreground">Notas:</span>{' '}
-                  <span className="text-muted-foreground">{investment.description}</span>
-                </p>
-              )}
+          {/* Summary of existing investments */}
+          {investments && investments.length > 0 && (
+            <div className="rounded-md border border-border bg-muted/30 p-4 text-sm space-y-2">
+              <p className="font-medium text-foreground">Resumen de aportes</p>
+              <ul className="space-y-1 text-muted-foreground">
+                {investments.map((inv) => (
+                  <li key={inv.id} className="flex justify-between">
+                    <span>{fundersList.find((f) => f.id === inv.funderId)?.name || 'Financiador'}</span>
+                    <span className="tabular-nums font-medium text-foreground">
+                      {parseFloat(inv.amount || '0').toLocaleString()} {inv.currency}
+                      {inv.amountUsd ? ` (${parseFloat(inv.amountUsd).toLocaleString()} USD)` : ' (pendiente)'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
-          <form action={handleUpsertInvestment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="hidden" name="projectId" value={projectId} />
-
-            <div>
-              <label htmlFor="inv-funder" className="block text-sm font-medium text-foreground">
-                Financiador
-              </label>
-              <select
-                id="inv-funder"
-                name="funderId"
-                disabled={!canEdit}
-                defaultValue={investment?.funderId ?? ''}
-                className={INPUT_CLASS}
-              >
-                <option value="">— Sin especificar —</option>
-                {fundersList.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="inv-ctype" className="block text-sm font-medium text-foreground">
-                Tipo de aporte
-              </label>
-              <select
-                id="inv-ctype"
-                name="contributionType"
-                disabled={!canEdit}
-                defaultValue={investment?.contributionType ?? 'cash'}
-                className={INPUT_CLASS}
-              >
-                <option value="cash">Efectivo</option>
-                <option value="in_kind">En especie</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="inv-amount" className="block text-sm font-medium text-foreground">
-                Monto de inversión <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="inv-amount"
-                name="amount"
-                type="text"
-                required
-                disabled={!canEdit}
-                defaultValue={investment?.amount ?? ''}
-                className={INPUT_CLASS}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="inv-currency" className="block text-sm font-medium text-foreground">
-                Moneda <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="inv-currency"
-                name="currency"
-                type="text"
-                required
-                disabled={!canEdit}
-                defaultValue={investment?.currency ?? ''}
-                className={INPUT_CLASS}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="inv-year" className="block text-sm font-medium text-foreground">
-                Año de referencia
-                <span className="ml-1 text-xs text-muted-foreground font-normal">(opcional)</span>
-              </label>
-              <input
-                id="inv-year"
-                name="year"
-                type="number"
-                disabled={!canEdit}
-                defaultValue={investment?.year ?? ''}
-                className={INPUT_CLASS}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="inv-description" className="block text-sm font-medium text-foreground">
-                Notas
-                <span className="ml-1 text-xs text-muted-foreground font-normal">(opcional)</span>
-              </label>
-              <input
-                id="inv-description"
-                name="description"
-                type="text"
-                disabled={!canEdit}
-                defaultValue={investment?.description ?? ''}
-                className={INPUT_CLASS}
-              />
-            </div>
-
-            {canEdit && (
-              <div className="md:col-span-2">
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
-                >
-                  Guardar inversión
-                </button>
-              </div>
-            )}
-          </form>
+          {/* Multi-row form */}
+          <InvestmentFormIntegration
+            investments={investments || []}
+            funders={fundersList}
+            canEdit={canEdit}
+            onCreateInvestment={handleCreateInvestment}
+            onUpdateInvestment={handleUpdateInvestment}
+            onDeleteInvestment={handleDeleteInvestment}
+          />
         </CardContent>
       </Card>
 
