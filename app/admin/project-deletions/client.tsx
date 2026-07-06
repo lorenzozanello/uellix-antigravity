@@ -87,7 +87,7 @@ export default function ProjectDeletionClient({ initialRequests }: { initialRequ
                       : 'Desconocido'}
                   </CardDescription>
                 </div>
-                <Badge variant="destructive" className="flex items-center gap-1">
+                <Badge variant="danger" className="flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Pendiente
                 </Badge>
