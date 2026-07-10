@@ -82,6 +82,13 @@ export class StellaGeminiAdapter {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new StellaTimeoutError()
       }
+      // Surface the real Gemini failure (status + message, key redacted) to the
+      // server logs. The user only ever sees a generic GEMINI_ERROR, so without
+      // this line a blocked/leaked key or 4xx from Google is invisible in Vercel.
+      console.error('[stella] Gemini API call failed:', {
+        role: request.role,
+        ...buildGeminiErrorLog(error, this.config.apiKey),
+      })
       throw new StellaGeminiError(error instanceof Error ? error.message : String(error))
     } finally {
       clearTimeout(timeoutId)
@@ -109,16 +116,27 @@ export class StellaGeminiAdapter {
   }
 }
 
-// Singleton instance (dev/test only - production should create per-org instance)
-let adapterInstance: StellaGeminiAdapter | null = null
+/**
+ * Extract a safe, structured summary of a Gemini/@google/genai error for
+ * server-side logging. Redacts the API key so it never lands in logs.
+ */
+export function buildGeminiErrorLog(
+  error: unknown,
+  apiKey: string
+): { status?: number; message: string } {
+  const rawMessage = error instanceof Error ? error.message : String(error)
+  const message = apiKey ? rawMessage.split(apiKey).join('[REDACTED]') : rawMessage
 
-export function getGeminiAdapter(config?: Partial<StellaAdapterConfig>): StellaGeminiAdapter {
-  if (!adapterInstance) {
-    adapterInstance = new StellaGeminiAdapter(config)
-  }
-  return adapterInstance
+  const statusValue = (error as { status?: unknown } | null)?.status
+  const status = typeof statusValue === 'number' ? statusValue : undefined
+
+  return status === undefined ? { message } : { status, message }
 }
 
-export function resetGeminiAdapter(): void {
-  adapterInstance = null
+// Construct a fresh adapter per call. Adapters are cheap (they only hold config;
+// the real GoogleGenAI client is created per request inside generateWithTimeout).
+// A module-level singleton in a warm serverless instance could otherwise pin a
+// stale API key after a rotation until the next cold start.
+export function getGeminiAdapter(config?: Partial<StellaAdapterConfig>): StellaGeminiAdapter {
+  return new StellaGeminiAdapter(config)
 }

@@ -2,7 +2,7 @@
 // Sprint 9B: Stella Gemini adapter tests - mock provider, no real Gemini calls
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { StellaGeminiAdapter } from './gemini-client'
+import { StellaGeminiAdapter, buildGeminiErrorLog, getGeminiAdapter } from './gemini-client'
 import { ValidatorOutputSchema } from '../schemas/validator-output'
 import type { StellaMockProvider, StellaRequest, StellaResponse } from './types'
 
@@ -125,5 +125,46 @@ describe('StellaGeminiAdapter', () => {
     })
     // If we got here without errors, the adapter doesn't expose the key during construction
     expect(adapterWithKey.isReady()).toBe(true)
+  })
+})
+
+describe('buildGeminiErrorLog', () => {
+  it('redacts the API key when it appears in the error message', () => {
+    const apiKey = 'AIzaSyD_super_secret_key_123'
+    const error = new Error(`Request rejected for key ${apiKey}`)
+
+    const log = buildGeminiErrorLog(error, apiKey)
+
+    expect(log.message).not.toContain(apiKey)
+    expect(log.message).toContain('[REDACTED]')
+  })
+
+  it('extracts the HTTP status code from a @google/genai ApiError', () => {
+    // @google/genai throws ApiError objects carrying a numeric `status`
+    const apiError = Object.assign(
+      new Error('{"error":{"code":403,"message":"API key reported as leaked","status":"PERMISSION_DENIED"}}'),
+      { name: 'ApiError', status: 403 }
+    )
+
+    const log = buildGeminiErrorLog(apiError, 'some-key')
+
+    expect(log.status).toBe(403)
+    expect(log.message).toContain('leaked')
+  })
+
+  it('handles non-Error values without throwing', () => {
+    const log = buildGeminiErrorLog('plain string failure', 'some-key')
+
+    expect(log.status).toBeUndefined()
+    expect(log.message).toBe('plain string failure')
+  })
+})
+
+describe('getGeminiAdapter', () => {
+  it('returns a fresh adapter per call (no shared singleton holding a stale key)', () => {
+    const first = getGeminiAdapter()
+    const second = getGeminiAdapter()
+
+    expect(first).not.toBe(second)
   })
 })

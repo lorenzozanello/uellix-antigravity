@@ -16,7 +16,7 @@ export {
 } from './errors'
 
 // Adapter
-export { StellaGeminiAdapter, getGeminiAdapter, resetGeminiAdapter } from './adapter/gemini-client'
+export { StellaGeminiAdapter, getGeminiAdapter, buildGeminiErrorLog } from './adapter/gemini-client'
 export type { StellaRole, StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig } from './adapter/types'
 
 // Schemas
