@@ -50,6 +50,18 @@ describe('report variants', () => {
         evidenceManifest: false,
         fxTrail: false,
         lineItems: false,
+        methodologyReadiness: false,
+        standards: true,
+      })
+    })
+
+    it('methodological surfaces the readiness annex but not funder/audit annexes', () => {
+      expect(getVariantAnnexes('methodological')).toEqual({
+        funderBreakdown: false,
+        evidenceManifest: false,
+        fxTrail: false,
+        lineItems: false,
+        methodologyReadiness: true,
         standards: true,
       })
     })
@@ -60,6 +72,7 @@ describe('report variants', () => {
         evidenceManifest: true,
         fxTrail: true,
         lineItems: true,
+        methodologyReadiness: true,
         standards: true,
       })
     })

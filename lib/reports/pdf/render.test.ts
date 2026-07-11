@@ -38,6 +38,7 @@ const props: ReportPdfProps = {
     truncated: false,
     total: 1,
   },
+  methodologyReadiness: [{ stepLabel: 'Evidencia', readinessScore: 75, statusLabel: 'Revisado' }],
   generatedAt: '10 de julio de 2026, 21:00',
 }
 
@@ -59,6 +60,7 @@ describe('ReportPdfDocument render', () => {
         evidenceManifest: [],
         fxTrail: null,
         lineItems: null,
+        methodologyReadiness: null,
         run: null,
       }) as unknown as Parameters<typeof renderToBuffer>[0]
     )

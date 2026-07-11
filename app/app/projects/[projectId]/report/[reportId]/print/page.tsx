@@ -9,7 +9,8 @@ import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
-import { buildEvidenceManifest, extractFxTrail, extractLineItems } from '@/lib/reports/pdf/report-data'
+import { buildEvidenceManifest, extractFxTrail, extractLineItems, buildMethodologyReadiness } from '@/lib/reports/pdf/report-data'
+import { listMethodologyReviewsForProject } from '@/lib/pipeline/methodology-review'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 
 export const dynamic = 'force-dynamic'
@@ -67,6 +68,9 @@ export default async function ReportPrintPage({
   const annexes = getVariantAnnexes(variant)
   const fxTrail = annexes.fxTrail ? extractFxTrail(report.snapshotJson) : null
   const lineItems = annexes.lineItems ? extractLineItems(report.snapshotJson) : null
+  const methodologyReadiness = annexes.methodologyReadiness
+    ? buildMethodologyReadiness(await listMethodologyReviewsForProject(projectId).catch(() => []))
+    : null
   const mappingGroups = annexes.standards ? groupMappingsByCatalog(dedupedMappings) : []
   const evidenceManifest = annexes.evidenceManifest
     ? buildEvidenceManifest(
@@ -240,6 +244,38 @@ export default async function ReportPrintPage({
             </section>
           )
         })}
+
+        {/* Methodology review readiness (methodological/audit annex) */}
+        {methodologyReadiness && (
+          <section className="break-inside-avoid">
+            <h2 className="mb-1 border-b border-slate-200 pb-1 text-lg font-semibold text-slate-900">
+              Preparación metodológica por paso
+            </h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Puntaje de preparación de la revisión metodológica de cada paso del pipeline (0–100).
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-300 text-left text-xs text-slate-500">
+                  <th className="py-1 pr-2 font-medium">Paso</th>
+                  <th className="py-1 pr-2 text-right font-medium">Preparación</th>
+                  <th className="py-1 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {methodologyReadiness.map((r, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-1 pr-2 text-slate-800">{r.stepLabel}</td>
+                    <td className="py-1 pr-2 text-right tabular-nums text-slate-800">
+                      {r.readinessScore === null ? 'Sin evaluar' : `${r.readinessScore}%`}
+                    </td>
+                    <td className="py-1 text-slate-500">{r.statusLabel}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
 
         {/* FX conversion trail (audit annex) — only when present */}
         {fxTrail && (

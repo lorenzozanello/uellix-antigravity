@@ -150,6 +150,25 @@ export async function getMethodologyReview(projectId: string, step: PipelineRevi
   return { matrix, items, template }
 }
 
+/** All methodology review matrices for a project (org-scoped), for the report
+ *  methodology-readiness annex. Read-only; any org member may read. */
+export async function listMethodologyReviewsForProject(projectId: string) {
+  const ctx = await authorizeProject(projectId)
+  return db
+    .select({
+      pipelineStep: methodologyReviewMatrix.pipelineStep,
+      status: methodologyReviewMatrix.status,
+      readinessScore: methodologyReviewMatrix.readinessScore,
+    })
+    .from(methodologyReviewMatrix)
+    .where(
+      and(
+        eq(methodologyReviewMatrix.projectId, projectId),
+        eq(methodologyReviewMatrix.organizationId, ctx.organization.id)
+      )
+    )
+}
+
 /** Create the matrix header for a step (opt-in). Idempotent: returns the existing one. */
 export async function startMethodologyReview(projectId: string, step: PipelineReviewStep) {
   const ctx = await authorizeProject(projectId)

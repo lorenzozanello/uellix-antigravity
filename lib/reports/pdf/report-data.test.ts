@@ -1,6 +1,12 @@
 // lib/reports/pdf/report-data.test.ts
 import { describe, it, expect } from 'vitest'
-import { extractFunderBreakdown, buildEvidenceManifest, extractFxTrail, extractLineItems } from './report-data'
+import {
+  extractFunderBreakdown,
+  buildEvidenceManifest,
+  extractFxTrail,
+  extractLineItems,
+  buildMethodologyReadiness,
+} from './report-data'
 
 describe('extractFunderBreakdown', () => {
   it('extracts rows and unattributed value from a snapshot', () => {
@@ -105,6 +111,25 @@ describe('extractLineItems', () => {
     expect(extractLineItems({})).toBeNull()
     expect(extractLineItems({ assignments: [] })).toBeNull()
     expect(extractLineItems(null)).toBeNull()
+  })
+})
+
+describe('buildMethodologyReadiness', () => {
+  it('orders steps by pipeline order and maps labels', () => {
+    const rows = buildMethodologyReadiness([
+      { pipelineStep: 'proxies', status: 'reviewed', readinessScore: 80 },
+      { pipelineStep: 'stakeholders', status: 'approved', readinessScore: 100 },
+    ])
+    expect(rows).not.toBeNull()
+    // stakeholders comes before proxies in the canonical pipeline order
+    expect(rows!.map((r) => r.stepLabel)).toEqual(['Grupos de interés', 'Proxies'])
+    expect(rows![0].statusLabel).toBe('Aprobado')
+    expect(rows![0].readinessScore).toBe(100)
+  })
+
+  it('ignores unknown steps and returns null when nothing is left', () => {
+    expect(buildMethodologyReadiness([{ pipelineStep: 'bogus', status: 'draft', readinessScore: 1 }])).toBeNull()
+    expect(buildMethodologyReadiness([])).toBeNull()
   })
 })
 

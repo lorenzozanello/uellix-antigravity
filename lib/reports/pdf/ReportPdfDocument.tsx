@@ -5,7 +5,7 @@
 // carries the mandatory methodological disclaimers verbatim.
 
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
-import type { FunderBreakdown, EvidenceManifestRow, FxTrail, LineItems } from './report-data'
+import type { FunderBreakdown, EvidenceManifestRow, FxTrail, LineItems, MethodologyReadinessRow } from './report-data'
 
 export type ReportPdfRun = {
   sroiRatio: string | null
@@ -41,6 +41,7 @@ export type ReportPdfProps = {
   evidenceManifest: EvidenceManifestRow[]
   fxTrail: FxTrail | null
   lineItems: LineItems | null
+  methodologyReadiness: MethodologyReadinessRow[] | null
   generatedAt: string
 }
 
@@ -201,6 +202,30 @@ export function ReportPdfDocument(props: ReportPdfProps) {
             )}
           </View>
         ))}
+
+        {/* Methodology review readiness (methodological/audit annex) */}
+        {props.methodologyReadiness && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Preparación metodológica por paso</Text>
+            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+              Puntaje de preparación de la revisión metodológica de cada paso del pipeline (0–100).
+            </Text>
+            <View style={styles.tableHeaderRow}>
+              <Text style={[styles.th, { width: '50%' }]}>Paso</Text>
+              <Text style={[styles.th, { width: '25%', textAlign: 'right', paddingRight: 8 }]}>Preparación</Text>
+              <Text style={[styles.th, { width: '25%' }]}>Estado</Text>
+            </View>
+            {props.methodologyReadiness.map((r, i) => (
+              <View key={i} style={styles.tableRow}>
+                <Text style={[styles.td, { width: '50%' }]}>{r.stepLabel}</Text>
+                <Text style={[styles.td, { width: '25%', textAlign: 'right', paddingRight: 8 }]}>
+                  {r.readinessScore === null ? 'Sin evaluar' : `${r.readinessScore}%`}
+                </Text>
+                <Text style={[styles.td, { width: '25%', color: '#64748b' }]}>{r.statusLabel}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Funder breakdown table (audit annex) — only when present */}
         {props.funderBreakdown && (

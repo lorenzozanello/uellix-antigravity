@@ -143,6 +143,51 @@ export function extractLineItems(snapshotJson: unknown, limit = 40): LineItems |
   return { rows: all.slice(0, limit), truncated: all.length > limit, total: all.length }
 }
 
+// Canonical pipeline order + display labels for the methodology readiness annex.
+// Kept local (not imported from methodology-review, which pulls in db/client) to
+// keep this a pure, db-free module.
+const METHODOLOGY_STEP_ORDER = ['stakeholders', 'outcomes', 'indicators', 'evidence', 'proxies', 'narrative']
+const METHODOLOGY_STEP_LABEL: Record<string, string> = {
+  stakeholders: 'Grupos de interés',
+  outcomes: 'Resultados',
+  indicators: 'Indicadores',
+  evidence: 'Evidencia',
+  proxies: 'Proxies',
+  narrative: 'Narrativa / Teoría de cambio',
+}
+const METHODOLOGY_STATUS_LABEL: Record<string, string> = {
+  draft: 'Borrador',
+  reviewed: 'Revisado',
+  approved: 'Aprobado',
+  flagged: 'Marcado',
+  archived: 'Archivado',
+}
+
+export type MethodologyReadinessRow = {
+  stepLabel: string
+  readinessScore: number | null
+  statusLabel: string
+}
+
+/** Order per-step methodology review readiness into display rows (canonical
+ *  pipeline order, Spanish labels). Null when there are no known-step reviews. */
+export function buildMethodologyReadiness(
+  reviews: { pipelineStep: string; status: string; readinessScore: number | null }[]
+): MethodologyReadinessRow[] | null {
+  const byStep = new Map(reviews.map((r) => [r.pipelineStep, r]))
+  const rows: MethodologyReadinessRow[] = []
+  for (const step of METHODOLOGY_STEP_ORDER) {
+    const review = byStep.get(step)
+    if (!review) continue
+    rows.push({
+      stepLabel: METHODOLOGY_STEP_LABEL[step] ?? step,
+      readinessScore: review.readinessScore,
+      statusLabel: METHODOLOGY_STATUS_LABEL[review.status] ?? review.status,
+    })
+  }
+  return rows.length > 0 ? rows : null
+}
+
 export type EvidenceManifestRow = {
   title: string
   type: string
