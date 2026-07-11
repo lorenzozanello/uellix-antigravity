@@ -469,6 +469,55 @@ export const sroiRunReviewItems = pgTable('sroi_run_review_items', {
   index('idx_sroi_run_review_items_review_id').on(table.reviewId),
 ])
 
+// Fase 2 — Generalized methodology review matrix. Where sroi_run_reviews only
+// covers the calculation run, this pair covers every earlier pipeline step
+// (stakeholders, outcomes, indicators, evidence, proxies, narrative). One matrix
+// per (project, pipeline_step), created on demand (opt-in). readiness_score is
+// auto-computed from item statuses (see lib/pipeline/methodology-review.ts).
+export const methodologyReviewMatrix = pgTable('methodology_review_matrix', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  pipelineStep: varchar('pipeline_step', { length: 50 }).notNull(),
+  status: varchar('status', { length: 50 }).default('draft').notNull(),
+  readinessScore: integer('readiness_score'),
+  overallNotes: text('overall_notes'),
+  reviewerId: uuid('reviewer_id').references(() => users.id).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('methodology_review_matrix_step_check', sql`${table.pipelineStep} IN ('stakeholders', 'outcomes', 'indicators', 'evidence', 'proxies', 'narrative')`),
+  check('methodology_review_matrix_status_check', sql`${table.status} IN ('draft', 'reviewed', 'approved', 'flagged', 'archived')`),
+  check('methodology_review_matrix_score_check', sql`${table.readinessScore} IS NULL OR (${table.readinessScore} >= 0 AND ${table.readinessScore} <= 100)`),
+  unique('methodology_review_matrix_project_step_unique').on(table.projectId, table.pipelineStep),
+  index('idx_methodology_review_matrix_project_id').on(table.projectId),
+])
+
+export const methodologyReviewMatrixItems = pgTable('methodology_review_matrix_items', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  matrixId: uuid('matrix_id').references(() => methodologyReviewMatrix.id).notNull(),
+  itemKey: varchar('item_key', { length: 255 }).notNull(),
+  label: varchar('label', { length: 500 }).notNull(),
+  status: varchar('status', { length: 50 }).default('warning').notNull(),
+  severity: varchar('severity', { length: 50 }).default('medium').notNull(),
+  isCustom: boolean('is_custom').default(false).notNull(),
+  notes: text('notes'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('methodology_review_matrix_items_status_check', sql`${table.status} IN ('pass', 'warning', 'fail', 'not_applicable')`),
+  check('methodology_review_matrix_items_severity_check', sql`${table.severity} IN ('low', 'medium', 'high')`),
+  unique('methodology_review_matrix_items_matrix_key_unique').on(table.matrixId, table.itemKey),
+  index('idx_methodology_review_matrix_items_matrix_id').on(table.matrixId),
+])
+
 export const sroiReports = pgTable('sroi_reports', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),

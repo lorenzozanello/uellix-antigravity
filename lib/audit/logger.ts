@@ -64,6 +64,11 @@ export const AUDIT_ACTIONS = {
 
   // Outcomes
   OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
+
+  // Methodology review matrix (generalized across pipeline steps)
+  METHODOLOGY_REVIEW_STARTED: 'methodology_review.started',
+  METHODOLOGY_REVIEW_UPDATED: 'methodology_review.updated',
+  METHODOLOGY_REVIEW_ITEM_UPSERTED: 'methodology_review_item.upserted',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

@@ -176,6 +176,13 @@
       "when": 1783373793712,
       "tag": "0024_outstanding_enchantress",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1783728060532,
+      "tag": "0025_shallow_mattie_franklin",
+      "breakpoints": true
     }
   ]
 }
