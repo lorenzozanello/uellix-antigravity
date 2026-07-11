@@ -1,7 +1,14 @@
 // lib/stella/adapter/types.ts
 // Sprint 9B: Stella adapter types
 
-export type StellaRole = 'advisor' | 'validator' | 'composer'
+export type StellaRole =
+  | 'advisor'
+  | 'validator'
+  | 'composer'
+  // Fase 5b reviewer roles
+  | 'proxy_reviewer'
+  | 'evidence_reviewer'
+  | 'audit_assistant'
 
 export interface StellaRequest {
   role: StellaRole

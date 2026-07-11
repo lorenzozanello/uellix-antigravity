@@ -3,7 +3,7 @@
 // THESE TESTS MUST NEVER FAIL - they enforce hard constraints
 
 import { describe, it, expect } from 'vitest'
-import { ValidatorOutputSchema, ComposerOutputSchema } from '../schemas'
+import { ValidatorOutputSchema, ComposerOutputSchema, ReviewerOutputSchema } from '../schemas'
 import { SHARED_GUARDRAILS } from '../prompts/shared-guardrails'
 
 describe('Stella Anti-Regression: Critical Guardrails', () => {
@@ -154,6 +154,32 @@ describe('Stella Anti-Regression: Critical Guardrails', () => {
       // The output should clearly be a draft
       expect(composer.draft_content).toBeDefined()
       expect(composer.draft_title).toContain('Draft') // Conventions
+    })
+  })
+
+  describe('Fase 5b reviewer roles: inherit the human-review invariant', () => {
+    it('ReviewerOutput requires_human_review must be literal true', () => {
+      const valid = {
+        summary: 'Revisión',
+        risk_level: 'medium' as const,
+        findings: ['Hallazgo'],
+        recommendations: ['Recomendación'],
+        requires_human_review: true,
+      }
+      expect(ReviewerOutputSchema.parse(valid).requires_human_review).toBe(true)
+      expect(() => ReviewerOutputSchema.parse({ ...valid, requires_human_review: false })).toThrow()
+    })
+
+    it('ReviewerOutput flags findings, never approvals', () => {
+      const output = ReviewerOutputSchema.parse({
+        summary: 'Hay brechas',
+        risk_level: 'high',
+        findings: ['Proxy sin fuente verificable'],
+        recommendations: ['Documentar la fuente'],
+        requires_human_review: true,
+      })
+      expect(output.findings.length).toBeGreaterThan(0)
+      expect(output.requires_human_review).toBe(true)
     })
   })
 

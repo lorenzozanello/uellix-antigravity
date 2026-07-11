@@ -1,0 +1,2 @@
+ALTER TABLE "stella_interactions" DROP CONSTRAINT "stella_interactions_stella_role_check";--> statement-breakpoint
+ALTER TABLE "stella_interactions" ADD CONSTRAINT "stella_interactions_stella_role_check" CHECK ("stella_interactions"."stella_role" IN ('advisor', 'validator', 'composer', 'proxy_reviewer', 'evidence_reviewer', 'audit_assistant'));

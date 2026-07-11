@@ -4,3 +4,4 @@
 export { AdvisorOutputSchema, type AdvisorOutput } from './advisor-output'
 export { ValidatorOutputSchema, type ValidatorOutput } from './validator-output'
 export { ComposerOutputSchema, type ComposerOutput } from './composer-output'
+export { ReviewerOutputSchema, type ReviewerOutput } from './reviewer-output'

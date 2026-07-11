@@ -1,7 +1,7 @@
 import React from 'react'
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
-import { StellaAdvisorPanel } from '@/components/stella'
+import { StellaAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions'
@@ -166,6 +166,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
       <Stepper />
 
       <StellaAdvisorPanel projectId={projectId} step="Evidencia" highlightHint={evidences.length === 0} />
+      <StellaReviewerPanel projectId={projectId} role="evidence_reviewer" title="Revisor de Evidencia (Stella)" />
 
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel

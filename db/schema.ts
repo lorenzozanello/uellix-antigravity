@@ -605,7 +605,7 @@ export const stellaInteractions = pgTable('stella_interactions', {
   riskFlags: text('risk_flags').array(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
-  check('stella_interactions_stella_role_check', sql`${table.stellaRole} IN ('advisor', 'validator', 'composer')`),
+  check('stella_interactions_stella_role_check', sql`${table.stellaRole} IN ('advisor', 'validator', 'composer', 'proxy_reviewer', 'evidence_reviewer', 'audit_assistant')`),
   check('stella_interactions_risk_level_check', sql`${table.riskLevel} IS NULL OR ${table.riskLevel} IN ('low', 'medium', 'high')`),
   // These already exist in the DB via migration 0012 — declared here so
   // schema.ts reflects reality (they were previously missing from the model).

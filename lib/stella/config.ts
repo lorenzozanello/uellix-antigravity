@@ -16,6 +16,10 @@ export const stellaConfig = {
   isAdvisorEnabled: process.env.STELLA_ADVISOR_ENABLED === 'true',
   isValidatorEnabled: process.env.STELLA_VALIDATOR_ENABLED === 'true',
   isComposerEnabled: process.env.STELLA_COMPOSER_ENABLED === 'true',
+  // Fase 5b reviewer roles — default false, enabled per-role via env vars.
+  isProxyReviewerEnabled: process.env.STELLA_PROXY_REVIEWER_ENABLED === 'true',
+  isEvidenceReviewerEnabled: process.env.STELLA_EVIDENCE_REVIEWER_ENABLED === 'true',
+  isAuditAssistantEnabled: process.env.STELLA_AUDIT_ASSISTANT_ENABLED === 'true',
 
   // Request timeout (ms)
   requestTimeoutMs: 15000,
