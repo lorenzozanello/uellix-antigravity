@@ -9,6 +9,8 @@ import { getReportDraft, getCalculationRunDetail } from '@/lib/pipeline/sroi-res
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
+import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { extractFunderBreakdown, buildEvidenceManifest } from '@/lib/reports/pdf/report-data'
 import { ReportPdfDocument } from '@/lib/reports/pdf/ReportPdfDocument'
 
 export const runtime = 'nodejs'
@@ -47,12 +49,26 @@ export async function GET(
     return new Response('Reporte no encontrado', { status: 404 })
   }
 
-  const [project, runDetail, mappings] = await Promise.all([
+  const [project, runDetail, mappings, evidence] = await Promise.all([
     getProjectByIdForCurrentOrganization(projectId),
     getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
     listOutcomeMappingsForProject(projectId).catch(() => []),
+    listEvidenceForProject(projectId).catch(() => []),
   ])
   const run = runDetail?.run ?? null
+
+  // Audit annexes. Funder breakdown honors the report's locked include flag.
+  const funderBreakdown = report.includeFunderBreakdown
+    ? extractFunderBreakdown(report.snapshotJson)
+    : null
+  const evidenceManifest = buildEvidenceManifest(
+    evidence.map((e) => ({
+      title: e.title,
+      type: e.type,
+      status: e.status,
+      contentHash: e.contentHash ?? null,
+    }))
+  )
 
   // Dedupe codes within each catalog, then format one line per catalog.
   const seenByCatalog = new Map<string, Set<string>>()
@@ -98,6 +114,8 @@ export async function GET(
       content: s.content,
     })),
     standards,
+    funderBreakdown,
+    evidenceManifest,
     generatedAt,
   })
 

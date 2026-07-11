@@ -5,6 +5,7 @@
 // carries the mandatory methodological disclaimers verbatim.
 
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
+import type { FunderBreakdown, EvidenceManifestRow } from './report-data'
 
 export type ReportPdfRun = {
   sroiRatio: string | null
@@ -35,6 +36,8 @@ export type ReportPdfProps = {
   run: ReportPdfRun | null
   sections: ReportPdfSection[]
   standards: ReportPdfStandard[]
+  funderBreakdown: FunderBreakdown | null
+  evidenceManifest: EvidenceManifestRow[]
   generatedAt: string
 }
 
@@ -77,6 +80,22 @@ const styles = StyleSheet.create({
   disclaimerBody: { fontSize: 9, color: '#475569', marginTop: 4 },
   section: { marginBottom: 14 },
   sectionTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 3 },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+    paddingBottom: 3,
+    marginBottom: 2,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e2e8f0',
+    paddingVertical: 3,
+  },
+  th: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: '#64748b' },
+  td: { fontSize: 8.5, color: '#1e293b' },
+  tdMono: { fontSize: 8, color: '#475569', fontFamily: 'Courier' },
   sectionBody: { fontSize: 9.5, color: '#1e293b' },
   sectionEmpty: { fontSize: 9.5, color: '#94a3b8', fontStyle: 'italic' },
   footer: {
@@ -179,6 +198,55 @@ export function ReportPdfDocument(props: ReportPdfProps) {
             )}
           </View>
         ))}
+
+        {/* Funder breakdown table (audit annex) — only when present */}
+        {props.funderBreakdown && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Desglose por financiador (USD)</Text>
+            <View style={styles.tableHeaderRow}>
+              <Text style={[styles.th, { width: '34%' }]}>Financiador</Text>
+              <Text style={[styles.th, { width: '20%' }]}>Tipo</Text>
+              <Text style={[styles.th, { width: '16%', textAlign: 'right' }]}>Inversión</Text>
+              <Text style={[styles.th, { width: '18%', textAlign: 'right' }]}>Valor neto atrib.</Text>
+              <Text style={[styles.th, { width: '12%', textAlign: 'right' }]}>SROI</Text>
+            </View>
+            {props.funderBreakdown.rows.map((r, i) => (
+              <View key={i} style={styles.tableRow}>
+                <Text style={[styles.td, { width: '34%' }]}>{r.funderName}</Text>
+                <Text style={[styles.td, { width: '20%', color: '#64748b' }]}>{r.funderType}</Text>
+                <Text style={[styles.td, { width: '16%', textAlign: 'right' }]}>{fmtMoney(r.investmentUsd)}</Text>
+                <Text style={[styles.td, { width: '18%', textAlign: 'right' }]}>{fmtMoney(r.attributedNsvUsd)}</Text>
+                <Text style={[styles.td, { width: '12%', textAlign: 'right' }]}>{fmtRatio(r.sroiRatio)}</Text>
+              </View>
+            ))}
+            {props.funderBreakdown.unattributedNsvUsd && (
+              <Text style={[styles.sectionBody, { color: '#64748b', marginTop: 3 }]}>
+                Valor social neto no atribuido: {fmtMoney(props.funderBreakdown.unattributedNsvUsd)} USD
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Evidence hash manifest (audit annex) — only when present */}
+        {props.evidenceManifest.length > 0 && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Manifiesto de evidencia (hashes SHA-256)</Text>
+            <View style={styles.tableHeaderRow}>
+              <Text style={[styles.th, { width: '46%' }]}>Título</Text>
+              <Text style={[styles.th, { width: '14%' }]}>Tipo</Text>
+              <Text style={[styles.th, { width: '20%' }]}>Estado</Text>
+              <Text style={[styles.th, { width: '20%' }]}>Hash</Text>
+            </View>
+            {props.evidenceManifest.map((e, i) => (
+              <View key={i} style={styles.tableRow}>
+                <Text style={[styles.td, { width: '46%' }]}>{e.title}</Text>
+                <Text style={[styles.td, { width: '14%', color: '#64748b' }]}>{e.type}</Text>
+                <Text style={[styles.td, { width: '20%' }]}>{e.status}</Text>
+                <Text style={[styles.tdMono, { width: '20%' }]}>{e.hashShort ? `${e.hashShort}…` : '—'}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Reference standards (comparability crosswalks) — only when present */}
         {props.standards.length > 0 && (

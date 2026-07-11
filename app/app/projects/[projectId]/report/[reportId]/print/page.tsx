@@ -8,6 +8,8 @@ import { SECTION_GROUPS, SECTION_META } from '@/lib/reports/report-sections'
 import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
+import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { buildEvidenceManifest } from '@/lib/reports/pdf/report-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +63,14 @@ export default async function ReportPrintPage({
     return true
   })
   const mappingGroups = groupMappingsByCatalog(dedupedMappings)
+  const evidenceManifest = buildEvidenceManifest(
+    (await listEvidenceForProject(projectId).catch(() => [])).map((e) => ({
+      title: e.title,
+      type: e.type,
+      status: e.status,
+      contentHash: e.contentHash ?? null,
+    }))
+  )
   const snapshotJson = report.snapshotJson
   const currency = report.currency ?? 'USD'
   const sectionByType = new Map(report.sections.map((s) => [s.sectionType, s]))
@@ -223,6 +233,37 @@ export default async function ReportPrintPage({
             </section>
           )
         })}
+
+        {/* Evidence hash manifest (audit annex) — only when evidence exists */}
+        {evidenceManifest.length > 0 && (
+          <section className="break-inside-avoid">
+            <h2 className="mb-3 border-b border-slate-200 pb-1 text-lg font-semibold text-slate-900">
+              Manifiesto de evidencia (hashes SHA-256)
+            </h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-300 text-left text-xs text-slate-500">
+                  <th className="py-1 pr-2 font-medium">Título</th>
+                  <th className="py-1 pr-2 font-medium">Tipo</th>
+                  <th className="py-1 pr-2 font-medium">Estado</th>
+                  <th className="py-1 font-medium">Hash</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evidenceManifest.map((e, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-1 pr-2 text-slate-800">{e.title}</td>
+                    <td className="py-1 pr-2 text-slate-500">{e.type}</td>
+                    <td className="py-1 pr-2 text-slate-700">{e.status}</td>
+                    <td className="py-1 font-mono text-xs text-slate-600">
+                      {e.hashShort ? `${e.hashShort}…` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
 
         {/* Reference standards (comparability crosswalks) — only when they exist */}
         {mappingGroups.length > 0 && (
