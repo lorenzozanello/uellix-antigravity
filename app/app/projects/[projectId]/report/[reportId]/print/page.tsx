@@ -9,7 +9,7 @@ import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
-import { buildEvidenceManifest } from '@/lib/reports/pdf/report-data'
+import { buildEvidenceManifest, extractFxTrail } from '@/lib/reports/pdf/report-data'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 
 export const dynamic = 'force-dynamic'
@@ -65,6 +65,7 @@ export default async function ReportPrintPage({
   })
   const variant = isReportVariant(report.reportVariant) ? report.reportVariant : 'audit'
   const annexes = getVariantAnnexes(variant)
+  const fxTrail = annexes.fxTrail ? extractFxTrail(report.snapshotJson) : null
   const mappingGroups = annexes.standards ? groupMappingsByCatalog(dedupedMappings) : []
   const evidenceManifest = annexes.evidenceManifest
     ? buildEvidenceManifest(
@@ -238,6 +239,41 @@ export default async function ReportPrintPage({
             </section>
           )
         })}
+
+        {/* FX conversion trail (audit annex) — only when present */}
+        {fxTrail && (
+          <section className="break-inside-avoid">
+            <h2 className="mb-1 border-b border-slate-200 pb-1 text-lg font-semibold text-slate-900">
+              Rastro de conversión a USD
+            </h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Cada aporte se normalizó a USD al guardarse. Los aportes ya en USD no se convierten.
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-300 text-left text-xs text-slate-500">
+                  <th className="py-1 pr-2 text-right font-medium">Monto original</th>
+                  <th className="py-1 pr-2 font-medium">Moneda</th>
+                  <th className="py-1 pr-2 text-right font-medium">Monto USD</th>
+                  <th className="py-1 font-medium">Año</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fxTrail.rows.map((r, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-1 pr-2 text-right tabular-nums text-slate-800">{fmt(r.amount)}</td>
+                    <td className="py-1 pr-2 text-slate-700">
+                      {r.currency}
+                      {r.converted ? ' (conv.)' : ''}
+                    </td>
+                    <td className="py-1 pr-2 text-right tabular-nums text-slate-800">{fmt(r.amountUsd)}</td>
+                    <td className="py-1 text-slate-500">{r.year ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
 
         {/* Evidence hash manifest (audit annex) — only when evidence exists */}
         {evidenceManifest.length > 0 && (

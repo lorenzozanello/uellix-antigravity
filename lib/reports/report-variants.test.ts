@@ -44,18 +44,20 @@ describe('report variants', () => {
   })
 
   describe('getVariantAnnexes', () => {
-    it('funder shows funder breakdown + standards but not the evidence manifest', () => {
+    it('funder shows funder breakdown + standards but not the evidence manifest or FX trail', () => {
       expect(getVariantAnnexes('funder')).toEqual({
         funderBreakdown: true,
         evidenceManifest: false,
+        fxTrail: false,
         standards: true,
       })
     })
 
-    it('audit shows every annex', () => {
+    it('audit shows every annex including the FX trail', () => {
       expect(getVariantAnnexes('audit')).toEqual({
         funderBreakdown: true,
         evidenceManifest: true,
+        fxTrail: true,
         standards: true,
       })
     })

@@ -51,17 +51,19 @@ export function getVariantSectionTypes(variant: ReportVariant, includeFunderBrea
 export type VariantAnnexes = {
   funderBreakdown: boolean
   evidenceManifest: boolean
+  fxTrail: boolean
   standards: boolean
 }
 
-/** Which document annexes render for this variant. */
+/** Which document annexes render for this variant. The raw FX conversion trail
+ *  is an audit-only traceability annex. */
 export function getVariantAnnexes(variant: ReportVariant): VariantAnnexes {
   switch (variant) {
     case 'funder':
-      return { funderBreakdown: true, evidenceManifest: false, standards: true }
+      return { funderBreakdown: true, evidenceManifest: false, fxTrail: false, standards: true }
     case 'methodological':
-      return { funderBreakdown: false, evidenceManifest: false, standards: true }
+      return { funderBreakdown: false, evidenceManifest: false, fxTrail: false, standards: true }
     case 'audit':
-      return { funderBreakdown: true, evidenceManifest: true, standards: true }
+      return { funderBreakdown: true, evidenceManifest: true, fxTrail: true, standards: true }
   }
 }

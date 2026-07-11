@@ -32,6 +32,7 @@ const props: ReportPdfProps = {
     unattributedNsvUsd: '250',
   },
   evidenceManifest: [{ title: 'Documento 1', type: 'file', status: 'approved', hashShort: 'abcdef012345' }],
+  fxTrail: { rows: [{ amount: '5000000', currency: 'COP', amountUsd: '1250', year: 2025, converted: true }] },
   generatedAt: '10 de julio de 2026, 21:00',
 }
 
@@ -51,6 +52,7 @@ describe('ReportPdfDocument render', () => {
         standards: [],
         funderBreakdown: null,
         evidenceManifest: [],
+        fxTrail: null,
         run: null,
       }) as unknown as Parameters<typeof renderToBuffer>[0]
     )

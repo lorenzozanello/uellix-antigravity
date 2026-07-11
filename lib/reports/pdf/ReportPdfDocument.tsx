@@ -5,7 +5,7 @@
 // carries the mandatory methodological disclaimers verbatim.
 
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
-import type { FunderBreakdown, EvidenceManifestRow } from './report-data'
+import type { FunderBreakdown, EvidenceManifestRow, FxTrail } from './report-data'
 
 export type ReportPdfRun = {
   sroiRatio: string | null
@@ -39,6 +39,7 @@ export type ReportPdfProps = {
   standards: ReportPdfStandard[]
   funderBreakdown: FunderBreakdown | null
   evidenceManifest: EvidenceManifestRow[]
+  fxTrail: FxTrail | null
   generatedAt: string
 }
 
@@ -225,6 +226,30 @@ export function ReportPdfDocument(props: ReportPdfProps) {
                 Valor social neto no atribuido: {fmtMoney(props.funderBreakdown.unattributedNsvUsd)} USD
               </Text>
             )}
+          </View>
+        )}
+
+        {/* FX conversion trail (audit annex) — only when present */}
+        {props.fxTrail && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Rastro de conversión a USD</Text>
+            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+              Cada aporte se normalizó a USD al guardarse. Los aportes ya en USD no se convierten.
+            </Text>
+            <View style={styles.tableHeaderRow}>
+              <Text style={[styles.th, { width: '28%', textAlign: 'right', paddingRight: 8 }]}>Monto original</Text>
+              <Text style={[styles.th, { width: '22%' }]}>Moneda</Text>
+              <Text style={[styles.th, { width: '28%', textAlign: 'right', paddingRight: 8 }]}>Monto USD</Text>
+              <Text style={[styles.th, { width: '22%' }]}>Año</Text>
+            </View>
+            {props.fxTrail.rows.map((r, i) => (
+              <View key={i} style={styles.tableRow}>
+                <Text style={[styles.td, { width: '28%', textAlign: 'right', paddingRight: 8 }]}>{fmtMoney(r.amount)}</Text>
+                <Text style={[styles.td, { width: '22%' }]}>{r.currency}{r.converted ? ' (conv.)' : ''}</Text>
+                <Text style={[styles.td, { width: '28%', textAlign: 'right', paddingRight: 8 }]}>{fmtMoney(r.amountUsd)}</Text>
+                <Text style={[styles.td, { width: '22%', color: '#64748b' }]}>{r.year ?? '—'}</Text>
+              </View>
+            ))}
           </View>
         )}
 

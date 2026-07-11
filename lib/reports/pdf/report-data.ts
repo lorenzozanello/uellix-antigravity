@@ -56,6 +56,37 @@ export function extractFunderBreakdown(snapshotJson: unknown): FunderBreakdown |
   return { rows, unattributedNsvUsd: asString(snap.unattributedNsvUsd) }
 }
 
+export type FxTrailRow = {
+  amount: string
+  currency: string
+  amountUsd: string
+  year: number | null
+  converted: boolean
+}
+
+export type FxTrail = { rows: FxTrailRow[] }
+
+function toFxRow(raw: unknown): FxTrailRow | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const amount = asString(r.amount)
+  const currency = asString(r.currency)
+  const amountUsd = asString(r.amountUsd)
+  if (amount === null || currency === null || amountUsd === null) return null
+  const year = typeof r.year === 'number' ? r.year : null
+  return { amount, currency, amountUsd, year, converted: currency !== 'USD' }
+}
+
+/** Extract the per-investment FX conversion trail from a calculation snapshot.
+ *  Documents how each contribution was normalized to USD. Null when absent. */
+export function extractFxTrail(snapshotJson: unknown): FxTrail | null {
+  if (!snapshotJson || typeof snapshotJson !== 'object') return null
+  const list = (snapshotJson as Record<string, unknown>).investments
+  if (!Array.isArray(list) || list.length === 0) return null
+  const rows = list.map(toFxRow).filter((r): r is FxTrailRow => r !== null)
+  return rows.length === 0 ? null : { rows }
+}
+
 export type EvidenceManifestRow = {
   title: string
   type: string
