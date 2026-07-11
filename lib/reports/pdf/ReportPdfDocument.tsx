@@ -21,6 +21,11 @@ export type ReportPdfSection = {
   content: string | null
 }
 
+export type ReportPdfStandard = {
+  catalogName: string
+  entries: string
+}
+
 export type ReportPdfProps = {
   organizationName: string
   projectName: string
@@ -29,6 +34,7 @@ export type ReportPdfProps = {
   calculationRunId: string
   run: ReportPdfRun | null
   sections: ReportPdfSection[]
+  standards: ReportPdfStandard[]
   generatedAt: string
 }
 
@@ -173,6 +179,25 @@ export function ReportPdfDocument(props: ReportPdfProps) {
             )}
           </View>
         ))}
+
+        {/* Reference standards (comparability crosswalks) — only when present */}
+        {props.standards.length > 0 && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Estándares de referencia</Text>
+            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+              Los resultados se mapean a los siguientes marcos como referencia de comparabilidad. No
+              constituye certificación ni equivalencia oficial con dichos estándares.
+            </Text>
+            {props.standards.map((s) => (
+              <View key={s.catalogName} style={{ marginBottom: 3 }}>
+                <Text style={{ fontSize: 9.5, fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>
+                  {s.catalogName}
+                </Text>
+                <Text style={styles.sectionBody}>{s.entries}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Footer on every page */}
         <Text

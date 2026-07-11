@@ -12,7 +12,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed:proxies": "tsx scripts/seed-proxies.ts"
+    "db:seed:proxies": "tsx scripts/seed-proxies.ts",
+    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

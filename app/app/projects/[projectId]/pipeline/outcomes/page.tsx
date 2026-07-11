@@ -4,6 +4,9 @@ import { StellaAdvisorPanel } from '@/components/stella';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
+import { hasRole } from '@/lib/auth/permissions';
+import { listCatalogsWithCodes, listOutcomeMappingsForProject } from '@/lib/taxonomies/service';
+import { OutcomeTaxonomyMapper } from '@/components/taxonomy/OutcomeTaxonomyMapper';
 import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { OutcomeAllocationWrapper } from '@/app/components/allocation-form/OutcomeAllocationWrapper';
@@ -76,6 +79,17 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
   const { membership } = await requireOrganizationAccess();
   const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
   const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
+  const [catalogs, allMappings] = await Promise.all([
+    listCatalogsWithCodes(),
+    listOutcomeMappingsForProject(projectId),
+  ]);
+  const canMapTaxonomy = hasRole(membership.role, 'analyst');
+  const mappingsByOutcome = new Map<string, typeof allMappings>();
+  for (const m of allMappings) {
+    const list = mappingsByOutcome.get(m.outcomeId) ?? [];
+    list.push(m);
+    mappingsByOutcome.set(m.outcomeId, list);
+  }
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -162,6 +176,13 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                   <OutcomeAllocationWrapper
                     outcomeId={o.id}
                     projectId={projectId}
+                  />
+                  <OutcomeTaxonomyMapper
+                    projectId={projectId}
+                    outcomeId={o.id}
+                    catalogs={catalogs}
+                    mappings={mappingsByOutcome.get(o.id) ?? []}
+                    canEdit={canMapTaxonomy}
                   />
                 </div>
               ))}

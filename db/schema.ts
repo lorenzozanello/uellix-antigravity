@@ -518,6 +518,54 @@ export const methodologyReviewMatrixItems = pgTable('methodology_review_matrix_i
   index('idx_methodology_review_matrix_items_matrix_id').on(table.matrixId),
 ])
 
+// Fase 3 — Interoperability. External standard catalogs (ODS, IRIS+, GRI, ESG,
+// TNFD) as controlled reference vocabularies, and many-to-many crosswalks from
+// an org's own outcomes to standard codes. Catalogs/codes are GLOBAL reference
+// data (shared, seeded, not org-scoped); mappings are org-scoped like the rest
+// of the pipeline. A mapping is a comparability reference, never a certification.
+export const taxonomyCatalogs = pgTable('taxonomy_catalogs', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  code: varchar('code', { length: 20 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  version: varchar('version', { length: 50 }).notNull(),
+  sourceUrl: text('source_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  unique('taxonomy_catalogs_code_unique').on(table.code),
+])
+
+export const taxonomyCodes = pgTable('taxonomy_codes', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  catalogId: uuid('catalog_id').references(() => taxonomyCatalogs.id).notNull(),
+  code: varchar('code', { length: 50 }).notNull(),
+  label: varchar('label', { length: 500 }).notNull(),
+  description: text('description'),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('taxonomy_codes_catalog_code_unique').on(table.catalogId, table.code),
+  index('idx_taxonomy_codes_catalog_id').on(table.catalogId),
+])
+
+export const outcomeTaxonomyMappings = pgTable('outcome_taxonomy_mappings', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  taxonomyCodeId: uuid('taxonomy_code_id').references(() => taxonomyCodes.id).notNull(),
+  mappingConfidence: varchar('mapping_confidence', { length: 20 }).default('medium').notNull(),
+  rationale: text('rationale'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('outcome_taxonomy_mappings_confidence_check', sql`${table.mappingConfidence} IN ('low', 'medium', 'high')`),
+  unique('outcome_taxonomy_mappings_outcome_code_unique').on(table.outcomeId, table.taxonomyCodeId),
+  index('idx_outcome_taxonomy_mappings_outcome_id').on(table.outcomeId),
+  index('idx_outcome_taxonomy_mappings_organization_id').on(table.organizationId),
+])
+
 export const sroiReports = pgTable('sroi_reports', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),

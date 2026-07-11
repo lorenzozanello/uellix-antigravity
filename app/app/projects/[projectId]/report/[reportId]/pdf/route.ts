@@ -8,6 +8,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { getReportDraft, getCalculationRunDetail } from '@/lib/pipeline/sroi-results'
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { ReportPdfDocument } from '@/lib/reports/pdf/ReportPdfDocument'
 
 export const runtime = 'nodejs'
@@ -46,11 +47,26 @@ export async function GET(
     return new Response('Reporte no encontrado', { status: 404 })
   }
 
-  const [project, runDetail] = await Promise.all([
+  const [project, runDetail, mappings] = await Promise.all([
     getProjectByIdForCurrentOrganization(projectId),
     getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
+    listOutcomeMappingsForProject(projectId).catch(() => []),
   ])
   const run = runDetail?.run ?? null
+
+  // Dedupe codes within each catalog, then format one line per catalog.
+  const seenByCatalog = new Map<string, Set<string>>()
+  const dedupedMappings = mappings.filter((m) => {
+    const seen = seenByCatalog.get(m.catalogCode) ?? new Set<string>()
+    if (seen.has(m.code)) return false
+    seen.add(m.code)
+    seenByCatalog.set(m.catalogCode, seen)
+    return true
+  })
+  const standards = groupMappingsByCatalog(dedupedMappings).map((g) => ({
+    catalogName: g.catalogName,
+    entries: g.items.map((i) => `${i.code} (${i.label})`).join(' · '),
+  }))
 
   const generatedAt = new Date().toLocaleString('es-MX', {
     day: 'numeric',
@@ -81,6 +97,7 @@ export async function GET(
       title: s.title,
       content: s.content,
     })),
+    standards,
     generatedAt,
   })
 

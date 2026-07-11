@@ -7,6 +7,7 @@ import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { SECTION_GROUPS, SECTION_META } from '@/lib/reports/report-sections'
 import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
+import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,18 @@ export default async function ReportPrintPage({
   ])
 
   const run = runDetail?.run ?? null
+  // Comparability crosswalks: dedupe codes within each catalog. Only rendered
+  // when mappings exist — never invented.
+  const mappings = await listOutcomeMappingsForProject(projectId).catch(() => [])
+  const seenByCatalog = new Map<string, Set<string>>()
+  const dedupedMappings = mappings.filter((m) => {
+    const seen = seenByCatalog.get(m.catalogCode) ?? new Set<string>()
+    if (seen.has(m.code)) return false
+    seen.add(m.code)
+    seenByCatalog.set(m.catalogCode, seen)
+    return true
+  })
+  const mappingGroups = groupMappingsByCatalog(dedupedMappings)
   const snapshotJson = report.snapshotJson
   const currency = report.currency ?? 'USD'
   const sectionByType = new Map(report.sections.map((s) => [s.sectionType, s]))
@@ -210,6 +223,30 @@ export default async function ReportPrintPage({
             </section>
           )
         })}
+
+        {/* Reference standards (comparability crosswalks) — only when they exist */}
+        {mappingGroups.length > 0 && (
+          <section className="break-inside-avoid">
+            <h2 className="mb-1 border-b border-slate-200 pb-1 text-lg font-semibold text-slate-900">
+              Estándares de referencia
+            </h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Los resultados de este proyecto se mapean a los siguientes marcos como referencia de
+              comparabilidad. Esto no constituye certificación ni equivalencia oficial con dichos
+              estándares.
+            </p>
+            <div className="space-y-2">
+              {mappingGroups.map((group) => (
+                <div key={group.catalogCode}>
+                  <p className="text-sm font-semibold text-slate-900">{group.catalogName}</p>
+                  <p className="text-sm text-slate-700">
+                    {group.items.map((i) => `${i.code} (${i.label})`).join(' · ')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Footer */}
         <footer className="border-t border-slate-300 pt-4 text-xs text-slate-500">

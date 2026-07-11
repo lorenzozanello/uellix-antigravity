@@ -69,6 +69,10 @@ export const AUDIT_ACTIONS = {
   METHODOLOGY_REVIEW_STARTED: 'methodology_review.started',
   METHODOLOGY_REVIEW_UPDATED: 'methodology_review.updated',
   METHODOLOGY_REVIEW_ITEM_UPSERTED: 'methodology_review_item.upserted',
+
+  // Interoperability — outcome ↔ standard taxonomy crosswalks
+  TAXONOMY_MAPPING_CREATED: 'outcome_taxonomy_mapping.created',
+  TAXONOMY_MAPPING_DELETED: 'outcome_taxonomy_mapping.deleted',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
