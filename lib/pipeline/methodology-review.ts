@@ -93,8 +93,17 @@ export function getReviewChecklistTemplate(step: PipelineReviewStep): ChecklistI
 // ---------------------------------------------------------------------------
 
 // Roles allowed to create/modify a methodology review — matches the reviewing
-// roles enforced by upsertSroiRunReviewItem and the RLS policy (006_*).
+// roles enforced by upsertSroiRunReviewItem and the RLS policy (006_*). Note
+// this is NOT a strict hierarchy level: 'reviewer' is a dedicated role that
+// ranks below 'analyst' in ROLE_HIERARCHY yet is explicitly a reviewing role,
+// while 'analyst' is not — so membership must be checked by set inclusion.
 const REVIEW_ROLES = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer']
+
+/** Whether a role may create/modify a methodology review. Single source of truth
+ *  for both the service guard and UI visibility. */
+export function canReviewMethodology(role: string): boolean {
+  return REVIEW_ROLES.includes(role)
+}
 
 function isReviewStep(step: string): step is PipelineReviewStep {
   return (PIPELINE_REVIEW_STEPS as readonly string[]).includes(step)
@@ -110,9 +119,15 @@ async function authorizeProject(projectId: string) {
   return ctx
 }
 
-/** Read the matrix + its items for a step. Returns null if not started (opt-in). */
+/**
+ * Read the matrix + its items for a step, always alongside the step's checklist
+ * template so the UI can render the full checklist even before a review exists
+ * (opt-in). `matrix` is null and `items` empty until the first item is saved.
+ */
 export async function getMethodologyReview(projectId: string, step: PipelineReviewStep) {
   const ctx = await authorizeProject(projectId)
+  const template = getReviewChecklistTemplate(step)
+
   const matrix = await db
     .select()
     .from(methodologyReviewMatrix)
@@ -125,20 +140,20 @@ export async function getMethodologyReview(projectId: string, step: PipelineRevi
     )
     .then((rows) => rows[0] ?? null)
 
-  if (!matrix) return null
+  if (!matrix) return { matrix: null, items: [], template }
 
   const items = await db
     .select()
     .from(methodologyReviewMatrixItems)
     .where(eq(methodologyReviewMatrixItems.matrixId, matrix.id))
 
-  return { matrix, items, template: getReviewChecklistTemplate(step) }
+  return { matrix, items, template }
 }
 
 /** Create the matrix header for a step (opt-in). Idempotent: returns the existing one. */
 export async function startMethodologyReview(projectId: string, step: PipelineReviewStep) {
   const ctx = await authorizeProject(projectId)
-  if (!REVIEW_ROLES.includes(ctx.membership.role)) {
+  if (!canReviewMethodology(ctx.membership.role)) {
     throw new Error('Permission denied: reviewing role required to start a review')
   }
   if (!isReviewStep(step)) throw new Error(`Unsupported pipeline step: ${step}`)
@@ -202,7 +217,7 @@ export async function upsertMethodologyReviewItem(
   input: MethodologyReviewItemInput
 ) {
   const ctx = await authorizeProject(projectId)
-  if (!REVIEW_ROLES.includes(ctx.membership.role)) {
+  if (!canReviewMethodology(ctx.membership.role)) {
     throw new Error('Permission denied: reviewing role required to review')
   }
   if (!isReviewStep(step)) throw new Error(`Unsupported pipeline step: ${step}`)
@@ -305,7 +320,7 @@ export async function updateMethodologyReview(
   input: MethodologyReviewHeaderInput
 ) {
   const ctx = await authorizeProject(projectId)
-  if (!REVIEW_ROLES.includes(ctx.membership.role)) {
+  if (!canReviewMethodology(ctx.membership.role)) {
     throw new Error('Permission denied: reviewing role required to review')
   }
   const validated = ReviewHeaderInputSchema.parse(input)
