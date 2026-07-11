@@ -1,6 +1,9 @@
 // app/app/projects/[projectId]/pipeline/stakeholders/page.tsx
 import Stepper from '@/components/sroi/Stepper';
 import { StellaAdvisorPanel } from '@/components/stella';
+import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
+import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
+import { requireOrganizationAccess } from '@/lib/auth/session';
 import { fetchStakeholders, addStakeholder } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { z } from 'zod';
@@ -38,6 +41,7 @@ interface StakeholderRow {
 
 export default async function StakeholdersPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
+  const { membership } = await requireOrganizationAccess();
   const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
   return (
     <div className="space-y-6 max-w-5xl">
@@ -49,6 +53,9 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
       </div>
       <Stepper />
       <StellaAdvisorPanel projectId={projectId} step="Grupos de interés" highlightHint={!stakeholders?.length} />
+      {canReviewMethodology(membership.role) && (
+        <MethodologyReviewPanel projectId={projectId} step="stakeholders" title="Revisión metodológica — Grupos de interés" />
+      )}
       {stakeholders?.length ? (
         <Card>
           <CardHeader>

@@ -1,6 +1,9 @@
 // app/app/projects/[projectId]/pipeline/narrative/page.tsx
 import Stepper from '@/components/sroi/Stepper';
 import { StellaAdvisorPanel } from '@/components/stella';
+import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
+import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
+import { requireOrganizationAccess } from '@/lib/auth/session';
 import { fetchNarrative, saveNarrative } from '@/app/app/projects/[projectId]/pipeline/narrative.actions';
 import { z } from 'zod';
 import { listOutcomesForProject } from '@/lib/pipeline/outcomes';
@@ -43,6 +46,7 @@ const TEXTAREA_CLASS =
 
 export default async function NarrativePage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
+  const { membership } = await requireOrganizationAccess();
   const narrative = await fetchNarrative(projectId);
   const data = narrative ?? {};
 
@@ -100,6 +104,9 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
       </div>
       <Stepper />
       <StellaAdvisorPanel projectId={projectId} step="Narrativa" highlightHint={!narrative} />
+      {canReviewMethodology(membership.role) && (
+        <MethodologyReviewPanel projectId={projectId} step="narrative" title="Revisión metodológica — Narrativa / Teoría de cambio" />
+      )}
       <form action={action} className="space-y-6">
         <input type="hidden" name="projectId" value={projectId} />
         <div>

@@ -1,6 +1,9 @@
 // app/app/projects/[projectId]/pipeline/indicators/page.tsx
 import Stepper from '@/components/sroi/Stepper';
 import { StellaAdvisorPanel } from '@/components/stella';
+import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
+import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
+import { requireOrganizationAccess } from '@/lib/auth/session';
 import { fetchIndicators, addIndicator } from '@/app/app/projects/[projectId]/pipeline/indicators.actions';
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -63,6 +66,7 @@ const TEXTAREA_CLASS =
 
 export default async function IndicatorsPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
+  const { membership } = await requireOrganizationAccess();
   const indicators = await fetchIndicators(projectId) as IndicatorRow[];
   const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
 
@@ -76,6 +80,9 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
       </div>
       <Stepper />
       <StellaAdvisorPanel projectId={projectId} step="Indicadores" highlightHint={!indicators?.length} />
+      {canReviewMethodology(membership.role) && (
+        <MethodologyReviewPanel projectId={projectId} step="indicators" title="Revisión metodológica — Indicadores" />
+      )}
 
       {indicators?.length ? (
         <Card>
