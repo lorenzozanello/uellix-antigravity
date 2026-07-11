@@ -49,15 +49,17 @@ describe('report variants', () => {
         funderBreakdown: true,
         evidenceManifest: false,
         fxTrail: false,
+        lineItems: false,
         standards: true,
       })
     })
 
-    it('audit shows every annex including the FX trail', () => {
+    it('audit shows every annex including the FX trail and line items', () => {
       expect(getVariantAnnexes('audit')).toEqual({
         funderBreakdown: true,
         evidenceManifest: true,
         fxTrail: true,
+        lineItems: true,
         standards: true,
       })
     })

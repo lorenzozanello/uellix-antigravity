@@ -9,7 +9,7 @@ import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
-import { buildEvidenceManifest, extractFxTrail } from '@/lib/reports/pdf/report-data'
+import { buildEvidenceManifest, extractFxTrail, extractLineItems } from '@/lib/reports/pdf/report-data'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 
 export const dynamic = 'force-dynamic'
@@ -66,6 +66,7 @@ export default async function ReportPrintPage({
   const variant = isReportVariant(report.reportVariant) ? report.reportVariant : 'audit'
   const annexes = getVariantAnnexes(variant)
   const fxTrail = annexes.fxTrail ? extractFxTrail(report.snapshotJson) : null
+  const lineItems = annexes.lineItems ? extractLineItems(report.snapshotJson) : null
   const mappingGroups = annexes.standards ? groupMappingsByCatalog(dedupedMappings) : []
   const evidenceManifest = annexes.evidenceManifest
     ? buildEvidenceManifest(
@@ -303,6 +304,48 @@ export default async function ReportPrintPage({
                 ))}
               </tbody>
             </table>
+          </section>
+        )}
+
+        {/* Raw calculation line items (audit annex) — only when present */}
+        {lineItems && (
+          <section className="break-inside-avoid">
+            <h2 className="mb-1 border-b border-slate-200 pb-1 text-lg font-semibold text-slate-900">
+              Line items del cálculo
+            </h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Contribuciones crudas de la corrida inmutable. Referencias por ID de resultado del
+              snapshot (no por nombre, que podría haber cambiado). Valores en USD.
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-300 text-left text-xs text-slate-500">
+                  <th className="py-1 pr-2 font-medium">Resultado</th>
+                  <th className="py-1 pr-2 text-right font-medium">Cantidad</th>
+                  <th className="py-1 pr-2 text-right font-medium">Valor proxy</th>
+                  <th className="py-1 pr-2 text-right font-medium">Bruto</th>
+                  <th className="py-1 pr-2 font-medium">Ajustes</th>
+                  <th className="py-1 text-right font-medium">Ajustado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.rows.map((r, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-1 pr-2 font-mono text-xs text-slate-600">{r.outcomeRef}</td>
+                    <td className="py-1 pr-2 text-right tabular-nums text-slate-800">{r.quantity}</td>
+                    <td className="py-1 pr-2 text-right tabular-nums text-slate-800">{fmt(r.proxyValue)}</td>
+                    <td className="py-1 pr-2 text-right tabular-nums text-slate-800">{fmt(r.grossValue)}</td>
+                    <td className="py-1 pr-2 text-xs text-slate-500">{r.adjustments}</td>
+                    <td className="py-1 text-right tabular-nums text-slate-800">{fmt(r.adjustedValue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {lineItems.truncated && (
+              <p className="mt-2 text-xs text-slate-500">
+                Mostrando {lineItems.rows.length} de {lineItems.total} line items.
+              </p>
+            )}
           </section>
         )}
 

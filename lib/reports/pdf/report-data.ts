@@ -87,6 +87,62 @@ export function extractFxTrail(snapshotJson: unknown): FxTrail | null {
   return rows.length === 0 ? null : { rows }
 }
 
+export type LineItemRow = {
+  outcomeRef: string
+  proxyRef: string
+  quantity: string
+  proxyValue: string
+  grossValue: string
+  adjustedValue: string
+  adjustments: string
+}
+
+export type LineItems = { rows: LineItemRow[]; truncated: boolean; total: number }
+
+function foldAdjustments(filters: unknown): string {
+  if (!filters || typeof filters !== 'object') return ''
+  const f = filters as Record<string, unknown>
+  const parts: string[] = []
+  const dw = asString(f.deadweightPct)
+  const attr = asString(f.attributionPct)
+  const disp = asString(f.displacementPct)
+  const drop = asString(f.dropoffPct)
+  if (dw !== null) parts.push(`DW ${dw}%`)
+  if (attr !== null) parts.push(`Atr ${attr}%`)
+  if (disp !== null) parts.push(`Desp ${disp}%`)
+  if (drop !== null) parts.push(`Dec ${drop}%`)
+  return parts.join(' · ')
+}
+
+function toLineItemRow(raw: unknown): LineItemRow | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const grossValue = asString(r.grossValue)
+  const adjustedValue = asString(r.adjustedValue)
+  if (grossValue === null || adjustedValue === null) return null
+  return {
+    outcomeRef: asString(r.outcomeId)?.slice(0, 8) ?? '—',
+    proxyRef: asString(r.proxyId)?.slice(0, 8) ?? '—',
+    quantity: asString(r.quantity) ?? '—',
+    proxyValue: asString(r.proxyValue) ?? '—',
+    grossValue,
+    adjustedValue,
+    adjustments: foldAdjustments(r.filters),
+  }
+}
+
+/** Extract the raw per-assignment calculation line items from a snapshot, capped
+ *  at `limit` rows (audit annex). References outcomes/proxies by their immutable
+ *  snapshot IDs (truncated) — not by current names, which could have drifted. */
+export function extractLineItems(snapshotJson: unknown, limit = 40): LineItems | null {
+  if (!snapshotJson || typeof snapshotJson !== 'object') return null
+  const list = (snapshotJson as Record<string, unknown>).assignments
+  if (!Array.isArray(list) || list.length === 0) return null
+  const all = list.map(toLineItemRow).filter((r): r is LineItemRow => r !== null)
+  if (all.length === 0) return null
+  return { rows: all.slice(0, limit), truncated: all.length > limit, total: all.length }
+}
+
 export type EvidenceManifestRow = {
   title: string
   type: string

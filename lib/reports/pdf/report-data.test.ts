@@ -1,6 +1,6 @@
 // lib/reports/pdf/report-data.test.ts
 import { describe, it, expect } from 'vitest'
-import { extractFunderBreakdown, buildEvidenceManifest, extractFxTrail } from './report-data'
+import { extractFunderBreakdown, buildEvidenceManifest, extractFxTrail, extractLineItems } from './report-data'
 
 describe('extractFunderBreakdown', () => {
   it('extracts rows and unattributed value from a snapshot', () => {
@@ -65,6 +65,46 @@ describe('extractFxTrail', () => {
       investments: [{ amount: '10', currency: 'USD', amountUsd: '10', year: 2025 }, { bad: true }],
     })
     expect(result!.rows).toHaveLength(1)
+  })
+})
+
+describe('extractLineItems', () => {
+  const snap = {
+    assignments: [
+      {
+        outcomeId: 'aaaaaaaa-1111-2222-3333-444444444444',
+        proxyId: 'bbbbbbbb-5555-6666-7777-888888888888',
+        quantity: '100',
+        proxyValue: '50',
+        grossValue: '5000',
+        adjustedValue: '3600',
+        filters: { deadweightPct: '10', attributionPct: '80', displacementPct: '5', dropoffPct: '0', durationYears: 1 },
+      },
+    ],
+  }
+
+  it('extracts computation rows with a short reference and folded adjustments', () => {
+    const result = extractLineItems(snap)
+    expect(result).not.toBeNull()
+    expect(result!.rows).toHaveLength(1)
+    expect(result!.rows[0].outcomeRef).toBe('aaaaaaaa')
+    expect(result!.rows[0].grossValue).toBe('5000')
+    expect(result!.rows[0].adjustedValue).toBe('3600')
+    expect(result!.rows[0].adjustments).toContain('DW 10%')
+    expect(result!.truncated).toBe(false)
+  })
+
+  it('caps rows and flags truncation', () => {
+    const many = { assignments: Array.from({ length: 60 }, () => snap.assignments[0]) }
+    const result = extractLineItems(many, 30)
+    expect(result!.rows).toHaveLength(30)
+    expect(result!.truncated).toBe(true)
+  })
+
+  it('returns null when there are no assignments', () => {
+    expect(extractLineItems({})).toBeNull()
+    expect(extractLineItems({ assignments: [] })).toBeNull()
+    expect(extractLineItems(null)).toBeNull()
   })
 })
 

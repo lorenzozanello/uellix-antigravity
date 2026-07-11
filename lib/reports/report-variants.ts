@@ -52,18 +52,19 @@ export type VariantAnnexes = {
   funderBreakdown: boolean
   evidenceManifest: boolean
   fxTrail: boolean
+  lineItems: boolean
   standards: boolean
 }
 
 /** Which document annexes render for this variant. The raw FX conversion trail
- *  is an audit-only traceability annex. */
+ *  and calculation line items are audit-only traceability annexes. */
 export function getVariantAnnexes(variant: ReportVariant): VariantAnnexes {
   switch (variant) {
     case 'funder':
-      return { funderBreakdown: true, evidenceManifest: false, fxTrail: false, standards: true }
+      return { funderBreakdown: true, evidenceManifest: false, fxTrail: false, lineItems: false, standards: true }
     case 'methodological':
-      return { funderBreakdown: false, evidenceManifest: false, fxTrail: false, standards: true }
+      return { funderBreakdown: false, evidenceManifest: false, fxTrail: false, lineItems: false, standards: true }
     case 'audit':
-      return { funderBreakdown: true, evidenceManifest: true, fxTrail: true, standards: true }
+      return { funderBreakdown: true, evidenceManifest: true, fxTrail: true, lineItems: true, standards: true }
   }
 }

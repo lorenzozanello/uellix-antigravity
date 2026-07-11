@@ -5,7 +5,7 @@
 // carries the mandatory methodological disclaimers verbatim.
 
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
-import type { FunderBreakdown, EvidenceManifestRow, FxTrail } from './report-data'
+import type { FunderBreakdown, EvidenceManifestRow, FxTrail, LineItems } from './report-data'
 
 export type ReportPdfRun = {
   sroiRatio: string | null
@@ -40,6 +40,7 @@ export type ReportPdfProps = {
   funderBreakdown: FunderBreakdown | null
   evidenceManifest: EvidenceManifestRow[]
   fxTrail: FxTrail | null
+  lineItems: LineItems | null
   generatedAt: string
 }
 
@@ -271,6 +272,40 @@ export function ReportPdfDocument(props: ReportPdfProps) {
                 <Text style={[styles.tdMono, { width: '20%' }]}>{e.hashShort ? `${e.hashShort}…` : '—'}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* Raw calculation line items (audit annex) — only when present */}
+        {props.lineItems && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Line items del cálculo</Text>
+            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+              Contribuciones crudas de la corrida inmutable. Referencias por ID de resultado/proxy
+              del snapshot (no por nombre, que podría haber cambiado). Valores en USD.
+            </Text>
+            <View style={styles.tableHeaderRow}>
+              <Text style={[styles.th, { width: '14%' }]}>Resultado</Text>
+              <Text style={[styles.th, { width: '12%', textAlign: 'right', paddingRight: 6 }]}>Cantidad</Text>
+              <Text style={[styles.th, { width: '14%', textAlign: 'right', paddingRight: 6 }]}>Valor proxy</Text>
+              <Text style={[styles.th, { width: '15%', textAlign: 'right', paddingRight: 6 }]}>Bruto</Text>
+              <Text style={[styles.th, { width: '30%' }]}>Ajustes</Text>
+              <Text style={[styles.th, { width: '15%', textAlign: 'right' }]}>Ajustado</Text>
+            </View>
+            {props.lineItems.rows.map((r, i) => (
+              <View key={i} style={styles.tableRow}>
+                <Text style={[styles.tdMono, { width: '14%' }]}>{r.outcomeRef}</Text>
+                <Text style={[styles.td, { width: '12%', textAlign: 'right', paddingRight: 6 }]}>{r.quantity}</Text>
+                <Text style={[styles.td, { width: '14%', textAlign: 'right', paddingRight: 6 }]}>{fmtMoney(r.proxyValue)}</Text>
+                <Text style={[styles.td, { width: '15%', textAlign: 'right', paddingRight: 6 }]}>{fmtMoney(r.grossValue)}</Text>
+                <Text style={[styles.td, { width: '30%', color: '#64748b' }]}>{r.adjustments}</Text>
+                <Text style={[styles.td, { width: '15%', textAlign: 'right' }]}>{fmtMoney(r.adjustedValue)}</Text>
+              </View>
+            ))}
+            {props.lineItems.truncated && (
+              <Text style={[styles.sectionBody, { color: '#64748b', marginTop: 3 }]}>
+                Mostrando {props.lineItems.rows.length} de {props.lineItems.total} line items.
+              </Text>
+            )}
           </View>
         )}
 

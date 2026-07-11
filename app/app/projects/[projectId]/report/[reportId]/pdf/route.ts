@@ -10,7 +10,7 @@ import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
-import { extractFunderBreakdown, buildEvidenceManifest, extractFxTrail } from '@/lib/reports/pdf/report-data'
+import { extractFunderBreakdown, buildEvidenceManifest, extractFxTrail, extractLineItems } from '@/lib/reports/pdf/report-data'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 import { ReportPdfDocument } from '@/lib/reports/pdf/ReportPdfDocument'
 
@@ -77,6 +77,7 @@ export async function GET(
       )
     : []
   const fxTrail = annexes.fxTrail ? extractFxTrail(report.snapshotJson) : null
+  const lineItems = annexes.lineItems ? extractLineItems(report.snapshotJson) : null
 
   // Dedupe codes within each catalog, then format one line per catalog.
   const seenByCatalog = new Map<string, Set<string>>()
@@ -128,6 +129,7 @@ export async function GET(
     funderBreakdown,
     evidenceManifest,
     fxTrail,
+    lineItems,
     generatedAt,
   })
 
