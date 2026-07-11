@@ -10,6 +10,7 @@ import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
 import { buildEvidenceManifest } from '@/lib/reports/pdf/report-data'
+import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,15 +63,19 @@ export default async function ReportPrintPage({
     seenByCatalog.set(m.catalogCode, seen)
     return true
   })
-  const mappingGroups = groupMappingsByCatalog(dedupedMappings)
-  const evidenceManifest = buildEvidenceManifest(
-    (await listEvidenceForProject(projectId).catch(() => [])).map((e) => ({
-      title: e.title,
-      type: e.type,
-      status: e.status,
-      contentHash: e.contentHash ?? null,
-    }))
-  )
+  const variant = isReportVariant(report.reportVariant) ? report.reportVariant : 'audit'
+  const annexes = getVariantAnnexes(variant)
+  const mappingGroups = annexes.standards ? groupMappingsByCatalog(dedupedMappings) : []
+  const evidenceManifest = annexes.evidenceManifest
+    ? buildEvidenceManifest(
+        (await listEvidenceForProject(projectId).catch(() => [])).map((e) => ({
+          title: e.title,
+          type: e.type,
+          status: e.status,
+          contentHash: e.contentHash ?? null,
+        }))
+      )
+    : []
   const snapshotJson = report.snapshotJson
   const currency = report.currency ?? 'USD'
   const sectionByType = new Map(report.sections.map((s) => [s.sectionType, s]))
@@ -110,7 +115,7 @@ export default async function ReportPrintPage({
         {/* Title block */}
         <header className="border-b border-slate-300 pb-5">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Reporte de Impacto SROI
+            Reporte de Impacto SROI · Variante {REPORT_VARIANT_LABEL[variant]}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{report.title}</h1>
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-700 sm:grid-cols-3">

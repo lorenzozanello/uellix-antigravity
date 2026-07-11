@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { ArrowLeft, ChevronRight, FileText, Plus } from 'lucide-react'
 import { listProjectReports, getRunList } from '@/lib/pipeline/sroi-results'
 import { createReportDraftFromRunAction } from './createReportDraftFromRun.action'
+import { REPORT_VARIANTS, REPORT_VARIANT_LABEL, REPORT_VARIANT_DESCRIPTION } from '@/lib/reports/report-variants'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select } from '@/components/ui/select'
@@ -52,7 +53,12 @@ export default async function ReportListPage({
     const runId = formData.get('runId') as string
     const title = formData.get('title') as string
     const includeFunderBreakdown = formData.get('includeFunderBreakdown') === 'on'
-    const result = await createReportDraftFromRunAction(projectId, runId, { title, includeFunderBreakdown })
+    const reportVariant = (formData.get('reportVariant') as string) || 'audit'
+    const result = await createReportDraftFromRunAction(projectId, runId, {
+      title,
+      includeFunderBreakdown,
+      reportVariant,
+    })
     revalidatePath(`/app/projects/${projectId}/report`)
     redirect(`/app/projects/${projectId}/report/${result.id}`)
   }
@@ -174,6 +180,26 @@ export default async function ReportListPage({
                     Usa un título descriptivo que identifique el período del proyecto o el alcance geográfico.
                   </p>
                 </div>
+              </div>
+              <div>
+                <label htmlFor="reportVariant" className="block text-sm font-medium text-foreground">
+                  Variante del reporte
+                </label>
+                <select
+                  id="reportVariant"
+                  name="reportVariant"
+                  defaultValue="audit"
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {REPORT_VARIANTS.map((v) => (
+                    <option key={v} value={v}>
+                      {REPORT_VARIANT_LABEL[v]} — {REPORT_VARIANT_DESCRIPTION[v]}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Determina qué secciones y anexos incluye el reporte. No se puede cambiar después de crearlo.
+                </p>
               </div>
               <div className="flex items-start gap-2">
                 <input

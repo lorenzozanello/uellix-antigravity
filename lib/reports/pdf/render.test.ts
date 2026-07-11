@@ -13,6 +13,7 @@ const props: ReportPdfProps = {
   projectName: 'Proyecto de Prueba',
   reportTitle: 'Reporte SROI de Prueba',
   statusLabel: 'Bloqueado',
+  variantLabel: 'Auditoría',
   calculationRunId: 'a1b2c3d4-0000-0000-0000-000000000000',
   run: {
     sroiRatio: '3.42',

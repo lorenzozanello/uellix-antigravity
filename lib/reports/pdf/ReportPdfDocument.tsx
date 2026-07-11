@@ -32,6 +32,7 @@ export type ReportPdfProps = {
   projectName: string
   reportTitle: string
   statusLabel: string
+  variantLabel: string
   calculationRunId: string
   run: ReportPdfRun | null
   sections: ReportPdfSection[]
@@ -150,7 +151,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.headerRule}>
-          <Text style={styles.eyebrow}>Reporte de Impacto SROI</Text>
+          <Text style={styles.eyebrow}>Reporte de Impacto SROI · Variante {props.variantLabel}</Text>
           <Text style={styles.title}>{props.reportTitle}</Text>
           <View style={styles.metaGrid}>
             <MetaItem label="Organización" value={props.organizationName} />

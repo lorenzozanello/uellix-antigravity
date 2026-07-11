@@ -16,7 +16,7 @@ import {
   projects,
 } from '@/db/schema';
 import { z } from 'zod';
-import { getInitialSectionTypes } from '@/lib/reports/report-sections';
+import { getVariantSectionTypes } from '@/lib/reports/report-variants';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -42,6 +42,7 @@ type ReviewItemInput = z.infer<typeof ReviewItemInputSchema>;
 const ReportDraftInputSchema = z.object({
   title: z.string().min(1),
   includeFunderBreakdown: z.boolean().optional().default(false),
+  reportVariant: z.enum(['funder', 'methodological', 'audit']).optional().default('audit'),
 });
 
 type ReportDraftInput = z.input<typeof ReportDraftInputSchema>;
@@ -374,6 +375,7 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
       title: validated.title,
       status: 'draft',
       includeFunderBreakdown: validated.includeFunderBreakdown,
+      reportVariant: validated.reportVariant,
       createdBy: ctx.user.id,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -384,7 +386,7 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
   // shared with the editable detail view and the print/PDF view so a report's
   // stored sections always match what those views render. funder_breakdown is
   // only included when the report opts in.
-  const initialSections = getInitialSectionTypes(validated.includeFunderBreakdown);
+  const initialSections = getVariantSectionTypes(validated.reportVariant, validated.includeFunderBreakdown);
 
   const sections = initialSections.map((type, idx) => ({
     organizationId: ctx.organization.id,

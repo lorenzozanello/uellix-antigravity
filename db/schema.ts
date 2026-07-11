@@ -578,6 +578,10 @@ export const sroiReports = pgTable('sroi_reports', {
   // financiador"), immutable after creation like other report-anchoring
   // decisions. Determines whether the funder_breakdown section is generated.
   includeFunderBreakdown: boolean('include_funder_breakdown').default(false).notNull(),
+  // Fase 6b — report variant chosen at creation, immutable thereafter. Governs
+  // which sections/annexes render. Default 'audit' preserves prior behavior
+  // (the full report) for reports created before variants existed.
+  reportVariant: varchar('report_variant', { length: 20 }).default('audit').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   updatedBy: uuid('updated_by').references(() => users.id),
   lockedBy: uuid('locked_by').references(() => users.id),
@@ -586,6 +590,7 @@ export const sroiReports = pgTable('sroi_reports', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('sroi_reports_status_check', sql`${table.status} IN ('draft', 'under_review', 'locked', 'archived')`),
+  check('sroi_reports_variant_check', sql`${table.reportVariant} IN ('funder', 'methodological', 'audit')`),
   index('idx_sroi_reports_project_id').on(table.projectId),
   index('idx_sroi_reports_calculation_run_id').on(table.calculationRunId),
 ])

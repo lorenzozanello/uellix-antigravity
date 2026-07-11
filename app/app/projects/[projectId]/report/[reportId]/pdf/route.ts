@@ -11,6 +11,7 @@ import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
 import { extractFunderBreakdown, buildEvidenceManifest } from '@/lib/reports/pdf/report-data'
+import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 import { ReportPdfDocument } from '@/lib/reports/pdf/ReportPdfDocument'
 
 export const runtime = 'nodejs'
@@ -57,18 +58,24 @@ export async function GET(
   ])
   const run = runDetail?.run ?? null
 
-  // Audit annexes. Funder breakdown honors the report's locked include flag.
-  const funderBreakdown = report.includeFunderBreakdown
-    ? extractFunderBreakdown(report.snapshotJson)
-    : null
-  const evidenceManifest = buildEvidenceManifest(
-    evidence.map((e) => ({
-      title: e.title,
-      type: e.type,
-      status: e.status,
-      contentHash: e.contentHash ?? null,
-    }))
-  )
+  // Variant governs which annexes render (in addition to the funder include flag).
+  const variant = isReportVariant(report.reportVariant) ? report.reportVariant : 'audit'
+  const annexes = getVariantAnnexes(variant)
+
+  const funderBreakdown =
+    annexes.funderBreakdown && report.includeFunderBreakdown
+      ? extractFunderBreakdown(report.snapshotJson)
+      : null
+  const evidenceManifest = annexes.evidenceManifest
+    ? buildEvidenceManifest(
+        evidence.map((e) => ({
+          title: e.title,
+          type: e.type,
+          status: e.status,
+          contentHash: e.contentHash ?? null,
+        }))
+      )
+    : []
 
   // Dedupe codes within each catalog, then format one line per catalog.
   const seenByCatalog = new Map<string, Set<string>>()
@@ -79,10 +86,12 @@ export async function GET(
     seenByCatalog.set(m.catalogCode, seen)
     return true
   })
-  const standards = groupMappingsByCatalog(dedupedMappings).map((g) => ({
-    catalogName: g.catalogName,
-    entries: g.items.map((i) => `${i.code} (${i.label})`).join(' · '),
-  }))
+  const standards = annexes.standards
+    ? groupMappingsByCatalog(dedupedMappings).map((g) => ({
+        catalogName: g.catalogName,
+        entries: g.items.map((i) => `${i.code} (${i.label})`).join(' · '),
+      }))
+    : []
 
   const generatedAt = new Date().toLocaleString('es-MX', {
     day: 'numeric',
@@ -97,6 +106,7 @@ export async function GET(
     projectName: project?.name ?? '—',
     reportTitle: report.title,
     statusLabel: STATUS_LABEL[report.status] ?? report.status,
+    variantLabel: REPORT_VARIANT_LABEL[variant],
     calculationRunId: report.calculationRunId,
     run: run
       ? {

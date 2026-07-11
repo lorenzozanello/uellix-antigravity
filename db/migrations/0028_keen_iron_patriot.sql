@@ -1,0 +1,2 @@
+ALTER TABLE "sroi_reports" ADD COLUMN "report_variant" varchar(20) DEFAULT 'audit' NOT NULL;--> statement-breakpoint
+ALTER TABLE "sroi_reports" ADD CONSTRAINT "sroi_reports_variant_check" CHECK ("sroi_reports"."report_variant" IN ('funder', 'methodological', 'audit'));

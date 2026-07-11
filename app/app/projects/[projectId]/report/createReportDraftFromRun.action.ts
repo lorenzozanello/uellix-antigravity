@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 const ReportDraftInputSchema = z.object({
   title: z.string().min(1),
   includeFunderBreakdown: z.boolean().optional().default(false),
+  reportVariant: z.enum(['funder', 'methodological', 'audit']).optional().default('audit'),
 });
 export async function createReportDraftFromRunAction(projectId: string, runId: string, payload: unknown) {
   const parsed = ReportDraftInputSchema.safeParse(payload);

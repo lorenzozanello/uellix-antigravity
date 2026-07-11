@@ -197,6 +197,13 @@
       "when": 1783736204536,
       "tag": "0027_little_midnight",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1783765046049,
+      "tag": "0028_keen_iron_patriot",
+      "breakpoints": true
     }
   ]
 }
