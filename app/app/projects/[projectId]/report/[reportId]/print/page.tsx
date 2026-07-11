@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, FileDown } from 'lucide-react'
 import { getReportDraft, getCalculationRunDetail } from '@/lib/pipeline/sroi-results'
 import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
@@ -70,7 +70,16 @@ export default async function ReportPrintPage({
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Volver al editor
         </Link>
-        <PrintButton />
+        <div className="flex items-center gap-2">
+          <a
+            href={`/app/projects/${projectId}/report/${reportId}/pdf`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+            Descargar PDF
+          </a>
+          <PrintButton />
+        </div>
       </div>
 
       {/* Document */}
