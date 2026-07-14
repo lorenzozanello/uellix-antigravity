@@ -6,13 +6,28 @@ import { z } from 'zod'
 import { createInvestment, updateInvestment, deleteInvestment } from '@/lib/pipeline/investments'
 
 const CreateInvestmentSchema = z.object({
-  funderId: z.string().uuid(),
-  amount: z.string().min(1),
-  currency: z.string().min(1),
+  funderId: z.string().uuid('Debes seleccionar un financiador válido'),
+  amount: z.string()
+    .min(1, 'El monto es requerido')
+    .refine((v) => {
+      const num = parseFloat(v)
+      return !isNaN(num) && num > 0
+    }, 'El monto debe ser un número positivo'),
+  currency: z.string()
+    .min(1, 'Debes especificar una moneda')
+    .regex(/^[A-Z]{3}$/, 'El código de moneda debe tener 3 letras (ej: USD, COP, EUR)'),
   year: z.number().int().optional(),
   description: z.string().optional(),
   contributionType: z.enum(['cash', 'in_kind']).default('cash'),
-  inKindValuationNotes: z.string().optional(),
+  inKindValuationNotes: z.string()
+    .refine(
+      (v, ctx) => {
+        const isCash = ctx.parent.contributionType === 'cash'
+        return isCash || (v && v.trim().length > 0)
+      },
+      'Las notas de valoración son requeridas para aportes en especie'
+    )
+    .optional(),
 })
 
 const UpdateInvestmentSchema = z.object({
@@ -38,12 +53,20 @@ export async function createInvestmentAction(projectId: string, formData: FormDa
     inKindValuationNotes: (formData.get('inKindValuationNotes') as string | null) || undefined,
   }
 
-  const parsed = CreateInvestmentSchema.parse(raw)
+  try {
+    const parsed = CreateInvestmentSchema.parse(raw)
 
-  if (!projectId) throw new Error('projectId missing')
+    if (!projectId) throw new Error('ID del proyecto faltante')
 
-  const result = await createInvestment(projectId, parsed)
-  return result
+    const result = await createInvestment(projectId, parsed)
+    return result
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join('; ')
+      throw new Error(`Validación fallida: ${messages}`)
+    }
+    throw error
+  }
 }
 
 /**
@@ -59,12 +82,20 @@ export async function updateInvestmentAction(investmentId: string, formData: For
     inKindValuationNotes: (formData.get('inKindValuationNotes') as string | null) || undefined,
   }
 
-  const parsed = UpdateInvestmentSchema.parse(raw)
+  try {
+    const parsed = UpdateInvestmentSchema.parse(raw)
 
-  if (!investmentId) throw new Error('investmentId missing')
+    if (!investmentId) throw new Error('ID de inversión faltante')
 
-  const result = await updateInvestment(investmentId, parsed)
-  return result
+    const result = await updateInvestment(investmentId, parsed)
+    return result
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(e => e.message).join('; ')
+      throw new Error(`Validación fallida: ${messages}`)
+    }
+    throw error
+  }
 }
 
 /**

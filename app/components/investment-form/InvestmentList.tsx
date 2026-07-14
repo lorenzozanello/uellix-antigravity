@@ -120,25 +120,45 @@ export default function InvestmentList({
 
   const handleRowChange = async (investmentId: string, data: Partial<InvestmentFormData>) => {
     // Update local state
-    setRows(
-      rows.map((row) =>
-        row.id === investmentId
-          ? {
-              ...row,
-              funderId: data.funderId ?? row.funderId,
-              amount: data.amount ?? row.amount,
-              currency: data.currency ?? row.currency,
-              contributionType: data.contributionType ?? row.contributionType,
-              inKindValuationNotes: data.inKindValuationNotes ?? row.inKindValuationNotes,
-              year: data.year ?? row.year,
-              description: data.description ?? row.description,
-            }
-          : row
-      )
+    const updatedRows = rows.map((row) =>
+      row.id === investmentId
+        ? {
+            ...row,
+            funderId: data.funderId ?? row.funderId,
+            amount: data.amount ?? row.amount,
+            currency: data.currency ?? row.currency,
+            contributionType: data.contributionType ?? row.contributionType,
+            inKindValuationNotes: data.inKindValuationNotes ?? row.inKindValuationNotes,
+            year: data.year ?? row.year,
+            description: data.description ?? row.description,
+          }
+        : row
     )
+    setRows(updatedRows)
 
-    // If it's a temp row (new), don't call server action yet
-    if (!investmentId.startsWith('temp-')) {
+    // If it's a temp row (new) with required fields filled, auto-save
+    if (investmentId.startsWith('temp-')) {
+      const tempRow = updatedRows.find((r) => r.id === investmentId)
+      if (tempRow && tempRow.funderId && tempRow.amount && tempRow.currency) {
+        // All required fields are present, auto-save
+        try {
+          await onAdd({
+            funderId: tempRow.funderId,
+            amount: tempRow.amount,
+            currency: tempRow.currency,
+            contributionType: tempRow.contributionType,
+            year: tempRow.year,
+            description: tempRow.description,
+            inKindValuationNotes: tempRow.inKindValuationNotes || undefined,
+          })
+          // Note: onSuccess callback will handle UI refresh
+        } catch (err) {
+          console.error('Auto-save failed:', err)
+          // Error is handled by InvestmentFormIntegration
+        }
+      }
+    } else {
+      // For existing investments, call update
       await onUpdateRow(investmentId, data)
     }
   }

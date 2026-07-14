@@ -110,8 +110,12 @@ export default function InvestmentFormIntegration({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 space-y-2">
+          <p className="text-sm font-semibold text-red-800">Error al guardar la inversión:</p>
+          <p className="text-sm text-red-700">{error}</p>
+          <p className="text-xs text-red-600 mt-2">
+            Verifica que el financiador, monto y moneda estén correctamente completados. Si el problema persiste, intenta de nuevo.
+          </p>
         </div>
       )}
 
@@ -127,7 +131,7 @@ export default function InvestmentFormIntegration({
       {isPending && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-          Guardando cambios…
+          Guardando inversión…
         </div>
       )}
     </div>

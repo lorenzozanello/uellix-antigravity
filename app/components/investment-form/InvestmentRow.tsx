@@ -98,6 +98,15 @@ export default function InvestmentRow({
     onUpdate(newData)
   }
 
+  // Validation state
+  const isTemp = investment.id.startsWith('temp-')
+  const hasRequiredFields = !!(formData.funderId && formData.amount && formData.currency)
+  const hasValidAmount = hasRequiredFields && parseFloat(formData.amount || '0') > 0
+  const needsFxButMissing = needsFxConversion && !fxRate
+  const isMissingInKindNotes = formData.contributionType === 'in_kind' && !formData.inKindValuationNotes
+  const isReadyToSave = hasValidAmount && !needsFxButMissing && !isMissingInKindNotes
+  const showValidationHint = isTemp && !isReadyToSave
+
   const handleFetchCopRate = async () => {
     if (!formData.year) {
       alert('Por favor especifica el año de referencia para obtener la TRM')
@@ -126,7 +135,33 @@ export default function InvestmentRow({
   }
 
   return (
-    <div className="border border-border rounded-lg p-4 space-y-4 bg-card">
+    <div className={`border rounded-lg p-4 space-y-4 bg-card transition-colors ${
+      isTemp && isReadyToSave ? 'border-green-200 bg-green-50/20' :
+      showValidationHint ? 'border-amber-200 bg-amber-50/20' :
+      'border-border'
+    }`}>
+      {/* Validation hint for temporary rows */}
+      {showValidationHint && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+          <p className="font-medium">Campos requeridos:</p>
+          <ul className="mt-1 space-y-0.5">
+            {!formData.funderId && <li>• Selecciona un financiador</li>}
+            {!formData.amount && <li>• Ingresa el monto</li>}
+            {!formData.currency && <li>• Especifica la moneda</li>}
+            {!hasValidAmount && formData.amount && <li>• El monto debe ser mayor a 0</li>}
+            {needsFxButMissing && <li>• Define la tasa de cambio</li>}
+            {isMissingInKindNotes && <li>• Agrega notas de valoración para aportes en especie</li>}
+          </ul>
+        </div>
+      )}
+
+      {isTemp && isReadyToSave && (
+        <div className="rounded-md bg-green-50 border border-green-200 p-3 text-xs text-green-800 flex items-start gap-2">
+          <span className="text-lg">✓</span>
+          <p><strong>Listo para guardar.</strong> Cuando termine de editar, esta fila se guardará automáticamente.</p>
+        </div>
+      )}
+
       {/* Row 1: Funder + Contribution Type */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
