@@ -13,23 +13,28 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { data } = await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (data.user) {
-      // Sync user profile (idempotent)
-      await syncUserProfile(data.user)
+    if (!error) {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        // Sync user profile (idempotent)
+        await syncUserProfile(authUser)
 
-      if (next) {
-        return NextResponse.redirect(new URL(next, request.url))
-      }
+        if (next) {
+          return NextResponse.redirect(new URL(next, request.url))
+        }
 
-      // Smart redirect based on org membership
-      const membership = await getCurrentMembership(data.user.id)
-      if (!membership) {
-        return NextResponse.redirect(new URL('/app/onboarding', request.url))
+        // Smart redirect based on org membership
+        const membership = await getCurrentMembership(authUser.id)
+        if (!membership) {
+          return NextResponse.redirect(new URL('/app/onboarding', request.url))
+        }
+
+        return NextResponse.redirect(new URL('/app/dashboard', request.url))
       }
     }
   }
 
-  return NextResponse.redirect(new URL('/app/dashboard', request.url))
+  return NextResponse.redirect(new URL('/login', request.url))
 }
