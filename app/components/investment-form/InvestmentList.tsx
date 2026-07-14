@@ -148,8 +148,8 @@ export default function InvestmentList({
             currency: tempRow.currency,
             contributionType: tempRow.contributionType,
             year: tempRow.year ?? undefined,
-            description: tempRow.description,
-            inKindValuationNotes: tempRow.inKindValuationNotes || undefined,
+            description: tempRow.description ?? undefined,
+            inKindValuationNotes: tempRow.inKindValuationNotes ?? undefined,
           })
           // Note: onSuccess callback will handle UI refresh
         } catch (err) {
