@@ -19,15 +19,15 @@ const CreateInvestmentSchema = z.object({
   year: z.number().int().optional(),
   description: z.string().optional(),
   contributionType: z.enum(['cash', 'in_kind']).default('cash'),
-  inKindValuationNotes: z.string()
-    .refine(
-      (v, ctx) => {
-        const isCash = ctx.parent.contributionType === 'cash'
-        return isCash || (v && v.trim().length > 0)
-      },
-      'Las notas de valoración son requeridas para aportes en especie'
-    )
-    .optional(),
+  inKindValuationNotes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.contributionType === 'in_kind' && (!data.inKindValuationNotes || data.inKindValuationNotes.trim().length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['inKindValuationNotes'],
+      message: 'Las notas de valoración son requeridas para aportes en especie',
+    })
+  }
 })
 
 const UpdateInvestmentSchema = z.object({
