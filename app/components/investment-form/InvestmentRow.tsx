@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Trash2, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
+import { Trash2, RefreshCw, Save, Check } from 'lucide-react'
 import { convertToUsd } from '@/lib/pipeline/fx-math'
 
 interface Funder {
@@ -39,32 +39,35 @@ interface InvestmentFormData {
 interface InvestmentRowProps {
   investment: Investment
   funders: Funder[]
-  onUpdate: (data: Partial<InvestmentFormData>) => void | Promise<void>
+  /** Called when the user explicitly clicks "Guardar". Never on keystroke. */
+  onSave: (data: InvestmentFormData) => void | Promise<void>
   onDelete: () => void | Promise<void>
   canEdit: boolean
+  isSaving: boolean
 }
 
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 /**
- * InvestmentRow: Single investment entry with:
- * - Funder select (with org-scoped funders)
- * - Contribution type (cash | in_kind)
- * - Amount + Currency
- * - USD equivalent (read-only)
- * - FX sub-form (for non-USD)
- * - In-kind valuation notes (conditional)
- * - Delete button
+ * InvestmentRow: Single investment entry.
+ *
+ * Editing is local-only; nothing hits the server until the user clicks
+ * "Guardar". For COP the official TRM is applied server-side at save time
+ * (from the reference year), so the client "Ver TRM" button is a preview aid
+ * only — it never has to succeed for the save to produce a correct USD value.
  */
 export default function InvestmentRow({
   investment,
   funders,
-  onUpdate,
+  onSave,
   onDelete,
   canEdit,
+  isSaving,
 }: InvestmentRowProps) {
-  const [formData, setFormData] = useState<Partial<InvestmentFormData>>({
+  const isTemp = investment.id.startsWith('temp-')
+
+  const initial: InvestmentFormData = {
     funderId: investment.funderId,
     amount: investment.amount,
     currency: investment.currency,
@@ -72,96 +75,116 @@ export default function InvestmentRow({
     inKindValuationNotes: investment.inKindValuationNotes ?? '',
     year: investment.year ?? undefined,
     description: investment.description ?? '',
-  })
+  }
 
+  const [formData, setFormData] = useState<InvestmentFormData>(initial)
   const [fxRate, setFxRate] = useState<string>('')
   const [fxSource, setFxSource] = useState<string>('')
+  const [fxDate, setFxDate] = useState<string>('')
   const [fetching, setFetching] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
-  const selectedFunder = funders.find((f) => f.id === formData.funderId)
-  const needsFxConversion = formData.currency && formData.currency !== 'USD'
+  const needsFxConversion = !!formData.currency && formData.currency !== 'USD'
   const isCop = formData.currency === 'COP'
 
-  // Calculate USD equivalent (read-only display)
-  const calculateUsdDisplay = () => {
-    if (!formData.amount || !fxRate || formData.currency === 'USD') {
-      return investment.amountUsd || null
+  // USD equivalent shown to the user. For a saved row we trust the frozen
+  // server value; while editing we preview using the locally fetched/entered
+  // rate. TRM `valor` is COP-per-USD, so convertToUsd = amount / rate.
+  const usdDisplay = (() => {
+    if (formData.currency === 'USD') return formData.amount || null
+    if (fxRate && formData.amount) {
+      try {
+        return convertToUsd(formData.amount, fxRate)
+      } catch {
+        return null
+      }
     }
-    return convertToUsd(formData.amount, fxRate)
+    // Fall back to the saved value only if the currency hasn't been changed.
+    if (formData.currency === investment.currency) return investment.amountUsd
+    return null
+  })()
+
+  // Dirty tracking so the "Guardar cambios" button only lights up when there
+  // is something to persist on an already-saved row.
+  const isDirty =
+    isTemp ||
+    formData.funderId !== initial.funderId ||
+    formData.amount !== initial.amount ||
+    formData.currency !== initial.currency ||
+    formData.contributionType !== initial.contributionType ||
+    (formData.inKindValuationNotes ?? '') !== (initial.inKindValuationNotes ?? '') ||
+    (formData.year ?? undefined) !== (initial.year ?? undefined) ||
+    (formData.description ?? '') !== (initial.description ?? '')
+
+  // Validation
+  const missing: string[] = []
+  if (!formData.funderId) missing.push('Selecciona un financiador')
+  if (!formData.amount) missing.push('Ingresa el monto')
+  else if (parseFloat(formData.amount) <= 0) missing.push('El monto debe ser mayor a 0')
+  if (!formData.currency) missing.push('Especifica la moneda')
+  if (isCop && !formData.year) missing.push('Indica el año de referencia para aplicar la TRM oficial')
+  if (formData.contributionType === 'in_kind' && !formData.inKindValuationNotes?.trim()) {
+    missing.push('Agrega notas de valoración para el aporte en especie')
   }
+  const isReadyToSave = missing.length === 0
 
-  const usdDisplay = calculateUsdDisplay()
-
-  const handleChange = (field: keyof InvestmentFormData, value: any) => {
-    const newData = { ...formData, [field]: value }
-    setFormData(newData)
-    onUpdate(newData)
+  const handleChange = (field: keyof InvestmentFormData, value: unknown) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
-
-  // Validation state
-  const isTemp = investment.id.startsWith('temp-')
-  const hasRequiredFields = !!(formData.funderId && formData.amount && formData.currency)
-  const hasValidAmount = hasRequiredFields && parseFloat(formData.amount || '0') > 0
-  const needsFxButMissing = needsFxConversion && !fxRate
-  const isMissingInKindNotes = formData.contributionType === 'in_kind' && !formData.inKindValuationNotes
-  const isReadyToSave = hasValidAmount && !needsFxButMissing && !isMissingInKindNotes
-  const showValidationHint = isTemp && !isReadyToSave
 
   const handleFetchCopRate = async () => {
     if (!formData.year) {
-      alert('Por favor especifica el año de referencia para obtener la TRM')
+      setFetchError('Primero indica el año de referencia.')
       return
     }
-
     setFetching(true)
+    setFetchError(null)
     try {
-      // Fetch COP rate for Dec 31 of the given year
       const date = `${formData.year}-12-31`
       const response = await fetch('/api/fx-rates/fetch-cop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date }),
       })
-      if (!response.ok) throw new Error('Failed to fetch COP rate')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const data = await response.json()
-      setFxRate(data.rateToUsd)
-      setFxSource('TRM oficial')
+      if (!data.rateToUsd) throw new Error('Sin tasa disponible para esa fecha')
+      setFxRate(String(data.rateToUsd))
+      setFxSource(data.source || 'TRM oficial')
+      setFxDate(data.rateDate || date)
     } catch (err) {
       console.error('COP rate fetch failed:', err)
-      alert('No se pudo obtener la tasa TRM. Intenta nuevamente.')
+      setFetchError('No se pudo obtener la TRM. La tasa oficial se aplicará al guardar.')
     } finally {
       setFetching(false)
     }
   }
 
+  const handleSave = () => {
+    if (!isReadyToSave) return
+    onSave({
+      funderId: formData.funderId,
+      amount: formData.amount,
+      currency: formData.currency,
+      contributionType: formData.contributionType,
+      inKindValuationNotes: formData.inKindValuationNotes || undefined,
+      year: formData.year,
+      description: formData.description || undefined,
+      fxRate: fxRate || undefined,
+      fxSource: fxSource || undefined,
+    })
+  }
+
+  const borderClass = isTemp
+    ? isReadyToSave
+      ? 'border-green-300'
+      : 'border-amber-200'
+    : isDirty
+      ? 'border-amber-200'
+      : 'border-border'
+
   return (
-    <div className={`border rounded-lg p-4 space-y-4 bg-card transition-colors ${
-      isTemp && isReadyToSave ? 'border-green-200 bg-green-50/20' :
-      showValidationHint ? 'border-amber-200 bg-amber-50/20' :
-      'border-border'
-    }`}>
-      {/* Validation hint for temporary rows */}
-      {showValidationHint && (
-        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-          <p className="font-medium">Campos requeridos:</p>
-          <ul className="mt-1 space-y-0.5">
-            {!formData.funderId && <li>• Selecciona un financiador</li>}
-            {!formData.amount && <li>• Ingresa el monto</li>}
-            {!formData.currency && <li>• Especifica la moneda</li>}
-            {!hasValidAmount && formData.amount && <li>• El monto debe ser mayor a 0</li>}
-            {needsFxButMissing && <li>• Define la tasa de cambio</li>}
-            {isMissingInKindNotes && <li>• Agrega notas de valoración para aportes en especie</li>}
-          </ul>
-        </div>
-      )}
-
-      {isTemp && isReadyToSave && (
-        <div className="rounded-md bg-green-50 border border-green-200 p-3 text-xs text-green-800 flex items-start gap-2">
-          <span className="text-lg">✓</span>
-          <p><strong>Listo para guardar.</strong> Cuando termine de editar, esta fila se guardará automáticamente.</p>
-        </div>
-      )}
-
+    <div className={`border rounded-lg p-4 space-y-4 bg-card transition-colors ${borderClass}`}>
       {/* Row 1: Funder + Contribution Type */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -172,7 +195,7 @@ export default function InvestmentRow({
             id={`funder-${investment.id}`}
             value={formData.funderId || ''}
             onChange={(e) => handleChange('funderId', e.target.value)}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             className={INPUT_CLASS}
             required
           >
@@ -193,7 +216,7 @@ export default function InvestmentRow({
             id={`ctype-${investment.id}`}
             value={formData.contributionType}
             onChange={(e) => handleChange('contributionType', e.target.value as 'cash' | 'in_kind')}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             className={INPUT_CLASS}
           >
             <option value="cash">Efectivo</option>
@@ -202,7 +225,7 @@ export default function InvestmentRow({
         </div>
       </div>
 
-      {/* Row 2: Amount + Currency */}
+      {/* Row 2: Amount + Currency + USD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label htmlFor={`amount-${investment.id}`} className="block text-sm font-medium text-foreground">
@@ -214,7 +237,7 @@ export default function InvestmentRow({
             inputMode="decimal"
             value={formData.amount}
             onChange={(e) => handleChange('amount', e.target.value)}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             required
             className={INPUT_CLASS}
             placeholder="0.00"
@@ -231,11 +254,13 @@ export default function InvestmentRow({
             value={formData.currency}
             onChange={(e) => {
               handleChange('currency', e.target.value.toUpperCase())
-              // Reset FX rate when currency changes
+              // Reset any preview rate when the currency changes.
               setFxRate('')
               setFxSource('')
+              setFxDate('')
+              setFetchError(null)
             }}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             required
             placeholder="USD, COP, EUR…"
             maxLength={3}
@@ -249,7 +274,7 @@ export default function InvestmentRow({
           </label>
           <div
             id={`usd-${investment.id}`}
-            className="mt-1 flex items-center px-3 py-1.5 rounded-md border border-input bg-muted text-sm text-muted-foreground"
+            className="mt-1 flex items-center px-3 py-1.5 rounded-md border border-input bg-muted text-sm min-h-[36px]"
           >
             {usdDisplay ? (
               <span className="text-foreground tabular-nums font-medium">
@@ -259,16 +284,10 @@ export default function InvestmentRow({
                 })}{' '}
                 USD
               </span>
-            ) : formData.currency === 'USD' ? (
-              <span className="text-foreground tabular-nums font-medium">
-                {parseFloat(formData.amount || '0').toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{' '}
-                USD
-              </span>
+            ) : isCop ? (
+              <span className="text-muted-foreground text-xs">Se calcula con la TRM al guardar</span>
             ) : (
-              <span className="text-amber-600">Pendiente de conversión</span>
+              <span className="text-amber-600 text-xs">Pendiente de conversión</span>
             )}
           </div>
         </div>
@@ -280,71 +299,85 @@ export default function InvestmentRow({
           <h4 className="text-sm font-semibold text-foreground">Tasa de conversión</h4>
 
           {isCop ? (
-            // COP: Auto-fetch option
-            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-              <div className="flex-1">
-                <label htmlFor={`cop-year-${investment.id}`} className="block text-xs font-medium text-muted-foreground mb-1">
-                  Año de referencia
-                </label>
-                <input
-                  id={`cop-year-${investment.id}`}
-                  type="number"
-                  value={formData.year || ''}
-                  onChange={(e) => handleChange('year', e.target.value ? parseInt(e.target.value) : undefined)}
-                  disabled={!canEdit}
-                  placeholder="2024"
-                  className={INPUT_CLASS}
-                />
-              </div>
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={handleFetchCopRate}
-                  disabled={fetching || !formData.year}
-                  className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className={`h-3 w-3 ${fetching ? 'animate-spin' : ''}`} />
-                  Auto-obtener TRM
-                </button>
-              )}
-              {fxRate && (
-                <div className="mt-5 text-xs text-green-600 font-medium">
-                  ✓ TRM: 1 COP = {fxRate} USD
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+                <div className="flex-1 w-full">
+                  <label htmlFor={`cop-year-${investment.id}`} className="block text-xs font-medium text-muted-foreground mb-1">
+                    Año de referencia <span className="text-red-500" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id={`cop-year-${investment.id}`}
+                    type="number"
+                    value={formData.year || ''}
+                    onChange={(e) => handleChange('year', e.target.value ? parseInt(e.target.value) : undefined)}
+                    disabled={!canEdit || isSaving}
+                    placeholder="2024"
+                    className={INPUT_CLASS}
+                  />
                 </div>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={handleFetchCopRate}
+                    disabled={fetching || !formData.year || isSaving}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${fetching ? 'animate-spin' : ''}`} />
+                    Ver TRM (vista previa)
+                  </button>
+                )}
+              </div>
+
+              {fxRate && (
+                <p className="text-xs text-green-700 font-medium">
+                  ✓ TRM oficial{fxDate ? ` (${fxDate})` : ''}: 1 USD = {parseFloat(fxRate).toLocaleString('es-CO')} COP
+                </p>
               )}
+              {fetchError && (
+                <p className="text-xs text-amber-700">{fetchError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                La TRM oficial (Superintendencia Financiera) se obtiene y se congela automáticamente
+                al guardar, usando el 31 de diciembre del año de referencia.
+              </p>
             </div>
           ) : (
-            // Other currencies: Manual entry
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`rate-${investment.id}`} className="block text-xs font-medium text-foreground mb-1">
-                  Tasa {formData.currency}→USD <span className="text-red-500" aria-hidden="true">*</span>
-                </label>
-                <input
-                  id={`rate-${investment.id}`}
-                  type="text"
-                  inputMode="decimal"
-                  value={fxRate}
-                  onChange={(e) => setFxRate(e.target.value)}
-                  disabled={!canEdit}
-                  placeholder="0.00"
-                  className={INPUT_CLASS}
-                />
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor={`rate-${investment.id}`} className="block text-xs font-medium text-foreground mb-1">
+                    Tasa 1 {formData.currency} = ? USD
+                  </label>
+                  <input
+                    id={`rate-${investment.id}`}
+                    type="text"
+                    inputMode="decimal"
+                    value={fxRate}
+                    onChange={(e) => setFxRate(e.target.value)}
+                    disabled={!canEdit || isSaving}
+                    placeholder="0.00"
+                    className={INPUT_CLASS}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`source-${investment.id}`} className="block text-xs font-medium text-foreground mb-1">
+                    Fuente de la tasa
+                  </label>
+                  <input
+                    id={`source-${investment.id}`}
+                    type="text"
+                    value={fxSource}
+                    onChange={(e) => setFxSource(e.target.value)}
+                    disabled={!canEdit || isSaving}
+                    placeholder="Ej: ECB, Banco Central"
+                    className={INPUT_CLASS}
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor={`source-${investment.id}`} className="block text-xs font-medium text-foreground mb-1">
-                  Fuente de la tasa <span className="text-red-500" aria-hidden="true">*</span>
-                </label>
-                <input
-                  id={`source-${investment.id}`}
-                  type="text"
-                  value={fxSource}
-                  onChange={(e) => setFxSource(e.target.value)}
-                  disabled={!canEdit}
-                  placeholder="Ej: ECB, Banco Central"
-                  className={INPUT_CLASS}
-                />
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Para monedas distintas de COP y USD, la conversión a USD se registra manualmente.
+                Ingresa la tasa y su fuente para trazabilidad.
+              </p>
             </div>
           )}
         </div>
@@ -363,7 +396,7 @@ export default function InvestmentRow({
             id={`notes-${investment.id}`}
             value={formData.inKindValuationNotes || ''}
             onChange={(e) => handleChange('inKindValuationNotes', e.target.value)}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             required
             placeholder="Describe la metodología de valuación…"
             rows={2}
@@ -377,14 +410,16 @@ export default function InvestmentRow({
         <div>
           <label htmlFor={`year-${investment.id}`} className="block text-sm font-medium text-foreground">
             Año de referencia
-            <span className="ml-1 text-xs text-muted-foreground font-normal">(opcional)</span>
+            <span className="ml-1 text-xs text-muted-foreground font-normal">
+              {isCop ? '(requerido para COP)' : '(opcional)'}
+            </span>
           </label>
           <input
             id={`year-${investment.id}`}
             type="number"
             value={formData.year || ''}
             onChange={(e) => handleChange('year', e.target.value ? parseInt(e.target.value) : undefined)}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             placeholder="2024"
             className={INPUT_CLASS}
           />
@@ -400,24 +435,64 @@ export default function InvestmentRow({
             type="text"
             value={formData.description || ''}
             onChange={(e) => handleChange('description', e.target.value)}
-            disabled={!canEdit}
+            disabled={!canEdit || isSaving}
             placeholder="Ej: Aporte anual"
             className={INPUT_CLASS}
           />
         </div>
       </div>
 
-      {/* Delete button */}
+      {/* Validation hint */}
+      {canEdit && !isReadyToSave && (formData.funderId || formData.amount || isTemp) && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+          <p className="font-medium mb-1">Completa antes de guardar:</p>
+          <ul className="space-y-0.5">
+            {missing.map((m, i) => (
+              <li key={i}>• {m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Actions */}
       {canEdit && (
-        <div className="flex justify-end pt-2 border-t border-border">
+        <div className="flex items-center justify-between pt-3 border-t border-border">
           <button
             type="button"
             onClick={onDelete}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
           >
             <Trash2 className="h-4 w-4" />
             Eliminar
           </button>
+
+          <div className="flex items-center gap-3">
+            {!isTemp && !isDirty && (
+              <span className="inline-flex items-center gap-1 text-xs text-green-700">
+                <Check className="h-3.5 w-3.5" />
+                Guardado
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!isReadyToSave || isSaving || (!isTemp && !isDirty)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#FF6A00] rounded-md hover:bg-[#e65f00] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Guardando…
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  {isTemp ? 'Guardar aporte' : 'Guardar cambios'}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>

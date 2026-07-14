@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useTransition } from 'react'
 import InvestmentList from './InvestmentList'
 import type { InvestmentFormData } from './InvestmentList'
 
@@ -36,10 +35,11 @@ interface InvestmentFormIntegrationProps {
 }
 
 /**
- * InvestmentFormIntegration: Connects InvestmentList component to server actions
- * - Handles create/update/delete operations
- * - Shows loading states and errors
- * - Calls onSuccess after operations complete
+ * InvestmentFormIntegration: Connects InvestmentList to the server actions.
+ *
+ * Each handler awaits its server action (which revalidates the page) so the
+ * child can rely on resolution meaning "saved". On failure we surface the
+ * message and re-throw so the child keeps the row for a retry.
  */
 export default function InvestmentFormIntegration({
   investments,
@@ -51,21 +51,18 @@ export default function InvestmentFormIntegration({
   onSuccess,
 }: InvestmentFormIntegrationProps) {
   const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
 
   const handleAdd = useCallback(
     async (investmentData: InvestmentFormData) => {
       setError(null)
-
-      startTransition(async () => {
-        try {
-          await onCreateInvestment(investmentData)
-          onSuccess?.()
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Error creating investment')
-          console.error('Create investment error:', err)
-        }
-      })
+      try {
+        await onCreateInvestment(investmentData)
+        onSuccess?.()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al crear la inversión')
+        console.error('Create investment error:', err)
+        throw err
+      }
     },
     [onCreateInvestment, onSuccess]
   )
@@ -73,16 +70,14 @@ export default function InvestmentFormIntegration({
   const handleDelete = useCallback(
     async (investmentId: string) => {
       setError(null)
-
-      startTransition(async () => {
-        try {
-          await onDeleteInvestment(investmentId)
-          onSuccess?.()
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Error deleting investment')
-          console.error('Delete investment error:', err)
-        }
-      })
+      try {
+        await onDeleteInvestment(investmentId)
+        onSuccess?.()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al eliminar la inversión')
+        console.error('Delete investment error:', err)
+        throw err
+      }
     },
     [onDeleteInvestment, onSuccess]
   )
@@ -90,19 +85,14 @@ export default function InvestmentFormIntegration({
   const handleUpdateRow = useCallback(
     async (investmentId: string, data: Partial<InvestmentFormData>) => {
       setError(null)
-
-      // Don't call server action for temp rows
-      if (investmentId.startsWith('temp-')) return
-
-      startTransition(async () => {
-        try {
-          await onUpdateInvestment(investmentId, data)
-          onSuccess?.()
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Error updating investment')
-          console.error('Update investment error:', err)
-        }
-      })
+      try {
+        await onUpdateInvestment(investmentId, data)
+        onSuccess?.()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al actualizar la inversión')
+        console.error('Update investment error:', err)
+        throw err
+      }
     },
     [onUpdateInvestment, onSuccess]
   )
@@ -110,12 +100,9 @@ export default function InvestmentFormIntegration({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 space-y-2">
-          <p className="text-sm font-semibold text-red-800">Error al guardar la inversión:</p>
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 space-y-1">
+          <p className="text-sm font-semibold text-red-800">No se pudo guardar la inversión</p>
           <p className="text-sm text-red-700">{error}</p>
-          <p className="text-xs text-red-600 mt-2">
-            Verifica que el financiador, monto y moneda estén correctamente completados. Si el problema persiste, intenta de nuevo.
-          </p>
         </div>
       )}
 
@@ -125,15 +112,8 @@ export default function InvestmentFormIntegration({
         onAdd={handleAdd}
         onDelete={handleDelete}
         onUpdateRow={handleUpdateRow}
-        canEdit={canEdit && !isPending}
+        canEdit={canEdit}
       />
-
-      {isPending && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-          Guardando inversión…
-        </div>
-      )}
     </div>
   )
 }
