@@ -11,9 +11,9 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { data } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (data.user) {
+    if (!error && data?.user) {
       // Sync user profile (idempotent)
       await syncUserProfile(data.user)
 
