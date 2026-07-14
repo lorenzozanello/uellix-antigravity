@@ -147,7 +147,7 @@ export default function InvestmentList({
             amount: tempRow.amount,
             currency: tempRow.currency,
             contributionType: tempRow.contributionType,
-            year: tempRow.year,
+            year: tempRow.year ?? undefined,
             description: tempRow.description,
             inKindValuationNotes: tempRow.inKindValuationNotes || undefined,
           })
