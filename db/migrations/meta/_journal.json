@@ -204,6 +204,41 @@
       "when": 1783765046049,
       "tag": "0028_keen_iron_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1784159962781,
+      "tag": "0029_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1784159973615,
+      "tag": "0030_immutability",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1784159983872,
+      "tag": "0031_rls_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1784159998340,
+      "tag": "0032_rls_specialized",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1784160200000,
+      "tag": "0033_public_api_grants",
+      "breakpoints": true
     }
   ]
 }

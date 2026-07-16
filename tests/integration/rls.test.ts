@@ -1,341 +1,217 @@
-// tests/integration/rls.test.ts
-// RLS policy tests for funders, fx_rates, and outcome_funder_allocations tables.
-//
-// These tests verify organization-scoped data isolation at the database layer.
-// They require a test database instance with RLS policies applied.
-//
-// To run locally against a test Supabase project:
-//   1. Set DATABASE_URL to a test project with RLS policies (db/policies/004_fx_tables_rls.sql) applied
-//   2. npx vitest run tests/integration/rls.test.ts
-//
-// Note: Full RLS testing with Supabase Auth requires user context setup (auth.uid()).
-// These tests mock user context where needed to verify policy logic.
-
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { db } from '@/db/client'
-import { eq, and } from 'drizzle-orm'
-import {
-  funders,
-  fxRates,
-  outcomeFunderAllocations,
-  organizations,
-  organizationMembers,
-  users,
-  outcomes,
-  projects,
-  portfolios,
-} from '@/db/schema'
-import Decimal from 'decimal.js'
+import { organizations, organizationMembers, fxRates, projects, projectInvestments, evidenceItems, sroiCalculationRuns, sroiCalculationLineItems, sroiReports, stellaInteractions } from '@/db/schema'
+import { randomUUID } from 'crypto'
 
-// Test data setup
-let org1Id: string
-let org2Id: string
-let user1Id: string
-let user2Id: string
-let org1ProjectId: string
-let org1OutcomeId: string
-let org1FunderId: string
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:55321'
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test'
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test'
 
-beforeEach(async () => {
-  // Generate test IDs
-  org1Id = crypto.randomUUID()
-  org2Id = crypto.randomUUID()
-  user1Id = crypto.randomUUID()
-  user2Id = crypto.randomUUID()
-  org1ProjectId = crypto.randomUUID()
-  org1OutcomeId = crypto.randomUUID()
-  org1FunderId = crypto.randomUUID()
-
-  // Create test organizations
-  await db.insert(organizations).values([
-    { id: org1Id, name: 'Test Org 1', slug: `test-org-1-${Date.now()}` },
-    { id: org2Id, name: 'Test Org 2', slug: `test-org-2-${Date.now()}` },
-  ])
-
-  // Create test users
-  await db.insert(users).values([
-    { id: user1Id, email: `user1-${crypto.randomUUID()}@test.local`, isSuperAdmin: false },
-    { id: user2Id, email: `user2-${crypto.randomUUID()}@test.local`, isSuperAdmin: false },
-  ])
-
-  // Add users to organizations with analyst role
-  await db.insert(organizationMembers).values([
-    { organizationId: org1Id, userId: user1Id, role: 'analyst', status: 'active' },
-    { organizationId: org2Id, userId: user2Id, role: 'analyst', status: 'active' },
-  ])
-
-  // Create a portfolio and project for org1
-  const portfolioId = crypto.randomUUID()
-  await db.insert(portfolios).values({
-    id: portfolioId,
-    organizationId: org1Id,
-    name: 'Test Portfolio',
-    createdBy: user1Id,
+// Helper to create and authenticate a user
+async function createTestUser(adminClient: SupabaseClient, role: string, orgId: string | null) {
+  const email = `test-rls-${role}-${randomUUID()}@test.local`
+  const password = 'test-password-123'
+  
+  const { data: userData, error: userError } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: `Test ${role}` }
   })
+  
+  if (userError) throw userError
 
-  await db.insert(projects).values({
-    id: org1ProjectId,
-    portfolioId,
-    organizationId: org1Id,
-    name: 'Test Project',
-    status: 'active',
-    createdBy: user1Id,
-  })
+  // Wait for trigger to sync
+  await new Promise(resolve => setTimeout(resolve, 500))
 
-  // Create an outcome for org1 project
-  await db.insert(outcomes).values({
-    id: org1OutcomeId,
-    projectId: org1ProjectId,
-    stakeholderGroupId: 'sg-test-1',
-    title: 'Test Outcome',
-    status: 'active',
-    createdBy: user1Id,
-  })
-
-  // Create a funder for org1
-  await db.insert(funders).values({
-    id: org1FunderId,
-    organizationId: org1Id,
-    name: 'Funder 1',
-    funderType: 'foundation',
-    createdBy: user1Id,
-  })
-})
-
-describe('RLS: funders, fx_rates, outcome_funder_allocations', () => {
-  it('funders table has organization_id column for org-scoped isolation', async () => {
-    // Verify the schema includes organization_id and indexes
-    const result = await db.select().from(funders).where(eq(funders.organizationId, org1Id)).limit(1)
-    expect(result).toBeDefined()
-  })
-
-  it('fx_rates table supports organization_id NULL for shared auto-fetched COP rates', async () => {
-    // Verify we can insert a rate with organization_id = NULL and organization_id NOT NULL
-    const sharedRateId = crypto.randomUUID()
-    const orgRateId = crypto.randomUUID()
-
-    // Insert shared rate (org-null)
-    await db.insert(fxRates).values({
-      id: sharedRateId,
-      currency: 'COP',
-      rateDate: new Date().toISOString().split('T')[0],
-      rateToUsd: new Decimal('4150.50'),
-      source: 'Test shared',
-      sourceType: 'auto_fetched',
-      organizationId: null,
-      createdBy: null,
+  if (orgId) {
+    await db.insert(organizationMembers).values({
+      organizationId: orgId,
+      userId: userData.user.id,
+      role: role as 'super_admin' | 'organization_admin' | 'impact_manager' | 'analyst' | 'reviewer' | 'viewer',
+      status: 'active'
     })
+  } else if (role === 'super_admin') {
+    await db.execute(`UPDATE public.users SET is_super_admin = true WHERE id = '${userData.user.id}'`)
+  }
 
-    // Insert org-scoped rate (org-specific)
-    await db.insert(fxRates).values({
-      id: orgRateId,
-      currency: 'EUR',
-      rateDate: new Date().toISOString().split('T')[0],
-      rateToUsd: new Decimal('1.10'),
-      source: 'Test manual',
-      sourceType: 'manual',
-      organizationId: org1Id,
-      createdBy: user1Id,
-    })
+  const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  await authClient.auth.signInWithPassword({ email, password })
+  
+  return { id: userData.user.id, client: authClient, email }
+}
 
-    // Both should exist in the database
-    const shared = await db.select().from(fxRates).where(eq(fxRates.id, sharedRateId))
-    const orgScoped = await db.select().from(fxRates).where(eq(fxRates.id, orgRateId))
+describe('RLS Coverage Integration Tests', () => {
+  let adminClient: SupabaseClient
+  let orgAId: string
+  let orgBId: string
+  let projectAId: string
+  
+  // Clients for different roles
+  let adminA: { id: string, client: SupabaseClient }
+  let analystA: { id: string, client: SupabaseClient }
+  let reviewerA: { id: string, client: SupabaseClient }
+  let viewerA: { id: string, client: SupabaseClient }
+  let adminB: { id: string, client: SupabaseClient }
+  let noOrgUser: { id: string, client: SupabaseClient }
+  let superAdmin: { id: string, client: SupabaseClient }
 
-    expect(shared).toHaveLength(1)
-    expect(orgScoped).toHaveLength(1)
-  })
+  beforeAll(async () => {
+    adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    
+    // Create Organizations
+    orgAId = randomUUID()
+    orgBId = randomUUID()
+    await db.insert(organizations).values([
+      { id: orgAId, name: 'RLS Org A', slug: `org-a-${Date.now()}` },
+      { id: orgBId, name: 'RLS Org B', slug: `org-b-${Date.now()}` }
+    ])
 
-  it('outcome_funder_allocations table has organization_id for org-scoped cross-reference', async () => {
-    // Verify we can create an allocation linking outcome → funder → organization
-    const allocationId = crypto.randomUUID()
+    // Create Test Project in Org A
+    projectAId = randomUUID()
+    
+    // Create Users
+    adminA = await createTestUser(adminClient, 'organization_admin', orgAId)
+    analystA = await createTestUser(adminClient, 'analyst', orgAId)
+    reviewerA = await createTestUser(adminClient, 'reviewer', orgAId)
+    viewerA = await createTestUser(adminClient, 'viewer', orgAId)
+    adminB = await createTestUser(adminClient, 'organization_admin', orgBId)
+    noOrgUser = await createTestUser(adminClient, 'none', null)
+    superAdmin = await createTestUser(adminClient, 'super_admin', null)
 
-    const result = await db
-      .insert(outcomeFunderAllocations)
-      .values({
-        id: allocationId,
-        outcomeId: org1OutcomeId,
-        funderId: org1FunderId,
-        organizationId: org1Id,
-        allocationPct: new Decimal('50.0000'),
-        createdBy: user1Id,
-      })
-      .returning()
-
-    expect(result).toHaveLength(1)
-    expect(result[0].organizationId).toBe(org1Id)
-
-    // Verify we can read it back
-    const read = await db.select().from(outcomeFunderAllocations).where(eq(outcomeFunderAllocations.id, allocationId))
-    expect(read).toHaveLength(1)
-  })
-
-  it('funders are scoped by organization_id in schema design', async () => {
-    // This test verifies the schema enforces org-scoping.
-    // RLS policies will prevent cross-org access; the schema ensures
-    // each funder row references exactly one org.
-    const funder = await db.select().from(funders).where(eq(funders.id, org1FunderId)).limit(1)
-    expect(funder).toHaveLength(1)
-    expect(funder[0].organizationId).toBe(org1Id)
-  })
-
-  it('fx_rates with organization_id != NULL are scoped to that org', async () => {
-    // Create a manual rate for org1
-    const org1RateId = crypto.randomUUID()
-    await db.insert(fxRates).values({
-      id: org1RateId,
-      currency: 'BRL',
-      rateDate: new Date().toISOString().split('T')[0],
-      rateToUsd: new Decimal('5.25'),
-      source: 'Manual BRL',
-      sourceType: 'manual',
-      organizationId: org1Id,
-      createdBy: user1Id,
-    })
-
-    // Create a manual rate for org2
-    const org2RateId = crypto.randomUUID()
-    await db.insert(fxRates).values({
-      id: org2RateId,
-      currency: 'BRL',
-      rateDate: new Date().toISOString().split('T')[0],
-      rateToUsd: new Decimal('5.30'),
-      source: 'Manual BRL org2',
-      sourceType: 'manual',
-      organizationId: org2Id,
-      createdBy: user2Id,
-    })
-
-    // Both rates exist in the database
-    const org1Rates = await db.select().from(fxRates).where(eq(fxRates.organizationId, org1Id))
-    const org2Rates = await db.select().from(fxRates).where(eq(fxRates.organizationId, org2Id))
-
-    expect(org1Rates.some((r) => r.id === org1RateId)).toBe(true)
-    expect(org2Rates.some((r) => r.id === org2RateId)).toBe(true)
-  })
-
-  it('outcome_funder_allocations reference both outcome and funder from the same organization', async () => {
-    // Create org2 funder and outcome
-    const org2FunderId = crypto.randomUUID()
-    const org2ProjectId = crypto.randomUUID()
-    const org2OutcomeId = crypto.randomUUID()
-
-    const org2Portfolio = crypto.randomUUID()
-    await db.insert(portfolios).values({
-      id: org2Portfolio,
-      organizationId: org2Id,
-      name: 'Org2 Portfolio',
-      createdBy: user2Id,
-    })
-
+    // Set up project via admin
     await db.insert(projects).values({
-      id: org2ProjectId,
-      portfolioId: org2Portfolio,
-      organizationId: org2Id,
-      name: 'Org2 Project',
-      status: 'active',
-      createdBy: user2Id,
+      id: projectAId,
+      organizationId: orgAId,
+      name: 'Test Project A',
+      status: 'draft',
+      createdBy: adminA.id
     })
-
-    await db.insert(outcomes).values({
-      id: org2OutcomeId,
-      projectId: org2ProjectId,
-      stakeholderGroupId: 'sg-test-2',
-      title: 'Org2 Outcome',
-      status: 'active',
-      createdBy: user2Id,
-    })
-
-    await db.insert(funders).values({
-      id: org2FunderId,
-      organizationId: org2Id,
-      name: 'Org2 Funder',
-      funderType: 'private',
-      createdBy: user2Id,
-    })
-
-    // Create allocation in org2
-    const org2AllocationId = crypto.randomUUID()
-    await db.insert(outcomeFunderAllocations).values({
-      id: org2AllocationId,
-      outcomeId: org2OutcomeId,
-      funderId: org2FunderId,
-      organizationId: org2Id,
-      allocationPct: new Decimal('75.0000'),
-      createdBy: user2Id,
-    })
-
-    // Verify it was created
-    const allocations = await db.select().from(outcomeFunderAllocations).where(eq(outcomeFunderAllocations.id, org2AllocationId))
-    expect(allocations).toHaveLength(1)
-    expect(allocations[0].organizationId).toBe(org2Id)
   })
 
-  it('shared fx_rates (organization_id IS NULL) are accessible to all orgs', async () => {
-    // Create a shared COP rate
-    const sharedRateId = crypto.randomUUID()
-    await db.insert(fxRates).values({
-      id: sharedRateId,
-      currency: 'COP',
-      rateDate: '2026-07-06',
-      rateToUsd: new Decimal('4200.75'),
-      source: 'Banco de la República (auto)',
-      sourceType: 'auto_fetched',
-      organizationId: null,
-      createdBy: null,
+  afterAll(async () => {
+    // Cleanup users
+    const usersToClean = [adminA, analystA, reviewerA, viewerA, adminB, noOrgUser, superAdmin]
+    for (const u of usersToClean) {
+      if (u?.id) await adminClient.auth.admin.deleteUser(u.id)
+    }
+  })
+
+  describe('Tablas Globales (organizations)', () => {
+    it('Admin A puede ver solo su organización', async () => {
+      const { data, error } = await adminA.client.from('organizations').select('*')
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+      expect(data![0].id).toBe(orgAId)
     })
 
-    // Both org1 and org2 should see this rate
-    const org1View = await db
-      .select()
-      .from(fxRates)
-      .where(and(eq(fxRates.id, sharedRateId), eq(fxRates.organizationId, null)))
-    const org2View = await db.select().from(fxRates).where(eq(fxRates.id, sharedRateId))
-
-    // Verify the shared rate exists and is accessible
-    expect(org1View).toHaveLength(1)
-    expect(org2View).toHaveLength(1)
-    expect(org1View[0].organizationId).toBeNull()
-  })
-
-  it('RLS policies use role-based write access (analyst+)', async () => {
-    // This test documents that RLS policies enforce:
-    // - analyst, impact_manager, organization_admin, super_admin can write
-    // - reviewer, viewer cannot write
-    // The policies are applied at the database layer and checked on INSERT/UPDATE.
-    // See db/policies/004_fx_tables_rls.sql for policy details.
-
-    // Verify analyst role exists in our test data
-    const membership = await db
-      .select()
-      .from(organizationMembers)
-      .where(and(eq(organizationMembers.userId, user1Id), eq(organizationMembers.organizationId, org1Id)))
-
-    expect(membership).toHaveLength(1)
-    expect(membership[0].role).toBe('analyst')
-  })
-
-  it('allocation percentage is validated (must be > 0 and <= 100)', async () => {
-    // Verify schema constraint: allocationPct > 0 AND allocationPct <= 100
-    const validId = crypto.randomUUID()
-    await db.insert(outcomeFunderAllocations).values({
-      id: validId,
-      outcomeId: org1OutcomeId,
-      funderId: org1FunderId,
-      organizationId: org1Id,
-      allocationPct: new Decimal('100.0000'),
-      createdBy: user1Id,
+    it('SuperAdmin puede ver todas las organizaciones', async () => {
+      const { data, error } = await superAdmin.client.from('organizations').select('*')
+      expect(error).toBeNull()
+      expect(data!.length).toBeGreaterThanOrEqual(2)
     })
 
-    const result = await db.select().from(outcomeFunderAllocations).where(eq(outcomeFunderAllocations.id, validId))
-    expect(result).toHaveLength(1)
-    expect(result[0].allocationPct).toEqual(new Decimal('100.0000'))
+    it('Usuario sin org no puede ver organizaciones', async () => {
+      const { data, error } = await noOrgUser.client.from('organizations').select('*')
+      expect(error).toBeNull() // RLS usually returns empty data instead of error for SELECT
+      expect(data).toHaveLength(0)
+    })
   })
 
-  it('funder types are limited to enum values', async () => {
-    // Verify schema constraint: funderType IN (...)
-    const funderData = await db.select().from(funders).where(eq(funders.id, org1FunderId))
-    expect(funderData).toHaveLength(1)
-    expect(['public', 'private', 'foundation', 'multilateral', 'individual', 'other']).toContain(funderData[0].funderType)
+  describe('Proyectos (CRUD Cruzado)', () => {
+    it('Analyst A puede crear proyectos en Org A', async () => {
+      const { data, error } = await analystA.client.from('projects').insert({
+        id: randomUUID(),
+        organization_id: orgAId,
+        name: 'Nuevo Proyecto Analyst',
+        status: 'draft',
+        created_by: analystA.id
+      }).select()
+      expect(error).toBeNull()
+      expect(data).toBeDefined()
+    })
+
+    it('Analyst A NO puede crear proyectos en Org B (Falla de RLS insert)', async () => {
+      const { data, error } = await analystA.client.from('projects').insert({
+        id: randomUUID(),
+        organization_id: orgBId,
+        name: 'Proyecto Infiltrado',
+        status: 'draft',
+        created_by: analystA.id
+      })
+      expect(error).not.toBeNull()
+      expect(error!.code).toBe('42501') // RLS violation / permission denied
+    })
+
+    it('Viewer A NO puede crear proyectos en Org A', async () => {
+      const { data, error } = await viewerA.client.from('projects').insert({
+        id: randomUUID(),
+        organization_id: orgAId,
+        name: 'Proyecto Viewer',
+        status: 'draft',
+        created_by: viewerA.id
+      })
+      expect(error).not.toBeNull()
+      expect(error!.code).toBe('42501')
+    })
+  })
+
+  describe('Storage', () => {
+    it('Analyst A puede subir archivo (INSERT) y leerlo (SELECT)', async () => {
+      const fileName = `${projectAId}/evidence1/test.txt`
+      const { error: uploadError } = await analystA.client.storage
+        .from('uellix-evidence')
+        .upload(fileName, 'Contenido de prueba', { upsert: true })
+      
+      expect(uploadError).toBeNull()
+
+      const { data, error: downloadError } = await analystA.client.storage
+        .from('uellix-evidence')
+        .download(fileName)
+      
+      expect(downloadError).toBeNull()
+      expect(await data?.text()).toBe('Contenido de prueba')
+    })
+
+    it('Admin B NO puede leer archivo de Org A (SELECT cruzado fallido)', async () => {
+      const fileName = `${projectAId}/evidence1/test.txt`
+      const { data, error } = await adminB.client.storage
+        .from('uellix-evidence')
+        .download(fileName)
+      
+      expect(error).not.toBeNull()
+      expect(error!.message).toContain('Object not found') // Supabase Storage returns not found for unauthorized RLS reads
+    })
+
+    it('Admin B NO puede subir archivo a proyecto de Org A (INSERT cruzado fallido)', async () => {
+      const fileName = `${projectAId}/evidence2/malicious.txt`
+      const { error } = await adminB.client.storage
+        .from('uellix-evidence')
+        .upload(fileName, 'Malicious', { upsert: true })
+      
+      expect(error).not.toBeNull()
+      expect(error!.message).toContain('row violates row-level security policy')
+    })
+
+    it('Paths inválidos son rechazados (falla en validación foldername)', async () => {
+      const fileName = `random-invalid-uuid/evidence1/test.txt`
+      const { error } = await analystA.client.storage
+        .from('uellix-evidence')
+        .upload(fileName, 'Contenido inválido')
+      
+      expect(error).not.toBeNull()
+      expect(error!.message).toContain('row violates row-level security policy')
+    })
+    
+    it('Viewer A NO puede borrar evidencia (DELETE rol insuficiente)', async () => {
+      const fileName = `${projectAId}/evidence1/test.txt`
+      const { error } = await viewerA.client.storage
+        .from('uellix-evidence')
+        .remove([fileName])
+      
+      expect(error).not.toBeNull()
+      // Fails due to RLS delete policy restricting to admin/analyst
+    })
   })
 })
