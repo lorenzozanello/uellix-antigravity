@@ -17,7 +17,7 @@ vi.mock('@/lib/auth/session', () => ({
 }))
 
 describe('buildComposerContext - Funder Breakdown Extension', () => {
-  let mockContext: any
+  let mockContext: Record<string, unknown>
 
   beforeEach(() => {
     mockContext = {

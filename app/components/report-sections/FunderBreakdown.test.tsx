@@ -145,7 +145,7 @@ describe('FunderBreakdownSection', () => {
         />
       )
 
-      expect(screen.getByText(/Valor Social Sin Atribuir/i)).toBeInTheDocument()
+      expect(screen.getByText(/Valor Social Sin Atribuir:/)).toBeInTheDocument()
       expect(screen.getByText(/2.4%/)).toBeInTheDocument() // 50000 / 2070000 = 2.4%
     })
 
@@ -159,7 +159,7 @@ describe('FunderBreakdownSection', () => {
         />
       )
 
-      expect(screen.queryByText(/Valor Social Sin Atribuir/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Valor Social Sin Atribuir:/)).not.toBeInTheDocument()
     })
 
     it('calculates unattributed percentage correctly', () => {

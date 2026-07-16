@@ -1,7 +1,7 @@
 // app/components/allocation-form/OutcomeAllocationSection.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AllocationList } from './AllocationList';
 import { ChevronDown } from 'lucide-react';
 
@@ -14,10 +14,10 @@ interface OutcomeAllocationSectionProps {
   outcomeId: string;
   projectId: string;
   funders: Funder[];
-  listAllocations: (outcomeId: string) => Promise<any>;
-  createAllocation: (outcomeId: string, funderId: string, pct: number) => Promise<any>;
-  updateAllocation: (allocationId: string, pct: number) => Promise<any>;
-  deleteAllocation: (allocationId: string) => Promise<any>;
+  listAllocations: (outcomeId: string) => Promise<{ id: string; funderId: string; allocationPct: string | number }[]>;
+  createAllocation: (outcomeId: string, funderId: string, pct: number) => Promise<unknown>;
+  updateAllocation: (allocationId: string, pct: number) => Promise<unknown>;
+  deleteAllocation: (allocationId: string) => Promise<unknown>;
 }
 
 interface Allocation {
@@ -41,20 +41,13 @@ export function OutcomeAllocationSection({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load allocations when component mounts or section expands
-  useEffect(() => {
-    if (isExpanded && allocations.length === 0 && !isLoading) {
-      loadAllocationsData();
-    }
-  }, [isExpanded]);
-
-  const loadAllocationsData = async () => {
+  const loadAllocationsData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const results = await listAllocations(outcomeId);
       setAllocations(
-        results.map((alloc: any) => ({
+        results.map((alloc) => ({
           id: alloc.id,
           funderId: alloc.funderId,
           funderName: funders.find(f => f.id === alloc.funderId)?.name || alloc.funderId,
@@ -66,7 +59,14 @@ export function OutcomeAllocationSection({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [outcomeId, funders, listAllocations]);
+
+  useEffect(() => {
+    if (isExpanded && allocations.length === 0 && !isLoading) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadAllocationsData();
+    }
+  }, [isExpanded, allocations.length, isLoading, loadAllocationsData]);
 
   const handleAddAllocation = async (funderId: string, pct: number) => {
     try {

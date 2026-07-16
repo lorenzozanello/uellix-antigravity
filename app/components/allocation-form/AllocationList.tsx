@@ -37,10 +37,17 @@ export function AllocationList({
   onRemove,
   isLoading = false,
 }: AllocationListProps) {
+  const [prevAllocations, setPrevAllocations] = useState<Allocation[]>(allocations);
   const [localAllocations, setLocalAllocations] = useState<Allocation[]>(allocations);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  // Sync state with props during render pass
+  if (allocations !== prevAllocations) {
+    setPrevAllocations(allocations);
+    setLocalAllocations(allocations);
+  }
 
   // Recalculate remaining % based on local state
   const totalPct = localAllocations.reduce((acc, a) => acc + a.allocationPct, 0);
@@ -147,7 +154,7 @@ export function AllocationList({
       <div className="space-y-2 mb-4">
         {localAllocations.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">
-            Sin asignaciones. Haz clic en "Agregar financiador" para empezar.
+            Sin asignaciones. Haz clic en &quot;Agregar financiador&quot; para empezar.
           </p>
         ) : (
           localAllocations.map(alloc => (

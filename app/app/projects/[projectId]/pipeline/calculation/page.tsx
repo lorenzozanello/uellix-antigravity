@@ -222,14 +222,24 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
+  interface InvestmentFormData {
+    funderId?: string;
+    amount?: string;
+    currency?: string;
+    contributionType?: string;
+    inKindValuationNotes?: string;
+    year?: number | string;
+    description?: string;
+  }
+
   // Investment CRUD handlers (for multi-row form)
-  async function handleCreateInvestment(data: any) {
+  async function handleCreateInvestment(data: InvestmentFormData) {
     'use server'
     const formData = new FormData()
-    formData.append('funderId', data.funderId)
-    formData.append('amount', data.amount)
-    formData.append('currency', data.currency)
-    formData.append('contributionType', data.contributionType)
+    if (data.funderId) formData.append('funderId', data.funderId)
+    if (data.amount) formData.append('amount', data.amount)
+    if (data.currency) formData.append('currency', data.currency)
+    if (data.contributionType) formData.append('contributionType', data.contributionType)
     if (data.inKindValuationNotes) {
       formData.append('inKindValuationNotes', data.inKindValuationNotes)
     }
@@ -243,7 +253,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
-  async function handleUpdateInvestment(investmentId: string, data: any) {
+  async function handleUpdateInvestment(investmentId: string, data: InvestmentFormData) {
     'use server'
     const formData = new FormData()
     if (data.amount) formData.append('amount', data.amount)
@@ -374,7 +384,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {readiness.issues.map((issue, idx) => {
                   // Enrich issues with specific names
-                  let enrichedMessage = issue.message
+                  const enrichedMessage = issue.message
                   let itemDetails = null
 
                   if (issue.messageKey === 'outcomes_without_evidence' && issue.itemIds) {

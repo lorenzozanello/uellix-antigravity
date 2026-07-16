@@ -1,5 +1,4 @@
 // app/components/allocation-form/OutcomeAllocationWrapper.tsx
-'use server';
 
 import { OutcomeAllocationSection } from './OutcomeAllocationSection';
 import { listAllocationsAction, createAllocationAction, updateAllocationAction, deleteAllocationAction } from '@/app/actions/allocations.actions';
@@ -21,7 +20,7 @@ export async function OutcomeAllocationWrapper({
 }: OutcomeAllocationWrapperProps) {
   // Fetch funders server-side
   const fundersData = await listFundersForCurrentOrganization();
-  const funders = fundersData.map((f: any) => ({ id: f.id, name: f.name }));
+  const funders = fundersData.map((f: { id: string; name: string }) => ({ id: f.id, name: f.name }));
 
   if (!funders || funders.length === 0) {
     return null;

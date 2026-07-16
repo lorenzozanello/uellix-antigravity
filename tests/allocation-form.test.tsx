@@ -57,8 +57,7 @@ describe('AllocationRow', () => {
     );
 
     const input = screen.getByDisplayValue('30');
-    await userEvent.clear(input);
-    await userEvent.type(input, '50');
+    fireEvent.change(input, { target: { value: '50' } });
 
     expect(onPctChange).toHaveBeenCalledWith(50);
   });
@@ -428,8 +427,7 @@ describe('AllocationList - Integration', () => {
 
     // Update to 50%
     const input = screen.getByDisplayValue('0');
-    await userEvent.clear(input);
-    await userEvent.type(input, '50');
+    fireEvent.change(input, { target: { value: '50' } });
 
     // Remove
     const removeButton = screen.getByLabelText('Eliminar asignación');

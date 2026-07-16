@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchCopTrmRate } from '@/lib/pipeline/fx'
+import { getCurrentOrganizationContext } from '@/lib/auth/session'
 
 export async function POST(request: NextRequest) {
   try {
+    const ctx = await getCurrentOrganizationContext()
+    if (!ctx) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { date } = body
 

@@ -40,7 +40,7 @@ describe('COP TRM fetching', () => {
       ok: false,
       status: 500,
     })
-    const result = await fetchCopTrmRate('2026-07-01', mockFetch as any)
+    const result = await fetchCopTrmRate('2026-07-01', mockFetch as unknown as typeof fetch)
     expect(result).toBeNull()
   })
 
@@ -49,7 +49,7 @@ describe('COP TRM fetching', () => {
       ok: true,
       json: async () => [],
     })
-    const result = await fetchCopTrmRate('2026-07-01', mockFetch as any)
+    const result = await fetchCopTrmRate('2026-07-01', mockFetch as unknown as typeof fetch)
     expect(result).toBeNull()
   })
 
@@ -58,13 +58,13 @@ describe('COP TRM fetching', () => {
       ok: true,
       json: async () => [{ vigenciadesde: '2026-07-01', vigenciahasta: '2026-07-02' }],
     })
-    const result = await fetchCopTrmRate('2026-07-01', mockFetch as any)
+    const result = await fetchCopTrmRate('2026-07-01', mockFetch as unknown as typeof fetch)
     expect(result).toBeNull()
   })
 
   it('returns null on network error', async () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
-    const result = await fetchCopTrmRate('2026-07-01', mockFetch as any)
+    const result = await fetchCopTrmRate('2026-07-01', mockFetch as unknown as typeof fetch)
     expect(result).toBeNull()
   })
 
@@ -79,7 +79,7 @@ describe('COP TRM fetching', () => {
         },
       ],
     })
-    const result = await fetchCopTrmRate('2026-07-01', mockFetch as any)
+    const result = await fetchCopTrmRate('2026-07-01', mockFetch as unknown as typeof fetch)
     expect(result).not.toBeNull()
     expect(result?.rateToUsd).toBe('4150.25')
     expect(result?.rateDate).toBe('2026-07-01')
@@ -98,7 +98,7 @@ describe('COP TRM fetching', () => {
 
     // Test with Date object
     const dateObj = new Date('2026-07-01T12:34:56Z')
-    const result = await fetchCopTrmRate(dateObj, mockFetch as any)
+    const result = await fetchCopTrmRate(dateObj, mockFetch as unknown as typeof fetch)
 
     expect(result?.rateDate).toBe('2026-07-01')
     // Verify URL included the ISO date
@@ -113,7 +113,7 @@ describe('COP TRM fetching', () => {
       json: async () => [{ valor: '4150' }],
     })
 
-    await fetchCopTrmRate('2026-07-15', mockFetch as any)
+    await fetchCopTrmRate('2026-07-15', mockFetch as unknown as typeof fetch)
 
     const callUrl = mockFetch.mock.calls[0][0]
     // Verify the query includes vigenciadesde/vigenciahasta bounds

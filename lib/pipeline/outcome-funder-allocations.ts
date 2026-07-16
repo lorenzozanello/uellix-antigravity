@@ -41,7 +41,7 @@ export interface OutcomeFunderAllocation {
 /**
  * Verify that the outcome exists and belongs to the current organization.
  */
-async function verifyOutcomeAccess(outcomeId: string, ctx: any) {
+async function verifyOutcomeAccess(outcomeId: string, ctx: { organization: { id: string } }) {
   const outcomes_result = await db
     .select({ projectId: projects.id, organizationId: projects.organizationId })
     .from(outcomes)
@@ -61,7 +61,7 @@ async function verifyOutcomeAccess(outcomeId: string, ctx: any) {
 /**
  * Verify that the funder exists and belongs to the current organization.
  */
-async function verifyFunderAccess(funderId: string, ctx: any) {
+async function verifyFunderAccess(funderId: string, ctx: { organization: { id: string } }) {
   const funder_result = await db
     .select()
     .from(funders)
