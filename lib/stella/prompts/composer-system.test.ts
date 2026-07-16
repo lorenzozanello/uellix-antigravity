@@ -34,7 +34,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
       currency: 'USD',
       lineItemCount: 10,
       version: 1,
-    },
+    } as unknown as import('../context/types').CalculationSnapshot,
     reportSections: [],
     projectCreatedAt: '2024-01-01T00:00:00Z',
     lastUpdatedAt: '2024-01-02T00:00:00Z',
@@ -68,7 +68,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextWithFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...baseMockContext.calculationSnapshot,
+        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -140,7 +140,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextNoUnattributed: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...baseMockContext.calculationSnapshot,
+        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -152,7 +152,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
           },
         ],
         unattributedNsvUsd: 0,
-      },
+      } as unknown as import('../context/types').CalculationSnapshot,
     }
 
     it('omits unattributed impact note when zero', () => {
@@ -175,10 +175,10 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextNoFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...baseMockContext.calculationSnapshot,
+        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
         fundersBreakdown: [],
         unattributedNsvUsd: 2070000,
-      },
+      } as unknown as import('../context/types').CalculationSnapshot,
     }
 
     it('does not include funder breakdown section when empty', () => {
@@ -208,7 +208,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextMultipleFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...baseMockContext.calculationSnapshot,
+        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',
@@ -236,7 +236,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
           },
         ],
         unattributedNsvUsd: 30000,
-      },
+      } as unknown as import('../context/types').CalculationSnapshot,
     }
 
     it('lists all 3+ funders in breakdown', () => {
@@ -269,7 +269,7 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     const contextWithFunders: StellaProjectContext = {
       ...baseMockContext,
       calculationSnapshot: {
-        ...baseMockContext.calculationSnapshot,
+        ...(baseMockContext.calculationSnapshot as import('../context/types').CalculationSnapshot),
         fundersBreakdown: [
           {
             funderId: 'funder-1',

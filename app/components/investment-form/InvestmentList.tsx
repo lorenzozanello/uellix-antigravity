@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash2, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import InvestmentRow from './InvestmentRow'
 
 interface Funder {
@@ -47,11 +47,27 @@ interface InvestmentListProps {
   canEdit: boolean
 }
 
+function makeTempRow(): Investment {
+  return {
+    id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    funderId: '',
+    amount: '',
+    currency: 'USD',
+    amountUsd: null,
+    contributionType: 'cash',
+    inKindValuationNotes: null,
+    status: 'new',
+  }
+}
+
 /**
- * InvestmentList: Multi-row investment form container
- * - Renders a row for each existing investment
- * - Allows adding/removing rows
- * - Handles per-row updates
+ * InvestmentList: Multi-row investment form container.
+ *
+ * Saved rows always come straight from the `investments` prop (kept fresh by
+ * the server after each revalidation), while unsaved "temp" rows live in local
+ * state until the user clicks Guardar. This split is what keeps the per-row
+ * FX preview state stable — saved rows never depend on fragile local state,
+ * and there is no per-keystroke server round-trip.
  */
 export default function InvestmentList({
   investments,
@@ -61,103 +77,71 @@ export default function InvestmentList({
   onUpdateRow,
   canEdit,
 }: InvestmentListProps) {
-  const [rows, setRows] = useState<Investment[]>(
-    investments && investments.length > 0 ? investments : [
-      {
-        id: `temp-${Date.now()}`,
-        funderId: '',
-        amount: '',
-        currency: 'USD',
-        amountUsd: null,
-        contributionType: 'cash',
-        inKindValuationNotes: null,
-        status: 'new',
-      },
-    ]
+  // Seed a single blank row only when the project has no saved investments yet.
+  const [tempRows, setTempRows] = useState<Investment[]>(
+    investments.length === 0 ? [makeTempRow()] : []
   )
-
+  const [savingId, setSavingId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const handleAddRow = () => {
-    const newRow: Investment = {
-      id: `temp-${Date.now()}`,
-      funderId: '',
-      amount: '',
-      currency: 'USD',
-      amountUsd: null,
-      contributionType: 'cash',
-      inKindValuationNotes: null,
-      status: 'new',
-    }
-    setRows([...rows, newRow])
+    setTempRows((prev) => [...prev, makeTempRow()])
   }
 
-  const handleDeleteRow = async (investmentId: string) => {
-    const row = rows.find((r) => r.id === investmentId)
+  const handleSave = async (rowId: string, data: InvestmentFormData) => {
+    setSavingId(rowId)
+    try {
+      if (rowId.startsWith('temp-')) {
+        await onAdd(data)
+        // Success: drop the temp row. The saved investment now arrives via the
+        // refreshed `investments` prop, so it won't disappear or duplicate.
+        setTempRows((prev) => prev.filter((r) => r.id !== rowId))
+      } else {
+        await onUpdateRow(rowId, data)
+      }
+    } catch {
+      // Error surfaced by InvestmentFormIntegration; keep the row so the user
+      // can retry without re-entering everything.
+    } finally {
+      setSavingId(null)
+    }
+  }
 
-    // If row has data, ask for confirmation
-    if (row && (row.funderId || row.amount)) {
-      setDeleteConfirm(investmentId)
+  const requestDelete = (row: Investment) => {
+    if (row.id.startsWith('temp-')) {
+      // Unsaved rows can be discarded without a confirmation prompt.
+      setTempRows((prev) => prev.filter((r) => r.id !== row.id))
       return
     }
-
-    // Otherwise delete immediately
-    await performDelete(investmentId)
+    setDeleteConfirm(row.id)
   }
 
-  const performDelete = async (investmentId: string) => {
+  const confirmDelete = async (investmentId: string) => {
     setDeleteConfirm(null)
-
-    // If it's a temp row, just remove it from UI
-    if (investmentId.startsWith('temp-')) {
-      setRows(rows.filter((r) => r.id !== investmentId))
-    } else {
-      // Call server action to delete
+    setSavingId(investmentId)
+    try {
       await onDelete(investmentId)
-      setRows(rows.filter((r) => r.id !== investmentId))
+    } finally {
+      setSavingId(null)
     }
   }
 
-  const handleRowChange = async (investmentId: string, data: Partial<InvestmentFormData>) => {
-    // Update local state
-    setRows(
-      rows.map((row) =>
-        row.id === investmentId
-          ? {
-              ...row,
-              funderId: data.funderId ?? row.funderId,
-              amount: data.amount ?? row.amount,
-              currency: data.currency ?? row.currency,
-              contributionType: data.contributionType ?? row.contributionType,
-              inKindValuationNotes: data.inKindValuationNotes ?? row.inKindValuationNotes,
-              year: data.year ?? row.year,
-              description: data.description ?? row.description,
-            }
-          : row
-      )
-    )
-
-    // If it's a temp row (new), don't call server action yet
-    if (!investmentId.startsWith('temp-')) {
-      await onUpdateRow(investmentId, data)
-    }
-  }
+  const allRows: Investment[] = [...investments, ...tempRows]
 
   return (
     <div className="space-y-4">
-      {/* Rows */}
       <div className="space-y-3">
-        {rows.map((investment, idx) => (
+        {allRows.map((investment) => (
           <div key={investment.id} className="relative">
             <InvestmentRow
               investment={investment}
               funders={funders}
-              onUpdate={(data) => handleRowChange(investment.id, data)}
-              onDelete={() => handleDeleteRow(investment.id)}
+              onSave={(data) => handleSave(investment.id, data)}
+              onDelete={() => requestDelete(investment)}
               canEdit={canEdit}
+              isSaving={savingId === investment.id}
             />
 
-            {/* Delete confirmation modal */}
             {deleteConfirm === investment.id && (
               <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center z-50">
                 <div className="bg-white dark:bg-slate-900 rounded-lg p-4 shadow-lg space-y-4 max-w-xs">
@@ -172,7 +156,7 @@ export default function InvestmentList({
                       Cancelar
                     </button>
                     <button
-                      onClick={() => performDelete(investment.id)}
+                      onClick={() => confirmDelete(investment.id)}
                       className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
                     >
                       Eliminar
@@ -185,7 +169,12 @@ export default function InvestmentList({
         ))}
       </div>
 
-      {/* Add row button */}
+      {allRows.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          Aún no hay aportes registrados. Agrega el primero para comenzar.
+        </p>
+      )}
+
       {canEdit && (
         <button
           onClick={handleAddRow}

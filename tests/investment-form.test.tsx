@@ -62,12 +62,9 @@ describe('InvestmentList Component', () => {
       />
     )
 
-    // Should have one empty row
-    const rows = screen.getAllByRole('row', { hidden: true }) // including headers
-    expect(rows.length).toBeGreaterThanOrEqual(2) // header + at least 1 row
-
-    // Funder dropdown should exist
-    expect(screen.getByLabelText(/Financiador/i)).toBeInTheDocument()
+    // Should seed exactly one empty row (one funder select) and a save button
+    expect(screen.getAllByLabelText(/Financiador/i)).toHaveLength(1)
+    expect(screen.getByRole('button', { name: /Guardar aporte/i })).toBeInTheDocument()
   })
 
   // Test 2: Form rendering with existing investments
@@ -83,9 +80,10 @@ describe('InvestmentList Component', () => {
       />
     )
 
-    // Should display both investments
-    expect(screen.getByText('World Bank')).toBeInTheDocument()
-    expect(screen.getByText('Local Foundation')).toBeInTheDocument()
+    // One funder select per saved investment, each with the right value
+    const funderSelects = screen.getAllByLabelText(/Financiador/i) as HTMLSelectElement[]
+    expect(funderSelects).toHaveLength(2)
+    expect(funderSelects.map((s) => s.value)).toEqual(['funder-1', 'funder-2'])
 
     // Amounts should be visible
     expect(screen.getByDisplayValue('100000')).toBeInTheDocument()
@@ -154,20 +152,17 @@ describe('InvestmentList Component', () => {
       />
     )
 
-    const currencyInput = screen.getByDisplayValue('')?.parentElement?.querySelector(
-      'input[name*="currency"]'
-    ) as HTMLInputElement
+    // USD (default) → no FX sub-form
+    expect(screen.queryByText(/Tasa de conversión/i)).not.toBeInTheDocument()
 
-    // Change to COP
-    if (currencyInput) {
-      await user.clear(currencyInput)
-      await user.type(currencyInput, 'COP')
+    // Change currency to COP → FX sub-form appears
+    const currencyInput = screen.getByLabelText(/Moneda/i) as HTMLInputElement
+    await user.clear(currencyInput)
+    await user.type(currencyInput, 'COP')
 
-      // FX sub-form should appear
-      await waitFor(() => {
-        expect(screen.getByText(/Tasa de conversión/i)).toBeInTheDocument()
-      })
-    }
+    await waitFor(() => {
+      expect(screen.getByText(/Tasa de conversión/i)).toBeInTheDocument()
+    })
   })
 
   // Test 6: USD equivalent is calculated and displayed (read-only)
@@ -188,8 +183,8 @@ describe('InvestmentList Component', () => {
     expect(usdEquivs.length).toBeGreaterThan(0)
   })
 
-  // Test 7: Add row button creates new investment
-  it('calls onAdd when "Agregar aporte" button clicked', async () => {
+  // Test 7: Add row button appends a new empty row (does NOT auto-save)
+  it('appends a new empty row when "Agregar aporte" clicked, without saving', async () => {
     const user = userEvent.setup()
     render(
       <InvestmentList
@@ -202,16 +197,20 @@ describe('InvestmentList Component', () => {
       />
     )
 
+    expect(screen.getAllByLabelText(/Financiador/i)).toHaveLength(1)
+
     const addButton = screen.getByRole('button', { name: /Agregar aporte/i })
     await user.click(addButton)
 
-    expect(mockOnAdd).toHaveBeenCalled()
+    // A second row appears locally; no server call is made just for adding a row
+    expect(screen.getAllByLabelText(/Financiador/i)).toHaveLength(2)
+    expect(mockOnAdd).not.toHaveBeenCalled()
   })
 
-  // Test 8: Delete row removes investment with confirmation
-  it('calls onDelete when row delete button clicked', async () => {
+  // Test 8: Delete saved row requires confirmation then calls onDelete
+  it('calls onDelete with the investment id after confirming deletion', async () => {
     const user = userEvent.setup()
-    const { rerender } = render(
+    render(
       <InvestmentList
         investments={mockInvestments}
         funders={mockFunders}
@@ -222,16 +221,19 @@ describe('InvestmentList Component', () => {
       />
     )
 
-    // Get first delete button
-    const deleteButtons = screen.getAllByRole('button', { name: /Eliminar/i })
-    if (deleteButtons.length > 0) {
-      await user.click(deleteButtons[0])
+    // Click the first row's "Eliminar" → opens confirmation modal (no call yet)
+    const deleteButtons = screen.getAllByRole('button', { name: /^Eliminar$/i })
+    await user.click(deleteButtons[0])
+    expect(mockOnDelete).not.toHaveBeenCalled()
 
-      // Should call onDelete with investment ID
-      await waitFor(() => {
-        expect(mockOnDelete).toHaveBeenCalledWith(expect.stringContaining('inv-'))
-      })
-    }
+    // Confirm in the modal (scope to the confirmation dialog)
+    const dialog = screen.getByText(/¿Eliminar este aporte/i).closest('div') as HTMLElement
+    const confirmButton = within(dialog).getByRole('button', { name: /^Eliminar$/i })
+    await user.click(confirmButton)
+
+    await waitFor(() => {
+      expect(mockOnDelete).toHaveBeenCalledWith('inv-1')
+    })
   })
 
   // Test 9: Form validation rejects empty amount
@@ -298,9 +300,9 @@ describe('InvestmentList Component', () => {
       />
     )
 
-    // Both funders should be visible
-    expect(screen.getByText('World Bank')).toBeInTheDocument()
-    expect(screen.getByText('Local Foundation')).toBeInTheDocument()
+    // Each row's funder select reflects the saved funder
+    const funderSelects = screen.getAllByLabelText(/Financiador/i) as HTMLSelectElement[]
+    expect(funderSelects.map((s) => s.value)).toEqual(['funder-1', 'funder-2'])
 
     // Both currencies should be shown
     expect(screen.getByDisplayValue('USD')).toBeInTheDocument()
@@ -351,7 +353,7 @@ describe('InvestmentRow Component', () => {
     status: 'active',
   }
 
-  const mockOnUpdate = vi.fn()
+  const mockOnSave = vi.fn()
   const mockOnDelete = vi.fn()
 
   beforeEach(() => {
@@ -364,9 +366,10 @@ describe('InvestmentRow Component', () => {
       <InvestmentRow
         investment={mockInvestment}
         funders={mockFunders}
-        onUpdate={mockOnUpdate}
+        onSave={mockOnSave}
         onDelete={mockOnDelete}
         canEdit={true}
+        isSaving={false}
       />
     )
 
@@ -376,8 +379,8 @@ describe('InvestmentRow Component', () => {
     expect(screen.getByLabelText(/Moneda/i)).toBeInTheDocument()
   })
 
-  // Test 14: FX lookup for COP shows auto-fetch option
-  it('shows auto-fetch button for COP currency', () => {
+  // Test 14: FX lookup for COP shows TRM preview option
+  it('shows TRM preview button for COP currency', () => {
     const copInvestment = {
       ...mockInvestment,
       currency: 'COP',
@@ -388,14 +391,15 @@ describe('InvestmentRow Component', () => {
       <InvestmentRow
         investment={copInvestment}
         funders={mockFunders}
-        onUpdate={mockOnUpdate}
+        onSave={mockOnSave}
         onDelete={mockOnDelete}
         canEdit={true}
+        isSaving={false}
       />
     )
 
-    // Should have option to auto-fetch COP rate
-    expect(screen.getByText(/Auto-obtener TRM/i)).toBeInTheDocument()
+    // Should have option to preview the COP TRM rate
+    expect(screen.getByText(/Ver TRM/i)).toBeInTheDocument()
   })
 
   // Test 15: Manual FX entry for non-COP currency
@@ -410,14 +414,41 @@ describe('InvestmentRow Component', () => {
       <InvestmentRow
         investment={eurInvestment}
         funders={mockFunders}
-        onUpdate={mockOnUpdate}
+        onSave={mockOnSave}
         onDelete={mockOnDelete}
         canEdit={true}
+        isSaving={false}
       />
     )
 
     // Should show manual entry fields
-    expect(screen.getByLabelText(/Tasa EUR.*USD/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Tasa 1 EUR.*USD/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Fuente/i)).toBeInTheDocument()
+  })
+
+  // Test 16: Explicit save button triggers onSave (no auto-save on keystroke)
+  it('calls onSave only when the save button is clicked', async () => {
+    const user = userEvent.setup()
+    render(
+      <InvestmentRow
+        investment={mockInvestment}
+        funders={mockFunders}
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+        canEdit={true}
+        isSaving={false}
+      />
+    )
+
+    // Editing a field must NOT trigger a save.
+    const amountInput = screen.getByLabelText(/Monto/i) as HTMLInputElement
+    await user.clear(amountInput)
+    await user.type(amountInput, '250000')
+    expect(mockOnSave).not.toHaveBeenCalled()
+
+    // Clicking "Guardar cambios" persists.
+    const saveButton = screen.getByRole('button', { name: /Guardar cambios/i })
+    await user.click(saveButton)
+    expect(mockOnSave).toHaveBeenCalledTimes(1)
   })
 })

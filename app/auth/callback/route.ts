@@ -6,16 +6,14 @@ import { isSafeRedirectPath } from '@/lib/auth/safe-redirect'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  // Password-recovery emails link here with ?next=/reset-password so the
-  // user lands on the "set a new password" form instead of the dashboard.
   const nextParam = requestUrl.searchParams.get('next')
   const next = isSafeRedirectPath(nextParam) ? nextParam : null
 
   if (code) {
     const supabase = await createClient()
-    const { data } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (data.user) {
+    if (!error && data?.user) {
       // Sync user profile (idempotent)
       await syncUserProfile(data.user)
 
@@ -28,8 +26,10 @@ export async function GET(request: Request) {
       if (!membership) {
         return NextResponse.redirect(new URL('/app/onboarding', request.url))
       }
+
+      return NextResponse.redirect(new URL('/app/dashboard', request.url))
     }
   }
 
-  return NextResponse.redirect(new URL('/app/dashboard', request.url))
+  return NextResponse.redirect(new URL('/login', request.url))
 }

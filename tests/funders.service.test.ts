@@ -3,10 +3,39 @@ import { createFunder, listFundersForOrganization } from '@/lib/pipeline/funders
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { db } from '@/db/client';
 import { logAuditAction } from '@/lib/audit/logger';
+import type { OrganizationContext } from '@/lib/auth/session';
 
 vi.mock('@/lib/auth/session');
 vi.mock('@/db/client');
 vi.mock('@/lib/audit/logger');
+
+function createMockContext(): OrganizationContext {
+  return {
+    organization: {
+      id: 'org-1',
+      name: 'Test Org',
+      slug: 'test-org',
+      legalName: null,
+      country: null,
+      sector: null,
+      status: 'active',
+    },
+    user: {
+      id: 'user-1',
+      email: 'test@example.com',
+      fullName: 'Test User',
+      avatarUrl: null,
+      isSuperAdmin: false,
+    },
+    membership: {
+      id: 'mem-1',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      role: 'analyst',
+      status: 'active',
+    },
+  };
+}
 
 describe('Funders service', () => {
   beforeEach(() => {
@@ -14,12 +43,7 @@ describe('Funders service', () => {
   });
 
   it('creates a funder for the current organization', async () => {
-    const mockCtx = {
-      organization: { id: 'org-1' },
-      user: { id: 'user-1' },
-      membership: { role: 'analyst' },
-    };
-    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockContext());
 
     const mockFunder = {
       id: 'funder-1',
@@ -45,20 +69,14 @@ describe('Funders service', () => {
   });
 
   it('lists all funders for the organization', async () => {
-    const mockCtx = {
-      organization: { id: 'org-1' },
-      user: { id: 'user-1' },
-      membership: { role: 'analyst' },
-    };
-    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockContext());
 
     const mockFunders = [
       { id: 'funder-1', organizationId: 'org-1', name: 'Foundation', funderType: 'foundation' },
       { id: 'funder-2', organizationId: 'org-1', name: 'Private', funderType: 'private' },
     ];
 
-    const mockExecute = vi.fn().mockResolvedValue(mockFunders);
-    const mockWhere = vi.fn().mockReturnValue({ execute: mockExecute });
+    const mockWhere = vi.fn().mockReturnValue({ execute: vi.fn().mockResolvedValue(mockFunders) });
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
     vi.mocked(db).select = mockSelect;
@@ -70,13 +88,9 @@ describe('Funders service', () => {
   });
 
   it('rejects invalid funder type', async () => {
-    const mockCtx = {
-      organization: { id: 'org-1' },
-      user: { id: 'user-1' },
-      membership: { role: 'analyst' },
-    };
-    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockContext());
 
-    await expect(createFunder('Bad Funder', 'invalid_type' as any)).rejects.toThrow();
+    // @ts-expect-error - Testing runtime validation with invalid string type
+    await expect(createFunder('Bad Funder', 'invalid_type')).rejects.toThrow();
   });
 });

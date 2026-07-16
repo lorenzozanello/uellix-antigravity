@@ -223,7 +223,7 @@ export async function updateInvestment(
   const existing = await getInvestment(investmentId)
 
   // Build update payload with provided fields
-  const updatePayload: any = {
+  const updatePayload: Record<string, unknown> = {
     updatedAt: new Date(),
   }
 

@@ -169,6 +169,10 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     ])
   )
 
+  // Build lookup for outcomes and proxies names
+  const outcomeLookup = new Map(assignmentsData.map(({ outcome }) => [outcome.id, outcome]))
+  const proxyLookup = new Map(assignmentsData.map(({ proxy }) => [proxy.id, proxy]))
+
   // Server Actions — wiring unchanged
   async function handleUpsertInvestment(formData: FormData) {
     'use server'
@@ -218,14 +222,24 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
+  interface InvestmentFormData {
+    funderId?: string;
+    amount?: string;
+    currency?: string;
+    contributionType?: string;
+    inKindValuationNotes?: string;
+    year?: number | string;
+    description?: string;
+  }
+
   // Investment CRUD handlers (for multi-row form)
-  async function handleCreateInvestment(data: any) {
+  async function handleCreateInvestment(data: InvestmentFormData) {
     'use server'
     const formData = new FormData()
-    formData.append('funderId', data.funderId)
-    formData.append('amount', data.amount)
-    formData.append('currency', data.currency)
-    formData.append('contributionType', data.contributionType)
+    if (data.funderId) formData.append('funderId', data.funderId)
+    if (data.amount) formData.append('amount', data.amount)
+    if (data.currency) formData.append('currency', data.currency)
+    if (data.contributionType) formData.append('contributionType', data.contributionType)
     if (data.inKindValuationNotes) {
       formData.append('inKindValuationNotes', data.inKindValuationNotes)
     }
@@ -239,7 +253,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
-  async function handleUpdateInvestment(investmentId: string, data: any) {
+  async function handleUpdateInvestment(investmentId: string, data: InvestmentFormData) {
     'use server'
     const formData = new FormData()
     if (data.amount) formData.append('amount', data.amount)
@@ -362,16 +376,45 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
               </div>
             </div>
           ) : (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="rounded-md border border-red-200 bg-red-50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-red-700" aria-hidden="true" />
                 <p className="font-semibold text-red-800 text-sm">Requisitos faltantes para habilitar el cálculo:</p>
               </div>
-              <ul className="space-y-1 pl-6 list-disc">
-                {readiness.blockingReasons.map((reason, idx) => (
-                  <li key={idx} className="text-sm text-red-700">{reason}</li>
-                ))}
-              </ul>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {readiness.issues.map((issue, idx) => {
+                  // Enrich issues with specific names
+                  const enrichedMessage = issue.message
+                  let itemDetails = null
+
+                  if (issue.messageKey === 'outcomes_without_evidence' && issue.itemIds) {
+                    const outcomeNames = issue.itemIds
+                      .map(id => outcomeLookup.get(id)?.title || `Outcome ${id.slice(0, 8)}`)
+                      .join(', ')
+                    itemDetails = `(${outcomeNames})`
+                  } else if (issue.messageKey === 'unapproved_proxies' && issue.itemIds) {
+                    const proxyNames = issue.itemIds
+                      .map(id => proxyLookup.get(id)?.name || `Proxy ${id.slice(0, 8)}`)
+                      .join(', ')
+                    itemDetails = `(${proxyNames})`
+                  }
+
+                  return (
+                    <div key={idx} className="rounded-md bg-white/50 p-3 text-sm border-l-2 border-red-500">
+                      <p className="text-red-900 font-medium mb-1">{issue.message}</p>
+                      {itemDetails && <p className="text-xs text-red-700 mb-2">{itemDetails}</p>}
+                      {issue.actionPath && (
+                        <a
+                          href={issue.actionPath}
+                          className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-900 font-semibold underline transition-colors"
+                        >
+                          {issue.actionLabel} →
+                        </a>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </CardContent>

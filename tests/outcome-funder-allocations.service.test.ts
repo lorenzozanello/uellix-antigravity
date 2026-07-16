@@ -6,6 +6,35 @@ import {
   deleteAllocation,
 } from '@/lib/pipeline/outcome-funder-allocations';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
+import type { OrganizationContext } from '@/lib/auth/session';
+
+function createMockCtx(orgId: string, userId: string): OrganizationContext {
+  return {
+    organization: {
+      id: orgId,
+      name: 'Test Org',
+      slug: 'test-org',
+      legalName: null,
+      country: null,
+      sector: null,
+      status: 'active',
+    },
+    user: {
+      id: userId,
+      email: 'test@example.com',
+      fullName: 'Test User',
+      avatarUrl: null,
+      isSuperAdmin: false,
+    },
+    membership: {
+      id: 'mem-1',
+      organizationId: orgId,
+      userId: userId,
+      role: 'analyst',
+      status: 'active',
+    },
+  };
+}
 
 vi.mock('@/lib/auth/session');
 vi.mock('@/db/client');
@@ -27,12 +56,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Should fail Zod validation before DB access
       await expect(createAllocation(createUUID(1), createUUID(2), 0)).rejects.toThrow();
@@ -43,12 +67,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Should fail Zod validation
       await expect(createAllocation(createUUID(1), createUUID(2), 101)).rejects.toThrow();
@@ -58,12 +77,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Should fail Zod UUID validation
       await expect(createAllocation('invalid-uuid', createUUID(2), 50)).rejects.toThrow();
@@ -74,12 +88,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Should fail Zod UUID validation
       await expect(createAllocation(createUUID(1), 'invalid-uuid', 50)).rejects.toThrow();
@@ -90,12 +99,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Should fail Zod validation
       await expect(updateAllocation(createUUID(10), 0)).rejects.toThrow();
@@ -106,12 +110,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Should fail Zod validation
       await expect(updateAllocation(createUUID(10), 101)).rejects.toThrow();
@@ -122,12 +121,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Invalid UUIDs will fail during DB lookup, which is OK for this test
       // (we're testing that the function at least tries to process valid IDs)
@@ -144,12 +138,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Valid UUID format - will fail on DB lookup which is OK
       const validId = createUUID(1);
@@ -167,12 +156,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       const orgId = createUUID(999);
       const userId = createUUID(888);
 
-      const mockCtx = {
-        organization: { id: orgId },
-        user: { id: userId },
-        membership: { role: 'analyst' },
-      };
-      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(mockCtx as any);
+      vi.mocked(getCurrentOrganizationContext).mockResolvedValue(createMockCtx(orgId, userId));
 
       // Boundary values that should pass Zod
       // 0.001 should pass (> 0)
@@ -186,7 +170,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       // Test 0.001 would pass Zod (but fail on DB lookup since mocked)
       try {
         await createAllocation(createUUID(1), createUUID(2), 0.001);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // May fail on DB lookup, that's OK
         expect(err).toBeDefined();
       }
@@ -194,7 +178,7 @@ describe('Outcome-Funder Allocations service — validation tests', () => {
       // Test 100 would pass Zod
       try {
         await createAllocation(createUUID(1), createUUID(2), 100);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // May fail on DB lookup, that's OK
         expect(err).toBeDefined();
       }

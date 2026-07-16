@@ -122,12 +122,10 @@ export function FxSubForm({
 
   const handleCurrencyChange = (newCurrency: string) => {
     setLocalCurrency(newCurrency)
-    if (newCurrency === 'USD') {
-      setLocalRate('')
-      setLocalSource('')
-      setRateFetched(false)
-      setAutoFetchError(null)
-    }
+    setLocalRate('')
+    setLocalSource('')
+    setRateFetched(false)
+    setAutoFetchError(null)
   }
 
   const handleClearRate = () => {
@@ -140,7 +138,7 @@ export function FxSubForm({
   const isRateRequired = localCurrency && localCurrency !== 'USD'
   const isCop = localCurrency === 'COP'
   const showAutoFetch = isCop && !rateFetched
-  const showManualRate = isRateRequired && (!isCop || (isCop && (rateFetched || autoFetchError)))
+  const showManualRate = isRateRequired
   const displayValueUsd = localCurrency === 'USD' ? localAmount : valueUsd
 
   return (

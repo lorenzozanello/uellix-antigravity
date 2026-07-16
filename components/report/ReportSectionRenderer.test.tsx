@@ -128,7 +128,7 @@ describe('ReportSectionRenderer', () => {
         />
       )
 
-      expect(screen.getByText(/Valor Social Sin Atribuir/i)).toBeInTheDocument()
+      expect(screen.getByText(/Valor Social Sin Atribuir:/)).toBeInTheDocument()
     })
   })
 
@@ -151,7 +151,7 @@ describe('ReportSectionRenderer', () => {
       )
 
       expect(screen.getByRole('table')).toBeInTheDocument()
-      expect(screen.getByText(/Notas metodológicas/i)).toBeInTheDocument()
+      expect(screen.getByText('Notas metodológicas')).toBeInTheDocument()
     })
 
     it('shows section content in notes when provided', () => {
