@@ -399,7 +399,7 @@ describe('InvestmentRow Component', () => {
     )
 
     // Should have option to preview the COP TRM rate
-    expect(screen.getByText(/Ver TRM/i)).toBeInTheDocument()
+    expect(screen.getByText(/Obtener tasa automática/i)).toBeInTheDocument()
   })
 
   // Test 15: Manual FX entry for non-COP currency

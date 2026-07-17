@@ -55,21 +55,20 @@ describe('FxSubForm Component', () => {
       const select = screen.getByLabelText('Moneda')
       changeSelect(select, 'COP')
 
-      expect(screen.getByRole('button', { name: /Obtener tasa TRM/ })).toBeTruthy()
+      expect(screen.getByRole('button', { name: /Obtener tasa automática/ })).toBeTruthy()
     })
 
-    it('shows manual rate input for non-COP currencies', () => {
+    it('shows auto-fetch button for non-COP currencies too', () => {
       render(<FxSubForm />)
       const select = screen.getByLabelText('Moneda')
       changeSelect(select, 'EUR')
 
-      expect(screen.getByLabelText(/Tasa de conversión/)).toBeTruthy()
-      expect(screen.getByLabelText(/Fuente/)).toBeTruthy()
+      expect(screen.getByRole('button', { name: /Obtener tasa automática/ })).toBeTruthy()
     })
   })
 
-  describe('Auto-fetch COP rate', () => {
-    it('fetches COP rate when button clicked', async () => {
+  describe('Auto-fetch rate', () => {
+    it('fetches rate when button clicked', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -80,12 +79,12 @@ describe('FxSubForm Component', () => {
       global.fetch = mockFetch
 
       render(<FxSubForm currency="COP" referenceYear={2026} />)
-      const button = screen.getByRole('button', { name: /Obtener tasa TRM/ })
+      const button = screen.getByRole('button', { name: /Obtener tasa automática/ })
       fireEvent.click(button)
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          '/api/fx-rates/fetch-cop',
+          '/api/fx-rates/fetch',
           expect.objectContaining({
             method: 'POST',
             body: expect.stringContaining('2026-12-31'),
