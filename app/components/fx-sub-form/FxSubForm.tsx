@@ -77,9 +77,9 @@ export function FxSubForm({
     }
   }, [localCurrency, localAmount, localRate, localSource, valueUsd, onChange])
 
-  // Auto-fetch COP rate
+  // Auto-fetch rate (COP via TRM, others via FX Oracle)
   const handleAutoFetchRate = async () => {
-    if (!referenceYear || localCurrency !== 'COP') {
+    if (!referenceYear || localCurrency === 'USD' || !localCurrency) {
       return
     }
 
@@ -91,15 +91,18 @@ export function FxSubForm({
       const decemberDate = new Date(referenceYear, 11, 31)
       const isoDate = decemberDate.toISOString().split('T')[0]
 
-      // Call the API to fetch COP rate
-      const response = await fetch('/api/fx-rates/fetch-cop', {
+      // Call the API to fetch rate
+      const response = await fetch('/api/fx-rates/fetch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: isoDate }),
+        body: JSON.stringify({ date: isoDate, currency: localCurrency }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch COP rate')
+        if (response.status === 502) {
+          throw new Error('Tasa no encontrada en oráculo automático.')
+        }
+        throw new Error('Failed to fetch rate')
       }
 
       const data = await response.json()
@@ -110,11 +113,11 @@ export function FxSubForm({
       }
 
       setLocalRate(String(data.rateToUsd))
-      setLocalSource(data.source || 'Superintendencia Financiera de Colombia — TRM oficial')
+      setLocalSource(data.source || 'Oráculo automático')
       setRateFetched(true)
       setAutoFetchError(null)
-    } catch (error) {
-      setAutoFetchError('Manual entry required')
+    } catch (error: any) {
+      setAutoFetchError(error.message || 'Ingreso manual requerido')
     } finally {
       setIsAutoFetching(false)
     }
@@ -136,8 +139,7 @@ export function FxSubForm({
   }
 
   const isRateRequired = localCurrency && localCurrency !== 'USD'
-  const isCop = localCurrency === 'COP'
-  const showAutoFetch = isCop && !rateFetched
+  const showAutoFetch = isRateRequired && !rateFetched
   const showManualRate = isRateRequired
   const displayValueUsd = localCurrency === 'USD' ? localAmount : valueUsd
 
@@ -190,7 +192,7 @@ export function FxSubForm({
         </div>
       )}
 
-      {/* Auto-fetch button (COP only) */}
+      {/* Auto-fetch button */}
       {showAutoFetch && (
         <div>
           <button
@@ -199,7 +201,7 @@ export function FxSubForm({
             disabled={disabled || isAutoFetching || !referenceYear}
             className="w-full rounded-md border border-amber-700 bg-amber-950/50 px-3 py-2 text-sm font-medium text-amber-300 hover:bg-amber-900/50 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {isAutoFetching ? 'Obteniendo tasa...' : 'Obtener tasa TRM (31 dic)'}
+            {isAutoFetching ? 'Consultando...' : 'Obtener tasa automática (31 dic)'}
           </button>
           {autoFetchError && (
             <div className="text-xs text-amber-600 mt-1">
@@ -215,7 +217,7 @@ export function FxSubForm({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label htmlFor="fx-rate" className="block text-xs font-medium text-slate-300">
-                Tasa de conversión ({localCurrency}→USD)
+                Tasa de conversión (1 USD = ? {localCurrency})
               </label>
               {rateFetched && (
                 <button
@@ -224,7 +226,7 @@ export function FxSubForm({
                   disabled={disabled}
                   className="text-xs text-slate-500 hover:text-slate-300 transition disabled:cursor-not-allowed"
                 >
-                  Limpiar
+                  Modificar
                 </button>
               )}
             </div>

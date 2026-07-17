@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchCopTrmRate } from '@/lib/pipeline/fx'
+import { getOrCreateFxRate } from '@/lib/pipeline/fx-rates'
+import { getOrCreateSharedCopRate } from '@/lib/pipeline/fx'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 
 export async function POST(request: NextRequest) {
@@ -10,10 +11,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { date } = body
+    const { date, currency } = body
 
     if (!date) {
       return NextResponse.json({ error: 'Missing date parameter' }, { status: 400 })
+    }
+    if (!currency) {
+      return NextResponse.json({ error: 'Missing currency parameter' }, { status: 400 })
     }
 
     // Validate date format (YYYY-MM-DD)
@@ -21,12 +25,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid date format. Expected YYYY-MM-DD' }, { status: 400 })
     }
 
-    // Fetch the COP rate
-    const result = await fetchCopTrmRate(date)
+    // Fetch the rate
+    let result = null
+    try {
+      if (currency === 'COP') {
+        result = await getOrCreateSharedCopRate(date)
+      } else {
+        result = await getOrCreateFxRate(currency, date)
+      }
+    } catch (e: any) {
+      // The service throws an error if it fails to auto-fetch and no manual rate is provided
+      console.warn(`FX fetch failed for ${currency} on ${date}:`, e.message)
+      return NextResponse.json(
+        { error: 'Failed to fetch FX rate automatically. Manual entry required.' },
+        { status: 502 }
+      )
+    }
 
     if (!result) {
       return NextResponse.json(
-        { error: 'Failed to fetch COP rate from TRM source' },
+        { error: 'Failed to fetch FX rate automatically. Manual entry required.' },
         { status: 502 }
       )
     }
@@ -37,7 +55,7 @@ export async function POST(request: NextRequest) {
       rateDate: result.rateDate,
     })
   } catch (error) {
-    console.error('Error fetching COP rate:', error)
+    console.error('Error fetching FX rate:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
