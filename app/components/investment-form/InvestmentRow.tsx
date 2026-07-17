@@ -157,9 +157,9 @@ export default function InvestmentRow({
       setFxRate(String(data.rateToUsd))
       setFxSource(data.source || 'Oráculo automático')
       setFxDate(data.rateDate || date)
-    } catch (err: any) {
+    } catch (err) {
       console.error('FX rate fetch failed:', err)
-      setFetchError(err.message || 'No se pudo obtener la tasa. Por favor ingrésela manualmente.')
+      setFetchError(err instanceof Error ? err.message : 'No se pudo obtener la tasa. Por favor ingrésela manualmente.')
     } finally {
       setFetching(false)
     }

@@ -3,9 +3,20 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
 
+type ProxyResult = {
+  id: string
+  name: string
+  value: string
+  currency: string
+  description: string
+  unit: string
+  referenceYear: string
+  thematicArea?: string
+}
+
 export function ProxyBankSearch() {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<any[]>([])
+  const [results, setResults] = useState<ProxyResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 

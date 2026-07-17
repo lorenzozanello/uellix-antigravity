@@ -116,8 +116,8 @@ export function FxSubForm({
       setLocalSource(data.source || 'Oráculo automático')
       setRateFetched(true)
       setAutoFetchError(null)
-    } catch (error: any) {
-      setAutoFetchError(error.message || 'Ingreso manual requerido')
+    } catch (error) {
+      setAutoFetchError(error instanceof Error ? error.message : 'Ingreso manual requerido')
     } finally {
       setIsAutoFetching(false)
     }

@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
       } else {
         result = await getOrCreateFxRate(currency, date)
       }
-    } catch (e: any) {
+    } catch (e) {
       // The service throws an error if it fails to auto-fetch and no manual rate is provided
-      console.warn(`FX fetch failed for ${currency} on ${date}:`, e.message)
+      console.warn(`FX fetch failed for ${currency} on ${date}:`, e instanceof Error ? e.message : e)
       return NextResponse.json(
         { error: 'Failed to fetch FX rate automatically. Manual entry required.' },
         { status: 502 }
