@@ -6,9 +6,10 @@ import { getCurrentOrganizationContext } from '@/lib/auth/session'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     const ctx = await getCurrentOrganizationContext()
     if (!ctx) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
