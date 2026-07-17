@@ -237,3 +237,70 @@ export async function setGlobalProxyManualFxRate(proxyId: string, input: { rateT
 
   return updated
 }
+
+export async function listPendingReviewProxies() {
+  await requireAdminAccess()
+  // Return all proxies from organizations that are pending review for the global bank
+  return db
+    .select()
+    .from(financialProxies)
+    .where(eq(financialProxies.reviewStatus, 'pending_review'))
+}
+
+export async function promoteProxyToGlobal(proxyId: string) {
+  const admin = await requireAdminAccess()
+  
+  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
+  if (!proxy) throw new Error('Proxy not found')
+  if (!proxy.organizationId) throw new Error('Proxy is already global')
+  if (proxy.reviewStatus !== 'pending_review') throw new Error('Proxy is not pending review')
+
+  // Clone the source if it is org-scoped
+  const source = await db.select().from(proxySources).where(eq(proxySources.id, proxy.sourceId)).then((r) => r[0])
+  let globalSourceId = proxy.sourceId
+
+  if (source && source.organizationId) {
+    // Clone the source first
+    const [clonedSource] = await db.insert(proxySources).values({
+      organizationId: null,
+      name: source.name,
+      description: source.description,
+      url: source.url,
+      status: 'active',
+      createdBy: admin.id,
+    }).returning()
+    globalSourceId = clonedSource.id
+  }
+
+  // Clone the proxy
+  const [clonedProxy] = await db.insert(financialProxies).values({
+    organizationId: null,
+    sourceId: globalSourceId,
+    name: proxy.name,
+    description: proxy.description,
+    proxyType: proxy.proxyType,
+    country: proxy.country,
+    territory: proxy.territory,
+    currency: proxy.currency,
+    value: proxy.value,
+    valueUsd: proxy.valueUsd,
+    fxRateId: proxy.fxRateId,
+    unit: proxy.unit,
+    referenceYear: proxy.referenceYear,
+    thematicArea: proxy.thematicArea,
+    methodology: proxy.methodology,
+    confidenceLevel: proxy.confidenceLevel,
+    methodologicalRisk: proxy.methodologicalRisk,
+    reviewStatus: 'approved',
+    reviewerId: admin.id,
+    reviewedAt: new Date(),
+    createdBy: admin.id,
+  }).returning()
+
+  // Update the original proxy to show it was approved
+  await db.update(financialProxies)
+    .set({ reviewStatus: 'approved', updatedAt: new Date() })
+    .where(eq(financialProxies.id, proxyId))
+
+  return clonedProxy
+}

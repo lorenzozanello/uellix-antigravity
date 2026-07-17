@@ -104,3 +104,20 @@ export async function setGlobalProxyManualFxRateAction(formData: FormData) {
   revalidatePath(PROXIES_PATH)
   redirect(`${PROXIES_PATH}?success=fx_rate_set`)
 }
+
+export async function promoteProxyToGlobalAction(formData: FormData) {
+  const proxyId = formData.get('proxyId') as string | null
+
+  if (!proxyId) redirect(`${PROXIES_PATH}?error=invalid_input`)
+
+  try {
+    const { promoteProxyToGlobal } = await import('@/lib/admin/proxies')
+    await promoteProxyToGlobal(proxyId)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown_error'
+    redirect(`${PROXIES_PATH}?error=${errorToSlug(message)}`)
+  }
+
+  revalidatePath(PROXIES_PATH)
+  redirect(`${PROXIES_PATH}?success=proxy_promoted`)
+}

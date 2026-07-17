@@ -132,7 +132,7 @@ export default function InvestmentRow({
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleFetchCopRate = async () => {
+  const handleFetchFxRate = async () => {
     if (!formData.year) {
       setFetchError('Primero indica el año de referencia.')
       return
@@ -141,20 +141,25 @@ export default function InvestmentRow({
     setFetchError(null)
     try {
       const date = `${formData.year}-12-31`
-      const response = await fetch('/api/fx-rates/fetch-cop', {
+      const response = await fetch('/api/fx-rates/fetch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date }),
+        body: JSON.stringify({ date, currency: formData.currency }),
       })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      if (!response.ok) {
+        if (response.status === 502) {
+          throw new Error('Tasa no encontrada. Ingreso manual requerido.')
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
       const data = await response.json()
       if (!data.rateToUsd) throw new Error('Sin tasa disponible para esa fecha')
       setFxRate(String(data.rateToUsd))
-      setFxSource(data.source || 'TRM oficial')
+      setFxSource(data.source || 'Oráculo automático')
       setFxDate(data.rateDate || date)
-    } catch (err) {
-      console.error('COP rate fetch failed:', err)
-      setFetchError('No se pudo obtener la TRM. La tasa oficial se aplicará al guardar.')
+    } catch (err: any) {
+      console.error('FX rate fetch failed:', err)
+      setFetchError(err.message || 'No se pudo obtener la tasa. Por favor ingrésela manualmente.')
     } finally {
       setFetching(false)
     }
@@ -296,57 +301,52 @@ export default function InvestmentRow({
       {/* Row 3: FX Conversion (if non-USD) */}
       {needsFxConversion && (
         <div className="border-t border-border pt-4 space-y-3">
-          <h4 className="text-sm font-semibold text-foreground">Tasa de conversión</h4>
+          <h4 className="text-sm font-semibold text-foreground">Tasa de conversión a USD</h4>
 
-          {isCop ? (
-            <div className="space-y-2">
-              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
-                <div className="flex-1 w-full">
-                  <label htmlFor={`cop-year-${investment.id}`} className="block text-xs font-medium text-muted-foreground mb-1">
-                    Año de referencia <span className="text-red-500" aria-hidden="true">*</span>
-                  </label>
-                  <input
-                    id={`cop-year-${investment.id}`}
-                    type="number"
-                    value={formData.year || ''}
-                    onChange={(e) => handleChange('year', e.target.value ? parseInt(e.target.value) : undefined)}
-                    disabled={!canEdit || isSaving}
-                    placeholder="2024"
-                    className={INPUT_CLASS}
-                  />
-                </div>
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={handleFetchCopRate}
-                    disabled={fetching || !formData.year || isSaving}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    <RefreshCw className={`h-3 w-3 ${fetching ? 'animate-spin' : ''}`} />
-                    Ver TRM (vista previa)
-                  </button>
-                )}
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+              <div className="flex-1 w-full max-w-[200px]">
+                <label htmlFor={`fx-year-${investment.id}`} className="block text-xs font-medium text-muted-foreground mb-1">
+                  Año de referencia <span className="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id={`fx-year-${investment.id}`}
+                  type="number"
+                  value={formData.year || ''}
+                  onChange={(e) => handleChange('year', e.target.value ? parseInt(e.target.value) : undefined)}
+                  disabled={!canEdit || isSaving}
+                  placeholder="2024"
+                  className={INPUT_CLASS}
+                />
               </div>
-
-              {fxRate && (
-                <p className="text-xs text-green-700 font-medium">
-                  ✓ TRM oficial{fxDate ? ` (${fxDate})` : ''}: 1 USD = {parseFloat(fxRate).toLocaleString('es-CO')} COP
-                </p>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleFetchFxRate}
+                  disabled={fetching || !formData.year || isSaving}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  <RefreshCw className={`h-3 w-3 ${fetching ? 'animate-spin' : ''}`} />
+                  Consultar Tasa Automática
+                </button>
               )}
-              {fetchError && (
-                <p className="text-xs text-amber-700">{fetchError}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                La TRM oficial (Superintendencia Financiera) se obtiene y se congela automáticamente
-                al guardar, usando el 31 de diciembre del año de referencia.
-              </p>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+            {fxRate && !fetchError && (
+              <p className="text-xs text-green-700 font-medium mt-2">
+                ✓ Tasa obtenida{fxDate ? ` (${fxDate})` : ''}: 1 USD = {parseFloat(fxRate).toLocaleString('es-CO')} {formData.currency}
+              </p>
+            )}
+            
+            {fetchError && (
+              <p className="text-xs text-amber-700 mt-2">{fetchError}</p>
+            )}
+
+            {(!isCop || fetchError) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 <div>
                   <label htmlFor={`rate-${investment.id}`} className="block text-xs font-medium text-foreground mb-1">
-                    Tasa 1 {formData.currency} = ? USD
+                    Tasa 1 USD = ? {formData.currency}
                   </label>
                   <input
                     id={`rate-${investment.id}`}
@@ -369,17 +369,16 @@ export default function InvestmentRow({
                     value={fxSource}
                     onChange={(e) => setFxSource(e.target.value)}
                     disabled={!canEdit || isSaving}
-                    placeholder="Ej: ECB, Banco Central"
+                    placeholder="Ej. Banco Central"
                     className={INPUT_CLASS}
                   />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Para monedas distintas de COP y USD, la conversión a USD se registra manualmente.
-                Ingresa la tasa y su fuente para trazabilidad.
-              </p>
-            </div>
-          )}
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              Se utiliza el valor histórico del 31 de diciembre del año de referencia.
+            </p>
+          </div>
         </div>
       )}
 

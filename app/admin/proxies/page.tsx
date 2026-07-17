@@ -1,9 +1,10 @@
-import { listGlobalProxySources, listGlobalFinancialProxies } from '@/lib/admin/proxies'
+import { listGlobalProxySources, listGlobalFinancialProxies, listPendingReviewProxies } from '@/lib/admin/proxies'
 import {
   createGlobalProxySourceAction,
   createGlobalFinancialProxyAction,
   updateGlobalProxyReviewStatusAction,
   setGlobalProxyManualFxRateAction,
+  promoteProxyToGlobalAction,
 } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -30,7 +31,11 @@ export default async function AdminProxiesPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const searchParams = await props.searchParams
-  const [sources, proxies] = await Promise.all([listGlobalProxySources(), listGlobalFinancialProxies()])
+  const [sources, proxies, pendingProxies] = await Promise.all([
+    listGlobalProxySources(), 
+    listGlobalFinancialProxies(),
+    listPendingReviewProxies()
+  ])
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? ERROR_MESSAGES.unknown_error : null
 
@@ -167,6 +172,56 @@ export default async function AdminProxiesPage(props: {
             </form>
           )}
         </div>
+      </div>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto mt-8 mb-8">
+        <div className="px-4 py-4 border-b border-slate-800">
+          <h3 className="text-lg font-semibold text-white">Sugerencias de la Comunidad</h3>
+          <p className="text-sm text-slate-400">
+            Proxies sugeridos por organizaciones que están pendientes de revisión para el Banco Global.
+          </p>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-slate-950/50 text-slate-400">
+            <tr>
+              <th className="text-left px-4 py-3 font-medium">Nombre</th>
+              <th className="text-left px-4 py-3 font-medium">Valor</th>
+              <th className="text-left px-4 py-3 font-medium">Año</th>
+              <th className="text-right px-4 py-3 font-medium">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800">
+            {pendingProxies.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
+                  No hay proxies pendientes de revisión.
+                </td>
+              </tr>
+            ) : (
+              pendingProxies.map((proxy) => (
+                <tr key={proxy.id}>
+                  <td className="px-4 py-3 text-white">{proxy.name}</td>
+                  <td className="px-4 py-3 text-slate-400">
+                    <div className="text-sm">{proxy.value}</div>
+                    <div className="text-xs text-slate-500">{proxy.currency}/{proxy.unit}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">{proxy.referenceYear ?? '—'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <form action={promoteProxyToGlobalAction} className="inline">
+                      <input type="hidden" name="proxyId" value={proxy.id} />
+                      <button
+                        type="submit"
+                        className="text-xs font-medium text-green-400 hover:underline transition"
+                      >
+                        Aprobar y Clonar a Global
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
