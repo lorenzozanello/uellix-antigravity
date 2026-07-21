@@ -7,6 +7,13 @@ import { randomUUID } from 'crypto'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:55321'
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test'
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test'
+const TEST_AUTH_OPTIONS = {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+}
 
 // Helper to create and authenticate a user
 async function createTestUser(adminClient: SupabaseClient, role: string, orgId: string | null) {
@@ -36,8 +43,9 @@ async function createTestUser(adminClient: SupabaseClient, role: string, orgId: 
     await db.execute(`UPDATE public.users SET is_super_admin = true WHERE id = '${userData.user.id}'`)
   }
 
-  const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  await authClient.auth.signInWithPassword({ email, password })
+  const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, TEST_AUTH_OPTIONS)
+  const { error: signInError } = await authClient.auth.signInWithPassword({ email, password })
+  if (signInError) throw signInError
   
   return { id: userData.user.id, client: authClient, email }
 }
@@ -58,7 +66,7 @@ describe('RLS Coverage Integration Tests', () => {
   let superAdmin: { id: string, client: SupabaseClient }
 
   beforeAll(async () => {
-    adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TEST_AUTH_OPTIONS)
     
     // Create Organizations
     orgAId = randomUUID()
@@ -162,7 +170,7 @@ describe('RLS Coverage Integration Tests', () => {
       const fileName = `${projectAId}/evidence1/test.txt`
       const { error: uploadError } = await analystA.client.storage
         .from('uellix-evidence')
-        .upload(fileName, new Blob(['Contenido de prueba'], { type: 'text/plain' }), { upsert: true })
+        .upload(fileName, 'Contenido de prueba', { contentType: 'text/plain', upsert: true })
       
       expect(uploadError).toBeNull()
 
@@ -188,7 +196,7 @@ describe('RLS Coverage Integration Tests', () => {
       const fileName = `${projectAId}/evidence2/malicious.txt`
       const { error } = await adminB.client.storage
         .from('uellix-evidence')
-        .upload(fileName, new Blob(['Malicious'], { type: 'text/plain' }), { upsert: true })
+        .upload(fileName, 'Malicious', { contentType: 'text/plain', upsert: true })
       
       expect(error).not.toBeNull()
       expect(error!.message).toContain('row violates row-level security policy')
@@ -198,7 +206,7 @@ describe('RLS Coverage Integration Tests', () => {
       const fileName = `random-invalid-uuid/evidence1/test.txt`
       const { error } = await analystA.client.storage
         .from('uellix-evidence')
-        .upload(fileName, new Blob(['Contenido inválido'], { type: 'text/plain' }))
+        .upload(fileName, 'Contenido inválido', { contentType: 'text/plain' })
       
       expect(error).not.toBeNull()
       expect(error!.message).toContain('row violates row-level security policy')
@@ -210,8 +218,15 @@ describe('RLS Coverage Integration Tests', () => {
         .from('uellix-evidence')
         .remove([fileName])
       
-      expect(error).not.toBeNull()
-      // Fails due to RLS delete policy restricting to admin/analyst
+      // PostgreSQL can report a successful DELETE even when RLS matched no rows.
+      expect(error).toBeNull()
+
+      const { data, error: downloadError } = await analystA.client.storage
+        .from('uellix-evidence')
+        .download(fileName)
+
+      expect(downloadError).toBeNull()
+      expect(await data?.text()).toBe('Contenido de prueba')
     })
   })
 })
