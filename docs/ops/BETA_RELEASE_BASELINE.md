@@ -27,3 +27,20 @@ Recorded on 2026-07-21 before stabilization changes:
 ## Release gate
 
 This candidate is not eligible for preview promotion until lint, typecheck, unit tests, and production build all exit successfully. Supabase integration and RLS validation are a separate gate executed only against an isolated environment before any production decision.
+
+## Stabilization result (2026-07-21)
+
+| Gate | Result |
+| --- | --- |
+| `pnpm lint` | Passed: 0 errors, 56 warnings |
+| `pnpm typecheck` | Passed |
+| `pnpm test:unit` | Passed: 75 files, 1,022 tests |
+| `pnpm build` | Passed: 44 application routes generated |
+| `pnpm audit --prod` | Passed: no known vulnerabilities |
+| `pnpm db:generate` | Passed: 37 tables, no schema drift |
+
+These results establish a local technical baseline; they do not authorize a
+deployment. Preview promotion still requires a clean, reviewed commit set.
+Supabase migrations `0034` through `0038` plus RLS policy `008` require the
+separate human gate in `docs/ops/SUPABASE_MIGRATION_GATE.md`. The new privacy
+and terms copy also requires business/legal approval before publication.

@@ -239,6 +239,41 @@
       "when": 1784160200000,
       "tag": "0033_public_api_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1784312583888,
+      "tag": "0034_phase3_white_label",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1784314133860,
+      "tag": "0035_phase5_marketing_leads",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1784314396125,
+      "tag": "0036_phase2_onboarding",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1784315019433,
+      "tag": "0037_phase1_stripe",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1784375098787,
+      "tag": "0038_sprint_a_gdpr_users",
+      "breakpoints": true
     }
   ]
 }

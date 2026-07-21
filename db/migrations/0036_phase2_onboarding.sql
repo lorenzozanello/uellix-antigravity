@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "base_currency" varchar(3) DEFAULT 'USD' NOT NULL;--> statement-breakpoint
+ALTER TABLE "organizations" ADD COLUMN "onboarding_completed" boolean DEFAULT false NOT NULL;
