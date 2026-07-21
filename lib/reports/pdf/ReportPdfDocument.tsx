@@ -4,8 +4,9 @@
 // runtime), never bundled to the client. Mirrors the print page content and
 // carries the mandatory methodological disclaimers verbatim.
 
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, View, Text, StyleSheet, Image } from '@react-pdf/renderer'
 import type { FunderBreakdown, EvidenceManifestRow, FxTrail, LineItems, MethodologyReadinessRow } from './report-data'
+import { getApprovedOrganizationLogoUrl } from '@/lib/organizations/logo-url'
 
 export type ReportPdfRun = {
   sroiRatio: string | null
@@ -43,6 +44,9 @@ export type ReportPdfProps = {
   lineItems: LineItems | null
   methodologyReadiness: MethodologyReadinessRow[] | null
   generatedAt: string
+  whiteLabelEnabled?: boolean
+  logoUrl?: string | null
+  brandColor?: string | null
 }
 
 const styles = StyleSheet.create({
@@ -149,13 +153,21 @@ function Figure({ label, value }: { label: string; value: string }) {
 
 export function ReportPdfDocument(props: ReportPdfProps) {
   const { run } = props
+  const approvedLogoUrl = getApprovedOrganizationLogoUrl(props.logoUrl)
   return (
     <Document title={props.reportTitle} author="Uellix">
       <Page size="A4" style={styles.page}>
         {/* Header */}
-        <View style={styles.headerRule}>
-          <Text style={styles.eyebrow}>Reporte de Impacto SROI · Variante {props.variantLabel}</Text>
-          <Text style={styles.title}>{props.reportTitle}</Text>
+        <View style={[styles.headerRule, props.whiteLabelEnabled && props.brandColor ? { borderBottomColor: props.brandColor } : {}]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.eyebrow}>Reporte de Impacto SROI · Variante {props.variantLabel}</Text>
+              <Text style={styles.title}>{props.reportTitle}</Text>
+            </View>
+            {props.whiteLabelEnabled && approvedLogoUrl ? (
+              <Image src={approvedLogoUrl} style={{ width: 60, height: 60, objectFit: 'contain' }} />
+            ) : null}
+          </View>
           <View style={styles.metaGrid}>
             <MetaItem label="Organización" value={props.organizationName} />
             <MetaItem label="Proyecto" value={props.projectName} />
