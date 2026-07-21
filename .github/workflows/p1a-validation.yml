@@ -74,13 +74,16 @@ jobs:
             exit 1
           fi
           
-          # Mask keys so they don't print in logs
-          echo "::add-mask::$(grep NEXT_PUBLIC_SUPABASE_ANON_KEY .env.supabase | cut -d '=' -f2 | tr -d '\"')"
-          echo "::add-mask::$(grep SUPABASE_SERVICE_ROLE_KEY .env.supabase | cut -d '=' -f2 | tr -d '\"')"
-          echo "::add-mask::$(grep DATABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')"
-          
-          # Append to GITHUB_ENV
-          cat .env.supabase >> $GITHUB_ENV
+          # Export only the four variables used by tests. Supabase CLI wraps
+          # values in quotes; GitHub otherwise preserves those quotes and the
+          # Postgres client receives an invalid URL.
+          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL; do
+            raw_value=$(grep -m1 "^${key}=" .env.supabase | cut -d '=' -f2-)
+            value="${raw_value%\"}"
+            value="${value#\"}"
+            echo "::add-mask::${value}"
+            printf '%s=%s\n' "${key}" "${value}" >> "$GITHUB_ENV"
+          done
 
       - name: Run Drizzle Local Migrations
         run: pnpm db:migrate:local
