@@ -1,0 +1,29 @@
+# Uellix Closed Beta Release Baseline
+
+## Safety boundary
+
+- Working branch: `codex/beta-stabilization`
+- Baseline commit: `b1c22b1c3c219401f16886b0fd687c364da3a922`
+- Production policy: preserve the existing Vercel deployment.
+- Data policy: do not mutate Supabase production without a human gate, verified backup, reviewed migration, and rollback plan.
+- Secret policy: `.env` and `.env.local` remain ignored; `.env.example` contains names and safe defaults only.
+
+## Starting repository state
+
+The stabilization branch inherited an existing dirty working tree from `main`. Those changes belong to the product owner and are intentionally preserved. They include public marketing changes, organization onboarding and billing work, Sentry, Stripe, report verification, database migrations `0034` through `0038`, and related schema changes.
+
+## Starting validation results
+
+Recorded on 2026-07-21 before stabilization changes:
+
+| Gate | Result |
+| --- | --- |
+| `pnpm lint` | Failed: 5 errors and 59 warnings |
+| `pnpm typecheck` | Failed: 14 TypeScript errors |
+| `pnpm test:unit` | Failed: 1009 passed, 1 PDF render timeout |
+| `pnpm build` | Failed: both `middleware.ts` and `proxy.ts` detected by Next.js 16 |
+| `pnpm audit --prod` | Failed: 2 high and 2 moderate advisories |
+
+## Release gate
+
+This candidate is not eligible for preview promotion until lint, typecheck, unit tests, and production build all exit successfully. Supabase integration and RLS validation are a separate gate executed only against an isolated environment before any production decision.
