@@ -33,19 +33,19 @@ jobs:
           echo "Validating that critical local config files only target loopback interfaces..."
           
           # Check drizzle.local.config.ts
-          if grep -i "LOCAL_DB_URL" drizzle.local.config.ts | grep -qvE "127.0.0.1|localhost|::1"; then
+          if ! grep -Ei "^[[:space:]]*const LOCAL_DB_URL = .*@(127\.0\.0\.1|localhost|\[::1\])" drizzle.local.config.ts; then
             echo "🚨 Error: drizzle.local.config.ts contains a non-loopback database URL!"
             exit 1
           fi
           
           # Check seed-local.ts database URL
-          if grep -i "dbUrl =" scripts/seed-local.ts | grep -qvE "127.0.0.1|localhost|::1"; then
+          if ! grep -Ei "^[[:space:]]*const dbUrl = .*@(127\.0\.0\.1|localhost|\[::1\])" scripts/seed-local.ts; then
             echo "🚨 Error: scripts/seed-local.ts contains a non-loopback database URL!"
             exit 1
           fi
           
           # Check config.toml ports/urls
-          if grep -i "api_url =" supabase/config.toml | grep -qvE "127.0.0.1|localhost|localhost|::1"; then
+          if ! grep -Ei "^[[:space:]]*api_url = ['\"]https?://(127\.0\.0\.1|localhost|\[::1\])" supabase/config.toml; then
             echo "🚨 Error: supabase/config.toml api_url is not loopback!"
             exit 1
           fi
