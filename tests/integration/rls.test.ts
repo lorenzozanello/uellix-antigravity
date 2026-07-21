@@ -162,7 +162,7 @@ describe('RLS Coverage Integration Tests', () => {
       const fileName = `${projectAId}/evidence1/test.txt`
       const { error: uploadError } = await analystA.client.storage
         .from('uellix-evidence')
-        .upload(fileName, 'Contenido de prueba', { upsert: true })
+        .upload(fileName, new Blob(['Contenido de prueba'], { type: 'text/plain' }), { upsert: true })
       
       expect(uploadError).toBeNull()
 
@@ -188,7 +188,7 @@ describe('RLS Coverage Integration Tests', () => {
       const fileName = `${projectAId}/evidence2/malicious.txt`
       const { error } = await adminB.client.storage
         .from('uellix-evidence')
-        .upload(fileName, 'Malicious', { upsert: true })
+        .upload(fileName, new Blob(['Malicious'], { type: 'text/plain' }), { upsert: true })
       
       expect(error).not.toBeNull()
       expect(error!.message).toContain('row violates row-level security policy')
@@ -198,7 +198,7 @@ describe('RLS Coverage Integration Tests', () => {
       const fileName = `random-invalid-uuid/evidence1/test.txt`
       const { error } = await analystA.client.storage
         .from('uellix-evidence')
-        .upload(fileName, 'Contenido inválido')
+        .upload(fileName, new Blob(['Contenido inválido'], { type: 'text/plain' }))
       
       expect(error).not.toBeNull()
       expect(error!.message).toContain('row violates row-level security policy')

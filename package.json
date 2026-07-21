@@ -10,7 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:unit": "vitest run --exclude tests/integration/**",
+    "test:unit": "vitest run --exclude \"tests/integration/**\"",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:rls": "vitest run --config vitest.integration.config.ts tests/integration/rls.test.ts",
     "db:generate": "drizzle-kit generate",

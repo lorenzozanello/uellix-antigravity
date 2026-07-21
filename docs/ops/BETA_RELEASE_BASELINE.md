@@ -10,7 +10,7 @@
 
 ## Starting repository state
 
-The stabilization branch inherited an existing dirty working tree from `main`. Those changes belong to the product owner and are intentionally preserved. They include public marketing changes, organization onboarding and billing work, Sentry, Stripe, report verification, database migrations `0034` through `0038`, and related schema changes.
+The stabilization branch inherited an existing dirty working tree from `main`. Those changes belong to the product owner and are intentionally preserved. They include public marketing changes, organization onboarding and billing work, Sentry, Stripe, report verification, database migrations `0034` through `0039`, and related schema changes.
 
 ## Starting validation results
 
@@ -42,7 +42,7 @@ This candidate is not eligible for preview promotion until lint, typecheck, unit
 These results establish a local technical baseline; they do not authorize a
 deployment. The reviewed commit set is now consolidated on
 `codex/beta-stabilization` and is eligible for a GitHub/Vercel Preview review.
-Supabase migrations `0034` through `0038` plus RLS policy `008` require the
+Supabase migrations `0034` through `0039` plus RLS policy `008` require the
 separate human gate in `docs/ops/SUPABASE_MIGRATION_GATE.md`; no migration was
 applied during stabilization. Product-owner approval for the privacy and terms
 copy was recorded in this stabilization task; legal verification against actual
