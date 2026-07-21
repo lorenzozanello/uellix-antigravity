@@ -104,6 +104,16 @@ const DB_ORG = {
   country: null,
   sector: null,
   status: 'active',
+  baseCurrency: 'COP',
+  onboardingCompleted: true,
+  stellaMonthlyQuota: 250,
+  stellaPlanLabel: 'Pilot',
+  logoUrl: 'https://example.com/logo.png',
+  brandColor: '#112233',
+  whiteLabelEnabled: true,
+  stripeCustomerId: 'cus_test',
+  stripeSubscriptionId: 'sub_test',
+  stripePriceId: 'price_test',
 }
 
 beforeEach(() => {
@@ -284,6 +294,14 @@ describe('requireOrganizationAccess', () => {
     expect(ctx.membership.organizationId).toBe('org-1')
     expect(ctx.organization.id).toBe('org-1')
     expect(ctx.organization.name).toBe('Test Org')
+    expect(ctx.organization).toMatchObject({
+      baseCurrency: 'COP',
+      onboardingCompleted: true,
+      stellaMonthlyQuota: 250,
+      stellaPlanLabel: 'Pilot',
+      whiteLabelEnabled: true,
+      stripeCustomerId: 'cus_test',
+    })
   })
 })
 
@@ -354,6 +372,8 @@ describe('getCurrentOrganizationContext', () => {
 
     expect(ctx?.organization.id).toBe('org-1')
     expect(ctx?.membership.role).toBe('analyst')
+    expect(ctx?.organization.baseCurrency).toBe('COP')
+    expect(ctx?.organization.onboardingCompleted).toBe(true)
   })
 })
 
