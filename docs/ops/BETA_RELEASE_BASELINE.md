@@ -32,15 +32,23 @@ This candidate is not eligible for preview promotion until lint, typecheck, unit
 
 | Gate | Result |
 | --- | --- |
-| `pnpm lint` | Passed: 0 errors, 56 warnings |
+| `pnpm lint` | Passed: 0 errors, 54 warnings |
 | `pnpm typecheck` | Passed |
-| `pnpm test:unit` | Passed: 75 files, 1,022 tests |
-| `pnpm build` | Passed: 44 application routes generated |
+| `pnpm test:unit` | Passed: 78 files, 1,027 tests |
+| `pnpm build` | Passed: production compile and static generation 44/44 |
 | `pnpm audit --prod` | Passed: no known vulnerabilities |
 | `pnpm db:generate` | Passed: 37 tables, no schema drift |
 
 These results establish a local technical baseline; they do not authorize a
-deployment. Preview promotion still requires a clean, reviewed commit set.
+deployment. The reviewed commit set is now consolidated on
+`codex/beta-stabilization` and is eligible for a GitHub/Vercel Preview review.
 Supabase migrations `0034` through `0038` plus RLS policy `008` require the
-separate human gate in `docs/ops/SUPABASE_MIGRATION_GATE.md`. The new privacy
-and terms copy also requires business/legal approval before publication.
+separate human gate in `docs/ops/SUPABASE_MIGRATION_GATE.md`; no migration was
+applied during stabilization. Product-owner approval for the privacy and terms
+copy was recorded in this stabilization task; legal verification against actual
+vendor contracts remains a production-release responsibility.
+
+The dependency gate uses patched `fast-uri` 3.1.4 and `sharp` 0.35.3. The unused
+optional MCP SDK edge from `@google/genai` is removed, and `shadcn` is classified
+as a build/development dependency. The production build and audit both pass with
+that resolved tree.
