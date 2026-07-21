@@ -94,6 +94,7 @@ export async function createInvitation(input: unknown) {
     organizationName: ctx.organization.name,
     role: data.role as Role,
     rawToken,
+    inviterName: ctx.user.fullName || ctx.user.email,
   })
 
   return { invitation, rawToken }
