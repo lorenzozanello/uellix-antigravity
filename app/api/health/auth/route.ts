@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 /**
- * Simple health check endpoint to verify Supabase auth is working.
- * No auth required - useful for debugging auth issues.
+ * Simple health check endpoint to verify Supabase auth connectivity.
+ * SECURITY: Never exposes user PII (email, id, provider). Returns only
+ * a boolean authenticated status to prevent information disclosure.
  */
 export async function GET() {
   try {
@@ -11,21 +12,24 @@ export async function GET() {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
+    if (userError) {
+      return NextResponse.json({
+        status: 'degraded',
+        authenticated: false,
+        message: 'Authentication service unavailable',
+        timestamp: new Date().toISOString(),
+      }, { status: 503 })
+    }
+
     return NextResponse.json({
       status: 'ok',
       authenticated: !!user,
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        provider: user.app_metadata?.provider,
-      } : null,
-      error: userError ? userError.message : null,
       timestamp: new Date().toISOString(),
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       status: 'error',
-      message: error instanceof Error ? error.message : String(error),
+      message: 'Internal health check failure',
       timestamp: new Date().toISOString(),
     }, { status: 500 })
   }
