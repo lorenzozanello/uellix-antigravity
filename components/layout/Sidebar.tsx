@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, FolderKanban, ShieldCheck, Users } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, ShieldCheck, Users, CreditCard } from 'lucide-react'
 
 const NAV_LINKS = [
   { href: '/app/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/app/projects', label: 'Proyectos SROI', icon: FolderKanban },
   { href: '/app/trust-center', label: 'Centro de confianza', icon: ShieldCheck },
   { href: '/app/organization/members', label: 'Miembros', icon: Users },
+  { href: '/app/organization/billing', label: 'Facturación', icon: CreditCard },
 ]
 
 function isActive(href: string, currentPath: string) {

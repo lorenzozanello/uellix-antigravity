@@ -528,6 +528,7 @@ export async function lockReportDraft(projectId: string, reportId: string) {
     .update(sroiReports)
     .set({
       status: 'locked',
+      verificationHash: crypto.randomUUID(),
       lockedBy: ctx.user.id,
       lockedAt: new Date(),
       updatedAt: new Date(),

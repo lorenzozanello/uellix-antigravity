@@ -13,6 +13,7 @@ import { UseCasesSection } from "@/components/marketing/UseCasesSection"
 import { SocialProofSection } from "@/components/marketing/SocialProofSection"
 import { FAQSection } from "@/components/marketing/FAQSection"
 import { FinalCTASection } from "@/components/marketing/FinalCTASection"
+import { SroiDemoCalculator } from "@/components/marketing/SroiDemoCalculator"
 
 // Canonical lives on the page, not the root layout, so it can't leak to other
 // routes (see the note in app/layout.tsx).
@@ -52,6 +53,12 @@ export default function HomePage() {
         }}
       />
       <HeroSection />
+
+      {/* Interactive Lead Capture */}
+      <section className="relative z-20 -mt-20 px-4 mb-20 max-w-7xl mx-auto">
+        <SroiDemoCalculator />
+      </section>
+
       <EditorialManifesto />
       <ProblemSection />
       <SolutionSection />

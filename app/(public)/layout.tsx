@@ -38,7 +38,7 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--uellix-paper)] text-[var(--uellix-ink)] font-manrope selection:bg-[#FF6A00]/20 selection:text-[#0F172A]">
+    <div className="dark flex min-h-screen flex-col bg-[var(--uellix-carbon)] text-white font-manrope selection:bg-[#FF6A00]/20 selection:text-white">
       <script
         type="application/ld+json"
         // Static, trusted content — safe to inline.
