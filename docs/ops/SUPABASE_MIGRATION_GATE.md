@@ -154,14 +154,24 @@ Production rollback commands must be prepared and peer-reviewed for the actual
 Supabase schema before execution; this document is a checklist, not execution
 authorization.
 
-## Outstanding cleanup: reconcile the Drizzle migration journal
+## Resolved: Drizzle migration journal reconciled (2026-07-22)
 
-`drizzle.__drizzle_migrations` still ends at `0029_integrity`, but production
-schema now actually matches `0038` (minus `0035`) plus the `private`-schema
-changes from the 2026-07-22 hardening pass, none of which exactly match any
-single migration file's literal SQL anymore (the `0031`/`0039` edits, the
-`users` INSERT grant). Before anyone runs `pnpm db:migrate` against
-production, either manually insert the corresponding rows into
-`drizzle.__drizzle_migrations` for `0030`-`0038`, or regenerate a fresh
-baseline snapshot — otherwise `drizzle-kit` will not know these are applied
-and may try to re-run SQL that partially already exists.
+`drizzle.__drizzle_migrations` was stuck at `0029_integrity` while production
+actually matched `0030`-`0034`, `0036`-`0038` (plus the `private`-schema
+hardening). Inserted rows for those 8 migrations using the same
+`sha256(file content)` hash `drizzle-orm`'s migrator itself computes
+(`node_modules/drizzle-orm/migrator.cjs`), with `created_at` taken from each
+entry's `when` in `meta/_journal.json`. `0035` and `0039` were deliberately
+left out since they're still not applied. Verified by reproducing
+`drizzle-kit migrate`'s own file-vs-journal-hash comparison: only `0035` and
+`0039` now show as pending.
+
+**Separate, pre-existing finding (not fixed, out of scope):** that same
+comparison shows `0010`, `0013`-`0019`, `0021`-`0023`, and `0026`-`0029` also
+hash-mismatch against the journal — their on-disk content has diverged from
+whatever was actually applied to production back when each one ran (edited
+post-hoc in the repo, most likely). This predates today's incident and isn't
+blocking anything; flagging it here so a future `pnpm db:migrate` doesn't
+get run against production without someone deciding how to handle it first
+(likely: diff each file against its git history at apply time, or just
+re-hash-reconcile the same way once confirmed harmless).
