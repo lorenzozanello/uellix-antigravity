@@ -1,8 +1,10 @@
 # Supabase migration gate for the closed beta
 
-Migrations `0034` through `0039` and policy `008` are versioned candidates only.
-They must not be applied to production by an automated agent or as a side effect
-of a Vercel deployment.
+`0035_phase5_marketing_leads.sql` + RLS policy `008`, and the two Storage
+helper grants in `0039_grant_rls_helper_execution.sql`, are versioned
+candidates only. They must not be applied to production by an automated agent
+or as a side effect of a Vercel deployment. `0034`, `0036`, `0037`, and `0038`
+are **already live in production** — see the 2026-07-22 incident below.
 
 ## Incident: 2026-07-22 production login outage
 
@@ -82,37 +84,84 @@ Not addressed (needs a human, not SQL): Supabase Auth's "Leaked password
 protection" is a project Auth setting, not a database object — enable it at
 Authentication → Policies → Password Security in the Supabase dashboard.
 
-## Required approval sequence
+## Incident continued: 2026-07-22 login outage, real root cause
+
+The grant fix above did not actually resolve the login outage — a user
+report of the same "Something went wrong" error after the grant fix proved
+it. Re-investigation found the true cause: production's Drizzle client
+connects via `DATABASE_URL` as the `postgres` role, which has `rolbypassrls`
+and owns every table, so **RLS and grants were never the blocker for the
+app's own server-side queries** — that whole first fix was real, correct
+hardening, but orthogonal to this outage.
+
+The actual cause: `db/schema.ts` (already deployed) defines columns that only
+exist starting in migrations `0034`, `0036`, `0037`, and `0038`, none of
+which had been applied to production. Since Drizzle generates explicit
+column lists (not `SELECT *`), every `db.select().from(users)` or
+`db.select().from(organizations)` failed with `column "..." does not exist`,
+reproduced directly against production using the app's own `db` client and
+schema imports:
+
+```
+db.select().from(users) -> column "deleted_at" does not exist
+db.select().from(organizations) -> column "stripe_customer_id" does not exist
+```
+
+Fix: the user applied the `ALTER TABLE ADD COLUMN` / `ADD CONSTRAINT`
+statements from `0034_phase3_white_label.sql`, `0036_phase2_onboarding.sql`,
+`0037_phase1_stripe.sql`, and `0038_sprint_a_gdpr_users.sql` directly via the
+Supabase SQL editor on 2026-07-22 — purely additive (no `DROP`), safe against
+the closed beta's small row count. Re-verified with the same reproduction:
+all four tables (`users`, `organizations`, `organization_members`,
+`sroi_reports`) now select cleanly through the real `db` client, and the user
+confirmed login works end-to-end on uellix.com.
+
+`0035_phase5_marketing_leads.sql` + policy `008`, and the two Storage helper
+`GRANT`s in `0039`, remain unapplied — nothing in the login/dashboard path
+depends on them. The Drizzle journal (`drizzle.__drizzle_migrations`) still
+does not reflect any of `0030` through `0038` — see "reconcile the journal"
+below before running `pnpm db:migrate` against production.
+
+## Required approval sequence (for what's still pending: `0035` + policy `008`, `0039`'s Storage grants)
 
 1. Create or select an isolated Supabase preview project with no production data.
 2. Record a production backup and confirm that a human can restore it.
 3. Confirm that the Storage helpers `can_read_evidence_object(text, uuid)` and
    `can_write_evidence_object(text, uuid)` already exist in preview, then review
-   the SQL and approve the order: `0034`, `0035`, policy `008`, `0036`, `0037`,
-   `0038`, `0039`.
+   the SQL and approve the order: `0035`, policy `008`, `0039`.
 4. Apply the candidate SQL to preview only.
-5. Run the integration/RLS suite against preview and exercise organization
-   onboarding, report verification, marketing leads and billing-disabled paths.
+5. Run the integration/RLS suite against preview and exercise marketing leads
+   and billing-disabled paths.
 6. Review logs and row counts; verify that anonymous users can only insert
    marketing leads and cannot read, update or delete them.
 7. Obtain an explicit human go/no-go decision before any production migration.
 
 ## Rollback plan to review before approval
 
-Rollback is performed in reverse order and may discard data written into new
-columns or `marketing_leads`. Export that data first if the preview/pilot has
-started using it.
-
 - `0039`: revoke `EXECUTE` from `authenticated` on the two Storage helpers
-  granted by this migration.
-- `0038`: drop `users.deleted_by`, then `users.deleted_at`.
-- `0037`: drop the Stripe unique constraints, then the three Stripe columns.
-- `0036`: drop `organizations.onboarding_completed`, then `base_currency`.
+  granted by this migration. Not yet applied.
+- `0038` (already live): drop `users.deleted_by`, then `users.deleted_at`.
+- `0037` (already live): drop the Stripe unique constraints, then the three
+  Stripe columns.
+- `0036` (already live): drop `organizations.onboarding_completed`, then
+  `base_currency`.
 - `0035` + policy `008`: export leads if required, then drop
-  `marketing_leads` (its policies are removed with the table).
-- `0034`: drop the report hash constraint and column, then the three branding
-  columns.
+  `marketing_leads` (its policies are removed with the table). Not yet applied.
+- `0034` (already live): drop the report hash constraint and column, then the
+  three branding columns.
 
 Production rollback commands must be prepared and peer-reviewed for the actual
 Supabase schema before execution; this document is a checklist, not execution
 authorization.
+
+## Outstanding cleanup: reconcile the Drizzle migration journal
+
+`drizzle.__drizzle_migrations` still ends at `0029_integrity`, but production
+schema now actually matches `0038` (minus `0035`) plus the `private`-schema
+changes from the 2026-07-22 hardening pass, none of which exactly match any
+single migration file's literal SQL anymore (the `0031`/`0039` edits, the
+`users` INSERT grant). Before anyone runs `pnpm db:migrate` against
+production, either manually insert the corresponding rows into
+`drizzle.__drizzle_migrations` for `0030`-`0038`, or regenerate a fresh
+baseline snapshot — otherwise `drizzle-kit` will not know these are applied
+and may try to re-run SQL that partially already exists.

@@ -53,10 +53,17 @@ responsibility.
 applied" framing throughout this document, assumed production matched its
 Drizzle journal (`0029_integrity`). It did not: `0030`-`0033` (RLS enablement,
 policies, helper functions) were already live in production via an
-undocumented manual apply, missing only the table-level grants, which caused
-a full login outage fixed the same day. See the incident record in
-`docs/ops/SUPABASE_MIGRATION_GATE.md` for the actual current production
-state before making any `0034`+ migration decision.
+undocumented manual apply, missing only the table-level grants. Restoring
+those grants did not fix the ongoing login outage — the real cause was that
+`0034`, `0036`, `0037`, and `0038` (columns `db/schema.ts` already assumes
+exist) had never been applied either. The user applied their `ADD COLUMN`
+statements directly to production the same day; login is confirmed working.
+`0035` (`marketing_leads`) and `0039`'s Storage grants remain unapplied and
+still require the human gate. See the full incident record in
+`docs/ops/SUPABASE_MIGRATION_GATE.md` before making any further Supabase
+migration decision — do not trust the "database migrations 0034 through
+0039... related schema changes" description in the "Starting repository
+state" section above; it no longer reflects production.
 
 The dependency gate uses patched `fast-uri` 3.1.4 and `sharp` 0.35.3. The unused
 optional MCP SDK edge from `@google/genai` is removed, and `shadcn` is classified
