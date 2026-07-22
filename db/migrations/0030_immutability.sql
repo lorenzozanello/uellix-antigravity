@@ -7,6 +7,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Pin search_path so the function can't be redirected by an object created
+-- earlier in a caller's search_path (Supabase linter: function_search_path_mutable).
+-- The body only references trigger-local variables, so an empty path is safe.
+ALTER FUNCTION uellix_forbid_mutation() SET search_path = '';
+
 DROP TRIGGER IF EXISTS trg_audit_logs_append_only ON audit_logs;
 CREATE TRIGGER trg_audit_logs_append_only
   BEFORE UPDATE OR DELETE ON audit_logs

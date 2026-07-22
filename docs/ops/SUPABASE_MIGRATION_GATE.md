@@ -48,6 +48,40 @@ Post-fix audit (2026-07-22) of all 36 tables that exist in production:
   `organizations.onboarding_completed`, `organizations.base_currency`,
   `users.deleted_at`, `users.deleted_by`) exist in production.
 
+## Follow-up hardening: 2026-07-22 Supabase linter warnings
+
+The same day, Supabase's database linter reported: `uellix_forbid_mutation`
+had a mutable `search_path`, and the three core RLS helper functions were
+callable as public RPC endpoints by both `anon` and `authenticated` (Supabase
+rules 0011, 0028, 0029). Applied directly to production with the user's
+authorization:
+
+- `ALTER FUNCTION public.uellix_forbid_mutation() SET search_path = ''` —
+  the function only touches trigger-local variables, so this has no
+  functional effect.
+- Moved `current_user_is_super_admin`, `current_user_org_ids`, and
+  `current_user_role_in_org` from `public` to a new `private` schema, with
+  `GRANT USAGE ON SCHEMA private` limited to `authenticated` (never `anon` or
+  `PUBLIC`). PostgREST only auto-exposes `public` as RPC, so this fully closes
+  both the `anon` and `authenticated` "SECURITY DEFINER function executable
+  via RPC" warnings without touching the RLS policies that call them — those
+  reference the functions by OID, resolved at each `CREATE POLICY`, and are
+  unaffected by a later schema move. Verified inline (transaction, rolled
+  back for the negative check): `authenticated` can still read every
+  RLS-protected table exercised, and `anon` gets `permission denied for
+  schema private` when attempting to call the moved functions directly.
+- `0030_immutability.sql`, `0031_rls_core.sql`, `0032_rls_specialized.sql`,
+  and `0039_grant_rls_helper_execution.sql` were updated in the same commit
+  so a future preview/prod apply of these still-pending migration files
+  produces the same `private`-schema layout production now actually has.
+  `0039` no longer grants the three core helpers — `0031` now creates and
+  grants them directly — since they never sit in `public` for `0033`'s
+  blanket revoke to touch in the first place.
+
+Not addressed (needs a human, not SQL): Supabase Auth's "Leaked password
+protection" is a project Auth setting, not a database object — enable it at
+Authentication → Policies → Password Security in the Supabase dashboard.
+
 ## Required approval sequence
 
 1. Create or select an isolated Supabase preview project with no production data.
@@ -69,8 +103,8 @@ Rollback is performed in reverse order and may discard data written into new
 columns or `marketing_leads`. Export that data first if the preview/pilot has
 started using it.
 
-- `0039`: revoke `EXECUTE` from `authenticated` on the three core RLS helpers
-  and two Storage helpers granted by this migration.
+- `0039`: revoke `EXECUTE` from `authenticated` on the two Storage helpers
+  granted by this migration.
 - `0038`: drop `users.deleted_by`, then `users.deleted_at`.
 - `0037`: drop the Stripe unique constraints, then the three Stripe columns.
 - `0036`: drop `organizations.onboarding_completed`, then `base_currency`.

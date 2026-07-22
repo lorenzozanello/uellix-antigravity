@@ -25,8 +25,8 @@ DROP POLICY IF EXISTS "stella_interactions_select_member_or_admin" ON stella_int
 CREATE POLICY "stella_interactions_select_member_or_admin"
 ON stella_interactions FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 -- EXPLICITLY DENY INSERT via RLS (no permissive INSERT policy).
@@ -60,17 +60,17 @@ ALTER TABLE signup_allowlist ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "signup_allowlist_select_super_admin" ON signup_allowlist;
 CREATE POLICY "signup_allowlist_select_super_admin"
 ON signup_allowlist FOR SELECT
-USING (current_user_is_super_admin());
+USING (private.current_user_is_super_admin());
 
 DROP POLICY IF EXISTS "signup_allowlist_insert_super_admin" ON signup_allowlist;
 CREATE POLICY "signup_allowlist_insert_super_admin"
 ON signup_allowlist FOR INSERT
-WITH CHECK (current_user_is_super_admin());
+WITH CHECK (private.current_user_is_super_admin());
 
 DROP POLICY IF EXISTS "signup_allowlist_delete_super_admin" ON signup_allowlist;
 CREATE POLICY "signup_allowlist_delete_super_admin"
 ON signup_allowlist FOR DELETE
-USING (current_user_is_super_admin());
+USING (private.current_user_is_super_admin());
 
 -- No UPDATE policy → entries are immutable once created (remove and re-add
 -- instead of editing), matching the audit_logs/stella_interactions pattern.
@@ -78,7 +78,7 @@ USING (current_user_is_super_admin());
 -- RLS for the Fase 1a FX foundation tables (funders, fx_rates,
 -- outcome_funder_allocations). Mirrors the org-scoped pattern in
 -- 001_initial_auth_rls.sql and reuses its SECURITY DEFINER helpers
--- (current_user_org_ids / current_user_is_super_admin / current_user_role_in_org).
+-- (private.current_user_org_ids / private.current_user_is_super_admin / private.current_user_role_in_org).
 -- Run in the Supabase SQL Editor. Idempotent: drops policies before recreating.
 
 ALTER TABLE funders ENABLE ROW LEVEL SECURITY;
@@ -91,26 +91,26 @@ ALTER TABLE outcome_funder_allocations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "funders_select" ON funders;
 CREATE POLICY "funders_select" ON funders FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "funders_insert" ON funders;
 CREATE POLICY "funders_insert" ON funders FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "funders_update" ON funders;
 CREATE POLICY "funders_update" ON funders FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -120,33 +120,33 @@ WITH CHECK (
 -- Shared auto-fetched rates carry organization_id IS NULL and are readable by
 -- any authenticated user. They are written only by the server (service role,
 -- which bypasses RLS) — a regular user cannot INSERT an org-NULL row because
--- current_user_role_in_org(NULL) returns NULL. Manual rates are org-scoped and
+-- private.current_user_role_in_org(NULL) returns NULL. Manual rates are org-scoped and
 -- writable by analyst+ in that org.
 -- ============================================================
 DROP POLICY IF EXISTS "fx_rates_select" ON fx_rates;
 CREATE POLICY "fx_rates_select" ON fx_rates FOR SELECT
 USING (
   (auth.uid() IS NOT NULL AND organization_id IS NULL)
-  OR organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  OR organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "fx_rates_insert" ON fx_rates;
 CREATE POLICY "fx_rates_insert" ON fx_rates FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "fx_rates_update" ON fx_rates;
 CREATE POLICY "fx_rates_update" ON fx_rates FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -157,26 +157,26 @@ WITH CHECK (
 DROP POLICY IF EXISTS "outcome_funder_allocations_select" ON outcome_funder_allocations;
 CREATE POLICY "outcome_funder_allocations_select" ON outcome_funder_allocations FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "outcome_funder_allocations_insert" ON outcome_funder_allocations;
 CREATE POLICY "outcome_funder_allocations_insert" ON outcome_funder_allocations FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "outcome_funder_allocations_update" ON outcome_funder_allocations;
 CREATE POLICY "outcome_funder_allocations_update" ON outcome_funder_allocations FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -184,7 +184,7 @@ WITH CHECK (
 -- RLS for the Fase 2a structured theory-of-change tables (theory_of_change_nodes,
 -- theory_of_change_links). Mirrors the org-scoped pattern in
 -- 001_initial_auth_rls.sql and reuses its SECURITY DEFINER helpers
--- (current_user_org_ids / current_user_is_super_admin / current_user_role_in_org).
+-- (private.current_user_org_ids / private.current_user_is_super_admin / private.current_user_role_in_org).
 -- Run in the Supabase SQL Editor. Idempotent: drops policies before recreating.
 
 ALTER TABLE theory_of_change_nodes ENABLE ROW LEVEL SECURITY;
@@ -196,26 +196,26 @@ ALTER TABLE theory_of_change_links ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "theory_of_change_nodes_select" ON theory_of_change_nodes;
 CREATE POLICY "theory_of_change_nodes_select" ON theory_of_change_nodes FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "theory_of_change_nodes_insert" ON theory_of_change_nodes;
 CREATE POLICY "theory_of_change_nodes_insert" ON theory_of_change_nodes FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "theory_of_change_nodes_update" ON theory_of_change_nodes;
 CREATE POLICY "theory_of_change_nodes_update" ON theory_of_change_nodes FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -226,26 +226,26 @@ WITH CHECK (
 DROP POLICY IF EXISTS "theory_of_change_links_select" ON theory_of_change_links;
 CREATE POLICY "theory_of_change_links_select" ON theory_of_change_links FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "theory_of_change_links_insert" ON theory_of_change_links;
 CREATE POLICY "theory_of_change_links_insert" ON theory_of_change_links FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "theory_of_change_links_update" ON theory_of_change_links;
 CREATE POLICY "theory_of_change_links_update" ON theory_of_change_links FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -253,8 +253,8 @@ WITH CHECK (
 -- RLS for the Fase 2 generalized methodology review matrix tables
 -- (methodology_review_matrix, methodology_review_matrix_items). Mirrors the
 -- org-scoped pattern in 001_initial_auth_rls.sql and reuses its SECURITY DEFINER
--- helpers (current_user_org_ids / current_user_is_super_admin /
--- current_user_role_in_org). Reviewing roles (super_admin, organization_admin,
+-- helpers (private.current_user_org_ids / private.current_user_is_super_admin /
+-- private.current_user_role_in_org). Reviewing roles (super_admin, organization_admin,
 -- impact_manager, reviewer) may create/update — matching upsertSroiRunReviewItem.
 -- Run in the Supabase SQL Editor. Idempotent: drops policies before recreating.
 
@@ -267,26 +267,26 @@ ALTER TABLE methodology_review_matrix_items ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "methodology_review_matrix_select" ON methodology_review_matrix;
 CREATE POLICY "methodology_review_matrix_select" ON methodology_review_matrix FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "methodology_review_matrix_insert" ON methodology_review_matrix;
 CREATE POLICY "methodology_review_matrix_insert" ON methodology_review_matrix FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "methodology_review_matrix_update" ON methodology_review_matrix;
 CREATE POLICY "methodology_review_matrix_update" ON methodology_review_matrix FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -297,26 +297,26 @@ WITH CHECK (
 DROP POLICY IF EXISTS "methodology_review_matrix_items_select" ON methodology_review_matrix_items;
 CREATE POLICY "methodology_review_matrix_items_select" ON methodology_review_matrix_items FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "methodology_review_matrix_items_insert" ON methodology_review_matrix_items;
 CREATE POLICY "methodology_review_matrix_items_insert" ON methodology_review_matrix_items FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "methodology_review_matrix_items_update" ON methodology_review_matrix_items;
 CREATE POLICY "methodology_review_matrix_items_update" ON methodology_review_matrix_items FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'reviewer')
+  OR private.current_user_is_super_admin()
 );
 
 -- DELETE explicitly denied (no policy)
@@ -349,31 +349,31 @@ CREATE POLICY "taxonomy_codes_select" ON taxonomy_codes FOR SELECT USING (true);
 DROP POLICY IF EXISTS "outcome_taxonomy_mappings_select" ON outcome_taxonomy_mappings;
 CREATE POLICY "outcome_taxonomy_mappings_select" ON outcome_taxonomy_mappings FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(private.current_user_org_ids())
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "outcome_taxonomy_mappings_insert" ON outcome_taxonomy_mappings;
 CREATE POLICY "outcome_taxonomy_mappings_insert" ON outcome_taxonomy_mappings FOR INSERT
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "outcome_taxonomy_mappings_update" ON outcome_taxonomy_mappings;
 CREATE POLICY "outcome_taxonomy_mappings_update" ON outcome_taxonomy_mappings FOR UPDATE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 )
 WITH CHECK (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
 
 DROP POLICY IF EXISTS "outcome_taxonomy_mappings_delete" ON outcome_taxonomy_mappings;
 CREATE POLICY "outcome_taxonomy_mappings_delete" ON outcome_taxonomy_mappings FOR DELETE
 USING (
-  current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
-  OR current_user_is_super_admin()
+  private.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin', 'impact_manager', 'analyst')
+  OR private.current_user_is_super_admin()
 );
