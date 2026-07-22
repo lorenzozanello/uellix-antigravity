@@ -104,7 +104,7 @@ describe('FxSubForm Component', () => {
       global.fetch = mockFetch
 
       render(<FxSubForm currency="COP" referenceYear={2026} />)
-      const button = screen.getByRole('button', { name: /Obtener tasa TRM/ })
+      const button = screen.getByRole('button', { name: /Obtener tasa automática/ })
       fireEvent.click(button)
 
       await waitFor(() => {
@@ -114,7 +114,7 @@ describe('FxSubForm Component', () => {
 
     it('disables button if no reference year', () => {
       render(<FxSubForm currency="COP" />)
-      const button = screen.getByRole('button', { name: /Obtener tasa TRM/ }) as HTMLButtonElement
+      const button = screen.getByRole('button', { name: /Obtener tasa automática/ }) as HTMLButtonElement
       expect(button.disabled).toBe(true)
     })
 
@@ -126,11 +126,11 @@ describe('FxSubForm Component', () => {
       global.fetch = mockFetch
 
       render(<FxSubForm currency="COP" referenceYear={2026} />)
-      const button = screen.getByRole('button', { name: /Obtener tasa TRM/ })
+      const button = screen.getByRole('button', { name: /Obtener tasa automática/ })
       fireEvent.click(button)
 
       await waitFor(() => {
-        expect(screen.getByText(/Manual entry required/)).toBeTruthy()
+        expect(screen.getByText(/Failed to fetch/)).toBeTruthy()
       })
     })
   })
@@ -316,9 +316,9 @@ describe('FxSubForm Component', () => {
     })
 
     it('disables auto-fetch button when disabled', () => {
-      render(<FxSubForm currency="COP" referenceYear={2026} disabled />)
+      render(<FxSubForm disabled={true} currency="COP" referenceYear={2026} />)
       const buttons = screen.getAllByRole('button')
-      const button = buttons.find(b => b.textContent?.includes('Obtener tasa TRM')) as HTMLButtonElement
+      const button = buttons.find(b => b.textContent?.includes('Obtener tasa automática')) as HTMLButtonElement
       expect(button.disabled).toBe(true)
     })
   })

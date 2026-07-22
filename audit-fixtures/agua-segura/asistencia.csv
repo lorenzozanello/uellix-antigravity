@@ -1,0 +1,27 @@
+# DATOS SINTÉTICOS — EXCLUSIVAMENTE PARA AUDITORÍA FUNCIONAL DE UELLIX
+participante_id,rol,talleres_asistidos,talleres_totales,completo_formacion
+LID-01,Vocal,11,12,si
+LID-02,Vocal,11,12,si
+LID-03,Comite,12,12,si
+LID-04,Vocal,12,12,si
+LID-05,Promotor,12,12,si
+LID-06,Comite,11,12,si
+LID-07,Promotor,11,12,si
+LID-08,Comite,11,12,si
+LID-09,Vocal,10,12,si
+LID-10,Vocal,11,12,si
+LID-11,Vocal,11,12,si
+LID-12,Promotor,12,12,si
+LID-13,Vocal,12,12,si
+LID-14,Vocal,12,12,si
+LID-15,Vocal,11,12,si
+LID-16,Vocal,11,12,si
+LID-17,Promotor,12,12,si
+LID-18,Promotor,10,12,si
+LID-19,Vocal,11,12,si
+LID-20,Comite,10,12,si
+LID-21,Vocal,11,12,si
+LID-22,Comite,12,12,si
+LID-23,Vocal,6,12,no
+LID-24,Vocal,4,12,no
+LID-25,Vocal,5,12,no

@@ -7,6 +7,7 @@ import { emailConfig } from '@/lib/email/config'
 import { ResendEmailProvider } from '@/lib/email/resend-client'
 import type { EmailProvider } from '@/lib/email/provider'
 import { ROLE_LABELS, type Role } from '@/lib/auth/roles'
+import { getInvitationEmailTemplate } from '@/lib/email/templates/invitation'
 
 export function buildInvitationAcceptUrl(rawToken: string): string {
   return `${emailConfig.appUrl}/invite/accept?token=${rawToken}`
@@ -17,6 +18,7 @@ interface SendInvitationEmailParams {
   organizationName: string
   role: Role
   rawToken: string
+  inviterName: string
 }
 
 export async function sendInvitationEmail(
@@ -26,15 +28,18 @@ export async function sendInvitationEmail(
   const acceptUrl = buildInvitationAcceptUrl(params.rawToken)
   const roleLabel = ROLE_LABELS[params.role]
 
+  const html = getInvitationEmailTemplate({
+    inviterName: params.inviterName,
+    organizationName: params.organizationName,
+    roleName: roleLabel,
+    joinLink: acceptUrl,
+  })
+
   try {
     await provider.send({
       to: params.email,
       subject: `Invitación a ${params.organizationName} en Uellix`,
-      html: `
-        <p>Has sido invitado a unirte a <strong>${params.organizationName}</strong> en Uellix como <strong>${roleLabel}</strong>.</p>
-        <p><a href="${acceptUrl}">Aceptar invitación</a></p>
-        <p>Este enlace expira en 7 días. Si no esperabas esta invitación, puedes ignorar este correo.</p>
-      `.trim(),
+      html,
     })
   } catch (err) {
     console.error('[invitations] Failed to send invitation email:', err)

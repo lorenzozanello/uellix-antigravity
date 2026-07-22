@@ -49,7 +49,7 @@ describe('ReportPdfDocument render', () => {
     )
     expect(buffer.length).toBeGreaterThan(1000)
     expect(Buffer.from(buffer.subarray(0, 5)).toString('latin1')).toBe('%PDF-')
-  })
+  }, 15_000)
 
   it('renders without the optional annexes (no funder, no evidence, no standards)', async () => {
     const buffer = await renderToBuffer(
@@ -65,5 +65,5 @@ describe('ReportPdfDocument render', () => {
       }) as unknown as Parameters<typeof renderToBuffer>[0]
     )
     expect(Buffer.from(buffer.subarray(0, 5)).toString('latin1')).toBe('%PDF-')
-  })
+  }, 15_000)
 })

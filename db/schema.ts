@@ -7,6 +7,9 @@ export const users = pgTable('users', {
   fullName: varchar('full_name', { length: 255 }),
   avatarUrl: varchar('avatar_url', { length: 255 }),
   isSuperAdmin: boolean('is_super_admin').default(false).notNull(),
+  // GDPR: Soft delete for right to erasure
+  deletedAt: timestamp('deleted_at'),
+  deletedBy: uuid('deleted_by'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -24,6 +27,21 @@ export const organizations = pgTable('organizations', {
   // manually by a super_admin via /admin/services — no payment gateway.
   stellaMonthlyQuota: integer('stella_monthly_quota').default(0),
   stellaPlanLabel: varchar('stella_plan_label', { length: 100 }),
+
+  // Phase 3: White-labeling support
+  logoUrl: varchar('logo_url', { length: 255 }),
+  brandColor: varchar('brand_color', { length: 7 }),
+  whiteLabelEnabled: boolean('white_label_enabled').default(false).notNull(),
+
+  // Phase 1: Stripe Integration
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }).unique(),
+  stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }).unique(),
+  stripePriceId: varchar('stripe_price_id', { length: 255 }),
+
+  // Phase 2: Onboarding B2B
+  baseCurrency: varchar('base_currency', { length: 3 }).default('USD').notNull(),
+  onboardingCompleted: boolean('onboarding_completed').default(false).notNull(),
+  
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -582,6 +600,10 @@ export const sroiReports = pgTable('sroi_reports', {
   // which sections/annexes render. Default 'audit' preserves prior behavior
   // (the full report) for reports created before variants existed.
   reportVariant: varchar('report_variant', { length: 20 }).default('audit').notNull(),
+  
+  // Phase 3: Public verification trail
+  verificationHash: varchar('verification_hash', { length: 255 }).unique(),
+  
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   updatedBy: uuid('updated_by').references(() => users.id),
   lockedBy: uuid('locked_by').references(() => users.id),
@@ -778,3 +800,18 @@ export const theoryOfChangeLinks = pgTable('theory_of_change_links', {
   index('idx_toc_links_from_node_id').on(table.fromNodeId),
   index('idx_toc_links_to_node_id').on(table.toNodeId),
 ])
+
+// ---------------------------------------------------------------------------
+// Phase 5: Marketing Leads
+// ---------------------------------------------------------------------------
+export const marketingLeads = pgTable(
+  'marketing_leads',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: varchar('email', { length: 255 }).notNull(),
+    companyName: varchar('company_name', { length: 255 }),
+    sroiResult: varchar('sroi_result', { length: 50 }),
+    source: varchar('source', { length: 100 }).default('sroi_calculator').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  }
+)

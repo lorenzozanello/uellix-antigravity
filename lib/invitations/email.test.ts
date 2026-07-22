@@ -28,7 +28,13 @@ describe('sendInvitationEmail', () => {
   it('sends an email with the accept link and role label to the injected provider', async () => {
     const provider = new RecordingProvider()
     await sendInvitationEmail(
-      { email: 'invitee@user.com', organizationName: 'Acme', role: 'analyst', rawToken: 'tok123' },
+      {
+        email: 'invitee@user.com',
+        organizationName: 'Acme',
+        role: 'analyst',
+        rawToken: 'tok123',
+        inviterName: 'Maria Gestora',
+      },
       provider
     )
 
@@ -37,13 +43,20 @@ describe('sendInvitationEmail', () => {
     expect(provider.sent[0].subject).toContain('Acme');
     expect(provider.sent[0].html).toContain('tok123');
     expect(provider.sent[0].html).toContain('Analista'); // ROLE_LABELS['analyst']
+    expect(provider.sent[0].html).toContain('Maria Gestora');
   });
 
   it('does not throw when the provider fails', async () => {
     const provider = new ThrowingProvider();
     await expect(
       sendInvitationEmail(
-        { email: 'invitee@user.com', organizationName: 'Acme', role: 'viewer', rawToken: 'tok123' },
+        {
+          email: 'invitee@user.com',
+          organizationName: 'Acme',
+          role: 'viewer',
+          rawToken: 'tok123',
+          inviterName: 'Admin Uellix',
+        },
         provider
       )
     ).resolves.toBeUndefined();

@@ -47,7 +47,7 @@ export { buildAdvisorContext, StellaBuildContextError } from './context/build-ad
 export { buildValidatorContext, StellaBuildValidatorContextError } from './context/build-validator-context'
 
 // Rate limiting
-export { checkStellaRateLimit, recordStellaRequest, resetStellaRateLimitForTests } from './rate-limit'
+export { consumeStellaRateLimit, resetStellaRateLimitForTests } from './rate-limit'
 export type { RateLimitResult } from './rate-limit'
 
 // Fallbacks

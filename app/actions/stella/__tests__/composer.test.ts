@@ -61,10 +61,8 @@ vi.mock('@/lib/stella/adapter/gemini-client', () => ({
 }))
 
 const mockCheckStellaRateLimit = vi.fn()
-const mockRecordStellaRequest = vi.fn()
 vi.mock('@/lib/stella/rate-limit', () => ({
-  checkStellaRateLimit: (...args: unknown[]) => mockCheckStellaRateLimit(...args),
-  recordStellaRequest: (...args: unknown[]) => mockRecordStellaRequest(...args),
+  consumeStellaRateLimit: (...args: unknown[]) => mockCheckStellaRateLimit(...args),
 }))
 
 const mockCheckStellaQuota = vi.fn()
@@ -138,6 +136,7 @@ const RATE_LIMIT_OK: RateLimitResult = {
   remaining: 95,
   limit: 100,
   resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+  reason: 'allowed',
 }
 
 const RATE_LIMIT_EXCEEDED: RateLimitResult = {
@@ -145,6 +144,7 @@ const RATE_LIMIT_EXCEEDED: RateLimitResult = {
   remaining: 0,
   limit: 100,
   resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+  reason: 'limit',
 }
 
 // ---------------------------------------------------------------------------
@@ -254,7 +254,7 @@ describe('getStellaComposer server action', () => {
 
       await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
-      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
     })
   })
 
@@ -275,7 +275,7 @@ describe('getStellaComposer server action', () => {
       }
     })
 
-    it('passes organization.id (not project id) to checkStellaRateLimit', async () => {
+    it('passes organization.id (not project id) to consumeStellaRateLimit', async () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
@@ -287,13 +287,13 @@ describe('getStellaComposer server action', () => {
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalledWith('proj-different-id')
     })
 
-    it('does NOT record request when rate limited', async () => {
+    it('consumes only once when rate limited', async () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
 
       await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
-      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).toHaveBeenCalledOnce()
     })
 
     it('does NOT call Gemini when rate limited', async () => {
@@ -370,16 +370,16 @@ describe('getStellaComposer server action', () => {
   })
 
   // -------------------------------------------------------------------------
-  // recordStellaRequest behavior
+  // consumeStellaRateLimit behavior
   // -------------------------------------------------------------------------
-  describe('recordStellaRequest behavior', () => {
-    it('records request after context built (before Gemini call)', async () => {
-      let recordCalledBeforeGenerate = false
-      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+  describe('consumeStellaRateLimit behavior', () => {
+    it('consumes after context is built and before Gemini', async () => {
+      let consumedBeforeGenerate = false
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockBuildComposerContext.mockResolvedValue(MOCK_CONTEXT)
-      mockRecordStellaRequest.mockImplementation(() => {
-        recordCalledBeforeGenerate = !mockAdapterGenerate.mock.calls.length
+      mockCheckStellaRateLimit.mockImplementation(() => {
+        consumedBeforeGenerate = !mockAdapterGenerate.mock.calls.length
+        return RATE_LIMIT_OK
       })
       mockAdapterGenerate.mockResolvedValue({
         role: 'composer',
@@ -393,16 +393,19 @@ describe('getStellaComposer server action', () => {
 
       await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
-      expect(recordCalledBeforeGenerate).toBe(true)
+      expect(consumedBeforeGenerate).toBe(true)
+      expect(mockBuildComposerContext.mock.invocationCallOrder[0]).toBeLessThan(
+        mockCheckStellaRateLimit.mock.invocationCallOrder[0]
+      )
     })
 
-    it('records with organization.id (not project id)', async () => {
+    it('consumes with organization.id (not project id)', async () => {
       setupSuccessfulCall()
 
       await getStellaComposer('proj-uuid-001', 'report-1', 'section-1', 'executive_summary')
 
-      expect(mockRecordStellaRequest).toHaveBeenCalledWith('org-uuid-001')
-      expect(mockRecordStellaRequest).not.toHaveBeenCalledWith('proj-uuid-001')
+      expect(mockCheckStellaRateLimit).toHaveBeenCalledWith('org-uuid-001')
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalledWith('proj-uuid-001')
     })
 
     it('does NOT record when feature flags are off', async () => {
@@ -410,7 +413,7 @@ describe('getStellaComposer server action', () => {
 
       await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
 
-      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
     })
 
     it('does NOT record when context build fails', async () => {
@@ -423,7 +426,7 @@ describe('getStellaComposer server action', () => {
 
       await getStellaComposer('proj-1', 'report-missing', 'section-1', 'executive_summary')
 
-      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
     })
   })
 

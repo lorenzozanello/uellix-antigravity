@@ -18,7 +18,7 @@ import {
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ReviewerOutputSchema, type ReviewerOutput } from '@/lib/stella/schemas/reviewer-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
-import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
+import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
@@ -27,6 +27,7 @@ export type StellaReviewerErrorCode =
   | 'DISABLED'
   | 'UNAUTHORIZED'
   | 'RATE_LIMITED'
+  | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
@@ -65,15 +66,6 @@ export async function getStellaReviewer(
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
   }
 
-  const rateLimit = checkStellaRateLimit(ctx.organization.id)
-  if (!rateLimit.allowed) {
-    return {
-      ok: false,
-      error: 'RATE_LIMITED',
-      message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
-    }
-  }
-
   const quotaCheck = await checkStellaQuota(ctx.organization.id)
   if (!quotaCheck.allowed) {
     const message =
@@ -86,8 +78,21 @@ export async function getStellaReviewer(
   try {
     const context = await buildReviewerContext(projectId, ctx.organization.id)
 
-    // Record after context built — prevents gaming via repeated context errors.
-    recordStellaRequest(ctx.organization.id)
+    // Consume after context validation and immediately before the model attempt.
+    const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
+    if (!rateLimit.allowed) {
+      return rateLimit.reason === 'unavailable'
+        ? {
+            ok: false,
+            error: 'RATE_LIMIT_UNAVAILABLE',
+            message: 'Stella rate limit service is temporarily unavailable.',
+          }
+        : {
+            ok: false,
+            error: 'RATE_LIMITED',
+            message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
+          }
+    }
 
     const systemPrompt = buildReviewerSystemPrompt(role)
     const userMessage = buildReviewerUserMessage(role, context)

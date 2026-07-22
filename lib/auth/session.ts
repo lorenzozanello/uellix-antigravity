@@ -48,6 +48,16 @@ export interface Organization {
   country: string | null
   sector: string | null
   status: string
+  baseCurrency?: string
+  onboardingCompleted?: boolean
+  stellaMonthlyQuota?: number | null
+  stellaPlanLabel?: string | null
+  logoUrl?: string | null
+  brandColor?: string | null
+  whiteLabelEnabled?: boolean
+  stripeCustomerId?: string | null
+  stripeSubscriptionId?: string | null
+  stripePriceId?: string | null
 }
 
 export interface OrganizationContext {
@@ -211,6 +221,16 @@ export const requireOrganizationAccess = cache(async (): Promise<OrganizationCon
       country: org.country,
       sector: org.sector,
       status: org.status,
+      baseCurrency: org.baseCurrency,
+      onboardingCompleted: org.onboardingCompleted,
+      stellaMonthlyQuota: org.stellaMonthlyQuota,
+      stellaPlanLabel: org.stellaPlanLabel,
+      logoUrl: org.logoUrl,
+      brandColor: org.brandColor,
+      whiteLabelEnabled: org.whiteLabelEnabled,
+      stripeCustomerId: org.stripeCustomerId,
+      stripeSubscriptionId: org.stripeSubscriptionId,
+      stripePriceId: org.stripePriceId,
     },
   }
 })
@@ -265,6 +285,16 @@ export const getCurrentOrganizationContext = cache(async (): Promise<Organizatio
       country: org.country,
       sector: org.sector,
       status: org.status,
+      baseCurrency: org.baseCurrency,
+      onboardingCompleted: org.onboardingCompleted,
+      stellaMonthlyQuota: org.stellaMonthlyQuota,
+      stellaPlanLabel: org.stellaPlanLabel,
+      logoUrl: org.logoUrl,
+      brandColor: org.brandColor,
+      whiteLabelEnabled: org.whiteLabelEnabled,
+      stripeCustomerId: org.stripeCustomerId,
+      stripeSubscriptionId: org.stripeSubscriptionId,
+      stripePriceId: org.stripePriceId,
     },
   }
 })
