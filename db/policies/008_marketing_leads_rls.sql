@@ -10,7 +10,7 @@ ALTER TABLE marketing_leads ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "super_admins_read_marketing_leads"
   ON marketing_leads FOR SELECT
   TO authenticated
-  USING (current_user_is_super_admin());
+  USING (private.current_user_is_super_admin());
 
 -- Anonymous users can INSERT leads (public demo request form)
 CREATE POLICY "anon_insert_marketing_leads"
