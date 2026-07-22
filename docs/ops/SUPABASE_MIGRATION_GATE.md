@@ -1,10 +1,19 @@
 # Supabase migration gate for the closed beta
 
-`0035_phase5_marketing_leads.sql` + RLS policy `008`, and the two Storage
-helper grants in `0039_grant_rls_helper_execution.sql`, are versioned
-candidates only. They must not be applied to production by an automated agent
-or as a side effect of a Vercel deployment. `0034`, `0036`, `0037`, and `0038`
-are **already live in production** — see the 2026-07-22 incident below.
+Four pieces remain versioned candidates only, and must not be applied to
+production by an automated agent or as a side effect of a Vercel deployment:
+- `0035_phase5_marketing_leads.sql` + RLS policy `008`
+  (`db/policies/008_marketing_leads_rls.sql`)
+- `supabase/migrations/20260716000000_auth_trigger.sql` — the
+  `auth.users` → `public.users` sync trigger that `0033`'s "trigger manages
+  INSERT" comment assumed existed. It never got applied; found 2026-07-22
+  while scoping this gate.
+- `supabase/migrations/20260716000001_storage_policies.sql` — Storage RLS for
+  the `uellix-evidence` bucket. Supersedes `0039_grant_rls_helper_execution.sql`
+  (see that file's header); apply this one instead.
+
+`0034`, `0036`, `0037`, and `0038` are **already live in production** — see
+the 2026-07-22 incident below.
 
 ## Incident: 2026-07-22 production login outage
 
@@ -122,18 +131,25 @@ depends on them. The Drizzle journal (`drizzle.__drizzle_migrations`) still
 does not reflect any of `0030` through `0038` — see "reconcile the journal"
 below before running `pnpm db:migrate` against production.
 
-## Required approval sequence (for what's still pending: `0035` + policy `008`, `0039`'s Storage grants)
+## Required approval sequence (scope: marketing leads, auth trigger, Storage RLS)
 
 1. Create or select an isolated Supabase preview project with no production data.
 2. Record a production backup and confirm that a human can restore it.
-3. Confirm that the Storage helpers `can_read_evidence_object(text, uuid)` and
-   `can_write_evidence_object(text, uuid)` already exist in preview, then review
-   the SQL and approve the order: `0035`, policy `008`, `0039`.
+3. Review the SQL and approve this order: `0035_phase5_marketing_leads.sql`,
+   `db/policies/008_marketing_leads_rls.sql`,
+   `supabase/migrations/20260716000000_auth_trigger.sql`,
+   `supabase/migrations/20260716000001_storage_policies.sql`. Skip
+   `0039_grant_rls_helper_execution.sql` entirely — superseded, see its header.
 4. Apply the candidate SQL to preview only.
-5. Run the integration/RLS suite against preview and exercise marketing leads
-   and billing-disabled paths.
+5. Run the integration/RLS suite against preview and exercise: marketing lead
+   submission (anon), signup/login end-to-end (to exercise the new auth
+   trigger instead of the app-level `syncUserProfile` upsert), and an evidence
+   file upload/download in the app.
 6. Review logs and row counts; verify that anonymous users can only insert
-   marketing leads and cannot read, update or delete them.
+   marketing leads and cannot read/update/delete them; verify the auth
+   trigger correctly populates `public.users` on signup without relying on
+   the `authenticated` INSERT grant added during the 2026-07-22 incident
+   (that grant can stay as defense-in-depth either way).
 7. Obtain an explicit human go/no-go decision before any production migration.
 
 ## Rollback plan to review before approval
