@@ -43,10 +43,20 @@ These results establish a local technical baseline; they do not authorize a
 deployment. The reviewed commit set is now consolidated on
 `codex/beta-stabilization` and is eligible for a GitHub/Vercel Preview review.
 Supabase migrations `0034` through `0039` plus RLS policy `008` require the
-separate human gate in `docs/ops/SUPABASE_MIGRATION_GATE.md`; no migration was
-applied during stabilization. Product-owner approval for the privacy and terms
-copy was recorded in this stabilization task; legal verification against actual
-vendor contracts remains a production-release responsibility.
+separate human gate in `docs/ops/SUPABASE_MIGRATION_GATE.md`; no migration
+from this batch was applied during stabilization. Product-owner approval for
+the privacy and terms copy was recorded in this stabilization task; legal
+verification against actual vendor contracts remains a production-release
+responsibility.
+
+**Correction (2026-07-22):** the statement above, and the "no migration was
+applied" framing throughout this document, assumed production matched its
+Drizzle journal (`0029_integrity`). It did not: `0030`-`0033` (RLS enablement,
+policies, helper functions) were already live in production via an
+undocumented manual apply, missing only the table-level grants, which caused
+a full login outage fixed the same day. See the incident record in
+`docs/ops/SUPABASE_MIGRATION_GATE.md` for the actual current production
+state before making any `0034`+ migration decision.
 
 The dependency gate uses patched `fast-uri` 3.1.4 and `sharp` 0.35.3. The unused
 optional MCP SDK edge from `@google/genai` is removed, and `shadcn` is classified

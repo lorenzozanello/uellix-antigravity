@@ -50,8 +50,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.methodology_review_matrix_items T
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.stella_interactions TO authenticated;
 
 -- Users (Specific)
--- Trigger manages INSERT, deletion is managed by trigger or cascade. Users can only update their profile.
-GRANT SELECT, UPDATE ON public.users TO authenticated;
+-- No DB trigger syncs auth.users -> public.users; app/(public)/login/actions.ts
+-- and lib/auth/session.ts#syncUserProfile perform an explicit
+-- INSERT ... ON CONFLICT DO UPDATE on every login/signup, which requires
+-- INSERT even for existing rows. Deletion is managed by trigger or cascade.
+GRANT SELECT, INSERT, UPDATE ON public.users TO authenticated;
 
 -- Append-Only Tables (No UPDATE, No DELETE)
 GRANT SELECT, INSERT ON public.audit_logs TO authenticated;
