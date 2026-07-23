@@ -18,15 +18,27 @@ const AZUL_PROFUNDO = '#0F172A'
 // audit-ready report carries Uellix branding by default (non white-label).
 // Server-only fs read, cached across renders. Never throws: a missing asset
 // simply omits the logo rather than breaking PDF generation.
+// Candidates in preference order: the canonical horizontal lockup first, then
+// the brand-guide export as a fallback. Trying both keeps the logo working even
+// if only one of the two assets is committed.
+const UELLIX_LOGO_CANDIDATES = [
+  'uellix-logo-horizontal.png',
+  'uellix-logo-horizontal-from-guide.png',
+]
+
 let _uellixLogoDataUri: string | null | undefined
 function uellixLogoDataUri(): string | null {
   if (_uellixLogoDataUri !== undefined) return _uellixLogoDataUri
-  try {
-    const p = path.join(process.cwd(), 'public', 'brand', 'uellix-logo-horizontal-from-guide.png')
-    _uellixLogoDataUri = `data:image/png;base64,${fs.readFileSync(p).toString('base64')}`
-  } catch {
-    _uellixLogoDataUri = null
+  for (const file of UELLIX_LOGO_CANDIDATES) {
+    try {
+      const p = path.join(process.cwd(), 'public', 'brand', file)
+      _uellixLogoDataUri = `data:image/png;base64,${fs.readFileSync(p).toString('base64')}`
+      return _uellixLogoDataUri
+    } catch {
+      // try next candidate
+    }
   }
+  _uellixLogoDataUri = null
   return _uellixLogoDataUri
 }
 
@@ -269,7 +281,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               {uellixLogo ? (
-                <Image src={uellixLogo} style={{ width: 92, height: 24, objectFit: 'contain', marginBottom: 8 }} />
+                <Image src={uellixLogo} style={{ width: 118, height: 30, objectFit: 'contain', marginBottom: 10 }} />
               ) : null}
               <Text style={[styles.eyebrow, { color: accent }]}>Reporte de Impacto SROI · Variante {props.variantLabel}</Text>
               <Text style={styles.title}>{props.reportTitle}</Text>
