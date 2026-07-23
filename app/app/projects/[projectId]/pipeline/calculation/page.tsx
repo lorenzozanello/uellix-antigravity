@@ -293,7 +293,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         >
           <Card className="h-full hover:shadow-md transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-ring">
             <CardContent className="p-5 flex gap-3 items-start">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]" aria-hidden="true">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fc4c0d]/10 text-[#fc4c0d]" aria-hidden="true">
                 <BarChart2 className="h-4 w-4" />
               </div>
               <div>

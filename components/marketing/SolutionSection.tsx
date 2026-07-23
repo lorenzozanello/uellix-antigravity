@@ -61,7 +61,7 @@ export function SolutionSection() {
       <div className="texture-grain-b" aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_85%_0%,rgba(255,106,0,0.05),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_85%_0%,rgba(252,76,13,0.05),transparent_60%)]"
       />
 
       <div className="relative z-10 mx-auto max-w-6xl">
@@ -99,7 +99,7 @@ export function SolutionSection() {
                   <span
                     className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-sm transition-premium ${
                       output
-                        ? "border-uellix-orange bg-uellix-orange shadow-[0_8px_22px_-6px_rgba(255,106,0,0.6)] group-hover:-translate-y-0.5"
+                        ? "border-uellix-orange bg-uellix-orange shadow-[0_8px_22px_-6px_rgba(252,76,13,0.6)] group-hover:-translate-y-0.5"
                         : accent
                         ? "border-uellix-orange/35 bg-uellix-orange/12 group-hover:bg-uellix-orange/20"
                         : "border-white/12 bg-white/[0.04] group-hover:border-white/25"

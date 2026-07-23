@@ -78,8 +78,8 @@ export default function Stepper() {
                   className={cn(
                     'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background text-xs font-bold transition-colors',
                     isActive
-                      ? 'border-[#FF6A00] bg-[#FF6A00] text-white shadow-sm'
-                      : 'border-border text-muted-foreground group-hover:border-[#FF6A00]/60 group-hover:text-foreground'
+                      ? 'border-[#fc4c0d] bg-[#fc4c0d] text-white shadow-sm'
+                      : 'border-border text-muted-foreground group-hover:border-[#fc4c0d]/60 group-hover:text-foreground'
                   )}
                 >
                   {idx + 1}

@@ -21,9 +21,9 @@
   /* Brand palette as theme tokens — generates bg/text/border/from/via/outline
      -uellix-* utilities (with opacity modifiers), so components stop hardcoding
      hex. Values mirror the :root brand tokens defined lower in this file. */
-  --color-uellix-orange: #FF6A00;
-  --color-uellix-orange-strong: #e05e00;
-  --color-uellix-deep: #0F172A;
+  --color-uellix-orange: #fc4c0d;
+  --color-uellix-orange-strong: #db420b;
+  --color-uellix-deep: #071426;
   --color-uellix-carbon: #0A101E;
   --color-uellix-copper: #C2703F;
   --color-uellix-ink: #14181F;
@@ -153,7 +153,7 @@
 
 /* Uellix Design System: Semantic color aliases */
 :root {
-  /* Legacy teal accent — pending migration to Naranja Impacto (#FF6A00) */
+  /* Legacy teal accent — pending migration to Naranja Impacto (#fc4c0d) */
   --color-teal-primary: #0d9488;
   --color-teal-light: #14b8a6;
   --color-teal-dark: #0f766e;
@@ -223,8 +223,8 @@
               background-color var(--dur-premium) var(--ease-premium);
 }
 .card-lift:hover {
-  border-color: rgba(255, 106, 0, 0.22);
-  box-shadow: 0 0 0 1px rgba(255, 106, 0, 0.08),
+  border-color: rgba(252, 76, 13, 0.22);
+  box-shadow: 0 0 0 1px rgba(252, 76, 13, 0.08),
               0 8px 28px rgba(15, 23, 42, 0.10),
               0 2px 6px rgba(15, 23, 42, 0.04);
   transform: translateY(-2px);
@@ -235,11 +235,11 @@
 
 /* ─── Uellix Brand Tokens ─── */
 :root {
-  --uellix-deep:        #0F172A;
-  --uellix-carbon:      #0A101E;  /* deeper carbon for dossier backgrounds */
-  --uellix-orange:      #FF6A00;
+  --uellix-deep:        #071426;
+  --uellix-carbon:      #050D18;  /* deeper carbon for dossier backgrounds */
+  --uellix-orange:      #fc4c0d;
   --uellix-copper:      #C2703F;  /* editorial copper accent (secondary) */
-  --uellix-gray-mid:    #64748B;
+  --uellix-gray-mid:    #6c7380;
   --uellix-gray-light:  #E2E8F0;
   --uellix-mist:        #FBFAFC;
   --uellix-paper:       #F4F1EA;  /* warm paper neutral — NOT cold white */
@@ -371,7 +371,7 @@
   right: -0.05em;
   bottom: 0.06em;
   height: 0.22em;
-  background: rgba(255, 106, 0, 0.16);
+  background: rgba(252, 76, 13, 0.16);
   border-radius: 2px;
   transform: rotate(-0.6deg);
   z-index: -1;
@@ -405,7 +405,7 @@ html {
   left: 0;
   right: 0;
   height: 2px;
-  background: #FF6A00;
+  background: #fc4c0d;
   transform: scaleX(0);
   transform-origin: left center;
   z-index: 100;

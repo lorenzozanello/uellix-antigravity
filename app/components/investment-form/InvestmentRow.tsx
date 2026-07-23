@@ -477,7 +477,7 @@ export default function InvestmentRow({
               type="button"
               onClick={handleSave}
               disabled={!isReadyToSave || isSaving || (!isTemp && !isDirty)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#FF6A00] rounded-md hover:bg-[#e65f00] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#fc4c0d] rounded-md hover:bg-[#e65f00] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>

@@ -46,7 +46,7 @@ export function StellaSection() {
       <div className="texture-grain-c" aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_15%_20%,rgba(255,106,0,0.06),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_15%_20%,rgba(252,76,13,0.06),transparent_60%)]"
       />
 
       <div className="relative z-10 mx-auto max-w-6xl">

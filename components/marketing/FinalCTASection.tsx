@@ -36,11 +36,11 @@ export function FinalCTASection() {
       {/* Radial + technical grid */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_50%_100%,rgba(255,106,0,0.08),transparent_65%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_50%_100%,rgba(252,76,13,0.08),transparent_65%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,106,0,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,106,0,0.025)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_60%_70%_at_50%_100%,black,transparent)]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(252,76,13,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(252,76,13,0.025)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_60%_70%_at_50%_100%,black,transparent)]"
       />
 
       <div className="relative z-10 mx-auto max-w-3xl text-center">
@@ -61,7 +61,7 @@ export function FinalCTASection() {
         <div className="flex flex-col sm:flex-row gap-3.5 justify-center items-stretch sm:items-center mb-10">
           <Link
             href="/demo"
-            className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-8 py-4 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] w-full sm:w-auto shadow-[0_10px_30px_-8px_rgba(255,106,0,0.6)]"
+            className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-8 py-4 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] w-full sm:w-auto shadow-[0_10px_30px_-8px_rgba(252,76,13,0.6)]"
           >
             Solicitar demo privada
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

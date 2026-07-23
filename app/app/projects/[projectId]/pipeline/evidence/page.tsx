@@ -371,7 +371,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <FileText className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Subir archivo</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -483,7 +483,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <Link2 className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Registrar URL</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -596,7 +596,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlignLeft className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <AlignLeft className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Registrar declaración de texto</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">

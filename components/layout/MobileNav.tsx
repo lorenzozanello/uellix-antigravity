@@ -93,7 +93,7 @@ export function MobileNav() {
                       'flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-md transition-colors min-h-11 border-l-2',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                       active
-                        ? 'bg-sidebar-accent text-white border-[#FF6A00]'
+                        ? 'bg-sidebar-accent text-white border-[#fc4c0d]'
                         : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground border-transparent',
                     ].join(' ')}
                   >

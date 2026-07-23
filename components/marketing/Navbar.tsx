@@ -78,7 +78,7 @@ export function Navbar() {
             </Link>
             <Link
               href="/demo"
-              className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-5 py-2 text-sm font-bold text-white overflow-hidden shadow-[0_0_20px_rgba(255,106,0,0.3)] hover:shadow-[0_0_30px_rgba(255,106,0,0.5)] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[36px]"
+              className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-5 py-2 text-sm font-bold text-white overflow-hidden shadow-[0_0_20px_rgba(252,76,13,0.3)] hover:shadow-[0_0_30px_rgba(252,76,13,0.5)] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[36px]"
             >
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
               <span className="relative">Solicitar demo</span>
@@ -140,7 +140,7 @@ export function Navbar() {
                 <Link
                   href="/demo"
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-4 py-3 text-base font-bold text-white shadow-[0_0_20px_rgba(255,106,0,0.3)] min-h-[44px]"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-4 py-3 text-base font-bold text-white shadow-[0_0_20px_rgba(252,76,13,0.3)] min-h-[44px]"
                 >
                   Solicitar demo
                 </Link>

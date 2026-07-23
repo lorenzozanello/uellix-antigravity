@@ -76,7 +76,7 @@ export default async function ReportListPage({
         </Link>
         <div className="mt-3 flex items-start gap-4">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#fc4c0d]/10 text-[#fc4c0d]"
             aria-hidden="true"
           >
             <FileText className="h-5 w-5" />

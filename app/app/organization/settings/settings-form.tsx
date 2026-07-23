@@ -149,7 +149,7 @@ export function SettingsForm({
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex justify-center rounded-md bg-[#FF6A00] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#E65C00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6A00] disabled:opacity-50"
+              className="inline-flex justify-center rounded-md bg-[#fc4c0d] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#E65C00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fc4c0d] disabled:opacity-50"
             >
               {isSaving ? 'Guardando...' : 'Guardar Cambios'}
             </button>

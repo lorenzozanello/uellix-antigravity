@@ -74,7 +74,7 @@ export function getInvitationEmailTemplate(params: {
     }
     .button {
       display: inline-block;
-      background-color: #FF6A00;
+      background-color: #fc4c0d;
       color: #FFFFFF;
       text-decoration: none;
       padding: 14px 28px;
@@ -109,7 +109,7 @@ export function getInvitationEmailTemplate(params: {
       </div>
       <div class="message" style="font-size: 14px; margin-bottom: 0;">
         O copia y pega el siguiente enlace en tu navegador:<br>
-        <a href="${joinLink}" style="color: #FF6A00; word-break: break-all;">${joinLink}</a>
+        <a href="${joinLink}" style="color: #fc4c0d; word-break: break-all;">${joinLink}</a>
       </div>
     </div>
     <div class="footer">

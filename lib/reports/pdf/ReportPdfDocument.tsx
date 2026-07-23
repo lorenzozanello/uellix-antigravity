@@ -11,8 +11,8 @@ import type { FunderBreakdown, EvidenceManifestRow, FxTrail, LineItems, Methodol
 import { getApprovedOrganizationLogoUrl } from '@/lib/organizations/logo-url'
 
 // Uellix brand palette (mirrors app/globals.css).
-const NARANJA_IMPACTO = '#FF6A00'
-const AZUL_PROFUNDO = '#0F172A'
+const NARANJA_IMPACTO = '#fc4c0d'
+const AZUL_PROFUNDO = '#071426'
 
 // Bundled Uellix horizontal logo, embedded as a base64 data URI so the
 // audit-ready report carries Uellix branding by default (non white-label).

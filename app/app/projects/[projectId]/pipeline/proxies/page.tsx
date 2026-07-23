@@ -322,7 +322,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <BookOpen className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Registrar fuente</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -403,7 +403,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <DollarSign className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Crear proxy financiero</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -598,7 +598,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <GitMerge className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <GitMerge className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Asignar proxy a resultado</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">

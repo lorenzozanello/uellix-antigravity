@@ -27,7 +27,7 @@ export function HeroSection() {
           transition={{ duration: 0.5 }}
           className="flex justify-center mb-8"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-uellix-orange/30 bg-uellix-orange/10 px-4 py-2 text-xs font-semibold text-[#FF8C33] font-ibm-plex-mono tracking-widest uppercase shadow-[0_0_15px_rgba(255,106,0,0.2)]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-uellix-orange/30 bg-uellix-orange/10 px-4 py-2 text-xs font-semibold text-[#FF8C33] font-ibm-plex-mono tracking-widest uppercase shadow-[0_0_15px_rgba(252,76,13,0.2)]">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-uellix-orange opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-uellix-orange"></span>
@@ -68,7 +68,7 @@ export function HeroSection() {
         >
           <Link
             href="/demo"
-            className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-8 py-4 text-lg font-bold text-white overflow-hidden shadow-[0_0_30px_rgba(255,106,0,0.4)] hover:shadow-[0_0_50px_rgba(255,106,0,0.6)] transition-all w-full sm:w-auto"
+            className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-8 py-4 text-lg font-bold text-white overflow-hidden shadow-[0_0_30px_rgba(252,76,13,0.4)] hover:shadow-[0_0_50px_rgba(252,76,13,0.6)] transition-all w-full sm:w-auto"
           >
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
             <span className="relative flex items-center gap-2">

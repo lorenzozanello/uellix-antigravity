@@ -77,7 +77,7 @@ export default async function PublicVerificationPage({
                 href={`/verify/${hash}/pdf`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#FF6A00] hover:bg-[#E65C00] text-white font-semibold rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF6A00]"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#fc4c0d] hover:bg-[#E65C00] text-white font-semibold rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#fc4c0d]"
               >
                 <Download className="w-5 h-5" />
                 Descargar Reporte PDF

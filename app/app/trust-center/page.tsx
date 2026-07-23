@@ -66,7 +66,7 @@ export default async function TrustCenterPage({
       {/* Header */}
       <div className="flex items-start gap-4">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#fc4c0d]/10 text-[#fc4c0d]"
           aria-hidden="true"
         >
           <ShieldCheck className="h-5 w-5" />
@@ -108,7 +108,7 @@ export default async function TrustCenterPage({
           </span>
           {activeFilterCount > 0 && (
             <span
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6A00] text-[10px] font-bold text-white"
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fc4c0d] text-[10px] font-bold text-white"
               aria-label={`${activeFilterCount} filtro${activeFilterCount !== 1 ? 's' : ''} activo${activeFilterCount !== 1 ? 's' : ''}`}
             >
               {activeFilterCount}
