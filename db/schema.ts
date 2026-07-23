@@ -596,6 +596,10 @@ export const sroiReports = pgTable('sroi_reports', {
   // financiador"), immutable after creation like other report-anchoring
   // decisions. Determines whether the funder_breakdown section is generated.
   includeFunderBreakdown: boolean('include_funder_breakdown').default(false).notNull(),
+  // Chosen at draft-creation time. Governs whether the evidence confidence
+  // score column renders in the report's evidence manifest. Defaults true
+  // (transparency), opt-out for polished external reports.
+  includeEvidenceConfidence: boolean('include_evidence_confidence').default(true).notNull(),
   // Fase 6b — report variant chosen at creation, immutable thereafter. Governs
   // which sections/annexes render. Default 'audit' preserves prior behavior
   // (the full report) for reports created before variants existed.

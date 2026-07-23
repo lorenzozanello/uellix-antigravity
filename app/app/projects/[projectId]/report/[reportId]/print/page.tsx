@@ -139,6 +139,8 @@ export default async function ReportPrintPage({
     : []
   // Sensitivity band is frozen in the run snapshot (null for older runs).
   const sensitivity = run ? extractSensitivityBand(report.snapshotJson) : null
+  // Per-report toggle: show the evidence confidence score or not.
+  const showConfidence = report.includeEvidenceConfidence !== false
 
   const snapshotJson = report.snapshotJson
   const currency = report.currency ?? 'USD'
@@ -414,22 +416,24 @@ export default async function ReportPrintPage({
                 <div className="rp-block">
                   <div className="rp-shead"><span className="rp-bar" /><h2>Manifiesto de evidencia · huellas digitales SHA-256</h2></div>
                   <table>
-                    <thead><tr><th>Evidencia</th><th>Tipo</th><th>Estado</th><th className="rp-num">Confianza</th><th>Huella</th></tr></thead>
+                    <thead><tr><th>Evidencia</th><th>Tipo</th><th>Estado</th>{showConfidence && <th className="rp-num">Confianza</th>}<th>Huella</th></tr></thead>
                     <tbody>
                       {evidenceManifest.map((e, i) => (
                         <tr key={i}>
                           <td>{e.title}</td>
                           <td>{e.type}</td>
                           <td>{EVIDENCE_STATUS_ES[e.status] ?? e.status}</td>
-                          <td className="rp-num">{e.confidenceScore === null ? '—' : <span className={`rp-chip ${confidenceChip(e.confidenceScore)}`}>{e.confidenceScore}</span>}</td>
+                          {showConfidence && <td className="rp-num">{e.confidenceScore === null ? '—' : <span className={`rp-chip ${confidenceChip(e.confidenceScore)}`}>{e.confidenceScore}</span>}</td>}
                           <td className="rp-mono">{e.hashShort ? `${e.hashShort}…` : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <p className="rp-snote" style={{ marginTop: 6, marginBottom: 0 }}>
-                    Confianza = puntaje calculado (0–100) por tipo, estado de revisión, vínculo a resultado y verificación de integridad.
-                  </p>
+                  {showConfidence && (
+                    <p className="rp-snote" style={{ marginTop: 6, marginBottom: 0 }}>
+                      Confianza = puntaje calculado (0–100) por tipo, estado de revisión, vínculo a resultado y verificación de integridad.
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -53,10 +53,12 @@ export default async function ReportListPage({
     const runId = formData.get('runId') as string
     const title = formData.get('title') as string
     const includeFunderBreakdown = formData.get('includeFunderBreakdown') === 'on'
+    const includeEvidenceConfidence = formData.get('includeEvidenceConfidence') === 'on'
     const reportVariant = (formData.get('reportVariant') as string) || 'audit'
     const result = await createReportDraftFromRunAction(projectId, runId, {
       title,
       includeFunderBreakdown,
+      includeEvidenceConfidence,
       reportVariant,
     })
     revalidatePath(`/app/projects/${projectId}/report`)
@@ -213,6 +215,22 @@ export default async function ReportListPage({
                   <span className="block text-xs text-muted-foreground font-normal">
                     Agrega una sección con el ratio SROI individual por financiador, el valor
                     atribuido y el valor social sin atribuir.
+                  </span>
+                </label>
+              </div>
+              <div className="flex items-start gap-2">
+                <input
+                  id="includeEvidenceConfidence"
+                  name="includeEvidenceConfidence"
+                  type="checkbox"
+                  defaultChecked
+                  className="mt-0.5 h-4 w-4 rounded border-input"
+                />
+                <label htmlFor="includeEvidenceConfidence" className="text-sm text-foreground">
+                  Mostrar nivel de confianza de la evidencia
+                  <span className="block text-xs text-muted-foreground font-normal">
+                    Muestra el puntaje de confianza (0–100) de cada evidencia en el manifiesto.
+                    Desactívalo para reportes externos más sobrios.
                   </span>
                 </label>
               </div>
