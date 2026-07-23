@@ -4,9 +4,31 @@
 // runtime), never bundled to the client. Mirrors the print page content and
 // carries the mandatory methodological disclaimers verbatim.
 
+import fs from 'node:fs'
+import path from 'node:path'
 import { Document, Page, View, Text, StyleSheet, Image } from '@react-pdf/renderer'
 import type { FunderBreakdown, EvidenceManifestRow, FxTrail, LineItems, MethodologyReadinessRow } from './report-data'
 import { getApprovedOrganizationLogoUrl } from '@/lib/organizations/logo-url'
+
+// Uellix brand palette (mirrors app/globals.css).
+const NARANJA_IMPACTO = '#FF6A00'
+const AZUL_PROFUNDO = '#0F172A'
+
+// Bundled Uellix horizontal logo, embedded as a base64 data URI so the
+// audit-ready report carries Uellix branding by default (non white-label).
+// Server-only fs read, cached across renders. Never throws: a missing asset
+// simply omits the logo rather than breaking PDF generation.
+let _uellixLogoDataUri: string | null | undefined
+function uellixLogoDataUri(): string | null {
+  if (_uellixLogoDataUri !== undefined) return _uellixLogoDataUri
+  try {
+    const p = path.join(process.cwd(), 'public', 'brand', 'uellix-logo-horizontal-from-guide.png')
+    _uellixLogoDataUri = `data:image/png;base64,${fs.readFileSync(p).toString('base64')}`
+  } catch {
+    _uellixLogoDataUri = null
+  }
+  return _uellixLogoDataUri
+}
 
 export type ReportPdfRun = {
   sroiRatio: string | null
@@ -74,8 +96,31 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 8,
   },
-  figureLabel: { fontSize: 7, color: '#64748b' },
+  figureLabel: { fontSize: 8, color: '#64748b' },
   figureValue: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginTop: 2, color: '#0f172a' },
+  // Hero SROI: the single most important number gets dominant visual weight.
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18 },
+  heroBox: {
+    width: '36%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderLeftWidth: 3,
+    borderRadius: 4,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  heroLabel: { fontSize: 8, letterSpacing: 1, textTransform: 'uppercase' },
+  heroValue: { fontSize: 30, fontFamily: 'Helvetica-Bold', color: AZUL_PROFUNDO, marginTop: 2 },
+  heroCaption: { fontSize: 7.5, color: '#64748b', marginTop: 5, lineHeight: 1.3 },
+  heroFigures: { width: '61%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  heroFigure: {
+    width: '31%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 4,
+    padding: 8,
+    justifyContent: 'center',
+  },
   disclaimer: {
     borderWidth: 1,
     borderColor: '#cbd5e1',
@@ -133,6 +178,16 @@ function fmtRatio(value: string | null): string {
   return isNaN(n) ? '—' : `${n.toFixed(2)}:1`
 }
 
+// Plain-language gloss under the hero ratio so the headline number is legible
+// to non-specialist readers (funders, community), not just analysts.
+function sroiCaption(value: string | null, currency?: string | null): string {
+  if (!value) return ''
+  const n = parseFloat(value)
+  if (isNaN(n)) return ''
+  const cur = currency ?? 'USD'
+  return `Por cada 1 ${cur} invertido se generan ${n.toFixed(2)} ${cur} de valor social.`
+}
+
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.metaItem}>
@@ -142,26 +197,25 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.figureBox}>
-      <Text style={styles.figureLabel}>{label}</Text>
-      <Text style={styles.figureValue}>{value}</Text>
-    </View>
-  )
-}
-
 export function ReportPdfDocument(props: ReportPdfProps) {
   const { run } = props
   const approvedLogoUrl = getApprovedOrganizationLogoUrl(props.logoUrl)
+  // Accent = the org's brand color under white-label, otherwise Naranja Impacto.
+  const accent = props.whiteLabelEnabled && props.brandColor ? props.brandColor : NARANJA_IMPACTO
+  // The Uellix wordmark leads the header only when NOT white-labeled, so a
+  // client-branded report never shows a competing Uellix logo.
+  const uellixLogo = props.whiteLabelEnabled ? null : uellixLogoDataUri()
   return (
     <Document title={props.reportTitle} author="Uellix">
       <Page size="A4" style={styles.page}>
         {/* Header */}
-        <View style={[styles.headerRule, props.whiteLabelEnabled && props.brandColor ? { borderBottomColor: props.brandColor } : {}]}>
+        <View style={[styles.headerRule, { borderBottomColor: accent }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.eyebrow}>Reporte de Impacto SROI · Variante {props.variantLabel}</Text>
+              {uellixLogo ? (
+                <Image src={uellixLogo} style={{ width: 92, height: 24, objectFit: 'contain', marginBottom: 8 }} />
+              ) : null}
+              <Text style={[styles.eyebrow, { color: accent }]}>Reporte de Impacto SROI · Variante {props.variantLabel}</Text>
               <Text style={styles.title}>{props.reportTitle}</Text>
             </View>
             {props.whiteLabelEnabled && approvedLogoUrl ? (
@@ -180,15 +234,30 @@ export function ReportPdfDocument(props: ReportPdfProps) {
           </View>
         </View>
 
-        {/* SROI figures */}
+        {/* SROI figures — hero ratio + three supporting figures */}
         {run && (
           <View>
             <Text style={styles.sectionHeading}>Resultados SROI</Text>
-            <View style={styles.figuresRow}>
-              <Figure label="Ratio SROI" value={fmtRatio(run.sroiRatio)} />
-              <Figure label="Valor social neto" value={fmtMoney(run.netSocialValue, run.currency)} />
-              <Figure label="Valor social bruto" value={fmtMoney(run.grossSocialValue, run.currency)} />
-              <Figure label="Inversión total" value={fmtMoney(run.totalInvestment, run.currency)} />
+            <View style={styles.heroRow}>
+              <View style={[styles.heroBox, { borderLeftColor: accent }]}>
+                <Text style={[styles.heroLabel, { color: accent }]}>Ratio SROI</Text>
+                <Text style={styles.heroValue}>{fmtRatio(run.sroiRatio)}</Text>
+                <Text style={styles.heroCaption}>{sroiCaption(run.sroiRatio, run.currency)}</Text>
+              </View>
+              <View style={styles.heroFigures}>
+                <View style={styles.heroFigure}>
+                  <Text style={styles.figureLabel}>Valor social neto</Text>
+                  <Text style={styles.figureValue}>{fmtMoney(run.netSocialValue, run.currency)}</Text>
+                </View>
+                <View style={styles.heroFigure}>
+                  <Text style={styles.figureLabel}>Valor social bruto</Text>
+                  <Text style={styles.figureValue}>{fmtMoney(run.grossSocialValue, run.currency)}</Text>
+                </View>
+                <View style={styles.heroFigure}>
+                  <Text style={styles.figureLabel}>Inversión total</Text>
+                  <Text style={styles.figureValue}>{fmtMoney(run.totalInvestment, run.currency)}</Text>
+                </View>
+              </View>
             </View>
           </View>
         )}
