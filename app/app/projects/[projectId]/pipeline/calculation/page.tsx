@@ -427,6 +427,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       <StellaReviewerPanel projectId={projectId} role="audit_assistant" title="Asistente de Auditoría (Stella)" />
 
       {/* Investment — Multi-row form (Task 11) */}
+      <div id="investment" className="scroll-mt-24" aria-hidden="true" />
       <Card>
         <CardHeader>
           <CardTitle>Inversión del proyecto</CardTitle>
@@ -507,6 +508,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       </Card>
 
       {/* Fase 1c — Funder attribution */}
+      <div id="funder-attribution" className="scroll-mt-24" aria-hidden="true" />
       <Card>
         <CardHeader>
           <CardTitle>Atribución por financiador</CardTitle>
@@ -597,6 +599,11 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       </Card>
 
       {/* Assignment Inputs & SROI Filters */}
+      {/* Anchor targets for readiness action links (#sroi-inputs, #sroi-filters).
+          Both quantity inputs and SROI filters live in this same section, one
+          card per assignment, so both anchors land here. */}
+      <div id="sroi-inputs" className="scroll-mt-24" aria-hidden="true" />
+      <div id="sroi-filters" className="scroll-mt-24" aria-hidden="true" />
       <section aria-labelledby="assignments-heading">
         <h2
           id="assignments-heading"

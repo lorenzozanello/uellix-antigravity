@@ -521,7 +521,7 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
       messageKey: 'unapproved_proxies',
       message: `${unapprovedProxies.length} proxy(ies) no aprobado(s). Todo proxy debe ser revisado y aprobado antes del cálculo. Accede a Proxies para revisar.`,
       itemIds: unapprovedProxies,
-      actionPath: `/app/proxies`,
+      actionPath: `/app/projects/${projectId}/pipeline/proxies`,
       actionLabel: 'Revisar proxies',
     })
   }
@@ -561,7 +561,7 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
       messageKey: 'proxies_missing_usd',
       message: `${proxiesMissingUsd.length} proxy(ies) falta(n) conversión a USD. Verifica que los proxies tengan valores en USD.`,
       itemIds: proxiesMissingUsd,
-      actionPath: `/app/proxies`,
+      actionPath: `/app/projects/${projectId}/pipeline/proxies`,
       actionLabel: 'Revisar proxies',
     })
   }
