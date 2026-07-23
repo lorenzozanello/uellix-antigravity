@@ -1,74 +1,110 @@
+"use client"
+
 import React from "react"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { EvidenceDossier } from "@/components/marketing/visuals/EvidenceDossier"
+import { ArrowRight, Activity, ShieldCheck, Zap } from "lucide-react"
+import { motion } from "framer-motion"
 
 export function HeroSection() {
   return (
     <section
       id="inicio"
       aria-label="Sección principal"
-      className="relative overflow-hidden bg-[var(--uellix-paper)] px-4 pt-16 pb-20 sm:pt-24 sm:pb-28 lg:pt-28 lg:pb-36"
+      className="relative overflow-hidden bg-[#0A101E] px-4 pt-32 pb-20 sm:pt-40 sm:pb-28 lg:pt-48 lg:pb-36 min-h-screen flex items-center"
     >
-      {/* Fine technical grid — masked toward top */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.03)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_85%_65%_at_60%_0%,black_35%,transparent)]"
-      />
-      {/* Copper/orange radial — very subtle */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-8%] top-[-8%] h-[560px] w-[560px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,106,0,0.07),transparent_62%)]"
-      />
+      {/* Background glow effects */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-uellix-orange/20 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 xl:gap-16">
+      {/* Grid pattern */}
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-[0.05] [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
 
-          {/* ── Left: editorial copy column ── */}
-          <div className="flex flex-col items-start text-left animate-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full border border-uellix-orange/25 bg-uellix-orange/8 px-3.5 py-1.5 text-[11px] font-semibold text-[#B85200] mb-7 font-ibm-plex-mono tracking-[0.14em] uppercase">
-              <span className="h-1.5 w-1.5 rounded-full bg-uellix-orange shrink-0" aria-hidden="true" />
-              Ledger cívico de impacto
+      <div className="relative z-10 mx-auto max-w-5xl text-center">
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex justify-center mb-8"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full border border-uellix-orange/30 bg-uellix-orange/10 px-4 py-2 text-xs font-semibold text-[#FF8C33] font-ibm-plex-mono tracking-widest uppercase shadow-[0_0_15px_rgba(252,76,13,0.2)]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-uellix-orange opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-uellix-orange"></span>
             </span>
+            Ledger Cívico de Impacto
+          </span>
+        </motion.div>
 
-            <h1 className="font-sora font-bold tracking-[-0.025em] text-[#0F172A] mb-6 text-[clamp(2.8rem,6.5vw,6rem)] leading-[0.96]">
-              Convierte el impacto social en{" "}
-              <span className="text-uellix-orange text-keyword-mark">evidencia defendible.</span>
-            </h1>
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="font-sora font-extrabold tracking-tight text-white mb-8 text-[clamp(3rem,8vw,5.5rem)] leading-[1.05]"
+        >
+          Convierte el impacto social en{" "}
+          <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-uellix-orange to-[#FFB067] relative inline-block">
+            evidencia defendible.
+            {/* Underline glow */}
+            <span className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-uellix-orange/0 via-uellix-orange to-uellix-orange/0 blur-sm" />
+          </span>
+        </motion.h1>
 
-            <p className="font-manrope text-base sm:text-lg text-[#475569] max-w-xl mb-9 leading-relaxed">
-              Uellix estructura proyectos, conecta evidencias, documenta proxies y
-              filtros SROI, y genera reportes audit-ready preparados para revisión
-              externa.
-            </p>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="font-manrope text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+        >
+          Uellix estructura proyectos, conecta evidencias, documenta proxies SROI y genera reportes <strong className="text-white font-semibold">audit-ready</strong> preparados para revisión externa.
+        </motion.p>
 
-            <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center w-full sm:w-auto">
-              <Link
-                href="/demo"
-                className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-7 py-3.5 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] w-full sm:w-auto shadow-[0_6px_20px_-6px_rgba(255,106,0,0.55)]"
-              >
-                Solicitar demo
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <a
-                href="#metodologia"
-                className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg border border-[#0F172A]/12 bg-white/70 px-7 py-3.5 text-base font-semibold text-[#0F172A] hover:bg-white hover:border-[#0F172A]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] w-full sm:w-auto"
-              >
-                Ver metodología
-              </a>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="flex flex-col sm:flex-row gap-4 items-center justify-center w-full"
+        >
+          <Link
+            href="/demo"
+            className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-uellix-orange to-[#FF8C33] px-8 py-4 text-lg font-bold text-white overflow-hidden shadow-[0_0_30px_rgba(252,76,13,0.4)] hover:shadow-[0_0_50px_rgba(252,76,13,0.6)] transition-all w-full sm:w-auto"
+          >
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+            <span className="relative flex items-center gap-2">
+              Solicitar demo interactiva
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Link>
 
-            <p className="mt-7 max-w-md text-xs leading-relaxed font-manrope text-[#5B6472] border-l-2 border-uellix-orange/30 pl-3">
-              Stella ayuda a identificar riesgos metodológicos. La validación final
-              permanece en manos del equipo experto.
-            </p>
+          <a
+            href="#metodologia"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-md px-8 py-4 text-lg font-semibold text-white hover:bg-white/10 hover:border-white/30 transition-all w-full sm:w-auto"
+          >
+            Ver metodología
+          </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.8 }}
+          className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16 text-sm text-slate-400 font-medium"
+        >
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-[#FFB067]" />
+            Cálculo SROI en tiempo real
           </div>
-
-          {/* ── Right: Evidence Dossier — visible on all breakpoints ── */}
-          <div className="flex items-center justify-center lg:justify-end animate-fade-up">
-            <EvidenceDossier />
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-[#FFB067]" />
+            Trazabilidad Audit-Ready
           </div>
-        </div>
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-[#FFB067]" />
+            Revisión IA con Stella
+          </div>
+        </motion.div>
+
       </div>
     </section>
   )

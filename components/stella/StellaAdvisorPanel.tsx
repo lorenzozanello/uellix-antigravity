@@ -68,7 +68,7 @@ export function StellaAdvisorPanel({
       className={cn(
         'rounded-lg border p-4 my-4 text-sm',
         highlightHint
-          ? 'border-[#FF6A00]/40 bg-[#FF6A00]/5'
+          ? 'border-[#fc4c0d]/40 bg-[#fc4c0d]/5'
           : 'border-border bg-muted/20',
         className
       )}

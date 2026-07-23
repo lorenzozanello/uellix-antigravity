@@ -13,7 +13,7 @@ import { buildValidatorSystemPrompt, buildValidatorUserMessage } from '@/lib/ste
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ValidatorOutputSchema } from '@/lib/stella/schemas/validator-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
-import { checkStellaRateLimit, recordStellaRequest } from '@/lib/stella/rate-limit'
+import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
@@ -24,6 +24,7 @@ export type StellaValidatorErrorCode =
   | 'UNAUTHORIZED'
   | 'UNSUPPORTED_STEP'
   | 'RATE_LIMITED'
+  | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
@@ -61,16 +62,6 @@ export async function getStellaValidator(
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
   }
 
-  // Rate limit check — enforced per org, per hour, in-memory
-  const rateLimit = checkStellaRateLimit(ctx.organization.id)
-  if (!rateLimit.allowed) {
-    return {
-      ok: false,
-      error: 'RATE_LIMITED',
-      message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
-    }
-  }
-
   // Quota check — enforced per org, per calendar month, DB-backed.
   // Every org defaults to quota 0 (blocked) until a super_admin assigns one.
   // Note: this check and the later audit insert (stella_interactions row)
@@ -92,9 +83,21 @@ export async function getStellaValidator(
     // Build context — validates project ownership + step support before consuming rate limit
     const context = await buildValidatorContext(projectId, ctx.organization.id, step)
 
-    // Record after context built — prevents gaming via repeated context errors,
-    // allows retries on Gemini/parse failures
-    recordStellaRequest(ctx.organization.id)
+    // Consume after context validation and immediately before the model attempt.
+    const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
+    if (!rateLimit.allowed) {
+      return rateLimit.reason === 'unavailable'
+        ? {
+            ok: false,
+            error: 'RATE_LIMIT_UNAVAILABLE',
+            message: 'Stella rate limit service is temporarily unavailable.',
+          }
+        : {
+            ok: false,
+            error: 'RATE_LIMITED',
+            message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.`,
+          }
+    }
 
     // Build prompts
     const systemPrompt = buildValidatorSystemPrompt()

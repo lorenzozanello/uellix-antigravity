@@ -10,7 +10,7 @@ export function PipelineStepHeader({ step, title, description, methodologyNote }
     <div className="mb-6 border-b border-border pb-5">
       <div className="flex items-center gap-3 mb-1.5">
         <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6A00] text-xs font-bold text-white"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fc4c0d] text-xs font-bold text-white"
           aria-hidden="true"
         >
           {step}

@@ -222,14 +222,24 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
+  interface InvestmentFormData {
+    funderId?: string;
+    amount?: string;
+    currency?: string;
+    contributionType?: string;
+    inKindValuationNotes?: string;
+    year?: number | string;
+    description?: string;
+  }
+
   // Investment CRUD handlers (for multi-row form)
-  async function handleCreateInvestment(data: any) {
+  async function handleCreateInvestment(data: InvestmentFormData) {
     'use server'
     const formData = new FormData()
-    formData.append('funderId', data.funderId)
-    formData.append('amount', data.amount)
-    formData.append('currency', data.currency)
-    formData.append('contributionType', data.contributionType)
+    if (data.funderId) formData.append('funderId', data.funderId)
+    if (data.amount) formData.append('amount', data.amount)
+    if (data.currency) formData.append('currency', data.currency)
+    if (data.contributionType) formData.append('contributionType', data.contributionType)
     if (data.inKindValuationNotes) {
       formData.append('inKindValuationNotes', data.inKindValuationNotes)
     }
@@ -243,7 +253,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
     revalidatePath(`/app/projects/${projectId}/pipeline/calculation`)
   }
 
-  async function handleUpdateInvestment(investmentId: string, data: any) {
+  async function handleUpdateInvestment(investmentId: string, data: InvestmentFormData) {
     'use server'
     const formData = new FormData()
     if (data.amount) formData.append('amount', data.amount)
@@ -283,7 +293,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         >
           <Card className="h-full hover:shadow-md transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-ring">
             <CardContent className="p-5 flex gap-3 items-start">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FF6A00]/10 text-[#FF6A00]" aria-hidden="true">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fc4c0d]/10 text-[#fc4c0d]" aria-hidden="true">
                 <BarChart2 className="h-4 w-4" />
               </div>
               <div>
@@ -374,7 +384,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {readiness.issues.map((issue, idx) => {
                   // Enrich issues with specific names
-                  let enrichedMessage = issue.message
+                  const enrichedMessage = issue.message
                   let itemDetails = null
 
                   if (issue.messageKey === 'outcomes_without_evidence' && issue.itemIds) {
@@ -417,6 +427,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       <StellaReviewerPanel projectId={projectId} role="audit_assistant" title="Asistente de Auditoría (Stella)" />
 
       {/* Investment — Multi-row form (Task 11) */}
+      <div id="investment" className="scroll-mt-24" aria-hidden="true" />
       <Card>
         <CardHeader>
           <CardTitle>Inversión del proyecto</CardTitle>
@@ -497,6 +508,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       </Card>
 
       {/* Fase 1c — Funder attribution */}
+      <div id="funder-attribution" className="scroll-mt-24" aria-hidden="true" />
       <Card>
         <CardHeader>
           <CardTitle>Atribución por financiador</CardTitle>
@@ -587,6 +599,11 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       </Card>
 
       {/* Assignment Inputs & SROI Filters */}
+      {/* Anchor targets for readiness action links (#sroi-inputs, #sroi-filters).
+          Both quantity inputs and SROI filters live in this same section, one
+          card per assignment, so both anchors land here. */}
+      <div id="sroi-inputs" className="scroll-mt-24" aria-hidden="true" />
+      <div id="sroi-filters" className="scroll-mt-24" aria-hidden="true" />
       <section aria-labelledby="assignments-heading">
         <h2
           id="assignments-heading"

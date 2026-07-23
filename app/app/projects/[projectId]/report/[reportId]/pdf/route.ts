@@ -20,6 +20,7 @@ import {
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
 import { listMethodologyReviewsForProject } from '@/lib/pipeline/methodology-review'
 import { ReportPdfDocument } from '@/lib/reports/pdf/ReportPdfDocument'
+import { getApprovedOrganizationLogoUrl } from '@/lib/organizations/logo-url'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -142,6 +143,9 @@ export async function GET(
     lineItems,
     methodologyReadiness,
     generatedAt,
+    whiteLabelEnabled: ctx.organization.whiteLabelEnabled,
+    logoUrl: getApprovedOrganizationLogoUrl(ctx.organization.logoUrl),
+    brandColor: ctx.organization.brandColor,
   })
 
   // renderToBuffer's type wants a ReactElement<DocumentProps>; our component

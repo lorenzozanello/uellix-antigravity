@@ -38,7 +38,7 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--uellix-paper)] text-[var(--uellix-ink)] font-manrope selection:bg-[#FF6A00]/20 selection:text-[#0F172A]">
+    <div className="dark flex min-h-screen flex-col bg-[var(--uellix-carbon)] text-white font-manrope selection:bg-[#fc4c0d]/20 selection:text-white">
       <script
         type="application/ld+json"
         // Static, trusted content — safe to inline.
@@ -53,7 +53,7 @@ export default function PublicLayout({
       {/* Skip link — visible on focus */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-[#0F172A] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#FF6A00]"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-[#0F172A] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#fc4c0d]"
       >
         Saltar al contenido
       </a>

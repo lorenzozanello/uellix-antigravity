@@ -36,61 +36,79 @@ import { EmptyState } from '@/components/states/EmptyState'
 // Top-level Server Actions for the forms and buttons
 export const fileAction = async (formData: FormData) => {
   'use server'
-  const projectId = formData.get('projectId') as string
-  const fileEntry = formData.get('file')
-  if (!fileEntry || !(fileEntry instanceof File) || fileEntry.size === 0) {
-    throw new Error('Archivo no provisto o vacío.')
+  try {
+    const projectId = formData.get('projectId') as string
+    const fileEntry = formData.get('file')
+    if (!fileEntry || !(fileEntry instanceof File) || fileEntry.size === 0) {
+      throw new Error('Archivo no provisto o vacío.')
+    }
+    // Reject oversized files using File.size (available without reading the
+    // body) before ever buffering the content into memory.
+    if (fileEntry.size > MAX_EVIDENCE_FILE_SIZE_BYTES) {
+      throw new Error(
+        `El archivo supera el límite de ${MAX_EVIDENCE_FILE_SIZE_BYTES / (1024 * 1024)} MB.`
+      )
+    }
+    const buffer = Buffer.from(await fileEntry.arrayBuffer())
+    const rawInput = {
+      title: formData.get('title') as string,
+      description: (formData.get('description') as string) || undefined,
+      outcomeId: (formData.get('outcomeId') as string) || undefined,
+      indicatorId: (formData.get('indicatorId') as string) || undefined,
+      file: {
+        name: fileEntry.name,
+        mimeType: fileEntry.type,
+        size: fileEntry.size,
+        buffer,
+      },
+    }
+    await createFileEvidenceAction(projectId, rawInput)
+    revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido al procesar el archivo'
+    console.error('[fileAction] Error:', { error, message })
+    throw new Error(`No se pudo procesar el archivo: ${message}`)
   }
-  // Reject oversized files using File.size (available without reading the
-  // body) before ever buffering the content into memory.
-  if (fileEntry.size > MAX_EVIDENCE_FILE_SIZE_BYTES) {
-    throw new Error(
-      `El archivo supera el límite de ${MAX_EVIDENCE_FILE_SIZE_BYTES / (1024 * 1024)} MB.`
-    )
-  }
-  const buffer = Buffer.from(await fileEntry.arrayBuffer())
-  const rawInput = {
-    title: formData.get('title') as string,
-    description: (formData.get('description') as string) || undefined,
-    outcomeId: (formData.get('outcomeId') as string) || undefined,
-    indicatorId: (formData.get('indicatorId') as string) || undefined,
-    file: {
-      name: fileEntry.name,
-      mimeType: fileEntry.type,
-      size: fileEntry.size,
-      buffer,
-    },
-  }
-  await createFileEvidenceAction(projectId, rawInput)
-  revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
 export const urlAction = async (formData: FormData) => {
   'use server'
-  const projectId = formData.get('projectId') as string
-  const rawInput = {
-    title: formData.get('title') as string,
-    description: (formData.get('description') as string) || undefined,
-    outcomeId: (formData.get('outcomeId') as string) || undefined,
-    indicatorId: (formData.get('indicatorId') as string) || undefined,
-    url: formData.get('url') as string,
+  try {
+    const projectId = formData.get('projectId') as string
+    const rawInput = {
+      title: formData.get('title') as string,
+      description: (formData.get('description') as string) || undefined,
+      outcomeId: (formData.get('outcomeId') as string) || undefined,
+      indicatorId: (formData.get('indicatorId') as string) || undefined,
+      url: formData.get('url') as string,
+    }
+    await createUrlEvidenceAction(projectId, rawInput)
+    revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido al procesar la URL'
+    console.error('[urlAction] Error:', { error, message })
+    throw new Error(`No se pudo registrar la URL: ${message}`)
   }
-  await createUrlEvidenceAction(projectId, rawInput)
-  revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
 export const textAction = async (formData: FormData) => {
   'use server'
-  const projectId = formData.get('projectId') as string
-  const rawInput = {
-    title: formData.get('title') as string,
-    description: (formData.get('description') as string) || undefined,
-    outcomeId: (formData.get('outcomeId') as string) || undefined,
-    indicatorId: (formData.get('indicatorId') as string) || undefined,
-    text: formData.get('text') as string,
+  try {
+    const projectId = formData.get('projectId') as string
+    const rawInput = {
+      title: formData.get('title') as string,
+      description: (formData.get('description') as string) || undefined,
+      outcomeId: (formData.get('outcomeId') as string) || undefined,
+      indicatorId: (formData.get('indicatorId') as string) || undefined,
+      text: formData.get('text') as string,
+    }
+    await createTextEvidenceAction(projectId, rawInput)
+    revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido al procesar el texto'
+    console.error('[textAction] Error:', { error, message })
+    throw new Error(`No se pudo registrar el texto: ${message}`)
   }
-  await createTextEvidenceAction(projectId, rawInput)
-  revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
 export const archiveAction = async (formData: FormData) => {
@@ -353,7 +371,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <FileText className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Subir archivo</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -465,7 +483,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <Link2 className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Registrar URL</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -578,7 +596,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlignLeft className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <AlignLeft className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Registrar declaración de texto</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">

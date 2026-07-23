@@ -97,7 +97,7 @@ describe('createReportDraftFromRunAction', () => {
 
     const result = await createReportDraftFromRunAction(PROJECT_ID, RUN_ID, payload);
     expect(result.id).toBe(REPORT_ID);
-    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, { title: 'Annual SROI Report', includeFunderBreakdown: false, reportVariant: 'audit' });
+    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, { title: 'Annual SROI Report', includeFunderBreakdown: false, includeEvidenceConfidence: true, reportVariant: 'audit' });
   });
 
   it('passes includeFunderBreakdown through when true', async () => {
@@ -105,7 +105,7 @@ describe('createReportDraftFromRunAction', () => {
     vi.mocked(createReportDraftFromRun).mockResolvedValue({ id: REPORT_ID, title: 'Multi-Funder Report' } as any);
 
     await createReportDraftFromRunAction(PROJECT_ID, RUN_ID, payload);
-    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, { title: 'Multi-Funder Report', includeFunderBreakdown: true, reportVariant: 'audit' });
+    expect(createReportDraftFromRun).toHaveBeenCalledWith(PROJECT_ID, RUN_ID, { title: 'Multi-Funder Report', includeFunderBreakdown: true, includeEvidenceConfidence: true, reportVariant: 'audit' });
   });
 
   it('fails validation on empty title', async () => {

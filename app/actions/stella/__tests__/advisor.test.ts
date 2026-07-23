@@ -61,10 +61,8 @@ vi.mock('@/lib/stella/adapter/gemini-client', () => ({
 }))
 
 const mockCheckStellaRateLimit = vi.fn()
-const mockRecordStellaRequest = vi.fn()
 vi.mock('@/lib/stella/rate-limit', () => ({
-  checkStellaRateLimit: (...args: unknown[]) => mockCheckStellaRateLimit(...args),
-  recordStellaRequest: (...args: unknown[]) => mockRecordStellaRequest(...args),
+  consumeStellaRateLimit: (...args: unknown[]) => mockCheckStellaRateLimit(...args),
 }))
 
 const mockCheckStellaQuota = vi.fn()
@@ -128,6 +126,7 @@ const RATE_LIMIT_OK: RateLimitResult = {
   remaining: 95,
   limit: 100,
   resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+  reason: 'allowed',
 }
 
 const RATE_LIMIT_EXCEEDED: RateLimitResult = {
@@ -135,6 +134,15 @@ const RATE_LIMIT_EXCEEDED: RateLimitResult = {
   remaining: 0,
   limit: 100,
   resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+  reason: 'limit',
+}
+
+const RATE_LIMIT_UNAVAILABLE: RateLimitResult = {
+  allowed: false,
+  remaining: 0,
+  limit: 100,
+  resetAtHourUtc: '2026-06-26T15:00:00.000Z',
+  reason: 'unavailable',
 }
 
 // ---------------------------------------------------------------------------
@@ -390,6 +398,19 @@ describe('getStellaAdvisor server action', () => {
   })
 
   describe('Rate limiting', () => {
+    it('consumes after context validation and before Gemini', async () => {
+      setupSuccessfulCall()
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(mockBuildAdvisorContext.mock.invocationCallOrder[0]).toBeLessThan(
+        mockCheckStellaRateLimit.mock.invocationCallOrder[0]
+      )
+      expect(mockCheckStellaRateLimit.mock.invocationCallOrder[0]).toBeLessThan(
+        mockAdapterGenerate.mock.invocationCallOrder[0]
+      )
+    })
+
     it('returns RATE_LIMITED when org has exceeded hourly limit', async () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
@@ -403,7 +424,23 @@ describe('getStellaAdvisor server action', () => {
       }
     })
 
-    it('passes organization.id (not project id) to checkStellaRateLimit', async () => {
+    it('fails closed when the distributed limiter is unavailable', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 2, quota: 50 })
+      mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_UNAVAILABLE)
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'RATE_LIMIT_UNAVAILABLE',
+        message: 'Stella rate limit service is temporarily unavailable.',
+      })
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it('passes organization.id (not project id) to consumeStellaRateLimit', async () => {
       setupSuccessfulCall()
 
       await getStellaAdvisor('proj-different-id', 'narrative')
@@ -412,13 +449,13 @@ describe('getStellaAdvisor server action', () => {
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalledWith('proj-different-id')
     })
 
-    it('does NOT record request when rate limited', async () => {
+    it('consumes only once when rate limited', async () => {
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
 
       await getStellaAdvisor('proj-1', 'narrative')
 
-      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).toHaveBeenCalledOnce()
     })
 
     it('does NOT call Gemini when rate limited', async () => {
@@ -430,12 +467,12 @@ describe('getStellaAdvisor server action', () => {
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
     })
 
-    it('records request after context built, with organization.id', async () => {
+    it('consumes after context with organization.id', async () => {
       setupSuccessfulCall()
 
       await getStellaAdvisor('proj-1', 'narrative')
 
-      expect(mockRecordStellaRequest).toHaveBeenCalledWith('org-1')
+      expect(mockCheckStellaRateLimit).toHaveBeenCalledWith('org-1')
     })
 
     it('does NOT record rate limit when auth fails', async () => {
@@ -444,7 +481,6 @@ describe('getStellaAdvisor server action', () => {
       await getStellaAdvisor('proj-1', 'narrative')
 
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
-      expect(mockRecordStellaRequest).not.toHaveBeenCalled()
     })
   })
 

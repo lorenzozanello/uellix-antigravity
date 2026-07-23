@@ -101,7 +101,7 @@ export function DemoRequestForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-7 py-3.5 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_6px_20px_-6px_rgba(255,106,0,0.55)]"
+        className="btn-premium inline-flex items-center justify-center gap-2 rounded-lg bg-uellix-orange px-7 py-3.5 text-base font-semibold text-white hover:bg-uellix-orange-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uellix-orange min-h-[48px] disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_6px_20px_-6px_rgba(252,76,13,0.55)]"
       >
         {isLoading ? "Enviando…" : "Enviar solicitud"}
         {!isLoading && <ArrowRight className="h-4 w-4" aria-hidden="true" />}

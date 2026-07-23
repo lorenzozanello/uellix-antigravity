@@ -1,23 +1,26 @@
 // lib/stella/rate-limit.ts
-// Sprint 9D: Per-org in-memory hourly rate limiter for Stella requests.
-// Uses lazy expiry: stale hour buckets are overwritten on the next request,
-// no active cleanup needed. Not Redis-backed — resets on server restart (MVP).
+// Phase 4: Redis-backed Rate Limiter with In-Memory fallback.
 
 import { stellaConfig } from './config'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 export interface RateLimitResult {
   allowed: boolean
   remaining: number
   limit: number
   resetAtHourUtc: string
+  reason: 'allowed' | 'limit' | 'unavailable'
 }
 
+// ---------------------------------------------------------------------------
+// In-Memory Fallback Implementation
+// ---------------------------------------------------------------------------
 interface HourBucket {
   count: number
   hourKey: string
 }
 
-// UTC hour key, e.g. "2026-5-26-14" (month is 0-indexed, intentional — consistent within process)
 function currentHourKey(): string {
   const now = new Date()
   return `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}-${now.getUTCHours()}`
@@ -33,29 +36,75 @@ function nextHourReset(): string {
 
 const store = new Map<string, HourBucket>()
 
-export function checkStellaRateLimit(organizationId: string): RateLimitResult {
+function memoryConsume(organizationId: string): RateLimitResult {
   const limit = stellaConfig.rateLimitPerHour
   const hourKey = currentHourKey()
   const bucket = store.get(organizationId)
   const count = bucket && bucket.hourKey === hourKey ? bucket.count : 0
+  const allowed = count < limit
+  const nextCount = allowed ? count + 1 : count
+
+  if (allowed) {
+    store.set(organizationId, { count: nextCount, hourKey })
+  }
 
   return {
-    allowed: count < limit,
-    remaining: Math.max(0, limit - count),
+    allowed,
+    remaining: Math.max(0, limit - nextCount),
     limit,
     resetAtHourUtc: nextHourReset(),
+    reason: allowed ? 'allowed' : 'limit',
   }
 }
 
-export function recordStellaRequest(organizationId: string): void {
-  const hourKey = currentHourKey()
-  const bucket = store.get(organizationId)
+// ---------------------------------------------------------------------------
+// Redis (Upstash/Vercel KV) Implementation
+// ---------------------------------------------------------------------------
 
-  if (bucket && bucket.hourKey === hourKey) {
-    bucket.count++
-  } else {
-    store.set(organizationId, { count: 1, hourKey })
+let ratelimit: Ratelimit | null = null
+
+if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  const redis = new Redis({
+    url: process.env.KV_REST_API_URL,
+    token: process.env.KV_REST_API_TOKEN,
+  })
+  ratelimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(stellaConfig.rateLimitPerHour, '1 h'),
+    analytics: true,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Consume exactly one hourly Stella token for an organization. */
+export async function consumeStellaRateLimit(organizationId: string): Promise<RateLimitResult> {
+  if (ratelimit) {
+    const limit = stellaConfig.rateLimitPerHour
+    try {
+      const result = await ratelimit.limit(`stella_org_${organizationId}`)
+      return {
+        allowed: result.success,
+        remaining: result.remaining,
+        limit: result.limit,
+        resetAtHourUtc: new Date(result.reset).toISOString(),
+        reason: result.success ? 'allowed' : 'limit',
+      }
+    } catch {
+      console.error('[stella-rate-limit] Distributed limiter unavailable')
+      return {
+        allowed: false,
+        remaining: 0,
+        limit,
+        resetAtHourUtc: nextHourReset(),
+        reason: 'unavailable',
+      }
+    }
   }
+
+  return memoryConsume(organizationId)
 }
 
 export function resetStellaRateLimitForTests(): void {

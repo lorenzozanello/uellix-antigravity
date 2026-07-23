@@ -67,14 +67,26 @@ async function resolveAmountUsd(
   currency: string | null,
   year: number | null | undefined,
 ): Promise<{ amountUsd: string | null; fxRateId: string | null }> {
-  if (currency === 'USD') return { amountUsd: amount, fxRateId: null }
+  if (!currency || currency === 'USD') return { amountUsd: amount, fxRateId: null }
+  
+  const date = year ? `${year}-12-31` : new Date().toISOString().slice(0, 10)
+  
   if (currency === 'COP') {
-    const date = year ? `${year}-12-31` : new Date().toISOString().slice(0, 10)
     const rate = await getOrCreateSharedCopRate(date)
     if (!rate?.rateToUsd) return { amountUsd: null, fxRateId: null }
     return { amountUsd: convertToUsd(amount, rate.rateToUsd), fxRateId: rate.id }
   }
-  return { amountUsd: null, fxRateId: null }
+
+  // Attempt to fetch from global cache / Oracle for other currencies
+  try {
+    const { getOrCreateFxRate } = await import('@/lib/pipeline/fx-rates')
+    const rate = await getOrCreateFxRate(currency, date)
+    if (!rate?.rateToUsd) return { amountUsd: null, fxRateId: null }
+    return { amountUsd: convertToUsd(amount, rate.rateToUsd), fxRateId: rate.id }
+  } catch (error) {
+    // If auto-fetch fails and no manual rate is provided, it throws. Return null.
+    return { amountUsd: null, fxRateId: null }
+  }
 }
 
 /**
@@ -223,7 +235,7 @@ export async function updateInvestment(
   const existing = await getInvestment(investmentId)
 
   // Build update payload with provided fields
-  const updatePayload: any = {
+  const updatePayload: Record<string, unknown> = {
     updatedAt: new Date(),
   }
 

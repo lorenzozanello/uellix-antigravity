@@ -60,7 +60,7 @@ export function UseCasesSection() {
               <div className="texture-grain" aria-hidden="true" />
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(255,106,0,0.10),transparent_60%)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(252,76,13,0.10),transparent_60%)]"
               />
               <div className="relative">
                 <div className="flex items-center justify-between">

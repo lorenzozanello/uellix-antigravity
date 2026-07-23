@@ -28,8 +28,10 @@ import {
   startMethodologyReview,
 } from '@/lib/pipeline/methodology-review'
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import type { OrganizationContext } from '@/lib/auth/session'
+import type { Role } from '@/lib/auth/roles'
 
-function ctxWithRole(role: string) {
+function ctxWithRole(role: Role): OrganizationContext {
   return {
     user: { id: 'user-1', email: 't@e.com', fullName: null, avatarUrl: null, isSuperAdmin: false },
     organization: { id: 'org-1', name: 'Org', slug: 'org', legalName: null, country: null, sector: null, status: 'active' },
@@ -43,7 +45,7 @@ describe('methodology review — authorization', () => {
   })
 
   it('rejects an item upsert from a non-reviewing role (viewer)', async () => {
-    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctxWithRole('viewer') as never)
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctxWithRole('viewer'))
 
     await expect(
       upsertMethodologyReviewItem('proj-1', 'evidence', {
@@ -56,7 +58,7 @@ describe('methodology review — authorization', () => {
   })
 
   it('rejects starting a review from a non-reviewing role (analyst)', async () => {
-    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctxWithRole('analyst') as never)
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctxWithRole('analyst'))
 
     await expect(startMethodologyReview('proj-1', 'outcomes')).rejects.toThrow('Permission denied')
   })

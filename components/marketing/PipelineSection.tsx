@@ -46,7 +46,7 @@ function NodeCircle({ n, kind, size }: Omit<Node, "label"> & { size: "lg" | "sm"
     <span
       className={`flex ${dims} shrink-0 items-center justify-center rounded-full border-2 font-sora font-bold transition-premium group-hover:-translate-y-0.5 ${
         kind === "output"
-          ? "border-uellix-orange bg-uellix-orange text-white shadow-[0_8px_20px_-6px_rgba(255,106,0,0.65)]"
+          ? "border-uellix-orange bg-uellix-orange text-white shadow-[0_8px_20px_-6px_rgba(252,76,13,0.65)]"
           : kind === "stella"
           ? "border-uellix-orange/40 bg-uellix-orange/10 text-[#B85200]"
           : "border-[#0F172A]/14 bg-white text-[#0F172A] shadow-sm"

@@ -75,7 +75,7 @@ export default async function PortfolioDetailPage({
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+              <TrendingUp className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
               <CardTitle className="text-base">Análisis de portafolio</CardTitle>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">

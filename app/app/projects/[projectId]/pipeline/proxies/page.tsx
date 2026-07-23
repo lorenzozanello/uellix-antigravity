@@ -4,6 +4,7 @@ import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
 import { StellaAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
+import { ProxyBankSearch } from '@/app/components/proxy-bank-search/ProxyBankSearch'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import {
@@ -16,6 +17,7 @@ import { createProxySourceAction } from '@/app/app/projects/[projectId]/pipeline
 import { createFinancialProxyAction } from '@/app/app/projects/[projectId]/pipeline/proxies/createFinancialProxy.action'
 import { assignProxyToOutcomeAction } from '@/app/app/projects/[projectId]/pipeline/proxies/assignProxyToOutcome.action'
 import { archiveOutcomeProxyAssignmentAction } from '@/app/app/projects/[projectId]/pipeline/proxies/archiveOutcomeProxyAssignment.action'
+import { updateFinancialProxyReviewStatusAction } from '@/app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxyReviewStatus.action'
 import { revalidatePath } from 'next/cache'
 import { Archive, BookOpen, DollarSign, GitMerge } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -162,6 +164,16 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
     revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
 
+  async function handleSuggestProxy(formData: FormData) {
+    'use server'
+    const proxyId = formData.get('proxyId') as string
+    await updateFinancialProxyReviewStatusAction(projectId, {
+      proxyId,
+      newStatus: 'pending_review'
+    })
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
+  }
+
   return (
     <div className="space-y-6 max-w-6xl">
       <PipelineStepHeader
@@ -253,6 +265,17 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                      {p.reviewStatus === 'suggested' && canEdit && (
+                        <form action={handleSuggestProxy} className="mt-2">
+                          <input type="hidden" name="proxyId" value={p.id} />
+                          <button
+                            type="submit"
+                            className="text-[10px] bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded transition-colors"
+                          >
+                            Sugerir al Banco Global
+                          </button>
+                        </form>
+                      )}
                     </TableCell>
                     <TableCell>
                       {confidenceConfig ? (
@@ -284,19 +307,22 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
 
       {/* Creation forms — restricted to permitted roles */}
       {canEdit && (
-        <section aria-labelledby="add-proxy-heading">
+        <section aria-labelledby="manage-proxies-heading">
           <h2
-            id="add-proxy-heading"
+            id="manage-proxies-heading"
             className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
           >
-            Agregar al banco de proxies
+            Gestión de Proxies
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          
+          <ProxyBankSearch />
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Create Source */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <BookOpen className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Registrar fuente</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -377,7 +403,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <DollarSign className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Crear proxy financiero</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -572,7 +598,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <GitMerge className="h-4 w-4 text-[#FF6A00]" aria-hidden="true" />
+                  <GitMerge className="h-4 w-4 text-[#fc4c0d]" aria-hidden="true" />
                   <CardTitle className="text-sm">Asignar proxy a resultado</CardTitle>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">

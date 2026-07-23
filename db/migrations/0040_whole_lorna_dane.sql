@@ -1,0 +1,1 @@
+ALTER TABLE "sroi_reports" ADD COLUMN "include_evidence_confidence" boolean DEFAULT true NOT NULL;

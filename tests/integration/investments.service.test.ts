@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { randomUUID } from 'crypto'
 import { db } from '@/db/client'
 import {
@@ -19,6 +19,26 @@ import {
 
 const uuid = randomUUID
 
+let mockUserId = ''
+let mockOrgId = ''
+
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentOrganizationContext: vi.fn(() => Promise.resolve({
+    user: { id: mockUserId, email: 'test@example.com' },
+    organization: { id: mockOrgId, name: 'Test Org', slug: 'test-org' },
+    membership: { role: 'analyst' }
+  })),
+  requireOrganizationAccess: vi.fn(() => Promise.resolve({
+    user: { id: mockUserId, email: 'test@example.com' },
+    organization: { id: mockOrgId, name: 'Test Org', slug: 'test-org' },
+    membership: { role: 'analyst' }
+  })),
+  getCurrentUser: vi.fn(() => Promise.resolve({
+    id: mockUserId,
+    email: 'test@example.com'
+  }))
+}))
+
 describe('Investment Service - Multi-Funder CRUD', () => {
   let orgId: string
   let userId: string
@@ -29,6 +49,7 @@ describe('Investment Service - Multi-Funder CRUD', () => {
   beforeEach(async () => {
     // Create test organization
     orgId = uuid()
+    mockOrgId = orgId
     await db.insert(organizations).values({
       id: orgId,
       name: 'Test Org',
@@ -40,6 +61,7 @@ describe('Investment Service - Multi-Funder CRUD', () => {
 
     // Create test user
     userId = uuid()
+    mockUserId = userId
     await db.insert(users).values({
       id: userId,
       email: `test-${Date.now()}@example.com`,
@@ -97,13 +119,11 @@ describe('Investment Service - Multi-Funder CRUD', () => {
   })
 
   afterEach(async () => {
-    // Cleanup
+    // Cleanup non-append-only data
     await db.delete(projectInvestments).where(eq(projectInvestments.projectId, projectId))
     await db.delete(projects).where(eq(projects.id, projectId))
     await db.delete(funders).where(eq(funders.organizationId, orgId))
     await db.delete(organizationMembers).where(eq(organizationMembers.organizationId, orgId))
-    await db.delete(users).where(eq(users.id, userId))
-    await db.delete(organizations).where(eq(organizations.id, orgId))
   })
 
   describe('createInvestment', () => {
@@ -122,9 +142,9 @@ describe('Investment Service - Multi-Funder CRUD', () => {
       expect(result.projectId).toBe(projectId)
       expect(result.funderId).toBe(funder1Id)
       expect(result.contributionType).toBe('cash')
-      expect(result.amount).toBe('10000')
+      expect(result.amount).toBe('10000.0000')
       expect(result.currency).toBe('USD')
-      expect(result.amountUsd).toBe('10000') // USD passes through
+      expect(result.amountUsd).toBe('10000.0000') // USD passes through
       expect(result.status).toBe('active')
     })
 
@@ -268,7 +288,7 @@ describe('Investment Service - Multi-Funder CRUD', () => {
         amount: '15000',
       })
 
-      expect(updated.amount).toBe('15000')
+      expect(updated.amount).toBe('15000.0000')
       expect(updated.id).toBe(inv.id)
     })
 
@@ -317,7 +337,7 @@ describe('Investment Service - Multi-Funder CRUD', () => {
       })
 
       expect(updated.currency).toBe('COP')
-      expect(updated.amount).toBe('1000000')
+      expect(updated.amount).toBe('1000000.0000')
       expect(updated.amountUsd).not.toBeNull()
     })
 

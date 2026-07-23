@@ -399,11 +399,11 @@ describe('InvestmentRow Component', () => {
     )
 
     // Should have option to preview the COP TRM rate
-    expect(screen.getByText(/Ver TRM/i)).toBeInTheDocument()
+    expect(screen.getByText(/Consultar Tasa Automática/i)).toBeInTheDocument()
   })
 
-  // Test 15: Manual FX entry for non-COP currency
-  it('shows manual FX entry fields for non-COP, non-USD currencies', () => {
+  // Test 15: Auto fetch for non-COP currency
+  it('shows auto-fetch button for non-COP, non-USD currencies too', () => {
     const eurInvestment = {
       ...mockInvestment,
       currency: 'EUR',
@@ -421,9 +421,8 @@ describe('InvestmentRow Component', () => {
       />
     )
 
-    // Should show manual entry fields
-    expect(screen.getByLabelText(/Tasa 1 EUR.*USD/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Fuente/i)).toBeInTheDocument()
+    // Should show auto fetch button
+    expect(screen.getByText(/Consultar Tasa Automática/i)).toBeInTheDocument()
   })
 
   // Test 16: Explicit save button triggers onSave (no auto-save on keystroke)

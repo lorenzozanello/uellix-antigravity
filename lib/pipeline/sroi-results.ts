@@ -42,6 +42,7 @@ type ReviewItemInput = z.infer<typeof ReviewItemInputSchema>;
 const ReportDraftInputSchema = z.object({
   title: z.string().min(1),
   includeFunderBreakdown: z.boolean().optional().default(false),
+  includeEvidenceConfidence: z.boolean().optional().default(true),
   reportVariant: z.enum(['funder', 'methodological', 'audit']).optional().default('audit'),
 });
 
@@ -375,6 +376,7 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
       title: validated.title,
       status: 'draft',
       includeFunderBreakdown: validated.includeFunderBreakdown,
+      includeEvidenceConfidence: validated.includeEvidenceConfidence,
       reportVariant: validated.reportVariant,
       createdBy: ctx.user.id,
       createdAt: new Date(),
@@ -528,6 +530,7 @@ export async function lockReportDraft(projectId: string, reportId: string) {
     .update(sroiReports)
     .set({
       status: 'locked',
+      verificationHash: crypto.randomUUID(),
       lockedBy: ctx.user.id,
       lockedAt: new Date(),
       updatedAt: new Date(),

@@ -12,7 +12,7 @@ export function EditorialManifesto() {
       <div className="texture-grain" aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_50%,rgba(255,106,0,0.06),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_50%,rgba(252,76,13,0.06),transparent_70%)]"
       />
       {/* Oversized editorial index mark */}
       <span

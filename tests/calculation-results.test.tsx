@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import { CalculationResultsCard } from '@/components/calculation-results/CalculationResultsCard'
 import { FunderBreakdownTable } from '@/components/calculation-results/FunderBreakdownTable'
 import { FxAuditTrail } from '@/components/calculation-results/FxAuditTrail'
@@ -72,8 +73,8 @@ const mockInvestments = [
 
 describe('CalculationResultsCard', () => {
   it('should render null when snapshotJson is null', () => {
-    const result = CalculationResultsCard({ snapshotJson: null, currency: 'USD' })
-    expect(result).toBeNull()
+    const { container } = render(<CalculationResultsCard snapshotJson={null} currency="USD" />)
+    expect(container.firstChild).toBeNull()
   })
 
   it('should render null when fundersBreakdown is empty', () => {
@@ -81,8 +82,8 @@ describe('CalculationResultsCard', () => {
       ...mockSnapshotJson,
       fundersBreakdown: [],
     }
-    const result = CalculationResultsCard({ snapshotJson: snapshot, currency: 'USD' })
-    expect(result).toBeNull()
+    const { container } = render(<CalculationResultsCard snapshotJson={snapshot} currency="USD" />)
+    expect(container.firstChild).toBeNull()
   })
 
   it('should export component without errors', () => {
@@ -93,13 +94,15 @@ describe('CalculationResultsCard', () => {
 
 describe('FunderBreakdownTable', () => {
   it('should render null when fundersBreakdown is empty', () => {
-    const result = FunderBreakdownTable({
-      fundersBreakdown: [],
-      unattributedNsvUsd: '0',
-      totalNetSocialValueUsd: '0',
-      currency: 'USD',
-    })
-    expect(result).toBeNull()
+    const { container } = render(
+      <FunderBreakdownTable
+        fundersBreakdown={[]}
+        unattributedNsvUsd="0"
+        totalNetSocialValueUsd="0"
+        currency="USD"
+      />
+    )
+    expect(container.firstChild).toBeNull()
   })
 
   it('should export component without errors', () => {
@@ -141,14 +144,14 @@ describe('FunderBreakdownTable', () => {
 
 describe('FxAuditTrail', () => {
   it('should render null when investments is empty', () => {
-    const result = FxAuditTrail({ investments: [] })
-    expect(result).toBeNull()
+    const { container } = render(<FxAuditTrail investments={[]} />)
+    expect(container.firstChild).toBeNull()
   })
 
   it('should render null when no conversions needed (all USD)', () => {
     const usdOnly = mockInvestments.slice(0, 1)
-    const result = FxAuditTrail({ investments: usdOnly })
-    expect(result).toBeNull()
+    const { container } = render(<FxAuditTrail investments={usdOnly} />)
+    expect(container.firstChild).toBeNull()
   })
 
   it('should export component without errors', () => {

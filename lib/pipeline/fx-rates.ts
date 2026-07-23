@@ -9,7 +9,7 @@
 import { db } from '@/db/client';
 import { fxRates } from '@/db/schema';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import Decimal from 'decimal.js';
 
@@ -105,7 +105,62 @@ export async function getOrCreateFxRate(
     return result;
   }
 
-  // No existing rate and no manual entry provided
+  // No existing manual rate and no manual entry provided.
+  // Before failing, let's see if there is a globally cached auto-fetched rate.
+  const globalCached = await db
+    .select()
+    .from(fxRates)
+    .where(
+      and(
+        eq(fxRates.currency, parsed.currency),
+        eq(fxRates.rateDate, parsed.rateDate),
+        isNull(fxRates.organizationId),
+      ),
+    )
+    .then((rows) => rows[0] ?? null);
+
+  if (globalCached) {
+    return globalCached;
+  }
+
+  // Not in global cache. Attempt to fetch from FX Oracle.
+  const { fetchHistoricalRateToUsd } = await import('@/lib/pipeline/fx-oracle');
+  const fetched = await fetchHistoricalRateToUsd(parsed.currency, parsed.rateDate);
+
+  if (fetched) {
+    try {
+      const inserted = await db
+        .insert(fxRates)
+        .values({
+          currency: parsed.currency,
+          rateDate: parsed.rateDate,
+          rateToUsd: fetched.rateToUsd.toString(),
+          source: fetched.source,
+          sourceType: 'auto_fetched',
+          organizationId: null, // Global cache
+          createdBy: null,
+        })
+        .returning()
+        .then((rows) => rows[0]);
+      return inserted;
+    } catch (e) {
+      // Race condition with another concurrent request: read again
+      const raced = await db
+        .select()
+        .from(fxRates)
+        .where(
+          and(
+            eq(fxRates.currency, parsed.currency),
+            eq(fxRates.rateDate, parsed.rateDate),
+            isNull(fxRates.organizationId),
+          ),
+        )
+        .then((rows) => rows[0] ?? null);
+      if (raced) return raced;
+    }
+  }
+
+  // No existing rate, no manual entry provided, and auto-fetch failed
   throw new Error(
     `No rate found for ${parsed.currency}/${parsed.rateDate}. ` +
       'Manual entry required: provide rateToUsd and source.',

@@ -29,7 +29,7 @@ export default function OpengraphImage() {
             position: "absolute",
             inset: 0,
             background:
-              "radial-gradient(ellipse 60% 60% at 82% 12%, rgba(255,106,0,0.20), transparent 60%)",
+              "radial-gradient(ellipse 60% 60% at 82% 12%, rgba(252,76,13,0.20), transparent 60%)",
             display: "flex",
           }}
         />
@@ -57,7 +57,7 @@ export default function OpengraphImage() {
               style={{
                 fontSize: 40,
                 fontWeight: 700,
-                color: "#FF6A00",
+                color: "#fc4c0d",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -98,7 +98,7 @@ export default function OpengraphImage() {
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.025em",
-              color: "#FF6A00",
+              color: "#fc4c0d",
             }}
           >
             evidencia defendible.
@@ -122,7 +122,7 @@ export default function OpengraphImage() {
                 width: 10,
                 height: 10,
                 borderRadius: 999,
-                backgroundColor: "#FF6A00",
+                backgroundColor: "#fc4c0d",
                 display: "flex",
               }}
             />

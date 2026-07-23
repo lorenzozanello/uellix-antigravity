@@ -1,0 +1,114 @@
+name: P1A Validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate-p1a:
+    name: Validate P1A Architecture and Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Loopback URLs
+        run: |
+          echo "Validating that critical local config files only target loopback interfaces..."
+          
+          # Check drizzle.local.config.ts
+          if ! grep -Ei "^[[:space:]]*const LOCAL_DB_URL = .*@(127\.0\.0\.1|localhost|\[::1\])" drizzle.local.config.ts; then
+            echo "🚨 Error: drizzle.local.config.ts contains a non-loopback database URL!"
+            exit 1
+          fi
+          
+          # Check seed-local.ts database URL
+          if ! grep -Ei "^[[:space:]]*const dbUrl = .*@(127\.0\.0\.1|localhost|\[::1\])" scripts/seed-local.ts; then
+            echo "🚨 Error: scripts/seed-local.ts contains a non-loopback database URL!"
+            exit 1
+          fi
+          
+          # Check config.toml ports/urls
+          if ! grep -Ei "^[[:space:]]*api_url = ['\"]https?://(127\.0\.0\.1|localhost|\[::1\])" supabase/config.toml; then
+            echo "🚨 Error: supabase/config.toml api_url is not loopback!"
+            exit 1
+          fi
+          
+          echo "✅ Loopback check passed."
+
+      - name: Start Supabase Local
+        run: pnpm supabase start
+
+      - name: Export Supabase Local Env Vars
+        run: |
+          trap 'rm -f .env.supabase' EXIT
+          pnpm supabase status -o env --override-name api.url=NEXT_PUBLIC_SUPABASE_URL,auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY,auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY,db.url=DATABASE_URL > .env.supabase
+          
+          # Validate loopback without printing values
+          SB_URL=$(grep NEXT_PUBLIC_SUPABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')
+          DB_URL=$(grep DATABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')
+          
+          if echo "$SB_URL" | grep -qvE "127.0.0.1|localhost|::1"; then
+            echo "🚨 Error: NEXT_PUBLIC_SUPABASE_URL is not loopback!"
+            exit 1
+          fi
+          
+          if echo "$DB_URL" | grep -qvE "127.0.0.1|localhost|::1"; then
+            echo "🚨 Error: DATABASE_URL is not loopback!"
+            exit 1
+          fi
+          
+          # Export only the four variables used by tests. Supabase CLI wraps
+          # values in quotes; GitHub otherwise preserves those quotes and the
+          # Postgres client receives an invalid URL.
+          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL; do
+            raw_value=$(grep -m1 "^${key}=" .env.supabase | cut -d '=' -f2-)
+            value="${raw_value%\"}"
+            value="${value#\"}"
+            echo "::add-mask::${value}"
+            printf '%s=%s\n' "${key}" "${value}" >> "$GITHUB_ENV"
+          done
+
+      - name: Run Drizzle Local Migrations
+        run: pnpm db:migrate:local
+
+      - name: Run Drizzle Local Seed
+        run: pnpm db:seed:local
+
+      - name: Run Integration Tests
+        run: pnpm test:integration
+
+      - name: Run RLS Tests
+        run: pnpm test:rls
+
+      - name: Run Lint
+        run: pnpm lint
+
+      - name: Run Typecheck
+        run: pnpm typecheck
+
+      - name: Run Unit Tests
+        run: pnpm test:unit
+
+      - name: Build Project
+        run: pnpm build
+
+      - name: Stop Supabase
+        if: always()
+        run: pnpm supabase stop --no-backup

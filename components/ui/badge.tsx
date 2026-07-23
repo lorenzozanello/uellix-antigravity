@@ -12,7 +12,7 @@ const badgeVariants = cva(
         warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100',
         danger: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
         teal: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-100',
-        accent: 'bg-[#FF6A00]/10 text-[#FF6A00] dark:bg-[#FF6A00]/20 dark:text-[#FF6A00]',
+        accent: 'bg-[#fc4c0d]/10 text-[#fc4c0d] dark:bg-[#fc4c0d]/20 dark:text-[#fc4c0d]',
       },
     },
     defaultVariants: {
