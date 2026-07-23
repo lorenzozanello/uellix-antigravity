@@ -187,28 +187,41 @@ const styles = StyleSheet.create({
   },
 })
 
+// es-CO number format: '.' thousands, ',' decimals. Currency is placed BEFORE
+// the amount (USD 116.940,00) per Colombian/institutional convention.
 function fmtMoney(value: string | null, currency?: string | null): string {
   if (!value) return '—'
   const n = parseFloat(value)
   if (isNaN(n)) return '—'
-  const formatted = n.toLocaleString('es-MX', { maximumFractionDigits: 2 })
-  return currency ? `${formatted} ${currency}` : formatted
+  const formatted = n.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return currency ? `${currency} ${formatted}` : formatted
 }
 
 function fmtRatio(value: string | null): string {
   if (!value) return '—'
   const n = parseFloat(value)
-  return isNaN(n) ? '—' : `${n.toFixed(2)}:1`
+  return isNaN(n) ? '—' : `${n.toFixed(2).replace('.', ',')} : 1`
 }
 
 // Plain-language gloss under the hero ratio so the headline number is legible
-// to non-specialist readers (funders, community), not just analysts.
+// to non-specialist readers (funders, community), not just analysts. Framed as
+// an estimate, never a certified measurement.
 function sroiCaption(value: string | null, currency?: string | null): string {
   if (!value) return ''
   const n = parseFloat(value)
   if (isNaN(n)) return ''
   const cur = currency ?? 'USD'
-  return `Por cada 1 ${cur} invertido se generan ${n.toFixed(2)} ${cur} de valor social.`
+  return `Por cada ${cur} 1 invertido, se estima que el proyecto generó ${cur} ${n.toFixed(2).replace('.', ',')} de valor social.`
+}
+
+// Spanish labels for enum values that arrive from the data layer in English.
+const FUNDER_TYPE_ES: Record<string, string> = {
+  public: 'Público', private: 'Privado', foundation: 'Fundación',
+  multilateral: 'Multilateral', individual: 'Individual', other: 'Otro',
+}
+const EVIDENCE_STATUS_ES: Record<string, string> = {
+  draft: 'Borrador', under_review: 'En revisión', approved: 'Aprobado',
+  rejected: 'Rechazado', archived: 'Archivado',
 }
 
 function MetaItem({ label, value }: { label: string; value: string }) {
@@ -375,7 +388,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
             {props.funderBreakdown.rows.map((r, i) => (
               <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, { width: '34%' }]}>{r.funderName}</Text>
-                <Text style={[styles.td, { width: '20%', color: '#64748b' }]}>{r.funderType}</Text>
+                <Text style={[styles.td, { width: '20%', color: '#64748b' }]}>{FUNDER_TYPE_ES[r.funderType] ?? r.funderType}</Text>
                 <Text style={[styles.td, { width: '16%', textAlign: 'right' }]}>{fmtMoney(r.investmentUsd)}</Text>
                 <Text style={[styles.td, { width: '18%', textAlign: 'right' }]}>{fmtMoney(r.attributedNsvUsd)}</Text>
                 <Text style={[styles.td, { width: '12%', textAlign: 'right' }]}>{fmtRatio(r.sroiRatio)}</Text>
@@ -416,7 +429,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Evidence hash manifest (audit annex) — only when present */}
         {props.evidenceManifest.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <SectionHeader title="Manifiesto de evidencia (hashes SHA-256)" accent={accent} />
+            <SectionHeader title="Manifiesto de evidencia (huellas digitales SHA-256)" accent={accent} />
             <View style={styles.tableHeaderRow}>
               <Text style={[styles.th, { width: '46%' }]}>Título</Text>
               <Text style={[styles.th, { width: '14%' }]}>Tipo</Text>
@@ -427,7 +440,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, { width: '46%' }]}>{e.title}</Text>
                 <Text style={[styles.td, { width: '14%', color: '#64748b' }]}>{e.type}</Text>
-                <Text style={[styles.td, { width: '20%' }]}>{e.status}</Text>
+                <Text style={[styles.td, { width: '20%' }]}>{EVIDENCE_STATUS_ES[e.status] ?? e.status}</Text>
                 <Text style={[styles.tdMono, { width: '20%' }]}>{e.hashShort ? `${e.hashShort}…` : '—'}</Text>
               </View>
             ))}
@@ -437,7 +450,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Raw calculation line items (audit annex) — only when present */}
         {props.lineItems && (
           <View style={styles.section} wrap={false}>
-            <SectionHeader title="Line items del cálculo" accent={accent} />
+            <SectionHeader title="Detalle de partidas del cálculo" accent={accent} />
             <Text style={styles.sectionNote}>
               Contribuciones crudas de la corrida inmutable. Referencias por ID de resultado/proxy
               del snapshot (no por nombre, que podría haber cambiado). Valores en USD.
@@ -491,7 +504,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         <Text
           style={styles.footer}
           render={({ pageNumber, totalPages }) =>
-            `Uellix · Reporte SROI generado el ${props.generatedAt} · Documento lista para auditoría, requiere revisión humana antes de su uso externo · Página ${pageNumber} de ${totalPages}`
+            `Uellix · ${props.projectName} · Reporte SROI${run?.version ? ` v${run.version}` : ''} · Generado ${props.generatedAt} · Requiere revisión humana antes de su uso externo · Página ${pageNumber}/${totalPages}`
           }
           fixed
         />
