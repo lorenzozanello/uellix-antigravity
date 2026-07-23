@@ -804,21 +804,19 @@ export interface SroiScenarioResult {
   sroiRatioExact: string
 }
 
-// Non-persisted sensitivity band: re-runs the deterministic engine with every
-// SROI filter shifted uniformly by ±deltaPp (conservative up, optimistic down),
-// leaving the audited persist path untouched. Reuses the same runDeterministicCalc
-// so the scenarios can never drift from the real formula.
-export async function calculateSroiScenarios(projectId: string, deltaPp: number = SCENARIO_DELTA_PP) {
-  const ctx = await authorize(projectId)
-  const readiness = await getSroiCalculationReadiness(projectId)
-  if (!readiness.canCalculate) {
-    return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
-  }
-
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
-  if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
-
-  const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
+// Re-runs the deterministic engine with every SROI filter shifted uniformly by
+// ±deltaPp (conservative up, optimistic down). Reuses runDeterministicCalc so
+// the scenarios can never drift from the real formula. Pure over its inputs, so
+// both the live preview and the persisted-run snapshot share identical math.
+function computeScenarioBand(
+  investments: (typeof projectInvestments.$inferSelect)[],
+  assignmentData: AssignmentData[],
+  allocations: (typeof outcomeFunderAllocations.$inferSelect)[],
+  fundersList: (typeof funders.$inferSelect)[],
+  discountRatePct: string | null,
+  deltaPp: number = SCENARIO_DELTA_PP,
+): SroiScenarioResult[] {
+  return (['conservative', 'base', 'optimistic'] as const).map((sc) => {
     const adjusted: AssignmentData[] = assignmentData.map((d) => ({
       ...d,
       filterSet: {
@@ -839,6 +837,21 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
       sroiRatioExact: result.sroiRatioExact,
     }
   })
+}
+
+// Non-persisted sensitivity band computed against current data (calculation
+// page preview). The persisted, audit-anchored copy lives in the run snapshot.
+export async function calculateSroiScenarios(projectId: string, deltaPp: number = SCENARIO_DELTA_PP) {
+  const ctx = await authorize(projectId)
+  const readiness = await getSroiCalculationReadiness(projectId)
+  if (!readiness.canCalculate) {
+    return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
+  }
+
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
+
+  const scenarios = computeScenarioBand(investments, assignmentData, allocations, fundersList, discountRatePct, deltaPp)
 
   return { canCalculate: true as const, readiness, scenarios, deltaPp }
 }
@@ -894,6 +907,17 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       })),
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
+      // Sensitivity band frozen with the run: conservative / base / optimistic
+      // ratios from shifting every SROI filter by ±SCENARIO_DELTA_PP. Auditable
+      // and consistent with this exact snapshot, unlike a live recomputation.
+      sensitivity: {
+        deltaPp: SCENARIO_DELTA_PP,
+        scenarios: computeScenarioBand(investments, assignmentData, allocations, fundersList, discountRatePct).map(s => ({
+          scenario: s.scenario,
+          sroiRatio: s.sroiRatioExact,
+          netSocialValue: s.netSocialValueExact,
+        })),
+      },
       assignments: result.lineItems.map(li => ({
         assignmentId: li.assignmentId,
         outcomeId: li.outcomeId,

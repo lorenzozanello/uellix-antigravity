@@ -193,16 +193,46 @@ export type EvidenceManifestRow = {
   type: string
   status: string
   hashShort: string | null
+  confidenceScore: number | null
 }
 
 /** Build an audit manifest of evidence items with truncated content hashes. */
 export function buildEvidenceManifest(
-  items: { title: string; type: string; status: string; contentHash: string | null }[]
+  items: { title: string; type: string; status: string; contentHash: string | null; confidenceScore?: number | null }[]
 ): EvidenceManifestRow[] {
   return items.map((i) => ({
     title: i.title,
     type: i.type,
     status: i.status,
     hashShort: i.contentHash ? i.contentHash.slice(0, 12) : null,
+    confidenceScore: i.confidenceScore ?? null,
   }))
+}
+
+export type SensitivityRow = {
+  scenario: 'conservative' | 'base' | 'optimistic'
+  sroiRatio: string | null
+  netSocialValue: string | null
+}
+export type SensitivityBand = { deltaPp: number; rows: SensitivityRow[] }
+
+/** Read the sensitivity band frozen into the run snapshot. Returns null for
+ *  runs calculated before the band was persisted (older snapshots). */
+export function extractSensitivityBand(snapshotJson: unknown): SensitivityBand | null {
+  if (!snapshotJson || typeof snapshotJson !== 'object') return null
+  const sens = (snapshotJson as Record<string, unknown>).sensitivity
+  if (!sens || typeof sens !== 'object') return null
+  const s = sens as Record<string, unknown>
+  const list = Array.isArray(s.scenarios) ? s.scenarios : null
+  if (!list || list.length === 0) return null
+  const deltaPp = typeof s.deltaPp === 'number' ? s.deltaPp : 0
+  const rows = list
+    .map((raw): SensitivityRow | null => {
+      const r = raw as Record<string, unknown>
+      const scenario = r.scenario
+      if (scenario !== 'conservative' && scenario !== 'base' && scenario !== 'optimistic') return null
+      return { scenario, sroiRatio: asString(r.sroiRatio), netSocialValue: asString(r.netSocialValue) }
+    })
+    .filter((r): r is SensitivityRow => r !== null)
+  return rows.length > 0 ? { deltaPp, rows } : null
 }

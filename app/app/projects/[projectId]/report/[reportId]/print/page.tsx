@@ -13,6 +13,7 @@ import {
   extractFxTrail,
   extractLineItems,
   extractFunderBreakdown,
+  extractSensitivityBand,
   buildMethodologyReadiness,
 } from '@/lib/reports/pdf/report-data'
 import { listMethodologyReviewsForProject } from '@/lib/pipeline/methodology-review'
@@ -67,6 +68,16 @@ function readinessColor(score: number | null): { bar: string; chip: 'rp-bad' | '
   if (score < 67) return { bar: 'var(--rp-warn)', chip: 'rp-warn' }
   return { bar: 'var(--rp-ok)', chip: 'rp-ok' }
 }
+// Evidence confidence bands mirror the app's confidenceBadgeVariant.
+function confidenceChip(score: number | null): 'rp-bad' | 'rp-warn' | 'rp-ok' {
+  if (score === null || score < 40) return 'rp-bad'
+  if (score < 70) return 'rp-warn'
+  return 'rp-ok'
+}
+const SCENARIO_ES: Record<'conservative' | 'base' | 'optimistic', string> = {
+  conservative: 'Conservador', base: 'Base', optimistic: 'Optimista',
+}
+const SCENARIO_ORDER = ['conservative', 'base', 'optimistic'] as const
 
 export default async function ReportPrintPage({
   params,
@@ -122,9 +133,12 @@ export default async function ReportPrintPage({
           type: e.type,
           status: e.status,
           contentHash: e.contentHash ?? null,
+          confidenceScore: e.confidenceScore ?? null,
         }))
       )
     : []
+  // Sensitivity band is frozen in the run snapshot (null for older runs).
+  const sensitivity = run ? extractSensitivityBand(report.snapshotJson) : null
 
   const snapshotJson = report.snapshotJson
   const currency = report.currency ?? 'USD'
@@ -227,6 +241,26 @@ export default async function ReportPrintPage({
                   <div className="rp-kpi"><div className="rp-k">Inversión total</div><div className="rp-v">{fmtMoney(run.totalInvestment, run.currency)}</div></div>
                   <div className="rp-kpi"><div className="rp-k">Tasa de descuento</div><div className="rp-v">{project?.discountRatePct ? `${parseFloat(project.discountRatePct).toFixed(2).replace('.', ',')} %` : '—'}</div></div>
                 </div>
+
+                {sensitivity && (
+                  <div className="rp-block">
+                    <div className="rp-shead"><span className="rp-bar" /><h2>Banda de sensibilidad</h2></div>
+                    <p className="rp-snote">Ratio SROI con cada supuesto metodológico (peso muerto, atribución, desplazamiento, decrecimiento) desplazado ±{sensitivity.deltaPp} pp. Una banda comunica la incertidumbre mejor que un punto.</p>
+                    <div className="rp-band">
+                      {SCENARIO_ORDER.map((sc) => {
+                        const row = sensitivity.rows.find((r) => r.scenario === sc)
+                        if (!row) return null
+                        return (
+                          <div key={sc} className={`rp-scn${sc === 'base' ? ' rp-base' : ''}`}>
+                            <div className="rp-sl">{SCENARIO_ES[sc]}</div>
+                            <div className="rp-sv">{fmtRatio(row.sroiRatio)}</div>
+                            <div className="rp-ss">Valor social neto {fmtMoney(row.netSocialValue, run.currency)}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -380,18 +414,22 @@ export default async function ReportPrintPage({
                 <div className="rp-block">
                   <div className="rp-shead"><span className="rp-bar" /><h2>Manifiesto de evidencia · huellas digitales SHA-256</h2></div>
                   <table>
-                    <thead><tr><th>Evidencia</th><th>Tipo</th><th>Estado</th><th>Huella</th></tr></thead>
+                    <thead><tr><th>Evidencia</th><th>Tipo</th><th>Estado</th><th className="rp-num">Confianza</th><th>Huella</th></tr></thead>
                     <tbody>
                       {evidenceManifest.map((e, i) => (
                         <tr key={i}>
                           <td>{e.title}</td>
                           <td>{e.type}</td>
                           <td>{EVIDENCE_STATUS_ES[e.status] ?? e.status}</td>
+                          <td className="rp-num">{e.confidenceScore === null ? '—' : <span className={`rp-chip ${confidenceChip(e.confidenceScore)}`}>{e.confidenceScore}</span>}</td>
                           <td className="rp-mono">{e.hashShort ? `${e.hashShort}…` : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  <p className="rp-snote" style={{ marginTop: 6, marginBottom: 0 }}>
+                    Confianza = puntaje calculado (0–100) por tipo, estado de revisión, vínculo a resultado y verificación de integridad.
+                  </p>
                 </div>
               )}
 

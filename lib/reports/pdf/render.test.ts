@@ -31,7 +31,7 @@ const props: ReportPdfProps = {
     ],
     unattributedNsvUsd: '250',
   },
-  evidenceManifest: [{ title: 'Documento 1', type: 'file', status: 'approved', hashShort: 'abcdef012345' }],
+  evidenceManifest: [{ title: 'Documento 1', type: 'file', status: 'approved', hashShort: 'abcdef012345', confidenceScore: 85 }],
   fxTrail: { rows: [{ amount: '5000000', currency: 'COP', amountUsd: '1250', year: 2025, converted: true }] },
   lineItems: {
     rows: [{ outcomeRef: 'aaaaaaaa', proxyRef: 'bbbbbbbb', quantity: '100', proxyValue: '50', grossValue: '5000', adjustedValue: '3600', adjustments: 'DW 10% · Atr 80%' }],

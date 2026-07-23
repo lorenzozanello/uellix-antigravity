@@ -135,6 +135,14 @@
 .rp-fxfacts .rp-f .rp-k{font-family:var(--rp-mono);font-size:6.8pt;letter-spacing:.08em;text-transform:uppercase;color:var(--rp-grey)}
 .rp-fxfacts .rp-f .rp-v{font-size:9pt;font-weight:700;color:var(--rp-navy);margin-top:3px;font-variant-numeric:tabular-nums}
 
+/* sensitivity band */
+.rp-band{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:2px 0 18px}
+.rp-scn{border:1px solid var(--rp-hair);border-radius:6px;padding:11px 13px;background:#fff}
+.rp-scn.rp-base{background:var(--rp-panel);border-color:var(--rp-hair2)}
+.rp-scn .rp-sl{font-family:var(--rp-mono);font-size:7.5pt;letter-spacing:.06em;text-transform:uppercase;color:var(--rp-grey)}
+.rp-scn .rp-sv{font-size:17pt;font-weight:800;color:var(--rp-navy);margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.rp-scn .rp-ss{font-size:7.5pt;color:var(--rp-grey);margin-top:2px;font-variant-numeric:tabular-nums}
+
 .rp-std .rp-g{margin-bottom:8px}
 .rp-std .rp-cat{font-size:9.5pt;font-weight:700;color:var(--rp-navy)}
 .rp-std .rp-items{font-size:9pt;color:var(--rp-ink-soft);margin-top:1px}
