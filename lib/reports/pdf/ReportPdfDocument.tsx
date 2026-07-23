@@ -71,96 +71,119 @@ export type ReportPdfProps = {
   brandColor?: string | null
 }
 
+// Neutral greys reused across the layout.
+const INK = '#1e293b'
+const SLATE = '#64748b'
+const HAIRLINE = '#e2e8f0'
+const NIEBLA = '#f8fafc'
+const NARANJA_WASH = '#FFF7F1'
+
 const styles = StyleSheet.create({
   page: {
-    paddingVertical: 48,
-    paddingHorizontal: 56,
+    paddingTop: 44,
+    paddingBottom: 60,
+    paddingHorizontal: 52,
     fontSize: 10,
-    color: '#0f172a',
+    color: AZUL_PROFUNDO,
     fontFamily: 'Helvetica',
     lineHeight: 1.5,
   },
-  eyebrow: { fontSize: 8, letterSpacing: 1.5, color: '#64748b', textTransform: 'uppercase' },
-  title: { fontSize: 22, fontFamily: 'Helvetica-Bold', marginTop: 4, color: '#0f172a' },
-  headerRule: { borderBottomWidth: 1, borderBottomColor: '#cbd5e1', paddingBottom: 14, marginBottom: 18 },
-  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
-  metaItem: { width: '33%', marginBottom: 6 },
-  metaLabel: { fontSize: 7, color: '#64748b', textTransform: 'uppercase' },
-  metaValue: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#334155' },
-  sectionHeading: { fontSize: 8, letterSpacing: 1, color: '#64748b', textTransform: 'uppercase', marginBottom: 8 },
-  figuresRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 18 },
-  figureBox: {
-    width: '25%',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 4,
-    padding: 8,
-  },
-  figureLabel: { fontSize: 8, color: '#64748b' },
-  figureValue: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginTop: 2, color: '#0f172a' },
-  // Hero SROI: the single most important number gets dominant visual weight.
-  heroRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18 },
-  heroBox: {
-    width: '36%',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  eyebrow: { fontSize: 8, letterSpacing: 1.5, color: SLATE, textTransform: 'uppercase' },
+  title: { fontSize: 21, fontFamily: 'Helvetica-Bold', marginTop: 4, color: AZUL_PROFUNDO, lineHeight: 1.2 },
+  headerRule: { borderBottomWidth: 2, borderBottomColor: '#cbd5e1', paddingBottom: 14, marginBottom: 20 },
+  // Meta as an even 4-up strip that wraps cleanly.
+  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 14 },
+  metaItem: { width: '25%', marginBottom: 8, paddingRight: 8 },
+  metaLabel: { fontSize: 6.5, letterSpacing: 0.5, color: SLATE, textTransform: 'uppercase' },
+  metaValue: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#334155', marginTop: 1 },
+
+  // ── Section heading (accent bar) ──────────────────────────────────────────
+  eyebrowHeading: { fontSize: 8, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
+  sectionHeaderBar: { width: 3, height: 13, borderRadius: 2, marginRight: 7 },
+  sectionHeaderText: { fontSize: 11.5, fontFamily: 'Helvetica-Bold', color: AZUL_PROFUNDO },
+
+  // ── Hero SROI ─────────────────────────────────────────────────────────────
+  heroBand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: NARANJA_WASH,
     borderLeftWidth: 3,
-    borderRadius: 4,
-    padding: 12,
-    justifyContent: 'center',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
   },
+  heroBandLeft: { width: '42%' },
   heroLabel: { fontSize: 8, letterSpacing: 1, textTransform: 'uppercase' },
-  heroValue: { fontSize: 30, fontFamily: 'Helvetica-Bold', color: AZUL_PROFUNDO, marginTop: 2 },
-  heroCaption: { fontSize: 7.5, color: '#64748b', marginTop: 5, lineHeight: 1.3 },
-  heroFigures: { width: '61%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  heroFigure: {
-    width: '31%',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 4,
-    padding: 8,
-    justifyContent: 'center',
-  },
+  heroValue: { fontSize: 32, fontFamily: 'Helvetica-Bold', color: AZUL_PROFUNDO, marginTop: 3 },
+  heroCaptionWrap: { width: '58%', paddingLeft: 18 },
+  heroCaption: { fontSize: 10.5, color: '#475569', lineHeight: 1.4 },
+  kpiRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 22 },
+  kpiBox: { width: '32%', borderWidth: 1, borderColor: HAIRLINE, borderRadius: 4, padding: 10 },
+  kpiLabel: { fontSize: 8, color: SLATE },
+  kpiValue: { fontSize: 14, fontFamily: 'Helvetica-Bold', marginTop: 3, color: AZUL_PROFUNDO },
+
+  // ── Disclaimer ────────────────────────────────────────────────────────────
   disclaimer: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#f8fafc',
+    borderColor: HAIRLINE,
+    backgroundColor: '#fbfcfd',
     borderRadius: 4,
     padding: 12,
-    marginBottom: 18,
+    marginBottom: 22,
   },
-  disclaimerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: '#0f172a' },
+  disclaimerTitle: { fontSize: 9, fontFamily: 'Helvetica-Bold', color: AZUL_PROFUNDO },
   disclaimerBody: { fontSize: 9, color: '#475569', marginTop: 4 },
-  section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 3 },
+
+  // ── Content sections ──────────────────────────────────────────────────────
+  section: { marginBottom: 16 },
+  sectionBody: { fontSize: 9.5, color: INK },
+  sectionEmpty: { fontSize: 9.5, color: '#94a3b8', fontStyle: 'italic' },
+  sectionNote: { fontSize: 9, color: SLATE, marginBottom: 6 },
+
+  // ── Annex page divider ────────────────────────────────────────────────────
+  annexDivider: { marginBottom: 18, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: '#cbd5e1' },
+  annexEyebrow: { fontSize: 8, letterSpacing: 1.5, textTransform: 'uppercase' },
+  annexTitle: { fontSize: 16, fontFamily: 'Helvetica-Bold', color: AZUL_PROFUNDO, marginTop: 3 },
+
+  // ── Tables ────────────────────────────────────────────────────────────────
   tableHeaderRow: {
     flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
     borderBottomWidth: 1,
     borderBottomColor: '#cbd5e1',
-    paddingBottom: 3,
-    marginBottom: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 0.5,
-    borderBottomColor: '#e2e8f0',
-    paddingVertical: 3,
+    borderBottomColor: '#eef2f6',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
   },
-  th: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: '#64748b' },
-  td: { fontSize: 8.5, color: '#1e293b' },
+  tableRowAlt: { backgroundColor: NIEBLA },
+  th: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: '#475569', textTransform: 'uppercase', letterSpacing: 0.3 },
+  td: { fontSize: 8.5, color: INK },
   tdMono: { fontSize: 8, color: '#475569', fontFamily: 'Courier' },
-  sectionBody: { fontSize: 9.5, color: '#1e293b' },
-  sectionEmpty: { fontSize: 9.5, color: '#94a3b8', fontStyle: 'italic' },
+
+  // ── Footer ────────────────────────────────────────────────────────────────
   footer: {
     position: 'absolute',
-    bottom: 28,
-    left: 56,
-    right: 56,
+    bottom: 30,
+    left: 52,
+    right: 52,
     borderTopWidth: 1,
     borderTopColor: '#cbd5e1',
     paddingTop: 8,
     fontSize: 7.5,
-    color: '#64748b',
+    color: SLATE,
   },
 })
 
@@ -197,6 +220,17 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   )
 }
 
+// Section heading with a brand accent bar — used for both narrative sections
+// and audit-annex titles so hierarchy reads consistently.
+function SectionHeader({ title, accent }: { title: string; accent: string }) {
+  return (
+    <View style={styles.sectionHeaderRow}>
+      <View style={[styles.sectionHeaderBar, { backgroundColor: accent }]} />
+      <Text style={styles.sectionHeaderText}>{title}</Text>
+    </View>
+  )
+}
+
 export function ReportPdfDocument(props: ReportPdfProps) {
   const { run } = props
   const approvedLogoUrl = getApprovedOrganizationLogoUrl(props.logoUrl)
@@ -205,6 +239,15 @@ export function ReportPdfDocument(props: ReportPdfProps) {
   // The Uellix wordmark leads the header only when NOT white-labeled, so a
   // client-branded report never shows a competing Uellix logo.
   const uellixLogo = props.whiteLabelEnabled ? null : uellixLogoDataUri()
+  // Audit annexes are grouped onto their own page(s) after the narrative.
+  const hasAnnexes = Boolean(
+    props.methodologyReadiness ||
+      props.funderBreakdown ||
+      props.fxTrail ||
+      props.evidenceManifest.length > 0 ||
+      props.lineItems ||
+      props.standards.length > 0
+  )
   return (
     <Document title={props.reportTitle} author="Uellix">
       <Page size="A4" style={styles.page}>
@@ -234,29 +277,31 @@ export function ReportPdfDocument(props: ReportPdfProps) {
           </View>
         </View>
 
-        {/* SROI figures — hero ratio + three supporting figures */}
+        {/* SROI figures — full-width hero band + three supporting KPIs */}
         {run && (
           <View>
-            <Text style={styles.sectionHeading}>Resultados SROI</Text>
-            <View style={styles.heroRow}>
-              <View style={[styles.heroBox, { borderLeftColor: accent }]}>
+            <Text style={[styles.eyebrowHeading, { color: accent }]}>Resultados SROI</Text>
+            <View style={[styles.heroBand, { borderLeftColor: accent }]}>
+              <View style={styles.heroBandLeft}>
                 <Text style={[styles.heroLabel, { color: accent }]}>Ratio SROI</Text>
                 <Text style={styles.heroValue}>{fmtRatio(run.sroiRatio)}</Text>
+              </View>
+              <View style={styles.heroCaptionWrap}>
                 <Text style={styles.heroCaption}>{sroiCaption(run.sroiRatio, run.currency)}</Text>
               </View>
-              <View style={styles.heroFigures}>
-                <View style={styles.heroFigure}>
-                  <Text style={styles.figureLabel}>Valor social neto</Text>
-                  <Text style={styles.figureValue}>{fmtMoney(run.netSocialValue, run.currency)}</Text>
-                </View>
-                <View style={styles.heroFigure}>
-                  <Text style={styles.figureLabel}>Valor social bruto</Text>
-                  <Text style={styles.figureValue}>{fmtMoney(run.grossSocialValue, run.currency)}</Text>
-                </View>
-                <View style={styles.heroFigure}>
-                  <Text style={styles.figureLabel}>Inversión total</Text>
-                  <Text style={styles.figureValue}>{fmtMoney(run.totalInvestment, run.currency)}</Text>
-                </View>
+            </View>
+            <View style={styles.kpiRow}>
+              <View style={styles.kpiBox}>
+                <Text style={styles.kpiLabel}>Valor social neto</Text>
+                <Text style={styles.kpiValue}>{fmtMoney(run.netSocialValue, run.currency)}</Text>
+              </View>
+              <View style={styles.kpiBox}>
+                <Text style={styles.kpiLabel}>Valor social bruto</Text>
+                <Text style={styles.kpiValue}>{fmtMoney(run.grossSocialValue, run.currency)}</Text>
+              </View>
+              <View style={styles.kpiBox}>
+                <Text style={styles.kpiLabel}>Inversión total</Text>
+                <Text style={styles.kpiValue}>{fmtMoney(run.totalInvestment, run.currency)}</Text>
               </View>
             </View>
           </View>
@@ -275,7 +320,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Sections */}
         {props.sections.map((section) => (
           <View key={section.id} style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <SectionHeader title={section.title} accent={accent} />
             {section.content && section.content.trim().length > 0 ? (
               <Text style={styles.sectionBody}>{section.content}</Text>
             ) : (
@@ -284,11 +329,19 @@ export function ReportPdfDocument(props: ReportPdfProps) {
           </View>
         ))}
 
+        {/* Audit annexes — start on a fresh page, under one divider */}
+        {hasAnnexes && (
+          <View break style={styles.annexDivider}>
+            <Text style={[styles.annexEyebrow, { color: accent }]}>Respaldo técnico</Text>
+            <Text style={styles.annexTitle}>Anexos de auditoría</Text>
+          </View>
+        )}
+
         {/* Methodology review readiness (methodological/audit annex) */}
         {props.methodologyReadiness && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Preparación metodológica por paso</Text>
-            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+            <SectionHeader title="Preparación metodológica por paso" accent={accent} />
+            <Text style={styles.sectionNote}>
               Puntaje de preparación de la revisión metodológica de cada paso del pipeline (0–100).
             </Text>
             <View style={styles.tableHeaderRow}>
@@ -297,7 +350,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               <Text style={[styles.th, { width: '25%' }]}>Estado</Text>
             </View>
             {props.methodologyReadiness.map((r, i) => (
-              <View key={i} style={styles.tableRow}>
+              <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, { width: '50%' }]}>{r.stepLabel}</Text>
                 <Text style={[styles.td, { width: '25%', textAlign: 'right', paddingRight: 8 }]}>
                   {r.readinessScore === null ? 'Sin evaluar' : `${r.readinessScore}%`}
@@ -311,7 +364,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Funder breakdown table (audit annex) — only when present */}
         {props.funderBreakdown && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Desglose por financiador (USD)</Text>
+            <SectionHeader title="Desglose por financiador (USD)" accent={accent} />
             <View style={styles.tableHeaderRow}>
               <Text style={[styles.th, { width: '34%' }]}>Financiador</Text>
               <Text style={[styles.th, { width: '20%' }]}>Tipo</Text>
@@ -320,7 +373,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               <Text style={[styles.th, { width: '12%', textAlign: 'right' }]}>SROI</Text>
             </View>
             {props.funderBreakdown.rows.map((r, i) => (
-              <View key={i} style={styles.tableRow}>
+              <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, { width: '34%' }]}>{r.funderName}</Text>
                 <Text style={[styles.td, { width: '20%', color: '#64748b' }]}>{r.funderType}</Text>
                 <Text style={[styles.td, { width: '16%', textAlign: 'right' }]}>{fmtMoney(r.investmentUsd)}</Text>
@@ -329,7 +382,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               </View>
             ))}
             {props.funderBreakdown.unattributedNsvUsd && (
-              <Text style={[styles.sectionBody, { color: '#64748b', marginTop: 3 }]}>
+              <Text style={[styles.sectionNote, { marginTop: 5, marginBottom: 0 }]}>
                 Valor social neto no atribuido: {fmtMoney(props.funderBreakdown.unattributedNsvUsd)} USD
               </Text>
             )}
@@ -339,8 +392,8 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* FX conversion trail (audit annex) — only when present */}
         {props.fxTrail && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Rastro de conversión a USD</Text>
-            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+            <SectionHeader title="Rastro de conversión a USD" accent={accent} />
+            <Text style={styles.sectionNote}>
               Cada aporte se normalizó a USD al guardarse. Los aportes ya en USD no se convierten.
             </Text>
             <View style={styles.tableHeaderRow}>
@@ -350,7 +403,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               <Text style={[styles.th, { width: '22%' }]}>Año</Text>
             </View>
             {props.fxTrail.rows.map((r, i) => (
-              <View key={i} style={styles.tableRow}>
+              <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, { width: '28%', textAlign: 'right', paddingRight: 8 }]}>{fmtMoney(r.amount)}</Text>
                 <Text style={[styles.td, { width: '22%' }]}>{r.currency}{r.converted ? ' (conv.)' : ''}</Text>
                 <Text style={[styles.td, { width: '28%', textAlign: 'right', paddingRight: 8 }]}>{fmtMoney(r.amountUsd)}</Text>
@@ -363,7 +416,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Evidence hash manifest (audit annex) — only when present */}
         {props.evidenceManifest.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Manifiesto de evidencia (hashes SHA-256)</Text>
+            <SectionHeader title="Manifiesto de evidencia (hashes SHA-256)" accent={accent} />
             <View style={styles.tableHeaderRow}>
               <Text style={[styles.th, { width: '46%' }]}>Título</Text>
               <Text style={[styles.th, { width: '14%' }]}>Tipo</Text>
@@ -371,7 +424,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               <Text style={[styles.th, { width: '20%' }]}>Hash</Text>
             </View>
             {props.evidenceManifest.map((e, i) => (
-              <View key={i} style={styles.tableRow}>
+              <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, { width: '46%' }]}>{e.title}</Text>
                 <Text style={[styles.td, { width: '14%', color: '#64748b' }]}>{e.type}</Text>
                 <Text style={[styles.td, { width: '20%' }]}>{e.status}</Text>
@@ -384,8 +437,8 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Raw calculation line items (audit annex) — only when present */}
         {props.lineItems && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Line items del cálculo</Text>
-            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+            <SectionHeader title="Line items del cálculo" accent={accent} />
+            <Text style={styles.sectionNote}>
               Contribuciones crudas de la corrida inmutable. Referencias por ID de resultado/proxy
               del snapshot (no por nombre, que podría haber cambiado). Valores en USD.
             </Text>
@@ -398,7 +451,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               <Text style={[styles.th, { width: '15%', textAlign: 'right' }]}>Ajustado</Text>
             </View>
             {props.lineItems.rows.map((r, i) => (
-              <View key={i} style={styles.tableRow}>
+              <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.tdMono, { width: '14%' }]}>{r.outcomeRef}</Text>
                 <Text style={[styles.td, { width: '12%', textAlign: 'right', paddingRight: 6 }]}>{r.quantity}</Text>
                 <Text style={[styles.td, { width: '14%', textAlign: 'right', paddingRight: 6 }]}>{fmtMoney(r.proxyValue)}</Text>
@@ -408,7 +461,7 @@ export function ReportPdfDocument(props: ReportPdfProps) {
               </View>
             ))}
             {props.lineItems.truncated && (
-              <Text style={[styles.sectionBody, { color: '#64748b', marginTop: 3 }]}>
+              <Text style={[styles.sectionNote, { marginTop: 5, marginBottom: 0 }]}>
                 Mostrando {props.lineItems.rows.length} de {props.lineItems.total} line items.
               </Text>
             )}
@@ -418,8 +471,8 @@ export function ReportPdfDocument(props: ReportPdfProps) {
         {/* Reference standards (comparability crosswalks) — only when present */}
         {props.standards.length > 0 && (
           <View style={styles.section} wrap={false}>
-            <Text style={styles.sectionTitle}>Estándares de referencia</Text>
-            <Text style={[styles.sectionBody, { color: '#64748b', marginBottom: 4 }]}>
+            <SectionHeader title="Estándares de referencia" accent={accent} />
+            <Text style={styles.sectionNote}>
               Los resultados se mapean a los siguientes marcos como referencia de comparabilidad. No
               constituye certificación ni equivalencia oficial con dichos estándares.
             </Text>
