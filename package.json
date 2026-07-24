@@ -16,8 +16,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:local": "drizzle-kit migrate --config=drizzle.local.config.ts",
-    "db:setup:local": "pnpm db:migrate:local && pnpm db:seed:local",
-    "db:reset:local": "pnpm supabase stop --no-backup && pnpm supabase start && pnpm db:setup:local",
+    "db:bootstrap:local": "tsx scripts/bootstrap-local.ts",
+    "db:setup:local": "pnpm db:bootstrap:local && pnpm db:seed:local",
+    "db:reset:local": "pnpm supabase stop --no-backup && pnpm db:bootstrap:local",
     "db:seed:local": "tsx scripts/seed-local.ts",
     "db:seed:proxies": "tsx scripts/seed-proxies.ts",
     "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts"

@@ -288,6 +288,13 @@
       "when": 1784830133006,
       "tag": "0040_whole_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1784830134006,
+      "tag": "0041_bootstrap_closure",
+      "breakpoints": true
     }
   ]
 }

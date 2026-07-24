@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { db } from '@/db/client'
 import { organizations, organizationMembers, fxRates, projects, projectInvestments, evidenceItems, sroiCalculationRuns, sroiCalculationLineItems, sroiReports, stellaInteractions } from '@/db/schema'
 import { inArray } from 'drizzle-orm'
+import { deleteOrganizationsWithoutAuditTrail } from './cleanup'
 import { randomUUID } from 'crypto'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:55321'
@@ -139,7 +140,7 @@ describe('RLS Coverage Integration Tests', () => {
     if (orgIds.length > 0) {
       await db.delete(projects).where(inArray(projects.organizationId, orgIds))
       await db.delete(organizationMembers).where(inArray(organizationMembers.organizationId, orgIds))
-      await db.delete(organizations).where(inArray(organizations.id, orgIds))
+      await deleteOrganizationsWithoutAuditTrail(orgIds)
     }
   })
 
