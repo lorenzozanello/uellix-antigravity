@@ -5,8 +5,10 @@ import { listOrganizationAdminsForCurrentOrganization } from '@/lib/organization
 import { OnboardingForm } from './onboarding-form'
 import { OnboardingPending } from './onboarding-pending'
 
+// El layout raíz aplica la plantilla "%s | Uellix", así que aquí va sólo el
+// nombre de la página; incluir el sufijo produciría "… | Uellix | Uellix".
 export const metadata = {
-  title: 'Configuración inicial | Uellix',
+  title: 'Configuración inicial',
 }
 
 /**

@@ -394,12 +394,16 @@ async function main() {
 }
 
 async function countMigrations(sql: postgres.Sql): Promise<number> {
+  // La existencia se comprueba en una consulta APARTE: Postgres resuelve las
+  // relaciones en tiempo de PARSEO, así que un `where to_regclass(...) is not
+  // null` en la misma sentencia no evita el error 42P01 sobre una base limpia,
+  // donde el esquema `drizzle` todavía no existe.
+  const [exists] = await sql<{ present: boolean }[]>`
+    select to_regclass('drizzle.__drizzle_migrations') is not null as present`
+  if (!exists?.present) return 0
+
   const [row] = await sql<{ n: number }[]>`
-    select coalesce(
-      (select count(*)::int from drizzle.__drizzle_migrations),
-      0
-    ) as n
-    where to_regclass('drizzle.__drizzle_migrations') is not null`
+    select count(*)::int as n from drizzle.__drizzle_migrations`
   return row?.n ?? 0
 }
 
