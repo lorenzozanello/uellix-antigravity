@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import { assertLocalDatabase } from '../db/guard';
 
 // Resolve the path to .env.local in the root
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -16,12 +17,16 @@ async function main() {
     process.exit(1);
   }
 
-  // Safety guard
-  const url = new URL(supabaseUrl);
-  if (!['localhost', '127.0.0.1', '::1'].includes(url.hostname)) {
-    console.error('Safety violation: Not running on local host.');
-    process.exit(1);
-  }
+  // F0-05: guarda centralizada (antes era una comprobación ad-hoc local a este
+  // archivo). Valida tanto el API de Supabase como la cadena de Postgres que
+  // usará el script, para que ninguna de las dos vías quede sin cubrir.
+  assertLocalDatabase({
+    context: 'pnpm db:seed:local',
+    targets: [
+      { label: 'API de Supabase', envVar: 'NEXT_PUBLIC_SUPABASE_URL', value: supabaseUrl },
+      { label: 'PostgreSQL (postgres.js)', envVar: 'dbUrl (literal del script)', value: dbUrl },
+    ],
+  });
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   const sql = postgres(dbUrl);

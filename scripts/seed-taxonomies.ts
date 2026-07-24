@@ -10,10 +10,15 @@
 // Usage: pnpm db:seed:taxonomies
 
 import 'dotenv/config'
+import { assertLocalDatabase } from '../db/guard'
 import { db } from '../db/client'
 import { taxonomyCatalogs, taxonomyCodes } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import { TAXONOMY_SEED } from '../lib/taxonomies/seed-data'
+
+// F0-05: ver la nota equivalente en scripts/seed-proxies.ts. Este script fue el
+// que alcanzó la base remota durante la auditoría del 2026-07-24.
+assertLocalDatabase({ context: 'pnpm db:seed:taxonomies' })
 
 async function main() {
   let catalogsUpserted = 0
