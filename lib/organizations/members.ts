@@ -29,6 +29,32 @@ export async function listMembersForCurrentOrganization() {
     )
 }
 
+/**
+ * List the active administrators of the current organization.
+ *
+ * F0-03: the onboarding waiting screen shown to non-admin members needs to
+ * name who can unblock them. Any active member can already see the full member
+ * list (including emails) via `listMembersForCurrentOrganization`, so this
+ * exposes nothing new — it is just a narrower, cheaper query.
+ */
+export async function listOrganizationAdminsForCurrentOrganization() {
+  const ctx = await requireOrganizationAccess()
+  return db
+    .select({
+      email: users.email,
+      fullName: users.fullName,
+    })
+    .from(organizationMembers)
+    .innerJoin(users, eq(organizationMembers.userId, users.id))
+    .where(
+      and(
+        eq(organizationMembers.organizationId, ctx.organization.id),
+        eq(organizationMembers.status, 'active'),
+        eq(organizationMembers.role, 'organization_admin')
+      )
+    )
+}
+
 /** Remove a member from the current organization. Requires organization_admin or above. */
 export async function removeMemberFromCurrentOrganization(membershipId: string) {
   const ctx = await requireOrganizationAccess()

@@ -9,7 +9,8 @@ import {
   projectInvestments,
   organizationMembers,
 } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
+import { deleteOrganizationsWithoutAuditTrail } from './cleanup'
 import {
   createInvestment,
   listInvestments,
@@ -45,11 +46,14 @@ describe('Investment Service - Multi-Funder CRUD', () => {
   let projectId: string
   let funder1Id: string
   let funder2Id: string
+  /** Toda organización creada en el ciclo actual, para poder borrarlas todas. */
+  let createdOrgIds: string[] = []
 
   beforeEach(async () => {
     // Create test organization
     orgId = uuid()
     mockOrgId = orgId
+    createdOrgIds = [orgId]
     await db.insert(organizations).values({
       id: orgId,
       name: 'Test Org',
@@ -119,11 +123,22 @@ describe('Investment Service - Multi-Funder CRUD', () => {
   })
 
   afterEach(async () => {
-    // Cleanup non-append-only data
+    // F0-05: antes esta limpieza NO borraba las organizaciones. Cada `it` creaba
+    // una `test-org-*` y varios casos creaban además una `other-org-*` inline,
+    // de modo que la suite dejaba una organización huérfana por prueba. Tras una
+    // sola ejecución quedaban 17; la auditoría contó 77 acumuladas.
+    // `createdOrgIds` recoge todas las creadas en el ciclo actual.
     await db.delete(projectInvestments).where(eq(projectInvestments.projectId, projectId))
     await db.delete(projects).where(eq(projects.id, projectId))
-    await db.delete(funders).where(eq(funders.organizationId, orgId))
-    await db.delete(organizationMembers).where(eq(organizationMembers.organizationId, orgId))
+
+    if (createdOrgIds.length > 0) {
+      await db.delete(funders).where(inArray(funders.organizationId, createdOrgIds))
+      await db
+        .delete(organizationMembers)
+        .where(inArray(organizationMembers.organizationId, createdOrgIds))
+      await deleteOrganizationsWithoutAuditTrail(createdOrgIds)
+    }
+    createdOrgIds = []
   })
 
   describe('createInvestment', () => {
@@ -197,6 +212,7 @@ describe('Investment Service - Multi-Funder CRUD', () => {
 
     it('should reject funder from different organization', async () => {
       const otherOrgId = uuid()
+      createdOrgIds.push(otherOrgId)
       await db.insert(organizations).values({
         id: otherOrgId,
         name: 'Other Org',
@@ -390,6 +406,7 @@ describe('Investment Service - Multi-Funder CRUD', () => {
   describe('Funder isolation', () => {
     it('should not allow accessing funders from other organizations', async () => {
       const otherOrgId = uuid()
+      createdOrgIds.push(otherOrgId)
       await db.insert(organizations).values({
         id: otherOrgId,
         name: 'Other Org',

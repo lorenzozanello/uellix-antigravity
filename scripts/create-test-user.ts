@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import { assertLocalDatabase } from '../db/guard';
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -22,26 +23,19 @@ async function main() {
     process.exit(1);
   }
 
-  // --- Production safety guard ---
-  let isLocal = false;
-  try {
-    const url = new URL(supabaseUrl);
-    isLocal = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(url.hostname);
-  } catch {
-    // Fallback string matching if URL parsing fails
-    isLocal = supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1') || supabaseUrl.includes('[::1]') || supabaseUrl.includes('::1');
-  }
-
-  if (!isLocal || process.env.NODE_ENV === 'production') {
-    console.error(
-      '🚨 SAFETY VIOLATION: This script is restricted to LOCAL loopback instances only.\n' +
-      `   Rejected URL: ${supabaseUrl}\n` +
-      `   NODE_ENV: ${process.env.NODE_ENV || '(not set)'}\n` +
-      '   Operation refused. You can only execute this script against localhost, 127.0.0.1, or ::1.'
-    );
-    process.exit(1);
-  }
-  // --- End production safety guard ---
+  // F0-05: guarda centralizada. Sustituye a la comprobación ad-hoc anterior,
+  // que (a) imprimía la URL rechazada completa y (b) usaba `includes()` como
+  // respaldo, de modo que un host como `localhost.atacante.com` la superaba.
+  assertLocalDatabase({
+    context: 'pnpm tsx scripts/create-test-user.ts',
+    targets: [
+      {
+        label: 'API de Supabase',
+        envVar: 'NEXT_PUBLIC_SUPABASE_URL',
+        value: supabaseUrl,
+      },
+    ],
+  });
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 

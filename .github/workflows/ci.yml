@@ -32,6 +32,23 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # F0-07 — Control bloqueante de vulnerabilidades. CI nunca auditaba las
+      # dependencias, y por eso 4 CVE altas en Next.js (bypass de proxy, SSRF en
+      # Server Actions) pasaron inadvertidas hasta la auditoría del 2026-07-24,
+      # pese a existir un documento de readiness que afirmaba lo contrario.
+      #
+      # Umbral: high. Bloquea alta y crítica; las moderadas y bajas se reportan
+      # en el paso informativo siguiente sin romper la build.
+      - name: Security audit (blocking on high/critical)
+        run: pnpm audit --prod --audit-level high
+
+      - name: Security audit (informational, all severities)
+        if: always()
+        continue-on-error: true
+        run: pnpm audit --prod
+
+      # Incluye tests/db-guard.test.ts (F0-05): demuestra que los seeds y las
+      # pruebas de integración rechazan cualquier destino que no sea loopback.
       - name: Test
         run: pnpm test:unit
 

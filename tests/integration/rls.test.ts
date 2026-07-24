@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { db } from '@/db/client'
 import { organizations, organizationMembers, fxRates, projects, projectInvestments, evidenceItems, sroiCalculationRuns, sroiCalculationLineItems, sroiReports, stellaInteractions } from '@/db/schema'
+import { inArray } from 'drizzle-orm'
+import { deleteOrganizationsWithoutAuditTrail } from './cleanup'
 import { randomUUID } from 'crypto'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:55321'
@@ -99,10 +101,46 @@ describe('RLS Coverage Integration Tests', () => {
   })
 
   afterAll(async () => {
-    // Cleanup users
+    // F0-05 — Antes esta limpieza sólo borraba los usuarios de auth y dejaba
+    // huérfanas las organizaciones, los proyectos y los objetos de Storage. En
+    // la auditoría del 2026-07-24 se contabilizaron 77 organizaciones
+    // `test-org-*` / `rls-test-org-*` acumuladas. Ahora se limpia todo lo que
+    // la suite crea, en orden inverso al de las claves foráneas.
+    //
+    // La guarda de host (vitest.setup.integration.ts) ya garantizó que esto
+    // sólo puede ejecutarse contra un stack de loopback.
+
+    // 1. Objetos de Storage bajo el prefijo del proyecto de prueba.
+    if (projectAId) {
+      const { data: folders } = await adminClient.storage
+        .from('uellix-evidence')
+        .list(projectAId)
+
+      for (const folder of folders ?? []) {
+        const { data: files } = await adminClient.storage
+          .from('uellix-evidence')
+          .list(`${projectAId}/${folder.name}`)
+        const paths = (files ?? []).map((f) => `${projectAId}/${folder.name}/${f.name}`)
+        if (paths.length > 0) {
+          await adminClient.storage.from('uellix-evidence').remove(paths)
+        }
+      }
+    }
+
+    // 2. Usuarios de auth (el trigger elimina en cascada public.users).
     const usersToClean = [adminA, analystA, reviewerA, viewerA, adminB, noOrgUser, superAdmin]
     for (const u of usersToClean) {
       if (u?.id) await adminClient.auth.admin.deleteUser(u.id)
+    }
+
+    // 3. Filas de negocio. Los proyectos creados por la propia suite (incluido
+    //    el que inserta el caso "Analyst A puede crear proyectos") cuelgan de
+    //    las dos organizaciones, así que basta con filtrar por organización.
+    const orgIds = [orgAId, orgBId].filter(Boolean)
+    if (orgIds.length > 0) {
+      await db.delete(projects).where(inArray(projects.organizationId, orgIds))
+      await db.delete(organizationMembers).where(inArray(organizationMembers.organizationId, orgIds))
+      await deleteOrganizationsWithoutAuditTrail(orgIds)
     }
   })
 
