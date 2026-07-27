@@ -28,6 +28,17 @@ vi.mock('@/lib/stella/config', () => ({
   get stellaState() { return mockStellaState },
 }))
 
+// Etapa A2.1 (STL-A21-008): consent gate — mocked as valid by default so
+// existing tests keep exercising quota/rate-limit/model behavior unchanged.
+const mockGetStellaConsentStatus = vi.fn().mockResolvedValue({
+  status: 'valid',
+  currentAiTermsVersion: 'v1',
+  currentDataPolicyVersion: 'v1',
+})
+vi.mock('@/lib/stella/consent/consent-status', () => ({
+  getStellaConsentStatus: (...args: unknown[]) => mockGetStellaConsentStatus(...args),
+}))
+
 const mockRequireOrganizationAccess = vi.fn()
 vi.mock('@/lib/auth/session', () => ({
   requireOrganizationAccess: (...args: unknown[]) => mockRequireOrganizationAccess(...args),
@@ -79,6 +90,11 @@ vi.mock('@/db/client', () => ({
     insert: (...args: unknown[]) => mockDbInsert(...args),
   },
 }))
+
+vi.mock('@/lib/stella/aggregation/declaration-query', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/stella/aggregation/declaration-query')>()
+  return { ...original, findValidSensitiveAggregationDeclarations: vi.fn().mockResolvedValue(new Map()) }
+})
 
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
@@ -184,6 +200,13 @@ describe('getStellaValidator server action', () => {
     // Default: quota allowed, so tests unrelated to quota don't need to set it up.
     // Tests in the "Quota enforcement" describe block override this per-case.
     mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+    // Default: valid consent, so tests unrelated to consent don't need to set
+    // it up. The "Consent gate" describe block overrides this per-case.
+    mockGetStellaConsentStatus.mockResolvedValue({
+      status: 'valid',
+      currentAiTermsVersion: 'v1',
+      currentDataPolicyVersion: 'v1',
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -304,6 +327,54 @@ describe('getStellaValidator server action', () => {
       await getStellaValidator('proj-1', 'calculation')
 
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Consent gate (Etapa A2.1, STL-A21-008)
+  // -------------------------------------------------------------------------
+  describe('Consent gate', () => {
+    it('returns CONSENT_REQUIRED and never checks quota when consent is missing', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockGetStellaConsentStatus.mockResolvedValue({
+        status: 'missing',
+        currentAiTermsVersion: 'v1',
+        currentDataPolicyVersion: 'v1',
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('CONSENT_REQUIRED')
+      expect(mockCheckStellaQuota).not.toHaveBeenCalled()
+    })
+
+    it('returns CONSENT_REVOKED when consent was revoked', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockGetStellaConsentStatus.mockResolvedValue({
+        status: 'revoked',
+        currentAiTermsVersion: 'v1',
+        currentDataPolicyVersion: 'v1',
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('CONSENT_REVOKED')
+    })
+
+    it('returns CONSENT_OUTDATED when the accepted version is no longer current', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockGetStellaConsentStatus.mockResolvedValue({
+        status: 'outdated',
+        currentAiTermsVersion: 'v2',
+        currentDataPolicyVersion: 'v1',
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('CONSENT_OUTDATED')
     })
   })
 
@@ -658,6 +729,60 @@ describe('getStellaValidator server action', () => {
       if (result.ok) {
         expect(result.data.requires_human_review).toBe(true)
       }
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Sensitive-population guardrail (Etapa A2.3, DR-002/DR-003)
+  // -------------------------------------------------------------------------
+  describe('Sensitive-population guardrail (Etapa A2.3, DR-002/DR-003)', () => {
+    it('returns SENSITIVE_GROUP_SIZE_REQUIRED for an aggregate mention with no verified group size, and never calls the model', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+      mockBuildValidatorContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        narrativeSummary: 'The program served 50 niños in the last quarter.',
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBe('SENSITIVE_GROUP_SIZE_REQUIRED')
+        expect(result.message).not.toContain('niños')
+      }
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it('records a content-free audit entry for a blocked sensitive-population attempt', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+      mockBuildValidatorContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        narrativeSummary: 'The program served 50 niños in the last quarter.',
+      })
+
+      await getStellaValidator('proj-1', 'calculation')
+
+      const auditPayload = mockInsertValues.mock.calls[0][0]
+      expect(auditPayload.action).toBe('stella_sensitive_data.blocked')
+      expect(auditPayload.reason).toBe('SENSITIVE_GROUP_SIZE_REQUIRED')
+      expect(JSON.stringify(auditPayload)).not.toContain('niños')
+    })
+
+    it('still returns the generic CONTEXT_GUARDRAIL_FAILED for a non-sensitive-population guardrail violation', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+      mockBuildValidatorContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        proxySummary: [{ id: 'p-1', name: 'Proxy', source: 'Source', value: '12.50', currency: '' }],
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('CONTEXT_GUARDRAIL_FAILED')
     })
   })
 
