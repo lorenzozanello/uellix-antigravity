@@ -27,11 +27,12 @@ describe('Invariantes del bootstrap local', () => {
     expect(applied).toBe(journal.entries.length)
   })
 
-  it('crea las 37 tablas de negocio en public', async () => {
+  it('crea las 43 tablas de negocio en public', async () => {
+    // 42 + stella_pilot_confirmations (Etapa B0, migración 0048_stella_pilot_confirmations.sql).
     const tables = await scalar<number>(sql`
       select count(*)::int from information_schema.tables
       where table_schema = 'public' and table_type = 'BASE TABLE'`)
-    expect(tables).toBe(37)
+    expect(tables).toBe(43)
   })
 
   it('no deja drift de esquema respecto a db/schema.ts', async () => {
