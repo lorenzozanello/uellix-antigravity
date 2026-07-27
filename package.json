@@ -22,7 +22,12 @@
     "db:seed:local": "tsx scripts/seed-local.ts",
     "db:clean:test-data": "tsx scripts/clean-test-data.ts",
     "db:seed:proxies": "tsx scripts/seed-proxies.ts",
-    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts"
+    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts",
+    "stella:eval": "tsx tests/eval/run.ts",
+    "stella:retention:preview": "tsx scripts/stella-retention-cli.ts preview",
+    "stella:retention:purge": "tsx scripts/stella-retention-cli.ts purge",
+    "stella:pilot:preflight": "tsx scripts/stella-pilot-preflight.ts",
+    "stella:pilot:smoke": "vitest run --config vitest.smoke.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

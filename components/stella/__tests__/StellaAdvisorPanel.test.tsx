@@ -14,6 +14,11 @@ vi.mock('@/app/actions/stella/advisor', () => ({
   getStellaAdvisor: (...args: unknown[]) => mockGetStellaAdvisor(...args),
 }))
 
+const mockAcceptStellaPilotConfirmation = vi.fn()
+vi.mock('@/app/actions/stella/pilot-confirmation', () => ({
+  acceptStellaPilotConfirmation: (...args: unknown[]) => mockAcceptStellaPilotConfirmation(...args),
+}))
+
 // Mock Button component to avoid @base-ui/react jsdom compatibility issues
 vi.mock('@/components/ui/button', () => ({
   Button: ({
@@ -456,6 +461,85 @@ describe('StellaAdvisorPanel', () => {
         // If the real adapter were called it would throw (no API key in test env)
         // The mock being called proves isolation is complete
       })
+    })
+  })
+
+  describe('Etapa B0 — pilot UI (all new props default off, so every test above is unaffected)', () => {
+    beforeEach(() => {
+      mockAcceptStellaPilotConfirmation.mockReset()
+    })
+
+    it('renders no pilot badge/notice when pilotActive is not passed (default behavior unchanged)', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      expect(screen.queryByText(/piloto/i)).toBeNull()
+      expect(screen.queryByTestId('stella-pilot-notice')).toBeNull()
+    })
+
+    it('renders the "Piloto" badge and the fixed notice text when pilotActive is true', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="valid" />)
+      expect(screen.queryByText('Piloto')).not.toBeNull()
+      const notice = screen.getByTestId('stella-pilot-notice')
+      expect(notice.textContent).toMatch(/fase piloto controlado/i)
+      expect(notice.textContent).toMatch(/no cargues datos personales sensibles/i)
+      expect(notice.textContent).toMatch(/no certifica sroi/i)
+      expect(notice.textContent).toMatch(/revisión jurídica y contractual definitiva está pendiente/i)
+    })
+
+    it('shows a confirmation gate instead of "Preguntar a Stella" when pilotActive and confirmation is missing', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="missing" />)
+      expect(screen.queryByText(/confirmar restricciones del piloto/i)).not.toBeNull()
+      expect(screen.queryByText(/^preguntar a stella$/i)).toBeNull()
+    })
+
+    it('shows the same confirmation gate when the confirmation is outdated (notice version bumped)', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="outdated" />)
+      expect(screen.queryByText(/confirmar restricciones del piloto/i)).not.toBeNull()
+    })
+
+    it('shows the same confirmation gate when the confirmation was revoked', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="revoked" />)
+      expect(screen.queryByText(/confirmar restricciones del piloto/i)).not.toBeNull()
+    })
+
+    it('does not show the confirmation gate when the confirmation is valid — normal "Preguntar a Stella" button shows instead', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="valid" />)
+      expect(screen.queryByText(/confirmar restricciones del piloto/i)).toBeNull()
+      expect(screen.queryByText(/^preguntar a stella$/i)).not.toBeNull()
+    })
+
+    it('clicking the confirmation button calls acceptStellaPilotConfirmation and, on success, reveals the normal ask button', async () => {
+      mockAcceptStellaPilotConfirmation.mockResolvedValue({ ok: true, data: { status: 'valid', currentNoticeVersion: 'v1' } })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="missing" />)
+
+      fireEvent.click(screen.getByText(/confirmar restricciones del piloto/i))
+
+      await waitFor(() => {
+        expect(mockAcceptStellaPilotConfirmation).toHaveBeenCalledTimes(1)
+        expect(screen.queryByText(/^preguntar a stella$/i)).not.toBeNull()
+      })
+    })
+
+    it('never calls getStellaAdvisor while the confirmation gate is showing', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="missing" />)
+      expect(mockGetStellaAdvisor).not.toHaveBeenCalled()
+    })
+
+    it('surfaces a PILOT_* error with its own specific message, not the generic error fallback', async () => {
+      mockGetStellaAdvisor.mockResolvedValue({ ok: false, error: 'PILOT_ORGANIZATION_NOT_ALLOWED', message: 'Tu organización todavía no forma parte del piloto de Stella.' })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="valid" />)
+      fireEvent.click(screen.getByText(/^preguntar a stella$/i))
+      await waitFor(() => {
+        expect(screen.queryByText(/tu organización todavía no forma parte del piloto/i)).not.toBeNull()
+        expect(screen.queryByText(/la orientación de stella no está disponible temporalmente/i)).toBeNull()
+      })
+    })
+
+    it('allows retry after a PILOT_* block (button remains available)', async () => {
+      mockGetStellaAdvisor.mockResolvedValue({ ok: false, error: 'PILOT_DATA_RESTRICTED', message: 'Debés confirmar las restricciones de datos del piloto antes de continuar.' })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" pilotActive pilotConfirmationStatus="valid" />)
+      fireEvent.click(screen.getByText(/^preguntar a stella$/i))
+      await waitFor(() => expect(screen.queryByText(/debés confirmar las restricciones/i)).not.toBeNull())
+      expect(screen.queryByText(/^preguntar a stella$/i)).not.toBeNull()
     })
   })
 })

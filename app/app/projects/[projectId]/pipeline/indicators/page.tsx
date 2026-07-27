@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/indicators/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaAdvisorPanelWrapper } from '@/components/stella';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
@@ -79,7 +79,7 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Indicadores" highlightHint={!indicators?.length} />
+      <StellaAdvisorPanelWrapper projectId={projectId} step="Indicadores" highlightHint={!indicators?.length} />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="indicators" title="Revisión metodológica — Indicadores" />
       )}

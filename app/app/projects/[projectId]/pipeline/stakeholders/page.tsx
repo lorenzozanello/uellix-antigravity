@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/stakeholders/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaAdvisorPanelWrapper } from '@/components/stella';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
@@ -52,7 +52,7 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Grupos de interés" highlightHint={!stakeholders?.length} />
+      <StellaAdvisorPanelWrapper projectId={projectId} step="Grupos de interés" highlightHint={!stakeholders?.length} />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="stakeholders" title="Revisión metodológica — Grupos de interés" />
       )}

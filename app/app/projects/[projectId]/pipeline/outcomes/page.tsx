@@ -1,12 +1,13 @@
 // app/app/projects/[projectId]/pipeline/outcomes/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaAdvisorPanelWrapper } from '@/components/stella';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { listCatalogsWithCodes, listOutcomeMappingsForProject } from '@/lib/taxonomies/service';
 import { OutcomeTaxonomyMapper } from '@/components/taxonomy/OutcomeTaxonomyMapper';
+import { OutcomeSensitiveAggregationWrapper } from '@/components/aggregation/OutcomeSensitiveAggregationWrapper';
 import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { OutcomeAllocationWrapper } from '@/app/components/allocation-form/OutcomeAllocationWrapper';
@@ -100,7 +101,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Resultados" highlightHint={!outcomes?.length} />
+      <StellaAdvisorPanelWrapper projectId={projectId} step="Resultados" highlightHint={!outcomes?.length} />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="outcomes" title="Revisión metodológica — Resultados" />
       )}
@@ -184,6 +185,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                     mappings={mappingsByOutcome.get(o.id) ?? []}
                     canEdit={canMapTaxonomy}
                   />
+                  <OutcomeSensitiveAggregationWrapper projectId={projectId} outcomeId={o.id} />
                 </div>
               ))}
             </div>

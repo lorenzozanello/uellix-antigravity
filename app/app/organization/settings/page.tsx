@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { SettingsForm } from './settings-form';
 import { hasRole } from '@/lib/auth/permissions';
+import { StellaRetentionWrapper } from '@/components/retention/StellaRetentionWrapper';
 
 export default async function OrganizationSettingsPage() {
   const ctx = await getCurrentOrganizationContext();
@@ -39,6 +40,10 @@ export default async function OrganizationSettingsPage() {
         }}
         canEdit={canEdit}
       />
+
+      <div className="border-t border-slate-200" />
+
+      <StellaRetentionWrapper />
     </div>
   );
 }
