@@ -1,0 +1,209 @@
+{
+  "date": "2026-07-25",
+  "branch": "feature/stella-generation-copilot",
+  "baseCommitEtapaA1": "4c8a8ed9537e4181229ce94f83ca6447db30b172",
+  "baseCommitEtapaA15": "4c8a8ed9537e4181229ce94f83ca6447db30b172",
+  "commitsCreated": 0,
+  "supersededBy": "STELLA_STAGE_A15_CLOSURE_REPORT.md",
+  "note": "This file now reflects the COMBINED state after Etapa A1 + Etapa A1.5 (the reserve-closure session). It replaces the previous version of this same file, which declared some fields true before the runtime builders actually used the untrusted-data envelope.",
+  "etapaA15ModifiedFiles": [
+    "lib/stella/prompts/advisor-system.ts",
+    "lib/stella/prompts/validator-system.ts",
+    "lib/stella/prompts/reviewer-system.ts",
+    "lib/stella/prompts/composer-system.ts",
+    "lib/stella/prompts/composer-system.test.ts",
+    "lib/stella/prompts/registry.ts",
+    "lib/stella/prompts/registry.test.ts",
+    "lib/stella/context/schema-version.ts",
+    "lib/stella/audit-log.ts",
+    "lib/stella/__tests__/audit-log.test.ts",
+    "db/schema.ts",
+    "db/migrations/meta/_journal.json",
+    "tests/integration/stella-interactions-rls.test.ts",
+    "STELLA_REVISED_BACKLOG.csv",
+    "STELLA_STAGE_A_IMPLEMENTATION_REPORT.md",
+    "STELLA_THREAT_MODEL.md"
+  ],
+  "etapaA15NewFiles": [
+    "db/migrations/0043_stella_interactions_privilege_hardening.sql",
+    "db/migrations/0044_stella_prompt_content_hash.sql",
+    "lib/stella/prompts/build-runtime-message.ts",
+    "lib/stella/prompts/prompt-content-hash.ts",
+    "lib/stella/context/context-schema-descriptor.ts",
+    "lib/stella/prompts/__tests__/build-runtime-message.test.ts",
+    "lib/stella/prompts/__tests__/advisor-system.test.ts",
+    "lib/stella/prompts/__tests__/validator-system.test.ts",
+    "lib/stella/prompts/__tests__/reviewer-system.test.ts",
+    "lib/stella/prompts/__tests__/prompt-content-hash.test.ts",
+    "lib/stella/context/__tests__/context-schema-descriptor.test.ts",
+    "tests/stella-adversarial-runtime.test.ts",
+    "STELLA_STAGE_A15_CLOSURE_REPORT.md"
+  ],
+  "migrations": {
+    "createdEtapaA1": ["0042_stella_traceability.sql"],
+    "createdEtapaA15": ["0043_stella_interactions_privilege_hardening.sql", "0044_stella_prompt_content_hash.sql"],
+    "appliedToLocalStack": true,
+    "appliedToRemote": false,
+    "editedExistingMigration": false,
+    "destructiveChanges": false,
+    "drizzleKitCheckResult": "clean, no drift"
+  },
+  "tests": {
+    "projectWideUnit": { "files": 94, "tests": 1277, "passed": 1277, "failed": 0 },
+    "integration": { "files": 4, "tests": 49, "passed": 49, "failed": 0 },
+    "runtimeAdversarialSuite": { "tests": 78, "passed": 78, "note": "Exercises the 4 real buildXUserMessage functions, not just wrapUntrustedData in isolation." },
+    "builderIntegrationTests": {
+      "advisorSystemTest": 7,
+      "validatorSystemTest": 5,
+      "reviewerSystemTest": 15,
+      "composerSystemTest": 17,
+      "buildRuntimeMessageTest": 5
+    },
+    "promptVersionIntegrityTest": { "tests": 10, "passed": 10, "manualDriftVerification": "Temporarily altered advisor-system.ts's prompt text and confirmed the test failed as expected, then reverted." },
+    "contextSchemaIntegrityTest": { "tests": 6, "passed": 6, "manualDriftVerification": "Temporarily added a field to StellaProjectContext and confirmed pnpm typecheck failed on the descriptor's satisfies check, then reverted." },
+    "rlsAndPrivilegeTest": { "tests": 10, "passed": 10, "note": "Includes has_table_privilege assertions for authenticated/anon/service_role/postgres, not just 0-rows-affected." }
+  },
+  "staticChecks": {
+    "typecheck": "clean",
+    "lint": { "errors": 0, "warnings": 55, "warningsIntroducedThisSession": 0 }
+  },
+  "build": {
+    "attempted": true,
+    "succeeded": true,
+    "exitCode": 0,
+    "isolationMethod": "Loaded only .env.test.local (never .env.local); forced STELLA_ENABLED and all per-role flags to 'false'; forced GEMINI_API_KEY to a synthetic placeholder; verified all resolved DB/Supabase targets are loopback via db/guard.ts's checkLocalTargets(defaultTargets()) before invoking next build.",
+    "variableNamesForcedLocalOrSynthetic": [
+      "STELLA_ENABLED", "STELLA_ADVISOR_ENABLED", "STELLA_VALIDATOR_ENABLED", "STELLA_COMPOSER_ENABLED",
+      "STELLA_PROXY_REVIEWER_ENABLED", "STELLA_EVIDENCE_REVIEWER_ENABLED", "STELLA_AUDIT_ASSISTANT_ENABLED",
+      "STELLA_EVAL_REAL_MODEL", "GEMINI_API_KEY"
+    ],
+    "variableNamesLoadedFromLocalStack": ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "DATABASE_URL"],
+    "secretValuesLogged": false,
+    "externalAccessClaims": {
+      "configuredApplicationServicesWereLocalOrSynthetic": true,
+      "remoteDatabaseAccessObserved": false,
+      "remoteGeminiAccessObserved": false,
+      "buildRanWithNetworkDisabled": false,
+      "outboundTrafficWasIndependentlyMonitored": false
+    },
+    "externalAccessClaimsNote": "Etapa A1.6 correction (STL-A16-001): the previous 'externalNetworkAccessDuringBuild: false' field asserted, as an absolute fact, that no external access occurred. What was actually verified is narrower: db/guard.ts's checkLocalTargets(defaultTargets()) confirms the CONFIGURED DB/Supabase connection strings resolve to loopback hostnames, and no code path in the build was observed attempting a Gemini call (STELLA_ENABLED and all per-role flags were forced false, and no builder imports the adapter). Neither the network interface was physically disabled nor was outbound traffic independently captured (e.g. via a packet monitor or an egress-blocking sandbox) during the build, so 'no external access was possible' cannot be asserted as an absolute, monitored fact — only that the services the app was CONFIGURED to use were local/synthetic and that no attempt was observed. The field below replaces the removed absolute claim."
+  },
+  "commandsExecuted": [
+    "pnpm typecheck",
+    "pnpm lint",
+    "pnpm exec vitest run lib/stella/prompts/__tests__/build-runtime-message.test.ts",
+    "pnpm exec vitest run lib/stella/prompts/__tests__/advisor-system.test.ts",
+    "pnpm exec vitest run lib/stella/prompts/__tests__/validator-system.test.ts",
+    "pnpm exec vitest run lib/stella/prompts/__tests__/reviewer-system.test.ts",
+    "pnpm exec vitest run lib/stella/prompts/composer-system.test.ts",
+    "pnpm exec vitest run tests/stella-adversarial-runtime.test.ts",
+    "pnpm db:migrate:local (x2, migrations 0043 and 0044)",
+    "pnpm exec vitest run --config vitest.integration.config.ts tests/integration/stella-interactions-rls.test.ts",
+    "pnpm exec vitest run lib/stella/prompts/__tests__/prompt-content-hash.test.ts lib/stella/prompts/registry.test.ts",
+    "pnpm exec vitest run lib/stella/context/__tests__/context-schema-descriptor.test.ts",
+    "npx drizzle-kit check --config=drizzle.local.config.ts (x2)",
+    "pnpm test:unit",
+    "pnpm test:integration",
+    "pnpm exec tsx scripts/_tmp_safe_build.ts (isolated build attempt; scratch script deleted after use)"
+  ],
+  "commandsSkipped": [],
+  "externalAccessUsed": false,
+  "externalAccessUsedNote": "Refers to this session's own actions (migrations applied, tests run) — all deterministically verified local via db/guard.ts's checkLocalTargets before each DB-touching command. See build.externalAccessClaims for the narrower, corrected formulation of what could be verified specifically about the isolated build attempt (no traffic monitoring existed for that one command).",
+  "remoteWriteOccurred": false,
+  "realModelCallMade": false,
+  "flagsModified": false,
+  "csvValidation": {
+    "totalRows": 56,
+    "columns": 18,
+    "malformedRows": 0,
+    "duplicateIds": 0,
+    "danglingDependencies": 0,
+    "topologicalOrderViolations": 0,
+    "etapaA15RowsAdded": 11,
+    "etapaA15RowsMarkedDone": 11,
+    "etapaA15RowsStillPending": [],
+    "etapaA16RowsAdded": 4,
+    "etapaA16RowsMarkedDone": 4,
+    "supersededRows": ["STL-B-002", "STL-B-003 (marked Done: their described work was implemented ahead of schedule in Etapa A1.5, not Etapa B)"],
+    "correctedEtapaA16Note": "STL-A16-002: this block previously read etapaA15RowsMarkedDone: 10 with STL-A15-011 listed as pending — stale from the moment this same JSON file's own update (the task that row tracks) was written. Re-verified directly against STELLA_REVISED_BACKLOG.csv on 2026-07-25: all 11 STL-A15-* rows are Done. Corrected here. Row count also updated from 52 to 56 to reflect the 4 new STL-A16-* rows added in this session."
+  },
+  "reserveClosureStatus": {
+    "untrustedPayloadUtilityImplemented": true,
+    "untrustedPayloadIntegratedInRuntimeBuilders": true,
+    "tablePrivilegesHardened": true,
+    "promptVersionIntegrityTested": true,
+    "contextSchemaVersionIntegrityTested": true
+  },
+  "exitGateEtapaA15": {
+    "criteria": {
+      "allFourRuntimeBuildersUseStructuralSeparation": true,
+      "adversarialTestsInspectRealMessages": true,
+      "authenticatedHasNoInsertUpdateDeleteOnStellaInteractions": true,
+      "legitimateServerInsertsStillWork": true,
+      "rlsStillIsolatesOrganizations": true,
+      "promptChangeWithoutVersionBumpFailsATest": true,
+      "contextShapeChangeWithoutVersionBumpFailsATest": true,
+      "noRawPayloadStored": true,
+      "noRealModelCalls": true,
+      "noRemoteAccess": true,
+      "noFlagsActivated": true,
+      "typecheckLintUnitIntegrationSchemaPass": true,
+      "buildPassesIsolated": true,
+      "documentsMatchCode": true
+    },
+    "result": "APROBADO",
+    "notes": "All 14 mandatory criteria verified. structuralDataInstructionSeparation is now true for the RUNTIME builders specifically (not only the context-object guardrail from Etapa A1)."
+  },
+  "recommendedNextBlock": [
+    "STL-A2-001",
+    "STL-A2-002",
+    "STL-A2-003",
+    "STL-A2-004",
+    "STL-A2-005",
+    "STL-A2-006"
+  ],
+  "recommendedNextBlockNote": "Etapa A2 (gobernanza de datos) is decision-gathering, not implementation — see STELLA_DECISION_REGISTER.md. Do not proceed automatically; await explicit instruction.",
+  "etapaA16ConsistencyClosure": {
+    "date": "2026-07-25",
+    "inconsistenciesFound": [
+      {
+        "id": "STL-A16-001",
+        "summary": "build.externalNetworkAccessDuringBuild: false was an absolute, unmonitored claim. Corrected to a 5-field verifiable breakdown (see build.externalAccessClaims).",
+        "status": "corrected"
+      },
+      {
+        "id": "STL-A16-002",
+        "summary": "csvValidation.etapaA15RowsMarkedDone said 10 with STL-A15-011 pending; the CSV itself already had all 11 rows Done. Re-verified directly against STELLA_REVISED_BACKLOG.csv and corrected.",
+        "status": "corrected"
+      },
+      {
+        "id": "STL-A16-003",
+        "summary": "computePromptContentHash() only hashed the system prompt text, not the TASK/RESPONSE_REQUIREMENTS fixed strings, the runtime message template, the untrusted-data delimiters, the structural field selection, or CONTEXT_SCHEMA_VERSION. A developer could have changed any of those without the hash changing, without a version bump, and without any test failing. Verified empirically: a TASK-text-only change was NOT caught by the old hash function (confirmed by reasoning about its implementation) and IS caught by the new one (confirmed by temporarily perturbing advisor-system.ts's TASK text and observing the test fail, then reverting). Fixed in lib/stella/prompts/prompt-content-hash.ts; all 6 expectedContentHash values in registry.ts recomputed; version numbers NOT bumped (the prompts' actual wording did not change, only what the control measures).",
+        "status": "corrected"
+      },
+      {
+        "id": "STL-A16-004",
+        "summary": "Regression introduced while fixing STL-A16-003, caught by pnpm test:unit: audit-log.ts's recordStellaInteraction() called computePromptContentHash(role) at runtime on every interaction, which now internally calls the real buildXUserMessage functions. Under the 4 Stella action test files' mocks (buildXUserMessage mocked to return a plain placeholder string, not a TASK/UNTRUSTED_PROJECT_DATA/RESPONSE_REQUIREMENTS-shaped message), the contract-extraction logic threw, causing 27 test failures across advisor/composer/validator action tests (ok:false instead of ok:true). Root cause: recomputing this hash per-call was unnecessary — it never varies within a prompt-template version. Fixed by using the registry's own recorded snapshot (template.expectedContentHash) at insert time instead of recomputing. All 1277 project-wide unit tests and 49 integration tests pass after the fix.",
+        "status": "corrected"
+      }
+    ],
+    "promptContractHashCoverage": {
+      "systemPrompt": true,
+      "taskTemplate": true,
+      "responseRequirements": true,
+      "runtimeMessageStructure": true,
+      "untrustedDataDelimiters": true,
+      "structuralFieldSelection": true,
+      "contextSchemaVersion": true,
+      "sectionOrMandateVariants": "composer only (default section vs. funder_breakdown section) — the other 5 roles have no data-independent variant in their task/response-requirements text"
+    },
+    "testsAffectedByBroadening": {
+      "promptContentHashTest": { "tests": 10, "passed": 10 },
+      "registryTest": { "tests": 8, "passed": 8 }
+    },
+    "rlsIntegrationTestsSkippedThisSession": true,
+    "rlsIntegrationTestsSkippedReason": "No change to the database, RLS policies, table privileges, or server actions in Etapa A1.6 — only to the prompt-hash computation (application code) and to documentation/backlog. tests/integration/stella-interactions-rls.test.ts's assertions are unaffected by this session's changes.",
+    "governancePackageCreated": true,
+    "governanceDecisionsImplemented": false
+  }
+}
