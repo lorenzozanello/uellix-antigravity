@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import { StellaAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaAdvisorPanelWrapper, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
 import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
@@ -420,7 +420,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         </CardContent>
       </Card>
 
-      <StellaAdvisorPanel projectId={projectId} step="Cálculo" highlightHint={!readiness.hasInvestment} />
+      <StellaAdvisorPanelWrapper projectId={projectId} step="Cálculo" highlightHint={!readiness.hasInvestment} />
 
       <StellaValidatorPanel projectId={projectId} step="Cálculo" />
 

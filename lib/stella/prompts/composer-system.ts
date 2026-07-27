@@ -2,6 +2,7 @@
 // Sprint 9B: Stella Composer system prompt builder
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
+import { buildStellaUserMessage } from './build-runtime-message'
 import type { StellaProjectContext } from '../context/types'
 
 export function buildComposerSystemPrompt(sectionType: string): string {
@@ -58,49 +59,58 @@ export function buildComposerUserMessage(
   sectionType: string,
   context: StellaProjectContext
 ): string {
-  const contextSummary = `
-**Analysis Summary:**
-- Outcomes: ${context.outcomesSnapshot.map(o => o.name).join(', ') || 'TBD'}
-- Impact period: ${context.filterSetsSummary.length > 0 ? context.filterSetsSummary[0].durationYears + ' years' : 'Not specified'}
-- Estimated social value: ${context.calculationSnapshot ? `${context.calculationSnapshot.currency} ${context.calculationSnapshot.netSocialValue.toFixed(2)}` : 'TBD'}
-- SROI ratio: ${context.calculationSnapshot ? context.calculationSnapshot.sroiRatio.toFixed(2) : 'TBD'}
-
-**Evidence available:** ${context.evidenceMetadata.filter(e => e.status === 'approved').length} approved items
-**Proxies assigned:** ${context.proxySummary.length} proxies
-`
-
-  let funderContext = ''
-  if (sectionType === 'funder_breakdown' && context.calculationSnapshot?.fundersBreakdown) {
-    const fb = context.calculationSnapshot.fundersBreakdown
-    const funderBreakdownSummary = fb
-      .map(
-        (f) =>
-          `- ${f.funderName} (${f.funderType}): ${context.calculationSnapshot?.currency} ${f.investmentUsd.toFixed(2)} invested → SROI ${f.sroiRatio.toFixed(2)}:1`
-      )
-      .join('\n')
-
-    const unattributedNote =
-      context.calculationSnapshot.unattributedNsvUsd && context.calculationSnapshot.unattributedNsvUsd > 0
-        ? `\n\nUnattributed impact (not yet allocated to funders): ${context.calculationSnapshot.currency} ${context.calculationSnapshot.unattributedNsvUsd.toFixed(2)}`
-        : ''
-
-    funderContext = `
-
-**Funder Breakdown:**
-${funderBreakdownSummary}${unattributedNote}
-
-For this section, provide:
-1. Clear summary of each funder's financial contribution and attributed impact (SROI ratio)
-2. Comparison of returns across funder types (if relevant)
-3. Explanation of any unattributed impact
-4. Methodology note that ratios are based on outcome allocations`
+  // Etapa A1.5 (STL-A15-004): same fields as before (outcome names, impact
+  // period, estimated social value, SROI ratio, approved-evidence count,
+  // proxies-assigned count, and — for funder_breakdown — the same per-funder
+  // formatted lines and unattributed-impact note), now sent through the
+  // structural TASK/UNTRUSTED_PROJECT_DATA/RESPONSE_REQUIREMENTS envelope.
+  // The per-funder line keeps its original "- Name (type): CUR X.XX invested
+  // → SROI Y.YY:1" formatting deliberately, so composer-system.test.ts's
+  // content assertions (funder names, ratios, the word "invested") continue
+  // to hold without modification; only the 2 assertions that checked literal
+  // markdown section headers ("Outcomes:", "**Funder Breakdown:**") — which
+  // cannot survive a move to delimited JSON — were updated, with a comment
+  // there explaining why.
+  const untrustedData: Record<string, unknown> = {
+    outcomes: context.outcomesSnapshot.map((o) => o.name),
+    impactPeriod:
+      context.filterSetsSummary.length > 0 ? `${context.filterSetsSummary[0].durationYears} years` : 'Not specified',
+    estimatedSocialValue: context.calculationSnapshot
+      ? `${context.calculationSnapshot.currency} ${context.calculationSnapshot.netSocialValue.toFixed(2)}`
+      : 'TBD',
+    sroiRatio: context.calculationSnapshot ? context.calculationSnapshot.sroiRatio.toFixed(2) : 'TBD',
+    evidenceApprovedCount: context.evidenceMetadata.filter((e) => e.status === 'approved').length,
+    proxiesAssignedCount: context.proxySummary.length,
   }
 
-  return `Please write the "${sectionType}" section of our SROI impact report.
+  let responseRequirements =
+    'Generate a draft that is clear, audit-ready, and cites evidence/proxies explicitly. Remember that this is a DRAFT - the user will review and edit before publication.\n\n' +
+    'Include explicit disclaimers about assumptions, limitations, and the need for human review.'
 
-${contextSummary}${funderContext}
+  if (sectionType === 'funder_breakdown' && context.calculationSnapshot?.fundersBreakdown) {
+    const fb = context.calculationSnapshot.fundersBreakdown
+    const currency = context.calculationSnapshot.currency
 
-Generate a draft that is clear, audit-ready, and cites evidence/proxies explicitly. Remember that this is a DRAFT - the user will review and edit before publication.
+    untrustedData.fundersBreakdown = fb.map(
+      (f) => `- ${f.funderName} (${f.funderType}): ${currency} ${f.investmentUsd.toFixed(2)} invested → SROI ${f.sroiRatio.toFixed(2)}:1`
+    )
 
-Include explicit disclaimers about assumptions, limitations, and the need for human review.`
+    if (context.calculationSnapshot.unattributedNsvUsd && context.calculationSnapshot.unattributedNsvUsd > 0) {
+      untrustedData.unattributedImpact = `Unattributed impact (not yet allocated to funders): ${currency} ${context.calculationSnapshot.unattributedNsvUsd.toFixed(2)}`
+    }
+
+    responseRequirements =
+      'For this section, provide:\n' +
+      "1. Clear summary of each funder's financial contribution and attributed impact (SROI ratio)\n" +
+      '2. Comparison of returns across funder types (if relevant)\n' +
+      '3. Explanation of any unattributed impact\n' +
+      '4. Methodology note that ratios are based on outcome allocations\n\n' +
+      responseRequirements
+  }
+
+  return buildStellaUserMessage({
+    task: `Please write the "${sectionType}" section of our SROI impact report.`,
+    untrustedData,
+    responseRequirements,
+  })
 }

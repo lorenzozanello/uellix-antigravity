@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/narrative/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaAdvisorPanelWrapper } from '@/components/stella';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
@@ -103,7 +103,7 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Narrativa" highlightHint={!narrative} />
+      <StellaAdvisorPanelWrapper projectId={projectId} step="Narrativa" highlightHint={!narrative} />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="narrative" title="Revisión metodológica — Narrativa / Teoría de cambio" />
       )}

@@ -16,8 +16,14 @@ const onboardingSchema = z.object({
 export async function completeOnboarding(formData: FormData) {
   const ctx = await requireOrganizationAccess()
 
+  // F0-03: la interfaz ya no muestra este formulario a quien no puede enviarlo,
+  // pero la comprobación se mantiene aquí porque es la autorización real — una
+  // acción de servidor es un endpoint público. El mensaje pasa a español: antes
+  // era la única cadena en inglés que un usuario podía ver en toda la aplicación.
   if (ctx.membership.role !== ROLES.SUPER_ADMIN && ctx.membership.role !== ROLES.ORGANIZATION_ADMIN) {
-    throw new Error('Only organization admins can complete onboarding')
+    throw new Error(
+      'Sólo un administrador de la organización puede completar la configuración inicial.'
+    )
   }
 
   const parsed = onboardingSchema.safeParse({
@@ -27,7 +33,7 @@ export async function completeOnboarding(formData: FormData) {
   })
 
   if (!parsed.success) {
-    throw new Error(`Invalid onboarding data: ${parsed.error.issues.map(i => i.message).join(', ')}`)
+    throw new Error('Revisa los datos de la organización: país, sector y moneda base son obligatorios.')
   }
 
   const { country, sector, baseCurrency } = parsed.data

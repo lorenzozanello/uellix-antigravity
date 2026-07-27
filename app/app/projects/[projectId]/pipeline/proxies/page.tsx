@@ -2,7 +2,7 @@
 
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
-import { StellaAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaAdvisorPanelWrapper, StellaReviewerPanel } from '@/components/stella'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
 import { ProxyBankSearch } from '@/app/components/proxy-bank-search/ProxyBankSearch'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
@@ -185,7 +185,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={projectId} step="Proxies" highlightHint={assignments.length === 0} />
+      <StellaAdvisorPanelWrapper projectId={projectId} step="Proxies" highlightHint={assignments.length === 0} />
       <StellaReviewerPanel projectId={projectId} role="proxy_reviewer" title="Revisor de Proxies (Stella)" />
       {ctx && canReviewMethodology(ctx.membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="proxies" title="Revisión metodológica — Proxies" />

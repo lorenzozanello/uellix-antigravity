@@ -288,6 +288,62 @@
       "when": 1784830133006,
       "tag": "0040_whole_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1784830134006,
+      "tag": "0041_bootstrap_closure",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1784830135006,
+      "tag": "0042_stella_traceability",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1784916535006,
+      "tag": "0043_stella_interactions_privilege_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1784916536006,
+      "tag": "0044_stella_prompt_content_hash",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1784916537006,
+      "tag": "0045_stella_ai_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1784916538006,
+      "tag": "0046_stella_sensitive_aggregation_declarations",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1785092169210,
+      "tag": "0047_stella_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1785102840064,
+      "tag": "0048_stella_pilot_confirmations",
+      "breakpoints": true
     }
   ]
 }

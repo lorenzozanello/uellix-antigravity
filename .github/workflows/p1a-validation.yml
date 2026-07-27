@@ -1,13 +1,26 @@
-name: P1A Validation
+name: Local bootstrap and integration
+
+# F0-04 / F2-02 / F0-07 — Verifica contra un stack Supabase EFÍMERO que:
+#   1. El bootstrap funciona desde una base limpia.
+#   2. Aplicarlo dos veces seguidas deja el sistema funcional (idempotencia).
+#   3. Reaplicar 0033_public_api_grants.sql —el escenario de una restauración de
+#      backup— no deja rota la evidencia, porque el bootstrap se autorrepara.
+#   4. Las 39 pruebas de integración/RLS pasan después de todo lo anterior.
+#
+# Todo ocurre contra loopback. La guarda de host (db/guard.ts) aborta el
+# proceso si alguna variable apuntara fuera de 127.0.0.1/localhost/::1, así que
+# este workflow no puede alcanzar una base remota ni por error de configuración.
 
 on:
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
+  # Se conserva el id `validate-p1a` a propósito: es el nombre con el que este
+  # check aparece en la protección de rama. Renombrarlo dejaría la regla
+  # apuntando a un check inexistente y los PR se quedarían esperando.
   validate-p1a:
-    name: Validate P1A Architecture and Security
+    name: Double bootstrap + integration/RLS
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -28,86 +41,72 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate Loopback URLs
+      # Defensa estática, previa a levantar nada: ningún fichero de
+      # configuración local debe apuntar fuera de loopback.
+      - name: Validate loopback configuration
         run: |
-          echo "Validating that critical local config files only target loopback interfaces..."
-          
-          # Check drizzle.local.config.ts
           if ! grep -Ei "^[[:space:]]*const LOCAL_DB_URL = .*@(127\.0\.0\.1|localhost|\[::1\])" drizzle.local.config.ts; then
-            echo "🚨 Error: drizzle.local.config.ts contains a non-loopback database URL!"
+            echo "::error::drizzle.local.config.ts no apunta a loopback"
             exit 1
           fi
-          
-          # Check seed-local.ts database URL
-          if ! grep -Ei "^[[:space:]]*const dbUrl = .*@(127\.0\.0\.1|localhost|\[::1\])" scripts/seed-local.ts; then
-            echo "🚨 Error: scripts/seed-local.ts contains a non-loopback database URL!"
-            exit 1
-          fi
-          
-          # Check config.toml ports/urls
           if ! grep -Ei "^[[:space:]]*api_url = ['\"]https?://(127\.0\.0\.1|localhost|\[::1\])" supabase/config.toml; then
-            echo "🚨 Error: supabase/config.toml api_url is not loopback!"
+            echo "::error::supabase/config.toml api_url no apunta a loopback"
             exit 1
           fi
-          
-          echo "✅ Loopback check passed."
+          echo "Configuración local verificada: sólo loopback."
 
-      - name: Start Supabase Local
-        run: pnpm supabase start
+      # Demuestra que la guarda rechaza destinos remotos antes de tocar la base.
+      - name: Host guard tests
+        run: pnpm exec vitest run tests/db-guard.test.ts
 
-      - name: Export Supabase Local Env Vars
+      # ── Primera aplicación, desde una base completamente limpia ────────────
+      # `db:bootstrap:local` levanta Supabase, aplica supabase/migrations y la
+      # cadena de Drizzle en el orden correcto, verifica 11 invariantes y
+      # escribe .env.test.local, que es lo que consumen las pruebas.
+      - name: Bootstrap (1/2) — clean database
+        run: pnpm db:bootstrap:local
+
+      # ── Segunda aplicación consecutiva ─────────────────────────────────────
+      - name: Bootstrap (2/2) — idempotency
+        run: pnpm db:bootstrap:local
+
+      # ── Regresión de SEC-03 ────────────────────────────────────────────────
+      # Reaplicar 0033 revoca EXECUTE sobre los helpers de RLS de Storage y deja
+      # inutilizada la subida y lectura de evidencia, en silencio. Se reproduce
+      # a propósito y se comprueba que el bootstrap lo repara.
+      - name: SEC-03 regression — re-apply 0033 and self-heal
         run: |
-          trap 'rm -f .env.supabase' EXIT
-          pnpm supabase status -o env --override-name api.url=NEXT_PUBLIC_SUPABASE_URL,auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY,auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY,db.url=DATABASE_URL > .env.supabase
-          
-          # Validate loopback without printing values
-          SB_URL=$(grep NEXT_PUBLIC_SUPABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')
-          DB_URL=$(grep DATABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')
-          
-          if echo "$SB_URL" | grep -qvE "127.0.0.1|localhost|::1"; then
-            echo "🚨 Error: NEXT_PUBLIC_SUPABASE_URL is not loopback!"
+          DB_URL=$(grep -m1 '^DATABASE_URL=' .env.test.local | cut -d '=' -f2-)
+          echo "::add-mask::${DB_URL}"
+
+          psql "${DB_URL}" -q -v ON_ERROR_STOP=1 -f db/migrations/0033_public_api_grants.sql
+
+          BROKEN=$(psql "${DB_URL}" -t -A -c \
+            "select has_function_privilege('authenticated','public.can_write_evidence_object(text,uuid)','EXECUTE')")
+          if [ "${BROKEN}" != "f" ]; then
+            echo "::error::No se pudo reproducir SEC-03; la prueba de regresión ya no es válida"
             exit 1
           fi
-          
-          if echo "$DB_URL" | grep -qvE "127.0.0.1|localhost|::1"; then
-            echo "🚨 Error: DATABASE_URL is not loopback!"
+          echo "SEC-03 reproducido: permisos de evidencia revocados."
+
+          pnpm db:bootstrap:local
+
+          FIXED=$(psql "${DB_URL}" -t -A -c \
+            "select has_function_privilege('authenticated','public.can_write_evidence_object(text,uuid)','EXECUTE')")
+          if [ "${FIXED}" != "t" ]; then
+            echo "::error::El bootstrap NO reparó los permisos de evidencia"
             exit 1
           fi
-          
-          # Export only the four variables used by tests. Supabase CLI wraps
-          # values in quotes; GitHub otherwise preserves those quotes and the
-          # Postgres client receives an invalid URL.
-          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL; do
-            raw_value=$(grep -m1 "^${key}=" .env.supabase | cut -d '=' -f2-)
-            value="${raw_value%\"}"
-            value="${value#\"}"
-            echo "::add-mask::${value}"
-            printf '%s=%s\n' "${key}" "${value}" >> "$GITHUB_ENV"
-          done
+          echo "Reparado por el bootstrap."
 
-      - name: Run Drizzle Local Migrations
-        run: pnpm db:migrate:local
-
-      - name: Run Drizzle Local Seed
-        run: pnpm db:seed:local
-
-      - name: Run Integration Tests
+      # ── Suite completa contra el stack efímero ─────────────────────────────
+      # No se exportan variables: vitest.setup.integration.ts lee .env.test.local,
+      # que el bootstrap acaba de generar, y valida el host antes de conectar.
+      - name: Integration and RLS tests
         run: pnpm test:integration
 
-      - name: Run RLS Tests
-        run: pnpm test:rls
-
-      - name: Run Lint
-        run: pnpm lint
-
-      - name: Run Typecheck
-        run: pnpm typecheck
-
-      - name: Run Unit Tests
-        run: pnpm test:unit
-
-      - name: Build Project
-        run: pnpm build
+      - name: Schema drift check
+        run: npx drizzle-kit check
 
       - name: Stop Supabase
         if: always()

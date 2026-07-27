@@ -21,9 +21,17 @@
 // (used as createdBy — the proxies table has a NOT NULL FK to users).
 
 import 'dotenv/config'
+import { assertLocalDatabase } from '../db/guard'
 import { db } from '../db/client'
 import { users, proxySources, financialProxies } from '../db/schema'
 import { eq, isNull, and } from 'drizzle-orm'
+
+// F0-05: `import 'dotenv/config'` (arriba) carga `.env`, cuyo DATABASE_URL
+// apunta al proyecto remoto. Sin esta guarda, `pnpm db:seed:proxies` escribe en
+// producción aunque hayas exportado variables locales en la shell.
+// Se ejecuta antes de cualquier consulta: postgres.js no conecta hasta la
+// primera query, así que abortar aquí garantiza que no hubo conexión.
+assertLocalDatabase({ context: 'pnpm db:seed:proxies' })
 
 interface SeedSource {
   name: string

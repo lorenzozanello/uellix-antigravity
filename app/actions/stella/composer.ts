@@ -6,24 +6,36 @@
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
+import { getStellaConsentStatus } from '@/lib/stella/consent/consent-status'
 import { buildComposerContext, StellaBuildComposerContextError } from '@/lib/stella/context/build-composer-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
+import { assertContextHasNoForbiddenData } from '@/lib/stella/context/context-guardrails'
 import { buildComposerSystemPrompt, buildComposerUserMessage } from '@/lib/stella/prompts/composer-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ComposerOutputSchema } from '@/lib/stella/schemas/composer-output'
-import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import { StellaParseError, StellaTimeoutError, StellaGeminiError, StellaContextGuardrailError } from '@/lib/stella/errors'
+import { SENSITIVE_DATA_BLOCK_MESSAGES } from '@/lib/stella/context/sensitive-population'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
-import { db } from '@/db/client'
-import { stellaInteractions } from '@/db/schema'
+import { recordStellaInteraction } from '@/lib/stella/audit-log'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import type { ComposerOutput } from '@/lib/stella/schemas/composer-output'
 
 export type StellaComposerErrorCode =
   | 'DISABLED'
   | 'UNAUTHORIZED'
+  | 'CONSENT_REQUIRED'
+  | 'CONSENT_REVOKED'
+  | 'CONSENT_OUTDATED'
   | 'RATE_LIMITED'
   | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
+  | 'CONTEXT_GUARDRAIL_FAILED'
+  | 'SENSITIVE_INDIVIDUAL_DATA_BLOCKED'
+  | 'SENSITIVE_GROUP_SIZE_REQUIRED'
+  | 'SENSITIVE_GROUP_TOO_SMALL'
+  | 'SENSITIVE_REIDENTIFICATION_RISK'
+  | 'SENSITIVE_FREE_TEXT_BLOCKED'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
@@ -60,6 +72,21 @@ export async function getStellaComposer(
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
   }
 
+  // Etapa A2.1 (STL-A21-008, DR-005) — see advisor.ts for the rationale.
+  const consentStatus = await getStellaConsentStatus(ctx.organization.id)
+  if (consentStatus.status !== 'valid') {
+    const consentErrorByStatus: Record<'missing' | 'revoked' | 'outdated', StellaComposerErrorCode> = {
+      missing: 'CONSENT_REQUIRED',
+      revoked: 'CONSENT_REVOKED',
+      outdated: 'CONSENT_OUTDATED',
+    }
+    return {
+      ok: false,
+      error: consentErrorByStatus[consentStatus.status],
+      message: "An organization admin must review and accept Stella's current AI terms and data policy before it can be used.",
+    }
+  }
+
   // Quota check — enforced per org, per calendar month, DB-backed.
   // Every org defaults to quota 0 (blocked) until a super_admin assigns one.
   // Note: this check and the later audit insert (stella_interactions row)
@@ -80,6 +107,9 @@ export async function getStellaComposer(
   try {
     // Build context — validates project + report ownership before consuming rate limit
     const context = await buildComposerContext(projectId, ctx.organization.id, reportId)
+
+    // Etapa A1 (STL-A1-008) — see advisor.ts for the rationale.
+    await assertContextHasNoForbiddenData(context)
 
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
@@ -106,14 +136,16 @@ export async function getStellaComposer(
     // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
     const data = await adapter.parseResponse(response.rawOutput, ComposerOutputSchema)
 
-    // Audit insert — required for compliance; surface failure rather than swallow
+    // Audit insert — required for compliance; surface failure rather than
+    // swallow. Central recorder (Etapa A1, STL-A1-006).
     try {
-      await db.insert(stellaInteractions).values({
+      await recordStellaInteraction({
         organizationId: ctx.organization.id,
         projectId,
         createdBy: ctx.user.id,
-        stellaRole: 'composer',
+        role: 'composer',
         pipelineStep: sectionType,
+        context,
         contextHash,
         responseJson: data as unknown,
         modelUsed: response.modelUsed,
@@ -127,6 +159,29 @@ export async function getStellaComposer(
   } catch (error) {
     if (error instanceof StellaBuildComposerContextError) {
       return { ok: false, error: 'UNAUTHORIZED', message: 'Report or project access denied.' }
+    }
+
+    if (error instanceof StellaContextGuardrailError) {
+      // Etapa A2.3 (STL-A23-007, DR-002/DR-003) — see advisor.ts for the rationale.
+      if (error.code && error.code in SENSITIVE_DATA_BLOCK_MESSAGES) {
+        const reasonCode = error.code as keyof typeof SENSITIVE_DATA_BLOCK_MESSAGES
+        try {
+          await logAuditAction({
+            organizationId: ctx.organization.id,
+            projectId,
+            actorUserId: ctx.user.id,
+            entityType: 'stella_interaction',
+            entityId: projectId,
+            action: AUDIT_ACTIONS.STELLA_SENSITIVE_DATA_BLOCKED,
+            reason: reasonCode,
+          })
+        } catch {
+          // Audit logging must never mask the original block.
+        }
+        return { ok: false, error: reasonCode, message: SENSITIVE_DATA_BLOCK_MESSAGES[reasonCode] }
+      }
+
+      return { ok: false, error: 'CONTEXT_GUARDRAIL_FAILED', message: 'Stella context failed a safety check.' }
     }
 
     if (error instanceof StellaTimeoutError) {

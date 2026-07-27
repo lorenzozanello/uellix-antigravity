@@ -2,6 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { buildComposerUserMessage } from './composer-system'
 import type { StellaProjectContext } from '../context/types'
 
+// Etapa A1.5 (STL-A15-004): buildComposerUserMessage now routes its data
+// through the structural TASK/UNTRUSTED_PROJECT_DATA/RESPONSE_REQUIREMENTS
+// envelope (delimited JSON) instead of concatenated markdown prose. All
+// content assertions below (funder names, types, amounts, ratios, guidance
+// text, relative order) hold unchanged, because that data is still present,
+// verbatim, inside the JSON block. Exactly 2 assertions could not survive the
+// format change because they checked literal markdown section headers that
+// no longer exist ("Outcomes:", "**Funder Breakdown:**") — those two are
+// updated below to check the equivalent JSON-key presence instead, with a
+// comment at each site.
 describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
   const baseMockContext: StellaProjectContext = {
     projectId: 'proj-1',
@@ -45,7 +55,10 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
       const message = buildComposerUserMessage('executive_summary', baseMockContext)
 
       expect(message).toContain('executive_summary')
-      expect(message).toContain('Outcomes:')
+      // Updated (Etapa A1.5): outcomes are now a JSON array under the
+      // "outcomes" key inside UNTRUSTED_PROJECT_DATA, not a "Outcomes:"
+      // markdown label — same data, different (structural) format.
+      expect(message).toContain('"outcomes"')
       expect(message).not.toContain('Funder Breakdown')
     })
 
@@ -94,7 +107,12 @@ describe('buildComposerUserMessage - Funder Breakdown Enhancement', () => {
     it('includes funder breakdown section header', () => {
       const message = buildComposerUserMessage('funder_breakdown', contextWithFunders)
 
-      expect(message).toContain('**Funder Breakdown:**')
+      // Updated (Etapa A1.5): the funder breakdown is now a JSON array under
+      // the "fundersBreakdown" key inside UNTRUSTED_PROJECT_DATA, not a
+      // "**Funder Breakdown:**" markdown heading — same data, different
+      // (structural) format. The per-funder content itself (names, types,
+      // amounts, ratios, asserted below) is untouched.
+      expect(message).toContain('"fundersBreakdown"')
     })
 
     it('lists all funders with investment and SROI data', () => {

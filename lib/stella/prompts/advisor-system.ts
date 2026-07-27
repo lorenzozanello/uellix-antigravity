@@ -2,6 +2,7 @@
 // Sprint 9B: Stella Advisor system prompt builder
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
+import { buildStellaUserMessage } from './build-runtime-message'
 import type { StellaProjectContext } from '../context/types'
 
 export function buildAdvisorSystemPrompt(step: string): string {
@@ -39,22 +40,21 @@ IMPORTANT: Return ONLY the JSON object. No markdown, no explanation outside the 
 }
 
 export function buildAdvisorUserMessage(step: string, context: StellaProjectContext): string {
-  const contextSummary = `
-**Project Context:**
-- Project ID: ${context.projectId}
-- Current step: ${step}
-- Outcomes defined: ${context.outcomesSnapshot.length}
-- Indicators: ${context.indicatorsSnapshot.length}
-- Evidence items: ${context.evidenceTotal}
-- Readiness score: ${context.readinessScore ?? 'Not yet calculated'}
-
-**Current Analysis Summary:**
-${context.narrativeSummary.substring(0, 500)}...
-`
-
-  return `Please provide guidance for the "${step}" step of our SROI analysis.
-
-${contextSummary}
-
-Generate clear, actionable advice for completing this step methodologically sound.`
+  // Etapa A1.5 (STL-A15-001): same fields as before (projectId, step, the 3
+  // counts, readiness score, narrative truncated to 500 chars), now sent
+  // through the structural TASK/UNTRUSTED_PROJECT_DATA/RESPONSE_REQUIREMENTS
+  // envelope instead of concatenated prose. No field added or removed.
+  return buildStellaUserMessage({
+    task: `Please provide guidance for the "${step}" step of our SROI analysis.`,
+    untrustedData: {
+      projectId: context.projectId,
+      currentStep: step,
+      outcomesDefined: context.outcomesSnapshot.length,
+      indicatorsCount: context.indicatorsSnapshot.length,
+      evidenceItems: context.evidenceTotal,
+      readinessScore: context.readinessScore ?? 'Not yet calculated',
+      currentAnalysisSummary: context.narrativeSummary.substring(0, 500) + '...',
+    },
+    responseRequirements: 'Generate clear, actionable advice for completing this step methodologically sound.',
+  })
 }

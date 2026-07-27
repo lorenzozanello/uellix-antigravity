@@ -16,11 +16,18 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:local": "drizzle-kit migrate --config=drizzle.local.config.ts",
-    "db:setup:local": "pnpm db:migrate:local && pnpm db:seed:local",
-    "db:reset:local": "pnpm supabase stop --no-backup && pnpm supabase start && pnpm db:setup:local",
+    "db:bootstrap:local": "tsx scripts/bootstrap-local.ts",
+    "db:setup:local": "pnpm db:bootstrap:local && pnpm db:seed:local",
+    "db:reset:local": "pnpm supabase stop --no-backup && pnpm db:bootstrap:local",
     "db:seed:local": "tsx scripts/seed-local.ts",
+    "db:clean:test-data": "tsx scripts/clean-test-data.ts",
     "db:seed:proxies": "tsx scripts/seed-proxies.ts",
-    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts"
+    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts",
+    "stella:eval": "tsx tests/eval/run.ts",
+    "stella:retention:preview": "tsx scripts/stella-retention-cli.ts preview",
+    "stella:retention:purge": "tsx scripts/stella-retention-cli.ts purge",
+    "stella:pilot:preflight": "tsx scripts/stella-pilot-preflight.ts",
+    "stella:pilot:smoke": "vitest run --config vitest.smoke.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -39,7 +46,7 @@
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.21.0",
-    "next": "16.2.9",
+    "next": "16.2.11",
     "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -60,7 +67,7 @@
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.11",
     "jsdom": "^29.1.1",
     "shadcn": "^4.11.0",
     "supabase": "2.109.1",
@@ -72,7 +79,7 @@
   "pnpm": {
     "overrides": {
       "esbuild@<=0.24.2": "0.25.0",
-      "postcss@<8.5.10": "8.5.10",
+      "postcss@<8.5.12": "8.5.12",
       "brace-expansion@<1.1.16": "1.1.16",
       "brace-expansion@>=3.0.0 <5.0.7": "5.0.7",
       "js-yaml@>=4.0.0 <4.3.0": "4.3.0",
