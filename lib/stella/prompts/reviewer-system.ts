@@ -4,6 +4,7 @@
 // focus and the emphasized context differ.
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
+import { buildStellaUserMessage } from './build-runtime-message'
 import type { StellaProjectContext } from '../context/types'
 
 export type ReviewerRole = 'proxy_reviewer' | 'evidence_reviewer' | 'audit_assistant'
@@ -85,38 +86,64 @@ IMPORTANT:
 }
 
 export function buildReviewerUserMessage(role: ReviewerRole, context: StellaProjectContext): string {
-  const shared = `**Project Analysis State:**
-- Outcomes: ${context.outcomesSnapshot.length}
-- Indicators: ${context.indicatorsSnapshot.length}
-- Evidence items: ${context.evidenceMetadata.length} (${context.evidenceMetadata.filter((e) => e.status === 'approved').length} approved)
-- Proxies: ${context.proxySummary.length}
-- SROI Calculation: ${context.calculationSnapshot ? `Yes (Ratio: ${context.calculationSnapshot.sroiRatio.toFixed(2)})` : 'Not yet calculated'}
-- Readiness Score: ${context.readinessScore ?? 'N/A'}/100`
-
-  let detail = ''
-  if (role === 'proxy_reviewer') {
-    detail = `\n**Proxies:**\n${
-      context.proxySummary
-        .map((p) => `- ${p.name} — source: ${p.source}; confidence: ${p.confidenceLevel ?? 'unknown'}; methodological risk: ${p.methodologicalRisk ?? 'unknown'}`)
-        .join('\n') || 'No proxies assigned'
-    }\n\n**Adjustment filters (per assignment):**\n${
-      context.filterSetsSummary
-        .map((f) => `- deadweight ${f.deadweightPct ?? '?'}%, attribution ${f.attributionPct ?? '?'}%, displacement ${f.displacementPct ?? '?'}%, drop-off ${f.dropoffPct ?? '?'}%`)
-        .join('\n') || 'No filter sets'
-    }`
-  } else if (role === 'evidence_reviewer') {
-    detail = `\n**Evidence:**\n${
-      context.evidenceMetadata
-        .map((e) => `- ${e.title} (${e.type}, ${e.status})${e.outcomeId ? ' [linked to an outcome]' : ''}${e.indicatorId ? ' [linked to an indicator]' : ''}`)
-        .join('\n') || 'No evidence uploaded'
-    }\n\n**Outcomes:** ${context.outcomesSnapshot.map((o) => o.name).join(', ') || 'None yet'}`
-  } else {
-    detail = `\n**Outcomes:** ${context.outcomesSnapshot.map((o) => o.name).join(', ') || 'None yet'}\n\n**Evidence status:**\n${
-      context.evidenceMetadata.map((e) => `- ${e.title} (${e.status})`).join('\n') || 'No evidence'
-    }\n\n**Proxies:**\n${
-      context.proxySummary.map((p) => `- ${p.name} (${p.confidenceLevel ?? 'unknown'} confidence)`).join('\n') || 'No proxies'
-    }`
+  // Etapa A1.5 (STL-A15-003): same shared summary fields and same
+  // role-specific detail fields as before, now sent through the structural
+  // TASK/UNTRUSTED_PROJECT_DATA/RESPONSE_REQUIREMENTS envelope instead of
+  // concatenated markdown prose. No field added or removed.
+  // Counts use distinct key names from the role-specific detail lists below
+  // (e.g. proxiesCount vs. proxies) — a prior draft of this function reused
+  // "proxies" for both, and the object spread below silently dropped the
+  // count in favor of the list. Verified with a dedicated test.
+  const shared = {
+    outcomesCount: context.outcomesSnapshot.length,
+    indicatorsCount: context.indicatorsSnapshot.length,
+    evidenceItemsTotal: context.evidenceMetadata.length,
+    evidenceItemsApproved: context.evidenceMetadata.filter((e) => e.status === 'approved').length,
+    proxiesCount: context.proxySummary.length,
+    sroiCalculation: context.calculationSnapshot
+      ? `Yes (Ratio: ${context.calculationSnapshot.sroiRatio.toFixed(2)})`
+      : 'Not yet calculated',
+    readinessScore: context.readinessScore !== undefined ? `${context.readinessScore}/100` : 'N/A',
   }
 
-  return `Please review this project and identify issues, gaps, and risks. Be specific and concrete.\n\n${shared}\n${detail}`
+  let detail: Record<string, unknown>
+  if (role === 'proxy_reviewer') {
+    detail = {
+      proxies: context.proxySummary.map((p) => ({
+        name: p.name,
+        source: p.source,
+        confidenceLevel: p.confidenceLevel ?? 'unknown',
+        methodologicalRisk: p.methodologicalRisk ?? 'unknown',
+      })),
+      adjustmentFilters: context.filterSetsSummary.map((f) => ({
+        deadweightPct: f.deadweightPct ?? null,
+        attributionPct: f.attributionPct ?? null,
+        displacementPct: f.displacementPct ?? null,
+        dropoffPct: f.dropoffPct ?? null,
+      })),
+    }
+  } else if (role === 'evidence_reviewer') {
+    detail = {
+      evidence: context.evidenceMetadata.map((e) => ({
+        title: e.title,
+        type: e.type,
+        status: e.status,
+        linkedToOutcome: Boolean(e.outcomeId),
+        linkedToIndicator: Boolean(e.indicatorId),
+      })),
+      outcomeNames: context.outcomesSnapshot.map((o) => o.name),
+    }
+  } else {
+    detail = {
+      outcomeNames: context.outcomesSnapshot.map((o) => o.name),
+      evidenceStatus: context.evidenceMetadata.map((e) => ({ title: e.title, status: e.status })),
+      proxies: context.proxySummary.map((p) => ({ name: p.name, confidenceLevel: p.confidenceLevel ?? 'unknown' })),
+    }
+  }
+
+  return buildStellaUserMessage({
+    task: 'Please review this project and identify issues, gaps, and risks.',
+    untrustedData: { ...shared, ...detail },
+    responseRequirements: 'Be specific and concrete.',
+  })
 }

@@ -1,6 +1,23 @@
 import { db } from '@/db/client'
 import { auditLogs } from '@/db/schema'
 
+// Etapa A2.4 (DR-004 aprobado) — optional transactional client. Reusing the
+// TxClient/QueryClient pattern from lib/stella/aggregation/declaration-service.ts
+// (Etapa A2.3.2): a caller that already opened a db.transaction can pass its
+// `tx` here so the audit insert commits atomically with the business write it
+// documents, instead of the best-effort try/catch pattern used elsewhere in
+// Stella (logAuditActionSafely in app/actions/stella/aggregation-declarations.ts).
+// Chosen over a transactional-outbox table (evaluated and rejected — see
+// STELLA_A2_DR004_RETENTION_IMPLEMENTATION_REPORT.md#17): this repository has
+// no existing outbox/event-processor infrastructure, and introducing one
+// (new table, processor, retry loop, idempotency key) purely to guarantee
+// consistency for a handful of low-frequency retention/hold operations would
+// be a generic event system for the whole platform, which is explicitly out
+// of scope for DR-004. Every existing call site keeps working unchanged —
+// the parameter is optional and defaults to `db`.
+type TxClient = Parameters<Parameters<typeof db.transaction>[0]>[0]
+export type AuditQueryClient = typeof db | TxClient
+
 // ---------------------------------------------------------------------------
 // Typed audit action constants
 // ---------------------------------------------------------------------------
@@ -34,6 +51,37 @@ export const AUDIT_ACTIONS = {
 
   // Stella service/quota management
   STELLA_SERVICE_UPDATED: 'stella_service.updated',
+
+  // Stella AI consent (Etapa A2.1, DR-005)
+  STELLA_AI_CONSENT_ACCEPTED: 'stella_ai_consent.accepted',
+  STELLA_AI_CONSENT_REVOKED: 'stella_ai_consent.revoked',
+
+  // Stella sensitive-population guardrail (Etapa A2.3, DR-002/DR-003) — the
+  // afterJson/reason for this action must only ever carry the fixed reason
+  // code (see SENSITIVE_DATA_REASON_CODES), never the text that tripped it.
+  STELLA_SENSITIVE_DATA_BLOCKED: 'stella_sensitive_data.blocked',
+
+  // Stella sensitive-aggregation declarations (Etapa A2.3.1, DR-002/DR-003)
+  // — afterJson never carries group_size, dimensions values, or any
+  // minimization-invariant field beyond entityType/sensitiveCategory.
+  STELLA_SENSITIVE_AGGREGATION_DECLARED: 'stella_sensitive_aggregation.declared',
+  STELLA_SENSITIVE_AGGREGATION_VERIFIED: 'stella_sensitive_aggregation.verified',
+  STELLA_SENSITIVE_AGGREGATION_REVOKED: 'stella_sensitive_aggregation.revoked',
+
+  // Stella retention/purge (Etapa A2.4, DR-004) — afterJson/beforeJson never
+  // carry response_json content, only counts/IDs/policy version.
+  STELLA_RETENTION_SETTINGS_UPDATED: 'stella_retention_settings.updated',
+  STELLA_RETENTION_HOLD_CREATED: 'stella_retention_hold.created',
+  STELLA_RETENTION_HOLD_RELEASED: 'stella_retention_hold.released',
+  STELLA_RETENTION_PURGE_RUN_STARTED: 'stella_retention_purge_run.started',
+  STELLA_RETENTION_PURGE_RUN_COMPLETED: 'stella_retention_purge_run.completed',
+
+  // Stella controlled-pilot operative confirmation (Etapa B0) — distinct
+  // from stella_ai_consent (DR-005, organizational); this is a per-user
+  // acceptance of the pilot's operating rules.
+  STELLA_PILOT_CONFIRMATION_ACCEPTED: 'stella_pilot_confirmation.accepted',
+  STELLA_PILOT_CONFIRMATION_REVOKED: 'stella_pilot_confirmation.revoked',
+  STELLA_PILOT_ACCESS_DENIED: 'stella_pilot_access.denied',
 
   // Proxy sources
   PROXY_SOURCE_CREATED: 'proxy_source.created',
@@ -107,14 +155,14 @@ export interface AuditLogEntry {
  *
  * All sensitive fields should be passed explicitly; never log plaintext secrets.
  */
-export async function logAuditAction(entry: AuditLogEntry): Promise<void> {
+export async function logAuditAction(entry: AuditLogEntry, client: AuditQueryClient = db): Promise<void> {
   // Basic validation
   if (!entry.entityType || !entry.entityId || !entry.action) {
     console.warn('[audit] logAuditAction called with missing required fields', entry)
     return
   }
 
-  await db.insert(auditLogs).values({
+  await client.insert(auditLogs).values({
     organizationId: entry.organizationId,
     actorUserId: entry.actorUserId,
     entityType: entry.entityType,

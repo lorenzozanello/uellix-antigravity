@@ -2,6 +2,7 @@
 // Sprint 9B: Stella Validator system prompt builder
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
+import { buildStellaUserMessage } from './build-runtime-message'
 import type { StellaProjectContext } from '../context/types'
 
 export function buildValidatorSystemPrompt(): string {
@@ -49,27 +50,27 @@ IMPORTANT:
 }
 
 export function buildValidatorUserMessage(context: StellaProjectContext): string {
-  const contextSummary = `
-**Project Analysis State:**
-- Outcomes defined: ${context.outcomesSnapshot.length}
-- Indicators assigned: ${context.indicatorsSnapshot.length}
-- Evidence items: ${context.evidenceMetadata.length} (${context.evidenceMetadata.filter(e => e.status === 'approved').length} approved)
-- Proxies used: ${context.proxySummary.length}
-- SROI Calculation: ${context.calculationSnapshot ? `Yes (Ratio: ${context.calculationSnapshot.sroiRatio.toFixed(2)})` : 'Not yet calculated'}
-- Readiness Score: ${context.readinessScore ?? 'N/A'}/100
-
-**Outcomes:** ${context.outcomesSnapshot.map(o => o.name).join(', ') || 'None yet'}
-
-**Evidence Status:**
-${context.evidenceMetadata.map(e => `- ${e.title} (${e.status})`).join('\n') || 'No evidence uploaded'}
-
-**Proxies:**
-${context.proxySummary.map(p => `- ${p.name} (${p.confidenceLevel || 'unknown'} confidence)`).join('\n') || 'No proxies assigned'}
-`
-
-  return `Please validate the following SROI analysis for methodological completeness and audit readiness.
-
-${contextSummary}
-
-Identify gaps, risks, and areas needing improvement. Be specific about what's missing or weak.`
+  // Etapa A1.5 (STL-A15-002): same fields as before (the 5 counts/summary
+  // lines, the outcome names, per-evidence title+status, per-proxy
+  // name+confidence), now sent through the structural
+  // TASK/UNTRUSTED_PROJECT_DATA/RESPONSE_REQUIREMENTS envelope instead of
+  // concatenated markdown prose. No field added or removed.
+  return buildStellaUserMessage({
+    task: 'Please validate the following SROI analysis for methodological completeness and audit readiness.',
+    untrustedData: {
+      outcomesDefined: context.outcomesSnapshot.length,
+      indicatorsAssigned: context.indicatorsSnapshot.length,
+      evidenceItemsTotal: context.evidenceMetadata.length,
+      evidenceItemsApproved: context.evidenceMetadata.filter((e) => e.status === 'approved').length,
+      proxiesUsed: context.proxySummary.length,
+      sroiCalculation: context.calculationSnapshot
+        ? `Yes (Ratio: ${context.calculationSnapshot.sroiRatio.toFixed(2)})`
+        : 'Not yet calculated',
+      readinessScore: context.readinessScore !== undefined ? `${context.readinessScore}/100` : 'N/A',
+      outcomes: context.outcomesSnapshot.map((o) => o.name),
+      evidenceStatus: context.evidenceMetadata.map((e) => ({ title: e.title, status: e.status })),
+      proxies: context.proxySummary.map((p) => ({ name: p.name, confidenceLevel: p.confidenceLevel ?? 'unknown' })),
+    },
+    responseRequirements: "Identify gaps, risks, and areas needing improvement. Be specific about what's missing or weak.",
+  })
 }
