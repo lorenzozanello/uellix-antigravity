@@ -207,18 +207,29 @@ describe.skipIf(!REAL)('Etapa B0 — smoke test real (Gemini pagado, datos sint�
     expect(result.ok).toBe(true)
   })
 
+  // Etapa B0 — hallazgo del smoke test de cierre (2026-07-27): `pipeline_step`
+  // es `varchar(100)` en el schema (stella_interactions), porque en
+  // producción `step` es siempre una etiqueta corta ('outcomes', 'narrative',
+  // etc.) — nunca una oración completa. Las 3 preguntas sintéticas originales
+  // de este archivo (98/111/139 caracteres) explotaban que Advisor no valida
+  // `step` contra una lista fija (ver §12.5 del reporte de B0) para
+  // transmitir el texto completo de la pregunta, pero dos de las tres
+  // excedían el límite de la columna y el INSERT fallaba con AUDIT_ERROR —
+  // confirmado con Gemini real autenticando y respondiendo correctamente
+  // (la Llamada 1, de 98 caracteres, sí persistió). Acortadas aquí para caber
+  // con margen; el significado de cada caso se conserva.
   const CASES = [
     {
       label: 'Llamada 1 — pregunta metodológica general',
-      step: 'Explica brevemente la diferencia entre una actividad y un outcome dentro de una cadena de impacto.',
+      step: 'Diferencia entre actividad y outcome en una cadena de impacto.',
     },
     {
       label: 'Llamada 2 — revisión del outcome sintético',
-      step: 'Revisa este outcome sintético e identifica si describe un cambio observable sin inventar información adicional.',
+      step: 'Revisa este outcome sintético: ¿describe un cambio observable?',
     },
     {
       label: 'Llamada 3 — stakeholder sintético',
-      step: 'Sugiere cómo mejorar la descripción de este stakeholder ficticio para que sea metodológicamente más clara, sin añadir datos no disponibles.',
+      step: 'Mejora la descripción de este stakeholder ficticio, sin inventar datos.',
     },
   ]
 
