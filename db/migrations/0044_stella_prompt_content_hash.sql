@@ -1,0 +1,31 @@
+-- 0044_stella_prompt_content_hash.sql
+--
+-- Etapa A1.5 (STL-A15-008). Aditiva; columna nullable, no toca ninguna fila
+-- existente.
+--
+-- Decision documentada: SI persistir prompt_content_hash por interaccion,
+-- ademas de prompt_version (ya existente desde la migracion 0042). Razon:
+-- lib/stella/prompts/registry.ts solo guarda el hash esperado de la version
+-- ACTUAL de cada prompt — cuando alguien bombee `version` y reemplace
+-- `expectedContentHash` para reflejar un cambio de texto, el registro deja de
+-- poder decir que hash exacto tenia la version anterior. Sin esta columna,
+-- una fila historica con prompt_version=1 no podria verificarse de forma
+-- independiente contra ningun hash una vez que el registro avance a version=2
+-- (el registro solo conserva el hash de la version vigente, no un historial).
+-- Guardar el hash en cada fila hace que la trazabilidad de esa fila no
+-- dependa de que el registro central conserve versiones antiguas: el mismo
+-- principio de auditoria append-only que ya rige el resto de esta tabla.
+--
+-- No es el prompt/payload bruto (eso sigue prohibido por defecto, ver
+-- STELLA_DECISION_REGISTER.md#DR-006): es un hash SHA-256 de 64 caracteres,
+-- calculado con lib/stella/prompts/prompt-content-hash.ts a partir de
+-- entradas canonicas fijas — nunca contiene texto real del prompt ni datos
+-- de proyecto.
+--
+-- Compatibilidad con filas historicas: nullable. Las filas insertadas antes
+-- de esta migracion (y cualquier fila insertada por un despliegue que aun no
+-- haya actualizado audit-log.ts) simplemente no tienen esta columna rellena;
+-- no se retro-calcula para filas existentes.
+
+ALTER TABLE "stella_interactions"
+  ADD COLUMN IF NOT EXISTS "prompt_content_hash" varchar(64);

@@ -629,12 +629,44 @@ export const stellaInteractions = pgTable('stella_interactions', {
   stellaRole: varchar('stella_role', { length: 50 }).notNull(),
   pipelineStep: varchar('pipeline_step', { length: 100 }).notNull(),
   contextHash: varchar('context_hash', { length: 64 }).notNull(),
-  responseJson: jsonb('response_json').notNull(),
-  modelUsed: varchar('model_used', { length: 100 }).default('gemini-2.0-flash').notNull(),
+  // Etapa A2.4: no longer NOT NULL — a purge run sets this to NULL alongside
+  // responsePurgedAt/responsePurgeRunId below. Never absent at insert time
+  // (the 4 Stella actions always pass a real response), so NULL means
+  // exactly one thing today: purged.
+  responseJson: jsonb('response_json'),
+  // No DEFAULT (Etapa A1, STL-A1-013): the 4 Stella actions always pass the
+  // real modelUsed explicitly; a fixed default would silently misattribute a
+  // row to a model that wasn't actually used the moment GEMINI_MODEL changes
+  // or a model gets retired (as 'gemini-2.0-flash' already was).
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
   tokensUsed: integer('tokens_used'),
   riskLevel: varchar('risk_level', { length: 50 }),
   riskFlags: text('risk_flags').array(),
+  // Etapa A1 traceability columns (STL-A1-002/003/004). Nullable: additive,
+  // and historical rows predating this migration never had them.
+  promptTemplateId: varchar('prompt_template_id', { length: 150 }),
+  promptVersion: integer('prompt_version'),
+  // Etapa A1.5 (STL-A15-008), broadened Etapa A1.6 (STL-A16-003): SHA-256 of
+  // the FULL prompt contract at insert time (system prompt + fixed task/
+  // response-requirements text + runtime message structure + untrusted-data
+  // delimiters + field-name selection + context schema version) — never the
+  // raw prompt or any project data. See lib/stella/prompts/prompt-content-hash.ts
+  // for the exact contract and db/migrations/0044_stella_prompt_content_hash.sql
+  // for why this is kept per-row rather than only in the registry.
+  promptContentHash: varchar('prompt_content_hash', { length: 64 }),
+  contextSchemaVersion: integer('context_schema_version'),
+  // Structural manifest only (entity types, IDs, FIELD NAMES, counts, hash,
+  // sensitivity flags) — never raw prompt/context text. See
+  // STELLA_DECISION_REGISTER.md#DR-006 for why the raw payload is not stored.
+  contextManifest: jsonb('context_manifest'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  // Etapa A2.4 (DR-004 aprobado) — retention/purge. `responseJson` loses its
+  // NOT NULL constraint here: redaction sets it to NULL and stamps these two
+  // columns together (never one without the other — see the pair CHECK
+  // below). The row itself is NEVER deleted for this reason; see
+  // lib/stella/retention/purge-service.ts and db/migrations/0047_stella_retention.sql.
+  responsePurgedAt: timestamp('response_purged_at'),
+  responsePurgeRunId: uuid('response_purge_run_id'),
 }, (table) => [
   check('stella_interactions_stella_role_check', sql`${table.stellaRole} IN ('advisor', 'validator', 'composer', 'proxy_reviewer', 'evidence_reviewer', 'audit_assistant')`),
   check('stella_interactions_risk_level_check', sql`${table.riskLevel} IS NULL OR ${table.riskLevel} IN ('low', 'medium', 'high')`),
@@ -645,6 +677,219 @@ export const stellaInteractions = pgTable('stella_interactions', {
   index('stella_interactions_created_by_created_idx').on(table.createdBy, table.createdAt),
   index('stella_interactions_context_hash_idx').on(table.contextHash),
   index('stella_interactions_risk_level_idx').on(table.riskLevel).where(sql`${table.riskLevel} IS NOT NULL`),
+  // Etapa A2.4: a row must always carry either a real response or a record
+  // of why it doesn't — guards against something OTHER than the purge path
+  // ever nulling responseJson silently.
+  check('stella_interactions_response_presence_check', sql`${table.responseJson} IS NOT NULL OR ${table.responsePurgedAt} IS NOT NULL`),
+  check(
+    'stella_interactions_purge_pair_check',
+    sql`(${table.responsePurgedAt} IS NULL AND ${table.responsePurgeRunId} IS NULL) OR (${table.responsePurgedAt} IS NOT NULL AND ${table.responsePurgeRunId} IS NOT NULL)`,
+  ),
+  index('stella_interactions_purge_eligibility_idx').on(table.organizationId, table.createdAt).where(sql`${table.responsePurgedAt} IS NULL`),
+])
+
+// ---------------------------------------------------------------------------
+// Etapa A2.4 (DR-004 aprobado) — retention configuration, preservation
+// holds, and purge-run bookkeeping for `stella_interactions.response_json`.
+// See db/migrations/0047_stella_retention.sql and
+// STELLA_A2_DR004_RETENTION_IMPLEMENTATION_REPORT.md for the full design
+// rationale. Only `response_json` has an executable purge path in this
+// stage — see lib/stella/retention/policy.ts's header for why the other 5
+// retention categories (metadata, manifest, consent, declarations, audit
+// logs) are documented but not purged here (no reliable contractual-closure
+// event exists yet).
+// ---------------------------------------------------------------------------
+
+/** One row per organization — default (24 months) applies when no row exists, never a NULL "unlimited" sentinel. */
+export const stellaRetentionSettings = pgTable('stella_retention_settings', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull().unique(),
+  responseRetentionMonths: integer('response_retention_months').notNull(),
+  policyVersion: varchar('policy_version', { length: 20 }).notNull(),
+  configuredBy: uuid('configured_by').references(() => users.id).notNull(),
+  configuredAt: timestamp('configured_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('srs_retention_months_check', sql`${table.responseRetentionMonths} >= 1 AND ${table.responseRetentionMonths} <= 60`),
+])
+
+/** A hold at ANY scope level blocks purge for everything underneath it (org > project > single interaction). Minimized: fixed hold_type/reason_code vocabularies, no free-text description field. */
+export const stellaRetentionHolds = pgTable('stella_retention_holds', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id),
+  interactionId: uuid('interaction_id').references(() => stellaInteractions.id),
+  holdType: varchar('hold_type', { length: 40 }).notNull(),
+  reasonCode: varchar('reason_code', { length: 60 }).notNull(),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at'),
+  releasedBy: uuid('released_by').references(() => users.id),
+  releasedAt: timestamp('released_at'),
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+}, (table) => [
+  check('srh_hold_type_check', sql`${table.holdType} IN ('legal_hold', 'audit_investigation', 'dispute', 'contractual_obligation', 'authorized_preservation')`),
+  check('srh_status_check', sql`${table.status} IN ('active', 'released', 'expired')`),
+  check(
+    'srh_released_pair_check',
+    sql`(${table.releasedAt} IS NULL AND ${table.releasedBy} IS NULL) OR (${table.releasedAt} IS NOT NULL AND ${table.releasedBy} IS NOT NULL)`,
+  ),
+  index('srh_org_status_idx').on(table.organizationId, table.status),
+  index('srh_interaction_idx').on(table.interactionId).where(sql`${table.interactionId} IS NOT NULL`),
+])
+
+/** Reconstructs any run without ever storing purged content — only counts, a cursor, and the policy version applied. */
+export const stellaRetentionPurgeRuns = pgTable('stella_retention_purge_runs', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  policyVersion: varchar('policy_version', { length: 20 }).notNull(),
+  mode: varchar('mode', { length: 20 }).notNull(),
+  status: varchar('status', { length: 30 }).default('pending').notNull(),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  requestedBy: uuid('requested_by').references(() => users.id).notNull(),
+  cutoffAt: timestamp('cutoff_at').notNull(),
+  batchSize: integer('batch_size').default(500).notNull(),
+  cursorCreatedAt: timestamp('cursor_created_at'),
+  cursorId: uuid('cursor_id'),
+  recordsScanned: integer('records_scanned').default(0).notNull(),
+  recordsEligible: integer('records_eligible').default(0).notNull(),
+  recordsPurged: integer('records_purged').default(0).notNull(),
+  recordsSkippedHold: integer('records_skipped_hold').default(0).notNull(),
+  recordsFailed: integer('records_failed').default(0).notNull(),
+  errorCode: varchar('error_code', { length: 60 }),
+  idempotencyKey: varchar('idempotency_key', { length: 100 }).notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('srpr_mode_check', sql`${table.mode} IN ('dry_run', 'apply')`),
+  check('srpr_status_check', sql`${table.status} IN ('pending', 'running', 'completed', 'completed_with_errors', 'failed', 'cancelled')`),
+  index('srpr_org_created_idx').on(table.organizationId, table.createdAt),
+])
+
+// Etapa A2.1 (STL-A21-004, DR-005 aprobado 2026-07-25). Append-only event
+// log — no UPDATE/DELETE column, no `updatedAt` (an event never changes
+// after it happens). See db/migrations/0045_stella_ai_consent.sql for the
+// full design rationale (Option B: append-only, no separate 'superseded'
+// event type).
+export const stellaAiConsentEvents = pgTable('stella_ai_consent_events', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  eventType: varchar('event_type', { length: 20 }).notNull(), // 'accepted' | 'revoked'
+  // Required for 'accepted' (see CHECK in the migration); null for 'revoked'
+  // — a revocation refers back to the accepted event via supersedesEventId.
+  aiTermsVersion: varchar('ai_terms_version', { length: 20 }),
+  dataPolicyVersion: varchar('data_policy_version', { length: 20 }),
+  capabilityScope: text('capability_scope').array(),
+  actorUserId: uuid('actor_user_id').references(() => users.id).notNull(),
+  occurredAt: timestamp('occurred_at').defaultNow().notNull(),
+  reason: text('reason'),
+  supersedesEventId: uuid('supersedes_event_id'),
+  metadata: jsonb('metadata'),
+}, (table) => [
+  check('stella_ai_consent_events_event_type_check', sql`${table.eventType} IN ('accepted', 'revoked')`),
+  check(
+    'stella_ai_consent_events_accepted_versions_check',
+    sql`(${table.eventType} = 'accepted' AND ${table.aiTermsVersion} IS NOT NULL AND ${table.dataPolicyVersion} IS NOT NULL AND ${table.capabilityScope} IS NOT NULL) OR ${table.eventType} = 'revoked'`,
+  ),
+  index('stella_ai_consent_events_org_occurred_idx').on(table.organizationId, table.occurredAt),
+])
+
+// Etapa A2.3.1 (STL-A231-005, DR-002/DR-003) — see
+// db/migrations/0046_stella_sensitive_aggregation_declarations.sql for the
+// full design rationale (polymorphic entity reference, mutable
+// current-state row with a supersedes chain for history, minimization
+// invariants). Material fields (groupSize/sensitiveCategory/dimensions/
+// verifiedBy/verifiedAt) are never updated in place once verified — see
+// lib/stella/aggregation/declaration-service.ts, which exposes no "edit"
+// function for them.
+export const stellaSensitiveAggregationDeclarations = pgTable('stella_sensitive_aggregation_declarations', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+
+  entityType: varchar('entity_type', { length: 50 }).notNull(),
+  entityId: uuid('entity_id').notNull(),
+
+  sensitiveCategory: varchar('sensitive_category', { length: 20 }).notNull(),
+  aggregationLevel: varchar('aggregation_level', { length: 20 }).default('aggregate').notNull(),
+
+  groupSize: integer('group_size').notNull(),
+  groupSizeBucket: varchar('group_size_bucket', { length: 20 }).notNull(),
+  dimensions: text('dimensions').array().default([]).notNull(),
+
+  countSourceType: varchar('count_source_type', { length: 40 }).notNull(),
+  countSourceId: uuid('count_source_id'),
+  countSourceNote: varchar('count_source_note', { length: 255 }),
+
+  verificationStatus: varchar('verification_status', { length: 20 }).default('pending').notNull(),
+
+  declaredBy: uuid('declared_by').references(() => users.id).notNull(),
+  verifiedBy: uuid('verified_by').references(() => users.id),
+  verifiedAt: timestamp('verified_at'),
+
+  policyVersion: varchar('policy_version', { length: 20 }).notNull(),
+  minimumGroupSizeApplied: integer('minimum_group_size_applied'),
+
+  revokedBy: uuid('revoked_by').references(() => users.id),
+  revokedAt: timestamp('revoked_at'),
+  revocationReason: varchar('revocation_reason', { length: 255 }),
+
+  supersedesDeclarationId: uuid('supersedes_declaration_id'),
+  supersededByDeclarationId: uuid('superseded_by_declaration_id'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  check('ssad_entity_type_check', sql`${table.entityType} IN ('project', 'outcome', 'indicator', 'stakeholder_group', 'evidence', 'report_section')`),
+  check('ssad_sensitive_category_check', sql`${table.sensitiveCategory} IN ('minors', 'health', 'minors_and_health')`),
+  check('ssad_aggregation_level_check', sql`${table.aggregationLevel} = 'aggregate'`),
+  check('ssad_group_size_positive_check', sql`${table.groupSize} > 0`),
+  check('ssad_group_size_bucket_check', sql`${table.groupSizeBucket} IN ('below_10', '10_49', '50_249', '250_plus')`),
+  check('ssad_verification_status_check', sql`${table.verificationStatus} IN ('pending', 'verified', 'revoked', 'superseded')`),
+  check('ssad_count_source_type_check', sql`${table.countSourceType} IN ('project_record', 'indicator_measurement', 'stakeholder_record', 'verified_external_evidence', 'manual_verified_declaration')`),
+  check(
+    'ssad_verified_pair_check',
+    sql`(${table.verificationStatus} = 'verified' AND ${table.verifiedBy} IS NOT NULL AND ${table.verifiedAt} IS NOT NULL AND ${table.minimumGroupSizeApplied} IS NOT NULL) OR ${table.verificationStatus} != 'verified'`,
+  ),
+  check(
+    'ssad_revoked_pair_check',
+    sql`(${table.verificationStatus} = 'revoked' AND ${table.revokedBy} IS NOT NULL AND ${table.revokedAt} IS NOT NULL) OR ${table.verificationStatus} != 'revoked'`,
+  ),
+  uniqueIndex('ssad_active_unique_idx')
+    .on(table.organizationId, table.projectId, table.entityType, table.entityId, table.sensitiveCategory)
+    .where(sql`${table.verificationStatus} IN ('pending', 'verified')`),
+  index('ssad_org_project_idx').on(table.organizationId, table.projectId),
+  index('ssad_entity_idx').on(table.entityType, table.entityId),
+])
+
+// ---------------------------------------------------------------------------
+// Etapa B0 (modo piloto restringido, decisión del propietario 2026-07-26) —
+// confirmación operativa PER-USER del piloto, deliberadamente SEPARADA del
+// consentimiento organizacional de DR-005 (stella_ai_consent_events, arriba):
+// DR-005 es una decisión de la organización ("aceptamos que Stella use IA
+// para procesar nuestros datos"); esta tabla es una aceptación operativa
+// individual ("YO entiendo que esto es un piloto, no cargaré datos
+// prohibidos, y revisaré los resultados"). Mismo patrón append-only
+// (evento accepted/revoked con encadenamiento vía supersedes_event_id) que
+// stella_ai_consent_events — reutilizado deliberadamente, nunca mezclado en
+// la misma tabla/checkbox.
+// ---------------------------------------------------------------------------
+export const stellaPilotConfirmations = pgTable('stella_pilot_confirmations', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  eventType: varchar('event_type', { length: 20 }).notNull(), // 'accepted' | 'revoked'
+  noticeVersion: varchar('notice_version', { length: 20 }), // required for 'accepted'; null for 'revoked'
+  occurredAt: timestamp('occurred_at').defaultNow().notNull(),
+  supersedesEventId: uuid('supersedes_event_id'),
+}, (table) => [
+  check('stella_pilot_confirmations_event_type_check', sql`${table.eventType} IN ('accepted', 'revoked')`),
+  check(
+    'stella_pilot_confirmations_accepted_version_check',
+    sql`(${table.eventType} = 'accepted' AND ${table.noticeVersion} IS NOT NULL) OR ${table.eventType} = 'revoked'`,
+  ),
+  index('stella_pilot_confirmations_org_user_occurred_idx').on(table.organizationId, table.userId, table.occurredAt),
 ])
 
 export const sroiReportSections = pgTable('sroi_report_sections', {
