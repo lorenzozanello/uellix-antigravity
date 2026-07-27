@@ -439,6 +439,45 @@ describe('getStellaAdvisor server action', () => {
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
     })
+
+    // Etapa B0 — hallazgo del smoke test de cierre (2026-07-27): un
+    // `pipeline_step` que excede `varchar(100)` (STL-B0-035/036) producía
+    // AUDIT_ERROR sin dejar ningún rastro del error real de Postgres en los
+    // logs del servidor. Estas dos pruebas fijan la corrección: el error
+    // estructural (código + mensaje, nunca el contexto/proyecto) debe
+    // quedar registrado, y la etiqueta de paso usada en producción debe
+    // caber cómodamente en la columna.
+    it('logs the real underlying error (code + message) instead of swallowing it silently on AUDIT_ERROR', async () => {
+      setupSuccessfulCall()
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const pgLikeError = Object.assign(new Error('value too long for type character varying(100)'), { code: '22001' })
+      mockInsertValues.mockRejectedValue(pgLikeError)
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[stella] recordStellaInteraction failed:',
+        expect.objectContaining({ code: '22001', message: expect.stringContaining('character varying(100)') }),
+      )
+      // Nunca se registra el contenido del proyecto/contexto junto al error.
+      const loggedPayload = consoleErrorSpy.mock.calls.find((call) => call[0] === '[stella] recordStellaInteraction failed:')?.[1]
+      expect(JSON.stringify(loggedPayload)).not.toContain('Narrativa')
+      consoleErrorSpy.mockRestore()
+    })
+
+    it('the pipeline step label used in production always fits well within pipeline_step\'s varchar(100) limit', () => {
+      // Mismas 7 etiquetas que las páginas reales pasan a
+      // <StellaAdvisorPanelWrapper step="..."/> — ver
+      // app/app/projects/[projectId]/pipeline/*/page.tsx. Ninguna es una
+      // pregunta libre; todas son identificadores canónicos cortos.
+      const PRODUCTION_STEP_LABELS = ['Resultados', 'Narrativa', 'Grupos de interés', 'Cálculo', 'Evidencia', 'Indicadores', 'Proxies']
+      for (const label of PRODUCTION_STEP_LABELS) {
+        expect(label.length).toBeLessThanOrEqual(100)
+        // Margen amplio: una etiqueta de paso nunca debería acercarse al límite.
+        expect(label.length).toBeLessThan(30)
+      }
+    })
   })
 
   describe('Rate limiting', () => {

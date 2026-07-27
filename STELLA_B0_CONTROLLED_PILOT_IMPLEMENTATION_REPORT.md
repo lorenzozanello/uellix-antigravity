@@ -1,6 +1,6 @@
 # Etapa B0 — Modo piloto restringido: reporte de implementación
 
-**Fecha:** 2026-07-26 (implementación) → 2026-07-27 (autenticación real confirmada, ver §0.4). **Rama:** `feature/stella-generation-copilot`. **Gate final: APROBADO CON RESERVAS** (ver §0.4 y §19). El piloto se ejecutó de punta a punta contra el stack local real y **la autenticación con Gemini pagado quedó confirmada de forma definitiva** (REST directo, SDK directo, y una interacción real de Advisor con persistencia completa). La reserva restante es acotada: 2 de las 3 llamadas sintéticas del smoke test fallaron por un defecto demostrado y ya corregido en el propio fixture de prueba (no en código de producción) — ver §0.4 — pendiente de una re-ejecución que no se hizo en esta sesión por haber agotado el máximo de llamadas reales autorizado.
+**Fecha:** 2026-07-26 (implementación) → 2026-07-27 (cierre definitivo, ver §0.5). **Rama:** `feature/stella-generation-copilot`. **Gate final: `APROBADO`** (ver §0.5 y §19). Las 3 llamadas sintéticas del smoke test contra Gemini pagado real tuvieron éxito, con persistencia completa y trazabilidad íntegra en `stella_interactions` — sin duplicación, sin datos reales, sin PII. La causa raíz del `AUDIT_ERROR` observado en la sesión anterior quedó demostrada con precisión (Postgres `22001`, columna `pipeline_step`) y corregida de forma semántica, no solo por longitud.
 
 ## 0. Sesión adicional de diagnóstico de la clave (2026-07-26, tercera sesión)
 
@@ -71,6 +71,56 @@ El propietario reemplazó manualmente la línea `GEMINI_API_KEY` en `.env.local`
 **Corrección aplicada:** se acortaron los 3 textos de `tests/smoke/stella-b0-real-smoke.test.ts` a 62/62/71 caracteres (muy por debajo del límite), conservando el sentido de cada caso. No se tocó el esquema (ensanchar la columna solo para acomodar un abuso del parámetro `step` en una prueba sería la dirección equivocada) ni ningún código de producción. No se volvió a ejecutar el smoke test tras la corrección: hacerlo habría significado 3 llamadas reales adicionales, excediendo el máximo autorizado en este encargo.
 
 **Diagnóstico: `AUTHENTICATION_WORKING`.** La cadena completa de autenticación (variable correcta → REST → SDK → una interacción real completa de Stella con persistencia y trazabilidad íntegra) está confirmada. El hallazgo de `pipeline_step` es un defecto de fixture de prueba, ya corregido, no relacionado con la autenticación ni con el código de producción.
+
+### 0.5 Octava sesión — causa raíz exacta, corrección semántica, y cierre con 3/3 (2026-07-27)
+
+Esta sesión resolvió con precisión la causa de `AUDIT_ERROR` (sin llamar a Gemini hasta completar el diagnóstico) y corrigió la contradicción documental de longitudes de §0.4.
+
+**Causa raíz exacta, reproducida directamente contra Postgres local (transacción revertida a propósito, sin fila parcial):**
+
+| Campo | Valor |
+|---|---|
+| Operación | `INSERT` (vía `recordStellaInteraction()`, `lib/stella/audit-log.ts`) |
+| Tabla | `stella_interactions` |
+| Columna | `pipeline_step` (`varchar(100)`) |
+| Código PostgreSQL | `22001` |
+| Mensaje original (sanitizado) | `value too long for type character varying(100)` |
+| Transacción revertida | Sí — completamente; `0` filas parciales confirmadas tras el rollback |
+| `audit_logs` afectada | No — `recordStellaInteraction()` nunca escribe en `audit_logs`; esa tabla solo se usa en el camino de bloqueo por datos sensibles (`STELLA_SENSITIVE_DATA_BLOCKED`), un código de error distinto de `AUDIT_ERROR` |
+
+**Contradicción de longitudes de §0.4, resuelta:** no era una contradicción real, sino una falta de distinción explícita entre dos momentos. Longitudes exactas, calculadas por código:
+
+| | Caso 1 | Caso 2 | Caso 3 |
+|---|---|---|---|
+| Original (usado en la llamada real que falló) | 98 (cabe) | 111 (**excede**) | 139 (**excede**) |
+| Corrección de emergencia de §0.4 (nunca vuelta a probar contra Gemini real) | 62 | 62 | 71 |
+| Corrección definitiva de esta sesión (etiqueta canónica real) | "Resultados" (10) | "Narrativa" (9) | "Grupos de interés" (18) |
+
+**Corrección semántica (no solo de longitud):** `getStellaAdvisor(projectId, step)` no tiene ni debe tener un segundo parámetro para una "pregunta libre" — en producción, `step` es siempre la etiqueta canónica del paso del pipeline. Las 7 páginas reales (`app/app/projects/[projectId]/pipeline/*/page.tsx`) pasan exactamente `"Resultados"`, `"Narrativa"`, `"Grupos de interés"`, `"Cálculo"`, `"Evidencia"`, `"Indicadores"`, `"Proxies"` — nunca una oración. El smoke test usaba `step` para transmitir una pregunta completa, un uso indebido del parámetro independiente de su longitud. Se corrigieron los 3 casos de `tests/smoke/stella-b0-real-smoke.test.ts` para usar las mismas 3 etiquetas canónicas reales (`"Resultados"`, `"Narrativa"`, `"Grupos de interés"`), correspondientes a los datos sintéticos ya sembrados (un outcome, una narrativa, un grupo de stakeholders). No se ensanchó `varchar(100)`: el modelo de dominio no demuestra que la columna deba aceptar texto libre — al contrario, confirma que nunca lo hace en producción.
+
+**El error real ya no se oculta:** `app/actions/stella/advisor.ts` registraba `AUDIT_ERROR` sin dejar rastro del error subyacente. Se añadió un `console.error('[stella] recordStellaInteraction failed:', { code, message })` en ese `catch` — nunca el contexto, el proyecto, ni la respuesta del modelo; solo el código y mensaje estructural de Postgres, que para este tipo de error (longitud/tipo) nunca embebe el valor real (verificado en la reproducción de arriba).
+
+**Reproducción sin Gemini (proveedor mock, Postgres local real, organización sintética propia — no la del smoke test, para no competir por su cuota):**
+
+| Caso | Provider mock | Interacción | Auditoría |
+|---|---|---|---|
+| 1 — Resultados | ✅ `stella-pilot-mock` | ✅ persistida (schema, tokens=0, versiones, hash, manifiesto) | N/A (`recordStellaInteraction` no escribe `audit_logs`) |
+| 2 — Narrativa | ✅ `stella-pilot-mock` | ✅ persistida | N/A |
+| 3 — Grupos de interés | ✅ `stella-pilot-mock` | ✅ persistida | N/A |
+
+Prueba de regresión permanente: `tests/integration/stella-advisor-mock-persistence.test.ts` (4 pruebas). Primera versión reutilizaba la organización sintética del smoke test y falló al correr junto al resto de la suite — no por un bug de código, sino porque esa organización ya había agotado su cuota mensual (compartida con las llamadas reales del smoke test). Corregido usando una organización sintética propia y dedicada, nunca usada fuera de este archivo.
+
+**Repetición final del smoke test real (`pnpm stella:pilot:smoke`, una sola vez, 3 llamadas):**
+
+| Caso | Gemini | Schema | Persistencia | Tokens | Auditoría |
+|---|---|---|---|---|---|
+| 1 — Resultados | ✅ | ✅ | ✅ (`gemini-2.5-flash`) | 2910 | N/A (ver nota arriba) |
+| 2 — Narrativa | ✅ | ✅ | ✅ | 2310 | N/A |
+| 3 — Grupos de interés | ✅ | ✅ | ✅ | 2312 | N/A |
+
+Las 3 filas verificadas directamente en `stella_interactions`: `prompt_version`, `context_schema_version`, hash de contenido del prompt y manifiesto de contexto presentes en las 3; una fila por caso, sin duplicación; datos 100% sintéticos, sin PII.
+
+**Diagnóstico: `AUTHENTICATION_WORKING`. `B0 = APROBADO`** — sin reservas de autenticación ni de persistencia. Validación completa ejecutada tras el cierre: typecheck limpio, 124 archivos/1799 pruebas unitarias (1 archivo/6 pruebas omitidas por diseño — el smoke test gateado), 13 archivos/148 pruebas de integración, lint 0 errores, `drizzle-kit check` limpio, build aislado exitoso, `git diff --check` limpio.
 
 ## 1. Resumen ejecutivo
 
@@ -208,19 +258,14 @@ La política de retención de DR-004 aplica sin cambios a cualquier interacción
 - El consentimiento DR-005 se revalida dentro de `getStellaPilotAccess()` Y en el código preexistente de `advisor.ts` — solapamiento aceptado para no arriesgar una refactorización de código ya probado.
 - `token_overflow`/`cancelled` en el proveedor simulado no tienen clases de error dedicadas — se documentan como equivalentes a `StellaGeminiError`/`StellaTimeoutError` respectivamente, ya que no existe tal infraestructura en el adaptador real.
 
-## 19. Gate final — APROBADO CON RESERVAS
+## 19. Gate final — `APROBADO`
 
-La autenticación con Gemini pagado quedó **confirmada de forma definitiva** en §0.4 (REST directo, SDK directo, y una interacción real completa de Advisor con persistencia y trazabilidad íntegras). El gate se mantiene en reservas, no por la autenticación, sino por:
+Todas las condiciones del gate quedaron satisfechas (ver §0.5): 3/3 llamadas reales a Gemini pagado exitosas, schema válido, persistencia completa con trazabilidad íntegra (modelo, tokens, versiones, hashes, manifiesto), sin duplicación, sin datos reales, sin PII. La causa raíz del `AUDIT_ERROR` anterior quedó demostrada con precisión (Postgres `22001` sobre `pipeline_step`) y corregida semánticamente — separando la etiqueta canónica del paso de cualquier texto libre, no solo acortando cadenas. El error real ya no queda oculto detrás de un código genérico. Validación completa (typecheck, unitarias, integración, lint, `drizzle-kit check`, build, `git diff --check`) ejecutada y en verde tras el cierre.
 
-**Reservas:**
-1. **UI no verificada visualmente en navegador** en esta sesión (misma reserva heredada de A2.3.2/A2.4).
-2. **El smoke test no se re-ejecutó tras corregir el defecto de longitud de `pipeline_step`** (§0.4) — la corrección (acortar los 3 textos sintéticos a ≤100 caracteres) está aplicada y con typecheck limpio, pero confirmarla con una nueva ejecución de `pnpm stella:pilot:smoke` habría requerido 3 llamadas reales adicionales, excediendo el máximo autorizado en la sesión de cierre. Se recomienda una única re-ejecución de confirmación antes de declarar B0 plenamente `APROBADO`.
-3. **Hallazgo no bloqueante**: `Advisor` no valida su parámetro `step` contra una lista fija (a diferencia de `Validator`) — documentado como decisión de diseño pendiente de revisar en B1 (§12.5). Es precisamente lo que permitió transmitir las preguntas sintéticas del smoke test, y también la causa indirecta del hallazgo de longitud en §0.4.
+**Reserva residual (no bloqueante, no de esta etapa):** la UI no fue verificada visualmente en navegador en ninguna sesión de B0 (misma reserva heredada de A2.3.2/A2.4).
 
-Ninguna reserva es un defecto de autenticación ni de la infraestructura del piloto — ambas están probadas end-to-end contra Gemini real.
-
-**Estado seguro de cierre:** `.env.local` quedó con `STELLA_PILOT_MODE=false` (dejarlo activo restringiría el Advisor de TODAS las organizaciones locales a la única organización sintética de este smoke test); el resto de la configuración del piloto permanece documentada para reactivarla con `pnpm stella:pilot:smoke`. `STELLA_VALIDATOR_ENABLED`/`STELLA_COMPOSER_ENABLED` quedaron en `false`. El fixture sintético (organización, usuario, proyecto) permanece en el stack local, claramente etiquetado. Ningún script temporal de diagnóstico quedó en el repositorio.
+**Estado seguro de cierre:** `.env.local` quedó con `STELLA_PILOT_MODE=false` (dejarlo activo restringiría el Advisor de TODAS las organizaciones locales a la única organización sintética del smoke test); el resto de la configuración del piloto permanece documentada para reactivarla con `pnpm stella:pilot:smoke`. `STELLA_VALIDATOR_ENABLED`/`STELLA_COMPOSER_ENABLED` quedaron en `false`. Los fixtures sintéticos (organización del smoke test y organización dedicada de la prueba de regresión) permanecen en el stack local, claramente etiquetados. Ningún script temporal de diagnóstico quedó en el repositorio.
 
 ## 20. Próximo bloque
 
-**Etapa B1 — Copiloto metodológico contextual por pasos.** No se avanza automáticamente: se recomienda una única re-ejecución de `pnpm stella:pilot:smoke` (ahora con los textos corregidos) para confirmar 3/3 llamadas exitosas y declarar B0 `APROBADO` sin reservas, y luego decidir explícitamente si se sube la rama y se abre un PR de revisión antes de iniciar B1.
+**Etapa B1 — Copiloto metodológico contextual por pasos.** B0 queda `APROBADO`. Próximo paso recomendado: revisar los commits locales, hacer push de la rama como respaldo y abrir un PR en borrador antes de iniciar B1 — ninguna de esas tres acciones se realizó en esta sesión; requieren decisión explícita del propietario.

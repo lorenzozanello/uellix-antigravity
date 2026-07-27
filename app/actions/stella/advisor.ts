@@ -219,7 +219,20 @@ export async function getStellaAdvisor(
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,
       })
-    } catch {
+    } catch (auditError) {
+      // The client only ever sees the generic AUDIT_ERROR/message below — but
+      // this must never be the ONLY trace of the failure. Structural DB
+      // errors (column length, type, constraint violations) never embed the
+      // offending value in `code`/`message` (verified for the varchar-length
+      // case this code exists to guard against — see
+      // STELLA_B0_CONTROLLED_PILOT_IMPLEMENTATION_REPORT.md#0.5); logging
+      // them is safe. This intentionally does NOT log `context`, `data`, or
+      // any other field that could carry project content.
+      const code = (auditError as { code?: unknown } | null)?.code
+      console.error('[stella] recordStellaInteraction failed:', {
+        code: typeof code === 'string' ? code : undefined,
+        message: auditError instanceof Error ? auditError.message : String(auditError),
+      })
       return {
         ok: false,
         error: 'AUDIT_ERROR',

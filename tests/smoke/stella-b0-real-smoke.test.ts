@@ -207,29 +207,35 @@ describe.skipIf(!REAL)('Etapa B0 — smoke test real (Gemini pagado, datos sint�
     expect(result.ok).toBe(true)
   })
 
-  // Etapa B0 — hallazgo del smoke test de cierre (2026-07-27): `pipeline_step`
-  // es `varchar(100)` en el schema (stella_interactions), porque en
-  // producción `step` es siempre una etiqueta corta ('outcomes', 'narrative',
-  // etc.) — nunca una oración completa. Las 3 preguntas sintéticas originales
-  // de este archivo (98/111/139 caracteres) explotaban que Advisor no valida
-  // `step` contra una lista fija (ver §12.5 del reporte de B0) para
-  // transmitir el texto completo de la pregunta, pero dos de las tres
-  // excedían el límite de la columna y el INSERT fallaba con AUDIT_ERROR —
-  // confirmado con Gemini real autenticando y respondiendo correctamente
-  // (la Llamada 1, de 98 caracteres, sí persistió). Acortadas aquí para caber
-  // con margen; el significado de cada caso se conserva.
+  // Etapa B0 — hallazgo del smoke test de cierre (2026-07-27), corregido
+  // semánticamente el 2026-07-27 (no solo por longitud): las 3 preguntas
+  // sintéticas originales de este archivo (98/111/139 caracteres) usaban
+  // `step` para transmitir una ORACIÓN COMPLETA — un uso indebido del
+  // parámetro. `getStellaAdvisor(projectId, step)` no tiene (ni debe tener)
+  // un segundo parámetro para una "pregunta libre"; `step` es, en producción,
+  // siempre la ETIQUETA CANÓNICA del paso del pipeline — exactamente los
+  // mismos valores que las 7 páginas reales pasan a
+  // `<StellaAdvisorPanelWrapper step="..."/>` ("Resultados", "Narrativa",
+  // "Grupos de interés", "Cálculo", "Evidencia", "Indicadores", "Proxies" —
+  // ver app/app/projects/[projectId]/pipeline/*/page.tsx). `pipeline_step`
+  // (varchar(100)) refleja esa realidad: nunca fue pensado para aceptar
+  // texto libre, y ensancharlo solo para acomodar el abuso anterior habría
+  // sido la corrección equivocada. Los 3 casos siguientes usan las mismas
+  // 3 etiquetas canónicas reales que corresponden a los datos sintéticos ya
+  // sembrados (un outcome, una narrativa, un grupo de stakeholders) — el
+  // mismo patrón que un uso real de Advisor, no una pregunta inventada.
   const CASES = [
     {
-      label: 'Llamada 1 — pregunta metodológica general',
-      step: 'Diferencia entre actividad y outcome en una cadena de impacto.',
+      label: 'Llamada 1 — paso Resultados (outcome sintético)',
+      step: 'Resultados',
     },
     {
-      label: 'Llamada 2 — revisión del outcome sintético',
-      step: 'Revisa este outcome sintético: ¿describe un cambio observable?',
+      label: 'Llamada 2 — paso Narrativa',
+      step: 'Narrativa',
     },
     {
-      label: 'Llamada 3 — stakeholder sintético',
-      step: 'Mejora la descripción de este stakeholder ficticio, sin inventar datos.',
+      label: 'Llamada 3 — paso Grupos de interés (stakeholder sintético)',
+      step: 'Grupos de interés',
     },
   ]
 
