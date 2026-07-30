@@ -55,7 +55,7 @@ export async function getStellaContextualAdvisor(
     const request = buildContextualAdvisorRequest(step, context)
     const response = await adapter.generate({ role: 'advisor', systemPrompt: request.systemPrompt, userMessage: buildAdvisorContextualUserMessage(step, request.serializedContext), responseJsonSchema: request.responseJsonSchema })
     const raw: unknown = JSON.parse(response.rawOutput)
-    return { ok: true, data: decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths) }
+    return { ok: true, data: decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step) }
   } catch (error) {
     if (error instanceof StellaTimeoutError) return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
     if (error instanceof StellaGeminiError) return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
