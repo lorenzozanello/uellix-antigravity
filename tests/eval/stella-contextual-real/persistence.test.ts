@@ -2,10 +2,20 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { initializeRunManifest } from './artifacts'
 import { checkpointState, readCheckpoint } from './checkpoint'
 import { validateResumeManifest } from './resume'
 
 describe('contextual real runner persistence', () => {
+  it('initializes the run manifest once and never overwrites it', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'stella-runner-'))
+    const manifest = { runId: 'run-1', status: 'INITIALIZED' }
+    await initializeRunManifest(directory, manifest)
+    await expect(initializeRunManifest(directory, { runId: 'run-2' })).rejects.toThrow()
+    expect(JSON.parse(await readFile(join(directory, 'run-manifest.json'), 'utf8'))).toEqual(manifest)
+    await rm(directory, { recursive: true, force: true })
+  })
+
   it('writes checkpoint atomically and rejects a corrupt checkpoint', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'stella-runner-'))
     await checkpointState(directory, { status: 'RUNNING', providerCalls: 1, expectedCalls: 2 })
