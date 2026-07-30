@@ -58,6 +58,7 @@ export interface TransactionalCheckpointInput {
   rawResponses: readonly RawResponse[]
   decodedResults: readonly DecodedResult[]
   errors: readonly SafeRunError[]
+  metrics?: Partial<Record<string, number>>
   status: RealRunnerStatus
   checkpointStatus: CheckpointCommitStatus
   startedAt: string
@@ -185,6 +186,7 @@ function buildCheckpointContents(input: TransactionalCheckpointInput): Record<Ch
     startedAt: input.startedAt,
     lastCheckpointAt: input.lastCheckpointAt,
   }
+  const metrics = input.metrics ?? {}
   const summary = {
     checkpointSequence,
     runId: input.runId,
@@ -196,12 +198,21 @@ function buildCheckpointContents(input: TransactionalCheckpointInput): Record<Ch
     pendingCases: derived.pendingCaseIds.length,
     inFlightCases: derived.inFlightCaseIds.length,
     providerCalls: caseState.providerCalls,
+    providerResponsesReceived: input.rawResponses.length,
     expectedCalls: caseState.expectedCalls,
     resumeCount: caseState.resumeCount ?? 0,
-    successfulResponses: input.rawResponses.length,
+    successfulResponses: input.decodedResults.length,
     failedResponses: derived.failedCaseIds.length,
     schemaValidCases: input.decodedResults.length,
     schemaInvalidCases: Math.max(0, input.rawResponses.length - input.decodedResults.length),
+    invalidSourceFields: metrics.invalidSourceFields ?? 0,
+    providerSourceFieldsProperties: metrics.providerSourceFieldsProperties ?? 0,
+    providerStringReferenceValues: metrics.providerStringReferenceValues ?? 0,
+    providerAliases: metrics.providerAliases ?? 0,
+    providerCanonicalPaths: metrics.providerCanonicalPaths ?? 0,
+    providerSFReferences: metrics.providerSFReferences ?? 0,
+    invalidIndexes: metrics.invalidIndexes ?? 0,
+    providerStepMismatches: metrics.providerStepMismatches ?? 0,
     internalCanonicalDecodingCases: input.decodedResults.length,
     requiresHumanReviewCases: input.decodedResults.filter((result) => result.requiresHumanReview).length,
     eligibleForGate: false,

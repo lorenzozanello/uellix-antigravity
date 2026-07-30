@@ -88,6 +88,21 @@ describe('guarded contextual real runner', () => {
     expect(result.caseState.phases[caseId]).toBe('SUCCEEDED')
   })
 
+  // Case A/H (spec section 12): a translated step must not fail the case; the mismatch must be observable.
+  it('canonicalizes a provider-translated step, succeeds the case, and surfaces the mismatch metric', async () => {
+    const result = await runGuardedContextualEvaluation({
+      cases: OFFICIAL_CONTEXTUAL_MOCK_CASES,
+      caseIds: [caseId],
+      env,
+      runtime,
+      provider: async (request) => ({ ...(request.providerTemplate as Record<string, unknown>), step: 'stakeholders-translated' }),
+    })
+    expect(result.caseState.phases[caseId]).toBe('SUCCEEDED')
+    expect(result.decodedResults[0].output.step).toBe('stakeholders')
+    expect(result.rawResponses[0].providerResponse.step).toBe('stakeholders-translated')
+    expect(result.summary.providerStepMismatches).toBe(1)
+  })
+
   it.each(['SUCCEEDED', 'FAILED', 'IN_FLIGHT', 'RAW_RECEIVED', 'DECODED'] as const)('never invokes a non-pending %s case', async (phase) => {
     let calls = 0
     let state = createCaseState([caseId])
@@ -148,7 +163,7 @@ describe('guarded contextual real runner', () => {
 
     expect(phases).toEqual(['PENDING', 'IN_FLIGHT', 'RAW_RECEIVED', 'FAILED'])
     expect(calls).toBe(1)
-    expect(error.category).toMatch(/^(PROVIDER_SCHEMA_ERROR|SOURCE_REFERENCE_ERROR)$/)
+    expect(error.category).toBe('PROVIDER_OUTPUT_CONTRACT_ERROR')
     expect(error.caseState).toMatchObject({ phases: { [caseId]: 'FAILED' }, providerCalls: 1, expectedCalls: 1, currentCaseId: null })
     expect(error.rawResponses).toHaveLength(1)
     expect(error.rawResponses[0]).toMatchObject({ caseId, providerResponse: invalidRaw })

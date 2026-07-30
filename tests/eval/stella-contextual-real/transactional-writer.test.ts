@@ -423,4 +423,61 @@ describe('transactional multi-artifact checkpoint writer', () => {
       confirmedCheckpointSequence: 0,
     })
   })
+
+  // Case G (spec section 12): checkpoint metrics must never be null, even with zero incidents.
+  it('never writes a null metric in a partial checkpoint summary', async () => {
+    const directory = await createDirectory()
+    await writeTransactionalCheckpoint(input(directory))
+    const summary = await readJson(directory, 'summary.json')
+    for (const key of [
+      'invalidSourceFields', 'providerSourceFieldsProperties', 'providerStringReferenceValues',
+      'providerAliases', 'providerCanonicalPaths', 'providerSFReferences', 'invalidIndexes', 'providerStepMismatches',
+    ]) {
+      expect(summary[key]).not.toBeNull()
+      expect(summary[key]).not.toBeUndefined()
+      expect(summary[key]).toBe(0)
+    }
+  })
+
+  // Case H (spec section 12): 10 calls, 10 raw responses, 9 valid decodes, 1 failure.
+  it('reports coherent counter semantics for a mixed batch of successes and one failure', async () => {
+    const directory = await createDirectory()
+    const caseIds = Array.from({ length: 10 }, (_, index) => `case-${index + 1}`)
+    const successIds = caseIds.slice(0, 9)
+    const failedId = caseIds[9]
+
+    let state = createCaseState(caseIds)
+    for (const id of successIds) {
+      state = transitionCase(state, id, 'IN_FLIGHT')
+      state = transitionCase(state, id, 'RAW_RECEIVED')
+      state = transitionCase(state, id, 'DECODED')
+      state = transitionCase(state, id, 'SUCCEEDED')
+    }
+    state = transitionCase(state, failedId, 'IN_FLIGHT')
+    state = transitionCase(state, failedId, 'RAW_RECEIVED')
+    state = transitionCase(state, failedId, 'FAILED')
+
+    const rawResponses = caseIds.map((caseId) => ({ ...rawResponse, caseId }))
+    const decodedResults = successIds.map((caseId) => ({ ...decodedResult, caseId }))
+    const errors = [{ ...safeError, category: 'SOURCE_REFERENCE_ERROR' as const, caseId: failedId }]
+
+    await writeTransactionalCheckpoint(input(directory, state, {
+      selectedCaseIds: caseIds,
+      rawResponses,
+      decodedResults,
+      errors,
+      status: 'FAILED',
+      metrics: { providerStepMismatches: 1 },
+    }))
+
+    expect(await readJson(directory, 'summary.json')).toMatchObject({
+      providerCalls: 10,
+      providerResponsesReceived: 10,
+      successfulResponses: 9,
+      failedResponses: 1,
+      schemaValidCases: 9,
+      schemaInvalidCases: 1,
+      providerStepMismatches: 1,
+    })
+  })
 })

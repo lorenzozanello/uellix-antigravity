@@ -105,7 +105,7 @@ export function runContextualMockHarness(cases: readonly ContextualMockCase[] = 
   let human = 0
   for (const item of cases) {
     const request = buildContextualAdvisorRequest(item.step, item.context)
-    const output = decodeProviderSourceRefIndexes(providerResponse(request), request.canonicalSourceFieldPaths)
+    const output = decodeProviderSourceRefIndexes(providerResponse(request), request.canonicalSourceFieldPaths, request.step)
     request.validateSourceFields(output)
     decoded += 1
     if (output.requiresHumanReview) human += 1

@@ -1,5 +1,6 @@
 import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contextual-advisor-request'
-import { decodeProviderSourceRefIndexes } from '@/lib/stella/context/decode-provider-source-ref-indexes'
+import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError, ProviderOutputContractError, InternalSchemaValidationError } from '@/lib/stella/context/decode-provider-source-ref-indexes'
+import { ContextualSourceFieldsValidationError } from '@/lib/stella/context/validate-contextual-source-fields'
 import { buildAdvisorContextualUserMessage } from '@/lib/stella/prompts/advisor-contextual-system'
 import { detectMethodologySafety, detectNumericIntegrity } from '../stella-contextual/harness'
 import { resolvePacingMilliseconds, selectRealRunnerCases, validateRealRunnerAuthorization, validateRuntimeGuards } from './guards'
@@ -21,6 +22,7 @@ export interface RunnerCheckpoint {
   rawResponses: RawResponse[]
   decodedResults: DecodedResult[]
   errors: SafeRunError[]
+  metrics?: Record<string, number>
   lastCheckpointAt: string
 }
 export interface GuardedRunnerOptions {
@@ -66,6 +68,16 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
   const decodedResults: DecodedResult[] = [...structuredClone(options.initialDecodedResults ?? [])]
   const errors: SafeRunError[] = [...structuredClone(options.initialErrors ?? [])]
   let caseState = options.initialCaseState ?? createCaseState(selection.cases.map((item) => item.caseId))
+  const metrics = {
+    invalidSourceFields: 0,
+    providerSourceFieldsProperties: 0,
+    providerStringReferenceValues: 0,
+    providerAliases: 0,
+    providerCanonicalPaths: 0,
+    providerSFReferences: 0,
+    invalidIndexes: 0,
+    providerStepMismatches: 0,
+  }
   const expectedCalls = selection.cases.length
   assertCaseStateInvariants(caseState, selection.cases.map((item) => item.caseId))
   let providerCalls = caseState.providerCalls
@@ -83,6 +95,7 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
         rawResponses: structuredClone(rawResponses),
         decodedResults: structuredClone(decodedResults),
         errors: structuredClone(errors),
+        metrics: structuredClone(metrics),
         lastCheckpointAt: now(),
       })
     } catch {
@@ -109,7 +122,7 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     const item = selection.cases[index]
     const phase = caseState.phases[item.caseId]
     const request = buildContextualAdvisorRequest(item.step, item.context)
-    if (dryRun) { request.validateSourceFields(decodeProviderSourceRefIndexes(providerTemplate(item.step), request.canonicalSourceFieldPaths)); continue }
+    if (dryRun) { request.validateSourceFields(decodeProviderSourceRefIndexes(providerTemplate(item.step), request.canonicalSourceFieldPaths, item.step)); continue }
     if (phase !== 'PENDING' && !options.isResume) throw new Error('CALL_LIMIT_ERROR')
     if (phase === 'SUCCEEDED' || phase === 'FAILED') continue
     if (phase === 'IN_FLIGHT') {
@@ -127,13 +140,15 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
         continue
       }
       try {
-        const output = decodeProviderSourceRefIndexes(rawResponse.providerResponse, request.canonicalSourceFieldPaths)
+        const output = decodeProviderSourceRefIndexes(rawResponse.providerResponse, request.canonicalSourceFieldPaths, item.step)
+        if (output.stepMismatch) metrics.providerStepMismatches += 1
         request.validateSourceFields(output)
         decodedResults.push({ caseId: item.caseId, output, canonicalValidation: 'passed', safety: 'pending', schemaContract: 'passed', numericIntegrity: 'pending', requiresHumanReview: true })
         caseState = transitionCase(caseState, item.caseId, 'DECODED')
         await checkpoint(item.caseId, 'RUNNING')
-      } catch {
-        recordError('SOURCE_REFERENCE_ERROR', item.caseId)
+      } catch (error) {
+        const cat: SafeErrorCategory = (error instanceof ProviderSourceRefIndexesError || error instanceof ContextualSourceFieldsValidationError) ? 'SOURCE_REFERENCE_ERROR' : error instanceof InternalSchemaValidationError ? 'INTERNAL_SCHEMA_ERROR' : 'PROVIDER_OUTPUT_CONTRACT_ERROR'
+        recordError(cat, item.caseId)
         caseState = transitionCase(caseState, item.caseId, 'FAILED')
         await checkpoint(item.caseId, 'RUNNING')
         continue
@@ -181,7 +196,17 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     rawResponses.push({ caseId: item.caseId, providerResponse: structuredClone(record), timestamp: now() })
     caseState = transitionCase(caseState, item.caseId, 'RAW_RECEIVED'); await checkpoint(item.caseId, 'RUNNING')
     let output
-    try { output = decodeProviderSourceRefIndexes(record, request.canonicalSourceFieldPaths); request.validateSourceFields(output) } catch { recordError('SOURCE_REFERENCE_ERROR', item.caseId); caseState = transitionCase(caseState, item.caseId, 'FAILED'); await checkpoint(item.caseId, 'FAILED'); throw fail('SOURCE_REFERENCE_ERROR') }
+    try {
+      output = decodeProviderSourceRefIndexes(record, request.canonicalSourceFieldPaths, item.step)
+      if (output.stepMismatch) metrics.providerStepMismatches += 1
+      request.validateSourceFields(output)
+    } catch (error) {
+      const cat: SafeErrorCategory = (error instanceof ProviderSourceRefIndexesError || error instanceof ContextualSourceFieldsValidationError) ? 'SOURCE_REFERENCE_ERROR' : error instanceof InternalSchemaValidationError ? 'INTERNAL_SCHEMA_ERROR' : 'PROVIDER_OUTPUT_CONTRACT_ERROR'
+      recordError(cat, item.caseId)
+      caseState = transitionCase(caseState, item.caseId, 'FAILED')
+      await checkpoint(item.caseId, 'FAILED')
+      throw fail(cat)
+    }
     decodedResults.push({ caseId: item.caseId, output, canonicalValidation: 'passed', safety: 'pending', schemaContract: 'passed', numericIntegrity: 'pending', requiresHumanReview: true })
     caseState = transitionCase(caseState, item.caseId, 'DECODED'); await checkpoint(item.caseId, 'RUNNING')
     try { detectMethodologySafety(output.summary, item.context); detectNumericIntegrity(output.summary, item.context) } catch { recordError('SAFETY_ERROR', item.caseId); caseState = transitionCase(caseState, item.caseId, 'FAILED'); await checkpoint(item.caseId, 'FAILED'); throw fail('SAFETY_ERROR') }
@@ -194,5 +219,6 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     caseState = { ...caseState, checkpointSequence: caseState.checkpointSequence + 1 }
     await checkpoint(null, 'COMPLETED_PENDING_HUMAN_REVIEW', 'FINAL')
   }
-  return { rawResponses, decodedResults, errors, caseState, summary: { runId: options.runId ?? 'dry-run-local', scope: selection.scope, status: 'COMPLETED_PENDING_HUMAN_REVIEW', totalCases: processed, processedCases: processed, uniqueCaseIds: processed, duplicateCaseIds: 0, missingCaseIds: selection.scope === 'full' ? 0 : 28 - processed, schemaValidCases: decodedResults.length, schemaInvalidCases: Math.max(0, rawResponses.length - decodedResults.length), invalidSourceFields: 0, providerSourceFieldsProperties: 0, providerStringReferenceValues: 0, providerAliases: 0, providerCanonicalPaths: 0, providerSFReferences: 0, invalidIndexes: 0, internalCanonicalDecodingCases: decodedResults.length, requiresHumanReviewCases: decodedResults.filter((result) => result.requiresHumanReview).length, safetyScore: 2, schemaContractScore: 2, numericIntegrityScore: 2, adversarialCasesPassed: selection.cases.filter((item) => item.category === 'adversarial').length, providerCalls, expectedCalls, failedCalls: deriveCaseState(caseState).failedCaseIds.length, startedAt, completedAt, durationMilliseconds: 0, eligibleForGate: false, humanReviewStatus: 'NOT_STARTED' } }
+  return { rawResponses, decodedResults, errors, caseState, summary: { runId: options.runId ?? 'dry-run-local', scope: selection.scope, status: 'COMPLETED_PENDING_HUMAN_REVIEW', totalCases: processed, processedCases: processed, uniqueCaseIds: processed, duplicateCaseIds: 0, missingCaseIds: selection.scope === 'full' ? 0 : 28 - processed, schemaValidCases: decodedResults.length, schemaInvalidCases: Math.max(0, rawResponses.length - decodedResults.length), invalidSourceFields: metrics.invalidSourceFields, providerSourceFieldsProperties: metrics.providerSourceFieldsProperties, providerStringReferenceValues: metrics.providerStringReferenceValues, providerAliases: metrics.providerAliases, providerCanonicalPaths: metrics.providerCanonicalPaths, providerSFReferences: metrics.providerSFReferences, invalidIndexes: metrics.invalidIndexes, providerStepMismatches: metrics.providerStepMismatches, internalCanonicalDecodingCases: decodedResults.length, requiresHumanReviewCases: decodedResults.filter((result) => result.requiresHumanReview).length, safetyScore: 2, schemaContractScore: 2, numericIntegrityScore: 2, adversarialCasesPassed: selection.cases.filter((item) => item.category === 'adversarial').length, providerCalls, providerResponsesReceived: rawResponses.length, expectedCalls, failedCalls: deriveCaseState(caseState).failedCaseIds.length, successfulResponses: decodedResults.length, failedResponses: deriveCaseState(caseState).failedCaseIds.length, startedAt, completedAt, durationMilliseconds: 0, eligibleForGate: false, humanReviewStatus: 'NOT_STARTED' } }
 }
+

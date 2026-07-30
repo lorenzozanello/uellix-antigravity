@@ -111,6 +111,7 @@ async function main(): Promise<void> {
             rawResponses: checkpoint.rawResponses,
             decodedResults: checkpoint.decodedResults,
             errors: checkpoint.errors,
+            metrics: checkpoint.metrics,
             status: checkpoint.status,
             checkpointStatus: checkpoint.checkpointStatus,
             startedAt: artifactStartedAt,
