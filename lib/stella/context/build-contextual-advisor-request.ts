@@ -1,6 +1,6 @@
 import type { AdvisorPipelineStep } from '../advisor/steps'
 import { buildAdvisorContextualSystemPrompt } from '../prompts/advisor-contextual-system'
-import { AdvisorContextualOutputSchema } from '../schemas/advisor-contextual-output'
+import { AdvisorContextualOutputSchema, buildContextualResponseJsonSchema } from '../schemas/advisor-contextual-output'
 import { collectCanonicalSourceFieldPaths } from './canonical-source-field-paths'
 import { buildAdvisorStepContext, type ContextualAdvisorStepContext } from './build-advisor-step-context'
 import type { ContextualAdvisorContext } from './types'
@@ -13,6 +13,7 @@ export type ContextualAdvisorRequest = Readonly<{
   canonicalSourceFieldPaths: readonly string[]
   systemPrompt: string
   internalResponseSchema: typeof AdvisorContextualOutputSchema
+  responseJsonSchema: Record<string, unknown>
   validateSourceFields: (output: unknown) => void
 }>
 
@@ -41,8 +42,9 @@ export function buildContextualAdvisorRequest(
     contextualData,
     serializedContext,
     canonicalSourceFieldPaths,
-    systemPrompt: buildAdvisorContextualSystemPrompt(contextualData.step),
+    systemPrompt: buildAdvisorContextualSystemPrompt(contextualData.step, canonicalSourceFieldPaths),
     internalResponseSchema: AdvisorContextualOutputSchema,
+    responseJsonSchema: buildContextualResponseJsonSchema(contextualData.step, canonicalSourceFieldPaths),
     validateSourceFields: (output) => validateContextualSourceFields(canonicalSourceFieldPaths, output as { findings: unknown; suggestions: unknown }),
   })
 }

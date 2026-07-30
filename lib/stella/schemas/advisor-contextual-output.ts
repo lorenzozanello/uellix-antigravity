@@ -29,3 +29,10 @@ export const AdvisorContextualOutputSchema = z.object({
 }).strict()
 
 export type AdvisorContextualOutput = z.infer<typeof AdvisorContextualOutputSchema>
+
+export function buildContextualResponseJsonSchema(step: string, paths: readonly string[]): Record<string, unknown> {
+  const sourceRefIndexes = paths.length ? { type: 'array', items: { type: 'integer', minimum: 0, maximum: paths.length - 1 } } : { type: 'array', maxItems: 0 }
+  const finding = { type: 'object', additionalProperties: false, required: ['id', 'severity', 'title', 'explanation', 'sourceRefIndexes'], properties: { id: { type: 'string' }, severity: { type: 'string', enum: ['info', 'warning'] }, title: { type: 'string' }, explanation: { type: 'string' }, sourceRefIndexes } }
+  const suggestion = { type: 'object', additionalProperties: false, required: ['id', 'proposedText', 'rationale', 'missingInformation', 'sourceRefIndexes'], properties: { id: { type: 'string' }, proposedText: { type: ['string', 'null'] }, rationale: { type: 'string' }, missingInformation: { type: 'array', items: { type: 'string' } }, sourceRefIndexes } }
+  return { type: 'object', additionalProperties: false, required: ['step', 'responseType', 'summary', 'findings', 'suggestions', 'clarifyingQuestions', 'limitations', 'requiresHumanReview'], properties: { step: { const: step }, responseType: { type: 'string', enum: AdvisorResponseTypeSchema.options }, summary: { type: 'string' }, findings: { type: 'array', items: finding }, suggestions: { type: 'array', items: suggestion }, clarifyingQuestions: { type: 'array', items: { type: 'string' } }, limitations: { type: 'array', items: { type: 'string' } }, requiresHumanReview: { const: true } } }
+}

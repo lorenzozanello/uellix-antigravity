@@ -16,6 +16,13 @@ import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
 import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
+import type { ContextualAdvisorContext } from '@/lib/stella/context/types'
+import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
+import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
+import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contextual-advisor-request'
+import { buildAdvisorContextualUserMessage } from '@/lib/stella/prompts/advisor-contextual-system'
+import { decodeProviderSourceRefIndexes } from '@/lib/stella/context/decode-provider-source-ref-indexes'
+import type { StellaGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 
 export type StellaAdvisorErrorCode =
   | 'DISABLED'
@@ -33,6 +40,28 @@ export type StellaAdvisorErrorCode =
 export type StellaAdvisorResult =
   | { ok: true; data: AdvisorOutput }
   | { ok: false; error: StellaAdvisorErrorCode; message: string }
+
+export type StellaContextualAdvisorResult =
+  | { ok: true; data: AdvisorContextualOutput }
+  | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT'; message: string }
+
+/** Controlled contextual path: accepts already-built context and leaves the generic action unchanged. */
+export async function getStellaContextualAdvisor(
+  step: AdvisorPipelineStep,
+  context: ContextualAdvisorContext,
+  adapter: StellaGeminiAdapter = getGeminiAdapter(),
+): Promise<StellaContextualAdvisorResult> {
+  try {
+    const request = buildContextualAdvisorRequest(step, context)
+    const response = await adapter.generate({ role: 'advisor', systemPrompt: request.systemPrompt, userMessage: buildAdvisorContextualUserMessage(step, request.serializedContext), responseJsonSchema: request.responseJsonSchema })
+    const raw: unknown = JSON.parse(response.rawOutput)
+    return { ok: true, data: decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths) }
+  } catch (error) {
+    if (error instanceof StellaTimeoutError) return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
+    if (error instanceof StellaGeminiError) return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
+    return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
+  }
+}
 
 export async function getStellaAdvisor(
   projectId: string,

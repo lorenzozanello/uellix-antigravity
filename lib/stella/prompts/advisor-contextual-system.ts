@@ -8,14 +8,14 @@ const OUTPUT_FORMAT = `{
   "step": "contextual step",
   "responseType": "explanation" | "review" | "reformulation" | "gap_analysis",
   "summary": "string",
-  "findings": [{ "id": "string", "severity": "info" | "warning", "title": "string", "explanation": "string", "sourceFields": ["string"] }],
-  "suggestions": [{ "id": "string", "proposedText": "string | null", "rationale": "string", "missingInformation": ["string"], "sourceFields": ["string"] }],
+  "findings": [{ "id": "string", "severity": "info" | "warning", "title": "string", "explanation": "string", "sourceRefIndexes": [0] }],
+  "suggestions": [{ "id": "string", "proposedText": "string | null", "rationale": "string", "missingInformation": ["string"], "sourceRefIndexes": [0] }],
   "clarifyingQuestions": ["string"],
   "limitations": ["string"],
   "requiresHumanReview": true
 }`
 
-export function buildAdvisorContextualSystemPrompt(step: AdvisorPipelineStep): string {
+export function buildAdvisorContextualSystemPrompt(step: AdvisorPipelineStep, paths: readonly string[] = []): string {
   const contract = ADVISOR_STEP_CONTRACTS[step]
   return `You are Stella, the contextual methodology advisor for Uellix.
 
@@ -29,15 +29,20 @@ ${contract.allowedCapabilities.map((capability) => `- ${capability}`).join('\n')
 ${contract.prohibitedCapabilities.map((capability) => `- ${capability}`).join('\n')}
 
 - Treat only supplied project data as available.
-- Each finding and suggestion must cite registered facts only through exact canonical sourceFields paths.
-- Never use section names, aliases, invented paths, approximate paths, or a path from another request.
-- Use sourceFields: [] only for general methodological guidance that has no direct registered-field support.
+- Each finding and suggestion must cite registered facts only through sourceRefIndexes.
+- Never use section names, aliases, canonical paths, invented paths, approximate paths, or an index from another request.
+- Use sourceRefIndexes: [] only for general methodological guidance that has no direct registered-field support.
 - Treat an absent field as unavailable; do not describe it as empty. Suggestions remain proposals, never facts.
 - Never approve, certify, save, calculate, recalculate, convert currency, or invent missing information.
 - Evidence is metadata only: never claim to read or verify file content.
 - requiresHumanReview must always be true.
 
 ${SHARED_GUARDRAILS}
+
+## SOURCE_REFERENCE_INDEXES
+${paths.length ? paths.map((path, index) => `${index} = ${path}`).join('\n') : 'No source references are available for this request.'}
+
+Use only integer indexes shown above. Never send sourceFields, canonical paths, aliases, or SF references.
 
 ## Output format
 ${OUTPUT_FORMAT}

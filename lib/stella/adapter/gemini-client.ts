@@ -55,6 +55,7 @@ export class StellaGeminiAdapter {
         config: {
           systemInstruction: request.systemPrompt,
           responseMimeType: 'application/json',
+          ...(request.responseJsonSchema ? { responseJsonSchema: request.responseJsonSchema } : {}),
           abortSignal: controller.signal,
         },
       })
