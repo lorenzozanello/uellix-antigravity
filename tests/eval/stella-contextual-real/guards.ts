@@ -27,12 +27,14 @@ export function parseRealRunnerArgs(args: readonly string[]): RealRunnerArgs {
   }
   if (!/^[a-z0-9][a-z0-9-]*$/i.test(parsed.runLabel)) throw new RealRunnerGuardError('CONFIGURATION_ERROR', 'run label is unsafe')
   if (parsed.resume && parsed.caseIds.length) throw new RealRunnerGuardError('CONFIGURATION_ERROR', 'resume cannot change case ids')
+  if (parsed.resume && parsed.dryRun) throw new RealRunnerGuardError('CONFIGURATION_ERROR', 'dry-run cannot resume a real run')
   return parsed
 }
 
 export function selectRealRunnerCases(catalog: readonly ContextualMockCase[], caseIds: readonly string[]): { cases: readonly ContextualMockCase[]; scope: RealRunnerScope } {
   if (new Set(catalog.map((item) => item.caseId)).size !== 28 || catalog.length !== 28) throw new RealRunnerGuardError('CASE_SELECTION_ERROR', 'official catalog is not complete and unique')
   if (caseIds.length === 0) return { cases: catalog, scope: 'full' }
+  if (caseIds.length === 28 && caseIds.join('|') === catalog.map((item) => item.caseId).join('|')) return { cases: catalog, scope: 'full' }
   if (caseIds.length > 7 || new Set(caseIds).size !== caseIds.length) throw new RealRunnerGuardError('CASE_SELECTION_ERROR', 'canary ids must be unique and between one and seven')
   const selected = caseIds.map((id) => catalog.find((item) => item.caseId === id))
   if (selected.some((item) => !item)) throw new RealRunnerGuardError('CASE_SELECTION_ERROR', 'unknown case id')
