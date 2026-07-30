@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { open, readFile, rename, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { assertCaseStateInvariants, deriveCaseState, type TransactionalCaseState } from './case-state'
-import type { DecodedResult, RawResponse, RealRunnerScope, RealRunnerStatus, SafeRunError } from './types'
+import { SAFE_ERROR_CATEGORIES, type DecodedResult, type RawResponse, type RealRunnerScope, type RealRunnerStatus, type SafeRunError } from './types'
 
 export const HASHED_CHECKPOINT_FILES = [
   'run-state.json',
@@ -85,22 +85,7 @@ const RAW_PHASES = new Set(['RAW_RECEIVED', 'DECODED', 'SUCCEEDED', 'FAILED'])
 const DECODED_PHASES = new Set(['DECODED', 'SUCCEEDED', 'FAILED'])
 const SAFE_ERROR_KEYS = new Set(['category', 'caseId', 'location', 'type', 'summary', 'timestamp'])
 const FORBIDDEN_ARTIFACT_KEYS = new Set(['GEMINI_API_KEY', 'apiKey', 'systemPrompt', 'userMessage', 'processEnv', 'prompt', 'context', 'stack'])
-const SAFE_ERROR_CATEGORIES = new Set([
-  'CONFIGURATION_ERROR',
-  'AUTHORIZATION_ERROR',
-  'CASE_SELECTION_ERROR',
-  'DIRTY_TREE_ERROR',
-  'PROVIDER_ERROR',
-  'PROVIDER_SCHEMA_ERROR',
-  'SOURCE_REFERENCE_ERROR',
-  'INTERNAL_SCHEMA_ERROR',
-  'CANONICAL_VALIDATION_ERROR',
-  'SAFETY_ERROR',
-  'NUMERIC_INTEGRITY_ERROR',
-  'CHECKPOINT_ERROR',
-  'RESUME_INTEGRITY_ERROR',
-  'CALL_LIMIT_ERROR',
-])
+const SAFE_ERROR_CATEGORY_SET = new Set(SAFE_ERROR_CATEGORIES)
 
 function checkpointError(): Error {
   return new Error('CHECKPOINT_ERROR')
@@ -133,7 +118,7 @@ function assertArtifactInvariants(input: TransactionalCheckpointInput): void {
   if (input.errors.some((error) => {
     const keys = Object.keys(error)
     return keys.some((key) => !SAFE_ERROR_KEYS.has(key))
-      || !SAFE_ERROR_CATEGORIES.has(error.category)
+      || !SAFE_ERROR_CATEGORY_SET.has(error.category)
       || typeof error.location !== 'string'
       || typeof error.type !== 'string'
       || typeof error.summary !== 'string'
@@ -193,6 +178,7 @@ function buildCheckpointContents(input: TransactionalCheckpointInput): Record<Ch
     providerCalls: caseState.providerCalls,
     expectedCalls: caseState.expectedCalls,
     currentCaseId: caseState.currentCaseId,
+    resumeCount: caseState.resumeCount ?? 0,
     processedCaseIds: derived.processedCaseIds,
     failedCaseIds: derived.failedCaseIds,
     pendingCaseIds: derived.pendingCaseIds,
@@ -211,6 +197,7 @@ function buildCheckpointContents(input: TransactionalCheckpointInput): Record<Ch
     inFlightCases: derived.inFlightCaseIds.length,
     providerCalls: caseState.providerCalls,
     expectedCalls: caseState.expectedCalls,
+    resumeCount: caseState.resumeCount ?? 0,
     successfulResponses: input.rawResponses.length,
     failedResponses: derived.failedCaseIds.length,
     schemaValidCases: input.decodedResults.length,

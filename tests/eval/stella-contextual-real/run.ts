@@ -5,7 +5,14 @@ import { OFFICIAL_CONTEXTUAL_MOCK_CASES } from '../stella-contextual/cases'
 import { createRunArtifacts, initializeRunManifest } from './artifacts'
 import { parseRealRunnerArgs, selectRealRunnerCases } from './guards'
 import { validateRealRunnerAuthorization, validateRuntimeGuards } from './guards'
-import { loadResumableArtifacts, validateResumeManifest } from './resume'
+import {
+  computeCaseCatalogHash,
+  INTERNAL_SCHEMA_PROTOCOL,
+  loadResumableArtifacts,
+  PROVIDER_SCHEMA_PROTOCOL,
+  REAL_RUNNER_VERSION,
+  validateResumableArtifacts,
+} from './resume'
 import { runGuardedContextualEvaluation } from './runner'
 import { writeTransactionalCheckpoint } from './transactional-writer'
 
@@ -15,21 +22,41 @@ const runtime = () => ({ branch: git('branch', '--show-current'), head: git('rev
 async function main(): Promise<void> {
   const args = parseRealRunnerArgs(process.argv.slice(2))
   if (args.help) { console.log('Usage: pnpm tsx tests/eval/stella-contextual-real/run.ts [--run-label label] [--case-id id] [--resume directory] [--dry-run] [--output-root path]'); return }
-  if (args.resume) throw new Error('RESUME_FLOW_NOT_READY')
   const currentRuntime = runtime()
   const resumed = args.resume ? await loadResumableArtifacts(args.resume) : undefined
   const resumedCaseIds = resumed?.manifest.caseIds
   if (resumedCaseIds !== undefined && (!Array.isArray(resumedCaseIds) || !resumedCaseIds.every((id) => typeof id === 'string'))) throw new Error('RESUME_INTEGRITY_ERROR: invalid case ids')
   const activeCaseIds = (resumedCaseIds as string[] | undefined) ?? args.caseIds
-  if (resumed) validateResumeManifest(resumed.manifest, { branch: currentRuntime.branch, head: currentRuntime.head, originMainSHA: currentRuntime.originMainSHA, providerMode: String(process.env.STELLA_PROVIDER_MODE ?? ''), model: String(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash'), caseCatalogHash: String(resumed.manifest.caseCatalogHash ?? ''), caseIds: activeCaseIds, scope: resumed.manifest.scope === 'canary' ? 'canary' : 'full', expectedCalls: Number(resumed.manifest.expectedCalls) })
   validateRuntimeGuards(currentRuntime, args.dryRun)
-  validateRealRunnerAuthorization(process.env, activeCaseIds, args.dryRun)
   const selection = selectRealRunnerCases(OFFICIAL_CONTEXTUAL_MOCK_CASES, activeCaseIds)
   const selectedCaseIds = selection.cases.map((item) => item.caseId)
-  const artifactStartedAt = new Date().toISOString()
-  const output = args.dryRun ? undefined : await createRunArtifacts(resolve(args.outputRoot ?? 'artifacts/stella-contextual-real-runs'), args.runLabel)
+  const catalogHash = computeCaseCatalogHash(OFFICIAL_CONTEXTUAL_MOCK_CASES)
+  const validatedResume = resumed
+    ? validateResumableArtifacts(resumed, {
+        branch: currentRuntime.branch,
+        head: currentRuntime.head,
+        originMainSHA: currentRuntime.originMainSHA,
+        providerMode: String(process.env.STELLA_PROVIDER_MODE ?? ''),
+        model: String(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash'),
+        caseCatalogHash: catalogHash,
+        caseIds: selectedCaseIds,
+        knownCaseIds: OFFICIAL_CONTEXTUAL_MOCK_CASES.map((item) => item.caseId),
+        scope: selection.scope,
+        expectedCalls: selectedCaseIds.length,
+        schemaProtocol: PROVIDER_SCHEMA_PROTOCOL,
+        internalProtocol: INTERNAL_SCHEMA_PROTOCOL,
+        runnerVersion: REAL_RUNNER_VERSION,
+      })
+    : undefined
+  validateRealRunnerAuthorization(process.env, selection.scope === 'full' ? [] : activeCaseIds, args.dryRun)
+  const artifactStartedAt = validatedResume?.startedAt ?? new Date().toISOString()
+  const output = args.dryRun
+    ? undefined
+    : validatedResume
+      ? { directory: validatedResume.directory, runId: validatedResume.runId }
+      : await createRunArtifacts(resolve(args.outputRoot ?? 'artifacts/stella-contextual-real-runs'), args.runLabel)
   if (output) {
-    await initializeRunManifest(output.directory, {
+    if (!validatedResume) await initializeRunManifest(output.directory, {
       runId: output.runId,
       runLabel: args.runLabel,
       scope: selection.scope,
@@ -40,16 +67,18 @@ async function main(): Promise<void> {
       dirtyTrackedTree: false,
       providerMode: process.env.STELLA_PROVIDER_MODE,
       model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      caseCatalogHash: catalogHash,
       caseIds: selectedCaseIds,
       expectedCalls: selectedCaseIds.length,
       pacingMilliseconds: 10_000,
       startedAt: artifactStartedAt,
-      runnerVersion: 'current-contextual-v1',
+      runnerVersion: REAL_RUNNER_VERSION,
       acknowledgementNamesPresent: ['STELLA_REAL_EVAL_ACK'],
-      schemaProtocol: 'sourceRefIndexes',
-      internalProtocol: 'sourceFields',
+      schemaProtocol: PROVIDER_SCHEMA_PROTOCOL,
+      internalProtocol: INTERNAL_SCHEMA_PROTOCOL,
       status: 'INITIALIZED',
       providerCalls: 0,
+      resumeCount: 0,
     })
   }
   const provider = args.dryRun ? undefined : await (async () => {
@@ -64,6 +93,13 @@ async function main(): Promise<void> {
     env: process.env,
     runtime: currentRuntime,
     provider,
+    runId: output?.runId,
+    startedAt: artifactStartedAt,
+    isResume: Boolean(validatedResume),
+    initialCaseState: validatedResume?.caseState,
+    initialRawResponses: validatedResume?.rawResponses,
+    initialDecodedResults: validatedResume?.decodedResults,
+    initialErrors: validatedResume?.errors,
     onCheckpoint: output
       ? async (checkpoint) => {
           await writeTransactionalCheckpoint({

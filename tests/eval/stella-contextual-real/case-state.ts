@@ -1,6 +1,6 @@
 export type CasePhase = 'PENDING' | 'IN_FLIGHT' | 'RAW_RECEIVED' | 'DECODED' | 'SUCCEEDED' | 'FAILED'
-export interface TransactionalCaseState { phases: Record<string, CasePhase>; providerCalls: number; expectedCalls: number; currentCaseId: string | null; checkpointSequence: number }
-export function createCaseState(caseIds: readonly string[]): TransactionalCaseState { return { phases: Object.fromEntries(caseIds.map((id) => [id, 'PENDING'])), providerCalls: 0, expectedCalls: caseIds.length, currentCaseId: null, checkpointSequence: 0 } }
+export interface TransactionalCaseState { phases: Record<string, CasePhase>; providerCalls: number; expectedCalls: number; currentCaseId: string | null; checkpointSequence: number; resumeCount?: number }
+export function createCaseState(caseIds: readonly string[]): TransactionalCaseState { return { phases: Object.fromEntries(caseIds.map((id) => [id, 'PENDING'])), providerCalls: 0, expectedCalls: caseIds.length, currentCaseId: null, checkpointSequence: 0, resumeCount: 0 } }
 
 const ACTIVE_PHASES: readonly CasePhase[] = ['IN_FLIGHT', 'RAW_RECEIVED', 'DECODED']
 const ALLOWED_TRANSITIONS: Record<CasePhase, readonly CasePhase[]> = {
@@ -17,6 +17,7 @@ export function assertCaseStateInvariants(state: TransactionalCaseState, selecte
   const stateIds = Object.keys(state.phases)
   if (selected.size !== selectedCaseIds.length || stateIds.length !== selected.size || stateIds.some((id) => !selected.has(id))) throw new Error('CASE_SELECTION_ERROR')
   if (state.expectedCalls !== selectedCaseIds.length || !Number.isInteger(state.providerCalls) || state.providerCalls < 0 || state.providerCalls > state.expectedCalls) throw new Error('CALL_LIMIT_ERROR')
+  if (state.resumeCount !== undefined && (!Number.isInteger(state.resumeCount) || state.resumeCount < 0)) throw new Error('CASE_STATE_INVARIANT_ERROR')
   if (stateIds.some((id) => !Object.hasOwn(ALLOWED_TRANSITIONS, state.phases[id]))) throw new Error('CASE_STATE_INVARIANT_ERROR')
   if (state.currentCaseId !== null && (!selected.has(state.currentCaseId) || !ACTIVE_PHASES.includes(state.phases[state.currentCaseId]))) throw new Error('CASE_STATE_INVARIANT_ERROR')
 }

@@ -57,6 +57,7 @@ describe('transactional provider case state', () => {
     expect(() => assertCaseStateInvariants({ ...state, currentCaseId: 'case' }, ['case'])).toThrow('CASE_STATE_INVARIANT_ERROR')
     expect(() => assertCaseStateInvariants({ ...state, providerCalls: -1 }, ['case'])).toThrow('CALL_LIMIT_ERROR')
     expect(() => assertCaseStateInvariants({ ...state, providerCalls: 2 }, ['case'])).toThrow('CALL_LIMIT_ERROR')
+    expect(() => assertCaseStateInvariants({ ...state, resumeCount: -1 }, ['case'])).toThrow('CASE_STATE_INVARIANT_ERROR')
   })
 
   it('derives every phase list exactly from the state map', () => {

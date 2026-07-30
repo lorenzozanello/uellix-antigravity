@@ -3,7 +3,8 @@ import type { ContextualMockCase } from '../stella-contextual/cases'
 
 export type RealRunnerScope = 'canary' | 'full'
 export type RealRunnerStatus = 'INITIALIZED' | 'RUNNING' | 'INTERRUPTED' | 'FAILED' | 'COMPLETED_PENDING_HUMAN_REVIEW'
-export type SafeErrorCategory = 'CONFIGURATION_ERROR' | 'AUTHORIZATION_ERROR' | 'CASE_SELECTION_ERROR' | 'DIRTY_TREE_ERROR' | 'PROVIDER_ERROR' | 'PROVIDER_SCHEMA_ERROR' | 'SOURCE_REFERENCE_ERROR' | 'INTERNAL_SCHEMA_ERROR' | 'CANONICAL_VALIDATION_ERROR' | 'SAFETY_ERROR' | 'NUMERIC_INTEGRITY_ERROR' | 'CHECKPOINT_ERROR' | 'RESUME_INTEGRITY_ERROR' | 'CALL_LIMIT_ERROR'
+export const SAFE_ERROR_CATEGORIES = ['CONFIGURATION_ERROR', 'AUTHORIZATION_ERROR', 'CASE_SELECTION_ERROR', 'DIRTY_TREE_ERROR', 'PROVIDER_ERROR', 'PROVIDER_SCHEMA_ERROR', 'SOURCE_REFERENCE_ERROR', 'INTERNAL_SCHEMA_ERROR', 'CANONICAL_VALIDATION_ERROR', 'SAFETY_ERROR', 'NUMERIC_INTEGRITY_ERROR', 'CHECKPOINT_ERROR', 'RESUME_INTEGRITY_ERROR', 'CALL_LIMIT_ERROR', 'INTERRUPTED_AFTER_CALL_STARTED'] as const
+export type SafeErrorCategory = (typeof SAFE_ERROR_CATEGORIES)[number]
 
 export interface RunnerRuntime { branch: string; head: string; originMainSHA: string; trackedDirty: boolean; stagingDirty: boolean; gitOperationInProgress: boolean }
 export interface ProviderRequest { case: ContextualMockCase; systemPrompt: string; userMessage: string; responseJsonSchema: Record<string, unknown>; providerTemplate: Record<string, unknown> }
