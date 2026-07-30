@@ -15,17 +15,17 @@ export const AdvisorContextualOutputSchema = z.object({
     title: z.string(),
     explanation: z.string(),
     sourceFields: SourceFieldsSchema,
-  })),
+  }).strict()),
   suggestions: z.array(z.object({
     id: z.string(),
     proposedText: z.string().nullable(),
     rationale: z.string(),
     missingInformation: z.array(z.string()),
     sourceFields: SourceFieldsSchema,
-  })),
+  }).strict()),
   clarifyingQuestions: z.array(z.string()),
   limitations: z.array(z.string()),
   requiresHumanReview: z.literal(true),
-})
+}).strict()
 
 export type AdvisorContextualOutput = z.infer<typeof AdvisorContextualOutputSchema>

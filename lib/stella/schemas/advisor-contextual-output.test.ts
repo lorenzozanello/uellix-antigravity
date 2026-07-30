@@ -20,4 +20,10 @@ describe('AdvisorContextualOutputSchema', () => {
   it('rejects a response that disables required human review', () => {
     expect(() => AdvisorContextualOutputSchema.parse({ ...valid, requiresHumanReview: false })).toThrow()
   })
+
+  it('rejects non-string sourceFields and provider-facing properties', () => {
+    const providerIndexField = ['source', 'RefIndexes'].join('')
+    expect(() => AdvisorContextualOutputSchema.parse({ ...valid, findings: [{ ...valid.findings[0], sourceFields: [0] }] })).toThrow()
+    expect(() => AdvisorContextualOutputSchema.parse({ ...valid, findings: [{ ...valid.findings[0], [providerIndexField]: [0] }] })).toThrow()
+  })
 })

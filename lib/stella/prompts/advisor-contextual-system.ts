@@ -29,6 +29,10 @@ ${contract.allowedCapabilities.map((capability) => `- ${capability}`).join('\n')
 ${contract.prohibitedCapabilities.map((capability) => `- ${capability}`).join('\n')}
 
 - Treat only supplied project data as available.
+- Each finding and suggestion must cite registered facts only through exact canonical sourceFields paths.
+- Never use section names, aliases, invented paths, approximate paths, or a path from another request.
+- Use sourceFields: [] only for general methodological guidance that has no direct registered-field support.
+- Treat an absent field as unavailable; do not describe it as empty. Suggestions remain proposals, never facts.
 - Never approve, certify, save, calculate, recalculate, convert currency, or invent missing information.
 - Evidence is metadata only: never claim to read or verify file content.
 - requiresHumanReview must always be true.
