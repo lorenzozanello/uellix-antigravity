@@ -20,8 +20,16 @@ const FORBIDDEN_PATTERNS = [
 
 // Injection markers — prompt-injection attempts in Spanish and English.
 // These extend the forbidden-pattern check (secrets above stay untouched).
-// Regexes (not substrings) so that e.g. "ecosystem: renewal" or
-// "operating system: Linux" do NOT false-positive on `system:`.
+//
+// FIX 3 (audit): these markers are defense-in-depth only — the untrusted-data
+// envelope is the real defense — so they must be SPECIFIC enough that
+// legitimate ToC prose is never destroyed. Standard narrative phrasings like
+// "actúa como articulador/catalizador" or "Sistema: educativo departamental"
+// must pass; a fake role block is only flagged when the same line carries
+// instruction-like content, and role hijack only in explicit formulations.
+const INSTRUCTION_TAIL =
+  '(?:mode|modo|override|developer|desarrollador|debug|admin|root|enabled|activad|instru|aprueb|approve|certif|reveal|revela|ignor|secret|prompt)'
+
 const FORBIDDEN_INJECTION_PATTERNS: RegExp[] = [
   // Ignore-previous-instructions (EN)
   /ignore\s+(?:all\s+|the\s+)?(?:previous|prior|above|earlier)/i,
@@ -30,16 +38,16 @@ const FORBIDDEN_INJECTION_PATTERNS: RegExp[] = [
   /ignor[aáe]\w*\s+(?:todas?\s+|las?\s+)?(?:las?\s+)?instrucciones/i,
   /instrucciones\s+(?:anteriores|previas)/i,
   /(?:ignora|olvida)\s+(?:todo\s+)?lo\s+anterior/i,
-  // Fake conversation-role blocks at line start (EN + ES)
-  /(?:^|\n)\s*system\s*:/i,
-  /(?:^|\n)\s*assistant\s*:/i,
-  /(?:^|\n)\s*sistema\s*:/i,
-  /(?:^|\n)\s*asistente\s*:/i,
-  // Role hijack (ES + EN)
-  /eres\s+ahora/i,
-  /act[uú]a\s+como/i,
-  /you\s+are\s+now/i,
-  /act\s+as\s+(?:a|an|the)\b/i,
+  // Fake conversation-role blocks at line start (EN + ES) — only when the
+  // rest of the same line contains instruction-like content.
+  new RegExp(`(?:^|\\n)\\s*(?:system|sistema|assistant|asistente)\\s*:[^\\n]*${INSTRUCTION_TAIL}`, 'i'),
+  // Role hijack (ES) — explicit formulations only.
+  /eres\s+ahora\s+un/i,
+  /act[uú]a\s+como\s+(?:si\s+fueras|un\s+asistente|una?\s+(?:ia|inteligencia)|un\s+modelo|(?:el\s+)?administrador|el\s+sistema|root)/i,
+  // Role hijack (EN) — explicit formulations only.
+  /you\s+are\s+now\s+(?:a|an|in)\b/i,
+  /[Yy]ou\s+are\s+now\s+[A-Z]{2,}/,
+  /act\s+as\s+(?:if\b|the\s+system|an?\s+(?:ai|assistant|model|admin))/i,
   // Markdown fence breakout
   /```/,
 ]
