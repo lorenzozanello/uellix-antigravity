@@ -43,6 +43,25 @@ describe('findBareIndexReferenceTokens (R4)', () => {
     expect(findBareIndexReferenceTokens('(1.5) no es un índice', 20)).toEqual([])
     expect(findBareIndexReferenceTokens('', 20)).toEqual([])
   })
+
+  // FIX 3 (option a): unbracketed Spanish index-reference phrasings.
+  it.each([
+    ['índice 3', 'según el índice 3 hay evidencia'],
+    ['indice 3', 'segun el indice 3 hay evidencia'],
+    ['fuente 0', 'la fuente 0 respalda esta afirmación'],
+    ['referencia 2', 'ver referencia 2 del catálogo'],
+    ['Fuente 1', 'Fuente 1 confirma el dato'],
+  ])('detects the unbracketed phrase %s when it is a valid catalog index', (_token, text) => {
+    expect(findBareIndexReferenceTokens(text, 20).length).toBeGreaterThan(0)
+  })
+
+  it('never flags legitimate prose around those words without an in-range integer', () => {
+    expect(findBareIndexReferenceTokens('El proxy proviene de una fuente oficial verificable.', 20)).toEqual([])
+    expect(findBareIndexReferenceTokens('Se registraron 3 fuentes y 2 referencias.', 20)).toEqual([])
+    expect(findBareIndexReferenceTokens('La fuente 2026 del anuario no aplica.', 20)).toEqual([])
+    expect(findBareIndexReferenceTokens('ver fuente 5', 3)).toEqual([])
+    expect(findBareIndexReferenceTokens('el índice de precios subió', 20)).toEqual([])
+  })
 })
 
 describe('validateNoIndexReferenceTokens (R4)', () => {

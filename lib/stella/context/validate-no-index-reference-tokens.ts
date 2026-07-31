@@ -17,18 +17,38 @@ export class ContextualIndexTokenLeakError extends StellaParseError {
 const BARE_INDEX_TOKEN_PATTERN = /[([]\s*(\d{1,4})\s*[)\]]/g
 /** The provider-transport field name must never appear in user-facing text. */
 const TRANSPORT_FIELD_PATTERN = /\bsourceRefIndexes?\b/gi
+/**
+ * Unbracketed Spanish index-reference phrasings: "índice 3", "fuente 0",
+ * "referencia 2". Bounded by the same in-range rule as the bracketed form.
+ * Words WITHOUT a trailing integer ("fuente oficial") can never match.
+ * A custom lookbehind/lookahead replaces \b, which is ASCII-only and would
+ * silently fail on the accented "índice".
+ */
+const UNBRACKETED_INDEX_PHRASE_PATTERN = /(?<![\p{L}\p{N}])(índice|indice|fuente|referencia)\s+(\d{1,4})(?![\p{N}])/giu
 
 /**
  * Returns the bare index-reference tokens found in one free-text value.
- * A parenthesized/bracketed integer only counts as a leak when it is a valid
- * index into this request's catalog (0 <= n < pathCount) — this keeps years
- * like "(2026)" and other out-of-range numbers from being false positives.
+ * A numeric reference — "(3)", "[3]", "índice 3", "fuente 3", "referencia 3"
+ * — only counts as a leak when the integer is a valid index into this
+ * request's catalog (0 <= n < pathCount). This keeps years like "(2026)" or
+ * "fuente 2026" and other out-of-range numbers from being false positives.
+ *
+ * Known residue (documented in G1_PACKAGE.md §"Known reservations"): other
+ * phrasings — English "index 3"/"source 3", "ítem 3", ordinals like
+ * "tercera fuente" — are NOT detected and rely on the prompt rule plus
+ * mandatory human review.
  */
 export function findBareIndexReferenceTokens(text: string, pathCount: number): string[] {
   const tokens: string[] = []
+  const isCatalogIndex = (raw: string): boolean => {
+    const index = Number(raw)
+    return Number.isInteger(index) && index >= 0 && index < pathCount
+  }
   for (const match of text.matchAll(BARE_INDEX_TOKEN_PATTERN)) {
-    const index = Number(match[1])
-    if (Number.isInteger(index) && index >= 0 && index < pathCount) tokens.push(match[0])
+    if (isCatalogIndex(match[1])) tokens.push(match[0])
+  }
+  for (const match of text.matchAll(UNBRACKETED_INDEX_PHRASE_PATTERN)) {
+    if (isCatalogIndex(match[2])) tokens.push(match[0])
   }
   for (const match of text.matchAll(TRANSPORT_FIELD_PATTERN)) {
     tokens.push(match[0])
