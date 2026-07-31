@@ -113,7 +113,9 @@ export async function getStellaReviewer(
   }
 
   try {
-    const context = await buildReviewerContext(projectId, ctx.organization.id)
+    // Per-role minimization (WS6): each reviewer role receives only its own
+    // enrichment slice; omitting the role would return the superset.
+    const context = await buildReviewerContext(projectId, ctx.organization.id, role)
 
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
