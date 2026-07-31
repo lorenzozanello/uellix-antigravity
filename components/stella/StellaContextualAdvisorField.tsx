@@ -11,6 +11,7 @@
 
 import { useState } from 'react'
 import { StellaContextualAdvisorPanel } from './StellaContextualAdvisorPanel'
+import { persistStellaDecision } from './decision-adapter'
 import type { SuggestionDecisionRecord } from './decision-types'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 
@@ -33,7 +34,12 @@ interface StellaContextualAdvisorFieldProps {
   panelTitle?: string
   /** Heading level for the panel title (page outline dependent). */
   headingLevel?: 2 | 3 | 4
-  /** Decision persistence hook forwarded to the panel (default no-op). */
+  /**
+   * Additional decision hook forwarded to the panel. WS3c U4 (D-007): the
+   * field ALWAYS composes persistStellaDecision (best-effort, never throws,
+   * silent while the persistence flag is dormant) with this optional hook —
+   * pages get persistence for free and may still observe decisions.
+   */
   onDecision?: (record: SuggestionDecisionRecord) => void
 }
 
@@ -74,7 +80,12 @@ export function StellaContextualAdvisorField({
         targetValue={value}
         targetLabel={fieldLabel}
         onApply={(_suggestion, text) => setValue(text)}
-        onDecision={onDecision}
+        onDecision={(record) => {
+          // D-007: fire-and-forget persistence — persistStellaDecision never
+          // throws and swallows DISABLED while the flag is dormant.
+          void persistStellaDecision(record, { projectId })
+          onDecision?.(record)
+        }}
         className="my-2"
       />
     </div>
