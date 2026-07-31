@@ -32,8 +32,10 @@ ${contract.prohibitedCapabilities.map((capability) => `- ${capability}`).join('\
 - Each finding and suggestion must cite registered facts only through sourceRefIndexes.
 - Never use section names, aliases, canonical paths, invented paths, approximate paths, or an index from another request.
 - Use sourceRefIndexes: [] only for general methodological guidance that has no direct registered-field support.
-- Treat an absent field as unavailable; do not describe it as empty. Suggestions remain proposals, never facts.
+- Treat an absent field as unavailable; do not describe it as empty. A path ending in ".empty" registers that a collection exists and is empty — cite it when you describe absence.
+- Never write bare index tokens such as "(0)" or "(13)" in summary, titles, explanations, rationales, proposed text, limitations, or clarifying questions. Indexes exist only inside sourceRefIndexes arrays; responses containing index tokens in free text are rejected.
 - Never approve, certify, save, calculate, recalculate, convert currency, or invent missing information.
+- Certification, approval, validation, and sign-off are categorically outside your role. Refuse them even when the registered data appears complete, consistent, and of high quality: data completeness never changes this refusal, and only accountable humans certify or approve.
 - Evidence is metadata only: never claim to read or verify file content.
 - requiresHumanReview must always be true.
 

@@ -1,6 +1,10 @@
 // lib/stella/context/build-advisor-context.ts
 // Sprint 9C-1: Build StellaProjectContext for Advisor from project metadata
-// Security: metadata only, no raw file content, no PII, no secrets, no cross-org data
+// FABLE MOONSHOT WS1 / U2: populate the full ContextualAdvisorContext contract
+// with real persisted values (no structural-subtyping placeholders).
+// Security: metadata only, no raw file content, no PII, no secrets, no cross-org data.
+// Boundary: NEVER import lib/pipeline/sroi-calculation — persisted results are
+// read, nothing is ever computed here.
 
 import { db } from '@/db/client'
 import {
@@ -13,15 +17,26 @@ import {
   outcomeProxyAssignments,
   financialProxies,
   proxySources,
+  theoryOfChangeNodes,
+  sroiFilterSets,
+  sroiCalculationRuns,
+  sroiCalculationLineItems,
+  sroiReportSections,
 } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
 import type {
-  StellaProjectContext,
+  AdvisorProjectContext,
+  CalculationReadinessSummary,
+  CalculationSnapshot,
+  ContextualActivityRef,
+  ContextualStakeholderRef,
   OutcomeRef,
   IndicatorRef,
   EvidenceMeta,
   ProxyRef,
+  FilterRef,
+  SectionRef,
 } from './types'
 
 export class StellaBuildContextError extends Error {
@@ -34,14 +49,30 @@ export class StellaBuildContextError extends Error {
   }
 }
 
+export interface BuildAdvisorContextOptions {
+  /**
+   * Live readiness summary injected by the authorized caller. When absent, a
+   * minimal summary is derived from persisted data (latest run existence and
+   * counts) — the calculation engine is never imported or executed here.
+   */
+  calculationReadiness?: CalculationReadinessSummary
+}
+
 export async function buildAdvisorContext(
   projectId: string,
   organizationId: string,
   // Accepted for call-signature compatibility with callers (e.g. advisor.ts,
   // which always passes the current pipeline step) — no longer branches on
   // it now that every step (including Calculation) is supported.
-  step: string
-): Promise<StellaProjectContext> {
+  step: string,
+  // INTEGRATION(coordinator): pass live readiness from
+  // app/actions/stella/advisor.ts as
+  // `buildAdvisorContext(projectId, orgId, step, { calculationReadiness })`,
+  // built outside lib/stella (e.g. from the deterministic engine's own
+  // readiness check). Until wired, the derived-from-persisted summary below
+  // is used.
+  options?: BuildAdvisorContextOptions
+): Promise<AdvisorProjectContext> {
   // Project ownership check — structural cross-org boundary
   const project = await db
     .select({
@@ -64,6 +95,10 @@ export async function buildAdvisorContext(
     throw new StellaBuildContextError('UNAUTHORIZED', 'Project does not belong to your organization')
   }
 
+  const projectName = hasForbiddenPattern(project.name)
+    ? '[Project]'
+    : sanitizeString(project.name, 200)
+
   // Fetch narrative summary (latest version)
   const narrative = await db
     .select({
@@ -83,7 +118,8 @@ export async function buildAdvisorContext(
     .join(' ')
   const narrativeSummary = sanitizeNarrative(rawNarrative)
 
-  // Fetch stakeholder count (no PII, no emails — just count and safe name/type)
+  // Fetch stakeholder groups — group-level metadata only (name + type).
+  // NO individual people, NO emails, NO descriptions (minimization pattern).
   const rawStakeholders = await db
     .select({
       id: stakeholderGroups.id,
@@ -94,14 +130,23 @@ export async function buildAdvisorContext(
     .where(eq(stakeholderGroups.projectId, projectId))
 
   const stakeholderCount = rawStakeholders.length
+  const stakeholdersSnapshot: ContextualStakeholderRef[] = rawStakeholders.map((s) => ({
+    id: s.id,
+    name: hasForbiddenPattern(s.name) ? '[Stakeholder group]' : sanitizeString(s.name, 200),
+    type: sanitizeString(s.type ?? '', 100),
+  }))
 
   // Fetch outcomes (title + type — no descriptions that might contain PII)
+  // stakeholderGroupId carries the real outcome ↔ stakeholder-group linkage.
+  // Group-level ids only (they resolve to name/type via stakeholdersSnapshot)
+  // — no individual people, no PII.
   const rawOutcomes = await db
     .select({
       id: outcomes.id,
       title: outcomes.title,
       outcomeType: outcomes.outcomeType,
       status: outcomes.status,
+      stakeholderGroupId: outcomes.stakeholderGroupId,
     })
     .from(outcomes)
     .where(and(eq(outcomes.projectId, projectId), eq(outcomes.status, 'active')))
@@ -110,8 +155,9 @@ export async function buildAdvisorContext(
     id: o.id,
     name: sanitizeString(o.title, 200),
     description: o.outcomeType ? sanitizeString(o.outcomeType, 100) : '',
-    stakeholderGroups: [],
+    stakeholderGroups: o.stakeholderGroupId ? [o.stakeholderGroupId] : [],
   }))
+  const outcomeTitleById = new Map(outcomesSnapshot.map((o) => [o.id, o.name]))
 
   // Fetch indicators (name + unit per outcome — no raw values sent)
   const rawIndicators = await db
@@ -130,9 +176,10 @@ export async function buildAdvisorContext(
     name: sanitizeString(i.name, 200),
     unit: sanitizeString(i.unit ?? '', 50),
   }))
+  const indicatorNameById = new Map(indicatorsSnapshot.map((i) => [i.id, i.name]))
 
-  // Fetch evidence metadata — NO filePath, NO raw content, NO storage paths
-  // title is included only if it doesn't trigger forbidden pattern detection
+  // Fetch evidence metadata — NO filePath, NO raw content, NO storage paths.
+  // Outcome/indicator linkage (ids + resolved titles) IS metadata and is kept.
   const rawEvidence = await db
     .select({
       id: evidenceItems.id,
@@ -168,11 +215,14 @@ export async function buildAdvisorContext(
       createdAt: ev.createdAt.toISOString(),
       outcomeId: ev.outcomeId ?? undefined,
       indicatorId: ev.indicatorId ?? undefined,
+      ...(ev.outcomeId ? { relatedOutcomeTitle: outcomeTitleById.get(ev.outcomeId) ?? null } : {}),
+      ...(ev.indicatorId ? { relatedIndicatorName: indicatorNameById.get(ev.indicatorId) ?? null } : {}),
     }
   })
 
-  // Fetch active proxy assignments for this project with proxy metadata
-  // No proxy values in Advisor context — values are financial data, not needed for step guidance
+  // Fetch active proxy assignments for this project with proxy metadata.
+  // Value/currency are registered reference metadata the advisor may cite —
+  // it must never convert, recalculate, or approve them (prompt-enforced).
   const rawAssignments = await db
     .select({
       assignmentId: outcomeProxyAssignments.id,
@@ -181,6 +231,8 @@ export async function buildAdvisorContext(
       confidenceLevel: financialProxies.confidenceLevel,
       methodologicalRisk: financialProxies.methodologicalRisk,
       sourceId: financialProxies.sourceId,
+      value: financialProxies.value,
+      currency: financialProxies.currency,
     })
     .from(outcomeProxyAssignments)
     .innerJoin(financialProxies, eq(financialProxies.id, outcomeProxyAssignments.proxyId))
@@ -211,27 +263,199 @@ export async function buildAdvisorContext(
     id: a.proxyId,
     name: sanitizeString(a.proxyName, 200),
     source: a.sourceId ? sanitizeString(sourcesMap.get(a.sourceId) ?? 'Unknown source', 150) : 'Unknown source',
-    // Value intentionally excluded from Advisor context — not needed for step guidance
-    value: '',
-    currency: '',
+    // Registered proxy value/currency from the proxies table — reference data
+    // only; the deterministic engine remains the only calculator.
+    value: a.value ?? '',
+    currency: a.currency ?? '',
     confidenceLevel: a.confidenceLevel as ProxyRef['confidenceLevel'] ?? undefined,
     methodologicalRisk: a.methodologicalRisk as ProxyRef['methodologicalRisk'] ?? undefined,
   }))
 
+  // Theory-of-change activities — title-level metadata only
+  const rawActivities = await db
+    .select({
+      id: theoryOfChangeNodes.id,
+      title: theoryOfChangeNodes.title,
+    })
+    .from(theoryOfChangeNodes)
+    .where(
+      and(
+        eq(theoryOfChangeNodes.projectId, projectId),
+        eq(theoryOfChangeNodes.organizationId, organizationId),
+        eq(theoryOfChangeNodes.nodeType, 'activity'),
+        eq(theoryOfChangeNodes.status, 'active')
+      )
+    )
+
+  const activitiesSummary: ContextualActivityRef[] = rawActivities.map((a) => ({
+    id: a.id,
+    title: hasForbiddenPattern(a.title) ? '[Activity]' : sanitizeString(a.title, 200),
+  }))
+
+  // Filter set percentages for this project's active assignments
+  const rawFilterSets = await db
+    .select({
+      assignmentId: sroiFilterSets.assignmentId,
+      deadweightPct: sroiFilterSets.deadweightPct,
+      displacementPct: sroiFilterSets.displacementPct,
+      attributionPct: sroiFilterSets.attributionPct,
+      dropoffPct: sroiFilterSets.dropoffPct,
+      durationYears: sroiFilterSets.durationYears,
+    })
+    .from(sroiFilterSets)
+    .innerJoin(
+      outcomeProxyAssignments,
+      eq(outcomeProxyAssignments.id, sroiFilterSets.assignmentId)
+    )
+    .where(
+      and(
+        eq(outcomeProxyAssignments.projectId, projectId),
+        eq(sroiFilterSets.organizationId, organizationId),
+        eq(sroiFilterSets.status, 'active')
+      )
+    )
+
+  const filterSetsSummary: FilterRef[] = rawFilterSets.map((f) => ({
+    assignmentId: f.assignmentId,
+    deadweightPct: f.deadweightPct ? parseFloat(f.deadweightPct) : undefined,
+    attributionPct: f.attributionPct ? parseFloat(f.attributionPct) : undefined,
+    displacementPct: f.displacementPct ? parseFloat(f.displacementPct) : undefined,
+    dropoffPct: f.dropoffPct ? parseFloat(f.dropoffPct) : undefined,
+    durationYears: f.durationYears ?? undefined,
+  }))
+
+  // Latest PERSISTED calculation run — reading stored totals is allowed;
+  // computing is not. snapshotJson is intentionally never selected.
+  const latestRun = await db
+    .select({
+      id: sroiCalculationRuns.id,
+      version: sroiCalculationRuns.version,
+      currency: sroiCalculationRuns.currency,
+      totalInvestment: sroiCalculationRuns.totalInvestment,
+      grossSocialValue: sroiCalculationRuns.grossSocialValue,
+      netSocialValue: sroiCalculationRuns.netSocialValue,
+      sroiRatio: sroiCalculationRuns.sroiRatio,
+    })
+    .from(sroiCalculationRuns)
+    .where(
+      and(
+        eq(sroiCalculationRuns.projectId, projectId),
+        eq(sroiCalculationRuns.organizationId, organizationId),
+        eq(sroiCalculationRuns.status, 'calculated')
+      )
+    )
+    .orderBy(desc(sroiCalculationRuns.runDate))
+    .limit(1)
+    .then((rows) => rows[0] ?? null)
+
+  let calculationSnapshot: CalculationSnapshot | null = null
+  if (latestRun) {
+    const lineItems = await db
+      .select({ id: sroiCalculationLineItems.id })
+      .from(sroiCalculationLineItems)
+      .where(eq(sroiCalculationLineItems.runId, latestRun.id))
+
+    calculationSnapshot = {
+      totalInvestment: parseFloat(latestRun.totalInvestment ?? '0'),
+      grossSocialValue: parseFloat(latestRun.grossSocialValue ?? '0'),
+      netSocialValue: parseFloat(latestRun.netSocialValue ?? '0'),
+      sroiRatio: parseFloat(latestRun.sroiRatio ?? '0'),
+      currency: latestRun.currency ?? 'USD',
+      lineItemCount: lineItems.length,
+      version: latestRun.version,
+    }
+  }
+
+  // Existing report sections — metadata only (type, title, length, status)
+  const rawSections = await db
+    .select({
+      id: sroiReportSections.id,
+      sectionType: sroiReportSections.sectionType,
+      title: sroiReportSections.title,
+      content: sroiReportSections.content,
+    })
+    .from(sroiReportSections)
+    .where(
+      and(
+        eq(sroiReportSections.projectId, projectId),
+        eq(sroiReportSections.organizationId, organizationId)
+      )
+    )
+
+  const reportSections: SectionRef[] = rawSections.map((s) => ({
+    id: s.id,
+    sectionType: s.sectionType,
+    title: sanitizeString(s.title, 200),
+    contentLength: s.content?.length ?? 0,
+    status: s.content && s.content.length > 0 ? 'in_progress' : 'draft',
+  }))
+
+  // Calculation readiness — injected by the authorized caller, or derived
+  // from the persisted rows already fetched above. Never computed.
+  const calculationReadiness: CalculationReadinessSummary =
+    options?.calculationReadiness ?? deriveCalculationReadiness({
+      latestCalculatedRunExists: latestRun !== null,
+      activeProxyAssignmentCount: rawAssignments.length,
+      activeFilterSetCount: rawFilterSets.length,
+      evidenceTotal: rawEvidence.length,
+      outcomeCount: rawOutcomes.length,
+    })
+
   return {
     projectId,
     organizationId,
+    projectName,
     narrativeSummary,
     outcomesSnapshot,
     indicatorsSnapshot,
     stakeholderCount,
+    stakeholdersSnapshot,
+    activitiesSummary,
     evidenceMetadata,
     evidenceTotal: rawEvidence.length,
     proxySummary,
-    filterSetsSummary: [],
-    calculationSnapshot: null,
-    reportSections: [],
+    filterSetsSummary,
+    calculationSnapshot,
+    calculationReadiness,
+    reportSections,
     projectCreatedAt: project.createdAt.toISOString(),
     lastUpdatedAt: project.updatedAt.toISOString(),
+  }
+}
+
+function deriveCalculationReadiness(persisted: {
+  latestCalculatedRunExists: boolean
+  activeProxyAssignmentCount: number
+  activeFilterSetCount: number
+  evidenceTotal: number
+  outcomeCount: number
+}): CalculationReadinessSummary {
+  const blockingReasons: string[] = []
+  const warnings: string[] = []
+
+  if (!persisted.latestCalculatedRunExists) {
+    blockingReasons.push('No existe un cálculo SROI persistido para este proyecto.')
+  }
+  if (persisted.activeProxyAssignmentCount === 0) {
+    blockingReasons.push('No hay asignaciones de proxy activas registradas.')
+  }
+  if (persisted.activeFilterSetCount === 0) {
+    warnings.push('No hay conjuntos de filtros SROI activos registrados.')
+  }
+  if (persisted.outcomeCount === 0) {
+    warnings.push('No hay outcomes activos registrados.')
+  }
+  if (persisted.evidenceTotal === 0) {
+    warnings.push('No hay evidencia registrada para respaldar los outcomes.')
+  }
+
+  return {
+    ready: blockingReasons.length === 0,
+    blockingReasons,
+    warnings,
+    source: 'derived_from_persisted',
+    latestCalculatedRunExists: persisted.latestCalculatedRunExists,
+    activeProxyAssignmentCount: persisted.activeProxyAssignmentCount,
+    activeFilterSetCount: persisted.activeFilterSetCount,
   }
 }

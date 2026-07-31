@@ -1,7 +1,34 @@
 // lib/stella/fallbacks.ts
 // Sprint 9B: Fallback responses when Stella is unavailable or disabled
+// FABLE MOONSHOT WS1 / U8: contextual-shape fallback for citation failures
 
 import type { AdvisorOutput, ValidatorOutput, ComposerOutput } from './schemas'
+import type { AdvisorContextualOutput } from './schemas/advisor-contextual-output'
+import type { AdvisorPipelineStep } from './advisor/steps'
+
+/**
+ * Safe contextual-shape fallback used when the provider's response fails
+ * citation validation at PARSE level (invalid sourceRefIndexes, non-catalog
+ * citations, or index-token leaks in free text). It makes no claims, cites
+ * nothing, and always requires human review. Structural/schema failures do
+ * NOT use this fallback — those stay fail-closed.
+ */
+export function buildContextualAdvisorFallback(step: AdvisorPipelineStep): AdvisorContextualOutput {
+  return {
+    step,
+    responseType: 'explanation',
+    summary:
+      'Stella no pudo generar una respuesta verificable para este paso: la respuesta del modelo no superó la validación de citas. No se registran hallazgos ni sugerencias. Consultá la documentación metodológica SROI y volvé a intentarlo.',
+    findings: [],
+    suggestions: [],
+    clarifyingQuestions: [],
+    limitations: [
+      'Respuesta de contingencia sin citas a datos registrados.',
+      'Este paso requiere revisión humana antes de cualquier uso.',
+    ],
+    requiresHumanReview: true,
+  }
+}
 
 export const ADVISOR_FALLBACK: AdvisorOutput = {
   step: 'unknown',

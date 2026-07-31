@@ -20,7 +20,8 @@
     "db:reset:local": "pnpm supabase stop --no-backup && pnpm supabase start && pnpm db:setup:local",
     "db:seed:local": "tsx scripts/seed-local.ts",
     "db:seed:proxies": "tsx scripts/seed-proxies.ts",
-    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts"
+    "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts",
+    "eval:offline": "tsx scripts/eval-offline.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

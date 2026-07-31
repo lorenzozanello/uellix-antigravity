@@ -77,6 +77,8 @@ const mockAssignments = [
     confidenceLevel: 'high',
     methodologicalRisk: 'low',
     sourceId: 'src-1',
+    value: '350.0000',
+    currency: 'USD',
   },
 ]
 
@@ -93,6 +95,7 @@ function makeChain(resolvedValue: unknown) {
   chain.where = vi.fn().mockReturnValue(chain)
   chain.limit = vi.fn().mockReturnValue(chain)
   chain.innerJoin = vi.fn().mockReturnValue(chain)
+  chain.orderBy = vi.fn().mockReturnValue(chain)
   chain.then = vi.fn().mockImplementation(
     (cb: (v: unknown) => unknown) => Promise.resolve(cb(resolvedValue))
   )
@@ -115,6 +118,11 @@ async function setupFullMockSequence(projectRow = mockProject) {
   // 6. evidence → array
   // 7. proxy assignments (innerJoin) → array
   // 8. source lookup → .then((rows) => rows[0] ?? null) → needs array
+  // 9. ToC activities → array
+  // 10. filter sets (innerJoin) → array
+  // 11. latest calculation run → [] here → calculationSnapshot null (no
+  //     line-item query happens in that case)
+  // 12. report sections → array
   selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                   // project
     .mockReturnValueOnce(makeChain([mockNarrative]) as never)                // narrative
@@ -124,6 +132,10 @@ async function setupFullMockSequence(projectRow = mockProject) {
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)              // evidence
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                // proxy assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'HACT Database' }]) as never) // source
+    .mockReturnValueOnce(makeChain([]) as never)                             // activities
+    .mockReturnValueOnce(makeChain([]) as never)                             // filter sets
+    .mockReturnValueOnce(makeChain([]) as never)                             // latest run (none)
+    .mockReturnValueOnce(makeChain([]) as never)                             // report sections
 }
 
 // ---------------------------------------------------------------------------
@@ -285,13 +297,13 @@ describe('buildAdvisorContext', () => {
       expect(ctx.proxySummary[0].confidenceLevel).toBe('high')
     })
 
-    it('excludes proxy financial value and currency (Advisor role)', async () => {
+    it('includes registered proxy value and currency from the proxies table', async () => {
       await setupFullMockSequence()
       const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'proxies')
 
       for (const proxy of ctx.proxySummary) {
-        expect(proxy.value).toBe('')
-        expect(proxy.currency).toBe('')
+        expect(proxy.value).toBe('350.0000')
+        expect(proxy.currency).toBe('USD')
       }
     })
   })
@@ -320,11 +332,12 @@ describe('buildAdvisorContext', () => {
       expect(JSON.stringify(ctx)).not.toContain('"file_path"')
     })
 
-    it('calculationSnapshot is null (Advisor never touches calculation)', async () => {
+    it('calculationSnapshot is null when no persisted run exists (never computed)', async () => {
       await setupFullMockSequence()
       const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
 
       expect(ctx.calculationSnapshot).toBeNull()
+      expect(ctx.calculationReadiness.ready).toBe(false)
     })
 
     it('organizationId in context matches requesting org (no cross-org leakage)', async () => {
@@ -351,6 +364,10 @@ describe('buildAdvisorContext', () => {
         .mockReturnValueOnce(makeChain([]) as never)   // indicators
         .mockReturnValueOnce(makeChain([]) as never)   // evidence
         .mockReturnValueOnce(makeChain([]) as never)   // proxy assignments
+        .mockReturnValueOnce(makeChain([]) as never)   // activities
+        .mockReturnValueOnce(makeChain([]) as never)   // filter sets
+        .mockReturnValueOnce(makeChain([]) as never)   // latest run (none)
+        .mockReturnValueOnce(makeChain([]) as never)   // report sections
 
       const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
 

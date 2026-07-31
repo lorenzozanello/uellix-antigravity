@@ -1,6 +1,7 @@
 import { StellaParseError } from '../errors'
 import { AdvisorContextualOutputSchema, type AdvisorContextualOutput } from '../schemas/advisor-contextual-output'
 import { validateContextualSourceFields } from './validate-contextual-source-fields'
+import { validateNoIndexReferenceTokens } from './validate-no-index-reference-tokens'
 
 export class ProviderSourceRefIndexesError extends StellaParseError {
   constructor(readonly location: string, received: unknown, readonly reason: string) {
@@ -35,6 +36,9 @@ function exact(value: Record<string, unknown>, keys: readonly string[], location
   for (const key of keys) if (!Object.hasOwn(value, key)) throw new ProviderOutputContractError(location, value, `is missing ${key}`)
   for (const key of Object.keys(value)) if (!keys.includes(key)) throw new ProviderOutputContractError(`${location}.${key}`, value[key], 'is not allowed')
 }
+/** U8: hard cap on DISTINCT source references per finding/suggestion. */
+export const MAX_SOURCE_REFS_PER_ITEM = 8
+
 function decode(value: unknown, name: 'findings' | 'suggestions', keys: readonly string[], paths: readonly string[]): Array<Record<string, unknown>> {
   if (!Array.isArray(value)) throw new ProviderOutputContractError(name, value, 'must be an array')
   return value.map((candidate, itemIndex) => {
@@ -42,10 +46,18 @@ function decode(value: unknown, name: 'findings' | 'suggestions', keys: readonly
     if ('sourceFields' in item) throw new ProviderSourceRefIndexesError(`${location}.sourceFields`, item.sourceFields, 'sourceFields not allowed in provider response')
     exact(item, keys, location)
     if (!Array.isArray(item.sourceRefIndexes)) throw new ProviderSourceRefIndexesError(`${location}.sourceRefIndexes`, item.sourceRefIndexes, 'must be an array')
-    const sourceFields = item.sourceRefIndexes.map((index, indexPosition) => {
+    // Duplicates are deduplicated silently (first-seen order preserved);
+    // exceeding the distinct-reference cap rejects the item (fail closed).
+    const seen = new Set<string>()
+    const sourceFields: string[] = []
+    item.sourceRefIndexes.forEach((index, indexPosition) => {
       if (typeof index !== 'number' || !Number.isInteger(index) || !Number.isFinite(index) || index < 0 || index >= paths.length) throw new ProviderSourceRefIndexesError(`${location}.sourceRefIndexes[${indexPosition}]`, index, 'must be an in-range integer')
-      return paths[index]
+      const path = paths[index]
+      if (seen.has(path)) return
+      seen.add(path)
+      sourceFields.push(path)
     })
+    if (sourceFields.length > MAX_SOURCE_REFS_PER_ITEM) throw new ProviderSourceRefIndexesError(`${location}.sourceRefIndexes`, item.sourceRefIndexes, `must not reference more than ${MAX_SOURCE_REFS_PER_ITEM} distinct sources`)
     const { sourceRefIndexes: _, ...rest } = item; void _
     return { ...rest, sourceFields }
   })
@@ -77,6 +89,9 @@ export function decodeProviderSourceRefIndexes(
   }
 
   validateContextualSourceFields(paths, parsed)
+  // R4: citations exist only as decoded sourceFields — free text must not
+  // surface bare index tokens like "(0)" or the transport field name.
+  validateNoIndexReferenceTokens(parsed, paths.length)
 
   const result = parsed as DecodedAdvisorOutput
   Object.defineProperty(result, 'stepMismatch', {
