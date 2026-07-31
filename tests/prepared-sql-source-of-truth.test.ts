@@ -253,12 +253,47 @@ describe('Dormant decision-persistence flag', () => {
     expect(rollback).toContain('STELLA_DECISIONS_PERSISTENCE_ENABLED')
   })
 
-  // BLOCKED, not forgotten: adding STELLA_DECISIONS_PERSISTENCE_ENABLED=false to
-  // .env.example is required by the G2 hardening scope, but the campaign's own
-  // harness deny-list (D-002, which covers `.env*`) prevents this agent from
-  // reading or writing that file. Lorenzo must add it manually; then replace
-  // this todo with the assertion below:
-  //   const env = readRoot('.env.example')
-  //   expect(env).toMatch(/^STELLA_DECISIONS_PERSISTENCE_ENABLED=false$/m)
-  it.todo('is documented in .env.example — pending manual edit, see STELLA_G2_PRE_EXECUTION_HARDENING_RESULT')
+  // Lorenzo added this manually — the harness deny-list (D-002, which covers
+  // `.env*`) blocks this agent from reading or writing that file directly, so
+  // it could only be documented as a blocked it.todo until he did.
+  it('is documented in .env.example: present once, value exactly false, fail-closed', () => {
+    const env = readRoot('.env.example')
+    const KEY = 'STELLA_DECISIONS_PERSISTENCE_ENABLED'
+
+    // Present, anchored: no leading/trailing whitespace, no quotes, no other
+    // value ('true', '1', 'yes', ...) — only a bare `false` satisfies
+    // lib/stella/config.ts's `=== 'true'` fail-closed comparison as intended.
+    expect(env).toMatch(new RegExp(`^${KEY}=false$`, 'm'))
+
+    // Exactly one entry — a duplicate (even a second one also set to false)
+    // would be confusing drift in a file meant to be copied verbatim.
+    const occurrences = env.match(new RegExp(`^${KEY}=`, 'gm')) ?? []
+    expect(occurrences).toHaveLength(1)
+
+    // No ambiguous or secret-shaped value anywhere near the key — catches a
+    // stray edit that widened the line to `KEY=false  # some real value` or
+    // pasted a token instead of the boolean.
+    // .replace strips a trailing \r: this repo's tracked files are CRLF.
+    const line = env.split('\n').find((l) => l.startsWith(`${KEY}=`))?.replace(/\r$/, '')
+    expect(line).toBe(`${KEY}=false`)
+    // Check only the VALUE side for an opaque token — the key name itself is
+    // 37 chars and would false-positive against a length-based check.
+    expect(line?.split('=')[1]).not.toMatch(/[A-Za-z0-9_-]{6,}/)
+
+    // The four required explanatory comments immediately precede the key.
+    const idx = env.indexOf(`${KEY}=`)
+    const preamble = env.slice(0, idx)
+    const commentBlock = preamble.slice(preamble.lastIndexOf('\n\n') + 1)
+    expect(commentBlock).toMatch(/false por defecto/i)
+    // [\s\S] instead of the `s` (dotAll) flag: the tsconfig target predates ES2018.
+    expect(commentBlock).toMatch(/no activar antes[\s\S]*G2[\s\S]*G3/i)
+    expect(commentBlock).toMatch(/gate posterior/i)
+    expect(commentBlock).toMatch(/no contiene secretos|no es (un )?secreto/i)
+
+    // Production stays fail-closed regardless of what the template says: the
+    // template documents a default, but lib/stella/config.ts is what actually
+    // enforces it, and only the literal string 'true' flips it on.
+    const config = readRoot('lib', 'stella', 'config.ts')
+    expect(config).toMatch(/isDecisionsPersistenceEnabled:\s*process\.env\.STELLA_DECISIONS_PERSISTENCE_ENABLED === 'true'/)
+  })
 })
