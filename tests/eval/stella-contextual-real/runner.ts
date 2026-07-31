@@ -2,7 +2,7 @@ import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contex
 import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError, InternalSchemaValidationError } from '@/lib/stella/context/decode-provider-source-ref-indexes'
 import { ContextualSourceFieldsValidationError } from '@/lib/stella/context/validate-contextual-source-fields'
 import { buildAdvisorContextualUserMessage } from '@/lib/stella/prompts/advisor-contextual-system'
-import { detectMethodologySafety, detectNumericIntegrity } from '../stella-contextual/harness'
+import { runAdvisorOutputTextDetectors } from '../stella-contextual/harness'
 import { resolvePacingMilliseconds, selectRealRunnerCases, validateRealRunnerAuthorization, validateRuntimeGuards } from './guards'
 import type { ContextualProvider, DecodedResult, RawResponse, RealRunnerStatus, RealRunnerSummary, RunnerRuntime, SafeErrorCategory, SafeRunError } from './types'
 import type { ContextualMockCase } from '../stella-contextual/cases'
@@ -162,17 +162,19 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
         await checkpoint(item.caseId, 'RUNNING')
         continue
       }
-      try {
+      {
+        // U9: detectors run over ALL text fields, not only the summary.
         const decoded = decodedResults[decodedIndex]
-        detectMethodologySafety(decoded.output.summary, item.context)
-        detectNumericIntegrity(decoded.output.summary, item.context)
-        decodedResults[decodedIndex] = { ...decoded, safety: 'passed', numericIntegrity: 'passed' }
-        caseState = transitionCase(caseState, item.caseId, 'SUCCEEDED')
-        await checkpoint(item.caseId, 'RUNNING')
-      } catch {
-        recordError('SAFETY_ERROR', item.caseId)
-        caseState = transitionCase(caseState, item.caseId, 'FAILED')
-        await checkpoint(item.caseId, 'RUNNING')
+        const detectors = runAdvisorOutputTextDetectors(decoded.output, item.context)
+        if (detectors.safety === 'passed' && detectors.numericIntegrity === 'passed') {
+          decodedResults[decodedIndex] = { ...decoded, safety: 'passed', numericIntegrity: 'passed' }
+          caseState = transitionCase(caseState, item.caseId, 'SUCCEEDED')
+          await checkpoint(item.caseId, 'RUNNING')
+        } else {
+          recordError(detectors.safety !== 'passed' ? 'SAFETY_ERROR' : 'NUMERIC_INTEGRITY_ERROR', item.caseId)
+          caseState = transitionCase(caseState, item.caseId, 'FAILED')
+          await checkpoint(item.caseId, 'RUNNING')
+        }
       }
       continue
     }
@@ -209,7 +211,12 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     }
     decodedResults.push({ caseId: item.caseId, output, canonicalValidation: 'passed', safety: 'pending', schemaContract: 'passed', numericIntegrity: 'pending', requiresHumanReview: true })
     caseState = transitionCase(caseState, item.caseId, 'DECODED'); await checkpoint(item.caseId, 'RUNNING')
-    try { detectMethodologySafety(output.summary, item.context); detectNumericIntegrity(output.summary, item.context) } catch { recordError('SAFETY_ERROR', item.caseId); caseState = transitionCase(caseState, item.caseId, 'FAILED'); await checkpoint(item.caseId, 'FAILED'); throw fail('SAFETY_ERROR') }
+    // U9: detectors run over ALL text fields, not only the summary.
+    const detectors = runAdvisorOutputTextDetectors(output, item.context)
+    if (detectors.safety !== 'passed' || detectors.numericIntegrity !== 'passed') {
+      const category: SafeErrorCategory = detectors.safety !== 'passed' ? 'SAFETY_ERROR' : 'NUMERIC_INTEGRITY_ERROR'
+      recordError(category, item.caseId); caseState = transitionCase(caseState, item.caseId, 'FAILED'); await checkpoint(item.caseId, 'FAILED'); throw fail(category)
+    }
     decodedResults[decodedResults.length - 1] = { ...decodedResults[decodedResults.length - 1], safety: 'passed', numericIntegrity: 'passed' }
     caseState = transitionCase(caseState, item.caseId, 'SUCCEEDED'); await checkpoint(item.caseId, 'RUNNING')
   }
@@ -219,6 +226,16 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     caseState = { ...caseState, checkpointSequence: caseState.checkpointSequence + 1 }
     await checkpoint(null, 'COMPLETED_PENDING_HUMAN_REVIEW', 'FINAL')
   }
-  return { rawResponses, decodedResults, errors, caseState, summary: { runId: options.runId ?? 'dry-run-local', scope: selection.scope, status: 'COMPLETED_PENDING_HUMAN_REVIEW', totalCases: processed, processedCases: processed, uniqueCaseIds: processed, duplicateCaseIds: 0, missingCaseIds: selection.scope === 'full' ? 0 : 28 - processed, schemaValidCases: decodedResults.length, schemaInvalidCases: Math.max(0, rawResponses.length - decodedResults.length), invalidSourceFields: metrics.invalidSourceFields, providerSourceFieldsProperties: metrics.providerSourceFieldsProperties, providerStringReferenceValues: metrics.providerStringReferenceValues, providerAliases: metrics.providerAliases, providerCanonicalPaths: metrics.providerCanonicalPaths, providerSFReferences: metrics.providerSFReferences, invalidIndexes: metrics.invalidIndexes, providerStepMismatches: metrics.providerStepMismatches, internalCanonicalDecodingCases: decodedResults.length, requiresHumanReviewCases: decodedResults.filter((result) => result.requiresHumanReview).length, safetyScore: 2, schemaContractScore: 2, numericIntegrityScore: 2, adversarialCasesPassed: selection.cases.filter((item) => item.category === 'adversarial').length, providerCalls, providerResponsesReceived: rawResponses.length, expectedCalls, failedCalls: deriveCaseState(caseState).failedCaseIds.length, successfulResponses: decodedResults.length, failedResponses: deriveCaseState(caseState).failedCaseIds.length, startedAt, completedAt, durationMilliseconds: 0, eligibleForGate: false, humanReviewStatus: 'NOT_STARTED' } }
+  // U9: scores are computed from actual detector/decoding results — never
+  // hardcoded. Gate semantics stay intact: eligibleForGate is always false
+  // and human review is always required.
+  const schemaInvalidCases = Math.max(0, rawResponses.length - decodedResults.length)
+  const safetyViolationCount = errors.filter((item) => item.category === 'SAFETY_ERROR').length
+  const numericViolationCount = errors.filter((item) => item.category === 'NUMERIC_INTEGRITY_ERROR').length
+  const safetyScore = safetyViolationCount === 0 ? 2 : 0
+  const numericIntegrityScore = numericViolationCount === 0 ? 2 : 0
+  const schemaContractScore = schemaInvalidCases === 0 ? 2 : 0
+  const adversarialCasesPassed = selection.cases.filter((item) => item.category === 'adversarial' && caseState.phases[item.caseId] === 'SUCCEEDED').length
+  return { rawResponses, decodedResults, errors, caseState, summary: { runId: options.runId ?? 'dry-run-local', scope: selection.scope, status: 'COMPLETED_PENDING_HUMAN_REVIEW', totalCases: processed, processedCases: processed, uniqueCaseIds: processed, duplicateCaseIds: 0, missingCaseIds: selection.scope === 'full' ? 0 : 28 - processed, schemaValidCases: decodedResults.length, schemaInvalidCases, invalidSourceFields: metrics.invalidSourceFields, providerSourceFieldsProperties: metrics.providerSourceFieldsProperties, providerStringReferenceValues: metrics.providerStringReferenceValues, providerAliases: metrics.providerAliases, providerCanonicalPaths: metrics.providerCanonicalPaths, providerSFReferences: metrics.providerSFReferences, invalidIndexes: metrics.invalidIndexes, providerStepMismatches: metrics.providerStepMismatches, internalCanonicalDecodingCases: decodedResults.length, requiresHumanReviewCases: decodedResults.filter((result) => result.requiresHumanReview).length, safetyScore, schemaContractScore, numericIntegrityScore, adversarialCasesPassed, providerCalls, providerResponsesReceived: rawResponses.length, expectedCalls, failedCalls: deriveCaseState(caseState).failedCaseIds.length, successfulResponses: decodedResults.length, failedResponses: deriveCaseState(caseState).failedCaseIds.length, startedAt, completedAt, durationMilliseconds: 0, eligibleForGate: false, humanReviewStatus: 'NOT_STARTED' } }
 }
 
