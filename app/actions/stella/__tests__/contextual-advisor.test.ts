@@ -440,6 +440,35 @@ describe('getStellaContextualAdvisor server action', () => {
       expect(serialized).not.toContain('community wellbeing')
     })
 
+    // WS3c U2 (RK-19): provider step mismatches are observable — warned and audited.
+    it('warns and audits stepMismatch when the provider returned a different step', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      setupSuccessfulCall()
+      // Requested step 'narrative'; provider answers the Spanish label.
+      mockGenerateResolves('narrativa')
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+      expect(warnSpy).toHaveBeenCalledWith('[stella] provider step mismatch', { step: 'narrative' })
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked.afterJson.stepMismatch).toBe(true)
+      warnSpy.mockRestore()
+    })
+
+    it('does not warn nor audit stepMismatch when the provider step matches', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      setupSuccessfulCall()
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+      expect(warnSpy).not.toHaveBeenCalledWith('[stella] provider step mismatch', expect.anything())
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked.afterJson).not.toHaveProperty('stepMismatch')
+      warnSpy.mockRestore()
+    })
+
     // WS3c U1 (RK-08): audit metadata carries the sensitive-populations flag.
     it('logs sensitivePopulations metadata (flag + categories) when the context detected them', async () => {
       setupSuccessfulCall()

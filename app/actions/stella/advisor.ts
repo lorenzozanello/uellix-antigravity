@@ -160,6 +160,14 @@ export async function getStellaContextualAdvisor(
     }
 
     const result = await runContextualAdvisor(step, context, getGeminiAdapter())
+
+    // RK-19: provider step drift is canonicalized inside the pipeline, but it
+    // must be observable — warn (metadata only: the trusted step name) and
+    // tag the audit row below.
+    if (result.ok && result.stepMismatch) {
+      console.warn('[stella] provider step mismatch', { step })
+    }
+
     if (!result.ok) {
       // Model-path failure surfaced as a typed result — report to Sentry with
       // codes/ids only (the typed messages are static, never prompt echoes).
@@ -205,6 +213,8 @@ export async function getStellaContextualAdvisor(
         // RK-08: metadata only — flags that the heightened-care notice applied.
         sensitivePopulations: context.sensitivePopulations?.detected ?? false,
         sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+        // RK-19: only present when the provider answered a different step.
+        ...(result.stepMismatch ? { stepMismatch: true } : {}),
       },
     })
 
