@@ -50,11 +50,15 @@ function findViolations(pattern: RegExp): string[] {
 
 describe('Stella Anti-Regression: Critical Guardrails', () => {
   describe('NEVER: Calculate SROI or modify deterministic logic', () => {
+    // FIX 5 (audit): the pattern catches EVERY module-reference form —
+    // static `import ... from`, dynamic `import(...)` (incl. `await import`),
+    // `require(...)`, and `export * / export {..} from` re-exports — for any
+    // path spelling (relative or the `@/lib/pipeline/...` alias, both quote
+    // styles). Any quoted specifier containing pipeline/sroi-* is a violation.
+    const sroiImportPattern =
+      /(?:from\s*['"]|import\s*\(\s*['"]|require\s*\(\s*['"])[^'"]*pipeline\/(?:sroi-calculation|sroi-sensitivity|sroi-funders)/
+
     it('should not import SROI calculation functions (real source scan)', () => {
-      // No lib/stella module may import/require the deterministic SROI engine:
-      // lib/pipeline/sroi-calculation, sroi-sensitivity or sroi-funders.
-      const sroiImportPattern =
-        /(?:import[\s\S]{0,200}?from\s*['"]|require\(\s*['"])[^'"]*pipeline\/(?:sroi-calculation|sroi-sensitivity|sroi-funders)/
       expect(findViolations(sroiImportPattern)).toEqual([])
     })
 
@@ -66,12 +70,21 @@ describe('Stella Anti-Regression: Critical Guardrails', () => {
       expect(files.some((f) => f.replace(/\\/g, '/').endsWith('adapter/gemini-client.ts'))).toBe(true)
     })
 
-    it('the source scan would actually fail on a violating import', () => {
-      const sroiImportPattern =
-        /(?:import[\s\S]{0,200}?from\s*['"]|require\(\s*['"])[^'"]*pipeline\/(?:sroi-calculation|sroi-sensitivity|sroi-funders)/
-      const violatingSource = `import { calculateSroi } from '@/lib/pipeline/sroi-calculation'`
-      expect(sroiImportPattern.test(violatingSource)).toBe(true)
+    it('the source scan would actually fail on every violating import form', () => {
+      // Static import — relative and alias paths
+      expect(sroiImportPattern.test(`import { calculateSroi } from '@/lib/pipeline/sroi-calculation'`)).toBe(true)
+      expect(sroiImportPattern.test(`import x from "../../pipeline/sroi-sensitivity"`)).toBe(true)
+      // require()
       expect(sroiImportPattern.test(`const x = require('../../pipeline/sroi-funders')`)).toBe(true)
+      // Dynamic import — incl. await import
+      expect(sroiImportPattern.test(`const mod = await import('@/lib/pipeline/sroi-calculation')`)).toBe(true)
+      expect(sroiImportPattern.test(`import('../pipeline/sroi-funders').then(run)`)).toBe(true)
+      // Re-exports
+      expect(sroiImportPattern.test(`export * from '@/lib/pipeline/sroi-calculation'`)).toBe(true)
+      expect(sroiImportPattern.test(`export { calculateSroi } from '../../pipeline/sroi-calculation'`)).toBe(true)
+      // Non-violations stay clean
+      expect(sroiImportPattern.test(`import { db } from '@/db/client'`)).toBe(false)
+      expect(sroiImportPattern.test(`// mentions pipeline/sroi-calculation in prose only`)).toBe(false)
     })
 
     it('should not include SROI formula in prompts', () => {
@@ -130,23 +143,44 @@ describe('Stella Anti-Regression: Critical Guardrails', () => {
   describe('NEVER: Write to database without explicit user action', () => {
     // The only allowed DB writers are the server actions in app/actions/stella/*.
     // lib/stella modules may READ (context builders, quota) but never write.
-    // Matches db.insert( / db.update( / db.delete( — deliberately NOT bare
-    // `.update(` so crypto createHash().update() stays allowed (reads are fine,
-    // the boundary is writes).
-    const dbWritePattern = /\bdb\s*\.\s*(?:insert|update|delete)\s*\(/
+    //
+    // FIX 6 (audit): two complementary patterns.
+    //  - `.insert(` on ANY receiver — no JS stdlib method is named insert, so
+    //    a bare-receiver match has no false positives and catches every alias.
+    //  - `.update(` / `.delete(` only on db-ish receivers (db, tx, trx,
+    //    transaction, client, dbClient, database, getDb()) — a bare-receiver
+    //    match would false-positive on createHash().update() and Map/Set
+    //    .delete(), so those receivers stay allowlisted by omission.
+    const anyInsertPattern = /\.\s*insert\s*\(/
+    const dbWritePattern =
+      /(?:\b(?:db|tx|trx|transaction|client|dbclient|database)\b|getDb\s*\(\s*\))\s*\.\s*(?:update|delete)\s*\(/i
 
     it('no lib/stella module performs a direct DB write (real source scan)', () => {
+      expect(findViolations(anyInsertPattern)).toEqual([])
       expect(findViolations(dbWritePattern)).toEqual([])
     })
 
-    it('the DB-write scan would actually fail on a violation', () => {
-      expect(dbWritePattern.test(`await db.insert(stellaInteractions).values({})`)).toBe(true)
+    it('the DB-write scan would actually fail on a violation (incl. tx/getDb aliases)', () => {
+      // insert — any receiver
+      expect(anyInsertPattern.test(`await db.insert(stellaInteractions).values({})`)).toBe(true)
+      expect(anyInsertPattern.test(`await tx.insert(runs).values({})`)).toBe(true)
+      expect(anyInsertPattern.test(`await getDb().insert(runs).values({})`)).toBe(true)
+      expect(anyInsertPattern.test(`await someAlias.insert(rows)`)).toBe(true)
+      // update/delete — db-ish receivers, incl. tx and getDb() variants
       expect(dbWritePattern.test(`await db.update(projects).set({})`)).toBe(true)
-      expect(dbWritePattern.test(`await db.delete(evidence)`)).toBe(true)
+      expect(dbWritePattern.test(`await tx.update(projects).set({})`)).toBe(true)
+      expect(dbWritePattern.test(`await trx.delete(evidence)`)).toBe(true)
+      expect(dbWritePattern.test(`await transaction.delete(evidence)`)).toBe(true)
+      expect(dbWritePattern.test(`await getDb().update(projects).set({})`)).toBe(true)
+      expect(dbWritePattern.test(`await dbClient.delete(evidence)`)).toBe(true)
       // Reading stays allowed:
       expect(dbWritePattern.test(`await db.select().from(projects)`)).toBe(false)
+      expect(anyInsertPattern.test(`await db.select().from(projects)`)).toBe(false)
       // crypto hash update stays allowed:
       expect(dbWritePattern.test(`createHash('sha256').update(input).digest('hex')`)).toBe(false)
+      // Map/Set delete stays allowed:
+      expect(dbWritePattern.test(`seen.delete(key)`)).toBe(false)
+      expect(dbWritePattern.test(`counts.delete(kind)`)).toBe(false)
     })
   })
 

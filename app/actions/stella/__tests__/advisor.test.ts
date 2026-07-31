@@ -411,12 +411,19 @@ describe('getStellaAdvisor server action', () => {
 
     it('returns PAYLOAD_TOO_LARGE on StellaPayloadTooLargeError from the adapter', async () => {
       setupSuccessfulCall()
+      mockBuildAdvisorUserMessage.mockReturnValue('USER_CANARY_prompt cédula 1.234.567.890')
       mockAdapterGenerate.mockRejectedValue(new StellaPayloadTooLargeError(150000, 120000))
 
       const result = await getStellaAdvisor('proj-1', 'narrative')
 
       expect(result.ok).toBe(false)
-      if (!result.ok) expect(result.error).toBe('PAYLOAD_TOO_LARGE')
+      if (!result.ok) {
+        expect(result.error).toBe('PAYLOAD_TOO_LARGE')
+        // Audit pin: the user-facing message is static — it never echoes
+        // prompt content back to the caller.
+        expect(result.message).not.toContain('USER_CANARY_prompt')
+        expect(result.message).not.toContain('1.234.567.890')
+      }
     })
 
     it('returns UNSUPPORTED_STEP when context builder rejects for calculation', async () => {
