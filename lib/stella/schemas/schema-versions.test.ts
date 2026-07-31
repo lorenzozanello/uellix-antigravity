@@ -103,4 +103,31 @@ describe('schema contract versions (docs/20_STELLA_ROLE_CONTRACTS.md)', () => {
     expect(ValidatorOutputSchema.shape.requires_human_review.parse(true)).toBe(true)
     expect(ReviewerOutputSchema.shape.requires_human_review.parse(true)).toBe(true)
   })
+
+  // FIX 2 (audit): pin the decision-carrying enum vocabularies, not only the
+  // key sets — widening/narrowing risk_level or responseType is a contract
+  // change and must force a conscious version bump.
+  it('enum vocabularies are pinned per version', () => {
+    expect(ValidatorOutputSchema.shape.risk_level.options).toEqual(['low', 'medium', 'high'])
+    expect(ReviewerOutputSchema.shape.risk_level.options).toEqual(['low', 'medium', 'high'])
+    expect(AdvisorContextualOutputSchema.shape.responseType.options).toEqual([
+      'explanation',
+      'review',
+      'reformulation',
+      'gap_analysis',
+    ])
+    expect(AdvisorContextualOutputSchema.shape.findings.element.shape.severity.options).toEqual([
+      'info',
+      'warning',
+    ])
+    expect(AdvisorContextualOutputSchema.shape.step.options).toEqual([
+      'stakeholders',
+      'outcomes',
+      'narrative',
+      'indicators',
+      'evidence',
+      'proxies',
+      'calculation',
+    ])
+  })
 })

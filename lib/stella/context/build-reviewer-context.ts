@@ -22,6 +22,7 @@ import {
   outcomeProxyAssignments,
   financialProxies,
   proxySources,
+  outcomes,
   evidenceItems,
   sroiRunReviews,
 } from '@/db/schema'
@@ -37,8 +38,10 @@ export type ReviewerRole = 'proxy_reviewer' | 'evidence_reviewer' | 'audit_assis
 
 /**
  * Proxy enrichment for the proxy_reviewer: value + currency, source name and
- * domain-only URL, reference year and approval (review) status. Never the full
- * source URL (path/query could carry tokens or tracking), never descriptions.
+ * domain-only URL, reference year, approval (review) status, and the outcome
+ * this assignment values (id + sanitized title) so appropriateness claims are
+ * groundable. Never the full source URL (path/query could carry tokens or
+ * tracking), never descriptions or justifications.
  */
 export interface ReviewerProxyDetail {
   id: string
@@ -53,6 +56,10 @@ export interface ReviewerProxyDetail {
   approvalStatus: string
   confidenceLevel: 'high' | 'medium' | 'low' | null
   methodologicalRisk: 'low' | 'medium' | 'high' | null
+  /** Outcome this assignment values (outcome_proxy_assignments.outcome_id). */
+  outcomeId: string
+  /** Sanitized outcome title — never the outcome description. */
+  outcomeTitle: string
 }
 
 /**
@@ -69,6 +76,11 @@ export interface ReviewerEvidenceDetail {
   confidenceScore: number | null
   outcomeId: string | null
   indicatorId: string | null
+  /**
+   * Sanitized title of the linked outcome (null when unlinked) — per-outcome
+   * coverage claims need more grounding than a boolean.
+   */
+  relatedOutcomeTitle: string | null
   createdAt: string
 }
 
@@ -90,6 +102,15 @@ export interface ReviewerContext extends StellaProjectContext {
   proxyDetails?: ReviewerProxyDetail[]
   evidenceDetails?: ReviewerEvidenceDetail[]
   runReviewSummary?: ReviewerRunReviewSummary
+}
+
+/**
+ * Sanitize a free-text label for the model: injection-bearing values are
+ * replaced by a fixed placeholder (same policy as evidence titles), clean
+ * values are control-char-stripped and truncated.
+ */
+function sanitizeLabel(value: string, placeholder: string, maxLength: number): string {
+  return hasForbiddenPattern(value) ? placeholder : sanitizeString(value, maxLength)
 }
 
 /**
@@ -124,10 +145,13 @@ async function buildProxyDetails(
       methodologicalRisk: financialProxies.methodologicalRisk,
       sourceName: proxySources.name,
       sourceUrl: proxySources.url,
+      outcomeId: outcomeProxyAssignments.outcomeId,
+      outcomeTitle: outcomes.title,
     })
     .from(outcomeProxyAssignments)
     .innerJoin(financialProxies, eq(financialProxies.id, outcomeProxyAssignments.proxyId))
     .innerJoin(proxySources, eq(proxySources.id, financialProxies.sourceId))
+    .innerJoin(outcomes, eq(outcomes.id, outcomeProxyAssignments.outcomeId))
     .where(
       and(
         eq(outcomeProxyAssignments.projectId, projectId),
@@ -138,16 +162,18 @@ async function buildProxyDetails(
 
   return rows.map((row) => ({
     id: row.proxyId,
-    name: sanitizeString(row.name, 200),
+    name: sanitizeLabel(row.name, '[Proxy]', 200),
     value: row.value ?? null,
     currency: row.currency ?? null,
-    sourceName: sanitizeString(row.sourceName, 150),
+    sourceName: sanitizeLabel(row.sourceName, '[Fuente]', 150),
     sourceUrlDomain: extractUrlDomain(row.sourceUrl),
     referenceYear: row.referenceYear ?? null,
     approvalStatus: row.reviewStatus,
     confidenceLevel: (row.confidenceLevel as ReviewerProxyDetail['confidenceLevel']) ?? null,
     methodologicalRisk:
       (row.methodologicalRisk as ReviewerProxyDetail['methodologicalRisk']) ?? null,
+    outcomeId: row.outcomeId,
+    outcomeTitle: sanitizeLabel(row.outcomeTitle, '[Outcome]', 200),
   }))
 }
 
@@ -166,17 +192,19 @@ async function buildEvidenceDetails(
       confidenceScore: evidenceItems.confidenceScore,
       outcomeId: evidenceItems.outcomeId,
       indicatorId: evidenceItems.indicatorId,
+      relatedOutcomeTitle: outcomes.title,
       createdAt: evidenceItems.createdAt,
       // filePath intentionally excluded — never send storage paths to Gemini
     })
     .from(evidenceItems)
+    .leftJoin(outcomes, eq(outcomes.id, evidenceItems.outcomeId))
     .where(
       and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.organizationId, organizationId))
     )
 
   return rows.map((row) => ({
     id: row.id,
-    title: hasForbiddenPattern(row.title) ? '[Evidence item]' : sanitizeString(row.title, 150),
+    title: sanitizeLabel(row.title, '[Evidence item]', 150),
     type: row.type as ReviewerEvidenceDetail['type'],
     status: row.status as ReviewerEvidenceDetail['status'],
     integrityVerified: row.integrityVerified ?? null,
@@ -184,6 +212,9 @@ async function buildEvidenceDetails(
     confidenceScore: row.confidenceScore ?? null,
     outcomeId: row.outcomeId ?? null,
     indicatorId: row.indicatorId ?? null,
+    relatedOutcomeTitle: row.relatedOutcomeTitle
+      ? sanitizeLabel(row.relatedOutcomeTitle, '[Outcome]', 200)
+      : null,
     createdAt: row.createdAt.toISOString(),
   }))
 }
@@ -220,9 +251,9 @@ async function buildRunReviewSummary(
  * the enrichment depends on the role:
  *
  * - proxy_reviewer    → proxyDetails (value/currency, source name + domain,
- *                       reference year, approval status)
+ *                       reference year, approval status, assigned outcome)
  * - evidence_reviewer → evidenceDetails (integrityVerified/-At, confidence
- *                       score, status, linkage)
+ *                       score, status, linkage incl. outcome title)
  * - audit_assistant   → runReviewSummary (sroi_run_reviews roll-up) on top of
  *                       the calculation snapshot the base already carries
  *

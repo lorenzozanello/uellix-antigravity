@@ -131,6 +131,7 @@ export function buildFixtureGroundedEvidenceReviewerCase(): RoleEvalCase {
         confidenceScore: extraction.lineaBaseConfidenceScore,
         outcomeId: 'out-tiempo',
         indicatorId: 'ind-horas',
+        relatedOutcomeTitle: 'Reducción del tiempo semanal de acceso a agua',
         createdAt: '2026-02-01T00:00:00.000Z',
       },
       {
@@ -143,6 +144,7 @@ export function buildFixtureGroundedEvidenceReviewerCase(): RoleEvalCase {
         confidenceScore: null,
         outcomeId: null,
         indicatorId: null,
+        relatedOutcomeTitle: null,
         createdAt: '2026-05-01T00:00:00.000Z',
       },
     ],

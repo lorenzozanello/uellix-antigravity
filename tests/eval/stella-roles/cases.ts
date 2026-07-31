@@ -117,6 +117,8 @@ const PROXY_DETAILS: ReviewerContext['proxyDetails'] = [
     approvalStatus: 'approved',
     confidenceLevel: 'high',
     methodologicalRisk: 'low',
+    outcomeId: 'out-agua',
+    outcomeTitle: 'Reducción del tiempo semanal de acceso a agua',
   },
   {
     id: 'proxy-2',
@@ -129,6 +131,8 @@ const PROXY_DETAILS: ReviewerContext['proxyDetails'] = [
     approvalStatus: 'pending_review',
     confidenceLevel: null,
     methodologicalRisk: 'medium',
+    outcomeId: 'out-gasto',
+    outcomeTitle: 'Reducción del gasto mensual en agua',
   },
 ]
 
@@ -143,6 +147,7 @@ const EVIDENCE_DETAILS: ReviewerContext['evidenceDetails'] = [
     confidenceScore: 85,
     outcomeId: 'out-agua',
     indicatorId: 'ind-horas',
+    relatedOutcomeTitle: 'Reducción del tiempo semanal de acceso a agua',
     createdAt: '2026-03-01T00:00:00.000Z',
   },
   {
@@ -155,6 +160,7 @@ const EVIDENCE_DETAILS: ReviewerContext['evidenceDetails'] = [
     confidenceScore: null,
     outcomeId: null,
     indicatorId: null,
+    relatedOutcomeTitle: null,
     createdAt: '2026-04-01T00:00:00.000Z',
   },
 ]
@@ -242,12 +248,12 @@ const REVIEWER_OUTPUT_PROXY = {
   summary: `Los proxies asignados son mayormente trazables; hay una brecha de documentación en el proxy interno. ${HUMAN_REVIEW_CLOSING}`,
   risk_level: 'medium',
   findings: [
-    '[LOW RISK] El proxy "Valor hora de trabajo no calificado" cuenta con fuente oficial (datos.dane.gov.co), año de referencia 2024 y estado aprobado.',
-    '[MEDIUM RISK] El proxy "Costo evitado de agua embotellada" no tiene año de referencia documentado, su fuente es un informe interno sin dominio verificable y sigue en estado pending_review.',
+    '[LOW RISK] El proxy "Valor hora de trabajo no calificado" cuenta con fuente oficial (datos.dane.gov.co), año de referencia 2024 y estado aprobado, y su asignación al outcome de reducción del tiempo semanal de acceso a agua parece apropiada para monetizar tiempo liberado.',
+    '[MEDIUM RISK] El proxy "Costo evitado de agua embotellada", asignado al outcome de reducción del gasto mensual en agua, no tiene año de referencia documentado, su fuente es un informe interno sin dominio verificable y sigue en estado pending_review.',
   ],
   recommendations: [
     'Documentar el año de referencia y la fuente verificable del proxy interno antes de usarlo externamente.',
-    'Que la persona responsable resuelva el estado pending_review del proxy interno.',
+    'Que la persona responsable resuelva el estado pending_review del proxy interno asignado al outcome de gasto.',
   ],
   requires_human_review: true,
 }
@@ -256,9 +262,9 @@ const REVIEWER_OUTPUT_EVIDENCE = {
   summary: `La evidencia de línea base es sólida; los testimonios carecen de verificación de integridad. ${HUMAN_REVIEW_CLOSING}`,
   risk_level: 'medium',
   findings: [
-    '[LOW RISK] "Línea base hogares 2025" tiene integridad verificada, puntaje de confianza alto y vínculo con outcome e indicador.',
+    '[LOW RISK] "Línea base hogares 2025" tiene integridad verificada, puntaje de confianza alto y vínculo con el outcome de reducción del tiempo semanal de acceso a agua.',
     '[MEDIUM RISK] "Testimonios de hogares" no tiene verificación de integridad ni puntaje de confianza, sigue en under_review y no está vinculado a ningún outcome.',
-    '[MEDIUM RISK] El outcome de reducción del gasto mensual no cuenta con evidencia vinculada que lo respalde.',
+    '[MEDIUM RISK] La única evidencia con vínculo corresponde al outcome de tiempo de acceso; el outcome de reducción del gasto mensual no cuenta con evidencia vinculada que lo respalde.',
   ],
   recommendations: [
     'Verificar la integridad de los testimonios o documentar por qué no aplica.',
@@ -273,6 +279,7 @@ const REVIEWER_OUTPUT_AUDIT = {
   findings: [
     '[MEDIUM RISK] La revisión humana más reciente del cálculo tiene estado flagged con puntaje de preparación 72; los hallazgos de esa revisión deben resolverse primero.',
     '[LOW RISK] Outcomes, proxies, filtros y cálculo están presentes y son coherentes entre sí, según la información provista.',
+    '[LOW RISK] La narrativa declarada (filtros comunitarios que reducen tiempo de acarreo y gasto de los hogares) es coherente con los outcomes definidos y con el resultado calculado, según la información provista.',
     '[MEDIUM RISK] Parte de la evidencia sigue en revisión, lo que limita la preparación para auditoría externa.',
   ],
   recommendations: [

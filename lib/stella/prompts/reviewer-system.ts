@@ -28,31 +28,31 @@ export const REVIEWER_ROLE_CONFIG: Record<ReviewerRole, ReviewerRoleConfig> = {
   proxy_reviewer: {
     title: 'Revisor de Proxies',
     pipelineStep: 'Proxies',
-    mandate: `You review the project's financial proxies for methodological soundness. For each proxy you receive: name, value and currency, source name and source domain, reference year, approval status, confidence level and methodological risk, plus the project's adjustment filters. Focus on:
+    mandate: `You review the project's financial proxies for methodological soundness. For each proxy you receive: name, value and currency, source name and source domain, reference year, approval status, confidence level and methodological risk, and the assigned outcome (id and title), plus the project's adjustment filters. Focus on:
 - Source verifiability: does the source name/domain point to an official, documented source?
 - Reference year: is the reference year present and reasonably recent for the value claimed?
 - Approval status: is any proxy still suggested/pending_review while the analysis relies on it?
 - Confidence & methodological risk: are low-confidence or high-risk proxies flagged?
-- Value plausibility: does the recorded value and currency plausibly monetize the outcome it is assigned to? Never recalculate or propose a different value.
-- Over-claiming: any proxy that likely overstates the outcome's value?`,
+- Value plausibility: does the recorded value and currency plausibly monetize the assigned outcome (named per proxy)? Never recalculate or propose a different value.
+- Over-claiming: any proxy that likely overstates its assigned outcome's value?`,
   },
   evidence_reviewer: {
     title: 'Revisor de Evidencia',
     pipelineStep: 'Evidence',
-    mandate: `You review the project's evidence for traceability and sufficiency. For each evidence item you receive: title, type, status, integrity verification flag and date, confidence score, and outcome/indicator linkage, plus the outcome list. Focus on:
+    mandate: `You review the project's evidence for traceability and sufficiency. For each evidence item you receive: title, type, status, integrity verification flag and date, confidence score, and outcome/indicator linkage (linked outcome id and title per item), plus the outcome list. Focus on:
 - Integrity: for file evidence, is integrityVerified true and integrityVerifiedAt recorded?
 - Confidence: is the recorded confidence score consistent with the item's type and status?
 - Linkage: is evidence linked to the outcomes/indicators it supports?
-- Coverage gaps: which outcomes or indicators lack sufficient supporting evidence?
+- Coverage gaps: compare the outcome list against each item's linked outcome — which outcomes lack sufficient supporting evidence?
 - Status: is anything still in draft/under_review that a claim depends on?`,
   },
   audit_assistant: {
     title: 'Asistente de Auditoría',
     pipelineStep: 'Calculation',
-    mandate: `You assess the overall audit-readiness of the SROI analysis. You receive the project analysis state (outcomes, evidence, proxies, calculation state, readiness score) and the human run-review summary (review count, latest review status and readiness score). Focus on:
+    mandate: `You assess the overall audit-readiness of the SROI analysis. You receive the project analysis state (outcomes, evidence, proxies, calculation state, readiness score), the narrative summary, and the human run-review summary (review count, latest review status and readiness score). Focus on:
 - Trail completeness: are outcomes, evidence, proxies, filters and the calculation run all present and coherent?
 - Human review trail: has the latest calculation run been reviewed, and what does its latest status/readiness score indicate?
-- Consistency: does the narrative match the outcomes and the calculated result?
+- Consistency: does the narrative summary match the outcomes and the calculated result?
 - Readiness: what concrete gaps block external, audit-ready use?
 - Prioritization: order the most important issues to resolve first.`,
   },
@@ -113,6 +113,8 @@ export const REVIEWER_PROMPT_FIELD_CONTRACT: Record<
     { promptMention: 'approval status', payloadPath: 'proxies[].approvalStatus' },
     { promptMention: 'confidence level', payloadPath: 'proxies[].confidenceLevel' },
     { promptMention: 'methodological risk', payloadPath: 'proxies[].methodologicalRisk' },
+    { promptMention: 'assigned outcome (id and title)', payloadPath: 'proxies[].outcomeId' },
+    { promptMention: 'assigned outcome (id and title)', payloadPath: 'proxies[].outcomeTitle' },
     { promptMention: 'adjustment filters', payloadPath: 'adjustmentFilters[].attributionPct' },
   ],
   evidence_reviewer: [
@@ -120,6 +122,8 @@ export const REVIEWER_PROMPT_FIELD_CONTRACT: Record<
     { promptMention: 'integrity verification flag and date', payloadPath: 'evidence[].integrityVerifiedAt' },
     { promptMention: 'confidence score', payloadPath: 'evidence[].confidenceScore' },
     { promptMention: 'status', payloadPath: 'evidence[].status' },
+    { promptMention: 'linked outcome id and title per item', payloadPath: 'evidence[].outcomeId' },
+    { promptMention: 'linked outcome id and title per item', payloadPath: 'evidence[].relatedOutcomeTitle' },
     { promptMention: 'outcome/indicator linkage', payloadPath: 'evidence[].linkedToOutcome' },
     { promptMention: 'outcome/indicator linkage', payloadPath: 'evidence[].linkedToIndicator' },
     { promptMention: 'outcome list', payloadPath: 'outcomes[]' },
@@ -130,6 +134,7 @@ export const REVIEWER_PROMPT_FIELD_CONTRACT: Record<
     { promptMention: 'readiness score', payloadPath: 'runReviews.latestReadinessScore' },
     { promptMention: 'readiness score', payloadPath: 'projectAnalysisState.readinessScore' },
     { promptMention: 'calculation state', payloadPath: 'projectAnalysisState.sroiCalculated' },
+    { promptMention: 'narrative summary', payloadPath: 'narrativeSummary' },
   ],
 }
 
@@ -145,6 +150,8 @@ function legacyProxyRows(context: StellaProjectContext) {
     approvalStatus: 'unknown',
     confidenceLevel: p.confidenceLevel ?? 'unknown',
     methodologicalRisk: p.methodologicalRisk ?? 'unknown',
+    outcomeId: null as string | null,
+    outcomeTitle: null as string | null,
   }))
 }
 
@@ -157,6 +164,8 @@ function legacyEvidenceRows(context: StellaProjectContext) {
     integrityVerified: null as boolean | null,
     integrityVerifiedAt: null as string | null,
     confidenceScore: null as number | null,
+    outcomeId: e.outcomeId ?? null,
+    relatedOutcomeTitle: null as string | null,
     linkedToOutcome: Boolean(e.outcomeId),
     linkedToIndicator: Boolean(e.indicatorId),
   }))
@@ -193,6 +202,8 @@ export function buildReviewerUserMessage(
           approvalStatus: p.approvalStatus,
           confidenceLevel: p.confidenceLevel ?? 'unknown',
           methodologicalRisk: p.methodologicalRisk ?? 'unknown',
+          outcomeId: p.outcomeId,
+          outcomeTitle: sanitizeFreeText(p.outcomeTitle, 200),
         }))
       : legacyProxyRows(context)
     payload.adjustmentFilters = context.filterSetsSummary.map((f) => ({
@@ -210,12 +221,18 @@ export function buildReviewerUserMessage(
           integrityVerified: e.integrityVerified,
           integrityVerifiedAt: e.integrityVerifiedAt,
           confidenceScore: e.confidenceScore,
+          outcomeId: e.outcomeId,
+          relatedOutcomeTitle: e.relatedOutcomeTitle ? sanitizeFreeText(e.relatedOutcomeTitle, 200) : null,
           linkedToOutcome: Boolean(e.outcomeId),
           linkedToIndicator: Boolean(e.indicatorId),
         }))
       : legacyEvidenceRows(context)
     payload.outcomes = context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200))
   } else {
+    // Narrative summary is sanitized + PII-redacted upstream (sanitizeNarrative
+    // in the context builder); re-passed through sanitizeFreeText for defense
+    // in depth. Grounds the mandate's narrative-consistency bullet.
+    payload.narrativeSummary = sanitizeFreeText(context.narrativeSummary, 2000)
     payload.outcomes = context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200))
     payload.evidence = context.evidenceMetadata.map((e) => ({ title: sanitizeFreeText(e.title, 200), status: e.status }))
     payload.proxies = context.proxySummary.map((p) => ({

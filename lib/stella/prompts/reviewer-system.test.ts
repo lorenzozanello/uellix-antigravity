@@ -78,6 +78,8 @@ const enrichedContext: ReviewerContext = {
       approvalStatus: 'approved',
       confidenceLevel: 'high',
       methodologicalRisk: 'low',
+      outcomeId: 'out-1',
+      outcomeTitle: 'Reducción del tiempo de acceso a agua',
     },
   ],
   evidenceDetails: [
@@ -91,6 +93,7 @@ const enrichedContext: ReviewerContext = {
       confidenceScore: 85,
       outcomeId: 'out-1',
       indicatorId: 'ind-1',
+      relatedOutcomeTitle: 'Reducción del tiempo de acceso a agua',
       createdAt: '2026-03-01T00:00:00.000Z',
     },
   ],
@@ -170,6 +173,8 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
       sourceUrlDomain: 'datos.dane.gov.co',
       referenceYear: 2024,
       approvalStatus: 'approved',
+      outcomeId: 'out-1',
+      outcomeTitle: 'Reducción del tiempo de acceso a agua',
     })
   })
 
@@ -180,6 +185,8 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
       integrityVerified: true,
       integrityVerifiedAt: '2026-03-02T10:00:00.000Z',
       confidenceScore: 85,
+      outcomeId: 'out-1',
+      relatedOutcomeTitle: 'Reducción del tiempo de acceso a agua',
     })
   })
 
@@ -193,6 +200,11 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
     })
   })
 
+  it('audit_assistant payload carries the narrative summary (FIX 1c) — grounds the consistency mandate', () => {
+    const payload = extractPayload(buildReviewerUserMessage('audit_assistant', enrichedContext))
+    expect(payload.narrativeSummary).toBe('Acceso a agua segura en Isla Esperanza.')
+  })
+
   describe('legacy fallback (plain StellaProjectContext without enrichments)', () => {
     it('proxy_reviewer degrades to nulls instead of throwing', () => {
       const payload = extractPayload(buildReviewerUserMessage('proxy_reviewer', baseContext))
@@ -200,6 +212,8 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
       expect(proxies[0].sourceUrlDomain).toBeNull()
       expect(proxies[0].referenceYear).toBeNull()
       expect(proxies[0].approvalStatus).toBe('unknown')
+      expect(proxies[0].outcomeId).toBeNull()
+      expect(proxies[0].outcomeTitle).toBeNull()
     })
 
     it('evidence_reviewer degrades to nulls instead of throwing', () => {
@@ -208,6 +222,8 @@ describe('reviewer prompt ↔ context contract (RK-17)', () => {
       expect(evidence[0].integrityVerified).toBeNull()
       expect(evidence[0].confidenceScore).toBeNull()
       expect(evidence[0].linkedToOutcome).toBe(true)
+      expect(evidence[0].outcomeId).toBe('out-1')
+      expect(evidence[0].relatedOutcomeTitle).toBeNull()
     })
 
     it('audit_assistant reports an empty review trail instead of throwing', () => {

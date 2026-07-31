@@ -89,9 +89,9 @@ The prompt↔context mapping is formalized in `REVIEWER_PROMPT_FIELD_CONTRACT`
 
 | Aspect | Contract |
 |---|---|
-| Purpose | Flags proxy source verifiability, reference-year, approval-status, confidence/risk and over-claiming issues for a human reviewer. |
+| Purpose | Flags proxy source verifiability, reference-year, approval-status, confidence/risk, outcome-appropriateness and over-claiming issues for a human reviewer. |
 | Flag | `STELLA_ENABLED` + `STELLA_PROXY_REVIEWER_ENABLED` |
-| Inputs | Base `StellaProjectContext` **plus** `proxyDetails[]`: `name`, `value`, `currency`, `sourceName`, `sourceUrlDomain` (**hostname only — full URLs never sent**), `referenceYear`, `approvalStatus` (`financial_proxies.review_status`), `confidenceLevel`, `methodologicalRisk`; plus adjustment filters. Org-scoped through active `outcome_proxy_assignments`. |
+| Inputs | Base `StellaProjectContext` **plus** `proxyDetails[]`: `name`, `value`, `currency`, `sourceName`, `sourceUrlDomain` (**hostname only — full URLs never sent**), `referenceYear`, `approvalStatus` (`financial_proxies.review_status`), `confidenceLevel`, `methodologicalRisk`, `outcomeId` + `outcomeTitle` (the assigned outcome — grounds appropriateness claims; title sanitized, never descriptions/justifications); plus adjustment filters. Org-scoped through active `outcome_proxy_assignments`. Injection-bearing proxy/source/outcome names collapse to fixed placeholders (`[Proxy]`/`[Fuente]`/`[Outcome]`). |
 | Invariants | Never proposes a different proxy value; never approves; `requires_human_review` always true. |
 
 ### 5. `evidence_reviewer` — Revisor de Evidencia
@@ -100,7 +100,7 @@ The prompt↔context mapping is formalized in `REVIEWER_PROMPT_FIELD_CONTRACT`
 |---|---|
 | Purpose | Flags evidence integrity, confidence, linkage, coverage and status issues. |
 | Flag | `STELLA_ENABLED` + `STELLA_EVIDENCE_REVIEWER_ENABLED` |
-| Inputs | Base context **plus** `evidenceDetails[]`: `title`, `type`, `status`, `integrityVerified`, `integrityVerifiedAt`, `confidenceScore`, `outcomeId`/`indicatorId` linkage, `createdAt`. No `filePath`, no raw content, titles injection-filtered. |
+| Inputs | Base context **plus** `evidenceDetails[]`: `title`, `type`, `status`, `integrityVerified`, `integrityVerifiedAt`, `confidenceScore`, `outcomeId`/`indicatorId` linkage, `relatedOutcomeTitle` (sanitized linked-outcome title, null when unlinked — grounds per-outcome coverage claims), `createdAt`. No `filePath`, no raw content, titles injection-filtered. |
 | Invariants | Never changes evidence status; flags only. |
 
 ### 6. `audit_assistant` — Asistente de Auditoría
@@ -109,7 +109,7 @@ The prompt↔context mapping is formalized in `REVIEWER_PROMPT_FIELD_CONTRACT`
 |---|---|
 | Purpose | Overall audit-readiness assessment: trail completeness, consistency, prioritized gaps. |
 | Flag | `STELLA_ENABLED` + `STELLA_AUDIT_ASSISTANT_ENABLED` |
-| Inputs | Base context (incl. calculation snapshot + readiness score) **plus** `runReviewSummary`: `reviewCount`, `latestStatus`, `latestReadinessScore`, `latestReviewedAt` from `sroi_run_reviews`. |
+| Inputs | Base context (incl. calculation snapshot + readiness score) **plus** `runReviewSummary`: `reviewCount`, `latestStatus`, `latestReadinessScore`, `latestReviewedAt` from `sroi_run_reviews`; **plus** `narrativeSummary` in the payload (sanitized + PII-redacted upstream) — grounds the narrative-consistency mandate. |
 | Invariants | Never declares the analysis audit-ready; readiness scores are reported, not awarded. |
 
 Reviewer failure modes: common codes only (see §0.6); context builder errors map to `UNAUTHORIZED`.
@@ -117,9 +117,12 @@ Reviewer failure modes: common codes only (see §0.6); context builder errors ma
 ## 7. Versioning policy
 
 - Each versioned schema file exports a `*_SCHEMA_VERSION` semver const, starting at `1.0.0`.
-- `lib/stella/schemas/schema-versions.test.ts` pins the exact sorted key list per schema (and the
-  nested reference shapes for the Composer). **Any** shape change fails that test until the author
-  bumps the version, updates the pin, and updates this document — the three move together.
+- `lib/stella/schemas/schema-versions.test.ts` pins the exact sorted key list per schema (plus the
+  nested reference shapes for the Composer AND the decision-carrying enum vocabularies:
+  `risk_level`, `responseType`, finding `severity`, advisor `step`). Any key-set or pinned-enum
+  change fails that test until the author bumps the version, updates the pin, and updates this
+  document — the three move together. Other type-level changes (e.g. widening a plain string
+  field) are not machine-pinned and still require reviewer discipline.
 - Bump rules: PATCH = descriptions/doc only; MINOR = optional, backward-compatible additions;
   MAJOR = key removal/rename, type change, or invariant change.
 - `scripts/eval-roles-offline.ts` additionally gates that the exported versions match the versions
