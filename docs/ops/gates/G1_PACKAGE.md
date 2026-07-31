@@ -99,11 +99,19 @@ Executed on 2026-07-31 in the WS1 worktree at commit `004e42f` (before doc packa
 
 Note: in a dry run `schemaValidCases`/`requiresHumanReviewCases`/`adversarialCasesPassed` are 0 by design — nothing is recorded because no provider ran; the 28 request builds and template decodes all succeeded (a failure would have thrown and exited non-zero).
 
-## 7. Rollback
+## 7. Known reservations for the human reviewer
+
+These are accepted, documented limitations — none blocks the gate, but the reviewer must weigh them when reading decoded outputs:
+
+1. **R4 detector residue (index-reference phrasings).** The leak validator catches bracketed tokens (`(3)`, `[3]`) and the unbracketed Spanish phrasings `índice N` / `indice N` / `fuente N` / `referencia N` when `N` is a valid catalog index. It does **not** catch other phrasings — English `index 3` / `source 3`, `ítem 3`, ordinals like "tercera fuente", or spelled-out numbers ("fuente tres"). Those rely on the prompt rule ("Never write bare index tokens…") plus this mandatory human review. When reviewing decoded outputs, scan free text for any wording that references sources by position rather than by content.
+2. **Detector short-circuit (eval tooling only).** `detectMethodologySafety` / `detectNumericIntegrity` return early when a text field contains an allowed phrase (e.g. "no puedo certificar"), which suppresses unsafe-phrase detection **in that same field** — a field could pair a disclaimer with an unsafe claim and pass the automated detector. This affects evaluation scoring only (not the production citation pipeline) and is mitigated by `eligibleForGate: false` plus this mandatory human read of every decoded output.
+3. **Legitimate prose enumerations are lossy-but-safe.** A response that numbers its own points as "(1)", "(2)" (or writes "fuente 2" meaning something legitimate) while those integers are valid catalog indexes is treated as a leak: the eval runner fails the case closed, and the production path (`runContextualAdvisor`) replaces the entire response with the claim-free contextual fallback (`requiresHumanReview: true`). No unsafe content passes; the cost is losing an otherwise valid response. If real-provider outputs show frequent false positives of this kind, revisit the token patterns before the full 28-case run.
+
+## 8. Rollback
 
 **None needed — the evaluation is read-only.** It writes only local run artifacts under `artifacts/stella-contextual-real-runs/`; it never writes to the application database or any remote system. To discard an aborted or unwanted run, delete its artifact directory (do not rewrite git history for committed artifacts; add a follow-up commit instead).
 
-## 8. Sign-off
+## 9. Sign-off
 
 | Role | Name | Decision (APPROVE / REJECT) | Date |
 |------|------|-----------------------------|------|
