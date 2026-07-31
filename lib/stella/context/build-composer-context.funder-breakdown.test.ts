@@ -1,286 +1,260 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { db } from '@/db/client'
+// lib/stella/context/build-composer-context.funder-breakdown.test.ts
+// Funder-breakdown extraction tests for buildComposerContext.
+//
+// Audit FIX 5 (WS4): the original file asserted only on hand-built literals
+// and never invoked buildComposerContext. Reworked to drive the real builder
+// through a mocked db layer (same makeChain pattern as
+// __tests__/build-composer-context.test.ts) and assert the funder-breakdown
+// extraction from a realistic snapshotJson fixture.
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { buildComposerContext } from './build-composer-context'
-import type { StellaProjectContext } from './types'
 
-// Mock database queries
 vi.mock('@/db/client', () => ({
   db: {
     select: vi.fn(),
-    insert: vi.fn(),
-    update: vi.fn(),
   },
 }))
 
-vi.mock('@/lib/auth/session', () => ({
-  requireOrganizationAccess: vi.fn(),
-}))
+const PROJECT_ID = 'proj-fb-0001'
+const ORG_ID = 'org-fb-0001'
+const REPORT_ID = 'rpt-fb-0001'
 
-describe('buildComposerContext - Funder Breakdown Extension', () => {
-  let mockContext: Record<string, unknown>
+const projectRow = {
+  id: PROJECT_ID,
+  organizationId: ORG_ID,
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-06-15'),
+}
 
+const reportRow = {
+  id: REPORT_ID,
+  organizationId: ORG_ID,
+  projectId: PROJECT_ID,
+}
+
+// Realistic snapshotJson as persisted by calculateAndPersistSroiRun — string
+// money/ratio values at MONEY_DP=4 / RATIO_DP=6, plus keys (investments,
+// assignments) that must NEVER leak into the Stella context.
+const fundersBreakdownFixture = [
+  {
+    funderId: 'funder-1',
+    funderName: 'Fundación Española de Impacto Social',
+    funderType: 'foundation',
+    investmentUsd: '500000.0000',
+    attributedNsvUsd: '1600000.0000',
+    sroiRatio: '3.200000',
+  },
+  {
+    funderId: 'funder-2',
+    funderName: 'Privado B',
+    funderType: 'private',
+    investmentUsd: '200000.0000',
+    attributedNsvUsd: '420000.0000',
+    sroiRatio: '2.100000',
+  },
+]
+
+function makeSnapshotJson(overrides: Record<string, unknown> = {}) {
+  return {
+    version: 3,
+    currency: 'USD',
+    totalInvestment: '700000.0000',
+    grossSocialValue: '2500000.0000',
+    netSocialValue: '2070000.0000',
+    sroiRatio: '2.957142',
+    fundersBreakdown: fundersBreakdownFixture,
+    unattributedNsvUsd: '50000.0000',
+    investments: [{ id: 'inv-1', fxRateId: 'canary-fx-rate-id', amount: '999999' }],
+    assignments: [{ assignmentId: 'canary-assignment-id' }],
+    ...overrides,
+  }
+}
+
+function makeCalcRun(snapshotJson: unknown) {
+  return {
+    id: 'run-fb-001',
+    version: 3,
+    currency: 'USD',
+    totalInvestment: '700000.0000',
+    grossSocialValue: '2500000.0000',
+    netSocialValue: '2070000.0000',
+    sroiRatio: '2.957142',
+    snapshotJson,
+  }
+}
+
+// Chainable thenable query mock — same pattern as
+// __tests__/build-composer-context.test.ts
+function makeChain(resolvedValue: unknown) {
+  const chain: Record<string, unknown> = {}
+  chain.from = vi.fn().mockReturnValue(chain)
+  chain.where = vi.fn().mockReturnValue(chain)
+  chain.limit = vi.fn().mockReturnValue(chain)
+  chain.innerJoin = vi.fn().mockReturnValue(chain)
+  chain.orderBy = vi.fn().mockReturnValue(chain)
+  chain.then = vi.fn().mockImplementation(
+    (cb: (v: unknown) => unknown) => Promise.resolve(cb(resolvedValue))
+  )
+  return chain
+}
+
+// Query order inside buildComposerContext (assignments carry sourceId: null,
+// so the per-source lookup loop issues no query):
+// 1. project  2. report  3. narrative  4. stakeholders  5. outcomes
+// 6. indicators  7. evidence  8. proxy assignments  9. filter sets
+// 10. latest calc run  [11. line items — only when a run exists]
+// 12. readiness review  13. report sections
+async function setupSequence(calcRunRows: unknown[]) {
+  const { db } = await import('@/db/client')
+  const selectMock = vi.mocked(db.select)
+
+  const chain = selectMock
+    .mockReturnValueOnce(makeChain([projectRow]) as never) // 1. project
+    .mockReturnValueOnce(makeChain([reportRow]) as never) // 2. report
+    .mockReturnValueOnce(makeChain([]) as never) // 3. narrative
+    .mockReturnValueOnce(makeChain([]) as never) // 4. stakeholders
+    .mockReturnValueOnce(makeChain([]) as never) // 5. outcomes
+    .mockReturnValueOnce(makeChain([]) as never) // 6. indicators
+    .mockReturnValueOnce(makeChain([]) as never) // 7. evidence
+    .mockReturnValueOnce(makeChain([]) as never) // 8. assignments (no sourceIds → no source query)
+    .mockReturnValueOnce(makeChain([]) as never) // 9. filter sets
+    .mockReturnValueOnce(makeChain(calcRunRows) as never) // 10. calc run
+
+  if (calcRunRows.length > 0) {
+    chain.mockReturnValueOnce(makeChain([{ id: 'li-1' }, { id: 'li-2' }]) as never) // 11. line items
+  }
+
+  chain.mockReturnValueOnce(makeChain([]) as never) // 12. review
+  chain.mockReturnValueOnce(makeChain([]) as never) // 13. sections
+}
+
+const build = () => buildComposerContext(PROJECT_ID, ORG_ID, REPORT_ID)
+
+describe('buildComposerContext — funder breakdown extraction (real invocation)', () => {
   beforeEach(() => {
-    mockContext = {
-      organization: { id: 'org-1' },
-      membership: { role: 'impact_manager' },
-      user: { id: 'user-1' },
-    }
-  })
-
-  afterEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('fundersBreakdown data extraction', () => {
-    it('extracts fundersBreakdown from snapshotJson when available', async () => {
-      // This test verifies that when a calculation run has snapshotJson with
-      // fundersBreakdown data, it's properly extracted and included in the context
+  it('extracts fundersBreakdown from snapshotJson, parsing strings to numbers', async () => {
+    await setupSequence([makeCalcRun(makeSnapshotJson())])
+    const ctx = await build()
 
-      const mockFundersBreakdown = [
-        {
-          funderId: 'funder-1',
-          funderName: 'Foundation A',
-          funderType: 'foundation',
-          investmentUsd: '500000.0000',
-          attributedNsvUsd: '1600000.0000',
-          sroiRatio: '3.200000',
-        },
-      ]
-
-      const mockSnapshotJson = {
-        fundersBreakdown: mockFundersBreakdown,
-        unattributedNsvUsd: '50000.0000',
-      }
-
-      // The context should include parsed funder breakdown data
-      // fundersBreakdown is extracted from snapshotJson with string values
-      // converted to numbers for Stella's use
-
-      expect(mockSnapshotJson.fundersBreakdown).toBeDefined()
-      expect(mockSnapshotJson.fundersBreakdown).toHaveLength(1)
-      expect(mockSnapshotJson.fundersBreakdown[0].funderId).toBe('funder-1')
+    const fb = ctx.calculationSnapshot?.fundersBreakdown
+    expect(fb).toBeDefined()
+    expect(fb).toHaveLength(2)
+    expect(fb![0]).toEqual({
+      funderId: 'funder-1',
+      funderName: 'Fundación Española de Impacto Social', // unicode preserved
+      funderType: 'foundation',
+      investmentUsd: 500000,
+      attributedNsvUsd: 1600000,
+      sroiRatio: 3.2,
     })
-
-    it('handles multiple funders in breakdown', () => {
-      const mockFundersBreakdown = [
-        {
-          funderId: 'funder-1',
-          funderName: 'Foundation A',
-          funderType: 'foundation',
-          investmentUsd: '500000.0000',
-          attributedNsvUsd: '1600000.0000',
-          sroiRatio: '3.200000',
-        },
-        {
-          funderId: 'funder-2',
-          funderName: 'Private B',
-          funderType: 'private',
-          investmentUsd: '200000.0000',
-          attributedNsvUsd: '420000.0000',
-          sroiRatio: '2.100000',
-        },
-      ]
-
-      expect(mockFundersBreakdown).toHaveLength(2)
-      expect(mockFundersBreakdown[0].funderName).toBe('Foundation A')
-      expect(mockFundersBreakdown[1].funderType).toBe('private')
-    })
-
-    it('includes unattributedNsvUsd in calculation snapshot', () => {
-      const mockSnapshotJson = {
-        fundersBreakdown: [
-          {
-            funderId: 'funder-1',
-            funderName: 'Foundation A',
-            funderType: 'foundation',
-            investmentUsd: '500000.0000',
-            attributedNsvUsd: '1600000.0000',
-            sroiRatio: '3.200000',
-          },
-        ],
-        unattributedNsvUsd: '50000.0000',
-      }
-
-      expect(mockSnapshotJson.unattributedNsvUsd).toBe('50000.0000')
-    })
-
-    it('handles missing snapshotJson gracefully', () => {
-      const mockSnapshotJson = null
-
-      expect(mockSnapshotJson).toBeNull()
-      // When snapshotJson is null, fundersBreakdown should be undefined
-      // in the CalculationSnapshot
-    })
-
-    it('handles empty fundersBreakdown array', () => {
-      const mockSnapshotJson = {
-        fundersBreakdown: [],
-        unattributedNsvUsd: '0.0000',
-      }
-
-      expect(mockSnapshotJson.fundersBreakdown).toHaveLength(0)
-    })
+    expect(typeof fb![0].investmentUsd).toBe('number')
+    expect(typeof fb![0].sroiRatio).toBe('number')
   })
 
-  describe('Stella context for funder_breakdown section', () => {
-    it('provides funder breakdown context suitable for report generation', () => {
-      const mockFundersBreakdown = [
-        {
-          funderId: 'funder-1',
-          funderName: 'Foundation A',
-          funderType: 'foundation',
-          investmentUsd: '500000.0000',
-          attributedNsvUsd: '1600000.0000',
-          sroiRatio: '3.200000',
-        },
-        {
-          funderId: 'funder-2',
-          funderName: 'Private B',
-          funderType: 'private',
-          investmentUsd: '200000.0000',
-          attributedNsvUsd: '420000.0000',
-          sroiRatio: '2.100000',
-        },
-      ]
+  it('preserves multiple funders in order with their types', async () => {
+    await setupSequence([makeCalcRun(makeSnapshotJson())])
+    const ctx = await build()
 
-      // Verify data structure matches what Stella composer expects
-      expect(mockFundersBreakdown[0]).toHaveProperty('funderId')
-      expect(mockFundersBreakdown[0]).toHaveProperty('funderName')
-      expect(mockFundersBreakdown[0]).toHaveProperty('funderType')
-      expect(mockFundersBreakdown[0]).toHaveProperty('investmentUsd')
-      expect(mockFundersBreakdown[0]).toHaveProperty('attributedNsvUsd')
-      expect(mockFundersBreakdown[0]).toHaveProperty('sroiRatio')
-    })
-
-    it('sanitizes funder names in context (no PII)', () => {
-      // Funder names should be sanitized to prevent PII leakage
-      const funderName = 'Foundation A'
-      const sanitized = funderName.substring(0, 200) // Example sanitization
-      expect(sanitized).toBe('Foundation A')
-    })
-
-    it('converts string numeric values to numbers for CalculationSnapshot', () => {
-      const mockRow = {
-        funderId: 'funder-1',
-        funderName: 'Foundation A',
-        funderType: 'foundation',
-        investmentUsd: '500000.0000',
-        attributedNsvUsd: '1600000.0000',
-        sroiRatio: '3.200000',
-      }
-
-      const parsed = {
-        funderId: mockRow.funderId,
-        funderName: mockRow.funderName,
-        funderType: mockRow.funderType,
-        investmentUsd: parseFloat(mockRow.investmentUsd),
-        attributedNsvUsd: parseFloat(mockRow.attributedNsvUsd),
-        sroiRatio: parseFloat(mockRow.sroiRatio),
-      }
-
-      expect(parsed.investmentUsd).toBe(500000)
-      expect(typeof parsed.investmentUsd).toBe('number')
-      expect(parsed.sroiRatio).toBe(3.2)
-    })
+    const fb = ctx.calculationSnapshot!.fundersBreakdown!
+    expect(fb.map((f) => f.funderId)).toEqual(['funder-1', 'funder-2'])
+    expect(fb[1].funderType).toBe('private')
+    expect(fb[1].investmentUsd).toBe(200000)
+    expect(fb[1].attributedNsvUsd).toBe(420000)
+    expect(fb[1].sroiRatio).toBe(2.1)
   })
 
-  describe('Report section rendering context', () => {
-    it('includes enough funder data for narrative generation', () => {
-      const contextData = {
-        fundersBreakdown: [
-          {
-            funderId: 'funder-1',
-            funderName: 'Foundation A',
-            funderType: 'foundation',
-            investmentUsd: 500000,
-            attributedNsvUsd: 1600000,
-            sroiRatio: 3.2,
-          },
-          {
-            funderId: 'funder-2',
-            funderName: 'Private B',
-            funderType: 'private',
-            investmentUsd: 200000,
-            attributedNsvUsd: 420000,
-            sroiRatio: 2.1,
-          },
-        ],
-        unattributedNsvUsd: 50000,
-        currency: 'USD',
-      }
+  it('parses unattributedNsvUsd from the snapshot', async () => {
+    await setupSequence([makeCalcRun(makeSnapshotJson())])
+    const ctx = await build()
 
-      // Stella can generate a narrative like:
-      // "Foundation A saw a 3.2x SROI on their $500K investment,
-      //  while Private B achieved 2.1x on their $200K contribution.
-      //  $50K of value was not directly attributed to specific funders."
-
-      const narrative =
-        `${contextData.fundersBreakdown[0].funderName} achieved a ${contextData.fundersBreakdown[0].sroiRatio}:1 SROI ` +
-        `while ${contextData.fundersBreakdown[1].funderName} achieved ${contextData.fundersBreakdown[1].sroiRatio}:1`
-
-      expect(narrative).toContain('Foundation A')
-      expect(narrative).toContain('3.2')
-      expect(narrative).toContain('Private B')
-      expect(narrative).toContain('2.1')
-    })
+    expect(ctx.calculationSnapshot?.unattributedNsvUsd).toBe(50000)
+    expect(typeof ctx.calculationSnapshot?.unattributedNsvUsd).toBe('number')
   })
 
-  describe('Edge cases', () => {
-    it('handles funder with zero investment', () => {
-      const mockRow = {
-        funderId: 'funder-1',
-        funderName: 'Foundation A',
-        funderType: 'foundation',
-        investmentUsd: '0.0000',
-        attributedNsvUsd: '0.0000',
-        sroiRatio: '0.000000',
-      }
+  it('populates run totals alongside the breakdown', async () => {
+    await setupSequence([makeCalcRun(makeSnapshotJson())])
+    const ctx = await build()
 
-      const investmentUsd = parseFloat(mockRow.investmentUsd)
-      expect(investmentUsd).toBe(0)
-    })
+    expect(ctx.calculationSnapshot?.totalInvestment).toBe(700000)
+    expect(ctx.calculationSnapshot?.grossSocialValue).toBe(2500000)
+    expect(ctx.calculationSnapshot?.netSocialValue).toBe(2070000)
+    expect(ctx.calculationSnapshot?.sroiRatio).toBe(2.957142)
+    expect(ctx.calculationSnapshot?.lineItemCount).toBe(2)
+    expect(ctx.calculationSnapshot?.version).toBe(3)
+  })
 
-    it('handles very large investment amounts', () => {
-      const mockRow = {
-        funderId: 'funder-1',
-        funderName: 'Foundation A',
-        funderType: 'foundation',
-        investmentUsd: '999999999999.9999',
-        attributedNsvUsd: '2999999999999.9997',
-        sroiRatio: '3.000000',
-      }
+  it('leaves fundersBreakdown/unattributedNsvUsd undefined when snapshotJson is null', async () => {
+    await setupSequence([makeCalcRun(null)])
+    const ctx = await build()
 
-      const investmentUsd = parseFloat(mockRow.investmentUsd)
-      expect(investmentUsd).toBe(999999999999.9999)
-    })
+    expect(ctx.calculationSnapshot).not.toBeNull()
+    expect(ctx.calculationSnapshot?.fundersBreakdown).toBeUndefined()
+    expect(ctx.calculationSnapshot?.unattributedNsvUsd).toBeUndefined()
+    // Totals still come from the run columns, not the snapshot
+    expect(ctx.calculationSnapshot?.totalInvestment).toBe(700000)
+  })
 
-    it('handles high SROI ratios', () => {
-      const mockRow = {
-        funderId: 'funder-1',
-        funderName: 'Foundation A',
-        funderType: 'foundation',
-        investmentUsd: '100000.0000',
-        attributedNsvUsd: '5000000.0000',
-        sroiRatio: '50.000000',
-      }
+  it('leaves fundersBreakdown undefined when the snapshot predates Fase 1b (no key)', async () => {
+    const legacySnapshot = makeSnapshotJson()
+    delete (legacySnapshot as Record<string, unknown>).fundersBreakdown
+    delete (legacySnapshot as Record<string, unknown>).unattributedNsvUsd
+    await setupSequence([makeCalcRun(legacySnapshot)])
+    const ctx = await build()
 
-      const sroiRatio = parseFloat(mockRow.sroiRatio)
-      expect(sroiRatio).toBe(50)
-    })
+    expect(ctx.calculationSnapshot?.fundersBreakdown).toBeUndefined()
+    expect(ctx.calculationSnapshot?.unattributedNsvUsd).toBeUndefined()
+  })
 
-    it('handles unicode funder names', () => {
-      const mockRow = {
-        funderId: 'funder-1',
-        funderName: 'Fundación Española de Impacto Social',
-        funderType: 'foundation',
-        investmentUsd: '500000.0000',
-        attributedNsvUsd: '1600000.0000',
-        sroiRatio: '3.200000',
-      }
+  it('maps an empty fundersBreakdown array to an empty array (not undefined)', async () => {
+    await setupSequence([
+      makeCalcRun(makeSnapshotJson({ fundersBreakdown: [], unattributedNsvUsd: '0.0000' })),
+    ])
+    const ctx = await build()
 
-      // After sanitization (truncating to 200 chars), name should still be valid
-      const sanitized = mockRow.funderName.substring(0, 200)
-      expect(sanitized).toBe('Fundación Española de Impacto Social')
-    })
+    expect(ctx.calculationSnapshot?.fundersBreakdown).toEqual([])
+    // '0.0000' parses to 0
+    expect(ctx.calculationSnapshot?.unattributedNsvUsd).toBe(0)
+  })
+
+  it('returns a null calculationSnapshot when no calculated run exists', async () => {
+    await setupSequence([])
+    const ctx = await build()
+
+    expect(ctx.calculationSnapshot).toBeNull()
+  })
+
+  it('sanitizes funder names (truncated at 200 chars, control chars stripped)', async () => {
+    const longName = 'A'.repeat(250)
+    await setupSequence([
+      makeCalcRun(
+        makeSnapshotJson({
+          fundersBreakdown: [
+            { ...fundersBreakdownFixture[0], funderName: longName },
+            { ...fundersBreakdownFixture[1], funderName: 'Fund\x00ación\x1F X' },
+          ],
+        })
+      ),
+    ])
+    const ctx = await build()
+
+    const fb = ctx.calculationSnapshot!.fundersBreakdown!
+    // sanitizeString(_, 200): substring(0, 200) + '...'
+    expect(fb[0].funderName).toBe('A'.repeat(200) + '...')
+    expect(fb[1].funderName).not.toContain('\x00')
+    expect(fb[1].funderName).not.toContain('\x1F')
+  })
+
+  it('never leaks the raw snapshotJson (investments/assignments) into the context', async () => {
+    await setupSequence([makeCalcRun(makeSnapshotJson())])
+    const ctx = await build()
+
+    const json = JSON.stringify(ctx)
+    expect(json).not.toContain('snapshotJson')
+    expect(json).not.toContain('canary-fx-rate-id')
+    expect(json).not.toContain('canary-assignment-id')
+    expect(json).not.toContain('999999')
   })
 })
