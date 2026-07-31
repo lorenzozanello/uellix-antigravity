@@ -85,6 +85,20 @@ Auditoría WS7: APPROVE_WITH_NOTES, 0 bloqueadores, 3 MINOR advisorios (modelo �
 agregación de costos → nota G9; N+1 aceptable en beta; default `model_used` desactualizado
 en schema — preexistente, dueño WS3b/G2).
 
+### 2026-07-31 · WS6 INTEGRACIÓN · rama `moonshot/ws6-roles-eval` → merge `8f39d2a`
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm test:unit` (ws1-worktree, post-fixes) | VERDE | 117 archivos, 1982 tests |
+| `pnpm eval:roles` (implementador, auditor y coordinador post-merge) | VERDE | 5/5 gates, 14/14 casos, 5/5 canaries rechazados |
+| `pnpm eval:offline` (regresión, los tres) | VERDE | 6/6 gates, 28/28 |
+| `pnpm typecheck` (los tres) | VERDE | limpio |
+
+Auditoría WS6: APPROVE_WITH_NOTES; MAJOR (RK-17 residual: 3 bullets de mandato sin datos
+serializados) corregido con contract test ampliado + enum pins + sanitizeLabel; probes
+adversariales de extractUrlDomain superados (credenciales/token/IDN/javascript: → fail-closed).
+RK-17 CERRADO offline; RK-27 CERRADO (fixture agua-segura alimenta eval evidence_reviewer).
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
