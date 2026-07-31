@@ -27,8 +27,8 @@
 | RK-12 | Invocaciones Stella invisibles en `audit_logs`/panel admin de logs; denegaciones (quota/rate-limit/parse) no dejan rastro | `lib/audit/logger.ts:36`, `app/actions/stella/advisor.ts:73-92` | WS3 | ABIERTO |
 | RK-13 | Taxonomía de errores colapsada en paneles (RATE_LIMITED sin reset, TIMEOUT genérico); DISABLED desmonta el panel post-click | `StellaAdvisorPanel.tsx:47-57` | WS2 | ABIERTO |
 | RK-14 | Documentos de evidencia son blobs write-only: sin extracción, sin retrieval, sin signed URL de descarga; `content_hash` mutable (fuera de 0030) debilita el manifiesto del PDF | `lib/pipeline/evidence.ts`, `db/migrations/0030_immutability.sql` | WS5/WS3 | ABIERTO |
-| RK-15 | Precisión Decimal global sin fijar (`Decimal.set` inexistente) y sin golden test del ratio; `parseFloat` en porcentajes dentro del motor | `lib/pipeline/sroi-calculation.ts:79-83,643-654` | WS4 | ABIERTO |
-| RK-16 | Composer no valida `evidence_references`/`proxy_references` contra el contexto (superficie de alucinación de IDs) | `lib/stella/schemas/composer-output.ts:20-37` | WS4/WS6 | ABIERTO |
+| RK-15 | Precisión Decimal global sin fijar y sin golden test del ratio; `parseFloat` en el motor | `lib/pipeline/decimal-config.ts` + goldens | WS4 | **MITIGADO** (merge `5ffbf52`: pin explícito importado por sroi-*/fx-*, goldens exactos re-derivados por auditor, parseNum Decimal con paridad caracterizada) |
+| RK-16 | Composer no valida referencias ni cifras contra contexto (alucinación) | `lib/stella/schemas/composer-numeric-guard.ts` | WS4/WS6 | **PARCIAL** (guard construido y endurecido post-auditoría; WIRING pendiente en composer.ts — coordinador) |
 | RK-17 | Roles reviewer comparten contexto del validator: prompts piden datos que el contexto no provee; flags ausentes de `.env.example` (inalcanzables); sin tests de panel ni de acción | `build-reviewer-context.ts:19`, `lib/stella/config.ts:20-22` | WS6 | ABIERTO |
 | RK-18 | `risk_level=high` del validator no bloquea publicación de reportes (solo advisory) | `app/actions/stella/validator.ts` | WS4/WS6 | ABIERTO |
 | RK-19 | `stepMismatch` del proveedor se descarta en producción sin métrica ni log | `decode-provider-source-ref-indexes.ts:82-87` | WS1/WS7 | ABIERTO |
@@ -53,7 +53,7 @@
 | RK-33 | FX oracle no cableado a inversiones (EUR dead-end); comentario invertido en `rateToUsd` | WS4 |
 | RK-34 | Accesibilidad: aria-live condicional, saltos de heading, hex hardcodeado | WS2 |
 | RK-35 | Doble build de contexto en `buildAdvisorContextualUserMessage` (punto latente de divergencia) | WS1 |
-| RK-36 | `build-composer-context.test.funder-breakdown.ts` puede no coincidir con el glob de vitest — verificar que ejecuta | WS4 |
+| RK-36 | ~~Test muerto de funder-breakdown~~ **RESUELTO** en `5ffbf52`: renombrado al glob correcto y reescrito para invocar `buildComposerContext` real (la versión previa nunca llamaba a la función) | WS4 |
 | RK-37 | Mensajes de bloqueo del motor mezclan inglés/español | WS4 |
 
 ## Riesgos de campaña (proceso)

@@ -33,6 +33,19 @@ Auditoría independiente WS5: APPROVE_WITH_NOTES. Hallazgo MAJOR (scope `audit-f
 verificado FALSO POSITIVO por el coordinador (`git ls-tree` base la contiene; diff de rama = 0
 archivos ahí). Hallazgo MINOR (CSV lenient quote) documentado como comportamiento intencional.
 
+### 2026-07-31 · WS4 INTEGRACIÓN · rama `moonshot/ws4-composer` → merge `5ffbf52`
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| suites focalizadas WS4 (13 archivos, worktree ws4, implementador y coordinador) | VERDE | 226 tests (implementador) / 172 (subset coordinador) |
+| `pnpm typecheck` (ws4, ambos) | VERDE | limpio |
+| `pnpm test:unit` (ws4, implementador, post-fixes) | VERDE | 100 archivos, 1473 tests |
+
+Auditoría WS4: APPROVE_WITH_NOTES; goldens re-derivados a mano por el auditor (exactos);
+5 hallazgos corregidos con prueba de fallo-sin-fix (runs con revert documentados).
+Guard numérico del composer queda SIN cablear por diseño (WIRING.md) — wiring del coordinador
+pendiente tras merge de WS3.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
