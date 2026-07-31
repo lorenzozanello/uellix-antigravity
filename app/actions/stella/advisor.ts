@@ -198,7 +198,14 @@ export async function getStellaContextualAdvisor(
       entityType: 'project',
       entityId: projectId,
       action: AUDIT_ACTIONS.STELLA_INVOKED,
-      afterJson: { stellaRole: 'advisor', pipelineStep: step, tokensUsed: result.tokensUsed ?? null },
+      afterJson: {
+        stellaRole: 'advisor',
+        pipelineStep: step,
+        tokensUsed: result.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+      },
     })
 
     return { ok: true, data: result.data }
@@ -361,7 +368,14 @@ export async function getStellaAdvisor(
       entityType: 'project',
       entityId: projectId,
       action: AUDIT_ACTIONS.STELLA_INVOKED,
-      afterJson: { stellaRole: 'advisor', pipelineStep: step, tokensUsed: response.tokensUsed ?? null },
+      afterJson: {
+        stellaRole: 'advisor',
+        pipelineStep: step,
+        tokensUsed: response.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+      },
     })
 
     return { ok: true, data }

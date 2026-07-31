@@ -199,14 +199,20 @@ function makeChain(resolvedValue: unknown) {
  * order: proxyDetails → evidenceDetails → runReviewSummary (only those the
  * requested role needs; all three when role is omitted).
  */
-async function setupMockSequence(role?: ReviewerRole, opts: { projectRow?: typeof mockProject } = {}) {
+async function setupMockSequence(
+  role?: ReviewerRole,
+  opts: {
+    projectRow?: typeof mockProject
+    stakeholderRows?: Array<{ id: string; type?: string | null }>
+  } = {}
+) {
   const { db } = await import('@/db/client')
   const selectMock = vi.mocked(db.select)
 
   const chain = selectMock
     .mockReturnValueOnce(makeChain([opts.projectRow ?? mockProject]) as never)        // 1 project
     .mockReturnValueOnce(makeChain([mockNarrative]) as never)                          // 2 narrative
-    .mockReturnValueOnce(makeChain([{ id: 'sh-1' }]) as never)                         // 3 stakeholders
+    .mockReturnValueOnce(makeChain(opts.stakeholderRows ?? [{ id: 'sh-1' }]) as never) // 3 stakeholders
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                             // 4 outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                           // 5 indicators
     .mockReturnValueOnce(makeChain(mockEvidenceBase) as never)                         // 6 evidence
@@ -430,6 +436,27 @@ describe('buildReviewerContext', () => {
       }
       expect(thrown).toBeInstanceOf(StellaBuildReviewerContextError)
       expect(thrown?.code).toBe('PROJECT_NOT_FOUND')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagates from the base
+  // validator context into every reviewer role's context.
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupMockSequence('audit_assistant')
+      const ctx = await buildReviewerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'audit_assistant')
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('propagates a detected flag from stakeholder group types into the reviewer context', async () => {
+      await setupMockSequence('proxy_reviewer', {
+        stakeholderRows: [{ id: 'sh-1', type: 'menores en situación de vulnerabilidad' }],
+      })
+      const ctx = await buildReviewerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'proxy_reviewer')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
     })
   })
 })

@@ -20,6 +20,7 @@ import {
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
+import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
   StellaProjectContext,
   OutcomeRef,
@@ -95,9 +96,10 @@ export async function buildValidatorContext(
     .join(' ')
   const narrativeSummary = sanitizeNarrative(rawNarrative)
 
-  // Stakeholder count (no PII, no emails)
+  // Stakeholder count (no PII, no emails). `type` is group-level metadata
+  // read from the SAME query for the RK-08 sensitive-populations detector.
   const rawStakeholders = await db
-    .select({ id: stakeholderGroups.id })
+    .select({ id: stakeholderGroups.id, type: stakeholderGroups.type })
     .from(stakeholderGroups)
     .where(eq(stakeholderGroups.projectId, projectId))
 
@@ -303,6 +305,13 @@ export async function buildValidatorContext(
     .limit(1)
     .then((rows) => rows[0] ?? null)
 
+  // RK-08: sensitive-populations flag from data already queried above —
+  // stakeholder group types, narrative text, outcome titles. No new queries.
+  const sensitivePopulations = detectSensitivePopulations({
+    stakeholderTypes: rawStakeholders.map((s) => s.type ?? ''),
+    texts: [rawNarrative, ...rawOutcomes.map((o) => o.title)],
+  })
+
   return {
     projectId,
     organizationId,
@@ -317,6 +326,7 @@ export async function buildValidatorContext(
     calculationSnapshot,
     reportSections: [],
     readinessScore: latestReview?.readinessScore ?? undefined,
+    sensitivePopulations,
     projectCreatedAt: project.createdAt.toISOString(),
     lastUpdatedAt: project.updatedAt.toISOString(),
   }

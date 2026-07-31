@@ -427,11 +427,33 @@ describe('getStellaContextualAdvisor server action', () => {
       expect(invoked.organizationId).toBe('org-1')
       expect(invoked.actorUserId).toBe('user-1')
       expect(invoked.entityId).toBe('proj-1')
-      expect(invoked.afterJson).toEqual({ stellaRole: 'advisor', pipelineStep: 'narrative', tokensUsed: 42 })
+      expect(invoked.afterJson).toEqual({
+        stellaRole: 'advisor',
+        pipelineStep: 'narrative',
+        tokensUsed: 42,
+        sensitivePopulations: false,
+        sensitivePopulationCategories: [],
+      })
       // NO prompt/context/response content in any audit payload
       const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
       expect(serialized).not.toContain('Resumen')
       expect(serialized).not.toContain('community wellbeing')
+    })
+
+    // WS3c U1 (RK-08): audit metadata carries the sensitive-populations flag.
+    it('logs sensitivePopulations metadata (flag + categories) when the context detected them', async () => {
+      setupSuccessfulCall()
+      mockBuildAdvisorContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        sensitivePopulations: { detected: true, categories: ['minors', 'violence_victims'] },
+      })
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked.afterJson.sensitivePopulations).toBe(true)
+      expect(invoked.afterJson.sensitivePopulationCategories).toEqual(['minors', 'violence_victims'])
     })
 
     it('logs STELLA_DENIED with QUOTA_EXCEEDED and result is unchanged when the audit write throws', async () => {

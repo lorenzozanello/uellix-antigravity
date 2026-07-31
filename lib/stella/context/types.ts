@@ -157,6 +157,18 @@ export interface CalculationReadinessSummary extends ContextualCalculationReadin
   activeFilterSetCount: number
 }
 
+/**
+ * WS3c U1 (RK-08): sensitive-populations flag computed by the context
+ * builders from already-queried metadata (stakeholder group types/names,
+ * narrative, outcome titles). Metadata only — it activates a fixed
+ * heightened-care notice in the TRUSTED prompt tier and annotates audit
+ * logs; it is never serialized into the untrusted data envelope.
+ */
+export interface SensitivePopulationsFlag {
+  detected: boolean
+  categories: string[]
+}
+
 /** The explicit, provider-independent data contract for a contextual Advisor request. */
 export interface ContextualAdvisorContext {
   projectId: string
@@ -177,6 +189,9 @@ export interface ContextualAdvisorContext {
   reportSections?: readonly SectionRef[]
   projectCreatedAt?: string | null
   lastUpdatedAt?: string | null
+  /** RK-08: heightened-care flag (see SensitivePopulationsFlag). Never part
+   *  of the per-step untrusted slice — trusted prompt tier + audit only. */
+  sensitivePopulations?: SensitivePopulationsFlag
 }
 
 /**
@@ -220,6 +235,10 @@ export interface StellaProjectContext {
   // Report
   reportSections: SectionRef[]
   readinessScore?: number
+
+  // RK-08: heightened-care flag computed from already-queried metadata.
+  // Activates the trusted-tier SENSITIVE_POPULATIONS_NOTICE + audit metadata.
+  sensitivePopulations?: SensitivePopulationsFlag
 
   // Timestamps
   projectCreatedAt: string

@@ -25,6 +25,7 @@ import {
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
+import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
   AdvisorProjectContext,
   CalculationReadinessSummary,
@@ -409,6 +410,18 @@ export async function buildAdvisorContext(
     ? { ...derivedReadiness, ...options.calculationReadiness, source: 'injected' }
     : derivedReadiness
 
+  // RK-08: sensitive-populations flag from data already queried above —
+  // stakeholder group types/names, narrative text, outcome titles. No extra
+  // queries; org isolation is untouched.
+  const sensitivePopulations = detectSensitivePopulations({
+    stakeholderTypes: rawStakeholders.map((s) => s.type ?? ''),
+    texts: [
+      ...rawStakeholders.map((s) => s.name),
+      rawNarrative,
+      ...rawOutcomes.map((o) => o.title),
+    ],
+  })
+
   return {
     projectId,
     organizationId,
@@ -426,6 +439,7 @@ export async function buildAdvisorContext(
     calculationSnapshot,
     calculationReadiness,
     reportSections,
+    sensitivePopulations,
     projectCreatedAt: project.createdAt.toISOString(),
     lastUpdatedAt: project.updatedAt.toISOString(),
   }

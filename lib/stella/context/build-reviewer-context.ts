@@ -267,6 +267,9 @@ export async function buildReviewerContext(
 ): Promise<ReviewerContext> {
   // The 'calculation' step satisfies the validator builder's step gate; the
   // resulting base context is the whole project regardless of role.
+  // RK-08: the base already carries `sensitivePopulations` (computed by
+  // buildValidatorContext from stakeholder types, narrative and outcome
+  // titles) — the spread propagates it to every reviewer role unchanged.
   const base = await buildValidatorContext(projectId, organizationId, 'calculation')
 
   const context: ReviewerContext = { ...base, reviewerRole: role ?? null }

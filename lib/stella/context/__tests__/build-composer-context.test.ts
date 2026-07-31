@@ -158,6 +158,8 @@ async function setupFullMockSequence(opts: {
   withCalcRun?: boolean
   withReview?: boolean
   sectionsRows?: typeof mockSections
+  stakeholderRows?: Array<{ id: string; type?: string | null }>
+  narrativeRow?: typeof mockNarrative
 } = {}) {
   const {
     projectRow = mockProject,
@@ -165,6 +167,8 @@ async function setupFullMockSequence(opts: {
     withCalcRun = true,
     withReview = true,
     sectionsRows = mockSections,
+    stakeholderRows = mockStakeholders,
+    narrativeRow = mockNarrative,
   } = opts
 
   const { db } = await import('@/db/client')
@@ -173,8 +177,8 @@ async function setupFullMockSequence(opts: {
   const chain = selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                                       // 1. project
     .mockReturnValueOnce(makeChain([reportRow]) as never)                                        // 2. report
-    .mockReturnValueOnce(makeChain([mockNarrative]) as never)                                    // 3. narrative
-    .mockReturnValueOnce(makeChain(mockStakeholders) as never)                                   // 4. stakeholders
+    .mockReturnValueOnce(makeChain([narrativeRow]) as never)                                     // 3. narrative
+    .mockReturnValueOnce(makeChain(stakeholderRows) as never)                                    // 4. stakeholders
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                                       // 5. outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                                     // 6. indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)                                  // 7. evidence
@@ -451,6 +455,38 @@ describe('buildComposerContext', () => {
       const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
 
       expect(ctx.organizationId).toBe(MOCK_ORG_ID)
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagation
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('flags refugees/displaced from a stakeholder group type', async () => {
+      await setupFullMockSequence({
+        stakeholderRows: [{ id: 'sh-1', type: 'población desplazada' }],
+      })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('refugees_displaced')
+    })
+
+    it('flags minors from the narrative text', async () => {
+      await setupFullMockSequence({
+        narrativeRow: {
+          narrativeText: 'Programa de nutrición para niños de primera infancia.',
+          theoryOfChangeSummary: '',
+        },
+      })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
     })
   })
 })

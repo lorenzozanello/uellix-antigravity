@@ -214,11 +214,27 @@ describe('getStellaComposer server action', () => {
       expect(invoked.organizationId).toBe('org-uuid-001')
       expect(invoked.actorUserId).toBe('user-uuid-001')
       expect(invoked.entityId).toBe('proj-uuid-001')
-      expect(invoked.afterJson).toEqual({ stellaRole: 'composer', pipelineStep: 'executive_summary', tokensUsed: 1234 })
+      expect(invoked.afterJson).toEqual({ stellaRole: 'composer', pipelineStep: 'executive_summary', tokensUsed: 1234, sensitivePopulations: false, sensitivePopulationCategories: [] })
       const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
       expect(serialized).not.toContain('mock composer system prompt')
       expect(serialized).not.toContain('mock composer user message')
       expect(serialized).not.toContain(VALID_COMPOSER_OUTPUT.draft_content)
+    })
+
+    // WS3c U1 (RK-08): audit metadata carries the sensitive-populations flag.
+    it('logs sensitivePopulations metadata when the context detected them', async () => {
+      setupSuccessfulCall()
+      mockBuildComposerContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        sensitivePopulations: { detected: true, categories: ['extreme_poverty'] },
+      })
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked.afterJson.sensitivePopulations).toBe(true)
+      expect(invoked.afterJson.sensitivePopulationCategories).toEqual(['extreme_poverty'])
     })
 
     it('logs STELLA_DENIED with ROLE_DENIED / QUOTA_EXCEEDED / RATE_LIMITED reason codes', async () => {

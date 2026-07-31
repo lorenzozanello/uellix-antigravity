@@ -227,7 +227,14 @@ export async function getStellaComposer(
       entityType: 'project',
       entityId: projectId,
       action: AUDIT_ACTIONS.STELLA_INVOKED,
-      afterJson: { stellaRole: 'composer', pipelineStep: sectionType, tokensUsed: response.tokensUsed ?? null },
+      afterJson: {
+        stellaRole: 'composer',
+        pipelineStep: sectionType,
+        tokensUsed: response.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+      },
     })
 
     return { ok: true, data }

@@ -667,7 +667,7 @@ describe('getStellaAdvisor server action', () => {
       expect(invoked.actorUserId).toBe('user-1')
       expect(invoked.entityType).toBe('project')
       expect(invoked.entityId).toBe('proj-1')
-      expect(invoked.afterJson).toEqual({ stellaRole: 'advisor', pipelineStep: 'narrative', tokensUsed: 321 })
+      expect(invoked.afterJson).toEqual({ stellaRole: 'advisor', pipelineStep: 'narrative', tokensUsed: 321, sensitivePopulations: false, sensitivePopulationCategories: [] })
     })
 
     it('logs STELLA_DENIED with ROLE_DENIED when a viewer is rejected', async () => {

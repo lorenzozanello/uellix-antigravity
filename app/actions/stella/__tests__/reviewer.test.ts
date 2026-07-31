@@ -184,9 +184,29 @@ describe('getStellaReviewer server action', () => {
       expect(invoked.afterJson.stellaRole).toBe('proxy_reviewer')
       expect(invoked.afterJson.tokensUsed).toBe(42)
       expect(typeof invoked.afterJson.pipelineStep).toBe('string')
+      // WS3c U1 (RK-08): the flag defaults to false with empty categories.
+      expect(invoked.afterJson.sensitivePopulations).toBe(false)
+      expect(invoked.afterJson.sensitivePopulationCategories).toEqual([])
       const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
       expect(serialized).not.toContain(VALID_REVIEWER_OUTPUT.summary)
       expect(serialized).not.toContain('Proxy sin fuente verificable')
+    })
+
+    // WS3c U1 (RK-08): audit metadata carries the sensitive-populations flag.
+    it('logs sensitivePopulations metadata when the context detected them', async () => {
+      setupSuccessfulCall()
+      mockBuildReviewerContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        reviewerRole: 'proxy_reviewer',
+        sensitivePopulations: { detected: true, categories: ['refugees_displaced'] },
+      })
+
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked.afterJson.sensitivePopulations).toBe(true)
+      expect(invoked.afterJson.sensitivePopulationCategories).toEqual(['refugees_displaced'])
     })
 
     it('logs STELLA_DENIED with ROLE_DENIED for a viewer, tagged with the requested reviewer role', async () => {
