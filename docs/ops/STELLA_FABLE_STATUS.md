@@ -11,7 +11,7 @@
 - **Branch coordinadora:** `codex/stella-fable-moonshot` (== `origin/main` al inicio)
 - **Ramas de workstreams:** ninguna creada aún (creación lazy — D-005)
 - **Worktrees propios:** sólo `uellix-stella-fable-moonshot`. Ajenos (NO tocar): `uellix-antigravity`, `uellix-antigravity-b1c-integration`, `uellix-stella-autonomous`
-- **Fase de campaña:** CAMPAÑA FUNCIONAL EN CURSO — Ola 1 (WS3+WS1+WS4 en paralelo)
+- **Fase de campaña:** CAMPAÑA FUNCIONAL EN CURSO — Ola 1 CERRADA (checkpoint `02a9791`, 1927 tests verdes) · Ola 2 EN CURSO
 - **Estado general:** EN EJECUCIÓN (objetivo: STELLA_OFFLINE_RELEASE_CANDIDATE_READY)
 
 ## Fase activa por workstream
@@ -19,12 +19,15 @@
 | WS | Fase | Rama | Notas |
 |----|------|------|-------|
 | WS1 Context & References | **INTEGRADO** (merge `24b122c`) | `moonshot/ws1-context` | Paridad 18/18 campos con test estricto; R1–R6 resueltas offline; harness con scoring medido; `pnpm eval:offline` 6/6; paquete G1 con dry-run y reservas §7. Pendiente coordinador: wiring readiness en advisor.ts + mapeo PAYLOAD_TOO_LARGE en run-contextual-advisor |
-| WS2 Advisor UX | NO INICIADO | — | Ola 2: tras integrar WS1+WS3 |
+| WS2 Advisor UX | IMPLEMENTACIÓN Ola 2 (agente) | `moonshot/ws2-advisor-ux` @ worktree `uellix-moonshot-ws5` (reutilizado) | Panel contextual, ciclo aceptar/rechazar/editar/preview/aplicar/deshacer (estado React, sin DOM imperativo), taxonomía completa de errores, DISABLED como prop de servidor, a11y |
 | WS3 Security & Audit | IMPLEMENTACIÓN (agente) | `moonshot/ws3-security` @ worktree `uellix-moonshot-ws3` | T3.3, T3.11, T3.1, T3.13, T3.12, T3.15 (unidades DB quedan para 2ª unidad WS3) |
 | WS4 Composer determinístico | **INTEGRADO** (merge `5ffbf52`) | `moonshot/ws4-composer` | Decimal pinneado (incl. fx.ts), parseNum caracterizado, goldens exactos, 13 clases de bloqueo testeadas, skippedAssignments, guard numérico+referencias con contexto de value-claim. Pendiente: wiring del guard en composer.ts (coordinador, tras WS3) |
 | WS5 Grounding documental | **INTEGRADO** (merge `61988e8`) | `moonshot/ws5-grounding` | Spec+ADR, G5_PACKAGE, extracción csv/txt, chunking+anclas (invariante reconstrucción testeada), retrieval con aislamiento estructural, paquete pgvector en `db/prepared/` (NO aplicado). Pendiente WS5: PDF/XLSX tras decisión G5; ingest hook tras integrar (nota de wiring en spec §12) |
-| WS6 Roles & Eval | NO INICIADO | — | Depende de T1.13 (en curso en WS1) |
-| WS7 Ops & Comercial | NO INICIADO | — | Ola 2/3 |
+| WS3b Persistencia & DB security | IMPLEMENTACIÓN Ola 2 (agente) | `moonshot/ws3b-persistence` @ worktree `uellix-moonshot-ws3` (reutilizado) | SQL preparado (trigger append-only + revoke grants + tabla decisiones), audit_logs para invocaciones/denegaciones, Sentry en fallos, action de decisiones dormante tras flag, paquetes G2/G3, política de retención (DP-04) |
+| WS6 Roles & Eval | IMPLEMENTACIÓN Ola 2 (agente) | `moonshot/ws6-roles-eval` @ worktree `uellix-moonshot-ws1` (reutilizado) | Contextos por rol reviewer (RK-17), contratos+versionado de schemas, suites eval por rol + canaries, fixture agua-segura conectada (RK-27), paquete G4; reformulation queda fuera (decisión de producto) |
+| WS7 Ops & Comercial | IMPLEMENTACIÓN Ola 2 (agente) | `moonshot/ws7-ops` @ worktree `uellix-moonshot-ws4` (reutilizado) | Agregación tokens+modelo de costos, coherencia billing (RK-25), legal EN, plan de alertas, paquetes G8/G9, playbook de soporte |
+
+**Dueños de zonas calientes (ciclo Ola 2):** `app/actions/stella/**`, `lib/stella/config.ts`, `lib/audit/**`, `db/prepared/**` → WS3b · `components/**`, páginas pipeline/report → WS2 · contextos/prompts/schemas validator-composer-reviewer, `.env.example`, `tests/eval/stella-roles` → WS6 · admin/billing/legal-EN/`lib/stella/cost-model.ts` → WS7 · `package.json` → coordinador.
 
 **Dueños de zonas calientes (ciclo Ola 1):** `lib/stella/config.ts`, `sanitize.ts`, prompts legacy, `app/actions/stella/**` → WS3 · builders de contexto advisor, `advisor-contextual-system.ts`, `tests/eval/**`, `package.json` (solo script eval:offline) → WS1 · `lib/pipeline/sroi-*`, `composer-output.ts` + guard numérico → WS4 · wiring cross-WS (readiness en advisor.ts, guard en composer.ts) → coordinador en integración.
 
