@@ -3,7 +3,7 @@
 // WS2 (Moonshot) — component tests for the contextual advisor panel.
 // No real Gemini, no real DB, no real auth: the server action is mocked.
 
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
 import type { SuggestionDecisionRecord } from '../decision-types'
@@ -59,6 +59,71 @@ const VALID_OUTPUT: AdvisorContextualOutput = {
   clarifyingQuestions: ['¿Cuántos beneficiarios directos tiene el programa?'],
   limitations: ['El análisis no incluye la evidencia adjunta.'],
   requiresHumanReview: true,
+}
+
+/** Two applyable suggestions sharing ONE target field — for the global-LIFO
+ * undo regression (audit FIX 1). */
+const TWO_SUGGESTIONS_OUTPUT: AdvisorContextualOutput = {
+  ...VALID_OUTPUT,
+  suggestions: [
+    {
+      id: 's-1',
+      proposedText: 'Texto A',
+      rationale: 'Primera propuesta.',
+      missingInformation: [],
+      sourceFields: ['narrativeSummary'],
+    },
+    {
+      id: 's-2',
+      proposedText: 'Texto B',
+      rationale: 'Segunda propuesta.',
+      missingInformation: [],
+      sourceFields: ['narrativeSummary'],
+    },
+  ],
+}
+
+/**
+ * Stateful harness mirroring how pages actually wire the panel (see
+ * StellaContextualAdvisorField): one controlled field, onApply writes it,
+ * targetValue reflects it — required so undo/staleness see real values.
+ */
+function TargetHarness({
+  onDecision,
+  output = VALID_OUTPUT,
+  initialValue = 'valor original',
+}: {
+  onDecision?: (record: SuggestionDecisionRecord) => void
+  output?: AdvisorContextualOutput
+  initialValue?: string
+}) {
+  const [value, setValue] = React.useState(initialValue)
+  return (
+    <>
+      <textarea
+        aria-label="Campo destino"
+        data-testid="harness-target"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+      />
+      <StellaContextualAdvisorPanel
+        projectId="proj-1"
+        step="narrative"
+        targetValue={value}
+        onApply={(_suggestion, text) => setValue(text)}
+        onDecision={onDecision}
+      />
+    </>
+  )
+}
+
+function harnessTarget(): HTMLTextAreaElement {
+  return screen.getByTestId('harness-target') as HTMLTextAreaElement
+}
+
+function undoButtonIn(suggestionId: string): HTMLButtonElement {
+  const scope = within(screen.getByTestId(`stella-suggestion-${suggestionId}`))
+  return scope.getByText('Deshacer').closest('button') as HTMLButtonElement
 }
 
 function success(output: AdvisorContextualOutput = VALID_OUTPUT) {
@@ -325,29 +390,111 @@ describe('StellaContextualAdvisorPanel', () => {
       expect(record.appliedText).toBeUndefined()
     })
 
-    it('Deshacer replays the previous value through onApply and reports "undone"', async () => {
-      const onApply = vi.fn()
+    it('Deshacer restores the previous value and reports "undone" with real displaced/restored values', async () => {
       const onDecision = vi.fn()
-      await renderSuccess({ onApply, onDecision, targetValue: 'valor original' })
+      success()
+      render(<TargetHarness onDecision={onDecision} />)
+      askStella()
+      await waitFor(() => {
+        expect(screen.queryAllByText('Aceptar').length).toBeGreaterThan(0)
+      })
 
       fireEvent.click(screen.getAllByText('Aceptar')[0]!)
-      expect(onApply).toHaveBeenLastCalledWith(
-        expect.objectContaining({ id: 's-1' }),
-        'Texto propuesto por Stella para la narrativa.'
-      )
+      expect(harnessTarget().value).toBe('Texto propuesto por Stella para la narrativa.')
 
       fireEvent.click(screen.getByText('Deshacer'))
-      expect(onApply).toHaveBeenLastCalledWith(
-        expect.objectContaining({ id: 's-1' }),
-        'valor original'
-      )
+      expect(harnessTarget().value).toBe('valor original')
       // Undo consumed the history entry — the affordance disappears.
       expect(screen.queryByText('Deshacer')).toBeNull()
 
       const undoneRecord: SuggestionDecisionRecord = onDecision.mock.calls[1]![0]
       expect(undoneRecord.action).toBe('undone')
+      // appliedText = restored value; previousValue = value the undo displaced.
       expect(undoneRecord.appliedText).toBe('valor original')
       expect(undoneRecord.previousValue).toBe('Texto propuesto por Stella para la narrativa.')
+    })
+
+    it('REGRESSION (audit FIX 1): interleaved cross-suggestion applies undo as a global LIFO', async () => {
+      // Repro from the audit: orig → apply s1(A) → apply s2(B). The old
+      // per-suggestion undo restored `orig` from s1 (losing B) and could
+      // then resurrect A from s2.
+      const onDecision = vi.fn()
+      success(TWO_SUGGESTIONS_OUTPUT)
+      render(<TargetHarness onDecision={onDecision} output={TWO_SUGGESTIONS_OUTPUT} initialValue="orig" />)
+      askStella()
+      await waitFor(() => {
+        expect(screen.queryAllByText('Aceptar').length).toBe(2)
+      })
+
+      // apply s1(A), then apply s2(B)
+      fireEvent.click(within(screen.getByTestId('stella-suggestion-s-1')).getByText('Aceptar'))
+      expect(harnessTarget().value).toBe('Texto A')
+      fireEvent.click(within(screen.getByTestId('stella-suggestion-s-2')).getByText('Aceptar'))
+      expect(harnessTarget().value).toBe('Texto B')
+
+      // s1 is NOT the top of the stack: its undo is disabled and explains why.
+      const undoS1 = undoButtonIn('s-1')
+      expect(undoS1.disabled).toBe(true)
+      expect(undoS1.getAttribute('title')).toMatch(/aplicación más reciente/i)
+
+      // Undoing s2 (top) restores A — it must NOT restore `orig`.
+      fireEvent.click(undoButtonIn('s-2'))
+      expect(harnessTarget().value).toBe('Texto A')
+      const undoneS2: SuggestionDecisionRecord = onDecision.mock.calls[2]![0]
+      expect(undoneS2.action).toBe('undone')
+      expect(undoneS2.suggestionId).toBe('s-2')
+      expect(undoneS2.previousValue).toBe('Texto B') // value actually displaced
+      expect(undoneS2.appliedText).toBe('Texto A') // value actually restored
+
+      // Now s1 is the top: undoing it restores the original value.
+      const undoS1After = undoButtonIn('s-1')
+      expect(undoS1After.disabled).toBe(false)
+      fireEvent.click(undoS1After)
+      expect(harnessTarget().value).toBe('orig')
+
+      // Stack empty — no undo affordances remain.
+      expect(screen.queryByText('Deshacer')).toBeNull()
+    })
+
+    it('stale undo (field edited after apply) requires an explicit confirmation', async () => {
+      const onDecision = vi.fn()
+      success()
+      render(<TargetHarness onDecision={onDecision} />)
+      askStella()
+      await waitFor(() => {
+        expect(screen.queryAllByText('Aceptar').length).toBeGreaterThan(0)
+      })
+
+      fireEvent.click(screen.getAllByText('Aceptar')[0]!)
+      expect(harnessTarget().value).toBe('Texto propuesto por Stella para la narrativa.')
+
+      // The user edits the field AFTER the apply.
+      fireEvent.change(harnessTarget(), { target: { value: 'editado a mano' } })
+
+      // Undo now requires confirmation — nothing changes yet.
+      fireEvent.click(screen.getByText('Deshacer'))
+      const confirm = screen.getByTestId('stella-undo-confirm-s-1')
+      expect(confirm.getAttribute('role')).toBe('alertdialog')
+      expect(harnessTarget().value).toBe('editado a mano')
+      // Dialog receives focus so Escape works without tabbing.
+      await waitFor(() => {
+        expect(document.activeElement).toBe(confirm)
+      })
+
+      // Escape cancels without undoing.
+      fireEvent.keyDown(confirm, { key: 'Escape' })
+      expect(screen.queryByTestId('stella-undo-confirm-s-1')).toBeNull()
+      expect(harnessTarget().value).toBe('editado a mano')
+
+      // Confirmed undo restores the pre-apply value and records reality.
+      fireEvent.click(screen.getByText('Deshacer'))
+      fireEvent.click(screen.getByText('Confirmar deshacer'))
+      expect(harnessTarget().value).toBe('valor original')
+      const undone: SuggestionDecisionRecord = onDecision.mock.calls
+        .map((c) => c[0] as SuggestionDecisionRecord)
+        .find((r) => r.action === 'undone')!
+      expect(undone.previousValue).toBe('editado a mano') // displaced user edit
+      expect(undone.appliedText).toBe('valor original') // restored value
     })
 
     it('shows a copy-to-clipboard affordance instead of Aceptar when no onApply is wired', async () => {
@@ -390,10 +537,22 @@ describe('StellaContextualAdvisorPanel', () => {
       expect(notice.textContent).toMatch(/cuota mensual agotada/i)
     })
 
-    it('RATE_LIMITED surfaces the reset info from the message', async () => {
-      const notice = await renderError('RATE_LIMITED', 'Rate limit exceeded. Resets at 15:00 UTC.')
+    it('RATE_LIMITED humanizes the ISO reset timestamp the server emits', async () => {
+      // Real server format: rate-limit.ts always emits Date#toISOString().
+      const notice = await renderError(
+        'RATE_LIMITED',
+        'Rate limit exceeded. Resets at 2026-06-26T15:00:00.000Z.'
+      )
       expect(notice.textContent).toMatch(/límite de solicitudes por hora/i)
-      expect(notice.textContent).toContain('15:00 UTC')
+      expect(notice.textContent).toMatch(/se restablece a las 15:00 \(UTC\)/i)
+      // The raw ISO string is no longer shown verbatim.
+      expect(notice.textContent).not.toContain('2026-06-26T15:00:00.000Z')
+    })
+
+    it('RATE_LIMITED falls back gracefully when the reset info is not parseable', async () => {
+      const notice = await renderError('RATE_LIMITED', 'Rate limit exceeded. Resets at soon-ish.')
+      expect(notice.textContent).toMatch(/límite de solicitudes por hora/i)
+      expect(notice.textContent).toContain('soon-ish')
     })
 
     it('TIMEOUT offers Reintentar and retry re-invokes the action', async () => {
@@ -507,10 +666,6 @@ describe('StellaContextualAdvisorPanel', () => {
   // Security invariants
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
-    it('does not read GEMINI_API_KEY', () => {
-      expect(process.env.GEMINI_API_KEY).toBeUndefined()
-    })
-
     it('does not claim certification in rendered content', async () => {
       await renderSuccess()
       const text = document.body.textContent ?? ''

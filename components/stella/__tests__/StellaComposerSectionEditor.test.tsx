@@ -129,15 +129,27 @@ describe('StellaComposerSectionEditor', () => {
     expect(screen.queryByTestId('stella-composer-undo')).toBeNull()
   })
 
-  it('Escape dismisses the overwrite confirmation (U6 keyboard)', async () => {
+  it('focuses the alertdialog on open, Escape dismisses it and focus returns to the trigger (FIX 2)', async () => {
     render(<StellaComposerSectionEditor {...defaultProps} initialContent="contenido escrito a mano" />)
     await composeDraft()
 
-    fireEvent.click(screen.getByText(/usar este borrador/i))
-    fireEvent.keyDown(screen.getByTestId('stella-composer-overwrite-confirm'), { key: 'Escape' })
+    // Realistic keyboard flow: the trigger has focus when activated.
+    const trigger = screen.getByText(/usar este borrador/i).closest('button') as HTMLButtonElement
+    trigger.focus()
+    fireEvent.click(trigger)
+
+    // The dialog receives focus on open — Escape works without tabbing.
+    const confirm = screen.getByTestId('stella-composer-overwrite-confirm')
+    await waitFor(() => {
+      expect(document.activeElement).toBe(confirm)
+    })
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
 
     expect(screen.queryByTestId('stella-composer-overwrite-confirm')).toBeNull()
     expect(contentTextarea().value).toBe('contenido escrito a mano')
+    // Focus returns to the trigger on close.
+    expect(document.activeElement).toBe(trigger)
   })
 
   it('Deshacer restores the pre-apply title and content', async () => {

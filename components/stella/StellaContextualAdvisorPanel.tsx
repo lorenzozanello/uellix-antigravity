@@ -129,9 +129,16 @@ export function StellaContextualAdvisorPanel({
 }: StellaContextualAdvisorPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
   const [suggestionUi, setSuggestionUi] = useState<Record<string, SuggestionUiState>>({})
+  // GLOBAL LIFO stack for the single shared target field: applies from ALL
+  // suggestions interleave on one field, so only the most recent apply is
+  // safely undoable — undoing an older entry would silently clobber the
+  // newer apply (audit FIX 1).
   const [history, setHistory] = useState<AppliedSuggestionHistoryEntry[]>([])
+  // Suggestion id awaiting a stale-undo confirmation (field changed after apply).
+  const [pendingUndoId, setPendingUndoId] = useState<string | null>(null)
   const resultRef = useRef<HTMLDivElement>(null)
   const errorRef = useRef<HTMLDivElement>(null)
+  const undoConfirmRef = useRef<HTMLDivElement>(null)
   const idPrefix = useId()
 
   const HeadingTag = `h${headingLevel}` as 'h2' | 'h3' | 'h4'
@@ -142,6 +149,12 @@ export function StellaContextualAdvisorPanel({
     if (panelState.status === 'success') resultRef.current?.focus()
     else if (panelState.status === 'error') errorRef.current?.focus()
   }, [panelState.status])
+
+  // Focus the stale-undo confirmation when it opens so Escape works without
+  // tabbing (keyboard parity with the composer overwrite confirm).
+  useEffect(() => {
+    if (pendingUndoId !== null) undoConfirmRef.current?.focus()
+  }, [pendingUndoId])
 
   function uiFor(id: string): SuggestionUiState {
     return suggestionUi[id] ?? INITIAL_SUGGESTION_UI
@@ -155,6 +168,7 @@ export function StellaContextualAdvisorPanel({
     setPanelState({ status: 'loading' })
     setSuggestionUi({})
     setHistory([])
+    setPendingUndoId(null)
     try {
       const result = await getStellaContextualAdvisor(projectId, step)
       if (result.ok) {
@@ -182,6 +196,7 @@ export function StellaContextualAdvisorPanel({
       ...prev,
       { suggestionId: suggestion.id, previousValue, appliedValue: text, at: new Date().toISOString() },
     ])
+    setPendingUndoId(null)
     patchUi(suggestion.id, { mode: 'none' })
     emitDecision({
       suggestionId: suggestion.id,
@@ -194,22 +209,44 @@ export function StellaContextualAdvisorPanel({
     })
   }
 
-  function undoSuggestion(suggestion: ContextualSuggestion) {
+  /**
+   * Executes the undo of the TOP stack entry (global LIFO — audit FIX 1).
+   * The emitted record reflects reality: `previousValue` is the field value
+   * the undo actually displaced (the current value at undo time) and
+   * `appliedText` is the value restored into the field.
+   */
+  function performUndo(suggestion: ContextualSuggestion) {
     if (!onApply) return
-    const idx = history.map((e) => e.suggestionId).lastIndexOf(suggestion.id)
-    if (idx < 0) return
-    const entry = history[idx]!
+    const entry = history[history.length - 1]
+    if (!entry || entry.suggestionId !== suggestion.id) return
+    const displacedValue = targetValue ?? ''
     onApply(suggestion, entry.previousValue)
-    setHistory((prev) => prev.filter((_, i) => i !== idx))
+    setHistory((prev) => prev.slice(0, -1))
+    setPendingUndoId(null)
     emitDecision({
       suggestionId: suggestion.id,
       step,
       action: 'undone',
       proposedText: suggestion.proposedText,
       appliedText: entry.previousValue,
-      previousValue: entry.appliedValue,
+      previousValue: displacedValue,
       decidedAt: new Date().toISOString(),
     })
+  }
+
+  /**
+   * Undo entry point: only the top of the global stack is undoable. If the
+   * field changed after the apply (the user typed over it), undoing would
+   * destroy that edit — require an explicit confirmation first.
+   */
+  function requestUndo(suggestion: ContextualSuggestion) {
+    const entry = history[history.length - 1]
+    if (!entry || entry.suggestionId !== suggestion.id) return
+    if ((targetValue ?? '') !== entry.appliedValue) {
+      setPendingUndoId(suggestion.id)
+    } else {
+      performUndo(suggestion)
+    }
   }
 
   async function copySuggestion(suggestion: ContextualSuggestion, text: string) {
@@ -389,6 +426,8 @@ export function StellaContextualAdvisorPanel({
                   {panelState.data.suggestions.map((suggestion) => {
                     const ui = uiFor(suggestion.id)
                     const applied = history.some((e) => e.suggestionId === suggestion.id)
+                    const topEntry = history[history.length - 1]
+                    const isTopOfStack = topEntry?.suggestionId === suggestion.id
                     const canApply = Boolean(onApply)
                     const effectiveText = ui.mode === 'edit' ? ui.editedText : suggestion.proposedText ?? ''
 
@@ -398,10 +437,14 @@ export function StellaContextualAdvisorPanel({
                         className="rounded-md border border-border bg-background p-3"
                         data-testid={`stella-suggestion-${suggestion.id}`}
                         onKeyDown={(event) => {
-                          // U6: Escape closes preview / edit / reject.
-                          if (event.key === 'Escape' && ui.mode !== 'none') {
+                          // U6: Escape closes preview / edit / reject / undo-confirm.
+                          if (
+                            event.key === 'Escape' &&
+                            (ui.mode !== 'none' || pendingUndoId === suggestion.id)
+                          ) {
                             event.stopPropagation()
                             patchUi(suggestion.id, { mode: 'none' })
+                            if (pendingUndoId === suggestion.id) setPendingUndoId(null)
                           }
                         }}
                       >
@@ -601,12 +644,57 @@ export function StellaContextualAdvisorPanel({
                                   <button
                                     type="button"
                                     className={ACTION_BUTTON_CLASS}
-                                    onClick={() => undoSuggestion(suggestion)}
+                                    // Global LIFO: only the most recent apply on the
+                                    // shared field is undoable (audit FIX 1).
+                                    disabled={!isTopOfStack}
+                                    title={
+                                      isTopOfStack
+                                        ? undefined
+                                        : 'Solo se puede deshacer la aplicación más reciente sobre este campo.'
+                                    }
+                                    onClick={() => requestUndo(suggestion)}
                                   >
                                     <Undo2 className="h-3 w-3" aria-hidden="true" />
                                     Deshacer
                                   </button>
                                 )}
+                              </div>
+                            )}
+
+                            {/* Stale-undo confirmation: the field changed after
+                                this apply — undoing would discard that edit. */}
+                            {pendingUndoId === suggestion.id && (
+                              <div
+                                ref={undoConfirmRef}
+                                tabIndex={-1}
+                                role="alertdialog"
+                                aria-label="Confirmar deshacer"
+                                data-testid={`stella-undo-confirm-${suggestion.id}`}
+                                className="mt-2 rounded-md border border-uellix-orange/30 bg-uellix-orange/5 p-2.5 focus-visible:outline-none"
+                              >
+                                <p className="text-xs font-medium text-foreground">
+                                  El texto del campo cambió después de aplicar esta sugerencia.
+                                </p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  Al deshacer se reemplazará el contenido actual por el valor previo a
+                                  la aplicación y se perderán esos cambios.
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    className={PRIMARY_ACTION_BUTTON_CLASS}
+                                    onClick={() => performUndo(suggestion)}
+                                  >
+                                    Confirmar deshacer
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={ACTION_BUTTON_CLASS}
+                                    onClick={() => setPendingUndoId(null)}
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </>

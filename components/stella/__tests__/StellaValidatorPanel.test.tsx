@@ -583,13 +583,13 @@ describe('StellaValidatorPanel', () => {
       })
     })
 
-    it('shows reset time from error message', async () => {
+    it('shows a humanized reset time from the ISO server message (FIX 3)', async () => {
       rateLimited()
       render(<StellaValidatorPanel projectId="proj-1" />)
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/2026-06-26T15:00:00/)).not.toBeNull()
+        expect(screen.queryByText(/se restablece a las 15:00 \(UTC\)/i)).not.toBeNull()
       })
     })
 

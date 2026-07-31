@@ -63,6 +63,22 @@ function rateLimitResetInfo(message: string): string | null {
 }
 
 /**
+ * Humanizes the reset moment. The rate limiter always emits an ISO-8601
+ * UTC timestamp (Date#toISOString in lib/stella/rate-limit.ts) — parse it
+ * and render a readable hour ("las 15:00 (UTC)"). Anything unparseable
+ * falls back to the raw string so the information is never dropped.
+ */
+function humanizeResetMoment(raw: string): string {
+  const parsed = new Date(raw)
+  if (!Number.isNaN(parsed.getTime())) {
+    const hh = String(parsed.getUTCHours()).padStart(2, '0')
+    const mm = String(parsed.getUTCMinutes()).padStart(2, '0')
+    return `las ${hh}:${mm} (UTC)`
+  }
+  return raw
+}
+
+/**
  * Maps a server error code + message to a Spanish presentation.
  * Unknown codes degrade to the UNKNOWN_ERROR presentation.
  */
@@ -103,7 +119,7 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
         code,
         title: 'Límite de solicitudes por hora alcanzado',
         description: reset
-          ? `Se alcanzó el límite de solicitudes a Stella por esta hora. Se restablece a las ${reset} (UTC).`
+          ? `Se alcanzó el límite de solicitudes a Stella por esta hora. Se restablece a ${humanizeResetMoment(reset)}.`
           : `Se alcanzó el límite de solicitudes a Stella por esta hora. ${message}`,
         retryable: false,
         tone: 'warning',
@@ -151,7 +167,8 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
         title: 'Respuesta con formato inesperado',
         description:
           'Stella devolvió una respuesta con un formato que no se pudo verificar, así que no se muestra. Podés intentar de nuevo.',
-        retryable: false,
+        // A fresh model call is a legitimate retry (audit FIX 4).
+        retryable: true,
         tone: 'error',
       }
     case 'GEMINI_ERROR':
@@ -160,7 +177,8 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
         title: 'Error del servicio de IA',
         description:
           'El servicio de IA de Stella encontró un error inesperado. Podés intentar de nuevo en unos minutos.',
-        retryable: false,
+        // A fresh model call is a legitimate retry (audit FIX 4).
+        retryable: true,
         tone: 'error',
       }
     case 'AUDIT_ERROR':

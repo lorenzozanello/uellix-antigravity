@@ -13,7 +13,7 @@
 // - Undo: every apply pushes the previous {title, content} onto a client
 //   history stack; "Deshacer" restores the most recent entry.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Undo2 } from 'lucide-react'
 import { StellaComposerPanel, type ComposerDraft } from './StellaComposerPanel'
 
@@ -61,6 +61,20 @@ export function StellaComposerSectionEditor({
   const [content, setContent] = useState(initialContent)
   const [history, setHistory] = useState<SectionHistoryEntry[]>([])
   const [pendingDraft, setPendingDraft] = useState<ComposerDraft | null>(null)
+  const confirmRef = useRef<HTMLDivElement>(null)
+  // Element that triggered the confirmation — focus returns there on close
+  // (audit FIX 2).
+  const returnFocusRef = useRef<HTMLElement | null>(null)
+
+  // Focus the alertdialog when it opens so Escape works without tabbing.
+  useEffect(() => {
+    if (pendingDraft) confirmRef.current?.focus()
+  }, [pendingDraft])
+
+  function restoreTriggerFocus() {
+    returnFocusRef.current?.focus()
+    returnFocusRef.current = null
+  }
 
   function applyDraft(draft: ComposerDraft) {
     setHistory((prev) => [...prev, { title, content, at: new Date().toISOString() }])
@@ -69,9 +83,21 @@ export function StellaComposerSectionEditor({
     setPendingDraft(null)
   }
 
+  function confirmPendingDraft(draft: ComposerDraft) {
+    applyDraft(draft)
+    restoreTriggerFocus()
+  }
+
+  function dismissConfirm() {
+    setPendingDraft(null)
+    restoreTriggerFocus()
+  }
+
   function handleUseDraft(draft: ComposerDraft) {
     // Overwrite confirmation only when the user would lose non-empty content.
     if (content.trim().length > 0) {
+      returnFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
       setPendingDraft(draft)
     } else {
       applyDraft(draft)
@@ -99,17 +125,20 @@ export function StellaComposerSectionEditor({
         onUseDraft={handleUseDraft}
       />
 
-      {/* Overwrite confirmation — explicit, keyboard-dismissable. */}
+      {/* Overwrite confirmation — explicit, keyboard-dismissable. Receives
+          focus on open; focus returns to the trigger on close (FIX 2). */}
       {pendingDraft && (
         <div
+          ref={confirmRef}
+          tabIndex={-1}
           role="alertdialog"
           aria-label="Confirmar reemplazo de contenido"
           data-testid="stella-composer-overwrite-confirm"
-          className="rounded-md border border-uellix-orange/30 bg-uellix-orange/5 p-3"
+          className="rounded-md border border-uellix-orange/30 bg-uellix-orange/5 p-3 focus-visible:outline-none"
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
               event.stopPropagation()
-              setPendingDraft(null)
+              dismissConfirm()
             }
           }}
         >
@@ -123,14 +152,14 @@ export function StellaComposerSectionEditor({
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => applyDraft(pendingDraft)}
+              onClick={() => confirmPendingDraft(pendingDraft)}
               className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Reemplazar contenido
             </button>
             <button
               type="button"
-              onClick={() => setPendingDraft(null)}
+              onClick={dismissConfirm}
               className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Cancelar

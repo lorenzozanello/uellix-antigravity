@@ -387,7 +387,8 @@ describe('StellaAdvisorPanel', () => {
 
       await waitFor(() => {
         expect(screen.queryByText(/límite de solicitudes por hora/i)).not.toBeNull()
-        expect(screen.queryByText(/2026-06-26T15:00:00/)).not.toBeNull()
+        // FIX 3: the ISO reset timestamp is humanized to a readable UTC hour.
+        expect(screen.queryByText(/se restablece a las 15:00 \(UTC\)/i)).not.toBeNull()
       })
     })
 

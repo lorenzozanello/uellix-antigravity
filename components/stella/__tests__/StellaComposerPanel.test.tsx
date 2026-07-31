@@ -552,10 +552,10 @@ describe('StellaComposerPanel', () => {
   // Security invariants
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
-    it('does not read GEMINI_API_KEY env var', () => {
-      expect(process.env.GEMINI_API_KEY).toBeUndefined()
-    })
-
+    // Note: the old "does not read GEMINI_API_KEY env var" test was removed
+    // (audit FIX 5) — asserting the var is undefined in the test env proved
+    // nothing about the component. Isolation is proven by the mocked-action
+    // test below: the real adapter would throw without a key.
     it('does not make real Gemini calls — action is fully mocked', async () => {
       success()
       render(<StellaComposerPanel {...defaultProps} />)

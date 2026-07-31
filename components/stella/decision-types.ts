@@ -37,11 +37,17 @@ export interface SuggestionDecisionRecord {
   /**
    * Text actually handed to the page via `onApply` (accept/accept_edited/
    * undone) or copied to the clipboard (`copied`). Absent for `rejected`.
+   * For `undone` this is the RESTORED value (what the field holds after the
+   * undo completes).
    */
   appliedText?: string
   /**
-   * The target's value immediately before the apply, when the page supplied
-   * one. Absent in clipboard mode and for `rejected`.
+   * The field value this decision displaced, when the page supplied one.
+   * - accept/accept_edited: the target's value immediately before the apply.
+   * - undone: the target's value at undo time (what the undo overwrote —
+   *   which may differ from the applied text if the user edited afterwards;
+   *   that case requires an explicit stale-undo confirmation in the UI).
+   * Absent in clipboard mode and for `rejected`.
    */
   previousValue?: string
   /** Optional free-text reason captured on `rejected`. */
