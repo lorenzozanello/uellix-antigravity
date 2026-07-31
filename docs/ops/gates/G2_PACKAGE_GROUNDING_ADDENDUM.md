@@ -31,11 +31,48 @@ grounding); el rollback no pierde fuente de verdad.
 - [ ] Backup de staging registrado y restaurable por un humano.
 - [ ] Suite offline verde en el branch: `pnpm vitest run lib/grounding`.
 
+## Ejecución separada — no forma parte de la corrida de `stella_0002`/`0003`
+
+Este script se aplica **en una sesión propia**, después de los scripts
+`stella_*` y solo cuando sus dos condiciones de gate estén cumplidas:
+
+1. **Decisión G5 P3 registrada** (`docs/ops/gates/G5_PACKAGE.md`): pgvector vs.
+   fallback léxico. **Sin esa decisión el script no se ejecuta.**
+2. **pgvector confirmado disponible** en el proyecto de staging
+   (Dashboard → Database → Extensions → `vector`).
+
+`grounding_0001` no comparte precondiciones ni transacción con
+`stella_0002`/`stella_0003`, y un aborto suyo **no** invalida la aplicación de
+aquellos. Si G5 P3 eligió el fallback léxico y pgvector no está disponible,
+aplicar la variante sin la columna `embedding` descrita en
+`db/prepared/README.md` — la guarda de forma del script tolera ambas variantes.
+
 ## Aplicación (staging)
 
-1. Abrir el SQL Editor de Supabase (staging) con rol admin.
-2. Pegar y ejecutar `db/prepared/grounding_0001_evidence_chunks.sql` completo.
-3. Ejecutar las verificaciones de abajo.
+**Método principal — psql con transacción única (preferido):**
+
+```bash
+# con el connection string de STAGING (¡verificar dos veces el host!)
+# -1 = todo el script en UNA transacción: un fallo no deja la tabla creada
+#      con RLS todavía sin habilitar.
+psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/grounding_0001_evidence_chunks.sql
+```
+
+**Alternativa — supabase CLI** (verificar antes el proyecto linkeado con
+`supabase projects list`):
+
+```bash
+supabase db execute --file db/prepared/grounding_0001_evidence_chunks.sql
+```
+
+**Último recurso — SQL Editor de Supabase** (staging, rol admin): pegar y
+ejecutar el script completo. Solo si las vías anteriores no están disponibles:
+el editor no garantiza por contrato la ejecución transaccional del script
+entero, y un fallo entre el `CREATE TABLE` y el `ENABLE ROW LEVEL SECURITY`
+dejaría `evidence_chunks` **sin RLS** — un estado parcial con impacto de
+seguridad. Si se usa esta vía, ejecutar inmediatamente la verificación 3.
+
+Después: ejecutar las verificaciones de abajo.
 
 ## Verificaciones post-aplicación
 
@@ -73,9 +110,27 @@ Criterio de aprobación binario: **todas** las verificaciones 1–5 dan el
 resultado esperado y la suite RLS de integración (`pnpm test:rls`, apuntando a
 staging, autorizado por Lorenzo) pasa sin regresiones.
 
+## Criterios de aborto (propios de este addendum)
+
+Complementan —no reemplazan— los criterios A1–A8 de `G2_PACKAGE.md`.
+
+| # | Causa de aborto | Cómo se detecta | Qué hacer |
+|---|---|---|---|
+| GA1 | **Decisión G5 P3 ausente** | No hay registro en `G5_PACKAGE.md` / `STELLA_FABLE_DECISIONS.md` | Detener. Este script no se ejecuta antes de G5. `stella_0002`/`0003` no se ven afectados |
+| GA2 | **pgvector no disponible y no se eligió la variante léxica** | El script aborta: `pgvector is neither installed nor available on this instance` | Detener. Confirmar disponibilidad en el Dashboard o aplicar la variante sin `embedding` |
+| GA2b | **pgvector instalado en un esquema fuera del `search_path`** | El script aborta: `pgvector is installed in schema "X" but the type "vector" is not resolvable`. En Supabase hosted lo normal es `extensions`, ya contemplado por el `SET search_path = public, extensions` del script | Añadir ese esquema al `SET search_path` del encabezado del script y re-ejecutar. Verificar antes con:<br>`SELECT e.extname, n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'vector';` |
+| GA3 | **Host equivocado** | Verificar destino antes de ejecutar | Detener. No ejecutar nada |
+| GA4 | **`evidence_chunks` preexistente con forma incompatible** | El script aborta listando columnas discrepantes | Detener. No forzar; investigar el origen de esa tabla |
+| GA5 | **Tabla creada sin RLS (estado parcial)** | Verificación 3 devuelve `f`, o `pg_policies` devuelve 0 filas | Detener. Re-ejecutar el script completo con `psql -1` (es convergente) y re-verificar. Si persiste, rollback |
+| GA6 | **Fallo de cualquier verificación 1–5** | Sección anterior | Detener y evaluar rollback |
+
+Como `evidence_chunks` contiene **solo datos derivados y regenerables**, el
+rollback aquí es barato: no pierde fuente de verdad. Ante la duda, revertir.
+
 ## Rollback
 
-1. Ejecutar `db/prepared/grounding_0001_rollback.sql` en el SQL Editor.
+1. Ejecutar `db/prepared/grounding_0001_rollback.sql`, preferentemente con
+   `psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f ...`.
 2. Verificar:
 
 ```sql
