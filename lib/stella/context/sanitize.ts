@@ -1,6 +1,9 @@
 // lib/stella/context/sanitize.ts
 // Sprint 9B: Context sanitization to prevent prompt injection and secret leakage
-// WS3 (Fable Moonshot): injection markers, untrusted-data envelope, inline labels.
+// WS3 (Fable Moonshot): injection markers, untrusted-data envelope, inline
+// labels, PII redaction on all free-text paths.
+
+import { redactPii } from '../security/redact-pii'
 
 // Secret-oriented patterns — matched case-insensitively as substrings.
 const FORBIDDEN_PATTERNS = [
@@ -80,7 +83,17 @@ export function sanitizeNarrative(narrative: string): string {
   if (hasForbiddenPattern(cleaned)) {
     return '[Narrative contains restricted content - filtered for Stella]'
   }
-  return cleaned
+  return redactPii(cleaned).text
+}
+
+/**
+ * Sanitize an arbitrary free-text field (titles, names, sources, summaries)
+ * for inclusion in a prompt payload: control-char cleanup + PII redaction.
+ * Used by the prompt builders so every Stella role benefits from redaction
+ * regardless of which context builder produced the data.
+ */
+export function sanitizeFreeText(input: string, maxLength = 500): string {
+  return redactPii(sanitizeString(input, maxLength)).text
 }
 
 /**

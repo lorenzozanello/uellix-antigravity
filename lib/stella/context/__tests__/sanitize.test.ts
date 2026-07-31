@@ -9,6 +9,7 @@ import {
   sanitizeNarrative,
   sanitizeOutcome,
   sanitizeInlineLabel,
+  sanitizeFreeText,
   markAsData,
   wrapUntrustedData,
   UNTRUSTED_DATA_MARKER,
@@ -125,6 +126,32 @@ describe('sanitizeNarrative', () => {
     const long = 'a'.repeat(3000)
     const result = sanitizeNarrative(long)
     expect(result.length).toBeLessThanOrEqual(2003) // 2000 + '...'
+  })
+
+  it('redacts PII from otherwise-clean narratives (emails, phones, cédulas)', () => {
+    const result = sanitizeNarrative(
+      'Coordinado por maria@ong.org (+57 300 123 4567), beneficiaria con cédula 1.234.567.890'
+    )
+    expect(result).not.toContain('maria@ong.org')
+    expect(result).not.toContain('300 123 4567')
+    expect(result).not.toContain('1.234.567.890')
+    expect(result).toContain('[REDACTED:email]')
+    expect(result).toContain('[REDACTED:phone]')
+    expect(result).toContain('[REDACTED:id]')
+  })
+})
+
+describe('sanitizeFreeText', () => {
+  it('applies control-char cleanup, truncation and PII redaction', () => {
+    const result = sanitizeFreeText('Encuesta\x00 de juan.perez@ong.org sobre salud', 200)
+    expect(result).not.toContain('juan.perez@ong.org')
+    expect(result).toContain('[REDACTED:email]')
+    expect(result).not.toContain('\x00')
+  })
+
+  it('leaves amounts, years and percentages untouched', () => {
+    const input = 'Inversión $1.000.000 COP en 2026 con 45% de atribución'
+    expect(sanitizeFreeText(input, 200)).toBe(input)
   })
 })
 

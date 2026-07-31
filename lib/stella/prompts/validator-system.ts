@@ -2,7 +2,7 @@
 // Sprint 9B: Stella Validator system prompt builder
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
-import { wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { sanitizeFreeText, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
 import type { StellaProjectContext } from '../context/types'
 
 export function buildValidatorSystemPrompt(): string {
@@ -61,10 +61,10 @@ export function buildValidatorUserMessage(context: StellaProjectContext): string
       sroiRatio: context.calculationSnapshot ? Number(context.calculationSnapshot.sroiRatio.toFixed(2)) : null,
       readinessScore: context.readinessScore ?? null,
     },
-    outcomes: context.outcomesSnapshot.map((o) => o.name),
-    evidence: context.evidenceMetadata.map((e) => ({ title: e.title, status: e.status })),
+    outcomes: context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200)),
+    evidence: context.evidenceMetadata.map((e) => ({ title: sanitizeFreeText(e.title, 200), status: e.status })),
     proxies: context.proxySummary.map((p) => ({
-      name: p.name,
+      name: sanitizeFreeText(p.name, 200),
       confidenceLevel: p.confidenceLevel ?? 'unknown',
     })),
   }

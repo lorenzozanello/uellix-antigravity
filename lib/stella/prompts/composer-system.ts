@@ -2,7 +2,7 @@
 // Sprint 9B: Stella Composer system prompt builder
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
-import { sanitizeInlineLabel, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { sanitizeFreeText, sanitizeInlineLabel, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
 import type { StellaProjectContext } from '../context/types'
 
 export function buildComposerSystemPrompt(rawSectionType: string): string {
@@ -64,7 +64,7 @@ export function buildComposerUserMessage(
   const payload: Record<string, unknown> = {
     sectionType,
     analysisSummary: {
-      outcomes: context.outcomesSnapshot.map((o) => o.name),
+      outcomes: context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200)),
       impactPeriodYears:
         context.filterSetsSummary.length > 0 ? context.filterSetsSummary[0].durationYears ?? null : null,
       estimatedSocialValue: calc
@@ -81,8 +81,8 @@ export function buildComposerUserMessage(
     payload.funderBreakdown = {
       currency: calc.currency,
       funders: calc.fundersBreakdown.map((f) => ({
-        funderName: f.funderName,
-        funderType: f.funderType,
+        funderName: sanitizeFreeText(f.funderName, 200),
+        funderType: sanitizeFreeText(f.funderType, 100),
         investmentUsd: Number(f.investmentUsd.toFixed(2)),
         sroiRatio: Number(f.sroiRatio.toFixed(2)),
       })),

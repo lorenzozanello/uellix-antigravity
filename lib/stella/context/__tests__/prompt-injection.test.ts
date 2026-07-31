@@ -206,6 +206,17 @@ describe('envelope invariants — benign canary content', () => {
   })
 })
 
+describe('PII redaction reaches every legacy builder', () => {
+  const PII_TEXT = 'Contacto: maria.lopez@ong.org, tel +57 300 123 4567, cédula 1.234.567.890'
+
+  it.each(BUILDERS)('%s: no raw PII survives into the user message', (_name, build) => {
+    const message = build(PII_TEXT)
+    expect(message).not.toContain('maria.lopez@ong.org')
+    expect(message).not.toContain('300 123 4567')
+    expect(message).not.toContain('1.234.567.890')
+  })
+})
+
 describe('system prompt hardening', () => {
   it('all four system prompts carry the untrusted-envelope instruction', () => {
     const prompts = [

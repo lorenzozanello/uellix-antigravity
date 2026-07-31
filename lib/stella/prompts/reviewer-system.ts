@@ -4,7 +4,7 @@
 // focus and the emphasized context differ.
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
-import { wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { sanitizeFreeText, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
 import type { StellaProjectContext } from '../context/types'
 
 export type ReviewerRole = 'proxy_reviewer' | 'evidence_reviewer' | 'audit_assistant'
@@ -102,8 +102,8 @@ export function buildReviewerUserMessage(role: ReviewerRole, context: StellaProj
 
   if (role === 'proxy_reviewer') {
     payload.proxies = context.proxySummary.map((p) => ({
-      name: p.name,
-      source: p.source,
+      name: sanitizeFreeText(p.name, 200),
+      source: sanitizeFreeText(p.source, 200),
       confidenceLevel: p.confidenceLevel ?? 'unknown',
       methodologicalRisk: p.methodologicalRisk ?? 'unknown',
     }))
@@ -115,18 +115,18 @@ export function buildReviewerUserMessage(role: ReviewerRole, context: StellaProj
     }))
   } else if (role === 'evidence_reviewer') {
     payload.evidence = context.evidenceMetadata.map((e) => ({
-      title: e.title,
+      title: sanitizeFreeText(e.title, 200),
       type: e.type,
       status: e.status,
       linkedToOutcome: Boolean(e.outcomeId),
       linkedToIndicator: Boolean(e.indicatorId),
     }))
-    payload.outcomes = context.outcomesSnapshot.map((o) => o.name)
+    payload.outcomes = context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200))
   } else {
-    payload.outcomes = context.outcomesSnapshot.map((o) => o.name)
-    payload.evidence = context.evidenceMetadata.map((e) => ({ title: e.title, status: e.status }))
+    payload.outcomes = context.outcomesSnapshot.map((o) => sanitizeFreeText(o.name, 200))
+    payload.evidence = context.evidenceMetadata.map((e) => ({ title: sanitizeFreeText(e.title, 200), status: e.status }))
     payload.proxies = context.proxySummary.map((p) => ({
-      name: p.name,
+      name: sanitizeFreeText(p.name, 200),
       confidenceLevel: p.confidenceLevel ?? 'unknown',
     }))
   }

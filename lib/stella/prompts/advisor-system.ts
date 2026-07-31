@@ -5,7 +5,7 @@
 // are sanitized to a single line.
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
-import { sanitizeInlineLabel, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { sanitizeFreeText, sanitizeInlineLabel, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
 import type { StellaProjectContext } from '../context/types'
 
 export function buildAdvisorSystemPrompt(step: string): string {
@@ -52,7 +52,7 @@ export function buildAdvisorUserMessage(step: string, context: StellaProjectCont
       indicators: context.indicatorsSnapshot.length,
       evidenceItems: context.evidenceTotal,
       readinessScore: context.readinessScore ?? null,
-      narrativeSummary: context.narrativeSummary.substring(0, 500),
+      narrativeSummary: sanitizeFreeText(context.narrativeSummary, 500),
     },
   }
 
