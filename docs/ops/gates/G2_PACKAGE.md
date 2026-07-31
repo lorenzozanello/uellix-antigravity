@@ -44,8 +44,11 @@ Opción B — psql / supabase CLI:
 
 ```bash
 # con el connection string de STAGING (¡verificar dos veces el host!)
-psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/prepared/stella_0002_interactions_hardening.sql
-psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/prepared/stella_0003_suggestion_decisions.sql
+# -1 = todo el script en UNA transacción: si algo falla no queda estado parcial
+#      (rollback automático); como además los statements son idempotentes,
+#      re-ejecutar el script tras corregir también recupera.
+psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0002_interactions_hardening.sql
+psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0003_suggestion_decisions.sql
 
 # o vía supabase CLI apuntando al proyecto de staging linkeado:
 supabase db execute --file db/prepared/stella_0002_interactions_hardening.sql

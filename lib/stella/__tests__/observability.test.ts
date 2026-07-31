@@ -26,13 +26,17 @@ describe('reportStellaFailure', () => {
     errorSpy.mockRestore()
   })
 
-  it('captures the exception with stella_role and error_code tags', () => {
+  it('captures a sanitized clone with stella_role and error_code tags', () => {
     const error = new Error('boom')
     reportStellaFailure('advisor', 'GEMINI_ERROR', error)
 
     expect(mockCaptureException).toHaveBeenCalledTimes(1)
     const [captured, options] = mockCaptureException.mock.calls[0] as [Error, Record<string, unknown>]
-    expect(captured).toBe(error)
+    // NOT the original object — a clone so a poisoned message never travels verbatim
+    expect(captured).not.toBe(error)
+    expect(captured).toBeInstanceOf(Error)
+    expect(captured.name).toBe('Error')
+    expect(captured.message).toBe('boom') // short messages pass through intact
     expect(options.tags).toEqual({ stella_role: 'advisor', error_code: 'GEMINI_ERROR' })
   })
 
@@ -42,10 +46,31 @@ describe('reportStellaFailure', () => {
     expect(options.fingerprint).toEqual(['stella', 'validator', 'TIMEOUT'])
   })
 
-  it('forwards scalar meta as extra', () => {
+  it('forwards scalar meta as extra plus the original message length', () => {
     reportStellaFailure('composer', 'AUDIT_ERROR', new Error('x'), { projectId: 'p-1', reportId: 'r-1' })
     const [, options] = mockCaptureException.mock.calls[0] as [Error, Record<string, unknown>]
-    expect(options.extra).toEqual({ projectId: 'p-1', reportId: 'r-1' })
+    expect(options.extra).toEqual({ projectId: 'p-1', reportId: 'r-1', originalMessageLength: 1 })
+  })
+
+  it('truncates a poisoned long message to 200 chars before Sentry (stack header included)', () => {
+    // Worst case: the provider error echoes the whole request body. The canary
+    // sits beyond the truncation limit and must never reach Sentry.
+    const poisoned = new Error('GEMINI 400: request rejected. Body echo follows: ' + 'x'.repeat(300) + ' TAIL_CANARY_' + PROMPT_FIXTURE)
+    reportStellaFailure('advisor', 'GEMINI_ERROR', poisoned)
+
+    const [captured, options] = mockCaptureException.mock.calls[0] as [Error, Record<string, unknown>]
+    expect(captured.message.length).toBeLessThanOrEqual(200)
+    expect(captured.message).not.toContain('TAIL_CANARY_')
+    expect(captured.message).not.toContain('SYSTEM_PROMPT_CANARY')
+    // V8 stacks embed the full message in the header line — the sanitized
+    // clone must rebuild it from the truncated message.
+    expect(captured.stack ?? '').not.toContain('TAIL_CANARY_')
+    expect(captured.stack ?? '').not.toContain('SYSTEM_PROMPT_CANARY')
+    // frames are preserved for grouping/debugging
+    expect(captured.stack ?? '').toMatch(/\n\s+at /)
+    // diagnostics: the original length survives as a scalar
+    const extra = options.extra as Record<string, unknown>
+    expect(extra.originalMessageLength).toBe(poisoned.message.length)
   })
 
   it('wraps non-Error values without serializing them (no payload leak)', () => {

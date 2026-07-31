@@ -71,13 +71,17 @@ BEGIN
   WHERE c.conrelid = 'public.stella_interactions'::regclass
     AND c.conname = 'stella_interactions_stella_role_check';
 
+  -- Match the QUOTED literals (''advisor'' etc.) as they appear in
+  -- pg_get_constraintdef output — a bare substring match would be fooled by a
+  -- superstring role (e.g. a hypothetical 'super_advisor' would satisfy
+  -- LIKE '%advisor%' without 'advisor' being in the set).
   IF current_def IS NULL
-     OR current_def NOT LIKE '%advisor%'
-     OR current_def NOT LIKE '%validator%'
-     OR current_def NOT LIKE '%composer%'
-     OR current_def NOT LIKE '%proxy_reviewer%'
-     OR current_def NOT LIKE '%evidence_reviewer%'
-     OR current_def NOT LIKE '%audit_assistant%'
+     OR current_def NOT LIKE '%''advisor''%'
+     OR current_def NOT LIKE '%''validator''%'
+     OR current_def NOT LIKE '%''composer''%'
+     OR current_def NOT LIKE '%''proxy_reviewer''%'
+     OR current_def NOT LIKE '%''evidence_reviewer''%'
+     OR current_def NOT LIKE '%''audit_assistant''%'
   THEN
     IF current_def IS NOT NULL THEN
       ALTER TABLE public.stella_interactions

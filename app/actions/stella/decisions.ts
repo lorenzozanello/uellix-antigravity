@@ -110,6 +110,25 @@ export async function recordStellaDecision(input: StellaDecisionInput): Promise<
       return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
     }
 
+    // interactionId ownership: a client-supplied interaction UUID must exist
+    // AND belong to the session organization and this same project — the FK
+    // alone would let an org-A member attribute a decision to an org-B
+    // interaction (cross-org misattribution). Not-found and cross-org return
+    // the SAME error code and message as schema validation on purpose, so the
+    // response is not an existence oracle for foreign interaction ids.
+    if (data.interactionId !== undefined) {
+      const interaction = await db.execute(
+        sql`SELECT 1 FROM stella_interactions
+            WHERE id = ${data.interactionId}
+              AND organization_id = ${ctx.organization.id}
+              AND project_id = ${data.projectId}
+            LIMIT 1`,
+      )
+      if ((interaction as unknown as unknown[]).length === 0) {
+        return { ok: false, error: 'INVALID_INPUT', message: 'Invalid decision payload.' }
+      }
+    }
+
     // Hash-not-content invariant: the raw previous value never reaches the DB.
     const previousValueHash =
       data.previousValue !== undefined

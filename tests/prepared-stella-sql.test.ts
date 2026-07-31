@@ -107,6 +107,18 @@ describe('db/prepared/stella_0002_interactions_hardening.sql', () => {
     expect(raw).toMatch(/IF current_def IS NULL/)
   })
 
+  it('matches CHECK roles as QUOTED literals, not bare substrings (audit FIX 4)', () => {
+    // pg_get_constraintdef renders literals quoted ('advisor'::character
+    // varying ...); a bare LIKE '%advisor%' would be satisfied by a
+    // superstring role like 'super_advisor'. The DO block must compare
+    // against the quoted form — inside the $$ body that is ''advisor''.
+    for (const role of ['advisor', 'validator', 'composer', 'proxy_reviewer', 'evidence_reviewer', 'audit_assistant']) {
+      expect(raw).toContain(`NOT LIKE '%''${role}''%'`)
+    }
+    // and no remaining bare-substring comparisons on current_def
+    expect(raw).not.toMatch(/current_def NOT LIKE '%[a-z_]+%'/)
+  })
+
   it('creates no tables and contains no destructive statements against pre-existing tables', () => {
     expect(code).not.toMatch(/CREATE TABLE/i)
     expect(code).not.toMatch(/DROP TABLE/i)

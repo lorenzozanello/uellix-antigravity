@@ -81,8 +81,11 @@ function serializeExecuteCalls(): string {
 
 function setupHappyPath() {
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-  // 1st execute: project-ownership SELECT → one row; 2nd: INSERT ... RETURNING id
+  // 1st execute: project-ownership SELECT → one row
+  // 2nd execute: interaction-ownership SELECT → one row (VALID_INPUT carries interactionId)
+  // 3rd execute: INSERT ... RETURNING id
   mockDbExecute
+    .mockResolvedValueOnce([{ '?column?': 1 }])
     .mockResolvedValueOnce([{ '?column?': 1 }])
     .mockResolvedValueOnce([{ id: DECISION_ID }])
 }
@@ -174,6 +177,61 @@ describe('recordStellaDecision server action', () => {
       if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
       expect(mockDbExecute).toHaveBeenCalledTimes(1) // no INSERT happened
     })
+
+    it('rejects a cross-org interactionId IDENTICALLY to a nonexistent one (no existence oracle)', async () => {
+      // Case A: interactionId exists but belongs to another org/project — the
+      // scoped ownership SELECT finds nothing.
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockDbExecute
+        .mockResolvedValueOnce([{ '?column?': 1 }]) // project ownership ok
+        .mockResolvedValueOnce([]) // interaction not visible to this org
+      const crossOrg = await recordStellaDecision(VALID_INPUT)
+
+      expect(crossOrg.ok).toBe(false)
+      if (!crossOrg.ok) expect(crossOrg.error).toBe('INVALID_INPUT')
+      expect(mockDbExecute).toHaveBeenCalledTimes(2) // no INSERT happened
+
+      // Case B: interactionId does not exist at all — same DB result shape.
+      mockDbExecute.mockReset()
+      mockDbExecute
+        .mockResolvedValueOnce([{ '?column?': 1 }])
+        .mockResolvedValueOnce([])
+      const nonexistent = await recordStellaDecision(VALID_INPUT)
+
+      // Indistinguishable: same code AND same message as schema validation.
+      expect(nonexistent).toEqual(crossOrg)
+      const malformed = await recordStellaDecision({ ...VALID_INPUT, decision: 'certified' as never })
+      expect(malformed).toEqual(crossOrg)
+    })
+
+    it('verifies interactionId scoped to the session org AND the given project', async () => {
+      setupHappyPath()
+
+      await recordStellaDecision(VALID_INPUT)
+
+      const ownershipQuery = mockDbExecute.mock.calls[1][0] as { queryChunks: unknown[] }
+      const serialized = JSON.stringify(ownershipQuery.queryChunks)
+      expect(serialized).toContain('stella_interactions')
+      expect(serialized).toContain(INTERACTION_ID)
+      expect(serialized).toContain(ORG_ID)
+      expect(serialized).toContain(PROJECT_ID)
+    })
+
+    it('skips the interaction-ownership query when no interactionId is provided', async () => {
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockDbExecute
+        .mockResolvedValueOnce([{ '?column?': 1 }]) // project ownership
+        .mockResolvedValueOnce([{ id: DECISION_ID }]) // insert
+
+      const result = await recordStellaDecision({
+        projectId: PROJECT_ID,
+        suggestionKey: 'advisor.suggested_next_actions[0]',
+        decision: 'accepted',
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockDbExecute).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('Happy path (flag on, post-G2)', () => {
@@ -183,7 +241,7 @@ describe('recordStellaDecision server action', () => {
       const result = await recordStellaDecision(VALID_INPUT)
 
       expect(result).toEqual({ ok: true, data: { id: DECISION_ID } })
-      expect(mockDbExecute).toHaveBeenCalledTimes(2)
+      expect(mockDbExecute).toHaveBeenCalledTimes(3) // project check, interaction check, insert
     })
 
     it('binds organization_id and decided_by from the SESSION, never from input', async () => {
@@ -191,7 +249,7 @@ describe('recordStellaDecision server action', () => {
 
       await recordStellaDecision(VALID_INPUT)
 
-      const insertQuery = mockDbExecute.mock.calls[1][0] as { queryChunks: unknown[] }
+      const insertQuery = mockDbExecute.mock.calls[2][0] as { queryChunks: unknown[] }
       const serialized = JSON.stringify(insertQuery.queryChunks)
       expect(serialized).toContain(ORG_ID)
       expect(serialized).toContain(USER_ID)
