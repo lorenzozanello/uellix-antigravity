@@ -2,7 +2,7 @@
 // U1 (WS4) — the SROI pipeline must run under an EXPLICITLY pinned Decimal
 // configuration. These values are the decimal.js defaults on purpose: pinning
 // them must not change numeric behavior, only make it reproducible.
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import Decimal from 'decimal.js'
 import {
   applyDecimalConfig,
@@ -57,5 +57,32 @@ describe('decimal-config (determinism guard)', () => {
     expect(convertToUsd('1000000', '3')).toBe('333333.3333')
     // Tie case at the 4th decimal: 0.00005 / 1 → 0.0001 under HALF_UP
     expect(convertToUsd('0.00005', '1')).toBe('0.0001')
+  })
+
+  // Audit FIX 4 — fx.ts (the production FX path) and fx-oracle.ts must sit
+  // under the determinism pin like the rest of the pipeline. Each test
+  // perturbs the shared Decimal config, resets the module registry and
+  // re-imports the module: its own decimal-config side-effect import must
+  // restore the pinned configuration. Without that import (`decimal.js` is
+  // externalized, so the perturbed constructor is shared), the perturbation
+  // leaks and these assertions fail.
+  it('importing fx.ts re-applies the pinned config (side-effect import present)', async () => {
+    vi.doMock('@/db/client', () => ({ db: {} }))
+    Decimal.set({ precision: 7, rounding: Decimal.ROUND_FLOOR })
+    vi.resetModules()
+    const fx = await import('@/lib/pipeline/fx')
+    expect(Decimal.precision).toBe(DECIMAL_PRECISION)
+    expect(Decimal.rounding).toBe(DECIMAL_ROUNDING)
+    // Under a leaked precision-7 / ROUND_FLOOR config this is '333333.3000'.
+    expect(fx.convertToUsd('1000000', '3')).toBe('333333.3333')
+    vi.doUnmock('@/db/client')
+  })
+
+  it('importing fx-oracle.ts re-applies the pinned config (side-effect import present)', async () => {
+    Decimal.set({ precision: 7, rounding: Decimal.ROUND_FLOOR })
+    vi.resetModules()
+    await import('@/lib/pipeline/fx-oracle')
+    expect(Decimal.precision).toBe(DECIMAL_PRECISION)
+    expect(Decimal.rounding).toBe(DECIMAL_ROUNDING)
   })
 })

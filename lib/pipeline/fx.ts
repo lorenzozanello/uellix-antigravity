@@ -11,6 +11,8 @@
 //
 // Source verified live 2026-07-04 (see the multi-funder design spec).
 
+// Pin the shared Decimal configuration first — determinism guard (WS4 U1).
+import './decimal-config'
 import Decimal from 'decimal.js'
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db/client'

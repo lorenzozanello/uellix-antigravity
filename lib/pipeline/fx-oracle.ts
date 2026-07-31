@@ -2,6 +2,8 @@
 // Service for fetching historical exchange rates to USD for non-COP currencies
 // Uses the free, open-source Frankfurter API (based on ECB data)
 
+// Pin the shared Decimal configuration first — determinism guard (WS4 U1).
+import './decimal-config'
 import Decimal from 'decimal.js'
 
 // Known currencies supported by the European Central Bank (Frankfurter)
