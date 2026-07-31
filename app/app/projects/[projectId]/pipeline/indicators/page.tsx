@@ -1,6 +1,8 @@
 // app/app/projects/[projectId]/pipeline/indicators/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/stella';
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
@@ -69,6 +71,9 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
   const { membership } = await requireOrganizationAccess();
   const indicators = await fetchIndicators(projectId) as IndicatorRow[];
   const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
+  // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -79,7 +84,22 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Indicadores" highlightHint={!indicators?.length} />
+      {/* DP-03 (pending product decision): legacy generic advisor stays
+          mounted alongside the new contextual advisor. */}
+      <StellaAdvisorPanel
+        projectId={projectId}
+        step="Indicadores"
+        highlightHint={!indicators?.length}
+        enabled={stellaAdvisorEnabled}
+      />
+      {/* U3: indicators are a per-outcome list — no single apply target, so
+          apply offers copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="indicators"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Indicadores)"
+      />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="indicators" title="Revisión metodológica — Indicadores" />
       )}

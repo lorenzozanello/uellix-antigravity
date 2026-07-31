@@ -1,6 +1,8 @@
 // app/app/projects/[projectId]/pipeline/outcomes/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel } from '@/components/stella';
+import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/stella';
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { requireOrganizationAccess } from '@/lib/auth/session';
@@ -84,6 +86,9 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
     listOutcomeMappingsForProject(projectId),
   ]);
   const canMapTaxonomy = hasRole(membership.role, 'analyst');
+  // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
   const mappingsByOutcome = new Map<string, typeof allMappings>();
   for (const m of allMappings) {
     const list = mappingsByOutcome.get(m.outcomeId) ?? [];
@@ -100,7 +105,22 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
         </p>
       </div>
       <Stepper />
-      <StellaAdvisorPanel projectId={projectId} step="Resultados" highlightHint={!outcomes?.length} />
+      {/* DP-03 (pending product decision): legacy generic advisor stays
+          mounted alongside the new contextual advisor. */}
+      <StellaAdvisorPanel
+        projectId={projectId}
+        step="Resultados"
+        highlightHint={!outcomes?.length}
+        enabled={stellaAdvisorEnabled}
+      />
+      {/* U3: outcomes are a list of records with per-row edit forms — no
+          single apply target, so apply offers copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="outcomes"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Resultados)"
+      />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="outcomes" title="Revisión metodológica — Resultados" />
       )}

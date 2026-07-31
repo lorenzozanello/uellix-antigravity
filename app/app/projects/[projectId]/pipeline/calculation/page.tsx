@@ -19,7 +19,9 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import { StellaAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaAdvisorPanel, StellaContextualAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config'
 import {
   listSroiCalculationRuns,
   getSroiCalculationReadiness,
@@ -69,6 +71,14 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
   const canEdit = ctx && ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role)
 
   const readiness = await getSroiCalculationReadiness(projectId)
+
+  // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella
+  const stellaValidatorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isValidatorEnabled && stellaState.canUseStella
+  const auditAssistantEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAuditAssistantEnabled && stellaState.canUseStella
 
   // calculateSroiPreview only throws for genuine unexpected failures (e.g. a
   // race condition where the investment row disappears between the readiness
@@ -420,11 +430,31 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         </CardContent>
       </Card>
 
-      <StellaAdvisorPanel projectId={projectId} step="Cálculo" highlightHint={!readiness.hasInvestment} />
+      {/* DP-03 (pending product decision): legacy generic advisor stays
+          mounted alongside the new contextual advisor. */}
+      <StellaAdvisorPanel
+        projectId={projectId}
+        step="Cálculo"
+        highlightHint={!readiness.hasInvestment}
+        enabled={stellaAdvisorEnabled}
+      />
+      {/* U3: the calculation step is numeric/derived — no free-text apply
+          target, so apply offers copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="calculation"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Cálculo)"
+      />
 
-      <StellaValidatorPanel projectId={projectId} step="Cálculo" />
+      <StellaValidatorPanel projectId={projectId} step="Cálculo" enabled={stellaValidatorEnabled} />
 
-      <StellaReviewerPanel projectId={projectId} role="audit_assistant" title="Asistente de Auditoría (Stella)" />
+      <StellaReviewerPanel
+        projectId={projectId}
+        role="audit_assistant"
+        title="Asistente de Auditoría (Stella)"
+        enabled={auditAssistantEnabled}
+      />
 
       {/* Investment — Multi-row form (Task 11) */}
       <Card>
