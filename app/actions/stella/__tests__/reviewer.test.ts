@@ -208,6 +208,19 @@ describe('getStellaReviewer server action', () => {
     })
   })
 
+  describe('Payload cap', () => {
+    it('returns PAYLOAD_TOO_LARGE on StellaPayloadTooLargeError from the adapter', async () => {
+      setupSuccessfulCall()
+      const { StellaPayloadTooLargeError } = await import('@/lib/stella/security/payload-limits')
+      mockAdapterGenerate.mockRejectedValue(new StellaPayloadTooLargeError(150000, 120000))
+
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PAYLOAD_TOO_LARGE')
+    })
+  })
+
   describe('Auth boundary', () => {
     it('returns UNAUTHORIZED when requireOrganizationAccess throws', async () => {
       mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))

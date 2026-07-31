@@ -12,6 +12,7 @@ import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
@@ -28,6 +29,7 @@ export type StellaAdvisorErrorCode =
   | 'RATE_LIMITED'
   | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
+  | 'PAYLOAD_TOO_LARGE'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
@@ -123,6 +125,9 @@ export async function getStellaContextualAdvisor(
     if (error instanceof StellaBuildContextError) {
       if (error.code === 'UNSUPPORTED_STEP') return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
       if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
+    }
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
   }
@@ -255,6 +260,10 @@ export async function getStellaAdvisor(
 
     if (error instanceof StellaGeminiError) {
       return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
+    }
+
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
 
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }

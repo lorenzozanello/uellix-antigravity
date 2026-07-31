@@ -553,6 +553,17 @@ describe('getStellaValidator server action', () => {
       if (!result.ok) expect(result.error).toBe('GEMINI_ERROR')
     })
 
+    it('returns PAYLOAD_TOO_LARGE on StellaPayloadTooLargeError from the adapter', async () => {
+      setupSuccessfulCall()
+      const { StellaPayloadTooLargeError } = await import('@/lib/stella/security/payload-limits')
+      mockAdapterGenerate.mockRejectedValue(new StellaPayloadTooLargeError(150000, 120000))
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PAYLOAD_TOO_LARGE')
+    })
+
     it('returns PARSE_ERROR on StellaParseError', async () => {
       mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
       mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)

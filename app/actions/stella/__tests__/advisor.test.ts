@@ -6,6 +6,7 @@ import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 import type { StellaProjectContext } from '@/lib/stella/context/types'
 import type { OrganizationContext } from '@/lib/auth/session'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits'
 import type { RateLimitResult } from '@/lib/stella/rate-limit'
 
 // ---------------------------------------------------------------------------
@@ -365,6 +366,16 @@ describe('getStellaAdvisor server action', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('GEMINI_ERROR')
+    })
+
+    it('returns PAYLOAD_TOO_LARGE on StellaPayloadTooLargeError from the adapter', async () => {
+      setupSuccessfulCall()
+      mockAdapterGenerate.mockRejectedValue(new StellaPayloadTooLargeError(150000, 120000))
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PAYLOAD_TOO_LARGE')
     })
 
     it('returns UNSUPPORTED_STEP when context builder rejects for calculation', async () => {

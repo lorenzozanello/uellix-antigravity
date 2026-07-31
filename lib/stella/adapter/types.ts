@@ -36,5 +36,9 @@ export interface StellaAdapterConfig {
   apiKey: string
   model: string
   timeoutMs: number
+  // WS3 adapter caps
+  maxOutputTokens: number
+  temperature: number
+  maxPromptChars: number
   mockProvider?: StellaMockProvider // For testing
 }

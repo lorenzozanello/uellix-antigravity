@@ -1,10 +1,22 @@
 // lib/stella/adapter/gemini-client.test.ts
 // Sprint 9B: Stella Gemini adapter tests - mock provider, no real Gemini calls
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { StellaGeminiAdapter, buildGeminiErrorLog, getGeminiAdapter } from './gemini-client'
 import { ValidatorOutputSchema } from '../schemas/validator-output'
+import { StellaPayloadTooLargeError } from '../security/payload-limits'
 import type { StellaMockProvider, StellaRequest, StellaResponse } from './types'
+
+// Mock @google/genai — resolved by the adapter's dynamic import. Captures the
+// generateContent call so tests can assert the config actually passed.
+const mockGenerateContent = vi.fn()
+vi.mock('@google/genai', () => ({
+  GoogleGenAI: class {
+    models = { generateContent: (...args: unknown[]) => mockGenerateContent(...args) }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(_opts: unknown) {}
+  },
+}))
 
 // Mock provider for testing
 class MockGeminiProvider implements StellaMockProvider {
@@ -157,6 +169,126 @@ describe('buildGeminiErrorLog', () => {
 
     expect(log.status).toBeUndefined()
     expect(log.message).toBe('plain string failure')
+  })
+})
+
+describe('adapter caps (WS3)', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset()
+    mockGenerateContent.mockResolvedValue({
+      text: '{"ok":true}',
+      usageMetadata: { totalTokenCount: 10 },
+    })
+  })
+
+  describe('maxOutputTokens + temperature are passed to generateContent', () => {
+    it('uses the defaults (4096 / 0.2) when not overridden', async () => {
+      const adapter = new StellaGeminiAdapter({ apiKey: 'test-key' })
+
+      await adapter.generate({ role: 'validator', systemPrompt: 'sys', userMessage: 'user' })
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({ maxOutputTokens: 4096, temperature: 0.2 }),
+        })
+      )
+    })
+
+    it('honors per-adapter overrides', async () => {
+      const adapter = new StellaGeminiAdapter({
+        apiKey: 'test-key',
+        maxOutputTokens: 128,
+        temperature: 0.7,
+      })
+
+      await adapter.generate({ role: 'validator', systemPrompt: 'sys', userMessage: 'user' })
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({ maxOutputTokens: 128, temperature: 0.7 }),
+        })
+      )
+    })
+  })
+
+  describe('maxPromptChars input cap', () => {
+    it('rejects an oversized request with StellaPayloadTooLargeError before the provider is called', async () => {
+      const mockProvider = new MockGeminiProvider()
+      const generateSpy = vi.spyOn(mockProvider, 'generate')
+      const adapter = new StellaGeminiAdapter({
+        apiKey: 'test-key',
+        mockProvider,
+        maxPromptChars: 50,
+      })
+
+      await expect(
+        adapter.generate({
+          role: 'validator',
+          systemPrompt: 'x'.repeat(30),
+          userMessage: 'y'.repeat(30),
+        })
+      ).rejects.toBeInstanceOf(StellaPayloadTooLargeError)
+      expect(generateSpy).not.toHaveBeenCalled()
+    })
+
+    it('also guards the REAL provider path (no mock provider)', async () => {
+      const adapter = new StellaGeminiAdapter({ apiKey: 'test-key', maxPromptChars: 10 })
+
+      await expect(
+        adapter.generate({ role: 'validator', systemPrompt: 'x'.repeat(20), userMessage: 'y' })
+      ).rejects.toBeInstanceOf(StellaPayloadTooLargeError)
+      expect(mockGenerateContent).not.toHaveBeenCalled()
+    })
+
+    it('measures system prompt + user message together', async () => {
+      const adapter = new StellaGeminiAdapter({
+        apiKey: 'test-key',
+        mockProvider: new MockGeminiProvider(),
+        maxPromptChars: 100,
+      })
+
+      // 60 + 60 = 120 > 100 even though each alone fits
+      await expect(
+        adapter.generate({
+          role: 'validator',
+          systemPrompt: 's'.repeat(60),
+          userMessage: 'u'.repeat(60),
+        })
+      ).rejects.toBeInstanceOf(StellaPayloadTooLargeError)
+    })
+
+    it('allows a request within the cap (default 120000)', async () => {
+      const adapter = new StellaGeminiAdapter({
+        apiKey: 'test-key',
+        mockProvider: new MockGeminiProvider(),
+      })
+
+      const response = await adapter.generate({
+        role: 'validator',
+        systemPrompt: 's'.repeat(1000),
+        userMessage: 'u'.repeat(1000),
+      })
+
+      expect(response.rawOutput).toContain('summary')
+    })
+
+    it('carries the measured size and limit on the error', async () => {
+      const adapter = new StellaGeminiAdapter({
+        apiKey: 'test-key',
+        mockProvider: new MockGeminiProvider(),
+        maxPromptChars: 5,
+      })
+
+      try {
+        await adapter.generate({ role: 'validator', systemPrompt: 'abc', userMessage: 'defg' })
+        expect.unreachable('should have thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(StellaPayloadTooLargeError)
+        const typed = error as StellaPayloadTooLargeError
+        expect(typed.promptChars).toBe(7)
+        expect(typed.maxPromptChars).toBe(5)
+      }
+    })
   })
 })
 
