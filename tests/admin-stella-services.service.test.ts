@@ -5,6 +5,9 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mockDbData = vi.hoisted(() => ({
   orgs: [] as any[],
   usageCounts: {} as Record<string, number>,
+  // SUM(tokens_used) mock: drizzle's sum() returns string | null from the
+  // driver, so the mock stores it exactly like that.
+  tokenSums: {} as Record<string, string | null>,
   updated: {} as any,
   beforeOrg: null as any,
 }));
@@ -54,7 +57,12 @@ vi.mock('@/db/client', () => {
                   // threaded through this mock; tests that need per-org usage counts
                   // use a single org id ('org-1') to keep this simple.
                   return Promise.resolve(
-                    cb([{ value: mockDbData.usageCounts['org-1'] ?? 0 }])
+                    cb([
+                      {
+                        value: mockDbData.usageCounts['org-1'] ?? 0,
+                        tokens: mockDbData.tokenSums['org-1'] ?? null,
+                      },
+                    ])
                   );
                 }
                 return Promise.resolve(cb([]));
@@ -76,11 +84,13 @@ vi.mock('@/db/client', () => {
 
 import { listOrganizationsWithStellaUsage, updateOrganizationStellaService } from '@/lib/admin/stella-services';
 import { requireAdminAccess } from '@/lib/auth/session';
+import { estimateCostUsd } from '@/lib/stella/cost-model';
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockDbData.orgs = [];
   mockDbData.usageCounts = {};
+  mockDbData.tokenSums = {};
   mockDbData.updated = {};
   mockDbData.beforeOrg = null;
 });
@@ -116,6 +126,32 @@ describe('listOrganizationsWithStellaUsage', () => {
     const result = await listOrganizationsWithStellaUsage();
 
     expect(result[0].usedThisMonth).toBe(25);
+  });
+
+  it('aggregates tokensThisMonth from SUM(tokens_used) and derives estimatedCostUsd via the cost model', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({} as any);
+    mockDbData.orgs = [{ id: 'org-1', name: 'Acme', stellaMonthlyQuota: 50, stellaPlanLabel: 'Pro' }];
+    mockDbData.usageCounts = { 'org-1': 3 };
+    // Drizzle SUM comes back as a string from the pg driver.
+    mockDbData.tokenSums = { 'org-1': '1000000' };
+
+    const result = await listOrganizationsWithStellaUsage();
+
+    expect(result[0].tokensThisMonth).toBe(1_000_000);
+    expect(result[0].estimatedCostUsd).toBeCloseTo(estimateCostUsd(1_000_000), 10);
+    expect(result[0].estimatedCostUsd).toBeGreaterThan(0);
+  });
+
+  it('reports 0 tokens and 0 cost when SUM(tokens_used) is null (no rows / all-null tokens)', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue({} as any);
+    mockDbData.orgs = [{ id: 'org-1', name: 'Acme', stellaMonthlyQuota: 0, stellaPlanLabel: null }];
+    mockDbData.usageCounts = { 'org-1': 0 };
+    mockDbData.tokenSums = { 'org-1': null };
+
+    const result = await listOrganizationsWithStellaUsage();
+
+    expect(result[0].tokensThisMonth).toBe(0);
+    expect(result[0].estimatedCostUsd).toBe(0);
   });
 });
 

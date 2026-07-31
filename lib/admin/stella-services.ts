@@ -5,11 +5,12 @@
 
 import { db } from '@/db/client'
 import { organizations, stellaInteractions } from '@/db/schema'
-import { eq, and, gte, count } from 'drizzle-orm'
+import { eq, and, gte, count, sum } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdminAccess } from '@/lib/auth/session'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { startOfCurrentUtcMonth } from '@/lib/stella/quota'
+import { estimateCostUsd } from '@/lib/stella/cost-model'
 
 const StellaServiceInput = z.object({
   planLabel: z.string().max(100).optional(),
@@ -31,8 +32,10 @@ export async function listOrganizationsWithStellaUsage() {
 
   const results = []
   for (const org of orgs) {
-    const usedThisMonth = await db
-      .select({ value: count() })
+    // One aggregate query per org: request count (quota unit) + token total.
+    // Same current-UTC-month window convention as lib/stella/quota.ts.
+    const usage = await db
+      .select({ value: count(), tokens: sum(stellaInteractions.tokensUsed) })
       .from(stellaInteractions)
       .where(
         and(
@@ -40,9 +43,18 @@ export async function listOrganizationsWithStellaUsage() {
           gte(stellaInteractions.createdAt, startOfCurrentUtcMonth())
         )
       )
-      .then((rows) => rows[0]?.value ?? 0)
+      .then((rows) => rows[0] ?? { value: 0, tokens: null })
 
-    results.push({ ...org, usedThisMonth })
+    const usedThisMonth = usage.value ?? 0
+    // drizzle sum() surfaces as string | null (pg numeric); null when there are
+    // no rows or every row has tokens_used = null.
+    const tokensThisMonth = Number(usage.tokens ?? 0)
+    // Estimate only — blended input/output heuristic over total tokens; see
+    // the loudly documented assumptions in lib/stella/cost-model.ts (G9
+    // calibrates against real Gemini billing).
+    const estimatedCostUsd = estimateCostUsd(tokensThisMonth)
+
+    results.push({ ...org, usedThisMonth, tokensThisMonth, estimatedCostUsd })
   }
 
   return results
