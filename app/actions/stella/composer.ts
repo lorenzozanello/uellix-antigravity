@@ -14,6 +14,11 @@ import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ComposerOutputSchema } from '@/lib/stella/schemas/composer-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
 import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits'
+import {
+  validateComposerNumbers,
+  validateComposerReferences,
+  authorizedNumbersFromSnapshot,
+} from '@/lib/stella/schemas/composer-numeric-guard'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
@@ -113,6 +118,37 @@ export async function getStellaComposer(
 
     // Parse and validate output — throws StellaParseError on invalid JSON or schema mismatch
     const data = await adapter.parseResponse(response.rawOutput, ComposerOutputSchema)
+
+    // Numeric + reference integrity guard (WS4): every figure and cited id in
+    // the draft must trace back to the context; hallucinations fail closed.
+    const referenceCheck = validateComposerReferences(data, context)
+    const numberCheck = context.calculationSnapshot
+      ? validateComposerNumbers(
+          data,
+          authorizedNumbersFromSnapshot(context.calculationSnapshot, [
+            ...context.filterSetsSummary.flatMap((f) => [
+              f.deadweightPct,
+              f.attributionPct,
+              f.displacementPct,
+              f.dropoffPct,
+              f.durationYears,
+            ]).filter((v): v is number => v !== undefined),
+            context.stakeholderCount,
+            context.evidenceTotal,
+            ...(context.readinessScore !== undefined && context.readinessScore !== null
+              ? [context.readinessScore]
+              : []),
+          ]),
+        )
+      : { ok: true as const, violations: [] }
+
+    if (!referenceCheck.ok || !numberCheck.ok) {
+      console.error('[stella] Composer integrity guard rejected draft:', {
+        referenceViolations: referenceCheck.violations,
+        numericViolations: numberCheck.violations,
+      })
+      return { ok: false, error: 'PARSE_ERROR', message: 'Stella generó cifras o referencias no verificables. Intentá de nuevo.' }
+    }
 
     // Audit insert — required for compliance; surface failure rather than swallow
     try {

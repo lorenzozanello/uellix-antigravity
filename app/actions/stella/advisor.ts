@@ -21,6 +21,9 @@ import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
 import { runContextualAdvisor } from '@/lib/stella/advisor/run-contextual-advisor'
+// App-layer only: lib/stella must never import the calculation engine
+// (anti-regression enforced); the action injects the readiness verdict.
+import { getSroiCalculationReadiness } from '@/lib/pipeline/sroi-calculation'
 
 export type StellaAdvisorErrorCode =
   | 'DISABLED'
@@ -86,9 +89,26 @@ export async function getStellaContextualAdvisor(
   }
 
   try {
+    // Live calculation readiness from the deterministic engine (app layer —
+    // lib/stella never imports it). Best-effort: on any failure we fall back
+    // to the derived-from-persisted summary inside buildAdvisorContext.
+    let liveReadiness: { ready: boolean; blockingReasons: string[]; warnings: string[] } | undefined
+    try {
+      const r = await getSroiCalculationReadiness(projectId)
+      liveReadiness = {
+        ready: r.canCalculate,
+        blockingReasons: r.blockingReasons,
+        warnings: r.issues.filter((i) => i.type === 'warning').map((i) => i.message),
+      }
+    } catch {
+      liveReadiness = undefined
+    }
+
     // Project ownership check happens inside buildAdvisorContext — throws
     // UNAUTHORIZED if projectId does not belong to ctx.organization.id.
-    const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
+    const context = liveReadiness
+      ? await buildAdvisorContext(projectId, ctx.organization.id, step, { calculationReadiness: liveReadiness })
+      : await buildAdvisorContext(projectId, ctx.organization.id, step)
     const contextHash = buildContextHash(context)
 
     // Consume after context validation and immediately before the model attempt.

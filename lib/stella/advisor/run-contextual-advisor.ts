@@ -19,11 +19,12 @@ import { decodeProviderSourceRefIndexes } from '../context/decode-provider-sourc
 import { ContextualIndexTokenLeakError } from '../context/validate-no-index-reference-tokens'
 import { buildContextualAdvisorFallback } from '../fallbacks'
 import { StellaTimeoutError, StellaGeminiError } from '../errors'
+import { StellaPayloadTooLargeError } from '../security/payload-limits'
 import type { StellaGeminiAdapter } from '../adapter/gemini-client'
 
 export type RunContextualAdvisorResult =
   | { ok: true; data: AdvisorContextualOutput; modelUsed: string; tokensUsed?: number; fallbackUsed?: true }
-  | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT'; message: string }
+  | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT' | 'PAYLOAD_TOO_LARGE'; message: string }
 
 /**
  * U8: the safe contextual fallback replaces the provider response ONLY for
@@ -73,6 +74,9 @@ export async function runContextualAdvisor(
     }
   } catch (error) {
     if (error instanceof StellaTimeoutError) return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
+    }
     if (error instanceof StellaGeminiError) return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
     return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
   }

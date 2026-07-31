@@ -28,6 +28,7 @@ import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './saniti
 import type {
   AdvisorProjectContext,
   CalculationReadinessSummary,
+  ContextualCalculationReadiness,
   CalculationSnapshot,
   ContextualActivityRef,
   ContextualStakeholderRef,
@@ -54,8 +55,13 @@ export interface BuildAdvisorContextOptions {
    * Live readiness summary injected by the authorized caller. When absent, a
    * minimal summary is derived from persisted data (latest run existence and
    * counts) — the calculation engine is never imported or executed here.
+   *
+   * The caller may pass just the core readiness verdict
+   * (ready/blockingReasons/warnings, e.g. mapped from the deterministic
+   * engine's own check in the app layer); the persisted-row counts are always
+   * derived here and merged, and `source` is forced to 'injected'.
    */
-  calculationReadiness?: CalculationReadinessSummary
+  calculationReadiness?: ContextualCalculationReadiness | CalculationReadinessSummary
 }
 
 export async function buildAdvisorContext(
@@ -390,16 +396,18 @@ export async function buildAdvisorContext(
     status: s.content && s.content.length > 0 ? 'in_progress' : 'draft',
   }))
 
-  // Calculation readiness — injected by the authorized caller, or derived
-  // from the persisted rows already fetched above. Never computed.
-  const calculationReadiness: CalculationReadinessSummary =
-    options?.calculationReadiness ?? deriveCalculationReadiness({
-      latestCalculatedRunExists: latestRun !== null,
-      activeProxyAssignmentCount: rawAssignments.length,
-      activeFilterSetCount: rawFilterSets.length,
-      evidenceTotal: rawEvidence.length,
-      outcomeCount: rawOutcomes.length,
-    })
+  // Calculation readiness — injected by the authorized caller (merged over
+  // the derived persisted-row counts), or fully derived. Never computed here.
+  const derivedReadiness = deriveCalculationReadiness({
+    latestCalculatedRunExists: latestRun !== null,
+    activeProxyAssignmentCount: rawAssignments.length,
+    activeFilterSetCount: rawFilterSets.length,
+    evidenceTotal: rawEvidence.length,
+    outcomeCount: rawOutcomes.length,
+  })
+  const calculationReadiness: CalculationReadinessSummary = options?.calculationReadiness
+    ? { ...derivedReadiness, ...options.calculationReadiness, source: 'injected' }
+    : derivedReadiness
 
   return {
     projectId,

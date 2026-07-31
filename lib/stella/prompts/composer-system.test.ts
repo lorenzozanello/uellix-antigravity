@@ -13,6 +13,7 @@ import type { StellaProjectContext, CalculationSnapshot } from '../context/types
 // mention the marker name inline, so key on `\n<marker>\n`.
 const MARKER_LINE = `\n${UNTRUSTED_DATA_MARKER}\n`
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper: envelope shape is asserted per-test
 function extractEnvelopePayload(message: string): Record<string, any> {
   const idx = message.lastIndexOf(MARKER_LINE)
   expect(idx).toBeGreaterThanOrEqual(0)
