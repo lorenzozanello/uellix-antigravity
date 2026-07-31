@@ -11,20 +11,22 @@
 - **Branch coordinadora:** `codex/stella-fable-moonshot` (== `origin/main` al inicio)
 - **Ramas de workstreams:** ninguna creada aún (creación lazy — D-005)
 - **Worktrees propios:** sólo `uellix-stella-fable-moonshot`. Ajenos (NO tocar): `uellix-antigravity`, `uellix-antigravity-b1c-integration`, `uellix-stella-autonomous`
-- **Fase de campaña:** BOOTSTRAP CERRADO → lista para campaña funcional (no iniciada)
-- **Estado general:** `STELLA_FABLE_MOONSHOT_READY_FOR_GOAL`
+- **Fase de campaña:** CAMPAÑA FUNCIONAL EN CURSO — Ola 1 (WS3+WS1+WS4 en paralelo)
+- **Estado general:** EN EJECUCIÓN (objetivo: STELLA_OFFLINE_RELEASE_CANDIDATE_READY)
 
 ## Fase activa por workstream
 
 | WS | Fase | Rama | Notas |
 |----|------|------|-------|
-| WS1 Context & References | NO INICIADO | — | Arranque prioritario: T1.1 test de paridad |
-| WS2 Advisor UX | NO INICIADO | — | Bloqueado parcialmente por T1.2 |
-| WS3 Security & Audit | NO INICIADO | — | Arranque prioritario: T3.1/T3.3 |
-| WS4 Composer determinístico | NO INICIADO | — | Paralelo seguro con WS1/WS3 |
-| WS5 Grounding documental | NO INICIADO | — | T5.1 spec + T5.2 extracción pura |
-| WS6 Roles & Eval | NO INICIADO | — | Depende de T1.13 |
-| WS7 Ops & Comercial | NO INICIADO | — | T7.1/T7.3 arrancables |
+| WS1 Context & References | IMPLEMENTACIÓN (agente) | `moonshot/ws1-context` @ worktree `uellix-moonshot-ws1` | T1.1–T1.13: paridad, R1–R6, harness real scoring, gate offline, paquete G1 |
+| WS2 Advisor UX | NO INICIADO | — | Ola 2: tras integrar WS1+WS3 |
+| WS3 Security & Audit | IMPLEMENTACIÓN (agente) | `moonshot/ws3-security` @ worktree `uellix-moonshot-ws3` | T3.3, T3.11, T3.1, T3.13, T3.12, T3.15 (unidades DB quedan para 2ª unidad WS3) |
+| WS4 Composer determinístico | IMPLEMENTACIÓN (agente) | `moonshot/ws4-composer` @ worktree `uellix-moonshot-ws4` | T4.1–T4.4 + guard numérico puro (wiring en integración) |
+| WS5 Grounding documental | NO INICIADO | — | Ola 2: T5.1 spec + T5.2 extracción pura |
+| WS6 Roles & Eval | NO INICIADO | — | Depende de T1.13 (en curso en WS1) |
+| WS7 Ops & Comercial | NO INICIADO | — | Ola 2/3 |
+
+**Dueños de zonas calientes (ciclo Ola 1):** `lib/stella/config.ts`, `sanitize.ts`, prompts legacy, `app/actions/stella/**` → WS3 · builders de contexto advisor, `advisor-contextual-system.ts`, `tests/eval/**`, `package.json` (solo script eval:offline) → WS1 · `lib/pipeline/sroi-*`, `composer-output.ts` + guard numérico → WS4 · wiring cross-WS (readiness en advisor.ts, guard en composer.ts) → coordinador en integración.
 
 ## Commits de la campaña
 
