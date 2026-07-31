@@ -37,8 +37,8 @@ const stakeholderRows = [
 ]
 
 const outcomeRows = [
-  { id: 'out-1', title: 'Mayor tasa de empleo', outcomeType: 'social', status: 'active' },
-  { id: 'out-2', title: 'Mayor confianza', outcomeType: 'psychological', status: 'active' },
+  { id: 'out-1', title: 'Mayor tasa de empleo', outcomeType: 'social', status: 'active', stakeholderGroupId: 'sh-1' },
+  { id: 'out-2', title: 'Mayor confianza', outcomeType: 'psychological', status: 'active', stakeholderGroupId: 'sh-2' },
 ]
 
 const indicatorRows = [
@@ -118,7 +118,7 @@ function defaultFixtures(): QueryFixtures {
     'createdAt,id,name,organizationId,status,updatedAt': [projectRow],
     'narrativeText,theoryOfChangeSummary': [narrativeRow],
     'id,name,type': stakeholderRows,
-    'id,outcomeType,status,title': outcomeRows,
+    'id,outcomeType,stakeholderGroupId,status,title': outcomeRows,
     'id,name,outcomeId,unit': indicatorRows,
     'contentHash,createdAt,id,indicatorId,outcomeId,status,title,type': evidenceRows,
     'assignmentId,confidenceLevel,currency,methodologicalRisk,proxyId,proxyName,sourceId,value': assignmentRows,
@@ -193,6 +193,20 @@ describe('buildAdvisorContext — ContextualAdvisorContext parity (U1)', () => {
 
     // No hardcoded placeholders: each collection reflects the persisted rows.
     expect(ctx.projectName).toBe('Programa de Empleo Juvenil')
+    expect(ctx.narrativeSummary).toBe(
+      'El proyecto mejora la empleabilidad juvenil. Capacitación conduce a empleo formal.'
+    )
+    expect(ctx.outcomesSnapshot).toEqual([
+      { id: 'out-1', name: 'Mayor tasa de empleo', description: 'social', stakeholderGroups: ['sh-1'] },
+      { id: 'out-2', name: 'Mayor confianza', description: 'psychological', stakeholderGroups: ['sh-2'] },
+    ])
+    expect(ctx.indicatorsSnapshot).toEqual([
+      { id: 'ind-1', outcomeId: 'out-1', name: 'Empleos conseguidos en 6 meses', unit: 'count' },
+    ])
+    expect(ctx.stakeholderCount).toBe(2)
+    expect(ctx.evidenceTotal).toBe(1)
+    expect(ctx.projectCreatedAt).toBe('2026-01-01T00:00:00.000Z')
+    expect(ctx.lastUpdatedAt).toBe('2026-06-01T00:00:00.000Z')
     expect(ctx.stakeholdersSnapshot).toEqual([
       { id: 'sh-1', name: 'Jóvenes participantes', type: 'beneficiary' },
       { id: 'sh-2', name: 'Empleadores locales', type: 'secondary' },
@@ -216,6 +230,22 @@ describe('buildAdvisorContext — ContextualAdvisorContext parity (U1)', () => {
     expect(ctx.reportSections).toEqual([
       { id: 'sec-1', sectionType: 'executive_summary', title: 'Resumen ejecutivo', contentLength: 'Borrador del resumen.'.length, status: 'in_progress' },
     ])
+  })
+
+  it('links each outcome to its stakeholder group at group level only (FIX 1)', async () => {
+    await installFixtures(defaultFixtures())
+
+    const ctx = await buildAdvisorContext(PROJECT_ID, ORG_ID, 'outcomes')
+
+    const stakeholderIds = new Set((ctx.stakeholdersSnapshot ?? []).map((s) => s.id))
+    expect(ctx.outcomesSnapshot?.length).toBeGreaterThan(0)
+    for (const outcome of ctx.outcomesSnapshot ?? []) {
+      expect(outcome.stakeholderGroups?.length).toBeGreaterThan(0)
+      for (const groupId of outcome.stakeholderGroups ?? []) {
+        // Group-level ids only — resolvable via stakeholdersSnapshot, no PII.
+        expect(stakeholderIds.has(groupId)).toBe(true)
+      }
+    }
   })
 
   it('populates proxy value and currency from the proxies table — never hardcoded empty strings', async () => {

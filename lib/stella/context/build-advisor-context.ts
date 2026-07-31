@@ -137,12 +137,16 @@ export async function buildAdvisorContext(
   }))
 
   // Fetch outcomes (title + type — no descriptions that might contain PII)
+  // stakeholderGroupId carries the real outcome ↔ stakeholder-group linkage.
+  // Group-level ids only (they resolve to name/type via stakeholdersSnapshot)
+  // — no individual people, no PII.
   const rawOutcomes = await db
     .select({
       id: outcomes.id,
       title: outcomes.title,
       outcomeType: outcomes.outcomeType,
       status: outcomes.status,
+      stakeholderGroupId: outcomes.stakeholderGroupId,
     })
     .from(outcomes)
     .where(and(eq(outcomes.projectId, projectId), eq(outcomes.status, 'active')))
@@ -151,7 +155,7 @@ export async function buildAdvisorContext(
     id: o.id,
     name: sanitizeString(o.title, 200),
     description: o.outcomeType ? sanitizeString(o.outcomeType, 100) : '',
-    stakeholderGroups: [],
+    stakeholderGroups: o.stakeholderGroupId ? [o.stakeholderGroupId] : [],
   }))
   const outcomeTitleById = new Map(outcomesSnapshot.map((o) => [o.id, o.name]))
 
