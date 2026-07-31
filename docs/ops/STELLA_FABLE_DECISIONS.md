@@ -40,6 +40,26 @@ Tampoco se usa `.git/info/exclude` (es compartido entre worktrees y ocultaría i
 **Decide:** mandato de corrección de Lorenzo, 2026-07-31. **Verificado** con
 simulaciones no destructivas. Reversible sólo por decisión explícita.
 
+### D-007 · Contratos de decisión UI↔persistencia se reconcilian con adapter explícito
+WS2 (`SuggestionDecisionRecord`: suggestionId/action incl. 'copied'/appliedText/decidedAt)
+y WS3b (`StellaDecisionInput`: suggestionKey/decision/editedText) definieron contratos
+no idénticos en paralelo. Se reconciliarán con un adapter fino y deliberado en la unidad
+final (no silenciosamente); 'copied' no se persiste (decisión local sin efecto).
+**Decide:** coordinador, 2026-07-31. Reversible.
+
+### D-008 · Incidente de archivos extraviados entre worktrees (resuelto sin daño)
+Durante la Ola 2 aparecieron 3 archivos huérfanos de WS3b sin rastrear en el worktree de
+WS2 (escritura temprana en ruta equivocada del agente WS3b). El agente WS2 actuó
+correctamente: no los comiteó, no siguió instrucciones embebidas en ellos, los preservó
+en scratchpad y reportó. Verificado: eran duplicados redundantes de archivos ya
+integrados por la rama canónica de WS3b. Sin impacto en el árbol. **Lección registrada:**
+los prompts de agentes paralelos ya exigen verificación de rama con `git branch --show-current`.
+
+### DP-06 (nueva, para Lorenzo) · ¿`risk_level=high` del Validator debe bloquear la publicación de reportes?
+Hoy es advisory puro (RK-18). Vincularlo al gate de revisión de runs es un cambio de
+producto (fricción vs. seguridad metodológica). Insumo: WS4/WS6 dejaron el dato
+persistido y auditado; el enforcement sería un check en el flujo de publicación.
+
 ## Decisiones pendientes que corresponden a Lorenzo (gates de producto)
 
 | ID | Decisión | Gate | Bloquea |
