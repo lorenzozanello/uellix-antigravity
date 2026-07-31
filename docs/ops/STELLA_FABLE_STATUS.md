@@ -30,7 +30,8 @@
 
 | SHA | Rama | Descripción |
 |-----|------|-------------|
-| HEAD (primer commit sobre `dd36a4e`; ver `git log --oneline -1`) | coordinadora | bootstrap: docs maestros + protecciones + gitignore artifacts |
+| `f986842` | coordinadora | bootstrap: docs maestros + protecciones (incluyó `/artifacts/` en .gitignore, revertido después) |
+| HEAD (ver `git log --oneline -1`) | coordinadora | corrección: artifacts visibles para auditoría; protección movida al harness (D-006) |
 
 ## Archivos modificados (bootstrap)
 
@@ -42,8 +43,8 @@
 - `docs/ops/STELLA_FABLE_TEST_LEDGER.md` (nuevo)
 - `docs/ops/STELLA_FABLE_DEPENDENCY_MAP.md` (nuevo)
 - `docs/ops/STELLA_FABLE_RELEASE_CRITERIA.md` (nuevo)
-- `.gitignore` (añade `/artifacts/` — mitiga RK-26)
-- `.claude/settings.local.json` (protecciones deny — NO rastreado, no se comitea)
+- `.gitignore` (sin cambios netos vs `dd36a4e`: la entrada `/artifacts/` del bootstrap fue revertida — D-006; los artifacts deben permanecer SIN seguimiento pero VISIBLES en `git status` para auditoría local)
+- `.claude/settings.local.json` (protecciones deny — NO rastreado, no se comitea; incluye bloqueo de `git add artifacts*`, `git add .`, `-A`, `--all`, `-f`)
 
 ## Pruebas
 

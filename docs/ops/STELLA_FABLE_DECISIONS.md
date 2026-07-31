@@ -30,6 +30,16 @@ No se crean los worktrees/ramas de los 7 workstreams al inicio; cada uno se crea
 su ejecución empieza, partiendo del commit coordinador vigente. **Motivo:** evitar ramas
 huérfanas incoherentes si el presupuesto se agota. **Reversible.**
 
+### D-006 · Artifacts sin seguimiento pero visibles (corrección de bootstrap)
+El bootstrap (`f986842`) añadió `/artifacts/` al `.gitignore` rastreado. Revertido:
+modificaba una política compartida del repo y ocultaba la evidencia local de
+`git status`. Regla vigente: los artifacts nunca se agregan al staging (deny del
+harness en `.claude/settings.local.json`: `git add artifacts*`, `git add .`, `-A`,
+`--all`, `-f`) pero permanecen visibles como untracked para auditorías locales.
+Tampoco se usa `.git/info/exclude` (es compartido entre worktrees y ocultaría igual).
+**Decide:** mandato de corrección de Lorenzo, 2026-07-31. **Verificado** con
+simulaciones no destructivas. Reversible sólo por decisión explícita.
+
 ## Decisiones pendientes que corresponden a Lorenzo (gates de producto)
 
 | ID | Decisión | Gate | Bloquea |

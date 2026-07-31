@@ -159,13 +159,16 @@ actualización de `STELLA_FABLE_STATUS.md`.
 
 - `.claude/settings.local.json` (local, no rastreado, gitignored) contiene reglas `deny`
   del harness que bloquean ANTES de ejecutar: `git push`, `gh pr create/merge`,
-  `git merge main|origin/main`, `git rebase`, `git add .|-A|--all`, `git reset --hard`,
+  `git merge main|origin/main`, `git rebase`, `git add .|-A|--all|-f|artifacts*`, `git reset --hard`,
   lectura/cat de `.env*`, `pnpm db:migrate`, seeds (`db:seed:*`), `test:integration`,
   `test:rls`, `drizzle-kit migrate`, `supabase`, `vercel`, llamadas a
   `generativelanguage.googleapis.com`.
 - Verificación realizada 2026-07-31 con simulaciones inocuas: `git push --dry-run` y
   `pnpm db:seed:proxies --help` fueron denegados por el harness sin ejecutarse.
-- No se modificó ninguna configuración compartida (`.claude/settings.json` intacto).
+- No se modifica configuración compartida (`.claude/settings.json` intacto). La entrada
+  `/artifacts/` que el bootstrap añadió a `.gitignore` fue revertida (D-006): los
+  artifacts permanecen sin seguimiento pero VISIBLES en `git status` para auditoría
+  local; el bloqueo de su staging vive en el deny del harness, no en el ignore.
 
 ## Presupuesto (FASE J)
 
