@@ -2,7 +2,7 @@ import { ADVISOR_STEP_CONTRACTS } from '../advisor/step-contracts'
 import { assertAdvisorPipelineStep, type AdvisorPipelineStep } from '../advisor/steps'
 import { buildAdvisorStepContext } from '../context/build-advisor-step-context'
 import type { ContextualAdvisorContext } from '../context/types'
-import { SHARED_GUARDRAILS } from './shared-guardrails'
+import { SHARED_GUARDRAILS, SENSITIVE_POPULATIONS_NOTICE } from './shared-guardrails'
 
 const OUTPUT_FORMAT = `{
   "step": "contextual step",
@@ -63,5 +63,13 @@ export function buildAdvisorContextualUserMessage(
     context: contextual.context,
     ...(userQuestion !== undefined ? { userQuestion } : {}),
   }
-  return `UNTRUSTED_PROJECT_DATA\n${JSON.stringify(payload)}`
+  // RK-08: the heightened-care block is part of the TRUSTED preamble — it is
+  // emitted BEFORE the UNTRUSTED_PROJECT_DATA marker and can never appear
+  // inside the envelope. The `sensitivePopulations` flag itself is not in any
+  // step slice (build-advisor-step-context), so it never enters the payload
+  // or the citation catalog.
+  const sensitiveNotice = context.sensitivePopulations?.detected
+    ? `${SENSITIVE_POPULATIONS_NOTICE}\n\n`
+    : ''
+  return `${sensitiveNotice}UNTRUSTED_PROJECT_DATA\n${JSON.stringify(payload)}`
 }

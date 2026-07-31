@@ -23,7 +23,20 @@ import { StellaPayloadTooLargeError } from '../security/payload-limits'
 import type { StellaGeminiAdapter } from '../adapter/gemini-client'
 
 export type RunContextualAdvisorResult =
-  | { ok: true; data: AdvisorContextualOutput; modelUsed: string; tokensUsed?: number; fallbackUsed?: true }
+  | {
+      ok: true
+      data: AdvisorContextualOutput
+      modelUsed: string
+      tokensUsed?: number
+      fallbackUsed?: true
+      /**
+       * RK-19: present (always `true`) when the provider answered with a step
+       * different from the requested one. The step is canonicalized to the
+       * trusted request either way — this flag only surfaces the drift for
+       * observability (console.warn + audit metadata in the action layer).
+       */
+      stepMismatch?: true
+    }
   | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT' | 'PAYLOAD_TOO_LARGE'; message: string }
 
 /**
@@ -50,16 +63,31 @@ export async function runContextualAdvisor(
 ): Promise<RunContextualAdvisorResult> {
   try {
     const request = buildContextualAdvisorRequest(step, context)
+    // RK-08: the per-step slice strips `sensitivePopulations` from the
+    // serialized payload (it is trusted-tier metadata, not citable data), so
+    // the flag is re-attached here only to let the user-message builder emit
+    // the heightened-care notice in the TRUSTED preamble.
+    const userMessageContext = context.sensitivePopulations
+      ? { ...request.serializedContext, sensitivePopulations: context.sensitivePopulations }
+      : request.serializedContext
     const response = await adapter.generate({
       role: 'advisor',
       systemPrompt: request.systemPrompt,
-      userMessage: buildAdvisorContextualUserMessage(step, request.serializedContext),
+      userMessage: buildAdvisorContextualUserMessage(step, userMessageContext),
       responseJsonSchema: request.responseJsonSchema,
     })
     const raw: unknown = JSON.parse(response.rawOutput)
     try {
       const data = decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step)
-      return { ok: true, data, modelUsed: response.modelUsed, tokensUsed: response.tokensUsed }
+      return {
+        ok: true,
+        data,
+        modelUsed: response.modelUsed,
+        tokensUsed: response.tokensUsed,
+        // RK-19: the decoder records the drift on a non-enumerable property
+        // (see decode-provider-source-ref-indexes.ts) — surface it here.
+        ...(data.stepMismatch === true ? { stepMismatch: true as const } : {}),
+      }
     } catch (decodeError) {
       if (isSafeFallbackFailure(decodeError)) {
         return {

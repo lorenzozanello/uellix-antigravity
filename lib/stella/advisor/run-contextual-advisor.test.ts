@@ -169,6 +169,34 @@ describe('runContextualAdvisor — trusted step contract', () => {
     expect(generate.mock.calls[0][0]).toMatchObject({ role: 'advisor' })
   })
 
+  // WS3c U2 (RK-19): step mismatches are canonicalized AND surfaced.
+  describe('stepMismatch observability (RK-19)', () => {
+    it('surfaces stepMismatch: true when the provider returned a different step', async () => {
+      const { adapter } = mockAdapter(providerOutput('narrativa', [0]))
+
+      const result = await runContextualAdvisor('narrative', context(), adapter)
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.stepMismatch).toBe(true)
+        // Canonicalization is unchanged — the trusted step wins.
+        expect(result.data.step).toBe('narrative')
+      }
+    })
+
+    it('does not set stepMismatch when the provider step matches', async () => {
+      const { adapter } = mockAdapter(providerOutput('narrative', [0]))
+
+      const result = await runContextualAdvisor('narrative', context(), adapter)
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.stepMismatch).toBeUndefined()
+        expect('stepMismatch' in result).toBe(false)
+      }
+    })
+  })
+
   it('returns modelUsed and tokensUsed from the provider response for the audit trail', async () => {
     const generate = vi.fn().mockResolvedValue({
       role: 'advisor',

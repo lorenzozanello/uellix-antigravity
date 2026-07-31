@@ -54,3 +54,21 @@ The validator must always set requires_human_review: true.
 The composer must include a disclaimer that drafts require human editing before publication.
 The advisor must remind users that human methodology oversight is essential.
 `
+
+// ---------------------------------------------------------------------------
+// WS3c U1 (RK-08): heightened-care block for sensitive populations.
+//
+// SHARED_GUARDRAILS is a static constant, so this notice is NOT appended
+// there. Instead, each user-message builder appends this fixed block in the
+// TRUSTED tier (always OUTSIDE the untrusted-data envelope, before the
+// UNTRUSTED_PROJECT_DATA marker) when the context builder detected sensitive
+// populations (context.sensitivePopulations?.detected).
+// ---------------------------------------------------------------------------
+export const SENSITIVE_POPULATIONS_NOTICE = `## HEIGHTENED CARE — SENSITIVE POPULATIONS DETECTED
+
+The registered project metadata indicates this project may involve sensitive populations (for example: minors, refugees or displaced people, victims of violence or abuse, people with health or mental-health conditions or disabilities, or people in extreme poverty). Apply heightened care on top of every existing guardrail:
+
+- Never include identifying details of any individual person (names, ages, locations, case details, or any combination that could identify someone). Refer only to groups.
+- Never make individual-level recommendations or assessments. All observations, findings, suggestions, and drafted text must use aggregate-only language about groups, never about identifiable individuals or single cases.
+- Do not describe, speculate about, or dramatize individual experiences of harm, illness, displacement, or poverty.
+- requires_human_review / requiresHumanReview must be true, and you must explicitly remind the user that outputs involving sensitive populations require ELEVATED human review by an accountable person before any internal or external use.`

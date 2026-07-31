@@ -194,7 +194,14 @@ export async function getStellaValidator(
       entityType: 'project',
       entityId: projectId,
       action: AUDIT_ACTIONS.STELLA_INVOKED,
-      afterJson: { stellaRole: 'validator', pipelineStep: 'Calculation', tokensUsed: response.tokensUsed ?? null },
+      afterJson: {
+        stellaRole: 'validator',
+        pipelineStep: 'Calculation',
+        tokensUsed: response.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+      },
     })
 
     return { ok: true, data }

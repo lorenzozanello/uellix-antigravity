@@ -105,7 +105,14 @@ function makeChain(resolvedValue: unknown) {
 // ---------------------------------------------------------------------------
 // Helper: set up full mock sequence for a successful context build
 // ---------------------------------------------------------------------------
-async function setupFullMockSequence(projectRow = mockProject) {
+async function setupFullMockSequence(
+  projectRow = mockProject,
+  opts: {
+    stakeholderRows?: Array<{ id: string; name: string; type: string | null }>
+    narrativeRow?: typeof mockNarrative
+    outcomeRows?: typeof mockOutcomes
+  } = {}
+) {
   const { db } = await import('@/db/client')
   const selectMock = vi.mocked(db.select)
 
@@ -125,9 +132,9 @@ async function setupFullMockSequence(projectRow = mockProject) {
   // 12. report sections → array
   selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                   // project
-    .mockReturnValueOnce(makeChain([mockNarrative]) as never)                // narrative
-    .mockReturnValueOnce(makeChain(mockStakeholders) as never)               // stakeholders
-    .mockReturnValueOnce(makeChain(mockOutcomes) as never)                   // outcomes
+    .mockReturnValueOnce(makeChain([opts.narrativeRow ?? mockNarrative]) as never) // narrative
+    .mockReturnValueOnce(makeChain(opts.stakeholderRows ?? mockStakeholders) as never) // stakeholders
+    .mockReturnValueOnce(makeChain(opts.outcomeRows ?? mockOutcomes) as never) // outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                 // indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)              // evidence
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                // proxy assignments
@@ -373,6 +380,49 @@ describe('buildAdvisorContext', () => {
 
       expect(ctx.narrativeSummary).not.toContain('GEMINI_API_KEY')
       expect(ctx.narrativeSummary).not.toContain('sk_secret_abc123')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagation
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('flags minors from a stakeholder group type', async () => {
+      await setupFullMockSequence(mockProject, {
+        stakeholderRows: [{ id: 'sh-1', name: 'Grupo A', type: 'niños y adolescentes' }],
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
+    })
+
+    it('flags violence victims from the narrative text', async () => {
+      await setupFullMockSequence(mockProject, {
+        narrativeRow: {
+          narrativeText: 'Acompañamiento a víctimas de violencia intrafamiliar.',
+          theoryOfChangeSummary: '',
+        },
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('violence_victims')
+    })
+
+    it('flags from an outcome title', async () => {
+      await setupFullMockSequence(mockProject, {
+        outcomeRows: [
+          { id: 'out-1', title: 'Reducción de la pobreza extrema', outcomeType: 'social', status: 'active' },
+        ],
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'narrative')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('extreme_poverty')
     })
   })
 })

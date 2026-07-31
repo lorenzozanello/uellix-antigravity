@@ -186,6 +186,9 @@ export async function getStellaReviewer(
         stellaRole: role,
         pipelineStep: REVIEWER_ROLE_CONFIG[role].pipelineStep,
         tokensUsed: response.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
       },
     })
 

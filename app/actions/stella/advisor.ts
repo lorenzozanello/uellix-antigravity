@@ -160,6 +160,14 @@ export async function getStellaContextualAdvisor(
     }
 
     const result = await runContextualAdvisor(step, context, getGeminiAdapter())
+
+    // RK-19: provider step drift is canonicalized inside the pipeline, but it
+    // must be observable — warn (metadata only: the trusted step name) and
+    // tag the audit row below.
+    if (result.ok && result.stepMismatch) {
+      console.warn('[stella] provider step mismatch', { step })
+    }
+
     if (!result.ok) {
       // Model-path failure surfaced as a typed result — report to Sentry with
       // codes/ids only (the typed messages are static, never prompt echoes).
@@ -198,7 +206,16 @@ export async function getStellaContextualAdvisor(
       entityType: 'project',
       entityId: projectId,
       action: AUDIT_ACTIONS.STELLA_INVOKED,
-      afterJson: { stellaRole: 'advisor', pipelineStep: step, tokensUsed: result.tokensUsed ?? null },
+      afterJson: {
+        stellaRole: 'advisor',
+        pipelineStep: step,
+        tokensUsed: result.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+        // RK-19: only present when the provider answered a different step.
+        ...(result.stepMismatch ? { stepMismatch: true } : {}),
+      },
     })
 
     return { ok: true, data: result.data }
@@ -361,7 +378,14 @@ export async function getStellaAdvisor(
       entityType: 'project',
       entityId: projectId,
       action: AUDIT_ACTIONS.STELLA_INVOKED,
-      afterJson: { stellaRole: 'advisor', pipelineStep: step, tokensUsed: response.tokensUsed ?? null },
+      afterJson: {
+        stellaRole: 'advisor',
+        pipelineStep: step,
+        tokensUsed: response.tokensUsed ?? null,
+        // RK-08: metadata only — flags that the heightened-care notice applied.
+        sensitivePopulations: context.sensitivePopulations?.detected ?? false,
+        sensitivePopulationCategories: context.sensitivePopulations?.categories ?? [],
+      },
     })
 
     return { ok: true, data }

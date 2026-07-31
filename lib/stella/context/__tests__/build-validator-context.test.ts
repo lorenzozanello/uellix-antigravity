@@ -144,11 +144,15 @@ async function setupFullMockSequence(opts: {
   projectRow?: typeof mockProject
   withCalcRun?: boolean
   withReview?: boolean
+  stakeholderRows?: Array<{ id: string; type?: string | null }>
+  narrativeRow?: typeof mockNarrative
 } = {}) {
   const {
     projectRow = mockProject,
     withCalcRun = true,
     withReview = true,
+    stakeholderRows = mockStakeholders,
+    narrativeRow = mockNarrative,
   } = opts
 
   const { db } = await import('@/db/client')
@@ -156,8 +160,8 @@ async function setupFullMockSequence(opts: {
 
   const chain = selectMock
     .mockReturnValueOnce(makeChain([projectRow]) as never)                                       // 1. project
-    .mockReturnValueOnce(makeChain([mockNarrative]) as never)                                    // 2. narrative
-    .mockReturnValueOnce(makeChain(mockStakeholders) as never)                                   // 3. stakeholders
+    .mockReturnValueOnce(makeChain([narrativeRow]) as never)                                     // 2. narrative
+    .mockReturnValueOnce(makeChain(stakeholderRows) as never)                                    // 3. stakeholders
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                                       // 4. outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                                     // 5. indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)                                  // 6. evidence
@@ -477,6 +481,38 @@ describe('buildValidatorContext', () => {
 
       // snapshotJson is the raw column — the context only has calculationSnapshot with totals
       expect(JSON.stringify(ctx)).not.toContain('snapshotJson')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // WS3c U1 (RK-08): sensitive-populations flag propagation
+  // -------------------------------------------------------------------------
+  describe('Sensitive populations flag (RK-08)', () => {
+    it('is present and false for non-sensitive metadata', async () => {
+      await setupFullMockSequence()
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+      expect(ctx.sensitivePopulations).toEqual({ detected: false, categories: [] })
+    })
+
+    it('flags minors from a stakeholder group type', async () => {
+      await setupFullMockSequence({
+        stakeholderRows: [{ id: 'sh-1', type: 'niños y adolescentes' }],
+      })
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('minors')
+    })
+
+    it('flags health conditions from the narrative text', async () => {
+      await setupFullMockSequence({
+        narrativeRow: {
+          narrativeText: 'Apoyo psicosocial y salud mental para la comunidad.',
+          theoryOfChangeSummary: '',
+        },
+      })
+      const ctx = await buildValidatorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'calculation')
+      expect(ctx.sensitivePopulations?.detected).toBe(true)
+      expect(ctx.sensitivePopulations?.categories).toContain('health_conditions')
     })
   })
 })

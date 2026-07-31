@@ -215,11 +215,27 @@ describe('getStellaValidator server action', () => {
       expect(invoked.organizationId).toBe('org-uuid-001')
       expect(invoked.actorUserId).toBe('user-uuid-001')
       expect(invoked.entityId).toBe('proj-uuid-001')
-      expect(invoked.afterJson).toEqual({ stellaRole: 'validator', pipelineStep: 'Calculation', tokensUsed: 1234 })
+      expect(invoked.afterJson).toEqual({ stellaRole: 'validator', pipelineStep: 'Calculation', tokensUsed: 1234, sensitivePopulations: false, sensitivePopulationCategories: [] })
       const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
       expect(serialized).not.toContain('mock validator system prompt')
       expect(serialized).not.toContain('mock validator user message')
       expect(serialized).not.toContain(VALID_VALIDATOR_OUTPUT.summary)
+    })
+
+    // WS3c U1 (RK-08): audit metadata carries the sensitive-populations flag.
+    it('logs sensitivePopulations metadata when the context detected them', async () => {
+      setupSuccessfulCall()
+      mockBuildValidatorContext.mockResolvedValue({
+        ...MOCK_CONTEXT,
+        sensitivePopulations: { detected: true, categories: ['minors'] },
+      })
+
+      const result = await getStellaValidator('proj-uuid-001', 'Calculation')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked.afterJson.sensitivePopulations).toBe(true)
+      expect(invoked.afterJson.sensitivePopulationCategories).toEqual(['minors'])
     })
 
     it('logs STELLA_DENIED with ROLE_DENIED for a viewer', async () => {
