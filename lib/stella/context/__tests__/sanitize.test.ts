@@ -177,6 +177,29 @@ describe('sanitizeFreeText', () => {
   })
 })
 
+describe('redaction happens BEFORE truncation (FIX 7)', () => {
+  it('an email straddling the narrative cut cannot survive as a fragment', () => {
+    // Old order truncated at 2000 first, leaving the partial 'maria.lop'
+    // which no longer matches the email pattern.
+    const input = 'a'.repeat(1990) + ' maria.lopez@ong.org sigue el texto'
+    const result = sanitizeNarrative(input)
+    expect(result).not.toContain('maria.lop')
+    expect(result).not.toContain('@')
+  })
+
+  it('an email straddling the free-text cut cannot survive as a fragment', () => {
+    const input = 'a'.repeat(90) + ' maria.lopez@ong.org'
+    const result = sanitizeFreeText(input, 100)
+    expect(result).not.toContain('maria')
+  })
+
+  it('a phone straddling the cut cannot leak leading digits', () => {
+    const input = 'a'.repeat(95) + ' +57 300 123 4567'
+    const result = sanitizeFreeText(input, 100)
+    expect(result).not.toContain('+57 3')
+  })
+})
+
 describe('sanitizeOutcome', () => {
   it('sanitizes name and description with their caps', () => {
     const result = sanitizeOutcome('n'.repeat(300), 'd'.repeat(600))

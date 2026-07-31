@@ -85,23 +85,27 @@ export function hasForbiddenPattern(input: string): boolean {
 
 /**
  * Sanitize narrative text for safe inclusion in prompts.
+ * FIX 7 (audit): PII is redacted BEFORE truncation — a value straddling the
+ * cut would otherwise survive as a fragment the patterns no longer match.
  */
 export function sanitizeNarrative(narrative: string): string {
-  const cleaned = sanitizeString(narrative, 2000)
+  const redacted = redactPii(narrative ?? '').text
+  const cleaned = sanitizeString(redacted, 2000)
   if (hasForbiddenPattern(cleaned)) {
     return '[Narrative contains restricted content - filtered for Stella]'
   }
-  return redactPii(cleaned).text
+  return cleaned
 }
 
 /**
  * Sanitize an arbitrary free-text field (titles, names, sources, summaries)
- * for inclusion in a prompt payload: control-char cleanup + PII redaction.
- * Used by the prompt builders so every Stella role benefits from redaction
- * regardless of which context builder produced the data.
+ * for inclusion in a prompt payload: PII redaction FIRST (see FIX 7 above),
+ * then control-char cleanup + truncation. Used by the prompt builders so
+ * every Stella role benefits from redaction regardless of which context
+ * builder produced the data.
  */
 export function sanitizeFreeText(input: string, maxLength = 500): string {
-  return redactPii(sanitizeString(input, maxLength)).text
+  return sanitizeString(redactPii(input ?? '').text, maxLength)
 }
 
 /**

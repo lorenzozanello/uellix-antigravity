@@ -3,15 +3,24 @@
 // Stella prompts. No imports, no side effects — safe from any layer.
 //
 // Covered:
-//  - email addresses
+//  - email addresses (unicode-aware: non-ASCII local parts + IDN domains,
+//    e.g. josé.muñoz@fundación.co)
 //  - phone numbers (international + Colombian formats)
-//  - Colombian cédulas / NITs and generic 6-12+ digit ID sequences that are
-//    preceded by a context word (cédula, CC, NIT, documento, identificación,
-//    DNI, pasaporte, id, ...)
+//  - Colombian cédulas / NITs and 6-20 char digit sequences preceded by an
+//    ID-LIKE context word (cédula, CC, NIT, documento, identificación, DNI,
+//    pasaporte/passport). Bare "id" is deliberately NOT a context word —
+//    internal entity references ("El id 123456 del outcome") must survive.
 //  - URLs with embedded credentials (https://user:pass@host/...)
 //
 // Deliberately NOT redacted: years, monetary amounts, percentages, scores,
 // SROI ratios and bare digit runs without an identifying context word.
+//
+// KNOWN TRADEOFF (documented, not fixed): a bare 10-digit Colombian mobile
+// written WITHOUT separators or context (e.g. "3001234567" alone in prose)
+// is indistinguishable from an amount or a count, so it is NOT redacted.
+// Requiring separators/+prefix/parentheses keeps monetary values and
+// beneficiary counts intact; the envelope still confines any such digits to
+// the untrusted data tier.
 
 export interface PiiRedaction {
   kind: string
@@ -44,17 +53,21 @@ const RULES: readonly RedactionRule[] = [
     replace: '[REDACTED:url-credentials]',
   },
   {
+    // Unicode-aware (FIX 4): \p{L}\p{N} instead of ASCII classes, no \b
+    // anchors (JS word boundaries are ASCII-based and fail next to accented
+    // characters like the ñ in "ñoño@ejemplo.org").
     kind: 'email',
-    pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
+    pattern: /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}/gu,
     replace: '[REDACTED:email]',
   },
   {
-    // Context word + 6-20 char digit sequence (dots/commas/hyphens allowed,
-    // e.g. 1.234.567.890 or NIT 900.123.456-7). The context word is kept so
-    // the model still knows WHAT was redacted.
+    // ID-LIKE context word + 6-20 char digit sequence (dots/commas/hyphens
+    // allowed, e.g. 1.234.567.890 or NIT 900.123.456-7). The context word is
+    // kept so the model still knows WHAT was redacted. Bare "id" is NOT in
+    // the list (FIX 8) — generic entity ids must survive.
     kind: 'id',
     pattern:
-      /\b(c[eé]dula(?:\s+de\s+ciudadan[ií]a)?|c\.?c\.?|nit|documento(?:\s+de\s+identidad)?|identificaci[oó]n|dni|pasaporte|passport|id)\s*(?:n[oº°]{0,2}\.?\s*|#\s*|:\s*)?(\d[\d.,-]{4,18}\d)/gi,
+      /\b(c[eé]dula(?:\s+de\s+ciudadan[ií]a)?|c\.?c\.?|nit|documento(?:\s+de\s+identidad)?|identificaci[oó]n|dni|pasaporte|passport)\s*(?:n[oº°]{0,2}\.?\s*|#\s*|:\s*)?(\d[\d.,-]{4,18}\d)/gi,
     replace: (_match, contextWord: string) => `${contextWord} [REDACTED:id]`,
   },
   {

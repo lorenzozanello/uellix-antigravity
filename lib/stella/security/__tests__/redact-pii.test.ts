@@ -23,6 +23,19 @@ describe('redactPii — emails', () => {
     expect(result.text).not.toContain('c.d+tag@sub.dominio.co')
     expect(kinds(result).email).toBe(2)
   })
+
+  // FIX 4 (audit): non-ASCII local parts and IDN domains.
+  it.each([
+    'josé.muñoz@fundación.co',
+    'ñoño@ejemplo.org',
+    'maría-pérez@correo.es',
+    'übung@münchen.de',
+  ])('redacts unicode email %s', (email) => {
+    const result = redactPii(`Escribir a ${email} para coordinar`)
+    expect(result.text).not.toContain(email)
+    expect(result.text).toContain('[REDACTED:email]')
+    expect(kinds(result).email).toBe(1)
+  })
 })
 
 describe('redactPii — phone numbers', () => {
@@ -56,7 +69,7 @@ describe('redactPii — Colombian cédulas / NITs / contextual IDs', () => {
     'identificación: 1032456789',
     'DNI 12345678',
     'pasaporte AB1234567'.replace('AB', ''), // digits-only passport number with context
-    'id 123456789012',
+    'documento 123456789012',
   ])('redacts %s keeping the context word', (input) => {
     const result = redactPii(`Beneficiario con ${input} registrado`)
     expect(result.text).toContain('[REDACTED:id]')
@@ -67,6 +80,18 @@ describe('redactPii — Colombian cédulas / NITs / contextual IDs', () => {
   it('does NOT redact a bare 8-digit number without a context word', () => {
     const result = redactPii('El programa atendió a familias del sector 12345678')
     expect(result.text).toContain('12345678')
+    expect(result.redactions).toEqual([])
+  })
+
+  // FIX 8 (audit): bare "id" is NOT an identifying context word — internal
+  // entity references like "El id 123456 del outcome" must survive.
+  it.each([
+    'El id 123456 del outcome',
+    'el ID 98765432 de la evidencia quedó archivado',
+    'run id 20260731123456',
+  ])('does NOT redact generic entity id in %j', (input) => {
+    const result = redactPii(input)
+    expect(result.text).toBe(input)
     expect(result.redactions).toEqual([])
   })
 })
