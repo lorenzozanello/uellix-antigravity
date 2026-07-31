@@ -73,6 +73,18 @@ Wiring transversal del coordinador (`ea892ca`): readiness vivo del motor inyecta
 contexto advisor (capa app), guard numérico+referencias del composer activo fail-closed,
 PAYLOAD_TOO_LARGE mapeado en el runner contextual.
 
+### 2026-07-31 · WS7 INTEGRACIÓN · rama `moonshot/ws7-ops` → merge `de860ca`
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm test:unit` (ws4-worktree, implementador) | VERDE | 115 archivos, 1945 tests |
+| suites focalizadas (auditor) | VERDE | 3 archivos, 26 tests |
+| `pnpm typecheck` (ambos) | VERDE | limpio |
+
+Auditoría WS7: APPROVE_WITH_NOTES, 0 bloqueadores, 3 MINOR advisorios (modelo único en
+agregación de costos → nota G9; N+1 aceptable en beta; default `model_used` desactualizado
+en schema — preexistente, dueño WS3b/G2).
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
