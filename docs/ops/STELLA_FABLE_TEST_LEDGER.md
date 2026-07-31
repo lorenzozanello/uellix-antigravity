@@ -99,6 +99,22 @@ serializados) corregido con contract test ampliado + enum pins + sanitizeLabel; 
 adversariales de extractUrlDomain superados (credenciales/token/IDN/javascript: → fail-closed).
 RK-17 CERRADO offline; RK-27 CERRADO (fixture agua-segura alimenta eval evidence_reviewer).
 
+### 2026-07-31 · WS3b INTEGRACIÓN · rama `moonshot/ws3b-persistence` → merge `3e967d0` (+wiring `568e70d`)
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm test:unit` (ws3-worktree, post-fixes) | VERDE | 117 archivos, 2020 tests |
+| suites focalizadas (auditor: prepared-sql + actions + observability + logger) | VERDE | 9 archivos, 254 tests |
+| `pnpm typecheck` (los tres) | VERDE | limpio |
+| `test:integration` / `test:rls` | NO EJECUTADAS | prohibidas (BD remota); casos RLS de Stella EDITADOS y listos para G3 |
+
+Auditoría WS3b: APPROVE_WITH_NOTES; MAJOR (interactionId sin verificación org — oráculo
+de existencia) corregido con respuesta indistinguible + 3 menores (Sentry truncado con
+stack reconstruido, psql -1, CHECK con literales entrecomillados), todos con
+fails-without-fix. RK-04 queda PREPARADO (SQL listo, aplicación = G2); RK-12 MITIGADO
+(invocaciones/denegaciones/rechazos de integridad en audit_logs); RK-23 MITIGADO
+(Sentry con sanitización); RK-11 PARCIAL (acción de decisiones dormante tras flag+G2).
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
