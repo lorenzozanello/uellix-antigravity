@@ -15,8 +15,7 @@ import type { ContextualAdvisorContext } from '../context/types'
 import type { AdvisorContextualOutput } from '../schemas/advisor-contextual-output'
 import { buildContextualAdvisorRequest } from '../context/build-contextual-advisor-request'
 import { buildAdvisorContextualUserMessage } from '../prompts/advisor-contextual-system'
-import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError } from '../context/decode-provider-source-ref-indexes'
-import { ContextualSourceFieldsValidationError } from '../context/validate-contextual-source-fields'
+import { decodeProviderSourceRefIndexes } from '../context/decode-provider-source-ref-indexes'
 import { ContextualIndexTokenLeakError } from '../context/validate-no-index-reference-tokens'
 import { buildContextualAdvisorFallback } from '../fallbacks'
 import { StellaTimeoutError, StellaGeminiError } from '../errors'
@@ -27,20 +26,20 @@ export type RunContextualAdvisorResult =
   | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT'; message: string }
 
 /**
- * U8: citation-level failures are the only PARSE-level failures answered with
- * the safe contextual fallback. In these cases the provider produced a
- * structurally valid response whose citations we refuse to trust — the whole
- * response is discarded and replaced by a claim-free fallback. Structural or
- * schema failures (ProviderOutputContractError, InternalSchemaValidationError,
- * invalid JSON) are ambiguous about what the provider meant, so they stay
- * fail-closed as PARSE_ERROR.
+ * U8: the safe contextual fallback replaces the provider response ONLY for
+ * index-token leaks in free text (ContextualIndexTokenLeakError) — the one
+ * PARSE-level citation failure where the response already passed structural,
+ * schema, and catalog-membership validation and only its prose hygiene
+ * failed. Substituting the claim-free fallback there is unambiguously safe.
+ *
+ * Everything else stays fail-closed as PARSE_ERROR: invalid/out-of-range
+ * sourceRefIndexes and catalog violations are citation-transport corruption
+ * (ambiguous about what the provider meant — and the authorized action path
+ * in app/actions/stella explicitly pins fail-closed behavior for them), and
+ * structural/schema/JSON failures are equally ambiguous.
  */
-function isCitationLevelFailure(error: unknown): boolean {
-  return (
-    error instanceof ProviderSourceRefIndexesError ||
-    error instanceof ContextualSourceFieldsValidationError ||
-    error instanceof ContextualIndexTokenLeakError
-  )
+function isSafeFallbackFailure(error: unknown): boolean {
+  return error instanceof ContextualIndexTokenLeakError
 }
 
 export async function runContextualAdvisor(
@@ -61,7 +60,7 @@ export async function runContextualAdvisor(
       const data = decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step)
       return { ok: true, data, modelUsed: response.modelUsed, tokensUsed: response.tokensUsed }
     } catch (decodeError) {
-      if (isCitationLevelFailure(decodeError)) {
+      if (isSafeFallbackFailure(decodeError)) {
         return {
           ok: true,
           data: buildContextualAdvisorFallback(step),
