@@ -1,5 +1,5 @@
 import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contextual-advisor-request'
-import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError, ProviderOutputContractError, InternalSchemaValidationError } from '@/lib/stella/context/decode-provider-source-ref-indexes'
+import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError, InternalSchemaValidationError } from '@/lib/stella/context/decode-provider-source-ref-indexes'
 import { ContextualSourceFieldsValidationError } from '@/lib/stella/context/validate-contextual-source-fields'
 import { buildAdvisorContextualUserMessage } from '@/lib/stella/prompts/advisor-contextual-system'
 import { detectMethodologySafety, detectNumericIntegrity } from '../stella-contextual/harness'
