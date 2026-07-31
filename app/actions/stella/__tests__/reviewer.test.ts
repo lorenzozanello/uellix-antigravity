@@ -164,7 +164,7 @@ describe('getStellaReviewer server action', () => {
   })
 
   describe('Role gate (canUseStella)', () => {
-    it.each(['viewer', 'reviewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or Gemini', async (role) => {
+    it.each(['viewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or Gemini', async (role) => {
       setupSuccessfulCall()
       mockRequireOrganizationAccess.mockResolvedValue({
         ...MOCK_ORG_CONTEXT,
@@ -180,7 +180,7 @@ describe('getStellaReviewer server action', () => {
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
     })
 
-    it.each(['analyst', 'organization_admin'] as const)('allows role %s through the gate', async (role) => {
+    it.each(['analyst', 'reviewer', 'organization_admin'] as const)('allows role %s through the gate', async (role) => {
       setupSuccessfulCall()
       mockRequireOrganizationAccess.mockResolvedValue({
         ...MOCK_ORG_CONTEXT,

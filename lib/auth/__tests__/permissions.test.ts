@@ -19,12 +19,15 @@ describe('canUseStella', () => {
     expect(canUseStella(ROLES.SUPER_ADMIN)).toBe(true)
   })
 
-  it('denies viewer', () => {
-    expect(canUseStella(ROLES.VIEWER)).toBe(false)
+  it('allows reviewer — SET INCLUSION, not hierarchy (methodology-review convention)', () => {
+    // reviewer ranks below analyst in ROLE_HIERARCHY yet is the dedicated
+    // reviewing role (see lib/pipeline/methodology-review.ts REVIEW_ROLES);
+    // a hierarchy threshold would wrongly lock it out.
+    expect(canUseStella(ROLES.REVIEWER)).toBe(true)
   })
 
-  it('denies reviewer (below analyst — human reviewers act through review flows, not Stella invocation)', () => {
-    expect(canUseStella(ROLES.REVIEWER)).toBe(false)
+  it('denies viewer — the only role excluded', () => {
+    expect(canUseStella(ROLES.VIEWER)).toBe(false)
   })
 
   it('every defined role gets a deterministic boolean', () => {
@@ -32,12 +35,12 @@ describe('canUseStella', () => {
       expect(typeof canUseStella(role)).toBe('boolean')
     }
   })
-})
 
-describe('hasRole (sanity for the hierarchy canUseStella relies on)', () => {
-  it('analyst threshold splits exactly at analyst', () => {
-    expect(hasRole(ROLES.ANALYST, ROLES.ANALYST)).toBe(true)
+  it('is NOT reducible to the analyst hierarchy threshold (reviewer proves set inclusion)', () => {
+    // Pin the reason the set exists: hasRole(reviewer, analyst) is false but
+    // canUseStella(reviewer) is true. This test fails if someone "simplifies"
+    // canUseStella back to hasRole(role, 'analyst').
     expect(hasRole(ROLES.REVIEWER, ROLES.ANALYST)).toBe(false)
-    expect(hasRole(ROLES.VIEWER, ROLES.ANALYST)).toBe(false)
+    expect(canUseStella(ROLES.REVIEWER)).toBe(true)
   })
 })

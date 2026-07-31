@@ -69,7 +69,7 @@ export async function getStellaReviewer(
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
   }
 
-  // Role gate — viewers/reviewers never trigger AI calls (quota + rate limit).
+  // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
   if (!canUseStella(ctx.membership.role)) {
     return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }

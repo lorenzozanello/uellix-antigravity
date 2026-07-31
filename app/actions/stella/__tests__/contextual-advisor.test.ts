@@ -189,7 +189,7 @@ describe('getStellaContextualAdvisor server action', () => {
   })
 
   describe('Role gate (canUseStella)', () => {
-    it.each(['viewer', 'reviewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or the adapter', async (role) => {
+    it.each(['viewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or the adapter', async (role) => {
       setupSuccessfulCall('narrative')
       mockRequireOrganizationAccess.mockResolvedValue({
         ...MOCK_ORG_CONTEXT,
@@ -206,11 +206,11 @@ describe('getStellaContextualAdvisor server action', () => {
       expect(mockBuildAdvisorContext).not.toHaveBeenCalled()
     })
 
-    it('allows analyst through the gate', async () => {
+    it.each(['analyst', 'reviewer'] as const)('allows role %s through the gate', async (role) => {
       setupSuccessfulCall('narrative')
       mockRequireOrganizationAccess.mockResolvedValue({
         ...MOCK_ORG_CONTEXT,
-        membership: { ...MOCK_ORG_CONTEXT.membership, role: 'analyst' },
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
       })
 
       const result = await getStellaContextualAdvisor('proj-1', 'narrative')
