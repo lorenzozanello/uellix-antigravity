@@ -30,6 +30,10 @@ export const stellaConfig = {
   isProxyReviewerEnabled: process.env.STELLA_PROXY_REVIEWER_ENABLED === 'true',
   isEvidenceReviewerEnabled: process.env.STELLA_EVIDENCE_REVIEWER_ENABLED === 'true',
   isAuditAssistantEnabled: process.env.STELLA_AUDIT_ASSISTANT_ENABLED === 'true',
+  // WS3b: suggestion-decision persistence — DORMANT by default. Must stay
+  // false until gate G2 applies db/prepared/stella_0003_suggestion_decisions.sql
+  // (the table does not exist before that). See app/actions/stella/decisions.ts.
+  isDecisionsPersistenceEnabled: process.env.STELLA_DECISIONS_PERSISTENCE_ENABLED === 'true',
 
   // Request timeout (ms)
   requestTimeoutMs: 15000,

@@ -19,6 +19,8 @@ import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
+import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
+import { reportStellaFailure } from '@/lib/stella/observability'
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
 
 export type StellaValidatorErrorCode =
@@ -38,6 +40,17 @@ export type StellaValidatorErrorCode =
 export type StellaValidatorResult =
   | { ok: true; data: ValidatorOutput }
   | { ok: false; error: StellaValidatorErrorCode; message: string }
+
+// Fire-and-forget audit trail write (WS3b): an audit_logs failure must NEVER
+// change the user-facing result of a Stella call. Payloads are metadata-only
+// (ids/codes/counts) — never prompt, context or model response content.
+async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
+  try {
+    await logAuditAction(entry)
+  } catch (error) {
+    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
+  }
+}
 
 function buildRiskFlags(output: ValidatorOutput): string[] {
   const flags: string[] = []
@@ -67,6 +80,14 @@ export async function getStellaValidator(
 
   // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
   if (!canUseStella(ctx.membership.role)) {
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'validator', reason: 'ROLE_DENIED', membershipRole: ctx.membership.role },
+    })
     return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
@@ -84,6 +105,14 @@ export async function getStellaValidator(
       quotaCheck.reason === 'no_quota'
         ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
         : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'validator', reason: 'QUOTA_EXCEEDED', quotaReason: quotaCheck.reason ?? null },
+    })
     return { ok: false, error: 'QUOTA_EXCEEDED', message }
   }
 
@@ -94,6 +123,17 @@ export async function getStellaValidator(
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
     if (!rateLimit.allowed) {
+      await logStellaAudit({
+        organizationId: ctx.organization.id,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_DENIED,
+        afterJson: {
+          stellaRole: 'validator',
+          reason: rateLimit.reason === 'unavailable' ? 'RATE_LIMIT_UNAVAILABLE' : 'RATE_LIMITED',
+        },
+      })
       return rateLimit.reason === 'unavailable'
         ? {
             ok: false,
@@ -139,13 +179,23 @@ export async function getStellaValidator(
         riskLevel: data.risk_level,
         riskFlags: buildRiskFlags(data),
       })
-    } catch {
+    } catch (insertError) {
+      reportStellaFailure('validator', 'AUDIT_ERROR', insertError, { projectId })
       return {
         ok: false,
         error: 'AUDIT_ERROR',
         message: 'Failed to record Stella interaction. Please try again.',
       }
     }
+
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_INVOKED,
+      afterJson: { stellaRole: 'validator', pipelineStep: 'Calculation', tokensUsed: response.tokensUsed ?? null },
+    })
 
     return { ok: true, data }
   } catch (error) {
@@ -157,14 +207,17 @@ export async function getStellaValidator(
     }
 
     if (error instanceof StellaTimeoutError) {
+      reportStellaFailure('validator', 'TIMEOUT', error, { projectId })
       return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
     }
 
     if (error instanceof StellaParseError) {
+      reportStellaFailure('validator', 'PARSE_ERROR', error, { projectId })
       return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
     }
 
     if (error instanceof StellaGeminiError) {
+      reportStellaFailure('validator', 'GEMINI_ERROR', error, { projectId })
       return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
     }
 
@@ -172,6 +225,7 @@ export async function getStellaValidator(
       return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
 
+    reportStellaFailure('validator', 'UNKNOWN_ERROR', error, { projectId })
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
   }
 }

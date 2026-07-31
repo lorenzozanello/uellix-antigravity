@@ -87,6 +87,22 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
+// WS3b: audit trail writer mocked at the module boundary (keeps AUDIT_ACTIONS real)
+const mockLogAuditAction = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return {
+    ...original,
+    logAuditAction: (...args: unknown[]) => mockLogAuditAction(...args),
+  }
+})
+
+// WS3b: Sentry-backed failure reporting mocked
+const mockReportStellaFailure = vi.fn()
+vi.mock('@/lib/stella/observability', () => ({
+  reportStellaFailure: (...args: unknown[]) => mockReportStellaFailure(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
 // ---------------------------------------------------------------------------
@@ -188,6 +204,7 @@ describe('getStellaAdvisor server action', () => {
     // Default: quota allowed, so tests unrelated to quota don't need to set it up.
     // Tests in the "Quota enforcement" describe block override this per-case.
     mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+    mockLogAuditAction.mockResolvedValue(undefined)
   })
 
   describe('Feature flag gate', () => {
@@ -630,6 +647,157 @@ describe('getStellaAdvisor server action', () => {
       const result = await getStellaAdvisor('proj-1', 'Narrativa')
 
       expect(result.ok).toBe(true)
+    })
+  })
+
+  describe('Audit trail in audit_logs (WS3b)', () => {
+    it('logs STELLA_INVOKED after a successful call with role, step and tokensUsed metadata', async () => {
+      setupSuccessfulCall()
+      mockAdapterGenerate.mockResolvedValue({
+        role: 'advisor', rawOutput: JSON.stringify(VALID_ADVISOR_OUTPUT), parsedOutput: null,
+        modelUsed: 'mock-model', tokensUsed: 321, timestamp: new Date(),
+      })
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked).toBeDefined()
+      expect(invoked.organizationId).toBe('org-1')
+      expect(invoked.actorUserId).toBe('user-1')
+      expect(invoked.entityType).toBe('project')
+      expect(invoked.entityId).toBe('proj-1')
+      expect(invoked.afterJson).toEqual({ stellaRole: 'advisor', pipelineStep: 'narrative', tokensUsed: 321 })
+    })
+
+    it('logs STELLA_DENIED with ROLE_DENIED when a viewer is rejected', async () => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role: 'viewer' },
+      })
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      const denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied).toBeDefined()
+      expect(denied.afterJson.reason).toBe('ROLE_DENIED')
+      expect(denied.organizationId).toBe('org-1')
+    })
+
+    it('logs STELLA_DENIED with QUOTA_EXCEEDED when quota is exhausted', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+
+      await getStellaAdvisor('proj-1', 'Narrativa')
+
+      const denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson).toEqual({ stellaRole: 'advisor', reason: 'QUOTA_EXCEEDED', quotaReason: 'quota_exceeded' })
+    })
+
+    it('logs STELLA_DENIED with RATE_LIMITED / RATE_LIMIT_UNAVAILABLE reasons', async () => {
+      setupSuccessfulCall()
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
+      await getStellaAdvisor('proj-1', 'narrative')
+      let denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson.reason).toBe('RATE_LIMITED')
+
+      mockLogAuditAction.mockClear()
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_UNAVAILABLE)
+      await getStellaAdvisor('proj-1', 'narrative')
+      denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson.reason).toBe('RATE_LIMIT_UNAVAILABLE')
+    })
+
+    it('audit payloads NEVER contain prompt or model response text', async () => {
+      setupSuccessfulCall()
+      mockBuildAdvisorSystemPrompt.mockReturnValue('SYSTEM_CANARY_prompt secreta')
+      mockBuildAdvisorUserMessage.mockReturnValue('USER_CANARY_contexto cédula 1.234.567.890')
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
+      expect(mockLogAuditAction).toHaveBeenCalled()
+      expect(serialized).not.toContain('SYSTEM_CANARY_prompt')
+      expect(serialized).not.toContain('USER_CANARY_contexto')
+      expect(serialized).not.toContain(VALID_ADVISOR_OUTPUT.what_to_do)
+      expect(serialized).not.toContain(VALID_ADVISOR_OUTPUT.why_it_matters)
+    })
+
+    it('denial result is unchanged when the audit write throws (fire-and-forget)', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+      mockLogAuditAction.mockRejectedValue(new Error('audit db down'))
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
+      expect(errorSpy).toHaveBeenCalledWith('[stella-audit] audit write failed:', 'Error')
+      errorSpy.mockRestore()
+    })
+
+    it('success result is unchanged when the STELLA_INVOKED audit write throws', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      setupSuccessfulCall()
+      mockLogAuditAction.mockRejectedValue(new Error('audit db down'))
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+      errorSpy.mockRestore()
+    })
+  })
+
+  describe('Observability (WS3b)', () => {
+    it('reports GEMINI_ERROR with role and code', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
+      mockAdapterGenerate.mockRejectedValue(new StellaGeminiError('API failure'))
+
+      await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(mockReportStellaFailure).toHaveBeenCalledWith(
+        'advisor', 'GEMINI_ERROR', expect.any(StellaGeminiError), expect.objectContaining({ projectId: 'proj-1' }),
+      )
+    })
+
+    it('reports TIMEOUT and PARSE_ERROR', async () => {
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
+
+      mockAdapterGenerate.mockRejectedValue(new StellaTimeoutError())
+      await getStellaAdvisor('proj-1', 'narrative')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith('advisor', 'TIMEOUT', expect.anything(), expect.anything())
+
+      mockReportStellaFailure.mockClear()
+      mockAdapterGenerate.mockResolvedValue({
+        role: 'advisor', rawOutput: 'nope', parsedOutput: null, modelUsed: 'mock-model', timestamp: new Date(),
+      })
+      mockAdapterParseResponse.mockRejectedValue(new StellaParseError('Bad JSON'))
+      await getStellaAdvisor('proj-1', 'narrative')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith('advisor', 'PARSE_ERROR', expect.anything(), expect.anything())
+    })
+
+    it('reports AUDIT_ERROR when the stella_interactions insert fails', async () => {
+      setupSuccessfulCall()
+      mockInsertValues.mockRejectedValue(new Error('DB connection error'))
+
+      const result = await getStellaAdvisor('proj-1', 'Narrativa')
+
+      expect(result.ok).toBe(false)
+      expect(mockReportStellaFailure).toHaveBeenCalledWith('advisor', 'AUDIT_ERROR', expect.anything(), expect.anything())
+    })
+
+    it('does NOT report on a successful call', async () => {
+      setupSuccessfulCall()
+      await getStellaAdvisor('proj-1', 'narrative')
+      expect(mockReportStellaFailure).not.toHaveBeenCalled()
     })
   })
 

@@ -17,6 +17,8 @@ import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
+import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
+import { reportStellaFailure } from '@/lib/stella/observability'
 import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
@@ -47,6 +49,17 @@ export type StellaContextualAdvisorResult =
   | { ok: true; data: AdvisorContextualOutput }
   | { ok: false; error: StellaAdvisorErrorCode; message: string }
 
+// Fire-and-forget audit trail write (WS3b): an audit_logs failure must NEVER
+// change the user-facing result of a Stella call. Payloads are metadata-only
+// (ids/codes/counts) — never prompt, context or model response content.
+async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
+  try {
+    await logAuditAction(entry)
+  } catch (error) {
+    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
+  }
+}
+
 /**
  * Authorized contextual advisor path. Applies the exact same feature-flag,
  * auth, quota, project-ownership, rate-limit and audit guards as
@@ -75,6 +88,14 @@ export async function getStellaContextualAdvisor(
 
   // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
   if (!canUseStella(ctx.membership.role)) {
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'advisor', reason: 'ROLE_DENIED', membershipRole: ctx.membership.role },
+    })
     return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
@@ -85,6 +106,14 @@ export async function getStellaContextualAdvisor(
       quotaCheck.reason === 'no_quota'
         ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
         : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'advisor', reason: 'QUOTA_EXCEEDED', quotaReason: quotaCheck.reason ?? null },
+    })
     return { ok: false, error: 'QUOTA_EXCEEDED', message }
   }
 
@@ -114,13 +143,35 @@ export async function getStellaContextualAdvisor(
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
     if (!rateLimit.allowed) {
+      await logStellaAudit({
+        organizationId: ctx.organization.id,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_DENIED,
+        afterJson: {
+          stellaRole: 'advisor',
+          reason: rateLimit.reason === 'unavailable' ? 'RATE_LIMIT_UNAVAILABLE' : 'RATE_LIMITED',
+        },
+      })
       return rateLimit.reason === 'unavailable'
         ? { ok: false, error: 'RATE_LIMIT_UNAVAILABLE', message: 'Stella rate limit service is temporarily unavailable.' }
         : { ok: false, error: 'RATE_LIMITED', message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.` }
     }
 
     const result = await runContextualAdvisor(step, context, getGeminiAdapter())
-    if (!result.ok) return result
+    if (!result.ok) {
+      // Model-path failure surfaced as a typed result — report to Sentry with
+      // codes/ids only (the typed messages are static, never prompt echoes).
+      if (result.error === 'GEMINI_ERROR' || result.error === 'TIMEOUT' || result.error === 'PARSE_ERROR') {
+        reportStellaFailure('advisor', result.error, new Error(`contextual advisor ${result.error}`), {
+          projectId,
+          step,
+          contextual: true,
+        })
+      }
+      return result
+    }
 
     // Audit insert — required for compliance and for quota measurement;
     // surface failure rather than swallow (mirrors getStellaAdvisor below).
@@ -136,9 +187,19 @@ export async function getStellaContextualAdvisor(
         modelUsed: result.modelUsed,
         tokensUsed: result.tokensUsed,
       })
-    } catch {
+    } catch (insertError) {
+      reportStellaFailure('advisor', 'AUDIT_ERROR', insertError, { projectId, step, contextual: true })
       return { ok: false, error: 'AUDIT_ERROR', message: 'Failed to record Stella interaction. Please try again.' }
     }
+
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_INVOKED,
+      afterJson: { stellaRole: 'advisor', pipelineStep: step, tokensUsed: result.tokensUsed ?? null },
+    })
 
     return { ok: true, data: result.data }
   } catch (error) {
@@ -149,6 +210,7 @@ export async function getStellaContextualAdvisor(
     if (error instanceof StellaPayloadTooLargeError) {
       return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
+    reportStellaFailure('advisor', 'UNKNOWN_ERROR', error, { projectId, step, contextual: true })
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
   }
 }
@@ -186,6 +248,14 @@ export async function getStellaAdvisor(
 
   // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
   if (!canUseStella(ctx.membership.role)) {
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'advisor', reason: 'ROLE_DENIED', membershipRole: ctx.membership.role },
+    })
     return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
@@ -203,6 +273,14 @@ export async function getStellaAdvisor(
       quotaCheck.reason === 'no_quota'
         ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
         : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_DENIED,
+      afterJson: { stellaRole: 'advisor', reason: 'QUOTA_EXCEEDED', quotaReason: quotaCheck.reason ?? null },
+    })
     return { ok: false, error: 'QUOTA_EXCEEDED', message }
   }
 
@@ -213,6 +291,17 @@ export async function getStellaAdvisor(
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
     if (!rateLimit.allowed) {
+      await logStellaAudit({
+        organizationId: ctx.organization.id,
+        actorUserId: ctx.user.id,
+        entityType: 'project',
+        entityId: projectId,
+        action: AUDIT_ACTIONS.STELLA_DENIED,
+        afterJson: {
+          stellaRole: 'advisor',
+          reason: rateLimit.reason === 'unavailable' ? 'RATE_LIMIT_UNAVAILABLE' : 'RATE_LIMITED',
+        },
+      })
       return rateLimit.reason === 'unavailable'
         ? {
             ok: false,
@@ -257,13 +346,23 @@ export async function getStellaAdvisor(
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,
       })
-    } catch {
+    } catch (insertError) {
+      reportStellaFailure('advisor', 'AUDIT_ERROR', insertError, { projectId })
       return {
         ok: false,
         error: 'AUDIT_ERROR',
         message: 'Failed to record Stella interaction. Please try again.',
       }
     }
+
+    await logStellaAudit({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'project',
+      entityId: projectId,
+      action: AUDIT_ACTIONS.STELLA_INVOKED,
+      afterJson: { stellaRole: 'advisor', pipelineStep: step, tokensUsed: response.tokensUsed ?? null },
+    })
 
     return { ok: true, data }
   } catch (error) {
@@ -277,14 +376,17 @@ export async function getStellaAdvisor(
     }
 
     if (error instanceof StellaTimeoutError) {
+      reportStellaFailure('advisor', 'TIMEOUT', error, { projectId })
       return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
     }
 
     if (error instanceof StellaParseError) {
+      reportStellaFailure('advisor', 'PARSE_ERROR', error, { projectId })
       return { ok: false, error: 'PARSE_ERROR', message: 'Stella returned an unexpected response format.' }
     }
 
     if (error instanceof StellaGeminiError) {
+      reportStellaFailure('advisor', 'GEMINI_ERROR', error, { projectId })
       return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
     }
 
@@ -292,6 +394,7 @@ export async function getStellaAdvisor(
       return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
 
+    reportStellaFailure('advisor', 'UNKNOWN_ERROR', error, { projectId })
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
   }
 }

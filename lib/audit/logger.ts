@@ -35,6 +35,13 @@ export const AUDIT_ACTIONS = {
   // Stella service/quota management
   STELLA_SERVICE_UPDATED: 'stella_service.updated',
 
+  // Stella runtime audit trail (WS3b). Metadata only — payloads must NEVER
+  // include prompt, context or model response content (ids/codes/counts only).
+  STELLA_INVOKED: 'stella.invoked',
+  STELLA_DENIED: 'stella.denied',
+  STELLA_INTEGRITY_REJECTED: 'stella.integrity_rejected',
+  STELLA_DECISION_RECORDED: 'stella.decision_recorded',
+
   // Proxy sources
   PROXY_SOURCE_CREATED: 'proxy_source.created',
   PROXY_SOURCE_UPDATED: 'proxy_source.updated',
