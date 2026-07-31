@@ -22,7 +22,7 @@
 | WS2 Advisor UX | NO INICIADO | — | Ola 2: tras integrar WS1+WS3 |
 | WS3 Security & Audit | IMPLEMENTACIÓN (agente) | `moonshot/ws3-security` @ worktree `uellix-moonshot-ws3` | T3.3, T3.11, T3.1, T3.13, T3.12, T3.15 (unidades DB quedan para 2ª unidad WS3) |
 | WS4 Composer determinístico | IMPLEMENTACIÓN (agente) | `moonshot/ws4-composer` @ worktree `uellix-moonshot-ws4` | T4.1–T4.4 + guard numérico puro (wiring en integración) |
-| WS5 Grounding documental | IMPLEMENTACIÓN (agente) | `moonshot/ws5-grounding` @ worktree `uellix-moonshot-ws5` | T5.1 spec/ADR + T5.2-T5.4 (extracción csv/txt sin deps, chunking, anclas, retrieval mock) + T5.7 paquete pgvector en `db/prepared/` (adelantado a Ola 1 por ser greenfield sin colisiones) |
+| WS5 Grounding documental | **INTEGRADO** (merge `61988e8`) | `moonshot/ws5-grounding` | Spec+ADR, G5_PACKAGE, extracción csv/txt, chunking+anclas (invariante reconstrucción testeada), retrieval con aislamiento estructural, paquete pgvector en `db/prepared/` (NO aplicado). Pendiente WS5: PDF/XLSX tras decisión G5; ingest hook tras integrar (nota de wiring en spec §12) |
 | WS6 Roles & Eval | NO INICIADO | — | Depende de T1.13 (en curso en WS1) |
 | WS7 Ops & Comercial | NO INICIADO | — | Ola 2/3 |
 
