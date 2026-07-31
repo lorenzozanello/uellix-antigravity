@@ -66,7 +66,35 @@ Con el export de billing en mano:
 | Ventana de medición | Fechas UTC inicio/fin, para que el SQL de §2 y el export cubran lo mismo |
 | Clasificación de tamaño de proyectos | Etiqueta chico/mediano/grande de los proyectos activos en la ventana |
 
-## 5. Criterio de aceptación (binario)
+## 5. Criterios de aborto
+
+No recalibrar constantes (mantener las vigentes) si ocurre cualquiera de:
+
+- El export de billing no cubre la misma ventana UTC que el SQL de §2 —
+  medir sobre ventanas distintas produce una comparación inválida.
+- La discrepancia de conteo (§3.3) supera el 10 % — indica un bug de
+  instrumentación en el adapter, no un problema de precio; corregir el
+  conteo primero y repetir la medición antes de tocar constantes.
+- Menos de 14 días de tráfico real disponibles, o el tráfico de la ventana
+  es predominantemente de canary/smoke (no representativo de uso real).
+- El export de billing no puede obtenerse sin exponer datos de cuenta más
+  allá de lo necesario (en ese caso, escalar a Lorenzo en vez de aproximar).
+
+## 6. Rollback
+
+Este gate es de **solo lectura y cálculo** — no aplica cambios de esquema,
+flags ni infraestructura. No hay estado remoto que revertir. El "rollback"
+de una recalibración es exclusivamente de código:
+
+1. Cada recalibración es un commit aislado que toca únicamente
+   `lib/stella/cost-model.ts` (constantes + `asOfDate` + `source`).
+2. Si una recalibración resulta errónea (p. ej. se descubre después que la
+   ventana medida no era representativa), revertir ese commit puntual
+   restaura las constantes anteriores sin afectar ningún otro sistema.
+3. El export de billing usado como insumo nunca se commitea (§4) — no hay
+   dato remoto que limpiar tras un rollback.
+
+## 7. Criterio de aceptación (binario)
 
 G9 **pasa** cuando, durante **2 semanas consecutivas** con tráfico real:
 
@@ -80,7 +108,7 @@ Mientras G9 no pase, todo número de costo en `/admin/services` se trata como
 orden de magnitud (así lo dice el footer de la página) y **no** se usa para
 fijar precios de planes.
 
-## 6. Sign-off
+## 8. Sign-off
 
 | Rol | Nombre | Decisión (APPROVE / REJECT) | Fecha |
 |-----|--------|-----------------------------|-------|

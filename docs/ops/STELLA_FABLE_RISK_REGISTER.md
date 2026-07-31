@@ -1,14 +1,24 @@
 # STELLA FABLE MOONSHOT — Registro de Riesgos
 
-> Última actualización: 2026-07-31 (bootstrap; auditoría base sobre `dd36a4e`)
+> Última actualización: 2026-07-31 (reconciliación documental, checkpoint `15af6bb`; registro base creado en el bootstrap sobre `dd36a4e`, actualizado durante toda la campaña)
 > Severidad: P0 = bloquea el release candidate offline · P1 = degrada calidad/confianza · P2 = mejora.
 > Estado: ABIERTO / MITIGADO / ACEPTADO (con firma de decisión en DECISIONS.md).
+>
+> **Correcciones de esta reconciliación** (a partir de la auditoría independiente
+> `STELLA_MOONSHOT_INDEPENDENT_VERIFICATION`): RK-01 marcado con su wiring
+> resuelto; RK-04 confirmado como PREPARADO (no CERRADO — la aplicación sigue
+> siendo G2); RK-27 corregido de ABIERTO a MITIGADO con evidencia de
+> `eval:roles`; RK-13/RK-13b y RK-34/RK-34b fusionados en una única entrada
+> vigente cada uno (sin perder el historial de ambos hallazgos). RK-28 y
+> RK-29 se mantienen ABIERTOS — no hay evidencia de código que los cierre.
 
 ## P0 — Bloqueadores del Offline Release Candidate
 
+**Resumen (checkpoint final `15af6bb`): 8 de 9 P0 MITIGADOS offline; 1 (RK-04) PREPARADO, pendiente de aplicación en G2.**
+
 | ID | Riesgo | Evidencia | Workstream | Estado |
 |----|--------|-----------|------------|--------|
-| RK-01 | Paridad de contexto rota (7 campos nunca poblados) | merge `24b122c` | WS1 | **MITIGADO** (18/18 campos poblados con queries org-scoped; test de paridad estricto; readiness inyectable — wiring del action pendiente en coordinador) |
+| RK-01 | Paridad de contexto rota (7 campos nunca poblados) | merge `24b122c` | WS1 | **MITIGADO** (18/18 campos poblados con queries org-scoped; test de paridad estricto; readiness vivo inyectado en `advisor.ts:139` — wiring del coordinador RESUELTO en `ea892ca`, verificado en código) |
 | RK-02 | R1–R6 abiertas en código | merge `24b122c` | WS1 | **MITIGADO OFFLINE** (R1 sentinelas, R3 slices por step, R4 validador de fugas ±corchetes, R5 fixtures completos, R6 refusal categórico; R2 pertinencia sigue siendo heurística — validación semántica plena queda para G1) |
 | RK-03 | Advisor contextual sin UI | merge `0d0791a` | WS2 | **MITIGADO** (StellaContextualAdvisorPanel montado en los 7 steps con fuentes legibles y ciclo completo; convivencia con panel legacy pendiente de DP-03) |
 | RK-04 | `stella_interactions` sin trigger append-only + grants UPDATE/DELETE | `db/prepared/stella_0002_*.sql`, `tests/integration/rls.test.ts` (casos staged) | WS3 | **PREPARADO** (SQL con rollback + tests RLS duales pre/post; la APLICACIÓN es gate externo G2 — ver G2_PACKAGE.md) |
@@ -23,14 +33,12 @@
 | ID | Riesgo | Evidencia | WS | Estado |
 |----|--------|-----------|----|--------|
 | RK-10 | Sin dedup/tope de referencias ni fallback contextual | merge `24b122c` | WS1 | **MITIGADO** (dedup orden-preservante, tope 8 distintas fail-closed, fallback contextual schema-válido sólo en ContextualIndexTokenLeakError; índices inválidos siguen PARSE_ERROR por contrato congelado del action) |
-| RK-11 | Sin persistencia de decisiones ni historial/undo; Composer con DOM imperativo destructivo | merges `0d0791a`+`3e967d0`+`c28c135` | WS2/WS3 | **MITIGADO OFFLINE** (undo LIFO global con staleness-confirm; composer controlado con confirmación; persistencia: acción dormante + adapter cableado, activación = G2+flag; interactionId aún sin cablear en el field — nota G2) |
-| RK-13b | Taxonomía de errores colapsada / DISABLED desmonta panel | merge `0d0791a` | WS2 | **MITIGADO** (12 códigos con mensajes distintos, reset humanizado, DISABLED como prop inerte) |
-| RK-34b | Accesibilidad (aria-live condicional, headings, hex) | merge `0d0791a` | WS2 | **MITIGADO** (live regions persistentes, foco gestionado, jerarquía corregida, tokens) |
+| RK-11 | Sin persistencia de decisiones ni historial/undo; Composer con DOM imperativo destructivo | merges `0d0791a`+`3e967d0`+`c28c135` | WS2/WS3 | **MITIGADO OFFLINE** (undo LIFO global con staleness-confirm; composer controlado con confirmación; persistencia: acción dormante + adapter cableado, activación = G2+flag; `interactionId` sigue sin poblarse en la llamada del field — `StellaContextualAdvisorField.tsx` invoca `persistStellaDecision(record, { projectId })` sin `interactionId`, aunque el adapter y la acción ya lo soportan de punta a punta — residual menor, no bloquea C5) |
 | RK-12 | Invocaciones/denegaciones Stella invisibles en `audit_logs` | merge `3e967d0` | WS3 | **MITIGADO** (STELLA_INVOKED/DENIED/INTEGRITY_REJECTED/DECISION_RECORDED, metadata-only con canaries de fuga, fire-and-forget) |
-| RK-13 | Taxonomía de errores colapsada en paneles (RATE_LIMITED sin reset, TIMEOUT genérico); DISABLED desmonta el panel post-click | `StellaAdvisorPanel.tsx:47-57` | WS2 | ABIERTO |
+| RK-13 | Taxonomía de errores colapsada en paneles (RATE_LIMITED sin reset, TIMEOUT genérico); DISABLED desmonta el panel post-click | Hallazgo original: `StellaAdvisorPanel.tsx:47-57` (auditoría baseline). Mitigación: merge `0d0791a` (`StellaContextualAdvisorPanel.tsx`) | WS2 | **MITIGADO** — *(entrada consolidada 2026-07-31: este ID y el duplicado `RK-13b`, registrado por separado durante Ola 2 sin cruzar contra el registro existente, describían el mismo hallazgo. Se fusionan aquí sin pérdida de evidencia.)* 12 códigos de error con mensajes distintos, reset humanizado tras `RATE_LIMITED`, `DISABLED` como prop inicial del servidor (ya no desmonta el panel post-click) |
 | RK-14 | Documentos de evidencia write-only; `content_hash` mutable | `lib/grounding/**`, spec §12 | WS5/WS3 | **PARCIAL** (extracción csv/txt + chunking + retrieval implementados offline; ingest hook y PDF/XLSX = decisión G5; PENDIENTES para G2: signed URL de descarga y trigger de inmutabilidad de `evidence_items.content_hash` — añadir a un futuro stella_0004) |
 | RK-15 | Precisión Decimal global sin fijar y sin golden test del ratio; `parseFloat` en el motor | `lib/pipeline/decimal-config.ts` + goldens | WS4 | **MITIGADO** (merge `5ffbf52`: pin explícito importado por sroi-*/fx-*, goldens exactos re-derivados por auditor, parseNum Decimal con paridad caracterizada) |
-| RK-16 | Composer no valida referencias ni cifras contra contexto (alucinación) | `lib/stella/schemas/composer-numeric-guard.ts` | WS4/WS6 | **PARCIAL** (guard construido y endurecido post-auditoría; WIRING pendiente en composer.ts — coordinador) |
+| RK-16 | Composer no valida referencias ni cifras contra contexto (alucinación) | `lib/stella/schemas/composer-numeric-guard.ts`, `app/actions/stella/composer.ts:162-205` | WS4/WS6 | **MITIGADO** (guard construido, endurecido post-auditoría y cableado fail-closed en `composer.ts` — wiring del coordinador RESUELTO en `ea892ca`, verificado en código: rechaza el borrador y audita solo conteos de violaciones) |
 | RK-17 | Roles reviewer con contexto prestado y flags indescubribles | merge `8f39d2a` | WS6 | **MITIGADO** (contextos por rol con linkage de outcomes; contract test prompt⊆contexto; flags en .env.example; tests de acción y builder) |
 | RK-18 | `risk_level=high` del validator no bloquea publicación (advisory) | DP-06 en DECISIONS.md | WS4/WS6 | **DECISIÓN DE PRODUCTO** (elevado a Lorenzo como DP-06; dato persistido y auditado, enforcement sería un check en publicación) |
 | RK-19 | `stepMismatch` del proveedor se descartaba sin métrica ni log | merge `c28c135` | WS1/WS7 | **MITIGADO** (surfaced en resultado + console.warn + metadata en audit_logs) |
@@ -41,7 +49,7 @@
 | RK-24 | Rate limit con fallback en memoria por instancia sin aviso | merge `c28c135` | WS3/WS7 | **MITIGADO PARCIAL** (warn once-per-process al caer al fallback; la limitación per-instance en serverless persiste por diseño — alerta A2 del plan la cubre; fix estructural requiere KV configurado = operación) |
 | RK-25 | Billing UI contradecía el fail-closed (`\|\| 10` falso) | merge `de860ca` | WS7 | **MITIGADO** (3 estados veraces alineados con quota.ts; misma fuente/ventana que enforcement; Stripe relabel) |
 | RK-26 | Riesgo de staging accidental de `artifacts/` (prompts/respuestas crudas de evaluaciones reales). NO se mitiga vía `.gitignore` ni `.git/info/exclude`: los artifacts deben seguir visibles en `git status` para auditoría local (D-006). Mitigación: deny del harness sobre `git add artifacts*`/`git add .`/`-A`/`--all`/`-f` + regla de rutas explícitas | `.claude/settings.local.json` (local) | WS3 | MITIGADO (harness, verificado) |
-| RK-27 | Fixtures realistas (`audit-fixtures/agua-segura`, generador determinista con seed) nunca conectados al harness de eval — las dos inversiones en realismo no se encuentran | `audit-fixtures/agua-segura/generate.mjs`, `tests/eval/stella-contextual/cases.ts` | WS1/WS6 | ABIERTO |
+| RK-27 | Fixtures realistas (`audit-fixtures/agua-segura`, generador determinista con seed) nunca conectados al harness de eval — las dos inversiones en realismo no se encontraban | `audit-fixtures/agua-segura/generate.mjs`, `tests/eval/stella-roles/fixture-grounded.ts` | WS1/WS6 | **MITIGADO** — *(corregido 2026-07-31: esta fila decía ABIERTO pese a que el propio registro, en la sección de Riesgos de `STATUS.md` y en `TEST_LEDGER.md` (integración WS6), ya documentaba el cierre; la auditoría independiente lo marcó como contradicción a resolver.)* Conectado por WS6/`eval:roles` gate 5 (`roles-fixture-grounded-deterministic`): `extractAguaSeguraFixtures()` alimenta el caso `roles-evidence_reviewer-fixture-grounded`, extracción determinista verificada (`households=120, testimonios=4, confidence=52`), reproducido en esta reconciliación |
 | RK-28 | Redacción de secretos por substring exacto (una key URL-encoded o truncada en el error del proveedor no matchea); `stellaState.missingApiKey` computado y nunca consumido | `gemini-client.ts:124-135`, `config.ts:34` | WS3 | ABIERTO |
 | RK-29 | Harness real sólo cubre advisor contextual: validator/composer/reviewer sin harness de proveedor real; sin script pnpm para el runner | `tests/eval/stella-contextual-real/` | WS6 | ABIERTO |
 
@@ -53,7 +61,7 @@
 | RK-31 | Confidence score mide higiene del registro, no calidad del contenido; fallos de recálculo silenciosos | WS5 |
 | RK-32 | Búsqueda de proxies: 1 de 8 filtros del spec 15 implementado | WS5/WS7 |
 | RK-33 | FX oracle no cableado a inversiones (EUR dead-end); comentario invertido en `rateToUsd` | WS4 |
-| RK-34 | Accesibilidad: aria-live condicional, saltos de heading, hex hardcodeado | WS2 |
+| RK-34 | ~~Accesibilidad: aria-live condicional, saltos de heading, hex hardcodeado~~ **MITIGADO** en `0d0791a` — *(consolidado 2026-07-31 con el duplicado `RK-34b`, registrado por separado durante Ola 2 sin cruzar contra este ID; misma evidencia, sin pérdida de historial)*: live regions persistentes (no condicionales), foco gestionado al resultado, jerarquía de headings corregida, tokens de color en vez de hex hardcodeado | WS2 |
 | RK-35 | Doble build de contexto en `buildAdvisorContextualUserMessage` (punto latente de divergencia) | WS1 |
 | RK-36 | ~~Test muerto de funder-breakdown~~ **RESUELTO** en `5ffbf52`: renombrado al glob correcto y reescrito para invocar `buildComposerContext` real (la versión previa nunca llamaba a la función) | WS4 |
 | RK-37 | Mensajes de bloqueo del motor mezclan inglés/español | WS4 |

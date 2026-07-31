@@ -3,6 +3,12 @@
 > Registro append-only de ejecuciones de pruebas de la campaña.
 > Cada entrada: timestamp, commit, comando, resultado, notas.
 > Nunca se borra una entrada; los rojos se documentan, no se ocultan.
+>
+> **Reconciliación documental 2026-07-31:** se añadieron las entradas WS3
+> (merge `2ecd766`) y WS2 (merge `0d0791a`), que faltaban pese a que las
+> demás Olas 1/2 sí las tienen. No se ejecutó ninguna prueba nueva para esta
+> reconciliación — el checkpoint final (`15af6bb`) ya reproduce 2246/2246
+> tests, ambos evals y el build; ver la última fila del ledger.
 
 ## Política
 
@@ -60,6 +66,24 @@ post-auditoría (paridad estricta, linkage real de stakeholderGroups, detector d
 extendido a formas sin corchetes, reservas documentadas en G1 §7). Guards del runner
 real byte-idénticos a la base (verificado por auditor).
 
+### 2026-07-31 · WS3 INTEGRACIÓN · rama `moonshot/ws3-security` → merge `2ecd766`
+
+> Entrada añadida en la reconciliación documental 2026-07-31 (auditoría
+> independiente `STELLA_MOONSHOT_INDEPENDENT_VERIFICATION` señaló que WS3 no
+> tenía entrada propia pese a que las demás Olas 1 sí la tienen — solo
+> aparecía agregado en el checkpoint "OLA 1 CERRADA" de abajo). No se
+> inventan cifras de `test:unit` específicas al momento del merge: esa
+> granularidad no quedó registrada por separado durante la campaña, sólo el
+> agregado de checkpoint (1927 tests, fila siguiente). Lo que sigue está
+> respaldado directamente por el mensaje del commit de merge `2ecd766` y por
+> el diffstat del propio merge.
+
+| Comando / evidencia | Resultado | Detalle |
+|---|---|---|
+| Suites de seguridad tocadas por el merge (`git show --stat 2ecd766`) | 13 archivos de test añadidos/ampliados | `advisor.test.ts`, `composer.test.ts`, `contextual-advisor.test.ts`, `reviewer.test.ts`, `validator.test.ts` (acciones); `permissions.test.ts`; `anti-regression.test.ts`; `gemini-client.test.ts`; `prompt-injection.test.ts` (nuevo, 280 líneas); `sanitize.test.ts` (nuevo, 257 líneas); `composer-system.test.ts`; `payload-limits.test.ts` (nuevo); `redact-pii.test.ts` (nuevo) |
+| Auditoría independiente (mensaje de merge `2ecd766`) | APPROVE_WITH_NOTES | 8 hallazgos corregidos con pruebas de fallo-sin-fix, según el propio mensaje de commit: *"envelope UNTRUSTED_PROJECT_DATA en los 4 builders legacy — atacado por el auditor y resistió; step/sectionType allowlisted tras exploit del auditor; corpus de 18 payloads × 6 builders; redacción PII unicode pre-truncado; canUseStella set-inclusion incl. reviewer; caps maxOutputTokens/temperature/maxPromptChars con PAYLOAD_TOO_LARGE"* |
+| `pnpm typecheck` / `pnpm test:unit` (checkpoint agregado inmediatamente posterior) | VERDE | Ver fila "CHECKPOINT OLA 1 CERRADA" — WS3 es uno de los 4 workstreams integrados en ese checkpoint (113 archivos, 1927 tests) |
+
 ### 2026-07-31 · CHECKPOINT OLA 1 CERRADA · coordinadora `ea892ca` (WS5+WS4+WS1+WS3 integrados + wiring transversal)
 
 | Comando | Resultado | Detalle |
@@ -114,6 +138,22 @@ stack reconstruido, psql -1, CHECK con literales entrecomillados), todos con
 fails-without-fix. RK-04 queda PREPARADO (SQL listo, aplicación = G2); RK-12 MITIGADO
 (invocaciones/denegaciones/rechazos de integridad en audit_logs); RK-23 MITIGADO
 (Sentry con sanitización); RK-11 PARCIAL (acción de decisiones dormante tras flag+G2).
+
+### 2026-07-31 · WS2 INTEGRACIÓN · rama `moonshot/ws2-advisor-ux` → merge `0d0791a` (+ registro `392c613`)
+
+> Entrada añadida en la reconciliación documental 2026-07-31 (misma razón que
+> la entrada de WS3 arriba: WS2 solo aparecía agregado en el checkpoint "OLA
+> 2 CERRADA" de abajo, pese a tener su propio commit de registro `392c613`).
+> No se inventan cifras de `test:unit` específicas al momento del merge —
+> sólo el agregado de checkpoint (2170 tests, fila siguiente) quedó
+> registrado con ese detalle durante la campaña.
+
+| Comando / evidencia | Resultado | Detalle |
+|---|---|---|
+| Suites de UI tocadas por el merge (`git show --stat 0d0791a`) | 7 archivos de test añadidos/ampliados | `NarrativePage.contextual.integration.test.tsx` (nuevo, 185 líneas); `StellaAdvisorPanel.test.tsx`; `StellaComposerPanel.test.tsx`; `StellaComposerSectionEditor.test.tsx` (nuevo, 202 líneas); `StellaContextualAdvisorPanel.test.tsx` (nuevo, 684 líneas); `StellaValidatorPanel.test.tsx`; `source-field-label.test.ts` (nuevo) |
+| Auditoría independiente (mensaje de merge `0d0791a`) | APPROVE_WITH_NOTES | Según el propio mensaje de commit: *"MAJOR undo-LIFO + 4 minors fixed with fails-without-fix runs"*; ciclo completo aceptar/editar/rechazar/preview/aplicar vía estado React controlado (sin escritura DOM, sin auto-submit — invariante verificado por el auditor) |
+| Registro de decisiones (`392c613`) | — | D-007 (adapter de reconciliación UI↔persistencia), D-008 (incidente de archivos huérfanos resuelto sin daño), DP-06 (elevada a Lorenzo) — sin evidencia de test adicional, es un commit puramente documental |
+| `pnpm typecheck` / `pnpm test:unit` (checkpoint agregado inmediatamente posterior) | VERDE | Ver fila "CHECKPOINT OLA 2 CERRADA" — WS2 es uno de los 4 workstreams integrados en ese checkpoint (127 archivos, 2170 tests) |
 
 ### 2026-07-31 · CHECKPOINT OLA 2 CERRADA · coordinadora `392c613` (WS7+WS6+WS3b+WS2 integrados + wirings)
 

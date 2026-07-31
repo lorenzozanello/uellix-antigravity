@@ -57,6 +57,36 @@ entorno contra el que se corre ya recibió los scripts:
    `db/prepared/stella_0003_suggestion_decisions.sql` (antes, la relación no
    existe y el bloque falla por tabla inexistente).
 
+## Criterios de aborto
+
+Abortar la ejecución (no continuar, no flipear skips) si ocurre cualquiera de:
+
+- `pnpm test:rls` falla contra el stack **local** con los skips en su estado
+  pre-G2 — la línea base debe ser verde antes de tocar staging.
+- El proyecto de staging usado no es el designado por Lorenzo (verificar
+  `NEXT_PUBLIC_SUPABASE_URL` contra el proyecto correcto antes de exportar
+  credenciales) — riesgo de correr contra el proyecto equivocado.
+- Cualquier fallo deja filas de prueba sin limpiar más allá de lo que
+  `afterAll` recoge, o toca una tabla fuera de las 6 listadas en "Qué prueba
+  cada bloque".
+- G2 no está aplicado en staging pero se intenta flipear los skips post-G2
+  (el bloque fallaría por relación/columna inexistente — señal de secuencia
+  incorrecta, no un hallazgo de RLS).
+
+## Rollback
+
+Este gate es de **solo lectura estructural**: no aplica cambios de esquema,
+solo ejecuta la suite de tests contra RLS/grants ya aplicados por G2. No hay
+rollback de datos que ejecutar — el "rollback" de G3 es, en caso de fallo:
+
+1. Revertir los `.skip` flipeados (volver a `describe.skip(...)`) si el
+   fallo ocurrió tras flipearlos, para no dejar la suite roja en el repo.
+2. No se requiere ninguna acción sobre la base de staging: G3 no escribe
+   estado permanente fuera de las filas de prueba que la propia suite limpia.
+3. Si el fallo reveló una política/grant real incorrecta, el rollback de
+   **ese** hallazgo se ejecuta vía el rollback de G2 (`stella_0002_rollback.sql`
+   / `stella_0003_rollback.sql`), no vía G3.
+
 ## Criterio de aprobación (binario)
 
 - [ ] `pnpm test:rls` verde contra el stack local con los skips **activados**
