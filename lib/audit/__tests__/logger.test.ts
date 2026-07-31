@@ -21,6 +21,10 @@ describe('AUDIT_ACTIONS — Stella runtime vocabulary (WS3b)', () => {
     expect(AUDIT_ACTIONS.STELLA_INTEGRITY_REJECTED).toBe('stella.integrity_rejected')
   })
 
+  it('defines the decision-persistence action (WS3b U4, dormant until G2)', () => {
+    expect(AUDIT_ACTIONS.STELLA_DECISION_RECORDED).toBe('stella.decision_recorded')
+  })
+
   it('keeps the pre-existing quota-management action untouched', () => {
     expect(AUDIT_ACTIONS.STELLA_SERVICE_UPDATED).toBe('stella_service.updated')
   })

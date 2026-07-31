@@ -40,6 +40,7 @@ export const AUDIT_ACTIONS = {
   STELLA_INVOKED: 'stella.invoked',
   STELLA_DENIED: 'stella.denied',
   STELLA_INTEGRITY_REJECTED: 'stella.integrity_rejected',
+  STELLA_DECISION_RECORDED: 'stella.decision_recorded',
 
   // Proxy sources
   PROXY_SOURCE_CREATED: 'proxy_source.created',
