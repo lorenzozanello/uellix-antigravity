@@ -22,7 +22,7 @@
 | WS2 Advisor UX | NO INICIADO | — | Ola 2: tras integrar WS1+WS3 |
 | WS3 Security & Audit | IMPLEMENTACIÓN (agente) | `moonshot/ws3-security` @ worktree `uellix-moonshot-ws3` | T3.3, T3.11, T3.1, T3.13, T3.12, T3.15 (unidades DB quedan para 2ª unidad WS3) |
 | WS4 Composer determinístico | IMPLEMENTACIÓN (agente) | `moonshot/ws4-composer` @ worktree `uellix-moonshot-ws4` | T4.1–T4.4 + guard numérico puro (wiring en integración) |
-| WS5 Grounding documental | NO INICIADO | — | Ola 2: T5.1 spec + T5.2 extracción pura |
+| WS5 Grounding documental | IMPLEMENTACIÓN (agente) | `moonshot/ws5-grounding` @ worktree `uellix-moonshot-ws5` | T5.1 spec/ADR + T5.2-T5.4 (extracción csv/txt sin deps, chunking, anclas, retrieval mock) + T5.7 paquete pgvector en `db/prepared/` (adelantado a Ola 1 por ser greenfield sin colisiones) |
 | WS6 Roles & Eval | NO INICIADO | — | Depende de T1.13 (en curso en WS1) |
 | WS7 Ops & Comercial | NO INICIADO | — | Ola 2/3 |
 
