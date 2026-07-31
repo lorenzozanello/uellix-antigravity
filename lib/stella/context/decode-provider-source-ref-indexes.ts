@@ -1,6 +1,7 @@
 import { StellaParseError } from '../errors'
 import { AdvisorContextualOutputSchema, type AdvisorContextualOutput } from '../schemas/advisor-contextual-output'
 import { validateContextualSourceFields } from './validate-contextual-source-fields'
+import { validateNoIndexReferenceTokens } from './validate-no-index-reference-tokens'
 
 export class ProviderSourceRefIndexesError extends StellaParseError {
   constructor(readonly location: string, received: unknown, readonly reason: string) {
@@ -77,6 +78,9 @@ export function decodeProviderSourceRefIndexes(
   }
 
   validateContextualSourceFields(paths, parsed)
+  // R4: citations exist only as decoded sourceFields — free text must not
+  // surface bare index tokens like "(0)" or the transport field name.
+  validateNoIndexReferenceTokens(parsed, paths.length)
 
   const result = parsed as DecodedAdvisorOutput
   Object.defineProperty(result, 'stepMismatch', {
