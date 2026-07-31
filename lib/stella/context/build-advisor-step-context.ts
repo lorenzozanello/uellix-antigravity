@@ -16,6 +16,10 @@ function evidenceMetadataOnly(evidence: ContextualEvidenceMetadata): ContextualE
     status: evidence.status,
     createdAt: evidence.createdAt,
     ...(evidence.description !== undefined ? { description: evidence.description } : {}),
+    // Evidence ↔ outcome/indicator linkage is metadata and is preserved.
+    // Anything else (filePath, raw content, full hashes) never passes through.
+    ...(evidence.outcomeId !== undefined ? { outcomeId: evidence.outcomeId } : {}),
+    ...(evidence.indicatorId !== undefined ? { indicatorId: evidence.indicatorId } : {}),
     ...(evidence.relatedOutcomeTitle !== undefined ? { relatedOutcomeTitle: evidence.relatedOutcomeTitle } : {}),
     ...(evidence.relatedIndicatorName !== undefined ? { relatedIndicatorName: evidence.relatedIndicatorName } : {}),
     ...(evidence.mimeTypeGeneral !== undefined ? { mimeTypeGeneral: evidence.mimeTypeGeneral } : {}),
