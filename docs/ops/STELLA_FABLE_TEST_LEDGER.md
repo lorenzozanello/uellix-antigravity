@@ -115,6 +115,16 @@ fails-without-fix. RK-04 queda PREPARADO (SQL listo, aplicación = G2); RK-12 MI
 (invocaciones/denegaciones/rechazos de integridad en audit_logs); RK-23 MITIGADO
 (Sentry con sanitización); RK-11 PARCIAL (acción de decisiones dormante tras flag+G2).
 
+### 2026-07-31 · CHECKPOINT OLA 2 CERRADA · coordinadora `392c613` (WS7+WS6+WS3b+WS2 integrados + wirings)
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm typecheck` | VERDE | limpio |
+| `pnpm lint` | VERDE | 0 errores (51 warnings preexistentes) |
+| `pnpm test:unit` | VERDE | **127 archivos, 2170 tests** (baseline 95/1372 → +798 tests netos de campaña) |
+| `pnpm eval:offline` | VERDE | 28/28, 0 violaciones R1–R6 |
+| `pnpm eval:roles` | VERDE | 14/14, 5/5 canaries rechazados |
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
