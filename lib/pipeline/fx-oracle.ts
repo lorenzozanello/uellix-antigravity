@@ -2,6 +2,8 @@
 // Service for fetching historical exchange rates to USD for non-COP currencies
 // Uses the free, open-source Frankfurter API (based on ECB data)
 
+// Pin the shared Decimal configuration first — determinism guard (WS4 U1).
+import './decimal-config'
 import Decimal from 'decimal.js'
 
 // Known currencies supported by the European Central Bank (Frankfurter)
@@ -19,9 +21,12 @@ export interface FxOracleResult {
 }
 
 /**
- * Fetches the historical exchange rate for a given currency to USD on a specific date.
- * Represents "1 {currency} = ? USD".
- * 
+ * Fetches the historical exchange rate for a given currency on a specific date.
+ * Represents "1 USD = ? {currency}" (currency units per USD): the API is
+ * queried with from=USD&to={currency}, so `rateToUsd` is the amount of the
+ * source currency that one USD buys. Consumers convert to USD by DIVIDING the
+ * source amount by this rate (see convertToUsd in fx-math.ts).
+ *
  * @param currency 3-letter currency code (e.g. 'EUR')
  * @param date ISO date string (YYYY-MM-DD)
  * @returns FxOracleResult if successful, null if failed or unsupported

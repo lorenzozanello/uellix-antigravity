@@ -1,4 +1,6 @@
 // Pure FX conversion functions (client-safe, no DB dependencies)
+// Pin the shared Decimal configuration first — determinism guard.
+import './decimal-config'
 import Decimal from 'decimal.js'
 
 // USD amounts carry 4 decimals, matching the numeric(20,4) money columns.

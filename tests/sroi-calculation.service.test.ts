@@ -100,6 +100,7 @@ import {
   calculateAndPersistSroiRun,
   getSroiCalculationReadiness,
   calculateSroiScenarios,
+  runDeterministicCalc,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -356,6 +357,122 @@ describe('Readiness edge cases', () => {
     const readiness = await getSroiCalculationReadiness(PROJECT_ID);
     expect(readiness.canCalculate).toBe(false);
     expect(readiness.blockingReasons.some(r => r.includes('Falta conversión a USD'))).toBe(true);
+  });
+
+  // U3 (WS4) — remaining blocking classes, one test each.
+
+  it('fails when an assignment has no quantity input', async () => {
+    seedHappyData();
+    mockDb.sroiAssignmentInputs = [];
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.missingInputs).toContain(ASSIGNMENT_ID);
+    expect(readiness.blockingReasons).toContain('Missing inputs for 1 assignment(s)');
+  });
+
+  it('fails when an assignment has no SROI filter set', async () => {
+    seedHappyData();
+    mockDb.sroiFilterSets = [];
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.missingFilterSets).toContain(ASSIGNMENT_ID);
+    expect(readiness.blockingReasons).toContain('Missing filter sets for 1 assignment(s)');
+  });
+
+  it('fails when an approved proxy has value <= 0', async () => {
+    seedHappyData({ proxy: { value: '0', valueUsd: '0' } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.invalidQuantities).toContain('proxy:proxy-1');
+    expect(readiness.blockingReasons).toContain('Invalid quantities in 1 item(s)');
+  });
+
+  it('fails when an approved proxy has no USD conversion', async () => {
+    seedHappyData({ proxy: { currency: 'EUR', valueUsd: null } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.proxiesMissingUsd).toContain('proxy-1');
+    expect(readiness.blockingReasons.some(r => r.includes('Falta conversión a USD para 1 proxy(ies)'))).toBe(true);
+  });
+
+  it('fails when funder allocations for an outcome exceed 100%', async () => {
+    seedHappyData();
+    mockDb.outcomeFunderAllocations.push(
+      { id: 'alloc-1', organizationId: ORG_ID, outcomeId: 'out-1', funderId: 'funder-1', allocationPct: '70', status: 'active' },
+      { id: 'alloc-2', organizationId: ORG_ID, outcomeId: 'out-1', funderId: 'funder-2', allocationPct: '50', status: 'active' },
+    );
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.overAllocatedOutcomes).toContain('out-1');
+    expect(readiness.blockingReasons).toContain('1 resultado(s) con atribución de financiadores > 100%');
+  });
+
+  it('fails when a filter percentage is negative', async () => {
+    seedHappyData({ filter: { attributionPct: '-5' } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.blockingReasons).toContain('Invalid filter values in 1 assignment(s)');
+  });
+
+  it('fails when duration exceeds the 50-year upper bound', async () => {
+    seedHappyData({ filter: { durationYears: 51 } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.blockingReasons).toContain('Invalid filter values in 1 assignment(s)');
+  });
+});
+
+describe('Skipped assignments are reported, never silently dropped (U3)', () => {
+  const investment = [{ amountUsd: '1000', funderId: 'funder-1' }] as any;
+  const goodLine = (id: string, outcomeId: string, quantity: string, valueUsd: string) => ({
+    assignment: { id, outcomeId, proxyId: `proxy-${id}` },
+    input: { quantity, unit: 'units' },
+    filterSet: { deadweightPct: null, attributionPct: null, displacementPct: null, dropoffPct: null, durationYears: 1 },
+    proxy: { id: `proxy-${id}`, valueUsd },
+    outcome: { id: outcomeId },
+  }) as any;
+
+  it('reports a line skipped for non-positive quantity', () => {
+    const result = runDeterministicCalc(
+      investment,
+      [goodLine('a1', 'out-1', '10', '100'), goodLine('a2', 'out-2', '0', '100')],
+      [], [], null,
+    );
+    expect(result.lineItems).toHaveLength(1);
+    expect(result.skippedAssignments).toEqual([
+      { outcomeId: 'out-2', reason: 'non_positive_quantity' },
+    ]);
+    expect(result.netSocialValueExact).toBe('1000.0000');
+  });
+
+  it('reports a line skipped for non-positive proxy value', () => {
+    const result = runDeterministicCalc(
+      investment,
+      [goodLine('a1', 'out-1', '10', '100'), goodLine('a2', 'out-2', '5', '0')],
+      [], [], null,
+    );
+    expect(result.lineItems).toHaveLength(1);
+    expect(result.skippedAssignments).toEqual([
+      { outcomeId: 'out-2', reason: 'non_positive_proxy_value' },
+    ]);
+  });
+
+  it('reports an empty list when nothing is skipped', () => {
+    const result = runDeterministicCalc(investment, [goodLine('a1', 'out-1', '10', '100')], [], [], null);
+    expect(result.skippedAssignments).toEqual([]);
+  });
+
+  it('surfaces skippedAssignments through the preview result (additive field)', async () => {
+    seedHappyData();
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    expect(preview.canCalculate).toBe(true);
+    expect(preview.result!.skippedAssignments).toEqual([]);
+  });
+
+  it('persists skippedAssignments inside the run snapshot (additive key)', async () => {
+    seedHappyData();
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+    expect((run.snapshotJson as any).skippedAssignments).toEqual([]);
   });
 });
 
