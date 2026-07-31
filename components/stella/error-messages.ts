@@ -72,8 +72,7 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
       return {
         code,
         title: 'Stella no está habilitada',
-        description:
-          'Stella no está habilitada para tu organización en este momento. Tus datos del pipeline no se ven afectados.',
+        description: 'Stella no está habilitada para tu organización en este momento.',
         retryable: false,
         tone: 'info',
       }
@@ -160,7 +159,7 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
         code,
         title: 'Error del servicio de IA',
         description:
-          'El servicio de IA de Stella encontró un error. Los datos de tu pipeline no se ven afectados.',
+          'El servicio de IA de Stella encontró un error inesperado. Podés intentar de nuevo en unos minutos.',
         retryable: false,
         tone: 'error',
       }
@@ -178,8 +177,7 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
       return {
         code: 'UNKNOWN_ERROR',
         title: 'Stella no está disponible',
-        description:
-          'La orientación de Stella no está disponible temporalmente. Los datos de tu pipeline no se ven afectados.',
+        description: 'Stella no está disponible temporalmente. Podés intentar de nuevo en unos minutos.',
         retryable: false,
         tone: 'error',
       }

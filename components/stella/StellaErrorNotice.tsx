@@ -40,10 +40,15 @@ interface StellaErrorNoticeProps {
   message: string
   /** Called when the user clicks "Reintentar" (shown only for retryable codes). */
   onRetry?: () => void
+  /**
+   * Panel-specific reassurance line rendered under the description, e.g.
+   * "Los datos de tu cálculo no se ven afectados."
+   */
+  footnote?: string
   className?: string
 }
 
-export function StellaErrorNotice({ code, message, onRetry, className }: StellaErrorNoticeProps) {
+export function StellaErrorNotice({ code, message, onRetry, footnote, className }: StellaErrorNoticeProps) {
   const presentation = stellaErrorPresentation(code, message)
   return (
     <div
@@ -62,6 +67,7 @@ export function StellaErrorNotice({ code, message, onRetry, className }: StellaE
       <div className="min-w-0 space-y-1">
         <p className="text-sm font-medium text-foreground">{presentation.title}</p>
         <p className="text-sm text-muted-foreground">{presentation.description}</p>
+        {footnote && <p className="text-xs text-muted-foreground/70">{footnote}</p>}
         {presentation.retryable && onRetry && (
           <button
             type="button"

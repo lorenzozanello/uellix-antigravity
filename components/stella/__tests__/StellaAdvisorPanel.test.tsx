@@ -315,14 +315,14 @@ describe('StellaAdvisorPanel', () => {
   })
 
   describe('Error state', () => {
-    it('shows error fallback message on GEMINI_ERROR', async () => {
+    it('shows the AI-service error message on GEMINI_ERROR (distinct taxonomy)', async () => {
       geminiError()
       render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
       fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
+          screen.queryByText(/el servicio de ia de stella encontró un error/i)
         ).not.toBeNull()
       })
     })
@@ -356,7 +356,7 @@ describe('StellaAdvisorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
+          screen.queryByText(/el servicio de ia de stella encontró un error/i)
         ).not.toBeNull()
       })
 
@@ -371,8 +371,84 @@ describe('StellaAdvisorPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la orientación de stella no está disponible temporalmente/i)
+          screen.queryByText(/stella no está disponible temporalmente/i)
         ).not.toBeNull()
+      })
+    })
+
+    it('shows the rate-limit reset info on RATE_LIMITED', async () => {
+      mockGetStellaAdvisor.mockResolvedValue({
+        ok: false,
+        error: 'RATE_LIMITED',
+        message: 'Rate limit exceeded. Resets at 2026-06-26T15:00:00.000Z.',
+      })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText(/límite de solicitudes por hora/i)).not.toBeNull()
+        expect(screen.queryByText(/2026-06-26T15:00:00/)).not.toBeNull()
+      })
+    })
+
+    it('offers Reintentar on TIMEOUT and retries the action', async () => {
+      mockGetStellaAdvisor.mockResolvedValue({
+        ok: false,
+        error: 'TIMEOUT',
+        message: 'Stella request timed out. Please try again.',
+      })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Reintentar')).not.toBeNull()
+      })
+
+      success()
+      fireEvent.click(screen.getByText('Reintentar'))
+      await waitFor(() => {
+        expect(mockGetStellaAdvisor).toHaveBeenCalledTimes(2)
+        expect(screen.queryByText(/qué hacer/i)).not.toBeNull()
+      })
+    })
+
+    it('shows the role message on UNAUTHORIZED', async () => {
+      mockGetStellaAdvisor.mockResolvedValue({
+        ok: false,
+        error: 'UNAUTHORIZED',
+        message: 'Tu rol no tiene permiso para usar Stella.',
+      })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Tu rol no tiene permiso para usar Stella.')).not.toBeNull()
+      })
+    })
+
+    it('explains reducing text on PAYLOAD_TOO_LARGE', async () => {
+      mockGetStellaAdvisor.mockResolvedValue({
+        ok: false,
+        error: 'PAYLOAD_TOO_LARGE',
+        message: 'El contexto del proyecto es demasiado grande para Stella.',
+      })
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText(/reducí la cantidad de texto/i)).not.toBeNull()
+      })
+    })
+
+    it('moves focus to the error notice on failure', async () => {
+      geminiError()
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      fireEvent.click(screen.getByText(/preguntar a stella/i))
+
+      await waitFor(() => {
+        const assertive = screen.getByTestId('stella-advisor-live-assertive')
+        expect(assertive.textContent).not.toBe('')
+        expect(assertive.contains(document.activeElement)).toBe(true)
       })
     })
 
@@ -387,24 +463,38 @@ describe('StellaAdvisorPanel', () => {
   })
 
   describe('Disabled state', () => {
-    it('renders null when action returns DISABLED', async () => {
+    it('stays mounted with an inert informative state when action returns DISABLED', async () => {
       disabled()
       const { container } = render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
       fireEvent.click(screen.getByText(/preguntar a stella/i))
 
       await waitFor(() => {
-        expect(container.firstChild).toBeNull()
+        expect(screen.queryByTestId('stella-advisor-disabled')).not.toBeNull()
       })
+      expect(container.firstChild).not.toBeNull()
+      const btn = screen.getByText(/preguntar a stella/i).closest('button')
+      expect(btn?.disabled).toBe(true)
     })
 
-    it('does not render any content when DISABLED', async () => {
-      disabled()
-      const { container } = render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+    it('renders inert and never calls the action when enabled={false} (server-passed)', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" enabled={false} />)
+      expect(screen.queryByTestId('stella-advisor-disabled')).not.toBeNull()
+      const btn = screen.getByText(/preguntar a stella/i).closest('button')
+      expect(btn?.disabled).toBe(true)
       fireEvent.click(screen.getByText(/preguntar a stella/i))
+      expect(mockGetStellaAdvisor).not.toHaveBeenCalled()
+    })
+  })
 
-      await waitFor(() => {
-        expect(container.innerHTML).toBe('')
-      })
+  describe('Live regions (U6)', () => {
+    it('mounts both live regions at idle, empty', () => {
+      render(<StellaAdvisorPanel projectId="proj-1" step="narrative" />)
+      const polite = screen.getByTestId('stella-advisor-live-polite')
+      const assertive = screen.getByTestId('stella-advisor-live-assertive')
+      expect(polite.getAttribute('aria-live')).toBe('polite')
+      expect(assertive.getAttribute('aria-live')).toBe('assertive')
+      expect(polite.textContent).toBe('')
+      expect(assertive.textContent).toBe('')
     })
   })
 

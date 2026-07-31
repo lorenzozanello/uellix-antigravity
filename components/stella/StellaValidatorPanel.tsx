@@ -1,29 +1,33 @@
 'use client'
 // components/stella/StellaValidatorPanel.tsx
 // Sprint 9D-3: On-demand Stella Validator panel for Calculation step.
-// Never auto-invokes. User triggers via "Review with Stella" button.
+// Never auto-invokes. User triggers via "Revisar con Stella" button.
 // Read-only: no pipeline writes, no SROI recalculation, no certification claims.
+// WS2 (Moonshot) U5/U6: shared error taxonomy, server-passed `enabled`
+// availability (inert state instead of unmount), persistent live regions,
+// focus management, fixed heading hierarchy.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { getStellaValidator } from '@/app/actions/stella/validator'
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
+import { StellaErrorNotice } from './StellaErrorNotice'
 
 type PanelState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'success'; data: ValidatorOutput }
-  | { status: 'error' }
+  | { status: 'error'; code: string; message: string }
   | { status: 'disabled' }
-  | { status: 'rate_limited'; message: string }
-  | { status: 'quota_exceeded'; message: string }
 
 interface StellaValidatorPanelProps {
   projectId: string
   step?: 'Calculation' | 'Cálculo'
   title?: string
   className?: string
+  /** Server-passed availability — see StellaAdvisorPanel. */
+  enabled?: boolean
 }
 
 const RISK_LEVEL_STYLES: Record<'low' | 'medium' | 'high', string> = {
@@ -43,8 +47,16 @@ export function StellaValidatorPanel({
   step = 'Calculation',
   title,
   className,
+  enabled = true,
 }: StellaValidatorPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
+  const resultRef = useRef<HTMLDivElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (panelState.status === 'success') resultRef.current?.focus()
+    else if (panelState.status === 'error') errorRef.current?.focus()
+  }, [panelState.status])
 
   async function handleReviewWithStella() {
     setPanelState({ status: 'loading' })
@@ -54,23 +66,16 @@ export function StellaValidatorPanel({
         setPanelState({ status: 'success', data: result.data })
       } else if (result.error === 'DISABLED') {
         setPanelState({ status: 'disabled' })
-      } else if (result.error === 'RATE_LIMITED') {
-        setPanelState({ status: 'rate_limited', message: result.message })
-      } else if (result.error === 'QUOTA_EXCEEDED') {
-        setPanelState({ status: 'quota_exceeded', message: result.message })
       } else {
-        setPanelState({ status: 'error' })
+        setPanelState({ status: 'error', code: result.error, message: result.message })
       }
     } catch {
-      setPanelState({ status: 'error' })
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
     }
   }
 
-  if (panelState.status === 'disabled') {
-    return null
-  }
-
   const isLoading = panelState.status === 'loading'
+  const isInertDisabled = !enabled || panelState.status === 'disabled'
 
   return (
     <section
@@ -83,143 +88,138 @@ export function StellaValidatorPanel({
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium text-foreground">{title ?? 'Stella Validator'}</p>
+          <h2 className="text-sm font-medium text-foreground">{title ?? 'Stella Validator'}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Stella Validator ofrece únicamente una revisión de riesgo consultiva. Se requiere
             revisión humana antes de su uso externo.
           </p>
         </div>
         <Button
+          type="button"
           variant="outline"
           size="sm"
-          onClick={isLoading ? undefined : handleReviewWithStella}
-          disabled={isLoading}
+          onClick={isLoading || isInertDisabled ? undefined : handleReviewWithStella}
+          disabled={isLoading || isInertDisabled}
           className="shrink-0"
         >
           {isLoading ? 'Cargando…' : 'Revisar con Stella'}
         </Button>
       </div>
 
-      {/* Loading skeleton */}
-      {panelState.status === 'loading' && (
-        <div
-          aria-live="polite"
-          aria-busy="true"
-          data-testid="stella-validator-loading"
-          className="mt-3 space-y-2"
-        >
-          <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
-          <div className="h-3 w-5/6 rounded bg-muted animate-pulse" />
-          <div className="h-3 w-2/3 rounded bg-muted animate-pulse" />
-        </div>
-      )}
-
-      {/* Rate limited — non-blocking, calculation unaffected */}
-      {panelState.status === 'rate_limited' && (
-        <div aria-live="assertive" role="alert" className="mt-3">
-          <p className="text-muted-foreground">
-            Se alcanzó el límite de solicitudes a Stella Validator por esta hora. {panelState.message}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground/70">
-            Los datos de tu cálculo no se ven afectados.
-          </p>
-        </div>
-      )}
-
-      {/* Quota exceeded — non-blocking, calculation unaffected */}
-      {panelState.status === 'quota_exceeded' && (
-        <div aria-live="assertive" role="alert" className="mt-3">
-          <p className="text-muted-foreground">{panelState.message}</p>
-          <p className="mt-1 text-xs text-muted-foreground/70">
-            Los datos de tu cálculo no se ven afectados.
-          </p>
-        </div>
-      )}
-
-      {/* Error — non-blocking, pipeline unaffected */}
-      {panelState.status === 'error' && (
-        <p aria-live="assertive" role="alert" className="mt-3 text-muted-foreground">
-          La revisión de Stella no está disponible temporalmente. Los datos de tu pipeline no se ven afectados.
+      {/* U5: inert informative state (server-disabled or post-click DISABLED). */}
+      {isInertDisabled && (
+        <p className="mt-3 text-muted-foreground" data-testid="stella-validator-disabled">
+          Stella no está habilitada para tu organización en este momento. Los datos de tu cálculo
+          no se ven afectados.
         </p>
       )}
 
-      {/* Success — full validation output */}
-      {panelState.status === 'success' && (
-        <div aria-live="polite" className="mt-3 space-y-3">
-          {/* Summary */}
-          <ValidatorSection title="Resumen" content={panelState.data.summary} />
-
-          {/* Risk level badge */}
-          <div>
-            <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
-              Nivel de riesgo
-            </h4>
-            <span
-              className={cn(
-                'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                RISK_LEVEL_STYLES[panelState.data.risk_level]
-              )}
-            >
-              {RISK_LEVEL_LABELS[panelState.data.risk_level]}
-            </span>
-          </div>
-
-          {/* Evidence gaps */}
-          <ValidatorList
-            title="Vacíos de evidencia"
-            items={panelState.data.evidence_gaps}
-            emptyText="No se identificaron vacíos de evidencia"
-          />
-
-          {/* Proxy risks */}
-          <ValidatorList
-            title="Riesgos de proxies"
-            items={panelState.data.proxy_risks}
-            emptyText="No se identificaron riesgos de proxies"
-          />
-
-          {/* Attribution risks */}
-          <ValidatorList
-            title="Riesgos de atribución"
-            items={panelState.data.attribution_risks}
-            emptyText="No se identificaron riesgos de atribución"
-          />
-
-          {/* Claim risks */}
-          <ValidatorList
-            title="Riesgos de afirmaciones"
-            items={panelState.data.claim_risks}
-            emptyText="No se identificaron riesgos de afirmaciones"
-          />
-
-          {/* Recommendations */}
-          <ValidatorList
-            title="Recomendaciones"
-            items={panelState.data.recommendations}
-            emptyText="Sin recomendaciones"
-          />
-
-          {/* Human review banner — requires_human_review is always true (z.literal) */}
+      {/* U6: persistent polite live region. */}
+      <div aria-live="polite" data-testid="stella-validator-live-polite">
+        {panelState.status === 'loading' && (
           <div
-            role="note"
-            className="rounded border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/20"
+            aria-busy="true"
+            data-testid="stella-validator-loading"
+            className="mt-3 space-y-2"
           >
-            <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
-              Se requiere revisión humana
-            </p>
-            <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-500">
-              Se requiere revisión humana antes de su uso externo. Esta revisión no certifica,
-              audita, aprueba ni garantiza el impacto.
+            <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-5/6 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-2/3 rounded bg-muted animate-pulse" />
+          </div>
+        )}
+
+        {/* Success — full validation output */}
+        {panelState.status === 'success' && (
+          <div ref={resultRef} tabIndex={-1} className="mt-3 space-y-3 focus-visible:outline-none">
+            {/* Summary */}
+            <ValidatorSection title="Resumen" content={panelState.data.summary} />
+
+            {/* Risk level badge */}
+            <div>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
+                Nivel de riesgo
+              </h3>
+              <span
+                className={cn(
+                  'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
+                  RISK_LEVEL_STYLES[panelState.data.risk_level]
+                )}
+              >
+                {RISK_LEVEL_LABELS[panelState.data.risk_level]}
+              </span>
+            </div>
+
+            {/* Evidence gaps */}
+            <ValidatorList
+              title="Vacíos de evidencia"
+              items={panelState.data.evidence_gaps}
+              emptyText="No se identificaron vacíos de evidencia"
+            />
+
+            {/* Proxy risks */}
+            <ValidatorList
+              title="Riesgos de proxies"
+              items={panelState.data.proxy_risks}
+              emptyText="No se identificaron riesgos de proxies"
+            />
+
+            {/* Attribution risks */}
+            <ValidatorList
+              title="Riesgos de atribución"
+              items={panelState.data.attribution_risks}
+              emptyText="No se identificaron riesgos de atribución"
+            />
+
+            {/* Claim risks */}
+            <ValidatorList
+              title="Riesgos de afirmaciones"
+              items={panelState.data.claim_risks}
+              emptyText="No se identificaron riesgos de afirmaciones"
+            />
+
+            {/* Recommendations */}
+            <ValidatorList
+              title="Recomendaciones"
+              items={panelState.data.recommendations}
+              emptyText="Sin recomendaciones"
+            />
+
+            {/* Human review banner — requires_human_review is always true (z.literal) */}
+            <div
+              role="note"
+              className="rounded border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/20"
+            >
+              <p className="text-xs font-medium text-amber-800 dark:text-amber-400">
+                Se requiere revisión humana
+              </p>
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-500">
+                Se requiere revisión humana antes de su uso externo. Esta revisión no certifica,
+                audita, aprueba ni garantiza el impacto.
+              </p>
+            </div>
+
+            {/* Disclaimer footer */}
+            <p className="border-t border-border pt-2 text-xs text-muted-foreground/70">
+              Stella Validator ofrece únicamente una revisión de riesgo consultiva. Esta revisión no
+              certifica, audita, aprueba ni garantiza el impacto.
             </p>
           </div>
+        )}
+      </div>
 
-          {/* Disclaimer footer */}
-          <p className="border-t border-border pt-2 text-xs text-muted-foreground/70">
-            Stella Validator ofrece únicamente una revisión de riesgo consultiva. Esta revisión no
-            certifica, audita, aprueba ni garantiza el impacto.
-          </p>
-        </div>
-      )}
+      {/* U6: persistent assertive live region — errors only. */}
+      <div aria-live="assertive" data-testid="stella-validator-live-assertive">
+        {panelState.status === 'error' && (
+          <div ref={errorRef} tabIndex={-1} className="mt-3 focus-visible:outline-none">
+            <StellaErrorNotice
+              code={panelState.code}
+              message={panelState.message}
+              onRetry={handleReviewWithStella}
+              footnote="Los datos de tu cálculo no se ven afectados."
+            />
+          </div>
+        )}
+      </div>
     </section>
   )
 }
@@ -227,9 +227,9 @@ export function StellaValidatorPanel({
 function ValidatorSection({ title, content }: { title: string; content: string }) {
   return (
     <div>
-      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
+      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
         {title}
-      </h4>
+      </h3>
       <p className="text-muted-foreground">{content}</p>
     </div>
   )
@@ -246,9 +246,9 @@ function ValidatorList({
 }) {
   return (
     <div>
-      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
+      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground">
         {title}
-      </h4>
+      </h3>
       {items.length > 0 ? (
         <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
           {items.map((item, i) => (
