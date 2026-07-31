@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { buildAdvisorStepContext } from '@/lib/stella/context/build-advisor-step-context'
+import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contextual-advisor-request'
+import { advisorPipelineSteps } from '@/lib/stella/advisor/steps'
 import { OFFICIAL_CONTEXTUAL_MOCK_CASES } from './cases'
 import { ContextualMockHarnessError, runContextualMockHarness } from './harness'
 describe('offline contextual mock harness', () => {
@@ -23,5 +26,36 @@ describe('offline contextual mock harness', () => {
     expect(fixture?.category).toBe(category)
     expect(fixture?.context.calculationSnapshot).toBeNull()
     expect(fixture?.context.calculationReadiness?.ready).toBe(false)
+  })
+
+  // R5: `complete` must be genuinely complete for EVERY step — each step's
+  // sliced context is populated, so complete and incomplete truly differ.
+  describe('complete-category fixtures are genuinely complete (R5)', () => {
+    it.each(advisorPipelineSteps)('%s: the complete slice has no empty registered collections', (step) => {
+      const complete = OFFICIAL_CONTEXTUAL_MOCK_CASES.find((item) => item.caseId === `b1c-${step}-complete`)
+      expect(complete).toBeDefined()
+      const request = buildContextualAdvisorRequest(step, complete!.context)
+      const sentinels = request.canonicalSourceFieldPaths.filter((path) => path.endsWith('.empty'))
+      // A complete project legitimately has zero blocking reasons/warnings;
+      // every other collection in the slice must be populated.
+      expect(sentinels.every((path) => path.startsWith('calculationReadiness.'))).toBe(true)
+    })
+
+    it('the complete calculation fixture carries a persisted snapshot and ready readiness', () => {
+      const complete = OFFICIAL_CONTEXTUAL_MOCK_CASES.find((item) => item.caseId === 'b1c-calculation-complete')
+      expect(complete?.context.calculationSnapshot).not.toBeNull()
+      expect(complete?.context.calculationReadiness?.ready).toBe(true)
+      expect(complete?.context.indicatorsSnapshot?.length).toBeGreaterThan(0)
+      expect(complete?.context.evidenceMetadata?.length).toBeGreaterThan(0)
+      expect(complete?.context.proxySummary?.length).toBeGreaterThan(0)
+    })
+
+    it.each(advisorPipelineSteps)('%s: complete and incomplete slices differ', (step) => {
+      const complete = OFFICIAL_CONTEXTUAL_MOCK_CASES.find((item) => item.caseId === `b1c-${step}-complete`)
+      const incomplete = OFFICIAL_CONTEXTUAL_MOCK_CASES.find((item) => item.caseId === `b1c-${step}-incomplete`)
+      const completeSlice = buildAdvisorStepContext(step, complete!.context).context
+      const incompleteSlice = buildAdvisorStepContext(step, incomplete!.context).context
+      expect(completeSlice).not.toEqual({ ...incompleteSlice, projectId: completeSlice.projectId })
+    })
   })
 })
