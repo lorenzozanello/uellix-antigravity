@@ -178,6 +178,65 @@ fails-without-fix. RK-04 queda PREPARADO (SQL listo, aplicación = G2); RK-12 MI
 
 WS3c auditado (APPROVE_WITH_NOTES, 0 bloqueadores) e integrado en `c28c135`.
 
+### 2026-07-31 · ENDURECIMIENTO PRE-EJECUCIÓN DE G2 · coordinadora (post-`6632378`)
+
+Resolución offline de los hallazgos R1–R6 de `STELLA_G2_READINESS_AUDIT`.
+**No se ejecutó G2**: cero acceso a base de datos, cero SQL aplicado.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm typecheck` | VERDE | limpio (un `error TS1501` por el flag `s` de regex en el test nuevo fue corregido usando `[\s\S]`) |
+| `pnpm lint` | VERDE | 0 errores, 51 warnings preexistentes |
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts lib/grounding` | VERDE | 6 archivos, **154 tests + 1 todo** (tras las dos rondas de correcciones de auditoría) |
+| `pnpm test:unit` | VERDE | **132 archivos, 2312 tests + 1 todo** (antes: 131/2246 → **+1 archivo, +66 tests**) |
+| `pnpm test:integration` / `pnpm test:rls` | NO EJECUTADAS | prohibidas (BD remota) |
+
+**Auditoría independiente del diff (agente separado, modo lectura, 3 pasadas):**
+ronda 1 → 1 BLOCKER, 3 MAJOR, 9 MINOR; ronda 2 → los 13 resueltos, pero 1 MAJOR
+y 6 MINOR **nuevos derivados del propio fix del BLOCKER**; ronda 3 → verificación
+final. El BLOCKER (**B1**) fue introducido por el propio
+endurecimiento: `SET search_path = public` habría impedido resolver el tipo
+`vector` cuando pgvector vive en el esquema `extensions` (convención de Supabase
+hosted) — y la guarda previa, agnóstica del esquema, habría declarado que
+pgvector estaba bien justo antes de fallar. Corregido con
+`search_path = public, extensions`, instalación `WITH SCHEMA extensions` y una
+guarda de resolubilidad (`to_regtype('vector')`) que nombra el esquema real.
+**M1** (los CHECK se reconciliaban por nombre y no por definición: un CHECK
+obsoleto sin `'undone'` habría pasado el gate y roto `recordStellaDecision` en
+runtime), **M2** (guarda de forma ciega a PK/DEFAULT/columnas extra) y **M3**
+(una migración escrita a mano en `db/migrations/` evadía las 4 salvaguardas)
+también corregidos, más 7 menores.
+
+La segunda ronda encontró que **el fix de B1 había roto la variante léxica de
+G5**: la guarda de resolubilidad abortaba el script cuando pgvector
+legítimamente no está instalado, y el mensaje afirmaba que sí lo estaba. Se
+resolvió condicionando la guarda a la presencia real de la extensión (**N1**,
+**N2**), más: anclajes `^$` en la comparación del CHECK de hash (**N3** — sin
+ellos, una regex obsoleta sin anclar habría pasado el gate y admitiría
+`<texto crudo><64 hex><más texto>`, justo la fuga que ese CHECK previene),
+lint de los literales de `EXECUTE` (**N4** — el stripper los blanqueaba, así que
+cualquier DDL escondido ahí era invisible), y **N5–N7**.
+
+Sin corregir por decisión explícita, ratificada por el auditor: **m8**
+(`decided_at timestamptz` vs. `timestamp` del resto del esquema) — `timestamptz`
+es lo correcto para un audit trail; la inconsistencia es un argumento para
+migrar el resto del esquema, no para degradar esta columna. Anotado en el
+inventario de `db/prepared/README.md` para que nadie lo "arregle" al revés.
+
+Cambios: los 3 scripts forward y los 3 rollbacks de `db/prepared/` fijan
+`SET search_path = public`, cualifican cada objeto con `public.`, añaden guardas
+de precondición y de forma que **abortan con mensaje accionable** en vez de
+hacer no-op silencioso, y reconcilian constraints de forma convergente.
+`G2_PACKAGE.md` incorpora criterios de aborto A1–A8 y prioriza
+`psql -1 -v ON_ERROR_STOP=1`; el addendum de grounding hace lo propio (GA1–GA6)
+y declara su ejecución separada, bloqueada por G5 P3. Nuevo ADR
+`docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md` + nueva suite
+`tests/prepared-sql-source-of-truth.test.ts` con las 4 salvaguardas.
+
+El `1 todo` es la aserción de `STELLA_DECISIONS_PERSISTENCE_ENABLED` en
+`.env.example`: la deny-list del harness (D-002, cubre `.env*`) impidió editar
+ese archivo. Queda como acción manual de Lorenzo — ver el resultado de la tarea.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

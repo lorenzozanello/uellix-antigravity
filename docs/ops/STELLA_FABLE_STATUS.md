@@ -104,6 +104,21 @@ Verificación: los 9 SHA son ancestros de HEAD (`git merge-base --is-ancestor <s
 
 Ningún gate fue ejecutado por esta campaña ni por esta reconciliación. Ver `EXTERNAL_GATES.md` para el registro completo.
 
+### Endurecimiento pre-ejecución de G2 (2026-07-31, offline)
+
+Tras `STELLA_G2_READINESS_AUDIT` se resolvieron offline sus hallazgos R1–R6, **sin ejecutar G2 ni tocar ninguna base de datos**:
+
+- **Fuente de verdad (R1):** decidida y documentada en `docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md`. `stella_suggestion_decisions` y `evidence_chunks` permanecen deliberadamente fuera de `db/schema.ts` y del snapshot de Drizzle, con 4 salvaguardas automáticas en `tests/prepared-sql-source-of-truth.test.ts` y un procedimiento de promoción modelado sobre el precedente `db/migrations/0016_fat_mac_gargan.sql`. Motivo verificado: drizzle emite `CREATE TABLE` **sin** `IF NOT EXISTS`, que fallaría contra una base donde G2 ya corrió.
+- **SQL endurecido (R5, R6):** los 3 scripts forward y los 3 rollbacks fijan `SET search_path = public`, cualifican todo con `public.`, y **abortan con mensaje accionable** si faltan precondiciones o si la tabla destino existe con forma incompatible — en vez del no-op silencioso de `CREATE TABLE IF NOT EXISTS`. Reconciliación convergente de constraints, índices, grants, RLS y política.
+- **Transaccionalidad (R2):** `psql -1 -v ON_ERROR_STOP=1` es ahora el método principal en `G2_PACKAGE.md` **y** en el addendum de grounding; el SQL Editor queda como último recurso con verificación explícita de estado parcial.
+- **Criterios de aborto:** A1–A8 en `G2_PACKAGE.md` (host equivocado, backup no verificable, migraciones base ausentes, flag encendido, forma incompatible, fallo post-apply, estado parcial, G5 ausente) y GA1–GA6 propios del addendum.
+- **Alcance (R3):** RK-14 reescrito — la signed URL de descarga y el trigger de inmutabilidad de `content_hash` **no** forman parte de G2 y no tienen script preparado; `stella_0004` no existe.
+- **Pendiente (R4):** añadir `STELLA_DECISIONS_PERSISTENCE_ENABLED=false` a `.env.example`. Bloqueado por la deny-list del harness (D-002 cubre `.env*`); requiere edición manual de Lorenzo. Registrado como `it.todo` en la suite.
+
+- **Auditoría independiente del diff (3 pasadas):** un agente separado revisó los 6 scripts. Ronda 1: 1 BLOCKER + 3 MAJOR + 9 MINOR — el BLOCKER lo había introducido el propio endurecimiento (`SET search_path = public` rompía la resolución del tipo `vector` en Supabase hosted, donde pgvector vive en `extensions`). Ronda 2: los 13 resueltos, pero el fix del BLOCKER había roto a su vez la variante léxica de G5 (1 MAJOR + 6 MINOR nuevos). Ronda 3: verificación final. Todo lo serio corregido; detalle en TEST_LEDGER.
+
+Pruebas tras el endurecimiento y las dos rondas de correcciones: typecheck VERDE · lint 0 errores · `test:unit` **132 archivos / 2312 tests + 1 todo** (+66 sobre 2246) · suites focalizadas de `db/prepared` 154 tests. Detalle en TEST_LEDGER.
+
 ## Bloqueos actuales
 
 Ninguno operativo sobre el trabajo offline — todo lo demostrable sin tocar sistemas remotos está demostrado y reproducido. El trabajo restante depende exclusivamente de gates externos (acción humana / acceso remoto autorizado / decisión de producto), nunca de código pendiente.
