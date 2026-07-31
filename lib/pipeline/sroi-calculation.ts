@@ -249,7 +249,7 @@ export async function upsertSroiFilterSet(projectId: string, assignmentId: strin
 
 // ─── Internal data loader for calculation ───────────────────────────────────
 
-interface AssignmentData {
+export interface AssignmentData {
   assignment: typeof outcomeProxyAssignments.$inferSelect
   input: typeof sroiAssignmentInputs.$inferSelect
   filterSet: typeof sroiFilterSets.$inferSelect
@@ -644,7 +644,16 @@ interface LineItemCalc {
   durationYears: number
 }
 
-interface CalcResult {
+// U3 (WS4) — a line the engine could not monetise is REPORTED, never silently
+// dropped. Readiness normally blocks these upstream (quantity ≤ 0 / proxy value
+// ≤ 0), but the engine no longer trusts that silently: any skipped assignment
+// surfaces here so previews, snapshots and audits can show what was excluded.
+export interface SkippedAssignment {
+  outcomeId: string
+  reason: 'non_positive_quantity' | 'non_positive_proxy_value'
+}
+
+export interface CalcResult {
   // currency is always 'USD' post Fase 1b — all inputs are normalized first.
   currency: string
   totalInvestment: number
@@ -658,6 +667,9 @@ interface CalcResult {
   lineItems: LineItemCalc[]
   fundersBreakdown: FunderBreakdownRow[]
   unattributedNsvUsd: string
+  // Additive (non-breaking): existing callers that destructure named fields
+  // are unaffected; new consumers can verify nothing was silently excluded.
+  skippedAssignments: SkippedAssignment[]
 }
 
 // Precision of the numeric DB columns (see manual-migration 003). Money and
@@ -675,7 +687,9 @@ function dec(v: string | number | null | undefined): Decimal {
   }
 }
 
-function runDeterministicCalc(
+// Exported (U2/U3, WS4) so golden/property tests can pin exact result strings
+// without a database. Production callers inside this module are unchanged.
+export function runDeterministicCalc(
   investments: (typeof projectInvestments.$inferSelect)[],
   assignmentData: AssignmentData[],
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[],
@@ -699,11 +713,19 @@ function runDeterministicCalc(
   // Per-outcome net social value (USD) — drives the per-funder attribution.
   const outcomeNsv = new Map<string, Decimal>()
   const lineItems: LineItemCalc[] = []
+  const skippedAssignments: SkippedAssignment[] = []
 
   for (const { assignment, input, filterSet, proxy } of assignmentData) {
     const quantity = dec(input.quantity)
     const proxyValue = dec(proxy.valueUsd ?? '0') // USD-normalized proxy value
-    if (quantity.lte(0) || proxyValue.lte(0)) continue
+    if (quantity.lte(0) || proxyValue.lte(0)) {
+      // Report — never silently drop — a line the engine cannot monetise.
+      skippedAssignments.push({
+        outcomeId: assignment.outcomeId,
+        reason: quantity.lte(0) ? 'non_positive_quantity' : 'non_positive_proxy_value',
+      })
+      continue
+    }
 
     const deadweightPct = clamp(parseNum(filterSet.deadweightPct), 0, 100)
     const attributionPct = clamp(parseNum(filterSet.attributionPct), 0, 100)
@@ -777,6 +799,7 @@ function runDeterministicCalc(
     lineItems,
     fundersBreakdown,
     unattributedNsvUsd,
+    skippedAssignments,
   }
 }
 
@@ -807,6 +830,7 @@ export async function calculateSroiPreview(projectId: string) {
       lineItems: result.lineItems,
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
+      skippedAssignments: result.skippedAssignments,
       discountRatePct: discountRatePct,
       formulaNotes: discountRatePct && parseNum(discountRatePct) > 0
         ? `Values normalized to USD; multi-year outcomes present-valued at ${discountRatePct}% annual discount rate.`
@@ -916,6 +940,8 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       })),
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
+      // U3 (WS4) — audit trail of lines the engine excluded (additive key).
+      skippedAssignments: result.skippedAssignments,
       assignments: result.lineItems.map(li => ({
         assignmentId: li.assignmentId,
         outcomeId: li.outcomeId,
