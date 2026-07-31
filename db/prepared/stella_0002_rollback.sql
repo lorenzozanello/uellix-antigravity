@@ -13,10 +13,16 @@
 --   state (e.g. to bisect an incident); do not treat the resulting grants as
 --   the intended security posture.
 
+-- RUN AS ONE TRANSACTION, like the forward script:
+--   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- Both statements are idempotent: re-running is a no-op.
+
+SET search_path = public;
+
 -- 1. Detach the append-only trigger (the shared function
 --    uellix_forbid_mutation() stays — it is owned by migration 0030 and used
 --    by audit_logs / sroi_calculation_runs / sroi_calculation_line_items).
-DROP TRIGGER IF EXISTS trg_stella_interactions_append_only ON stella_interactions;
+DROP TRIGGER IF EXISTS trg_stella_interactions_append_only ON public.stella_interactions;
 
 -- 2. Restore grants exactly as 0033 left them (BUG-compatible: full CRUD for
 --    authenticated on an append-only table; RLS still denies UPDATE/DELETE

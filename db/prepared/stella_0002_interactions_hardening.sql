@@ -7,6 +7,15 @@
 -- docs/ops/gates/G2_PACKAGE.md and the process in
 -- docs/ops/SUPABASE_MIGRATION_GATE.md. Rollback: stella_0002_rollback.sql.
 --
+-- SOURCE OF TRUTH: the objects touched here are managed outside the drizzle
+-- chain on purpose — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.
+--
+-- RUN AS ONE TRANSACTION:
+--   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- Every statement below is idempotent AND convergent (re-running brings an
+-- already-hardened database to the same end state), so a failed run can be
+-- fixed and re-run without manual cleanup.
+--
 -- WHY THIS EXISTS (verified drift, 2026-07):
 --   1. stella_interactions is documented append-only (db/policies/
 --      002_stella_interactions_rls.sql) but db/migrations/0030_immutability.sql
@@ -26,28 +35,38 @@
 --      environment actually received, the live CHECK may not match
 --      db/schema.ts:635. The DO block below reconciles it idempotently.
 
+-- Resolve every unqualified identifier in this script against public only.
+-- Belt-and-braces: every object below is ALSO schema-qualified explicitly.
+SET search_path = public;
+
 -- ============================================================
--- 0. Precondition guard: the shared trigger function must exist
---    (created by db/migrations/0030_immutability.sql)
+-- 0. Precondition guards — fail explicitly, never silently
 -- ============================================================
 DO $$
 BEGIN
+  -- 0a. The shared trigger function must exist (db/migrations/0030_immutability.sql).
   IF NOT EXISTS (
     SELECT 1 FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE p.proname = 'uellix_forbid_mutation' AND n.nspname = 'public'
   ) THEN
-    RAISE EXCEPTION 'precondition failed: function public.uellix_forbid_mutation() not found — apply db/migrations/0030_immutability.sql first';
+    RAISE EXCEPTION 'stella_0002 aborted: function public.uellix_forbid_mutation() not found — apply db/migrations/0030_immutability.sql first (G2 precondition "migraciones base al día")';
+  END IF;
+
+  -- 0b. The target table must exist (db/migrations/0012). Without this guard
+  --     the CREATE TRIGGER below would fail with a less actionable message.
+  IF to_regclass('public.stella_interactions') IS NULL THEN
+    RAISE EXCEPTION 'stella_0002 aborted: table public.stella_interactions not found — this database is not at the expected migration baseline (G2 precondition "migraciones base al día")';
   END IF;
 END $$;
 
 -- ============================================================
 -- 1. Append-only trigger (mirrors 0030_immutability.sql style)
 -- ============================================================
-DROP TRIGGER IF EXISTS trg_stella_interactions_append_only ON stella_interactions;
+DROP TRIGGER IF EXISTS trg_stella_interactions_append_only ON public.stella_interactions;
 CREATE TRIGGER trg_stella_interactions_append_only
-  BEFORE UPDATE OR DELETE ON stella_interactions
-  FOR EACH ROW EXECUTE FUNCTION uellix_forbid_mutation();
+  BEFORE UPDATE OR DELETE ON public.stella_interactions
+  FOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();
 
 -- ============================================================
 -- 2. Grant reconciliation (mirrors 0033 "Append-Only Tables"
@@ -56,10 +75,11 @@ CREATE TRIGGER trg_stella_interactions_append_only
 -- Note: even INSERT is never used by the browser client today (no INSERT RLS
 -- policy exists; all writes go through the service-role Drizzle client), but
 -- we match the documented append-only grant posture of audit_logs exactly.
+-- REVOKE on an already-revoked privilege is a no-op, never an error.
 REVOKE UPDATE, DELETE ON public.stella_interactions FROM authenticated;
 
 -- ============================================================
--- 3. stella_role CHECK reconciliation — idempotent
+-- 3. stella_role CHECK reconciliation — idempotent AND convergent
 --    Target set = db/schema.ts:635 (6 roles, post-0027)
 -- ============================================================
 DO $$
@@ -93,5 +113,5 @@ BEGIN
   END IF;
 END $$;
 
-COMMENT ON TRIGGER trg_stella_interactions_append_only ON stella_interactions IS
+COMMENT ON TRIGGER trg_stella_interactions_append_only ON public.stella_interactions IS
   'WS3b hardening (prepared stella_0002, gate G2): stella_interactions is an append-only AI audit trail; UPDATE/DELETE are forbidden even for the service role.';

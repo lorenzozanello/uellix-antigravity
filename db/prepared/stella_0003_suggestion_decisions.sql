@@ -7,6 +7,17 @@
 -- docs/ops/gates/G2_PACKAGE.md and the process in
 -- docs/ops/SUPABASE_MIGRATION_GATE.md. Rollback: stella_0003_rollback.sql.
 --
+-- SOURCE OF TRUTH: this table is deliberately absent from db/schema.ts and the
+-- drizzle snapshot — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md. Do not add
+-- it to schema.ts without following the promotion procedure in that ADR §7.
+--
+-- RUN AS ONE TRANSACTION:
+--   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- Idempotent AND convergent: on a database where the table already exists with
+-- the expected shape, re-running reconciles indexes, grants, RLS, the policy
+-- and the CHECK constraints. If the table exists with an INCOMPATIBLE shape the
+-- script ABORTS with an explicit error instead of silently doing nothing.
+--
 -- PURPOSE: records what humans DID with Stella suggestions (accepted,
 -- accepted with edits, rejected, undone) — the human-in-the-loop half of the
 -- AI audit trail. The consuming server action
@@ -19,13 +30,112 @@
 -- computed server-side in recordStellaDecision. applied_text may store the
 -- text that was actually applied (it becomes project content anyway).
 
-CREATE TABLE IF NOT EXISTS stella_suggestion_decisions (
+SET search_path = public;
+
+-- ============================================================
+-- 0. Preconditions + shape guard
+-- ============================================================
+-- CREATE TABLE IF NOT EXISTS silently does nothing when a table of the same
+-- name exists with a DIFFERENT shape. That would leave the application talking
+-- to a table it does not understand. Fail loudly instead.
+-- The error reports COLUMN NAMES AND TYPES ONLY — never row data.
+DO $$
+DECLARE
+  mismatched text;
+BEGIN
+  -- 0a. FK targets must exist.
+  IF to_regclass('public.organizations') IS NULL
+     OR to_regclass('public.projects') IS NULL
+     OR to_regclass('public.users') IS NULL
+     OR to_regclass('public.stella_interactions') IS NULL THEN
+    RAISE EXCEPTION 'stella_0003 aborted: one of the referenced tables (organizations, projects, users, stella_interactions) is missing — this database is not at the expected migration baseline (G2 precondition "migraciones base al día")';
+  END IF;
+
+  -- 0b. RLS helper functions must exist (db/migrations/0031_rls_core.sql);
+  --     EXECUTE is granted by 0039_grant_rls_helper_execution.sql.
+  IF to_regprocedure('public.current_user_org_ids()') IS NULL
+     OR to_regprocedure('public.current_user_is_super_admin()') IS NULL THEN
+    RAISE EXCEPTION 'stella_0003 aborted: RLS helpers public.current_user_org_ids()/current_user_is_super_admin() not found — apply db/migrations/0031_rls_core.sql and 0039_grant_rls_helper_execution.sql first';
+  END IF;
+
+  -- 0c. Shape guard — only when the table already exists.
+  IF to_regclass('public.stella_suggestion_decisions') IS NOT NULL THEN
+    SELECT string_agg(
+             format('%s (expected %s%s)', e.col, e.typ,
+                    CASE WHEN e.nul = 'NO' THEN ' NOT NULL' ELSE ' NULL' END),
+             ', ' ORDER BY e.col)
+      INTO mismatched
+    FROM (VALUES
+      ('id',                  'uuid',                        'NO'),
+      ('organization_id',     'uuid',                        'NO'),
+      ('project_id',          'uuid',                        'NO'),
+      ('interaction_id',      'uuid',                        'YES'),
+      ('suggestion_key',      'text',                        'NO'),
+      ('decision',            'text',                        'NO'),
+      ('previous_value_hash', 'text',                        'YES'),
+      ('applied_text',        'text',                        'YES'),
+      ('rejection_reason',    'text',                        'YES'),
+      ('decided_by',          'uuid',                        'NO'),
+      ('decided_at',          'timestamp with time zone',    'NO')
+    ) AS e(col, typ, nul)
+    LEFT JOIN information_schema.columns c
+           ON c.table_schema = 'public'
+          AND c.table_name   = 'stella_suggestion_decisions'
+          AND c.column_name  = e.col
+          AND c.data_type    = e.typ
+          AND c.is_nullable  = e.nul
+    WHERE c.column_name IS NULL;
+
+    IF mismatched IS NOT NULL THEN
+      RAISE EXCEPTION
+        'stella_0003 aborted: public.stella_suggestion_decisions already exists with an INCOMPATIBLE shape. Missing or mismatched columns: %. This script never ALTERs COLUMNS of an existing table (it does reconcile stale constraints) — resolve manually and re-run (see "Criterios de aborto" in docs/ops/gates/G2_PACKAGE.md).',
+        mismatched;
+    END IF;
+
+    -- 0d. Columns matching is not enough: a pre-existing table can still be
+    --     unusable by the application. Check the three cases that would break
+    --     recordStellaDecision's INSERT at runtime.
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conrelid = 'public.stella_suggestion_decisions'::regclass AND contype = 'p'
+    ) THEN
+      RAISE EXCEPTION 'stella_0003 aborted: public.stella_suggestion_decisions exists without a PRIMARY KEY';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'stella_suggestion_decisions'
+        AND column_name = 'id' AND column_default IS NOT NULL
+    ) THEN
+      RAISE EXCEPTION 'stella_0003 aborted: public.stella_suggestion_decisions.id has no DEFAULT — the application INSERT omits id and would fail';
+    END IF;
+
+    SELECT string_agg(column_name, ', ' ORDER BY column_name) INTO mismatched
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'stella_suggestion_decisions'
+      AND is_nullable = 'NO' AND column_default IS NULL
+      AND column_name NOT IN (
+        'id', 'organization_id', 'project_id', 'suggestion_key',
+        'decision', 'decided_by'
+      );
+    IF mismatched IS NOT NULL THEN
+      RAISE EXCEPTION
+        'stella_0003 aborted: public.stella_suggestion_decisions has unexpected NOT NULL columns without a default (%), which the application INSERT does not populate.',
+        mismatched;
+    END IF;
+  END IF;
+END $$;
+
+-- ============================================================
+-- 1. Table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-  organization_id uuid NOT NULL REFERENCES organizations(id),
-  project_id uuid NOT NULL REFERENCES projects(id),
+  organization_id uuid NOT NULL REFERENCES public.organizations(id),
+  project_id uuid NOT NULL REFERENCES public.projects(id),
   -- The stella_interactions row whose suggestion was decided on; NULL when the
   -- UI cannot attribute the decision to a specific interaction.
-  interaction_id uuid REFERENCES stella_interactions(id),
+  interaction_id uuid REFERENCES public.stella_interactions(id),
   -- Stable key identifying WHICH suggestion inside the interaction payload
   -- (e.g. 'advisor.suggested_next_actions[2]') — assigned by the UI layer.
   suggestion_key text NOT NULL,
@@ -35,7 +145,7 @@ CREATE TABLE IF NOT EXISTS stella_suggestion_decisions (
   applied_text text,
   rejection_reason text,
   -- Same user-FK convention as stella_interactions.created_by (public.users).
-  decided_by uuid NOT NULL REFERENCES users(id),
+  decided_by uuid NOT NULL REFERENCES public.users(id),
   decided_at timestamptz DEFAULT now() NOT NULL,
   CONSTRAINT stella_suggestion_decisions_decision_check
     CHECK (decision IN ('accepted', 'accepted_edited', 'rejected', 'undone')),
@@ -43,19 +153,89 @@ CREATE TABLE IF NOT EXISTS stella_suggestion_decisions (
     CHECK (previous_value_hash IS NULL OR previous_value_hash ~ '^[0-9a-f]{64}$')
 );
 
-CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_org_decided_at
-  ON stella_suggestion_decisions (organization_id, decided_at);
-CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_interaction_id
-  ON stella_suggestion_decisions (interaction_id);
+-- ============================================================
+-- 2. CHECK reconciliation — convergent
+-- ============================================================
+-- Covers the case where the table pre-exists with the right columns (so the
+-- shape guard passed) but a named CHECK is MISSING **or STALE**.
+--
+-- Comparing only `conname` would be a trap: an earlier revision that created
+-- decision_check with 3 values (no 'undone') carries the right name with the
+-- wrong definition, and a name-only check would silently leave it in place —
+-- the gate would sign off green and recordStellaDecision would fail at runtime
+-- on the first 'undone'. So we compare the DEFINITION, matching quoted
+-- literals exactly as pg_get_constraintdef renders them (same rigour as
+-- stella_0002's stella_role reconciliation).
+DO $$
+DECLARE
+  def text;
+BEGIN
+  SELECT pg_get_constraintdef(oid) INTO def
+  FROM pg_constraint
+  WHERE conrelid = 'public.stella_suggestion_decisions'::regclass
+    AND conname = 'stella_suggestion_decisions_decision_check';
+
+  IF def IS NULL
+     OR def NOT LIKE '%''accepted''%'
+     OR def NOT LIKE '%''accepted_edited''%'
+     OR def NOT LIKE '%''rejected''%'
+     OR def NOT LIKE '%''undone''%'
+  THEN
+    IF def IS NOT NULL THEN
+      ALTER TABLE public.stella_suggestion_decisions
+        DROP CONSTRAINT stella_suggestion_decisions_decision_check;
+    END IF;
+    ALTER TABLE public.stella_suggestion_decisions
+      ADD CONSTRAINT stella_suggestion_decisions_decision_check
+      CHECK (decision IN ('accepted', 'accepted_edited', 'rejected', 'undone'));
+  END IF;
+
+  SELECT pg_get_constraintdef(oid) INTO def
+  FROM pg_constraint
+  WHERE conrelid = 'public.stella_suggestion_decisions'::regclass
+    AND conname = 'stella_suggestion_decisions_prev_hash_check';
+
+  -- The hash-not-content invariant: the definition must still pin the ANCHORED
+  -- 64-hex shape. Matching the bare class would accept a stale UNANCHORED regex
+  -- ('[0-9a-f]{64}' without ^$), which would happily admit
+  -- "<raw text><64 hex><more raw text>" — i.e. the very leak this CHECK exists
+  -- to prevent. pg_get_constraintdef renders the literal as '^[0-9a-f]{64}$',
+  -- so match it including its surrounding quotes.
+  IF def IS NULL OR def NOT LIKE '%''^[0-9a-f]{64}$''%' THEN
+    IF def IS NOT NULL THEN
+      ALTER TABLE public.stella_suggestion_decisions
+        DROP CONSTRAINT stella_suggestion_decisions_prev_hash_check;
+    END IF;
+    ALTER TABLE public.stella_suggestion_decisions
+      ADD CONSTRAINT stella_suggestion_decisions_prev_hash_check
+      CHECK (previous_value_hash IS NULL OR previous_value_hash ~ '^[0-9a-f]{64}$');
+  END IF;
+END $$;
 
 -- ============================================================
--- Grants (0033 style — stricter than append-only: SELECT only;
--- INSERT happens exclusively via the service-role Drizzle client)
+-- 3. Indexes (no CONCURRENTLY — this script runs inside one transaction)
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_org_decided_at
+  ON public.stella_suggestion_decisions (organization_id, decided_at);
+CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_interaction_id
+  ON public.stella_suggestion_decisions (interaction_id);
+
+-- ============================================================
+-- 4. Grants (0033 style — stricter than append-only: SELECT only;
+--    INSERT happens exclusively via the service-role Drizzle client)
 -- ============================================================
 GRANT SELECT ON public.stella_suggestion_decisions TO authenticated;
+-- Defensive: if an earlier revision or another script widened the grant,
+-- converge back to SELECT-only. REVOKE of an absent privilege is a no-op.
+-- Supabase's bootstrap grants CRUD on new public tables to anon/authenticated;
+-- 0033 revoked the DEFAULT PRIVILEGES for anon but that is per-grantor, so a
+-- table created by a different role can still arrive wide open. RLS already
+-- denies anon (no policy matches it), this is defense in depth.
+REVOKE INSERT, UPDATE, DELETE ON public.stella_suggestion_decisions FROM authenticated;
+REVOKE ALL ON public.stella_suggestion_decisions FROM anon;
 
 -- ============================================================
--- RLS (mirrors db/policies/002_stella_interactions_rls.sql posture)
+-- 5. RLS (mirrors db/policies/002_stella_interactions_rls.sql posture)
 -- ============================================================
 --   - SELECT: org members read their own org's decisions; super_admin sees all
 --   - No INSERT policy: inserts are strictly server-side via the service-role
@@ -65,19 +245,19 @@ GRANT SELECT ON public.stella_suggestion_decisions TO authenticated;
 --     update of the original decision)
 --   - No DELETE policy: audit-trail integrity
 
-ALTER TABLE stella_suggestion_decisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stella_suggestion_decisions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "stella_suggestion_decisions_select" ON stella_suggestion_decisions;
+DROP POLICY IF EXISTS "stella_suggestion_decisions_select" ON public.stella_suggestion_decisions;
 CREATE POLICY "stella_suggestion_decisions_select"
-ON stella_suggestion_decisions FOR SELECT
+ON public.stella_suggestion_decisions FOR SELECT
 USING (
-  organization_id = ANY(current_user_org_ids())
-  OR current_user_is_super_admin()
+  organization_id = ANY(public.current_user_org_ids())
+  OR public.current_user_is_super_admin()
 );
 
 -- No INSERT policy -> INSERT denied via RLS (service role only)
 -- No UPDATE policy -> UPDATE denied (immutable decisions)
 -- No DELETE policy -> DELETE denied (audit trail integrity)
 
-COMMENT ON TABLE stella_suggestion_decisions IS
-  'Human decisions over Stella suggestions (WS3b, prepared stella_0003, gate G2). previous_value_hash is a SHA-256 digest — raw previous text is never stored.';
+COMMENT ON TABLE public.stella_suggestion_decisions IS
+  'Human decisions over Stella suggestions (WS3b, prepared stella_0003, gate G2). previous_value_hash is a SHA-256 digest — raw previous text is never stored. Managed outside the drizzle chain: see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';

@@ -15,4 +15,10 @@
 -- approved statement after confirming (via pg_depend / \dx+) that no other
 -- object uses the "vector" type.
 
-DROP TABLE IF EXISTS evidence_chunks;
+-- RUN AS ONE TRANSACTION, like the forward script:
+--   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- Idempotent: re-running is a no-op.
+
+SET search_path = public;
+
+DROP TABLE IF EXISTS public.evidence_chunks;

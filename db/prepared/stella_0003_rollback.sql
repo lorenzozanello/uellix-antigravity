@@ -14,4 +14,11 @@
 --
 -- Policies and indexes fall with the table; the table-level GRANT disappears
 -- with the table as well. No shared functions or extensions are involved.
-DROP TABLE IF EXISTS stella_suggestion_decisions;
+--
+-- RUN AS ONE TRANSACTION, like the forward script:
+--   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- Idempotent: re-running is a no-op.
+
+SET search_path = public;
+
+DROP TABLE IF EXISTS public.stella_suggestion_decisions;
