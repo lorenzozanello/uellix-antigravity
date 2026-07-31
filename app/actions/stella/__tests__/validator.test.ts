@@ -187,6 +187,39 @@ describe('getStellaValidator server action', () => {
   })
 
   // -------------------------------------------------------------------------
+  // Role gate (canUseStella)
+  // -------------------------------------------------------------------------
+  describe('Role gate (canUseStella)', () => {
+    it.each(['viewer', 'reviewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or Gemini', async (role) => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
+      expect(mockCheckStellaQuota).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it.each(['analyst', 'organization_admin'] as const)('allows role %s through the gate', async (role) => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaValidator('proj-1', 'calculation')
+
+      expect(result.ok).toBe(true)
+    })
+  })
+
+  // -------------------------------------------------------------------------
   // Feature flag gate
   // -------------------------------------------------------------------------
   describe('Feature flag gate', () => {

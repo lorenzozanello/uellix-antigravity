@@ -5,6 +5,7 @@
 // metadata-only context, no automatic saves (draft returned to UI only).
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildComposerContext, StellaBuildComposerContextError } from '@/lib/stella/context/build-composer-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
@@ -58,6 +59,11 @@ export async function getStellaComposer(
     ctx = await requireOrganizationAccess()
   } catch {
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
+  }
+
+  // Role gate — viewers/reviewers never trigger AI calls (quota + rate limit).
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.

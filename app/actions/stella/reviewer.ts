@@ -6,6 +6,7 @@
 // The AI never writes to the pipeline and requires_human_review is always true.
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildReviewerContext, StellaBuildReviewerContextError } from '@/lib/stella/context/build-reviewer-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
@@ -64,6 +65,11 @@ export async function getStellaReviewer(
     ctx = await requireOrganizationAccess()
   } catch {
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
+  }
+
+  // Role gate — viewers/reviewers never trigger AI calls (quota + rate limit).
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   const quotaCheck = await checkStellaQuota(ctx.organization.id)

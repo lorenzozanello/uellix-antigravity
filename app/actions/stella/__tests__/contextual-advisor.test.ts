@@ -188,6 +188,37 @@ describe('getStellaContextualAdvisor server action', () => {
     })
   })
 
+  describe('Role gate (canUseStella)', () => {
+    it.each(['viewer', 'reviewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or the adapter', async (role) => {
+      setupSuccessfulCall('narrative')
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
+      expect(mockCheckStellaQuota).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+      expect(mockBuildAdvisorContext).not.toHaveBeenCalled()
+    })
+
+    it('allows analyst through the gate', async () => {
+      setupSuccessfulCall('narrative')
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role: 'analyst' },
+      })
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+    })
+  })
+
   describe('A. Unauthenticated caller', () => {
     it('never reaches the adapter when requireOrganizationAccess throws', async () => {
       mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))

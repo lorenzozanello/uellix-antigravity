@@ -232,6 +232,36 @@ describe('getStellaAdvisor server action', () => {
     })
   })
 
+  describe('Role gate (canUseStella)', () => {
+    it.each(['viewer', 'reviewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or Gemini', async (role) => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
+      expect(mockCheckStellaQuota).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it.each(['analyst', 'impact_manager', 'organization_admin', 'super_admin'] as const)('allows role %s through the gate', async (role) => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+    })
+  })
+
   describe('Context builder integration', () => {
     it('passes projectId and organization.id to buildAdvisorContext (not the same)', async () => {
       setupSuccessfulCall()

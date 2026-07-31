@@ -79,6 +79,20 @@ export function canGenerateReport(role: Role): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Stella (AI advisor) permissions
+// ---------------------------------------------------------------------------
+
+/**
+ * Can the user invoke Stella (advisor/validator/composer/reviewer roles)?
+ * Allowed: analyst and above (analyst, impact_manager, organization_admin,
+ * super_admin). Denied: viewer and reviewer — read/review-only members never
+ * trigger AI calls (which consume org quota and rate limit).
+ */
+export function canUseStella(role: Role): boolean {
+  return hasRole(role, 'analyst')
+}
+
+// ---------------------------------------------------------------------------
 // Admin-level permissions
 // ---------------------------------------------------------------------------
 

@@ -4,6 +4,7 @@
 // Security: feature-flagged, auth-gated, metadata-only context, audit-logged, no secret logging
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildAdvisorContext, StellaBuildContextError } from '@/lib/stella/context/build-advisor-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
@@ -65,6 +66,11 @@ export async function getStellaContextualAdvisor(
     ctx = await requireOrganizationAccess()
   } catch {
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
+  }
+
+  // Role gate — viewers/reviewers never trigger AI calls (quota + rate limit).
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
@@ -145,6 +151,11 @@ export async function getStellaAdvisor(
       error: 'UNAUTHORIZED',
       message: 'Authentication required.',
     }
+  }
+
+  // Role gate — viewers/reviewers never trigger AI calls (quota + rate limit).
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
