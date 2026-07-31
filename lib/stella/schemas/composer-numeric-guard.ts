@@ -10,15 +10,26 @@
 // in this directory).
 //
 // ── Allowlist (tokens never flagged) ─────────────────────────────────────────
+// NONE of the year/ordinal/section exemptions apply when the token sits in a
+// VALUE-CLAIMING context — preceded by a ratio/value keyword (SROI, ratio,
+// razón, retorno, valor, total, inversión) or a currency word/symbol (USD,
+// COP, EUR, $, €, £), followed by a value marker (":1", "x", "veces", a
+// currency word, "dólares", "pesos", "millones", "adicionales"), or carrying
+// a '%' suffix. A number participating in a quantitative claim must ALWAYS
+// trace to the authorized set, however small or year-like it looks:
+// "el SROI es 7", "$2050" and "recibió 2019 adicionales" are validated, not
+// exempted.
 // 1. Calendar years: a plain 4-digit integer in 1900–2100 (no separators, no
-//    decimals). Covers "en 2026", period labels, etc.
-// 2. Small integers / list ordinals: plain integers 0–20. Covers "3 outcomes",
-//    "step 2", the "1" in "3.2:1".
+//    decimals) outside value-claiming context. Covers "en 2026", "2025-2026".
+// 2. Small integers / list ordinals: plain integers 0–20 outside
+//    value-claiming context. Covers "3 outcomes", "paso 2", the "1" in
+//    "3.2:1".
 // 3. Section numbers: a short dotted token (e.g. "2.1", "3.4.1", 1–2 digit
-//    components) that either starts a line and is followed by whitespace and a
-//    letter ("2.1 Metodología"), or is immediately preceded by the word
-//    "section"/"sección". A dotted token followed by ':' or '%' is NEVER
-//    treated as a section number.
+//    components) that either starts a line and is followed by whitespace and
+//    an UPPERCASE letter with no value marker after it ("2.1 Metodología" is
+//    a heading; "3.2 veces la inversión" is NOT), or is immediately preceded
+//    by the word "section"/"sección". A dotted token followed by ':' or '%'
+//    or in value-claiming context is NEVER treated as a section number.
 // 4. Identifier fragments: digits directly attached to a letter/underscore
 //    (or via '-', '/', '#' after an alphanumeric), e.g. "ev-123", "SDG8",
 //    "v2.3". These are references, not numeric claims. (validateComposer-
@@ -198,6 +209,14 @@ function tokenMatchesAuthorized(
 const SECTION_TOKEN_RE = /^\d{1,2}(\.\d{1,2}){1,2}$/
 const SECTION_KEYWORD_RE = /(?:secci[oó]n|section)\s*$/i
 
+// Value-claiming context (audit FIX 1/2/3): a ratio/value keyword or currency
+// marker just before the token, or a value marker just after it. Tokens in
+// this context are NEVER exempted as years/ordinals/section numbers.
+const VALUE_CLAIM_BEFORE_RE =
+  /(?:\bSROI|\bratios?|\braz[oó]n|\bretornos?|\bvalor|\btotal|\binversi[oó]n|\bUSD|\bCOP|\bEUR|[$€£])\s*(?:de|del|es|era|fue|:|=)?\s*$/i
+const VALUE_CLAIM_AFTER_RE =
+  /^\s*(?::1\b|x\b|veces\b|USD\b|COP\b|EUR\b|d[oó]lares\b|pesos\b|millones\b|adicionales\b)/i
+
 interface TokenSite {
   token: string
   isPercent: boolean
@@ -218,24 +237,33 @@ function extractTokens(text: string): TokenSite[] {
 
     const isPercent = /^\s{0,2}(%|percent\b|por\s+ciento\b)/i.test(after)
 
+    // Value-claiming context — disables the year/ordinal/section exemptions.
+    const inValueClaim =
+      isPercent || VALUE_CLAIM_BEFORE_RE.test(before) || VALUE_CLAIM_AFTER_RE.test(after)
+
     // (4) identifier fragment: "ev-123", "SDG8", "v2.3", "#4", "out/7"
     const identifierAttached =
       /[A-Za-z_]/.test(prev) ||
       (['-', '/', '#'].includes(prev) && /[A-Za-z0-9_]/.test(prevPrev))
 
-    // (1) calendar year / (2) small integer — plain integers only
+    // (1) calendar year / (2) small integer — plain integers only, and never
+    // inside a value-claiming context ("$2050", "el SROI es 7").
     const isPlainInt = /^\d+$/.test(token)
     const intVal = isPlainInt ? parseInt(token, 10) : NaN
-    const isYear = isPlainInt && token.length === 4 && intVal >= YEAR_MIN && intVal <= YEAR_MAX
-    const isOrdinal = isPlainInt && intVal <= MAX_ALLOWED_ORDINAL
+    const isYear =
+      isPlainInt && !inValueClaim &&
+      token.length === 4 && intVal >= YEAR_MIN && intVal <= YEAR_MAX
+    const isOrdinal = isPlainInt && !inValueClaim && intVal <= MAX_ALLOWED_ORDINAL
 
-    // (3) section number
+    // (3) section number — heading must start with an UPPERCASE letter and
+    // carry no value marker ("2.1 Metodología" yes, "3.2 veces" no).
     const atLineStart = /(?:^|\n)\s*$/.test(before)
-    const headingFollows = /^\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(after)
+    const headingFollows =
+      /^\s+[A-ZÁÉÍÓÚÑÜ]/.test(after) && !VALUE_CLAIM_AFTER_RE.test(after)
     const isSectionNumber =
       SECTION_TOKEN_RE.test(token) &&
       next !== ':' &&
-      !isPercent &&
+      !inValueClaim &&
       ((atLineStart && headingFollows) || SECTION_KEYWORD_RE.test(before))
 
     sites.push({

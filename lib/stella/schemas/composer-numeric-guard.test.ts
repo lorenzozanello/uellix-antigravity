@@ -188,6 +188,117 @@ describe('validateComposerNumbers — documented allowlist', () => {
   })
 })
 
+describe('validateComposerNumbers — value-claiming context disables exemptions (audit fixes)', () => {
+  // FIX 1: small integers in ratio/currency claims are validated, not exempted.
+  it('flags a bare-integer wrong ratio ("el SROI es 7" vs authorized 3.2)', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'El SROI es 7.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations).toEqual([{ token: '7', field: 'draft_content' }])
+  })
+
+  it('flags a small integer followed by "veces"', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'Logramos un retorno de 4 veces.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations[0].token).toBe('4')
+  })
+
+  it('flags a small integer with a currency symbol', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'El costo unitario fue de $15.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations[0].token).toBe('15')
+  })
+
+  it('still passes a claimed small integer that IS authorized ("total de 20")', () => {
+    // 20 is in AUTHORIZED.additional — claimed context requires a match, and gets one.
+    const res = validateComposerNumbers(
+      output({ draft_content: 'Se aplicó un deadweight total de 20.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(true)
+  })
+
+  // FIX 2: year-shaped tokens in currency/quantity claims are validated.
+  it('flags "$2050" — currency context beats the year exemption', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'El fondo recibió $2050 al cierre.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations).toEqual([{ token: '2050', field: 'draft_content' }])
+  })
+
+  it('flags "recibió 2019 adicionales" — quantity context beats the year exemption', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'Se entregaron 2019 adicionales al programa.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations[0].token).toBe('2019')
+  })
+
+  it('flags a year-shaped token followed by a currency word', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'La reparación costó 2026 USD.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations[0].token).toBe('2026')
+  })
+
+  it('keeps genuine year usage passing ("en 2026", "2025-2026")', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: 'En 2026 se ejecutó el programa; el periodo 2025-2026 cerró bien.' }),
+      AUTHORIZED,
+    )
+    expect(res.violations).toEqual([])
+    expect(res.ok).toBe(true)
+  })
+
+  // FIX 3: line-start decimals followed by value markers are not headings.
+  it('flags a paragraph-start "7.7 veces la inversión" (not a section heading)', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: '7.7 veces la inversión fue el resultado del periodo.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations).toEqual([{ token: '7.7', field: 'draft_content' }])
+  })
+
+  it('passes a paragraph-start "3.2 veces" because 3.2 is authorized, not exempted', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: '3.2 veces la inversión fue el resultado verificado.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(true)
+  })
+
+  it('flags a line-start decimal followed by lowercase prose even without markers', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: '4.8 resultó ser la cifra del periodo.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(false)
+    expect(res.violations[0].token).toBe('4.8')
+  })
+
+  it('still exempts a real heading ("2.1 Metodología") after the tightening', () => {
+    const res = validateComposerNumbers(
+      output({ draft_content: '2.1 Metodología\nEl análisis sigue la guía SROI.' }),
+      AUTHORIZED,
+    )
+    expect(res.ok).toBe(true)
+  })
+})
+
 describe('validateComposerNumbers — edges', () => {
   it('passes a draft with no numbers at all', () => {
     const res = validateComposerNumbers(output(), AUTHORIZED)

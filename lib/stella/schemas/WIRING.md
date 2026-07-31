@@ -52,7 +52,14 @@ if (!referenceCheck.ok || !numberCheck.ok) {
   reference `title`/`name`/`context`) not traceable to the authorized set.
   Formatting tolerance and the allowlist (years 1900–2100, ordinals ≤ 20,
   section numbers, identifier fragments) are documented at the top of
-  `composer-numeric-guard.ts`.
+  `composer-numeric-guard.ts`. Post-audit tightening: NONE of the
+  year/ordinal/section exemptions apply inside a value-claiming context —
+  a token near a ratio/value keyword (SROI, ratio, razón, retorno, valor,
+  total, inversión), a currency word/symbol (USD, COP, EUR, $, €, £), a
+  value marker (":1", "x", "veces", "dólares", "pesos", "millones",
+  "adicionales") or a '%' is always validated against the authorized set
+  ("el SROI es 7", "$2050", "2019 adicionales" get flagged unless the value
+  is authorized).
 - **The guard is only as strong as the `additional` array**: pass every
   numeric value the context legitimately exposed, or legit drafts will be
   rejected. If the context gains new numeric fields, extend the array.
