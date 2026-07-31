@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { collectCanonicalSourceFieldPaths } from '../canonical-source-field-paths'
+import { collectCanonicalSourceFieldPaths, isCanonicalSourceFieldPath } from '../canonical-source-field-paths'
 
 describe('collectCanonicalSourceFieldPaths', () => {
   it('collects concrete leaves in insertion order using bracket indexes', () => {
@@ -22,13 +22,11 @@ describe('collectCanonicalSourceFieldPaths', () => {
     ])
   })
 
-  it('omits undefined, empty containers, inherited properties, and container paths without mutating input', () => {
+  it('omits undefined and inherited properties, keeps container paths out, and never mutates input', () => {
     const prototype = { inherited: 'not-owned' }
     const value = Object.assign(Object.create(prototype), {
       defined: 0,
       absent: undefined,
-      emptyObject: {},
-      emptyArray: [],
       nested: [[{ value: '' }]],
     })
     const before = structuredClone(value)
@@ -38,7 +36,37 @@ describe('collectCanonicalSourceFieldPaths', () => {
   })
 
   it('builds a request-local catalog for each distinct structure', () => {
-    expect(collectCanonicalSourceFieldPaths({ outcomesSnapshot: [] })).toEqual([])
     expect(collectCanonicalSourceFieldPaths({ outcomesSnapshot: [{ id: 'outcome-1' }] })).toEqual(['outcomesSnapshot[0].id'])
+  })
+
+  // R1: an empty registered collection must still be citable, so the model
+  // can ground statements about absence instead of citing nothing.
+  describe('empty-collection sentinel leaves (R1)', () => {
+    it('emits a citable `.empty` sentinel leaf for empty arrays and empty objects', () => {
+      expect(collectCanonicalSourceFieldPaths({ outcomesSnapshot: [] })).toEqual(['outcomesSnapshot.empty'])
+      expect(collectCanonicalSourceFieldPaths({ emptyObject: {} })).toEqual(['emptyObject.empty'])
+    })
+
+    it('emits sentinels for nested empty collections using their full path', () => {
+      expect(collectCanonicalSourceFieldPaths({
+        calculationReadiness: { ready: false, blockingReasons: [], warnings: [] },
+      })).toEqual([
+        'calculationReadiness.ready',
+        'calculationReadiness.blockingReasons.empty',
+        'calculationReadiness.warnings.empty',
+      ])
+      expect(collectCanonicalSourceFieldPaths({ nested: [[]] })).toEqual(['nested[0].empty'])
+    })
+
+    it('sentinel paths satisfy the canonical path pattern and never replace real leaves', () => {
+      const paths = collectCanonicalSourceFieldPaths({ proxySummary: [], outcomesSnapshot: [{ id: 'outcome-1' }] })
+      expect(paths).toEqual(['proxySummary.empty', 'outcomesSnapshot[0].id'])
+      for (const path of paths) expect(isCanonicalSourceFieldPath(path)).toBe(true)
+    })
+
+    it('does not emit a sentinel for an empty root value', () => {
+      expect(collectCanonicalSourceFieldPaths({})).toEqual([])
+      expect(collectCanonicalSourceFieldPaths([])).toEqual([])
+    })
   })
 })
