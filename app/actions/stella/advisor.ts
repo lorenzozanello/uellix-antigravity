@@ -16,6 +16,9 @@ import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib
 import { db } from '@/db/client'
 import { stellaInteractions } from '@/db/schema'
 import type { AdvisorOutput } from '@/lib/stella/schemas/advisor-output'
+import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
+import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
+import { runContextualAdvisor } from '@/lib/stella/advisor/run-contextual-advisor'
 
 export type StellaAdvisorErrorCode =
   | 'DISABLED'
@@ -33,6 +36,91 @@ export type StellaAdvisorErrorCode =
 export type StellaAdvisorResult =
   | { ok: true; data: AdvisorOutput }
   | { ok: false; error: StellaAdvisorErrorCode; message: string }
+
+export type StellaContextualAdvisorResult =
+  | { ok: true; data: AdvisorContextualOutput }
+  | { ok: false; error: StellaAdvisorErrorCode; message: string }
+
+/**
+ * Authorized contextual advisor path. Applies the exact same feature-flag,
+ * auth, quota, project-ownership, rate-limit and audit guards as
+ * getStellaAdvisor below, then hands off to the pure runContextualAdvisor
+ * pipeline. organizationId always comes from the authenticated session
+ * (requireOrganizationAccess), never from the caller — a caller can only
+ * name a projectId, and buildAdvisorContext rejects it if it does not
+ * belong to that session's organization.
+ */
+export async function getStellaContextualAdvisor(
+  projectId: string,
+  step: AdvisorPipelineStep,
+): Promise<StellaContextualAdvisorResult> {
+  // Feature flag gate — all flags default to false
+  if (!stellaConfig.isEnabled || !stellaConfig.isAdvisorEnabled || !stellaState.canUseStella) {
+    return { ok: false, error: 'DISABLED', message: 'Stella Advisor is not enabled.' }
+  }
+
+  // Auth + org context — redirects if unauthenticated
+  let ctx: Awaited<ReturnType<typeof requireOrganizationAccess>>
+  try {
+    ctx = await requireOrganizationAccess()
+  } catch {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
+  }
+
+  // Quota check — enforced per org, per calendar month, DB-backed.
+  const quotaCheck = await checkStellaQuota(ctx.organization.id)
+  if (!quotaCheck.allowed) {
+    const message =
+      quotaCheck.reason === 'no_quota'
+        ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
+        : `Alcanzaste el límite mensual de ${quotaCheck.quota} consultas a Stella (usadas: ${quotaCheck.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+    return { ok: false, error: 'QUOTA_EXCEEDED', message }
+  }
+
+  try {
+    // Project ownership check happens inside buildAdvisorContext — throws
+    // UNAUTHORIZED if projectId does not belong to ctx.organization.id.
+    const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
+    const contextHash = buildContextHash(context)
+
+    // Consume after context validation and immediately before the model attempt.
+    const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
+    if (!rateLimit.allowed) {
+      return rateLimit.reason === 'unavailable'
+        ? { ok: false, error: 'RATE_LIMIT_UNAVAILABLE', message: 'Stella rate limit service is temporarily unavailable.' }
+        : { ok: false, error: 'RATE_LIMITED', message: `Rate limit exceeded. Resets at ${rateLimit.resetAtHourUtc}.` }
+    }
+
+    const result = await runContextualAdvisor(step, context, getGeminiAdapter())
+    if (!result.ok) return result
+
+    // Audit insert — required for compliance and for quota measurement;
+    // surface failure rather than swallow (mirrors getStellaAdvisor below).
+    try {
+      await db.insert(stellaInteractions).values({
+        organizationId: ctx.organization.id,
+        projectId,
+        createdBy: ctx.user.id,
+        stellaRole: 'advisor',
+        pipelineStep: step,
+        contextHash,
+        responseJson: result.data as unknown,
+        modelUsed: result.modelUsed,
+        tokensUsed: result.tokensUsed,
+      })
+    } catch {
+      return { ok: false, error: 'AUDIT_ERROR', message: 'Failed to record Stella interaction. Please try again.' }
+    }
+
+    return { ok: true, data: result.data }
+  } catch (error) {
+    if (error instanceof StellaBuildContextError) {
+      if (error.code === 'UNSUPPORTED_STEP') return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
+      if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
+    }
+    return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
+  }
+}
 
 export async function getStellaAdvisor(
   projectId: string,

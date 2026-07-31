@@ -15,6 +15,7 @@ export interface StellaRequest {
   systemPrompt: string
   userMessage: string
   contextHash?: string // SHA-256 of context for audit trail
+  responseJsonSchema?: Record<string, unknown>
 }
 
 export interface StellaResponse {
