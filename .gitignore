@@ -45,3 +45,6 @@ next-env.d.ts
 # local agent/editor configuration
 /.agents/
 /.claude/settings.local.json
+
+# real-eval evidence (raw prompts/responses) — never commit
+/artifacts/
