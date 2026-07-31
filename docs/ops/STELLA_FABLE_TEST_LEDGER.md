@@ -60,6 +60,19 @@ post-auditoría (paridad estricta, linkage real de stakeholderGroups, detector d
 extendido a formas sin corchetes, reservas documentadas en G1 §7). Guards del runner
 real byte-idénticos a la base (verificado por auditor).
 
+### 2026-07-31 · CHECKPOINT OLA 1 CERRADA · coordinadora `ea892ca` (WS5+WS4+WS1+WS3 integrados + wiring transversal)
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm typecheck` | VERDE | limpio |
+| `pnpm lint` | VERDE | 0 errores (50 warnings preexistentes de no-unused-vars) |
+| `pnpm test:unit` | VERDE | **113 archivos, 1927 tests** (baseline era 95/1372: +555 tests netos en la campaña) |
+| `pnpm eval:offline` | VERDE | 6/6 gates, 28/28 casos, 0 violaciones R1–R6 |
+
+Wiring transversal del coordinador (`ea892ca`): readiness vivo del motor inyectado al
+contexto advisor (capa app), guard numérico+referencias del composer activo fail-closed,
+PAYLOAD_TOO_LARGE mapeado en el runner contextual.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
