@@ -3,15 +3,75 @@
 // THESE TESTS MUST NEVER FAIL - they enforce hard constraints
 
 import { describe, it, expect } from 'vitest'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative, resolve } from 'node:path'
 import { ValidatorOutputSchema, ComposerOutputSchema, ReviewerOutputSchema } from '../schemas'
 import { SHARED_GUARDRAILS } from '../prompts/shared-guardrails'
+import { buildAdvisorSystemPrompt } from '../prompts/advisor-system'
+import { buildValidatorSystemPrompt } from '../prompts/validator-system'
+import { buildComposerSystemPrompt } from '../prompts/composer-system'
+import { buildReviewerSystemPrompt } from '../prompts/reviewer-system'
+
+// ---------------------------------------------------------------------------
+// Source scanning helpers — these tests read the ACTUAL source files of
+// lib/stella/** so that a violating import/write would make them fail.
+// ---------------------------------------------------------------------------
+
+const STELLA_ROOT = resolve(process.cwd(), 'lib', 'stella')
+
+/** Recursively collect every .ts source file under lib/stella, excluding tests. */
+function collectStellaSourceFiles(dir: string = STELLA_ROOT, acc: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name)
+    if (entry.isDirectory()) {
+      if (entry.name === '__tests__' || entry.name === 'node_modules') continue
+      collectStellaSourceFiles(full, acc)
+    } else if (
+      entry.name.endsWith('.ts') &&
+      !entry.name.endsWith('.test.ts') &&
+      !entry.name.includes('.test.')
+    ) {
+      acc.push(full)
+    }
+  }
+  return acc
+}
+
+function findViolations(pattern: RegExp): string[] {
+  const violations: string[] = []
+  for (const file of collectStellaSourceFiles()) {
+    const content = readFileSync(file, 'utf8')
+    if (pattern.test(content)) {
+      violations.push(relative(process.cwd(), file))
+    }
+  }
+  return violations
+}
 
 describe('Stella Anti-Regression: Critical Guardrails', () => {
   describe('NEVER: Calculate SROI or modify deterministic logic', () => {
-    it('should not import SROI calculation functions', () => {
-      // This test ensures lib/stella code doesn't import sroi-calculation
-      // In actual integration, we verify this at build time with circular dependency checks
-      expect(true).toBe(true)
+    it('should not import SROI calculation functions (real source scan)', () => {
+      // No lib/stella module may import/require the deterministic SROI engine:
+      // lib/pipeline/sroi-calculation, sroi-sensitivity or sroi-funders.
+      const sroiImportPattern =
+        /(?:import[\s\S]{0,200}?from\s*['"]|require\(\s*['"])[^'"]*pipeline\/(?:sroi-calculation|sroi-sensitivity|sroi-funders)/
+      expect(findViolations(sroiImportPattern)).toEqual([])
+    })
+
+    it('scans a non-empty set of real source files (guard against a broken scanner)', () => {
+      const files = collectStellaSourceFiles()
+      expect(files.length).toBeGreaterThan(10)
+      // Sanity: the scanner sees files we know exist.
+      expect(files.some((f) => f.endsWith('config.ts'))).toBe(true)
+      expect(files.some((f) => f.replace(/\\/g, '/').endsWith('adapter/gemini-client.ts'))).toBe(true)
+    })
+
+    it('the source scan would actually fail on a violating import', () => {
+      const sroiImportPattern =
+        /(?:import[\s\S]{0,200}?from\s*['"]|require\(\s*['"])[^'"]*pipeline\/(?:sroi-calculation|sroi-sensitivity|sroi-funders)/
+      const violatingSource = `import { calculateSroi } from '@/lib/pipeline/sroi-calculation'`
+      expect(sroiImportPattern.test(violatingSource)).toBe(true)
+      expect(sroiImportPattern.test(`const x = require('../../pipeline/sroi-funders')`)).toBe(true)
     })
 
     it('should not include SROI formula in prompts', () => {
@@ -21,10 +81,28 @@ describe('Stella Anti-Regression: Critical Guardrails', () => {
   })
 
   describe('NEVER: Claim certification or automatic audit', () => {
-    it('should reject "certified" in prohibited terms', () => {
-      // SHARED_GUARDRAILS should contain prohibitions against these terms:
-      // certified, certification, automatic audit, guaranteed impact, AI audited, automatically approved
-      expect(SHARED_GUARDRAILS.toLowerCase()).toContain('never')
+    it('every system prompt contains an explicit categorical certification prohibition', () => {
+      // The prohibition must be categorical: out of role REGARDLESS of data
+      // completeness — not merely the word "never" somewhere in the prompt.
+      const prompts = [
+        buildAdvisorSystemPrompt('outcomes'),
+        buildValidatorSystemPrompt(),
+        buildComposerSystemPrompt('executive_summary'),
+        buildReviewerSystemPrompt('proxy_reviewer'),
+        buildReviewerSystemPrompt('evidence_reviewer'),
+        buildReviewerSystemPrompt('audit_assistant'),
+      ]
+      for (const prompt of prompts) {
+        expect(prompt.toLowerCase()).toContain('categorically outside your role')
+        expect(prompt.toLowerCase()).toContain('regardless of data completeness')
+        expect(prompt.toLowerCase()).toContain('never claim certification')
+      }
+    })
+
+    it('SHARED_GUARDRAILS states certification is categorically out of role', () => {
+      const lower = SHARED_GUARDRAILS.toLowerCase()
+      expect(lower).toContain('categorically outside your role')
+      expect(lower).toContain('regardless of data completeness')
     })
 
     it('ValidatorOutput should never allow missing requires_human_review', () => {
@@ -50,10 +128,25 @@ describe('Stella Anti-Regression: Critical Guardrails', () => {
   })
 
   describe('NEVER: Write to database without explicit user action', () => {
-    it('should not have direct database write functions', () => {
-      // Stella adapter should not export any functions that write to DB
-      // All writes must go through explicit server actions triggered by user
-      expect(true).toBe(true) // Placeholder - actual check is at compile time
+    // The only allowed DB writers are the server actions in app/actions/stella/*.
+    // lib/stella modules may READ (context builders, quota) but never write.
+    // Matches db.insert( / db.update( / db.delete( — deliberately NOT bare
+    // `.update(` so crypto createHash().update() stays allowed (reads are fine,
+    // the boundary is writes).
+    const dbWritePattern = /\bdb\s*\.\s*(?:insert|update|delete)\s*\(/
+
+    it('no lib/stella module performs a direct DB write (real source scan)', () => {
+      expect(findViolations(dbWritePattern)).toEqual([])
+    })
+
+    it('the DB-write scan would actually fail on a violation', () => {
+      expect(dbWritePattern.test(`await db.insert(stellaInteractions).values({})`)).toBe(true)
+      expect(dbWritePattern.test(`await db.update(projects).set({})`)).toBe(true)
+      expect(dbWritePattern.test(`await db.delete(evidence)`)).toBe(true)
+      // Reading stays allowed:
+      expect(dbWritePattern.test(`await db.select().from(projects)`)).toBe(false)
+      // crypto hash update stays allowed:
+      expect(dbWritePattern.test(`createHash('sha256').update(input).digest('hex')`)).toBe(false)
     })
   })
 
