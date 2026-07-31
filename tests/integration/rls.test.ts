@@ -217,7 +217,7 @@ describe('RLS Coverage Integration Tests', () => {
       const { error } = await viewerA.client.storage
         .from('uellix-evidence')
         .remove([fileName])
-      
+
       // PostgreSQL can report a successful DELETE even when RLS matched no rows.
       expect(error).toBeNull()
 
@@ -227,6 +227,213 @@ describe('RLS Coverage Integration Tests', () => {
 
       expect(downloadError).toBeNull()
       expect(await data?.text()).toBe('Contenido de prueba')
+    })
+  })
+
+  // ==========================================================================
+  // WS3b U5: stella_interactions — append-only AI audit trail.
+  // RLS posture (db/policies/002_stella_interactions_rls.sql): SELECT for org
+  // members / super_admin; NO INSERT, UPDATE or DELETE policies. Post-G2
+  // (db/prepared/stella_0002_interactions_hardening.sql) the authenticated
+  // role also loses the table-level UPDATE/DELETE grants (0033 bug) and the
+  // uellix_forbid_mutation() trigger blocks mutation even for service role.
+  // ==========================================================================
+  describe('Stella Interactions (append-only)', () => {
+    let interactionId: string
+
+    beforeAll(async () => {
+      // Seed via the service-role Drizzle client — the only legitimate write
+      // path (mirrors the server actions in app/actions/stella/*).
+      interactionId = randomUUID()
+      await db.insert(stellaInteractions).values({
+        id: interactionId,
+        organizationId: orgAId,
+        projectId: projectAId,
+        createdBy: adminA.id,
+        stellaRole: 'advisor',
+        pipelineStep: 'narrative',
+        contextHash: 'a'.repeat(64),
+        responseJson: { summary: 'seed for RLS tests' },
+        modelUsed: 'test-model',
+      })
+    })
+
+    it('Admin A puede ver las interacciones de su organización', async () => {
+      const { data, error } = await adminA.client
+        .from('stella_interactions')
+        .select('id, organization_id')
+        .eq('id', interactionId)
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+      expect(data![0].organization_id).toBe(orgAId)
+    })
+
+    it('Viewer A (mismo org) puede LEER interacciones — el gate de rol solo bloquea invocar', async () => {
+      const { data, error } = await viewerA.client
+        .from('stella_interactions')
+        .select('id')
+        .eq('id', interactionId)
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+    })
+
+    it('Admin B NO puede ver interacciones de Org A (SELECT cruzado devuelve vacío)', async () => {
+      const { data, error } = await adminB.client
+        .from('stella_interactions')
+        .select('id')
+        .eq('id', interactionId)
+      expect(error).toBeNull() // RLS filters silently on SELECT
+      expect(data).toHaveLength(0)
+    })
+
+    it('SuperAdmin puede ver interacciones de cualquier org', async () => {
+      const { data, error } = await superAdmin.client
+        .from('stella_interactions')
+        .select('id')
+        .eq('id', interactionId)
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+    })
+
+    it('INSERT como authenticated es denegado (sin política INSERT — solo service role escribe)', async () => {
+      const { error } = await adminA.client.from('stella_interactions').insert({
+        id: randomUUID(),
+        organization_id: orgAId,
+        project_id: projectAId,
+        created_by: adminA.id,
+        stella_role: 'advisor',
+        pipeline_step: 'narrative',
+        context_hash: 'b'.repeat(64),
+        response_json: { summary: 'client-side insert attempt' },
+      })
+      expect(error).not.toBeNull()
+      expect(error!.code).toBe('42501')
+    })
+
+    it('UPDATE como authenticated es denegado (RLS pre-G2; grant revocado + trigger post-G2)', async () => {
+      const { data, error } = await adminA.client
+        .from('stella_interactions')
+        .update({ pipeline_step: 'tampered' })
+        .eq('id', interactionId)
+        .select()
+
+      // Pre-G2: no UPDATE policy → RLS matches 0 rows (no error, empty data).
+      // Post-G2 (stella_0002): the revoked table grant makes this a hard 42501.
+      if (error) {
+        expect(error.code).toBe('42501')
+      } else {
+        expect(data).toHaveLength(0)
+      }
+
+      // Either way the row is untouched (verified via service client).
+      const { data: fresh } = await adminClient
+        .from('stella_interactions')
+        .select('pipeline_step')
+        .eq('id', interactionId)
+        .single()
+      expect(fresh!.pipeline_step).toBe('narrative')
+    })
+
+    it('DELETE como authenticated es denegado (RLS pre-G2; grant revocado + trigger post-G2)', async () => {
+      const { error } = await adminA.client
+        .from('stella_interactions')
+        .delete()
+        .eq('id', interactionId)
+
+      // Pre-G2: silent 0-row match; post-G2: 42501 by revoked grant.
+      if (error) expect(error.code).toBe('42501')
+
+      const { data: fresh } = await adminClient
+        .from('stella_interactions')
+        .select('id')
+        .eq('id', interactionId)
+      expect(fresh).toHaveLength(1)
+    })
+
+    // Enable after G2 applies db/prepared/stella_0002_interactions_hardening.sql:
+    // the uellix_forbid_mutation() trigger must reject UPDATE/DELETE even for
+    // the SERVICE ROLE (RLS-bypassing) client. Running this pre-G2 would
+    // actually mutate the audit trail, so it stays skipped until the gate.
+    describe.skip('post-G2 (stella_0002): trigger blocks mutation even for service role', () => {
+      it('UPDATE via service role falla con insufficient_privilege', async () => {
+        await expect(
+          db.execute(`UPDATE public.stella_interactions SET pipeline_step = 'x' WHERE id = '${interactionId}'`),
+        ).rejects.toThrow(/append-only/)
+      })
+
+      it('DELETE via service role falla con insufficient_privilege', async () => {
+        await expect(
+          db.execute(`DELETE FROM public.stella_interactions WHERE id = '${interactionId}'`),
+        ).rejects.toThrow(/append-only/)
+      })
+    })
+  })
+
+  // ==========================================================================
+  // WS3b U5: stella_suggestion_decisions — enable after G2 applies
+  // db/prepared/stella_0003_suggestion_decisions.sql (the table does not exist
+  // before that gate; running these earlier fails on a missing relation).
+  // Posture: SELECT-only org-scoped RLS; INSERT/UPDATE/DELETE denied for
+  // authenticated (service-role writes only, via recordStellaDecision).
+  // ==========================================================================
+  describe.skip('Stella Suggestion Decisions (post-G2 stella_0003)', () => {
+    let decisionId: string
+
+    beforeAll(async () => {
+      decisionId = randomUUID()
+      await db.execute(
+        `INSERT INTO stella_suggestion_decisions (id, organization_id, project_id, suggestion_key, decision, decided_by)
+         VALUES ('${decisionId}', '${orgAId}', '${projectAId}', 'advisor.suggested_next_actions[0]', 'accepted', '${adminA.id}')`,
+      )
+    })
+
+    it('Admin A puede ver las decisiones de su organización', async () => {
+      const { data, error } = await adminA.client
+        .from('stella_suggestion_decisions')
+        .select('id')
+        .eq('id', decisionId)
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+    })
+
+    it('Admin B NO puede ver decisiones de Org A (SELECT cruzado devuelve vacío)', async () => {
+      const { data, error } = await adminB.client
+        .from('stella_suggestion_decisions')
+        .select('id')
+        .eq('id', decisionId)
+      expect(error).toBeNull()
+      expect(data).toHaveLength(0)
+    })
+
+    it('INSERT como authenticated es denegado (42501 — sin grant ni política)', async () => {
+      const { error } = await adminA.client.from('stella_suggestion_decisions').insert({
+        id: randomUUID(),
+        organization_id: orgAId,
+        project_id: projectAId,
+        suggestion_key: 'advisor.suggested_next_actions[1]',
+        decision: 'rejected',
+        decided_by: adminA.id,
+      })
+      expect(error).not.toBeNull()
+      expect(error!.code).toBe('42501')
+    })
+
+    it('UPDATE como authenticated es denegado (42501 — SELECT-only grant)', async () => {
+      const { error } = await adminA.client
+        .from('stella_suggestion_decisions')
+        .update({ decision: 'undone' })
+        .eq('id', decisionId)
+      expect(error).not.toBeNull()
+      expect(error!.code).toBe('42501')
+    })
+
+    it('DELETE como authenticated es denegado (42501 — SELECT-only grant)', async () => {
+      const { error } = await adminA.client
+        .from('stella_suggestion_decisions')
+        .delete()
+        .eq('id', decisionId)
+      expect(error).not.toBeNull()
+      expect(error!.code).toBe('42501')
     })
   })
 })
