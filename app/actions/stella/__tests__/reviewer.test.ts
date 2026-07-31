@@ -72,6 +72,22 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
+// WS3b: audit trail writer mocked at the module boundary (keeps AUDIT_ACTIONS real)
+const mockLogAuditAction = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return {
+    ...original,
+    logAuditAction: (...args: unknown[]) => mockLogAuditAction(...args),
+  }
+})
+
+// WS3b: Sentry-backed failure reporting mocked
+const mockReportStellaFailure = vi.fn()
+vi.mock('@/lib/stella/observability', () => ({
+  reportStellaFailure: (...args: unknown[]) => mockReportStellaFailure(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
 // ---------------------------------------------------------------------------
@@ -150,6 +166,68 @@ describe('getStellaReviewer server action', () => {
     mockInsertValues.mockResolvedValue([])
     mockDbInsert.mockReturnValue({ values: mockInsertValues })
     mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+    mockLogAuditAction.mockResolvedValue(undefined)
+  })
+
+  describe('Audit trail + observability (WS3b)', () => {
+    it('logs STELLA_INVOKED with the reviewer role and its pipeline step, metadata only', async () => {
+      setupSuccessfulCall()
+
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked).toBeDefined()
+      expect(invoked.organizationId).toBe('org-1')
+      expect(invoked.actorUserId).toBe('user-1')
+      expect(invoked.entityId).toBe('proj-1')
+      expect(invoked.afterJson.stellaRole).toBe('proxy_reviewer')
+      expect(invoked.afterJson.tokensUsed).toBe(42)
+      expect(typeof invoked.afterJson.pipelineStep).toBe('string')
+      const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
+      expect(serialized).not.toContain(VALID_REVIEWER_OUTPUT.summary)
+      expect(serialized).not.toContain('Proxy sin fuente verificable')
+    })
+
+    it('logs STELLA_DENIED with ROLE_DENIED for a viewer, tagged with the requested reviewer role', async () => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role: 'viewer' },
+      })
+
+      await getStellaReviewer('proj-1', 'evidence_reviewer')
+
+      const denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson).toEqual({ stellaRole: 'evidence_reviewer', reason: 'ROLE_DENIED', membershipRole: 'viewer' })
+    })
+
+    it('denial result is unchanged when the audit write throws (fire-and-forget)', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      setupSuccessfulCall()
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+      mockLogAuditAction.mockRejectedValue(new Error('audit db down'))
+
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
+      expect(errorSpy).toHaveBeenCalledWith('[stella-audit] audit write failed:', 'Error')
+      errorSpy.mockRestore()
+    })
+
+    it('reports AUDIT_ERROR to observability with the reviewer role when the insert fails', async () => {
+      setupSuccessfulCall()
+      mockInsertValues.mockRejectedValue(new Error('DB down'))
+
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith(
+        'proxy_reviewer', 'AUDIT_ERROR', expect.anything(), expect.objectContaining({ projectId: 'proj-1' }),
+      )
+    })
   })
 
   describe('Feature flag gate', () => {

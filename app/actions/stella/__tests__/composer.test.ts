@@ -80,6 +80,22 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
+// WS3b: audit trail writer mocked at the module boundary (keeps AUDIT_ACTIONS real)
+const mockLogAuditAction = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return {
+    ...original,
+    logAuditAction: (...args: unknown[]) => mockLogAuditAction(...args),
+  }
+})
+
+// WS3b: Sentry-backed failure reporting mocked
+const mockReportStellaFailure = vi.fn()
+vi.mock('@/lib/stella/observability', () => ({
+  reportStellaFailure: (...args: unknown[]) => mockReportStellaFailure(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
 // ---------------------------------------------------------------------------
@@ -183,6 +199,113 @@ describe('getStellaComposer server action', () => {
     // Default: quota allowed, so tests unrelated to quota don't need to set it up.
     // Tests in the "Quota enforcement" describe block override this per-case.
     mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+    mockLogAuditAction.mockResolvedValue(undefined)
+  })
+
+  describe('Audit trail + observability (WS3b)', () => {
+    it('logs STELLA_INVOKED after a successful call with role/sectionType/tokensUsed metadata only', async () => {
+      setupSuccessfulCall()
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked).toBeDefined()
+      expect(invoked.organizationId).toBe('org-uuid-001')
+      expect(invoked.actorUserId).toBe('user-uuid-001')
+      expect(invoked.entityId).toBe('proj-uuid-001')
+      expect(invoked.afterJson).toEqual({ stellaRole: 'composer', pipelineStep: 'executive_summary', tokensUsed: 1234 })
+      const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
+      expect(serialized).not.toContain('mock composer system prompt')
+      expect(serialized).not.toContain('mock composer user message')
+      expect(serialized).not.toContain(VALID_COMPOSER_OUTPUT.draft_content)
+    })
+
+    it('logs STELLA_DENIED with ROLE_DENIED / QUOTA_EXCEEDED / RATE_LIMITED reason codes', async () => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role: 'viewer' },
+      })
+      await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+      let denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson.reason).toBe('ROLE_DENIED')
+
+      mockLogAuditAction.mockClear()
+      setupSuccessfulCall()
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+      await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+      denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson.reason).toBe('QUOTA_EXCEEDED')
+
+      mockLogAuditAction.mockClear()
+      setupSuccessfulCall()
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
+      await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+      denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson.reason).toBe('RATE_LIMITED')
+    })
+
+    it('logs STELLA_INTEGRITY_REJECTED with violation COUNTS only when the guard fails', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      setupSuccessfulCall()
+      // Reference to an evidence id that does NOT exist in the context →
+      // validateComposerReferences fails closed.
+      mockAdapterParseResponse.mockResolvedValue({
+        ...VALID_COMPOSER_OUTPUT,
+        evidence_references: [{ evidenceId: 'ev-HALLUCINATED', title: 'Fuente inventada', context: 'x' }],
+      })
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PARSE_ERROR')
+      const rejected = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.integrity_rejected')
+      expect(rejected).toBeDefined()
+      expect(rejected.afterJson.stellaRole).toBe('composer')
+      expect(typeof rejected.afterJson.referenceViolationCount).toBe('number')
+      expect(rejected.afterJson.referenceViolationCount).toBeGreaterThan(0)
+      expect(typeof rejected.afterJson.numericViolationCount).toBe('number')
+      // counts only — the violating text/id never reaches the audit payload
+      const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
+      expect(serialized).not.toContain('ev-HALLUCINATED')
+      expect(serialized).not.toContain('Fuente inventada')
+      errorSpy.mockRestore()
+    })
+
+    it('denial result is unchanged when the audit write throws (fire-and-forget)', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      setupSuccessfulCall()
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+      mockLogAuditAction.mockRejectedValue(new Error('audit db down'))
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
+      expect(errorSpy).toHaveBeenCalledWith('[stella-audit] audit write failed:', 'Error')
+      errorSpy.mockRestore()
+    })
+
+    it('reports GEMINI_ERROR and AUDIT_ERROR to observability with the composer role', async () => {
+      setupSuccessfulCall()
+      mockAdapterGenerate.mockRejectedValue(new StellaGeminiError('API failure'))
+      await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith(
+        'composer', 'GEMINI_ERROR', expect.anything(),
+        expect.objectContaining({ projectId: 'proj-uuid-001', reportId: 'report-uuid-001' }),
+      )
+
+      mockReportStellaFailure.mockClear()
+      setupSuccessfulCall()
+      mockInsertValues.mockRejectedValue(new Error('DB down'))
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary')
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith(
+        'composer', 'AUDIT_ERROR', expect.anything(), expect.anything(),
+      )
+    })
   })
 
   // -------------------------------------------------------------------------

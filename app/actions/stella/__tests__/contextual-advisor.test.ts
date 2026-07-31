@@ -74,6 +74,22 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
+// WS3b: audit trail writer mocked at the module boundary (keeps AUDIT_ACTIONS real)
+const mockLogAuditAction = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return {
+    ...original,
+    logAuditAction: (...args: unknown[]) => mockLogAuditAction(...args),
+  }
+})
+
+// WS3b: Sentry-backed failure reporting mocked
+const mockReportStellaFailure = vi.fn()
+vi.mock('@/lib/stella/observability', () => ({
+  reportStellaFailure: (...args: unknown[]) => mockReportStellaFailure(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place. runContextualAdvisor itself is
 // NOT mocked — it is the pure, already-covered pipeline (see
@@ -173,6 +189,7 @@ describe('getStellaContextualAdvisor server action', () => {
     mockInsertValues.mockResolvedValue([])
     mockDbInsert.mockReturnValue({ values: mockInsertValues })
     mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+    mockLogAuditAction.mockResolvedValue(undefined)
   })
 
   describe('Feature flag gate', () => {
@@ -395,6 +412,79 @@ describe('getStellaContextualAdvisor server action', () => {
 
       expect(mockGetGeminiAdapter).toHaveBeenCalled()
       expect(process.env.GEMINI_API_KEY).toBeUndefined()
+    })
+  })
+
+  describe('M. Audit trail + observability (WS3b)', () => {
+    it('logs STELLA_INVOKED after a successful contextual call, metadata only', async () => {
+      setupSuccessfulCall()
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(true)
+      const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
+      expect(invoked).toBeDefined()
+      expect(invoked.organizationId).toBe('org-1')
+      expect(invoked.actorUserId).toBe('user-1')
+      expect(invoked.entityId).toBe('proj-1')
+      expect(invoked.afterJson).toEqual({ stellaRole: 'advisor', pipelineStep: 'narrative', tokensUsed: 42 })
+      // NO prompt/context/response content in any audit payload
+      const serialized = JSON.stringify(mockLogAuditAction.mock.calls)
+      expect(serialized).not.toContain('Resumen')
+      expect(serialized).not.toContain('community wellbeing')
+    })
+
+    it('logs STELLA_DENIED with QUOTA_EXCEEDED and result is unchanged when the audit write throws', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+      mockLogAuditAction.mockRejectedValue(new Error('audit db down'))
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
+      expect(errorSpy).toHaveBeenCalledWith('[stella-audit] audit write failed:', 'Error')
+      errorSpy.mockRestore()
+    })
+
+    it('logs STELLA_DENIED with RATE_LIMITED when the limiter blocks', async () => {
+      setupSuccessfulCall()
+      mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_EXCEEDED)
+
+      await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      const denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
+      expect(denied.afterJson.reason).toBe('RATE_LIMITED')
+    })
+
+    it('reports AUDIT_ERROR to observability when the interactions insert fails', async () => {
+      setupSuccessfulCall()
+      mockInsertValues.mockRejectedValue(new Error('DB down'))
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith(
+        'advisor', 'AUDIT_ERROR', expect.anything(),
+        expect.objectContaining({ projectId: 'proj-1', contextual: true }),
+      )
+    })
+
+    it('reports typed model failures (GEMINI_ERROR) surfaced by runContextualAdvisor', async () => {
+      setupSuccessfulCall()
+      const { StellaGeminiError } = await import('@/lib/stella/errors')
+      mockAdapterGenerate.mockRejectedValue(new StellaGeminiError('API failure'))
+
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('GEMINI_ERROR')
+      expect(mockReportStellaFailure).toHaveBeenCalledWith(
+        'advisor', 'GEMINI_ERROR', expect.anything(),
+        expect.objectContaining({ projectId: 'proj-1', step: 'narrative', contextual: true }),
+      )
     })
   })
 })
