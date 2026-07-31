@@ -1,0 +1,61 @@
+// tests/sroi-decimal-config.test.ts
+// U1 (WS4) — the SROI pipeline must run under an EXPLICITLY pinned Decimal
+// configuration. These values are the decimal.js defaults on purpose: pinning
+// them must not change numeric behavior, only make it reproducible.
+import { describe, it, expect } from 'vitest'
+import Decimal from 'decimal.js'
+import {
+  applyDecimalConfig,
+  DECIMAL_PRECISION,
+  DECIMAL_ROUNDING,
+  DECIMAL_TO_EXP_NEG,
+  DECIMAL_TO_EXP_POS,
+} from '@/lib/pipeline/decimal-config'
+
+describe('decimal-config (determinism guard)', () => {
+  it('pins the documented values (equal to decimal.js defaults)', () => {
+    expect(DECIMAL_PRECISION).toBe(20)
+    expect(DECIMAL_ROUNDING).toBe(Decimal.ROUND_HALF_UP)
+    expect(DECIMAL_ROUNDING).toBe(4) // ROUND_HALF_UP numeric value, belt & braces
+    expect(DECIMAL_TO_EXP_NEG).toBe(-7)
+    expect(DECIMAL_TO_EXP_POS).toBe(21)
+  })
+
+  it('is applied to the shared Decimal constructor on import', () => {
+    // Importing the module (done above) must have configured the constructor.
+    expect(Decimal.precision).toBe(DECIMAL_PRECISION)
+    expect(Decimal.rounding).toBe(DECIMAL_ROUNDING)
+    expect(Decimal.toExpNeg).toBe(DECIMAL_TO_EXP_NEG)
+    expect(Decimal.toExpPos).toBe(DECIMAL_TO_EXP_POS)
+  })
+
+  it('applyDecimalConfig restores the pinned config after a perturbation', () => {
+    Decimal.set({ precision: 5, rounding: Decimal.ROUND_FLOOR })
+    expect(Decimal.precision).toBe(5)
+    applyDecimalConfig()
+    expect(Decimal.precision).toBe(DECIMAL_PRECISION)
+    expect(Decimal.rounding).toBe(DECIMAL_ROUNDING)
+  })
+
+  it('produces the expected arithmetic under the pinned config', () => {
+    applyDecimalConfig()
+    // 20 significant digits
+    expect(new Decimal(1).div(3).toString()).toBe('0.33333333333333333333')
+    // ROUND_HALF_UP: ties round away from zero
+    expect(new Decimal('2.5').toFixed(0)).toBe('3')
+    expect(new Decimal('-2.5').toFixed(0)).toBe('-3')
+    expect(new Decimal('1.00005').toFixed(4)).toBe('1.0001')
+  })
+
+  it('pipeline modules import the guard (spot check via fx-math)', async () => {
+    // Perturb, then import a pipeline module: its own import of decimal-config
+    // is cached (side effects ran at first import), so instead assert that the
+    // exported behavior matches the pinned config.
+    const { convertToUsd } = await import('@/lib/pipeline/fx-math')
+    applyDecimalConfig()
+    // 1000000 / 3 = 333333.33333... → HALF_UP at 4dp
+    expect(convertToUsd('1000000', '3')).toBe('333333.3333')
+    // Tie case at the 4th decimal: 0.00005 / 1 → 0.0001 under HALF_UP
+    expect(convertToUsd('0.00005', '1')).toBe('0.0001')
+  })
+})

@@ -2,6 +2,9 @@
 // Sprint 6B – Deterministic SROI Calculation Engine
 // No mocks. No placeholders. No FX conversion. No AI/Stella.
 
+// Pin the shared Decimal configuration (precision/rounding) before anything
+// else touches decimal.js — determinism guard, see decimal-config.ts.
+import '@/lib/pipeline/decimal-config'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 import Decimal from 'decimal.js'
 import { db } from '@/db/client'
@@ -76,10 +79,29 @@ async function authorize(projectId: string) {
   return ctx
 }
 
-function parseNum(val: string | null | undefined): number {
+// Matches the leading numeric token exactly as parseFloat would consume it:
+// optional sign, then Infinity | digits[.digits][exponent] | .digits[exponent].
+const LEADING_NUMBER_RE = /^[+-]?(?:Infinity|\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)/
+
+// Exported for characterization tests (tests/sroi-parse-num.test.ts) — the
+// accepted input formats are pinned there; keep them green if you touch this.
+//
+// Decimal-based replacement for the historical parseFloat implementation
+// (U1, WS4): same accepted formats — leading/trailing whitespace tolerated,
+// trailing garbage ignored, Infinity preserved, invalid input → 0 — but the
+// numeric interpretation now flows through the pinned Decimal configuration
+// instead of the platform float parser.
+export function parseNum(val: string | null | undefined): number {
   if (!val) return 0
-  const n = parseFloat(val)
-  return isNaN(n) ? 0 : n
+  const match = LEADING_NUMBER_RE.exec(val.trimStart())
+  if (!match) return 0
+  // decimal.js rejects a trailing bare dot ('5.'); parseFloat accepted it.
+  const token = match[0].endsWith('.') ? match[0].slice(0, -1) : match[0]
+  try {
+    return new Decimal(token).toNumber()
+  } catch {
+    return 0
+  }
 }
 
 function clamp(val: number, lo: number, hi: number) {
