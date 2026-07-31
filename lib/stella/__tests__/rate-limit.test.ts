@@ -88,3 +88,66 @@ describe('consumeStellaRateLimit', () => {
     expect((await consumeStellaRateLimit(ORG_A)).remaining).toBe(2)
   })
 })
+
+// ---------------------------------------------------------------------------
+// WS3c U3 (RK-24): the in-memory fallback must announce itself — on
+// serverless, per-instance limits are much weaker than the distributed
+// limiter, and silence hides that misconfiguration.
+// Fresh module instances per test (the warn-once flag is module-level).
+// ---------------------------------------------------------------------------
+describe('in-memory fallback warning (RK-24)', () => {
+  const EXPECTED_WARNING =
+    '[stella-rate-limit] KV not configured — falling back to per-instance in-memory limiter (limits are per-instance on serverless)'
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+    vi.restoreAllMocks()
+  })
+
+  async function freshModule() {
+    vi.resetModules()
+    return await import('../rate-limit')
+  }
+
+  it('warns exactly once per process when KV is not configured and the fallback is used', async () => {
+    vi.stubEnv('KV_REST_API_URL', '')
+    vi.stubEnv('KV_REST_API_TOKEN', '')
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const mod = await freshModule()
+
+    await mod.consumeStellaRateLimit(ORG_A)
+    await mod.consumeStellaRateLimit(ORG_A)
+    await mod.consumeStellaRateLimit(ORG_B)
+
+    const fallbackWarnings = warnSpy.mock.calls.filter((c) => c[0] === EXPECTED_WARNING)
+    expect(fallbackWarnings).toHaveLength(1)
+  })
+
+  it('does not warn at import time — only when the fallback is actually consumed', async () => {
+    vi.stubEnv('KV_REST_API_URL', '')
+    vi.stubEnv('KV_REST_API_TOKEN', '')
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await freshModule()
+
+    expect(warnSpy).not.toHaveBeenCalledWith(EXPECTED_WARNING)
+  })
+
+  it('does NOT warn when KV IS configured (distributed limiter path)', async () => {
+    // Connection-refused endpoint: the distributed limiter is constructed and
+    // attempted, fails fast, and resolves as 'unavailable' — never falling
+    // back to memory, never emitting the fallback warning.
+    vi.stubEnv('KV_REST_API_URL', 'http://127.0.0.1:1')
+    vi.stubEnv('KV_REST_API_TOKEN', 'test-token')
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const mod = await freshModule()
+
+    const result = await mod.consumeStellaRateLimit(ORG_A)
+
+    expect(result.reason).toBe('unavailable')
+    expect(warnSpy).not.toHaveBeenCalledWith(EXPECTED_WARNING)
+    expect(errorSpy).toHaveBeenCalledWith('[stella-rate-limit] Distributed limiter unavailable')
+  })
+})

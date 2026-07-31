@@ -36,6 +36,19 @@ function nextHourReset(): string {
 
 const store = new Map<string, HourBucket>()
 
+// WS3c U3 (RK-24): once-per-process flag — the in-memory fallback must
+// announce itself the first time it is actually used, because per-instance
+// limits are much weaker than the distributed limiter on serverless.
+let memoryFallbackWarned = false
+
+function warnMemoryFallbackOnce(): void {
+  if (memoryFallbackWarned) return
+  memoryFallbackWarned = true
+  console.warn(
+    '[stella-rate-limit] KV not configured — falling back to per-instance in-memory limiter (limits are per-instance on serverless)'
+  )
+}
+
 function memoryConsume(organizationId: string): RateLimitResult {
   const limit = stellaConfig.rateLimitPerHour
   const hourKey = currentHourKey()
@@ -104,6 +117,8 @@ export async function consumeStellaRateLimit(organizationId: string): Promise<Ra
     }
   }
 
+  // KV vars absent — per-instance in-memory fallback (RK-24: warn once).
+  warnMemoryFallbackOnce()
   return memoryConsume(organizationId)
 }
 
