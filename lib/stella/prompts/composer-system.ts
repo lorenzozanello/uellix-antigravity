@@ -2,11 +2,28 @@
 // Sprint 9B: Stella Composer system prompt builder
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
-import { sanitizeFreeText, sanitizeInlineLabel, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { sanitizeFreeText, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { SECTION_META } from '../../reports/report-sections'
 import type { StellaProjectContext } from '../context/types'
 
+// Fixed label used in the system tier when the caller-supplied sectionType is
+// not in the report section vocabulary. The raw value still reaches the model,
+// but only inside the untrusted-data envelope of the user message.
+const GENERIC_SECTION_LABEL = 'report_section'
+
+/**
+ * Allowlist a caller-supplied section type against the report section
+ * vocabulary (SECTION_META keys). Unknown values are replaced by a fixed
+ * generic label — never interpolated into the system prompt.
+ */
+export function resolveComposerSectionLabel(sectionType: string): string {
+  return Object.prototype.hasOwnProperty.call(SECTION_META, sectionType)
+    ? sectionType
+    : GENERIC_SECTION_LABEL
+}
+
 export function buildComposerSystemPrompt(rawSectionType: string): string {
-  const sectionType = sanitizeInlineLabel(rawSectionType)
+  const sectionType = resolveComposerSectionLabel(rawSectionType)
   return `You are Stella Composer, the expert report writer for Uellix SROI analyses.
 
 ## Your Role

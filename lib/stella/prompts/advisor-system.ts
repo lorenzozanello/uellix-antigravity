@@ -1,15 +1,43 @@
 // lib/stella/prompts/advisor-system.ts
 // Sprint 9B: Stella Advisor system prompt builder
 // WS3 (Fable Moonshot): all user/org-derived content travels inside the
-// UNTRUSTED_PROJECT_DATA envelope; labels interpolated into the system prompt
-// are sanitized to a single line.
+// UNTRUSTED_PROJECT_DATA envelope; the step interpolated into the system
+// prompt is ALLOWLISTED against the advisor step vocabulary — an unknown
+// step is rejected, never sanitized-and-continued.
 
 import { SHARED_GUARDRAILS } from './shared-guardrails'
-import { sanitizeFreeText, sanitizeInlineLabel, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import { sanitizeFreeText, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '../context/sanitize'
+import {
+  ADVISOR_STEP_LABELS,
+  isAdvisorPipelineStep,
+  UnsupportedAdvisorPipelineStepError,
+  type AdvisorPipelineStep,
+} from '../advisor/steps'
 import type { StellaProjectContext } from '../context/types'
 
+// The legacy advisor path historically receives either the enum key
+// ('narrative') or the Spanish UI label ('Narrativa'). Both resolve to the
+// canonical enum value; anything else is out of vocabulary.
+const LABEL_TO_STEP: Record<string, AdvisorPipelineStep> = Object.fromEntries(
+  (Object.entries(ADVISOR_STEP_LABELS) as [AdvisorPipelineStep, string][]).map(([key, label]) => [label, key])
+) as Record<string, AdvisorPipelineStep>
+
+/**
+ * Resolve a caller-supplied step to the canonical advisor step, or null when
+ * it is not in the known vocabulary (enum keys + Spanish labels).
+ */
+export function resolveAdvisorStep(step: string): AdvisorPipelineStep | null {
+  if (isAdvisorPipelineStep(step)) return step
+  return LABEL_TO_STEP[step] ?? null
+}
+
 export function buildAdvisorSystemPrompt(step: string): string {
-  const safeStep = sanitizeInlineLabel(step)
+  const resolved = resolveAdvisorStep(step)
+  if (!resolved) {
+    // Never interpolate an out-of-vocabulary value into the system tier.
+    throw new UnsupportedAdvisorPipelineStepError(step)
+  }
+  const safeStep = resolved
   return `You are Stella, the AI methodology advisor for Uellix.
 
 ## Your Role

@@ -8,7 +8,7 @@ import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildAdvisorContext, StellaBuildContextError } from '@/lib/stella/context/build-advisor-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
-import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/prompts/advisor-system'
+import { buildAdvisorSystemPrompt, buildAdvisorUserMessage, resolveAdvisorStep } from '@/lib/stella/prompts/advisor-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
@@ -144,6 +144,12 @@ export async function getStellaAdvisor(
       error: 'DISABLED',
       message: 'Stella Advisor is not enabled.',
     }
+  }
+
+  // Step allowlist — reject out-of-vocabulary steps before any resource is
+  // consumed. An unknown step can never reach the system prompt tier.
+  if (!resolveAdvisorStep(step)) {
+    return { ok: false, error: 'UNSUPPORTED_STEP', message: 'Unsupported advisor step.' }
   }
 
   // Auth + org context — redirects if unauthenticated
