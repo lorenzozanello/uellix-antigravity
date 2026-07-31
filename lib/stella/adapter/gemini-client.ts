@@ -4,6 +4,7 @@
 
 import { stellaConfig } from '../config'
 import { StellaParseError, StellaGeminiError, StellaTimeoutError } from '../errors'
+import { assertPromptWithinLimit } from '../security/payload-limits'
 import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig } from './types'
 
 export class StellaGeminiAdapter {
@@ -15,6 +16,9 @@ export class StellaGeminiAdapter {
       apiKey: config?.apiKey || stellaConfig.geminiApiKey,
       model: config?.model || stellaConfig.geminiModel,
       timeoutMs: config?.timeoutMs || stellaConfig.requestTimeoutMs,
+      maxOutputTokens: config?.maxOutputTokens ?? stellaConfig.maxOutputTokens,
+      temperature: config?.temperature ?? stellaConfig.temperature,
+      maxPromptChars: config?.maxPromptChars ?? stellaConfig.maxPromptChars,
       mockProvider: config?.mockProvider,
     }
 
@@ -28,6 +32,10 @@ export class StellaGeminiAdapter {
    * Returns raw string output — caller is responsible for parsing and validation.
    */
   async generate(request: StellaRequest): Promise<StellaResponse> {
+    // Central input cap — enforced BEFORE any provider (mock or real) so an
+    // oversized payload can never reach the model or count against quota.
+    assertPromptWithinLimit(request, this.config.maxPromptChars)
+
     // Tests inject a mock provider — no real Gemini calls ever happen in tests
     if (this.mockProvider) {
       return this.mockProvider.generate(request)
@@ -55,6 +63,8 @@ export class StellaGeminiAdapter {
         config: {
           systemInstruction: request.systemPrompt,
           responseMimeType: 'application/json',
+          maxOutputTokens: this.config.maxOutputTokens,
+          temperature: this.config.temperature,
           ...(request.responseJsonSchema ? { responseJsonSchema: request.responseJsonSchema } : {}),
           abortSignal: controller.signal,
         },

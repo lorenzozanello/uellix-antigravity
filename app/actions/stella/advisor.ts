@@ -4,13 +4,15 @@
 // Security: feature-flagged, auth-gated, metadata-only context, audit-logged, no secret logging
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildAdvisorContext, StellaBuildContextError } from '@/lib/stella/context/build-advisor-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
-import { buildAdvisorSystemPrompt, buildAdvisorUserMessage } from '@/lib/stella/prompts/advisor-system'
+import { buildAdvisorSystemPrompt, buildAdvisorUserMessage, resolveAdvisorStep } from '@/lib/stella/prompts/advisor-system'
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { AdvisorOutputSchema } from '@/lib/stella/schemas/advisor-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
@@ -27,6 +29,7 @@ export type StellaAdvisorErrorCode =
   | 'RATE_LIMITED'
   | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
+  | 'PAYLOAD_TOO_LARGE'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
@@ -65,6 +68,11 @@ export async function getStellaContextualAdvisor(
     ctx = await requireOrganizationAccess()
   } catch {
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
+  }
+
+  // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
@@ -118,6 +126,9 @@ export async function getStellaContextualAdvisor(
       if (error.code === 'UNSUPPORTED_STEP') return { ok: false, error: 'UNSUPPORTED_STEP', message: error.message }
       if (error.code === 'UNAUTHORIZED' || error.code === 'NOT_FOUND') return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
     }
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
+    }
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
   }
 }
@@ -135,6 +146,12 @@ export async function getStellaAdvisor(
     }
   }
 
+  // Step allowlist — reject out-of-vocabulary steps before any resource is
+  // consumed. An unknown step can never reach the system prompt tier.
+  if (!resolveAdvisorStep(step)) {
+    return { ok: false, error: 'UNSUPPORTED_STEP', message: 'Unsupported advisor step.' }
+  }
+
   // Auth + org context — redirects if unauthenticated
   let ctx: Awaited<ReturnType<typeof requireOrganizationAccess>>
   try {
@@ -145,6 +162,11 @@ export async function getStellaAdvisor(
       error: 'UNAUTHORIZED',
       message: 'Authentication required.',
     }
+  }
+
+  // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
@@ -244,6 +266,10 @@ export async function getStellaAdvisor(
 
     if (error instanceof StellaGeminiError) {
       return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
+    }
+
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
 
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }

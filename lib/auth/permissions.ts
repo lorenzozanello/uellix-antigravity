@@ -79,6 +79,30 @@ export function canGenerateReport(role: Role): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Stella (AI advisor) permissions
+// ---------------------------------------------------------------------------
+
+// Roles allowed to invoke Stella. SET INCLUSION, not a hierarchy threshold —
+// following the methodology-review convention (lib/pipeline/
+// methodology-review.ts REVIEW_ROLES): 'reviewer' ranks below 'analyst' in
+// ROLE_HIERARCHY yet is the dedicated reviewing role, so it is explicitly
+// included here (the Stella reviewer/validator panels are review tooling).
+// Only 'viewer' is denied — read-only members never trigger AI calls, which
+// consume org quota and rate limit.
+const STELLA_ROLES: readonly Role[] = [
+  'super_admin',
+  'organization_admin',
+  'impact_manager',
+  'analyst',
+  'reviewer',
+]
+
+/** Can the user invoke Stella (advisor/validator/composer/reviewer roles)? */
+export function canUseStella(role: Role): boolean {
+  return STELLA_ROLES.includes(role)
+}
+
+// ---------------------------------------------------------------------------
 // Admin-level permissions
 // ---------------------------------------------------------------------------
 

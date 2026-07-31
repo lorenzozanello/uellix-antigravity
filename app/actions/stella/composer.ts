@@ -5,6 +5,7 @@
 // metadata-only context, no automatic saves (draft returned to UI only).
 
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { buildComposerContext, StellaBuildComposerContextError } from '@/lib/stella/context/build-composer-context'
 import { buildContextHash } from '@/lib/stella/context/build-context-hash'
@@ -12,6 +13,7 @@ import { buildComposerSystemPrompt, buildComposerUserMessage } from '@/lib/stell
 import { getGeminiAdapter } from '@/lib/stella/adapter/gemini-client'
 import { ComposerOutputSchema } from '@/lib/stella/schemas/composer-output'
 import { StellaParseError, StellaTimeoutError, StellaGeminiError } from '@/lib/stella/errors'
+import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
@@ -24,6 +26,7 @@ export type StellaComposerErrorCode =
   | 'RATE_LIMITED'
   | 'RATE_LIMIT_UNAVAILABLE'
   | 'QUOTA_EXCEEDED'
+  | 'PAYLOAD_TOO_LARGE'
   | 'GEMINI_ERROR'
   | 'PARSE_ERROR'
   | 'TIMEOUT'
@@ -58,6 +61,11 @@ export async function getStellaComposer(
     ctx = await requireOrganizationAccess()
   } catch {
     return { ok: false, error: 'UNAUTHORIZED', message: 'Authentication required.' }
+  }
+
+  // Role gate — set inclusion (reviewer allowed, viewer denied); viewers never trigger AI calls.
+  if (!canUseStella(ctx.membership.role)) {
+    return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
@@ -139,6 +147,10 @@ export async function getStellaComposer(
 
     if (error instanceof StellaGeminiError) {
       return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
+    }
+
+    if (error instanceof StellaPayloadTooLargeError) {
+      return { ok: false, error: 'PAYLOAD_TOO_LARGE', message: 'El contexto del proyecto es demasiado grande para Stella. Reducí la cantidad de texto e intentá de nuevo.' }
     }
 
     return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }

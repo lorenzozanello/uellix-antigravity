@@ -2,6 +2,16 @@
 // Sprint 9B: Stella configuration from environment variables
 // Server-only module. Never expose GEMINI_API_KEY to client.
 
+function envPositiveInt(name: string, fallback: number): number {
+  const parsed = parseInt(process.env[name] ?? '', 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function envTemperature(name: string, fallback: number): number {
+  const parsed = parseFloat(process.env[name] ?? '')
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 2 ? parsed : fallback
+}
+
 export const stellaConfig = {
   // API Key: read from environment, never log or expose
   geminiApiKey: process.env.GEMINI_API_KEY ?? '',
@@ -23,6 +33,14 @@ export const stellaConfig = {
 
   // Request timeout (ms)
   requestTimeoutMs: 15000,
+
+  // WS3 adapter caps — deterministic, bounded model calls.
+  // Max output tokens per generation (default 4096).
+  maxOutputTokens: envPositiveInt('STELLA_MAX_OUTPUT_TOKENS', 4096),
+  // Sampling temperature (default 0.2 — low variance for audit-adjacent output).
+  temperature: envTemperature('STELLA_TEMPERATURE', 0.2),
+  // Aggregate input cap: serialized system prompt + user message chars.
+  maxPromptChars: envPositiveInt('STELLA_MAX_PROMPT_CHARS', 120000),
 
   // Rate limit per org per hour (configurable)
   rateLimitPerHour: parseInt(process.env.STELLA_RATE_LIMIT_PER_HOUR ?? '100', 10),

@@ -186,6 +186,39 @@ describe('getStellaComposer server action', () => {
   })
 
   // -------------------------------------------------------------------------
+  // Role gate (canUseStella)
+  // -------------------------------------------------------------------------
+  describe('Role gate (canUseStella)', () => {
+    it.each(['viewer'] as const)('returns UNAUTHORIZED for role %s without touching quota, rate limit or Gemini', async (role) => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
+      expect(mockCheckStellaQuota).not.toHaveBeenCalled()
+      expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it.each(['analyst', 'reviewer', 'organization_admin'] as const)('allows role %s through the gate', async (role) => {
+      setupSuccessfulCall()
+      mockRequireOrganizationAccess.mockResolvedValue({
+        ...MOCK_ORG_CONTEXT,
+        membership: { ...MOCK_ORG_CONTEXT.membership, role },
+      })
+
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(true)
+    })
+  })
+
+  // -------------------------------------------------------------------------
   // Feature flag gate
   // -------------------------------------------------------------------------
   describe('Feature flag gate', () => {
@@ -507,6 +540,17 @@ describe('getStellaComposer server action', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('GEMINI_ERROR')
+    })
+
+    it('returns PAYLOAD_TOO_LARGE on StellaPayloadTooLargeError from the adapter', async () => {
+      setupSuccessfulCall()
+      const { StellaPayloadTooLargeError } = await import('@/lib/stella/security/payload-limits')
+      mockAdapterGenerate.mockRejectedValue(new StellaPayloadTooLargeError(150000, 120000))
+
+      const result = await getStellaComposer('proj-1', 'report-1', 'section-1', 'executive_summary')
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PAYLOAD_TOO_LARGE')
     })
 
     it('returns PARSE_ERROR on StellaParseError', async () => {
