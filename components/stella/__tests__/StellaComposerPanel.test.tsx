@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 // components/stella/__tests__/StellaComposerPanel.test.tsx
-// Sprint 9D: Component tests — no real Gemini, no real DB, no real auth
+// Sprint 9D component tests, reworked for WS2 (Moonshot) U4: the panel no
+// longer writes into the DOM by element id — it emits drafts through the
+// `onUseDraft` callback prop. No real Gemini, no real DB, no real auth.
 
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -21,13 +23,15 @@ vi.mock('@/components/ui/button', () => ({
     onClick,
     disabled,
     className,
+    type,
   }: {
     children: React.ReactNode
     onClick?: () => void
     disabled?: boolean
     className?: string
+    type?: 'button' | 'submit'
   }) => (
-    <button onClick={onClick} disabled={disabled} className={className}>
+    <button type={type ?? 'button'} onClick={onClick} disabled={disabled} className={className}>
       {children}
     </button>
   ),
@@ -70,24 +74,6 @@ const defaultProps = {
   reportId: 'report-1',
   sectionId: 'section-1',
   sectionType: 'executive_summary',
-  titleInputId: 'title-section-1',
-  contentInputId: 'content-section-1',
-}
-
-// The component writes the draft into sibling DOM inputs by ID (see
-// titleInputId/contentInputId) rather than via a callback prop, since a
-// Server Component cannot pass an event-handler function to this Client
-// Component. Tests that exercise "Usar este borrador" render these inputs
-// alongside the panel to observe the write.
-function renderWithSectionInputs(props: Partial<typeof defaultProps> = {}) {
-  const merged = { ...defaultProps, ...props }
-  return render(
-    <>
-      <StellaComposerPanel {...merged} />
-      <input id={merged.titleInputId} defaultValue="" />
-      <textarea id={merged.contentInputId} defaultValue="" />
-    </>
-  )
 }
 
 function success(output = VALID_COMPOSER_OUTPUT) {
@@ -145,6 +131,16 @@ describe('StellaComposerPanel', () => {
     it('does not show success content in idle state', () => {
       render(<StellaComposerPanel {...defaultProps} />)
       expect(screen.queryByText(/borrador propuesto/i)).toBeNull()
+    })
+
+    it('mounts both live regions at idle, empty (U6)', () => {
+      render(<StellaComposerPanel {...defaultProps} />)
+      const polite = screen.getByTestId('stella-composer-live-polite')
+      const assertive = screen.getByTestId('stella-composer-live-assertive')
+      expect(polite.getAttribute('aria-live')).toBe('polite')
+      expect(assertive.getAttribute('aria-live')).toBe('assertive')
+      expect(polite.textContent).toBe('')
+      expect(assertive.textContent).toBe('')
     })
   })
 
@@ -227,7 +223,7 @@ describe('StellaComposerPanel', () => {
       await waitFor(() => {
         const el = screen.getByTestId('stella-composer-loading')
         expect(el.getAttribute('aria-busy')).toBe('true')
-        expect(el.getAttribute('aria-live')).toBe('polite')
+        expect(screen.getByTestId('stella-composer-live-polite').contains(el)).toBe(true)
       })
 
       await act(async () => {
@@ -237,27 +233,27 @@ describe('StellaComposerPanel', () => {
   })
 
   // -------------------------------------------------------------------------
-  // Disabled state
+  // Disabled availability (U5)
   // -------------------------------------------------------------------------
   describe('Disabled state', () => {
-    it('renders null when action returns DISABLED', async () => {
+    it('stays mounted with an inert informative state when action returns DISABLED', async () => {
       disabled()
       const { container } = render(<StellaComposerPanel {...defaultProps} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
-        expect(container.firstChild).toBeNull()
+        expect(screen.queryByTestId('stella-composer-disabled')).not.toBeNull()
       })
+      expect(container.firstChild).not.toBeNull()
+      const btn = screen.getByText(/redactar con stella/i).closest('button')
+      expect(btn?.disabled).toBe(true)
     })
 
-    it('does not render any content when DISABLED', async () => {
-      disabled()
-      const { container } = render(<StellaComposerPanel {...defaultProps} />)
+    it('renders inert and never calls the action when enabled={false} (server-passed)', () => {
+      render(<StellaComposerPanel {...defaultProps} enabled={false} />)
+      expect(screen.queryByTestId('stella-composer-disabled')).not.toBeNull()
       fireEvent.click(screen.getByText(/redactar con stella/i))
-
-      await waitFor(() => {
-        expect(container.innerHTML).toBe('')
-      })
+      expect(mockGetStellaComposer).not.toHaveBeenCalled()
     })
   })
 
@@ -265,13 +261,13 @@ describe('StellaComposerPanel', () => {
   // Quota exceeded state
   // -------------------------------------------------------------------------
   describe('Quota exceeded state', () => {
-    it('shows the quota message when QUOTA_EXCEEDED', async () => {
+    it('shows the quota message verbatim when QUOTA_EXCEEDED', async () => {
       quotaExceeded()
       render(<StellaComposerPanel {...defaultProps} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
-        expect(screen.queryByText(/límite mensual/i)).not.toBeNull()
+        expect(screen.queryByText(/límite mensual de 50 consultas/i)).not.toBeNull()
       })
     })
 
@@ -287,18 +283,28 @@ describe('StellaComposerPanel', () => {
   })
 
   // -------------------------------------------------------------------------
-  // Error state
+  // Error state (U5 taxonomy)
   // -------------------------------------------------------------------------
   describe('Error state', () => {
-    it('shows generic Spanish error message on GEMINI_ERROR', async () => {
+    it('shows the AI-service error message on GEMINI_ERROR (distinct taxonomy)', async () => {
       geminiError()
       render(<StellaComposerPanel {...defaultProps} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la redacción de stella no está disponible temporalmente/i)
+          screen.queryByText(/el servicio de ia de stella encontró un error/i)
         ).not.toBeNull()
+      })
+    })
+
+    it('shows the section-unaffected footnote on errors', async () => {
+      geminiError()
+      render(<StellaComposerPanel {...defaultProps} />)
+      fireEvent.click(screen.getByText(/redactar con stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText(/el contenido de tu sección no se ve afectado/i)).not.toBeNull()
       })
     })
 
@@ -318,9 +324,28 @@ describe('StellaComposerPanel', () => {
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
-        expect(
-          screen.queryByText(/la redacción de stella no está disponible temporalmente/i)
-        ).not.toBeNull()
+        expect(screen.queryByText(/stella no está disponible temporalmente/i)).not.toBeNull()
+      })
+    })
+
+    it('offers Reintentar on TIMEOUT and retries the action', async () => {
+      mockGetStellaComposer.mockResolvedValue({
+        ok: false,
+        error: 'TIMEOUT',
+        message: 'Stella request timed out. Please try again.',
+      })
+      render(<StellaComposerPanel {...defaultProps} />)
+      fireEvent.click(screen.getByText(/redactar con stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Reintentar')).not.toBeNull()
+      })
+
+      success()
+      fireEvent.click(screen.getByText('Reintentar'))
+      await waitFor(() => {
+        expect(mockGetStellaComposer).toHaveBeenCalledTimes(2)
+        expect(screen.queryByText(/borrador propuesto/i)).not.toBeNull()
       })
     })
 
@@ -331,7 +356,7 @@ describe('StellaComposerPanel', () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/la redacción de stella no está disponible temporalmente/i)
+          screen.queryByText(/el servicio de ia de stella encontró un error/i)
         ).not.toBeNull()
       })
 
@@ -389,14 +414,25 @@ describe('StellaComposerPanel', () => {
       })
     })
 
-    it('renders "Usar este borrador" button', async () => {
+    it('renders "Usar este borrador" button when onUseDraft is provided', async () => {
       success()
-      render(<StellaComposerPanel {...defaultProps} />)
+      render(<StellaComposerPanel {...defaultProps} onUseDraft={vi.fn()} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/usar este borrador/i)).not.toBeNull()
       })
+    })
+
+    it('does NOT render "Usar este borrador" without an onUseDraft callback', async () => {
+      success()
+      render(<StellaComposerPanel {...defaultProps} />)
+      fireEvent.click(screen.getByText(/redactar con stella/i))
+
+      await waitFor(() => {
+        expect(screen.queryByText(/borrador propuesto/i)).not.toBeNull()
+      })
+      expect(screen.queryByText(/usar este borrador/i)).toBeNull()
     })
 
     it('shows human review disclaimer footer', async () => {
@@ -449,25 +485,30 @@ describe('StellaComposerPanel', () => {
   })
 
   // -------------------------------------------------------------------------
-  // "Usar este borrador" — writes into sibling DOM inputs by ID
+  // "Usar este borrador" — U4: callback contract, no DOM writes
   // -------------------------------------------------------------------------
-  describe('Usar este borrador', () => {
-    it('does not modify the section inputs automatically on success', async () => {
+  describe('Usar este borrador (onUseDraft callback)', () => {
+    it('does not call onUseDraft automatically on success', async () => {
       success()
-      renderWithSectionInputs()
+      const onUseDraft = vi.fn()
+      render(<StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/usar este borrador/i)).not.toBeNull()
       })
 
-      expect((document.getElementById(defaultProps.titleInputId) as HTMLInputElement).value).toBe('')
-      expect((document.getElementById(defaultProps.contentInputId) as HTMLTextAreaElement).value).toBe('')
+      // Wait an additional tick to ensure no deferred auto-apply happens
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 0))
+      })
+      expect(onUseDraft).not.toHaveBeenCalled()
     })
 
-    it('writes draft_title and draft_content into the section inputs when clicked', async () => {
+    it('fires onUseDraft with the draft title and content on explicit click', async () => {
       success()
-      renderWithSectionInputs()
+      const onUseDraft = vi.fn()
+      render(<StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />)
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
@@ -476,24 +517,34 @@ describe('StellaComposerPanel', () => {
 
       fireEvent.click(screen.getByText(/usar este borrador/i))
 
-      expect((document.getElementById(defaultProps.titleInputId) as HTMLInputElement).value).toBe(
-        VALID_COMPOSER_OUTPUT.draft_title
-      )
-      expect((document.getElementById(defaultProps.contentInputId) as HTMLTextAreaElement).value).toBe(
-        VALID_COMPOSER_OUTPUT.draft_content
-      )
+      expect(onUseDraft).toHaveBeenCalledTimes(1)
+      expect(onUseDraft).toHaveBeenCalledWith({
+        title: VALID_COMPOSER_OUTPUT.draft_title,
+        content: VALID_COMPOSER_OUTPUT.draft_content,
+      })
     })
 
-    it('does nothing if the target inputs are not present in the DOM', async () => {
+    it('performs no imperative DOM writes: sibling inputs remain untouched', async () => {
       success()
-      render(<StellaComposerPanel {...defaultProps} />)
+      const onUseDraft = vi.fn()
+      render(
+        <>
+          <StellaComposerPanel {...defaultProps} onUseDraft={onUseDraft} />
+          <input id="title-section-1" defaultValue="" />
+          <textarea id="content-section-1" defaultValue="" />
+        </>
+      )
       fireEvent.click(screen.getByText(/redactar con stella/i))
 
       await waitFor(() => {
         expect(screen.queryByText(/usar este borrador/i)).not.toBeNull()
       })
 
-      expect(() => fireEvent.click(screen.getByText(/usar este borrador/i))).not.toThrow()
+      fireEvent.click(screen.getByText(/usar este borrador/i))
+
+      expect((document.getElementById('title-section-1') as HTMLInputElement).value).toBe('')
+      expect((document.getElementById('content-section-1') as HTMLTextAreaElement).value).toBe('')
+      expect(onUseDraft).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -501,10 +552,10 @@ describe('StellaComposerPanel', () => {
   // Security invariants
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
-    it('does not read GEMINI_API_KEY env var', () => {
-      expect(process.env.GEMINI_API_KEY).toBeUndefined()
-    })
-
+    // Note: the old "does not read GEMINI_API_KEY env var" test was removed
+    // (audit FIX 5) — asserting the var is undefined in the test env proved
+    // nothing about the component. Isolation is proven by the mocked-action
+    // test below: the real adapter would throw without a key.
     it('does not make real Gemini calls — action is fully mocked', async () => {
       success()
       render(<StellaComposerPanel {...defaultProps} />)
@@ -513,23 +564,6 @@ describe('StellaComposerPanel', () => {
       await waitFor(() => {
         expect(mockGetStellaComposer).toHaveBeenCalled()
       })
-    })
-
-    it('does not auto-save: section inputs are only ever written from explicit click', async () => {
-      success()
-      renderWithSectionInputs()
-      fireEvent.click(screen.getByText(/redactar con stella/i))
-
-      await waitFor(() => {
-        expect(screen.queryByText(/borrador propuesto/i)).not.toBeNull()
-      })
-
-      // Wait an additional tick to ensure no deferred auto-write happens
-      await act(async () => {
-        await new Promise((r) => setTimeout(r, 0))
-      })
-
-      expect((document.getElementById(defaultProps.titleInputId) as HTMLInputElement).value).toBe('')
     })
   })
 })

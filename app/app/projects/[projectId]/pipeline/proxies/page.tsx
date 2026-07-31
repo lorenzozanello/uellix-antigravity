@@ -2,7 +2,9 @@
 
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
-import { StellaAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaAdvisorPanel, StellaContextualAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
 import { ProxyBankSearch } from '@/app/components/proxy-bank-search/ProxyBankSearch'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
@@ -89,6 +91,12 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
     listProxyAssignmentsForProject(projectId),
     fetchOutcomes(projectId),
   ])
+
+  // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella
+  const proxyReviewerEnabled =
+    stellaConfig.isEnabled && stellaConfig.isProxyReviewerEnabled && stellaState.canUseStella
 
   // O(1) lookup maps — resolve UUIDs to display names without extra DB calls
   const sourceById = new Map(proxySources.map((s) => [s.id, s.name]))
@@ -185,8 +193,29 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={projectId} step="Proxies" highlightHint={assignments.length === 0} />
-      <StellaReviewerPanel projectId={projectId} role="proxy_reviewer" title="Revisor de Proxies (Stella)" />
+      {/* DP-03 (pending product decision): legacy generic advisor stays
+          mounted alongside the new contextual advisor. */}
+      <StellaAdvisorPanel
+        projectId={projectId}
+        step="Proxies"
+        highlightHint={assignments.length === 0}
+        enabled={stellaAdvisorEnabled}
+      />
+      {/* U3: proxy assignments are structured records (values, currencies,
+          confidence) — no free-text apply target, so apply offers
+          copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="proxies"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Proxies)"
+      />
+      <StellaReviewerPanel
+        projectId={projectId}
+        role="proxy_reviewer"
+        title="Revisor de Proxies (Stella)"
+        enabled={proxyReviewerEnabled}
+      />
       {ctx && canReviewMethodology(ctx.membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="proxies" title="Revisión metodológica — Proxies" />
       )}

@@ -1,7 +1,9 @@
 import React from 'react'
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
-import { StellaAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaAdvisorPanel, StellaContextualAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
+// Server-only config read (READ-ONLY module) — availability passed as prop (U5).
+import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions'
@@ -154,6 +156,12 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
   const outcomes = await fetchOutcomes(projectId)
   const indicators = await fetchIndicators(projectId)
 
+  // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
+  const stellaAdvisorEnabled =
+    stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella
+  const evidenceReviewerEnabled =
+    stellaConfig.isEnabled && stellaConfig.isEvidenceReviewerEnabled && stellaState.canUseStella
+
   return (
     <div className="space-y-6 max-w-5xl">
       <PipelineStepHeader
@@ -165,8 +173,28 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
 
       <Stepper />
 
-      <StellaAdvisorPanel projectId={projectId} step="Evidencia" highlightHint={evidences.length === 0} />
-      <StellaReviewerPanel projectId={projectId} role="evidence_reviewer" title="Revisor de Evidencia (Stella)" />
+      {/* DP-03 (pending product decision): legacy generic advisor stays
+          mounted alongside the new contextual advisor. */}
+      <StellaAdvisorPanel
+        projectId={projectId}
+        step="Evidencia"
+        highlightHint={evidences.length === 0}
+        enabled={stellaAdvisorEnabled}
+      />
+      {/* U3: evidence entries are records with file uploads — no single
+          editable apply target, so apply offers copy-to-clipboard. */}
+      <StellaContextualAdvisorPanel
+        projectId={projectId}
+        step="evidence"
+        enabled={stellaAdvisorEnabled}
+        title="Stella — Asesoría contextual (Evidencia)"
+      />
+      <StellaReviewerPanel
+        projectId={projectId}
+        role="evidence_reviewer"
+        title="Revisor de Evidencia (Stella)"
+        enabled={evidenceReviewerEnabled}
+      />
 
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel

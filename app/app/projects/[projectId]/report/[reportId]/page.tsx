@@ -8,7 +8,11 @@ import { lockReportDraftAction } from '../lockReportDraft.action'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SECTION_META, SECTION_GROUPS } from '@/lib/reports/report-sections'
-import { StellaComposerPanel } from '@/components/stella'
+import { StellaComposerSectionEditor } from '@/components/stella'
+// Server-only config read (READ-ONLY module): availability is resolved here
+// and passed down as a serializable prop (U5) so disabled panels render an
+// inert informative state instead of unmounting post-click.
+import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 
 export const dynamic = 'force-dynamic'
@@ -22,11 +26,6 @@ const REPORT_STATUS: Record<
   locked: { variant: 'success', label: 'Bloqueado' },
   archived: { variant: 'neutral', label: 'Archivado' },
 }
-
-const INPUT_CLASS =
-  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-const TEXTAREA_CLASS =
-  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y'
 
 type ReportDraft = Awaited<ReturnType<typeof getReportDraft>>
 type Section = ReportDraft['sections'][number]
@@ -46,6 +45,9 @@ export default async function ReportDetailPage({
   }
 
   const isLocked = report.status === 'locked'
+  // Mirrors the getStellaComposer feature-flag gate (app/actions/stella/composer.ts).
+  const composerEnabled =
+    stellaConfig.isEnabled && stellaConfig.isComposerEnabled && stellaState.canUseStella
   const statusConfig =
     REPORT_STATUS[report.status] ?? { variant: 'neutral' as const, label: report.status }
 
@@ -290,14 +292,6 @@ export default async function ReportDetailPage({
                             </div>
                           ) : (
                             <>
-                              <StellaComposerPanel
-                                projectId={projectId}
-                                reportId={reportId}
-                                sectionId={section.id}
-                                sectionType={section.sectionType}
-                                titleInputId={titleInputId}
-                                contentInputId={contentInputId}
-                              />
                               {section.sectionType === 'funder_breakdown' && (
                                 <div className="mb-4 rounded-md border border-border bg-muted/10 p-3">
                                   <ReportSectionRenderer
@@ -315,46 +309,23 @@ export default async function ReportDetailPage({
                                 aria-labelledby={sectionHeadingId}
                               >
                                 <input type="hidden" name="sectionId" value={section.id} />
-                                <div>
-                                  <label
-                                    htmlFor={titleInputId}
-                                    className="block text-xs font-medium text-foreground"
-                                  >
-                                    Título de la sección
-                                  </label>
-                                  <input
-                                    id={titleInputId}
-                                    name="title"
-                                    type="text"
-                                    required
-                                    defaultValue={section.title}
-                                    className={INPUT_CLASS}
-                                  />
-                                </div>
-                                <div>
-                                  <label
-                                    htmlFor={contentInputId}
-                                    className="block text-xs font-medium text-foreground"
-                                  >
-                                    Contenido
-                                  </label>
-                                  <textarea
-                                    id={contentInputId}
-                                    name="content"
-                                    rows={5}
-                                    defaultValue={section.content ?? ''}
-                                    placeholder={
-                                      meta.helper ||
-                                      'Documentación metodológica para esta sección…'
-                                    }
-                                    className={TEXTAREA_CLASS}
-                                  />
-                                  {meta.helper && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {meta.helper}
-                                    </p>
-                                  )}
-                                </div>
+                                {/* U4: controlled title/content owner. The composer
+                                    panel hands drafts to it via onUseDraft (with
+                                    overwrite confirmation + undo); the inputs keep
+                                    name="title"/"content", so this server form and
+                                    updateReportSection keep working unchanged. */}
+                                <StellaComposerSectionEditor
+                                  projectId={projectId}
+                                  reportId={reportId}
+                                  sectionId={section.id}
+                                  sectionType={section.sectionType}
+                                  enabled={composerEnabled}
+                                  initialTitle={section.title}
+                                  initialContent={section.content ?? ''}
+                                  titleInputId={titleInputId}
+                                  contentInputId={contentInputId}
+                                  helper={meta.helper}
+                                />
                                 <button
                                   type="submit"
                                   className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
