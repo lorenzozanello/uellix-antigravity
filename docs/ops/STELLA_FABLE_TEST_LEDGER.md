@@ -125,6 +125,19 @@ fails-without-fix. RK-04 queda PREPARADO (SQL listo, aplicación = G2); RK-12 MI
 | `pnpm eval:offline` | VERDE | 28/28, 0 violaciones R1–R6 |
 | `pnpm eval:roles` | VERDE | 14/14, 5/5 canaries rechazados |
 
+### 2026-07-31 · CHECKPOINT FINAL DE CAMPAÑA · coordinadora `20d21fb` (Olas 1+2+3 integradas)
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm typecheck` | VERDE | limpio |
+| `pnpm lint` | VERDE | 0 errores (51 warnings preexistentes + 1 directive sobrante) |
+| `pnpm test:unit` | VERDE | **131 archivos, 2246 tests** (baseline 95/1372 → **+874 tests netos**) |
+| `pnpm eval:offline` | VERDE | 6/6 gates, 28/28 casos, 0 violaciones R1–R6 |
+| `pnpm eval:roles` | VERDE | 5/5 gates, 14/14 casos, 5/5 canaries rechazados |
+| `pnpm build` | **VERDE** | build de producción Next.js exitoso |
+
+WS3c auditado (APPROVE_WITH_NOTES, 0 bloqueadores) e integrado en `c28c135`.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

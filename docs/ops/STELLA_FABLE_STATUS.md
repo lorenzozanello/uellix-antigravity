@@ -11,8 +11,10 @@
 - **Branch coordinadora:** `codex/stella-fable-moonshot` (== `origin/main` al inicio)
 - **Ramas de workstreams:** ninguna creada aún (creación lazy — D-005)
 - **Worktrees propios:** sólo `uellix-stella-fable-moonshot`. Ajenos (NO tocar): `uellix-antigravity`, `uellix-antigravity-b1c-integration`, `uellix-stella-autonomous`
-- **Fase de campaña:** CAMPAÑA FUNCIONAL EN CURSO — Ola 1 CERRADA (checkpoint `02a9791`, 1927 tests verdes) · Ola 2 EN CURSO
-- **Estado general:** EN EJECUCIÓN (objetivo: STELLA_OFFLINE_RELEASE_CANDIDATE_READY)
+- **Fase de campaña:** CAMPAÑA CERRADA — Olas 1, 2 y 3 integradas y auditadas
+- **Estado general:** **`STELLA_OFFLINE_RELEASE_CANDIDATE_READY`** (criterios C1–C18 de RELEASE_CRITERIA verificados; C6 con nota: SQL preparado y lint-testeado, la prueba contra stack real es parte de G2/G3). **NO es PRODUCTION_READY** — gates externos G1–G10 pendientes, todos con paquete preparado.
+- **Checkpoint final:** `20d21fb` + registros de cierre — typecheck/lint/test:unit (2246)/eval:offline/eval:roles/build TODOS VERDES.
+- **WS3c Final hardening:** INTEGRADO (merge `c28c135`): RK-08 (poblaciones sensibles), RK-19, RK-24, adapter D-007.
 
 ## Fase activa por workstream
 
@@ -110,16 +112,20 @@ DP-01..DP-05 (DECISIONS.md) — todas de Lorenzo, ninguna bloquea el arranque.
 ## Próximo comando seguro
 
 ```
-git status && git log --oneline -3
+git status && git log --oneline -5 && pnpm test:unit
 ```
 
-(verificar que la coordinadora sigue limpia sobre el commit de bootstrap antes de abrir WS1/WS3/WS4).
+(la coordinadora debe estar limpia sobre el checkpoint final; la suite debe dar 2246 verdes).
 
-## Instrucciones exactas para retomar
+## Instrucciones exactas para retomar (post-campaña)
 
-1. Abrir el worktree `C:\Users\Lorenzo\Documents\uellix-stella-fable-moonshot`, rama `codex/stella-fable-moonshot`.
-2. Verificar HEAD descendiente de `dd36a4e` y working tree limpio.
-3. Confirmar protecciones: `.claude/settings.local.json` contiene la lista deny (si falta, restaurar según MOONSHOT §Protecciones y verificar con `git push --dry-run` → debe ser denegado).
-4. Leer este archivo + DEPENDENCY_MAP + RISK_REGISTER.
-5. Continuar con el primer workstream NO INICIADO según prioridad (WS3 → WS1 → WS4 en paralelo si hay capacidad; WS2 tras T1.2).
-6. Cada unidad atómica termina con: tests verdes registrados en TEST_LEDGER + auditoría independiente + commit local con rutas explícitas + actualización de este archivo.
+1. Worktree `C:\Users\Lorenzo\Documents\uellix-stella-fable-moonshot`, rama `codex/stella-fable-moonshot`, HEAD descendiente del checkpoint final.
+2. Confirmar protecciones (`.claude/settings.local.json` deny list; probar `git push --dry-run` → denegado).
+3. **El trabajo restante depende de gates externos y decisiones de Lorenzo** — ejecutar en este orden:
+   - G2 (aplicar stella_0002/0003 + grounding en staging, por checklist de `gates/G2_PACKAGE.md`) → luego G3 (`test:rls` local→staging, flip de skips).
+   - G1 (evaluación real del advisor: `gates/G1_PACKAGE.md`, empezar por canary).
+   - Decisiones: DP-01/G5 (grounding: formatos+libs+pgvector), DP-03 (panel contextual vs legacy), DP-04 (retención), DP-06 (validator HIGH bloquea publicación), G7 (legal EN/ES).
+   - G4 (rollout por rol, un flag a la vez, ventanas de 72h) → G8 (smoke Preview) → G9 (calibración de costos).
+4. Trabajo offline residual opcional (no bloquea el RC): signed URL de descarga de evidencia + trigger de inmutabilidad de `content_hash` (futuro stella_0004, notas en RK-14), cuota por tokens (tras G9), cablear `interactionId` en el field de decisiones (nota de auditoría WS3c), PDF/XLSX tras G5, reformulation tras decisión de producto.
+5. Las ramas `moonshot/*` ya integradas pueden borrarse localmente cuando Lorenzo lo decida; los worktrees `uellix-moonshot-ws1/3/4/5` quedan para inspección.
+6. **Nunca declarar PRODUCTION_READY** sin: G1 real aprobado por humano, G2/G3 aplicados y verificados, G8 smoke en Preview, revisión legal G7 y piloto controlado (G10 con aprobación explícita de Lorenzo).
