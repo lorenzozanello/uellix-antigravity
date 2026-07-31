@@ -59,7 +59,7 @@ check('R1-empty-collection-sentinels', () => {
   let sentinelsChecked = 0
   for (const item of OFFICIAL_CONTEXTUAL_MOCK_CASES) {
     const request = buildContextualAdvisorRequest(item.step, item.context)
-    const serialized = request.serializedContext as Record<string, unknown>
+    const serialized = request.serializedContext as unknown as Record<string, unknown>
     for (const [key, value] of Object.entries(serialized)) {
       if (Array.isArray(value) && value.length === 0) {
         assertCondition(
