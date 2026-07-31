@@ -18,7 +18,7 @@
 
 | WS | Fase | Rama | Notas |
 |----|------|------|-------|
-| WS1 Context & References | IMPLEMENTACIÓN (agente) | `moonshot/ws1-context` @ worktree `uellix-moonshot-ws1` | T1.1–T1.13: paridad, R1–R6, harness real scoring, gate offline, paquete G1 |
+| WS1 Context & References | **INTEGRADO** (merge `24b122c`) | `moonshot/ws1-context` | Paridad 18/18 campos con test estricto; R1–R6 resueltas offline; harness con scoring medido; `pnpm eval:offline` 6/6; paquete G1 con dry-run y reservas §7. Pendiente coordinador: wiring readiness en advisor.ts + mapeo PAYLOAD_TOO_LARGE en run-contextual-advisor |
 | WS2 Advisor UX | NO INICIADO | — | Ola 2: tras integrar WS1+WS3 |
 | WS3 Security & Audit | IMPLEMENTACIÓN (agente) | `moonshot/ws3-security` @ worktree `uellix-moonshot-ws3` | T3.3, T3.11, T3.1, T3.13, T3.12, T3.15 (unidades DB quedan para 2ª unidad WS3) |
 | WS4 Composer determinístico | **INTEGRADO** (merge `5ffbf52`) | `moonshot/ws4-composer` | Decimal pinneado (incl. fx.ts), parseNum caracterizado, goldens exactos, 13 clases de bloqueo testeadas, skippedAssignments, guard numérico+referencias con contexto de value-claim. Pendiente: wiring del guard en composer.ts (coordinador, tras WS3) |

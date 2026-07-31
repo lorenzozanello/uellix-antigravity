@@ -46,6 +46,20 @@ Auditoría WS4: APPROVE_WITH_NOTES; goldens re-derivados a mano por el auditor (
 Guard numérico del composer queda SIN cablear por diseño (WIRING.md) — wiring del coordinador
 pendiente tras merge de WS3.
 
+### 2026-07-31 · WS1 INTEGRACIÓN · rama `moonshot/ws1-context` → merge `24b122c`
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm test:unit` (ws1, implementador post-fixes) | VERDE | 98 archivos, 1463 tests |
+| `pnpm typecheck` (ws1, implementador, auditor y coordinador) | VERDE | limpio |
+| `pnpm eval:offline` (ws1, los tres) | VERDE | 6/6 gates, 28/28 casos, 0 violaciones R1–R6 |
+| dry-run runner real `--dry-run` (implementador y auditor, verificado 0 llamadas de red en código antes de ejecutar) | VERDE | 28 casos procesados, providerCalls 0, eligibleForGate false |
+
+Auditoría WS1: APPROVE_WITH_NOTES, 6 hallazgos todos MINOR, 4 corregidos en pase
+post-auditoría (paridad estricta, linkage real de stakeholderGroups, detector de fugas
+extendido a formas sin corchetes, reservas documentadas en G1 §7). Guards del runner
+real byte-idénticos a la base (verificado por auditor).
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
