@@ -15,13 +15,33 @@ import type { ContextualAdvisorContext } from '../context/types'
 import type { AdvisorContextualOutput } from '../schemas/advisor-contextual-output'
 import { buildContextualAdvisorRequest } from '../context/build-contextual-advisor-request'
 import { buildAdvisorContextualUserMessage } from '../prompts/advisor-contextual-system'
-import { decodeProviderSourceRefIndexes } from '../context/decode-provider-source-ref-indexes'
+import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError } from '../context/decode-provider-source-ref-indexes'
+import { ContextualSourceFieldsValidationError } from '../context/validate-contextual-source-fields'
+import { ContextualIndexTokenLeakError } from '../context/validate-no-index-reference-tokens'
+import { buildContextualAdvisorFallback } from '../fallbacks'
 import { StellaTimeoutError, StellaGeminiError } from '../errors'
 import type { StellaGeminiAdapter } from '../adapter/gemini-client'
 
 export type RunContextualAdvisorResult =
-  | { ok: true; data: AdvisorContextualOutput; modelUsed: string; tokensUsed?: number }
+  | { ok: true; data: AdvisorContextualOutput; modelUsed: string; tokensUsed?: number; fallbackUsed?: true }
   | { ok: false; error: 'PARSE_ERROR' | 'GEMINI_ERROR' | 'TIMEOUT'; message: string }
+
+/**
+ * U8: citation-level failures are the only PARSE-level failures answered with
+ * the safe contextual fallback. In these cases the provider produced a
+ * structurally valid response whose citations we refuse to trust — the whole
+ * response is discarded and replaced by a claim-free fallback. Structural or
+ * schema failures (ProviderOutputContractError, InternalSchemaValidationError,
+ * invalid JSON) are ambiguous about what the provider meant, so they stay
+ * fail-closed as PARSE_ERROR.
+ */
+function isCitationLevelFailure(error: unknown): boolean {
+  return (
+    error instanceof ProviderSourceRefIndexesError ||
+    error instanceof ContextualSourceFieldsValidationError ||
+    error instanceof ContextualIndexTokenLeakError
+  )
+}
 
 export async function runContextualAdvisor(
   step: AdvisorPipelineStep,
@@ -37,8 +57,21 @@ export async function runContextualAdvisor(
       responseJsonSchema: request.responseJsonSchema,
     })
     const raw: unknown = JSON.parse(response.rawOutput)
-    const data = decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step)
-    return { ok: true, data, modelUsed: response.modelUsed, tokensUsed: response.tokensUsed }
+    try {
+      const data = decodeProviderSourceRefIndexes(raw, request.canonicalSourceFieldPaths, step)
+      return { ok: true, data, modelUsed: response.modelUsed, tokensUsed: response.tokensUsed }
+    } catch (decodeError) {
+      if (isCitationLevelFailure(decodeError)) {
+        return {
+          ok: true,
+          data: buildContextualAdvisorFallback(step),
+          modelUsed: response.modelUsed,
+          tokensUsed: response.tokensUsed,
+          fallbackUsed: true,
+        }
+      }
+      throw decodeError
+    }
   } catch (error) {
     if (error instanceof StellaTimeoutError) return { ok: false, error: 'TIMEOUT', message: 'Stella request timed out. Please try again.' }
     if (error instanceof StellaGeminiError) return { ok: false, error: 'GEMINI_ERROR', message: 'Stella AI service encountered an error.' }
