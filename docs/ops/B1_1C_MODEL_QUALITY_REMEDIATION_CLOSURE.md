@@ -7,6 +7,31 @@
 
 ---
 
+## Evidence handling — `artifacts/` is local and not part of this pull request
+
+Every path under `artifacts/` referenced in this document (`stella-contextual-real-runs/`, `stella-contextual-real-reviews/`, `stella-contextual-real-gates/`) is **local evaluation evidence that is not tracked in this Git repository and is not part of the pull request diff**. `artifacts/` carries no `.gitignore` entry — it is simply never committed, by working convention, and this document does not change that convention.
+
+This is deliberate, not an omission:
+
+- The `artifacts/` tree can contain full provider prompts, full provider responses, and full request contexts for real evaluation runs. That material is not appropriate for a Git history that is meant to stay auditable and diffable indefinitely — prompts and raw model output are exactly the kind of large, semi-sensitive, non-reviewable content a repository should not accumulate.
+- Because of that, **this closure report does not, and will not, copy `raw-responses.json`, prompts, payloads, full contexts, credentials, or any complete case response into the repository.** What is committed here is the run ID, the gate ID, relative paths, the deterministic metrics, the decision, the reservations, and the SHA-256 hash of every file in each package (§3.6) — enough for a reviewer to verify the shape and integrity of the evidence without the evidence itself needing to live in Git.
+
+**If you are an authorized auditor and need to inspect the underlying packages** (`run-manifest.json`, `summary.json`, `raw-responses.json`, `decoded-results.json`, `review-matrix.json`, `review-matrix.csv`, `gate-decision.json`, etc.), they exist on the machine/session where this evaluation ran, under the exact relative paths cited throughout this document. Obtaining them requires one of:
+
+- a secure, separate delivery of the specific package directory from whoever ran the evaluation (not via this repository or this PR);
+- a controlled local copy of the working tree that produced this closure, scoped to the `artifacts/` paths cited in §3.2, §3.4, §3.5 and §7;
+- access through whatever internal, already-authorized storage or handoff process your organization uses for evaluation evidence that must not enter Git — this document does not name or assume a specific system, because none is established as part of B1.1C.
+
+Whichever route is used, **verify what you receive against the hashes in §3.6 before trusting it.** A package whose files hash to the values recorded here is provably the same package this closure report describes; a package that doesn't should be treated as unverified, regardless of its source.
+
+The three references below point to files inside `artifacts/` and are given as plain relative paths, not as clickable links, because they will not resolve on GitHub or in any clone of this repository:
+
+- `artifacts/stella-contextual-real-reviews/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/HUMAN_REVIEW_REPORT.md`
+- `artifacts/stella-contextual-real-gates/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/B1C_FINAL_GATE_REPORT.md`
+- `artifacts/stella-contextual-real-gates/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/gate-reservations.json`
+
+---
+
 ## 1. Scope closed
 
 B1.1C covers the **contextual advisor** path of Stella (`step: stakeholders | outcomes | narrative | indicators | evidence | proxies | calculation`) against the current architecture on this branch — the request/response contract, the source-reference protocol, the fail-closed decoding layer, and the transactional real-model evaluation harness.
@@ -87,7 +112,7 @@ Only the canonical run underwent human review and gate evaluation. No provider c
 - Usefulness — 0/1/2: 0 / 4 / 24 (average 1.8571)
 - Role-boundary failures: 0 · Numeric-integrity failures: 0 · Adversarial failures: 0 (7/7 adversarial cases held) · Uncertainty-handling failures: 1
 - Reference-quality failures: 14 (0 materially false)
-- Full narrative: [HUMAN_REVIEW_REPORT.md](../../artifacts/stella-contextual-real-reviews/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/HUMAN_REVIEW_REPORT.md)
+- Full narrative (local evidence, not in Git — see "Evidence handling" above): `artifacts/stella-contextual-real-reviews/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/HUMAN_REVIEW_REPORT.md`
 
 ### 3.5 Gate
 
@@ -95,7 +120,7 @@ Only the canonical run underwent human review and gate evaluation. No provider c
 - Gate ID: `4d285a79-b50a-4c93-9dd6-c98838c53c35`
 - Decision: `B1_1C_APPROVED_WITH_RESERVATIONS`
 - Preflight: 19/19 checks passed (17 required + 2 boundary/drift guards)
-- Full narrative: [B1C_FINAL_GATE_REPORT.md](../../artifacts/stella-contextual-real-gates/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/B1C_FINAL_GATE_REPORT.md)
+- Full narrative (local evidence, not in Git — see "Evidence handling" above): `artifacts/stella-contextual-real-gates/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/B1C_FINAL_GATE_REPORT.md`
 
 ### 3.6 Integrity hashes (SHA-256, recomputed and matched at every stage)
 
@@ -143,7 +168,7 @@ Building a reproducible, self-verifying gate executor that consumes a run + revi
 
 ## 5. Reservations
 
-Six reservations were recorded during human review, none of which blocks this closure. Full mechanism, code references and per-case evidence are in [gate-reservations.json](../../artifacts/stella-contextual-real-gates/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/gate-reservations.json).
+Six reservations were recorded during human review, none of which blocks this closure. Full mechanism, code references and per-case evidence are in `gate-reservations.json` (local evidence, not in Git — see "Evidence handling" above): `artifacts/stella-contextual-real-gates/b1c-current-architecture-full-after-step-fix-2026-07-30T23-40-15-172Z/gate-reservations.json`.
 
 | ID | Title | Priority | Blocks B1.1C | Blocks commercial production |
 |---|---|---|---|---|
