@@ -151,6 +151,18 @@ reducidos con `table_schema='public'` y todos los grantees, `CHECK` con los 6
 roles vía `pg_get_constraintdef`, `UPDATE`/`DELETE` debe fallar sobre la fila
 sintética).
 
+### 8b. G2 — `stella_0002b` (endurecimiento append-only)
+```bash
+psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0002b_append_only_truncate_hardening.sql
+```
+Cierra el hueco de `TRUNCATE` en las **cuatro** tablas append-only (RK-04b).
+**Exige que el paso 8 ya haya corrido**: su guarda verifica los cuatro triggers
+de fila antes de tocar nada. Verificar: 4 triggers `*_no_truncate`
+(`BEFORE TRUNCATE`, `FOR EACH STATEMENT`), `authenticated` y `service_role` sin
+`TRUNCATE/REFERENCES/TRIGGER/MAINTAIN`, `service_role` además sin
+`UPDATE/DELETE`, y `TRUNCATE` bloqueado como `authenticated`, como
+`service_role` **y como `postgres`** — este último solo lo detiene el trigger.
+
 ### 9. G2 — `stella_0003`
 ```bash
 psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0003_suggestion_decisions.sql
@@ -172,10 +184,23 @@ pnpm test:rls
 
 ### 11. Rollback
 ```bash
+psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0002b_rollback.sql
 psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0003_rollback.sql
 psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0002_rollback.sql
 ```
 Verificar: trigger → 0 filas; `to_regclass('public.stella_suggestion_decisions')` → `NULL`.
+
+**`stella_0002b_rollback.sql` va primero y no revierte nada** — es
+`SAFE_NON_REVERSING_ROLLBACK`: verifica que las protecciones siguen en pie y
+sale distinto de 0 si detecta un hueco. Se corre **aquí y no al final** porque es
+el único archivo del paquete con PL/pgSQL no trivial (agregados, `UNION ALL`,
+`has_table_privilege`) y, de otro modo, el ciclo no lo ejecutaría nunca.
+
+**Orden importa:** correr `stella_0002_rollback.sql` después de haber aplicado
+0002b deja `stella_interactions` asimétrica — protegida contra `TRUNCATE` pero
+otra vez abierta a `UPDATE/DELETE` — y hace que reaplicar 0002b **aborte** por su
+guarda 0c. Es deliberado: la protección de 0002b no debe caer por el rollback de
+otra unidad. Ver la cabecera de `stella_0002_rollback.sql`.
 
 ### 12. Reconstrucción y segunda corrida
 ```bash

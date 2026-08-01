@@ -63,8 +63,31 @@ function expectNoDestructiveStatements(code: string) {
   // `ALTER TABLE public.stella_interactions DROP COLUMN ...` would slip past a
   // \w+ pattern — and stella_0002 is exactly the script that touches a
   // pre-existing table holding audit data.
-  expect(code).not.toMatch(/\b(DROP SCHEMA|TRUNCATE|DELETE FROM|DROP EXTENSION)\b/i)
+  expect(code).not.toMatch(/\b(DROP SCHEMA|DELETE FROM|DROP EXTENSION)\b/i)
   expect(code).not.toMatch(/ALTER TABLE\s+[\w."]+\s+DROP COLUMN/i)
+  expectNoTruncateCommand(code)
+}
+
+/**
+ * TRUNCATE plays three unrelated roles in this package, so banning the bare
+ * word — as this helper originally did — would forbid the very defence that
+ * stella_0002b exists to add:
+ *
+ *   1. trigger EVENT    `BEFORE TRUNCATE ON t ... FOR EACH STATEMENT`  (the guard)
+ *   2. privilege NAME   `REVOKE TRUNCATE, REFERENCES, TRIGGER ON t ...` (removing it)
+ *   3. COMMAND          `TRUNCATE TABLE t`                              (destructive)
+ *
+ * Only (3) is forbidden, and only (3) can begin a statement — as a command
+ * TRUNCATE is always the first token. Classifying by statement position is
+ * therefore stricter than a substring ban, not looser: it still rejects every
+ * executable TRUNCATE while allowing the two declarative uses.
+ */
+function expectNoTruncateCommand(code: string) {
+  const offenders = code
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => /^TRUNCATE\b/i.test(s))
+  expect(offenders, `TRUNCATE used as a command: ${offenders.join(' | ')}`).toEqual([])
 }
 
 /**
@@ -80,8 +103,17 @@ function expectNoExecutedDdl(sql: string) {
   // not dynamic SQL. The whitespace must live INSIDE the lookahead — with
   // `EXECUTE\s*(?!FUNCTION)` the engine backtracks \s* to empty and the
   // lookahead sees " FUNCTION", so every legitimate trigger clause matches.
+  //
+  // One further form is admitted: `EXECUTE '<fixed literal>'`. After
+  // stripCommentsAndStrings a genuine single-quoted literal collapses to `''`,
+  // so this lookahead passes ONLY when the argument was a self-contained
+  // literal in the source. `EXECUTE v_sql`, `EXECUTE format(...)` and
+  // `EXECUTE 'x' || ident` all still fail, because none of them leaves a bare
+  // `''` immediately after the keyword. stella_0002b needs this to defer
+  // PARSING (not composition) of `REVOKE MAINTAIN`, which is a syntax error
+  // before PostgreSQL 17; the literal it executes is pinned by its own test.
   expect(
-    stripCommentsAndStrings(sql).match(/\bEXECUTE\b(?!\s*(?:FUNCTION\b|PROCEDURE\b))/gi),
+    stripCommentsAndStrings(sql).match(/\bEXECUTE\b(?!\s*(?:FUNCTION\b|PROCEDURE\b|''))/gi),
   ).toBeNull()
 }
 
@@ -246,9 +278,9 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
     expect(statements(raw).length).toBeGreaterThan(4)
   })
 
-  it('every statement starts with a known DDL keyword', () => {
+  it('every statement starts with a known DDL keyword (incl. DROP TRIGGER)', () => {
     for (const stmt of statements(raw)) {
-      expect(stmt).toMatch(/^(SET|CREATE|ALTER|DROP POLICY|GRANT|REVOKE|DO|COMMENT)\b/i)
+      expect(stmt).toMatch(/^(SET|CREATE|ALTER|DROP POLICY|DROP TRIGGER|GRANT|REVOKE|DO|COMMENT)\b/i)
     }
   })
 
@@ -355,10 +387,39 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
     expect(code).not.toMatch(/CREATE POLICY[^;]*FOR (INSERT|UPDATE|DELETE)/i)
   })
 
-  it('grants authenticated SELECT only and converges away from wider grants', () => {
+  it('revokes ALL from every role before granting anything back', () => {
+    // Hardened 2026-08-01. Enumerating privileges to revoke is a losing game:
+    // it cannot anticipate what a future PostgreSQL or Supabase bootstrap adds
+    // to ALTER DEFAULT PRIVILEGES. Inheriting `Dxtm` that way is exactly what
+    // left the four pre-existing audit tables TRUNCATE-able. REVOKE ALL is the
+    // only formulation that cannot inherit a surplus it was not written for.
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      expect(code, `missing REVOKE ALL for ${role}`).toMatch(
+        new RegExp(`REVOKE ALL ON public\\.stella_suggestion_decisions FROM ${role}`, 'i'),
+      )
+    }
+  })
+
+  it('grants authenticated SELECT only, and service_role nothing', () => {
     expect(code).toMatch(/GRANT SELECT ON public\.stella_suggestion_decisions TO authenticated/i)
-    expect(code).not.toMatch(/GRANT[^;]*\b(INSERT|UPDATE|DELETE)\b[^;]*TO authenticated/i)
-    expect(code).toMatch(/REVOKE INSERT, UPDATE, DELETE ON public\.stella_suggestion_decisions FROM authenticated/i)
+    expect(code).not.toMatch(/GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE|REFERENCES|TRIGGER|MAINTAIN|ALL)\b[^;]*TO authenticated/i)
+    // service_role gets no grant at all: the only writer is the Drizzle client,
+    // which connects as the table OWNER, whose access comes from ownership.
+    expect(code).not.toMatch(/GRANT[^;]*TO service_role/i)
+  })
+
+  it('adds both append-only triggers so the table never has the 0002b gap', () => {
+    expect(code).toMatch(
+      /CREATE TRIGGER trg_stella_suggestion_decisions_append_only\s+BEFORE UPDATE OR DELETE ON public\.stella_suggestion_decisions\s+FOR EACH ROW EXECUTE FUNCTION public\.uellix_forbid_mutation\(\)/i,
+    )
+    expect(code).toMatch(
+      /CREATE TRIGGER trg_stella_suggestion_decisions_no_truncate\s+BEFORE TRUNCATE ON public\.stella_suggestion_decisions\s+FOR EACH STATEMENT EXECUTE FUNCTION public\.uellix_forbid_mutation\(\)/i,
+    )
+    // Idempotent: each CREATE is preceded by its own DROP ... IF EXISTS.
+    expect(code).toMatch(/DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_append_only/i)
+    expect(code).toMatch(/DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_no_truncate/i)
+    // And it must guard the function it depends on.
+    expect(raw).toMatch(/uellix_forbid_mutation\(\) not found/)
   })
 
   it('never grants to anon or PUBLIC, and revokes anon defensively', () => {
@@ -396,7 +457,9 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
   })
 
   it('contains no destructive statements', () => {
-    expect(code).not.toMatch(/\b(DROP TABLE|DROP SCHEMA|TRUNCATE|DELETE FROM|DROP EXTENSION)\b/i)
+    // DROP TABLE is checked here rather than in the shared helper: the 0003
+    // ROLLBACK legitimately drops the table this script creates.
+    expect(code).not.toMatch(/\bDROP TABLE\b/i)
     expectNoDestructiveStatements(code)
     expectNoExecutedDdl(raw)
   })
@@ -425,5 +488,361 @@ describe('db/prepared/stella_0003_rollback.sql', () => {
   it('documents the flag precondition and export-first warning', () => {
     expect(raw).toMatch(/STELLA_DECISIONS_PERSISTENCE_ENABLED/)
     expect(raw).toMatch(/[Ee]xport/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// stella_0002b — append-only TRUNCATE hardening (added 2026-08-01)
+// ---------------------------------------------------------------------------
+// Repairs the privilege surplus that Supabase's ALTER DEFAULT PRIVILEGES leaves
+// on every table created in `public` (`authenticated=Dxtm`), which made the four
+// append-only tables TRUNCATE-able. Demonstrated on a real PostgreSQL 17 before
+// this script was written.
+
+/** The four tables whose append-only guarantee is documented and load-bearing. */
+const APPEND_ONLY_TABLES = [
+  'stella_interactions',
+  'audit_logs',
+  'sroi_calculation_runs',
+  'sroi_calculation_line_items',
+] as const
+
+/** Row-level UPDATE/DELETE guards that must survive 0002b untouched. */
+const ROW_TRIGGERS = [
+  'trg_stella_interactions_append_only',
+  'trg_audit_logs_append_only',
+  'trg_sroi_runs_append_only',
+  'trg_sroi_line_items_append_only',
+] as const
+
+/** Statement-level TRUNCATE guards that 0002b introduces. */
+const TRUNCATE_TRIGGERS = [
+  ['stella_interactions', 'trg_stella_interactions_no_truncate'],
+  ['audit_logs', 'trg_audit_logs_no_truncate'],
+  ['sroi_calculation_runs', 'trg_sroi_calculation_runs_no_truncate'],
+  ['sroi_calculation_line_items', 'trg_sroi_calculation_line_items_no_truncate'],
+] as const
+
+describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql', () => {
+  const raw = read('stella_0002b_append_only_truncate_hardening.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('has balanced parentheses and terminates every statement', () => {
+    expectBalancedParens(code)
+    expect(code.trim().endsWith(';')).toBe(true)
+  })
+
+  it('declares an explicit search_path and documents single-transaction use', () => {
+    expect(statements(raw)[0]).toMatch(/^SET search_path = public$/i)
+    expect(raw).toMatch(/-1 -v ON_ERROR_STOP=1/)
+  })
+
+  it('every statement starts with a known keyword', () => {
+    for (const stmt of statements(raw)) {
+      expect(stmt).toMatch(/^(SET|CREATE|DROP TRIGGER|DO|REVOKE|COMMENT)\b/i)
+    }
+  })
+
+  it('covers exactly the four append-only tables', () => {
+    for (const table of APPEND_ONLY_TABLES) {
+      expect(code, `missing ${table}`).toMatch(new RegExp(`public\\.${table}\\b`))
+    }
+    // Never reaches into the objects later gates create.
+    expect(code).not.toMatch(/stella_suggestion_decisions/i)
+    expect(code).not.toMatch(/evidence_chunks/i)
+  })
+
+  it('revokes TRUNCATE, REFERENCES and TRIGGER from authenticated', () => {
+    const stmt = statements(raw).find(
+      (s) => /^REVOKE\b/i.test(s) && /FROM authenticated$/i.test(s),
+    )
+    expect(stmt, 'no REVOKE ... FROM authenticated statement').toBeDefined()
+    for (const priv of ['TRUNCATE', 'REFERENCES', 'TRIGGER']) {
+      expect(stmt, `authenticated keeps ${priv}`).toMatch(new RegExp(`\\b${priv}\\b`, 'i'))
+    }
+    for (const table of APPEND_ONLY_TABLES) {
+      expect(stmt).toMatch(new RegExp(`public\\.${table}\\b`))
+    }
+    // SELECT and INSERT are the documented append-only posture — never revoked.
+    expect(stmt).not.toMatch(/\bSELECT\b/i)
+    expect(stmt).not.toMatch(/\bINSERT\b/i)
+  })
+
+  it('revokes UPDATE, DELETE, TRUNCATE, REFERENCES and TRIGGER from service_role', () => {
+    const stmt = statements(raw).find(
+      (s) => /^REVOKE\b/i.test(s) && /FROM service_role$/i.test(s),
+    )
+    expect(stmt, 'no REVOKE ... FROM service_role statement').toBeDefined()
+    for (const priv of ['UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']) {
+      expect(stmt, `service_role keeps ${priv}`).toMatch(new RegExp(`\\b${priv}\\b`, 'i'))
+    }
+    expect(stmt).not.toMatch(/\bSELECT\b/i)
+    expect(stmt).not.toMatch(/\bINSERT\b/i)
+  })
+
+  it('handles MAINTAIN version-aware, via a fixed literal and never below PG17', () => {
+    expect(raw).toMatch(/server_version_num/)
+    expect(raw).toMatch(/>=\s*170000/)
+    // The REVOKE MAINTAIN text must exist ONLY inside a quoted literal, so a
+    // pre-17 server never parses it. After stripping strings it is gone.
+    expect(raw).toMatch(/REVOKE MAINTAIN ON /)
+    expect(code).not.toMatch(/REVOKE MAINTAIN/i)
+    // Both roles lose it.
+    expect(raw).toMatch(/FROM authenticated, service_role/)
+  })
+
+  it('creates one BEFORE TRUNCATE FOR EACH STATEMENT trigger per table', () => {
+    for (const [table, trigger] of TRUNCATE_TRIGGERS) {
+      expect(code, `missing CREATE for ${trigger}`).toMatch(
+        new RegExp(
+          `CREATE TRIGGER ${trigger}\\s+BEFORE TRUNCATE ON public\\.${table}\\s+FOR EACH STATEMENT EXECUTE FUNCTION public\\.uellix_forbid_mutation\\(\\)`,
+          'i',
+        ),
+      )
+      // Idempotency: every CREATE is preceded by its own DROP ... IF EXISTS.
+      expect(code, `missing DROP for ${trigger}`).toMatch(
+        new RegExp(`DROP TRIGGER IF EXISTS ${trigger} ON public\\.${table}`, 'i'),
+      )
+    }
+    // FOR EACH ROW on TRUNCATE is rejected by PostgreSQL outright.
+    expect(code).not.toMatch(/BEFORE TRUNCATE[^;]*FOR EACH ROW/i)
+  })
+
+  it('creates exactly four triggers and drops exactly those four', () => {
+    expect([...code.matchAll(/CREATE TRIGGER/gi)]).toHaveLength(4)
+    const dropped = [...code.matchAll(/DROP TRIGGER IF EXISTS (\w+)/gi)].map((m) => m[1]).sort()
+    expect(dropped).toEqual(TRUNCATE_TRIGGERS.map(([, t]) => t).slice().sort())
+  })
+
+  it('guards its preconditions instead of failing obscurely', () => {
+    expect(raw).toMatch(/uellix_forbid_mutation\(\) not found/)
+    expect(raw).toMatch(/missing target table/)
+    // Requires the row-level protection to already exist, so it can never
+    // produce a table that rejects TRUNCATE but still accepts UPDATE.
+    expect(raw).toMatch(/missing UPDATE\/DELETE append-only trigger/)
+    for (const trigger of ROW_TRIGGERS) {
+      expect(raw, `precondition does not check ${trigger}`).toContain(trigger)
+    }
+  })
+
+  it('never drops the pre-existing row-level triggers', () => {
+    for (const trigger of ROW_TRIGGERS) {
+      expect(code).not.toMatch(new RegExp(`DROP TRIGGER IF EXISTS ${trigger}\\b`, 'i'))
+    }
+  })
+
+  it('touches no data, no RLS and no constraints', () => {
+    expect(code).not.toMatch(/\b(INSERT INTO|DELETE FROM|MERGE)\b/i)
+    expect(code).not.toMatch(/ROW LEVEL SECURITY/i)
+    expect(code).not.toMatch(/CREATE POLICY|DROP POLICY/i)
+    expect(code).not.toMatch(/ADD CONSTRAINT|DROP CONSTRAINT/i)
+  })
+
+  it('is transaction-compatible and contains no destructive statements', () => {
+    // Check STATEMENTS, not raw lines: statements() collapses `DO $$ ... $$`
+    // bodies, so the PL/pgSQL `BEGIN` of a guard block is not mistaken for
+    // transaction control. Only a top-level COMMIT/ROLLBACK/BEGIN would break
+    // `psql -1`.
+    for (const stmt of statements(raw)) {
+      expect(stmt, `transaction control statement: ${stmt}`).not.toMatch(
+        /^(COMMIT|ROLLBACK|BEGIN)\b/i,
+      )
+    }
+    expect(code).not.toMatch(/CONCURRENTLY/i)
+    expectNoDestructiveStatements(code)
+    expectNoExecutedDdl(raw)
+    expectNoAnonOrPublicGrants(code)
+  })
+
+  it('grants nothing to anyone — it only removes privileges', () => {
+    expect(code).not.toMatch(/\bGRANT\b/i)
+  })
+})
+
+describe('db/prepared/stella_0002b_rollback.sql', () => {
+  const raw = read('stella_0002b_rollback.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('has balanced parentheses and terminated statements', () => {
+    expectBalancedParens(code)
+    expect(code.trim().endsWith(';')).toBe(true)
+  })
+
+  it('declares the SAFE_NON_REVERSING_ROLLBACK policy', () => {
+    expect(raw).toMatch(/SAFE_NON_REVERSING_ROLLBACK/)
+    expect(statements(raw)[0]).toMatch(/^SET search_path = public$/i)
+    expect(raw).toMatch(/-1 -v ON_ERROR_STOP=1/)
+  })
+
+  it('never re-grants any of the dangerous privileges', () => {
+    // The whole point: a rollback must not be a one-command way to reopen an
+    // audit-trail hole. No executable GRANT may survive comment stripping.
+    expect(code).not.toMatch(/\bGRANT\b/i)
+    for (const priv of ['TRUNCATE', 'TRIGGER', 'REFERENCES', 'MAINTAIN', 'UPDATE', 'DELETE']) {
+      expect(code, `rollback re-grants ${priv}`).not.toMatch(
+        new RegExp(`GRANT[^;]*\\b${priv}\\b`, 'i'),
+      )
+    }
+  })
+
+  it('never drops the TRUNCATE or row-level protections', () => {
+    expect(code).not.toMatch(/DROP TRIGGER/i)
+    for (const [, trigger] of TRUNCATE_TRIGGERS) {
+      expect(code).not.toMatch(new RegExp(`DROP[^;]*${trigger}`, 'i'))
+    }
+  })
+
+  it('changes nothing at all: no DDL, no DML, no grants', () => {
+    for (const stmt of statements(raw)) {
+      expect(stmt, `unexpected mutating statement: ${stmt.slice(0, 60)}`).toMatch(/^(SET|DO)\b/i)
+    }
+    expect(code).not.toMatch(/\b(INSERT INTO|DELETE FROM|ALTER TABLE|CREATE TABLE|DROP TABLE)\b/i)
+    expectNoDestructiveStatements(code)
+  })
+
+  it('verifies all three protections and reports gaps', () => {
+    for (const [, trigger] of TRUNCATE_TRIGGERS) {
+      expect(raw).toContain(trigger)
+    }
+    for (const trigger of ROW_TRIGGERS) {
+      expect(raw).toContain(trigger)
+    }
+    expect(raw).toMatch(/RAISE WARNING/)
+    expect(raw).toMatch(/RAISE NOTICE/)
+  })
+
+  it('explains why reversing would contradict the audit-ready guarantee', () => {
+    expect(raw).toMatch(/audit-ready|audit trail/i)
+    // Must distinguish itself from the bug-compatible stella_0002 rollback.
+    expect(raw).toMatch(/BUG-COMPATIBLE/i)
+    expect(raw).toMatch(/DBA/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Correcciones de la auditoría independiente (2026-08-01)
+// ---------------------------------------------------------------------------
+// Pin the fixes for MAJ-01, MAJ-02 and the correctness MINORs so they cannot be
+// silently undone. Each test names the finding it closes.
+
+describe('audit fixes — MAJ-01: bounded lock acquisition', () => {
+  it('stella_0002b sets a lock_timeout before taking ACCESS EXCLUSIVE', () => {
+    const raw = read('stella_0002b_append_only_truncate_hardening.sql')
+    // Every DROP/CREATE TRIGGER takes ACCESS EXCLUSIVE and holds it to COMMIT.
+    // audit_logs is written on essentially every request, so an unbounded wait
+    // behind a long reader would stall all traffic to it.
+    expect(raw).toMatch(/SET lock_timeout = '\d+s'/)
+    const stmts = statements(raw)
+    const lockIdx = stmts.findIndex((s) => /^SET lock_timeout/i.test(s))
+    const firstDdlIdx = stmts.findIndex((s) => /^(DROP TRIGGER|CREATE TRIGGER|REVOKE)\b/i.test(s))
+    expect(lockIdx, 'lock_timeout missing').toBeGreaterThan(-1)
+    expect(lockIdx, 'lock_timeout must precede any lock-taking statement').toBeLessThan(firstDdlIdx)
+  })
+
+  it('stella_0003 sets a lock_timeout too (its section 6 also takes the lock)', () => {
+    const raw = read('stella_0003_suggestion_decisions.sql')
+    expect(raw).toMatch(/SET lock_timeout = '\d+s'/)
+  })
+})
+
+describe('audit fixes — MAJ-02: stella_0003 asserts its own write path', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+
+  it('aborts if the applying role cannot INSERT', () => {
+    // The writer's access comes from OWNING the table. Applying this script as
+    // a role other than the one the app connects as would leave no INSERT path,
+    // and the REVOKE ALL means an inherited service_role grant can no longer
+    // mask the mistake.
+    expect(raw).toMatch(/has_table_privilege\(current_user, 'public\.stella_suggestion_decisions', 'INSERT'\)/)
+    expect(raw).toMatch(/cannot INSERT into public\.stella_suggestion_decisions/)
+  })
+
+  it('verifies the RLS helpers are EXECUTABLE, not merely present (MIN-08)', () => {
+    // 0033:18 revokes EXECUTE from authenticated and 0039 grants it back. An
+    // environment with the first and not the second passes an existence check
+    // but denies every read through the SELECT policy.
+    expect(raw).toMatch(/has_function_privilege\('authenticated', 'public\.current_user_org_ids\(\)', 'EXECUTE'\)/)
+    expect(raw).toMatch(/has_function_privilege\('authenticated', 'public\.current_user_is_super_admin\(\)', 'EXECUTE'\)/)
+  })
+
+  it('no longer claims service_role bypasses RLS on this table (MIN-07)', () => {
+    // After section 4, service_role holds NO privilege here. Reads/writes work
+    // because the OWNER bypasses RLS (no FORCE ROW LEVEL SECURITY).
+    expect(raw).toMatch(/it is OWNERSHIP that bypasses RLS/i)
+    expect(raw).not.toMatch(/via the service-role\s*\n?--\s*client \(recordStellaDecision\), which bypasses RLS/i)
+  })
+})
+
+describe('audit fixes — stella_0002b hardening details', () => {
+  const raw = read('stella_0002b_append_only_truncate_hardening.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('guards that the grantee roles exist (MIN-02)', () => {
+    expect(raw).toMatch(/FROM pg_roles WHERE rolname = r\.name/)
+    expect(raw).toMatch(/missing role\(s\)/)
+  })
+
+  it('writes the MAINTAIN literal on one line, with no implicit concatenation (MIN-01)', () => {
+    // Adjacent string constants concatenate ONLY when separated by a newline.
+    // Splitting the literal would make any reformatting that joined the lines a
+    // silent syntax error, so it must be a single self-contained literal.
+    const m = /EXECUTE '(REVOKE MAINTAIN[^']*)'/.exec(raw)
+    expect(m, 'MAINTAIN literal not found as a single quoted string').not.toBeNull()
+    expect(m![1]).toContain('FROM authenticated, service_role')
+    for (const t of ['stella_interactions', 'audit_logs', 'sroi_calculation_runs', 'sroi_calculation_line_items']) {
+      expect(m![1]).toContain(`public.${t}`)
+    }
+    // No adjacent-literal concatenation anywhere in the file.
+    expect(raw).not.toMatch(/'\s*\n\s*'/)
+  })
+
+  it('verifies its own end state inside the same transaction (MIN-10)', () => {
+    // A REVOKE only removes grants from the current grantor and merely WARNs
+    // when there is nothing to revoke — so "I ran REVOKE" is not evidence.
+    expect(raw).toMatch(/FAILED verification: privileges still present after REVOKE/)
+    expect(raw).toMatch(/FAILED verification: TRUNCATE trigger\(s\) not attached/)
+    // Over-revoking must fail too: the posture is SELECT+INSERT, not read-only.
+    expect(raw).toMatch(/FAILED verification: authenticated LOST expected privilege/)
+    // Verification must come after the changes it checks. Compare positions in
+    // `raw`: the messages live inside string literals, which `code` blanks.
+    expect(raw.lastIndexOf('CREATE TRIGGER')).toBeLessThan(raw.indexOf('FAILED verification'))
+  })
+
+  it('uses to_regclass rather than a ::regclass cast (MIN-03)', () => {
+    // `('public.'||t)::regclass` throws when the table is absent, and PostgreSQL
+    // does not guarantee WHERE-qual evaluation order, so a sibling
+    // `IS NOT NULL` guard cannot be relied on to run first. to_regclass()
+    // already returns regclass and yields NULL instead of raising.
+    expect(code).not.toMatch(/\)::regclass/)
+    // Positive check must read `raw`: stripCommentsAndStrings blanks the
+    // 'public.' literal, so this pattern can never match in `code`.
+    expect(raw).toMatch(/to_regclass\('public\.' \|\| t\.tbl\)/)
+  })
+})
+
+describe('audit fixes — stella_0002b rollback', () => {
+  const raw = read('stella_0002b_rollback.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('uses to_regclass rather than a ::regclass cast (MIN-03)', () => {
+    expect(code).not.toMatch(/\)::regclass/)
+    // Positive check must read `raw`: stripCommentsAndStrings blanks the
+    // 'public.' literal, so this pattern can never match in `code`.
+    expect(raw).toMatch(/to_regclass\('public\.' \|\| t\.tbl\)/)
+  })
+
+  it('exits non-zero when it detects a gap (MIN-04)', () => {
+    // It changes nothing, so raising is free — and a gate that trusts the exit
+    // code must not see green while the script just reported the protection is
+    // gone.
+    expect(raw).toMatch(/RAISE EXCEPTION 'stella_0002b_rollback: append-only hardening is NOT intact/)
+  })
+})
+
+describe('audit fixes — MIN-09: order hazard is documented', () => {
+  it('stella_0002_rollback warns that it leaves an asymmetric state after 0002b', () => {
+    const raw = read('stella_0002_rollback.sql')
+    expect(raw).toMatch(/ORDER HAZARD vs stella_0002b/)
+    expect(raw).toMatch(/asymmetric/i)
   })
 })

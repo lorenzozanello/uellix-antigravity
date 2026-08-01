@@ -13,12 +13,30 @@ Aplicar (y saber revertir) contra **staging** — nunca producción directamente
 | Orden | Script | Rollback | Qué hace |
 |-------|--------|----------|----------|
 | 1 | `db/prepared/stella_0002_interactions_hardening.sql` | `db/prepared/stella_0002_rollback.sql` | Trigger append-only en `stella_interactions` + revoca `UPDATE/DELETE` de `authenticated` (bug de `0033:50`) + reconcilia el CHECK de `stella_role` al set de 6 roles |
-| 2 | `db/prepared/stella_0003_suggestion_decisions.sql` | `db/prepared/stella_0003_rollback.sql` | Crea `stella_suggestion_decisions` (decisiones humanas sobre sugerencias) con RLS SELECT-only |
+| 1b | `db/prepared/stella_0002b_append_only_truncate_hardening.sql` | `db/prepared/stella_0002b_rollback.sql` — **deliberadamente NO reversible** | Cierra el hueco de `TRUNCATE` en las **cuatro** tablas append-only: revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` de `authenticated` y además `UPDATE/DELETE` de `service_role`, y añade 4 triggers `BEFORE TRUNCATE FOR EACH STATEMENT` (única capa que alcanza al **owner**) |
+| 2 | `db/prepared/stella_0003_suggestion_decisions.sql` | `db/prepared/stella_0003_rollback.sql` | Crea `stella_suggestion_decisions` (decisiones humanas sobre sugerencias) con RLS SELECT-only, `REVOKE ALL` previo a los grants y sus 2 triggers append-only |
 | 3 | `db/prepared/grounding_0001_evidence_chunks.sql` | `db/prepared/grounding_0001_rollback.sql` | Ver addendum dedicado: `docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md` (tiene precondiciones propias: pgvector + decisión G5 P3) |
 
-El orden 1→2 importa solo débilmente (2 referencia `stella_interactions`, que
-ya existe); el addendum de grounding (3) es independiente y puede aplicarse en
-otra sesión.
+El orden 1→1b→2 importa: **1b exige que 1 ya esté aplicado** (su guarda de
+precondición verifica el trigger `trg_stella_interactions_append_only`, además
+de los otros tres triggers de fila). El paso 2 referencia `stella_interactions`,
+que ya existe. El addendum de grounding (3) es independiente y puede aplicarse
+en otra sesión.
+
+**Por qué existe un `1b` en vez de modificar el `1`:** `stella_0002` ya fue
+verificado y su evidencia (hash incluido) está publicada. Editarlo invalidaría
+esa evidencia y obligaría a repetir su ensayo completo, sin ganar nada:
+`stella_0002` hizo exactamente lo que declaraba. El hallazgo que `1b` repara
+(RK-04b) es **preexistente y sistémico** — viene de los `ALTER DEFAULT
+PRIVILEGES` de Supabase, no de `stella_0002`. Una unidad separada mantiene un
+cambio por propósito y cada uno con su propio gate.
+
+**Rollback de 1b:** política `SAFE_NON_REVERSING_ROLLBACK`. No vuelve a conceder
+`TRUNCATE` ni borra los triggers: no hay regresión funcional de la que revertir
+(ningún camino de código usa esos privilegios), así que lo único que lograría
+revertir sería reabrir el hueco en una tabla audit-ready. Ver la cabecera del
+propio archivo para las cuatro acepciones de "rollback" y la vía DBA explícita
+para los casos reales.
 
 ## Precondiciones (todas binarias)
 

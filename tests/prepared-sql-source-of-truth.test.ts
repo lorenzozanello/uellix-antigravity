@@ -134,8 +134,12 @@ describe('ADR 21 safeguard 4 — db/prepared/README.md is an accurate registry',
     const forward = preparedSqlFiles.filter((f) => !f.includes('rollback'))
     expect(forward.length).toBeGreaterThan(0)
     for (const file of forward) {
-      // "<family>_<NNNN>_<description>.sql" -> "<family>_<NNNN>_rollback.sql"
-      const match = /^([a-z]+_\d+)_.+\.sql$/.exec(file)
+      // "<family>_<NNNN>[<letter>]_<description>.sql"
+      //   -> "<family>_<NNNN>[<letter>]_rollback.sql"
+      // The optional trailing letter carries follow-up units that harden an
+      // already-published script without renumbering it (stella_0002b), so the
+      // evidence produced for the original keeps referring to the same name.
+      const match = /^([a-z]+_\d+[a-z]?)_.+\.sql$/.exec(file)
       expect(match, `unexpected prepared script name: ${file}`).not.toBeNull()
       const rollback = `${match![1]}_rollback.sql`
       expect(existsSync(path.join(PREPARED_DIR, rollback)), `missing ${rollback}`).toBe(true)

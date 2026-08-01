@@ -237,6 +237,80 @@ El `1 todo` es la aserción de `STELLA_DECISIONS_PERSISTENCE_ENABLED` en
 `.env.example`: la deny-list del harness (D-002, cubre `.env*`) impidió editar
 ese archivo. Queda como acción manual de Lorenzo — ver el resultado de la tarea.
 
+### 2026-08-01 · REMEDIACIÓN DE PRIVILEGIOS APPEND-ONLY · worktree `codex/stella-g2-local-rehearsal`
+
+Cierre de **RK-04b** (`MAJOR_APPEND_ONLY_BYPASS`). Nueva unidad preparada
+`stella_0002b` + endurecimiento de `stella_0003` antes de su primera aplicación.
+**No se ejecutó G2 formal**: todo el trabajo con base de datos ocurrió contra el
+stack Supabase **local y desechable** de este worktree.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm typecheck` | VERDE | 0 errores |
+| `pnpm lint` | VERDE | 0 errores, 51 warnings preexistentes |
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | 2 archivos, **114 tests** (antes: 79 → **+35**) |
+| `pnpm test:unit` | VERDE | **134 archivos, 2408 tests** (antes: 134/2373 → **+35 tests**) |
+| `pnpm test:rls` | NO EJECUTADA | fuera de alcance de esta unidad |
+
+**Auditoría independiente del diff (agente separado, solo lectura):**
+**0 BLOCKER, 2 MAJOR, 10 MINOR**, con verificación contra fuentes primarias
+(`pg_cast.dat`, documentación de PostgreSQL 17). Los **2 MAJOR y 6 MINOR de
+correctitud** fueron corregidos y fijados con 12 tests nuevos:
+
+| ID | Hallazgo | Corrección |
+|---|---|---|
+| MAJ-01 | `DROP/CREATE TRIGGER` toma `ACCESS EXCLUSIVE` sobre `audit_logs` (escrita en casi cada request) y lo retiene hasta el COMMIT; sin timeout, encolarse tras un lector largo bloquearía todo el tráfico a la tabla | `SET lock_timeout = '5s'` en 0002b y 0003: el modo de fallo pasa de "el sitio se para" a "aborta y reintenta" |
+| MAJ-02 | 0003 no concede nada a `service_role` apoyándose en que el aplicador es el owner — **la única premisa sin guarda** de un script que guarda todo lo demás. Antes del `REVOKE ALL`, un grant heredado la enmascaraba | Guarda que aborta si el rol actual no puede `INSERT`, reportando rol y owner |
+| MIN-01 | El literal de `REVOKE MAINTAIN` dependía de la concatenación implícita multilínea: reformatear a una línea lo convertiría en error de sintaxis | Un solo literal en una línea; test que prohíbe `'\n'` adyacentes |
+| MIN-02 | Sin guarda de existencia de `authenticated`/`service_role` | Guarda `pg_roles` con mensaje accionable |
+| MIN-03 | `('public.'||t)::regclass` lanza excepción si la tabla falta, y PostgreSQL **no garantiza el orden de evaluación de los quals del WHERE**, así que el `IS NOT NULL` hermano no protege | `to_regclass()` en todas partes — ya devuelve `regclass` y da NULL en vez de lanzar |
+| MIN-04 | El rollback reportaba huecos con `RAISE WARNING` → `psql` salía 0 y un gate lo vería verde | `RAISE EXCEPTION` final; no modifica nada, así que raise no cuesta |
+| MIN-07 | 0003 §5 seguía afirmando que `service_role` salta RLS, cuando tras §4 no tiene **ningún** privilegio; quien salta RLS es el **owner** | Comentario corregido explicando la diferencia |
+| MIN-08 | 0003 verificaba que los helpers RLS *existen*, no que sean *ejecutables* (0033:18 revoca, 0039 reconcede) | Guarda `has_function_privilege` |
+| MIN-09 | Correr `stella_0002_rollback` tras 0002b deja `stella_interactions` asimétrica y hace abortar un re-apply de 0002b | Documentado en la cabecera del rollback de 0002 y en el paso 11 del runbook |
+| MIN-10 | El forward nunca aseveraba su estado final; un `REVOKE` solo elimina concesiones del grantor actual y **avisa, no falla**, si no hay nada que revocar | Bloque de auto-verificación **en la misma transacción**: 0 privilegios residuales, 4 triggers adjuntos y `SELECT`/`INSERT` **preservados** (sobre-revocar también falla) |
+
+**Confirmados correctos por la auditoría** (sin acción): sintaxis
+`BEFORE TRUNCATE … FOR EACH STATEMENT`; disparo para owner y superusuario;
+**disparo también sobre tablas añadidas por `CASCADE`** (doc PG17: los triggers
+se disparan "first those listed in the command, and then any that were added due
+to cascading") — de modo que un `TRUNCATE <ancestro> CASCADE` aborta;
+reutilización de `uellix_forbid_mutation()` a nivel sentencia (`TG_OP`/
+`TG_TABLE_NAME` disponibles, ausencia de `RETURN` correcta); umbral `170000`;
+bits `tgtype` 8/16/32; `rolbypassrls` no salta grants de tabla.
+
+**Aceptados sin corregir, documentados:** MIN-05 se resolvió añadiendo el
+rollback de 0002b al paso 11 del runbook. **MIN-06** (`ENABLE ALWAYS TRIGGER`
+para cerrar la vía `session_replication_role = 'replica'`) **no se aplicó**:
+cierra un residual real, pero altera el comportamiento ante restauraciones
+(`pg_restore --disable-triggers`) que no puedo verificar en este entorno. Queda
+como recomendación de seguimiento, no como omisión silenciosa.
+
+**Cobertura nueva** (23 tests): que `0002b` cubre las cuatro tablas, revoca los
+privilegios exigidos a `authenticated` y a `service_role` sin tocar
+`SELECT`/`INSERT`, crea exactamente 4 triggers `BEFORE TRUNCATE FOR EACH
+STATEMENT` con su `DROP ... IF EXISTS`, no borra los triggers de fila
+preexistentes, no toca datos/RLS/constraints, es transaccional, y maneja
+`MAINTAIN` de forma version-aware; que el rollback **no** vuelve a conceder
+ningún privilegio peligroso ni borra protecciones; y que `0003` hace
+`REVOKE ALL` a los tres roles antes de conceder, no concede nada a
+`service_role`, y crea sus dos triggers append-only.
+
+**Guards de test reforzados, no relajados.** Tres aserciones tuvieron que
+volverse *más precisas* porque el vocabulario del paquete cambió:
+
+- `TRUNCATE` dejó de ser una palabra prohibida y pasó a clasificarse por
+  posición: solo se rechaza cuando **inicia un statement** (comando), no cuando
+  aparece como **evento de trigger** (`BEFORE TRUNCATE`) o como **nombre de
+  privilegio** (`REVOKE TRUNCATE`). Un ban por substring habría prohibido
+  justamente la defensa que se estaba añadiendo.
+- `EXECUTE` dinámico sigue prohibido salvo cuando su argumento es un **literal
+  puro** — detectable porque `stripCommentsAndStrings` lo colapsa a `''`.
+  `EXECUTE v_sql` y `EXECUTE format(...)` siguen fallando.
+- La convención de nombres de `db/prepared/` admite ahora un sufijo de letra
+  (`stella_0002b`), para que una unidad correctiva no obligue a renumerar un
+  script cuya evidencia ya fue publicada.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

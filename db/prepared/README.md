@@ -78,7 +78,8 @@ requiere acción humana explícita.
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
 |--------|----------|------|-------------------------|--------|
 | `stella_0002_interactions_hardening.sql` | `stella_0002_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`) | trigger `trg_stella_interactions_append_only`; grants de `stella_interactions`; CHECK `stella_interactions_stella_role_check` | PREPARADO |
-| `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + grant SELECT + RLS + política `stella_suggestion_decisions_select` | PREPARADO |
+| `stella_0002b_append_only_truncate_hardening.sql` | `stella_0002b_rollback.sql` (**no reversible**) | G2 (`docs/ops/gates/G2_PACKAGE.md`) | 4 triggers `*_no_truncate` (`BEFORE TRUNCATE FOR EACH STATEMENT`) sobre `stella_interactions`, `audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y además `UPDATE/DELETE` a `service_role` | PREPARADO |
+| `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + `REVOKE ALL` a los 3 roles + grant SELECT a `authenticated` + RLS + política `stella_suggestion_decisions_select` + 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO |
 | `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | PREPARADO |
 
 **Tablas gestionadas fuera de Drizzle (ADR 21):** `stella_suggestion_decisions`,
@@ -102,6 +103,23 @@ DEFAULT), así que el tipo es indiferente para el código.
   reconcilia idempotentemente el CHECK de `stella_role` al set de 6 roles de
   `db/schema.ts`. Su rollback restaura un estado **bug-compatible** (ver
   comentarios en el propio rollback) y **no** revierte el CHECK de 6 roles.
+- **`stella_0002b_append_only_truncate_hardening.sql`**: cierra el hueco de
+  `TRUNCATE` en la garantía append-only de las **cuatro** tablas protegidas. Un
+  trigger `FOR EACH ROW` no se dispara en `TRUNCATE` y RLS tampoco lo gobierna,
+  así que `SET LOCAL ROLE authenticated; TRUNCATE ...` **tenía éxito** (probado
+  sobre PostgreSQL 17 real, 2026-08-01). **Causa raíz:** los
+  `ALTER DEFAULT PRIVILEGES` de Supabase conceden `Dxtm`
+  (TRUNCATE/REFERENCES/TRIGGER/MAINTAIN) a `authenticated` en toda tabla creada
+  en `public` — 36 de 37 tablas lo heredan; ninguna migración de este repo lo
+  concedió. Aplica **dos capas**: grants (detiene a todo rol que no sea el
+  owner) y triggers de sentencia (única capa que alcanza al owner, que aquí
+  importa porque `db/client.ts` conecta con `DATABASE_URL`, es decir, como
+  `postgres`). `MAINTAIN` se revoca de forma **version-aware** (solo PG17+, vía
+  `EXECUTE` de un literal fijo, porque el token no existe antes de 17). Su
+  rollback es **deliberadamente no reversible** (`SAFE_NON_REVERSING_ROLLBACK`):
+  solo verifica y explica, nunca vuelve a conceder `TRUNCATE`. Reparar los
+  *default privileges* globales queda **diferido a un gate transversal** — este
+  script no los toca.
 - **`stella_0003_suggestion_decisions.sql`**: crea la tabla
   `stella_suggestion_decisions` (decisiones humanas sobre sugerencias de
   Stella) con RLS SELECT-only org-scoped. La server action que la consume
