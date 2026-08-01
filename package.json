@@ -19,6 +19,7 @@
     "db:setup:local": "pnpm db:migrate:local && pnpm db:seed:local",
     "db:reset:local": "pnpm supabase stop --no-backup && pnpm supabase start && pnpm db:setup:local",
     "db:seed:local": "tsx scripts/seed-local.ts",
+    "db:seed:stella-local": "tsx scripts/seed-stella-local.ts",
     "db:seed:proxies": "tsx scripts/seed-proxies.ts",
     "db:seed:taxonomies": "tsx scripts/seed-taxonomies.ts",
     "eval:offline": "tsx scripts/eval-offline.ts",

@@ -2,12 +2,19 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "uellix-antigravity"
+# CHANGED for the G2/G3 local rehearsal worktree (2026-07-31): must be unique
+# per-worktree so Docker container/volume/network names never collide with
+# the already-running `uellix-antigravity` or `aforiq` stacks on this host.
+project_id = "uellix-stella-g2-local-rehearsal"
 
 [api]
 enabled = true
 # Port to use for the API URL.
-port = 55321
+# CHANGED for the G2/G3 local rehearsal worktree: shifted +1000 from the
+# uellix-antigravity range (5532x) to a verified-free block. See
+# docs/ops/LOCAL_STAGING_G2_REHEARSAL.md for the full port map and the
+# `docker ps` evidence this was checked against.
+port = 56321
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
 schemas = ["public", "graphql_public"]
@@ -32,9 +39,10 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-port = 55322
+# CHANGED for the G2/G3 local rehearsal worktree — see [api].port comment.
+port = 56322
 # Port used by db diff command to initialize the shadow database.
-shadow_port = 55320
+shadow_port = 56320
 # Maximum amount of time to wait for health check when starting the local database.
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
@@ -44,7 +52,8 @@ major_version = 17
 [db.pooler]
 enabled = false
 # Port to use for the local connection pooler.
-port = 55329
+# CHANGED for the G2/G3 local rehearsal worktree — see [api].port comment.
+port = 56329
 # Specifies when a server connection can be reused by other clients.
 # Configure one of the supported pooler modes: `transaction`, `session`.
 pool_mode = "transaction"
@@ -94,7 +103,8 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 55323
+# CHANGED for the G2/G3 local rehearsal worktree — see [api].port comment.
+port = 56323
 # External URL of the API server that frontend connects to.
 api_url = "http://127.0.0.1"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
@@ -105,7 +115,8 @@ openai_api_key = "env(OPENAI_API_KEY)"
 [local_smtp]
 enabled = true
 # Port to use for the email testing server web interface.
-port = 55324
+# CHANGED for the G2/G3 local rehearsal worktree — see [api].port comment.
+port = 56324
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
@@ -388,7 +399,8 @@ enabled = true
 # `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
 policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
-inspector_port = 55383
+# CHANGED for the G2/G3 local rehearsal worktree — see [api].port comment.
+inspector_port = 56383
 # The Deno major version to use.
 deno_version = 2
 
@@ -396,8 +408,9 @@ deno_version = 2
 # secret_key = "env(SECRET_VALUE)"
 
 [analytics]
-enabled = true
-port = 55327
+enabled = false
+# CHANGED for the G2/G3 local rehearsal worktree — see [api].port comment.
+port = 56327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 

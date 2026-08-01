@@ -1,7 +1,11 @@
 import { defineConfig } from 'drizzle-kit';
 import { URL } from 'url';
 
-const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
+// CHANGED for the G2/G3 local rehearsal worktree: 55322 is the already-running
+// uellix-antigravity stack's port on this host. Using it here would silently
+// migrate against ANOTHER worktree's live local database instead of this
+// worktree's isolated stack. See docs/ops/LOCAL_STAGING_G2_REHEARSAL.md.
+const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:56322/postgres';
 
 // Strict safety check for local environment
 function validateLocalUrl(urlString: string) {

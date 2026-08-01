@@ -4,7 +4,11 @@ import { db } from '@/db/client'
 import { organizations, organizationMembers, fxRates, projects, projectInvestments, evidenceItems, sroiCalculationRuns, sroiCalculationLineItems, sroiReports, stellaInteractions } from '@/db/schema'
 import { randomUUID } from 'crypto'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:55321'
+// CHANGED for the G2/G3 local rehearsal worktree: the fallback used to be
+// 55321, the already-running uellix-antigravity stack's API port on this
+// host. NEXT_PUBLIC_SUPABASE_URL should still be set explicitly in
+// .env.local; this fallback only changes what happens if it is not.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:56321'
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test'
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test'
 const TEST_AUTH_OPTIONS = {

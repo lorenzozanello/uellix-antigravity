@@ -8,7 +8,11 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const dbUrl = 'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
+// CHANGED for the G2/G3 local rehearsal worktree: 55322 is the already-running
+// uellix-antigravity stack's port on this host. Using it here would silently
+// seed ANOTHER worktree's live local database instead of this worktree's
+// isolated stack. See docs/ops/LOCAL_STAGING_G2_REHEARSAL.md.
+const dbUrl = 'postgresql://postgres:postgres@127.0.0.1:56322/postgres';
 
 async function main() {
   if (!supabaseUrl || !serviceRoleKey) {
