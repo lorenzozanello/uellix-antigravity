@@ -110,8 +110,40 @@ contractual explícito.
   `stella_interactions.created_by`: ante una solicitud de supresión de
   usuario, el camino DRAFT es el mismo mecanismo 4.2 acotado a
   `created_by = <usuario>` (pseudonimizar autor, conservar metadatos de org).
-- `applied_text`/`rejection_reason` en decisiones: cubiertos por el borrado
-  del proyecto/org al que pertenecen (cascada organizacional ya existente).
+- `applied_text`/`rejection_reason` en decisiones: **NO existe ninguna cascada
+  organizacional.** *(Corregido 2026-08-01: este documento afirmaba que estaban
+  "cubiertos por el borrado del proyecto/org (cascada organizacional ya
+  existente)". Es falso — describía un mecanismo que el esquema no implementa.)*
+
+  **Semántica real de las FKs.** Las cuatro FKs de `stella_suggestion_decisions`
+  (`organization_id`, `project_id`, `interaction_id`, `decided_by`) y las de
+  `stella_interactions` se declaran **sin** `ON DELETE`, es decir `NO ACTION`.
+  Consecuencia: estas filas **bloquean** el borrado de su organización,
+  proyecto, interacción o usuario en vez de desaparecer con él. Un
+  `DELETE FROM organizations …` fallará con
+  `violates foreign key constraint`, no borrará nada en cascada.
+
+  **Qué hay que hacer antes de borrar un proyecto u organización:**
+  1. Exportar las decisiones e interacciones afectadas (son audit trail).
+  2. Decidir explícitamente su destino — pseudonimizar (4.2) o conservar.
+  3. Eliminarlas en orden hijo→padre, o el `DELETE` del padre fallará.
+
+  **Qué debe conservarse por trazabilidad:** el vínculo
+  decisión ↔ interacción ↔ proyecto ↔ organización es lo que hace auditable la
+  cadena humano-IA. Borrar el padre y dejar huérfano al hijo destruiría esa
+  trazabilidad, y por eso `NO ACTION` es **deliberado**, no un descuido.
+
+  **Qué NO está automatizado:** no hay cascada, ni job de purga, ni tarea
+  programada. Todo borrado de datos de retención es hoy una operación manual y
+  deliberada. Además, desde `stella_0003` la vía 4.2 (pseudonimizar mediante
+  `UPDATE`) queda **bloqueada por el trigger append-only incluso para el
+  owner**: cualquier script futuro que la implemente deberá desactivar el
+  trigger explícitamente y dejar registro de ello — lo que es exactamente la
+  fricción que se buscaba.
+
+  Cambiar las FKs a `ON DELETE CASCADE` **no** forma parte de esta unidad y
+  requeriría su propio gate: convertiría un borrado accidental de organización
+  en una pérdida silenciosa de audit trail.
 
 ## 6. Decisiones pendientes para Lorenzo (checklist DP-04)
 

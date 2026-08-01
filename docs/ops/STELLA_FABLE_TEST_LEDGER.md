@@ -311,6 +311,103 @@ volverse *más precisas* porque el vocabulario del paquete cambió:
   (`stella_0002b`), para que una unidad correctiva no obligue a renumerar un
   script cuya evidencia ya fue publicada.
 
+### 2026-08-01 · ENDURECIMIENTO PRE-APLICACIÓN DE `stella_0003` · worktree `codex/stella-g2-local-rehearsal`
+
+Cierre de **MAJ-A / MAJ-B / MAJ-C** (RK-04d) y de MIN-A/MIN-B/MIN-D/MIN-F,
+**antes de que `stella_0003` tocara ninguna base**. El script **sigue sin
+aplicarse**. Cero escrituras: toda la validación se hizo en transacciones
+revertidas.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | **188 tests** (antes 114 → **+74**) |
+| `pnpm typecheck` | VERDE | 0 errores |
+| `pnpm lint` | VERDE | 0 errores |
+| `pnpm test:unit` | VERDE | **134 archivos, 2482 tests** (antes 2408 → **+74**) |
+| `pnpm test:rls` | NO EJECUTADA | fuera de alcance |
+
+**La prueba que importa (MAJ-A).** La guarda vieja habría devuelto `true` para
+cualquier superusuario. La nueva se ejercitó en cinco escenarios, todos en
+transacciones revertidas:
+
+| Caso | Instalador | `stella.writer_role` | Resultado |
+|---|---|---|---|
+| A | `postgres` (no superusuario) | `postgres` | **VERIFIED** |
+| B | `postgres` | `authenticated` | **ABORTA** — `direct INSERT: f, rolbypassrls: f` |
+| C | `postgres` | rol inexistente | **ABORTA** |
+| D | **`supabase_admin` (superusuario)** | `authenticated` | **ABORTA** ← la guarda vieja habría pasado |
+| E | `supabase_admin` | `postgres` | VERIFIED — correcto: `postgres` tiene grants directos + `rolbypassrls`, la ruta existe de verdad |
+
+**Idempotencia:** dos corridas consecutivas en la misma transacción → dos
+`verification passed`, sin duplicar objetos.
+
+**MIN-B medido, no supuesto:** sobre `stella_interactions`,
+`information_schema.role_table_grants` devuelve **11 filas** y `aclexplode`
+sobre la ACL directa devuelve **4**. La diferencia son privilegios del owner y
+heredados por membresía (`postgres` es miembro de `authenticated` y
+`service_role`) — exactamente el falso rojo que habría hecho fallar el gate.
+
+**Revisión independiente del diff — ronda 2: 0 BLOCKER, 1 MAJOR, 7 MINOR.**
+Todos corregidos y fijados con pruebas de regresión:
+
+| ID | Hallazgo | Corrección |
+|---|---|---|
+| **M1** | La comprobación (19) abortaba si existía `public.evidence_chunks`. Pero `grounding_0001` la crea **legítimamente sobre la misma base** bajo su propio gate (G5 P3), y el chequeo no puede distinguir "la creé yo" de "otro gate ya corrió". Una vez aplicado G5 P3, **toda re-ejecución de 0003 abortaría** — rompiendo la convergencia que el propio encabezado promete | Eliminada. El invariante real ("este archivo nunca la crea") es **estático**, no de runtime: el script no menciona `evidence_chunks` y el test offline lo verifica. Documentado por qué no se comprueba |
+| **m1** | La comprobación (20) buscaba el nombre de la tabla dentro de `defaclacl`, que es `aclitem[]` (`grantee=privs/grantor`) y **nunca** contiene nombres de tabla: siempre daba 0. Un chequeo que no podía dispararse mientras se contaba como verificado | Eliminada, con la razón documentada |
+| **m2** | No se verificaba `relforcerowsecurity`. Todo el camino de escritura depende de que el **owner esquive RLS**; con FORCE activo dejaría de esquivarlo y, sin policy INSERT, toda escritura fallaría — mientras el script imprimía `VERIFIED` | Comprobado en **dos** sitios: la guarda §4b y la auto-verificación §7 |
+| **m3** | `writer::regrole::oid` — `regrolein` parsea como identificador SQL: minusculiza y parte por puntos. Un rol `AppWriter` o `app.writer` pasaba el chequeo de existencia y reventaba después | `SELECT oid FROM pg_roles WHERE rolname = writer`. Verificado: `Rol.Con.Puntos` da ahora el mensaje limpio de "no existe" |
+| **m4** | `position()` prueba **presencia**, no exclusividad: un CHECK obsoleto que además admitiera `'deleted'` pasaba | Añadida comprobación de exclusividad con `regexp_matches` sobre la definición |
+| **m5** | `authenticated=r*/postgres` (SELECT **WITH GRANT OPTION**) quedaba excluido y no se reportaba, pese a permitir re-conceder SELECT a `anon` | `AND NOT a.is_grantable` en la exclusión |
+| **m6** | No se detectaban columnas ni FKs **extra**, ni se fijaba `confdeltype` | Exactamente 11 columnas, exactamente 4 FKs, y `confdeltype='a'` (NO ACTION) — ahora invariante documentada por RK-04f |
+| **m7** | El mensaje era más estricto que la guarda: un `stella.writer_role='authenticated'` con grants adecuados habría pasado | La guarda rechaza `writer IN ('anon','authenticated','service_role')` |
+
+**Control adicional del encargo:** la autorización destructiva del rollback
+exige ahora exactamente `= 'true'` (antes `'yes'`), sin valores ambiguos.
+
+**Revisión independiente — ronda 3: 0 BLOCKER, 1 MAJOR, 7 MINOR.** Todos
+corregidos:
+
+| ID | Hallazgo | Corrección |
+|---|---|---|
+| **MAJOR-1** | §4b declaraba que existía una prueba offline fijando que el único camino de escritura de la app es `db/client.ts` (postgres-js sobre `DATABASE_URL`) y no un cliente `service_role`/PostgREST. **Esa prueba no existía.** El hecho era cierto pero nadie lo fijaba — y es *load-bearing*: es la razón declarada de por qué la guarda SQL puede quedarse corta. Exactamente el defecto que M1/m1 habían cerrado en otros sitios | Escrita: verifica que `db/client.ts` es postgres-js sobre `DATABASE_URL` y **no** un cliente supabase-js; que `decisions.ts` escribe por ahí; y que **ningún otro módulo** de `app/`, `lib/` o `components/` toca la tabla (recorrido real del árbol, ignorando comentarios) |
+| **MINOR-1** | `README.md` y el registro de riesgos seguían diciendo "20 comprobaciones … `evidence_chunks` ausente, default privileges intactos" — justo las dos que M1 y m1 eliminaron. El registro autoritativo afirmaba verificar algo que ya no se verifica | Corregido a **18**, enumerando cuáles se retiraron y por qué, para que no se reintroduzcan |
+| **MINOR-2** | El comentario (19) atribuía la verificación a `prepared-sql-source-of-truth.test.ts` (que no la hace) y decía que el script "no menciona `evidence_chunks` en ninguna parte" — literalmente falso: aparece en comentarios | Reescrito: el **SQL ejecutable** nunca la menciona, y quien lo fija es `prepared-stella-sql.test.ts` |
+| **MINOR-3** | `'([a-z_]+)'` no capturaba `'accepted2'`, `'Deleted'` ni `'v2'`: un CHECK obsoleto con esos valores pasaba la prueba de exclusividad en silencio — el mismo patrón "sólo detecta lo que ya esperabas" que cerró MIN-A | Ampliado a `'([^'']+)'` en los **dos** puntos de uso |
+| **MINOR-4** | §2 reconciliaba por presencia mientras §7 rechazaba supersets: un CHECK preexistente con un quinto estado no se reconstruía y luego abortaba toda la transacción. La cabecera promete convergencia, no un fallo ruidoso | §2 usa ahora la misma prueba de exclusividad → reconstruye en vez de abortar |
+| **MINOR-5** | `PUBLIC` era invisible: es grantee OID 0, sin fila en `pg_roles`, así que el `JOIN` no podía verlo — y el script tampoco lo revocaba | `REVOKE ALL … FROM PUBLIC` + comprobación explícita de `grantee = 0` |
+| **MINOR-6** | "0 UNIQUE" sólo miraba `pg_constraint`; un `CREATE UNIQUE INDEX` suelto impone unicidad sin crear constraint y habría pasado | Añadida comprobación sobre `pg_index` (`indisunique AND NOT indisprimary`) |
+| **MINOR-7** | `G2_PACKAGE.md` ofrecía vías (`supabase db execute --file`, SQL Editor) donde **no se puede** emitir el `SET` previo, así que siempre caerían en la rama ASSUMPTION | Tabla por vía de aplicación, con `ALTER DATABASE … SET stella.writer_role` para las que no admiten `SET` de sesión |
+
+**Escenarios ejercitados de la guarda — reejecutados contra PostgreSQL 17 real
+DESPUÉS de las ediciones SQL de ronda 3** (SHA-256 del script
+`6caa5ca97acbc0e9b28a439a66dcfac9b0d15399e4172da886dffd9fc1d6b7d1`), todos en
+transacciones revertidas. *(Corregido por MINOR-D: el párrafo anterior enumeraba
+los escenarios de ronda 2 bajo la tabla de ronda 3, sin evidencia de una
+re-ejecución posterior a los cambios de `EXISTS` en §2, `pg_index`,
+`REVOKE … FROM PUBLIC` y `grantee = 0`. Era el mismo patrón "verificación
+declarada, no realizada" que este paquete persigue.)*
+
+| Caso | Instalador | `stella.writer_role` | Resultado real |
+|---|---|---|---|
+| A | `postgres` | `postgres` | `write path VERIFIED` |
+| B | `postgres` | `authenticated` | aborta — *is a PostgREST role* |
+| C | `postgres` | inexistente | aborta — *does not exist* |
+| D | **`supabase_admin` (superusuario)** | `authenticated` | **aborta** |
+| E | `postgres` | `authenticator` | aborta — *has no working INSERT path* |
+| F | `postgres` | `Rol.Con.Puntos` | aborta limpio (sin reventar en `regrolein`) |
+| G | `postgres` | **sin declarar** | `ASSUMPTION, not a verification` |
+
+Idempotencia reverificada con el mismo script: dos corridas consecutivas → dos
+`verification passed`. Base intacta: `stella_suggestion_decisions` sigue
+ausente.
+
+**Lección de proceso (propia, no del auditor).** Dos ediciones automatizadas de
+tests se corrompieron por usar `String.replace` con un reemplazo que contenía
+`$'`, que en JavaScript significa *"el texto posterior al match"*: duplicó 691
+líneas del archivo. Se detectó por error de parseo, se verificó que la cola era
+duplicado exacto y se truncó. Para texto con `$` conviene una función de
+reemplazo o edición directa, nunca una cadena literal.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

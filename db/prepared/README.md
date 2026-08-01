@@ -120,6 +120,44 @@ DEFAULT), así que el tipo es indiferente para el código.
   solo verifica y explica, nunca vuelve a conceder `TRUNCATE`. Reparar los
   *default privileges* globales queda **diferido a un gate transversal** — este
   script no los toca.
+- **Endurecimiento previo a la primera aplicación de `stella_0003`
+  (2026-08-01).** Tres MAJOR de la reauditoría, cerrados antes de que el script
+  tocara ninguna base:
+  - **MAJ-A — guarda de escritura vacua.** Usaba
+    `has_table_privilege(current_user, …)`, que devuelve `true` para **cualquier
+    superusuario** y además probaba el rol *instalador*, no el de la
+    aplicación. Sustituida por una guarda basada en hechos auditables: rol
+    escritor **declarado** (`stella.writer_role`), propietario real de la tabla,
+    y ACL **directa** vía `aclexplode` (sin herencia por membresía ni atajo de
+    superusuario). Condición: *el writer es owner* **o** *tiene INSERT+SELECT
+    directos y `rolbypassrls`* — porque RLS está activo sin policy de INSERT, y
+    `INSERT … RETURNING id` también exige SELECT.
+    **Límite honesto:** ningún SQL puede observar a qué rol resuelve
+    `DATABASE_URL`. La garantía se reparte en tres: guarda estructural (el
+    script), prueba offline del camino de escritura del código (`tests/`), y
+    precondición humana del gate remoto (`G2_PACKAGE.md`). Con
+    `stella.writer_role` **sin declarar**, el script cae a `current_user` y lo
+    anuncia como **ASUNCIÓN, no verificación** — el chequeo de owner sería
+    tautológico. Declararlo es lo que lo convierte en una comprobación real.
+  - **MAJ-B — sin auto-verificación.** Añadida al final del forward, en la
+    **misma transacción**: 18 comprobaciones sobre `pg_catalog` (tabla, owner,
+    columnas/tipos/defaults/nulabilidad **y sin columnas extra**, PK, 4 FKs
+    exactas y todas `NO ACTION`, ausencia de UNIQUE **constraint e índice**,
+    ambos CHECK — el de `decision` con **exclusividad**, no solo presencia —,
+    RLS activo **y `FORCE` apagado**, 1 sola policy SELECT org-scoped, los 2
+    triggers con sus eventos exactos, y privilegios directos por `aclexplode`
+    incluyendo `PUBLIC`). Aborta ante privilegios residuales **y ante
+    sobre-revocación**.
+    **Dos comprobaciones fueron retiradas en la ronda 2 de revisión** y no
+    deben reintroducirse: `evidence_chunks` ausente (rompía la convergencia —
+    `grounding_0001` la crea legítimamente bajo su propio gate G5 P3) y
+    "default privileges intactos" (era **infalsificable**: `defaclacl` es
+    `aclitem[]` y nunca contiene nombres de tabla, así que la comprobación no
+    podía dispararse jamás mientras se contaba como verificada). Ambos
+    invariantes son **estáticos** y los fija el test offline.
+  - **MAJ-C — sin guarda de roles.** Añadida antes de crear nada.
+  - **MIN-A** — `LIKE '%''accepted_edited''%'` reemplazado por `position()`:
+    `_` es comodín de `LIKE` y habría aceptado `'acceptedXedited'`.
 - **`stella_0003_suggestion_decisions.sql`**: crea la tabla
   `stella_suggestion_decisions` (decisiones humanas sobre sugerencias de
   Stella) con RLS SELECT-only org-scoped. La server action que la consume

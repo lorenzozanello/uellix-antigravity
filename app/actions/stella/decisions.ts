@@ -101,8 +101,15 @@ export async function recordStellaDecision(input: StellaDecisionInput): Promise<
 
   try {
     // Project ownership: the client-supplied projectId must belong to the
-    // session organization (the service-role client bypasses RLS, so this
-    // check is mandatory).
+    // session organization. This check is MANDATORY because RLS gives us
+    // nothing here: `db` (db/client.ts) is a direct postgres-js connection over
+    // DATABASE_URL, i.e. the table OWNER — and the owner bypasses row-level
+    // security (there is no FORCE ROW LEVEL SECURITY on these tables). RLS
+    // protects the PostgREST/browser path, not this one. Corrected 2026-08-01:
+    // this comment previously said "the service-role client", which is wrong on
+    // both counts — this is not a service_role client, and after
+    // db/prepared/stella_0003_suggestion_decisions.sql `service_role` holds no
+    // privilege at all on stella_suggestion_decisions.
     const owned = await db.execute(
       sql`SELECT 1 FROM projects WHERE id = ${data.projectId} AND organization_id = ${ctx.organization.id} LIMIT 1`,
     )

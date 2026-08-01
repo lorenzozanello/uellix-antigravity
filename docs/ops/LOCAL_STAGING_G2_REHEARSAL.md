@@ -164,6 +164,16 @@ de fila antes de tocar nada. Verificar: 4 triggers `*_no_truncate`
 `service_role` **y como `postgres`** — este último solo lo detiene el trigger.
 
 ### 9. G2 — `stella_0003`
+**Declara el rol escritor antes de aplicar** (si no, el script cae a
+`current_user` y lo anuncia como *asunción*, no verificación):
+```bash
+psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 \
+  -c "SET stella.writer_role='postgres'" -f db/prepared/stella_0003_suggestion_decisions.sql
+```
+Debe imprimir `write path VERIFIED against declared writer role postgres` y
+`verification passed — …`. Si aparece `stella.writer_role is UNSET`, el ensayo
+no verificó el camino de escritura: repetir declarándolo.
+
 ```bash
 psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0003_suggestion_decisions.sql
 ```

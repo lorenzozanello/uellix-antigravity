@@ -246,8 +246,9 @@ describe('RLS Coverage Integration Tests', () => {
     let interactionId: string
 
     beforeAll(async () => {
-      // Seed via the service-role Drizzle client — the only legitimate write
-      // path (mirrors the server actions in app/actions/stella/*).
+      // Seed via the direct Drizzle connection (db/client.ts over DATABASE_URL,
+      // i.e. the table owner) — the only legitimate write path, mirroring the
+      // server actions in app/actions/stella/*. Not a service_role client.
       interactionId = randomUUID()
       await db.insert(stellaInteractions).values({
         id: interactionId,
@@ -378,7 +379,12 @@ describe('RLS Coverage Integration Tests', () => {
   // db/prepared/stella_0003_suggestion_decisions.sql (the table does not exist
   // before that gate; running these earlier fails on a missing relation).
   // Posture: SELECT-only org-scoped RLS; INSERT/UPDATE/DELETE denied for
-  // authenticated (service-role writes only, via recordStellaDecision).
+  // authenticated. Writes happen ONLY through recordStellaDecision, which uses
+  // the direct Drizzle connection (db/client.ts over DATABASE_URL) — i.e. the
+  // table OWNER, which bypasses RLS. Corrected 2026-08-01: not "service-role
+  // writes" — after stella_0003, `service_role` holds no privilege on this
+  // table. Immutability is enforced by two append-only triggers, which fire for
+  // every role including the owner.
   // ==========================================================================
   describe.skip('Stella Suggestion Decisions (post-G2 stella_0003)', () => {
     let decisionId: string

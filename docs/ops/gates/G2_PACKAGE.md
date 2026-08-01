@@ -38,6 +38,39 @@ revertir sería reabrir el hueco en una tabla audit-ready. Ver la cabecera del
 propio archivo para las cuatro acepciones de "rollback" y la vía DBA explícita
 para los casos reales.
 
+## Precondición humana — rol escritor de `stella_0003`
+
+**Esto no lo puede verificar ningún SQL.** `stella_0003` necesita saber con qué
+rol se conecta la aplicación (`DATABASE_URL`), y esa información vive en el
+entorno, no en la base. El script comprueba la parte estructural (owner, ACL
+directa, `rolbypassrls`); confirmar la correspondencia es tarea del operador.
+
+- [ ] Averiguar el rol de `DATABASE_URL` **sin imprimir la connection string**
+      (basta el componente de usuario; en Supabase suele ser `postgres`).
+- [ ] Declararlo al aplicar — **cómo hacerlo depende de la vía**; ver la tabla
+      justo debajo de esta checklist. No todas las vías admiten un `SET` de
+      sesión, y sin declararlo el gate **no** queda verificado.
+- [ ] Confirmar tras aplicar que el `NOTICE` dice
+      **`write path VERIFIED against declared writer role …`**.
+      Si dice `stella.writer_role is UNSET — … ASSUMPTION, not a verification`,
+      **el gate no está verificado**: se aplicó asumiendo que instalador y
+      writer coinciden. Repetir declarando la variable.
+
+Cómo declarar `stella.writer_role` según la vía de aplicación:
+
+| Vía de aplicación | Cómo declarar el writer |
+|---|---|
+| `psql` (recomendada) | `psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -c "SET stella.writer_role='<rol>'" -f db/prepared/stella_0003_suggestion_decisions.sql` |
+| `supabase db execute --file` | **No admite un `SET` previo en la misma sesión.** Fijarlo antes a nivel de base: `ALTER DATABASE <db> SET stella.writer_role = '<rol>';` (persiste; revertir después con `ALTER DATABASE <db> RESET stella.writer_role;`) |
+| SQL Editor de Supabase | Igual: `ALTER DATABASE … SET` previo, o anteponer el `SET` como primera sentencia del mismo bloque pegado |
+
+**Sin ninguna de estas, el script cae a la rama ASSUMPTION y el gate no queda
+verificado.**
+
+Motivo: la guarda anterior usaba `has_table_privilege(current_user, …)`, que
+devuelve `true` para cualquier superusuario — era ciega justo cuando el script
+se aplicaba con tooling como `supabase_admin`.
+
 ## Precondiciones (todas binarias)
 
 - [ ] Migraciones base al día en staging: `0030_immutability.sql` aplicada
@@ -141,11 +174,33 @@ SELECT relrowsecurity FROM pg_class WHERE relname = 'stella_suggestion_decisions
 SELECT policyname, cmd FROM pg_policies WHERE tablename = 'stella_suggestion_decisions';
 -- esperado: stella_suggestion_decisions_select | SELECT — y ninguna otra
 
--- 6. Grants de la tabla nueva, todos los grantees y filtrando por esquema
-SELECT grantee, privilege_type FROM information_schema.role_table_grants
-WHERE table_schema = 'public' AND table_name = 'stella_suggestion_decisions'
-ORDER BY grantee, privilege_type;
--- esperado: authenticated | SELECT (una sola fila); anon/PUBLIC sin filas
+-- 6. Grants DIRECTOS de la tabla nueva.
+--
+--    NO uses information_schema.role_table_grants aquí. Esa vista expande los
+--    privilegios que el rol de la sesión alcanza por MEMBRESÍA, y en Supabase
+--    `postgres` es miembro de `authenticated` y de `service_role` (verificado:
+--    pg_has_role('postgres','authenticated','MEMBER') = t). Devolvería filas del
+--    owner y heredadas, y el gate se leería como fallo aunque el estado fuera
+--    correcto — un falso rojo.
+--
+--    aclexplode() sobre pg_class.relacl lee la ACL LITERALMENTE: solo concesiones
+--    directas, sin herencia y sin el atajo de superusuario.
+SELECT g.rolname AS grantee, a.privilege_type
+FROM pg_class c
+CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+JOIN pg_roles g ON g.oid = a.grantee
+WHERE c.oid = to_regclass('public.stella_suggestion_decisions')
+  AND g.rolname IN ('anon', 'authenticated', 'service_role')
+ORDER BY g.rolname, a.privilege_type;
+-- esperado: EXACTAMENTE una fila -> authenticated | SELECT
+--           anon y service_role: sin filas. PUBLIC no aparece (grantee = 0).
+
+-- 6b. Y que PUBLIC no tenga nada (grantee 0 en la ACL):
+SELECT count(*) AS public_grants
+FROM pg_class c
+CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+WHERE c.oid = to_regclass('public.stella_suggestion_decisions') AND a.grantee = 0;
+-- esperado: 0
 
 -- 7. CHECKs de la tabla nueva — leer la DEFINICIÓN, no solo el nombre.
 --    Un CHECK con el nombre correcto y una definición obsoleta (p. ej. sin
