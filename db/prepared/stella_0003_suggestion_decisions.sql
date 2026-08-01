@@ -29,8 +29,24 @@
 -- value a suggestion replaced — NEVER the raw previous text. The hash is
 -- computed server-side in recordStellaDecision. applied_text may store the
 -- text that was actually applied (it becomes project content anyway).
+--
+-- PRIVILEGE HARDENING (2026-08-01, before this script's first application
+-- anywhere): section 4 now does REVOKE ALL before granting anything back, and
+-- section 6 attaches both append-only triggers. Both changes exist so this
+-- table never inherits the Supabase default-privilege surplus (`Dxtm`) that
+-- left the four pre-existing audit tables TRUNCATE-able and forced the
+-- corrective script db/prepared/stella_0002b_append_only_truncate_hardening.sql.
+-- This script has never been applied to any database, so hardening it now costs
+-- nothing and leaves no environment to repair later.
+-- Added dependency: db/migrations/0030_immutability.sql (uellix_forbid_mutation).
 
 SET search_path = public;
+
+-- On a database where the table ALREADY exists, section 6's DROP/CREATE TRIGGER
+-- takes ACCESS EXCLUSIVE and holds it to COMMIT. Bound the wait so a long reader
+-- cannot turn this script into a stall for every writer; the script is
+-- convergent, so aborting and retrying costs nothing. (Added 2026-08-01.)
+SET lock_timeout = '5s';
 
 -- ============================================================
 -- 0. Preconditions + shape guard
@@ -56,6 +72,25 @@ BEGIN
   IF to_regprocedure('public.current_user_org_ids()') IS NULL
      OR to_regprocedure('public.current_user_is_super_admin()') IS NULL THEN
     RAISE EXCEPTION 'stella_0003 aborted: RLS helpers public.current_user_org_ids()/current_user_is_super_admin() not found — apply db/migrations/0031_rls_core.sql and 0039_grant_rls_helper_execution.sql first';
+  END IF;
+
+  -- Existing is not enough: they must be EXECUTABLE by authenticated, or the
+  -- SELECT policy in section 5 fails at runtime for every real user.
+  -- 0033_public_api_grants.sql:18 does REVOKE EXECUTE ON ALL FUNCTIONS ... FROM
+  -- authenticated, and 0039 grants it back — an environment that received the
+  -- first and not the second looks healthy here but denies every read.
+  IF NOT has_function_privilege('authenticated', 'public.current_user_org_ids()', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.current_user_is_super_admin()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'stella_0003 aborted: role authenticated lacks EXECUTE on the RLS helpers — apply db/migrations/0039_grant_rls_helper_execution.sql (0033:18 revokes it; 0039 grants it back). Without it the SELECT policy denies every read';
+  END IF;
+
+  -- 0b-bis. The append-only trigger function must exist
+  --         (db/migrations/0030_immutability.sql). Section 6 attaches this
+  --         table's immutability triggers to it, mirroring the posture that
+  --         prepared stella_0002/stella_0002b established for
+  --         stella_interactions and the other audit tables.
+  IF to_regprocedure('public.uellix_forbid_mutation()') IS NULL THEN
+    RAISE EXCEPTION 'stella_0003 aborted: function public.uellix_forbid_mutation() not found — apply db/migrations/0030_immutability.sql first (G2 precondition "migraciones base al día")';
   END IF;
 
   -- 0c. Shape guard — only when the table already exists.
@@ -221,26 +256,87 @@ CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_interaction_id
   ON public.stella_suggestion_decisions (interaction_id);
 
 -- ============================================================
--- 4. Grants (0033 style — stricter than append-only: SELECT only;
---    INSERT happens exclusively via the service-role Drizzle client)
+-- 4. Grants — deny-by-default, then grant back the minimum
 -- ============================================================
-GRANT SELECT ON public.stella_suggestion_decisions TO authenticated;
--- Defensive: if an earlier revision or another script widened the grant,
--- converge back to SELECT-only. REVOKE of an absent privilege is a no-op.
--- Supabase's bootstrap grants CRUD on new public tables to anon/authenticated;
--- 0033 revoked the DEFAULT PRIVILEGES for anon but that is per-grantor, so a
--- table created by a different role can still arrive wide open. RLS already
--- denies anon (no policy matches it), this is defense in depth.
-REVOKE INSERT, UPDATE, DELETE ON public.stella_suggestion_decisions FROM authenticated;
+-- WHY REVOKE ALL FIRST (hardened 2026-08-01, before this script's first ever
+-- application anywhere):
+--
+-- Supabase configures ALTER DEFAULT PRIVILEGES so that every table created by
+-- `postgres` in schema `public` is born granting `Dxtm` to `authenticated` —
+-- D=TRUNCATE, x=REFERENCES, t=TRIGGER, m=MAINTAIN (PG17+) — and full `arwdDxtm`
+-- to `service_role`. That inheritance is exactly what left the four existing
+-- append-only tables TRUNCATE-able by `authenticated`, a MAJOR finding that
+-- prepared stella_0002b had to repair after the fact (it was demonstrated on a
+-- real PostgreSQL 17: `SET LOCAL ROLE authenticated; TRUNCATE ...` succeeded).
+--
+-- Listing privileges to revoke one by one is a losing game: it silently misses
+-- whatever a future PostgreSQL version or Supabase bootstrap adds. REVOKE ALL
+-- and then granting back is the only formulation that cannot inherit a surplus
+-- it was not written to anticipate. This table therefore never carries the
+-- defect its siblings had to be repaired for.
+--
+-- REVOKE of a privilege a role does not hold is a no-op, so this is repeatable.
 REVOKE ALL ON public.stella_suggestion_decisions FROM anon;
+REVOKE ALL ON public.stella_suggestion_decisions FROM authenticated;
+REVOKE ALL ON public.stella_suggestion_decisions FROM service_role;
+
+-- The minimum the real architecture needs:
+--
+--   authenticated -> SELECT only. Reads are gated by the org-scoped RLS policy
+--     in section 5. This is stricter than the append-only tables, which also
+--     carry an (inert) INSERT grant.
+--
+--   anon -> nothing. Never reads or writes this table.
+--
+--   service_role -> nothing. The only writer is recordStellaDecision
+--     (app/actions/stella/decisions.ts), which goes through the Drizzle client
+--     in db/client.ts. That client connects with DATABASE_URL, i.e. as the
+--     table's OWNER, whose access derives from ownership and not from any
+--     grant. Granting service_role here would hand out privileges that nothing
+--     in this system exercises. If a deployment ever routes writes through
+--     PostgREST with a service_role JWT, that deployment must add the grant
+--     deliberately, through its own gate — it must not be inherited by default.
+GRANT SELECT ON public.stella_suggestion_decisions TO authenticated;
+
+-- Assert the premise the paragraph above rests on, instead of trusting it.
+--
+-- Every other assumption in this script is guarded (FK targets, RLS helpers,
+-- trigger function, column shape, PK, defaults, NOT NULLs). This one was not,
+-- and it is the one that decides whether the application can write at all: the
+-- writer's access comes from OWNING the table, so if this script were ever
+-- applied by a role OTHER than the one the app connects as (e.g. via tooling
+-- running as supabase_admin), the table would end up with no INSERT path and
+-- the first write after STELLA_DECISIONS_PERSISTENCE_ENABLED is flipped would
+-- fail with "permission denied".
+--
+-- Before the REVOKE ALL above, an inherited service_role grant would have
+-- masked that mistake. It no longer can — so the check has to be explicit.
+DO $$
+DECLARE
+  tbl_owner name;
+BEGIN
+  SELECT pg_get_userbyid(c.relowner) INTO tbl_owner
+  FROM pg_class c WHERE c.oid = to_regclass('public.stella_suggestion_decisions');
+
+  IF NOT has_table_privilege(current_user, 'public.stella_suggestion_decisions', 'INSERT') THEN
+    RAISE EXCEPTION 'stella_0003 aborted: the current role (%) cannot INSERT into public.stella_suggestion_decisions (owner: %). recordStellaDecision writes through db/client.ts as the DATABASE_URL role — apply this script AS that role, or grant it INSERT explicitly through its own gate', current_user, tbl_owner;
+  END IF;
+
+  RAISE NOTICE 'stella_0003: write path verified — role % can INSERT (table owner: %). authenticated has SELECT only; anon and service_role have nothing.',
+    current_user, tbl_owner;
+END $$;
 
 -- ============================================================
 -- 5. RLS (mirrors db/policies/002_stella_interactions_rls.sql posture)
 -- ============================================================
 --   - SELECT: org members read their own org's decisions; super_admin sees all
---   - No INSERT policy: inserts are strictly server-side via the service-role
---     client (recordStellaDecision), which bypasses RLS — identical to
---     stella_interactions
+--   - No INSERT policy: inserts are strictly server-side, via recordStellaDecision
+--     over the Drizzle client. NOTE (corrected 2026-08-01): that client connects
+--     as the table OWNER, and it is OWNERSHIP that bypasses RLS here — there is
+--     no FORCE ROW LEVEL SECURITY on this table. It is NOT `service_role` doing
+--     the bypassing: after section 4, service_role holds no privilege on this
+--     table at all. The earlier wording claimed the opposite and would have led
+--     a reader to believe the write path depended on a grant that does not exist.
 --   - No UPDATE policy: decisions are immutable ('undone' is a NEW row, not an
 --     update of the original decision)
 --   - No DELETE policy: audit-trail integrity
@@ -258,6 +354,43 @@ USING (
 -- No INSERT policy -> INSERT denied via RLS (service role only)
 -- No UPDATE policy -> UPDATE denied (immutable decisions)
 -- No DELETE policy -> DELETE denied (audit trail integrity)
+
+-- ============================================================
+-- 6. Append-only enforcement at the database level
+-- ============================================================
+-- RLS and grants both stop at the table OWNER, and the only writer here IS the
+-- owner (db/client.ts connects with DATABASE_URL). Triggers are the one control
+-- that fires for every role, owner included, so they are what actually makes
+-- "decisions are immutable" true rather than merely intended.
+--
+-- Two triggers are required, not one, because they cover disjoint events:
+--   * FOR EACH ROW  on UPDATE/DELETE — no OLD/NEW rows exist for TRUNCATE, so a
+--     row trigger can never see it;
+--   * FOR EACH STATEMENT on TRUNCATE — PostgreSQL forbids FOR EACH ROW here.
+-- Omitting the second is precisely the gap that stella_0002b had to close on
+-- the four pre-existing audit tables. This table ships with both from day one.
+--
+-- 'undone' is a NEW row, never an UPDATE of the original decision, so nothing in
+-- the application is affected by forbidding mutation.
+--
+-- public.uellix_forbid_mutation() is reused unchanged: it reads only TG_OP and
+-- TG_TABLE_NAME, both available at row and statement level, and always raises
+-- with SQLSTATE 42501.
+
+DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_append_only ON public.stella_suggestion_decisions;
+CREATE TRIGGER trg_stella_suggestion_decisions_append_only
+  BEFORE UPDATE OR DELETE ON public.stella_suggestion_decisions
+  FOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_no_truncate ON public.stella_suggestion_decisions;
+CREATE TRIGGER trg_stella_suggestion_decisions_no_truncate
+  BEFORE TRUNCATE ON public.stella_suggestion_decisions
+  FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+COMMENT ON TRIGGER trg_stella_suggestion_decisions_append_only ON public.stella_suggestion_decisions IS
+  'WS3b (prepared stella_0003, gate G2): human-decision audit trail is append-only; UPDATE/DELETE are forbidden even for the table owner.';
+COMMENT ON TRIGGER trg_stella_suggestion_decisions_no_truncate ON public.stella_suggestion_decisions IS
+  'WS3b (prepared stella_0003, gate G2): TRUNCATE is forbidden on this append-only table, including for the table owner.';
 
 COMMENT ON TABLE public.stella_suggestion_decisions IS
   'Human decisions over Stella suggestions (WS3b, prepared stella_0003, gate G2). previous_value_hash is a SHA-256 digest — raw previous text is never stored. Managed outside the drizzle chain: see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
