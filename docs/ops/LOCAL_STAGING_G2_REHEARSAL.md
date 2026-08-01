@@ -276,6 +276,105 @@ la corrida. Ningún comando de esta unidad tocó otro stack ni el Supabase
 remoto. `.env.local` (no rastreado, `.gitignore: .env*`) apunta solo a
 `127.0.0.1` en los puertos `56321`/`56322` de este worktree.
 
+## STELLA 0002 LOCAL REHEARSAL — RUN 1
+
+> **Esto NO es la aprobación formal de G2.** Es un ensayo estructural sobre un
+> stack local y desechable: demuestra que el script corre en un PostgreSQL
+> real, que es idempotente y que sus verificaciones son ejecutables. Una base
+> local no es staging. El gate G2 sigue **sin ejecutar** y sin aprobar; su
+> ejecución formal exige el entorno remoto autorizado y las precondiciones
+> humanas de `docs/ops/gates/G2_PACKAGE.md` (ver allí la *Aclaración sobre A1*).
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-01, 11:26–11:29 (hora local) |
+| Branch | `codex/stella-g2-local-rehearsal` |
+| Commit al aplicar | `fdb4cb4` — *docs(local): clarify structural G2 rehearsal scope* |
+| `project_id` | `uellix-stella-g2-local-rehearsal` |
+| Contenedor DB | `supabase_db_uellix-stella-g2-local-rehearsal` |
+| Script | `db/prepared/stella_0002_interactions_hardening.sql` (117 líneas, 6442 bytes) |
+| SHA-256 | `11b792159435ee91fe00634e85a687a4c6b7aff9496f403db18740ba778c05e6` |
+
+### Aplicación
+
+Ambas corridas con `psql -v ON_ERROR_STOP=1 -1` (transacción única) contra el
+contenedor local, transmitiendo **solo** ese archivo, sin SQL adicional y sin
+modificar el script (hash idéntico en las dos).
+
+| Corrida | Exit | Duración | Notices | Errores |
+|---|---|---|---|---|
+| 1ª (aplicación) | 0 | ~850 ms | 1 — `trigger … does not exist, skipping` (esperado: `DROP TRIGGER IF EXISTS` sobre trigger inexistente) | 0 |
+| 2ª (idempotencia) | 0 | ~766 ms | 0 (el trigger ya existía) | 0 |
+
+Statements en ambas: `SET`, `DO` (guardas), `DROP TRIGGER`, `CREATE TRIGGER`,
+`REVOKE`, `DO` (CHECK), `COMMENT`.
+
+### Verificaciones estructurales (12/12)
+
+| # | Verificación | Resultado |
+|---|---|---|
+| 1 | Trigger `trg_stella_interactions_append_only` | existe **exactamente 1**; 1 solo trigger no interno en la tabla |
+| 2 | Definición | `BEFORE DELETE OR UPDATE … FOR EACH ROW EXECUTE FUNCTION uellix_forbid_mutation()`; **no** cubre INSERT |
+| 3 | `authenticated` conserva | `SELECT`, `INSERT` |
+| 4 | `authenticated` pierde | `UPDATE`, `DELETE` (ambos `false` por `has_table_privilege`) |
+| 5 | Grants para `anon` / `PUBLIC` | 0 filas |
+| 6 | CHECK de `stella_role` | los 6 roles, **exactamente 6 literales** |
+| 7 | ¿CHECK modificado? | **No** — `md5` de `pg_get_constraintdef` idéntico antes y después. El `DO` block fue un no-op convergente |
+| 8 | RLS | sigue activo |
+| 9 | Policy base | presente y sin cambios (`md5` de `qual` idéntico) |
+| 10 | `stella_suggestion_decisions` | sigue ausente |
+| 11 | `evidence_chunks` | sigue ausente |
+| 12 | Interacciones sintéticas | sigue siendo 1 |
+
+Convergencia con el modelo declarado: tras la aplicación, `stella_interactions`
+tiene para `authenticated` **el mismo conjunto de grants** que `audit_logs`,
+`sroi_calculation_runs` y `sroi_calculation_line_items`
+(`INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE`) — que es justo lo que el
+script declara replicar.
+
+### Prueba de inmutabilidad
+
+Ejecutada dentro de `BEGIN … ROLLBACK`, sobre la única fila sintética, como
+`postgres` (dueño de la tabla, que ignora RLS y grants) — la ruta más
+privilegiada posible, que es donde el trigger tiene que sostener la garantía.
+
+| Operación | Resultado | SQLSTATE | Mensaje |
+|---|---|---|---|
+| `UPDATE` | **bloqueada por el trigger** | `42501` | `append-only: UPDATE on stella_interactions is not permitted` |
+| `DELETE` | **bloqueada por el trigger** | `42501` | `append-only: DELETE on stella_interactions is not permitted` |
+
+La sonda distinguía tres desenlaces (bloqueo por el trigger esperado / error no
+relacionado / mutación exitosa) y ambas cayeron en el primero. Transacción
+revertida.
+
+Post-prueba: la fila sintética sigue existiendo, el conteo sigue en 1,
+`tokens_used` sigue en 0 (no en el 999 que intentó el `UPDATE`) y el
+`context_hash` no cambió.
+
+### Conteos antes / después
+
+| Métrica | Pre-0002 | Post-1ª | Post-2ª |
+|---|---|---|---|
+| Trigger append-only | 0 | 1 | 1 |
+| Interacciones sintéticas | 1 | 1 | 1 |
+| Policies en la tabla | 1 | 1 | 1 |
+| `authenticated` UPDATE/DELETE | sí | no | no |
+| `md5` del CHECK | igual | igual | igual |
+| `md5` de la policy | igual | igual | igual |
+| `context_hash` | igual | igual | igual |
+
+### Pruebas
+
+`pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts`
+→ **2 archivos, 79/79 verdes** (48 + 31). `pnpm typecheck` → 0 errores.
+`test:rls` **no** se ejecutó.
+
+### Alcance
+
+Cero acceso remoto. Cero `stella_0003`. Cero `grounding_0001`. Cero G3. Cero
+rollbacks. Cero seeds. Cero resets. Otros stacks (`uellix-antigravity`,
+`aforiq`) intactos. **Cero ejecución formal del gate G2.**
+
 ## MANUAL MIGRATION 003 DECISION
 
 **Clasificación: `CONDITIONAL_LEGACY_ONLY`.**
