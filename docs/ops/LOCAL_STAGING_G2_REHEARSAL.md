@@ -726,6 +726,153 @@ Detectados en la reauditoría previa y todavía abiertos:
    Linux el mismo archivo hashea `ad22e22c…`. No hay `.gitattributes` que fije
    `eol` para `*.sql`.
 
+## G3 LOCAL REHEARSAL — RUN 1, CORRECTED INSTRUMENTATION
+
+**2026-08-01 · worktree `codex/stella-g2-local-rehearsal` · HEAD `2d26319`
+(inicial) · project_id `uellix-stella-g2-local-rehearsal` · contenedor
+`supabase_db_uellix-stella-g2-local-rehearsal` (PostgreSQL 17.6).**
+
+Primera ejecución de `pnpm test:rls` con los dos bloques post-G2 habilitados.
+**Cero acceso remoto**, cero `supabase login/link/db push/db pull`, cero G2
+formal, cero `grounding_0001`, cero rollback, cero reset.
+
+### Respaldo pre-G3
+
+`pg_dump -Fc` sobre `postgres` dentro del contenedor, copiado a una carpeta
+temporal de Windows **fuera del repositorio** (no versionado, no subido).
+581 736 bytes. SHA-256 `d46280c4261cc8b68896dd34b12f41d9334756a61f7a2f2a3c441aef5b436aeb`.
+Validado con `pg_restore -l`: 1 155 entradas de TOC, 87 `TABLE DATA`, incluye
+ambas tablas Stella con sus ACL y constraints. **No restaurado.**
+
+### El falso rojo, y por qué no era un hallazgo de RLS
+
+La 1ª ejecución dio **23/25**. Los dos rojos estaban en el bloque
+`post-G2 (stella_0002)`, que aserta con
+`expect(...).rejects.toThrow(/append-only/)`.
+
+La base **sí** bloqueó ambas mutaciones. La sonda de diagnóstico mostró la
+cadena real del error:
+
+```
+depth 0  DrizzleQueryError  code=undefined  message="Failed query: UPDATE public.stella_interactions …"
+depth 1  PostgresError      code="42501"    message="append-only: UPDATE on stella_interactions is not permitted"
+                                            severity=ERROR  routine=exec_stmt_raise  table_name=null
+```
+
+`DrizzleQueryError` (drizzle-orm 0.45.2, `errors.js:12`) construye su `message`
+como `"Failed query: <sql>\nparams: "` y cuelga el error del driver en `.cause`.
+`.rejects.toThrow(/regex/)` compara **sólo** contra `.message`, así que la
+aserción nunca podía ver el mensaje del trigger. **Defecto de instrumentación,
+independiente del entorno** — habría fallado igual contra staging.
+
+Verificado en la base tras el intento: 2 interacciones, ambas con
+`pipeline_step='narrative'`, **0 manipuladas**.
+
+Nota: `PostgresError` hace `Object.assign(this, x)` con el notice crudo, pero
+para un `RAISE EXCEPTION` de plpgsql **`table_name` queda `null`** (sólo se
+rellena en violaciones de constraint). La tabla y la operación hay que
+extraerlas del texto, que `public.uellix_forbid_mutation()` formatea de forma
+estable: `'append-only: % on % is not permitted'` con `TG_OP` y `TG_TABLE_NAME`.
+
+### Corrección — helper de desenvoltura, aserción más fuerte
+
+`tests/helpers/append-only-error.ts` recorre la cadena `cause` con límite de
+profundidad (10) y detección de ciclos, y exige **conjuntamente** SQLSTATE
+`42501`, el texto `append-only`, la operación y la tabla. Rechaza
+explícitamente un `42501` que no venga del trigger (p. ej.
+`permission denied for table …`). Los dos tests además verifican ahora que la
+fila quedó intacta.
+
+`tests/append-only-error.test.ts`: **13 casos** — causa válida, causa anidada,
+error sin causa, SQLSTATE erróneo, mensaje erróneo, operación errónea, tabla
+errónea, cadena circular, cadena excesivamente profunda, y el caso de "la
+consulta tuvo éxito" (que debe fallar ruidosamente).
+
+### Idempotencia del residuo append-only
+
+La 1ª corrida dejó una decisión persistente con la clave determinista
+`g3-local-rehearsal.synthetic.advisor.suggested_next_actions[0]`, más la
+interacción sintética asociada. Ninguna se puede borrar (triggers append-only)
+y sus FK `ON DELETE NO ACTION` fijan organización, proyecto y usuario.
+
+Para poder reejecutar sin multiplicar el residuo, el `beforeAll` raíz resuelve
+la clave **antes** de escribir nada:
+
+| Caso | Comportamiento |
+|------|----------------|
+| exactamente 1 | **REUSED** — reutiliza la fila y deriva de ella org, proyecto e interacción. Cero inserciones append-only |
+| 0 | **CREATED** — crea exactamente una, como en la 1ª corrida |
+| >1 | **Aborta** la suite con error explícito; no se elige una fila arbitrariamente |
+
+Sin `ON CONFLICT` sin constraint, sin `UPDATE`, sin `DELETE`, sin `TRUNCATE`,
+sin desactivar triggers, sin `session_replication_role`, sin `DROP TABLE`.
+
+### Ejecución focalizada del arreglo
+
+`vitest ... -t "via service role falla con insufficient_privilege"` →
+**2 passed / 30 skipped**. La selección no ejecutó el bloque que crea la
+decisión, y en modo REUSED el `beforeAll` de interacciones tampoco insertó.
+Conteos idénticos antes y después.
+
+### 2ª ejecución completa
+
+`pnpm test:rls` → **1 archivo, 32 passed, 0 failed, 0 skipped, 11,79 s.**
+Fixture append-only: **REUSED**. Warnings: 7 × `Multiple GoTrueClient
+instances` (benigno; jsdom comparte la storage key entre clientes).
+
+### Conteos antes / después de la 2ª ejecución
+
+| Tabla | Antes | Después |
+|-------|-------|---------|
+| `stella_suggestion_decisions` | 1 | **1** |
+| `stella_interactions` | 2 | **2** |
+| `organizations` | 3 | 3 |
+| `users` / `auth.users` | 9 / 9 | 9 / 9 |
+| `projects` | 2 | 2 |
+| `organization_members` | 7 | 7 |
+| `storage.objects` | 0 | 0 |
+
+Cero crecimiento del residuo append-only. Los fixtures desechables de la
+corrida (7 usuarios + membresías, organización B, el proyecto creado por el
+analyst y el objeto de Storage) fueron limpiados por `afterAll`, que propaga
+errores de FK en vez de silenciarlos.
+
+### Aislamiento y permisos demostrados
+
+| Caso | Resultado |
+|------|-----------|
+| Organización A lee su decisión (clave y decisión exactas) | ✅ |
+| Organización B no la ve (SELECT cruzado vacío) | ✅ |
+| Usuario sin membresía no la lee | ✅ |
+| Usuario sin membresía no puede insertar | `42501` |
+| super_admin la lee | ✅ |
+| super_admin **no** puede mutarla | `42501` |
+| `authenticated` INSERT / UPDATE / DELETE | `42501` |
+| `service_role` SELECT e INSERT directos | `42501` — sin grant de tabla, **`BYPASSRLS` no sustituye a la ACL** |
+| `UPDATE` / `DELETE` como owner sobre `stella_interactions` | `42501`, `append-only: … is not permitted`, fila intacta |
+| `TRUNCATE` de `stella_suggestion_decisions` (en transacción revertida) | `42501`, `append-only: TRUNCATE on stella_suggestion_decisions is not permitted`, fila superviviente |
+
+### Postcheck estructural
+
+RLS activo en ambas tablas · 104 policies · 10 triggers append-only ·
+ACL de `stella_suggestion_decisions` = `authenticated: SELECT` + owner ·
+`session_replication_role = origin` · `evidence_chunks` **ausente** ·
+0 decisiones no sintéticas · 0 interacciones manipuladas · 0 emails fuera de
+`@test.com` / `@test.local` · sin DDL · sin migraciones · `db/prepared`,
+`db/schema.ts` y `db/migrations` intactos.
+
+### Residuo deliberado y limpieza autorizada
+
+Persisten, y **no pueden retirarse fila por fila**: 1 decisión sintética,
+1 interacción sintética, y por FK `NO ACTION` la organización, el proyecto y el
+usuario que referencian. La limpieza autorizada es el **reset/rebuild del stack
+local desechable** — no se intentó `DELETE` ni `TRUNCATE`, ni se desactivó
+ningún trigger.
+
+**G3 remoto no queda autorizado por este ensayo:** requiere una estrategia no
+contaminante propia (base efímera dedicada o gate de solo lectura sobre filas
+ya existentes), todavía sin diseñar.
+
 ## MANUAL MIGRATION 003 DECISION
 
 **Clasificación: `CONDITIONAL_LEGACY_ONLY`.**

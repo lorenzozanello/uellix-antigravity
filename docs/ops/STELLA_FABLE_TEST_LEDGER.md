@@ -531,6 +531,65 @@ ejecución formal de G2.**
 | 3 | No existe test automático de integridad estructural de los archivos de test; el incidente de `String.replace` con `$'` sólo está registrado como lección de proceso. **Reincidió durante esta misma corrida**, al redactar esta entrada: un `String.replace` sobre este ledger interpretó `$` + backtick (el texto ANTERIOR al match, 411 líneas) y `$` + comilla simple (el texto POSTERIOR, 6 líneas), insertando 417 líneas espurias, y además colapsó `$$` en `$`. Se detectó por conteo de líneas (540 añadidas frente a 123 esperadas), se revirtió con `git checkout --` y se rehízo con una **función** de reemplazo, que desactiva por completo esa interpretación. Segundo caso registrado: la lección escrita no basta, hace falta el guardarraíl | proceso |
 | 4 | El SHA-256 citado como "bytes ejecutados" es el del working tree con CRLF; en un checkout LF o CI Linux el mismo archivo hashea `ad22e22c…`. No hay `.gitattributes` que fije `eol` para `*.sql` | evidencia |
 
+### 2026-08-01 · G3 LOCAL REHEARSAL — RUN 1, CORRECTED INSTRUMENTATION · worktree `codex/stella-g2-local-rehearsal`
+
+Primera ejecución de `pnpm test:rls` con los dos bloques post-G2 habilitados,
+contra el stack local `uellix-stella-g2-local-rehearsal` (PostgreSQL 17.6,
+`127.0.0.1:56321` / `56322`). **Cero acceso remoto.** Detalle completo en
+`docs/ops/LOCAL_STAGING_G2_REHEARSAL.md` y `docs/ops/gates/G3_PACKAGE.md`.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm test:rls` (1ª, instrumentación original) | **ROJO** | 23 passed / **2 failed** — rojo falso, ver abajo |
+| `vitest ... -t "via service role falla con insufficient_privilege"` (focalizada) | VERDE | 2 passed / 30 skipped; no ejecutó el bloque que crea la decisión |
+| `pnpm test:rls` (2ª, corregida) | VERDE | 1 archivo, **32 passed, 0 failed, 0 skipped**, 11,79 s |
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | **188 tests**, 2 archivos |
+| `pnpm test:unit` | VERDE | **135 archivos, 2495 tests** (+13: pruebas del helper nuevo) |
+| `pnpm typecheck` | VERDE | exit 0, 0 errores |
+| `pnpm lint` | VERDE | exit 0, **0 errores** (51 warnings preexistentes; los archivos nuevos no añaden ninguno) |
+
+**Causa del falso rojo.** `db.execute()` de drizzle-orm 0.45.2 lanza un
+`DrizzleQueryError` cuyo `.message` es `"Failed query: <sql>\nparams: "`; el
+`PostgresError` de postgres-js 3.4.9 —con `code='42501'` y
+`append-only: UPDATE on stella_interactions is not permitted`— queda en
+`.cause`. `.rejects.toThrow(/append-only/)` compara sólo contra `.message`, así
+que la aserción **nunca podía ver** el mensaje del trigger. La base sí bloqueó
+ambas mutaciones y la fila quedó intacta. Defecto **independiente del entorno**:
+habría fallado igual contra staging.
+
+**Corrección.** `tests/helpers/append-only-error.ts` recorre la cadena `cause`
+(profundidad ≤ 10, detección de ciclos) y exige **conjuntamente** SQLSTATE
+`42501`, texto `append-only`, operación y tabla — estrictamente **más fuerte**
+que la aserción original. Fijado por `tests/append-only-error.test.ts` (13
+casos: causa válida, anidada, ausente, SQLSTATE erróneo, mensaje erróneo,
+operación/tabla erróneas, ciclo, profundidad, y "la consulta tuvo éxito").
+
+**Idempotencia.** La suite resuelve la clave determinista
+`g3-local-rehearsal.synthetic.advisor.suggested_next_actions[0]` antes de
+escribir: **REUSED** si existe una (deriva org, proyecto e interacción y no
+inserta nada append-only), **CREATED** si no existe, **aborta** si hay más de
+una. La 2ª corrida fue **REUSED**: decisiones **1 → 1**, interacciones
+**2 → 2**, y organizaciones/usuarios/proyectos/membresías/objetos de Storage sin
+cambio neto.
+
+**Cobertura nueva** (7 tests, ninguno crea filas append-only): `TRUNCATE`
+bloqueado por el trigger `BEFORE TRUNCATE` en transacción revertida;
+`service_role` sin poder leer **ni** insertar (BYPASSRLS ≠ ACL); super_admin lee
+pero no muta; usuario sin membresía ni lee ni inserta; y la lectura de
+organización A verifica clave y decisión exactas.
+
+**Alcance.** Cero acceso remoto. Cero `supabase login/link/db push/db pull`.
+Cero reset. Cero restauración del respaldo. **Rollback NO ejecutado.** Cero
+`grounding_0001`. **Cero ejecución formal de G2.** Otros stacks
+(`uellix-antigravity`, `aforiq`) intactos. Respaldo local pre-G3
+(`pg_dump -Fc`, fuera del repo, SHA-256 `d46280c4…b436aeb`, validado con
+`pg_restore -l`, no restaurado).
+
+**Residuo deliberado.** 1 decisión + 1 interacción sintéticas, más la clausura
+FK que fijan (org, proyecto, usuario). No retirables fila por fila. Limpieza
+autorizada: **reset/rebuild del stack local**. **G3 remoto sigue sin
+autorización** — necesita una estrategia no contaminante propia.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
