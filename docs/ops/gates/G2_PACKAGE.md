@@ -170,6 +170,31 @@ Regla transversal: ante cualquier duda sobre el destino o el estado,
 **abortar es siempre la opción correcta** — estos scripts son convergentes y
 re-ejecutables, así que detenerse nunca cuesta trabajo perdido.
 
+### Aclaración sobre A1 — ensayo estructural local
+
+A1 se refiere al destino de **la ejecución formal del gate**. Ni producción ni
+una base local son jamás destinos válidos para **declarar G2 ejecutado**.
+
+Existe, sin embargo, un procedimiento distinto y explícitamente acotado:
+`docs/ops/LOCAL_STAGING_G2_REHEARSAL.md` permite aplicar estos scripts contra
+un stack Supabase **local y desechable** exclusivamente como **ensayo
+estructural** — comprobar que el SQL corre en un PostgreSQL real, que es
+idempotente y que sus verificaciones son ejecutables, antes de tocar el entorno
+autorizado.
+
+Ese ensayo **no satisface, no aprueba y no adelanta G2**:
+
+- una base local **no es staging** y no debe reportarse como tal;
+- ninguna corrida local puede marcar las casillas de *Precondiciones* de este
+  paquete ni habilitar el avance a G3;
+- la ejecución formal exige el **entorno remoto autorizado** y las
+  precondiciones humanas correspondientes (backup verificado, flags apagados,
+  aprobación explícita).
+
+Dicho de otro modo: el ensayo local responde *"¿el script funciona?"*; G2
+responde *"¿estamos autorizados a cambiar el entorno real, y quedó verificado
+allí?"*. Aprobar lo primero nunca implica lo segundo.
+
 ## Post-aplicación (flags)
 
 Solo después de staging verde:
