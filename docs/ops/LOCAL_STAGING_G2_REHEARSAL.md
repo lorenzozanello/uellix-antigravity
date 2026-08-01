@@ -400,6 +400,70 @@ Cero acceso remoto. Cero `stella_0003`. Cero `grounding_0001`. Cero G3. Cero
 rollbacks. Cero seeds. Cero resets. Otros stacks (`uellix-antigravity`,
 `aforiq`) intactos. **Cero ejecución formal del gate G2.**
 
+## APPEND-ONLY TRUNCATE HARDENING — RUN 1
+
+> **No es la aprobación formal de G2.** Ensayo estructural sobre el stack local
+> desechable. Una base local no es staging; el gate sigue sin ejecutar.
+
+Cierra **RK-04b**. La auditoría previa demostró que
+`SET LOCAL ROLE authenticated; TRUNCATE TABLE public.stella_interactions;`
+**tenía éxito**: un trigger `FOR EACH ROW` no se dispara en `TRUNCATE` y RLS no
+lo gobierna.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-01, 12:16–12:17 (hora local) |
+| Commits | `f28627b` (0002b), `58210c2` (0003), `4e3352b` (docs/tests) |
+| Script | `db/prepared/stella_0002b_append_only_truncate_hardening.sql` |
+| SHA-256 | `781e8b58fe2f512c4214016421199c853f9ed840fde0f27f701ddf247aace550` |
+| 1ª aplicación | exit **0**, ~866 ms, auto-verificación superada |
+| 2ª aplicación (idempotencia) | exit **0**, ~736 ms, mismo hash, sin duplicados |
+
+### Matriz de privilegios — antes / después
+
+Sobre las **cuatro** tablas append-only (`stella_interactions`, `audit_logs`,
+`sroi_calculation_runs`, `sroi_calculation_line_items`):
+
+| Rol | Antes | Después |
+|---|---|---|
+| `authenticated` | `SELECT, INSERT, REFERENCES, TRIGGER, TRUNCATE, MAINTAIN` | **`SELECT, INSERT`** |
+| `service_role` | `SELECT, INSERT, UPDATE, DELETE, REFERENCES, TRIGGER, TRUNCATE, MAINTAIN` | **`SELECT, INSERT`** |
+| `anon` | nada | nada |
+| `postgres` (owner) | todo | todo — **no acotable por grants**; lo detiene el trigger |
+
+Conteos verificados tras la 2ª corrida: 4 triggers `*_no_truncate`, 4 triggers
+`*_append_only`, **0 duplicados**, **0 privilegios peligrosos**, **16/16**
+`SELECT`+`INSERT` preservados, 4 tablas con RLS, 1 interacción sintética.
+
+### Pruebas de `TRUNCATE` por rol
+
+En transacción con `ROLLBACK`, sin `CASCADE`, sobre la única fila sintética:
+
+| Rol | Resultado | SQLSTATE | Origen del bloqueo |
+|---|---|---|---|
+| `authenticated` | bloqueado | `42501` | **privilegio** — `permission denied for table stella_interactions` |
+| `service_role` | bloqueado | `42501` | **privilegio** — `permission denied for table stella_interactions` |
+| `postgres` (owner) | bloqueado | `42501` | **trigger** — `append-only: TRUNCATE on stella_interactions is not permitted` |
+
+Esto es exactamente el diseño de dos capas funcionando sobre poblaciones
+distintas: los grants detienen a todo rol que no sea el owner; el trigger es la
+**única** capa que alcanza al owner — y aquí importa, porque `db/client.ts`
+conecta con `DATABASE_URL`, es decir, como `postgres`.
+
+**Datos preservados:** la fila sintética sobrevivió a las tres pruebas
+(`count = 1`, `context_hash` de 64 chars, `tokens_used = 0`).
+
+`stella_0002b_rollback.sql` también se ejecutó (paso 11): reportó las tres
+protecciones intactas y salió 0, sin modificar nada.
+
+### Alcance
+
+Cero acceso remoto. Cero `stella_0003` (endurecido pero **no aplicado**). Cero
+`grounding_0001`. Cero G3. Otros stacks intactos. **Cero ejecución formal de
+G2.** Los `ALTER DEFAULT PRIVILEGES` globales **no** se tocaron: siguen
+concediendo `Dxtm` a toda tabla nueva (**RK-04c**, diferido a un gate
+transversal).
+
 ## MANUAL MIGRATION 003 DECISION
 
 **Clasificación: `CONDITIONAL_LEGACY_ONLY`.**
