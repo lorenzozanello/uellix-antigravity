@@ -80,6 +80,18 @@ heredado de otro worktree.
 Aplicado por la propia CLI al iniciar el stack sobre un volumen nuevo:
 trigger `auth.users → public.users`, políticas de Storage. 2 archivos.
 
+**No se ejecuta ningún comando para este paso.** Los 2 archivos ya fueron
+aplicados por `pnpm supabase start` antes de que empezara el ciclo manual, y
+**no deben reaplicarse** durante la construcción de la base. Estado verificado
+en la base local (solo `SELECT`, sin reaplicar):
+
+| Objeto | Origen | Estado |
+|---|---|---|
+| `auth.users` → trigger `on_auth_user_created` | `20260716000000_auth_trigger.sql` | presente |
+| `auth.users` → trigger `on_auth_user_updated` | `20260716000000_auth_trigger.sql` | presente |
+| `public.handle_new_user()` | `20260716000000_auth_trigger.sql` | presente |
+| `storage.objects` → 3 policies (`select/insert/delete_evidence`) | `20260716000001_storage_policies.sql` | presentes |
+
 ### 2. `db/migrations/` (Drizzle — AUTO_APPLY_LOCAL)
 ```bash
 pnpm db:migrate:local
@@ -92,8 +104,12 @@ aplicar:
 ```bash
 psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -f db/manual-migrations/001_unique_constraints.sql
 psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -f db/manual-migrations/002_append_only.sql
-psql "postgresql://postgres:postgres@127.0.0.1:56322/postgres" -f db/manual-migrations/003_numeric_columns.sql
 ```
+
+**`003_numeric_columns.sql` es CONDICIONAL — no se aplica en una base fresca.**
+Sobre una base reconstruida desde cero por el paso 2, la migración `0016` ya
+dejó esas columnas en `numeric`, y el `PRECHECK` de 003 ni siquiera compila.
+Ver *MANUAL MIGRATION 003 DECISION* más abajo antes de ejecutarlo.
 
 ### 4. `db/policies/` (MANUAL_REQUIRED_LOCAL)
 En orden, los 8 archivos — `002_stella_interactions_rls.sql` es precondición
@@ -169,6 +185,120 @@ pnpm supabase start
 Repetir los pasos 2–11 íntegros. Si la segunda corrida diverge de la primera
 en cualquier verificación, el ensayo se considera inválido — el ciclo es
 desechable y reconstruible en minutos, por diseño.
+
+## MANUAL MIGRATION 003 DECISION
+
+**Clasificación: `CONDITIONAL_LEGACY_ONLY`.**
+**Decisión para esta base: `ALREADY_SATISFIED_ON_FRESH_DRIZZLE_BUILD`.**
+**El bloque `APPLY` de 003 no se ejecutó** — ni total ni parcialmente.
+
+### Error observado
+
+Al correr el `PRECHECK` de `db/manual-migrations/003_numeric_columns.sql`
+(consulta de solo lectura, sin tocar datos) contra la base local recién
+migrada:
+
+```
+ERROR:  operator does not exist: numeric !~ unknown
+LINE 3:   FROM project_investments WHERE amount !~ '^-?[0-9]+(\.[0-9...
+HINT:  No operator matches the given name and argument types.
+```
+
+### Causa
+
+El `PRECHECK` busca valores no convertibles con el operador regex `!~`, que en
+PostgreSQL **solo está definido para tipos text-like**. Que no compile no es un
+fallo de la base: es la prueba de que las columnas ya **no** son `varchar`.
+
+El historial del repositorio lo explica por completo:
+
+1. `0007` / `0009` / `0010` crean esas columnas como `varchar(255)`, con CHECKs
+   escritos en forma textual — p. ej.
+   `CHECK (cast(nullif(quantity,'') as numeric) > 0)`.
+2. `db/manual-migrations/003_numeric_columns.sql` convierte a `numeric` fuera
+   de banda. Drizzle nunca lo capturó en un snapshot.
+3. `db/migrations/0016_fat_mac_gargan.sql` — *"snapshot reconciliation: fold
+   the manual numeric-columns migration into the drizzle-kit chain"* — pliega
+   003 dentro de la cadena, **añadiendo cláusulas `USING` explícitas** para que
+   una base limpia pueda hacer el cast. Su propia cabecera lo declara: *"A
+   fresh environment applying 0000..0015 through drizzle (which never converts
+   to numeric) reaches the numeric state here instead of needing 003
+   separately."*
+
+`docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md` §3 lo registra como precedente:
+0016 *"ya resolvió exactamente este problema para
+`db/manual-migrations/003_numeric_columns.sql`"*.
+
+### Matriz de columnas y comparación triple
+
+- **A** = estado objetivo declarado por `003_numeric_columns.sql`
+- **B** = estado declarado por `db/schema.ts` + `meta/0016_snapshot.json`
+- **C** = estado real en `supabase_db_uellix-stella-g2-local-rehearsal`
+
+| # | Tabla | Columna | A (003) | B (schema/snapshot) | C (PostgreSQL real) | Nulabilidad (B = C) | Veredicto |
+|---|---|---|---|---|---|---|---|
+| 1 | `project_investments` | `amount` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | NOT NULL | `EXACT_MATCH` |
+| 2 | `financial_proxies` | `value` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 3 | `sroi_assignment_inputs` | `quantity` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | NOT NULL | `EXACT_MATCH` |
+| 4 | `sroi_calculation_runs` | `total_investment` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 5 | `sroi_calculation_runs` | `gross_social_value` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 6 | `sroi_calculation_runs` | `net_social_value` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 7 | `sroi_calculation_runs` | `sroi_ratio` | **`numeric(20,6)`** | **`numeric(20,6)`** | **`numeric(20,6)`** | nullable | `EXACT_MATCH` |
+| 8 | `sroi_calculation_line_items` | `quantity` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 9 | `sroi_calculation_line_items` | `proxy_value` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 10 | `sroi_calculation_line_items` | `gross_value` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+| 11 | `sroi_calculation_line_items` | `adjusted_value` | `numeric(20,4)` | `numeric(20,4)` | `numeric(20,4)` | nullable | `EXACT_MATCH` |
+
+**11 `EXACT_MATCH` / 0 `COMPATIBLE_BUT_DIFFERENT` / 0 `MISMATCH` / 0 `UNKNOWN`.**
+`sroi_ratio` es la única columna con escala 6 — verificada por separado, no
+asumida igual al resto.
+
+### Evidencia SQL (solo lectura)
+
+`information_schema` y `pg_catalog` coinciden en las 11 columnas:
+
+```
+ financial_proxies           | value              | numeric(20,4) | nullable
+ project_investments         | amount             | numeric(20,4) | NOT NULL
+ sroi_assignment_inputs      | quantity           | numeric(20,4) | NOT NULL
+ sroi_calculation_line_items | adjusted_value     | numeric(20,4) | nullable
+ sroi_calculation_line_items | gross_value        | numeric(20,4) | nullable
+ sroi_calculation_line_items | proxy_value        | numeric(20,4) | nullable
+ sroi_calculation_line_items | quantity           | numeric(20,4) | nullable
+ sroi_calculation_runs       | gross_social_value | numeric(20,4) | nullable
+ sroi_calculation_runs       | net_social_value   | numeric(20,4) | nullable
+ sroi_calculation_runs       | sroi_ratio         | numeric(20,6) | nullable
+ sroi_calculation_runs       | total_investment   | numeric(20,4) | nullable
+```
+
+Cero columnas objetivo con tipo `varchar` / `text` / `char` / `json` / `jsonb`
+(consulta explícita → 0 filas). Ningún sustituto numérico en otra columna.
+
+Los CHECK re-añadidos están en **forma nativa numérica**, no en la forma
+textual de la era `varchar` — la huella que solo deja 0016:
+
+```
+ project_investments_amount_check      | CHECK ((amount > (0)::numeric))
+ sroi_assignment_inputs_quantity_check | CHECK ((quantity > (0)::numeric))
+```
+
+### Qué obligaría a ejecutar 003 en otra base
+
+003 **no está deprecada** y no debe borrarse. Sigue siendo obligatoria cuando:
+
+- la base es **legacy** y sus columnas objetivo aún son `varchar`/`text` —
+  típicamente un restore de un dump anterior a 0016 (jul-2026);
+- la base aplicó `0000`…`0015` pero **no** `0016` (journal sin
+  `0016_fat_mac_gargan`);
+- el `PRECHECK` **sí compila** — si `!~` es aceptado, las columnas son
+  text-like y la conversión está pendiente.
+
+Regla operativa: **si el `PRECHECK` de 003 falla con
+`operator does not exist: numeric !~`, la migración ya está satisfecha y no
+debe ejecutarse. Si el `PRECHECK` corre, debe ejecutarse.**
+
+No se omitió en silencio ni se evadió el `PRECHECK`: se clasificó con
+evidencia y quedó fijada por `tests/manual-migration-003-classification.test.ts`.
 
 ## Comandos de gestión del stack
 
