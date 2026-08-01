@@ -14,7 +14,7 @@
 // convergent reconciliation, and transaction compatibility.
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const PREPARED = path.resolve(process.cwd(), 'db', 'prepared')
@@ -432,7 +432,9 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
     // decision_check missing 'undone') must be rebuilt, not skipped.
     expect(raw).toMatch(/pg_get_constraintdef/)
     for (const value of ['accepted', 'accepted_edited', 'rejected', 'undone']) {
-      expect(raw).toContain(`def NOT LIKE '%''${value}''%'`)
+      // position(), not LIKE: `_` is a LIKE wildcard, so the old form also
+      // accepted a stale 'acceptedXedited'. See MIN-A.
+      expect(raw).toContain(`position('''${value}''' in def)`)
     }
     expect(raw).toMatch(/DROP CONSTRAINT stella_suggestion_decisions_decision_check/)
     expect(raw).toMatch(/DROP CONSTRAINT stella_suggestion_decisions_prev_hash_check/)
@@ -442,7 +444,7 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
     // Matching the bare class would accept a stale UNANCHORED constraint
     // ('[0-9a-f]{64}' without ^$), which admits "<raw text><64 hex><more>" —
     // exactly the leak the hash-not-content invariant exists to prevent.
-    expect(raw).toContain("def NOT LIKE '%''^[0-9a-f]{64}$''%'")
+    expect(raw).toContain("position('''^[0-9a-f]{64}$''' in def)")
   })
 
   it('guards PK, id default and unexpected NOT NULL columns (audit M2)', () => {
@@ -482,7 +484,11 @@ describe('db/prepared/stella_0003_rollback.sql', () => {
   it('drops exactly the one NEW table this package creates, nothing pre-existing', () => {
     const dropTargets = [...code.matchAll(/DROP TABLE IF EXISTS ([\w.]+)/gi)].map((m) => m[1])
     expect(dropTargets).toEqual(['public.stella_suggestion_decisions'])
-    expect(code).not.toMatch(/\b(DROP SCHEMA|TRUNCATE|DELETE FROM|DROP EXTENSION|DROP FUNCTION)\b/i)
+    expect(code).not.toMatch(/\b(DROP SCHEMA|DELETE FROM|DROP EXTENSION|DROP FUNCTION)\b/i)
+    // TRUNCATE is named in the operator-facing NOTICEs ("the append-only
+    // triggers forbid UPDATE/DELETE/TRUNCATE"), so classify by position rather
+    // than banning the word: only a TRUNCATE *command* is forbidden.
+    expectNoTruncateCommand(code)
   })
 
   it('documents the flag precondition and export-first warning', () => {
@@ -748,13 +754,13 @@ describe('audit fixes — MAJ-01: bounded lock acquisition', () => {
 describe('audit fixes — MAJ-02: stella_0003 asserts its own write path', () => {
   const raw = read('stella_0003_suggestion_decisions.sql')
 
-  it('aborts if the applying role cannot INSERT', () => {
-    // The writer's access comes from OWNING the table. Applying this script as
-    // a role other than the one the app connects as would leave no INSERT path,
-    // and the REVOKE ALL means an inherited service_role grant can no longer
-    // mask the mistake.
-    expect(raw).toMatch(/has_table_privilege\(current_user, 'public\.stella_suggestion_decisions', 'INSERT'\)/)
-    expect(raw).toMatch(/cannot INSERT into public\.stella_suggestion_decisions/)
+  it('aborts if the declared writer role has no working INSERT path', () => {
+    // Superseded 2026-08-01 (MAJ-A). The original assertion pinned
+    // has_table_privilege(current_user, ...), which returns true for ANY
+    // superuser and proved the installer's access rather than the
+    // application's. The replacement resolves a DECLARED writer role.
+    expect(raw).toMatch(/has no working INSERT path/)
+    expect(raw).toMatch(/stella\.writer_role/)
   })
 
   it('verifies the RLS helpers are EXECUTABLE, not merely present (MIN-08)', () => {
@@ -844,5 +850,574 @@ describe('audit fixes — MIN-09: order hazard is documented', () => {
     const raw = read('stella_0002_rollback.sql')
     expect(raw).toMatch(/ORDER HAZARD vs stella_0002b/)
     expect(raw).toMatch(/asymmetric/i)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// stella_0003 pre-apply hardening (2026-08-01) — MAJ-A / MAJ-B / MAJ-C
+// ---------------------------------------------------------------------------
+// Pins the fixes made before this script's FIRST application anywhere. Each
+// test names the finding it closes.
+
+describe('stella_0003 MAJ-A — the write-path guard is not vacuous', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+  // Absence assertions must read the EXECUTABLE sql: the comments legitimately
+  // quote the old, rejected patterns while explaining why they were replaced.
+  const code = stripCommentsAndStrings(raw)
+
+  it('never uses has_table_privilege(current_user, ...)', () => {
+    // The old guard did exactly this. has_table_privilege() returns true
+    // unconditionally for any role with rolsuper, so it was blind precisely in
+    // the case its own comment named: the script being applied by tooling
+    // running as supabase_admin.
+    // Read `code`, not `raw`: the replacement's own comment quotes the old
+    // pattern verbatim while explaining why it was removed.
+    expect(code).not.toMatch(/has_table_privilege\(\s*current_user/i)
+  })
+
+  it('declares an explicit writer role instead of assuming the installer', () => {
+    expect(raw).toMatch(/current_setting\('stella\.writer_role', true\)/)
+    // And documents how it is set, how it fails when absent, how it is verified.
+    expect(raw).toMatch(/SET stella\.writer_role/)
+    expect(raw).toMatch(/WHEN UNSET/)
+    expect(raw).toMatch(/ASSUMPTION, not a verification/)
+  })
+
+  it('resolves privileges through aclexplode, so inheritance cannot satisfy it', () => {
+    // aclexplode() over relacl reads the ACL literally: privileges reached via
+    // role membership do not appear, and there is no superuser short-circuit.
+    expect(raw).toMatch(/aclexplode\(COALESCE\(c\.relacl, acldefault\('r', c\.relowner\)\)\)/)
+    // Superseded by m3: the grantee OID is resolved by exact rolname rather
+    // than through ::regrole, which lowercases and dot-splits its input.
+    expect(raw).toMatch(/a\.grantee = writer_oid/)
+  })
+
+  it('requires ownership OR (direct INSERT+SELECT AND rolbypassrls)', () => {
+    // RLS is enabled with no INSERT policy, so a bare INSERT grant is not a
+    // working write path. INSERT ... RETURNING id also needs SELECT.
+    expect(raw).toMatch(/owner_is_writer/)
+    expect(raw).toMatch(/rolbypassrls/)
+    expect(raw).toMatch(/direct_insert/)
+    expect(raw).toMatch(/direct_select/)
+    expect(raw).toMatch(/RETURNING id/)
+  })
+
+  it('refuses a PostgREST role as table owner', () => {
+    expect(raw).toMatch(/a PostgREST role/)
+  })
+
+  it('tells the operator NOT to grant INSERT just to satisfy the guard', () => {
+    expect(raw).toMatch(/Do NOT grant INSERT to authenticated or service_role/)
+  })
+
+  it('separates what SQL proves from what it cannot', () => {
+    // Structural guard / offline code test / human gate precondition.
+    expect(raw).toMatch(/STRUCTURAL GUARD/)
+    expect(raw).toMatch(/OFFLINE CODE TEST/)
+    expect(raw).toMatch(/HUMAN GATE PRECONDITION/)
+  })
+})
+
+describe('stella_0003 MAJ-C — roles guard runs before anything is created', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+
+  it('checks anon, authenticated and service_role exist', () => {
+    expect(raw).toMatch(/FROM \(VALUES \('anon'\), \('authenticated'\), \('service_role'\)\) AS r\(name\)/)
+    expect(raw).toMatch(/missing role\(s\)/)
+  })
+
+  it('places that guard before the CREATE TABLE', () => {
+    // Anchor on the guard's VALUES list and on the fully-qualified CREATE
+    // TABLE: the bare phrase 'CREATE TABLE IF NOT EXISTS' also appears in a
+    // header comment far above the real statement, and the guard's message
+    // lives inside a string literal (blanked by stripCommentsAndStrings), so
+    // neither raw-substring nor code-substring alone is reliable here.
+    const guardAt = raw.indexOf("('anon'), ('authenticated'), ('service_role')")
+    const createAt = raw.indexOf('CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions')
+    expect(guardAt, 'roles guard not found').toBeGreaterThan(-1)
+    expect(createAt, 'CREATE TABLE statement not found').toBeGreaterThan(-1)
+    expect(guardAt).toBeLessThan(createAt)
+  })
+
+  it('does not fold the writer role into the fixed-role guard', () => {
+    // The installer is explicitly NOT assumed to be the writer.
+    expect(raw).toMatch(/installer is NOT assumed to be it/)
+  })
+})
+
+describe('stella_0003 MAJ-B — final self-verification', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+
+  it('exists and runs after the objects it checks', () => {
+    expect(raw).toMatch(/Self-verification/)
+    expect(raw.lastIndexOf('CREATE TRIGGER')).toBeLessThan(raw.indexOf('FAILED verification'))
+  })
+
+  it('explains why running REVOKE is not evidence', () => {
+    expect(raw).toMatch(/only removes grants made by the CURRENT grantor/)
+    expect(raw).toMatch(/WARNING — never an error/)
+  })
+
+  it.each([
+    ['table exists', /does not exist after the script ran/],
+    ['owner is not a PostgREST role', /FAILED verification: table owner is/],
+    ['column contract', /column contract broken/],
+    ['primary key', /PRIMARY KEY on \(id\) missing/],
+    ['foreign keys', /missing FOREIGN KEY\(s\)/],
+    ['no unexpected UNIQUE', /unexpected UNIQUE constraint/],
+    ['decision CHECK', /decision CHECK missing or incomplete/],
+    ['hash CHECK anchored', /CHECK missing or not anchored/],
+    ['RLS enabled', /ROW LEVEL SECURITY is not enabled/],
+    ['exactly one policy', /expected exactly 1 RLS policy/],
+    ['row trigger', /expected exactly 1 BEFORE UPDATE OR DELETE FOR EACH ROW trigger/],
+    ['truncate trigger', /expected exactly 1 BEFORE TRUNCATE FOR EACH STATEMENT trigger/],
+    ['both bound to the shared function', /triggers bound to public\.uellix_forbid_mutation/],
+    ['no extra triggers', /unexpected extra trigger/],
+    ['no residual privileges', /unexpected DIRECT privilege\(s\) present/],
+    ['not over-revoked', /authenticated LOST its direct SELECT grant/],
+    // NOTE: the former checks (19) evidence_chunks-absent and (20)
+    // default-privileges-untouched were REMOVED in review round 2 — see the
+    // 'review round 2' describe below. (19) broke convergence once
+    // grounding_0001 is applied under its own gate; (20) was unfalsifiable.
+    ['no unexpected columns', /expected exactly 11 columns/],
+    ['FORCE RLS off', /FORCE ROW LEVEL SECURITY is ON/],
+  ])('asserts: %s', (_label, pattern) => {
+    expect(raw).toMatch(pattern)
+  })
+
+  it('reads pg_catalog, not information_schema, for privileges', () => {
+    // Strip comments: the block's own prose explains WHY
+    // information_schema.role_table_grants is unusable here.
+    const verify = stripCommentsAndStrings(raw.slice(raw.indexOf('Self-verification')))
+    expect(verify).toMatch(/aclexplode/)
+    expect(verify).not.toMatch(/information_schema/)
+  })
+
+  it('uses pg_policy/pg_trigger/pg_constraint rather than views', () => {
+    // Strip comments: this block's own prose explains WHY
+    // information_schema.role_table_grants is unusable here.
+    const verify = stripCommentsAndStrings(raw.slice(raw.indexOf('Self-verification')))
+    for (const cat of ['pg_policy', 'pg_trigger', 'pg_constraint', 'pg_attribute', 'pg_class']) {
+      expect(verify, `self-verification does not read ${cat}`).toMatch(new RegExp(`\\b${cat}\\b`))
+    }
+  })
+})
+
+describe('stella_0003 MIN-A — accepted_edited is matched literally', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+
+  it('uses position(), never LIKE, for the decision literals', () => {
+    // `_` is a LIKE wildcard: LIKE '%''accepted_edited''%' would also accept a
+    // stale constraint spelling 'acceptedXedited' and leave it in place.
+    // Absence is asserted on the executable sql: the explanatory comments
+    // quote the rejected LIKE form on purpose.
+    const codeOnly = stripCommentsAndStrings(raw)
+    expect(codeOnly).not.toMatch(/\bLIKE\b/i)
+    expect(raw).toMatch(/position\('''accepted_edited''' in def\)/)
+  })
+
+  it('matches the anchored hash pattern literally too', () => {
+    expect(raw).toMatch(/position\('''\^\[0-9a-f\]\{64\}\$''' in def\)/)
+  })
+})
+
+describe('stella_0003 — append-only triggers and grant targets', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('creates exactly the two append-only triggers, idempotently', () => {
+    expect(code).toMatch(
+      /CREATE TRIGGER trg_stella_suggestion_decisions_append_only\s+BEFORE UPDATE OR DELETE ON public\.stella_suggestion_decisions\s+FOR EACH ROW EXECUTE FUNCTION public\.uellix_forbid_mutation\(\)/i,
+    )
+    expect(code).toMatch(
+      /CREATE TRIGGER trg_stella_suggestion_decisions_no_truncate\s+BEFORE TRUNCATE ON public\.stella_suggestion_decisions\s+FOR EACH STATEMENT EXECUTE FUNCTION public\.uellix_forbid_mutation\(\)/i,
+    )
+    expect([...code.matchAll(/CREATE TRIGGER/gi)]).toHaveLength(2)
+    expect([...code.matchAll(/DROP TRIGGER IF EXISTS/gi)]).toHaveLength(2)
+  })
+
+  it('leaves no Dxtm residue: REVOKE ALL for all three roles, then SELECT only', () => {
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      expect(code).toMatch(new RegExp(`REVOKE ALL ON public\\.stella_suggestion_decisions FROM ${role}`, 'i'))
+    }
+    expect(code).toMatch(/GRANT SELECT ON public\.stella_suggestion_decisions TO authenticated/i)
+    expect(code).not.toMatch(/GRANT[^;]*TO service_role/i)
+    expect(code).not.toMatch(/GRANT[^;]*\b(TRUNCATE|REFERENCES|TRIGGER|MAINTAIN|ALL)\b[^;]*TO/i)
+  })
+
+  it('sets a lock_timeout', () => {
+    expect(raw).toMatch(/SET lock_timeout = '\d+s'/)
+  })
+})
+
+describe('stella_0003 rollback — destructive, and protected accordingly', () => {
+  const raw = read('stella_0003_rollback.sql')
+
+  it('sets a lock_timeout before taking ACCESS EXCLUSIVE', () => {
+    expect(raw).toMatch(/SET lock_timeout = '\d+s'/)
+  })
+
+  it('is a no-op when the table does not exist', () => {
+    expect(raw).toMatch(/does not exist — nothing to do \(idempotent no-op\)/)
+  })
+
+  it('counts rows and reports the count before dropping', () => {
+    expect(raw).toMatch(/SELECT count\(\*\) FROM public\.stella_suggestion_decisions/)
+    expect(raw).toMatch(/RAISE NOTICE 'Rows currently stored: %'/)
+  })
+
+  it('aborts when rows exist and destruction was not authorised', () => {
+    expect(raw).toMatch(/stella\.confirm_destroy_decisions/)
+    expect(raw).toMatch(/destruction was NOT authorised/)
+    expect(raw).toMatch(/RAISE EXCEPTION 'stella_0003_rollback aborted/)
+  })
+
+  it('warns that DROP TABLE erases the audit trail and triggers cannot stop it', () => {
+    expect(raw).toMatch(/erases this human-decision audit trail/)
+    expect(raw).toMatch(/cannot stop DROP TABLE/)
+  })
+
+  it('names the four meanings of rollback and the human responsibility', () => {
+    for (const m of [
+      /TECHNICAL ROLLBACK, BEFORE USE/,
+      /DESTRUCTION WITH DATA/,
+      /EMERGENCY OPERATION/,
+      /HUMAN RESPONSIBILITY/,
+    ]) {
+      expect(raw).toMatch(m)
+    }
+  })
+
+  it('never restores unsafe grants and never touches 0002/0002b', () => {
+    const code = stripCommentsAndStrings(raw)
+    expect(code).not.toMatch(/\bGRANT\b/i)
+    expect(code).not.toMatch(/stella_interactions|audit_logs|sroi_calculation/i)
+    expect(code).not.toMatch(/DROP FUNCTION/i)
+  })
+
+  it('drops exactly the one table this package creates', () => {
+    const code = stripCommentsAndStrings(raw)
+    const targets = [...code.matchAll(/DROP TABLE IF EXISTS ([\w.]+)/gi)].map((m) => m[1])
+    expect(targets).toEqual(['public.stella_suggestion_decisions'])
+  })
+})
+
+describe('G2 verification must not use the ambiguous grants view', () => {
+  const g2 = readFileSync(
+    path.resolve(process.cwd(), 'docs', 'ops', 'gates', 'G2_PACKAGE.md'),
+    'utf8',
+  )
+
+  it('checks stella_suggestion_decisions grants via aclexplode, not role_table_grants', () => {
+    // information_schema.role_table_grants expands privileges reached through
+    // role MEMBERSHIP, and postgres is a member of authenticated/service_role
+    // in Supabase — so it returns owner and inherited rows and reads as a false
+    // red. Measured on this stack: 11 rows vs 4 real direct grants.
+    const section = g2.slice(g2.indexOf('-- 6.'), g2.indexOf('-- 7.'))
+    expect(section).not.toMatch(/role_table_grants\s*\n?\s*WHERE/i)
+    expect(section).toMatch(/aclexplode\(COALESCE\(c\.relacl, acldefault\('r', c\.relowner\)\)\)/)
+    expect(section).toMatch(/a\.grantee = 0/) // PUBLIC check
+  })
+
+  it('explains why the view is wrong, so it does not come back', () => {
+    expect(g2).toMatch(/NO uses information_schema\.role_table_grants/)
+    expect(g2).toMatch(/MEMBRESÍA|membres/i)
+    expect(g2).toMatch(/falso rojo/i)
+  })
+})
+
+describe('retention policy states the real FK semantics', () => {
+  const pol = readFileSync(
+    path.resolve(process.cwd(), 'docs', 'ops', 'STELLA_RETENTION_POLICY.md'),
+    'utf8',
+  )
+
+  it('no longer claims an organizational delete cascade', () => {
+    expect(pol).toMatch(/NO existe ninguna cascada/i)
+    expect(pol).toMatch(/NO ACTION/)
+  })
+
+  it('says the rows BLOCK the parent delete and what to do first', () => {
+    expect(pol).toMatch(/bloquean/i)
+    expect(pol).toMatch(/violates foreign key constraint/)
+    expect(pol).toMatch(/Exportar/i)
+  })
+
+  it('records that nothing is automated and that 4.2 is now trigger-blocked', () => {
+    expect(pol).toMatch(/NO está automatizado/i)
+    expect(pol).toMatch(/bloqueada por el trigger append-only/i)
+  })
+})
+
+describe('the hardening did not touch the drizzle chain', () => {
+  it('db/schema.ts does not mention the gate-managed tables', () => {
+    const schema = readFileSync(path.resolve(process.cwd(), 'db', 'schema.ts'), 'utf8')
+    expect(schema).not.toMatch(/stella_suggestion_decisions|suggestionDecisions/)
+    expect(schema).not.toMatch(/evidence_chunks|evidenceChunks/)
+  })
+
+  it('no migration references the prepared scripts', () => {
+    const journal = readFileSync(
+      path.resolve(process.cwd(), 'db', 'migrations', 'meta', '_journal.json'),
+      'utf8',
+    )
+    expect(journal).not.toContain('stella_0003')
+    expect(journal).not.toContain('stella_0002b')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Independent review round 2 (2026-08-01) — M1 + m1..m7
+// ---------------------------------------------------------------------------
+// Regression tests for the findings of the second independent review of the
+// stella_0003 pre-apply hardening. Each names the finding it closes.
+
+describe('review round 2 — stella_0003 forward', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('M1: never aborts because evidence_chunks exists', () => {
+    // grounding_0001 legitimately creates public.evidence_chunks on the SAME
+    // database under its own gate (G5 P3). Raising here would make every
+    // re-run of this script abort once that gate is applied, breaking the
+    // convergence the header promises. The real invariant — that THIS file
+    // never creates it — is static and covered offline.
+    expect(code).not.toMatch(/evidence_chunks/i)
+    expect(raw).toMatch(/NOT CHECKED AT RUNTIME, deliberately/)
+    expect(raw).toMatch(/grounding_0001_evidence_chunks\.sql legitimately creates/)
+  })
+
+  it('m1: drops the pg_default_acl check that could never fire', () => {
+    // defaclacl is aclitem[] — 'grantee=privs/grantor' — and never contains a
+    // table name, so position('stella_suggestion_decisions' in ...) was always
+    // 0: a check that reported itself verified while being unfalsifiable.
+    expect(code).not.toMatch(/pg_default_acl/)
+    expect(raw).toMatch(/unfalsifiable/)
+  })
+
+  it('m2: requires FORCE ROW LEVEL SECURITY to be OFF, in both places', () => {
+    // The whole write path rests on the owner bypassing RLS. With FORCE ON the
+    // owner stops bypassing and, with no INSERT policy, every write fails —
+    // while the script would still report VERIFIED.
+    expect(code).toMatch(/relforcerowsecurity/)
+    expect([...code.matchAll(/relforcerowsecurity/g)].length).toBeGreaterThanOrEqual(2)
+    expect(raw).toMatch(/FORCE ROW LEVEL SECURITY is ON/)
+  })
+
+  it('m3: resolves the writer OID by rolname, never through ::regrole', () => {
+    // regrolein parses its argument as an SQL identifier: it lowercases
+    // unquoted input and splits on dots, so a role named "AppWriter" or
+    // "app.writer" would pass the existence check and then fail resolving.
+    expect(code).not.toMatch(/::regrole/)
+    expect(code).toMatch(/SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = writer/)
+    expect(code).toMatch(/a\.grantee = writer_oid/)
+  })
+
+  it('m4: the decision CHECK must contain the four states AND no others', () => {
+    // position() proves presence, not exclusivity: a stale CHECK also allowing
+    // 'deleted' would satisfy four probes and pass.
+    expect(code).toMatch(/regexp_matches\(def/)
+    expect(raw).toMatch(/Presence is not exclusivity/)
+    expect(raw).toMatch(/allows unexpected state\(s\)/)
+  })
+
+  it('m5: a grantable SELECT is not treated as the allowed plain SELECT', () => {
+    // authenticated=r*/postgres would let authenticated re-grant SELECT to anon.
+    expect(code).toMatch(/NOT a\.is_grantable/)
+  })
+
+  it('m6: rejects extra columns, extra FKs, and non-NO-ACTION delete rules', () => {
+    expect(raw).toMatch(/expected exactly 11 columns/)
+    expect(raw).toMatch(/expected exactly 4 foreign keys/)
+    // confdeltype 'a' = NO ACTION — a deliberate invariant per RK-04f.
+    // Read `raw`: stripCommentsAndStrings blanks the 'a' literal.
+    expect(raw).toMatch(/c\.confdeltype = 'a'/)
+    expect(raw).toMatch(/not ON DELETE NO ACTION/)
+  })
+
+  it('m7: refuses a PostgREST role as the declared writer', () => {
+    expect(raw).toMatch(/declared writer role % is a PostgREST role/)
+  })
+})
+
+describe('review round 2 — stella_0003 rollback authorization', () => {
+  const raw = read('stella_0003_rollback.sql')
+
+  it("accepts only the exact string 'true' as destruction authorization", () => {
+    // No ambiguous values: 'yes', 'y', '1' and anything else must NOT authorise
+    // erasing an audit trail.
+    expect(raw).toMatch(/current_setting\('stella\.confirm_destroy_decisions', true\), ''\) = 'true'/)
+    expect(raw).not.toMatch(/= 'yes'/)
+    expect(raw).toMatch(/SET stella\.confirm_destroy_decisions = 'true'/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Review round 3 (2026-08-01) — MAJOR-1: the OFFLINE CODE TEST §4b cites
+// ---------------------------------------------------------------------------
+// stella_0003 §4b splits its assurance into three parts and names this file as
+// part 2: "the application's only write path is db/client.ts (postgres-js over
+// DATABASE_URL), not a service_role/PostgREST client".
+//
+// That claim was TRUE but UNENFORCED — nothing tested it. Which is exactly the
+// defect M1 and m1 closed elsewhere in this package: a verification declared
+// and not performed. It is load-bearing here, because it is the stated reason
+// the SQL guard is allowed to stop where it does.
+
+const REPO = process.cwd()
+const readRepo = (...p: string[]) => readFileSync(path.join(REPO, ...p), 'utf8')
+
+describe('MAJOR-1 — the write path stella_0003 §4b relies on is pinned here', () => {
+  const client = readRepo('db', 'client.ts')
+  const decisions = readRepo('app', 'actions', 'stella', 'decisions.ts')
+
+  it('db/client.ts is a direct postgres-js connection over DATABASE_URL', () => {
+    // If this ever became a supabase-js client, the writer would stop being the
+    // DATABASE_URL role and the SQL guard's owner check would be verifying the
+    // wrong thing.
+    expect(client).toMatch(/from 'postgres'/)
+    expect(client).toMatch(/process\.env\.DATABASE_URL/)
+    expect(client).toMatch(/drizzle\(client/)
+    expect(client).not.toMatch(/createClient|@supabase\/supabase-js/)
+    expect(client).not.toMatch(/SERVICE_ROLE/)
+  })
+
+  it('recordStellaDecision writes through that client, not through supabase-js', () => {
+    expect(decisions).toMatch(/import \{ db \} from '@\/db\/client'/)
+    expect(decisions).toMatch(/db\.execute\(/)
+    // No PostgREST/service-role path to this table.
+    expect(decisions).not.toMatch(/@supabase\/supabase-js/)
+    expect(decisions).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY/)
+    expect(decisions).not.toMatch(/createClient\(/)
+  })
+
+  it('no other module reaches stella_suggestion_decisions at all', () => {
+    // The SQL grants authenticated SELECT and service_role nothing. If some
+    // other module started reading or writing this table through PostgREST,
+    // that posture would need revisiting — so fail loudly if one appears.
+    const roots = ['app', 'lib', 'components']
+    const offenders: string[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+          if (entry.name === 'node_modules' || entry.name === '__tests__') continue
+          walk(full)
+        } else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
+          const src = readFileSync(full, 'utf8')
+          // Ignore comments: several files legitimately DESCRIBE the table.
+          const code = src.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
+          if (code.includes('stella_suggestion_decisions')) {
+            offenders.push(path.relative(REPO, full).replace(/\\/g, '/'))
+          }
+        }
+      }
+    }
+    for (const r of roots) {
+      const dir = path.join(REPO, r)
+      if (existsSync(dir)) walk(dir)
+    }
+    // decisions.ts is the one legitimate consumer (its INSERT).
+    expect(offenders.sort()).toEqual(['app/actions/stella/decisions.ts'])
+  })
+
+  it('stella_0003 §4b describes this split honestly and points at a real test', () => {
+    const sql = read('stella_0003_suggestion_decisions.sql')
+    expect(sql).toMatch(/OFFLINE CODE TEST/)
+    // The cited file must be this one, and it must actually read db/client.ts.
+    expect(sql).toMatch(/tests\/prepared-stella-sql\.test\.ts/)
+  })
+})
+
+describe('review round 3 — MINOR-2..7', () => {
+  const raw = read('stella_0003_suggestion_decisions.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('MINOR-2: the (19) comment attributes enforcement to the right test', () => {
+    // It previously credited prepared-sql-source-of-truth.test.ts, which only
+    // isolates the drizzle chain, and claimed the script "does not mention
+    // evidence_chunks anywhere" — literally false, it appears in comments.
+    expect(raw).toMatch(/EXECUTABLE sql never mentions evidence_chunks/)
+    expect(raw).toMatch(/tests\/prepared-stella-sql\.test\.ts pins/)
+    expect(raw).not.toMatch(/tests\/prepared-sql-source-of-truth\.test\.ts enforces the separation/)
+  })
+
+  it('MINOR-3: literal extraction is not limited to [a-z_]', () => {
+    // `'([a-z_]+)'` produced NO match for 'accepted2', 'Deleted' or 'v2', so a
+    // stale CHECK admitting them passed the exclusivity test silently.
+    // Read `raw`: stripCommentsAndStrings blanks the SQL pattern literal.
+    // Both call sites (section 2 reconciliation and section 7 verification)
+    // must use the wide class.
+    const calls = [...raw.matchAll(/regexp_matches\(def, '''([^\n]*?)''', 'g'\)/g)].map((m) => m[1])
+    expect(calls.length).toBe(2)
+    for (const c of calls) expect(c).toBe("([^'']+)")
+  })
+
+  it('MINOR-4: section 2 reconciles on the same test section 7 enforces', () => {
+    // Otherwise a pre-existing SUPERSET CHECK survived reconciliation and then
+    // made the final verification abort the whole transaction — the header
+    // promises convergence, not a noisy failure.
+    const sec2 = raw.slice(raw.indexOf('-- 2. CHECK reconciliation'), raw.indexOf('-- 3. Indexes'))
+    expect(sec2).toMatch(/regexp_matches/)
+    expect(sec2).toMatch(/lit NOT IN \('accepted', 'accepted_edited', 'rejected', 'undone'\)/)
+  })
+
+  it('MINOR-5: PUBLIC is revoked and then verified', () => {
+    // PUBLIC is grantee OID 0 and has no pg_roles row, so a JOIN to pg_roles
+    // cannot see it. Revoke by construction, and check it explicitly.
+    expect(code).toMatch(/REVOKE ALL ON public\.stella_suggestion_decisions FROM PUBLIC/i)
+    expect(code).toMatch(/a\.grantee = 0/)
+    expect(raw).toMatch(/PUBLIC holds privilege\(s\)/)
+  })
+
+  it('MINOR-A: the "no ALTER DEFAULT PRIVILEGES" claim is actually enforced', () => {
+    // The (20) comment says this is "a static property enforced offline".
+    // Nothing enforced it — the same declared-but-unverified defect MINOR-2
+    // closed two lines above. Global default privileges are RK-04c's territory
+    // and belong to a cross-cutting gate, never to a single-table script.
+    expect(code).not.toMatch(/ALTER\s+DEFAULT\s+PRIVILEGES/i)
+    const rollback = read('stella_0003_rollback.sql')
+    expect(stripCommentsAndStrings(rollback)).not.toMatch(/ALTER\s+DEFAULT\s+PRIVILEGES/i)
+  })
+
+  it('MINOR-C: narrowing the CHECK reports offending states, not a bare PG error', () => {
+    // Rebuilding a CHECK that existing rows violate fails with PostgreSQL's
+    // generic 'check constraint "..." is violated by some row' — without the
+    // 'stella_0003 aborted:' prefix the header and the G2 abort criteria tell
+    // the operator to look for. Report the distinct STATES (never row data).
+    expect(raw).toMatch(/existing rows hold decision state\(s\) outside the contract/)
+    expect(code).toMatch(/string_agg\(DISTINCT d\.decision/)
+    expect(raw).toMatch(/No row data is shown, only the distinct states/)
+  })
+
+  it('MINOR-6: a standalone UNIQUE index is caught, not just a constraint', () => {
+    // CREATE UNIQUE INDEX enforces uniqueness without creating a constraint.
+    expect(code).toMatch(/FROM pg_index i/)
+    expect(code).toMatch(/i\.indisunique AND NOT i\.indisprimary/)
+    expect(raw).toMatch(/unexpected UNIQUE index\(es\)/)
+  })
+})
+
+describe('review round 3 — documentation is in sync with the SQL', () => {
+  const readme = readFileSync(path.join(PREPARED, 'README.md'), 'utf8')
+  const g2 = readFileSync(
+    path.resolve(process.cwd(), 'docs', 'ops', 'gates', 'G2_PACKAGE.md'),
+    'utf8',
+  )
+
+  it('MINOR-1: the registry no longer claims the two removed checks', () => {
+    expect(readme).not.toMatch(/20 comprobaciones/)
+    expect(readme).toMatch(/18 comprobaciones/)
+    // ...and says explicitly which two went, so they are not reintroduced.
+    expect(readme).toMatch(/Dos comprobaciones fueron retiradas/)
+    expect(readme).toMatch(/infalsificable/)
+  })
+
+  it('MINOR-7: every documented apply path says how to declare the writer', () => {
+    // `supabase db execute --file` and the SQL Editor cannot emit a prior SET,
+    // so without ALTER DATABASE ... SET they always land in ASSUMPTION mode.
+    expect(g2).toMatch(/ALTER DATABASE .* SET stella\.writer_role/)
+    expect(g2).toMatch(/supabase db execute --file/)
+    expect(g2).toMatch(/rama ASSUMPTION/)
   })
 })
