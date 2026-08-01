@@ -57,8 +57,25 @@ SET lock_timeout = '5s';
 -- The error reports COLUMN NAMES AND TYPES ONLY — never row data.
 DO $$
 DECLARE
-  mismatched text;
+  mismatched   text;
+  missing_roles text;
 BEGIN
+  -- 0-pre. The grantee roles must exist BEFORE anything is created or altered.
+  --        Without this, section 4's REVOKE/GRANT and section 0b's
+  --        has_function_privilege() both die on a bare
+  --        'role "authenticated" does not exist', after the table already
+  --        exists. Ported from stella_0002b §0-pre, whose comment notes this is
+  --        otherwise the one precondition the script never states.
+  --        The writer role is checked separately in section 4b, because it is
+  --        declared, not fixed — and the installer is NOT assumed to be it.
+  SELECT string_agg(r.name, ', ' ORDER BY r.name) INTO missing_roles
+  FROM (VALUES ('anon'), ('authenticated'), ('service_role')) AS r(name)
+  WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.name);
+
+  IF missing_roles IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0003 aborted: missing role(s): %. This database was not bootstrapped by Supabase; the grant model this script reconciles does not apply', missing_roles;
+  END IF;
+
   -- 0a. FK targets must exist.
   IF to_regclass('public.organizations') IS NULL
      OR to_regclass('public.projects') IS NULL
@@ -203,19 +220,48 @@ CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions (
 -- stella_0002's stella_role reconciliation).
 DO $$
 DECLARE
-  def text;
+  def       text;
+  offending text;
 BEGIN
   SELECT pg_get_constraintdef(oid) INTO def
   FROM pg_constraint
   WHERE conrelid = 'public.stella_suggestion_decisions'::regclass
     AND conname = 'stella_suggestion_decisions_decision_check';
 
+  -- position(), not LIKE: in a LIKE pattern `_` matches ANY single character,
+  -- so `LIKE '%''accepted_edited''%'` would also accept a stale constraint
+  -- spelling 'acceptedXedited' and leave it in place. position() is a literal
+  -- substring search with no metacharacters at all.
+  -- Reconcile on the SAME test section 7 verifies with — presence AND
+  -- exclusivity. Reconciling on presence alone left a convergence gap: a
+  -- pre-existing CHECK that was a strict SUPERSET (the four states plus a
+  -- fifth) satisfied section 2, was left in place, and then made section 7
+  -- abort the whole transaction. Now it is rebuilt instead.
   IF def IS NULL
-     OR def NOT LIKE '%''accepted''%'
-     OR def NOT LIKE '%''accepted_edited''%'
-     OR def NOT LIKE '%''rejected''%'
-     OR def NOT LIKE '%''undone''%'
+     OR position('''accepted''' in def) = 0
+     OR position('''accepted_edited''' in def) = 0
+     OR position('''rejected''' in def) = 0
+     OR position('''undone''' in def) = 0
+     OR EXISTS (
+          SELECT 1
+          FROM (SELECT (regexp_matches(def, '''([^'']+)''', 'g'))[1] AS lit) AS x
+          WHERE lit NOT IN ('accepted', 'accepted_edited', 'rejected', 'undone')
+        )
   THEN
+    -- Before narrowing the constraint, check the DATA. Rebuilding a CHECK that
+    -- existing rows violate fails with PostgreSQL's generic
+    -- 'check constraint "..." is violated by some row' — no table name, no
+    -- guidance, and none of the 'stella_0003 aborted:' prefix that this file's
+    -- header and the G2 abort criteria tell the operator to look for. Report
+    -- the offending STATES (never row data) instead.
+    SELECT string_agg(DISTINCT d.decision, ', ' ORDER BY d.decision) INTO offending
+    FROM public.stella_suggestion_decisions d
+    WHERE d.decision NOT IN ('accepted', 'accepted_edited', 'rejected', 'undone');
+
+    IF offending IS NOT NULL THEN
+      RAISE EXCEPTION 'stella_0003 aborted: existing rows hold decision state(s) outside the contract: %. The CHECK cannot be narrowed to accepted / accepted_edited / rejected / undone without losing or rewriting those rows — resolve manually (see "Criterios de aborto" in docs/ops/gates/G2_PACKAGE.md). No row data is shown, only the distinct states', offending;
+    END IF;
+
     IF def IS NOT NULL THEN
       ALTER TABLE public.stella_suggestion_decisions
         DROP CONSTRAINT stella_suggestion_decisions_decision_check;
@@ -236,7 +282,9 @@ BEGIN
   -- "<raw text><64 hex><more raw text>" — i.e. the very leak this CHECK exists
   -- to prevent. pg_get_constraintdef renders the literal as '^[0-9a-f]{64}$',
   -- so match it including its surrounding quotes.
-  IF def IS NULL OR def NOT LIKE '%''^[0-9a-f]{64}$''%' THEN
+  -- position() again: the pattern contains no `_`, but LIKE would still treat
+  -- any future edit's `_` as a wildcard. Literal search removes the trap class.
+  IF def IS NULL OR position('''^[0-9a-f]{64}$''' in def) = 0 THEN
     IF def IS NOT NULL THEN
       ALTER TABLE public.stella_suggestion_decisions
         DROP CONSTRAINT stella_suggestion_decisions_prev_hash_check;
@@ -279,6 +327,10 @@ CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_interaction_id
 REVOKE ALL ON public.stella_suggestion_decisions FROM anon;
 REVOKE ALL ON public.stella_suggestion_decisions FROM authenticated;
 REVOKE ALL ON public.stella_suggestion_decisions FROM service_role;
+-- PUBLIC is a fourth grantee, and an easy one to forget: it is not a role in
+-- pg_roles (it is grantee OID 0 in the ACL), so a check that joins pg_roles
+-- cannot even see it. Revoking is cheap and closes the gap by construction.
+REVOKE ALL ON public.stella_suggestion_decisions FROM PUBLIC;
 
 -- The minimum the real architecture needs:
 --
@@ -298,32 +350,135 @@ REVOKE ALL ON public.stella_suggestion_decisions FROM service_role;
 --     deliberately, through its own gate — it must not be inherited by default.
 GRANT SELECT ON public.stella_suggestion_decisions TO authenticated;
 
--- Assert the premise the paragraph above rests on, instead of trusting it.
+-- ============================================================
+-- 4b. Write-path guard — what SQL can prove, and what it cannot
+-- ============================================================
+-- REPLACES an earlier guard that read `has_table_privilege(current_user, ...,
+-- 'INSERT')`. That check was VACUOUS: has_table_privilege() returns true
+-- unconditionally for any role with rolsuper, so it was blind precisely in the
+-- scenario its own comment named — this script being applied by tooling running
+-- as `supabase_admin`, which IS a superuser. It also proved the wrong thing:
+-- "the role applying this script can insert", not "the role the application
+-- connects as can insert". Those coincide only by operational convention, which
+-- is the assumption the guard existed to stop making.
 --
--- Every other assumption in this script is guarded (FK targets, RLS helpers,
--- trigger function, column shape, PK, defaults, NOT NULLs). This one was not,
--- and it is the one that decides whether the application can write at all: the
--- writer's access comes from OWNING the table, so if this script were ever
--- applied by a role OTHER than the one the app connects as (e.g. via tooling
--- running as supabase_admin), the table would end up with no INSERT path and
--- the first write after STELLA_DECISIONS_PERSISTENCE_ENABLED is flipped would
--- fail with "permission denied".
+-- HONEST SCOPE. No SQL statement can observe which role DATABASE_URL resolves
+-- to — that lives in the environment, not the database. So the assurance is
+-- split into three parts, and only the first is enforced here:
 --
--- Before the REVOKE ALL above, an inherited service_role grant would have
--- masked that mistake. It no longer can — so the check has to be explicit.
+--   1. STRUCTURAL GUARD (this block) — verifiable facts only: the writer role
+--      exists, it owns the table (or holds a DIRECT, non-inherited INSERT+SELECT
+--      grant AND can get past RLS), and the owner is never one of the PostgREST
+--      roles.
+--   2. OFFLINE CODE TEST — tests/prepared-stella-sql.test.ts asserts that the
+--      application's only write path is db/client.ts (postgres-js over
+--      DATABASE_URL), not a service_role/PostgREST client.
+--   3. HUMAN GATE PRECONDITION — docs/ops/gates/G2_PACKAGE.md requires the
+--      operator to confirm that DATABASE_URL's role equals the writer role
+--      below. That step cannot be automated from inside the database.
+--
+-- DECLARING THE WRITER ROLE
+--   Set it explicitly, e.g.:   SET stella.writer_role = 'postgres';
+--   (or `psql -c "SET stella.writer_role='...'" -f this_file` / ALTER DATABASE).
+--
+--   WHEN UNSET the script falls back to `current_user` and says so with a
+--   NOTICE, because in the documented architecture the installer IS the
+--   application role. In that mode the owner check is tautological — CREATE
+--   TABLE makes current_user the owner — so it verifies nothing and the script
+--   reports it as an ASSUMPTION rather than pretending otherwise. Setting the
+--   variable is what turns this block into a real check, which is why the
+--   remote G2 checklist requires it.
+--
+--   Verify locally:  SHOW stella.writer_role;  -- and compare with the role in
+--                    DATABASE_URL (never print the connection string itself)
+--   Verify remotely: same, as step 0 of the G2 checklist.
 DO $$
 DECLARE
-  tbl_owner name;
+  writer        name;
+  writer_oid    oid;
+  writer_declared boolean;
+  tbl_owner     name;
+  owner_is_writer boolean;
+  direct_insert boolean;
+  direct_select boolean;
+  writer_bypassrls boolean;
+  force_rls     boolean;
 BEGIN
+  writer := nullif(current_setting('stella.writer_role', true), '');
+  writer_declared := writer IS NOT NULL;
+  IF NOT writer_declared THEN
+    writer := current_user;
+  END IF;
+
+  -- Resolve the OID by exact rolname. NOT `writer::regrole`: regrolein parses
+  -- its input as an SQL identifier — it lowercases anything unquoted and splits
+  -- on dots — so a role genuinely named "AppWriter" or "app.writer" would pass
+  -- an existence check on rolname and then fail here with
+  -- 'role "appwriter" does not exist'.
+  SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = writer;
+  IF writer_oid IS NULL THEN
+    RAISE EXCEPTION 'stella_0003 aborted: declared writer role % does not exist. Set stella.writer_role to the role DATABASE_URL connects as', writer;
+  END IF;
+
+  -- The writer must not be a PostgREST-facing role. Those reach the database
+  -- from the browser through `authenticator` + SET ROLE; making one the backend
+  -- writer would give every session the backend's reach.
+  IF writer IN ('anon', 'authenticated', 'service_role') THEN
+    RAISE EXCEPTION 'stella_0003 aborted: declared writer role % is a PostgREST role. The backend writer is the role DATABASE_URL connects as, not a JWT role', writer;
+  END IF;
+
   SELECT pg_get_userbyid(c.relowner) INTO tbl_owner
   FROM pg_class c WHERE c.oid = to_regclass('public.stella_suggestion_decisions');
 
-  IF NOT has_table_privilege(current_user, 'public.stella_suggestion_decisions', 'INSERT') THEN
-    RAISE EXCEPTION 'stella_0003 aborted: the current role (%) cannot INSERT into public.stella_suggestion_decisions (owner: %). recordStellaDecision writes through db/client.ts as the DATABASE_URL role — apply this script AS that role, or grant it INSERT explicitly through its own gate', current_user, tbl_owner;
+  -- The owner must never be one of the PostgREST-facing roles: that would hand
+  -- every browser session implicit full access, RLS included.
+  IF tbl_owner IN ('anon', 'authenticated', 'service_role') THEN
+    RAISE EXCEPTION 'stella_0003 aborted: table owner is %, a PostgREST role. Ownership implies unrestricted access — apply this script as the backend/database role instead', tbl_owner;
   END IF;
 
-  RAISE NOTICE 'stella_0003: write path verified — role % can INSERT (table owner: %). authenticated has SELECT only; anon and service_role have nothing.',
-    current_user, tbl_owner;
+  owner_is_writer := (tbl_owner = writer);
+
+  -- DIRECT grants only. aclexplode() over relacl reads the ACL literally, so a
+  -- privilege the writer merely INHERITS through role membership does not count
+  -- — and neither does the superuser short-circuit that broke the old guard.
+  SELECT
+    bool_or(a.privilege_type = 'INSERT'),
+    bool_or(a.privilege_type = 'SELECT')
+  INTO direct_insert, direct_select
+  FROM pg_class c
+  CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+  WHERE c.oid = to_regclass('public.stella_suggestion_decisions')
+    AND a.grantee = writer_oid;
+
+  SELECT rolbypassrls INTO writer_bypassrls FROM pg_roles WHERE oid = writer_oid;
+  SELECT relforcerowsecurity INTO force_rls
+  FROM pg_class WHERE oid = to_regclass('public.stella_suggestion_decisions');
+
+  -- FORCE ROW LEVEL SECURITY removes the owner's RLS bypass. With no INSERT
+  -- policy (by design, section 5) that would make the owner path fail too, so
+  -- the owner branch below is only valid while FORCE is off.
+  IF COALESCE(force_rls, false) THEN
+    RAISE EXCEPTION 'stella_0003 aborted: FORCE ROW LEVEL SECURITY is ON for public.stella_suggestion_decisions. Neither the owner nor any grantee could INSERT, because there is deliberately no INSERT policy. Turn FORCE off, or add an INSERT policy through its own gate';
+  END IF;
+
+  -- Why ownership (or bypassrls) and not just an INSERT grant: section 5 enables
+  -- RLS and deliberately creates NO INSERT policy. A non-owner without
+  -- rolbypassrls would hold the grant and still be denied every row. And
+  -- recordStellaDecision issues INSERT ... RETURNING id, which PostgreSQL also
+  -- requires SELECT on the returned column for — hence direct_select too.
+  IF NOT owner_is_writer
+     AND NOT (COALESCE(direct_insert, false) AND COALESCE(direct_select, false)
+              AND COALESCE(writer_bypassrls, false)) THEN
+    RAISE EXCEPTION
+      'stella_0003 aborted: writer role % has no working INSERT path (table owner: %, direct INSERT grant: %, direct SELECT grant: %, rolbypassrls: %). RLS is enabled with no INSERT policy, so the writer must either OWN the table or hold direct INSERT+SELECT and bypass RLS. recordStellaDecision writes via db/client.ts over DATABASE_URL — apply this script AS that role. Do NOT grant INSERT to authenticated or service_role to satisfy this check',
+      writer, tbl_owner, COALESCE(direct_insert, false), COALESCE(direct_select, false), COALESCE(writer_bypassrls, false);
+  END IF;
+
+  IF writer_declared THEN
+    RAISE NOTICE 'stella_0003: write path VERIFIED against declared writer role % (owner: %, owner_is_writer: %).', writer, tbl_owner, owner_is_writer;
+  ELSE
+    RAISE NOTICE 'stella_0003: stella.writer_role is UNSET — assuming installer (%) is the application writer. This is an ASSUMPTION, not a verification: the owner check is tautological in this mode. Set stella.writer_role to have it checked (required by the remote G2 checklist).', writer;
+  END IF;
 END $$;
 
 -- ============================================================
@@ -394,3 +549,311 @@ COMMENT ON TRIGGER trg_stella_suggestion_decisions_no_truncate ON public.stella_
 
 COMMENT ON TABLE public.stella_suggestion_decisions IS
   'Human decisions over Stella suggestions (WS3b, prepared stella_0003, gate G2). previous_value_hash is a SHA-256 digest — raw previous text is never stored. Managed outside the drizzle chain: see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
+
+-- ============================================================
+-- 7. Self-verification — assert the end state, inside this transaction
+-- ============================================================
+-- Ported from stella_0002b §5, whose lesson was learned the hard way (RK-04b):
+-- a REVOKE only removes grants made by the CURRENT grantor, and PostgreSQL
+-- merely emits a WARNING — never an error — when there is nothing to revoke.
+-- So "I ran REVOKE ALL" is not evidence that the privilege is gone.
+--
+-- Everything below reads pg_catalog directly. In particular, privileges come
+-- from aclexplode() over pg_class.relacl, which reports the ACL literally:
+-- privileges a role merely INHERITS through membership do not appear, and there
+-- is no superuser short-circuit of the kind that made the old write-path guard
+-- vacuous. information_schema.role_table_grants would have reported both.
+--
+-- Running inside the same transaction is what makes this worth doing: a failure
+-- rolls the whole script back instead of leaving a table that reported success.
+DO $$
+DECLARE
+  tbl_oid        oid;
+  tbl_owner      name;
+  problem        text;
+  def            text;
+  n              int;
+BEGIN
+  -- (1) The table exists.
+  tbl_oid := to_regclass('public.stella_suggestion_decisions');
+  IF tbl_oid IS NULL THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: public.stella_suggestion_decisions does not exist after the script ran';
+  END IF;
+
+  -- (2) Owner is a real backend role, never a PostgREST role.
+  SELECT pg_get_userbyid(relowner) INTO tbl_owner FROM pg_class WHERE oid = tbl_oid;
+  IF tbl_owner IN ('anon', 'authenticated', 'service_role') THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: table owner is %, a PostgREST role', tbl_owner;
+  END IF;
+
+  -- (3) Columns: exact name, type, nullability and presence/absence of default.
+  SELECT string_agg(format('%s(%s)', e.col, e.why), ', ' ORDER BY e.col) INTO problem
+  FROM (
+    SELECT x.col,
+           CASE
+             WHEN a.attname IS NULL THEN 'missing'
+             WHEN format_type(a.atttypid, a.atttypmod) <> x.typ
+               THEN 'type ' || format_type(a.atttypid, a.atttypmod) || ' <> ' || x.typ
+             WHEN a.attnotnull <> x.req_notnull THEN 'nullability'
+             WHEN (a.atthasdef OR a.attidentity <> '') <> x.req_hasdef THEN 'default'
+           END AS why
+    FROM (VALUES
+      ('id',                  'uuid',                        true,  true),
+      ('organization_id',     'uuid',                        true,  false),
+      ('project_id',          'uuid',                        true,  false),
+      ('interaction_id',      'uuid',                        false, false),
+      ('suggestion_key',      'text',                        true,  false),
+      ('decision',            'text',                        true,  false),
+      ('previous_value_hash', 'text',                        false, false),
+      ('applied_text',        'text',                        false, false),
+      ('rejection_reason',    'text',                        false, false),
+      ('decided_by',          'uuid',                        true,  false),
+      ('decided_at',          'timestamp with time zone',    true,  true)
+    -- NB: the alias cannot be `notnull` — PostgreSQL parses NOTNULL as an
+    -- operator (`x NOTNULL` == `x IS NOT NULL`), so it is not a usable name.
+    ) AS x(col, typ, req_notnull, req_hasdef)
+    LEFT JOIN pg_attribute a
+           ON a.attrelid = tbl_oid AND a.attname = x.col AND a.attnum > 0 AND NOT a.attisdropped
+  ) AS e
+  WHERE e.why IS NOT NULL;
+
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: column contract broken: %', problem;
+  END IF;
+
+  -- ...and no EXTRA columns. Checking the 11 named columns says nothing about a
+  -- 12th that the application does not know exists.
+  SELECT count(*) INTO n FROM pg_attribute
+  WHERE attrelid = tbl_oid AND attnum > 0 AND NOT attisdropped;
+  IF n <> 11 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 11 columns, found %', n;
+  END IF;
+
+  -- (4) Primary key on (id).
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = tbl_oid AND contype = 'p'
+      AND conkey = ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid = tbl_oid AND attname = 'id')]
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: PRIMARY KEY on (id) missing or on the wrong column(s)';
+  END IF;
+
+  -- (5) Foreign keys to the four referenced tables.
+  SELECT string_agg(f.col || '->' || f.tbl, ', ' ORDER BY f.col) INTO problem
+  FROM (VALUES
+    ('organization_id', 'organizations'),
+    ('project_id',      'projects'),
+    ('interaction_id',  'stella_interactions'),
+    ('decided_by',      'users')
+  ) AS f(col, tbl)
+  WHERE NOT EXISTS (
+    SELECT 1 FROM pg_constraint c
+    WHERE c.conrelid = tbl_oid AND c.contype = 'f'
+      AND c.confrelid = to_regclass('public.' || f.tbl)
+      AND c.conkey = ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid = tbl_oid AND attname = f.col)]
+      -- confdeltype 'a' = NO ACTION. This is a DELIBERATE invariant (RK-04f):
+      -- these rows must BLOCK deletion of their organization/project/user
+      -- rather than vanish with it. STELLA_RETENTION_POLICY.md documents it, so
+      -- pin it here — a silent switch to CASCADE would turn an accidental org
+      -- delete into silent audit-trail loss.
+      AND c.confdeltype = 'a'
+  );
+
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: missing FOREIGN KEY(s), or one is not ON DELETE NO ACTION: %', problem;
+  END IF;
+
+  -- ...and no EXTRA foreign keys.
+  SELECT count(*) INTO n FROM pg_constraint WHERE conrelid = tbl_oid AND contype = 'f';
+  IF n <> 4 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 4 foreign keys, found %', n;
+  END IF;
+
+  -- (6) UNIQUE: this table deliberately has NO unique constraint beyond the PK —
+  --     the same (project, suggestion_key) may be decided more than once
+  --     ('undone' is a NEW row). Assert that on purpose, so adding one silently
+  --     later is caught rather than assumed.
+  SELECT count(*) INTO n FROM pg_constraint WHERE conrelid = tbl_oid AND contype = 'u';
+  IF n <> 0 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected UNIQUE constraint(s) (%). Decisions are append-only history: re-deciding a suggestion inserts a NEW row', n;
+  END IF;
+
+  -- pg_constraint is not enough: a bare CREATE UNIQUE INDEX enforces uniqueness
+  -- without creating a constraint, so the check above would miss it entirely.
+  -- Exclude the primary key's own index, which is legitimately unique.
+  SELECT count(*) INTO n
+  FROM pg_index i
+  WHERE i.indrelid = tbl_oid AND i.indisunique AND NOT i.indisprimary;
+  IF n <> 0 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: % unexpected UNIQUE index(es) besides the primary key. A standalone unique index enforces uniqueness without a constraint and would silently forbid re-deciding a suggestion', n;
+  END IF;
+
+  -- (7)+(8) decision CHECK holds exactly the four states. position(), not LIKE:
+  --         `_` is a LIKE wildcard, so 'acceptedXedited' would have passed.
+  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint
+  WHERE conrelid = tbl_oid AND conname = 'stella_suggestion_decisions_decision_check';
+  IF def IS NULL
+     OR position('''accepted''' in def) = 0
+     OR position('''accepted_edited''' in def) = 0
+     OR position('''rejected''' in def) = 0
+     OR position('''undone''' in def) = 0 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: decision CHECK missing or incomplete: %', COALESCE(def, '<absent>');
+  END IF;
+
+  -- Presence is not exclusivity. Without this, a stale CHECK that ALSO allowed
+  -- a fifth state (e.g. 'deleted') would satisfy the four position() probes and
+  -- pass. Extract every quoted literal from the rendered definition and require
+  -- the set to be exactly the four documented states.
+  -- `[^'']+`, not `[a-z_]+`: a stale CHECK admitting 'accepted2', 'Deleted' or
+  -- 'v2' would produce NO match under the narrower class and pass silently —
+  -- the same "matches only what we already expected" trap that MIN-A closed.
+  SELECT string_agg(DISTINCT lit, ', ' ORDER BY lit) INTO problem
+  FROM (
+    SELECT (regexp_matches(def, '''([^'']+)''', 'g'))[1] AS lit
+  ) AS x
+  WHERE lit NOT IN ('accepted', 'accepted_edited', 'rejected', 'undone');
+
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: decision CHECK allows unexpected state(s): %. The contract is exactly accepted / accepted_edited / rejected / undone', problem;
+  END IF;
+
+  -- (9) hash CHECK still pins the ANCHORED 64-hex shape. An unanchored variant
+  --     would admit "<raw text><64 hex><more>" — the very leak it prevents.
+  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint
+  WHERE conrelid = tbl_oid AND conname = 'stella_suggestion_decisions_prev_hash_check';
+  IF def IS NULL OR position('''^[0-9a-f]{64}$''' in def) = 0 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: previous_value_hash CHECK missing or not anchored: %', COALESCE(def, '<absent>');
+  END IF;
+
+  -- (10) RLS enabled — and FORCE explicitly OFF.
+  --      FORCE matters as much as RLS itself here: the whole write path rests
+  --      on the owner bypassing row-level security. With FORCE ON the owner
+  --      stops bypassing, and since there is deliberately no INSERT policy,
+  --      every write would fail — while this script still reported success.
+  IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = tbl_oid) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: ROW LEVEL SECURITY is not enabled';
+  END IF;
+  IF (SELECT relforcerowsecurity FROM pg_class WHERE oid = tbl_oid) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: FORCE ROW LEVEL SECURITY is ON. The owner would stop bypassing RLS and, with no INSERT policy, recordStellaDecision could never write. Turn it off, or add an explicit INSERT policy through its own gate';
+  END IF;
+
+  -- (11) Exactly one policy: org-scoped SELECT, and nothing else.
+  SELECT count(*) INTO n FROM pg_policy WHERE polrelid = tbl_oid;
+  IF n <> 1 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 1 RLS policy, found %. INSERT/UPDATE/DELETE must stay denied by absence', n;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = tbl_oid
+      AND polname = 'stella_suggestion_decisions_select'
+      AND polcmd = 'r'                                   -- SELECT
+      AND position('current_user_org_ids' in pg_get_expr(polqual, polrelid)) > 0
+      AND position('current_user_is_super_admin' in pg_get_expr(polqual, polrelid)) > 0
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: the SELECT policy is missing, is not SELECT-only, or lost its org scoping';
+  END IF;
+
+  -- (12) Exactly one BEFORE UPDATE OR DELETE ... FOR EACH ROW trigger.
+  SELECT count(*) INTO n FROM pg_trigger
+  WHERE tgrelid = tbl_oid AND NOT tgisinternal
+    AND tgname = 'trg_stella_suggestion_decisions_append_only'
+    AND (tgtype & 1) = 1 AND (tgtype & 2) = 2        -- ROW, BEFORE
+    AND (tgtype & 16) = 16 AND (tgtype & 8) = 8      -- UPDATE, DELETE
+    AND (tgtype & 4) = 0;                            -- never INSERT
+  IF n <> 1 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 1 BEFORE UPDATE OR DELETE FOR EACH ROW trigger, found %', n;
+  END IF;
+
+  -- (13) Exactly one BEFORE TRUNCATE ... FOR EACH STATEMENT trigger.
+  SELECT count(*) INTO n FROM pg_trigger
+  WHERE tgrelid = tbl_oid AND NOT tgisinternal
+    AND tgname = 'trg_stella_suggestion_decisions_no_truncate'
+    AND (tgtype & 1) = 0 AND (tgtype & 2) = 2        -- STATEMENT, BEFORE
+    AND (tgtype & 32) = 32;                          -- TRUNCATE
+  IF n <> 1 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 1 BEFORE TRUNCATE FOR EACH STATEMENT trigger, found %', n;
+  END IF;
+
+  -- (14) Both triggers call public.uellix_forbid_mutation(), and no other
+  --      non-internal trigger exists on this table.
+  SELECT count(*) INTO n FROM pg_trigger t
+  WHERE t.tgrelid = tbl_oid AND NOT t.tgisinternal
+    AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')::oid;
+  IF n <> 2 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected 2 triggers bound to public.uellix_forbid_mutation(), found %', n;
+  END IF;
+  SELECT count(*) INTO n FROM pg_trigger WHERE tgrelid = tbl_oid AND NOT tgisinternal;
+  IF n <> 2 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected extra trigger(s) on the table (total %, expected 2)', n;
+  END IF;
+
+  -- (15)(16)(17)(18) Privileges, read as DIRECT ACL entries only.
+  --   anon         -> nothing
+  --   authenticated-> exactly SELECT
+  --   service_role -> nothing
+  --   and no write-ish privilege for any of the three.
+  SELECT string_agg(g.rolname || ':' || a.privilege_type, ', ' ORDER BY g.rolname, a.privilege_type)
+    INTO problem
+  FROM pg_class c,
+       aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+  JOIN pg_roles g ON g.oid = a.grantee
+  WHERE c.oid = tbl_oid
+    AND g.rolname IN ('anon', 'authenticated', 'service_role')
+    -- `AND NOT a.is_grantable`: the one allowed entry is a PLAIN SELECT. A
+    -- SELECT WITH GRANT OPTION (rendered `authenticated=r*/postgres`) would
+    -- otherwise be excluded here and pass unreported, even though it lets
+    -- authenticated re-grant SELECT to anon.
+    AND NOT (g.rolname = 'authenticated' AND a.privilege_type = 'SELECT' AND NOT a.is_grantable);
+
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected DIRECT privilege(s) present: %. Target is: authenticated=SELECT only; anon and service_role none. A REVOKE only removes grants from the current grantor — investigate other grantors', problem;
+  END IF;
+
+  -- PUBLIC separately: it is grantee OID 0 and has no pg_roles row, so the
+  -- JOIN above cannot see it. A grant to PUBLIC would reach every role in the
+  -- cluster, including anon.
+  SELECT string_agg(a.privilege_type, ', ' ORDER BY a.privilege_type) INTO problem
+  FROM pg_class c
+  CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+  WHERE c.oid = tbl_oid AND a.grantee = 0;
+
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: PUBLIC holds privilege(s): %. That reaches every role in the cluster, anon included', problem;
+  END IF;
+
+  -- ...and the one privilege that must NOT have been over-revoked.
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_class c,
+         aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    JOIN pg_roles g ON g.oid = a.grantee
+    WHERE c.oid = tbl_oid AND g.rolname = 'authenticated' AND a.privilege_type = 'SELECT'
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: authenticated LOST its direct SELECT grant — the RLS read path would deny every user';
+  END IF;
+
+  -- (19) NOT CHECKED AT RUNTIME, deliberately.
+  --      An earlier revision raised here if public.evidence_chunks existed,
+  --      meaning to assert "this script created no foreign object". That was
+  --      WRONG and broke the convergence this file promises:
+  --      db/prepared/grounding_0001_evidence_chunks.sql legitimately creates
+  --      that table on the SAME database under its own gate (G5 P3). Once G5 P3
+  --      is applied, every re-run of this script would abort the whole
+  --      transaction with a misleading message.
+  --      The real invariant — that THIS file never creates it — is static, not
+  --      runtime: the EXECUTABLE sql never mentions evidence_chunks (it appears
+  --      only in these comments), and tests/prepared-stella-sql.test.ts pins
+  --      that, asserting its absence from the comment-stripped script. A
+  --      runtime check cannot distinguish "I created it" from "another gate
+  --      did", so it must not try.
+
+  -- (20) NOT CHECKED AT RUNTIME either, for a different reason: it is
+  --      unfalsifiable. defaclacl is aclitem[] — 'grantee=privs/grantor' — and
+  --      never contains a table name, so searching it for
+  --      'stella_suggestion_decisions' always returns 0. The previous form was
+  --      a check that could never fire while reporting itself as verified.
+  --      That this script issues no ALTER DEFAULT PRIVILEGES is, again, a
+  --      static property enforced offline.
+
+  RAISE NOTICE 'stella_0003: verification passed — table owned by %, column contract exact (11 columns, no extras), PK, 4 FKs all NO ACTION, 0 UNIQUE, both CHECKs, RLS on (FORCE off) with 1 SELECT policy, 2 append-only triggers, authenticated=SELECT only (not grantable), anon/service_role=none.', tbl_owner;
+END $$;
