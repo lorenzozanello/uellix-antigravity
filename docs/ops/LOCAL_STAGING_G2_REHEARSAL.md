@@ -474,6 +474,258 @@ G2.** Los `ALTER DEFAULT PRIVILEGES` globales **no** se tocaron: siguen
 concediendo `Dxtm` a toda tabla nueva (**RK-04c**, diferido a un gate
 transversal).
 
+## STELLA 0003 LOCAL REHEARSAL — RUN 1
+
+> **No es la aprobación formal de G2.** Ensayo estructural sobre el stack local
+> desechable. Una base local no es staging; el gate remoto sigue **sin
+> ejecutar** y ninguna casilla de `docs/ops/gates/G2_PACKAGE.md` queda marcada
+> por esta corrida.
+
+Primera aplicación de `db/prepared/stella_0003_suggestion_decisions.sql` en un
+PostgreSQL real. La ejecutó **manualmente el operador**, en una sola sesión
+`psql`, declarando el rol escritor antes del script. Todo lo demás de esta
+sección —postchecks, pruebas de camino de escritura, inmutabilidad, matriz de
+roles y segunda aplicación— se hizo después, de forma independiente, sobre el
+estado ya aplicado.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-01 |
+| Branch | `codex/stella-g2-local-rehearsal` |
+| HEAD | `09a65fd22429c033cc3de970deb2913cd90752e3` |
+| `project_id` (config.toml) | `uellix-stella-g2-local-rehearsal` |
+| Contenedor | `supabase_db_uellix-stella-g2-local-rehearsal` |
+| Motor | PostgreSQL 17.6 |
+| Writer declarado | `SET stella.writer_role = 'postgres'` |
+| Script | `db/prepared/stella_0003_suggestion_decisions.sql` (859 líneas, 49 253 bytes) |
+
+### Identidad del artefacto — tres hashes distintos
+
+Los tres identifican el **mismo** archivo y no deben confundirse entre sí:
+
+| Identidad | Valor | Qué son esos bytes |
+|---|---|---|
+| SHA-256 working tree | `6caa5ca97acbc0e9b28a439a66dcfac9b0d15399e4172da886dffd9fc1d6b7d1` | bytes **CRLF** en disco — los que `psql` leyó realmente |
+| SHA-256 canónico Git | `ad22e22c18f0bfb8c03987e05b76de45efe440fd994c2ae719a55bece778fab5` | contenido de `git show HEAD:<archivo>`, bytes **LF** |
+| Git blob ID | `00c17b0491b26c195aa19822d8c80fed4874c202` | object id interno (SHA-1 de `blob <len>\0` + contenido LF) |
+
+`git hash-object` sobre el working tree devuelve el mismo blob ID, y
+`git status` para esa ruta está vacío: **el archivo no se modificó después de
+la aplicación manual**. El hash del working tree es el que hay que citar como
+"bytes ejecutados"; el canónico es el portable entre checkouts (ver pendiente
+remoto 4).
+
+### 1ª aplicación (manual, por el operador)
+
+```bash
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -1 \
+  -c "SET stella.writer_role='postgres'" -f db/prepared/stella_0003_suggestion_decisions.sql
+```
+
+Exit code exitoso. Auto-verificación del propio script superada, con sus dos
+`NOTICE` finales:
+
+```
+stella_0003: write path VERIFIED against declared writer role postgres
+             (owner: postgres, owner_is_writer: t).
+stella_0003: verification passed — table owned by postgres, column contract
+             exact (11 columns, no extras), PK, 4 FKs all NO ACTION, 0 UNIQUE,
+             both CHECKs, RLS on (FORCE off) with 1 SELECT policy,
+             2 append-only triggers, authenticated=SELECT only (not grantable),
+             anon/service_role=none.
+```
+
+La rama `ASSUMPTION` **no** se activó: el writer fue declarado, así que la
+guarda de §4b es una verificación real y no una suposición.
+
+### Postchecks estructurales independientes
+
+Reejecutados contra `pg_catalog` **sin confiar** en el `NOTICE` del script —
+que es el propio script afirmando sobre sí mismo:
+
+| Comprobación | Resultado |
+|---|---|
+| Columnas | **11 exactas**, cero adicionales, tipos/nulabilidad/defaults exactos |
+| PK | `stella_suggestion_decisions_pkey` sobre `(id)`, solo esa columna |
+| FKs | **4**, cero adicionales |
+| Acciones ON DELETE | **4/4 `NO ACTION`** (`confdeltype='a'`), cero `CASCADE` |
+| UNIQUE constraints | **0** |
+| Índices UNIQUE no-PK | **0** |
+| CHECK `decision` | exactamente `accepted`, `accepted_edited`, `rejected`, `undone` |
+| CHECK `previous_value_hash` | `IS NULL OR ~ '^[0-9a-f]{64}$'` (anclado) |
+| Índices | `(organization_id, decided_at)` y `(interaction_id)`, ambos no únicos; 3 en total con el de la PK |
+| Owner | `postgres` |
+| RLS | habilitado |
+| FORCE RLS | **apagado** |
+| Policies | **1**, `stella_suggestion_decisions_select`, `SELECT`, con `current_user_org_ids()` y `current_user_is_super_admin()`; **0** de INSERT/UPDATE/DELETE |
+| ACL `authenticated` | **solo `SELECT`**, `is_grantable = false` |
+| ACL `service_role` | **cero** privilegios directos |
+| ACL `anon` | **cero** |
+| ACL `PUBLIC` (grantee OID 0) | **cero** |
+| Triggers no internos | **2** |
+| Trigger de fila | `BEFORE UPDATE OR DELETE FOR EACH ROW` (`tgtype = 27`), sin INSERT |
+| Trigger de statement | `BEFORE TRUNCATE FOR EACH STATEMENT` (`tgtype = 34`) |
+| Función de ambos | `public.uellix_forbid_mutation()` |
+| `evidence_chunks` | **ausente** |
+| 4 tablas append-only previas | intactas, sus **8** triggers intactos |
+| Interacción sintética | intacta (`count = 1`, mismo `created_at`) |
+| Tablas en `public` | 38 (37 + la nueva) |
+| Registro de migraciones | sin entradas nuevas — el script preparado no se auto-registra |
+
+ACL leída con `aclexplode(COALESCE(relacl, acldefault('r', relowner)))`, nunca
+con `information_schema.role_table_grants`.
+
+### Camino de escritura — `INSERT ... RETURNING id`
+
+En una transacción terminada siempre en `ROLLBACK`, como `postgres` (el rol al
+que resuelve `DATABASE_URL`, es decir el owner). Los identificadores se
+derivaron **dentro de SQL** desde la fila sintética; ninguno se imprimió.
+
+| Comprobación | Resultado |
+|---|---|
+| `INSERT` | permitido (1 fila) |
+| `RETURNING id` | permitido, `id` no nulo |
+| `DEFAULT` de `decided_at` | aplicado |
+| CHECK de `decision` (`accepted_edited`) | satisfecho |
+| CHECK de hash (64 hex) | satisfecho |
+| FK a `stella_interactions` | satisfecha |
+| Tras `ROLLBACK` | **0 filas** — cero persistencia |
+
+Cero errores de FK, CHECK, ACL, RLS o `RETURNING`.
+
+### Inmutabilidad — como `postgres` (owner)
+
+Transacciones separadas, todas revertidas. La fila sintética se creó dentro de
+la misma transacción y desapareció con ella.
+
+| Operación | Resultado | SQLSTATE | Origen |
+|---|---|---|---|
+| `UPDATE` | **bloqueado** | `42501` | trigger — `append-only: UPDATE on stella_suggestion_decisions is not permitted` |
+| `DELETE` | **bloqueado** | `42501` | trigger — `append-only: DELETE on stella_suggestion_decisions is not permitted` |
+| `TRUNCATE` (sin `CASCADE`) | **bloqueado** | `42501` | trigger — `append-only: TRUNCATE on stella_suggestion_decisions is not permitted` |
+
+Ni grants ni RLS alcanzan al owner: el trigger es la única capa que lo detiene,
+y aquí importa porque `db/client.ts` conecta con `DATABASE_URL`. Tras las tres
+pruebas: tabla vacía, interacción sintética intacta, tablas dependientes sin
+cambios.
+
+### Matriz de roles cliente
+
+`SET LOCAL ROLE`, en transacciones revertidas. No se concedió ningún privilegio
+ni se creó ninguna policy para estas pruebas.
+
+| Rol | SELECT | INSERT | UPDATE | DELETE | TRUNCATE |
+|---|---|---|---|---|---|
+| `authenticated` | **permitido**, 0 filas visibles (RLS org-scoped, sin claims) | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) |
+| `service_role` | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) |
+| `anon` | bloqueado (EXECUTE del helper RLS, y además ACL) | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) | bloqueado (ACL) |
+
+Tres matices que conviene no perder:
+
+- **`authenticated` lee pero no ve nada.** La ACL concede `SELECT`; la policy
+  org-scoped filtra. Sin claims de JWT, `current_user_org_ids()` es vacío, así
+  que el resultado legítimo es 0 filas. ACL y RLS son capas distintas y aquí se
+  observan por separado.
+- **`service_role` tiene `rolbypassrls = t` y aun así no lee.** Saltarse RLS no
+  concede ACL: sin `GRANT SELECT` no hay lectura. Es exactamente la postura que
+  §4 pretendía —`service_role` sin ningún privilegio— comprobada en ejecución.
+- **`anon` es denegado por dos capas independientes.** El error observado es
+  `permission denied for function current_user_org_ids`, no el de tabla, porque
+  `current_user_org_ids()` es una función SQL `SECURITY DEFINER` y el planner
+  comprueba su `EXECUTE` al inlinearla, **antes** del chequeo de ACL de tabla en
+  el ejecutor. Verificado que ambas deniegan:
+  `has_table_privilege('anon', …, 'SELECT') = f` **y**
+  `has_function_privilege('anon','public.current_user_org_ids()','EXECUTE') = f`.
+  El mismo comportamiento es preexistente en `stella_interactions`; no lo
+  introduce `stella_0003`.
+
+### 2ª aplicación — idempotencia y convergencia
+
+Misma copia exacta del archivo (`sha256` verificado **dentro** del contenedor
+antes de ejecutar), misma sesión única, mismo writer declarado:
+
+| Campo | Valor |
+|---|---|
+| Bytes ejecutados | `6caa5ca9…7d1` (idéntico a la 1ª) |
+| Exit code | **0** |
+| Duración | ~898 ms |
+| `NOTICE` | `write path VERIFIED …` + `verification passed …` (idénticos) |
+| Warnings | **0** |
+| Errores | **0** |
+
+Los únicos mensajes adicionales son los `already exists, skipping` esperables de
+`CREATE TABLE/INDEX IF NOT EXISTS`. La policy y los dos triggers se
+`DROP`/`CREATE` por diseño (reconciliación convergente), no se duplican.
+
+**Idempotencia medida, no supuesta.** Se capturó una huella estructural de 39
+líneas —columnas, constraints, índices, policy, triggers, ACL, owner, flags RLS,
+conteo de filas, triggers de las 4 tablas previas, interacción sintética,
+número de tablas y ausencia de `evidence_chunks`— antes y después de la segunda
+corrida:
+
+```
+sha256(huella_antes)  = 549b4084327b35f18756586ca0edc4a8571d1ea7f79a3396a6552f632a84d030
+sha256(huella_despues)= 549b4084327b35f18756586ca0edc4a8571d1ea7f79a3396a6552f632a84d030
+diff -u  ->  sin diferencias
+```
+
+Una tabla, 11 columnas, mismos constraints, dos índices no únicos, cero UNIQUE,
+una policy, dos triggers, ACL idéntica, **cero filas**, cero duplicados, otros
+objetos intactos.
+
+Tras la segunda aplicación se reverificó **funcionalmente** que los triggers
+recreados siguen disparando: `UPDATE`, `DELETE` y `TRUNCATE` volvieron a fallar
+con `42501` desde `uellix_forbid_mutation()`, y la tabla quedó en 0 filas.
+
+La copia temporal del script dentro del contenedor se eliminó al terminar; no
+se tocó nada más.
+
+> Nota operativa (Git Bash / MSYS): el primer intento de la 2ª aplicación falló
+> con *"No such file or directory"* porque MSYS convirtió la ruta `/tmp/...` del
+> contenedor a una ruta de Windows. `-1` hizo su trabajo: el `SET` corrió, el
+> `-f` no encontró el archivo y **no se tocó la base** (verificado: 0 filas, 2
+> triggers, 1 policy). Se repitió con `MSYS_NO_PATHCONV=1`.
+
+### Pruebas offline
+
+| Comando | Resultado |
+|---|---|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | **188/188** en 2 archivos |
+| `pnpm test:unit` | **2482/2482** en 134 archivos |
+| `pnpm typecheck` | exit **0**, 0 errores |
+| `pnpm lint` | exit **0**, **0 errores** (51 warnings preexistentes, ajenos a esta unidad) |
+| `pnpm test:rls` | **NO EJECUTADA** — es G3 |
+
+### Alcance
+
+Cero acceso remoto. Cero `supabase login/link/db push/db pull`. Cero G3. Cero
+`grounding_0001`. Cero seeds. Cero reset. **Rollback NO ejecutado.** Otros
+stacks (`uellix-antigravity`, `aforiq`) intactos y healthy. **Cero ejecución
+formal de G2.**
+
+### Pendientes para el gate remoto (no bloquean el ensayo local)
+
+Detectados en la reauditoría previa y todavía abiertos:
+
+1. **`G2_PACKAGE.md` §2 sigue usando `information_schema.role_table_grants`**
+   para los grants de `stella_interactions`, la misma vista que §6 prohíbe con
+   argumento. Peor: esa vista **no puede expresar `PUBLIC`** — medido en este
+   stack, devuelve 0 filas con `grantee='PUBLIC'` mientras 195 relaciones sí
+   tienen ACL de `PUBLIC`. Su expectativa *"para anon / PUBLIC: ninguna fila"*
+   es, para `PUBLIC`, infalsificable. Es el defecto que MINOR-5 cerró para la
+   tabla nueva, abierto aún para la preexistente.
+2. **El rollback depende de banderas de `psql`.** La guarda (`DO $$`) y el
+   `DROP TABLE IF EXISTS` son sentencias separadas: sin `-1 -v ON_ERROR_STOP=1`
+   la excepción no impediría el `DROP`. Las cabeceras lo mandan; nada lo hace
+   estructural.
+3. **Falta un test automático de integridad estructural de los archivos de
+   test.** El incidente de `String.replace` con `$'` está registrado como
+   lección de proceso, pero nada lo fija contra recurrencia.
+4. **El hash de evidencia no es portable.** El SHA-256 citado como "bytes
+   ejecutados" es el del working tree con CRLF; en un checkout con LF o en CI
+   Linux el mismo archivo hashea `ad22e22c…`. No hay `.gitattributes` que fije
+   `eol` para `*.sql`.
+
 ## MANUAL MIGRATION 003 DECISION
 
 **Clasificación: `CONDITIONAL_LEGACY_ONLY`.**

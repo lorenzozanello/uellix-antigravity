@@ -408,6 +408,129 @@ líneas del archivo. Se detectó por error de parseo, se verificó que la cola e
 duplicado exacto y se truncó. Para texto con `$` conviene una función de
 reemplazo o edición directa, nunca una cadena literal.
 
+### 2026-08-01 · STELLA 0003 LOCAL REHEARSAL — RUN 1 · worktree `codex/stella-g2-local-rehearsal`
+
+**Primera aplicación de `stella_0003` en un PostgreSQL real.** La ejecutó
+**manualmente el operador**; todo lo demás de esta entrada se verificó después,
+de forma independiente, sobre el estado ya aplicado. **No es la ejecución
+formal de G2**: una base local no es staging y ninguna casilla de
+`docs/ops/gates/G2_PACKAGE.md` queda marcada por esta corrida.
+
+| Campo | Valor |
+|---|---|
+| Branch / HEAD | `codex/stella-g2-local-rehearsal` / `09a65fd22429c033cc3de970deb2913cd90752e3` |
+| `project_id` | `uellix-stella-g2-local-rehearsal` |
+| Contenedor | `supabase_db_uellix-stella-g2-local-rehearsal` (PostgreSQL 17.6) |
+| Writer declarado | `SET stella.writer_role = 'postgres'` |
+| SHA-256 working tree (bytes ejecutados, CRLF) | `6caa5ca97acbc0e9b28a439a66dcfac9b0d15399e4172da886dffd9fc1d6b7d1` |
+| SHA-256 canónico Git (LF) | `ad22e22c18f0bfb8c03987e05b76de45efe440fd994c2ae719a55bece778fab5` |
+| Git blob ID | `00c17b0491b26c195aa19822d8c80fed4874c202` |
+| Archivo modificado tras aplicar | **no** (`git status` vacío; `git hash-object` = blob ID) |
+
+**1ª aplicación (manual).** `psql -U postgres -d postgres -v ON_ERROR_STOP=1 -1
+-c "SET stella.writer_role='postgres'" -f <script>`. Exit exitoso. Los dos
+`NOTICE` finales del script: `write path VERIFIED against declared writer role
+postgres (owner: postgres, owner_is_writer: t)` y `verification passed — …`.
+La rama `ASSUMPTION` **no** se activó.
+
+**Postchecks independientes** (contra `pg_catalog`, sin confiar en el `NOTICE`
+que el script emite sobre sí mismo): 11 columnas exactas sin extras, tipos /
+nulabilidad / defaults exactos; PK sobre `(id)`; **4 FKs, todas `NO ACTION`**,
+cero adicionales; **0 UNIQUE constraints y 0 índices únicos no-PK**; CHECK de
+`decision` con exactamente los cuatro estados; CHECK de hash anclado
+`^[0-9a-f]{64}$`; 2 índices no únicos + el de la PK; owner `postgres`; RLS
+activo con **FORCE apagado**; **1 sola policy** SELECT org-scoped con ambos
+helpers; ACL directa por `aclexplode` → `authenticated = SELECT` no grantable,
+`service_role` / `anon` / `PUBLIC` = **nada**; 2 triggers no internos
+(`tgtype` 27 y 34) ligados a `uellix_forbid_mutation()`, sin INSERT en el de
+fila. `evidence_chunks` **ausente**; las 4 tablas append-only previas y sus 8
+triggers intactos; interacción sintética intacta; registro de migraciones sin
+entradas nuevas.
+
+**Camino de escritura** (transacción revertida, como `postgres` = owner =
+`DATABASE_URL`; identificadores derivados en SQL, nunca impresos):
+
+| Comprobación | Resultado |
+|---|---|
+| `INSERT` | permitido |
+| `RETURNING id` | permitido, `id` no nulo |
+| `DEFAULT` de `decided_at` | aplicado |
+| CHECKs (`accepted_edited`, hash 64 hex) y FK a `stella_interactions` | satisfechos |
+| Tras `ROLLBACK` | **0 filas** |
+
+Cero errores de FK, CHECK, ACL, RLS o `RETURNING`.
+
+**Inmutabilidad como owner** (transacciones separadas, todas revertidas):
+
+| Operación | Resultado | SQLSTATE | Origen |
+|---|---|---|---|
+| `UPDATE` | bloqueado | `42501` | trigger `uellix_forbid_mutation()` |
+| `DELETE` | bloqueado | `42501` | trigger `uellix_forbid_mutation()` |
+| `TRUNCATE` (sin `CASCADE`) | bloqueado | `42501` | trigger `BEFORE TRUNCATE` |
+
+**Matriz de roles cliente** (`SET LOCAL ROLE`, revertido; sin conceder nada):
+
+| Rol | SELECT | INSERT / UPDATE / DELETE / TRUNCATE |
+|---|---|---|
+| `authenticated` | permitido por ACL, **0 filas** por RLS org-scoped (sin claims) | bloqueados por **ACL** |
+| `service_role` | bloqueado por **ACL** — pese a `rolbypassrls = t` | bloqueados por **ACL** |
+| `anon` | bloqueado por **EXECUTE del helper RLS** y además por ACL | bloqueados por **ACL** |
+
+Tres matices medidos, no supuestos: (a) `authenticated` lee y no ve nada —
+ACL y RLS son capas distintas; (b) `service_role` salta RLS pero **saltarse RLS
+no concede ACL**, así que la postura "sin ningún privilegio" de §4 queda
+comprobada en ejecución; (c) el error de `anon` es `permission denied for
+function current_user_org_ids`, no el de tabla, porque el helper es una función
+SQL `SECURITY DEFINER` y el planner comprueba su `EXECUTE` al inlinearla, antes
+del chequeo de ACL de tabla en el ejecutor — verificado que **ambas** capas
+deniegan (`has_table_privilege` = f **y** `has_function_privilege` = f).
+Comportamiento preexistente en `stella_interactions`; no lo introduce 0003.
+
+**2ª aplicación — idempotencia medida, no supuesta.** Misma copia exacta
+(`sha256` verificado dentro del contenedor), misma sesión, mismo writer:
+exit **0**, ~898 ms, mismos dos `NOTICE`, **0 warnings, 0 errores**. Huella
+estructural de 39 líneas (columnas, constraints, índices, policy, triggers,
+ACL, owner, flags RLS, filas, triggers de las 4 tablas previas, interacción
+sintética, nº de tablas, ausencia de `evidence_chunks`) capturada antes y
+después:
+
+```
+sha256(antes)   = 549b4084327b35f18756586ca0edc4a8571d1ea7f79a3396a6552f632a84d030
+sha256(despues) = 549b4084327b35f18756586ca0edc4a8571d1ea7f79a3396a6552f632a84d030
+diff -u -> sin diferencias
+```
+
+Los triggers recreados se reverificaron **funcionalmente** tras la segunda
+corrida: `UPDATE`/`DELETE`/`TRUNCATE` volvieron a fallar con `42501`. La copia
+temporal del script dentro del contenedor se eliminó al terminar.
+
+*Nota operativa:* el primer intento de la 2ª aplicación falló por conversión de
+rutas de MSYS (`/tmp/...` → ruta Windows). `-1` hizo su trabajo: el `SET` corrió,
+el `-f` no encontró el archivo y **no se tocó la base** (verificado). Se repitió
+con `MSYS_NO_PATHCONV=1`.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | **188 tests**, 2 archivos |
+| `pnpm test:unit` | VERDE | **134 archivos, 2482 tests** |
+| `pnpm typecheck` | VERDE | exit 0, 0 errores |
+| `pnpm lint` | VERDE | exit 0, **0 errores** (51 warnings preexistentes) |
+| `pnpm test:rls` | NO EJECUTADA | es G3 |
+
+**Alcance.** Cero acceso remoto. Cero `supabase login/link/db push/db pull`.
+Cero G3. Cero `grounding_0001`. Cero seeds. Cero reset. **Rollback NO
+ejecutado.** Otros stacks (`uellix-antigravity`, `aforiq`) intactos. **Cero
+ejecución formal de G2.**
+
+**Pendientes para el gate remoto** (abiertos; no bloquean el ensayo local):
+
+| # | Pendiente | Ámbito |
+|---|---|---|
+| 1 | `G2_PACKAGE.md` §2 sigue usando `information_schema.role_table_grants` para `stella_interactions`. Además esa vista **no puede expresar `PUBLIC`**: medido en este stack devuelve 0 filas con `grantee='PUBLIC'` mientras **195 relaciones** sí tienen ACL de `PUBLIC`, así que su expectativa *"para anon / PUBLIC: ninguna fila"* es infalsificable para `PUBLIC`. Es el defecto que MINOR-5 cerró para la tabla nueva | G2 remoto |
+| 2 | En el rollback, la guarda (`DO $$`) y el `DROP TABLE IF EXISTS` son sentencias separadas: la protección depende de `-1 -v ON_ERROR_STOP=1`, no de la estructura | G2 remoto / producción |
+| 3 | No existe test automático de integridad estructural de los archivos de test; el incidente de `String.replace` con `$'` sólo está registrado como lección de proceso. **Reincidió durante esta misma corrida**, al redactar esta entrada: un `String.replace` sobre este ledger interpretó `$` + backtick (el texto ANTERIOR al match, 411 líneas) y `$` + comilla simple (el texto POSTERIOR, 6 líneas), insertando 417 líneas espurias, y además colapsó `$$` en `$`. Se detectó por conteo de líneas (540 añadidas frente a 123 esperadas), se revirtió con `git checkout --` y se rehízo con una **función** de reemplazo, que desactiva por completo esa interpretación. Segundo caso registrado: la lección escrita no basta, hace falta el guardarraíl | proceso |
+| 4 | El SHA-256 citado como "bytes ejecutados" es el del working tree con CRLF; en un checkout LF o CI Linux el mismo archivo hashea `ad22e22c…`. No hay `.gitattributes` que fije `eol` para `*.sql` | evidencia |
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |
