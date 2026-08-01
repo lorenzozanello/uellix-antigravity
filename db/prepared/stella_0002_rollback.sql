@@ -16,6 +16,18 @@
 -- RUN AS ONE TRANSACTION, like the forward script:
 --   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
 -- Both statements are idempotent: re-running is a no-op.
+--
+-- ORDER HAZARD vs stella_0002b (added 2026-08-01):
+-- If stella_0002b_append_only_truncate_hardening.sql has been applied, running
+-- THIS rollback leaves stella_interactions in an asymmetric state — still
+-- protected against TRUNCATE (0002b's statement trigger survives, by design),
+-- but open to UPDATE/DELETE again for `authenticated`. It also makes a later
+-- re-apply of 0002b ABORT, because that script's precondition 0c requires the
+-- row-level trigger this file removes.
+-- That is intentional, not a bug: 0002b's protection must not be undone by a
+-- rollback aimed at a different unit. To return to a fully pre-G2 state, run
+-- this file and then treat the 0002b hardening separately — see the four
+-- meanings of "rollback" in stella_0002b_rollback.sql.
 
 SET search_path = public;
 
