@@ -186,6 +186,96 @@ Repetir los pasos 2–11 íntegros. Si la segunda corrida diverge de la primera
 en cualquier verificación, el ensayo se considera inválido — el ciclo es
 desechable y reconstruible en minutos, por diseño.
 
+## BASE BUILD — RUN 1
+
+Primera construcción reproducible de la base local. **Ningún gate ejecutado**:
+no se corrió `stella_0002`, `stella_0003`, `grounding_0001` ni G3.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-01, 10:48 (hora local) |
+| Branch | `codex/stella-g2-local-rehearsal` |
+| Commit de partida | `91cc4ff` |
+| Commit de aislamiento | `ed9ab97` — *chore(local): isolate Supabase G2 rehearsal stack* |
+| Commit de clasificación | `ad559d8` — *docs(local): classify numeric migration for fresh builds* |
+| `project_id` | `uellix-stella-g2-local-rehearsal` |
+| Contenedor DB | `supabase_db_uellix-stella-g2-local-rehearsal` (`127.0.0.1:56322`) |
+| Acceso remoto | ninguno — sin `login`/`link`/`db push`/`db pull` |
+
+### Cadena aplicada
+
+| Paso | Resultado |
+|---|---|
+| `supabase/migrations/` (2) | Aplicadas por `supabase start`; **no reaplicadas**. Verificadas: 2 triggers en `auth.users`, `public.handle_new_user()`, 3 policies en `storage.objects` |
+| `db/migrations/` (40) | 40/40 aplicadas por `pnpm db:migrate:local`, de `0000_quick_husk` a `0039_grant_rls_helper_execution`. `drizzle.__drizzle_migrations` = 40 filas. 0 errores |
+| `001_unique_constraints.sql` | Aplicada. PRECHECKs → 0 filas. Índices `uq_active_outcome_proxy_assignment` y `uq_sroi_run_project_version` presentes (ya creados por la cadena Drizzle; `IF NOT EXISTS` los preservó) |
+| `002_append_only.sql` | Aplicada. `public.uellix_forbid_mutation()` + 3 triggers (`audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`) |
+| `003_numeric_columns.sql` | **No aplicada — `ALREADY_SATISFIED_ON_FRESH_DRIZZLE_BUILD`.** 11/11 columnas ya en el estado objetivo por `0016`. Ver *MANUAL MIGRATION 003 DECISION* |
+| `db/policies/` (8) | 8/8 aplicadas en orden, cada una en su propia transacción (`-1 -v ON_ERROR_STOP=1`). 0 errores |
+
+### Estado RLS
+
+- **37 tablas** con RLS habilitado, **103 policies** en total.
+- `002_stella_interactions_rls.sql` aplicada: `stella_interactions.relrowsecurity = true`,
+  1 policy `SELECT` (`stella_interactions_select_member_or_admin`). INSERT/UPDATE/DELETE
+  quedan denegados por ausencia de policy — *deny-by-default*, no por omisión.
+- `authenticated` tiene `EXECUTE` sobre `public.current_user_org_ids()` y
+  `public.current_user_is_super_admin()` (verificado con `has_function_privilege`).
+
+### Seeds
+
+| Entidad | Conteo |
+|---|---|
+| Organizaciones sintéticas | 2 (habilita las pruebas RLS cross-org) |
+| Usuarios sintéticos | 8 (todos en el dominio `test.com`; 1 super admin) |
+| Membresías sintéticas | 6 |
+| Proyectos sintéticos | 1 |
+| Interacciones Stella sintéticas | 1 |
+| Organizaciones con cuota Stella > 0 | 1 |
+
+Propiedades de la interacción sintética: `stella_role=advisor`,
+`pipeline_step=narrative`, `model_used=seed-synthetic` (ninguna llamada real a
+Gemini), `risk_level=low`, `tokens_used=0`, `context_hash` de 64 caracteres,
+`response_json.requiresHumanReview = true`. **Cero datos reales.**
+
+**Idempotencia:** `pnpm db:seed:stella-local` ejecutado dos veces. Los conteos
+de organizaciones, usuarios, membresías, proyectos e interacciones y el
+`context_hash` resultaron idénticos byte a byte entre ambas corridas.
+
+### Preflight estructural pre-G2
+
+Presentes: `public.organizations`, `public.projects`, `public.users`,
+`public.evidence_items`, `public.stella_interactions`,
+`public.uellix_forbid_mutation()`, `public.current_user_org_ids()`,
+`public.current_user_is_super_admin()`, `gen_random_uuid()`.
+
+Correctamente **ausentes** (los crea G2, aún no ejecutado):
+
+| Objeto | Estado |
+|---|---|
+| `public.stella_suggestion_decisions` | no existe |
+| `public.evidence_chunks` | no existe |
+| `trg_stella_interactions_append_only` | no existe |
+
+### Pruebas
+
+| Comando | Resultado |
+|---|---|
+| `pnpm typecheck` | verde, 0 errores |
+| `pnpm lint` | 0 errores, 51 warnings preexistentes |
+| `pnpm test:unit` | **134 archivos, 2373/2373 verdes**, 0 fallos, 0 omitidos |
+
+2373 = 2326 del baseline previo + 47 de
+`tests/manual-migration-003-classification.test.ts`. `pnpm test:rls` **no** se
+ejecutó: sus dos `describe.skip` dependen de objetos que crea G2.
+
+### Aislamiento
+
+`uellix-antigravity` y `aforiq` permanecieron en marcha e intactos durante toda
+la corrida. Ningún comando de esta unidad tocó otro stack ni el Supabase
+remoto. `.env.local` (no rastreado, `.gitignore: .env*`) apunta solo a
+`127.0.0.1` en los puertos `56321`/`56322` de este worktree.
+
 ## MANUAL MIGRATION 003 DECISION
 
 **Clasificación: `CONDITIONAL_LEGACY_ONLY`.**
