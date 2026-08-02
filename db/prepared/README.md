@@ -98,6 +98,21 @@ requiere acción humana explícita.
 | `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + `REVOKE ALL` a los 3 roles + grant SELECT a `authenticated` + RLS + política `stella_suggestion_decisions_select` + 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO |
 | `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | PREPARADO |
 | `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | 5 roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`); ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y `service_role` en las 38; repara `pg_default_acl` de `postgres` y `supabase_admin`; 4 entradas **globales** que suprimen `EXECUTE`/`USAGE` a `PUBLIC`; `USAGE ON SCHEMA auth` para el owner | PREPARADO — ensayado y aplicado **sólo en local** |
+| `stella_0005_runtime_cutover.sql` | `stella_0005_rollback.sql` | **local únicamente**; se aplica con `pnpm db:prepared:apply:local`, que conecta como `uellix_migrator` y hace `SET LOCAL ROLE uellix_owner`. El script **se niega** a correr con cualquier otra identidad, incluido un superusuario | 3 políticas `INSERT` (`audit_logs`, `stella_interactions`, `stella_suggestion_decisions`) → **104 → 107**; `search_path=''` en las 3 funciones SECURITY DEFINER que aún estaban en `search_path=public`; 4 entradas de `pg_default_acl` para `uellix_owner` en `public` (SELECT+INSERT a `uellix_writer`, SELECT a `uellix_auditor`; **nunca** UPDATE/DELETE) | PREPARADO — ensayado en contenedor efímero y aplicado **sólo en local** |
+| `stella_0005b_admin_bootstrap.sql` | `stella_0005b_rollback.sql` | **local únicamente**; requiere **superusuario** (en local, `supabase_admin`) y se aplica **antes** de `stella_0005` | `ALTER ROLE ... SET` (search_path, statement/lock/idle timeouts) para los 3 roles LOGIN; ownership del esquema `drizzle` y de `__drizzle_migrations` → `uellix_owner` + `USAGE` para `uellix_migrator`; `REVOKE USAGE ON TYPES FROM PUBLIC` en el default de `postgres` en `public` | PREPARADO — aplicado **sólo en local** |
+
+> **Por qué `stella_0005` viene partido en dos.** No es estilo: `uellix_owner` no
+> tiene `CREATEROLE` y no posee el esquema `drizzle`, así que `ALTER ROLE ... SET`,
+> `ALTER SCHEMA ... OWNER` y `ALTER DEFAULT PRIVILEGES FOR ROLE postgres` **no
+> pueden** ejecutarse por la ruta del migrator. Meterlos en el mismo fichero
+> habría obligado a aplicar todo el cutover como administrador, y eso habría
+> dejado sin comprobar justo la afirmación central del script: que la ruta
+> `uellix_migrator → SET ROLE uellix_owner` funciona.
+>
+> **`stella_0005b` no tiene rollback completo.** `ALTER SEQUENCE ... OWNER TO`
+> falla mientras la secuencia esté ligada a una tabla de otro dueño, así que el
+> rollback cambia la **tabla primero** y la secuencia después. Se descubrió
+> ejecutándolo, no revisándolo.
 
 **Tablas gestionadas fuera de Drizzle (ADR 21):** `stella_suggestion_decisions`,
 `evidence_chunks`. Consecuencia aceptada: `pnpm db:migrate:local` sobre una base

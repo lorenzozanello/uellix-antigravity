@@ -19,7 +19,7 @@ nada:
 
 | Hecho | Consecuencia |
 |---|---|
-| Las **38** tablas de `public` y las **8** funciones tenían `relowner`/`proowner` = `postgres` | `postgres` es el rol al que resuelve `DATABASE_URL`, es decir el **runtime de la aplicación**. El runtime era el owner. |
+| Las **38** tablas de `public` y las **8** funciones tenían `relowner`/`proowner` = `postgres` | `postgres` era el rol al que resolvía `DATABASE_URL`, es decir el **runtime de la aplicación**. El runtime era el owner. Desde el cutover (`stella_0005`) el runtime resuelve `UELLIX_RUNTIME_DATABASE_URL` y se autentica como `uellix_app`; ver [`DATABASE_RUNTIME_CUTOVER.md`](DATABASE_RUNTIME_CUTOVER.md). |
 | El owner **no está sujeto a RLS** salvo `FORCE ROW LEVEL SECURITY`, y `relforcerowsecurity` era `false` en **38/38** | Las 104 policies no gobernaban al backend. Sólo protegían el camino PostgREST/navegador. |
 | `postgres` tiene además `rolbypassrls = true` | Aunque dejara de ser owner, seguiría exento. Dos capas de exención, ninguna declarada. |
 | `postgres` es miembro de `anon`, `authenticated`, `authenticator` y `service_role` **con `ADMIN OPTION`** | Podía `SET ROLE` a cualquiera de ellos y re-concederlos. |
@@ -407,6 +407,29 @@ apunte a `postgres`, la transferencia de ownership es un obstáculo auditable
 
 Localmente el forward corre como `supabase_admin`, así que la barrera **sí** es
 real: `postgres` no tiene ninguna vía hacia `uellix_owner`.
+
+> **CORRECCIÓN (2026-08-02, tras la reauditoría independiente).** El párrafo
+> anterior era correcto sobre `uellix_owner` y **prematuro** sobre el resto. La
+> reauditoría midió que, con `stella_0004` instalado, el runtime local **seguía
+> siendo `postgres`**: `DATABASE_URL` no había cambiado, `row_security_active`
+> era `false` para todas las consultas del producto y `postgres` conservaba
+> `BYPASSRLS`, `CREATEROLE` y `CREATE` sobre `public` vía `pg_database_owner`.
+> Es decir: el modelo era correcto, estaba instalado, y **no gobernaba ni una
+> sola consulta de la aplicación**.
+>
+> Tres afirmaciones que circulaban y eran falsas:
+>
+> - *"el runtime ya no podía hacer `DROP POLICY`"* — podía, escalando a owner
+>   vía `CREATEROLE`;
+> - *"Drizzle estaba mitigado"* — `db:migrate:local` seguía conectando como
+>   `postgres` y `drizzle.__drizzle_migrations` seguía siendo suyo;
+> - *"el modelo gobernaba el tráfico real"* — nada preguntaba jamás al servidor
+>   con qué rol se autenticaba la aplicación, y esa ausencia de comprobación es
+>   la razón de que el estado durase semanas.
+>
+> Lo resuelto en local está en
+> [`DATABASE_RUNTIME_CUTOVER.md`](DATABASE_RUNTIME_CUTOVER.md). Lo de esta
+> sección (§5) **sigue vigente para remoto**.
 
 ### 5.3 Impacto por componente
 

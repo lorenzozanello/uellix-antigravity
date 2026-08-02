@@ -103,11 +103,30 @@ Nunca incluye la URL, el usuario, la contraseña ni la query string.
 1. `db/client.ts` no construye clientes en el cuerpo del módulo.
 2. Existe exactamente **una** llamada al driver, dentro de
    `createDatabaseClient`, y siempre después de la guarda.
-3. Ningún script ni config de drizzle lee `DATABASE_URL`.
+3. **Nada lee `DATABASE_URL`.** Ni scripts, ni configs de drizzle, ni el
+   runtime. Esa variable significaba a la vez el runtime, el migrator y el
+   auditor, y de tres lecturas siempre ganaba la más privilegiada: así fue como
+   la aplicación acabó sirviendo tráfico como `postgres`. Cada capacidad lee
+   ahora su propia variable, desde su propio fichero — ver
+   `db/safety/resolve-capability-database-url.ts` y
+   [`docs/ops/DATABASE_RUNTIME_CUTOVER.md`](../docs/ops/DATABASE_RUNTIME_CUTOVER.md).
 4. Ninguna capacidad local acepta un destino que no sea loopback o un
    contenedor explícitamente permitido, en el puerto esperado.
 5. Ningún mensaje de error contiene credenciales.
+6. **El runtime pregunta al servidor quién es antes de servir tráfico.**
+   `db/runtime-bootstrap.ts` comprueba `session_user`, `current_user`,
+   `rolsuper`, `rolbypassrls`, `rolcreaterole`, si puede `SET ROLE` al owner y
+   si puede `CREATE` en `public`. Si algo diverge, la inicialización aborta con
+   un código estable y no se ejecuta ninguna consulta de negocio. El rol
+   esperado es una constante importada, no un parámetro: una comprobación que
+   quien llama puede reapuntar no es una comprobación.
+7. **Toda consulta con datos de inquilino corre dentro de
+   `withDatabaseIdentityContext`.** Fuera de un contexto, el cliente compartido
+   no ve filas — falla cerrado. Antes del cutover ese mismo código devolvía las
+   filas de todos los inquilinos.
 
-Las cinco están fijadas por `tests/database-target-safety.test.ts` y
-`tests/database-entrypoint-safety.test.ts`, y las 1–3 también por el paso
+Las siete están fijadas por `tests/database-target-safety.test.ts`,
+`tests/database-entrypoint-safety.test.ts`,
+`tests/database-runtime-identity.test.ts` y
+`tests/database-runtime-rls.test.ts`; las 1–3 también por el paso
 *Validate Loopback URLs* del workflow `p1a-validation`.
