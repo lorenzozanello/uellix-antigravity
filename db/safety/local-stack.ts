@@ -46,3 +46,10 @@ export const LOCAL_CONTAINER_HOSTS: readonly string[] = Object.freeze([])
 
 /** Exact confirmation token required by the `local_reset` capability. */
 export const LOCAL_RESET_CONFIRMATION = `reset-local:${LOCAL_PROJECT_ID}`
+
+/**
+ * Exact confirmation token required by the `local_role_credential_rotation`
+ * capability. Bound to the project id so a token copied from another
+ * worktree's notes cannot rotate THIS stack's credentials.
+ */
+export const LOCAL_CREDENTIAL_ROTATION_CONFIRMATION = `rotate-local-credentials:${LOCAL_PROJECT_ID}`

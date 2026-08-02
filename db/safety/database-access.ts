@@ -49,6 +49,12 @@ export type DatabaseCapability =
   | 'local_integration_test'
   /** Destructive local rebuild. Local only + project id + exact confirmation. */
   | 'local_reset'
+  /**
+   * Sets the LOGIN passwords of the local `uellix_*` roles. Local only +
+   * project id + exact confirmation, because it is the one operation that
+   * mints the credentials every other capability then authenticates with.
+   */
+  | 'local_role_credential_rotation'
   /** drizzle-kit against the local stack. Local only. */
   | 'local_migration'
   /** Schema change against a designated remote. Blocked unless every signal is present. */
@@ -226,6 +232,16 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
     local_reset: localPolicy({
       requiresProjectId: true,
       confirmation: ({ projectId }) => `reset-local:${projectId}`,
+    }),
+
+    // Gated exactly like `local_reset`, and for the same reason: both are
+    // operations whose blast radius is the whole stack rather than one table.
+    // A rotation run against the wrong local stack would leave that stack's
+    // runtime unable to authenticate, so the project id is pinned and the
+    // confirmation token binds to it.
+    local_role_credential_rotation: localPolicy({
+      requiresProjectId: true,
+      confirmation: ({ projectId }) => `rotate-local-credentials:${projectId}`,
     }),
 
     controlled_remote_migration: {

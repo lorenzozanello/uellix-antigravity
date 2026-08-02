@@ -9,8 +9,10 @@ import {
   type DeploymentEnvironment,
 } from './safety/database-access'
 import type { EnvironmentSource } from './safety/database-target'
+import { getBoundDatabaseContext } from './identity-store'
 import { LOCAL_DB_PORT } from './safety/local-stack'
 import { resolveLocalDatabaseUrl } from './safety/resolve-local-database-url'
+import { resolveRuntimeDatabaseUrl } from './safety/resolve-capability-database-url'
 
 // db/client.ts
 //
@@ -258,6 +260,7 @@ export type LocalDatabaseCapability =
   | 'local_integration_test'
   | 'local_migration'
   | 'local_reset'
+  | 'local_role_credential_rotation'
   | 'readonly_audit'
 
 export interface LocalDatabaseClient extends DatabaseClient {
@@ -355,15 +358,33 @@ export function restrictDefaultDatabaseClient(restriction: DefaultRestriction): 
   defaultRestriction = restriction
 }
 
-function getDefaultClient(): DatabaseClient {
+/**
+ * The shared application client.
+ *
+ * The connection string comes from `UELLIX_RUNTIME_DATABASE_URL`, which must
+ * declare `uellix_app`. It no longer comes from `DATABASE_URL` — that variable
+ * meant the runtime, the migrator and the auditor at once, and the most
+ * privileged reading always won. See db/safety/resolve-capability-database-url.ts.
+ *
+ * Resolution still happens lazily, on first use, so importing this module
+ * opens no socket and reads no credential.
+ */
+export function getDefaultDatabaseClient(): DatabaseClient {
   if (defaultClient === null) {
+    const resolved = resolveRuntimeDatabaseUrl()
+    for (const warning of resolved.warnings) console.warn(`[db] ${warning}`)
+
     defaultClient = createDatabaseClient({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: resolved.url,
       capability: defaultRestriction?.capability ?? 'app_runtime',
       expectedLocalPort: defaultRestriction?.expectedLocalPort,
     })
   }
   return defaultClient
+}
+
+function getDefaultClient(): DatabaseClient {
+  return getDefaultDatabaseClient()
 }
 
 /**
@@ -399,7 +420,21 @@ export const db: PostgresJsDatabase<typeof schema> = new Proxy(
       if (typeof property === 'symbol' || INERT_PROPERTIES.has(property)) {
         return (target as unknown as Record<string | symbol, unknown>)[property]
       }
-      const real = getDefaultClient().db as unknown as Record<string, unknown>
+
+      // THE CUTOVER'S LOAD-BEARING LINE.
+      //
+      // Inside `withDatabaseIdentityContext`, this resolves to the drizzle
+      // handle bound to that request's transaction — the one carrying the
+      // `request.jwt.claims` setting every RLS policy reads. Outside a
+      // context, it falls back to the pooled client, which has no claims and
+      // therefore sees no rows.
+      //
+      // That fallback is deliberate and is NOT a hole: as `uellix_app` a
+      // claimless query returns zero rows rather than everything, so code that
+      // forgot to open a context fails closed and visibly. Before the cutover
+      // the same code path ran as `postgres` and returned every tenant's rows.
+      const bound = getBoundDatabaseContext()
+      const real = (bound?.db ?? getDefaultClient().db) as unknown as Record<string, unknown>
       const value = real[property]
       return typeof value === 'function' ? value.bind(real) : value
     },
