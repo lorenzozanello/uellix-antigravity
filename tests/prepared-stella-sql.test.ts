@@ -119,8 +119,16 @@ function expectNoExecutedDdl(sql: string) {
   // The admitted form exists because stella_0002b needs to defer PARSING (not
   // composition) of `REVOKE MAINTAIN`, a syntax error before PostgreSQL 17; the
   // literal it executes is pinned by its own test.
+  //
+  // `EXECUTE ON` is also admitted, and it is not a loophole: that is the
+  // PRIVILEGE NAME in `GRANT EXECUTE ON FUNCTION …`, `REVOKE EXECUTE ON
+  // FUNCTION …` and `ALTER DEFAULT PRIVILEGES … REVOKE EXECUTE ON FUNCTIONS
+  // …`. The token can never begin a dynamic statement — `EXECUTE ON` is not
+  // valid PL/pgSQL — so admitting it removes a false positive without widening
+  // what this helper proves. Added when stella_0004 landed, which is the first
+  // prepared script to grant or revoke the EXECUTE privilege.
   expect(
-    stripCommentsAndStrings(sql).match(/\bEXECUTE\b(?!\s*(?:FUNCTION\b|PROCEDURE\b|''))/gi),
+    stripCommentsAndStrings(sql).match(/\bEXECUTE\b(?!\s*(?:FUNCTION\b|PROCEDURE\b|ON\b|''))/gi),
   ).toBeNull()
 }
 
@@ -217,6 +225,8 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       'stella_0002b_rollback.sql',
       'stella_0003_rollback.sql',
       'stella_0003_suggestion_decisions.sql',
+      'stella_0004_role_separation.sql',
+      'stella_0004_rollback.sql',
     ])
   })
 
