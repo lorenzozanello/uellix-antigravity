@@ -731,6 +731,81 @@ no remoto): tabla `stella_suggestion_decisions` presente, **1** decisión,
 **2** interacciones — sin cambio. Respaldo pre-G3 no tocado. Cero reset, cero
 G3, cero acceso remoto, cero push/PR.
 
+### 2026-08-02 · STELLA 0003 ROLLBACK REHEARSAL — RUN 1 · worktree `codex/stella-g2-local-rehearsal`
+
+**HEAD inicial `12715d8`.** Primera ejecución **real** de
+`db/prepared/stella_0003_rollback.sql` contra un PostgreSQL vivo (stack local
+desechable `uellix-stella-g2-local-rehearsal`, contenedor
+`supabase_db_uellix-stella-g2-local-rehearsal`, PostgreSQL 17.6,
+`127.0.0.1:56322`). Hasta aquí el rollback estaba verificado sólo
+*estructuralmente*: 246 pruebas sobre el texto del archivo y 58 mutantes
+detectados, pero cero ejecuciones destructivas.
+
+**Respaldo antes de nada.** `pre_g3_local.dump` validado en tamaño exacto
+(581 736 bytes) y SHA-256 (`d46280c4…b436aeb`), `pg_restore -l` en solo lectura
+→ **1155 entradas TOC / 87 `TABLE DATA`** (exacto), y duplicado a una segunda
+ubicación estable fuera de `TEMP`, fuera del repositorio y fuera de carpetas
+sincronizadas. Hashes de original y copia **idénticos**. **Ninguno restaurado.**
+
+**Identidad del script.** SHA-256 working tree = SHA-256 canónico Git =
+`e9498d02…c4b12e4b` (el archivo está en LF, así que ambas identidades
+colapsan); blob ID `81211230…6224de`, idéntico al registrado en `HEAD`;
+`git diff HEAD` vacío. Hash **recalculado dentro del contenedor** antes de
+ejecutar y coincidente. Estructura re-verificada sobre el archivo: 4 sentencias
+top-level (3 `SET` + 1 `DO`), 0 `DROP` top-level, el único `DROP` como literal
+fijo dentro del `DO`, sin `format()`/`quote_ident`/concatenación, autorización
+exacta `stella.confirm_destroy_decisions = 'true'`, 6 guardas / 6 abortos.
+
+**1ª ejecución — destructiva, autorizada.** Un solo `psql`, una conexión, una
+transacción (`-1`), autorización por `-c` en la misma sesión que el `-f`. Sin
+`ALTER ROLE`/`ALTER DATABASE`/`PGOPTIONS`/config persistente (0 entradas en
+`pg_db_role_setting`). Exit **0**, ~1 s. **1 fila detectada**, banner de 13
+líneas verbatim, **1 `WARNING`**, tabla eliminada, transacción confirmada.
+
+**2ª ejecución — idempotencia.** Sesión nueva, **sin** autorización. Exit **0**,
+`NOTICE` de tabla ausente, no-op, **cero** banner, **cero** `WARNING`. Línea
+base re-capturada **idéntica byte a byte** a la del postcheck.
+
+**Postcheck — delta cerrado.** Cada línea que cambió entre la línea base pre y
+post pertenece a `stella_suggestion_decisions` o es un contador que refleja esa
+remoción:
+
+| Contador | Pre | Post | Δ |
+|---|---|---|---|
+| tablas `public` | 38 | 37 | −1 |
+| policies `public` | 104 | 103 | −1 |
+| triggers append-only | 10 | 8 | −2 |
+| índices `public` | 119 | 116 | −3 |
+| constraints `public` | 230 | 223 | −7 |
+| grants no-owner | 461 | 460 | −1 |
+| funciones `public` | 8 | 8 | 0 |
+| migraciones | 2 | 2 | 0 |
+
+`stella_interactions` presente con **2** filas; `organizations` 3, `users` 9,
+`projects` 2, `organization_members` 7 — sin cambio (las FKs de decisions eran
+salientes, el `DROP` sin `CASCADE` no tocó a los padres); `uellix_forbid_mutation()`
+intacta; `evidence_chunks` ausente; `session_replication_role = origin` antes y
+después.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | 2 archivos, **246 tests** — verdes **después** del `DROP`: prueban el texto del SQL, no el estado de la base |
+| `pnpm test:unit` | VERDE | **135 archivos, 2553 tests** |
+| `pnpm typecheck` | VERDE | exit 0, 0 errores |
+| `pnpm lint` | VERDE | exit 0, **0 errores** (51 warnings preexistentes, sin cambio) |
+| `pnpm test:rls` | **NO EJECUTADA** | Es G3 |
+| `pnpm test:integration` | **NO EJECUTADA** | Escribe en BD remota por defecto |
+
+**Alcance.** Diff limitado a documentación (`LOCAL_STAGING_G2_REHEARSAL.md`,
+este ledger, `STELLA_FABLE_RISK_REGISTER.md`, `gates/G2_PACKAGE.md`). Cero
+cambios en `stella_0003_rollback.sql`, `db/schema.ts`, `db/migrations`. Cero
+acceso remoto (todo por `docker exec`), cero restore, cero reset, cero G3, cero
+`grounding_0001`, cero rollback de `stella_0002`/`0002b`, cero push/PR. Otros
+stacks (`uellix-antigravity`, `aforiq`) intactos. **Cero ejecución formal de G2.**
+
+**Siguiente paso:** auditoría post-rollback independiente. El RUN 2 (FULL
+REBUILD) **no** queda autorizado por esta corrida.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

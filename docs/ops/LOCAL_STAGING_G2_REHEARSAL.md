@@ -1437,7 +1437,240 @@ SHA-256 sin cambio (`d46280c4…b436aeb`). Cero reset. Cero G3. Cero
 intactos. **Cero ejecución formal de G2.**
 
 **Siguiente paso:** ensayo destructivo controlado del rollback contra el stack
-local desechable — todavía **no** ejecutado.
+local desechable — ejecutado el 2026-08-02, ver
+[STELLA 0003 ROLLBACK REHEARSAL — RUN 1](#stella-0003-rollback-rehearsal--run-1).
+
+## STELLA 0003 ROLLBACK REHEARSAL — RUN 1
+
+> **No es la aprobación formal de G2.** Ensayo destructivo controlado sobre el
+> stack local desechable. Ninguna casilla de `docs/ops/gates/G2_PACKAGE.md`
+> queda marcada por esta corrida, y el gate remoto sigue **sin ejecutar**.
+
+Primera ejecución real de `db/prepared/stella_0003_rollback.sql` contra un
+PostgreSQL vivo. Hasta esta corrida el rollback sólo estaba verificado
+*estructuralmente* (246 pruebas sobre el texto del archivo, 58 mutantes
+detectados en 9 rondas de revisión adversarial): nunca había borrado nada.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-02 |
+| Branch | `codex/stella-g2-local-rehearsal` |
+| HEAD inicial | `12715d8916b0613fdae1ccf76f25ead6fb56c4b0` |
+| `project_id` (config.toml) | `uellix-stella-g2-local-rehearsal` |
+| Contenedor | `supabase_db_uellix-stella-g2-local-rehearsal` |
+| Motor | PostgreSQL 17.6 |
+| API / DB locales | `127.0.0.1:56321` / `127.0.0.1:56322` |
+| Script | `db/prepared/stella_0003_rollback.sql` (590 líneas, 39 498 bytes) |
+
+### Respaldo — verificado, duplicado, **no** restaurado
+
+El rollback destruye un audit trail append-only: después del `COMMIT` sólo un
+restore lo recupera. Por eso el respaldo se validó *antes* de tocar nada, y se
+duplicó fuera de `TEMP` para que la limpieza automática del sistema no pueda
+dejar la evidencia sin copia.
+
+| Campo | Valor |
+|---|---|
+| Respaldo original | `%TEMP%\uellix-g3-local-backup\pre_g3_local.dump` |
+| Tamaño | 581 736 bytes (exacto al esperado) |
+| SHA-256 original | `d46280c4261cc8b68896dd34b12f41d9334756a61f7a2f2a3c441aef5b436aeb` |
+| Segunda copia estable | `%LOCALAPPDATA%\uellix-stella-evidence\pre_g3_local.dump` |
+| SHA-256 segunda copia | `d46280c4261cc8b68896dd34b12f41d9334756a61f7a2f2a3c441aef5b436aeb` |
+| Coincidencia | **sí**, byte a byte |
+| `pg_restore -l` | 1155 entradas TOC · 87 `TABLE DATA` (exacto a lo esperado) |
+| Restauración | **NO ejecutada** (ni original ni copia) |
+
+La segunda copia vive fuera del repositorio, fuera de `TEMP` y fuera de
+cualquier carpeta sincronizada (`%LOCALAPPDATA%` está excluido de OneDrive por
+diseño). El listado del TOC se hizo por `stdin` hacia un `pg_restore` dentro del
+contenedor: lectura pura, sin ruta de escritura hacia la base.
+
+### Identidad del artefacto ejecutado
+
+A diferencia de `stella_0003_suggestion_decisions.sql` (CRLF en disco, tres
+hashes distintos), el rollback está en **LF** en el working tree: los bytes que
+`psql` leyó y los que Git almacena son los mismos, y dos de las tres identidades
+colapsan en un solo valor.
+
+| Identidad | Valor |
+|---|---|
+| SHA-256 working tree | `e9498d02493ca1fb8eacad8084e0930a783530fcf40d7cf2295008bfb4c12e4b` |
+| SHA-256 canónico Git | `e9498d02493ca1fb8eacad8084e0930a783530fcf40d7cf2295008bfb4c12e4b` (idéntico — archivo LF) |
+| Git blob ID | `812112309bfd1dc306cace47925e7b9b646224de` |
+| Blob registrado en `HEAD` | `812112309bfd1dc306cace47925e7b9b646224de` (coincide) |
+| `git diff HEAD` sobre la ruta | vacío — cero modificaciones posteriores |
+| SHA-256 recalculado **dentro del contenedor** | `e9498d02…c4b12e4b` (coincide antes de ejecutar) |
+
+Estructura re-verificada sobre el archivo, no sobre el recuerdo de las pruebas:
+
+- **4 sentencias top-level**: `SET search_path`, `SET lock_timeout='5s'`,
+  `SET client_min_messages=notice`, y un único bloque `DO $$ … $$`;
+- **cero `DROP` top-level**. El único `DROP` es
+  `EXECUTE 'DROP TABLE public.stella_suggestion_decisions'` (línea 587),
+  **dentro** del `DO` y detrás de las seis guardas;
+- **literal fijo, cero SQL construido**: sin `format()`, sin `quote_ident`, sin
+  concatenación de identificadores en ningún `EXECUTE`;
+- **autorización exacta**:
+  `current_setting('stella.confirm_destroy_decisions', true) = 'true'`;
+- **6 guardas / 6 mensajes de aborto** (aislamiento, tabla ausente → no-op,
+  propiedad, FORCE RLS, autorización, autorización persistida).
+
+### Preflight — precondiciones confirmadas por `SELECT`
+
+Working tree limpio, staging vacío, sin operación Git en curso, historial del
+segmento de ensayo lineal (`98f21f4..HEAD` sin merges), HEAD exacto al esperado.
+Contenedor `healthy`, PostgreSQL 17.6, `session_replication_role = origin`.
+
+| Precondición | Estado pre-rollback |
+|---|---|
+| `public.stella_suggestion_decisions` | presente |
+| filas en decisions | **1** |
+| filas en `stella_interactions` | **2** |
+| `public.evidence_chunks` | ausente (`to_regclass` → `NULL`) |
+| RLS decisions | activo |
+| FORCE RLS decisions | apagado |
+| policy `stella_suggestion_decisions_select` | presente (1, `SELECT`) |
+| ACL decisions | `authenticated = SELECT` únicamente |
+| `service_role` / `anon` / `PUBLIC` sobre decisions | sin privilegios |
+| triggers append-only (`uellix_forbid_mutation`) | **10** |
+| config persistida `stella.confirm_destroy_decisions` | **0 entradas** en `pg_db_role_setting` |
+
+Línea base capturada en un solo script de solo lectura (tablas, policies,
+triggers, flags RLS, ACL, índices, constraints, funciones, migraciones, filas
+relevantes y `pg_stat_user_tables`) — **1166 líneas, cero escrituras**.
+
+| Contador | Pre |
+|---|---|
+| tablas `public` | 38 |
+| policies `public` | 104 |
+| triggers de usuario `public` | 10 (todos append-only) |
+| índices `public` | 119 |
+| constraints `public` | 230 |
+| funciones `public` | 8 |
+| migraciones (`supabase_migrations`) | 2 |
+| grants no-owner | 461 |
+
+### 1ª ejecución — destructiva, autorizada
+
+Un solo proceso `psql`, una sola conexión, una sola transacción externa (`-1`).
+La autorización se declaró **en la misma sesión** que el archivo, vía `-c` que
+precede al `-f`:
+
+```bash
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -1 \
+  -c "SET stella.confirm_destroy_decisions = 'true';" \
+  -f /tmp/stella_0003_rollback.sql
+```
+
+Sin `ALTER ROLE`, sin `ALTER DATABASE`, sin `PGOPTIONS`, sin ninguna
+configuración persistente: la guarda de `pg_db_role_setting` habría abortado la
+corrida si la autorización hubiera sido permanente en lugar de por sesión.
+
+| Registro | Valor |
+|---|---|
+| Inicio / fin (UTC) | `2026-08-02T08:19:30Z` → `2026-08-02T08:19:31Z` |
+| Duración | ~1 s |
+| Hash ejecutado | `e9498d02…c4b12e4b` |
+| Código de salida | **0** |
+| `stdout` | `SET` ×4 (1 de `-c` + 3 del archivo), `DO` |
+| Filas detectadas | **1** |
+| Banner destructivo | presente, 13 líneas verbatim |
+| `WARNING` | presente (1) |
+| `NOTICE` final | `public.stella_suggestion_decisions dropped (1 row(s) destroyed). Re-running this file is now a no-op.` |
+| Resultado del `DROP` | tabla eliminada, transacción confirmada |
+
+### Postchecks — el delta es cerrado
+
+Comparación línea base pre/post. **Cada línea que cambió pertenece a
+`stella_suggestion_decisions` o es un contador que refleja exactamente esa
+remoción.** Ningún otro objeto desapareció.
+
+| Contador | Pre | Post | Δ |
+|---|---|---|---|
+| tablas `public` | 38 | 37 | **−1** |
+| policies `public` | 104 | 103 | **−1** |
+| triggers append-only | 10 | 8 | **−2** |
+| índices `public` | 119 | 116 | **−3** |
+| constraints `public` | 230 | 223 | **−7** |
+| grants no-owner | 461 | 460 | **−1** |
+| funciones `public` | 8 | 8 | 0 |
+| migraciones | 2 | 2 | 0 |
+
+Confirmado por `SELECT` tras el `DROP`:
+
+- `to_regclass('public.stella_suggestion_decisions')` → `NULL`; cero relaciones
+  con ese nombre, cero índices y cero constraints con ese prefijo;
+- su policy, sus 2 triggers append-only, sus 3 índices, sus 7 constraints y su
+  grant `authenticated=SELECT` ya no existen;
+- sus filas ya no existen **porque la tabla fue eliminada**, no por `DELETE` —
+  los triggers append-only prohíben `UPDATE`/`DELETE`/`TRUNCATE` pero no `DROP`,
+  que se los lleva por delante junto con la tabla;
+- `public.stella_interactions` presente, **2** filas, RLS y policy intactas;
+- las otras 4 tablas append-only intactas, con **8** triggers restantes;
+- `uellix_forbid_mutation()` intacta; `evidence_chunks` sigue ausente;
+- `organizations` **3**, `users` **9**, `projects` **2**,
+  `organization_members` **7** — sin cambio. Las FKs de decisions eran
+  *salientes*; el `DROP` sin `CASCADE` se llevó al hijo, nunca a los padres.
+
+**Sólo se perdió el audit trail de suggestion decisions, que es exactamente lo
+autorizado.**
+
+### 2ª ejecución — idempotencia, sin autorización
+
+Sesión nueva, **sin** declarar `stella.confirm_destroy_decisions`:
+
+```bash
+psql -U postgres -d postgres -v ON_ERROR_STOP=1 -1 \
+  -f /tmp/stella_0003_rollback.sql
+```
+
+| Registro | Valor |
+|---|---|
+| Código de salida | **0** |
+| `stdout` | `SET` ×3, `DO` |
+| Salida | `NOTICE: … does not exist — nothing to do (idempotent no-op).` |
+| Banner destructivo | **ausente** (0 ocurrencias) |
+| `WARNING` | **ausente** (0 ocurrencias) |
+| Modificaciones adicionales | ninguna |
+
+Línea base re-capturada tras la segunda corrida: **idéntica byte a byte** a la
+del postcheck. La guarda de tabla ausente devuelve antes de llegar a cualquier
+comprobación de autorización, que es por qué el no-op no exige permiso
+destructivo — no hay nada que destruir.
+
+### Pruebas offline
+
+| Suite | Resultado |
+|---|---|
+| `tests/prepared-stella-sql.test.ts` + `tests/prepared-sql-source-of-truth.test.ts` | **246 / 246** (2 archivos) |
+| `pnpm test:unit` | **2553 / 2553** (135 archivos) |
+| `pnpm typecheck` | limpio |
+| `pnpm lint` | **0 errores**, 51 warnings preexistentes |
+
+Las 246 pruebas focalizadas siguen verdes **después** del `DROP`: son pruebas de
+*fuente de verdad* sobre el texto del SQL (hash, sentencias top-level, guardas,
+mensajes de aborto verbatim), no sobre el estado de la base. No se ejecutaron
+`pnpm test:rls`, `pnpm test:integration`, G3 ni `grounding`.
+
+### Alcance
+
+**Cero acceso remoto** — todo por `docker exec` contra el contenedor local; sin
+`supabase login`, `link`, `push` ni `pull`. **Cero restore** (ni del original ni
+de la copia). **Cero reset** del stack y del volumen. **Cero G3.** **Cero
+`grounding_0001`.** **Cero rollback de `stella_0002` / `stella_0002b`.** Sin
+cambios en default privileges, sin desactivar triggers, sin tocar
+`session_replication_role` (`origin` antes y después). Sin `push` ni PR. Otros
+stacks (`uellix-antigravity`, `aforiq`) intactos. **Cero ejecución formal de
+G2.**
+
+**Riesgo residual:** el ensayo prueba el rollback contra un esquema local con
+volumen mínimo (1 decisión, 2 interacciones). No mide contención de bloqueo
+bajo carga concurrente: `lock_timeout='5s'` frente a un `ACCESS EXCLUSIVE` sobre
+una tabla activa es un comportamiento aún no observado. Tampoco valida el camino
+en el que el dueño de la tabla **no** es el rol de conexión.
+
+**Siguiente paso:** auditoría post-rollback independiente. El RUN 2 (FULL
+REBUILD) **no** queda autorizado por esta corrida.
 
 ## MANUAL MIGRATION 003 DECISION
 

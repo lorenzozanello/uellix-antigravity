@@ -366,7 +366,60 @@ semántica del servidor dentro de una sola sentencia. `-1 -v ON_ERROR_STOP=1`
 siguen **recomendadas** (atomicidad y exit code no-cero para un gate que lo
 lee), pero ya **no son la única barrera**.
 
-**El rollback de `stella_0003` NO ha sido ejecutado contra ninguna base.**
+### Ensayo destructivo controlado — RUN 1 (2026-08-02)
+
+**El rollback de `stella_0003` NO ha sido ejecutado contra staging ni contra
+producción.** Sí se ejecutó **una vez**, de forma controlada, contra el stack
+**local desechable** `uellix-stella-g2-local-rehearsal` (PostgreSQL 17.6,
+`127.0.0.1:56322`), en el worktree `codex/stella-g2-local-rehearsal`, HEAD
+`12715d8`. Registro completo en
+`docs/ops/LOCAL_STAGING_G2_REHEARSAL.md` §*STELLA 0003 ROLLBACK REHEARSAL —
+RUN 1* y en `docs/ops/STELLA_FABLE_TEST_LEDGER.md` (2026-08-02).
+
+**Esto NO marca ninguna casilla de este paquete.** Una base local no es
+staging: el gate remoto sigue sin ejecutar, y ni la aplicación de `stella_0002`,
+`stella_0002b` o `stella_0003` ni su rollback quedan aprobados por esta corrida.
+Lo que aporta es evidencia de comportamiento, que hasta ahora no existía: el
+rollback estaba verificado sobre su **texto** (246 pruebas de fuente de verdad,
+58 mutantes detectados) y nunca había destruido nada.
+
+Qué se observó, en el orden en que un DBA lo repetiría:
+
+1. **Respaldo primero.** `pre_g3_local.dump` validado en tamaño (581 736 bytes)
+   y SHA-256 (`d46280c4…b436aeb`), `pg_restore -l` en solo lectura → **1155**
+   entradas TOC y **87** `TABLE DATA`, y duplicado a una ubicación estable fuera
+   de `TEMP`, del repositorio y de carpetas sincronizadas, con hash idéntico.
+   **Ninguno restaurado.**
+2. **Identidad del artefacto.** SHA-256 `e9498d02…c4b12e4b` en el working tree,
+   idéntico al canónico Git (el archivo está en LF), blob ID coincidente con el
+   registrado en `HEAD`, `git diff HEAD` vacío, y el hash **recalculado dentro
+   del contenedor** antes de ejecutar.
+3. **Autorización por sesión, no persistente.** Un solo `psql`, una conexión,
+   una transacción (`-1 -v ON_ERROR_STOP=1`), con
+   `-c "SET stella.confirm_destroy_decisions = 'true';"` **precediendo** al
+   `-f`. Sin `ALTER ROLE`, `ALTER DATABASE` ni `PGOPTIONS`: la guarda de
+   `pg_db_role_setting` habría abortado si la autorización hubiese sido
+   permanente.
+4. **Ejecución destructiva.** Exit **0**, ~1 s. **1** fila detectada, banner de
+   13 líneas verbatim, **1** `RAISE WARNING`, tabla eliminada, transacción
+   confirmada.
+5. **Delta cerrado.** Comparación de línea base pre/post: **−1** tabla, **−1**
+   policy, **−2** triggers append-only (10 → **8**), **−3** índices, **−7**
+   constraints, **−1** grant — y **nada más**. Funciones 8 → 8, migraciones
+   2 → 2, `stella_interactions` con sus **2** filas, y
+   `organizations`/`users`/`projects`/`organization_members` sin cambio: las FKs
+   de la tabla eran salientes, así que el `DROP` sin `CASCADE` no alcanzó a los
+   padres. `uellix_forbid_mutation()` intacta.
+6. **Idempotencia.** Segunda corrida en sesión nueva y **sin** autorización:
+   exit 0, `NOTICE` de tabla ausente, no-op, **cero** banner y **cero**
+   `WARNING`; línea base idéntica byte a byte a la del postcheck.
+
+**Lo que este ensayo NO cubre.** Volumen mínimo (1 decisión): no mide contención
+de `lock_timeout='5s'` frente a un `ACCESS EXCLUSIVE` sobre una tabla activa
+—el escenario de staging bajo carga—, ni el camino en el que el dueño de la
+tabla **no** es el rol con el que se conecta. Ambos siguen sin observar. La
+verificación 3 de esta sección (exportar las filas antes de destruirlas) tampoco
+se ejercitó: en el ensayo se destruyó la fila deliberadamente.
 
 ### Orden
 
