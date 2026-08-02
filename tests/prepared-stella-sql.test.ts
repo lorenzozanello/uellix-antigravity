@@ -2280,9 +2280,21 @@ describe('MAJOR-1 — the write path stella_0003 §4b relies on is pinned here',
     // wrong thing.
     expect(client).toMatch(/from 'postgres'/)
     expect(client).toMatch(/process\.env\.DATABASE_URL/)
-    expect(client).toMatch(/drizzle\(client/)
+    // The postgres-js handle was renamed `client` -> `sql` when db/client.ts
+    // grew an explicit factory during the database-access hardening. The
+    // property §4b depends on is unchanged: drizzle is constructed over a
+    // postgres-js handle, so the writer is still the DATABASE_URL role.
+    expect(client).toMatch(/drizzle\(sql, \{ schema \}\)/)
     expect(client).not.toMatch(/createClient|@supabase\/supabase-js/)
     expect(client).not.toMatch(/SERVICE_ROLE/)
+  })
+
+  it('the default client is still built from DATABASE_URL with app_runtime authority', () => {
+    // The hardening added a capability guard in front of every connection.
+    // §4b's reasoning survives only if the APPLICATION path still resolves
+    // DATABASE_URL and is not silently narrowed to some other target.
+    expect(client).toMatch(/connectionString: process\.env\.DATABASE_URL/)
+    expect(client).toMatch(/capability: defaultRestriction\?\.capability \?\? 'app_runtime'/)
   })
 
   it('recordStellaDecision writes through that client, not through supabase-js', () => {

@@ -11,16 +11,21 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { LOCAL_DATABASE_URL } from '@/db/safety/local-stack'
 
 const SCRIPT_PATH = path.join(process.cwd(), 'scripts', 'seed-stella-local.ts')
 const raw = readFileSync(SCRIPT_PATH, 'utf8')
 
 describe('scripts/seed-stella-local.ts — connection safety', () => {
-  it('hardcodes a loopback-only connection string', () => {
-    const match = /const LOCAL_DB_URL = '([^']+)'/.exec(raw)
-    expect(match, 'LOCAL_DB_URL literal not found').not.toBeNull()
-    const hostname = new URL(match![1]).hostname
-    expect(['127.0.0.1', 'localhost', '::1']).toContain(hostname)
+  it('takes its target from the single pinned local-stack constant', () => {
+    // The literal used to be duplicated here. It now comes from
+    // db/safety/local-stack.ts, which tests/database-target-safety.test.ts
+    // cross-checks against supabase/config.toml — so the loopback guarantee
+    // is asserted once, against the real stack config, instead of by grepping
+    // a copy of the string in every script.
+    expect(raw).toMatch(/const LOCAL_DB_URL = LOCAL_DATABASE_URL/)
+    expect(raw).toMatch(/from '\.\.\/db\/safety\/local-stack'/)
+    expect(new URL(LOCAL_DATABASE_URL).hostname).toBe('127.0.0.1')
   })
 
   it('never reads DATABASE_URL or any env var for the connection target', () => {
@@ -30,17 +35,25 @@ describe('scripts/seed-stella-local.ts — connection safety', () => {
     expect(raw).not.toMatch(/process\.env\.[A-Z_]*SUPABASE[A-Z_]*URL/)
   })
 
-  it('validates the host BEFORE any connection is opened', () => {
-    const guardCall = raw.indexOf('assertLocalHost(LOCAL_DB_URL)')
-    const firstConnect = raw.indexOf('postgres(LOCAL_DB_URL)')
-    expect(guardCall).toBeGreaterThan(-1)
-    expect(firstConnect).toBeGreaterThan(-1)
-    expect(guardCall).toBeLessThan(firstConnect)
+  it('opens its connection through the central guarded factory, never the driver directly', () => {
+    // Previously this script called `postgres(LOCAL_DB_URL)` itself behind a
+    // hand-rolled hostname check. That check validated only the hostname — so
+    // a loopback URL on ANOTHER local stack's port passed it — and it printed
+    // the rejected hostname unredacted.
+    expect(raw).not.toMatch(/from 'postgres'/)
+    expect(raw).not.toMatch(/postgres\(/)
+    expect(raw).toMatch(/createDatabaseClient\(/)
   })
 
-  it('the guard rejects non-local hosts and calls process.exit(1), not throw-and-continue', () => {
-    expect(raw).toMatch(/allowedHosts\.includes\(hostname\)/)
+  it('declares the capability AND the expected port, not just a local host', () => {
+    expect(raw).toMatch(/capability: 'local_seed'/)
+    expect(raw).toMatch(/expectedLocalPort: LOCAL_DB_PORT/)
+  })
+
+  it('exits non-zero on refusal, and redacts the error instead of printing it raw', () => {
     expect(raw).toMatch(/process\.exit\(1\)/)
+    expect(raw).toMatch(/describeError\(err\)/)
+    expect(raw).not.toMatch(/console\.error\(err\)/)
   })
 })
 
