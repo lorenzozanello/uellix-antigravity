@@ -284,9 +284,24 @@ function expectRefusal(run: () => unknown, expectedCode: string): void {
   throw new Error(`expected a refusal with code ${expectedCode}, but the operation was allowed`)
 }
 
+/**
+ * A local URL that declares the RUNTIME role.
+ *
+ * The default client no longer reads `DATABASE_URL`, and no longer accepts a
+ * URL whose userinfo names `postgres` — that pairing is exactly what the
+ * cutover removed. `LOCAL_DATABASE_URL` still names `postgres` because local
+ * seeds, resets and the read-only audit legitimately use it, so these
+ * runtime-path tests need their own.
+ *
+ * The password is a placeholder: every test in this block is intercepted by the
+ * `postgres()` spy and never opens a socket.
+ */
+const LOCAL_RUNTIME_URL = `postgresql://uellix_app:not-a-real-password@127.0.0.1:${LOCAL_DB_PORT}/postgres`
+
 describe('db/client — the guard runs before the driver', () => {
   let client: typeof import('@/db/client')
   const originalDatabaseUrl = process.env.DATABASE_URL
+  const originalRuntimeUrl = process.env.UELLIX_RUNTIME_DATABASE_URL
 
   beforeEach(async () => {
     spies.postgresCalls.length = 0
@@ -298,6 +313,8 @@ describe('db/client — the guard runs before the driver', () => {
   afterEach(() => {
     if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL
     else process.env.DATABASE_URL = originalDatabaseUrl
+    if (originalRuntimeUrl === undefined) delete process.env.UELLIX_RUNTIME_DATABASE_URL
+    else process.env.UELLIX_RUNTIME_DATABASE_URL = originalRuntimeUrl
   })
 
   it('importing the module opens nothing', () => {
@@ -321,9 +338,37 @@ describe('db/client — the guard runs before the driver', () => {
   })
 
   it('a string-keyed read still builds the client — inertness is scoped, not blanket', () => {
-    process.env.DATABASE_URL = LOCAL_DATABASE_URL
+    process.env.UELLIX_RUNTIME_DATABASE_URL = LOCAL_RUNTIME_URL
     void client.db.select
-    expect(spies.postgresCalls).toEqual([LOCAL_DATABASE_URL])
+    expect(spies.postgresCalls).toEqual([LOCAL_RUNTIME_URL])
+  })
+
+  it('DATABASE_URL alone no longer builds anything — it is inert, not preferred', () => {
+    // The single most important regression this file can catch. Before the
+    // cutover this variable WAS the runtime connection, and it resolved to
+    // `postgres`. A fallback to it "just in case the new one is missing" would
+    // silently restore BYPASSRLS the first time somebody forgot to set the new
+    // variable.
+    delete process.env.UELLIX_RUNTIME_DATABASE_URL
+    process.env.DATABASE_URL = LOCAL_DATABASE_URL
+    try {
+      void client.db.select
+      throw new Error('expected a refusal')
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe('DB_CAPABILITY_URL_MISSING')
+    }
+    expect(spies.postgresCalls).toHaveLength(0)
+  })
+
+  it('refuses an administrative role in the runtime variable, without connecting', () => {
+    process.env.UELLIX_RUNTIME_DATABASE_URL = LOCAL_DATABASE_URL // declares `postgres`
+    try {
+      void client.db.select
+      throw new Error('expected a refusal')
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe('DB_CAPABILITY_URL_WRONG_ROLE')
+    }
+    expect(spies.postgresCalls).toHaveLength(0)
   })
 
   it('refuses a remote target for local_seed without calling postgres()', () => {
@@ -368,25 +413,30 @@ describe('db/client — the guard runs before the driver', () => {
   })
 
   it('the default `db` export does not connect until it is used', () => {
-    process.env.DATABASE_URL = LOCAL_DATABASE_URL
+    process.env.UELLIX_RUNTIME_DATABASE_URL = LOCAL_RUNTIME_URL
     expect(spies.postgresCalls).toHaveLength(0)
     // Touching a property is what triggers the lazy build.
     void client.db.select
-    expect(spies.postgresCalls).toEqual([LOCAL_DATABASE_URL])
+    expect(spies.postgresCalls).toEqual([LOCAL_RUNTIME_URL])
   })
 
-  it('a restricted default client refuses a remote DATABASE_URL on first use', () => {
+  it('a restricted default client refuses a remote runtime URL on first use', () => {
     client.restrictDefaultDatabaseClient({
       capability: 'local_integration_test',
       expectedLocalPort: LOCAL_DB_PORT,
     })
-    process.env.DATABASE_URL = FAKE_REMOTE_URL
+    // Remote AND correctly-roled: the target guard must refuse it on its own,
+    // without help from the role pre-check.
+    process.env.UELLIX_RUNTIME_DATABASE_URL = FAKE_REMOTE_URL.replace(
+      /\/\/[^:]+:/,
+      '//uellix_app:'
+    )
     expectRefusal(() => client.db.select, 'DB_OPERATION_NOT_ALLOWED')
     expect(spies.postgresCalls).toHaveLength(0)
   })
 
   it('the restriction cannot be applied after a client exists', () => {
-    process.env.DATABASE_URL = LOCAL_DATABASE_URL
+    process.env.UELLIX_RUNTIME_DATABASE_URL = LOCAL_RUNTIME_URL
     void client.db.select
     expect(() =>
       client.restrictDefaultDatabaseClient({ capability: 'local_integration_test' })

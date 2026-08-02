@@ -227,6 +227,16 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       'stella_0003_suggestion_decisions.sql',
       'stella_0004_role_separation.sql',
       'stella_0004_rollback.sql',
+      // The runtime cutover ships as two halves for a privilege reason, not a
+      // stylistic one: `uellix_owner` has no CREATEROLE and does not own the
+      // `drizzle` schema, so ALTER ROLE ... SET, ALTER SCHEMA ... OWNER and
+      // ALTER DEFAULT PRIVILEGES FOR ROLE postgres cannot run on the
+      // owner-scoped path. `0005b` is the separate, explicitly administrative
+      // script that carries exactly those three.
+      'stella_0005_rollback.sql',
+      'stella_0005_runtime_cutover.sql',
+      'stella_0005b_admin_bootstrap.sql',
+      'stella_0005b_rollback.sql',
     ])
   })
 
@@ -2284,27 +2294,43 @@ describe('MAJOR-1 — the write path stella_0003 §4b relies on is pinned here',
   const client = readRepo('db', 'client.ts')
   const decisions = readRepo('app', 'actions', 'stella', 'decisions.ts')
 
-  it('db/client.ts is a direct postgres-js connection over DATABASE_URL', () => {
+  it('db/client.ts is a direct postgres-js connection, not a supabase-js client', () => {
     // If this ever became a supabase-js client, the writer would stop being the
-    // DATABASE_URL role and the SQL guard's owner check would be verifying the
-    // wrong thing.
+    // role the connection authenticates as and the SQL guard's owner check
+    // would be verifying the wrong thing.
     expect(client).toMatch(/from 'postgres'/)
-    expect(client).toMatch(/process\.env\.DATABASE_URL/)
-    // The postgres-js handle was renamed `client` -> `sql` when db/client.ts
-    // grew an explicit factory during the database-access hardening. The
-    // property §4b depends on is unchanged: drizzle is constructed over a
-    // postgres-js handle, so the writer is still the DATABASE_URL role.
     expect(client).toMatch(/drizzle\(sql, \{ schema \}\)/)
     expect(client).not.toMatch(/createClient|@supabase\/supabase-js/)
     expect(client).not.toMatch(/SERVICE_ROLE/)
   })
 
-  it('the default client is still built from DATABASE_URL with app_runtime authority', () => {
-    // The hardening added a capability guard in front of every connection.
-    // §4b's reasoning survives only if the APPLICATION path still resolves
-    // DATABASE_URL and is not silently narrowed to some other target.
-    expect(client).toMatch(/connectionString: process\.env\.DATABASE_URL/)
+  // CORRECTED BY THE RUNTIME CUTOVER (stella_0005).
+  //
+  // This used to assert `connectionString: process.env.DATABASE_URL`, and it
+  // passed for as long as that was true — which is the problem. §4b's reasoning
+  // rested on "the writer is the DATABASE_URL role", and nobody checked WHICH
+  // role that was. It was `postgres`: the table owner, exempt from RLS, holding
+  // BYPASSRLS and CREATEROLE.
+  //
+  // The property worth pinning was never "the runtime reads DATABASE_URL". It
+  // is "the runtime reads a variable that can only ever name the
+  // least-privilege role", which is what the assertions below check.
+  it('the default client resolves the RUNTIME variable, never the shared one', () => {
+    expect(client).toMatch(/resolveRuntimeDatabaseUrl\(\)/)
     expect(client).toMatch(/capability: defaultRestriction\?\.capability \?\? 'app_runtime'/)
+    // No fallback, anywhere in the file. A `?? process.env.DATABASE_URL` would
+    // restore the administrative connection the first time the new variable was
+    // missing — silently, and only in the environment where it was forgotten.
+    expect(client).not.toMatch(/process\.env\.DATABASE_URL/)
+  })
+
+  it('the runtime resolver pins the expected role and refuses administrative ones', () => {
+    const resolver = readRepo('db', 'safety', 'resolve-capability-database-url.ts')
+    expect(resolver).toMatch(/RUNTIME_DATABASE_ROLE/)
+    expect(resolver).toMatch(/FORBIDDEN_RUNTIME_DATABASE_ROLES/)
+    // The expected role must not be reachable from configuration: a check a
+    // caller can retarget is not a check.
+    expect(resolver).not.toMatch(/expectedRole\s*=\s*env\[/)
   })
 
   it('recordStellaDecision writes through that client, not through supabase-js', () => {

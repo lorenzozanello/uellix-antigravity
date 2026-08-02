@@ -267,19 +267,65 @@ liveDescribe('live catalog: default privileges', () => {
     }
   })
 
-  it('no Uellix creator role has a POSITIVE default privilege on tables or sequences', async () => {
-    // Confirms 7d: a new table is born owner-only and must be granted
-    // explicitly. If someone adds a convenience default here, this fails.
-    const rows = await catalogSql<{ creator: string; objtype: string; grantee: string }[]>`
+  // REPLACED BY THE RUNTIME CUTOVER (stella_0005 §3).
+  //
+  // Before the cutover this asserted that NO default privilege existed for a
+  // Uellix creator on tables or sequences — a new table was born owner-only and
+  // had to be granted explicitly. That was the safe answer while the runtime
+  // was the owner, because the runtime could read everything regardless.
+  //
+  // Under `uellix_app` it is no longer safe in the same way: a table created by
+  // a future migration with no grant is invisible to the runtime, and the first
+  // symptom is a 500 in production rather than a failed migration. So there is
+  // now a deliberate baseline, and what this test pins is its SHAPE:
+  //
+  //   * every default privilege belongs to `uellix_owner` (no other Uellix role
+  //     is a creator);
+  //   * it reaches only `uellix_writer` and `uellix_auditor` — never PUBLIC,
+  //     `anon`, `authenticated` or `service_role`;
+  //   * it confers SELECT/INSERT/USAGE and NEVER UPDATE, DELETE, TRUNCATE,
+  //     REFERENCES, TRIGGER or MAINTAIN.
+  //
+  // That last clause is the load-bearing one: it makes APPEND-ONLY the default
+  // for future tables and mutability an explicit per-table opt-in, which is the
+  // direction the four existing append-only tables already point in.
+  it('default table and sequence privileges are the intended least-privilege baseline', async () => {
+    const rows = await catalogSql<{
+      creator: string
+      objtype: string
+      grantee: string
+      privilege_type: string
+    }[]>`
       SELECT pg_get_userbyid(d.defaclrole) AS creator,
              d.defaclobjtype::text AS objtype,
-             CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END AS grantee
+             CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END AS grantee,
+             a.privilege_type
       FROM pg_default_acl d,
       LATERAL aclexplode(d.defaclacl) a
       WHERE pg_get_userbyid(d.defaclrole) LIKE 'uellix\\_%'
         AND d.defaclobjtype IN ('r','S')
+        AND a.grantee <> d.defaclrole
     `
-    expect(rows.map((r) => `${r.creator}/${r.objtype}/${r.grantee}`)).toEqual([])
+
+    const FORBIDDEN_GRANTEES = ['PUBLIC', 'anon', 'authenticated', 'service_role', 'postgres']
+    const MUTATING = ['UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN']
+
+    for (const row of rows) {
+      expect(row.creator, 'only uellix_owner may be a default-privilege creator').toBe(
+        'uellix_owner'
+      )
+      expect(FORBIDDEN_GRANTEES, `grantee of ${row.objtype} default`).not.toContain(row.grantee)
+      expect(['uellix_writer', 'uellix_auditor']).toContain(row.grantee)
+      expect(
+        MUTATING,
+        `${row.grantee} must not receive ${row.privilege_type} on future ${row.objtype}`
+      ).not.toContain(row.privilege_type)
+    }
+
+    // A non-empty result is itself part of the assertion: if stella_0005 §3 were
+    // rolled back or never applied, the loop above would pass vacuously.
+    const writerTable = rows.filter((r) => r.grantee === 'uellix_writer' && r.objtype === 'r')
+    expect(writerTable.map((r) => r.privilege_type).sort()).toEqual(['INSERT', 'SELECT'])
   })
 
   it('acldefault still behaves as this design assumes', async () => {
@@ -303,5 +349,86 @@ liveDescribe('live catalog: default privileges', () => {
     // `proacl IS NULL` must never be read as "nothing granted".
     expect(byType.get('f'), 'acldefault for functions must still grant EXECUTE to PUBLIC').toContain('{=X/')
     expect(byType.get('T'), 'acldefault for types must still grant USAGE to PUBLIC').toContain('{=U/')
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* stella_0005b — the TYPE-default gap that could NOT be closed               */
+/* -------------------------------------------------------------------------- */
+
+// PostgreSQL 17.6, measured on this stack while writing stella_0005b:
+//
+//   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+//     GRANT USAGE ON TYPES TO postgres;
+//     REVOKE USAGE ON TYPES FROM PUBLIC;
+//
+// stores a row — and the row is NEVER CONSULTED. A composite type created
+// afterwards by `postgres` in `public` comes out with `typacl = NULL` and
+// `has_type_privilege('public', …, 'USAGE') = true`. The identical pair WITHOUT
+// `IN SCHEMA` works: `typacl = {postgres=U/postgres}`, PUBLIC denied.
+//
+// The working form is the one that cannot be scoped: it would govern every type
+// `postgres` creates in `extensions`, `storage`, `realtime` and any schema a
+// future Supabase upgrade adds. So the gap is contained OPERATIONALLY — all
+// Uellix DDL runs as `uellix_owner` through the migration wrapper, whose GLOBAL
+// default ACL does deny PUBLIC — and these tests are the gate that fails if
+// anything ever lands in `public` by the other route.
+liveDescribe('stella_0005b: the legacy-creator TYPE residue is contained, not claimed fixed', () => {
+  it('nothing in public is owned by postgres or supabase_admin', async () => {
+    // The drift gate. The residual TYPE gap is only reachable by an object
+    // created in `public` by a legacy creator; if none exists, the gap has no
+    // instance. This is the assertion the SQL script points at instead of
+    // claiming a fix it could not make.
+    const rows = await catalogSql<{ kind: string; name: string; owner: string }[]>`
+      SELECT 'relation' AS kind, c.relname::text AS name, pg_get_userbyid(c.relowner) AS owner
+        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public' AND c.relkind IN ('r','p','v','m','S')
+          AND pg_get_userbyid(c.relowner) IN ('postgres','supabase_admin')
+      UNION ALL
+      SELECT 'function', p.proname::text, pg_get_userbyid(p.proowner)
+        FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND pg_get_userbyid(p.proowner) IN ('postgres','supabase_admin')
+      UNION ALL
+      SELECT 'type', t.typname::text, pg_get_userbyid(t.typowner)
+        FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'public' AND t.typtype IN ('c','d','e','r')
+          AND pg_get_userbyid(t.typowner) IN ('postgres','supabase_admin')
+          AND NOT EXISTS (
+            SELECT 1 FROM pg_class c WHERE c.oid = t.typrelid AND c.relkind <> 'c'
+          )
+    `
+    expect(rows.map((r) => `${r.kind} ${r.name} (${r.owner})`)).toEqual([])
+  })
+
+  it('no schema-scoped TYPE default pretends the gap is closed', async () => {
+    // A row that still contains PUBLIC is the built-in default written out
+    // longhand: harmless. A row with PUBLIC REMOVED is the dangerous one — the
+    // catalog reports the gap as closed while types created there remain
+    // PUBLIC-usable, because the row is never consulted.
+    const rows = await catalogSql<{ creator: string; acl: string }[]>`
+      SELECT pg_get_userbyid(d.defaclrole) AS creator, d.defaclacl::text AS acl
+      FROM pg_default_acl d JOIN pg_namespace n ON n.oid = d.defaclnamespace
+      WHERE n.nspname = 'public'
+        AND d.defaclobjtype = 'T'
+        AND NOT EXISTS (SELECT 1 FROM aclexplode(d.defaclacl) a WHERE a.grantee = 0)
+    `
+    expect(rows.map((r) => `${r.creator}: ${r.acl}`)).toEqual([])
+  })
+
+  it('the GLOBAL default for uellix_owner — the one that DOES apply — denies PUBLIC', async () => {
+    // This is what actually contains the gap: every Uellix object is created by
+    // `uellix_owner`, and its global entry is consulted. Verified end-to-end
+    // against a really-created type in tests/database-migrator-path.test.ts.
+    const rows = await catalogSql<{ objtype: string; acl: string }[]>`
+      SELECT d.defaclobjtype::text AS objtype, d.defaclacl::text AS acl
+      FROM pg_default_acl d
+      WHERE pg_get_userbyid(d.defaclrole) = 'uellix_owner'
+        AND d.defaclnamespace = 0
+      ORDER BY 1
+    `
+    expect(rows.map((r) => r.objtype).sort()).toEqual(['T', 'f'])
+    for (const row of rows) {
+      expect(row.acl, `global default for ${row.objtype}`).not.toContain('{=')
+    }
   })
 })

@@ -393,10 +393,46 @@ liveDescribe('live catalog: role attributes', () => {
     }
   })
 
-  it('no Uellix LOGIN role carries a password', async () => {
+  // INVERTED BY THE RUNTIME CUTOVER (stella_0005).
+  //
+  // Before the cutover the three LOGIN roles were credential-less, and this
+  // test asserted that. That was correct while they were unused: a LOGIN role
+  // with no password cannot authenticate at all, so an unused role was also an
+  // unreachable one.
+  //
+  // The runtime now AUTHENTICATES as `uellix_app`, so the absence of a password
+  // would mean the cutover had not happened. The property worth pinning is no
+  // longer "no credential exists" but "credentials exist, are strongly hashed,
+  // and only the LOGIN roles have one" — the owner in particular must stay
+  // unreachable by password.
+  //
+  // The credentials themselves are minted by
+  // scripts/rotate-local-role-credentials.ts and live only in gitignored env
+  // files. Nothing in this test reads or reveals one; `rolpassword` is compared
+  // for SHAPE, never for value.
+  it('every Uellix LOGIN role carries a SCRAM-hashed password', async () => {
+    const rows = await catalogSql<{ rolname: string; scheme: string | null }[]>`
+      SELECT rolname,
+             CASE
+               WHEN rolpassword IS NULL                  THEN NULL
+               WHEN rolpassword LIKE 'SCRAM-SHA-256$%'   THEN 'scram'
+               WHEN rolpassword LIKE 'md5%'              THEN 'md5'
+               ELSE 'plaintext'
+             END AS scheme
+      FROM pg_authid
+      WHERE rolname LIKE 'uellix\\_%' AND rolcanlogin
+      ORDER BY rolname
+    `
+    expect(rows.map((r) => r.rolname)).toEqual(['uellix_app', 'uellix_auditor', 'uellix_migrator'])
+    for (const row of rows) {
+      expect(row.scheme, `${row.rolname} password scheme`).toBe('scram')
+    }
+  })
+
+  it('no NOLOGIN Uellix role has a password — the owner stays unreachable', async () => {
     const rows = await catalogSql<{ rolname: string }[]>`
       SELECT rolname FROM pg_authid
-      WHERE rolname LIKE 'uellix\\_%' AND rolpassword IS NOT NULL
+      WHERE rolname LIKE 'uellix\\_%' AND NOT rolcanlogin AND rolpassword IS NOT NULL
     `
     expect(rows.map((r) => r.rolname)).toEqual([])
   })
@@ -494,17 +530,42 @@ liveDescribe('live catalog: ownership', () => {
     expect(wrong.map((r) => `${r.objname}:${r.owner}`)).toEqual([])
   })
 
-  it('no Uellix role owns anything outside public', async () => {
+  it('no Uellix role owns anything outside public and drizzle', async () => {
     // pg_toast is excluded because a TOAST relation's owner is kept in lockstep
     // with its parent table by PostgreSQL — transferring 38 tables transfers
     // their TOAST entries as an unavoidable side effect.
+    //
+    // `drizzle` was added by stella_0005b. It holds `__drizzle_migrations`,
+    // which is Uellix's own migration bookkeeping and was owned by `postgres`
+    // only because drizzle-kit happened to create it while connected as that
+    // role. Leaving it there would have kept one table in the migration chain
+    // that the migrator could touch only by borrowing an administrative
+    // identity. It is named EXPLICITLY rather than the filter being loosened to
+    // "anything Uellix happens to own", so a future stray ownership transfer
+    // still fails this test.
     const rows = await catalogSql<{ obj: string; owner: string }[]>`
       SELECT n.nspname || '.' || c.relname AS obj, pg_get_userbyid(c.relowner) AS owner
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname NOT IN ('public','pg_toast')
+      WHERE n.nspname NOT IN ('public','pg_toast','drizzle')
         AND pg_get_userbyid(c.relowner) LIKE 'uellix\\_%'
     `
     expect(rows).toEqual([])
+  })
+
+  it('the drizzle bookkeeping schema and table belong to uellix_owner', async () => {
+    const rows = await catalogSql<{ obj: string; owner: string }[]>`
+      SELECT 'schema' AS obj, pg_get_userbyid(nspowner) AS owner
+        FROM pg_namespace WHERE nspname = 'drizzle'
+      UNION ALL
+      SELECT c.relname, pg_get_userbyid(c.relowner)
+        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'drizzle' AND c.relkind IN ('r','S')
+      ORDER BY 1
+    `
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.owner, `drizzle.${row.obj}`).toBe('uellix_owner')
+    }
   })
 
   it('the public schema itself is not owned by a Uellix role', async () => {
@@ -652,7 +713,12 @@ liveDescribe('live catalog: functions and indirect write paths', () => {
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace,
       LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
-      WHERE n.nspname NOT IN ('public','pg_toast')
+      -- drizzle is excluded because it is NOT Supabase-internal: it is Uellix's
+      -- own migration bookkeeping, transferred to uellix_owner by stella_0005b.
+      -- The privileges that show up there are the owner's own, which is the
+      -- intended end state rather than a leak into somebody else's schema.
+      -- Ownership of that schema is asserted separately above.
+      WHERE n.nspname NOT IN ('public','pg_toast','drizzle')
         AND c.relkind IN ('r','p','v','m','S')
         AND pg_get_userbyid(a.grantee) LIKE 'uellix\\_%'
     `
@@ -672,7 +738,20 @@ liveDescribe('live catalog: RLS and structure are untouched', () => {
     expect(rows[0]).toEqual({ rls_on: '38', force_on: '0', total: '38' })
   })
 
-  it('the 104 policies and 10 append-only triggers are intact and enabled', async () => {
+  // 104 -> 107. stella_0005 added exactly three INSERT policies, to
+  // `audit_logs`, `stella_interactions` and `stella_suggestion_decisions`.
+  //
+  // This is the one count in the cutover that MOVED, and it moved because it
+  // had to. All three tables had a SELECT policy and no INSERT policy: every
+  // write to them succeeded only because the runtime was `postgres` and
+  // bypassed RLS. Under `uellix_app` the same INSERT fails with "new row
+  // violates row-level security policy" — measured on this stack before the
+  // cutover, not predicted. Without the three policies, Stella could read its
+  // interactions and never record another one.
+  //
+  // The number is asserted rather than relaxed to a lower bound: a policy count
+  // that can only drift upwards is not an invariant.
+  it('the 107 policies and 10 append-only triggers are intact and enabled', async () => {
     const rows = await catalogSql<{ policies: string; triggers: string; disabled: string }[]>`
       SELECT (SELECT count(*)::text FROM pg_policy p
               JOIN pg_class c ON c.oid = p.polrelid
@@ -687,7 +766,23 @@ liveDescribe('live catalog: RLS and structure are untouched', () => {
               JOIN pg_namespace n ON n.oid = c.relnamespace
               WHERE n.nspname = 'public' AND NOT t.tgisinternal AND t.tgenabled <> 'O') AS disabled
     `
-    expect(rows[0]).toEqual({ policies: '104', triggers: '10', disabled: '0' })
+    expect(rows[0]).toEqual({ policies: '107', triggers: '10', disabled: '0' })
+  })
+
+  it('the three added policies are INSERT-only, on exactly the three append-only tables', async () => {
+    const rows = await catalogSql<{ tablename: string; policyname: string; cmd: string }[]>`
+      SELECT tablename, policyname, cmd FROM pg_policies
+      WHERE schemaname = 'public' AND policyname LIKE '%\\_insert\\_member\\_or\\_admin'
+      ORDER BY tablename
+    `
+    expect(rows.map((r) => r.tablename)).toEqual([
+      'audit_logs',
+      'stella_interactions',
+      'stella_suggestion_decisions',
+    ])
+    for (const row of rows) {
+      expect(row.cmd, `${row.tablename} policy command`).toBe('INSERT')
+    }
   })
 
   it('PUBLIC holds no CREATE on schema public', async () => {
