@@ -94,3 +94,34 @@
 | RC-05 | Auto-auditoría del implementador | Auditor independiente obligatorio por fase (FASE F) |
 
 *(Registro completo tras las 6 auditorías base del 2026-07-31. Fortalezas confirmadas que NO son riesgo: aislamiento organizacional ~90 % (orgId siempre de sesión, ownership check en cada builder), manejo de secretos ~85 % (import dinámico, sin singleton, redacción testeada), harness real con guards cuádruples y checkpointing transaccional ~85 %, motor SROI determinístico ~90 %.)*
+
+## STELLA FULL REBUILD — RUN 2 (2026-08-02) — impacto en el registro de riesgos
+
+RUN 2 no abre riesgos nuevos. Cierra la duda de **reproducibilidad** que RUN 1
+dejaba abierta por construcción: RUN 1 se ejecutó sobre un stack con estado
+heredado, RUN 2 sobre un volumen creado desde cero minutos antes.
+
+### Riesgos re-evaluados
+
+| Riesgo | Estado antes de RUN 2 | Efecto de RUN 2 |
+|---|---|---|
+| **RK-04b** — hueco de `TRUNCATE` en tablas append-only | mitigado por `stella_0002b`, verificado una vez | **re-verificado sobre base nueva**: 4 triggers `TRUNCATE` (`tgtype=34`), 8 append-only totales tras 0002b y 10 tras 0003, `TRUNCATE` bloqueado incluso como `postgres`, SQLSTATE `42501` |
+| **Reproducibilidad del paquete preparado** — ¿los scripts dependían de estado previo del stack de RUN 1? | **abierto** | **cerrado**: 0002/0002b/0003 aplicados dos veces cada uno sobre volumen nuevo, todos idempotentes, contrato estructural idéntico al documentado |
+| **Dependencia del resultado de G3 respecto del estado heredado** | sospecha razonable: RUN 1 corrió en modo `REUSED` | **cerrado**: RUN 2 dio 32/32 en modo `CREATED`. Las 32 aserciones se sostienen por el contrato de seguridad, no por fixtures preexistentes |
+| **Aislamiento de stacks locales en un host con tres pilas Supabase** | mitigado por `project_id` único | **re-verificado bajo destrucción real**: allowlist por label Docker, no por prefijo de nombre; `uellix-antigravity` y `aforiq` conservaron IDs de contenedor y estados |
+| **Pérdida irrecuperable de filas append-only** | mitigado por respaldo duplicado | **sin cambio**: ambos respaldos reverificados por SHA-256 antes y después, **no restaurados**; RUN 2 nunca los necesitó |
+
+### Riesgos locales que siguen abiertos
+
+| Riesgo | Estado |
+|---|---|
+| `db:seed:proxies`, `db:seed:taxonomies` y `test:integration` escriben en la BD remota por defecto (sin guarda de host) | **abierto** — evitados manualmente en RUN 1 y RUN 2; la mitigación sigue siendo procedimental, no técnica |
+| `db/client.ts` lee `DATABASE_URL` sin guarda de host | **abierto** — depende de que `.env.local` de este worktree apunte a `56322` |
+| Docker Desktop no expone `AppData\Local` en su file-sharing | **menor** — impide el bind-mount read-only para inspeccionar respaldos; la vía por `stdin` lo suple y es más restrictiva |
+
+### Bloqueadores remotos (sin cambio)
+
+`grounding_0001` sigue bloqueado por G5 P3. G2 formal sigue **sin ejecutar**:
+exige el entorno remoto autorizado y las precondiciones humanas de
+`docs/ops/gates/G2_PACKAGE.md`. Un ensayo local no es staging y RUN 2 no altera
+esa distinción.

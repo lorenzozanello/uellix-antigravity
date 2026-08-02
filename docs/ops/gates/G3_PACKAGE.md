@@ -205,3 +205,90 @@ intactos. Existe respaldo local pre-G3 (`pg_dump -Fc`, fuera del repo,
 SHA-256 `d46280c4…b436aeb`, validado con `pg_restore -l`, **no restaurado**).
 
 **Limpieza futura:** reset/rebuild del stack local. No hay otra.
+
+## STELLA FULL REBUILD — RUN 2 (2026-08-02) — G3 en modo CREATED
+
+Primera ejecución de G3 sobre un stack local **reconstruido desde cero**. RUN 1
+había corrido en modo `REUSED` sobre estado heredado; RUN 2 ejercita la rama
+`CREATED` del resolvedor de fixtures.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-02 |
+| Branch / HEAD inicial | `codex/stella-g2-local-rehearsal` / `92d7c61` |
+| Endpoints | API `127.0.0.1:56321`, DB `127.0.0.1:56322` — exclusivamente locales |
+| Acceso remoto | ninguno |
+
+### Precondiciones confirmadas antes de ejecutar
+
+| Precondición | Valor |
+|---|---|
+| Decisiones con la `suggestion_key` determinista | **0** |
+| `stella_suggestion_decisions` | **0 filas** |
+| `stella_interactions` | **1** |
+| `organizations` / `users` / `projects` / `memberships` | 2 / 8 / 1 / 6 |
+| `evidence_chunks` | ausente |
+| Modo de fixture previsto | **CREATED** |
+
+> El modo no es un flag: se **resuelve** contando filas con la
+> `suggestion_key` determinista. Con 0 filas, la rama `CREATED` queda
+> garantizada por construcción, no por configuración.
+
+### Ejecución — una sola vez
+
+`pnpm test:rls`
+
+| Registro | Valor |
+|---|---|
+| Archivos | 1 |
+| **Passed** | **32** |
+| **Failed** | **0** |
+| **Skipped** | **0** |
+| Duración | 11,37 s |
+| Fixture append-only | **CREATED** |
+| Decisiones creadas | 1 — ninguna segunda |
+| Interacciones creadas | 1 adicional |
+| Residuo inesperado | ninguno |
+
+### Cobertura funcional de las 32
+
+- Organización A **puede** leer sus decisiones.
+- Organización B **no puede** leer las de A.
+- Usuario sin membresía **no puede** leer ni insertar.
+- Superadmin **puede** leer y **no puede** mutar.
+- `service_role` **no puede** leer ni insertar la tabla de decisiones.
+- `authenticated` **no puede** insertar.
+- `UPDATE`, `DELETE` y `TRUNCATE` bloqueados, SQLSTATE **`42501`**, con el
+  mensaje append-only correcto.
+
+### Estado tras G3
+
+| Contador | Valor |
+|---|---|
+| `stella_suggestion_decisions` | 1 (1 `suggestion_key` distinta — 0 duplicados) |
+| `stella_interactions` | 2 |
+| organizations / users / projects / memberships | 3 / 9 / 2 / 7 |
+| `storage.objects` | 0 |
+| triggers append-only | 10 |
+| policies `public` | 104 |
+| `evidence_chunks` | ausente |
+| datos reales | 0 |
+
+Residuo enteramente sintético: usuario `test-rls-…@test.local`, organización
+`RLS Org A`, interacción `test-model`, decisión bajo el prefijo
+`g3-local-rehearsal.synthetic.`.
+
+### RUN 1 vs RUN 2
+
+| | RUN 1 | RUN 2 |
+|---|---|---|
+| Resultado | 32/32, 0 failed, 0 skipped | 32/32, 0 failed, 0 skipped |
+| Modo de fixture | **REUSED** | **CREATED** |
+| Estado de partida | stack con estado heredado | volumen creado desde cero |
+
+Que ambos den 32/32 **por caminos de fixture distintos** es evidencia más
+fuerte que dos corridas idénticas: prueba que las 32 aserciones dependen del
+contrato de seguridad y no del estado heredado. Cero deriva funcional.
+
+**G3 no se volvió a ejecutar tras esta corrida.** La regresión posterior
+(246/246, 2553/2553, typecheck, lint) se hizo sin tocar `test:rls`.

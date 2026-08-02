@@ -444,3 +444,67 @@ SELECT to_regclass('public.stella_suggestion_decisions'); -- NULL
 Solo después de: staging verde + G3 verde + decisión explícita go/no-go de
 Lorenzo, siguiendo la secuencia de `SUPABASE_MIGRATION_GATE.md` (backup, orden
 revisado, verificaciones repetidas). Este paquete no autoriza tocar producción.
+
+## STELLA FULL REBUILD — RUN 2 (2026-08-02) — evidencia local para G2
+
+> **Esto no es la ejecución de G2.** G2 sigue **sin ejecutar** y sin aprobar.
+> RUN 2 es un segundo ensayo estructural, sobre un stack local desechable
+> reconstruido desde cero, de los tres scripts que G2 aplicaría. Refuerza la
+> confianza en el paquete; no sustituye ninguna precondición del gate ni la
+> *Aclaración sobre A1*.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-02 |
+| Branch / HEAD inicial | `codex/stella-g2-local-rehearsal` / `92d7c61` |
+| `project_id` | `uellix-stella-g2-local-rehearsal` — API `127.0.0.1:56321`, DB `127.0.0.1:56322` |
+| PostgreSQL | 17.6, volumen creado desde cero en esta corrida |
+| Acceso remoto | ninguno |
+
+### Identidad de los artefactos aplicados
+
+| Script | SHA-256 working tree | SHA-256 canónico Git |
+|---|---|---|
+| `stella_0002_interactions_hardening.sql` | `11b792159435ee91fe00634e85a687a4c6b7aff9496f403db18740ba778c05e6` | `bdf5f8dc…24858cd` |
+| `stella_0002b_append_only_truncate_hardening.sql` | `781e8b58fe2f512c4214016421199c853f9ed840fde0f27f701ddf247aace550` | idéntico (archivo LF en el blob) |
+| `stella_0003_suggestion_decisions.sql` | `6caa5ca97acbc0e9b28a439a66dcfac9b0d15399e4172da886dffd9fc1d6b7d1` | `ad22e22c18f0bfb8c03987e05b76de45efe440fd994c2ae719a55bece778fab5` |
+
+`git diff HEAD` vacío sobre las tres rutas. Cada script aplicado **dos veces**,
+en una sola transacción externa (`-1`), con `ON_ERROR_STOP=1`, archivo exacto,
+sin modificaciones. `stella_0003` con el rol escritor declarado en la misma
+sesión vía `-c "SET stella.writer_role = 'postgres'"` — sin `ALTER ROLE`, sin
+`ALTER DATABASE`.
+
+### Verificaciones 1–7 sobre base reconstruida
+
+| # | Verificación | Resultado |
+|---|---|---|
+| 1 | Trigger `trg_stella_interactions_append_only` adjunto | presente, `tgtype=27`, `tgenabled=O` |
+| 2 | Grants reducidos (`table_schema='public'`, todos los grantees) | `authenticated` y `service_role` = `SELECT`+`INSERT`; `anon`/`PUBLIC` = 0 |
+| 3 | `CHECK` con los 6 roles vía `pg_get_constraintdef` | intacto |
+| 4 | `UPDATE`/`DELETE` sobre la fila sintética | bloqueados, SQLSTATE `42501` |
+| 4b | `TRUNCATE` en las 4 tablas append-only, incluido como `postgres` | bloqueado, SQLSTATE `42501`; 4 triggers `tgtype=34` |
+| 5 | RLS de `stella_suggestion_decisions` con una sola política | RLS on, FORCE off, 1 policy `SELECT` |
+| 6 | Grants `SELECT`-only, sin filas para `anon`/`PUBLIC` | `authenticated SELECT` no grantable; `service_role`/`anon`/`PUBLIC` ausentes del ACL |
+| 7 | Ambos `CHECK` por definición completa | `decision` con los 4 valores; `previous_value_hash` con el patrón de 64 hex |
+
+Contrato estructural adicional verificado **fuera** del propio script: 11
+columnas exactas, PK, 4 FKs todas `NO ACTION` (`confupdtype/confdeltype = a/a`),
+0 `UNIQUE`, 2 índices no únicos, 2 triggers nuevos, 10 append-only totales,
+`evidence_chunks` ausente.
+
+### Estado final
+
+38 tablas · 104 policies · 119 índices · 230 constraints · 10 triggers
+append-only · 8 funciones. Grants no-owner = 461 con la definición del registro
+original (526 si se cuenta `MAINTAIN`, privilegio nuevo de PostgreSQL 17).
+`uellix_forbid_mutation()` con SHA-256 `cd918f70…73cb98f`, **idéntico** al de
+RUN 1.
+
+### Qué sigue faltando para G2
+
+Nada de lo anterior sustituye: entorno remoto autorizado, ventana de cambio,
+respaldo remoto verificado, aprobación humana y la *Aclaración sobre A1*. RUN 2
+sólo demuestra que los tres scripts hacen lo que dicen sobre un PostgreSQL 17.6
+real y que lo hacen de forma reproducible e idempotente. **G2 formal: NO
+EJECUTADO.**
