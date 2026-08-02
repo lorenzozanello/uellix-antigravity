@@ -714,10 +714,10 @@ Detectados en la reauditoría previa y todavía abiertos:
    tienen ACL de `PUBLIC`. Su expectativa *"para anon / PUBLIC: ninguna fila"*
    es, para `PUBLIC`, infalsificable. Es el defecto que MINOR-5 cerró para la
    tabla nueva, abierto aún para la preexistente.
-2. **El rollback depende de banderas de `psql`.** La guarda (`DO $$`) y el
-   `DROP TABLE IF EXISTS` son sentencias separadas: sin `-1 -v ON_ERROR_STOP=1`
-   la excepción no impediría el `DROP`. Las cabeceras lo mandan; nada lo hace
-   estructural.
+2. ~~**El rollback depende de banderas de `psql`.**~~ **CERRADO 2026-08-01** —
+   ver *ENDURECIMIENTO ESTRUCTURAL DEL ROLLBACK DE `stella_0003`* más abajo.
+   Guarda y `DROP` viven ahora en el mismo bloque `DO`; el defecto quedó
+   demostrado empíricamente y la corrección verificada en 9 escenarios.
 3. **Falta un test automático de integridad estructural de los archivos de
    test.** El incidente de `String.replace` con `$'` está registrado como
    lección de proceso, pero nada lo fija contra recurrencia.
@@ -872,6 +872,572 @@ ningún trigger.
 **G3 remoto no queda autorizado por este ensayo:** requiere una estrategia no
 contaminante propia (base efímera dedicada o gate de solo lectura sobre filas
 ya existentes), todavía sin diseñar.
+
+## ENDURECIMIENTO ESTRUCTURAL DEL ROLLBACK DE `stella_0003`
+
+> **Unidad PREVIA al ensayo destructivo.** No se ejecutó el rollback, no se
+> restauró el respaldo, no se reseteó el stack, no se tocó la base viva. Cambia
+> únicamente `db/prepared/stella_0003_rollback.sql`, sus pruebas offline y esta
+> documentación. **G2 sigue sin ejecutar y sin aprobar.**
+
+**2026-08-01 · worktree `codex/stella-g2-local-rehearsal` · HEAD inicial
+`a77948d`.** Cierra el pendiente remoto **2** de la sección anterior.
+
+### El defecto
+
+La guarda de autorización era un bloque `DO $$ … $$;` y la destrucción una
+sentencia **top-level posterior e independiente**:
+
+```sql
+DO $$ ... IF n_rows > 0 AND NOT authorised THEN RAISE EXCEPTION ... $$;
+DROP TABLE IF EXISTS public.stella_suggestion_decisions;   -- <-- separada
+```
+
+Entre ambas no había más barrera que dos banderas de línea de comandos:
+
+| Bandera | Qué aporta | Qué pasa sin ella |
+|---|---|---|
+| `-v ON_ERROR_STOP=1` | `psql` **se detiene** tras una sentencia fallida | `psql` imprime el error y **envía la siguiente** — el `DROP` |
+| `-1` | Todo en una transacción; un fallo revierte | Cada sentencia hace autocommit por su cuenta |
+
+Son una **convención de invocación**, no una propiedad del archivo. La cabecera
+las **mandaba**; nada las **imponía**. Y `G2_PACKAGE.md` admite explícitamente
+tres vías de aplicación de las cuales **sólo una** las acepta: `psql`,
+`supabase db execute --file` y el SQL Editor de Supabase.
+
+### La corrección
+
+Todo ocurre ahora en **un único bloque `DO`**: existencia, conteo, `NOTICE`,
+autorización y el `DROP`. En PL/pgSQL un `RAISE EXCEPTION` termina el bloque de
+inmediato y ninguna sentencia posterior *de ese bloque* corre — **semántica del
+servidor dentro de una sola sentencia**, no del cliente entre dos. Ningún
+cliente, bandera u orden de pegado puede volver a separarlas.
+
+El `DROP` se emite como `EXECUTE 'DROP TABLE public.stella_suggestion_decisions'`
+— literal fijo, **cero** concatenación, `format()`, `quote_ident()` o variables;
+lo único que decide el código es **si** ejecutarlo, nunca **qué** dice. Sin
+`IF EXISTS`: la existencia ya se probó en el mismo bloque, y conservarlo sólo
+ocultaría una discrepancia entre la comprobación y el acto.
+
+`-1 -v ON_ERROR_STOP=1` **siguen recomendadas** como defensa en profundidad
+(atomicidad, y exit code ≠ 0 para un gate que lo lee — medido: `3`).
+
+**Cambio colateral necesario.** El banner de `RAISE NOTICE` pasó de guiones a
+`=`. Un `--` **dentro de un literal** ciega a todo analizador que quite
+comentarios antes que cadenas —incluido el `stripCommentsAndStrings` del propio
+lint offline—: truncaba el `NOTICE`, dejaba una comilla desbalanceada y a partir
+de ahí leía el **contenido de las cadenas** del script como si fuera código. La
+aserción "no hay `DROP TABLE` ejecutable" era, con guiones, infalsificable.
+
+### Autorización — exacta, sin coerción
+
+`COALESCE(current_setting('stella.confirm_destroy_decisions', true), '') = 'true'`.
+El segundo argumento (`missing_ok`) evita que un GUC nunca declarado aborte con
+*"unrecognized configuration parameter"* en vez del mensaje de la guarda; el
+`COALESCE` convierte "sin declarar" en "no autorizado" en vez de en un `NULL`
+que dejaría `NOT authorised` indeterminado y **ninguna** rama activa.
+
+Rechazados y verificados uno por uno: `yes`, `y`, `1`, `TRUE`, `True`, `trUe`,
+`on`, `t`, `'true '`, `' true'`. Sin `::boolean`, sin `lower()`, sin `trim()`.
+
+**Límite honesto, medido en PostgreSQL 17.6.** `SET x = TRUE` con la palabra
+clave **sin comillas** *sí* autoriza, y no es un hueco de la comparación: la
+gramática de `SET` normaliza la palabra clave desnuda y **almacena la cadena
+`'true'`**, byte a byte idéntica a la que produce `SET x = 'true'`. Para cuando
+`current_setting()` la lee, la distinción ya no existe y ninguna guarda escrita
+en SQL puede recuperarla. Lo que **sí** se rechaza es el literal entrecomillado
+`'TRUE'` y todas las demás grafías. Se declara aquí en vez de afirmar una
+estrictez mayor que la real — es el mismo tipo de "verificación declarada y no
+realizada" que MAJ-B y MINOR-2 cerraron en otros puntos del paquete.
+
+**Nota operativa.** En la imagen `supabase/postgres` el rol `postgres` **no** es
+superusuario, así que `ALTER DATABASE … SET stella.confirm_destroy_decisions`
+falla con *"permission denied to set parameter"*. La vía practicable es el `SET`
+de sesión (`psql -c "SET …" -f …`). No se investigó más: excede esta unidad,
+pero conviene tenerlo presente porque `G2_PACKAGE.md` propone `ALTER DATABASE`
+como alternativa para declarar `stella.writer_role`.
+
+### Dry-run — entorno desechable, base viva intacta
+
+Contenedor **nuevo y aislado** (`--network none`, sin puertos publicados),
+imagen `public.ecr.aws/supabase/postgres:17.6.1.143`, **PostgreSQL 17.6** — el
+mismo motor que el stack del ensayo. Fixture mínima: la tabla, más las dos
+triggers append-only para comprobar que tampoco detienen un `DROP`. Se ejecutó
+el **archivo real**, con `sha256` verificado dentro del contenedor. El
+contenedor se destruyó al terminar. **Cero contacto con
+`supabase_db_uellix-stella-g2-local-rehearsal`.**
+
+Los escenarios críticos corrieron con **`psql` desnudo — sin `-1` y sin
+`ON_ERROR_STOP`** — que es exactamente el caso para el que existe el
+endurecimiento.
+
+| # | Escenario | Invocación | Resultado |
+|---|---|---|---|
+| S1 | Tabla ausente | desnuda | exit 0, `NOTICE` de no-op, sin error |
+| S2 | Tabla presente, **0 filas** | desnuda | exit 0, `DROP`, `NOTICE` de rollback técnico, **sin** `WARNING` |
+| S3 | 1 fila, **sin** autorización | desnuda | aborta; **tabla, fila y 2 triggers sobreviven** |
+| S4 | 1 fila, autorización incorrecta (11 valores) | desnuda | **11/11 rechazadas**; tabla y fila intactas en todas |
+| S5 | 1 fila, autorización **exacta** `'true'` | desnuda | exit 0, `WARNING` de destrucción, `DROP`, conteo reportado |
+| S6 | Segunda ejecución inmediata | desnuda | exit 0, no-op idempotente |
+| S7 | S3/S5 con `-1 -v ON_ERROR_STOP=1` | completa | no autorizado → **exit 3** y tabla intacta; autorizado → exit 0 |
+| S8 | **Regresión:** forma ANTERIOR, misma invocación desnuda | desnuda | la guarda lanzó la excepción **y la tabla fue destruida igualmente** |
+| S9 | Forma NUEVA, invocación idéntica a S8 | desnuda | **tabla y fila sobreviven** |
+| S10 | `FORCE RLS` on, owner sin `BYPASSRLS`, 1 fila | desnuda | aborta por la guarda de `FORCE`; **no** clasifica la tabla como vacía |
+| S11 | Autorización **persistida** vía `ALTER DATABASE … SET` | desnuda | aborta; tabla y fila intactas. Tras `RESET` + `SET` de sesión → destruye |
+| S12 | `client_min_messages=error` vía `PGOPTIONS`, autorizado | desnuda | el `WARNING` de destrucción **sigue visible** |
+| S13 | Tabla vacía | desnuda | **no** imprime el banner de destrucción; sólo el mensaje de rollback técnico |
+| S14 | 1 fila, rechazada | desnuda | tampoco imprime el banner: el log de un rechazo no se confunde con el de una destrucción |
+| S15 | `FORCE` **sin** `ENABLE` (RLS deshabilitada), autorizado | desnuda | **no** hay rechazo falso: RLS no se aplica, el conteo es fiable, destruye |
+| S16 | Persistido `'false'` en un rol ajeno, autorizado en sesión | desnuda | **no** bloquea: fuera de alcance y con valor que no autoriza |
+| S17 | Persistido `'true'` vía `ALTER DATABASE` sobre esta base | desnuda | sigue bloqueando; tabla y fila intactas |
+| S18 | Vista dependiente presente, autorizado | desnuda | aborta con el **mensaje nativo** de PostgreSQL (sin prefijo, **por diseño**), **sin destruir**; tras retirar la vista, destruye |
+| S19 | Catálogo de provenance legible, comprobado explícitamente | desnuda | sin `permission denied` desnudo; destruye |
+| S20 | `REPEATABLE READ`, 1 fila, autorizado | desnuda | aborta **con prefijo**, nombra el nivel; tabla y fila intactas |
+| S21 | `SERIALIZABLE`, autorizado | desnuda | aborta igual; tabla intacta |
+| S22 | `READ COMMITTED` (defecto), autorizado | desnuda | **sin rechazo falso**; destruye |
+| S23 | `READ UNCOMMITTED`, autorizado | desnuda | **aceptado** (PostgreSQL lo implementa como `READ COMMITTED`); destruye |
+| S24 | `REPEATABLE READ`, **tabla ausente** | desnuda | la guarda dispara igualmente → confirma que corre **primero** |
+
+S8 y S9 son el par que prueba el defecto y su cierre: mismo motor, mismos bytes
+de invocación, misma fila — resultado opuesto.
+
+### Hallazgos de la revisión independiente (ronda 4) y su cierre
+
+Un agente revisor de solo lectura evaluó el diff. **0 BLOCKER, 3 MAJOR**, todos
+corregidos y reverificados; el detalle importa porque dos de ellos eran huecos
+reales y uno traía una corrección propuesta **inaplicable**.
+
+| # | Hallazgo | Cierre |
+|---|---|---|
+| **M1** | `count(*)` **está sujeto a RLS**. `FORCE ROW LEVEL SECURITY` quita el bypass del owner, así que un rol propietario **sin `rolbypassrls`** contaría **0** sobre una tabla poblada: el script habría anunciado *"table is empty — no audit data lost"* mientras destruía el audit trail. **Reproducido** en PG 17.6 (owner `NOBYPASSRLS`, policy `USING(false)`): `FORCE` off → 1, `FORCE` on → **0**, con la fila presente. **No** se reproduce como `postgres` sobre imagen Supabase porque ese rol tiene `rolbypassrls = true` — razón de más para no dejarlo al rol que el operador use | Guarda de `relforcerowsecurity` **antes** del conteo, simétrica con las §4b y §7 del script forward, que ya tratan `FORCE`-on como estado abortable. Verificado en **S10** |
+| **M2** | La autorización podía venir de un `ALTER DATABASE … SET` / `ALTER ROLE … SET` **persistido**, pre-autorizando toda sesión futura — el mismo defecto que este cambio cierra, reubicado de las banderas de `psql` a la capa de GUC | La corrección **propuesta por el revisor** (`pg_settings.source`) es **inaplicable**: los GUC placeholder personalizados **no aparecen en `pg_settings`** (medido: 0 filas), así que el chequeo habría abortado siempre o nunca. Implementado sobre **`pg_db_role_setting`**, que **sí** registra ambas formas. Verificado en **S11**. Queda un límite honesto declarado en el archivo: un `SET` de sesión es todo lo que SQL puede exigir; que lo teclee un humano y no un script envolvente es **precondición del gate**, no del SQL — el mismo reparto en tres (guarda estructural / prueba offline / gate humano) que usa §4b del forward |
+| **M3** | Las pruebas **no prohibían un `EXCEPTION WHEN`**. Un handler en el bloque —o en un sub-bloque anidado— traga el `RAISE` de la guarda y deja pasar el `DROP`, y **todas** las demás aserciones seguían en verde. Además es una edición *tentadora*, porque un fallo por objeto dependiente hoy sale sin el prefijo `stella_0003_rollback` | Aserciones que prohíben `EXCEPTION WHEN` y fijan **exactamente un `BEGIN` y un `RETURN`** dentro del bloque |
+
+MINOR/NIT también cerrados: mensaje de irreversibilidad corregido —el DDL de
+PostgreSQL es transaccional, así que bajo `-1` un `ROLLBACK` **sí** deshace todo
+hasta el `COMMIT`, y decir lo contrario mandaba al operador a un respaldo que
+todavía no necesita (**S12** aparte confirma que el aviso no puede silenciarse)—;
+`SET client_min_messages = notice` para que el camino destructivo no corra en
+silencio; `LOCK TABLE … ACCESS EXCLUSIVE` **antes** del conteo, cerrando el
+TOCTOU por el que un `INSERT` concurrente podía añadir filas nunca contadas ni
+autorizadas; banner de destrucción sólo en el camino con filas (**S13**), porque
+imprimir *"irreversible"* y a continuación *"no audit data lost"* se
+contradecía; el helper de comentarios de las pruebas ahora recorta también los
+comentarios **al final de línea** respetando comillas (la justificación anterior
+era falsa: `-- … EXECUTE 'DROP TABLE …'` tenía exactamente la forma que decía
+imposible); y la autorización se fija ahora **byte a byte** sobre la expresión
+aceptante en vez de enumerar literales rechazados, que sólo probaba la ausencia
+de una *segunda* comparación y no habría detectado `IN ('true','on')`, `ILIKE`
+ni `ANY(...)`.
+
+**No adoptado, con motivo:** `SET LOCAL` para las GUC de sesión (imposible fuera
+de una transacción, y bajo un pooler en modo transacción los `SET` y el `DO`
+podrían caer en backends distintos — riesgo ambiental, anotado aquí en vez de
+simulado).
+
+### Ronda 2 de revisión — 2 MAJOR más, y dos bugs que sólo vio el dry-run
+
+| # | Hallazgo | Cierre |
+|---|---|---|
+| **M4** | **El *armado* de las guardas no estaba probado.** Las aserciones comprobaban presencia de un nombre de catálogo, existencia de un mensaje y orden por `indexOf` — nunca que la guarda **lance**. El revisor lo demostró con mutantes: degradar el `RAISE EXCEPTION` de una guarda a `RAISE NOTICE`, invertir la condición de `FORCE`, o **neutralizar por completo la guarda de autorización** con `IF NOT authorised AND false THEN` dejaban la suite **entera en verde** — esta última porque `indexOf('RAISE EXCEPTION') < indexOf("EXECUTE 'DROP TABLE")` se satisfacía con la excepción de *otra* guarda | Cada guarda queda fijada como un **span único condición→`RAISE EXCEPTION`**, más el conteo total de excepciones y la exigencia de que todas lleven el prefijo `stella_0003_rollback aborted:`. Reverificado con **17 mutantes propios**, todos detectados |
+| **M5** | **`pg_db_role_setting` podía no ser legible.** Es un catálogo compartido cuyo privilegio de `SELECT` depende del entorno; en un clúster restringido la consulta de provenance moriría con un `permission denied` **desnudo**, sin prefijo, en el camino de emergencia y después de haber anunciado que la destrucción estaba autorizada. **Medido en esta imagen: sí es legible** (`=r/supabase_admin`, concedido a PUBLIC) — pero eso es una propiedad del entorno, no del script | Chequeo explícito de `has_table_privilege` antes de la consulta: una guarda no verificable se trata como guarda fallida, con mensaje prefijado y accionable |
+
+**Guarda añadida sobre la marcha.** Al mover el `LOCK TABLE` al frente (MINOR de
+la ronda 1), un rol que no es dueño pasó a fallar en el `LOCK` con
+`permission denied for table …` **sin prefijo**. Leer `pg_class` no exige
+privilegio sobre la tabla, así que una **precondición de propiedad**
+(`pg_has_role` contra `relowner`) va ahora primero: todo rechazo lleva el
+prefijo del contrato del operador. Eran **seis** guardas en ese momento; la ronda 3 retiró la de dependientes y quedaron **cinco**.
+
+**Dos bugs reales que ninguna prueba offline podía ver**, encontrados por el
+dry-run contra un PostgreSQL de verdad:
+
+1. **`operator is not unique: text || "char"`.** `pg_class.relkind` es del tipo
+   `"char"`, no `text`, y la concatenación es ambigua. Rompía **todas** las
+   corridas que llegaban al `DROP` — con 222 tests en verde.
+2. **La consulta de objetos dependientes no veía las vistas.** Una vista **no**
+   depende de la tabla directamente: depende su **regla de reescritura**
+   (`classid = pg_rewrite`), así que un `JOIN pg_class ON d.objid` la perdía por
+   completo. La guarda existía, no hacía nada, y reportaba éxito. Se reescribió
+   sobre `pg_describe_object()` — y en la ronda 3 se retiró del todo, al
+   descubrirse que esa segunda forma abortaba en toda ejecución (ver abajo).
+
+Ambos son la justificación de la Fase 6: un lint estático sobre expresiones
+regulares no puede resolver tipos ni recorrer catálogos.
+
+### Ronda 3 — un BLOCKER, y una guarda que se retira en vez de arreglarse
+
+| # | Hallazgo | Cierre |
+|---|---|---|
+| **B1** | **La guarda de objetos dependientes abortaba en TODA ejecución.** `CreatePolicy()` y las expresiones `CHECK` registran filas `DEPENDENCY_NORMAL` por **columna referenciada**, sin degradación de la auto-referencia — así que un filtro `deptype='n'` las clasifica como dependientes *ajenos*. **Reproducido** en PostgreSQL 17.6 contra el conjunto de objetos real de `stella_0003`: la guarda reportaba *"constraint … on table stella_suggestion_decisions, policy stella_suggestion_decisions_select on table stella_suggestion_decisions"* y **habría abortado siempre, incluso con la tabla vacía** — rompiendo el rollback por completo | **Guarda RETIRADA**, no arreglada por tercera vez. Ver abajo |
+| **M6** | **El filtro de persistencia usaba `current_user`.** PostgreSQL aplica `pg_db_role_setting` al inicio de sesión vía `process_settings(databaseid, GetSessionUserId())`: se indexa por el rol de **login**, exacto, y **no consulta membresía**. Falla **abierto** justo donde importa: la guarda de propiedad le dice al operador que reejecute *"como el rol dueño"*, cosa que puede hacer con `SET ROLE` — dejando `session_user` como su rol de login; un `ALTER ROLE <login> SET … = 'true'` **sí** autorizó esa sesión y el filtro por `current_user` no lo vería. Y falla **cerrado** en la otra dirección: un ajuste sobre un rol del que la sesión sólo hereda nunca se aplicó, pero la membresía coincidiría | `s.setrole = (SELECT oid FROM pg_roles WHERE rolname = session_user)`, coincidencia exacta de OID |
+| **M7** | **Cuatro mutantes más sobrevivían.** Las guardas quedaban fijadas, pero **no el flujo de datos que produce los valores que evalúan**: `IF n_rows > 0` → `IF n_rows > 1000000` (una tabla poblada y **sin autorizar** cae en la rama `ELSE`, registra *"no audit data lost"* y se destruye), un `authorised = true;` insertado (PL/pgSQL acepta `=` como asignación), un `n_rows := 0;`, y `SELECT NULL::text INTO persisted_at` | La **región de decisión** —conteo → asignación de autorización → `IF n_rows > 0 THEN`— fijada como **un único span adyacente verbatim**, más aserciones de escritura única sobre `n_rows`, `authorised` y `persisted_at` |
+
+**Por qué se retira la guarda de dependientes en vez de arreglarla.** No estaba
+en el encargo: se adoptó como NIT de la ronda 1. En dos intentos produjo dos
+defectos reales —primero no veía las vistas, luego abortaba siempre— y le
+quedaba un hueco conocido: los dependientes mediados por el **tipo compuesto**
+de la tabla (una función `RETURNS SETOF` esta tabla se registra contra
+`pg_type`, no `pg_class`). Su valor era exclusivamente el **prefijo del
+mensaje**; no impedía ninguna destrucción. Re-derivar `findDependentObjects()`
+de PostgreSQL en SQL no es tarea de este script: **una guarda sólo a veces
+correcta sobre "¿fallaría el `DROP`?" es peor que ninguna, porque invita a
+creerle.** Un fallo por objeto dependiente sale ahora con el mensaje nativo de
+PostgreSQL, **no destruye nada**, y queda documentado en `G2_PACKAGE.md` como
+uno de los pocos abortos que no llevan el prefijo. La tentación que justificaba
+la guarda —añadir un `EXCEPTION` handler para recuperar el prefijo— se cierra
+directamente: el test la prohíbe. Quedan **cinco** guardas.
+
+**La fixture mínima fue lo que ocultó el BLOCKER.** Tenía sólo la tabla y los dos
+triggers; sin política ni `CHECK`, el grafo de dependencias real nunca se
+ejercitó. La fixture de dry-run replica ahora lo que `stella_0003` crea
+realmente: tabla, ambos `CHECK`, índice, RLS con la política org-scoped y los
+dos triggers append-only.
+
+MINOR/NIT de la ronda 2 también cerrados: `LOCK TABLE` antes del chequeo de
+`FORCE` (la misma carrera aplica al **flag** que decide si el conteo significa
+algo); `FORCE` exige ahora **ambos** flags (`relrowsecurity AND
+relforcerowsecurity`), porque `FORCE` sin `ENABLE` no aplica RLS y abortar sería
+un rechazo falso; el filtro de persistencia acotado a la base actual, a los roles
+de los que esta sesión es miembro y al valor `'true'` (un
+`ALTER ROLE otro SET … = 'false'` no autoriza nada aquí y no debe bloquear una
+erradicación de emergencia); banner de destrucción movido **debajo** de las
+guardas, porque los `NOTICE` no se revierten y un rechazo dejaba un log que
+parecía el de una destrucción; supuesto de aislamiento `READ COMMITTED`
+declarado; alcance real del `client_min_messages` declarado (no puede hacer que
+el SQL Editor de Supabase muestre lo que nunca muestra); los otros cuatro canales
+de persistencia que este catálogo **no** cubre (`postgresql.conf`,
+`ALTER SYSTEM SET`, `PGOPTIONS`, `options=-c` en la cadena de conexión) nombrados
+en el límite honesto; y corregido el docstring del helper de lint, que afirmaba
+detectar `EXECUTE 'x' || ident` cuando —medido— no lo detecta.
+
+### Mensajes distinguibles
+
+Cada camino emite un mensaje propio, de modo que el log basta para saber qué
+pasó: `does not exist — nothing to do (idempotent no-op)` (ausente),
+`table is empty — technical rollback before use, no audit data lost` (vacía),
+`destroying N decision row(s) under explicit authorisation …` (`WARNING`,
+destrucción autorizada) y `dropped (N row(s) destroyed)` (confirmación final).
+El bloque de advertencia declara explícitamente que **ningún rollback SQL puede
+recuperar filas append-only** una vez destruida la tabla, que sólo un **respaldo
+verificado** puede, y que esto es desechable en el stack local pero no en un
+entorno real.
+
+### Pruebas
+
+| Comando | Resultado |
+|---|---|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | **237/237** en 2 archivos (antes 188 → **+49**) |
+| `pnpm test:unit` | **135 archivos, 2544/2544** (antes 2495 → +49, los mismos) |
+| `pnpm typecheck` | exit 0, 0 errores |
+| `pnpm lint` | exit 0, **0 errores** (51 warnings preexistentes, sin cambio) |
+| `pnpm test:rls` | **NO EJECUTADA** — es G3 |
+
+Las pruebas nuevas fijan: ausencia de `DROP TABLE` top-level; `DROP` dentro del
+mismo `DO` que la guarda y **después** del `RAISE EXCEPTION`; **ausencia de
+`EXCEPTION WHEN`** y exactamente un `BEGIN` y un `RETURN` en el bloque; las
+**seis guardas como spans condición→`RAISE EXCEPTION`**, su conteo exacto y su
+prefijo común; el orden aislamiento → existencia → propiedad → `LOCK` → `FORCE` → conteo → `DROP`, con cada
+offset exigido presente (una comparación `indexOf` pasa **vacuamente** cuando el
+término falta); ambos flags de RLS; el filtro de alcance de `pg_db_role_setting`
+como span único —con `session_user`, `split_part` en vez de `LIKE`, y el cuerpo del `EXISTS` incluido—; la **región de decisión** (conteo → asignación de autorización → `IF n_rows > 0 THEN`) como **span adyacente verbatim**, más escritura única de `n_rows`, `authorised` y `persisted_at`; la ausencia de `CASCADE` y de `pg_depend`; `EXECUTE` con literal fijo, **seguido
+inmediatamente** de `;` o `INTO` (una sonda acotada a la línea no vería
+`EXECUTE 'literal'\n || sufijo`); la expresión de autorización fijada **byte a
+byte**; ausencia de `::boolean`, `lower()` y `trim()`; `missing_ok = true`; los
+cuatro mensajes distinguibles; el aviso de audit trail en su forma
+transaccionalmente correcta; los cuatro canales de persistencia no cubiertos;
+`lock_timeout`; `client_min_messages`; `search_path`; cero `GRANT`, cero
+`ALTER DEFAULT PRIVILEGES`, cero mención ejecutable a
+0002/0002b/`evidence_chunks`; y que el archivo no contenga control de
+transacción propio.
+
+**Mutation testing.** Las aserciones se validaron contra **25 mutantes** del
+propio script: degradar cada una de las cinco guardas a `NOTICE`/`WARNING`;
+invertir la condición de `FORCE` y reducirla a un solo flag; `IF n_rows > 0` →
+`IF n_rows > 1000000`; insertar `authorised = true;`, `n_rows := 0;` y
+`SELECT true INTO authorised`; dejar `persisted_at` en `NULL`; revertir
+`session_user` a `pg_has_role(current_user, …)`; quitar el `COALESCE` de la
+guarda de propiedad; `AND false` dentro del `EXISTS`; ampliar el filtro de
+alcance; eliminar el `LOCK`; sacar el `DROP` del bloque; añadir `CASCADE`;
+añadir un `EXCEPTION WHEN OTHERS`; ampliar la autorización a `IN ('true','on')`;
+y `IF false THEN` sobre la guarda de autorización; **intercambiar los cuerpos de
+las ramas `THEN`/`ELSE`**; añadir un cuarto `SET` top-level de autoautorización
+(`SET stella.confirm_destroy_decisions = 'true';`), uno de `lock_timeout = 0` y
+uno de `client_min_messages = warning`; y concatenar el literal del `DROP` en la
+línea siguiente. **Los 25 fueron detectados.**
+El archivo se restauró byte a byte tras cada uno.
+
+Vale la pena registrar el método: las tres primeras rondas de aserciones fijaban
+**presencia** (un nombre de catálogo aparece, un mensaje existe, un `indexOf`
+precede a otro) y todas resultaron insuficientes. Sólo fijar **spans verbatim
+condición→efecto** y **escrituras únicas por variable** cerró la clase. Una
+aserción de orden `indexOf(x) < indexOf(y)` además pasa **vacuamente** cuando
+`x` falta (`-1 < n`), así que cada offset se exige presente antes de compararse.
+
+### Ronda 4 — dos MAJOR más, ambos en las pruebas y ninguno en el SQL
+
+| # | Hallazgo | Cierre |
+|---|---|---|
+| **M8** | **La lista de sentencias top-level no estaba acotada.** Ninguna aserción limitaba **cuántas** hay. Una sola línea añadida antes del `DO` derrota una guarda **desde fuera del bloque** — el único lugar al que el argumento estructural no llega: `SET stella.confirm_destroy_decisions = 'true';` hace que **toda ejecución se autoautorice** (`authorised` queda en `true`, `persisted_at` sigue en `NULL` porque un `SET` de sesión no está en `pg_db_role_setting`), y la suite entera seguía verde — el test que busca esa cadena es una aserción **positiva** ya satisfecha por el comentario de cabecera, así que no distingue prosa de sentencia ejecutable. Variantes igual de verdes: `SET lock_timeout = 0;` y `SET client_min_messages = warning;` | Se fija la **lista exacta** de cuatro sentencias top-level, más los literales leídos del fuente crudo, más la prohibición de cualquier `SET stella.` **ejecutable** (con cadenas blanqueadas: el mensaje de aborto sí menciona legítimamente ese `SET`) |
+| **M9** | **Se fijaba la condición de la rama, no qué rama contiene qué comportamiento.** Intercambiar verbatim los cuerpos de `THEN` y `ELSE` dejaba la suite verde: una tabla poblada se anunciaba como *"table is empty — no audit data lost"*, se saltaban las tres guardas de autorización, el banner y el `WARNING`, y se destruía. Mismo desenlace que el mutante `IF n_rows > 1000000` de la ronda 3, alcanzado por una mutación que el span no veía | Se fija **qué arma cada rama**: las cinco guardas, el banner y el `WARNING` deben quedar entre `IF n_rows > 0 THEN` y `ELSE`; el `NOTICE` de rollback técnico, después del `ELSE` y antes del `DROP`; y debe haber exactamente **un** `ELSE` |
+
+MINOR/NIT de esta ronda: el mensaje de la guarda de `FORCE` ofrecía reejecutar
+con un rol `BYPASSRLS`, remedio que **no puede** levantar un rechazo que es
+incondicional — reformulado; el chequeo de terminación de literales se **elevó a
+helper compartido** y se aplica ahora a **todos** los scripts preparados (estaba
+declarado "por archivo" mientras `stella_0002b`, que usa la misma construcción,
+no lo tenía — una verificación declarada y no realizada, justo en el archivo que
+persigue eso); el mensaje de la guarda de propiedad nombra ahora también la
+posibilidad de que la tabla haya desaparecido entre medias; y se corrigió el
+comentario que decía que *todo* lo posterior exige propiedad (sólo el `DROP` la
+exige: el conteo necesita `SELECT` y en PG17 `LOCK … ACCESS EXCLUSIVE` acepta
+además `MAINTAIN`).
+
+**Un NIT rechazado con evidencia.** El revisor sostuvo que los `CHECK` registran
+`deptype='a'`, no `'n'`, y que por tanto la explicación del BLOCKER de la ronda 3
+estaba mal atribuida. **Remedido** sobre PostgreSQL 17.6: tanto los dos `CHECK`
+como la política tienen filas `deptype='n'` (una por columna referenciada)
+**además** de su fila `'a'`. La tabla medida quedó citada verbatim en el
+comentario, de modo que la afirmación es ahora falsable.
+
+**Coste honesto registrado.** Al retirar la guarda de dependientes, el `DROP`
+pasó a ser el único fallo posible **después** del banner, y los `NOTICE` no se
+revierten. Así que en el camino autorizado con un objeto dependiente el log
+contiene el banner completo y *"destroying N decision row(s)"* para una
+ejecución en la que **no se destruyó nada** — precisamente el "log de un rechazo
+que parece un log de una destrucción" que el orden de las guardas evita. Es
+inofensivo para los **datos**, no para el **registro**: queda declarado en el
+script y en `G2_PACKAGE.md`.
+
+### Ronda 5 — el cambio de método que cierra la clase
+
+Dos MAJOR más, otra vez **enteramente en las pruebas**. Pero esta vez el hallazgo
+importante no fue un mutante concreto sino el **diagnóstico**: en cinco rondas
+seguidas se añadieron más aserciones de fragmento, y en cada ronda se coló una
+mutación nueva.
+
+| Ronda | Mutación que se escapó |
+|---|---|
+| 2 | `IF NOT authorised AND false THEN` — condición ampliada |
+| 3 | `IF n_rows > 1000000` — el flujo de datos, no la condición |
+| 4 | cuerpos de `THEN`/`ELSE` **intercambiados** — pertenencia de rama |
+| 4 | `SET stella.… = 'true';` **top-level** — fuera del bloque `DO` |
+| 5 | `IF false THEN` **envolviendo** una guarda ya fijada, una línea más afuera |
+| 5 | `persisted_at := NULL;` insertado justo antes de su propia guarda |
+| 5 | `PERFORM set_config('stella.confirm_destroy_decisions','true',true)` **dentro** del bloque, donde la lista de sentencias top-level no llega |
+
+Cada fragmento fija una forma más y deja el complemento abierto. **La clase no se
+cierra añadiendo fragmentos.** La única forma de aserción completa es fijar el
+**cuerpo ejecutable entero** del bloque `DO`: todas las sentencias, en orden, con
+su anidamiento.
+
+Lo que se fija es el cuerpo con comentarios quitados, **literales blanqueados** y
+espacios colapsados, comparado byte a byte contra una constante. Blanquear los
+literales mantiene la aserción legible —los mensajes `RAISE` son la mayor parte
+de los bytes del archivo— y separa las dos preocupaciones: esta prueba es dueña
+de la **estructura**, y las pruebas por mensaje siguen siendo dueñas del
+**texto**.
+
+**El coste es deliberado.** Cualquier edición del SQL obliga a actualizar la
+constante. Para un script que borra un audit trail, eso es exactamente lo que se
+quiere: ningún cambio de lógica ejecutable puede entrar sin aparecer en un diff
+que alguien tiene que aprobar.
+
+MINOR/NIT de esta ronda: el helper de terminación de literales admite ahora
+`EXECUTE '<literal>' USING …` (forma segura: pasa **parámetros**, no puede
+alterar el texto de la sentencia); la tabla de medición de `pg_depend` declara
+ahora su consulta exacta y su salida **completa** de 15 filas, en vez de un
+extracto con un filtro no declarado; el script muestra por fin **la invocación
+autorizada que funciona** (`psql -c "SET …" -f …`, una sola sesión) y explica por
+qué un `psql -c` separado **no** sirve —es otra sesión— y por qué el atajo obvio
+(`ALTER ROLE … SET`) queda rechazado por la guarda de persistencia; y se
+corrigieron un antecedente contradictorio en el comentario de propiedad y la
+mención obsoleta a un chequeo "por archivo" que ya es compartido.
+
+**58 mutantes acumulados, los 58 detectados**, incluidos los siete de esta ronda
+y `LOCK … NOWAIT`.
+
+### Ronda 6 — el supuesto que estaba documentado en vez de impuesto
+
+Dos MAJOR. El primero es el **primer defecto en el SQL desde la ronda 3**, y su
+diagnóstico es incómodo por lo exacto: yo había **documentado** el supuesto de
+aislamiento en un comentario y declarado "fuera de contrato" cualquier otra
+cosa — que es **precisamente el defecto que este archivo dedica 400 líneas a
+eliminar**, reintroducido un párrafo después de cerrarlo para las banderas de
+`psql`.
+
+| # | Hallazgo | Cierre |
+|---|---|---|
+| **M10** | **Aislamiento: documentado, no impuesto.** Bajo `REPEATABLE READ` o `SERIALIZABLE` el snapshot de la transacción se fija en su primera consulta con snapshot — bajo la invocación prescrita, la primera del bloque, **antes** del `LOCK`. Una fila confirmada por otra sesión en esa ventana es **invisible** para el conteo: `n_rows = 0`, rama `ELSE`, se saltan **las tres** guardas de autorización, y un audit trail poblado se destruye con un log que **certifica que no se perdió nada**. Y a diferencia de los cuatro canales de persistencia que sí son inobservables desde SQL, **éste sí lo es**: `current_setting('transaction_isolation')` no requiere privilegio | **Sexta guarda**, y la **primera** del bloque: `NOT IN ('read committed','read uncommitted')` → aborta con prefijo nombrando el nivel. Va primera porque bajo un snapshot fijo **todo** lo que el bloque lee es potencialmente rancio respecto al `LOCK`, no sólo el conteo. `READ UNCOMMITTED` se acepta porque PostgreSQL lo implementa **como** `READ COMMITTED` |
+| **M11** | **La medición de `pg_depend` decía "Complete output (15 rows)" y no lo era.** Se había tomado contra una fixture **reducida** —sin las 4 FK y con un solo índice— y aun así se declaraba completa: el mismo defecto que el archivo descalifica en todas partes | Remedido contra el conjunto **completo** que crea el script forward (11 columnas, PK, 4 FK, 2 CHECK, 2 índices, política RLS, 2 triggers, 2 defaults) = **20 filas**, pegadas verbatim, con el subconteo anterior señalado explícitamente |
+
+MINOR/NIT: tres comentarios citaban un banner con la palabra *"irreversible"*
+que el propio archivo había **eliminado** por inexacta —el DDL es transaccional
+y `ROLLBACK` sí deshace hasta el `COMMIT`—, de modo que la justificación del
+orden de las guardas descansaba sobre texto retirado por falso; el resumen del
+helper de terminación no mencionaba `USING`; el antecedente *"miembro del rol
+dueño"* contradecía el propio párrafo sobre `NOINHERIT` (un miembro `NOINHERIT`
+**es** miembro y aun así falla la prueba `'USAGE'`, correctamente); la redacción
+del snapshot decía "la primera consulta del bloque" cuando es la primera **de la
+transacción**; y la referencia a una "sección 4" apuntaba en realidad al script
+forward — este rollback no tiene secciones numeradas.
+
+**Escenarios nuevos (S20–S24):** `REPEATABLE READ` y `SERIALIZABLE` abortan con
+prefijo y la fila sobrevive; `READ COMMITTED` y `READ UNCOMMITTED` proceden sin
+rechazo falso; y bajo `REPEATABLE READ` la guarda dispara **incluso con la tabla
+ausente**, lo que confirma que corre primero. **40 mutantes acumulados, los 40
+detectados**, incluidos cinco contra la guarda nueva.
+
+### Ronda 7 — una premisa que se resuelve midiendo, no añadiendo guarda
+
+Un MAJOR, y su resolución es instructiva porque **no** consistió en endurecer más.
+
+**El hallazgo.** La guarda de propiedad admite deliberadamente **más** que el
+dueño exacto: `pg_has_role(…, 'USAGE')` también deja pasar a un rol que
+**hereda** los privilegios del dueño — y eso es correcto, porque es el mismo
+predicado que usa `DROP TABLE`. Pero la guarda de `FORCE` concluye de ahí que,
+con `FORCE` apagado, el conteo es fiable, y **esa** conclusión se había medido
+sólo para el dueño exacto. El bypass de RLS del owner y la comprobación de
+propiedad de `DROP` son rutas de código distintas: su coincidencia **no puede
+asumirse**. Si no coincidieran, un miembro del rol dueño pasaría la guarda de
+propiedad, pasaría la de `FORCE`, contaría **0** por la política org-scoped sin
+JWT, y destruiría la tabla bajo el log de *"no audit data lost"* — sin `FORCE`
+encendido en ningún momento.
+
+**La resolución: medirlo.** Sobre PostgreSQL 17.6, `FORCE` apagado, RLS activa,
+política `USING(false)`, una fila presente:
+
+| Rol | `count(*)` |
+|---|---|
+| dueño exacto (`NOBYPASSRLS`) | **1** |
+| miembro `INHERIT` del dueño (`NOBYPASSRLS`) | **1** |
+| `pg_has_role(miembro, dueño, 'USAGE')` | `true` |
+
+El bypass de RLS **sí sigue la membresía**, con el mismo predicado que la guarda.
+Los dos conjuntos **coinciden**, así que ningún llamador puede pasar la guarda de
+propiedad y leer un conteo filtrado por RLS. Un miembro `NOINHERIT` es rechazado
+antes, por la propia guarda de propiedad, y nunca llega al conteo. **No se añadió
+una séptima guarda**: se sustituyó una premisa afirmada por una premisa medida, y
+la medición quedó registrada junto a la de `FORCE`.
+
+**Un error de sintaxis SQL introducido y detectado en el acto.** Al reformular el
+mensaje de la guarda de propiedad escribí `owning role's privileges` **dentro de
+un literal entrecomillado**: el apóstrofe cierra la cadena. La suite offline lo
+detectó de inmediato —ocho aserciones en rojo, porque el desbalance de comillas
+propaga— y quedó corregido a `''`. Verificación posterior: **47 literales en el
+archivo, todos balanceados; los 3 con apóstrofe, correctamente escapados**, y el
+script vuelve a parsear y ejecutar contra un PostgreSQL vivo.
+
+MINOR/NIT: el mensaje de la guarda de propiedad decía *"no es miembro del rol
+dueño"*, que su propio comentario contradice (un miembro `NOINHERIT` **sí** es
+miembro y aun así falla, correctamente) — reformulado a *"no hereda los
+privilegios"* con la salida real (`SET ROLE <owner>`); el listado de `pg_depend`
+se reetiquetó como **transcripción** (nombres elididos, filas plegadas, orden
+impuesto) nombrando la fixture de forma completa que lo produjo; el argumento
+`%` del mensaje de aislamiento quedó fijado hasta
+`, current_setting('transaction_isolation');` —sin eso, cambiarlo por
+`default_transaction_isolation` dejaba la suite verde y producía un rechazo que
+se contradice a sí mismo—; *"todo lo que el bloque lee"* se acotó a *"lee **a
+través de una consulta**"* (las búsquedas de syscache usan el snapshot de
+catálogo, que es más fresco, no más rancio); y la línea de idempotencia de la
+cabecera menciona ahora la precondición de aislamiento.
+
+**50 mutantes acumulados, los 50 detectados.**
+
+### Ronda 8 — una estrechez que resulta ser portante
+
+Un MAJOR, sutil: mi comentario afirmaba que `DROP TABLE` pasa por
+`object_ownercheck → has_privs_of_role()`. Es **incompleto**.
+`RangeVarCallbackForDropRelation` hace una **segunda** comprobación y admite
+también al **dueño del esquema**. La guarda es por tanto más **estrecha** que la
+regla real de `DROP` — cerrada por defecto, sin riesgo inmediato — pero eso
+significa que el comentario afirma algo falso **y**, peor, que la estrechez es
+**portante** sin que nada lo registre: un lector futuro que "corrigiera" la
+guarda para igualarla a la regla documentada reintroduciría el MAJOR de la ronda
+7.
+
+**Medido** en PostgreSQL 17.6 (esquema de `sch_owner`, tabla de `tbl_owner`, RLS
+activa, `FORCE` apagado, política `USING(false)`, una fila):
+
+| Comprobación | Resultado |
+|---|---|
+| `pg_has_role('sch_owner','tbl_owner','USAGE')` | **false** |
+| `SELECT count(*)` como `sch_owner` | **permission denied** |
+| `DROP TABLE` como `sch_owner` | **ejecutado sin error** |
+
+Es decir: **el dueño del esquema puede DESTRUIR la tabla sin poder CONTARLA.**
+Ampliar la guarda lo dejaría llegar al conteo, obtener 0 (o un error de permisos
+sin prefijo), tomar la rama *"table is empty — no audit data lost"* y destruir un
+audit trail poblado — sin `FORCE` encendido en ningún momento. Queda registrado
+en el script con el mismo tratamiento de *"anotado para que no lo 'arreglen'
+luego"* que ya tenía la decisión de retirar la guarda de dependientes, y un
+mutante que la amplía al dueño del esquema ahora se detecta.
+
+MINOR: la afirmación *"aplicado a TODOS los scripts preparados"* era falsa —
+medido, se invocaba desde cuatro `describe` y **no** desde los rollbacks de
+0002/0002b; ahora hay un **barrido de directorio** sobre los seis scripts
+`stella_*`, y el comentario declara que los `grounding_*` pertenecen a otro
+archivo de pruebas y **no** están cubiertos. Y la suite fijaba la estructura por
+completo pero el **registro operativo** sólo en parte: sobrevivía un mutante que
+dejaba todas las guardas armadas e **invertía lo que el log dice** sobre la
+destrucción (*"nada de valor se borra; esta ejecución es totalmente
+reversible"*). Los cuatro mensajes operativos quedan ahora fijados **byte a
+byte**.
+
+NIT: se corrigieron dos afirmaciones sobre internals que el propio archivo
+contradecía —que las rutas de RLS y `DROP` "no pueden asumirse coincidentes"
+(resuelven al mismo predicado; lo que faltaba era la **evidencia**, no el
+argumento) y que los conjuntos "COINCIDEN" (sólo se midió, y sólo hace falta, la
+contención *admitidos ⊆ que evaden RLS*: cualquier rol `rolbypassrls` evade sin
+ser miembro del dueño)—; y la fixture de 20 filas se declara construida **ad
+hoc** y no versionada, con receta para recrearla.
+
+**54 mutantes acumulados, los 54 detectados.**
+
+### Ronda 9 — cierre
+
+**0 BLOCKER, 0 MAJOR.** El revisor declara el SQL entregado listo y, explícitamente,
+**no logra construir ninguna mutación que cambie lo que el script *hace* dejando
+la suite verde**. Verificó además, de forma independiente, que el conjunto de
+llamadores que admite la guarda de propiedad es *idéntico* al predicado de
+`object_ownercheck` de PostgreSQL menos el brazo del esquema, excluido a
+propósito.
+
+Los dos MINOR restantes eran sobre el **registro** y el **harness**, no sobre la
+lógica destructiva, y se corrigieron igualmente:
+
+- **el banner de destrucción era el último texto operativo sin fijar** en el
+  camino destructivo. El skeleton fija el *número* de `RAISE NOTICE`, así que no
+  se podía borrar una línea — pero sí **reemplazar su texto**: convertir *"only a
+  verified restore can, so one must exist"* en *"…though one is rarely needed"*
+  dejaba la suite entera verde. Es la precondición de toda la operación
+  invertida, en el camino de emergencia, en el texto que el operador lee justo
+  cuando decide. Las **13 líneas** del banner quedan fijadas verbatim, y también
+  la **cláusula de remedio** de los seis abortos;
+- **el "barrido de directorio" de la ronda 8 era una lista fija.** Leía el
+  directorio, pero sólo para una comprobación de igualdad de conjuntos; el
+  `it.each` iteraba un array codificado a mano. Un `stella_0004` nuevo habría
+  fallado *sólo* esa igualdad, la reparación natural es añadirlo a **ese** array,
+  y el script habría salido sin barrer mientras el comentario del SQL seguía
+  afirmando cobertura — el MINOR de la ronda 8 reinstalado en forma latente
+  dentro de su propio arreglo. Ahora el `it.each` itera el listado del
+  directorio y la igualdad queda como **tripwire**.
+
+**58 mutantes acumulados, los 58 detectados.**
+
+### Alcance
+
+**Cero escrituras en la base viva** (verificado antes y después: tabla presente,
+**1** decisión, **2** interacciones, **10** triggers append-only, **104**
+policies, `evidence_chunks` ausente, ACL `authenticated: SELECT`). Cero acceso
+remoto. **Rollback NO ejecutado.** Respaldo pre-G3 **no restaurado** y con
+SHA-256 sin cambio (`d46280c4…b436aeb`). Cero reset. Cero G3. Cero
+`grounding_0001`. Cero cambios en `db/schema.ts`, `db/migrations`,
+`stella_0002` o `stella_0002b`. Otros stacks (`uellix-antigravity`, `aforiq`)
+intactos. **Cero ejecución formal de G2.**
+
+**Siguiente paso:** ensayo destructivo controlado del rollback contra el stack
+local desechable — todavía **no** ejecutado.
 
 ## MANUAL MIGRATION 003 DECISION
 

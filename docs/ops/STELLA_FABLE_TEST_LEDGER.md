@@ -590,6 +590,92 @@ FK que fijan (org, proyecto, usuario). No retirables fila por fila. Limpieza
 autorizada: **reset/rebuild del stack local**. **G3 remoto sigue sin
 autorización** — necesita una estrategia no contaminante propia.
 
+### 2026-08-01 · ENDURECIMIENTO ESTRUCTURAL DEL ROLLBACK DE `stella_0003` · worktree `codex/stella-g2-local-rehearsal`
+
+Unidad **previa** al ensayo destructivo. Cierra **RK-04i** y el pendiente remoto
+2 de `docs/ops/LOCAL_STAGING_G2_REHEARSAL.md`. **Cero escrituras en la base
+viva, cero acceso remoto, rollback NO ejecutado.** Detalle completo en
+`docs/ops/LOCAL_STAGING_G2_REHEARSAL.md`.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | 2 archivos, **237 tests** (antes 188 → **+49**) |
+| `pnpm test:unit` | VERDE | **135 archivos, 2544 tests** (antes 2495 → +49, los mismos) |
+| `pnpm typecheck` | VERDE | exit 0, 0 errores |
+| `pnpm lint` | VERDE | exit 0, **0 errores** (51 warnings preexistentes, sin cambio) |
+| `pnpm test:rls` | **NO EJECUTADA** | Es G3 |
+| Dry-run del script real, contenedor desechable PG 17.6 | VERDE | **24/24 escenarios** con fixture realista (tabla, 2 CHECK, índice, RLS + política, 2 triggers); `sha256` verificado dentro del contenedor |
+| Mutation testing de las aserciones | VERDE | **58/58 mutantes detectados**; archivo restaurado byte a byte tras cada uno |
+| Revisión independiente (agente de solo lectura), **9 rondas, cerrada** | VERDE | R1: **3 MAJOR**; R2: **2 MAJOR**; R3: **1 BLOCKER + 2 MAJOR**; R4: **2 MAJOR**; R5: **2 MAJOR**; R6: **2 MAJOR** (el supuesto de aislamiento estaba documentado, no impuesto); R7: **1 MAJOR** (premisa del conjunto de llamadores — resuelto midiendo, no añadiendo guarda); R8: **1 MAJOR** (`DROP TABLE` admite además al dueño del ESQUEMA; la guarda es deliberadamente más estrecha y esa estrechez es portante); **R9: 0 BLOCKER, 0 MAJOR** — el revisor declara el SQL entregado listo y no logra construir ninguna mutación que cambie el comportamiento dejando la suite verde. Los 2 MINOR de R9 (banner sin fijar, "barrido" que era una lista fija) también corregidos |
+
+**Defecto.** Guarda (`DO $$ … $$;`) y `DROP TABLE IF EXISTS` eran **sentencias
+top-level separadas**. Sin `-v ON_ERROR_STOP=1`, `psql` reporta el error de la
+guarda y **envía la siguiente sentencia**; sin `-1`, no hay transacción que
+revierta. La barrera era una convención de invocación, y `G2_PACKAGE.md` admite
+tres vías de aplicación de las cuales **sólo `psql`** acepta esas banderas.
+
+**Corrección.** Guarda y `DROP` en **un único bloque `DO`**: un
+`RAISE EXCEPTION` termina el bloque y ninguna sentencia posterior *de ese
+bloque* corre — semántica del **servidor**, no del **cliente**. El `DROP` se
+emite como `EXECUTE '<literal fijo>'` (cero concatenación, `format()`,
+`quote_ident()` o variables), sin `IF EXISTS` porque la existencia ya se probó
+en el mismo bloque.
+
+**Dry-run.** Contenedor **nuevo, `--network none`, sin puertos publicados**,
+imagen `supabase/postgres:17.6.1.143` (PostgreSQL **17.6**, mismo motor que el
+stack del ensayo), destruido al terminar. Los escenarios críticos corrieron con
+**`psql` desnudo (sin `-1`, sin `ON_ERROR_STOP`)**: tabla ausente → no-op;
+0 filas → `DROP` con `NOTICE` de rollback técnico y **sin** `WARNING`; 1 fila
+sin autorización → aborta y **tabla, fila y triggers sobreviven**; **11/11**
+valores de autorización incorrectos rechazados; `'true'` exacta → `DROP` con
+`WARNING` y conteo; segunda ejecución → no-op. Con `-1 -v ON_ERROR_STOP=1` el
+camino no autorizado sale **3** (defensa en profundidad intacta).
+
+**Par regresión/cierre (S8/S9).** Mismo motor, misma invocación desnuda, misma
+fila: la forma **anterior** lanzó la excepción de la guarda **y destruyó la
+tabla igualmente**; la forma **nueva** dejó tabla y fila intactas.
+
+**Revisión independiente — 3 MAJOR cerrados (S10–S13).**
+**M1:** `count(*)` está sujeto a RLS; con `FORCE ROW LEVEL SECURITY` un owner
+sin `rolbypassrls` contaba **0** sobre una tabla poblada (reproducido: `FORCE`
+off → 1, on → 0) y el script habría anunciado *"no audit data lost"* mientras la
+destruía → guarda de `relforcerowsecurity` antes del conteo (**S10**).
+**M2:** un `ALTER DATABASE/ROLE … SET` persistido pre-autorizaba toda sesión
+futura — el mismo defecto reubicado a la capa de GUC. La corrección propuesta
+por el revisor (`pg_settings.source`) es **inaplicable**: los GUC placeholder no
+aparecen en `pg_settings` (0 filas); implementada sobre `pg_db_role_setting`
+(**S11**).
+**M3:** las pruebas no prohibían un `EXCEPTION WHEN`, que traga el `RAISE` de la
+guarda dejando pasar el `DROP` con todo lo demás en verde → prohibido, más
+exactamente un `BEGIN` y un `RETURN`.
+MINOR/NIT: aviso de irreversibilidad corregido (el DDL es transaccional: bajo
+`-1`, `ROLLBACK` deshace hasta el `COMMIT`), `client_min_messages` fijado
+(**S12**), `LOCK TABLE … ACCESS EXCLUSIVE` antes del conteo (TOCTOU), banner de
+destrucción sólo en el camino con filas (**S13**), helper de comentarios que
+recorta también los de final de línea, y autorización fijada **byte a byte** en
+vez de por enumeración de rechazos.
+
+**Cambio colateral.** El banner de `RAISE NOTICE` pasó de guiones a `=`: un
+`--` **dentro de un literal** hacía que `stripCommentsAndStrings` truncara el
+`NOTICE`, dejara una comilla desbalanceada y leyera el contenido de las cadenas
+como código — la aserción "no hay `DROP TABLE` ejecutable" era infalsificable.
+
+**Cobertura nueva (19 tests).** Ausencia de `DROP TABLE` top-level; `DROP`
+dentro del mismo `DO` y **después** del `RAISE EXCEPTION`; `EXECUTE` con literal
+fijo; exactitud de `stella.confirm_destroy_decisions` con rechazo enumerado;
+ausencia de `::boolean`/`lower()`/`trim()`; `missing_ok = true`; los cuatro
+mensajes distinguibles; aviso de audit trail irrecuperable; `lock_timeout`;
+`search_path`; cero `GRANT`/`ALTER DEFAULT PRIVILEGES`/mención ejecutable a
+0002/0002b/`evidence_chunks`; y ausencia de control de transacción propio.
+
+**Alcance.** Base viva verificada idéntica antes y después: **1** decisión,
+**2** interacciones, **10** triggers append-only, **104** policies,
+`evidence_chunks` ausente. Respaldo pre-G3 **no restaurado**, SHA-256 sin cambio
+(`d46280c4…b436aeb`). Cero reset, cero G3, cero `grounding_0001`, cero cambios
+en `db/schema.ts` / `db/migrations` / `stella_0002` / `stella_0002b`. Otros
+stacks intactos. **Cero ejecución formal de G2.** Siguiente paso: **ensayo
+destructivo controlado**, todavía sin ejecutar.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

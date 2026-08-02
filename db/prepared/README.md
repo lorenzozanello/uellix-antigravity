@@ -165,6 +165,117 @@ DEFAULT), así que el tipo es indiferente para el código.
   `STELLA_DECISIONS_PERSISTENCE_ENABLED` (default `false`) hasta que este
   script pase G2. Invariante de privacidad: `previous_value_hash` guarda un
   SHA-256, nunca el texto previo en crudo.
+- **`stella_0003_rollback.sql` — endurecimiento estructural (2026-08-01).**
+  **Defecto anterior:** la guarda de autorización era un bloque `DO $$ … $$;` y
+  el `DROP TABLE IF EXISTS` era una **sentencia top-level posterior e
+  independiente**. Entre una y otra no había más barrera que dos banderas de
+  línea de comandos:
+  - sin `-v ON_ERROR_STOP=1`, `psql` **reporta** el error de la guarda y
+    **envía la siguiente sentencia** — el `DROP`;
+  - sin `-1`, no hay transacción envolvente que revierta nada.
+
+  Esas banderas son una **convención de invocación**, no una propiedad del
+  archivo. Ningún otro consumidor de un `.sql` las aporta por defecto: el SQL
+  Editor de Supabase, `supabase db execute`, un cliente gráfico o un pegado en
+  una sesión `psql` abierta. La cabecera las **exigía**; nada las **imponía**.
+
+  **Corrección:** todo ocurre ahora en **un único bloque `DO`** — comprobación
+  de existencia, conteo de filas, `NOTICE` al operador, prueba de autorización y
+  el `DROP` mismo. En PL/pgSQL un `RAISE EXCEPTION` termina el bloque de
+  inmediato y ninguna sentencia posterior *de ese bloque* se ejecuta: es
+  semántica del **servidor** dentro de una sola sentencia, no del **cliente**
+  entre dos. `-1 -v ON_ERROR_STOP=1` siguen **recomendadas** (atomicidad y
+  código de salida distinto de 0 para un gate que lo lee), pero ya **no son la
+  única barrera**.
+
+  El `DROP` se emite como `EXECUTE '<literal fijo>'` — la misma construcción que
+  `stella_0002b` usa para su `REVOKE MAINTAIN` version-aware. **Cero
+  composición:** sin `||`, sin `format()`, sin `quote_ident()`, sin variables.
+  Lo único que decide el código circundante es **si** ejecutarlo, nunca **qué**
+  dice. Va sin `IF EXISTS` a propósito: la existencia ya quedó probada unas
+  líneas antes, en el mismo bloque.
+
+  Comportamiento fijado por `tests/prepared-stella-sql.test.ts` (bloques *review
+  round 4*): tabla ausente → `NOTICE` y no-op; tabla vacía → rollback técnico;
+  tabla con filas sin autorización → aborta y la tabla **sobrevive**; sólo la
+  cadena **exacta** `'true'` autoriza (`yes`, `y`, `1`, `TRUE`, `True`, `on`,
+  `t`, `' true '` son todas rechazadas); segunda ejecución → no-op.
+
+  **Tres MAJOR de la revisión independiente, cerrados en la misma unidad:**
+  - **M1 — el conteo era indigno de confianza bajo `FORCE ROW LEVEL SECURITY`.**
+    `count(*)` está sujeto a RLS; `FORCE` quita el bypass del owner, así que un
+    propietario sin `rolbypassrls` contaría **0** sobre una tabla poblada y el
+    script habría anunciado *"no audit data lost"* mientras la destruía.
+    Reproducido en PG 17.6. Añadida guarda de `relforcerowsecurity` **antes**
+    del conteo, simétrica con §4b/§7 del forward.
+  - **M2 — la autorización podía ser del entorno, no de la corrida.** Un
+    `ALTER DATABASE/ROLE … SET` persistido pre-autoriza toda sesión futura: el
+    mismo defecto, reubicado de las banderas de `psql` a la capa de GUC. **Ojo:**
+    `pg_settings` **no** expone GUCs placeholder personalizados (0 filas), así
+    que la provenance se lee de **`pg_db_role_setting`**. Límite honesto
+    declarado en el archivo: SQL puede exigir que sea de sesión, no puede
+    distinguir a un humano de un script — eso es precondición del gate.
+  - **M3 — las pruebas no prohibían un `EXCEPTION WHEN`.** Un handler traga el
+    `RAISE` de la guarda y deja pasar el `DROP` con todas las demás aserciones
+    en verde. Prohibido explícitamente, más exactamente un `BEGIN` y un `RETURN`.
+
+  Además: `LOCK TABLE … ACCESS EXCLUSIVE` antes del conteo (cierra el TOCTOU con
+  un `INSERT` concurrente), `SET client_min_messages = notice` (el camino
+  destructivo no puede correr en silencio) y el aviso de irreversibilidad
+  reformulado — el DDL de PostgreSQL es transaccional, así que bajo `-1` un
+  `ROLLBACK` deshace todo **hasta el `COMMIT`**; decir "irreversible" antes de
+  eso mandaba al operador a un respaldo que aún no necesitaba.
+
+  **Ronda 3 — un BLOCKER, y una guarda que se retira en vez de arreglarse.** El
+  pre-chequeo de objetos dependientes que se había añadido abortaba en **toda**
+  ejecución contra la tabla real: `CreatePolicy()` y las expresiones `CHECK`
+  registran filas `DEPENDENCY_NORMAL` por columna referenciada, sin degradación
+  de la auto-referencia, así que un filtro `deptype='n'` clasificaba la **propia
+  política y el propio `CHECK` de la tabla** como dependientes ajenos. La
+  fixture mínima de dry-run —sólo tabla y triggers— era la causa de que no se
+  viera. **Retirada, no arreglada por tercera vez:** su valor era exclusivamente
+  el prefijo del mensaje, no impedía ninguna destrucción, y le quedaba un hueco
+  conocido (dependientes vía el tipo compuesto de la tabla, registrados contra
+  `pg_type`). Re-derivar `findDependentObjects()` de PostgreSQL en SQL no es
+  tarea de este script: **una guarda sólo a veces correcta es peor que ninguna,
+  porque invita a creerle.** Quedan **cinco** guardas, y `G2_PACKAGE.md` registra
+  que un fallo por objeto dependiente sale con el mensaje nativo de PostgreSQL y
+  no destruye nada.
+
+  También en esa ronda: el filtro de persistencia pasó a **`session_user`**
+  —PostgreSQL aplica `pg_db_role_setting` por rol de **login**, no por
+  `current_user`, y la variante anterior fallaba **abierto** justo cuando el
+  operador reejecuta con `SET ROLE`—, y la **región de decisión** quedó fijada
+  como span verbatim, tras descubrirse que `IF n_rows > 0` → `IF n_rows >
+  1000000` bastaba para que una tabla poblada y **sin autorizar** se destruyera
+  con la suite entera en verde.
+
+  **Rondas 4–6 — seis MAJOR más, y un cambio de método.** Las rondas 4 y 5
+  fueron **enteramente pruebas**: la lista de sentencias top-level no estaba
+  acotada (una línea añadida antes del `DO` hacía que toda ejecución se
+  autoautorizara), y las aserciones de fragmento seguían dejando escapes —
+  intercambiar los cuerpos de las ramas, envolver una guarda en `IF false THEN`,
+  insertar `PERFORM set_config(...)` **dentro** del bloque. Se cerró fijando el
+  **cuerpo ejecutable entero** del bloque `DO` byte a byte: cualquier sentencia
+  insertada, eliminada, reordenada o re-anidada falla. Editar el SQL obliga a
+  actualizar esa constante — deliberado, para que ningún cambio de lógica entre
+  sin aparecer en un diff que alguien apruebe.
+
+  La ronda 6 encontró el **primer defecto de SQL desde la ronda 3**: el supuesto
+  de aislamiento estaba **documentado, no impuesto**. Bajo `REPEATABLE READ` el
+  snapshot se fija antes del `LOCK`, el conteo puede no ver filas confirmadas en
+  esa ventana, y el script destruiría un audit trail poblado bajo un log que
+  certifica que no se perdió nada. A diferencia de los canales de persistencia
+  inobservables, **éste sí se puede consultar** — de ahí una **sexta guarda**,
+  la primera del bloque. Regla que queda: *un supuesto declarado en un
+  comentario no es una guarda, y la prueba de si debería serlo es si SQL puede
+  observarlo.*
+
+  Verificado en **24 escenarios** sobre un contenedor PostgreSQL 17.6 desechable
+  con fixture realista (tabla, ambos `CHECK`, ambos índices, RLS con la política
+  org-scoped y los dos triggers), los críticos con `psql` **desnudo**, incluido
+  el par regresión/cierre; y **40 mutantes del script, los 40 detectados**.
+  **Este rollback sigue SIN ejecutarse contra ninguna base.**
 - **`grounding_0001_evidence_chunks.sql`**: se aplica **por separado** de los
   dos anteriores y **nunca antes de G5 P3**. Contiene solo datos derivados y
   regenerables, por lo que su rollback no pierde fuente de verdad. La extensión

@@ -279,9 +279,100 @@ Solo después de staging verde:
 
 ## Rollback
 
+### `stella_0003_rollback.sql` es destructivo, y se protege solo
+
+Es el único script del paquete que **borra un audit trail**. `DROP TABLE`
+elimina la tabla **y sus dos triggers append-only en la misma sentencia**, así
+que ninguna protección de base de datos puede detenerlo: los triggers prohíben
+`UPDATE`/`DELETE`/`TRUNCATE`, no `DROP`.
+
+**Autorización.** Con la tabla vacía el rollback es técnico y corre solo. Con
+**una o más filas** aborta salvo que el operador declare, con la cadena
+**exacta** `'true'`:
+
+```bash
+psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 \
+  -c "SET stella.confirm_destroy_decisions='true'" \
+  -f db/prepared/stella_0003_rollback.sql
+```
+
+`yes`, `y`, `1`, `TRUE`, `True`, `on`, `t` y cualquier variante con espacios se
+**rechazan**: borrar un audit trail no debe depender de la coerción booleana de
+un cliente. Quién autorizó, cuándo y por qué va en el registro del gate.
+**Exportar las filas antes** (`SELECT * FROM public.stella_suggestion_decisions
+ORDER BY decided_at;`).
+
+**La autorización debe ser de ESTA corrida.** El script aborta si detecta el
+ajuste **persistido** vía `ALTER DATABASE … SET` o `ALTER ROLE … SET` (lo lee de
+`pg_db_role_setting`): una autorización permanente pre-aprueba toda sesión
+futura y no deja ningún acto humano por corrida que registrar. Si aparece ese
+error, hacer `ALTER DATABASE … RESET stella.confirm_destroy_decisions` y
+autorizar con un `SET` de sesión.
+
+- [ ] **Precondición humana:** el `SET` de sesión lo teclea el operador en la
+      sesión que ejecuta el rollback. SQL puede exigir que la autorización sea
+      de sesión; **no** puede distinguir a un operador de un script envolvente.
+      Ese último tramo es responsabilidad del gate, igual que la correspondencia
+      entre `DATABASE_URL` y `stella.writer_role`.
+
+**Precondiciones estructurales** (el script aborta, con mensaje prefijado, si
+alguna falla):
+
+- `transaction_isolation` en `READ COMMITTED` (o `READ UNCOMMITTED`, que
+  PostgreSQL implementa igual). Bajo `REPEATABLE READ` o `SERIALIZABLE` el
+  snapshot se fija **antes** del `LOCK`, el conteo puede no ver filas
+  confirmadas en esa ventana, y el script clasificaría una tabla poblada como
+  vacía. Si un rol o base lleva `default_transaction_isolation` distinto,
+  limpiarlo o usar `SET TRANSACTION ISOLATION LEVEL READ COMMITTED`;
+- ser **dueño** de la tabla, o tener sus privilegios **heredados** — si no, no
+  puede ni bloquearla ni borrarla;
+- `FORCE ROW LEVEL SECURITY` **apagado** (el estado que `stella_0003` verifica),
+  porque `count(*)` está sujeto a RLS: un rol propietario sin `rolbypassrls`
+  contaría 0 sobre una tabla poblada y el rollback la trataría como vacía;
+- poder leer `pg_catalog.pg_db_role_setting`, el único catálogo que revela una
+  autorización persistida. Si no se puede leer, el script **rehúsa** en vez de
+  saltarse la comprobación.
+
+**Un aborto que NO llevará el prefijo.** Si alguna vez existe una vista o una FK
+entrante hacia esta tabla, el `DROP` falla con el mensaje nativo de PostgreSQL
+(*"cannot drop table … because other objects depend on it"*). Es **inofensivo**:
+nada se destruye, la transacción aborta y la tabla queda intacta. No hay
+pre-chequeo para convertirlo en un mensaje prefijado, y eso es **deliberado** —
+ver `db/prepared/stella_0003_rollback.sql`, sección *NO DEPENDENT-OBJECT
+PRE-CHECK*: dos intentos de re-derivar la resolución de dependencias de
+PostgreSQL en SQL produjeron dos defectos reales, el segundo de los cuales
+habría abortado **todas** las ejecuciones. Resolver la dependencia por su propio
+gate y reejecutar. (2) Un rol sin `USAGE` sobre el esquema `public` falla dentro
+de `to_regclass` con `permission denied for schema public`, antes de leer o
+bloquear nada. Ambos son **inofensivos**: cierran en falso y no destruyen.
+
+### La protección es estructural, no depende de las banderas de `psql`
+
+**Defecto corregido el 2026-08-01.** La guarda era un `DO $$ … $$;` y el
+`DROP TABLE IF EXISTS` una sentencia top-level **posterior e independiente**.
+Sin `-v ON_ERROR_STOP=1`, `psql` reporta el error de la guarda y **envía la
+siguiente sentencia** — el `DROP`; sin `-1`, tampoco hay transacción que
+revierta. Demostrado empíricamente sobre PostgreSQL 17.6 en un contenedor
+desechable: con `psql` desnudo, la forma anterior **destruyó la tabla y su fila
+pese a que la guarda lanzó la excepción**.
+
+Eso importa aquí más que en otros scripts porque este paquete admite tres vías
+de aplicación y **sólo la primera acepta esas banderas**: `psql`,
+`supabase db execute --file` y el SQL Editor de Supabase (ver *Aplicación*).
+
+Hoy guarda y `DROP` viven en **un único bloque `DO`**: un `RAISE EXCEPTION`
+termina el bloque y ninguna sentencia posterior *de ese bloque* se ejecuta —
+semántica del servidor dentro de una sola sentencia. `-1 -v ON_ERROR_STOP=1`
+siguen **recomendadas** (atomicidad y exit code no-cero para un gate que lo
+lee), pero ya **no son la única barrera**.
+
+**El rollback de `stella_0003` NO ha sido ejecutado contra ninguna base.**
+
+### Orden
+
 1. Ejecutar en orden inverso:
    `db/prepared/stella_0003_rollback.sql` (¡exportar filas antes si hubo
-   decisiones registradas! — ver comentario en el script), luego
+   decisiones registradas! — ver arriba y el comentario en el script), luego
    `db/prepared/stella_0002_rollback.sql`.
 2. Tener presente que el rollback de `stella_0002` restaura un estado
    **bug-compatible** (grants CRUD de `0033:50` sobre una tabla documentada
