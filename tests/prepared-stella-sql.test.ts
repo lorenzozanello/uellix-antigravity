@@ -1913,6 +1913,124 @@ describe('review round 4 — stella_0003 rollback: guard and DROP are one unit',
   })
 })
 
+// -----------------------------------------------------------------------------
+// MIN-1 CLOSURE (reaudit 2026-08-02) — the six abort messages, pinned end to end
+// -----------------------------------------------------------------------------
+// The GUARDS regexes above (review round 4) pin each guard's CONDITION plus a
+// short PREFIX of its message — enough to prove the guard is armed, but not
+// enough to prove the message's MIDDLE stayed intact. A mutation that removes
+// a middle clause, inverts its meaning, swaps the remedy, or exchanges two
+// messages wholesale passes every fragment assertion above unchanged, because
+// none of them read past the point each fragment happens to stop.
+//
+// This block closes that gap by extracting the full literal text of each of
+// the six `RAISE EXCEPTION 'stella_0003_rollback aborted: ...'` messages —
+// decoding the SQL '' escape the same way stripCommentsAndStrings does — and
+// comparing each one, in its fixed position, against a canonical constant
+// with a semantic label. Exact equality (not `.includes()` / `.toMatch()`) is
+// the point: a partial match would still pass if the middle were deleted or
+// reordered, which is exactly the class MIN-1 flags.
+describe('MIN-1 closure — the six abort messages, pinned end to end', () => {
+  const raw = read('stella_0003_rollback.sql')
+
+  /**
+   * Extract every `RAISE EXCEPTION '...'` string literal from inside the DO
+   * block, in source order, with the SQL `''` escape decoded to `'`.
+   *
+   * Comments are stripped FIRST via stripAllComments — the same helper every
+   * other test in this describe file uses — so the header's own prose
+   * example (`-- DO $$ ... RAISE EXCEPTION ... $$;`, line 84) can never be
+   * mistaken for an executable RAISE EXCEPTION: it lives entirely behind a
+   * `--` and stripAllComments removes the whole line before the DO $$ ... $$
+   * block is even located.
+   */
+  function extractAbortMessages(sql: string): string[] {
+    const doBlock = /DO \$\$([\s\S]*?)\$\$;/.exec(stripAllComments(sql))
+    expect(doBlock, 'no DO $$ ... $$ block found').not.toBeNull()
+    const body = doBlock![1]
+    // Same escape-aware string pattern used elsewhere in this file
+    // (stripCommentsAndStrings, the EXECUTABLE_SKELETON literal-blanking):
+    // '' inside the literal is a doubled single quote, not a close-then-open.
+    const literal = /RAISE EXCEPTION '((?:[^']|'')*)'/g
+    const messages: string[] = []
+    let m: RegExpExecArray | null
+    while ((m = literal.exec(body))) {
+      messages.push(m[1].replace(/''/g, "'"))
+    }
+    return messages
+  }
+
+  // One canonical, COMPLETE text per guard — prefix through final punctuation
+  // — labelled semantically and kept in the same order the guards appear in
+  // the file. A failing label says which guard's wording broke, not just
+  // that some string somewhere in the file changed.
+  const CANONICAL_MESSAGES: ReadonlyArray<readonly [string, string]> = [
+    [
+      'isolationPrecondition',
+      "stella_0003_rollback aborted: transaction_isolation is %. This script's row count is only trustworthy under READ COMMITTED, where the count taken after the ACCESS EXCLUSIVE lock sees a fresh snapshot; under REPEATABLE READ or SERIALIZABLE it could read a pre-lock snapshot, count 0 on a populated table, and destroy the audit trail while reporting that nothing was lost. Re-run with SET TRANSACTION ISOLATION LEVEL READ COMMITTED, or clear default_transaction_isolation for this role/database",
+    ],
+    [
+      'ownershipPrecondition',
+      "stella_0003_rollback aborted: role % cannot drop public.stella_suggestion_decisions — either it does not own the table and does not inherit the owning role's privileges (a NOINHERIT member must SET ROLE <owner> first), or the table was dropped by another session since this script started. Re-run as the role that owns the table (the same role DATABASE_URL connects as, see stella_0003 §4b); if it is already gone, re-running is a clean no-op",
+    ],
+    [
+      'forceRowLevelSecurity',
+      "stella_0003_rollback aborted: FORCE ROW LEVEL SECURITY is ON for public.stella_suggestion_decisions. count(*) is subject to RLS, so this script cannot tell an empty table from one whose rows are merely invisible to this role — and would classify a populated audit trail as empty. This refusal is UNCONDITIONAL: it does not depend on who you are, so re-running as a BYPASSRLS role will not clear it. Turn FORCE off — the state stella_0003 verifies and the only route past this guard",
+    ],
+    [
+      'destructionNotAuthorised',
+      "stella_0003_rollback aborted: the table holds % row(s) and destruction was NOT authorised. Export them first, then re-run with: SET stella.confirm_destroy_decisions = 'true'; Record who authorised it and why in the gate log",
+    ],
+    [
+      'provenanceCatalogUnreadable',
+      "stella_0003_rollback aborted: cannot verify that the authorisation belongs to THIS run — role % has no SELECT on pg_catalog.pg_db_role_setting, the only catalog that records a persisted ALTER DATABASE/ROLE setting. Re-run as a role that can read it, or GRANT SELECT ON pg_catalog.pg_db_role_setting TO %, or confirm manually that no standing authorisation exists and record that confirmation in the gate log",
+    ],
+    [
+      'authorisationPersisted',
+      'stella_0003_rollback aborted: stella.confirm_destroy_decisions is PERSISTED (%), not set for this run. A standing authorisation pre-approves every future session and leaves no per-run human act to record. Remove it (ALTER DATABASE/ROLE … RESET stella.confirm_destroy_decisions), then authorise with a session SET in the session that performs the rollback',
+    ],
+  ] as const
+
+  // Computed once, at describe-collection time — pure string parsing, no I/O
+  // beyond the read() above — so every `it` below checks the same extraction.
+  const messages = extractAbortMessages(raw)
+
+  it('finds exactly six abort messages inside the DO block', () => {
+    // Redundant with 'has exactly those six guards ...' above by design: that
+    // test counts `RAISE EXCEPTION` occurrences; this one counts successfully
+    // PARSED string literals following them. A RAISE EXCEPTION whose literal
+    // could not be parsed (e.g. a stray unescaped quote) would pass the count
+    // there and fail here.
+    expect(messages).toHaveLength(CANONICAL_MESSAGES.length)
+  })
+
+  it.each(CANONICAL_MESSAGES.map((entry, index) => [index, ...entry] as const))(
+    'message #%i (%s) is pinned COMPLETELY: prefix, explanation, context, remedy and punctuation',
+    (index, label, expectedText) => {
+      // Exact equality, not toMatch/toContain: a truncated, reordered or
+      // partially-substituted message must fail here even though a shorter
+      // substring of it would still be present.
+      expect(messages[index], `message at index ${index} (${label})`).toBe(expectedText)
+    },
+  )
+
+  it('has six DISTINCT messages — no guard silently duplicates another', () => {
+    // Catches a mutant that overwrites one guard's message with a copy of a
+    // different guard's message (still six RAISE EXCEPTIONs, still six
+    // parseable literals, but two identical) — which the per-index equality
+    // check above already rejects too, since the copy cannot match BOTH
+    // canonical texts at once, but this makes the invariant explicit and
+    // independent of the canonical constants.
+    expect(new Set(messages).size).toBe(messages.length)
+  })
+
+  it('every message keeps the stella_0003_rollback aborted: prefix', () => {
+    for (const [index, message] of messages.entries()) {
+      expect(message.startsWith('stella_0003_rollback aborted: '), `message ${index}`).toBe(true)
+    }
+  })
+})
+
 describe('review round 4 — destruction authorization is byte-exact', () => {
   const raw = read('stella_0003_rollback.sql')
 

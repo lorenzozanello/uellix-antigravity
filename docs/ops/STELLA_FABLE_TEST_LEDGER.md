@@ -676,6 +676,61 @@ en `db/schema.ts` / `db/migrations` / `stella_0002` / `stella_0002b`. Otros
 stacks intactos. **Cero ejecución formal de G2.** Siguiente paso: **ensayo
 destructivo controlado**, todavía sin ejecutar.
 
+### 2026-08-02 · CIERRE DE MINOR DE LA REAUDITORÍA (MIN-1, MIN-2) · worktree `codex/stella-g2-local-rehearsal`
+
+Sigue a `STELLA_0003_ROLLBACK_REAUDIT_VERIFIED_READY_FOR_CONTROLLED_EXECUTION`
+(0 BLOCKER, 0 MAJOR, 2 MINOR). Cierra ambos MINOR **sin tocar la lógica
+ejecutable** de `stella_0003_rollback.sql` — SHA-256 idéntico antes y después
+(`e9498d02…5008bfb4c12e4b`). **Rollback vivo NO ejecutado.**
+
+**MIN-1 — mensajes de aborto no fijados extremo a extremo.** Las aserciones de
+la ronda 4 (`GUARDS`, arriba) pinnean la condición de cada guarda más un
+prefijo del mensaje; el tramo medio (explicación, contexto, remedio) no
+quedaba comparado íntegro, así que una mutación ahí pasaba en verde.
+Añadido `describe('MIN-1 closure — the six abort messages, pinned end to
+end', ...)` en `tests/prepared-stella-sql.test.ts`: extrae los seis literales
+`RAISE EXCEPTION` del bloque `DO` (decodificando el escape `''`, con
+comentarios ya retirados por `stripAllComments` para no confundir la prosa
+del encabezado con SQL ejecutable) y los compara por **igualdad exacta**
+contra seis constantes canónicas etiquetadas semánticamente
+(`isolationPrecondition`, `ownershipPrecondition`, `forceRowLevelSecurity`,
+`destructionNotAuthorised`, `provenanceCatalogUnreadable`,
+`authorisationPersisted`), más comprobación de unicidad (6 mensajes
+distintos) y de prefijo común. 9 tests nuevos.
+
+**MIN-2 — README con conteo de mutantes desactualizado.** `db/prepared/README.md`
+seguía diciendo **40/40** tras la ronda de endurecimiento estructural del
+2026-08-01, cuyo resultado final verificado fue **58/58**. Corregido, con
+contexto añadido: los 58 son mutantes **destructivos y estructurales**
+(condiciones, guardas degradadas, ramas intercambiadas, aislamiento,
+autorización), pertenecen al endurecimiento **previo a la ejecución**, no
+implican cobertura universal de toda mutación posible, y la clase adicional
+que propuso esta reauditoría (mutaciones sólo de mensajes/comentarios, no
+destructivas) queda cerrada aparte, sin alterar esa cifra.
+
+**Mutation check focalizado (2026-08-02).** 10 mutantes sobre los seis
+mensajes (tramo medio eliminado, significado invertido, remedio cambiado,
+prefijo cambiado, referencias a aislamiento/FORCE RLS/autorización
+eliminadas, mensaje de propiedad cambiado, dos mensajes intercambiados, un
+mensaje duplicado) — **10/10 detectados**. Archivo restaurado byte a byte
+(SHA-256 verificado) tras cada uno.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | VERDE | 2 archivos, **246 tests** (antes 237 → **+9**) |
+| `pnpm test:unit` | VERDE | **135 archivos, 2553 tests** (antes 2544 → +9, los mismos) |
+| `pnpm typecheck` | VERDE | exit 0, 0 errores |
+| `pnpm lint` | VERDE | exit 0, **0 errores** (51 warnings preexistentes, sin cambio) |
+| `pnpm test:rls` | **NO EJECUTADA** | Es G3 |
+
+**Alcance.** Diff limitado a `tests/prepared-stella-sql.test.ts` y
+`db/prepared/README.md`. Cero cambios en `stella_0003_rollback.sql`,
+`db/schema.ts`, `db/migrations`. Verificación de estado vivo (solo `SELECT`,
+contra el stack local `uellix-stella-g2-local-rehearsal`, `127.0.0.1:56322`,
+no remoto): tabla `stella_suggestion_decisions` presente, **1** decisión,
+**2** interacciones — sin cambio. Respaldo pre-G3 no tocado. Cero reset, cero
+G3, cero acceso remoto, cero push/PR.
+
 ### Omitidas deliberadamente (baseline)
 
 | Comando | Motivo |

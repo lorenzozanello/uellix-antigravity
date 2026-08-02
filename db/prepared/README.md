@@ -274,7 +274,21 @@ DEFAULT), así que el tipo es indiferente para el código.
   Verificado en **24 escenarios** sobre un contenedor PostgreSQL 17.6 desechable
   con fixture realista (tabla, ambos `CHECK`, ambos índices, RLS con la política
   org-scoped y los dos triggers), los críticos con `psql` **desnudo**, incluido
-  el par regresión/cierre; y **40 mutantes del script, los 40 detectados**.
+  el par regresión/cierre; y **58 mutantes destructivos y estructurales del
+  script, los 58 detectados** (condiciones invertidas o eliminadas, guardas
+  degradadas a `NOTICE`/`WARNING`, ramas intercambiadas, ausencia de
+  aislamiento, autorización vacua, `EXCEPTION WHEN` insertado, y las demás
+  clases descritas en las rondas 2–6 de arriba). Esta cifra pertenece al
+  endurecimiento previo a la primera ejecución y **no implica cobertura
+  universal de toda mutación posible** — es la evidencia de que el conjunto de
+  mutaciones intentado, hasta ahora, fue detectado en su totalidad. La
+  reauditoría independiente posterior (2026-08-02) propuso una clase
+  adicional, no destructiva: mutaciones **sólo de los seis mensajes de
+  aborto** (tramos medios eliminados o invertidos, remedio cambiado, mensajes
+  intercambiados o duplicados) — cerrada aparte por
+  `describe('MIN-1 closure — the six abort messages, pinned end to end', ...)`
+  en `tests/prepared-stella-sql.test.ts`, sin tocar la lógica ejecutable ni
+  esta cifra de 58/58.
   **Este rollback sigue SIN ejecutarse contra ninguna base.**
 - **`grounding_0001_evidence_chunks.sql`**: se aplica **por separado** de los
   dos anteriores y **nunca antes de G5 P3**. Contiene solo datos derivados y
