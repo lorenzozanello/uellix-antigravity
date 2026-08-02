@@ -115,9 +115,18 @@ heredado, RUN 2 sobre un volumen creado desde cero minutos antes.
 
 | Riesgo | Estado |
 |---|---|
-| `db:seed:proxies`, `db:seed:taxonomies` y `test:integration` escriben en la BD remota por defecto (sin guarda de host) | **abierto** — evitados manualmente en RUN 1 y RUN 2; la mitigación sigue siendo procedimental, no técnica |
-| `db/client.ts` lee `DATABASE_URL` sin guarda de host | **abierto** — depende de que `.env.local` de este worktree apunte a `56322` |
+| `db:seed:proxies`, `db:seed:taxonomies` y `test:integration` escriben en la BD remota por defecto (sin guarda de host) | **cerrado 2026-08-02** — mitigación ahora **técnica y fail-closed**, no procedimental. Los seeds ya no leen `DATABASE_URL`: resuelven la URL fija de `db/safety/local-stack.ts` y pasan por la capacidad `local_seed`, que no acepta destinos remotos y no tiene bypass. `test:integration` aborta en `vitest.setup.integration.ts` antes de cargar cualquier módulo de test. Ver `docs/ops/DATABASE_TARGET_SAFETY.md` |
+| `db/client.ts` lee `DATABASE_URL` sin guarda de host | **cerrado 2026-08-02** — `db/client.ts` ya no construye el cliente al importarse y toda conexión pasa por `assertDatabaseOperationAllowed`. El runtime sigue usando `DATABASE_URL` bajo `app_runtime` (que sí admite remoto, por diseño), pero falla cerrado ante URL ausente, inválida o no clasificable, y los entry points locales quedan fijados al puerto `56322` — no sólo a loopback |
+| Un stack local en el **puerto equivocado** pasaba las guardas por hostname | **cerrado 2026-08-02** — riesgo real en este host, que ejecuta tres pilas Supabase en paralelo: `127.0.0.1:55322` (uellix-antigravity) satisfacía una allowlist de hostname. Todas las capacidades locales exigen ahora el puerto esperado |
 | Docker Desktop no expone `AppData\Local` en su file-sharing | **menor** — impide el bind-mount read-only para inspeccionar respaldos; la vía por `stdin` lo suple y es más restrictiva |
+
+### Riesgos locales abiertos tras el endurecimiento de acceso a BD
+
+| Riesgo | Estado |
+|---|---|
+| La allow-list de hostnames de contenedor está vacía por defecto | **aceptado** — un despliegue en red de contenedores debe pasar su propia lista; hasta entonces un hostname sin puntos clasifica `unknown` y falla cerrado. Es la dirección segura |
+| Las capacidades `controlled_remote_*` existen pero **ningún** entry point las usa | **abierto por diseño** — son la vía prevista para el día en que una herramienta TypeScript deba operar contra staging. Hoy toda operación remota sigue pasando por `db/prepared/` y las checklists de `docs/ops/gates/`. Su primer uso real exigirá revisión propia |
+| `pnpm test:integration` y `pnpm test:rls` conservan su nombre histórico | **aceptado** — CI los invoca; ya pasan por la guarda. `db:test:integration:local` es el alias que declara el entorno |
 
 ### Bloqueadores remotos (sin cambio)
 

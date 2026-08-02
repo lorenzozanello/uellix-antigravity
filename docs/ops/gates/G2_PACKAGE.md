@@ -6,6 +6,28 @@
 > `docs/ops/SUPABASE_MIGRATION_GATE.md` y
 > `docs/ops/SUPABASE_STAGING_MIGRATION_CHECKLIST.md`.
 
+## Relación con la capa de seguridad de destino (2026-08-02)
+
+El repositorio incorporó una arquitectura *fail-closed* de acceso a base de
+datos (`db/safety/`, documentada en
+[`docs/ops/DATABASE_TARGET_SAFETY.md`](../DATABASE_TARGET_SAFETY.md)). Qué
+significa para este gate:
+
+- **No cambia nada del procedimiento de G2.** Este paquete se sigue aplicando
+  con `psql` sobre los archivos revisados de `db/prepared/`. Ningún comando de
+  `package.json` escribe en un destino remoto, y las capacidades
+  `controlled_remote_*` de la nueva capa **no las usa ningún entry point hoy**.
+- **Sí cierra el riesgo lateral** que este gate arrastraba: los comandos
+  ambiguos (`db:seed:proxies`, `db:seed:taxonomies`, `db:migrate`) ya no
+  pueden alcanzar un destino remoto por accidente durante la preparación del
+  gate. Están bloqueados y sus reemplazos son local-only por construcción.
+- **La precondición humana del rol escritor de `stella_0003` sigue vigente
+  e inalterada** (ver la sección siguiente). La nueva capa autoriza *dónde* se
+  conecta un proceso; no puede observar *con qué rol* resuelve `DATABASE_URL`.
+
+**Esto no declara G2 aprobado ni ejecutado.** G2 formal sigue exigiendo el
+entorno remoto autorizado y las precondiciones humanas de este documento.
+
 ## Alcance
 
 Aplicar (y saber revertir) contra **staging** — nunca producción directamente:

@@ -875,3 +875,156 @@ este ledger, `STELLA_FABLE_RISK_REGISTER.md`, `gates/G2_PACKAGE.md`,
 `grounding_0001`, cero push/PR. **Cero ejecución formal de G2.**
 
 **Siguiente paso:** re-auditoría independiente de RUN 2.
+
+---
+
+### 2026-08-02 · ENDURECIMIENTO DE ACCESO A BASE DE DATOS · rama `codex/stella-g2-local-rehearsal`, sobre `7d9d269`
+
+Unidad transversal de seguridad, **no** un gate. Introduce `db/safety/`
+(clasificación de destinos + autorización por capacidad, fail-closed) y
+reescribe los entry points peligrosos para que pasen por ella. Documento
+operativo: `docs/ops/DATABASE_TARGET_SAFETY.md`.
+
+#### Suites ejecutadas
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/database-target-safety.test.ts` | VERDE | 137 tests — clasificación, redacción, matriz de capacidades, aislamiento, seguridad de mensajes, entorno, contraste contra `supabase/config.toml` |
+| `pnpm vitest run tests/database-entrypoint-safety.test.ts` | VERDE | 95 tests — sin efectos de import, guarda antes del driver, superficie de `package.json`, regresión dotenv, 6 procesos hijo reales sobre rutas de **rechazo** |
+| `pnpm test:unit` | VERDE | 137 archivos, **2787 tests** (baseline previo: 2704, de los cuales 3 en rojo por esta unidad, ya corregidos) |
+| `pnpm typecheck` | VERDE | `tsc --noEmit` sin errores |
+| `pnpm lint` | VERDE | 0 errores, 51 warnings — mismo conteo que antes de la unidad; ninguno en archivos nuevos |
+| `pnpm build` | VERDE | `next build` completo. Ahora compila **sin** variable de conexión: el cliente dejó de construirse en tiempo de import |
+
+**No ejecutados, por política de esta campaña:** `test:integration`, `test:rls`,
+seeds, migraciones, resets, `grounding_0001`. Cero acceso remoto.
+
+#### Rojos encontrados y corregidos (se documentan, no se ocultan)
+
+| # | Rojo | Causa | Corrección |
+|---|---|---|---|
+| 1 | `resolveEnvironment` devolvía `development` con `UELLIX_APP_ENV` mal escrita | La errata caía al `NODE_ENV` por defecto — el entorno **más permisivo** | Valor definido pero no reconocido ⇒ `production` |
+| 2 | 3 suites de servicio dejaron de cargar (`DB_TARGET_URL_MISSING`) | `vi.mock('@/db/client')` sin factory es *automock*: Vitest **inspecciona** los exports y leía `Symbol.toStringTag` y `__esModule` del proxy, forzando la construcción del cliente | Inspeccionar es inerte; sólo usar conecta. `fx-rates` necesitaba además métodos preexistentes ⇒ factory explícita |
+| 3 | `prepared-stella-sql` y `prepared-sql-source-of-truth` en rojo | Fijaban `drizzle(client` (renombrado a `sql`) y prohibían la cadena `db/prepared` en `drizzle.config.ts`, que aparecía en un comentario nuevo | Aserción actualizada al nombre real + una **nueva** que fija que el runtime sigue resolviendo la variable de conexión bajo `app_runtime`; comentario reformulado |
+| 4 | `db:audit:readonly` reportaba 5 triggers y `undefined` en la sesión | El filtro `LIKE '%append_only%'` sólo capturaba una de las dos familias; `SHOW` devuelve la fila con la clave del ajuste | Cuenta ambas familias por separado y total; lectura vía `current_setting()` |
+
+#### Revisión adversarial independiente — rondas 1 a 5
+
+Agente de solo lectura, sin acceso a base de datos. **2 BLOCKER y 4 MAJOR
+reales**, todos reproducidos antes de corregirse y todos cerrados con una
+prueba que falla si la corrección se revierte. Detalle en
+`docs/ops/DATABASE_TARGET_SAFETY.md` §9.
+
+El más grave: la guarda y el driver **leían la misma cadena de forma
+distinta**. `URL` (WHATWG) termina el userinfo en el último `@`; postgres-js
+usa el primero y trata la coma como lista multihost. Una URL que la guarda
+clasificaba `local_loopback:56322` hacía que el driver marcara primero un host
+gestionado remoto. Verificado contra `postgres@3.4.9`; alcanzable desde
+`UELLIX_LOCAL_DATABASE_URL` y desde `DATABASE_URL`.
+
+El segundo: la garantía de las suites de integración vivía sólo en el archivo
+de setup que carga la config de integración, así que `pnpm test` las ejecutaba
+sin guarda alguna, con el `db` compartido en `app_runtime`.
+
+**La ronda 2 encontró 1 BLOCKER y 2 MAJOR más, y dos los había introducido la
+propia corrección de la ronda 1:**
+
+- la comprobación de autoridad ambigua era evadible en **un carácter** (`#`),
+  porque cortaba la autoridad en un sitio distinto del driver — el mismo error
+  de la ronda 1, cometido al arreglarlo;
+- excluir `tests/integration/**` de la config base hizo que la config de
+  integración colectara **cero** archivos (`mergeConfig` concatena arrays), lo
+  que habría puesto en rojo los pasos de integración y RLS de CI en cada PR;
+- rechazar sólo `options` era insuficiente: el driver reenvía toda clave de
+  query que no consume, así que `?default_transaction_read_only=off` seguía
+  anulando la imposición de solo lectura.
+
+Lecciones registradas:
+
+1. **Una guarda que reimplementa el parseo de otro componente no es una
+   guarda**; donde no se pueda garantizar que ambos leen lo mismo, hay que
+   rechazar la entrada, no adivinarla.
+2. **Una corrección de seguridad puede romper otra cosa en silencio**, y una
+   aserción que sólo mira el lado negativo pasa en verde cuando la
+   funcionalidad desaparece. Las comprobaciones de config son ahora de
+   comportamiento: resuelven ambas configs y verifican qué colecta cada una.
+3. **Enmascarar por patrón no puede ser exhaustivo**: cuando el mensaje se
+   construye a partir del dato sensible, se descarta el mensaje.
+
+**La ronda 3 encontró 0 BLOCKER, 4 MAJOR y 4 MINOR.** El más instructivo no
+era un agujero de la arquitectura sino de las **pruebas**: la única aserción
+que decía cubrir la imposición de solo lectura leía el valor de vuelta de la
+tabla de políticas, y el mock de `postgres` descartaba el objeto de opciones —
+así que borrar la imposición entera dejaba la suite en verde mientras toda
+conexión de auditoría pasaba a ser escribible. Y `db:audit:readonly`
+*imprimía* el ajuste y contaba la comprobación como superada cualquiera que
+fuese su valor: habría reportado `off` y salido con código 0.
+
+4. **Una prueba que verifica la configuración en vez del efecto no es una
+   prueba.** Ahora el mock captura lo que recibe el driver, y la auditoría
+   falla —no informa— cuando la sesión no es de solo lectura.
+
+Correcciones adicionales de la ronda 3: TLS fijado para las capacidades
+remotas controladas (postgres-js viene con `ssl: false` y honra
+`?sslmode=disable`); flag de solo lectura movido a parámetro de arranque
+directo (PostgreSQL procesa `cmdline_options` antes que la lista por
+parámetro, así que el par directo gana); `sslrootcert` retirada de la
+allow-list porque el driver **sí** la reenvía; y detección de errores de red
+hecha estructural, tras descubrir que `address` es un **array** en los errores
+de postgres-js y la detección por `typeof === 'string'` nunca acertaba.
+
+**La ronda 4 encontró 0 BLOCKER, 1 MAJOR (latente) y 4 MINOR.** El MAJOR era,
+otra vez, una corrección mía: el TLS que yo había fijado para las capacidades
+remotas, `ssl: 'require'`, pone `rejectUnauthorized = false` en postgres-js —
+cifrado **sin autenticación del servidor** — y además degradaba
+configuraciones más fuertes, mientras la línea de auditoría decía `tls=pinned`.
+Se fija ahora `verify-full` y la línea dice `tls=verified`.
+
+Y la fuga de datos más concreta de toda la unidad no era una credencial:
+los errores de query de Drizzle llevan `Failed query: <sql>\nparams: <valores
+ligados>` en su propio mensaje, sin `address` ni `errno`, así que se imprimían
+enteros — y los parámetros ligados contienen correos y demás datos personales.
+
+5. **Un nombre que suena fuerte no es una garantía**: la línea de auditoría
+   debe decir lo que ocurrió, no lo que el nombre sugiere.
+6. **El dato sensible no siempre es la credencial.**
+
+**La ronda 5 (verificación acotada) cerró con 0 BLOCKER y 0 MAJOR**, condición
+de salida de la fase de revisión. Sus MINOR/NIT también se corrigieron; el más
+relevante: `ssl` había quedado como la única clave que un llamador podía
+**degradar** (`?? 'verify-full'` sólo protege contra `undefined`), mientras la
+línea de auditoría seguía afirmando `tls=verified`. Ahora `ssl` sólo se puede
+subir.
+
+Dos riesgos residuales quedan **aceptados y documentados** (no descubiertos
+tarde), ambos en `app_runtime` y ambos por la misma razón: cerrarlos exigiría
+cambiar el comportamiento del runtime de producción sin poder inspeccionar su
+cadena de conexión real. Ver `docs/ops/DATABASE_TARGET_SAFETY.md` §6.1, que
+además deja explícita la premisa de la que depende esa aceptación (quien fija
+`DATABASE_URL` es quien posee la credencial que contiene).
+
+#### Verificación de estado vivo (sólo `SELECT`, sesión forzada a solo lectura)
+
+`pnpm db:audit:readonly` contra `127.0.0.1:56322`:
+
+| Comprobación | Valor | Esperado |
+|---|---|---|
+| tablas `public` | 38 | 38 |
+| policies | 104 | 104 |
+| triggers append-only | 10 (5 de fila + 5 de `TRUNCATE`) | 10 |
+| `stella_suggestion_decisions` | 1 | 1 |
+| `stella_interactions` | 2 | 2 |
+| `evidence_chunks` | ausente | ausente |
+| `default_transaction_read_only` | `on` | `on` — confirma que la garantía la impone el servidor |
+
+Respaldos `pre_g3_local.dump` (original y copia estable): presentes, 581 736 B,
+SHA-256 `d46280c4261cc8b68896dd34b12f41d9334756a61f7a2f2a3c441aef5b436aeb` —
+idéntico al documentado en RUN 2. **No restaurados.** Stacks `uellix-antigravity`
+y `aforiq` intactos (28 h de uptime, sin reinicios). **Cero escrituras.**
+
+**Alcance del diff:** `db/safety/` (nuevo), `db/client.ts`, `db/README.md`,
+4 scripts de seed/usuario, 3 scripts nuevos, ambos configs de drizzle,
+`vitest.setup.integration.ts`, `package.json`, el workflow `p1a-validation`,
+2 suites nuevas y 3 ajustes de suites existentes, y documentación. Cero cambios
+en `db/prepared/`, `db/schema.ts` y `db/migrations/`. Cero push, cero PR.
+**Cero ejecución formal de G2.**
