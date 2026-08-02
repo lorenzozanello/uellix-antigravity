@@ -30,27 +30,40 @@ jobs:
 
       - name: Validate Loopback URLs
         run: |
-          echo "Validating that critical local config files only target loopback interfaces..."
-          
-          # Check drizzle.local.config.ts
-          if ! grep -Ei "^[[:space:]]*const LOCAL_DB_URL = .*@(127\.0\.0\.1|localhost|\[::1\])" drizzle.local.config.ts; then
-            echo "🚨 Error: drizzle.local.config.ts contains a non-loopback database URL!"
+          echo "Validating that the pinned local stack only targets loopback interfaces..."
+
+          # db/safety/local-stack.ts is now the SINGLE source of truth for the
+          # local connection target. drizzle.local.config.ts, scripts/seed-local.ts
+          # and scripts/db-audit-readonly.ts all derive their URL from it, so the
+          # per-file greps this step used to run were replaced by one check here
+          # plus the executable assertions in tests/database-target-safety.test.ts
+          # (which also cross-check these constants against supabase/config.toml).
+          if ! grep -Ei "^[[:space:]]*export const LOCAL_DATABASE_URL = .*@(127\.0\.0\.1|localhost|\[::1\])" db/safety/local-stack.ts; then
+            echo "🚨 Error: db/safety/local-stack.ts contains a non-loopback database URL!"
             exit 1
           fi
-          
-          # Check seed-local.ts database URL
-          if ! grep -Ei "^[[:space:]]*const dbUrl = .*@(127\.0\.0\.1|localhost|\[::1\])" scripts/seed-local.ts; then
-            echo "🚨 Error: scripts/seed-local.ts contains a non-loopback database URL!"
+
+          if ! grep -Ei "^[[:space:]]*export const LOCAL_SUPABASE_API_URL = .*https?://(127\.0\.0\.1|localhost|\[::1\])" db/safety/local-stack.ts; then
+            echo "🚨 Error: db/safety/local-stack.ts contains a non-loopback Supabase API URL!"
             exit 1
           fi
-          
+
+          # No entry point may resolve its target from DATABASE_URL any more.
+          if grep -REn "process\.env\.DATABASE_URL" scripts/ drizzle.config.ts drizzle.local.config.ts; then
+            echo "🚨 Error: a script or drizzle config still reads DATABASE_URL directly!"
+            exit 1
+          fi
+
           # Check config.toml ports/urls
           if ! grep -Ei "^[[:space:]]*api_url = ['\"]https?://(127\.0\.0\.1|localhost|\[::1\])" supabase/config.toml; then
             echo "🚨 Error: supabase/config.toml api_url is not loopback!"
             exit 1
           fi
-          
+
           echo "✅ Loopback check passed."
+
+      - name: Database target safety suite
+        run: pnpm vitest run tests/database-target-safety.test.ts tests/database-entrypoint-safety.test.ts
 
       - name: Start Supabase Local
         run: pnpm supabase start
@@ -64,16 +77,15 @@ jobs:
           SB_URL=$(grep NEXT_PUBLIC_SUPABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')
           DB_URL=$(grep DATABASE_URL .env.supabase | cut -d '=' -f2 | tr -d '\"')
           
-          if echo "$SB_URL" | grep -qvE "127.0.0.1|localhost|::1"; then
-            echo "🚨 Error: NEXT_PUBLIC_SUPABASE_URL is not loopback!"
-            exit 1
-          fi
-          
-          if echo "$DB_URL" | grep -qvE "127.0.0.1|localhost|::1"; then
-            echo "🚨 Error: DATABASE_URL is not loopback!"
-            exit 1
-          fi
-          
+          # Validate the targets with the repository OWN classifier, never by
+          # substring matching. The previous check was
+          #   grep -qvE "127.0.0.1|localhost|::1"
+          # which is exactly the bug class db/safety/ exists to remove:
+          # https://localhost.attacker.example/ contains "localhost", and the
+          # unescaped dots also matched 127x0x0x1. Values go through env and
+          # are never printed; the classifier reports a redacted host.
+          SB_URL="$SB_URL" DB_URL="$DB_URL" node --import tsx scripts/ci-assert-local-targets.ts
+
           # Export only the four variables used by tests. Supabase CLI wraps
           # values in quotes; GitHub otherwise preserves those quotes and the
           # Postgres client receives an invalid URL.

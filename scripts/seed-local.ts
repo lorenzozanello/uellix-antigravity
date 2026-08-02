@@ -1,34 +1,57 @@
+// scripts/seed-local.ts
+//
+// LOCAL ONLY, FAIL-CLOSED. Creates the base synthetic organizations, auth
+// users and memberships for this worktree's isolated Supabase stack.
+//
+// Both destinations are guarded before anything is created:
+//
+//   * the Postgres target, via `createLocalDatabaseClient` (`local_seed`),
+//     which resolves this worktree's pinned local URL and never reads
+//     `DATABASE_URL`;
+//   * the Supabase HTTP API target, via `assertSupabaseApiOperationAllowed`,
+//     which runs BEFORE `createClient` — creating auth users is a write, so
+//     the check cannot come after the admin client exists.
+//
+// The service-role key is the only value still read from the environment:
+// it is a secret and cannot be pinned in source. It is never printed.
+
 import { createClient } from '@supabase/supabase-js';
-import postgres from 'postgres';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import { createLocalDatabaseClient } from '../db/client';
+import { assertSupabaseApiOperationAllowed } from '../db/safety/database-access';
+import { LOCAL_API_PORT, LOCAL_SUPABASE_API_URL } from '../db/safety/local-stack';
+import { describeError } from '../db/safety/redact-error';
 
-// Resolve the path to .env.local in the root
+// Loads the service-role key. Note that no connection TARGET is taken from
+// this file any more — only the credential.
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-// CHANGED for the G2/G3 local rehearsal worktree: 55322 is the already-running
-// uellix-antigravity stack's port on this host. Using it here would silently
-// seed ANOTHER worktree's live local database instead of this worktree's
-// isolated stack. See docs/ops/LOCAL_STAGING_G2_REHEARSAL.md.
-const dbUrl = 'postgresql://postgres:postgres@127.0.0.1:56322/postgres';
+// Defaults to this worktree's pinned local API port; an explicitly provided
+// value is still forced through the local-only guard below.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || LOCAL_SUPABASE_API_URL;
 
 async function main() {
-  if (!supabaseUrl || !serviceRoleKey) {
-    console.error('Missing env vars: URL=', supabaseUrl, 'Key=', serviceRoleKey ? 'loaded' : 'missing');
+  if (!serviceRoleKey) {
+    console.error('Missing SUPABASE_SERVICE_ROLE_KEY (expected in .env.local).');
     process.exit(1);
   }
 
-  // Safety guard
-  const url = new URL(supabaseUrl);
-  if (!['localhost', '127.0.0.1', '::1'].includes(url.hostname)) {
-    console.error('Safety violation: Not running on local host.');
-    process.exit(1);
-  }
+  // Guard the auth/API target BEFORE the admin client is constructed.
+  const apiDecision = assertSupabaseApiOperationAllowed({
+    url: supabaseUrl,
+    capability: 'local_seed',
+    expectedLocalPort: LOCAL_API_PORT,
+  });
+  console.log(`[seed-local] supabase-api ${apiDecision.auditLine}`);
+
+  const client = createLocalDatabaseClient({ capability: 'local_seed' });
+  const sql = client.sql;
+  for (const warning of client.warnings) console.warn(`[seed-local] ${warning}`);
+  console.log(`[seed-local] postgres ${client.decision.auditLine}`);
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const sql = postgres(dbUrl);
 
   console.log('Seeding organizations and users...');
 
@@ -106,7 +129,10 @@ async function main() {
   }
 
   console.log('Seeding completed successfully!');
-  await sql.end();
+  await client.close();
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error('[seed-local] Failed:', describeError(err));
+  process.exit(1);
+});

@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
+import { BASE_EXCLUDE, INTEGRATION_GLOB } from "./vitest.shared";
 
 export default defineConfig({
   test: {
@@ -8,11 +9,9 @@ export default defineConfig({
     // (it feature-detects a global `afterEach`); without this, DOM from one
     // test leaks into the next within the same file.
     globals: true,
-    // Exclude nested git worktrees (created under .claude/worktrees by
-    // spawned background sessions) in addition to vitest's own defaults —
-    // otherwise a worktree's copy of tests/ gets picked up and every test
-    // silently runs twice.
-    exclude: ["**/node_modules/**", "**/dist/**", "**/.git/**", "**/.claude/**"],
+    // See vitest.shared.ts for why the integration glob is excluded here and
+    // why the list is shared rather than inherited.
+    exclude: [...BASE_EXCLUDE, INTEGRATION_GLOB],
     setupFiles: ["./vitest.setup.ts"],
   },
   resolve: {

@@ -24,35 +24,23 @@
 // ZERO REAL DATA: no real person, organization, email or evidence file is
 // referenced anywhere in this script.
 
-import postgres from 'postgres'
 import { createHash } from 'node:crypto'
+import { createDatabaseClient } from '../db/client'
+import { LOCAL_DATABASE_URL, LOCAL_DB_PORT } from '../db/safety/local-stack'
+import { describeError } from '../db/safety/redact-error'
 
-// This worktree's isolated stack only — see docs/ops/LOCAL_STAGING_G2_REHEARSAL.md
-// for the full port map and the `docker ps` evidence it was checked against
-// before this port was chosen.
-const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:56322/postgres'
+// This worktree's isolated stack only. The literal used to live here; it now
+// comes from db/safety/local-stack.ts, the single source of truth that
+// tests/database-target-safety.test.ts cross-checks against
+// supabase/config.toml. See docs/ops/LOCAL_STAGING_G2_REHEARSAL.md for the
+// full port map and the `docker ps` evidence the port was checked against.
+const LOCAL_DB_URL = LOCAL_DATABASE_URL
 
-function assertLocalHost(urlString: string): void {
-  let hostname: string
-  try {
-    hostname = new URL(urlString).hostname
-  } catch (err) {
-    console.error('CRITICAL DATABASE SAFETY ERROR: could not parse connection URL.')
-    console.error(err instanceof Error ? err.message : String(err))
-    process.exit(1)
-  }
-  const allowedHosts = ['127.0.0.1', 'localhost', '::1']
-  if (!allowedHosts.includes(hostname)) {
-    console.error('\n================================================================')
-    console.error('CRITICAL DATABASE SAFETY ERROR:')
-    console.error(`Hostname "${hostname}" is not allowed. Only local connections`)
-    console.error(`(${allowedHosts.join(', ')}) are permitted.`)
-    console.error('================================================================\n')
-    process.exit(1)
-  }
-}
-
-assertLocalHost(LOCAL_DB_URL)
+// The hand-rolled `assertLocalHost` that used to live here was removed. It
+// validated only the hostname — so a loopback URL on another local stack's
+// port passed it — and it printed the rejected hostname unredacted. Both are
+// now handled by the central guard inside `createDatabaseClient`, which is
+// the ONLY place in the repository that constructs a driver.
 
 // Fixed, obviously-synthetic identifiers (recognizable pattern, never a real
 // randomUUID) — safe to commit, safe to re-run, trivially greppable in any
@@ -76,7 +64,18 @@ const SYNTHETIC_RESPONSE_JSON = {
 }
 
 async function main() {
-  const sql = postgres(LOCAL_DB_URL)
+  // The guard runs inside createDatabaseClient, before the driver exists: it
+  // pins the capability, the environment AND the port. The port matters here
+  // — this host runs several local Supabase stacks side by side, so loopback
+  // alone does not identify the right database.
+  const client = createDatabaseClient({
+    connectionString: LOCAL_DB_URL,
+    capability: 'local_seed',
+    expectedLocalPort: LOCAL_DB_PORT,
+  })
+  console.log(`[seed-stella-local] ${client.decision.auditLine}`)
+
+  const sql = client.sql
 
   try {
     console.log('Seeding Stella rehearsal fixtures (1 project + 1 interaction)...')
@@ -153,11 +152,13 @@ async function main() {
       interactionId: SYNTHETIC_INTERACTION_ID,
     })
   } finally {
-    await sql.end()
+    await client.close()
   }
 }
 
 main().catch((err) => {
-  console.error(err)
+  // Redacted: the first post-guard failure is a driver error whose message
+  // embeds the host verbatim.
+  console.error('[seed-stella-local] Failed:', describeError(err))
   process.exit(1)
 })

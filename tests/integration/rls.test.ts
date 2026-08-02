@@ -1,3 +1,6 @@
+// MUST be the first import: fail-closed target gate that does not depend
+// on which vitest config selected this file. See tests/integration/_guard.ts.
+import './_guard'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { db } from '@/db/client'

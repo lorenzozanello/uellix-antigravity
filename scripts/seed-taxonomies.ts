@@ -7,15 +7,25 @@
 // Idempotent: safe to re-run. Catalogs are matched by `code`, codes by
 // (catalog_id, code); existing rows are updated in place, new ones inserted.
 //
-// Usage: pnpm db:seed:taxonomies
+// Usage: pnpm db:seed:local:taxonomies
+//
+// LOCAL ONLY, FAIL-CLOSED. Same hardening as scripts/seed-proxies.ts: this
+// script no longer reads `DATABASE_URL` (directly or through
+// `dotenv/config`). It resolves this worktree's pinned local stack and passes
+// through the `local_seed` capability guard before connecting.
 
-import 'dotenv/config'
-import { db } from '../db/client'
+import { createLocalDatabaseClient } from '../db/client'
+import { describeError } from '../db/safety/redact-error'
 import { taxonomyCatalogs, taxonomyCodes } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import { TAXONOMY_SEED } from '../lib/taxonomies/seed-data'
 
 async function main() {
+  const client = createLocalDatabaseClient({ capability: 'local_seed' })
+  const { db } = client
+  for (const warning of client.warnings) console.warn(`[seed-taxonomies] ${warning}`)
+  console.log(`[seed-taxonomies] ${client.decision.auditLine}`)
+
   let catalogsUpserted = 0
   let codesUpserted = 0
 
@@ -67,11 +77,12 @@ async function main() {
   }
 
   console.log(`Done. ${catalogsUpserted} catalogs, ${codesUpserted} codes upserted.`)
+  await client.close()
 }
 
 main()
   .then(() => process.exit(0))
   .catch((err) => {
-    console.error('Seed failed:', err)
+    console.error('[seed-taxonomies] Failed:', describeError(err))
     process.exit(1)
   })
