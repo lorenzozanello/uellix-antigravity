@@ -6,6 +6,31 @@
 > después contra **staging**. Ningún agente ejecuta `test:rls`; requiere una
 > base real y credenciales que solo maneja Lorenzo.
 
+## Efecto de `stella_0004` (separación de roles) sobre este gate
+
+Desde 2026-08-02 el stack **local** tiene aplicada la separación de roles de
+`db/prepared/stella_0004_role_separation.sql`. Qué cambia para G3:
+
+- **El procedimiento no cambia.** `db/client.ts` sigue conectando como
+  `postgres`, y PostgREST sigue usando `authenticator` → `anon` /
+  `authenticated` / `service_role`. Ninguno de esos roles cambió de membresías
+  ni perdió `SELECT/INSERT/UPDATE/DELETE`.
+- **Lo que sí perdieron `authenticated` y `service_role`** es
+  `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` en las **38** tablas (antes sólo en las
+  4 de `stella_0002b`). PostgREST no emite ninguno de los cuatro, así que la
+  suite no lo nota — salvo que un caso futuro intente `TRUNCATE`, que ahora
+  falla en la capa de grants antes de llegar al trigger.
+- **`postgres` dejó de ser el owner.** Sigue pudiendo leer y escribir lo que la
+  aplicación necesita (heredado de `uellix_writer`, concedido explícitamente),
+  pero ya **no** puede `ALTER`, `DROP`, `DROP POLICY`, `DISABLE ROW LEVEL
+  SECURITY` ni `DISABLE TRIGGER`. Un caso de la suite que dependiera de
+  desactivar un trigger para preparar una fixture fallaría — hoy ninguno lo
+  hace.
+- **Los triggers append-only siguen siendo la única capa que alcanza al owner**,
+  y siguen intactos: 10 triggers, `tgenabled = 'O'`.
+
+Remoto sigue sin `stella_0004` — ver `docs/ops/gates/G2_PACKAGE.md`.
+
 ## Qué se corre
 
 ```bash

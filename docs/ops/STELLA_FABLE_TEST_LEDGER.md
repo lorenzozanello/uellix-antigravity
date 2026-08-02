@@ -1091,3 +1091,92 @@ reset, cero grounding, cero acceso remoto, cero push, cero PR. **G2 formal
 sigue sin ejecutarse.**
 
 **Resultado:** `STELLA_DATABASE_SAFETY_GAPS_CLOSED_READY_FOR_FINAL_CHECK`.
+
+### 2026-08-02 · SEPARACIÓN DE ROLES DE BASE DE DATOS · `8cd8e62` + esta unidad
+
+Bloque `stella_0004`: ownership fuera del runtime, corrección de *default
+privileges* y matriz de privilegios explícita. Contrato completo en
+[`docs/ops/DATABASE_ROLE_MODEL.md`](DATABASE_ROLE_MODEL.md).
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/database-role-safety.test.ts` | VERDE | **49** tests (nuevo archivo) — 30 offline sobre el SQL preparado + 19 contra el catálogo vivo |
+| `pnpm vitest run tests/database-default-privileges.test.ts` | VERDE | **13** tests (nuevo archivo) |
+| `pnpm vitest run tests/database-target-safety.test.ts` | VERDE | **139** tests, sin cambio |
+| `pnpm vitest run tests/database-entrypoint-safety.test.ts` | VERDE | **111** tests, sin cambio |
+| `pnpm vitest run tests/prepared-stella-sql.test.ts` | VERDE | 249 → **251**; el tripwire de inventario y el invariante de `EXECUTE` **detectaron los scripts nuevos**, que es su función |
+| `pnpm test:unit` | VERDE | 139 archivos, **2869 tests** (antes 2805 → **+64**) |
+| `pnpm typecheck` | VERDE | exit 0 |
+| `pnpm lint` | VERDE | exit 0, **0 errores**, 51 warnings — mismo conteo que antes |
+| `pnpm build` | VERDE | `next build` completo, 44 páginas |
+
+**No ejecutados, por política:** `test:integration`, `test:rls`, seeds,
+migraciones, resets, `grounding_0001`. Cero acceso remoto.
+
+#### Ensayo desechable antes de tocar el stack vivo
+
+Contenedor `supabase/postgres:17.6.1.143` **sin red** (`--network none`),
+destruido al terminar. Fixture verificado fiel contra el stack vivo en tres
+dimensiones antes de cada corrida: **830** filas de ACL de tabla, **13** de ACL
+de función y **75** de default ACL (`public` + GLOBAL) — idénticas. **Cero filas
+de datos**: el fixture es sólo estructura.
+
+| Prueba | Resultado |
+|---|---|
+| Forward ×2 | idéntico (1086 filas de huella) — **idempotente** |
+| Rollback | **0** filas añadidas respecto del estado previo; delta = 260 ACL + 51 DEFACL, exactamente los dos segmentos `SAFE_NON_REVERSING` |
+| Rollback sin confirmación / con confirmación errónea | **RECHAZADO** en ambos casos |
+| Reaplicación tras rollback | converge al mismo estado |
+| Rollback con `restore_unsafe_defaults=yes` | restaura los default ACL originales con dos `RAISE WARNING` |
+| Regresión B1 (default privilege GLOBAL inseguro) | **abortado** por la precondición |
+| Regresión B2 (`anon` con `EXECUTE` en una función) | **abortado** |
+| Regresión M2 (vista o secuencia en `public`) | **abortado** en ambos casos |
+
+#### Defectos que el ensayo encontró antes de la base viva
+
+1. **La comprobación 9.2 no contemplaba las tablas TOAST**, que heredan el owner
+   y viven en `pg_toast`: ~70 entradas hacían fallar la verificación siempre.
+2. **`ALTER DEFAULT PRIVILEGES … IN SCHEMA public REVOKE … FROM PUBLIC` no
+   funciona** sobre funciones ni tipos — 0 filas, reporta éxito. Sólo la forma
+   **global** suprime el `EXECUTE`/`USAGE` incorporado.
+3. **Transferir el owner rompía toda la RLS del producto**: las 3 funciones
+   `SECURITY DEFINER` que llaman a `auth.uid()` pasaban a ejecutarse como
+   `uellix_owner`, sin `USAGE` sobre el esquema `auth` → `permission denied for
+   schema auth` para **todos** los invocantes, incluido PostgREST.
+4. **Evaluar una policy exige `EXECUTE` en el rol INVOCANTE** sobre las funciones
+   que la policy llama: sin ello un `SELECT` **falla** en vez de devolver cero
+   filas.
+5. **`ALTER TABLE … OWNER TO` no preserva la ACL del owner anterior**, la
+   transfiere. El runtime habría perdido `INSERT` sobre
+   `stella_suggestion_decisions`, enmascarado en las otras 37 tablas por la
+   membresía heredada de `postgres` en `pg_read_all_data`.
+
+#### Revisión adversarial independiente (read-only)
+
+**2 BLOCKER, 6 MAJOR, 8 MINOR** — todos reales, todos corregidos. Los dos
+BLOCKER: (B1) la verificación de default privileges hacía `INNER JOIN` sobre
+`defaclnamespace`, que **nunca** puede casar una fila global — ciega justo a la
+clase que el propio script declara decisiva; (B2) nada comprobaba `EXECUTE` de
+`anon`/`service_role` sobre las 8 funciones, que tras el cambio corren como el
+owner exento de RLS.
+
+#### Aplicación al stack local
+
+`psql -U supabase_admin -1 -v ON_ERROR_STOP=1`, una sola conexión,
+`lock_timeout=20s`. Respaldo previo tomado y verificado (**584 224 B**,
+SHA-256 `6c07073c…d02324`, idéntico dentro del contenedor y en el host); el
+respaldo anterior (`d46280c4…b436aeb`, 581 736 B) intacto.
+
+Aplicado **dos veces** más una tercera con el artefacto final tras la
+reescritura: huella idéntica en las tres. **Sin rollback sobre el stack vivo.**
+
+**Estado vivo tras aplicar:** 38 tablas, 104 policies, 119 índices, 230
+constraints, 10 triggers (`tgenabled='O'` los 10), 1 decisión, 2 interacciones,
+`evidence_chunks` ausente, RLS 38/38, `FORCE` 0/38, ownership `uellix_owner`
+38/38 + 8/8 funciones, `postgres` owner de **0**, `pg_has_role(postgres,
+uellix_owner)` = false/false, **0** privilegios peligrosos para no-owners, **0**
+para `anon`/`PUBLIC`, **0** default ACL inseguras. Servicios locales healthy,
+PostgREST responde 200. Otros dos stacks locales intactos y con **0** roles
+`uellix_*`.
+
+**Resultado:** `STELLA_DATABASE_PRIVILEGE_HARDENED_READY_FOR_REAUDIT`.

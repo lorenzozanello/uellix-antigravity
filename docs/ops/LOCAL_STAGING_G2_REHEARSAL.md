@@ -707,13 +707,16 @@ formal de G2.**
 
 Detectados en la reauditoría previa y todavía abiertos:
 
-1. **`G2_PACKAGE.md` §2 sigue usando `information_schema.role_table_grants`**
+1. ~~**`G2_PACKAGE.md` §2 sigue usando `information_schema.role_table_grants`**
    para los grants de `stella_interactions`, la misma vista que §6 prohíbe con
    argumento. Peor: esa vista **no puede expresar `PUBLIC`** — medido en este
    stack, devuelve 0 filas con `grantee='PUBLIC'` mientras 195 relaciones sí
    tienen ACL de `PUBLIC`. Su expectativa *"para anon / PUBLIC: ninguna fila"*
-   es, para `PUBLIC`, infalsificable. Es el defecto que MINOR-5 cerró para la
-   tabla nueva, abierto aún para la preexistente.
+   es, para `PUBLIC`, infalsificable.~~
+   **CERRADO 2026-08-02** (bloque de separación de roles): `G2_PACKAGE.md` §2
+   usa ahora `aclexplode(COALESCE(relacl, acldefault('r', relowner)))` con el
+   caso `grantee = 0` explícito para `PUBLIC`, igual que §6. La expectativa
+   sobre `PUBLIC` pasa de infalsificable a comprobable.
 2. ~~**El rollback depende de banderas de `psql`.**~~ **CERRADO 2026-08-01** —
    ver *ENDURECIMIENTO ESTRUCTURAL DEL ROLLBACK DE `stella_0003`* más abajo.
    Guarda y `DROP` viven ahora en el mismo bloque `DO`; el defecto quedó

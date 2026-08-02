@@ -38,6 +38,33 @@ Aplicar (y saber revertir) contra **staging** — nunca producción directamente
 | 1b | `db/prepared/stella_0002b_append_only_truncate_hardening.sql` | `db/prepared/stella_0002b_rollback.sql` — **deliberadamente NO reversible** | Cierra el hueco de `TRUNCATE` en las **cuatro** tablas append-only: revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` de `authenticated` y además `UPDATE/DELETE` de `service_role`, y añade 4 triggers `BEFORE TRUNCATE FOR EACH STATEMENT` (única capa que alcanza al **owner**) |
 | 2 | `db/prepared/stella_0003_suggestion_decisions.sql` | `db/prepared/stella_0003_rollback.sql` | Crea `stella_suggestion_decisions` (decisiones humanas sobre sugerencias) con RLS SELECT-only, `REVOKE ALL` previo a los grants y sus 2 triggers append-only |
 | 3 | `db/prepared/grounding_0001_evidence_chunks.sql` | `db/prepared/grounding_0001_rollback.sql` | Ver addendum dedicado: `docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md` (tiene precondiciones propias: pgvector + decisión G5 P3) |
+| — | `db/prepared/stella_0004_role_separation.sql` | `db/prepared/stella_0004_rollback.sql` | **FUERA DEL ALCANCE DE G2 REMOTO POR AHORA** — ver la sección siguiente |
+
+## `stella_0004` — separación de roles: local sí, remoto bloqueado
+
+`stella_0004_role_separation.sql` cierra RK-04c (los *default privileges*
+globales) y traslada el ownership de los 46 objetos de `public` fuera del rol
+del runtime. Está **ensayado y aplicado en local**, con dry-run desechable,
+idempotencia, rollback y reaplicación verificados.
+
+**No entra en G2 remoto todavía**, y la razón es concreta, no de prudencia
+genérica:
+
+| Bloqueador | Detalle |
+|---|---|
+| **RR-09** | `GRANT USAGE ON SCHEMA auth TO uellix_owner` **no es ejecutable como `postgres`** en Supabase gestionado: `auth` pertenece a `supabase_auth_admin` y `postgres` tiene `USAGE` sin `GRANT OPTION`. Sin ese grant, las 3 funciones `SECURITY DEFINER` que llaman a `auth.uid()` fallan con `permission denied for schema auth` **para todos los invocantes** — toda la RLS del producto. |
+| **RR-03** | El `pg_default_acl` de `supabase_admin` (que concede los **8** privilegios a `anon` sobre toda tabla que ese rol cree en `public`) no es corregible desde hosted. |
+| **RR-02** | En hosted, `postgres` retiene `ADMIN OPTION` sobre cualquier rol que cree, así que la separación owner/runtime es un obstáculo auditable, no una barrera. |
+
+Contrato completo, matriz de privilegios y decisiones de compatibilidad:
+[`docs/ops/DATABASE_ROLE_MODEL.md`](../DATABASE_ROLE_MODEL.md).
+
+**Consecuencia operativa si algún día se aplica:** tras `stella_0004`, los
+scripts 1, 1b y 2 de la tabla anterior ya **no** pueden ejecutarse como
+`postgres` — emiten `REVOKE`, `GRANT`, `CREATE TRIGGER` y `ALTER TABLE`, y todo
+eso exige ownership. Se ejecutan como `uellix_migrator` con `SET ROLE
+uellix_owner` explícito. Sobre una base donde `0004` **no** se ha aplicado
+(hoy: todas las remotas), el procedimiento de este documento no cambia en nada.
 
 El orden 1→1b→2 importa: **1b exige que 1 ya esté aplicado** (su guarda de
 precondición verifica el trigger `trg_stella_interactions_append_only`, además
@@ -162,14 +189,37 @@ SELECT tgname FROM pg_trigger
 WHERE tgrelid = 'public.stella_interactions'::regclass AND NOT tgisinternal;
 -- esperado: trg_stella_interactions_append_only
 
--- 2. Grants reducidos. Filtrar por esquema y mirar TODOS los grantees:
---    un GRANT residual a anon o PUBLIC no se vería filtrando por
---    grantee='authenticated'.
-SELECT grantee, privilege_type FROM information_schema.role_table_grants
-WHERE table_schema = 'public' AND table_name = 'stella_interactions'
-ORDER BY grantee, privilege_type;
+-- 2. Grants reducidos.
+--
+--    CORREGIDO 2026-08-02. Esta verificación usaba
+--    information_schema.role_table_grants, igual que la verificación 6 antes de
+--    RK-04e. Es inservible como criterio de gate por DOS razones distintas, y
+--    la segunda hacía que su expectativa declarada fuese literalmente
+--    incomprobable:
+--
+--      (a) EXPANDE PRIVILEGIOS POR MEMBRESÍA. `postgres` es miembro de
+--          `authenticated` y `service_role` con inherit=true, así que la vista
+--          le atribuye privilegios que su ACL directa no contiene. Sobre
+--          stella_interactions devolvía 11 filas frente a 4 concesiones reales.
+--
+--      (b) NO PUEDE EXPRESAR `PUBLIC`. El grantee PUBLIC es el OID 0, que no
+--          es una fila de pg_roles, así que la vista sencillamente lo omite.
+--          La línea "esperado para anon / PUBLIC: ninguna fila" era, para
+--          PUBLIC, INFALSIFICABLE: se cumplía igual en una base donde PUBLIC
+--          lo tuviera todo.
+--
+--    aclexplode() sobre relacl lee la ACL literalmente, y COALESCE con
+--    acldefault() es obligatorio porque un relacl NULO no significa "sin
+--    privilegios" sino "el default del tipo de objeto".
+SELECT CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END AS grantee,
+       a.privilege_type
+FROM pg_class c
+CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+WHERE c.oid = to_regclass('public.stella_interactions')
+ORDER BY 1, 2;
 -- esperado para authenticated: INSERT, SELECT (sin UPDATE ni DELETE)
--- esperado para anon / PUBLIC: ninguna fila
+-- esperado para anon y para PUBLIC: ninguna fila — y ahora sí es comprobable
+-- esperado para el owner: los 8 privilegios (es el owner, no una concesión)
 
 -- 3. CHECK de stella_role EXACTAMENTE con los 6 roles (no un superset)
 SELECT pg_get_constraintdef(oid) FROM pg_constraint

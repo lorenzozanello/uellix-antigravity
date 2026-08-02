@@ -411,6 +411,34 @@ cifrado **sin autenticación del servidor** — que un atacante en la ruta
 derrota presentando cualquier certificado. Por eso la línea de auditoría dice
 `tls=verified` y no algo que sólo *suene* fuerte.
 
+## 6.2 Qué NO cubre esta capa: el rol de conexión
+
+Esta capa responde **dónde** se conecta un proceso. No responde **con qué rol**,
+y esa es una pregunta distinta con consecuencias distintas.
+
+Hasta 2026-08-02, `db/client.ts` resolvía a `postgres`, que era además el
+**propietario** de las 38 tablas y las 8 funciones de `public`. Un destino
+correctamente autorizado por esta capa seguía siendo, del otro lado del socket,
+una sesión capaz de `DROP POLICY`, `ALTER TABLE … DISABLE ROW LEVEL SECURITY` y
+`DISABLE TRIGGER` sobre las mismas tablas append-only que debía respetar.
+
+Ese eje lo cubre el **modelo de roles**:
+[`docs/ops/DATABASE_ROLE_MODEL.md`](DATABASE_ROLE_MODEL.md), implementado por
+`db/prepared/stella_0004_role_separation.sql` y aplicado **sólo en local**.
+
+Las dos capas son complementarias y ninguna sustituye a la otra:
+
+| Pregunta | Capa | Módulo |
+|---|---|---|
+| ¿A qué host puede conectarse esta capacidad? | destino | `db/safety/` |
+| ¿Qué puede hacer el rol una vez conectado? | privilegios | `db/prepared/stella_0004_*`, `db/audit/canonical_acl.sql` |
+
+**Riesgo residual vigente (RR-01):** el runtime sigue siendo `postgres`, que
+conserva `rolbypassrls`. Ya no es owner — así que no puede alterar estructura,
+policies ni triggers — pero sigue exento de RLS. Rotarlo a `uellix_app` exige
+propagar los claims JWT por transacción, como hace PostgREST; es un cambio de
+aplicación, registrado como decisión **DP-07**.
+
 ## 7. Qué NO debe hacerse
 
 - **No** añadir una variable que habilite varias capacidades a la vez.

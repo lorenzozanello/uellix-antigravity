@@ -26,6 +26,22 @@ requiere acción humana explícita.
    ```
    psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/<script>.sql
    ```
+
+   > **`stella_0004` es la excepción en cuanto al ROL, no en cuanto a la
+   > transacción.** Debe ejecutarse como **superusuario** (en local,
+   > `supabase_admin` dentro del contenedor). Un rol `CREATEROLE` no
+   > superusuario recibe `ADMIN OPTION` automáticamente sobre cada rol que crea
+   > (PostgreSQL 16+, verificado en este stack), y con esa `ADMIN OPTION` puede
+   > concederse `SET` sobre el owner — la separación quedaría en el papel. El
+   > propio script lo comprueba y aborta.
+   >
+   > **Además, después de aplicar `stella_0004`, los scripts `stella_0002`,
+   > `0002b` y `0003` ya no pueden ejecutarse como `postgres`:** emiten
+   > `REVOKE`, `GRANT`, `CREATE TRIGGER` y `ALTER TABLE`, y todo eso exige
+   > ownership. Se ejecutan como `uellix_migrator` con un `SET ROLE
+   > uellix_owner` explícito. Lo mismo vale para `pnpm db:migrate:local` sobre
+   > una base donde `0004` ya corrió; sobre una base **recién creada** el orden
+   > normal (migraciones → `0002`/`0002b`/`0003` → `0004`) no se ve afectado.
    `-1` garantiza que un fallo no deje estado parcial. Ninguno de estos scripts
    usa `CREATE INDEX CONCURRENTLY`, así que todos son compatibles con el modo
    transaccional.
@@ -81,6 +97,7 @@ requiere acción humana explícita.
 | `stella_0002b_append_only_truncate_hardening.sql` | `stella_0002b_rollback.sql` (**no reversible**) | G2 (`docs/ops/gates/G2_PACKAGE.md`) | 4 triggers `*_no_truncate` (`BEFORE TRUNCATE FOR EACH STATEMENT`) sobre `stella_interactions`, `audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y además `UPDATE/DELETE` a `service_role` | PREPARADO |
 | `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + `REVOKE ALL` a los 3 roles + grant SELECT a `authenticated` + RLS + política `stella_suggestion_decisions_select` + 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO |
 | `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | PREPARADO |
+| `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | 5 roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`); ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y `service_role` en las 38; repara `pg_default_acl` de `postgres` y `supabase_admin`; 4 entradas **globales** que suprimen `EXECUTE`/`USAGE` a `PUBLIC`; `USAGE ON SCHEMA auth` para el owner | PREPARADO — ensayado y aplicado **sólo en local** |
 
 **Tablas gestionadas fuera de Drizzle (ADR 21):** `stella_suggestion_decisions`,
 `evidence_chunks`. Consecuencia aceptada: `pnpm db:migrate:local` sobre una base
@@ -304,4 +321,6 @@ script preparado**; no son parte del gate G2 actual:
 - signed URL de descarga de evidencia;
 - trigger de inmutabilidad de `evidence_items.content_hash`.
 
-Ambos requerirían un futuro `stella_0004` que **todavía no existe**.
+Ambos requerirían un script preparado propio que **todavía no existe**. El
+número `stella_0004` ya está tomado por la separación de roles (ver el
+inventario), así que un futuro paquete para RK-14 sería `stella_0005`.

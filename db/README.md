@@ -9,6 +9,27 @@
 | `db/manual-migrations/` | SQL aplicado a mano, fuera del flujo drizzle |
 | `db/policies/` | políticas RLS |
 | `db/prepared/` | paquetes SQL revisados para ejecución **remota controlada** (ver `db/prepared/README.md`) |
+| `db/audit/` | consultas **read-only** de inspección de privilegios contra `pg_catalog` + `aclexplode` (`canonical_acl.sql`) |
+
+---
+
+## Modelo de roles
+
+Los objetos Uellix de `public` **no** son propiedad del runtime. El contrato de
+privilegios — quién es owner, quién migra, quién escribe y quién audita, qué
+recibe una tabla que todavía no existe, y qué parte de todo eso es reproducible
+en Supabase gestionado — está en
+[`docs/ops/DATABASE_ROLE_MODEL.md`](../docs/ops/DATABASE_ROLE_MODEL.md).
+
+Dos reglas que se olvidan con facilidad:
+
+- **La ACL canónica se lee con `aclexplode(COALESCE(acl, acldefault(...)))`,
+  nunca con `information_schema.role_table_grants`.** Esa vista expande
+  privilegios alcanzados por **membresía** y **no puede expresar `PUBLIC`**, de
+  modo que una expectativa del tipo *"para PUBLIC: ninguna fila"* es
+  infalsificable con ella.
+- **Un ACL nulo no significa "sin privilegios".** Significa el default del tipo
+  de objeto, y para funciones ese default es `EXECUTE TO PUBLIC`.
 
 ---
 
