@@ -813,3 +813,65 @@ REBUILD) **no** queda autorizado por esta corrida.
 | `pnpm test:integration` | Escribe en BD remota por defecto — prohibido por reglas de campaña |
 | `pnpm test:rls` | Ídem |
 | `pnpm build` | Se ejecutará como gate de integración por workstream, no en baseline |
+
+## STELLA FULL REBUILD — RUN 2 (2026-08-02)
+
+Reconstrucción completa del stack local desechable y reaplicación controlada de
+`stella_0002`, `stella_0002b` y `stella_0003` sobre volumen nuevo, con G3 en
+modo `CREATED`. Evidencia completa en
+`docs/ops/LOCAL_STAGING_G2_REHEARSAL.md` → *STELLA FULL REBUILD — RUN 2*.
+
+| Campo | Valor |
+|---|---|
+| Branch | `codex/stella-g2-local-rehearsal` |
+| HEAD inicial | `92d7c61` |
+| `project_id` | `uellix-stella-g2-local-rehearsal` (API `56321`, DB `56322`) |
+| Recursos destruidos | 10 contenedores · 3 volúmenes · 1 red, todos por label `com.supabase.cli.project` |
+| Otros stacks | `uellix-antigravity` y `aforiq` con los **mismos IDs de contenedor y estados** antes, durante y después |
+| Respaldos | ambos con SHA-256 `d46280c4…36aeb`, 581 736 B, fuera del repo — **no restaurados** |
+| `pg_restore -l` | 1155 TOC · 87 `TABLE DATA`, en contenedor `--network none` por `stdin` |
+
+### Pruebas de RUN 2
+
+| Comando | Pre-G3 | Post-G3 | Notas |
+|---|---|---|---|
+| `pnpm vitest run tests/prepared-stella-sql.test.ts tests/prepared-sql-source-of-truth.test.ts` | **246 / 246** | **246 / 246** | 2 archivos |
+| `pnpm test:unit` | **2553 / 2553** | **2553 / 2553** | 135 archivos, 0 omitidos |
+| `pnpm typecheck` | verde | verde | `tsc --noEmit`, 0 errores |
+| `pnpm lint` | 0 errores · 51 warnings | 0 errores · 51 warnings | warnings preexistentes |
+| `pnpm test:rls` | — | **32 passed · 0 failed · 0 skipped** | ejecutada **una sola vez**, fixture `CREATED`, 11,37 s |
+| `pnpm test:integration` | **NO EJECUTADA** | **NO EJECUTADA** | Escribe en BD remota por defecto |
+| `db:seed:proxies` / `db:seed:taxonomies` | **NO EJECUTADOS** | **NO EJECUTADOS** | Sin guarda de host |
+| `grounding_0001` | **NO EJECUTADO** | **NO EJECUTADO** | Bloqueado por G5 P3 |
+
+### Idempotencia
+
+| Script | 1ª pasada | 2ª pasada |
+|---|---|---|
+| `stella_0002` | exit 0 | exit 0, salida idéntica salvo `NOTICE` de *skipping* |
+| `stella_0002b` | exit 0, `verification passed` | exit 0, `verification passed` |
+| `stella_0003` | exit 0, `write path VERIFIED` + `verification passed` | exit 0, idéntico |
+
+### Conteos finales
+
+38 tablas · 104 policies · 119 índices · 230 constraints · 10 triggers
+append-only · 8 funciones `public` · 3 orgs · 9 users (`public` y `auth`) ·
+2 projects · 7 memberships · 2 `stella_interactions` ·
+1 `stella_suggestion_decisions` · 0 `storage.objects` · `evidence_chunks`
+ausente · `session_replication_role = origin` · 0 datos reales.
+
+### RUN 1 vs RUN 2
+
+Cero deriva estructural, cero deriva de seguridad, cero deriva funcional.
+G3 RUN 1 = **32/32 REUSED**; G3 RUN 2 = **32/32 CREATED**. La única diferencia
+de contador es de *definición de medida* (`MAINTAIN`, privilegio nuevo de
+PostgreSQL 17): con la definición de RUN 1, RUN 2 da los mismos 461 grants
+no-owner.
+
+**Alcance.** Diff limitado a documentación (`LOCAL_STAGING_G2_REHEARSAL.md`,
+este ledger, `STELLA_FABLE_RISK_REGISTER.md`, `gates/G2_PACKAGE.md`,
+`gates/G3_PACKAGE.md`). Cero cambios en `db/prepared/`, `db/schema.ts`,
+`db/migrations` ni en ningún script. Cero restore, cero remoto, cero
+`grounding_0001`, cero push/PR. **Cero ejecución formal de G2.**
+
+**Siguiente paso:** re-auditoría independiente de RUN 2.

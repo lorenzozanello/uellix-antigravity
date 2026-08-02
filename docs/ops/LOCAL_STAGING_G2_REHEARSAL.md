@@ -1808,3 +1808,344 @@ uno opera exclusivamente sobre los contenedores cuyo nombre deriva del
   este ensayo es evidencia de que los scripts *funcionan estructuralmente* en
   un Postgres real, no una aprobación de ningún gate.
 - No prepara ni ejecuta `grounding_0001` — permanece bloqueado por G5 P3.
+
+## STELLA FULL REBUILD — RUN 2
+
+> **Sigue sin ser G2 formal.** RUN 2 destruye el stack local desechable, lo
+> reconstruye desde cero y vuelve a aplicar `stella_0002`, `stella_0002b` y
+> `stella_0003` sobre un volumen nuevo, para demostrar que RUN 1 es
+> **reproducible** y no un artefacto de un estado heredado. Cero remoto, cero
+> restore, cero `grounding_0001`, cero G2 formal.
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-08-02, 03:44–04:03 (hora local) · `2026-08-02T08:44Z`–`09:03Z` |
+| Branch | `codex/stella-g2-local-rehearsal` |
+| HEAD inicial | `92d7c61014fef455ff49553d0d89a284e5796b49` |
+| Working tree al arrancar | limpio · staging vacío · sin operaciones Git en curso |
+| Historial | lineal desde el merge de integración `c28c135`; el ensayo no introduce merges |
+| `project_id` | `uellix-stella-g2-local-rehearsal` |
+| API / DB local | `127.0.0.1:56321` / `127.0.0.1:56322` |
+| Acceso remoto | ninguno — sin `login`/`link`/`db push`/`db pull`; `supabase/.temp` sin `project-ref` |
+
+### Preflight — respaldos reverificados, no restaurados
+
+| Comprobación | Resultado |
+|---|---|
+| Respaldo original | `%TEMP%\uellix-g3-local-backup\pre_g3_local.dump` — presente, 581 736 B |
+| Copia estable | `%LOCALAPPDATA%\uellix-stella-evidence\pre_g3_local.dump` — presente, 581 736 B |
+| SHA-256 (ambos) | `d46280c4261cc8b68896dd34b12f41d9334756a61f7a2f2a3c441aef5b436aeb` |
+| Ubicación | fuera del repositorio · no versionados · `git check-ignore` confirma que están fuera del árbol · cero `*.dump` dentro del repo |
+| `pg_restore -l` | **1155 entradas TOC · 87 `TABLE DATA`** — exacto |
+| Aislamiento del listado | contenedor efímero `--network none`; el dump entró por `stdin`, el contenedor nunca recibió un descriptor de fichero al archivo |
+| SHA-256 tras la lectura | idéntico — el respaldo no fue tocado |
+| Restore | **NO EJECUTADO** |
+
+> El bind-mount read-only no era viable: Docker Desktop no expone
+> `AppData\Local` en su file-sharing y el montaje aparece vacío dentro del
+> contenedor. La vía por `stdin` es estrictamente más restrictiva y es la
+> misma que usó RUN 1.
+
+### Línea base final de RUN 1 (capturada antes de destruir)
+
+Un único script de solo lectura — tablas, columnas, constraints, índices,
+policies, ACL vía `aclexplode`, triggers con `tgtype`/`tgenabled`, funciones con
+hash de cuerpo, migraciones y conteos. **1878 líneas, cero escrituras**,
+conservada fuera del repositorio en `%LOCALAPPDATA%\uellix-stella-evidence\run1\`.
+Sin identificadores ni contenido de filas.
+
+| Contador (RUN 1, post-rollback) | Valor |
+|---|---|
+| tablas `public` | 37 |
+| policies `public` | 103 |
+| índices `public` | 116 |
+| constraints `public` | 223 |
+| triggers append-only | 8 |
+| `stella_suggestion_decisions` | ausente |
+| `evidence_chunks` | ausente |
+| organizations / users / projects / memberships | 3 / 9 / 2 / 7 |
+| `stella_interactions` | 2 |
+| `uellix_forbid_mutation()` SHA-256 | `cd918f70…73cb98f` |
+
+### Identidad de los tres scripts
+
+| Script | SHA-256 working tree | SHA-256 canónico Git | Blob |
+|---|---|---|---|
+| `stella_0002_interactions_hardening.sql` | `11b79215…78c05e6` ✔ documentado | `bdf5f8dc…24858cd` | `0a830f4f…` |
+| `stella_0002b_append_only_truncate_hardening.sql` | `781e8b58…7aace550` ✔ documentado | `781e8b58…7aace550` (idéntico) | `869a54de…` |
+| `stella_0003_suggestion_decisions.sql` | `6caa5ca9…fd1c6b7d1` ✔ documentado | `ad22e22c…ce778fab5` ✔ documentado | `00c17b04…` |
+
+`git diff HEAD` vacío sobre las tres rutas. Los tres archivos están en **CRLF**
+en el working tree; el blob de `0002b` también, por eso dos de sus tres
+identidades colapsan.
+
+### Inventario de destrucción
+
+Allowlist construida por **label Docker**, no por prefijo de nombre —
+`com.supabase.cli.project=uellix-stella-g2-local-rehearsal`. Es la distinción
+que importa: `supabase_db_uellix-antigravity` y
+`supabase_db_uellix-stella-g2-local-rehearsal` comparten prefijo pero nunca
+label.
+
+| Clase | Conteo | Recursos |
+|---|---|---|
+| Contenedores | 10 | `supabase_{db,kong,auth,rest,realtime,storage,studio,pg_meta,edge_runtime,inbucket}_uellix-stella-g2-local-rehearsal` |
+| Volúmenes | 3 | `supabase_{db,storage,edge_runtime}_uellix-stella-g2-local-rehearsal` |
+| Redes | 1 | `supabase_network_uellix-stella-g2-local-rehearsal` |
+
+Ningún volumen objetivo estaba compartido: verificado con
+`docker ps --filter volume=<nombre>` — cada uno sólo lo usaba un contenedor del
+propio stack objetivo.
+
+Denylist explícita: todo recurso de `uellix-antigravity`, de `aforiq`, y los
+volúmenes ajenos `supabase_db_AlumniGraph`, `supabase_db_we4u-platform`,
+`supabase_storage_*` de esos proyectos, `supabase_edge_runtime_` (sufijo vacío),
+el volumen huérfano por hash y el contenedor `uellix-db`.
+
+### Destrucción — `pnpm supabase stop --no-backup`
+
+Sin `docker system prune`, sin `docker volume prune`, sin wildcards, sin
+borrado por prefijo. Un solo comando, acotado por el `project_id` del
+`config.toml` del directorio de trabajo.
+
+| Verificación posterior | Resultado |
+|---|---|
+| Contenedores del stack objetivo | **0** (por label y por nombre) |
+| Volumen de DB objetivo | ausente |
+| Volúmenes `storage` / `edge_runtime` objetivo | ausentes |
+| Red objetivo | ausente |
+| Puerto 56321 / 56322 | cerrados |
+| `uellix-antigravity` | **mismos IDs de contenedor, mismos estados** que antes |
+| `aforiq` | **mismos IDs de contenedor, mismos estados** que antes |
+| Respaldos | tamaño y SHA-256 idénticos tras la destrucción |
+| Repositorio | `git status` vacío, HEAD sin cambios |
+
+> Anomalías **preexistentes y ajenas** registradas antes de tocar nada, para que
+> no se lean como daño colateral: `supabase_edge_runtime_uellix-antigravity`
+> ya estaba `Exited (255)`, `supabase_vector_uellix-antigravity` ya estaba en
+> `Restarting`, y `uellix-db` llevaba 2 semanas parado. Los tres siguen igual.
+
+### Stack limpio
+
+`pnpm supabase start` desde `supabase/config.toml`. Mismo `project_id`, mismos
+puertos, analytics/vector/imgproxy/pooler deshabilitados por configuración
+(la CLI los reporta como *Stopped services*). Cero link, cero pull, cero datos
+restaurados, cero datos copiados del stack anterior.
+
+| Verificación | Resultado |
+|---|---|
+| PostgreSQL | **17.6** (`x86_64-pc-linux-gnu`) |
+| Contenedores | 10, todos healthy, **IDs nuevos** (volumen nuevo) |
+| API / DB / Studio | `56321` / `56322` / `56323` en escucha |
+| Auth / Storage | healthy |
+| `public` en el arranque | **0 tablas** — base genuinamente nueva |
+| `supabase/migrations/` | 2 aplicadas por la CLI: 2 triggers en `auth.users`, `public.handle_new_user()`, 3 policies en `storage.objects` |
+| `.env.local` | válido **sin editar** — la CLI local deriva `anon`/`service_role` de un *JWT secret* de demo fijo, no de un valor por volumen |
+
+### Base build desde cero
+
+| Paso | Resultado |
+|---|---|
+| `pnpm db:migrate:local` | 40/40 Drizzle, `drizzle.__drizzle_migrations` = 40 filas, 0 errores |
+| `001_unique_constraints.sql` | aplicada; ambos `PRECHECK` → 0 filas; índices ya presentes por la cadena Drizzle (`IF NOT EXISTS` los preservó) |
+| `002_append_only.sql` | aplicada; `uellix_forbid_mutation()` + 3 triggers |
+| `003_numeric_columns.sql` | **NO aplicada** — `ALREADY_SATISFIED_ON_FRESH_DRIZZLE_BUILD`, igual que RUN 1 |
+| `db/policies/` (8) | 8/8, cada una en su propia transacción (`-1 -v ON_ERROR_STOP=1`), 0 errores |
+| `pnpm db:seed:local` | 2 orgs, 8 usuarios sintéticos (guarda de host activa) |
+| `pnpm db:seed:stella-local` | 1 proyecto + 1 interacción sintéticos |
+| `db:seed:proxies` / `db:seed:taxonomies` | **NO ejecutados** |
+| `grounding_0001` | **NO ejecutado** |
+
+Contrato base verificado **antes** del endurecimiento Stella:
+
+| Contador | Esperado | Obtenido |
+|---|---|---|
+| organizaciones sintéticas | 2 | 2 ✔ |
+| usuarios sintéticos | 8 | 8 ✔ |
+| membresías sintéticas | 6 | 6 ✔ |
+| proyectos sintéticos | 1 | 1 ✔ |
+| interacciones Stella sintéticas | 1 | 1 ✔ |
+| `stella_suggestion_decisions` | ausente | ausente ✔ |
+| `evidence_chunks` | ausente | ausente ✔ |
+| datos reales | 0 | 0 ✔ |
+| tablas / policies / índices / constraints | 37 / 103 / 116 / 223 | idénticos a RUN 1 pre-0003 ✔ |
+| `uellix_forbid_mutation()` SHA-256 | `cd918f70…73cb98f` | idéntico a RUN 1 ✔ |
+
+### `stella_0002`
+
+Aplicada dos veces, `docker exec … psql -1 -v ON_ERROR_STOP=1`, archivo exacto
+por `stdin`, sin modificar. Salida idéntica salvo los `NOTICE` de
+*does not exist, skipping* de la primera pasada. **Idempotente.**
+
+`stella_interactions`, `audit_logs`, `sroi_calculation_runs` y
+`sroi_calculation_line_items` intactas · 4 triggers `UPDATE/DELETE` ·
+`authenticated` sin `UPDATE/DELETE` · `anon`/`PUBLIC` sin grants · RLS y
+policies intactas · datos sintéticos preservados.
+
+### `stella_0002b`
+
+Aplicada dos veces. Ambas pasadas imprimen
+`verification passed — 4 TRUNCATE triggers attached, 0 residual dangerous grants, SELECT/INSERT preserved`.
+**Idempotente.**
+
+| Verificación | Resultado |
+|---|---|
+| Triggers `TRUNCATE` | 4 (`tgtype=34` = `BEFORE TRUNCATE FOR EACH STATEMENT`) |
+| Triggers append-only totales | 8 |
+| `UPDATE` / `DELETE` / `TRUNCATE` | bloqueados, **SQLSTATE `42501`**, mensaje `append-only: … is not permitted` |
+| `TRUNCATE` como `postgres` | bloqueado — sólo lo detiene el trigger |
+| `authenticated` / `service_role` | exactamente `SELECT`+`INSERT` en las 4 tablas |
+| `anon` / `PUBLIC` | 0 grants |
+| Datos persistentes generados por pruebas | 0 (`audit_logs`, `sroi_*` en 0 filas) |
+
+### `stella_0003`
+
+Aplicada dos veces en **una sola sesión** con el rol escritor declarado por
+`-c "SET stella.writer_role = 'postgres'"` antes del `-f`. Sin `ALTER ROLE`,
+sin `ALTER DATABASE`. Ambas pasadas imprimen
+`write path VERIFIED against declared writer role postgres` y
+`verification passed`. **Idempotente.**
+
+Contrato pre-G3 verificado de forma **independiente al propio script**:
+
+| Verificación | Esperado | Obtenido |
+|---|---|---|
+| Tabla presente | sí | sí ✔ |
+| Filas | 0 | 0 ✔ |
+| Columnas | 11 exactas | 11 ✔ |
+| FKs | 4, todas `NO ACTION` | 4, `confupdtype/confdeltype = a/a` ✔ |
+| `UNIQUE` | 0 | 0 ✔ |
+| Índices no únicos | 2 | 2 (+ el PK único) ✔ |
+| RLS / FORCE | on / off | on / off ✔ |
+| Policies | 1 `SELECT` | 1 ✔ |
+| `authenticated` | `SELECT` no grantable | `SELECT`, `is_grantable=false` ✔ |
+| `service_role` / `anon` / `PUBLIC` | 0 | ausentes del ACL ✔ |
+| Triggers nuevos | 2 | 2 ✔ |
+| Triggers append-only totales | 10 | 10 ✔ |
+| `evidence_chunks` | ausente | ausente ✔ |
+
+### G3 — modo CREATED
+
+Precondiciones confirmadas: 0 decisiones con la `suggestion_key` determinista
+`g3-local-rehearsal.synthetic.advisor.suggested_next_actions[0]`,
+`stella_suggestion_decisions` = 0, `stella_interactions` = 1, API y DB
+exclusivamente locales, cero remoto.
+
+`pnpm test:rls` ejecutado **una sola vez**:
+
+| Registro | Valor |
+|---|---|
+| Resultado | **1 archivo, 32 passed, 0 failed, 0 skipped**, 11,37 s |
+| Fixture append-only | **CREATED** — el modo se *resuelve* contando filas con la clave determinista, y sobre volumen nuevo no había ninguna |
+| Decisiones creadas | 1 (ninguna segunda) |
+| Interacciones creadas | 1 adicional |
+| Residuo inesperado | ninguno |
+
+Verificaciones funcionales cubiertas por las 32: organización A lee,
+organización B no lee, usuario sin membresía ni lee ni inserta, superadmin lee
+y no muta, `service_role` no lee ni inserta la tabla de decisiones,
+`authenticated` no inserta, `UPDATE`/`DELETE`/`TRUNCATE` bloqueados con
+SQLSTATE `42501` y el mensaje append-only correcto.
+
+> Que RUN 1 diera 32/32 en modo `REUSED` y RUN 2 dé 32/32 en modo `CREATED` es
+> evidencia **más fuerte** que dos corridas idénticas: las 32 aserciones se
+> sostienen por el contrato de seguridad, no por el estado heredado.
+
+### Postcheck RUN 2
+
+| Contador | Esperado | Obtenido |
+|---|---|---|
+| tablas `public` | 38 | 38 ✔ |
+| policies `public` | 104 | 104 ✔ |
+| triggers append-only | 10 | 10 ✔ |
+| índices `public` | 119 | 119 ✔ |
+| constraints `public` | 230 | 230 ✔ |
+| funciones `public` | 8 | 8 ✔ |
+| organizations | 3 | 3 ✔ |
+| users `public` / `auth.users` | 9 / 9 | 9 / 9 ✔ |
+| projects | 2 | 2 ✔ |
+| memberships | 7 | 7 ✔ |
+| `stella_interactions` | 2 | 2 ✔ |
+| `stella_suggestion_decisions` | 1 | 1 ✔ |
+| `storage.objects` | 0 | 0 ✔ |
+| `evidence_chunks` | ausente | ausente ✔ |
+| `session_replication_role` | `origin` | `origin` ✔ |
+| duplicados de `suggestion_key` | 0 | 1 clave distinta de 1 fila ✔ |
+| datos reales | 0 | 0 ✔ |
+
+Residuo final, **todo sintético y etiquetado como tal**: 8 usuarios `@test.com`
+del seed base + 1 `test-rls-…@test.local` del fixture G3; orgs
+`Organización A`/`Organización B` + `RLS Org A`; interacciones `seed-synthetic`
+y `test-model`; decisión con `suggestion_key` bajo el prefijo
+`g3-local-rehearsal.synthetic.`.
+
+### Comparación RUN 1 vs RUN 2
+
+Diff canónico entre la línea base de RUN 1 (post-rollback) y la de RUN 2
+(final): **61 líneas**, descompuestas en 7 contadores actualizados y 34 líneas
+que pertenecen **todas** a `stella_suggestion_decisions`. Ninguna línea de
+ningún objeto preexistente cambió.
+
+| Dimensión | Resultado |
+|---|---|
+| Hashes de `0002` / `0002b` / `0003` | idénticos a los documentados |
+| Columnas, PK, FKs, acciones `ON DELETE`, `CHECK`s | sin diferencias fuera de la tabla que crea 0003 |
+| Índices, policies | ídem |
+| ACL vía `aclexplode` | única diferencia no-owner: **+1** (`authenticated SELECT` sobre la tabla nueva) |
+| Triggers, `tgtype`, `tgenabled` | sin diferencias fuera de los 2 triggers de 0003 (`tgtype` 27 y 34, `tgenabled=O`) |
+| Cuerpo y hash de `uellix_forbid_mutation()` | `cd918f70…73cb98f` — **idéntico** |
+| RLS / FORCE RLS | sin diferencias |
+| Migraciones registradas | 2 Supabase + 40 Drizzle — idénticas |
+| Fixtures sintéticos | mismos conteos base (2/8/6/1/1) y mismo residuo final (3/9/2/7/2/1) |
+| Conteos finales | 38 / 104 / 119 / 230 / 10 — coinciden con los documentados de RUN 1 |
+| G3 | RUN 1 **32/32 REUSED** · RUN 2 **32/32 CREATED** |
+| Pruebas offline | 246/246 y 2553/2553 en ambos |
+| `evidence_chunks` | ausente en ambos |
+| Remoto | ausente en ambos |
+
+**Clasificación de diferencias**
+
+| Diferencia | Clase | Justificación |
+|---|---|---|
+| Los 34 objetos de `stella_suggestion_decisions` y los 7 contadores | **esperada** | Es exactamente lo que `stella_0003` debe crear |
+| Modo de fixture `REUSED` → `CREATED` | **esperada** | RUN 2 corre sobre volumen nuevo; el modo se resuelve por estado, por diseño |
+| Grants no-owner: 526 (RUN 2) vs 461 (documentado RUN 1) | **cosmética** | Diferencia de *definición de medida*, no de estado: `MAINTAIN` es un privilegio nuevo de PostgreSQL 17. Excluyéndolo, RUN 2 da **461** exacto. El delta real RUN 1→RUN 2 es **+1**, el mismo `−1` que registró el rollback |
+| IDs de contenedor y UUID de fixtures | **cosmética** | Identificadores aleatorios; no se comparan como si debieran coincidir |
+| Deriva estructural | **cero** | — |
+| Deriva de seguridad | **cero** | — |
+| Deriva funcional | **cero** | — |
+| BLOCKER | **ninguno** | — |
+
+### Pruebas
+
+| Comando | Pre-G3 | Post-G3 |
+|---|---|---|
+| `tests/prepared-stella-sql.test.ts` + `tests/prepared-sql-source-of-truth.test.ts` | **246 / 246** | **246 / 246** |
+| `pnpm test:unit` | **2553 / 2553** (135 archivos) | **2553 / 2553** (135 archivos) |
+| `pnpm typecheck` | verde | verde |
+| `pnpm lint` | 0 errores, 51 warnings preexistentes | 0 errores, 51 warnings |
+| `pnpm test:rls` | — | **32/32**, ejecutada **una sola vez** |
+
+### Desviación de herramienta
+
+No hay `psql` en el `PATH` del host. RUN 2 aplicó los tres scripts por
+`docker exec -i supabase_db_… psql -U postgres -d postgres -1 -v ON_ERROR_STOP=1 -f -`,
+con el archivo exacto por `stdin`. Es una conexión local dentro del contenedor:
+cambia la herramienta de transporte, no el procedimiento ni las garantías
+(`-1`, `ON_ERROR_STOP=1`, una sola sesión, archivo sin modificar).
+
+### Lo que RUN 2 **no** hizo
+
+- No restauró ninguno de los dos respaldos.
+- No accedió al Supabase remoto ni usó `login`/`link`/`push`/`pull`.
+- No ejecutó `grounding_0001` ni creó `evidence_chunks`.
+- No ejecutó G2 formal.
+- No cambió *default privileges* globales.
+- No modificó `db/schema.ts`, `db/migrations` ni ningún script preparado.
+- No usó `docker system prune`, `docker volume prune` ni patrones amplios.
+- No detuvo ni eliminó `uellix-antigravity` ni `aforiq`.
+- No hizo push ni PR.
+
+**Resultado del gate:** `FULL_REBUILD_RUN_2_EXECUTED_VERIFIED_READY_FOR_REAUDIT`.
+G2 formal sigue **sin ejecutar**; RUN 2 es evidencia de reproducibilidad local,
+no una aprobación.
