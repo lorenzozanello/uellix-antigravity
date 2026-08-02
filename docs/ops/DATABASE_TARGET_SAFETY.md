@@ -515,6 +515,38 @@ cerraron además sus MINOR/NIT:
 | 32 | NIT | El scrubber redactaba dos veces una URL (`***.***.co`) | La sustitución de URL va la última |
 | 33 | NIT | Un **nombre** de parámetro puede ser a su vez un host | Sólo se imprime si tiene forma de identificador; si no, `(unnamed)` |
 
+**La sexta ronda (reauditoría independiente posterior a la publicación de este
+documento) encontró 0 BLOCKER, 0 MAJOR y clasificó 1 mutación superviviente
+como cierre obligatorio.** El gate de la reauditoría exige que toda mutación
+de seguridad superviviente se trate como MAJOR o BLOCKER, así que se cerró
+antes de continuar, junto con dos huecos de cobertura relacionados
+identificados en la misma pasada:
+
+| # | Severidad | Hallazgo | Corrección |
+|---|---|---|---|
+| 34 | MAJOR (mutación superviviente) | El orden del *merge* de `postgresOptions.connection` en `db/client.ts` (spread del llamador, luego `default_transaction_read_only = 'on'`) era correcto, pero **ninguna prueba fallaba si se invertía**: `GUARD_OWNED_CONNECTION_KEYS` ya rechaza que el llamador incluya esa clave, así que ningún test que pasara por `createDatabaseClient` podía alcanzar el *merge* con un valor en conflicto. Ningún caller actual usa `postgresOptions.connection`, pero la garantía exportada por la API dependía de una capa sin prueba propia | Extraída como `mergeGuardedConnectionOptions()`, exportada y probada **directamente**, sin pasar por la refusal anterior — así la prueba sí depende del orden del spread. Confirmado con 3 mutaciones independientes (spread invertido, asignación protegida eliminada, `Object.assign` en orden inseguro), las 3 detectadas |
+| 35 | MINOR (hueco de cobertura) | La comparación de `GUARD_OWNED_CONNECTION_KEYS` era case-sensitive (`suppliedConnection[key] !== undefined`), pero los nombres de GUC de Postgres son case-insensitive: `DEFAULT_TRANSACTION_READ_ONLY` habría llegado al servidor como el mismo ajuste que la forma en minúsculas, sin que la guarda lo detectara | Las claves del llamador se normalizan a minúsculas sobre un `Set` derivado — nunca se muta el objeto original — antes de comparar. Probado con minúsculas, mayúsculas, mixed case, múltiples claves a la vez, una clave permitida (`application_name`) y un objeto vacío |
+| 36 | MINOR (hueco de cobertura) | `sslrootcert` estaba correctamente excluido de `DRIVER_CONSUMED_QUERY_KEYS` desde la ronda 3 (hallazgo 18), pero ninguna prueba fijaba **por qué**: ni que se clasifica como parámetro reenviado, ni que el reenvío no tiene ningún camino hacia el objeto `ssl` que de verdad controla la verificación del certificado | Verificado empíricamente contra el `postgres@3.4.9` instalado (`src/index.js` `parseOptions`, `src/connection.js` `secure()`): `sslrootcert` se reenvía al paquete de arranque (no está en `defaults`) pero **nunca se lee** para construir las opciones de `tls.connect` — sólo el `ssl` de nivel superior llega ahí. Añadidas pruebas que fijan ambos hechos por separado, más una prueba de nivel `db/client.ts` que confirma que `sslrootcert` en `postgresOptions.connection` no cambia el `ssl` fijado |
+
+Mutaciones adicionales probadas sobre el mismo cierre, las 8 detectadas:
+invertir el spread; eliminar el valor protegido; `Object.assign` inseguro;
+comparación case-sensitive; quitar sólo la normalización a minúsculas;
+permitir explícitamente `DEFAULT_TRANSACTION_READ_ONLY`; reclasificar
+`sslrootcert` como consumida por el driver; y dejar que `sslrootcert` degrade
+`verify-full`. Cada mutación se aplicó, se confirmó que al menos una prueba
+fallaba, y el archivo se restauró byte a byte (verificado por SHA-256) antes
+de la siguiente.
+
+7. **Una refusal que precede a un *merge* no prueba el *merge*.** Que
+   `GUARD_OWNED_CONNECTION_KEYS` rechace una clave en conflicto no dice nada
+   sobre si el orden del *merge* posterior sería correcto si esa refusal
+   desapareciera. Las dos capas son garantías **independientes**; cada una
+   necesita su propia prueba, alcanzable sin pasar por la otra.
+8. **Case-sensitivity es una superficie de bypass silenciosa cuando el
+   sistema protegido no la tiene.** Postgres no distingue mayúsculas en sus
+   GUC; una guarda que sí las distingue dentro de ese dominio no está
+   cerrada, sólo lo parece contra la entrada que alguien pensó en probar.
+
 ### Lecciones
 
 1. **Una guarda que reimplementa el parseo de otro componente no es una
@@ -540,9 +572,9 @@ cerraron además sus MINOR/NIT:
 
 ## 10. Cobertura ejecutable
 
-| Suite | Qué fija |
-|---|---|
-| `tests/database-target-safety.test.ts` | clasificación (local, remoto, privado, adversarial, inválido), redacción, matriz de capacidades, aislamiento, seguridad de mensajes, resolución de entorno, y contraste de las constantes locales contra `supabase/config.toml` |
-| `tests/database-entrypoint-safety.test.ts` | ausencia de efectos de import, guarda antes del driver, superficie de `package.json`, regresión de dotenv, y procesos hijo reales que verifican que los scripts abortan **antes** de conectar |
+| Suite | Tests | Qué fija |
+|---|---|---|
+| `tests/database-target-safety.test.ts` | 139 | clasificación (local, remoto, privado, adversarial, inválido), redacción, matriz de capacidades, aislamiento, seguridad de mensajes, resolución de entorno, contraste de las constantes locales contra `supabase/config.toml`, y la clasificación de `sslrootcert` como parámetro reenviado (hallazgo 36) |
+| `tests/database-entrypoint-safety.test.ts` | 111 | ausencia de efectos de import, guarda antes del driver, superficie de `package.json`, regresión de dotenv, procesos hijo reales que verifican que los scripts abortan **antes** de conectar, el orden del *merge* de `postgresOptions.connection` probado directamente vía `mergeGuardedConnectionOptions()` (hallazgo 34), la comparación case-insensitive de `GUARD_OWNED_CONNECTION_KEYS` (hallazgo 35), y que `sslrootcert` no influye en el `ssl` fijado (hallazgo 36) |
 
 Ambas se ejecutan en `pnpm test:unit` y en el workflow `p1a-validation`.

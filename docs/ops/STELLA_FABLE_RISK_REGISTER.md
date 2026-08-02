@@ -127,6 +127,7 @@ heredado, RUN 2 sobre un volumen creado desde cero minutos antes.
 | La allow-list de hostnames de contenedor está vacía por defecto | **aceptado** — un despliegue en red de contenedores debe pasar su propia lista; hasta entonces un hostname sin puntos clasifica `unknown` y falla cerrado. Es la dirección segura |
 | Las capacidades `controlled_remote_*` existen pero **ningún** entry point las usa | **abierto por diseño** — son la vía prevista para el día en que una herramienta TypeScript deba operar contra staging. Hoy toda operación remota sigue pasando por `db/prepared/` y las checklists de `docs/ops/gates/`. Su primer uso real exigirá revisión propia |
 | `pnpm test:integration` y `pnpm test:rls` conservan su nombre histórico | **aceptado** — CI los invoca; ya pasan por la guarda. `db:test:integration:local` es el alias que declara el entorno |
+| Mutación superviviente de la reauditoría independiente: el orden del *merge* de `postgresOptions.connection` no tenía prueba propia (alcanzable sólo si `GUARD_OWNED_CONNECTION_KEYS` fallara), esa comparación era case-sensitive, y `sslrootcert` no tenía prueba dedicada de su comportamiento real | **cerrado 2026-08-02** — `mergeGuardedConnectionOptions()` extraída y probada de forma aislada; comparación normalizada a minúsculas; `sslrootcert` fijado por prueba tras verificación empírica contra `postgres@3.4.9`. 8/8 mutaciones detectadas. Ver `docs/ops/DATABASE_TARGET_SAFETY.md` §9 ronda 6 |
 
 ### Bloqueadores remotos (sin cambio)
 

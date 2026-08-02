@@ -88,8 +88,42 @@ const TARGET_DETERMINING_OPTIONS = [
  * Startup-packet keys the guard itself sets. A caller supplying one could
  * overwrite the read-only enforcement: postgres-js keeps `...o.connection` in
  * the same object, and both settings travel in one startup packet.
+ *
+ * Values here are already lowercase — the caller's keys are normalised to
+ * lowercase before comparison (see `createDatabaseClient`), because Postgres
+ * GUC names are themselves case-insensitive: `DEFAULT_TRANSACTION_READ_ONLY`
+ * reaches the server as the same setting as the lowercase form.
  */
 const GUARD_OWNED_CONNECTION_KEYS = ['options', 'default_transaction_read_only'] as const
+
+/**
+ * Merge a caller's `postgresOptions.connection` with the read-only flag this
+ * guard applies, guaranteeing the protected key wins.
+ *
+ * Extracted as its own function so it can be tested directly, independent of
+ * the earlier `GUARD_OWNED_CONNECTION_KEYS` refusal in `createDatabaseClient`:
+ * that check already stops a caller from supplying
+ * `default_transaction_read_only` today, but the two are separate layers of
+ * the same guarantee, and defense in depth only works if each layer is
+ * independently correct — a test that only calls `createDatabaseClient` can
+ * never reach this function with a conflicting value, so it can never prove
+ * the SPREAD ORDER below is what actually protects the flag.
+ *
+ * The caller's keys are spread FIRST and the protected key is assigned
+ * AFTER, unconditionally when `readOnly` is true — this order is the entire
+ * guarantee. Inverting it would let a future caller connection key silently
+ * win.
+ */
+export function mergeGuardedConnectionOptions(
+  callerConnection: Record<string, string> | undefined,
+  readOnly: boolean
+): Record<string, string> {
+  const merged: Record<string, string> = { ...(callerConnection ?? {}) }
+  if (readOnly) {
+    merged.default_transaction_read_only = 'on'
+  }
+  return merged
+}
 
 /** Capabilities whose policy pins TLS. Checked before the guard builds a decision. */
 function assertsTlsFor(capability: DatabaseCapability): boolean {
@@ -117,8 +151,14 @@ export function createDatabaseClient(options: CreateDatabaseClientOptions): Data
       )
     }
 
+    // Case-insensitive: Postgres GUC names are, so `DEFAULT_TRANSACTION_READ_ONLY`
+    // must be caught exactly like the lowercase form. The comparison works off
+    // a derived lowercase key set — the caller's own object is never mutated.
     const suppliedConnection = (supplied.connection ?? {}) as Record<string, unknown>
-    const owned = GUARD_OWNED_CONNECTION_KEYS.filter((key) => suppliedConnection[key] !== undefined)
+    const suppliedConnectionKeysLower = new Set(
+      Object.keys(suppliedConnection).map((key) => key.toLowerCase())
+    )
+    const owned = GUARD_OWNED_CONNECTION_KEYS.filter((key) => suppliedConnectionKeysLower.has(key))
     if (owned.length > 0) {
       throw new Error(
         `createDatabaseClient: postgresOptions.connection may not contain [${owned.join(', ')}]. ` +
@@ -174,12 +214,10 @@ export function createDatabaseClient(options: CreateDatabaseClientOptions): Data
   // PostgreSQL processes the `options` field (cmdline_options) BEFORE the
   // per-parameter list, so a direct pair wins over anything smuggled through
   // `-c`. Callers may not supply either key — see GUARD_OWNED_CONNECTION_KEYS.
-  const connection: Record<string, string> = {
-    ...((options.postgresOptions?.connection as Record<string, string> | undefined) ?? {}),
-  }
-  if (decision.readOnly) {
-    connection.default_transaction_read_only = 'on'
-  }
+  const connection = mergeGuardedConnectionOptions(
+    options.postgresOptions?.connection as Record<string, string> | undefined,
+    decision.readOnly
+  )
 
   const sql = postgres(connectionString, {
     ...options.postgresOptions,

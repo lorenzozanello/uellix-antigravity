@@ -584,6 +584,35 @@ describe('capabilities — a URL may not override our own connection settings', 
     expect(decision.targetKind).toBe('managed_remote')
   })
 
+  it('flags "sslrootcert" as forwarded — empirically NOT one of the driver\'s own options', () => {
+    // Reaudit gap (sslrootcert): verified against the installed postgres@3.4.9
+    // (node_modules/postgres/src/index.js `parseOptions`) that `sslrootcert`
+    // is absent from the driver's own `defaults` object, so the `k in
+    // defaults` filter that builds the startup-packet `connection` object
+    // does NOT consume it — it is forwarded like any other unrecognised query
+    // key. `DRIVER_CONSUMED_QUERY_KEYS` in database-target.ts deliberately
+    // omits it for exactly this reason; this test pins the classification
+    // that depends on that omission.
+    const target = classifyDatabaseTarget(`${REMOTE_SUPABASE}?sslrootcert=%2Fpath%2Fto%2Fca.pem`)
+    expect(target.injectedConnectionParameters).toEqual(['sslrootcert'])
+  })
+
+  it('refuses a URL carrying "sslrootcert" for every capability a URL could reconfigure', () => {
+    const url = `postgresql://${FAKE_USER}:${FAKE_PASSWORD}@127.0.0.1:${LOCAL_DB_PORT}/postgres?sslrootcert=%2Fpath%2Fto%2Fca.pem`
+    for (const capability of LOCAL_ONLY_CAPABILITIES) {
+      const error = capture(() =>
+        assertDatabaseOperationAllowed({
+          url,
+          capability,
+          environment: 'test',
+          expectedLocalPort: LOCAL_DB_PORT,
+          env: {},
+        })
+      )
+      expect(error.code).toBe('DB_URL_UNSAFE_PARAMETERS')
+    }
+  })
+
   it('the refusal message names the parameters but never their values', () => {
     const error = capture(() =>
       assertDatabaseOperationAllowed({

@@ -1028,3 +1028,66 @@ y `aforiq` intactos (28 h de uptime, sin reinicios). **Cero escrituras.**
 2 suites nuevas y 3 ajustes de suites existentes, y documentación. Cero cambios
 en `db/prepared/`, `db/schema.ts` y `db/migrations/`. Cero push, cero PR.
 **Cero ejecución formal de G2.**
+
+### 2026-08-02 · CIERRE DE HUECOS DE LA REAUDITORÍA DE SEGURIDAD DE BD · rama `codex/stella-g2-local-rehearsal`, sobre `ce0b195`
+
+Sigue a `STELLA_DATABASE_SAFETY_REAUDIT_VERIFIED_READY_FOR_NEXT_HARDENING`, cuyo
+gate reclasifica temporalmente cualquier mutación de seguridad superviviente
+como MAJOR o BLOCKER. Cierra exactamente los tres huecos que dejó abiertos —
+ver `docs/ops/DATABASE_TARGET_SAFETY.md` §9, ronda 6 (hallazgos 34-36) para el
+detalle técnico completo. Resumen aquí:
+
+1. **Orden del *merge* de `postgresOptions.connection` sin prueba propia.**
+   El código ya era correcto (spread del llamador, luego el flag protegido),
+   pero ninguna prueba fallaba si se invertía, porque `GUARD_OWNED_CONNECTION_KEYS`
+   ya rechaza esa clave **antes** de llegar al *merge* — dos capas de la misma
+   garantía, sólo una con prueba. Extraída `mergeGuardedConnectionOptions()` en
+   `db/client.ts`, exportada y probada de forma aislada.
+2. **`GUARD_OWNED_CONNECTION_KEYS` comparaba case-sensitive.** Los GUC de
+   Postgres no distinguen mayúsculas; `DEFAULT_TRANSACTION_READ_ONLY` habría
+   pasado sin ser detectado. Normalizado a minúsculas sobre un `Set` derivado,
+   sin mutar el objeto del llamador.
+3. **`sslrootcert` sin prueba dedicada.** Ya estaba correctamente excluido de
+   `DRIVER_CONSUMED_QUERY_KEYS` desde la ronda 3 de la unidad original, pero
+   nada fijaba por qué. Verificado empíricamente contra el `postgres@3.4.9`
+   instalado: se reenvía al paquete de arranque, pero jamás se lee para
+   construir las opciones TLS — sólo el `ssl` de nivel superior llega a
+   `tls.connect`.
+
+**Mutation check (2026-08-02).** 8 mutaciones sobre los tres cierres (spread
+invertido, valor protegido eliminado, `Object.assign` inseguro, comparación
+case-sensitive, normalización a minúsculas retirada, `DEFAULT_TRANSACTION_READ_ONLY`
+permitida explícitamente, `sslrootcert` reclasificada como consumida por el
+driver, `sslrootcert` degradando `verify-full`) — **8/8 detectadas**. Cada
+mutación se aplicó a `db/client.ts` o `db/safety/database-target.ts`, se
+confirmó al menos una prueba en rojo, y el archivo se restauró desde una copia
+verificada por SHA-256 antes de la siguiente.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/database-target-safety.test.ts` | VERDE | 139 tests (antes 137 → **+2**) |
+| `pnpm vitest run tests/database-entrypoint-safety.test.ts` | VERDE | 111 tests (antes 95 → **+16**) |
+| `pnpm test:unit` | VERDE | 137 archivos, **2805 tests** (antes 2787 → **+18**, los mismos 18) |
+| `pnpm typecheck` | VERDE | exit 0, 0 errores |
+| `pnpm lint` | VERDE | exit 0, **0 errores**, 51 warnings — mismo conteo que antes de esta unidad |
+| `pnpm build` | VERDE | `next build` completo |
+
+**No ejecutados, por política de esta campaña:** `test:integration`, `test:rls`,
+seeds, migraciones, resets, `grounding_0001`. Cero acceso remoto.
+
+**Verificación de estado vivo (sólo `SELECT`, sesión forzada a solo lectura)**
+vía `pnpm db:audit:readonly` contra `127.0.0.1:56322`: **38** tablas, **104**
+policies, **10** triggers append-only (5 de fila + 5 de `TRUNCATE`), **1**
+`stella_suggestion_decisions`, **2** `stella_interactions`, `evidence_chunks`
+ausente, `default_transaction_read_only = on` — **idéntico** a la línea base
+de la unidad original. Cero escrituras.
+
+**Alcance del diff:** `db/client.ts` (extracción de `mergeGuardedConnectionOptions`
+y normalización case-insensitive; `db/safety/database-target.ts` sin cambios —
+la clasificación de `sslrootcert` ya era correcta), `tests/database-target-safety.test.ts`,
+`tests/database-entrypoint-safety.test.ts`, y esta documentación. Cero cambios
+en `db/prepared/`, `db/schema.ts`, `db/migrations/`, seeds, ni scripts. Cero
+reset, cero grounding, cero acceso remoto, cero push, cero PR. **G2 formal
+sigue sin ejecutarse.**
+
+**Resultado:** `STELLA_DATABASE_SAFETY_GAPS_CLOSED_READY_FOR_FINAL_CHECK`.

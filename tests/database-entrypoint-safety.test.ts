@@ -27,6 +27,7 @@ import {
 import { LOCAL_DATABASE_URL, LOCAL_DB_PORT } from '@/db/safety/local-stack'
 import { describeError } from '@/db/safety/redact-error'
 import { resolveLocalDatabaseUrl } from '@/db/safety/resolve-local-database-url'
+import { mergeGuardedConnectionOptions } from '@/db/client'
 
 const ROOT = process.cwd()
 const TSX_CLI = path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs')
@@ -480,6 +481,111 @@ describe('db/client — the guard runs before the driver', () => {
     }
   })
 
+  it.each([
+    ['DEFAULT_TRANSACTION_READ_ONLY', 'default_transaction_read_only'],
+    ['Default_Transaction_Read_Only', 'default_transaction_read_only'],
+    ['dEfAuLt_TrAnSaCtIoN_rEaD_oNlY', 'default_transaction_read_only'],
+    ['OPTIONS', 'options'],
+    ['Options', 'options'],
+  ])(
+    'refuses a case-varied spelling of a guard-owned key: %s',
+    // Reaudit gap (GUC-CASE): the check compared `suppliedConnection[key]` against
+    // the exact-lowercase literal, so `DEFAULT_TRANSACTION_READ_ONLY` sailed
+    // through untouched — and Postgres GUC names are case-insensitive, so the
+    // server would have honoured it exactly like the lowercase form the guard
+    // already refuses.
+    (suppliedKey) => {
+      expect(() =>
+        client.createDatabaseClient({
+          connectionString: LOCAL_DATABASE_URL,
+          capability: 'readonly_audit',
+          environment: 'test',
+          expectedLocalPort: LOCAL_DB_PORT,
+          env: {},
+          postgresOptions: { connection: { [suppliedKey]: 'off' } } as never,
+        })
+      ).toThrow(/postgresOptions\.connection may not contain/)
+      expect(spies.postgresCalls).toHaveLength(0)
+    }
+  )
+
+  it('still refuses multiple case-varied guard-owned keys supplied together', () => {
+    expect(() =>
+      client.createDatabaseClient({
+        connectionString: LOCAL_DATABASE_URL,
+        capability: 'readonly_audit',
+        environment: 'test',
+        expectedLocalPort: LOCAL_DB_PORT,
+        env: {},
+        postgresOptions: {
+          connection: { OPTIONS: '-c anything', Default_Transaction_Read_Only: 'off' },
+        } as never,
+      })
+    ).toThrow(/postgresOptions\.connection may not contain/)
+  })
+
+  it('does not reject an allowed key merely because its case differs from a guard-owned one', () => {
+    // The normalisation must only widen what is REFUSED, never narrow what a
+    // caller may legitimately pass — application_name is not guard-owned in
+    // any case.
+    const created = client.createDatabaseClient({
+      connectionString: LOCAL_DATABASE_URL,
+      capability: 'readonly_audit',
+      environment: 'test',
+      expectedLocalPort: LOCAL_DB_PORT,
+      env: {},
+      postgresOptions: { connection: { APPLICATION_NAME: 'audit-test' } } as never,
+    })
+    expect(created.decision.readOnly).toBe(true)
+  })
+
+  it('an empty postgresOptions.connection is never treated as carrying a guard-owned key', () => {
+    expect(() =>
+      client.createDatabaseClient({
+        connectionString: LOCAL_DATABASE_URL,
+        capability: 'readonly_audit',
+        environment: 'test',
+        expectedLocalPort: LOCAL_DB_PORT,
+        env: {},
+        postgresOptions: { connection: {} } as never,
+      })
+    ).not.toThrow()
+  })
+
+  it('does not mutate the caller-supplied connection object while validating its keys', () => {
+    // "no modificar las claves originales del caller salvo para validación":
+    // normalisation must happen on a derived copy, not on the object the
+    // caller still holds a reference to.
+    const callerConnection = { APPLICATION_NAME: 'audit-test' }
+    client.createDatabaseClient({
+      connectionString: LOCAL_DATABASE_URL,
+      capability: 'readonly_audit',
+      environment: 'test',
+      expectedLocalPort: LOCAL_DB_PORT,
+      env: {},
+      postgresOptions: { connection: callerConnection } as never,
+    })
+    expect(Object.keys(callerConnection)).toEqual(['APPLICATION_NAME'])
+  })
+
+  it('a safe caller connection key reaches the driver alongside the protected read-only flag', () => {
+    // Reaudit gap (connection merge order): proves the ACTUAL object handed to
+    // postgres() preserves a caller-supplied safe key AND ends with the
+    // protected flag on — not just that the policy table says `readOnly: true`.
+    const created = client.createDatabaseClient({
+      connectionString: LOCAL_DATABASE_URL,
+      capability: 'readonly_audit',
+      environment: 'test',
+      expectedLocalPort: LOCAL_DB_PORT,
+      env: {},
+      postgresOptions: { connection: { application_name: 'audit-test' } } as never,
+    })
+    expect(created.decision.readOnly).toBe(true)
+    const connection = spies.postgresOptions.at(-1)?.connection as Record<string, unknown>
+    expect(connection?.application_name).toBe('audit-test')
+    expect(connection?.default_transaction_read_only).toBe('on')
+  })
+
   it('a controlled remote capability pins VERIFIED TLS, where the URL cannot undo it', () => {
     // postgres-js defaults to `ssl: false` and honours `?sslmode=disable`, so
     // without pinning, a controlled remote read against production could run
@@ -536,6 +642,28 @@ describe('db/client — the guard runs before the driver', () => {
     expect(spies.postgresCalls).toHaveLength(0)
   })
 
+  it('sslrootcert reaching postgresOptions.connection never influences the pinned TLS decision', () => {
+    // Reaudit gap (sslrootcert): verified empirically against the installed
+    // postgres@3.4.9 (node_modules/postgres/src/connection.js `secure()`) that
+    // TLS is built ONLY from the top-level `ssl` option — `sslrootcert` is
+    // never read there, in any form. This pins that invariant so a future
+    // change that started reading it for certificate material would have to
+    // break this test first.
+    client.createDatabaseClient({
+      connectionString: `postgresql://postgres.projectref123:pw@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`,
+      capability: 'controlled_remote_read',
+      environment: 'production',
+      expectedProjectId: 'projectref123',
+      env: { UELLIX_DB_ALLOW_CONTROLLED_REMOTE_READ: 'controlled_remote_read' },
+      postgresOptions: { connection: { sslrootcert: 'attacker-supplied-path-or-pem' } } as never,
+    })
+    expect(spies.postgresOptions.at(-1)?.ssl).toBe('verify-full')
+    const connection = spies.postgresOptions.at(-1)?.connection as Record<string, unknown>
+    // Forwarded like any other connection key the driver does not special-case
+    // for TLS — present, but inert for certificate verification.
+    expect(connection?.sslrootcert).toBe('attacker-supplied-path-or-pem')
+  })
+
   it('the audit line names forwarded URL parameters, without their values', () => {
     const created = client.createDatabaseClient({
       connectionString: `${FAKE_REMOTE_URL}?options=reference%3Dprojectref123&application_name=uellix`,
@@ -578,6 +706,61 @@ describe('db/client — the guard runs before the driver', () => {
       env: {},
     })
     expect(spies.postgresOptions.at(-1)?.ssl).toBeUndefined()
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* 2a. Connection merge order — structural, independent of the earlier guard  */
+/* -------------------------------------------------------------------------- */
+
+describe('mergeGuardedConnectionOptions — the protected key always wins', () => {
+  // Reaudit gap (connection merge order): `createDatabaseClient` already
+  // refuses a caller who supplies `default_transaction_read_only` directly in
+  // `postgresOptions.connection` (see GUARD_OWNED_CONNECTION_KEYS above), so
+  // that value can never reach the merge in today's call graph. That refusal
+  // is a SEPARATE layer from the merge order itself — defense in depth only
+  // works if both layers are independently correct. This suite calls the
+  // merge function directly, bypassing that earlier refusal entirely, so it
+  // fails if the spread order in db/client.ts is ever inverted, regardless of
+  // whether the upstream guard still exists.
+  it('places the protected read-only flag AFTER the caller connection, so it cannot be overridden', () => {
+    const merged = mergeGuardedConnectionOptions(
+      { application_name: 'audit-test', default_transaction_read_only: 'off' },
+      true
+    )
+    expect(merged.application_name).toBe('audit-test')
+    expect(merged.default_transaction_read_only).toBe('on')
+  })
+
+  it('preserves every other caller-supplied key untouched', () => {
+    const merged = mergeGuardedConnectionOptions(
+      { application_name: 'audit-test', statement_timeout: '5000' },
+      true
+    )
+    expect(merged).toEqual({
+      application_name: 'audit-test',
+      statement_timeout: '5000',
+      default_transaction_read_only: 'on',
+    })
+  })
+
+  it('adds no read-only key at all when the capability is not read-only', () => {
+    const merged = mergeGuardedConnectionOptions({ application_name: 'seed' }, false)
+    expect(merged).toEqual({ application_name: 'seed' })
+    expect('default_transaction_read_only' in merged).toBe(false)
+  })
+
+  it('tolerates an undefined caller connection', () => {
+    expect(mergeGuardedConnectionOptions(undefined, true)).toEqual({
+      default_transaction_read_only: 'on',
+    })
+    expect(mergeGuardedConnectionOptions(undefined, false)).toEqual({})
+  })
+
+  it('does not mutate the caller-supplied object', () => {
+    const callerConnection = { default_transaction_read_only: 'off' }
+    mergeGuardedConnectionOptions(callerConnection, true)
+    expect(callerConnection.default_transaction_read_only).toBe('off')
   })
 })
 
