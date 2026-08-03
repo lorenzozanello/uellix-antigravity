@@ -188,3 +188,64 @@ Segunda mitad del cutover. Contrato completo en
 - **RR-AST-2 (forma 11).** Una función tainted **pasada por referencia** a un helper de orden superior que la invoca (`run(listX)`) no se clasifica como uso. No es ninguna de las diez formas que el escáner declara cerrar; se registra como límite conocido, no silencioso, y está anclado en el test.
 - **RR-AST-3 (driver fijo).** La forma 9 sólo dispara ante una lista de especificadores de driver; se amplió de 3 a 11 (postgres-js, node-postgres, neon, vercel, mysql…), pero sigue siendo una lista. Un driver nuevo fuera de ella no se marcaría como raíz de BD.
 - **RR-AST-4 (`'use server'` fuera de los directorios revisados).** Registrado el 2026-08-03, en el preflight del diseño de capacidades. El escáner separa `scanDirs` (`app`, `components`, `lib`, `db` — lo que se parsea para construir el grafo de imports) de `checkedDirs` (`app`, `components` — lo que se juzga como entry point). En `listCheckedModules()` **todas** las ramas están condicionadas a `isUnderCheckedDir()`, incluida la de `isUseServer`. Consecuencia: un módulo con directiva `'use server'` bajo `lib/**` (o `db/**`) participaría en el grafo y propagaría *danger* hacia sus consumidores, pero **nunca se clasificaría** como entry point — es decir, una server action invocable desde el cliente que el escáner no mira. **Instancias reales: cero.** Verificado el 2026-08-03 sobre el árbol completo: `app/**` tiene 93 directivas `'use server'` reales, `components/**` 0 y `lib/**` 0 (la única coincidencia textual en `lib/` es la advertencia en prosa de `lib/stella/advisor/run-contextual-advisor.ts`, que precisamente prohíbe exportar esa función desde un módulo `'use server'`; no es una directiva). Severidad: MINOR — riesgo estructural con población vacía, no un hallazgo. Mitigación disponible si la población deja de ser cero: mover la rama `isUseServer` de `listCheckedModules()` fuera de la guarda `isUnderCheckedDir`, de modo que cualquier `'use server'` en cualquier `scanDir` quede revisado con independencia de su ubicación. No se aplica en esta unidad: el cambio altera el escáner y su inventario versionado, y esta unidad es de **diseño**, no de implementación. Anclaje: mientras `lib/**` tenga cero directivas, el riesgo no tiene superficie explotable.
+
+---
+
+## Diseño de capacidades públicas (2026-08-03)
+
+**Unidad de DISEÑO. Nada aplicado, ninguna capacidad habilitada, cero acceso
+remoto, cero grounding, cero G2 formal.** Fuente:
+[`DATABASE_CAPABILITY_MODEL.md`](DATABASE_CAPABILITY_MODEL.md) y los cinco
+documentos de `capabilities/`.
+
+### Relación con hallazgos ya registrados
+
+Dos entradas previas de este registro describen exactamente lo que este diseño
+tenía que resolver, y conviene enlazarlas en lugar de duplicarlas:
+
+* **RC-14** ya había precisado que en la aceptación de invitación el muro que
+  se choca primero es `invitations_select_member`, no `members_insert_admin`, y
+  que *"la policy de capacidad que haga falta tiene que cubrir el SELECT, no
+  sólo el INSERT"*. CAP-01 lo cubre: `cap_invitation_select_invitations` +
+  `cap_invitation_update_invitations` + `cap_invitation_insert_members`.
+* **RC-13** ya había registrado que `super_admins_read_marketing_leads` está
+  tan muerta como la escritura. CAP-04 **no** la repara y explica por qué: es
+  una capacidad de lectura administrativa con su propio modelo de amenaza, y
+  agruparla con la captura pública es precisamente lo que la campaña prohíbe.
+  Se renombra aquí como **RR-CAP-6** sólo para el índice del modelo; el
+  hallazgo es RC-13 y sigue **ABIERTO POR DISEÑO**.
+
+### Riesgos del modelo (no de una capacidad concreta)
+
+| ID | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| **RR-CAP-0** | El diseño **no se ha ejecutado contra ninguna base**. Todo es SQL leído, no SQL corrido. Las precondiciones abortan si el estado no es el esperado, pero eso no sustituye a un ensayo | **ALTA hasta el primer dry-run** | ABIERTO |
+| **RR-CAP-1** | `uellix_owner` puede `SET ROLE` a los cinco roles de capacidad — necesario para transferirles la propiedad de las funciones. Quien controle el camino de DDL controla las cinco capacidades | MINOR | ACEPTADO (ya controlaba todo lo demás) |
+| **RR-CAP-2** | Las policies de los roles de capacidad son amplias por construcción (`USING (true)`): una policy no ve los argumentos de la función que la invoca. La estrechez vive en el cuerpo; la contención, en los grants por columna | MINOR | ACEPTADO Y DOCUMENTADO |
+| **RR-CAP-3** | El token de invitación en claro cruza de la aplicación a la base. Como parámetro ligado `pg_stat_statements` lo normaliza, pero `log_statement='all'` lo registraría | MINOR | MITIGACIÓN OPERATIVA (comprobación de runbook) |
+| **RR-CAP-4** | Cinco roles nuevos son cinco cosas más que auditar | NIT | MITIGADO por `tests/capability-isolation.test.ts` |
+| **RR-CAP-5** | Supabase gestionado puede no admitir `uellix_stripe` (rol `LOGIN` nuevo), por las mismas tres limitaciones que bloquearon `stella_0004` en remoto | **ABIERTO — NO VERIFICABLE** en esta unidad (remoto prohibido) | ABIERTO |
+| **RR-CAP-6** | = RC-13 | — | ver arriba |
+| **RR-CAP-7** | `PUBLIC` tiene `USAGE` sobre el esquema `public` (ACL medida: entrada `=U/pg_database_owner`), así que **todo rol nuevo lo hereda** y los ACL de PostgreSQL son aditivos: no hay *deny* por rol. Un borrador de este diseño afirmaba que `uellix_stripe` "no puede ni nombrar `public.projects`" — **era falso** y se corrigió. La propiedad que sí se afirma y se verifica es **cero privilegio sobre las 38 tablas en los 4 modos DML** | MINOR | ABIERTO como hardening candidato (`REVOKE USAGE ON SCHEMA public FROM PUBLIC` alcanza a roles internos de Supabase; exige análisis propio) |
+
+### Riesgos por capacidad
+
+| ID | Riesgo | Severidad |
+|---|---|---|
+| **RR-CAP-01-A** | Canal lateral de temporización en CAP-01: el camino "token válido, destinatario distinto" ejecutaba una consulta más que "token inexistente". Mitigado resolviendo el correo del sujeto **antes** de mirar la invitación, de modo que ambos caminos ejecuten el mismo número de sentencias. **No se declara cerrado**: la igualdad exacta no se ha medido y no se puede medir sin ejecutar | MINOR |
+| **RR-CAP-01-B** | Si DP-CAP-02 elige mensajes distinguibles, el oráculo de enumeración vuelve. El diseño lo permite pero no lo recomienda | MINOR — depende de decisión humana |
+| **RR-CAP-01-C** | El barrido de invitaciones expiradas no forma parte de la capacidad (la función ya no escribe en el camino de rechazo). Higiene, no seguridad | NIT |
+| **RR-CAP-02-A** | El hash viaja en la URL `/verify/<hash>`, luego aparece en logs de acceso del proveedor y en el historial. Inherente a que el certificado sea un enlace compartible; lo que desbloquea es material aprobado para publicación | MINOR |
+| **RR-CAP-02-B** | La ruta PDF pública queda huérfana hasta DP-CAP-06 y **debe devolver 404 incondicional** mientras tanto. Es la única parte de CAP-02 que exige un cambio de código **antes** de aplicar el paquete | **MAJOR si se aplica sin ese cambio** |
+| **RR-CAP-02-C** | Los reportes ya bloqueados **no** obtienen disclosure automáticamente: los certificados emitidos antes dejan de verificar hasta que alguien los apruebe uno a uno. Correcto (nadie autorizó publicarlos) pero es una regresión visible que hay que comunicar | MINOR |
+| **RR-CAP-02-D** | `organizations.name` se publica si el booleano está en `true`, y es editable por la organización. La aprobación es un acto humano que ve el nombre en ese momento; no hay revalidación posterior | NIT |
+| **RR-CAP-03-A** | El *lease* de 15 minutos sobre `processing` es una heurística, no una garantía: un worker colgado más de 15 min con la transacción abierta permitiría reprocesar. `idle_in_transaction_session_timeout = 15s` lo hace muy improbable | MINOR |
+| **RR-CAP-03-B** | El `catch` genérico del handler actual registra el objeto de error completo. Debe pasar a `error.name` **antes** de habilitar, como ya hace la ruta de leads | MINOR — **precondición de habilitación** |
+| **RR-CAP-03-C** | DP-CAP-07 sin resolver: `stripe_webhook_events` crece sin límite. Coste, no seguridad. La capacidad **no tiene `DELETE`**, así que no puede borrar la prueba de lo que hizo | NIT |
+| **RR-CAP-04-A** | Llenado distribuido de `marketing_leads` dentro del límite global. Mitigación operativa (alerta sobre el contador diario) | MINOR |
+| **RR-CAP-04-B** | Sin CAPTCHA, un bot competente pasa el honeypot. Añadirlo es decisión de producto y de privacidad (implica un tercero) | MINOR |
+| **RR-CAP-04-C** | `consent_version` anulable hasta DP-CAP-09: los leads se guardan sin registro de consentimiento, igual que hoy. El diseño no empeora nada, pero tampoco lo arregla | MINOR |
+| **RR-CAP-05-A** | Si DP-CAP-12 abre el alta más allá de la allowlist, el perfil de abuso cambia por completo y **este diseño no basta**: haría falta verificación de correo, CAPTCHA y cuarentena. Es la dependencia más fuerte de una capacidad respecto a una decisión de producto | **ALTA si DP-CAP-12 cambia** |
+| **RR-CAP-05-B** | El error de slug es distinguible **a propósito** (el espacio de slugs es público por diseño). Debe revisarse si DP-CAP-12 cambia el modelo de URL | NIT |
+| **RR-CAP-05-C** | La "configuración inicial" no es una tabla aparte: en este esquema la configuración de una organización **son sus propias columnas**, y toda la que la capacidad no nombra toma el `DEFAULT`. Ese es el mecanismo por el que no puede elegir plan ni cuota | CERRADO — documentado |
+| **RR-CAP-05-D** | `syncUserProfile` ocurre **fuera** de la RPC. Si falla, el `SELECT` sobre `public.users` no encuentra al sujeto y el bootstrap devuelve error uniforme: fail-closed y correcto, pero opaco para un usuario legítimo. El endpoint debe llamarlo y comprobar su resultado **antes** de la RPC | MINOR |

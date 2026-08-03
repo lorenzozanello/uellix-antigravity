@@ -111,6 +111,9 @@ BEGIN
 
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_cap_stripe') THEN
     EXECUTE 'REVOKE ALL ON SCHEMA uellix_capability FROM uellix_cap_stripe';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_org_ids() FROM uellix_cap_stripe';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_is_super_admin() FROM uellix_cap_stripe';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_role_in_org(uuid) FROM uellix_cap_stripe';
     EXECUTE 'REVOKE uellix_cap_stripe FROM uellix_owner';
     EXECUTE 'DROP ROLE uellix_cap_stripe';
   END IF;

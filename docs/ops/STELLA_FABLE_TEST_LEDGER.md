@@ -1378,3 +1378,109 @@ del risk register.
 | Login E2E HTTP local **(ensayo manual, no test automatizado)** | Probado: GoTrue real → cookie → dashboard con la organización propia bajo RLS → logout → redirect. Usuario sintético del seed; sin crear usuarios. `onboarding_completed` alternado y **restaurado**. No hay suite CI que lo reproduzca |
 | SQL aplicado en local | `stella_0005c` (re-alcance de policies INSERT) y `stella_0005d` (USAGE sobre `storage` para el owner — reparación de un hallazgo colateral medido) |
 | No ejecutado | grounding, G2 formal, G3 remoto, `test:rls`/`test:integration` remotos. Cero acceso remoto |
+
+---
+
+## Diseño de capacidades públicas (2026-08-03)
+
+**Unidad de DISEÑO.** Cero escrituras en base, cero acceso remoto, cero
+grounding, cero G2 formal. Ninguna capacidad habilitada.
+
+### Suites ejecutadas
+
+| Evidencia | Resultado |
+|---|---|
+| `pnpm test:unit` | **3421/3421**, 148 archivos. Línea base al inicio de la unidad: 3225 / 147 archivos |
+| `tests/capability-isolation.test.ts` (**nueva**) | **173/173**. Gate estático sobre `db/prepared/stella_0006..0010*.sql`: sin base de datos, sin red |
+| `tests/proxies.service.test.ts` | 28 (antes 19): +9 de `updateOrganizationFinancialProxy` (precondición 2) |
+| Once suites de base contra el stack local | **643/643** — corrección de la cifra publicada (640/184 → 643/187) |
+| `typecheck`, `lint` | limpios |
+| Auditoría de sólo lectura del stack local | 38 tablas · 107 policies · 10 triggers append-only · 1 decisión · 2 interacciones · `evidence_chunks` ausente — **sin cambios** respecto al estado de entrada |
+
+### Pruebas de mutación (la evidencia de que los gates muerden)
+
+Un test verde no prueba nada por sí solo. Cada gate nuevo se rompió a propósito
+y se comprobó que exactamente los tests que aseguran esa propiedad fallan:
+
+| Mutación | Tests que fallaron |
+|---|---|
+| `resetReview = false` en `updateOrganizationFinancialProxy` | 1 (reset de re-revisión) |
+| `if (false)` en el gate RC-12 de repunte de `sourceId` | 1 (rechazo de fuente ajena) |
+| `GRANT SELECT` añadido al definer de CAP-04 | 1 («el escritor de leads no puede leerlos») |
+| `TO uellix_app` retirado de una policy interna de CAP-02 | 1 («ninguna policy sin cláusula `TO`») |
+| `EXECUTE` de una función Stripe concedido a `uellix_app` | 2 (ejecutor único · el runtime no mueve cuotas) |
+
+### Suites de capacidad DISEÑADAS y NO implementadas
+
+Requieren un stack **desechable** y esta unidad tiene prohibido tocar uno. Cada
+una está especificada caso por caso en el documento de su capacidad:
+
+| Suite | Casos vivos diseñados | Documento |
+|---|---|---|
+| `invitation-capability` | 13 (`L1..L13`) | `capabilities/CAP_01_INVITATIONS.md` §11.2 |
+| `public-verification-capability` | 12 (`L1..L12`) | `capabilities/CAP_02_PUBLIC_VERIFICATION.md` §11.2 |
+| `stripe-webhook-capability` | 14 (`L1..L14`) | `capabilities/CAP_03_STRIPE.md` §12.2 |
+| `public-lead-capability` | 13 (`L1..L13`) | `capabilities/CAP_04_PUBLIC_LEADS.md` §10.2 |
+| `organization-bootstrap-capability` | 15 (`L1..L15`) | `capabilities/CAP_05_ORGANIZATION_BOOTSTRAP.md` §9.2 |
+
+**67 casos vivos diseñados, 0 ejecutados.** La suite estática cubre la mitad
+que se puede cubrir sin base: que el SQL que produciría ese catálogo dice lo
+que el diseño afirma. No cubre —y su cabecera lo dice— que las capacidades
+funcionen.
+
+### Dry run en entorno desechable sin red (2026-08-03)
+
+**Nada de esto tocó el stack vivo.** El contenedor se creó con `--network none`
+(sin puertos, sin red; sólo `docker exec`), sembrado con un volcado
+**schema-only** del stack local obtenido por lectura (`pg_dump --schema-only`,
+`pg_dumpall --roles-only --no-role-passwords`). Se destruye al terminar.
+
+**Línea base replicada exactamente: 38 tablas / 107 policies**, los cinco roles
+`uellix_*`, `auth.uid()` presente, las tres restricciones únicas y el índice
+parcial `user_single_active_membership`.
+
+| Fase | Resultado |
+|---|---|
+| Forward × 5, primera pasada | 5/5 sin error → 42 tablas, 132 policies, 6 roles, 8 funciones |
+| Forward × 5, **segunda** pasada | 5/5 sin error, **estado idéntico** (convergente) |
+| Pruebas de capacidad y aislamiento | **57/57** |
+| Rollback × 5, orden inverso | 5/5 sin error → **0 roles de capacidad, 0 policies `cap_*`, 0 funciones, esquema eliminado** |
+| Residuo tras rollback | Sólo lo retenido por diseño: `report_public_disclosures` y `stripe_webhook_events`; línea base de policies de vuelta en 105 |
+| Reaplicación tras rollback | 5/5 sin error, estado idéntico al de la primera pasada |
+| Concurrencia (dos sesiones reales) | 5/5 |
+
+**Concurrencia, medida con dos sesiones `psql` simultáneas:**
+
+| Escenario | Resultado |
+|---|---|
+| Dos aceptaciones del **mismo** token | ambas devuelven la organización (una acepta, la otra toma la rama idempotente); **1 membresía** |
+| Dos bootstrap con la **misma** clave | 1 organización, 1 membresía |
+| Dos bootstrap con claves **distintas**, mismo sujeto | 1 membresía, 1 organización; el perdedor **no deja ni organización ni fila de intento** — la transacción revierte entera y libera su clave |
+| Dos entregas Stripe del **mismo** evento | exactamente un `claimed`, un `in_progress`; `attempts` sin incrementar |
+| Dos envíos de lead idénticos | cero errores, **1 fila** |
+
+#### Ocho defectos que sólo la ejecución encontró
+
+Ninguno era visible leyendo el SQL, y cuatro habrían fallado **en tiempo de
+ejecución** —dentro de un webhook o de un enlace de invitación—, no al aplicar.
+
+| # | Defecto | Mecanismo | SQLSTATE |
+|---|---|---|---|
+| D1 | `ALTER FUNCTION … OWNER TO R` exige que **R** tenga `CREATE` sobre el esquema | La cabecera razonaba sólo la mitad de la comprobación (membresía) | 42501, al aplicar |
+| D2 | `CREATE OR REPLACE` en la segunda pasada exige propiedad resuelta por `has_privs_of_role`, que `INHERIT FALSE` niega | El paquete se declaraba convergente y no lo era | 42501, al reaplicar |
+| D3 | Las policies `{public}` preexistentes se evalúan **para todos los roles**, definers incluidos, y llaman a helpers cuyo `EXECUTE` se revocó a `PUBLIC` | Cuatro capacidades fallaban toda lectura | **42501, en ejecución** |
+| D4 | `auth.uid()` exige `USAGE` sobre el esquema `auth` **para el definer** | Misma clase que `stella_0005d` con `storage` | **42501, en ejecución** |
+| D5 | `pg_catalog.coalesce` / `nullif` no existen: son producciones gramaticales, no funciones | Sobre-cualificar rompe | **42883, en ejecución** |
+| D6 | `min(uuid)` no existe en PostgreSQL | Resolución de organización en el webhook | **42883, en ejecución** |
+| D7 | `has_any_column_privilege(..., 'DELETE')` no devuelve `false`: `DELETE` no tiene forma por columna | Abortaba la postcondición del paquete entero | 0A000, al aplicar |
+| D8 | `SELECT … FOR UPDATE` se filtra por el `USING` de la policy de UPDATE (`status='pending'`), así que **no ve la fila ya aceptada** | La rama idempotente era inalcanzable: recargar la página daba rechazo | lógico |
+
+Y uno más, de la misma familia, encontrado al probar CAP-04:
+`ON CONFLICT (expresión)` incorpora las columnas del árbitro al requisito
+`SELECT` de la sentencia, así que **un *conflict target* y un definer sin
+`SELECT` son mutuamente excluyentes**. Medido: `INSERT` simple y
+`ON CONFLICT DO NOTHING` sin objetivo pasan; con objetivo, denegado.
+
+Los nueve están fijados como gates estáticos en
+`tests/capability-isolation.test.ts` (§ *dry-run regressions*), de modo que no
+pueden reaparecer sin romper la suite.

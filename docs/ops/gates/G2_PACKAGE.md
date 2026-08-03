@@ -639,3 +639,33 @@ la firma, para que Stripe reintente y el operador lo vea.
 **Nada de esto sustituye** el entorno remoto autorizado, la ventana de cambio,
 el respaldo remoto verificado ni la aprobación humana. **G2 formal: NO
 EJECUTADO.**
+
+---
+
+## Campaña de capacidades públicas (2026-08-03) — **NO forma parte de G2**
+
+Los cinco paquetes `stella_0006` … `stella_0010` (`db/prepared/`) son **diseño**.
+**Ninguno se ha aplicado a ningún stack, ni local ni remoto**, y ninguna
+capacidad está habilitada.
+
+**No están incluidos en este gate y no deben añadirse a él sin decisión
+explícita**, por tres razones:
+
+1. **Catorce decisiones de producto abiertas** (DP-CAP-01 … DP-CAP-14) que
+   gobiernan qué se publica, qué se conserva y quién puede darse de alta. Ver
+   [`../DATABASE_CAPABILITY_MODEL.md`](../DATABASE_CAPABILITY_MODEL.md) §8.
+2. **Cero dry-run.** RR-CAP-0: todo es SQL leído, no SQL corrido. Las
+   precondiciones abortan si el estado no es el esperado, pero eso no es un
+   ensayo.
+3. **Cada paquete crea al menos un rol**, y `uellix_stripe` es además un rol
+   `LOGIN`. Las tres limitaciones de Supabase gestionado que bloquearon
+   `stella_0004` en remoto (RR-09) aplican igual, y **no se han verificado**:
+   esta unidad tiene prohibido el acceso remoto.
+
+Lo que sí aporta la unidad a este gate: `tests/capability-isolation.test.ts`
+(173 tests, offline) fija que los paquetes no se contaminen entre sí ni
+concedan nada a `anon`, `authenticated`, `service_role` o `PUBLIC`. Si alguna
+vez se incorporan a G2, esa suite es el punto de partida, no la evidencia final.
+
+**G2 formal: NO EJECUTADO. La campaña de capacidades: NO APROBADA, NO
+APLICADA, NO HABILITADA.**

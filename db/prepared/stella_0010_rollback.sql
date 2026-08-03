@@ -96,7 +96,13 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_cap_bootstrap') THEN
     EXECUTE 'REVOKE ALL ON SCHEMA uellix_capability FROM uellix_cap_bootstrap';
-    EXECUTE 'REVOKE uellix_cap_bootstrap FROM uellix_owner';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_org_ids() FROM uellix_cap_bootstrap';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_is_super_admin() FROM uellix_cap_bootstrap';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_role_in_org(uuid) FROM uellix_cap_bootstrap';
+    -- The forward grants USAGE on schema auth so the definer can resolve
+    -- auth.uid(); it goes back with the role.
+    EXECUTE 'REVOKE ALL ON SCHEMA auth FROM uellix_cap_bootstrap';
+    -- No membership to revoke: the capability role has ZERO members.
     EXECUTE 'DROP ROLE uellix_cap_bootstrap';
   END IF;
 END

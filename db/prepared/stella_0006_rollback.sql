@@ -21,7 +21,9 @@
 --   * `uq_invitations_token_hash` — a UNIQUE index on a column that was always
 --     meant to be unique. It was correct before this package and stays correct
 --     after it. Dropping it would reintroduce the possibility the package
---     closed.
+--     closed. The non-unique `idx_invitations_token_hash` the forward replaced
+--     IS recreated, so the catalogue matches its pre-application shape for
+--     everything except that added guarantee.
 --
 -- Everything that grants, executes or reads is removed. After this script the
 -- capability does not exist and lib/invitations/service.ts fails closed
@@ -95,6 +97,11 @@ BEGIN
 END
 $$;
 
+-- Restore the index the forward replaced, so the catalogue differs from its
+-- pre-application state only by the added UNIQUE guarantee.
+CREATE INDEX IF NOT EXISTS idx_invitations_token_hash
+  ON public.invitations (token_hash);
+
 -- Restate the surviving column's meaning now that nothing writes it.
 COMMENT ON COLUMN public.invitations.accepted_by IS
   'stella_0006 (rolled back): retained deliberately. Holds the auth.uid() that accepted the invitation while CAP-01 was live. Nothing writes it now. See docs/ops/capabilities/CAP_01_INVITATIONS.md §13.';
@@ -109,7 +116,16 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_cap_invitation') THEN
     EXECUTE 'REVOKE ALL ON SCHEMA uellix_capability FROM uellix_cap_invitation';
-    EXECUTE 'REVOKE uellix_cap_invitation FROM uellix_owner';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_org_ids() FROM uellix_cap_invitation';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_is_super_admin() FROM uellix_cap_invitation';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.current_user_role_in_org(uuid) FROM uellix_cap_invitation';
+    -- The forward grants USAGE on schema auth so the definer can resolve
+    -- auth.uid(); it goes back with the role.
+    EXECUTE 'REVOKE ALL ON SCHEMA auth FROM uellix_cap_invitation';
+    -- No membership to revoke: since the adversarial review the capability role
+    -- has ZERO members. The ownership transfer happens as superuser, so nothing
+    -- ever needed to be a member of it.
+    --
     -- No CASCADE. If anything still depends on this role the DROP fails, and a
     -- loud failure is the correct outcome: CASCADE here would silently remove
     -- objects the operator has not been told about.

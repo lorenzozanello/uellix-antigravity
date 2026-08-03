@@ -104,7 +104,9 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_cap_lead') THEN
     EXECUTE 'REVOKE ALL ON SCHEMA uellix_capability FROM uellix_cap_lead';
-    EXECUTE 'REVOKE uellix_cap_lead FROM uellix_owner';
+    -- No membership to revoke: since the adversarial review the capability role
+    -- has ZERO members. The ownership transfer happens as superuser, so nothing
+    -- ever needed to be a member of it.
     EXECUTE 'DROP ROLE uellix_cap_lead';
   END IF;
 END

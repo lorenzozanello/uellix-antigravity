@@ -354,3 +354,33 @@ de Node puede ejercitar: `uellix_app` no es miembro de ninguno de los dos —
 medido— y por tanto las policies con cláusula `TO` que los nombran no se
 evalúan nunca desde el runtime. Ese es exactamente el hueco que descubrió el
 bloqueo de `marketing_leads`.
+
+---
+
+## Nota del diseño de capacidades (2026-08-03)
+
+G3 **no se ejecutó** en esta unidad, ni ninguna prueba de integración remota.
+
+La frase con la que termina la sección anterior — *"ese es exactamente el hueco
+que descubrió el bloqueo de `marketing_leads`"* — es la razón por la que el
+diseño de capacidades existe, y conviene cerrar el círculo aquí:
+
+* El hueco es que `uellix_app` no es miembro de `anon` ni de `authenticated`,
+  así que las policies con `TO` que los nombran nunca se evalúan desde el
+  runtime. G3 es el único gate que ejercita ese camino de verdad.
+* **CAP-04 lo resuelve retirando las dos policies muertas**, no añadiendo una
+  tercera para el runtime: `anon_insert_marketing_leads` y
+  `authenticated_insert_marketing_leads` describen una vía PostgREST que ya no
+  existe, y una policy sin uso no es inocua — es una autorización esperando un
+  rol.
+* Medido durante el diseño: `uellix_writer` **ya tiene** `SELECT, INSERT,
+  UPDATE, DELETE` sobre `marketing_leads`. El bloqueo nunca fue de privilegio.
+  `stella_0009` también revoca esos cuatro, de modo que el paquete es una
+  **reducción neta** de privilegio.
+
+Cuando G3 se ejecute contra un stack donde la campaña esté aplicada, la
+comprobación que aporta valor es la simétrica: que `anon` y `authenticated`
+sigan **sin poder** insertar un lead por PostgREST, y que `PUBLIC` no tenga
+`EXECUTE` sobre ninguna función de `uellix_capability`.
+
+**Estado: la campaña NO está aplicada. G3 sigue sin ejecutarse.**

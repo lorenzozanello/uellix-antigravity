@@ -17,8 +17,7 @@
 -- section, every evidence_item OF THE PROJECT, the methodology matrix and the
 -- taxonomy crosswalks. It is closed today only because RLS refuses the reads.
 --
--- So this package does not restore access. It redefines what public
--- verification means:
+-- So this package does not restore access. It redefines the capability:
 --
 --   1. Being `locked` stops being sufficient. Locking is an INTERNAL act —
 --      "this no longer changes". Publishing is a SEPARATE, audited act,
@@ -26,23 +25,47 @@
 --   2. Every visible field is an explicit boolean that someone had to set.
 --      All four default to FALSE. A report with a disclosure row and no
 --      booleans verifies as authentic and reveals nothing else.
---   3. The read path is LANGUAGE sql + STABLE, so it is structurally unable
---      to write and has exactly one execution path — which is also what makes
---      the four failure modes indistinguishable.
+--   3. The read path is LANGUAGE sql + STABLE, so it is structurally unable to
+--      write, and its four failure modes return the same empty set because the
+--      JOIN produces it — not because a branch chose to.
 --
 -- Applying this package publishes NOTHING. Until a human approves a
 -- disclosure, /verify/<hash> answers 404 for every hash, as it does now.
 --
--- Runs as superuser for the CREATE ROLE window; see stella_0006's header for
--- why uellix_owner cannot do it. Three windows, same shape as stella_0006.
+-- ============================================================================
+-- WHAT THE ADVERSARIAL REVIEW CHANGED (2026-08-03)
+-- ============================================================================
+-- * The disclosure table no longer carries its own `organization_id`. It did,
+--   and nothing tied it to the report's organisation: no composite FK, no
+--   CHECK, and a WITH CHECK that validated only "you are an admin of the org
+--   you claim in the row". Foreign-key validation runs as the table owner and
+--   bypasses RLS, so an admin of Org A who learned a locked report id from
+--   Org B could insert (report_id = B's report, organization_id = A), set the
+--   booleans, and publish B's data under B's own name. The organisation is now
+--   derived from `sroi_reports` inside the policies, so there is nothing to
+--   disagree with.
+-- * `approved_by` is pinned to auth.uid() by the INSERT policy and is NOT in
+--   the UPDATE grant. The table's COMMENT claims each row is "one human
+--   decision with author and timestamp"; that is only true if the author
+--   cannot be chosen or rewritten.
+-- * The function is created, owned and granted in the SUPERUSER window. See
+--   stella_0006's header: `ALTER FUNCTION … OWNER TO R` requires R to hold
+--   CREATE on the schema, and `COMMENT ON` / `CREATE OR REPLACE` afterwards
+--   require ownership resolved through has_privs_of_role, which INHERIT FALSE
+--   denies. Doing it as superuser fixes all three and lets the capability role
+--   have ZERO members.
+-- * record_verification_hit is the only capability write reachable by fully
+--   anonymous traffic and had no timeout at all.
+--
+-- Runs as superuser. Three windows: (1) role + schema, (2) SET ROLE owner for
+-- DDL/grants/policies, (3) superuser for the functions and their ACLs.
 --
 --   psql "$LOCAL_SUPERUSER_URL" -1 -v ON_ERROR_STOP=1 \
 --     -f db/prepared/stella_0007_public_verification_capability.sql
 --
 -- WHAT THIS SCRIPT DELIBERATELY DOES NOT DO
 --   * No password, no LOGIN role, no credential.
---   * Nothing granted to anon, authenticated, service_role, PUBLIC or
---     uellix_writer.
+--   * Nothing granted to anon, authenticated, service_role or PUBLIC.
 --   * The definer gets NO privilege whatsoever on evidence_items,
 --     sroi_report_sections, projects, line items, members or stella_*.
 --   * No pre-existing policy, grant, column or trigger is altered.
@@ -58,7 +81,7 @@ SET search_path = public;
 DO $$
 BEGIN
   IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
-    RAISE EXCEPTION 'stella_0007 must run as a superuser (it creates a role); current_user is %.', current_user;
+    RAISE EXCEPTION 'stella_0007 must run as a superuser; current_user is %.', current_user;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_owner') THEN
@@ -70,8 +93,7 @@ BEGIN
 
   -- The baseline EXCLUDES everything the capability campaign introduces, so the
   -- five packages stay mutually independent: applying stella_0006 first must not
-  -- make this precondition fail. Pinning the raw global total would have coupled
-  -- them into an implicit ordering the design explicitly does not have.
+  -- make this precondition fail.
   IF (SELECT count(*) FROM pg_tables
        WHERE schemaname = 'public'
          AND tablename NOT IN ('report_public_disclosures','capability_verification_hits',
@@ -138,10 +160,8 @@ $$;
 ALTER ROLE uellix_cap_verification
   NOLOGIN NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER;
 
-GRANT uellix_cap_verification TO uellix_owner WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;
-
 COMMENT ON ROLE uellix_cap_verification IS
-  'stella_0007 / CAP-02: definer of uellix_capability.verify_report and record_verification_hit. NOLOGIN, no memberships, subject to RLS. Has no privilege of any kind on evidence, sections, projects or members.';
+  'stella_0007 / CAP-02: definer of uellix_capability.verify_report and record_verification_hit. NOLOGIN, ZERO members, subject to RLS. Has no privilege of any kind on evidence, sections, projects or members.';
 
 CREATE SCHEMA IF NOT EXISTS uellix_capability AUTHORIZATION uellix_owner;
 
@@ -149,8 +169,12 @@ REVOKE ALL ON SCHEMA uellix_capability FROM PUBLIC;
 GRANT USAGE ON SCHEMA uellix_capability TO uellix_app;
 GRANT USAGE ON SCHEMA uellix_capability TO uellix_cap_verification;
 
+-- Neither CAP-02 function calls auth.uid(): verification is anonymous by
+-- definition. So this definer, unlike CAP-01's and CAP-05's, gets NO grant on
+-- schema auth — and the postcondition asserts it does not have one.
+
 -- ============================================================
--- 2. WINDOW 2 (owner) — tables, functions, grants, policies
+-- 2. WINDOW 2 (owner) — tables, grants, policies
 -- ============================================================
 
 SET ROLE uellix_owner;
@@ -159,9 +183,13 @@ SET ROLE uellix_owner;
 --
 -- No row here means the report is not publicly verifiable, however locked it
 -- is. That is the fail-closed default and it is the whole design.
+--
+-- There is NO organization_id column, deliberately. An earlier revision had
+-- one, unconstrained against the report's own organisation, which let an admin
+-- of one tenant publish another tenant's report. The organisation is derived
+-- from sroi_reports wherever it is needed.
 CREATE TABLE IF NOT EXISTS public.report_public_disclosures (
   report_id              uuid        PRIMARY KEY REFERENCES public.sroi_reports(id),
-  organization_id        uuid        NOT NULL REFERENCES public.organizations(id),
   approved_by            uuid        NOT NULL REFERENCES public.users(id),
   approved_at            timestamptz NOT NULL DEFAULT now(),
   revoked_at             timestamptz,
@@ -177,7 +205,7 @@ CREATE TABLE IF NOT EXISTS public.report_public_disclosures (
 );
 
 COMMENT ON TABLE public.report_public_disclosures IS
-  'CAP-02. One row = one human decision to publish one report, with author and timestamp. Absent row = not publicly verifiable. All four visibility booleans default to false: approving a disclosure without setting any of them publishes authenticity and nothing else.';
+  'CAP-02. One row = one human decision to publish one report, with author and timestamp. Absent row = not publicly verifiable. All four visibility booleans default to false: approving a disclosure without setting any of them publishes authenticity and nothing else. approved_by is pinned to auth.uid() by policy and is not updatable.';
 
 ALTER TABLE public.report_public_disclosures ENABLE ROW LEVEL SECURITY;
 
@@ -193,20 +221,178 @@ CREATE TABLE IF NOT EXISTS public.capability_verification_hits (
 );
 
 COMMENT ON TABLE public.capability_verification_hits IS
-  'CAP-02. Aggregate verification counter, day x report. Deliberately carries NO personal data: answers "how often was this certificate checked" and cannot answer "by whom".';
+  'CAP-02. Aggregate verification counter, day x report. Carries NO personal data. NOTE: nothing reads it yet — no function and no grant exposes it to the product. It is collected, not surfaced.';
 
 ALTER TABLE public.capability_verification_hits ENABLE ROW LEVEL SECURITY;
 
--- 2.3 The read capability.
+-- 2.3 Definer grants — column-scoped.
+--
+-- The exclusions matter more than the inclusions. organizations gives up only
+-- id and name: not stripe_customer_id, not stripe_subscription_id, not
+-- stella_monthly_quota, and not slug. sroi_reports gives up no summary, no
+-- created_by, no locked_by. And there is no grant at all on evidence_items,
+-- sroi_report_sections, projects, line items or members.
+
+
+-- The pre-existing SELECT/INSERT/UPDATE policies on the tables this capability
+-- touches are `{public}` — they apply to EVERY role, this definer included —
+-- and their USING clauses call the three SECURITY DEFINER helpers. stella_0004
+-- revoked EXECUTE on those helpers from PUBLIC, so without these three grants
+-- the definer raises «permission denied for function current_user_org_ids»
+-- (42501) while evaluating a policy that would have been irrelevant to it.
+--
+-- Discovered by dry run, not by review: the failure is invisible to every
+-- static check, because the policy that breaks belongs to another role.
+--
+-- The grants are safe by construction. The helpers are SECURITY DEFINER owned
+-- by uellix_owner, so they run with ITS privileges and read the CALLER's
+-- memberships from auth.uid(); invoked from a capability definer with no JWT
+-- they return the empty set. `uellix_writer` and `uellix_auditor` already hold
+-- the same EXECUTE.
+GRANT EXECUTE ON FUNCTION public.current_user_org_ids()        TO uellix_cap_verification;
+GRANT EXECUTE ON FUNCTION public.current_user_is_super_admin() TO uellix_cap_verification;
+GRANT EXECUTE ON FUNCTION public.current_user_role_in_org(uuid) TO uellix_cap_verification;
+
+GRANT SELECT (id, organization_id, calculation_run_id, title, status,
+              report_variant, verification_hash, locked_at)
+  ON public.sroi_reports TO uellix_cap_verification;
+
+GRANT SELECT (id, name) ON public.organizations TO uellix_cap_verification;
+
+GRANT SELECT (id, sroi_ratio, total_investment, net_social_value, currency)
+  ON public.sroi_calculation_runs TO uellix_cap_verification;
+
+GRANT SELECT (report_id, revoked_at, public_summary, show_organization_name,
+              show_report_title, show_headline_ratio, show_totals, disclosure_version)
+  ON public.report_public_disclosures TO uellix_cap_verification;
+
+GRANT SELECT, INSERT, UPDATE ON public.capability_verification_hits TO uellix_cap_verification;
+
+-- 2.4 Capability policies.
+
+DROP POLICY IF EXISTS cap_verification_select_reports ON public.sroi_reports;
+CREATE POLICY cap_verification_select_reports
+ON public.sroi_reports FOR SELECT TO uellix_cap_verification
+USING (status = 'locked');
+
+DROP POLICY IF EXISTS cap_verification_select_disclosures ON public.report_public_disclosures;
+CREATE POLICY cap_verification_select_disclosures
+ON public.report_public_disclosures FOR SELECT TO uellix_cap_verification
+USING (revoked_at IS NULL);
+
+DROP POLICY IF EXISTS cap_verification_select_orgs ON public.organizations;
+CREATE POLICY cap_verification_select_orgs
+ON public.organizations FOR SELECT TO uellix_cap_verification
+USING (true);
+
+DROP POLICY IF EXISTS cap_verification_select_runs ON public.sroi_calculation_runs;
+CREATE POLICY cap_verification_select_runs
+ON public.sroi_calculation_runs FOR SELECT TO uellix_cap_verification
+USING (true);
+
+DROP POLICY IF EXISTS cap_verification_write_hits ON public.capability_verification_hits;
+CREATE POLICY cap_verification_write_hits
+ON public.capability_verification_hits FOR ALL TO uellix_cap_verification
+USING (true) WITH CHECK (true);
+
+-- 2.5 The INTERNAL side of report_public_disclosures.
+--
+-- Approving a disclosure is an ordinary, organisation-scoped admin action. It
+-- is NOT part of the capability and does not touch uellix_cap_verification.
+--
+-- These three name `TO uellix_app` explicitly, which departs from the 101
+-- pre-existing `{public}` policies and is deliberate. A policy with no TO
+-- clause is TO PUBLIC — the exact defect stella_0005c had to repair on the
+-- three append-only INSERT policies. Naming the runtime role costs nothing and
+-- removes the question.
+--
+-- The organisation is derived from sroi_reports, never asserted by the caller.
+-- The EXISTS subquery is itself evaluated under the caller's RLS, so a report
+-- belonging to another tenant is invisible to it and the predicate is false —
+-- two independent locks on the same door.
+--
+-- There is no DELETE policy: a disclosure is revoked (revoked_at), never
+-- erased. Who published what, and when, has to stay answerable.
+
+DROP POLICY IF EXISTS disclosures_select_member ON public.report_public_disclosures;
+CREATE POLICY disclosures_select_member
+ON public.report_public_disclosures FOR SELECT TO uellix_app
+USING (
+  EXISTS (
+    SELECT 1 FROM public.sroi_reports r
+     WHERE r.id = report_id
+       AND (r.organization_id = ANY(public.current_user_org_ids())
+            OR public.current_user_is_super_admin())
+  )
+);
+
+DROP POLICY IF EXISTS disclosures_insert_admin ON public.report_public_disclosures;
+CREATE POLICY disclosures_insert_admin
+ON public.report_public_disclosures FOR INSERT TO uellix_app
+WITH CHECK (
+  approved_by = auth.uid()
+  AND EXISTS (
+    SELECT 1 FROM public.sroi_reports r
+     WHERE r.id = report_id
+       AND (public.current_user_role_in_org(r.organization_id)
+              IN ('super_admin', 'organization_admin')
+            OR public.current_user_is_super_admin())
+  )
+);
+
+DROP POLICY IF EXISTS disclosures_update_admin ON public.report_public_disclosures;
+CREATE POLICY disclosures_update_admin
+ON public.report_public_disclosures FOR UPDATE TO uellix_app
+USING (
+  EXISTS (
+    SELECT 1 FROM public.sroi_reports r
+     WHERE r.id = report_id
+       AND (public.current_user_role_in_org(r.organization_id)
+              IN ('super_admin', 'organization_admin')
+            OR public.current_user_is_super_admin())
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.sroi_reports r
+     WHERE r.id = report_id
+       AND (public.current_user_role_in_org(r.organization_id)
+              IN ('super_admin', 'organization_admin')
+            OR public.current_user_is_super_admin())
+  )
+);
+
+-- The runtime's DML surface on the new table, column-scoped.
+--
+-- report_id, approved_by and approved_at are INSERT-only: once a disclosure is
+-- recorded, which report it is about and who approved it cannot be rewritten.
+-- Without that, "one human decision with author and timestamp" would be a
+-- claim the table could not keep.
+GRANT SELECT ON public.report_public_disclosures TO uellix_writer;
+GRANT INSERT (report_id, approved_by, public_summary, show_organization_name,
+              show_report_title, show_headline_ratio, show_totals, disclosure_version)
+  ON public.report_public_disclosures TO uellix_writer;
+GRANT UPDATE (revoked_at, revoked_by, public_summary, show_organization_name,
+              show_report_title, show_headline_ratio, show_totals,
+              disclosure_version, updated_at)
+  ON public.report_public_disclosures TO uellix_writer;
+
+RESET ROLE;
+
+-- ============================================================
+-- 3. WINDOW 3 (superuser) — the functions, their owners, their ACLs
+-- ============================================================
+
+-- 3.1 The read capability.
 --
 -- LANGUAGE sql and STABLE, both load-bearing:
 --   * STABLE makes the function structurally unable to write. The public read
 --     path cannot be turned into a write path by a later edit — the planner
---     refuses it. Same class of guarantee as the read-only audit connection.
---   * A single SELECT has no branches, so every failure mode (unknown hash,
---     not locked, no disclosure, revoked disclosure) executes the same plan
---     and returns the same empty set. Indistinguishability is a property of
---     the JOIN, not a convention the caller has to honour.
+--     refuses it.
+--   * A single SELECT has no branches, so the four failure modes (unknown
+--     hash, not locked, no disclosure, revoked disclosure) all return the same
+--     empty set as a property of the JOIN rather than of a convention the
+--     caller has to honour. Timing is NOT equalised — see RR-CAP-02-E.
 --
 -- issued_on is a DATE, not a timestamp: locked_at at microsecond precision is
 -- a near-unique identifier that would let two independently verified reports
@@ -255,13 +441,19 @@ $$;
 ALTER FUNCTION uellix_capability.verify_report(text) OWNER TO uellix_cap_verification;
 
 COMMENT ON FUNCTION uellix_capability.verify_report(text) IS
-  'CAP-02. Read-only. Returns at most one row, containing only fields an approved disclosure marks visible. Unknown hash, unlocked report, missing disclosure and revoked disclosure are indistinguishable: all four return the empty set.';
+  'CAP-02. Read-only. Returns at most one row, containing only fields an approved disclosure marks visible. Unknown hash, unlocked report, missing disclosure and revoked disclosure are indistinguishable by RESULT: all four return the empty set. Timing is not equalised (RR-CAP-02-E).';
 
--- 2.4 The counter, separate on purpose.
+-- 3.2 The counter, separate on purpose.
 --
 -- Keeping it out of verify_report is what lets verify_report be STABLE. It
 -- also means the read path survives a broken counter: the endpoint calls this
 -- AFTER answering and ignores its result.
+--
+-- This is the ONLY capability write reachable by fully anonymous traffic, and
+-- its ON CONFLICT … DO UPDATE serialises every visitor of a given certificate
+-- onto one row per day. Without the two timeouts a distributed flood against a
+-- single published hash would queue unboundedly on one heap page. It swallows
+-- lock_not_available and query_canceled because it is best-effort by contract.
 CREATE OR REPLACE FUNCTION uellix_capability.record_verification_hit(p_hash text)
 RETURNS void
 LANGUAGE plpgsql
@@ -272,6 +464,9 @@ AS $$
 DECLARE
   v_report_id uuid;
 BEGIN
+  SET LOCAL lock_timeout = '1s';
+  SET LOCAL statement_timeout = '2s';
+
   SELECT r.id INTO v_report_id
     FROM public.sroi_reports r
     JOIN public.report_public_disclosures d ON d.report_id = r.id
@@ -289,121 +484,21 @@ BEGIN
   VALUES (v_report_id, (pg_catalog.now() AT TIME ZONE 'UTC')::date, 1)
   ON CONFLICT (report_id, hit_date)
   DO UPDATE SET hit_count = public.capability_verification_hits.hit_count + 1;
+
+EXCEPTION
+  -- Best-effort means best-effort: a contended counter must never turn a
+  -- successful verification into an error, and an error here must never carry
+  -- a DETAIL back to an anonymous caller.
+  WHEN OTHERS THEN
+    RAISE LOG 'record_verification_hit skipped with SQLSTATE %', SQLSTATE;
+    RETURN;
 END
 $$;
 
 ALTER FUNCTION uellix_capability.record_verification_hit(text) OWNER TO uellix_cap_verification;
 
 COMMENT ON FUNCTION uellix_capability.record_verification_hit(text) IS
-  'CAP-02. Best-effort aggregate counter. Records day x report and nothing else. Silent no-op for any hash verify_report would also refuse.';
-
--- 2.5 Definer grants — column-scoped.
---
--- The exclusions matter more than the inclusions. organizations gives up only
--- id and name: not stripe_customer_id, not stripe_subscription_id, not
--- stella_monthly_quota. sroi_reports gives up no summary, no created_by, no
--- locked_by. And there is no grant at all on evidence_items,
--- sroi_report_sections, projects, line items or members — a body that tried to
--- read them would fail at run time under this owner.
-
-GRANT SELECT (id, organization_id, calculation_run_id, title, status,
-              report_variant, verification_hash, locked_at)
-  ON public.sroi_reports TO uellix_cap_verification;
-
-GRANT SELECT (id, name) ON public.organizations TO uellix_cap_verification;
-
-GRANT SELECT (id, sroi_ratio, total_investment, net_social_value, currency)
-  ON public.sroi_calculation_runs TO uellix_cap_verification;
-
-GRANT SELECT ON public.report_public_disclosures TO uellix_cap_verification;
-
-GRANT SELECT, INSERT, UPDATE ON public.capability_verification_hits TO uellix_cap_verification;
-
--- 2.6 Capability policies.
-
-DROP POLICY IF EXISTS cap_verification_select_reports ON public.sroi_reports;
-CREATE POLICY cap_verification_select_reports
-ON public.sroi_reports FOR SELECT TO uellix_cap_verification
-USING (status = 'locked');
-
-DROP POLICY IF EXISTS cap_verification_select_disclosures ON public.report_public_disclosures;
-CREATE POLICY cap_verification_select_disclosures
-ON public.report_public_disclosures FOR SELECT TO uellix_cap_verification
-USING (revoked_at IS NULL);
-
-DROP POLICY IF EXISTS cap_verification_select_orgs ON public.organizations;
-CREATE POLICY cap_verification_select_orgs
-ON public.organizations FOR SELECT TO uellix_cap_verification
-USING (true);
-
-DROP POLICY IF EXISTS cap_verification_select_runs ON public.sroi_calculation_runs;
-CREATE POLICY cap_verification_select_runs
-ON public.sroi_calculation_runs FOR SELECT TO uellix_cap_verification
-USING (true);
-
-DROP POLICY IF EXISTS cap_verification_write_hits ON public.capability_verification_hits;
-CREATE POLICY cap_verification_write_hits
-ON public.capability_verification_hits FOR ALL TO uellix_cap_verification
-USING (true) WITH CHECK (true);
-
--- 2.7 The INTERNAL side of report_public_disclosures.
---
--- Approving a disclosure is an ordinary, organisation-scoped admin action and
--- uses the ordinary model: the same helpers every other table uses. It is NOT
--- part of the capability and does not touch uellix_cap_verification.
---
--- These three name `TO uellix_app` explicitly, which departs from the 101
--- pre-existing `{public}` policies and is deliberate. A policy with no TO
--- clause is TO PUBLIC — the exact defect stella_0005c had to repair on the
--- three append-only INSERT policies. Here it would be inert in practice (the
--- USING clauses evaluate false without auth.uid(), so uellix_cap_verification
--- would gain nothing), but "inert in practice" is the argument that was wrong
--- last time: `authenticated` held a grant nobody had accounted for, and the
--- policy was what turned it into a write path. Naming the runtime role costs
--- nothing and removes the question.
---
--- There is no DELETE policy, deliberately: a disclosure is revoked
--- (revoked_at), never erased. Who published what, and when, has to remain
--- answerable after the fact.
-
-DROP POLICY IF EXISTS disclosures_select_member ON public.report_public_disclosures;
-CREATE POLICY disclosures_select_member
-ON public.report_public_disclosures FOR SELECT TO uellix_app
-USING (
-  organization_id = ANY(public.current_user_org_ids())
-  OR public.current_user_is_super_admin()
-);
-
-DROP POLICY IF EXISTS disclosures_insert_admin ON public.report_public_disclosures;
-CREATE POLICY disclosures_insert_admin
-ON public.report_public_disclosures FOR INSERT TO uellix_app
-WITH CHECK (
-  public.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin')
-  OR public.current_user_is_super_admin()
-);
-
-DROP POLICY IF EXISTS disclosures_update_admin ON public.report_public_disclosures;
-CREATE POLICY disclosures_update_admin
-ON public.report_public_disclosures FOR UPDATE TO uellix_app
-USING (
-  public.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin')
-  OR public.current_user_is_super_admin()
-)
-WITH CHECK (
-  public.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin')
-  OR public.current_user_is_super_admin()
-);
-
--- The runtime needs the ordinary DML surface on the new table, exactly like
--- every other operational table. It gets it through uellix_writer, which is
--- where the runtime's whole write surface is defined and read.
-GRANT SELECT, INSERT, UPDATE ON public.report_public_disclosures TO uellix_writer;
-
-RESET ROLE;
-
--- ============================================================
--- 3. WINDOW 3 (superuser) — function ACLs
--- ============================================================
+  'CAP-02. Best-effort aggregate counter. Records day x report and nothing else. Silent no-op for any hash verify_report would also refuse, and silent on any error.';
 
 REVOKE ALL ON FUNCTION uellix_capability.verify_report(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION uellix_capability.record_verification_hit(text) FROM PUBLIC;
@@ -417,51 +512,95 @@ GRANT EXECUTE ON FUNCTION uellix_capability.record_verification_hit(text) TO uel
 DO $$
 DECLARE
   v_policies integer;
+  v_extra    text;
 BEGIN
   IF (SELECT rolcanlogin FROM pg_roles WHERE rolname = 'uellix_cap_verification') THEN
     RAISE EXCEPTION 'uellix_cap_verification must be NOLOGIN.';
   END IF;
-  IF (SELECT rolbypassrls FROM pg_roles WHERE rolname = 'uellix_cap_verification') THEN
-    RAISE EXCEPTION 'uellix_cap_verification must be NOBYPASSRLS.';
+  IF (SELECT rolbypassrls OR rolcreaterole OR rolcreatedb OR rolsuper
+        FROM pg_roles WHERE rolname = 'uellix_cap_verification') THEN
+    RAISE EXCEPTION 'uellix_cap_verification has a forbidden role attribute.';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.roleid = (SELECT oid FROM pg_roles WHERE rolname = 'uellix_cap_verification')
+  ) THEN
+    RAISE EXCEPTION 'uellix_cap_verification has a member; it must have none.';
   END IF;
 
-  -- verify_report must be STABLE. 'i' immutable, 's' stable, 'v' volatile.
-  -- This is the assertion that the public read path cannot write.
+  -- verify_report must be STABLE ('s'). This is the assertion that the public
+  -- read path cannot write. Both functions must carry an EMPTY search_path —
+  -- enumerated, not prefix-matched: a prefix match would also accept
+  -- `search_path=public, pg_temp`, the configuration the model forbids.
   IF NOT EXISTS (
     SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'uellix_capability' AND p.proname = 'verify_report'
       AND p.provolatile = 's'
       AND p.prosecdef
       AND pg_get_userbyid(p.proowner) = 'uellix_cap_verification'
-      AND p.proconfig IS NOT NULL
-      AND EXISTS (SELECT 1 FROM unnest(p.proconfig) c WHERE c LIKE 'search\_path=%')
+      AND (p.proconfig @> ARRAY['search_path=']::text[]
+        OR p.proconfig @> ARRAY['search_path=""']::text[])
   ) THEN
-    RAISE EXCEPTION 'verify_report is not a STABLE SECURITY DEFINER owned by uellix_cap_verification with an explicit search_path.';
+    RAISE EXCEPTION 'verify_report is not a STABLE SECURITY DEFINER owned by uellix_cap_verification with an EMPTY search_path.';
   END IF;
 
-  -- The exclusion that defines this capability.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'uellix_capability' AND p.proname = 'record_verification_hit'
+      AND p.prosecdef
+      AND pg_get_userbyid(p.proowner) = 'uellix_cap_verification'
+      AND (p.proconfig @> ARRAY['search_path=']::text[]
+        OR p.proconfig @> ARRAY['search_path=""']::text[])
+  ) THEN
+    RAISE EXCEPTION 'record_verification_hit is not a SECURITY DEFINER owned by uellix_cap_verification with an EMPTY search_path.';
+  END IF;
+
+  -- Neither function calls auth.uid(), so the definer must NOT hold auth.
+  IF pg_catalog.has_schema_privilege('uellix_cap_verification', 'auth', 'USAGE') THEN
+    RAISE EXCEPTION 'uellix_cap_verification holds USAGE on schema auth; CAP-02 has no use for it.';
+  END IF;
+
+  -- The exclusion that defines this capability. pg_class filtered by relkind
+  -- rather than pg_tables: pg_tables omits views, materialised views, foreign
+  -- tables and sequences, and a view with a PUBLIC grant would be a read path
+  -- pg_tables could not see.
   IF EXISTS (
-    SELECT 1 FROM pg_tables t
-    WHERE t.schemaname = 'public'
-      AND t.tablename IN ('evidence_items','sroi_report_sections','projects',
-                          'sroi_calculation_line_items','organization_members',
-                          'stella_interactions','methodology_review_matrix',
-                          'invitations','marketing_leads','audit_logs')
-      AND pg_catalog.has_any_column_privilege(
-            'uellix_cap_verification',
-            ('public.' || pg_catalog.quote_ident(t.tablename))::regclass, 'SELECT')
+    SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r','p','v','m','f')
+      AND c.relname NOT IN ('sroi_reports','organizations','sroi_calculation_runs',
+                            'report_public_disclosures','capability_verification_hits')
+      AND pg_catalog.has_any_column_privilege('uellix_cap_verification', c.oid, 'SELECT')
   ) THEN
-    RAISE EXCEPTION 'uellix_cap_verification can read a table outside CAP-02.';
+    RAISE EXCEPTION 'uellix_cap_verification can read a relation outside CAP-02.';
   END IF;
 
-  -- Column-level exclusions on the two tables it CAN read.
+  -- Column-level exclusions on the relations it CAN read.
   IF pg_catalog.has_column_privilege(
-       'uellix_cap_verification', 'public.organizations', 'stripe_customer_id', 'SELECT') THEN
-    RAISE EXCEPTION 'uellix_cap_verification can read organizations.stripe_customer_id.';
+       'uellix_cap_verification', 'public.organizations', 'stripe_customer_id', 'SELECT')
+     OR pg_catalog.has_column_privilege(
+       'uellix_cap_verification', 'public.organizations', 'slug', 'SELECT') THEN
+    RAISE EXCEPTION 'uellix_cap_verification can read an organizations column outside (id, name).';
   END IF;
   IF pg_catalog.has_column_privilege(
        'uellix_cap_verification', 'public.sroi_reports', 'summary', 'SELECT') THEN
     RAISE EXCEPTION 'uellix_cap_verification can read sroi_reports.summary.';
+  END IF;
+
+  -- EXECUTE is held by exactly one non-superuser role besides the owner.
+  -- Enumerating pg_roles rather than matching a name pattern is what makes this
+  -- order-independent: it covers uellix_stripe, and any future role, without
+  -- having to know that role exists.
+  SELECT pg_catalog.string_agg(r.rolname, ', ') INTO v_extra
+    FROM pg_roles r
+   WHERE NOT r.rolsuper
+     AND r.rolname NOT IN ('uellix_app', 'uellix_cap_verification')
+     AND (pg_catalog.has_function_privilege(
+            r.rolname, 'uellix_capability.verify_report(text)', 'EXECUTE')
+       OR pg_catalog.has_function_privilege(
+            r.rolname, 'uellix_capability.record_verification_hit(text)', 'EXECUTE'));
+  IF v_extra IS NOT NULL THEN
+    RAISE EXCEPTION 'unexpected roles hold EXECUTE on a CAP-02 function: %', v_extra;
   END IF;
 
   IF pg_catalog.has_function_privilege(
@@ -473,15 +612,22 @@ BEGIN
     RAISE EXCEPTION 'uellix_app does not hold EXECUTE on verify_report.';
   END IF;
 
-  -- Cross-capability isolation.
+  -- The disclosure table must not carry an organisation the caller could
+  -- assert. The organisation is derived from sroi_reports, always.
   IF EXISTS (
-    SELECT 1 FROM pg_roles r
-    WHERE r.rolname LIKE 'uellix\_cap\_%'
-      AND r.rolname <> 'uellix_cap_verification'
-      AND pg_catalog.has_function_privilege(
-            r.rolname, 'uellix_capability.verify_report(text)', 'EXECUTE')
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'report_public_disclosures'
+      AND column_name = 'organization_id'
   ) THEN
-    RAISE EXCEPTION 'another capability role can execute verify_report.';
+    RAISE EXCEPTION 'report_public_disclosures carries an organization_id; it must derive the org from sroi_reports.';
+  END IF;
+
+  -- The approver cannot be rewritten after the fact.
+  IF pg_catalog.has_column_privilege(
+       'uellix_writer', 'public.report_public_disclosures', 'approved_by', 'UPDATE')
+     OR pg_catalog.has_column_privilege(
+       'uellix_writer', 'public.report_public_disclosures', 'report_id', 'UPDATE') THEN
+    RAISE EXCEPTION 'the runtime can rewrite who approved a disclosure, or which report it is about.';
   END IF;
 
   -- The counter carries no personal data, and cannot start to.
@@ -504,6 +650,15 @@ BEGIN
     RAISE EXCEPTION 'a report_public_disclosures visibility flag does not default to false.';
   END IF;
 
+
+  -- The three RLS helpers must be executable, or every read this capability
+  -- makes dies at 42501 while evaluating somebody else's {public} policy.
+  IF NOT (pg_catalog.has_function_privilege('uellix_cap_verification', 'public.current_user_org_ids()', 'EXECUTE')
+      AND pg_catalog.has_function_privilege('uellix_cap_verification', 'public.current_user_is_super_admin()', 'EXECUTE')
+      AND pg_catalog.has_function_privilege('uellix_cap_verification', 'public.current_user_role_in_org(uuid)', 'EXECUTE')) THEN
+    RAISE EXCEPTION 'uellix_cap_verification cannot execute the RLS helper functions; every policy-guarded read would fail with 42501.';
+  END IF;
+
   SELECT count(*) INTO v_policies
     FROM pg_policies
    WHERE schemaname = 'public' AND pg_catalog.left(policyname, 17) = 'cap_verification_';
@@ -518,17 +673,11 @@ BEGIN
     RAISE EXCEPTION 'Expected 3 internal disclosures_* policies, found %.', v_policies;
   END IF;
 
-  -- The baseline is untouched: this package adds two tables and eight policies
-  -- and alters none of what was already there.
   IF (SELECT count(*) FROM pg_tables
        WHERE schemaname = 'public'
          AND tablename NOT IN ('report_public_disclosures','capability_verification_hits',
                                'stripe_webhook_events','capability_bootstrap_attempts')) <> 38 THEN
-    RAISE EXCEPTION 'stella_0007 changed the non-capability table baseline; expected 38, found %.',
-      (SELECT count(*) FROM pg_tables
-        WHERE schemaname = 'public'
-          AND tablename NOT IN ('report_public_disclosures','capability_verification_hits',
-                                'stripe_webhook_events','capability_bootstrap_attempts'));
+    RAISE EXCEPTION 'stella_0007 changed the non-capability table baseline; expected 38.';
   END IF;
 
   IF (SELECT count(*) FROM pg_policies
@@ -537,13 +686,7 @@ BEGIN
          AND pg_catalog.left(policyname, 12) <> 'disclosures_'
          AND policyname NOT IN ('anon_insert_marketing_leads',
                                 'authenticated_insert_marketing_leads')) <> 105 THEN
-    RAISE EXCEPTION 'stella_0007 changed the non-capability policy baseline; expected 105, found %.',
-      (SELECT count(*) FROM pg_policies
-        WHERE schemaname = 'public'
-          AND pg_catalog.left(policyname, 4) <> 'cap_'
-          AND pg_catalog.left(policyname, 12) <> 'disclosures_'
-          AND policyname NOT IN ('anon_insert_marketing_leads',
-                                 'authenticated_insert_marketing_leads'));
+    RAISE EXCEPTION 'stella_0007 changed the policy baseline; expected 105.';
   END IF;
 
   RAISE NOTICE 'stella_0007 applied: CAP-02 capability present, zero reports published.';

@@ -746,3 +746,91 @@ por el bypass de `postgres`. Hoy fallan cerrado y esperan una decisión de
 privilegio: policy acotada o identidad técnica separada. **Ninguna se resolvió
 inventando una claim** — ver RC-05 a RC-08 en
 [`STELLA_FABLE_RISK_REGISTER.md`](STELLA_FABLE_RISK_REGISTER.md).
+
+---
+
+## 10. Roles de capacidad (2026-08-03) — **DISEÑADOS, NO CREADOS**
+
+Los cinco roles de este documento (`uellix_owner`, `uellix_migrator`,
+`uellix_app`, `uellix_writer`, `uellix_auditor`) siguen siendo **los únicos que
+existen** en el stack local. Verificado el 2026-08-03 por lectura de
+`pg_roles`: `uellix_app uellix_auditor uellix_migrator uellix_owner
+uellix_writer`, y nada más.
+
+El diseño de capacidades públicas
+([`DATABASE_CAPABILITY_MODEL.md`](DATABASE_CAPABILITY_MODEL.md)) propone seis
+roles adicionales. **Ninguno se ha creado**, porque ninguno de los paquetes
+`stella_0006` … `stella_0010` se ha aplicado a ningún stack.
+
+| Rol propuesto | Tipo | Paquete | Papel |
+|---|---|---|---|
+| `uellix_cap_invitation` | NOLOGIN | `stella_0006` | definer de `accept_invitation` |
+| `uellix_cap_verification` | NOLOGIN | `stella_0007` | definer de `verify_report` y `record_verification_hit` |
+| `uellix_cap_stripe` | NOLOGIN | `stella_0008` | definer de las tres funciones `stripe_*` |
+| `uellix_stripe` | **LOGIN** | `stella_0008` | identidad de conexión exclusiva del webhook |
+| `uellix_cap_lead` | NOLOGIN | `stella_0009` | definer de `submit_lead` |
+| `uellix_cap_bootstrap` | NOLOGIN | `stella_0010` | definer de `bootstrap_organization` |
+
+### 10.1 Cómo encajan con el contrato de §2
+
+Los cinco `uellix_cap_*` extienden el mismo patrón que §2.A establece para
+`uellix_owner`: **sin `LOGIN`, no hay cadena de conexión.** La diferencia es que
+`uellix_owner` es alcanzable por `SET ROLE` desde `uellix_migrator`, mientras
+que un rol de capacidad sólo es alcanzable **atravesando el cuerpo de su
+función** `SECURITY DEFINER`.
+
+La única membresía de cada uno es
+`GRANT uellix_cap_X TO uellix_owner WITH INHERIT FALSE, SET TRUE, ADMIN FALSE`
+— el mismo contrato de `uellix_migrator → uellix_owner` de §3.2, y por la misma
+razón: `INHERIT FALSE` significa que la operación normal del owner **no** lleva
+esos privilegios, y sólo los adquiere tras un `SET ROLE` explícito. Existe
+únicamente para poder transferirles la propiedad de la función.
+
+`uellix_stripe` es distinto y es el único caso: es `LOGIN` porque Stripe no
+tiene sujeto humano y necesita su propia credencial, rotable y revocable con
+independencia del runtime. A cambio, **no recibe ningún privilegio de tabla ni
+de columna sobre ninguna de las 38 tablas**, en ninguno de los cuatro modos DML
+— lo que el paquete verifica en su postcondición barriendo las 38 × 4.
+
+### 10.2 Un límite del modelo que conviene tener escrito
+
+§1 de este documento ya registra que *"funciones nuevas: `proacl` nulo ⇒
+`EXECUTE TO PUBLIC` implícito"*. El mismo tipo de default aplica al esquema
+`public`, y es más incómodo:
+
+```
+nspacl de public = {pg_database_owner=UC/…, =U/…, postgres=U/…, anon=U/…,
+                    authenticated=U/…, service_role=U/…, uellix_owner=UC/…,
+                    uellix_migrator=U/…, uellix_app=U/…, uellix_writer=U/…,
+                    uellix_auditor=U/…}
+```
+
+La entrada `=U/…` —grantee vacío— **es `PUBLIC`**. Consecuencia: **todo rol
+nuevo hereda `USAGE` sobre `public` en el momento de crearse**, y los ACL de
+PostgreSQL son aditivos, así que no hay forma de retirárselo a un rol concreto.
+
+Retirarlo globalmente (`REVOKE USAGE ON SCHEMA public FROM PUBLIC`) es
+técnicamente viable —los once roles nombrados tienen grant explícito y ninguno
+lo perdería— pero alcanzaría a los roles internos de Supabase que **no**
+aparecen en la lista (`supabase_auth_admin`, `supabase_storage_admin`,
+`authenticator`, `dashboard_user`, `pgbouncer`…). Es un cambio de privilegio
+sobre el esquema entero y **no se toma en un paquete de capacidad**: queda como
+hardening candidato con análisis propio (**RR-CAP-7** en el risk register).
+
+La consecuencia práctica es acotada: poder **nombrar** una tabla sobre la que no
+se tiene ningún privilegio no sirve de nada. Pero la afirmación fuerte —"este
+rol no puede ni nombrar `public.projects`"— **no es cierta** y no debe
+reintroducirse.
+
+### 10.3 Qué NO cambia este diseño
+
+* `uellix_app` no gana ninguna membresía nueva. Sigue siendo miembro de
+  `uellix_writer` y de nada más.
+* `uellix_writer` **pierde** cuatro privilegios si se aplica `stella_0009`
+  (`SELECT, INSERT, UPDATE, DELETE` sobre `marketing_leads`). Es la única
+  modificación de la superficie de escritura del runtime en toda la campaña, y
+  es una reducción.
+* Los 10 triggers append-only, las 107 policies existentes y las 8 funciones
+  `SECURITY DEFINER` de `public` no se tocan.
+* `postgres` sigue siendo miembro de `uellix_writer` (§3.2, DP-07 abierta). La
+  campaña no lo altera ni depende de ello.

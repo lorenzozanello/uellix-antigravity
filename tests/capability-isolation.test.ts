@@ -204,12 +204,36 @@ describe('capability isolation — one capability does not enable another', () =
     expect(new Set(all).size).toBe(all.length)
   })
 
-  it.each(CAPABILITIES)('$id grants EXECUTE to exactly one role: $executor', (cap) => {
+  it.each(CAPABILITIES)('$id grants EXECUTE on its own functions to exactly one role: $executor', (cap) => {
+    // Only grants on uellix_capability functions count. Each package also
+    // grants EXECUTE on the three public.current_user_* RLS helpers to its own
+    // definer — without which every policy-guarded read inside the definer
+    // fails 42501 against somebody else's {public} policy. Those are a
+    // different statement with a different purpose and are checked separately.
     const grants = [
-      ...code(read(cap.forward)).matchAll(/GRANT\s+EXECUTE\s+ON\s+FUNCTION[\s\S]*?TO\s+(\w+)\s*;/gi),
+      ...code(read(cap.forward)).matchAll(
+        /GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+uellix_capability\.[\s\S]*?TO\s+(\w+)\s*;/gi,
+      ),
     ].map((m) => m[1])
     expect(grants.length).toBe(cap.functions.length)
     expect(new Set(grants)).toEqual(new Set([cap.executor]))
+  })
+
+  it.each(CAPABILITIES)('$id grants the RLS helpers only to its own definer', (cap) => {
+    const helperGrants = [
+      ...code(read(cap.forward)).matchAll(
+        /GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+public\.current_user_[\s\S]*?TO\s+(\w+)\s*;/gi,
+      ),
+    ].map((m) => m[1])
+    // CAP-04 touches only marketing_leads, whose policies name anon /
+    // authenticated / the capability role and never {public}, so its definer
+    // never evaluates a helper and never needs the grant.
+    if (cap.id === 'CAP-04') {
+      expect(helperGrants).toEqual([])
+    } else {
+      expect(helperGrants.length).toBe(3)
+      expect(new Set(helperGrants)).toEqual(new Set([cap.definer]))
+    }
   })
 
   it.each(CAPABILITIES)('$id never grants a table privilege to another capability role', (cap) => {
@@ -341,13 +365,35 @@ describe('capability campaign — SECURITY DEFINER standard', () => {
     }
   })
 
-  it.each(CAPABILITIES)('$id: the definer is held only by uellix_owner, INHERIT FALSE', (cap) => {
+  it.each(CAPABILITIES)('$id: the definer role is granted to NOBODY', (cap) => {
+    // Stronger than the invariant this replaced. An earlier revision granted
+    // the capability role to uellix_owner with INHERIT FALSE / SET TRUE, so it
+    // could transfer ownership of the function — and SET ROLE authorisation is
+    // TRANSITIVE, so uellix_migrator (a LOGIN role that can SET ROLE to
+    // uellix_owner) could reach every capability role in two statements. The
+    // model's claim that no connection string resolves to a capability role
+    // was false while that grant existed.
+    //
+    // Doing the ownership transfer in the superuser window removes the need for
+    // the grant entirely, and the claim becomes true.
     const body = code(read(cap.forward))
-    const grants = [...body.matchAll(new RegExp(`GRANT\\s+${cap.definer}\\s+TO\\s+(\\w+)([^;]*);`, 'gi'))]
-    expect(grants.length).toBe(1)
-    expect(grants[0][1]).toBe('uellix_owner')
-    expect(grants[0][2]).toMatch(/INHERIT FALSE/i)
-    expect(grants[0][2]).toMatch(/ADMIN FALSE/i)
+    const grants = [...body.matchAll(new RegExp(`GRANT\\s+${cap.definer}\\s+TO\\s+`, 'gi'))]
+    expect(grants, `${cap.definer} is granted to someone`).toEqual([])
+  })
+
+  it.each(CAPABILITIES)('$id: the function lifecycle happens in the superuser window', (cap) => {
+    // ALTER FUNCTION ... OWNER TO R requires R to hold CREATE on the schema,
+    // which the capability role deliberately does not have; and CREATE OR
+    // REPLACE on a second apply requires ownership resolved through
+    // has_privs_of_role. Both fail if the block runs under SET ROLE
+    // uellix_owner. Everything about the function must come after RESET ROLE.
+    const body = code(read(cap.forward))
+    const reset = body.lastIndexOf('RESET ROLE;')
+    expect(reset).toBeGreaterThan(-1)
+    for (const marker of ['CREATE OR REPLACE FUNCTION uellix_capability.', 'OWNER TO ' + cap.definer]) {
+      const at = body.indexOf(marker)
+      expect(at, `${marker} appears before the last RESET ROLE`).toBeGreaterThan(reset)
+    }
   })
 
   it.each(CAPABILITIES)('$id: no dynamic SQL beyond the fixed-literal CREATE ROLE', (cap) => {
@@ -375,6 +421,133 @@ describe('capability campaign — SECURITY DEFINER standard', () => {
   it.each(CAPABILITIES)('$id: contains no password', (cap) => {
     expect(code(read(cap.forward))).not.toMatch(/\bPASSWORD\b/i)
     expect(code(read(cap.rollback))).not.toMatch(/\bPASSWORD\b/i)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 4b. Regressions pinned by the disposable dry run
+// ---------------------------------------------------------------------------
+// Every case here failed against a real PostgreSQL 17.6 and is invisible to
+// reading. They are kept as static gates so the same mistake cannot return.
+
+describe('capability campaign — dry-run regressions', () => {
+  it.each(CAPABILITIES)('$id: no SQL-standard construct is over-qualified', (cap) => {
+    // COALESCE, NULLIF, GREATEST and LEAST are grammar productions that build
+    // CoalesceExpr / NullIfExpr nodes. There are no pg_proc rows with those
+    // names, so `pg_catalog.coalesce(...)` parses as a function call and dies
+    // «function pg_catalog.coalesce(...) does not exist» — at RUN time, since
+    // plpgsql does not resolve SQL expressions at CREATE FUNCTION. Being
+    // grammar, they cannot be shadowed by search_path either, so qualifying
+    // them buys nothing and costs the capability.
+    expect(code(read(cap.forward))).not.toMatch(
+      /pg_catalog\.(coalesce|nullif|greatest|least)\s*\(/i,
+    )
+  })
+
+  it.each(CAPABILITIES)('$id: no aggregate is used on a uuid column', (cap) => {
+    // PostgreSQL has no min()/max() for uuid. `min(o.id)` raises 42883 inside
+    // the function, which for CAP-03 means inside a live webhook.
+    for (const fn of parseFunctions(code(read(cap.forward)))) {
+      expect(fn.body, `${fn.name} aggregates a uuid`).not.toMatch(/\bmin\s*\(\s*\w+\.id\s*\)/i)
+      expect(fn.body, `${fn.name} aggregates a uuid`).not.toMatch(/\bmax\s*\(\s*\w+\.id\s*\)/i)
+    }
+  })
+
+  it.each(CAPABILITIES)('$id: has_any_column_privilege is never asked for DELETE', (cap) => {
+    // DELETE and TRUNCATE have no column-level form, so
+    // has_any_column_privilege(..., 'DELETE') raises «unrecognized privilege
+    // type» rather than returning false — and it aborted a whole package.
+    const body = code(read(cap.forward))
+    const calls = [...body.matchAll(/has_any_column_privilege\([\s\S]{0,200}?\)/g)].map((m) => m[0])
+    for (const call of calls) {
+      expect(call, 'column privilege check asks for a table-only mode').not.toMatch(
+        /'(DELETE|TRUNCATE|TRIGGER)'/,
+      )
+    }
+  })
+
+  it('CAP-04 uses an UNTARGETED ON CONFLICT', () => {
+    // Measured: naming an arbiter makes its columns part of the statement's
+    // SELECT requirement, so a targeted conflict clause and a SELECT-less
+    // definer are mutually exclusive. Plain INSERT and untargeted DO NOTHING
+    // both succeed for this definer; the targeted form is denied.
+    const body = code(read('stella_0009_public_lead_capability.sql'))
+    expect(body).toMatch(/ON CONFLICT DO NOTHING;/)
+    expect(body).not.toMatch(/ON CONFLICT\s*\([^)]*\)\s*DO NOTHING/)
+  })
+
+  it('CAP-01 reads without the lock before taking it', () => {
+    // SELECT ... FOR UPDATE is filtered by the UPDATE policy's USING clause,
+    // and this capability's is USING (status = 'pending'). A locking read of an
+    // already-accepted row therefore returns NOT FOUND, which made the
+    // idempotent-replay branch unreachable: a user reloading the accept page
+    // got a refusal instead of their membership.
+    const fn = parseFunctions(code(read('stella_0006_invitation_capability.sql')))[0]
+    const firstRead = fn.body.indexOf('FROM public.invitations i')
+    const firstLock = fn.body.indexOf('FOR UPDATE')
+    const replay = fn.body.indexOf("v_inv_status = 'accepted'")
+    expect(firstRead).toBeGreaterThan(-1)
+    expect(replay, 'the replay branch runs before any lock').toBeLessThan(firstLock)
+  })
+
+  it.each(CAPABILITIES.filter((c) => c.id !== 'CAP-04'))(
+    '$id grants the RLS helpers, without which every guarded read dies at 42501',
+    (cap) => {
+      // The pre-existing policies on these tables are {public}: they apply to
+      // EVERY role, the definer included, and call the three SECURITY DEFINER
+      // helpers whose EXECUTE stella_0004 revoked from PUBLIC.
+      const body = code(read(cap.forward))
+      for (const helper of ['current_user_org_ids', 'current_user_is_super_admin', 'current_user_role_in_org']) {
+        expect(body, `${cap.id} does not grant ${helper}`).toMatch(
+          new RegExp(`GRANT EXECUTE ON FUNCTION public\\.${helper}`),
+        )
+      }
+    },
+  )
+
+  it.each(CAPABILITIES.filter((c) => ['CAP-01', 'CAP-05'].includes(c.id)))(
+    '$id grants USAGE on schema auth, because its body calls auth.uid()',
+    (cap) => {
+      // Resolving auth.uid() needs USAGE on schema auth FOR THE DEFINER.
+      // stella_0004 granted it to uellix_owner only, and stella_0005d exists
+      // because exactly this was missed once already for schema storage.
+      const body = code(read(cap.forward))
+      expect(body).toMatch(new RegExp(`GRANT USAGE ON SCHEMA auth TO ${cap.definer}`))
+      expect(code(read(cap.rollback))).toMatch(
+        new RegExp(`REVOKE ALL ON SCHEMA auth FROM ${cap.definer}`),
+      )
+    },
+  )
+
+  it.each(CAPABILITIES.filter((c) => ['CAP-02', 'CAP-03', 'CAP-04'].includes(c.id)))(
+    '$id does NOT grant schema auth — no body of its calls auth.uid()',
+    (cap) => {
+      expect(code(read(cap.forward))).not.toMatch(/GRANT USAGE ON SCHEMA auth/)
+    },
+  )
+
+  it('CAP-03 does not mark a failure inside the transaction it aborts', () => {
+    // UPDATE ... SET status='failed' followed by RAISE in the same transaction
+    // is rolled back BY that RAISE: the event stays 'processing' with a NULL
+    // error code, and every retry gets in_progress until the lease expires —
+    // the silent loss the handler exists to prevent. Marking a failure belongs
+    // to stripe_fail_event, which runs in its own transaction.
+    const fns = parseFunctions(code(read('stella_0008_stripe_webhook_identity.sql')))
+    const apply = fns.find((f) => f.name === 'stripe_apply_subscription')!
+    expect(apply.body).not.toMatch(/SET status\s*=\s*'failed'/)
+    const fail = fns.find((f) => f.name === 'stripe_fail_event')!
+    expect(fail.body).toMatch(/SET status\s*=\s*'failed'/)
+  })
+
+  it.each(CAPABILITIES)('$id: every function collapses engine errors into the uniform refusal', (cap) => {
+    // Without this, a 23505 reaches the caller with PostgreSQL's DETAIL — which
+    // quotes row values: a real user id from user_single_active_membership, or
+    // a Stripe subscription id from organizations_stripe_subscription_id_unique.
+    for (const fn of parseFunctions(code(read(cap.forward)))) {
+      if (fn.header.includes('LANGUAGE sql')) continue // no EXCEPTION in SQL functions
+      expect(fn.body, `${fn.name} has no EXCEPTION block`).toMatch(/EXCEPTION[\s\S]*WHEN OTHERS THEN/)
+      expect(fn.body, `${fn.name} logs SQLERRM`).not.toMatch(/RAISE LOG[^;]*SQLERRM/)
+    }
   })
 })
 
@@ -581,8 +754,12 @@ describe('CAP-05 — bootstrap cannot choose owner, role, plan or quota', () => 
     expect(policy![1]).toMatch(/role = 'organization_admin'/)
   })
 
-  it('slug uniqueness is atomic, not check-then-act', () => {
-    expect(body).toMatch(/ON CONFLICT \(slug\) DO NOTHING/)
+  it('slug uniqueness is atomic, and names the constraint rather than the column', () => {
+    // ON CONFLICT (slug) would put an OUT variable of the same name into an
+    // expression context, where plpgsql substitutes it. Naming the constraint
+    // avoids that and pins the one the precondition verified.
+    expect(body).toMatch(/ON CONFLICT ON CONSTRAINT organizations_slug_unique DO NOTHING/)
+    expect(body).not.toMatch(/ON CONFLICT \(slug\)/)
   })
 
   it('the reserved-slug denylist covers the application\'s own routes', () => {
