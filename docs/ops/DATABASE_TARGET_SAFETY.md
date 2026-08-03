@@ -603,7 +603,7 @@ de la siguiente.
 | Suite | Tests | Qué fija |
 |---|---|---|
 | `tests/database-target-safety.test.ts` | 139 | clasificación (local, remoto, privado, adversarial, inválido), redacción, matriz de capacidades, aislamiento, seguridad de mensajes, resolución de entorno, contraste de las constantes locales contra `supabase/config.toml`, y la clasificación de `sslrootcert` como parámetro reenviado (hallazgo 36) |
-| `tests/database-entrypoint-safety.test.ts` | 111 | ausencia de efectos de import, guarda antes del driver, superficie de `package.json`, regresión de dotenv, procesos hijo reales que verifican que los scripts abortan **antes** de conectar, el orden del *merge* de `postgresOptions.connection` probado directamente vía `mergeGuardedConnectionOptions()` (hallazgo 34), la comparación case-insensitive de `GUARD_OWNED_CONNECTION_KEYS` (hallazgo 35), y que `sslrootcert` no influye en el `ssl` fijado (hallazgo 36) |
+| `tests/database-entrypoint-safety.test.ts` | 122 | ausencia de efectos de import, guarda antes del driver, superficie de `package.json`, regresión de dotenv, procesos hijo reales que verifican que los scripts abortan **antes** de conectar, el orden del *merge* de `postgresOptions.connection` probado directamente vía `mergeGuardedConnectionOptions()` (hallazgo 34), la comparación case-insensitive de `GUARD_OWNED_CONNECTION_KEYS` (hallazgo 35), que `sslrootcert` no influye en el `ssl` fijado (hallazgo 36), y — desde el cierre 2026-08-02 — que el gate de integración resuelve `UELLIX_RUNTIME_DATABASE_URL` (nunca `DATABASE_URL`), rechaza rol/target/puerto incorrectos y colecta las 49 pruebas de integración |
 
 Ambas se ejecutan en `pnpm test:unit` y en el workflow `p1a-validation`.
 
@@ -619,7 +619,8 @@ lanza — devuelve **cero filas**.
 | Suite | Tests | Qué fija |
 |---|---|---|
 | `tests/authenticated-database-context.test.ts` | 33 | de dónde sale la identidad: sesión válida, ausente, rechazada, sujeto malformado, Auth caído (503 ≠ logout), usuario Auth sin perfil, cuenta con `deleted_at`, organización propia vs. ajena, super-admin sólo desde servidor, anidamiento, limpieza tras COMMIT y tras ROLLBACK, reutilización del pool, **dos peticiones concurrentes con identidades distintas**, y los flujos de login/logout/dashboard/cross-org/Stella/append-only |
-| `tests/database-runtime-entrypoints.test.ts` | 163 | cobertura estructural: reconstruye el grafo de imports de `app/**` y falla si un entry point alcanza `db/client.ts` sin abrir contexto |
+| `tests/database-runtime-entrypoints.test.ts` | 184 | cobertura estructural en dos capas: la capa regex reconstruye el grafo de imports de `app/**` y falla si un entry point alcanza `db/client.ts` sin abrir contexto; la capa AST (cierre 2026-08-02) extiende la cobertura a `components/**`, componentes JSX de servidor y las diez formas indirectas que sobrevivieron a la regex (alias, namespace, import dinámico, helper transitivo, reexport, wrapper decorativo/condicional, driver propio, `db` reasignado), con inventario versionado y 10 fixtures mutantes |
+| `tests/database-insert-policy-scope.test.ts` | 19 | alcance de las policies INSERT append-only tras `stella_0005c`: roles de policy `{uellix_app}`, `authenticated`/`anon`/`service_role`/`PUBLIC` sin INSERT efectivo, actor ligado a `auth.uid()` sin rama NULL, sondas en vivo con ROLLBACK |
 
 La segunda no es un grep. Casi ningún entry point consulta directo: llegan a la
 base a través de dos o tres servicios, así que la comprobación resuelve
@@ -634,8 +635,10 @@ abre contexto" (corre dentro del de su llamador) y `lib/auth/roles.ts` como "no
 alcanza la base". Un tercero comprueba que los ocho nombres de wrapper siguen
 exportados: renombrar uno convertiría el archivo entero en un no-op.
 
-La allowlist de 11 entry points no es una supresión: cada entrada lleva su
-motivo, y la suite falla si el archivo desaparece o deja de ser entry point.
+La allowlist de **13** entry points no es una supresión: cada entrada lleva su
+motivo, y la suite falla si el archivo desaparece, deja de ser entry point o
+deja de alcanzar la base (una fila que nunca se consulta es decoración). La
+misma allowlist gobierna la capa AST.
 
 Ambas se ejecutan en `pnpm test:unit`. Las partes que necesitan base viva se
 saltan solas cuando el stack local no está levantado, igual que las suites de

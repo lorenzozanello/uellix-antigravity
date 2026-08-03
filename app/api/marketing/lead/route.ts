@@ -13,9 +13,11 @@ const LeadSchema = z.object({
 /**
  * PUBLIC, UNAUTHENTICATED WRITE — BLOCKED BY DESIGN AFTER THE RUNTIME CUTOVER.
  *
- * `marketing_leads` is the only table in `public` whose policies name database
- * ROLES rather than applying to all of them (measured: the other 104 policies
- * carry `{public}`):
+ * `marketing_leads` was the only table in `public` whose policies name database
+ * ROLES rather than applying to all of them (since stella_0005c the three
+ * append-only INSERT policies are role-scoped too — deliberately, TO
+ * uellix_app; measured distribution: 101 {public} + 3 {uellix_app} +
+ * 2 {authenticated} + 1 {anon}):
  *
  *   anon_insert_marketing_leads           TO anon           WITH CHECK (true)
  *   authenticated_insert_marketing_leads  TO authenticated  WITH CHECK (true)

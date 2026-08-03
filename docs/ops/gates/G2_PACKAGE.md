@@ -595,15 +595,27 @@ sin privilegios nuevos.**
 
 | Evidencia | Estado |
 |---|---|
-| Entry points que alcanzan `db/client.ts` (grafo transitivo, `app/**`) | 93 de 110 |
+| Entry points que alcanzan `db/client.ts` (grafo transitivo, `app/**`) | 93 de 117 (cifra corregida 2026-08-02; el inventario era 117, no 110) |
 | Abren contexto de identidad | 80 |
 | En allowlist documentada, con motivo | 13 |
 | `tests/authenticated-database-context.test.ts` | 33 tests, VERDE (7 offline + 26 contra el stack vivo) |
 | `tests/database-runtime-entrypoints.test.ts` | 163 tests, VERDE |
 | `pnpm test:unit` | 3154 tests, VERDE |
 | `pnpm typecheck` / `pnpm lint` / `pnpm build` | VERDE / 0 errores / completo |
-| Login local | **restaurado** — el ciclo `getCurrentUser` → `public.users` → claims está roto por diseño |
+| Login local | **restaurado a nivel de unidad-con-BD-viva** (el ciclo `getCurrentUser` → `public.users` estaba roto; el sujeto ahora viene de GoTrue y el perfil se lee dentro de un contexto). La evidencia E2E HTTP llegó con el cierre de reauditoría — ver la fila de abajo |
 | Escrituras permanentes en la base | ninguna |
+
+**Actualización — cierre de reauditoría (2026-08-02):**
+
+| Evidencia | Estado |
+|---|---|
+| Escáner AST por export (`app/**` + `components/**`) | 117 módulos verificados; 95 alcanzan la base; 82 contextualizados + 13 allowlist; **0 sin guardia**; inventario versionado + 10 fixtures mutantes |
+| `tests/database-runtime-entrypoints.test.ts` | 184 tests, VERDE |
+| Policies INSERT append-only | re-alcanzadas `TO uellix_app` (`stella_0005c`); `authenticated`/`service_role`/`anon`/`PUBLIC` sin INSERT efectivo (medido con sonda directa como `authenticated` con claims válidos → denegada) |
+| Suite de integración local | **ejecutable y en verde: 49/49** (guard por capacidad, fixtures por ruta owner) |
+| Storage de evidencia | reparado (`stella_0005d`): las funciones SECURITY DEFINER quedaron sin `USAGE` sobre `storage` tras `stella_0004` y negaban todo objeto |
+| Login E2E HTTP local | **probado (ensayo manual, no test automatizado)**: GoTrue real → cookie → dashboard con la organización propia visible bajo RLS → logout → redirect. Usuario sintético del seed; sin crear usuarios; sin tocar Auth. No hay suite CI que lo reproduzca |
+| Stripe | fail-closed **y probado**: 400 firma inválida / 503 reintentable, cero acceso a BD en ambos; constante pineada por test |
 
 ### Cinco caminos bloqueados por diseño — precondición nueva para G2
 

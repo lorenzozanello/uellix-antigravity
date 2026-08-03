@@ -1248,7 +1248,7 @@ grep: casi ninguna página consulta directo.
 
 | | |
 |---|---|
-| Entry points inventariados | 110 |
+| Entry points inventariados | 117 (corregido en el cierre 2026-08-02; era 110, cifra sin fijar) |
 | Alcanzan `db/client.ts` | 93 |
 | Abren contexto de identidad | 80 |
 | En allowlist documentada | 13 |
@@ -1356,3 +1356,24 @@ fail-open.
 
 Tras las correcciones: **145 archivos, 3154 tests** (2957 → +197), typecheck
 verde, lint 0 errores, build completo.
+
+---
+
+## Unidad: cierre de la reauditoría de compatibilidad (2026-08-02, tarde)
+
+Cierra los 2 BLOCKER y 5 MAJOR de
+`STELLA_RUNTIME_COMPATIBILITY_REAUDIT_BLOCKED_ENTRYPOINT`. Detalle en
+`DATABASE_RUNTIME_CUTOVER.md` §11 y en la sección "Cierre de compatibilidad"
+del risk register.
+
+| Evidencia | Resultado |
+|---|---|
+| Once suites de base contra el stack local | **640/640** (antes diez suites, 581/581): entrypoints 184 · authenticated-context 33 · runtime-identity 21 · runtime-rls 18 · **insert-policy-scope 19 (nueva)** · migrator-path 18 · ddl-containment 18 · role-safety 52 · default-privileges 16 · target-safety 139 · entrypoint-safety 122 |
+| Suite local de integración | **49/49** (`pnpm db:test:integration:local`; rls 32 + investments 17). Guard por capacidad (`UELLIX_RUNTIME_DATABASE_URL`, rol `uellix_app`, 127.0.0.1:56322); fixtures por ruta owner (`tests/integration/_owner.ts`); clausura append-only en modo REUSED |
+| Residuo de la integración | +1 organización y +1 usuario por corrida en `public` (pineados por `audit_logs` append-only, FK NO ACTION — contrato preexistente, antes era uno POR TEST); 1 fila compartida `fx_rates` COP 2024-12-31 (fixture idempotente); `auth.users` limpio (los usuarios GoTrue de la suite se borran en `afterAll`) |
+| Gate de Stripe | `tests/stripe-webhook-route.test.ts`, 8 tests: 400/503 con cero acceso a BD, constante pineada |
+| Escáner AST | 117 módulos / 95 alcanzan BD / 82 contextualizados + 13 allowlist / **0 sin guardia**; 10 fixtures mutantes; con la forma antigua de `OutcomeAllocationWrapper` reinsertada, fallan 4 pruebas (verificado empíricamente) |
+| Policies | 107 = 101 `{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}`; `authenticated`/`service_role` sin INSERT efectivo en `audit_logs`/`stella_interactions` (sonda directa denegada) |
+| Login E2E HTTP local **(ensayo manual, no test automatizado)** | Probado: GoTrue real → cookie → dashboard con la organización propia bajo RLS → logout → redirect. Usuario sintético del seed; sin crear usuarios. `onboarding_completed` alternado y **restaurado**. No hay suite CI que lo reproduzca |
+| SQL aplicado en local | `stella_0005c` (re-alcance de policies INSERT) y `stella_0005d` (USAGE sobre `storage` para el owner — reparación de un hallazgo colateral medido) |
+| No ejecutado | grounding, G2 formal, G3 remoto, `test:rls`/`test:integration` remotos. Cero acceso remoto |

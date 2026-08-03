@@ -2,7 +2,9 @@
 //
 // HOW A REQUEST'S IDENTITY REACHES ROW-LEVEL SECURITY.
 //
-// Measured on this database, the whole RLS surface reduces to one function:
+// Measured on this database, the whole RLS surface reduces to one function
+// (counts from the pre-stella_0005 measurement; the total is 107 since the
+// three append-only INSERT policies landed, rescoped TO uellix_app by 0005c):
 //
 //     104 policies
 //       ├── 98 call current_user_is_super_admin()

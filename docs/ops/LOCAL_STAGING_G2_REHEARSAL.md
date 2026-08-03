@@ -2198,3 +2198,31 @@ seeds, sin resets.
 
 **Resultado:** `STELLA_RUNTIME_CUTOVER_HARDENED_READY_FOR_REAUDIT`. G2 formal
 sigue **sin ejecutar**.
+
+---
+
+## Cierre de la reauditoría de compatibilidad (2026-08-02, tarde)
+
+La reauditoría devolvió `STELLA_RUNTIME_COMPATIBILITY_REAUDIT_BLOCKED_ENTRYPOINT`
+(2 BLOCKER, 5 MAJOR). Esta unidad los cerró. Registro completo:
+`DATABASE_RUNTIME_CUTOVER.md` §11, risk register ("Cierre de compatibilidad"),
+`STELLA_FABLE_TEST_LEDGER.md` (última unidad). En resumen sobre este stack:
+
+- **SQL aplicado:** `stella_0005c` (policies INSERT append-only → `TO
+  uellix_app`; `REVOKE INSERT` a `authenticated`/`service_role` en `audit_logs`
+  y `stella_interactions`; actor ligado a `auth.uid()`, sin rama NULL) y
+  `stella_0005d` (`GRANT USAGE ON SCHEMA storage TO uellix_owner` — sin él,
+  TODA operación de objetos de evidencia fallaba desde `stella_0004`; medido
+  con la suite de Storage). Policies: se mantienen **107**, ahora 101
+  `{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}`.
+- **Integración local restaurada:** guard por capacidad + fixtures por ruta
+  owner → `pnpm db:test:integration:local` **49/49**. Residuo por corrida: +1
+  organización y +1 usuario en `public` (pineados por `audit_logs`; contrato
+  preexistente), 1 fila `fx_rates` COP compartida (fixture); `auth.users`
+  limpio; interacciones (2) y decisión (1) reutilizadas, no multiplicadas.
+- **Login E2E HTTP probado en local** con el usuario sintético del seed:
+  GoTrue real → cookie → dashboard con la organización propia bajo RLS →
+  logout → redirect. Sin crear usuarios; `onboarding_completed` alternado y
+  restaurado.
+- **Once suites de base: 640/640.** Escáner AST: 117 módulos, 0 sin guardia.
+- Sin acceso remoto, sin grounding, sin G2 formal, sin push.

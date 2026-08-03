@@ -221,6 +221,19 @@ organización correcta forje un registro a nombre de un colega). Un audit trail
 append-only que cualquiera puede escribir con la identidad de otro no es un
 audit trail.
 
+**Corrección de alcance (`stella_0005c`, 2026-08-02).** Las tres policies se
+crearon sin cláusula `TO` — es decir, `TO PUBLIC` — y eso reactivó los grants
+`INSERT` pre-cutover de `authenticated`/`service_role` sobre `audit_logs` y
+`stella_interactions`: un JWT de usuario válido podía escribir en ambas tablas
+directamente por PostgREST, saltándose la aplicación (hallazgo M1 de la
+reauditoría). `stella_0005c` re-alcanza las tres a `TO uellix_app`, revoca esos
+grants (SELECT intacto), elimina la rama `actor_user_id IS NULL` de
+`audit_logs` — medido: ningún llamador de producción escribe sin actor; el
+único que lo hacía es el webhook de Stripe, que está bloqueado y usará una
+identidad técnica, no `uellix_app` — y liga el actor a `auth.uid()` también en
+la rama super admin. Verificación ejecutable:
+`tests/database-insert-policy-scope.test.ts`.
+
 ### Default privileges para objetos futuros
 
 `SELECT` + `INSERT` a `uellix_writer`, `SELECT` a `uellix_auditor`, y nada más.
@@ -357,23 +370,61 @@ masivo.
 
 ### Cobertura medida
 
+Dos capas, en el mismo archivo (`tests/database-runtime-entrypoints.test.ts`):
+
+**Capa regex (entry points por convención de nombre, `app/**`):**
+
 | | |
 |---|---|
-| Entry points inventariados (`app/**`) | 110 |
+| Entry points inventariados (`app/**`) | 117 |
 | Alcanzan `db/client.ts` (grafo de imports transitivo) | 93 |
 | Abren contexto de identidad | 80 |
 | En allowlist documentada | 13 |
 
-`tests/database-runtime-entrypoints.test.ts` reconstruye el grafo de imports
-—resolviendo `@/`, relativos, re-exports y `import()` dinámico, e ignorando
-`import type` y módulos `'use client'`— y falla si un entry point alcanza
-`db/client.ts` sin abrir contexto. No es un grep: casi ninguna página consulta
-directo, todas llegan a la base a través de dos o tres servicios.
+> Cifra corregida en el cierre de reauditoría (2026-08-02): el inventario de la
+> capa regex es **117**, no 110 — un test que sólo comprobaba `> 40` dejó
+> derivar el número publicado. Ahora `tests/database-runtime-entrypoints.test.ts`
+> fija los cuatro valores exactos (117/93/80/13) y falla si cualquiera cambia
+> sin actualizar esta tabla.
+
+Reconstruye el grafo de imports —resolviendo `@/`, relativos, re-exports y
+`import()` dinámico, e ignorando `import type` y módulos `'use client'`— y
+falla si un entry point alcanza `db/client.ts` sin abrir contexto. No es un
+grep: casi ninguna página consulta directo, todas llegan a la base a través de
+dos o tres servicios.
 
 Lleva dos **controles negativos**: `lib/projects/service.ts` debe salir como
 "alcanza la base y no abre contexto" (corre dentro del de su llamador) y
 `lib/auth/roles.ts` como "no alcanza la base". Si cualquiera de los dos cambia,
 la comprobación dejó de discriminar y la suite lo dice.
+
+**Capa AST (cierre de reauditoría, 2026-08-02):** la reauditoría demostró diez
+formas que sobrevivían a la capa regex — componentes JSX de servidor que
+consultan durante el streaming del render (así se envió `OutcomeAllocationWrapper`),
+imports con alias, imports namespace, `import()` dinámico usado como valor,
+helpers locales transitivos, barrels de re-export, wrappers *decorativos* (el
+opener se llama, el trabajo de BD corre fuera de él), wrappers condicionales,
+módulos no canónicos que abren su propio driver, y `db` reasignado a una
+variable local. `tests/helpers/entrypoint-scanner.ts` las cierra con el AST de
+TypeScript y peligro **por export** (una función pura importada de un módulo
+que también consulta no contamina a la página); un uso sólo cuenta como
+protegido si está **dentro del argumento** de un opener aprobado.
+
+| | |
+|---|---|
+| Módulos servidor verificados (`app/**` + `components/**`) | 117 |
+| Alcanzan la base (raíz = `db/client.ts` **o** import de driver) | 95 |
+| Contextualizados | 82 |
+| En allowlist documentada (la misma de la capa regex) | 13 |
+| Sin guardia | 0 |
+
+El resultado se compara contra un **inventario versionado**
+(`tests/database-entrypoint-inventory.json`): una adición sin clasificar, una
+fila obsoleta o un cambio de clasificación fallan con nombre y apellido — nunca
+un conteo fijo a secas. Diez fixtures mutantes
+(`tests/fixtures/entrypoint-mutants/`) mantienen honesto al escáner: cada forma
+superviviente tiene su archivo, y la forma antigua de `OutcomeAllocationWrapper`
+es el fixture 1.
 
 ---
 
@@ -400,8 +451,11 @@ policy, es expresar la capacidad real.
 
 ### `marketing_leads`: el hallazgo del `TO`
 
-Es la **única** tabla de `public` cuyas policies nombran roles de base en vez de
-aplicar a todos (medido: las otras 104 llevan `{public}`):
+Era la **única** tabla de `public` cuyas policies nombraban roles de base en
+vez de aplicar a todos. Desde `stella_0005c` (2026-08-02) también las 3
+policies `INSERT` append-only nombran rol (`TO uellix_app`); distribución
+medida: **101 `{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}`
+= 107**. Las de `marketing_leads`:
 
 ```
 anon_insert_marketing_leads           TO anon           WITH CHECK (true)
@@ -461,3 +515,32 @@ un proceso en marcha.
 
 Revertir sólo el SQL deja a Stella capaz de leer sus interacciones e incapaz de
 registrar nuevas. **Se revierten los dos, o ninguno.**
+
+`stella_0005c_rollback.sql` y `stella_0005d_rollback.sql` revierten el cierre
+de reauditoría (abajo); ambos restauran estados **peores** por medición y lo
+dicen en su cabecera.
+
+---
+
+## 11. Cierre de reauditoría (2026-08-02)
+
+La reauditoría de compatibilidad (`STELLA_RUNTIME_COMPATIBILITY_REAUDIT_BLOCKED_ENTRYPOINT`)
+dejó 2 BLOCKER y 5 MAJOR. Cierre, con evidencia local:
+
+| Hallazgo | Cierre |
+|---|---|
+| B1 — `OutcomeAllocationWrapper` consultaba fuera del contexto de la página y desaparecía en silencio | Funders cargados dentro del `runWithOrganizationAccess` de `outcomes/page.tsx` (transacción cerrada antes del render), pasados por props; estado vacío explícito. La forma antigua vive como fixture mutante y hace fallar el escáner |
+| B2 — el escáner no veía JSX de servidor ni 10 formas indirectas | Capa AST por export con grafo de imports (§7, "Cobertura medida"): 117 módulos, 95 alcanzan la base, 0 sin guardia, inventario versionado + 10 fixtures |
+| M1 — policies INSERT `TO PUBLIC` + grants viejos | `stella_0005c` (arriba, §5) |
+| M2 — `_guard.ts` leía `DATABASE_URL` y la integración era inejecutable | Guard y setup resuelven `UELLIX_RUNTIME_DATABASE_URL` (rol verificado, loopback:56322, sin fallback); fixtures por la ruta owner (`tests/integration/_owner.ts`); **49/49 en verde** en el stack local. Colateral: `stella_0005d` repara las funciones SECURITY DEFINER de Storage que `stella_0004` dejó sin `USAGE` sobre `storage` — todo upload de evidencia fallaba y nada lo medía |
+| M3 — cifras y afirmaciones inconsistentes | Este documento, el risk register, `db/prepared/README.md`, los paquetes G2/G3 y el test ledger reconciliados con las cifras medidas |
+| M4 — Stripe sin prueba simétrica | `tests/stripe-webhook-route.test.ts`: 400 sin acceso a BD; 503 reintentable sin acceso ni escritura; la constante `WEBHOOK_DATABASE_IDENTITY_AVAILABLE` fijada a `false` — encenderla sin identidad técnica rompe la suite |
+| M5 — IDOR de `sourceId` en `createOrganizationFinancialProxy` (RC-12) | Gate de propiedad con error uniforme (fuente propia o global activa; inexistente ≡ ajena); cubre también el `update` parcial |
+
+**Login E2E HTTP, probado en local (2026-08-02):** con el usuario sintético del
+seed local (sin crear usuarios ni tocar Auth): login real contra GoTrue → cookie
+de sesión → `GET /app/dashboard` renderiza la organización propia y sólo esa
+(RLS activa, runtime `uellix_app`) → logout → el request siguiente redirige a
+`/login`. Única mutación del ensayo: `onboarding_completed` de la organización
+sintética se alternó a `true` para alcanzar el dashboard y se **restauró** a
+`false` al terminar.

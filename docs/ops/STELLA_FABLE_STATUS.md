@@ -12,6 +12,18 @@
 > árbol de git fueron verificados como correctos por esa auditoría; el
 > bloqueo era exclusivamente documental. Ningún código, prueba o SQL fue
 > tocado en esta reconciliación.
+>
+> **Actualización 2026-08-02 (fuera de la campaña congelada):** en el worktree
+> `uellix-stella-g2-local-rehearsal` (`codex/stella-g2-local-rehearsal`) se
+> ejecutaron, DESPUÉS de este checkpoint: la separación de roles de BD
+> (`stella_0004`), el cutover del runtime a `uellix_app` (`stella_0005`/`0005b`)
+> y el cierre de la reauditoría de compatibilidad (`stella_0005c`/`0005d`,
+> escáner AST de entry points, suite de integración local restaurada 49/49,
+> login E2E HTTP probado en local). Las cifras de esta cabecera (2246 tests,
+> 131 archivos) describen el checkpoint del 2026-07-31 y NO el estado vigente
+> de esa rama — para eso, ver `DATABASE_RUNTIME_CUTOVER.md` §11 y la última
+> unidad de `STELLA_FABLE_TEST_LEDGER.md`. Todo sigue siendo local: cero push,
+> cero acceso remoto, G1–G9 pendientes.
 
 ## Cabecera
 

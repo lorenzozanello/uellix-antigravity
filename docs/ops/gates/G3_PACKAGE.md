@@ -327,6 +327,17 @@ integración remota. La regresión completa se hizo con `pnpm test:unit`
 (3154/3154), `typecheck`, `lint` y `build`, más las diez suites de base contra
 el stack local (581/581).
 
+**Actualización — cierre de reauditoría (2026-08-02, tarde):** la familia de
+base creció a **once suites, 640/640** contra el stack local (se añadió
+`database-insert-policy-scope`, y `database-runtime-entrypoints` /
+`database-entrypoint-safety` crecieron con la capa AST y el gate de
+integración). Además, la suite **local** de integración volvió a ser ejecutable
+tras migrar su guard al esquema por capacidad y sus fixtures a la ruta owner:
+`pnpm db:test:integration:local` → **49/49** (2 archivos, `rls.test.ts` 32 +
+`investments.service.test.ts` 17) contra 127.0.0.1:56322, con la clausura
+append-only reutilizada (modo REUSED — cero filas append-only nuevas). Los
+alias remotos (`test:rls`, `test:integration`) siguen sin ejecutarse.
+
 Vale la pena registrar por qué eso **no** deja un hueco: las dos suites nuevas
 —`tests/authenticated-database-context.test.ts` y
 `tests/database-runtime-entrypoints.test.ts`— corren dentro de `test:unit` y

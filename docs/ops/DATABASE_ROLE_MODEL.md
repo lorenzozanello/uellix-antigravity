@@ -727,10 +727,12 @@ consecuencias que sí pertenecen al modelo de roles:
 `pg_has_role` devuelve false para ambos, y para `service_role`. Es lo correcto
 —esa membresía le entregaría todos los grants de esos roles— pero tiene un
 efecto que el modelo no había registrado: **una policy con cláusula `TO` que
-nombre esos roles no aplica al runtime**. `marketing_leads` es la única tabla de
-`public` en esa situación (las otras 104 policies llevan `{public}`), y su
-INSERT público quedó cerrado. La corrección es una policy INSERT para
-`{public}`, no una membresía de rol.
+nombre esos roles no aplica al runtime**. `marketing_leads` era la única tabla
+de `public` en esa situación, y su INSERT público quedó cerrado. La corrección
+es una policy INSERT para `{public}`, no una membresía de rol. (Actualización
+2026-08-02: desde `stella_0005c` las 3 policies `INSERT` append-only también
+llevan cláusula `TO` — deliberadamente, `TO uellix_app` —; distribución medida:
+101 `{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}` = 107.)
 
 **2. La claim `role: 'authenticated'` que fija el contexto no es un rol de
 base.** Vive dentro del JSON de `request.jwt.claims` y sólo la leen las
