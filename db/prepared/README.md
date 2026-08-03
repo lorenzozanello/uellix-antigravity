@@ -126,7 +126,7 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
 |---|---|---|---|---|
 | `stella_0006_invitation_capability.sql` | `stella_0006_rollback.sql` | **ninguno todavía**; requiere DP-CAP-01 y DP-CAP-02 | rol `uellix_cap_invitation` (NOLOGIN); esquema `uellix_capability`; `accept_invitation(text)` SECURITY DEFINER; columna `invitations.accepted_by`; índice único `uq_invitations_token_hash`; 6 policies `cap_invitation_*`; grants por columna sobre 4 tablas | **DISEÑO — no aplicado** |
-| `stella_0007_public_verification_capability.sql` | `stella_0007_rollback.sql` | **ninguno todavía**; requiere DP-CAP-04, 05 y 06 | rol `uellix_cap_verification`; **tablas `report_public_disclosures` y `capability_verification_hits`**; `verify_report(text)` (STABLE) y `record_verification_hit(text)`; 5 policies `cap_verification_*` + 3 `disclosures_*` internas | **DISEÑO — no aplicado** |
+| `stella_0007_public_verification_capability.sql` | `stella_0007_rollback.sql` | **ninguno todavía**; requiere DP-CAP-04, 05 y 06 | rol `uellix_cap_verification`; **tablas `report_public_disclosures` (sin `organization_id`: la organización se deriva de `sroi_reports` en las policies) y `capability_verification_hits`**; `verify_report(text)` (STABLE) y `record_verification_hit(text)`; 5 policies `cap_verification_*` + 3 `disclosures_*` internas `TO uellix_app` | **DISEÑO — no aplicado** |
 | `stella_0008_stripe_webhook_identity.sql` | `stella_0008_rollback.sql` | **ninguno todavía**; requiere DP-CAP-07 y la credencial fuera de banda | roles `uellix_stripe` (**LOGIN, sin contraseña en el script**) y `uellix_cap_stripe`; **tabla `stripe_webhook_events`**; `stripe_begin_event`, `stripe_apply_subscription`, `stripe_fail_event`; 4 policies `cap_stripe_*` | **DISEÑO — no aplicado** |
 | `stella_0009_public_lead_capability.sql` | `stella_0009_rollback.sql` | **ninguno todavía**; requiere DP-CAP-08 … 11 | rol `uellix_cap_lead`; `submit_lead(...)` (`RETURNS void`); columnas `marketing_leads.lead_status` y `.consent_version`; índice único `uq_marketing_leads_email_source`; policy `cap_lead_insert`; **revoca** los 4 privilegios de `uellix_writer` y **elimina** `anon_insert_marketing_leads` y `authenticated_insert_marketing_leads` | **DISEÑO — no aplicado** |
 | `stella_0010_organization_bootstrap_capability.sql` | `stella_0010_rollback.sql` | **ninguno todavía**; requiere DP-CAP-12 y DP-CAP-13 | rol `uellix_cap_bootstrap`; **tabla `capability_bootstrap_attempts`**; `bootstrap_organization(...)`; 8 policies `cap_bootstrap_*` | **DISEÑO — no aplicado** |
@@ -134,10 +134,29 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 > **Los cinco corren como superusuario y no dependen entre sí.** Superusuario
 > porque cada uno crea un rol y `uellix_owner` es `NOCREATEROLE` por diseño —
 > concederle `CREATEROLE` deshacía `stella_0004`, que comprueba y aborta
-> exactamente eso. Cada script baja a `SET ROLE uellix_owner` para todo lo que
-> toca `public`, y vuelve a superusuario sólo para el ACL de sus funciones
-> (una vez transferida la propiedad, `uellix_owner` ya no puede conceder sobre
-> ellas: su membresía es `INHERIT FALSE`).
+> exactamente eso.
+>
+> **Tres ventanas, y las fronteras son funcionales.** (1) superusuario:
+> precondiciones, `CREATE ROLE`, esquema y sus grants; (2) `SET ROLE
+> uellix_owner`: DDL sobre `public`, grants por columna del definer y policies;
+> (3) superusuario de nuevo: **toda** la función — `CREATE OR REPLACE`, `ALTER
+> … OWNER TO`, `COMMENT`, `REVOKE`, `GRANT` — y las postcondiciones.
+>
+> La ventana 3 no es estilo. `ALTER FUNCTION … OWNER TO R` exige que **R**
+> tenga `CREATE` sobre el esquema, y los definers sólo tienen `USAGE`; y
+> `CREATE OR REPLACE` en una segunda pasada exige propiedad resuelta por
+> `has_privs_of_role`, que `INHERIT FALSE` niega. Con la transferencia hecha
+> como superusuario **ningún rol necesita ser miembro del definer**, así que los
+> cinco roles de capacidad tienen **cero miembros** — y eso cierra un agujero
+> real: `SET ROLE` es transitivo, y `uellix_migrator` es un rol `LOGIN` que
+> alcanza `uellix_owner`.
+>
+> **Los cinco están probados en ejecución**, no sólo leídos: contenedor
+> desechable `--network none`, línea base 38/107 replicada por volcado
+> *schema-only*, aplicación doble convergente, 57 aserciones vivas, cinco
+> pruebas de concurrencia con sesiones reales, rollback y reaplicación. Nueve
+> defectos salieron de ahí y de ninguna otra parte; ver
+> [`docs/ops/capabilities/ADVERSARIAL_FINDINGS.md`](../../docs/ops/capabilities/ADVERSARIAL_FINDINGS.md).
 >
 > **Independencia comprobable:** las precondiciones cuentan una **línea base**
 > que excluye todo lo que la campaña introduce — las cuatro tablas nuevas, los
