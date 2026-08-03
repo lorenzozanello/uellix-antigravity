@@ -58,8 +58,8 @@ Y uno de confianza:
      · el secreto sólo lo lee ESTE handler
    ─────────────────────────────────  frontera 2: conexión SQL PROPIA
    uellix_stripe   (LOGIN, credencial exclusiva)
-     · USAGE sobre uellix_capability y NADA MÁS
-     · sin USAGE sobre public → no puede ni nombrar public.projects
+     · EXECUTE sobre exactamente 3 funciones
+     · CERO privilegio sobre las 38 tablas de public, en los 4 modos DML
    ─────────────────────────────────  frontera 3: SECURITY DEFINER
    uellix_cap_stripe   (NOLOGIN, cero miembros)
      · SELECT/UPDATE por columna sobre organizations
@@ -86,15 +86,28 @@ Resumen:
   o `status` sin acotar por columna, y aun así abriría la puerta a mutaciones
   masivas) y `SELECT` sobre `organizations` (que **es** la lista de clientes).
 
-La combinación produce la propiedad más fuerte del diseño:
+La combinación produce esta propiedad, que el paquete verifica en su
+postcondición:
 
 ```
-has_schema_privilege('uellix_stripe', 'public', 'USAGE')  →  false
+para cada una de las 38 tablas de public, y para SELECT/INSERT/UPDATE/DELETE:
+  has_any_column_privilege('uellix_stripe', <tabla>, <modo>)  →  false
 ```
 
-`uellix_stripe` no puede resolver el identificador `public.projects`. No es que
-le falte privilegio de tabla: le falta la capacidad de nombrar el esquema. Un
-volcado de su credencial no permite leer un solo dato SROI.
+**Cero privilegio sobre cero tablas.** Un volcado de la credencial de
+`uellix_stripe` no permite leer un solo dato SROI, ni la lista de clientes, ni
+un nombre de organización.
+
+> **Lo que NO se afirma.** Un borrador previo decía que `uellix_stripe`
+> *"no tiene `USAGE` sobre `public` y no puede ni nombrar `public.projects`"*.
+> Es falso: medido el 2026-08-03, el ACL de `public` contiene la entrada
+> `=U/pg_database_owner` — grantee vacío, es decir **`PUBLIC`** —, así que todo
+> rol nuevo hereda `USAGE` al crearse, y los ACL de PostgreSQL son aditivos: no
+> hay forma de retirárselo sólo a él. Hacerlo cierto exigiría
+> `REVOKE USAGE ON SCHEMA public FROM PUBLIC`, un cambio global que alcanza a
+> roles internos de Supabase. Se registra como **RR-CAP-7** y **no** se toma en
+> un paquete de capacidad. Poder nombrar una tabla sobre la que no se tiene
+> ningún privilegio no sirve de nada; la propiedad efectiva se conserva.
 
 ### 3.1 Atributos de `uellix_stripe`
 
@@ -106,8 +119,10 @@ ALTER ROLE uellix_stripe SET idle_in_transaction_session_timeout = '15s'
 ```
 
 Sin membresías ⇒ no hay `SET ROLE` posible, no hay herencia. Sus únicos
-privilegios son `USAGE` sobre `uellix_capability` y `EXECUTE` sobre tres
-funciones. **Nada más existe para él.**
+privilegios **concedidos** son `USAGE` sobre `uellix_capability` y `EXECUTE`
+sobre tres funciones. Hereda además `USAGE` sobre `public` de `PUBLIC`, que no
+se puede evitar (§3) y que no le sirve de nada: no tiene privilegio sobre
+ninguna tabla de ese esquema.
 
 Los dos timeouts son parte del contrato: un webhook que se cuelga con una
 transacción abierta bloquearía filas de `organizations` indefinidamente.
@@ -276,7 +291,7 @@ REVOKE ALL ON FUNCTION … FROM PUBLIC;   -- las tres
 **Y explícitamente NO:**
 
 ```
--- uellix_stripe NO recibe USAGE sobre public.
+-- uellix_stripe NO recibe NINGÚN privilegio de tabla ni de columna.
 -- uellix_app NO recibe EXECUTE sobre ninguna de las tres.
 ```
 
@@ -428,7 +443,7 @@ borrarlos, con lo que no puede borrar la prueba de lo que hizo.
 
 | # | Prueba |
 |---|---|
-| S1 | El paquete **no** concede `USAGE ON SCHEMA public` a `uellix_stripe` |
+| S1 | El paquete **no** concede ningún privilegio de `public` a `uellix_stripe`, y su postcondición barre las 38 tablas × 4 modos |
 | S2 | `uellix_stripe` no recibe ningún privilegio de tabla en el paquete |
 | S3 | `uellix_stripe` se crea `NOBYPASSRLS NOCREATEROLE NOCREATEDB NOSUPERUSER` y sin `GRANT … TO uellix_stripe` de ningún rol |
 | S4 | El paquete **no** contiene ninguna contraseña ni `PASSWORD` literal |
@@ -451,7 +466,7 @@ borrarlos, con lo que no puede borrar la prueba de lo que hizo.
 | L4 | `apply` sin `begin` previo | error uniforme, cero escrituras |
 | L5 | Organización no resuelta | `failed` con código, cero cambios en `organizations` |
 | L6 | Checkout que intenta reasignar suscripción ajena | rechazado |
-| L7 | `uellix_stripe` intenta `SELECT * FROM public.projects` | **falla por falta de `USAGE` sobre el esquema** |
+| L7 | `uellix_stripe` intenta `SELECT * FROM public.projects` | **denegado — cero privilegio sobre la tabla** (puede nombrarla; no puede leerla) |
 | L8 | `uellix_stripe` intenta `SELECT` sobre `public.organizations` | denegado |
 | L9 | `uellix_stripe` intenta `SET ROLE uellix_cap_stripe` | denegado |
 | L10 | `uellix_app` intenta `EXECUTE stripe_apply_subscription` | denegado |

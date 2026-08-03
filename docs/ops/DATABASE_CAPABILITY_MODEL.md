@@ -264,15 +264,48 @@ RPC `SECURITY DEFINER`.** Ninguna de las dos por sí sola basta:
   organización por `stripe_customer_id`, y `SELECT` sobre `organizations` es
   la lista completa de clientes.
 
-La combinación sí funciona, y produce una propiedad que se puede enseñar:
+La combinación sí funciona, y produce una propiedad verificable:
 
-> `uellix_stripe` tiene `USAGE` sobre el esquema `uellix_capability` y **sobre
-> ningún otro**. No tiene `USAGE` sobre `public`. Literalmente no puede
-> nombrar `public.projects`: la resolución del identificador falla antes de que
-> se evalúe ningún privilegio de tabla.
+> `uellix_stripe` no tiene **ningún** privilegio —ni de tabla ni de columna—
+> sobre ninguna de las 38 tablas de `public`. Sus únicos privilegios en toda
+> la base son `USAGE` sobre `uellix_capability` y `EXECUTE` sobre tres
+> funciones. Un volcado de su credencial no permite leer un solo dato SROI.
 
-Esa frase es verificable con `has_schema_privilege('uellix_stripe','public','USAGE')`
-y es la prueba de aislamiento más fuerte de todo el diseño.
+*Verificación:* `has_any_column_privilege` sobre las 38 tablas, para los cuatro
+modos DML, más `aclexplode` sobre `uellix_capability`.
+
+### 4.1 Una afirmación más fuerte que NO es cierta, y por qué se descarta
+
+Un borrador previo de este documento afirmaba que `uellix_stripe` *"no tiene
+`USAGE` sobre `public` y literalmente no puede nombrar `public.projects`"*.
+**Es falso**, y conviene dejar escrito por qué para que nadie lo reintroduzca.
+
+Medido el 2026-08-03, el ACL del esquema `public` es:
+
+```
+{pg_database_owner=UC/…, =U/…, postgres=U/…, anon=U/…, authenticated=U/…,
+ service_role=U/…, uellix_owner=UC/…, uellix_migrator=U/…, uellix_app=U/…,
+ uellix_writer=U/…, uellix_auditor=U/…}
+```
+
+La entrada `=U/…` —grantee vacío— **es `PUBLIC`**. Todo rol nuevo, incluido
+`uellix_stripe`, hereda `USAGE` sobre `public` en el momento de crearse. Y los
+ACL de PostgreSQL son **aditivos**: no existe un "deny" por rol, así que no se
+puede retirar a un rol concreto lo que `PUBLIC` concede.
+
+La única forma de hacer cierta aquella frase sería
+`REVOKE USAGE ON SCHEMA public FROM PUBLIC`. Es técnicamente viable —los once
+roles nombrados tienen ya un grant explícito, así que ninguno lo perdería—
+pero alcanzaría a los roles internos de Supabase que **no** aparecen en la
+lista (`supabase_auth_admin`, `supabase_storage_admin`, `authenticator`,
+`dashboard_user`, `pgbouncer`…) y que hoy dependen de la entrada `PUBLIC`.
+Eso es un cambio de privilegio global sobre el esquema entero.
+
+**No se toma en un paquete de capacidad.** Se registra como hardening candidato
+(**RR-CAP-7**), con su propio análisis de impacto, fuera de esta unidad. La
+propiedad que sí se afirma —cero privilegio sobre cero tablas— es más débil en
+la forma pero igual de efectiva en el fondo: poder nombrar una tabla sobre la
+que no se tiene ningún privilegio no sirve de nada.
 
 ---
 
@@ -334,7 +367,7 @@ reconceda. Es el mismo contrato que ya rige `uellix_migrator → uellix_owner`.
 | Objeto | `anon` | `authenticated` | `uellix_app` | **`uellix_stripe`** | `uellix_cap_stripe` | otros `uellix_cap_*` | `PUBLIC` |
 |---|---|---|---|---|---|---|---|
 | esquema `uellix_capability` | — | — | `Us` | **`Us`** | `Us` | `Us` | — |
-| esquema `public` | `Us` (preex.) | `Us` (preex.) | `Us` (preex.) | **— NO** | `Us` | `Us` | `Us` (preex.) |
+| esquema `public` | `Us` (preex.) | `Us` (preex.) | `Us` (preex.) | `Us` **heredado de PUBLIC — ver §4.1** | `Us` | `Us` | `Us` (preex.) |
 | `uellix_capability.stripe_begin_event(text,text)` | — | — | — | **`X`** | — | — | — |
 | `uellix_capability.stripe_apply_subscription(...)` | — | — | — | **`X`** | — | — | — |
 | `uellix_capability.stripe_fail_event(text,text)` | — | — | — | **`X`** | — | — | — |
@@ -389,8 +422,12 @@ comprueba con una consulta de catálogo distinta:
    fila a la organización que la función acaba de tocar.
    *Verificación:* `aclexplode(relacl)` + `pg_attribute` ACL.
 
-4. **Disyunción de esquemas.** `uellix_stripe` no tiene `USAGE` sobre `public`.
-   *Verificación:* `has_schema_privilege`.
+4. **Cero privilegio del actor externo.** `uellix_stripe` no tiene ningún
+   privilegio, de tabla ni de columna, sobre ninguna de las 38 tablas de
+   `public`, en ninguno de los cuatro modos DML. Tiene `USAGE` sobre `public`
+   heredado de `PUBLIC` y eso no se puede evitar (§4.1), pero nombrar una tabla
+   sobre la que no se tiene privilegio no sirve de nada.
+   *Verificación:* `has_any_column_privilege` × 38 tablas × 4 modos.
 
 Ninguna de las cuatro depende de leer el cuerpo de una función. Ese es el
 punto: el aislamiento es una propiedad del catálogo, no una promesa del código.
@@ -500,6 +537,11 @@ decisión no tomada nunca abre nada.
   (ver `DATABASE_ROLE_MODEL.md` §8) aplican a `uellix_stripe`, que es un rol
   `LOGIN` nuevo. **No verificado contra remoto** — está prohibido en esta
   unidad.
+* **RR-CAP-7 — `PUBLIC` tiene `USAGE` sobre el esquema `public`.** Todo rol
+  nuevo lo hereda, así que ningún rol técnico puede quedar sin capacidad de
+  *nombrar* objetos de `public` (§4.1). Retirarlo es viable pero es un cambio
+  global que alcanza a roles internos de Supabase; queda como hardening
+  candidato con análisis propio, fuera de esta unidad.
 * **RR-CAP-6 — `super_admins_read_marketing_leads` está roto desde el cutover.**
   Hallazgo colateral: es `TO authenticated` y el runtime no lo es. No forma
   parte de ninguna capacidad; se registra aquí para que no se pierda.
