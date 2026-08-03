@@ -26,11 +26,12 @@ import {
   assertSupabaseApiOperationAllowed,
   DatabaseSafetyError,
 } from './db/safety/database-access'
+import { resolveRuntimeDatabaseUrl } from './db/safety/resolve-capability-database-url'
 import { LOCAL_API_PORT, LOCAL_DB_PORT, LOCAL_SUPABASE_API_URL } from './db/safety/local-stack'
 
-// Loads local anon/service-role keys. It may also introduce a DATABASE_URL —
-// which is precisely why the assertions below run afterwards and are not
-// optional.
+// Loads local anon/service-role keys and UELLIX_RUNTIME_DATABASE_URL — the
+// capability variable the shared client resolves. DATABASE_URL is inert since
+// the cutover and is deliberately not consulted here (reaudit finding M2).
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
 function abort(error: unknown): never {
@@ -50,8 +51,13 @@ function abort(error: unknown): never {
 }
 
 try {
+  // Role first (uellix_app, named variable, value never logged), target second
+  // (loopback + this worktree's port under local_integration_test).
+  const resolved = resolveRuntimeDatabaseUrl()
+  for (const warning of resolved.warnings) console.warn(`[integration] ${warning}`)
+
   const dbDecision = assertDatabaseOperationAllowed({
-    url: process.env.DATABASE_URL,
+    url: resolved.url,
     capability: 'local_integration_test',
     expectedLocalPort: LOCAL_DB_PORT,
   })

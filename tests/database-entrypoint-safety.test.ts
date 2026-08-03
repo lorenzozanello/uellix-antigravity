@@ -27,6 +27,7 @@ import {
 import { LOCAL_DATABASE_URL, LOCAL_DB_PORT } from '@/db/safety/local-stack'
 import { describeError } from '@/db/safety/redact-error'
 import { resolveLocalDatabaseUrl } from '@/db/safety/resolve-local-database-url'
+import { resolveRuntimeDatabaseUrl } from '@/db/safety/resolve-capability-database-url'
 import { mergeGuardedConnectionOptions } from '@/db/client'
 
 const ROOT = process.cwd()
@@ -180,6 +181,97 @@ describe('the integration suites cannot be run ungated', () => {
     expect(guard).toMatch(/assertSupabaseApiOperationAllowed/)
     expect(guard).toMatch(/restrictDefaultDatabaseClient/)
     expect(guard).toMatch(/process\.exit\(1\)/)
+  })
+
+  it.each(['tests/integration/_guard.ts', 'vitest.setup.integration.ts'])(
+    '%s resolves the capability variable and never DATABASE_URL (reaudit M2)',
+    (relative) => {
+      // The historical defect: after the capability split nothing provisions
+      // DATABASE_URL, so a gate that read it aborted unconditionally and the
+      // 49 integration tests became unrunnable. The gate must vet the URL the
+      // shared client will actually use.
+      const source = code(relative)
+      expect(source).toMatch(/resolveRuntimeDatabaseUrl\(/)
+      expect(source).not.toMatch(/process\.env\.DATABASE_URL/)
+      // The resolved URL — not some other variable — feeds the target guard.
+      expect(source).toMatch(/url:\s*resolved\.url/)
+      expect(source).toMatch(/expectedLocalPort:\s*LOCAL_DB_PORT/)
+    }
+  )
+
+  it('the integration suite still collects its 49 tests — zero collection is a failure', () => {
+    // "The config collects the two files" (asserted above) is necessary but
+    // not sufficient: a file whose guard aborts at import time collects zero
+    // TESTS while still being listed. Count the tests themselves.
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs'),
+        'list',
+        '--config',
+        'vitest.integration.config.ts',
+      ],
+      { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CI: 'true' } }
+    )
+    const tests = (result.stdout ?? '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.includes(' > '))
+    expect(tests.length).toBe(49)
+  }, 120_000)
+})
+
+describe('the integration gate refuses each misconfiguration before any connection', () => {
+  // The gate is two layers applied in order — role, then target. These are the
+  // same calls tests/integration/_guard.ts makes, exercised in-process with an
+  // explicit env so each refusal is observable as a typed error rather than as
+  // a child process's exit code.
+  const gate = (runtimeUrl: string | undefined) => {
+    const env: Record<string, string | undefined> = {}
+    if (runtimeUrl !== undefined) env.UELLIX_RUNTIME_DATABASE_URL = runtimeUrl
+    const resolved = resolveRuntimeDatabaseUrl(env)
+    return assertDatabaseOperationAllowed({
+      url: resolved.url,
+      capability: 'local_integration_test',
+      expectedLocalPort: LOCAL_DB_PORT,
+      env,
+    })
+  }
+
+  it('refuses when the capability variable is missing', () => {
+    expect(() => gate(undefined)).toThrowError(
+      expect.objectContaining({ code: 'DB_CAPABILITY_URL_MISSING' })
+    )
+  })
+
+  it('refuses when the variable is present but empty', () => {
+    expect(() => gate('   ')).toThrowError(
+      expect.objectContaining({ code: 'DB_CAPABILITY_URL_MISSING' })
+    )
+  })
+
+  it('refuses an administrative role even on the right local target', () => {
+    expect(() => gate(`postgresql://postgres:pw@127.0.0.1:${LOCAL_DB_PORT}/postgres`)).toThrowError(
+      expect.objectContaining({ code: 'DB_CAPABILITY_URL_WRONG_ROLE' })
+    )
+  })
+
+  it('refuses a remote target even with the right role', () => {
+    expect(() => gate('postgresql://uellix_app:pw@db.projectref123.supabase.co:5432/postgres')).toThrowError(
+      expect.objectContaining({ code: 'DB_OPERATION_NOT_ALLOWED' })
+    )
+  })
+
+  it("refuses another stack's loopback port with the port-specific code", () => {
+    expect(() => gate('postgresql://uellix_app:pw@127.0.0.1:55322/postgres')).toThrowError(
+      expect.objectContaining({ code: 'DB_LOCAL_PORT_MISMATCH' })
+    )
+  })
+
+  it('accepts exactly this worktree: uellix_app on loopback port 56322', () => {
+    const decision = gate(`postgresql://uellix_app:pw@127.0.0.1:${LOCAL_DB_PORT}/postgres`)
+    expect(decision.targetKind).toBe('local_loopback')
+    expect(LOCAL_DB_PORT).toBe(56322)
   })
 })
 

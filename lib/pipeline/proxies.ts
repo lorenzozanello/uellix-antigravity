@@ -188,9 +188,34 @@ export async function getFinancialProxyById(proxyId: string) {
   return proxy;
 }
 
+/**
+ * Ownership gate for a caller-supplied proxy_source id (RC-12, reaudit M5).
+ *
+ * A source is usable by the caller's organisation ONLY when it is
+ *   * owned by that organisation, or
+ *   * a global/system source (organizationId NULL) that is active.
+ *
+ * The read runs inside the caller's identity context, and the refusal is
+ * UNIFORM: a source that does not exist and a source owned by another
+ * organisation produce the same error, so the endpoint cannot be used as an
+ * existence oracle for other tenants' catalog.
+ */
+async function requireUsableProxySource(sourceId: string, organizationId: string) {
+  const source = await db.select().from(proxySources).where(eq(proxySources.id, sourceId)).then(r => r[0]);
+  const usable =
+    source !== undefined &&
+    (source.organizationId === organizationId ||
+      (source.organizationId === null && source.status === 'active'));
+  if (!usable) throw new Error('Source not found');
+  return source;
+}
+
 export async function createOrganizationFinancialProxy(input: unknown) {
   const ctx = await requireOrganizationAccess();
   const data = FinancialProxyInput.parse(input);
+  // The organisation NEVER comes from the input — only from the session — and
+  // the named source must be usable by that organisation.
+  await requireUsableProxySource(data.sourceId, ctx.organization.id);
   const row = await db.insert(financialProxies).values({
     organizationId: ctx.organization.id,
     sourceId: data.sourceId,
@@ -235,6 +260,11 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
   const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then(r => r[0]);
   if (!proxy) throw new Error('Proxy not found');
   if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+  // A partial update may repoint the proxy at another source — the same
+  // ownership gate as creation applies (RC-12).
+  if (data.sourceId !== undefined) {
+    await requireUsableProxySource(data.sourceId, ctx.organization.id);
+  }
 
   // Re-review gate: if an approved proxy's material fields change, drop it back
   // to pending_review so no calculation uses an unreviewed value under an

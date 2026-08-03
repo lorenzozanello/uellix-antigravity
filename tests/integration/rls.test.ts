@@ -3,10 +3,14 @@
 import './_guard'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { db } from '@/db/client'
-import { organizations, organizationMembers, fxRates, projects, projectInvestments, evidenceItems, sroiCalculationRuns, sroiCalculationLineItems, sroiReports, stellaInteractions } from '@/db/schema'
 import { randomUUID } from 'crypto'
 import { expectAppendOnlyRejection } from '../helpers/append-only-error'
+// POST-CUTOVER: fixture writes go through the OWNER path (tests/integration/
+// _owner.ts) — the shared `db` client now authenticates as `uellix_app` and a
+// claimless insert is correctly refused by RLS. The assertions below keep
+// using the PostgREST role clients; only setup/teardown and the deliberate
+// owner-path trigger probes moved.
+import { ownerExecute, ownerRows, closeOwnerConnection } from './_owner'
 
 // Clave determinista del residuo append-only del ensayo G3 local. Identifica la
 // fila sintética sin depender de su UUID y permite REUTILIZARLA entre corridas
@@ -15,8 +19,8 @@ const G3_LOCAL_SYNTHETIC_KEY = 'g3-local-rehearsal.synthetic.advisor.suggested_n
 const G3_LOCAL_SYNTHETIC_KEY_DENIED = 'g3-local-rehearsal.synthetic.advisor.suggested_next_actions[1]'
 
 /**
- * `db.execute()` devuelve el `RowList` de postgres-js (array-like) según el
- * driver; normalizamos para no depender de esa forma.
+ * postgres-js devuelve un `RowList` (array-like); normalizamos para no
+ * depender de esa forma.
  */
 function rowsOf(result: unknown): Record<string, string>[] {
   if (Array.isArray(result)) return result as Record<string, string>[]
@@ -59,14 +63,12 @@ async function createTestUser(adminClient: SupabaseClient, role: string, orgId: 
   await new Promise(resolve => setTimeout(resolve, 500))
 
   if (orgId) {
-    await db.insert(organizationMembers).values({
-      organizationId: orgId,
-      userId: userData.user.id,
-      role: role as 'super_admin' | 'organization_admin' | 'impact_manager' | 'analyst' | 'reviewer' | 'viewer',
-      status: 'active'
-    })
+    await ownerExecute(
+      `INSERT INTO public.organization_members (organization_id, user_id, role, status)
+       VALUES ('${orgId}', '${userData.user.id}', '${role}', 'active')`,
+    )
   } else if (role === 'super_admin') {
-    await db.execute(`UPDATE public.users SET is_super_admin = true WHERE id = '${userData.user.id}'`)
+    await ownerExecute(`UPDATE public.users SET is_super_admin = true WHERE id = '${userData.user.id}'`)
   }
 
   const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, TEST_AUTH_OPTIONS)
@@ -113,7 +115,7 @@ describe('RLS Coverage Integration Tests', () => {
     adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TEST_AUTH_OPTIONS)
 
     const existingDecisions = rowsOf(
-      await db.execute(
+      await ownerRows(
         `SELECT id, organization_id, project_id FROM public.stella_suggestion_decisions
           WHERE suggestion_key = '${G3_LOCAL_SYNTHETIC_KEY}'`,
       ),
@@ -136,7 +138,7 @@ describe('RLS Coverage Integration Tests', () => {
       // La interacción sintética de la clausura preservada; se reutiliza para
       // no crear otra fila append-only.
       const closureInteractions = rowsOf(
-        await db.execute(
+        await ownerRows(
           `SELECT id FROM public.stella_interactions
             WHERE organization_id = '${orgAId}' AND project_id = '${projectAId}'`,
         ),
@@ -160,7 +162,12 @@ describe('RLS Coverage Integration Tests', () => {
     if (persistentFixtureMode === 'CREATED') {
       orgsToCreate.unshift({ id: orgAId, name: 'RLS Org A', slug: `org-a-${Date.now()}` })
     }
-    await db.insert(organizations).values(orgsToCreate)
+    for (const org of orgsToCreate) {
+      await ownerExecute(
+        `INSERT INTO public.organizations (id, name, slug, status)
+         VALUES ('${org.id}', '${org.name}', '${org.slug}', 'active')`,
+      )
+    }
 
     // Create Users
     adminA = await createTestUser(adminClient, 'organization_admin', orgAId)
@@ -174,13 +181,10 @@ describe('RLS Coverage Integration Tests', () => {
     // Set up project via admin. En modo REUSED el proyecto ya existe y está
     // fijado por las FK de la decisión persistente: no se recrea.
     if (persistentFixtureMode === 'CREATED') {
-      await db.insert(projects).values({
-        id: projectAId,
-        organizationId: orgAId,
-        name: 'Test Project A',
-        status: 'draft',
-        createdBy: adminA.id
-      })
+      await ownerExecute(
+        `INSERT INTO public.projects (id, organization_id, name, status, created_by)
+         VALUES ('${projectAId}', '${orgAId}', 'Test Project A', 'draft', '${adminA.id}')`,
+      )
     }
 
     console.info(`[G3 local] Fixture append-only persistente: ${persistentFixtureMode}`)
@@ -225,20 +229,21 @@ describe('RLS Coverage Integration Tests', () => {
 
     // Proyectos creados dentro de la suite que nada append-only referencia.
     // projectAId queda fuera: lo referencian la interacción y la decisión.
-    await db.execute(
+    await ownerExecute(
       `DELETE FROM public.projects WHERE organization_id = '${orgAId}' AND id <> '${projectAId}'`,
     )
 
     for (const u of disposableUsers) {
-      await db.execute(`DELETE FROM public.organization_members WHERE user_id = '${u.id}'`)
-      await db.execute(`DELETE FROM public.users WHERE id = '${u.id}'`)
+      await ownerExecute(`DELETE FROM public.organization_members WHERE user_id = '${u.id}'`)
+      await ownerExecute(`DELETE FROM public.users WHERE id = '${u.id}'`)
       const { error } = await adminClient.auth.admin.deleteUser(u.id)
       // No se silencia: un fallo de FK o de permisos aquí es un hallazgo real.
       if (error) throw new Error(`afterAll: no se pudo eliminar el usuario auth de prueba: ${error.message}`)
     }
 
     // Org B no tiene filas append-only; Org A queda fijada por la decisión.
-    await db.execute(`DELETE FROM public.organizations WHERE id = '${orgBId}'`)
+    await ownerExecute(`DELETE FROM public.organizations WHERE id = '${orgBId}'`)
+    await closeOwnerConnection()
 
     console.info(
       `[G3 local] Fixture append-only ${persistentFixtureMode}. Preservados a propósito ` +
@@ -391,21 +396,17 @@ describe('RLS Coverage Integration Tests', () => {
         return
       }
 
-      // Seed via the direct Drizzle connection (db/client.ts over DATABASE_URL,
-      // i.e. the table owner) — the only legitimate write path, mirroring the
-      // server actions in app/actions/stella/*. Not a service_role client.
+      // Seed via the OWNER path (post-cutover: the shared client is
+      // `uellix_app` and a claimless insert is correctly refused by RLS).
       interactionId = randomUUID()
-      await db.insert(stellaInteractions).values({
-        id: interactionId,
-        organizationId: orgAId,
-        projectId: projectAId,
-        createdBy: adminA.id,
-        stellaRole: 'advisor',
-        pipelineStep: 'narrative',
-        contextHash: 'a'.repeat(64),
-        responseJson: { summary: 'seed for RLS tests' },
-        modelUsed: 'test-model',
-      })
+      await ownerExecute(
+        `INSERT INTO public.stella_interactions
+           (id, organization_id, project_id, created_by, stella_role, pipeline_step,
+            context_hash, response_json, model_used)
+         VALUES ('${interactionId}', '${orgAId}', '${projectAId}', '${adminA.id}',
+                 'advisor', 'narrative', '${'a'.repeat(64)}',
+                 '{"summary": "seed for RLS tests"}'::jsonb, 'test-model')`,
+      )
     })
 
     it('Admin A puede ver las interacciones de su organización', async () => {
@@ -502,19 +503,21 @@ describe('RLS Coverage Integration Tests', () => {
 
     // Habilitado en el ensayo G3 local (2026-08-01): stella_0002 ya está
     // aplicado en este stack, así que uellix_forbid_mutation() debe rechazar
-    // UPDATE/DELETE incluso para el cliente SERVICE ROLE (que bypassa RLS).
+    // UPDATE/DELETE incluso para el DUEÑO de la tabla (post-cutover el probe
+    // corre como uellix_owner vía _owner.ts — el rol más privilegiado con
+    // acceso a la tabla; `uellix_app` ni siquiera tiene el grant UPDATE).
     // Correrlo pre-G2 sí mutaría el audit trail, de ahí el .skip original.
     // Contra un entorno donde stella_0002 no esté aplicado, volver a .skip.
-    describe('post-G2 (stella_0002): trigger blocks mutation even for service role', () => {
+    describe('post-G2 (stella_0002): trigger blocks mutation even for the table owner', () => {
       // La aserción NO puede apoyarse en `error.message`: drizzle envuelve el
       // fallo en un DrizzleQueryError cuyo message es "Failed query: …" y deja
       // el PostgresError real en `.cause`. expectAppendOnlyRejection desenvuelve
       // la cadena y exige CONJUNTAMENTE SQLSTATE 42501, el texto append-only, la
       // operación y la tabla — estrictamente más fuerte que el /append-only/
       // original, que ni siquiera llegaba a comparar contra el mensaje real.
-      it('UPDATE via service role falla con insufficient_privilege', async () => {
+      it('UPDATE via table owner falla con insufficient_privilege', async () => {
         await expectAppendOnlyRejection(
-          () => db.execute(`UPDATE public.stella_interactions SET pipeline_step = 'x' WHERE id = '${interactionId}'`),
+          () => ownerExecute(`UPDATE public.stella_interactions SET pipeline_step = 'x' WHERE id = '${interactionId}'`),
           { operation: 'UPDATE', table: 'stella_interactions' },
         )
 
@@ -526,9 +529,9 @@ describe('RLS Coverage Integration Tests', () => {
         expect(fresh!.pipeline_step).toBe('narrative')
       })
 
-      it('DELETE via service role falla con insufficient_privilege', async () => {
+      it('DELETE via table owner falla con insufficient_privilege', async () => {
         await expectAppendOnlyRejection(
-          () => db.execute(`DELETE FROM public.stella_interactions WHERE id = '${interactionId}'`),
+          () => ownerExecute(`DELETE FROM public.stella_interactions WHERE id = '${interactionId}'`),
           { operation: 'DELETE', table: 'stella_interactions' },
         )
 
@@ -571,8 +574,8 @@ describe('RLS Coverage Integration Tests', () => {
       }
 
       decisionId = randomUUID()
-      await db.execute(
-        `INSERT INTO stella_suggestion_decisions (id, organization_id, project_id, suggestion_key, decision, decided_by)
+      await ownerExecute(
+        `INSERT INTO public.stella_suggestion_decisions (id, organization_id, project_id, suggestion_key, decision, decided_by)
          VALUES ('${decisionId}', '${orgAId}', '${projectAId}', '${G3_LOCAL_SYNTHETIC_KEY}', 'accepted', '${adminA.id}')`,
       )
     })
@@ -704,12 +707,12 @@ describe('RLS Coverage Integration Tests', () => {
       // Se lanza dentro de una transacción: el trigger aborta el statement y la
       // transacción hace rollback, así que la tabla nunca queda vacía ni a mitad.
       await expectAppendOnlyRejection(
-        () => db.transaction(async (tx) => { await tx.execute(`TRUNCATE public.stella_suggestion_decisions`) }),
+        () => ownerExecute(`TRUNCATE public.stella_suggestion_decisions`),
         { operation: 'TRUNCATE', table: 'stella_suggestion_decisions' },
       )
 
       const survivors = rowsOf(
-        await db.execute(
+        await ownerRows(
           `SELECT count(*)::text AS n FROM public.stella_suggestion_decisions
             WHERE suggestion_key = '${G3_LOCAL_SYNTHETIC_KEY}'`,
         ),

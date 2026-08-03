@@ -13,6 +13,22 @@
 // Importing this module FIRST in every integration test file moves the gate
 // from "depends on the config" to "depends on the file itself".
 //
+// POST-CUTOVER (reaudit finding M2): the target no longer comes from
+// `DATABASE_URL` — that variable is inert everywhere since the capability
+// split, and reading it here left this gate pointing at a name nothing
+// provisions, which made the whole suite unrunnable. The connection the
+// integration tests actually use is the shared `db` client, which resolves
+// `UELLIX_RUNTIME_DATABASE_URL`; so THAT is the URL this gate must vet:
+//
+//   1. resolveRuntimeDatabaseUrl(): the variable exists and declares
+//      `uellix_app` — a wrong or administrative role aborts before a socket;
+//   2. assertDatabaseOperationAllowed(): the target is THIS worktree's local
+//      stack — loopback, db port 56322 — under `local_integration_test`,
+//      which permits no remote of any kind;
+//   3. the Supabase API target is the local stack too;
+//   4. restrictDefaultDatabaseClient(): the shared client is narrowed away
+//      from `app_runtime` before its first query.
+//
 // Both controls are idempotent: `restrictDefaultDatabaseClient` is one-shot,
 // so whichever of the two runs first wins and the second is a no-op.
 
@@ -23,6 +39,7 @@ import {
   assertDatabaseOperationAllowed,
   assertSupabaseApiOperationAllowed,
 } from '@/db/safety/database-access'
+import { resolveRuntimeDatabaseUrl } from '@/db/safety/resolve-capability-database-url'
 import { LOCAL_API_PORT, LOCAL_DB_PORT, LOCAL_SUPABASE_API_URL } from '@/db/safety/local-stack'
 import { describeError } from '@/db/safety/redact-error'
 
@@ -35,15 +52,23 @@ function abort(error: unknown): never {
   console.error('')
   console.error('Integration suites create users and write fixtures. They are')
   console.error(`restricted to this worktree's local stack (loopback, db port`)
-  console.error(`${LOCAL_DB_PORT}, api port ${LOCAL_API_PORT}). Start it with`)
-  console.error('`pnpm supabase start` and run `pnpm db:test:integration:local`.')
+  console.error(`${LOCAL_DB_PORT}, api port ${LOCAL_API_PORT}), reached as uellix_app via`)
+  console.error('UELLIX_RUNTIME_DATABASE_URL. Start the stack with `pnpm supabase start`')
+  console.error('and run `pnpm db:test:integration:local`.')
   console.error('================================================================\n')
   process.exit(1)
 }
 
 try {
+  // Role first: names the variable, never its value. DATABASE_URL is not
+  // consulted — deliberately, and resolveRuntimeDatabaseUrl warns if it is
+  // still exported.
+  const resolved = resolveRuntimeDatabaseUrl()
+  for (const warning of resolved.warnings) console.warn(`[integration-guard] ${warning}`)
+
+  // Target second: loopback + this worktree's port, no remote of any kind.
   assertDatabaseOperationAllowed({
-    url: process.env.DATABASE_URL,
+    url: resolved.url,
     capability: 'local_integration_test',
     expectedLocalPort: LOCAL_DB_PORT,
   })

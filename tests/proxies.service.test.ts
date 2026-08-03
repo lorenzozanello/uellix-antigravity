@@ -12,6 +12,7 @@ const mockDbData = vi.hoisted(() => ({
   outcomes: [] as any[],
   inserted: {} as any,
   updated: {} as any,
+  lastInsertValues: null as any,
 }));
 
 // Mock authentication/session utilities
@@ -64,9 +65,12 @@ vi.mock('@/db/client', () => {
         }),
       })),
       insert: vi.fn().mockImplementation(() => ({
-        values: vi.fn().mockImplementation(() => ({
-          returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.inserted])),
-        })),
+        values: vi.fn().mockImplementation((values) => {
+          mockDbData.lastInsertValues = values;
+          return {
+            returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.inserted])),
+          };
+        }),
       })),
       update: vi.fn().mockImplementation(() => ({
         set: vi.fn().mockImplementation(() => ({
@@ -106,6 +110,7 @@ beforeEach(() => {
   mockDbData.outcomes = [];
   mockDbData.inserted = {};
   mockDbData.updated = {};
+  mockDbData.lastInsertValues = null;
 });
 
 /*** Proxy Sources ***/
@@ -173,6 +178,8 @@ describe('Financial Proxies Service', () => {
     const { requireOrganizationAccess } = await import('@/lib/auth/session');
     const ctx = { organization: { id: 'org-2' }, user: { id: 'user-3' } } as any;
     vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    // RC-12: the named source must be usable by the caller's organisation.
+    mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: 'org-2', status: 'active' }];
     const input = { sourceId: SOURCE_UUID, name: 'Proxy X', currency: 'USD', value: '100', unit: 'units', referenceYear: 2023 };
     const inserted = { id: PROXY_UUID, ...input, organizationId: 'org-2', reviewStatus: 'suggested' };
     mockDbData.inserted = inserted;
@@ -181,6 +188,79 @@ describe('Financial Proxies Service', () => {
     expect(result.reviewStatus).toBe('suggested');
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // RC-12 / reaudit M5 — sourceId ownership gate on financial proxy creation.
+  // The mocked select ignores WHERE clauses, so each case seeds exactly the
+  // row the id would resolve to; an empty table IS the nonexistent id.
+  // -------------------------------------------------------------------------
+  describe('createOrganizationFinancialProxy — source ownership (RC-12)', () => {
+    const CALLER_ORG = 'org-2';
+    const baseInput = { sourceId: SOURCE_UUID, name: 'Proxy X', currency: 'USD', value: '100', unit: 'units', referenceYear: 2023 };
+
+    async function asCallerOrg() {
+      const { requireOrganizationAccess } = await import('@/lib/auth/session');
+      vi.mocked(requireOrganizationAccess).mockResolvedValue(
+        { organization: { id: CALLER_ORG }, user: { id: 'user-3' } } as any
+      );
+    }
+
+    it('allows a source owned by the caller organisation', async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: CALLER_ORG, status: 'active' }];
+      mockDbData.inserted = { id: PROXY_UUID, reviewStatus: 'suggested' };
+      await expect(createOrganizationFinancialProxy(baseInput)).resolves.toBeDefined();
+    });
+
+    it('allows an ACTIVE global source (organizationId null)', async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: null, status: 'active' }];
+      mockDbData.inserted = { id: PROXY_UUID, reviewStatus: 'suggested' };
+      await expect(createOrganizationFinancialProxy(baseInput)).resolves.toBeDefined();
+    });
+
+    it('rejects an archived global source', async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: null, status: 'archived' }];
+      await expect(createOrganizationFinancialProxy(baseInput)).rejects.toThrow('Source not found');
+    });
+
+    it("rejects another organisation's source", async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: 'other-org', status: 'active' }];
+      await expect(createOrganizationFinancialProxy(baseInput)).rejects.toThrow('Source not found');
+    });
+
+    it('a nonexistent id is INDISTINGUISHABLE from a foreign one — same uniform error', async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = []; // the id resolves to nothing
+      const nonexistent = createOrganizationFinancialProxy(baseInput).catch((e: Error) => e.message);
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: 'other-org', status: 'active' }];
+      const foreign = createOrganizationFinancialProxy(baseInput).catch((e: Error) => e.message);
+      expect(await nonexistent).toBe('Source not found');
+      expect(await foreign).toBe(await nonexistent);
+    });
+
+    it('a client-supplied organizationId neither widens the scope nor lands in the row', async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: CALLER_ORG, status: 'active' }];
+      mockDbData.inserted = { id: PROXY_UUID, reviewStatus: 'suggested' };
+      // The extra field is not in the Zod schema — parse() drops it — and the
+      // insert always carries the SESSION organisation.
+      await createOrganizationFinancialProxy({ ...baseInput, organizationId: 'attacker-org' });
+      expect(mockDbData.lastInsertValues.organizationId).toBe(CALLER_ORG);
+    });
+
+    it('the inserted row carries the session organisation and creator', async () => {
+      await asCallerOrg();
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: CALLER_ORG, status: 'active' }];
+      mockDbData.inserted = { id: PROXY_UUID, reviewStatus: 'suggested' };
+      await createOrganizationFinancialProxy(baseInput);
+      expect(mockDbData.lastInsertValues.organizationId).toBe(CALLER_ORG);
+      expect(mockDbData.lastInsertValues.createdBy).toBe('user-3');
+      expect(mockDbData.lastInsertValues.sourceId).toBe(SOURCE_UUID);
+    });
   });
 
   it('updateFinancialProxyReviewStatus only allows permitted roles', async () => {
