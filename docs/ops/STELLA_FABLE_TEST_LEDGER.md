@@ -1202,7 +1202,7 @@ completo en [`DATABASE_RUNTIME_CUTOVER.md`](DATABASE_RUNTIME_CUTOVER.md) §7–�
 | `pnpm vitest run tests/database-default-privileges.test.ts` | VERDE | sin cambio |
 | `pnpm vitest run tests/database-target-safety.test.ts` | VERDE | sin cambio |
 | `pnpm vitest run tests/database-entrypoint-safety.test.ts` | VERDE | sin cambio |
-| `pnpm test:unit` | VERDE | 145 archivos, **3154** tests (antes 2957 → **+197**) |
+| `pnpm test:unit` | VERDE | 145 archivos, **3154** tests (antes 2957 → **+197**). *Corrección 2026-08-03:* la cifra vigente es **147 archivos / 3234 tests**; 3225 era la línea base antes de los 9 tests de `updateOrganizationFinancialProxy` añadidos en el preflight del diseño de capacidades |
 | `pnpm typecheck` | VERDE | exit 0 |
 | `pnpm lint` | VERDE | exit 0, **0 errores**, 50 warnings (51 → 50: se cerró uno introducido y se limpió otro preexistente) |
 | `pnpm build` | VERDE | `next build` completo |
@@ -1354,7 +1354,8 @@ tomadas del cliente, contexto persistente en el pool, `service_role` o bypass
 reintroducido, anidamiento de identidades en operación normal, y regresiones
 fail-open.
 
-Tras las correcciones: **145 archivos, 3154 tests** (2957 → +197), typecheck
+Tras las correcciones: **145 archivos, 3154 tests** (2957 → +197) — cifra del
+cierre de reauditoría; vigente al 2026-08-03: **147 archivos, 3234 tests** —, typecheck
 verde, lint 0 errores, build completo.
 
 ---
@@ -1368,7 +1369,7 @@ del risk register.
 
 | Evidencia | Resultado |
 |---|---|
-| Once suites de base contra el stack local | **640/640** (antes diez suites, 581/581): entrypoints 184 · authenticated-context 33 · runtime-identity 21 · runtime-rls 18 · **insert-policy-scope 19 (nueva)** · migrator-path 18 · ddl-containment 18 · role-safety 52 · default-privileges 16 · target-safety 139 · entrypoint-safety 122 |
+| Once suites de base contra el stack local | **643/643** (antes diez suites, 581/581): entrypoints 187 · authenticated-context 33 · runtime-identity 21 · runtime-rls 18 · **insert-policy-scope 19 (nueva)** · migrator-path 18 · ddl-containment 18 · role-safety 52 · default-privileges 16 · target-safety 139 · entrypoint-safety 122. La cifra 640/184 publicada en el cierre de reauditoría estaba desactualizada: el conteo real reejecutado el 2026-08-03 es 643/187 (`database-runtime-entrypoints` incorporó tres casos de la capa AST que el recuento anterior no reflejó). Verificado con `--reporter=json`, 0 fallos |
 | Suite local de integración | **49/49** (`pnpm db:test:integration:local`; rls 32 + investments 17). Guard por capacidad (`UELLIX_RUNTIME_DATABASE_URL`, rol `uellix_app`, 127.0.0.1:56322); fixtures por ruta owner (`tests/integration/_owner.ts`); clausura append-only en modo REUSED |
 | Residuo de la integración | +1 organización y +1 usuario por corrida en `public` (pineados por `audit_logs` append-only, FK NO ACTION — contrato preexistente, antes era uno POR TEST); 1 fila compartida `fx_rates` COP 2024-12-31 (fixture idempotente); `auth.users` limpio (los usuarios GoTrue de la suite se borran en `afterAll`) |
 | Gate de Stripe | `tests/stripe-webhook-route.test.ts`, 8 tests: 400/503 con cero acceso a BD, constante pineada |

@@ -324,11 +324,12 @@ contrato de seguridad y no del estado heredado. Cero deriva funcional.
 
 G3 (`test:rls`) **no se volvió a ejecutar** en esta unidad, ni ninguna prueba de
 integración remota. La regresión completa se hizo con `pnpm test:unit`
-(3154/3154), `typecheck`, `lint` y `build`, más las diez suites de base contra
+(3234/3234 al 2026-08-03; 3154 era la cifra del cierre), `typecheck`, `lint`
+y `build`, más las diez suites de base contra
 el stack local (581/581).
 
 **Actualización — cierre de reauditoría (2026-08-02, tarde):** la familia de
-base creció a **once suites, 640/640** contra el stack local (se añadió
+base creció a **once suites, 643/643** contra el stack local (se añadió
 `database-insert-policy-scope`, y `database-runtime-entrypoints` /
 `database-entrypoint-safety` crecieron con la capa AST y el gate de
 integración). Además, la suite **local** de integración volvió a ser ejecutable

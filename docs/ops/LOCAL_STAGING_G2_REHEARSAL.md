@@ -2224,5 +2224,8 @@ La reauditoría devolvió `STELLA_RUNTIME_COMPATIBILITY_REAUDIT_BLOCKED_ENTRYPOI
   GoTrue real → cookie → dashboard con la organización propia bajo RLS →
   logout → redirect. Sin crear usuarios; `onboarding_completed` alternado y
   restaurado.
-- **Once suites de base: 640/640.** Escáner AST: 117 módulos, 0 sin guardia.
+- **Once suites de base: 643/643** (corregido el 2026-08-03; el 640/640 que
+  publicó el cierre de reauditoría subcontaba `database-runtime-entrypoints`
+  en 184 cuando la suite real tiene 187). Escáner AST: 117 módulos, 0 sin
+  guardia.
 - Sin acceso remoto, sin grounding, sin G2 formal, sin push.

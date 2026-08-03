@@ -600,7 +600,7 @@ sin privilegios nuevos.**
 | En allowlist documentada, con motivo | 13 |
 | `tests/authenticated-database-context.test.ts` | 33 tests, VERDE (7 offline + 26 contra el stack vivo) |
 | `tests/database-runtime-entrypoints.test.ts` | 163 tests, VERDE |
-| `pnpm test:unit` | 3154 tests, VERDE |
+| `pnpm test:unit` | 3234 tests / 147 archivos, VERDE (reejecutado 2026-08-03; 3154 era la cifra del cierre de reauditoría) |
 | `pnpm typecheck` / `pnpm lint` / `pnpm build` | VERDE / 0 errores / completo |
 | Login local | **restaurado a nivel de unidad-con-BD-viva** (el ciclo `getCurrentUser` → `public.users` estaba roto; el sujeto ahora viene de GoTrue y el perfil se lee dentro de un contexto). La evidencia E2E HTTP llegó con el cierre de reauditoría — ver la fila de abajo |
 | Escrituras permanentes en la base | ninguna |
@@ -610,7 +610,7 @@ sin privilegios nuevos.**
 | Evidencia | Estado |
 |---|---|
 | Escáner AST por export (`app/**` + `components/**`) | 117 módulos verificados; 95 alcanzan la base; 82 contextualizados + 13 allowlist; **0 sin guardia**; inventario versionado + 10 fixtures mutantes |
-| `tests/database-runtime-entrypoints.test.ts` | 184 tests, VERDE |
+| `tests/database-runtime-entrypoints.test.ts` | 187 tests, VERDE |
 | Policies INSERT append-only | re-alcanzadas `TO uellix_app` (`stella_0005c`); `authenticated`/`service_role`/`anon`/`PUBLIC` sin INSERT efectivo (medido con sonda directa como `authenticated` con claims válidos → denegada) |
 | Suite de integración local | **ejecutable y en verde: 49/49** (guard por capacidad, fixtures por ruta owner) |
 | Storage de evidencia | reparado (`stella_0005d`): las funciones SECURITY DEFINER quedaron sin `USAGE` sobre `storage` tras `stella_0004` y negaban todo objeto |

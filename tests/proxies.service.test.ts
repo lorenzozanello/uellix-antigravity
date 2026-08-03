@@ -13,6 +13,7 @@ const mockDbData = vi.hoisted(() => ({
   inserted: {} as any,
   updated: {} as any,
   lastInsertValues: null as any,
+  lastUpdateValues: null as any,
 }));
 
 // Mock authentication/session utilities
@@ -31,6 +32,9 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_UPDATED: 'organization_updated',
+    FINANCIAL_PROXY_CREATED: 'financial_proxy_created',
+    FINANCIAL_PROXY_UPDATED: 'financial_proxy_updated',
+    FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy_review_status_changed',
   },
 }));
 
@@ -73,11 +77,14 @@ vi.mock('@/db/client', () => {
         }),
       })),
       update: vi.fn().mockImplementation(() => ({
-        set: vi.fn().mockImplementation(() => ({
-          where: vi.fn().mockImplementation(() => ({
-            returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.updated])),
-          })),
-        })),
+        set: vi.fn().mockImplementation((values) => {
+          mockDbData.lastUpdateValues = values;
+          return {
+            where: vi.fn().mockImplementation(() => ({
+              returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.updated])),
+            })),
+          };
+        }),
       })),
     },
   };
@@ -89,6 +96,7 @@ import {
   archiveProxySource,
   listFinancialProxies,
   createOrganizationFinancialProxy,
+  updateOrganizationFinancialProxy,
   updateFinancialProxyReviewStatus,
   assignProxyToOutcome,
   archiveOutcomeProxyAssignment,
@@ -111,6 +119,7 @@ beforeEach(() => {
   mockDbData.inserted = {};
   mockDbData.updated = {};
   mockDbData.lastInsertValues = null;
+  mockDbData.lastUpdateValues = null;
 });
 
 /*** Proxy Sources ***/
@@ -260,6 +269,138 @@ describe('Financial Proxies Service', () => {
       expect(mockDbData.lastInsertValues.organizationId).toBe(CALLER_ORG);
       expect(mockDbData.lastInsertValues.createdBy).toBe('user-3');
       expect(mockDbData.lastInsertValues.sourceId).toBe(SOURCE_UUID);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // updateOrganizationFinancialProxy — precondition 2 of the capability-design
+  // unit. The export had NO call site and NO dedicated test, so two invariants
+  // it carries were unpinned: the RC-12 source-ownership gate applied again on
+  // re-pointing, and the re-review reset that stops an approved proxy from
+  // keeping its "approved" label after a material field changes.
+  //
+  // Keeping the export unreferenced is deliberate (see the capability model:
+  // the proxy edit surface is not wired yet). Pinning it here means that when
+  // it IS wired, the gates cannot have silently rotted in the meantime.
+  //
+  // The mocked select ignores WHERE clauses, so each case seeds exactly the row
+  // the id would resolve to; an empty table IS the nonexistent id.
+  // ---------------------------------------------------------------------------
+  describe('updateOrganizationFinancialProxy — ownership and re-review gates', () => {
+    const CALLER_ORG = 'org-upd';
+    const approvedProxy = {
+      id: PROXY_UUID,
+      organizationId: CALLER_ORG,
+      reviewStatus: 'approved',
+      value: '100',
+      currency: 'USD',
+      unit: 'units',
+      referenceYear: 2023,
+      name: 'Proxy U',
+      sourceId: SOURCE_UUID,
+    };
+
+    async function asCallerOrg() {
+      const { requireOrganizationAccess } = await import('@/lib/auth/session');
+      vi.mocked(requireOrganizationAccess).mockResolvedValue(
+        { organization: { id: CALLER_ORG }, user: { id: 'user-upd' } } as any
+      );
+    }
+
+    it('rejects a nonexistent proxy', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [];
+      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { name: 'New' }))
+        .rejects.toThrow('Proxy not found');
+    });
+
+    it("rejects another organisation's proxy", async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [{ ...approvedProxy, organizationId: 'other-org' }];
+      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { name: 'New' }))
+        .rejects.toThrow('Forbidden');
+    });
+
+    it('rejects re-pointing at another organisation\'s source (RC-12 applies on update, not only on create)', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: 'other-org', status: 'active' }];
+      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: SOURCE_UUID }))
+        .rejects.toThrow('Source not found');
+      // The refusal happens BEFORE any write.
+      expect(mockDbData.lastUpdateValues).toBeNull();
+    });
+
+    it('allows re-pointing at an active global source', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: null, status: 'active' }];
+      mockDbData.updated = { ...approvedProxy };
+      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: SOURCE_UUID }))
+        .resolves.toBeDefined();
+    });
+
+    it('resets an APPROVED proxy to pending_review when a material field changes', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.updated = { ...approvedProxy, value: '250', reviewStatus: 'pending_review' };
+
+      await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
+
+      expect(mockDbData.lastUpdateValues.reviewStatus).toBe('pending_review');
+      const { logAuditAction } = await import('@/lib/audit/logger');
+      expect(logAuditAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'financial_proxy_review_status_changed',
+          reason: expect.stringContaining('Approval reset'),
+        })
+      );
+    });
+
+    it('does NOT reset when a non-material field changes', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.updated = { ...approvedProxy, name: 'Renamed' };
+
+      await updateOrganizationFinancialProxy(PROXY_UUID, { name: 'Renamed' });
+
+      expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
+      const { logAuditAction } = await import('@/lib/audit/logger');
+      expect(logAuditAction).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'financial_proxy_updated' })
+      );
+    });
+
+    it('does NOT reset a proxy that was never approved — the gate protects an approval, and there is none', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [{ ...approvedProxy, reviewStatus: 'suggested' }];
+      mockDbData.updated = { ...approvedProxy, reviewStatus: 'suggested', value: '250' };
+
+      await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
+
+      expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
+    });
+
+    it('a material field re-submitted with the SAME value is not a change — no spurious reset', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.updated = { ...approvedProxy };
+
+      await updateOrganizationFinancialProxy(PROXY_UUID, { value: '100', referenceYear: 2023 });
+
+      expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
+    });
+
+    it('a client-supplied organizationId cannot move the row to another tenant', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.updated = { ...approvedProxy };
+
+      // Not in the Zod schema — partial().parse() drops it, so it never
+      // reaches the SET clause.
+      await updateOrganizationFinancialProxy(PROXY_UUID, { name: 'X', organizationId: 'attacker-org' });
+
+      expect(mockDbData.lastUpdateValues.organizationId).toBeUndefined();
     });
   });
 
