@@ -574,14 +574,34 @@ decisión no tomada nunca abre nada.
 | **DP-CAP-12** | ¿Quién puede crear la primera organización? | allowlist (hoy) / abierto / invitación | **allowlist, sin cambios** | CAP-05 |
 | **DP-CAP-13** | Límite de organizaciones por sujeto | 1 (hoy) / N | **1** | CAP-05 |
 | **DP-CAP-14** | Política de rate limiting (valores concretos) | — | **valores propuestos, no fijados** | las 5 |
+| **DP-CAP-15** | ¿Cómo se vincula por primera vez una organización a un cliente de Stripe? | (a) un flujo *first-party* autenticado registra el vínculo **antes** de que llegue ningún webhook; (b) el webhook lo infiere de `session.client_reference_id`; (c) alta manual por un super admin | **(a) — pero no está implementado.** Mientras no lo esté, `checkout.session.completed` **no tiene camino** por `stripe_apply_subscription`, y el handler no debe inventarse uno | **CAP-03** |
+
+**Son quince, no catorce.** DP-CAP-15 nació de la segunda ronda adversarial y
+es la única decisión que **elimina** una rama en vez de configurarla. El caso
+`organization` de `stripe_apply_subscription` resolvía la organización desde
+`session.client_reference_id`, que un Payment Link acepta como parámetro
+suministrado por el comprador y que este repositorio no restringe en ningún
+`checkout.sessions.create` propio. Las dos rondas llegaron a conclusiones
+opuestas sobre cómo comprobar ese valor —una dijo que la guarda era demasiado
+estricta, la otra que demasiado laxa— y **ambas tenían razón**: ningún predicado
+sobre la fila actual distingue una primera suscripción legítima de una
+reclamación hostil, porque la única evidencia en cualquiera de los dos sentidos
+es el propio campo suministrado por el atacante. La respuesta no es una guarda
+mejor: es que la capacidad **se niega a ser el sitio donde ese vínculo se crea
+por primera vez**. Eso es DP-CAP-15, y no se decide aquí.
+
+Consecuencias que ya están fijadas por prueba:
+`p_match_kind` admite exactamente `('customer','subscription')`
+(gate `cap03-match-kind`), y la cadena `client_reference_id` no aparece en
+`stella_0008` en ninguna forma (gate `cap03-client-reference`).
 
 ---
 
 ## 9. Riesgos residuales del modelo (no de una capacidad concreta)
 
 * **RR-CAP-0 — ACTUALIZADO tras el dry run.** Ya no dice "todo es SQL leído".
-  Los cinco paquetes se aplicaron **dos veces** (convergentes), pasaron 57
-  aserciones vivas y cinco pruebas de concurrencia con sesiones reales, se
+  Los cinco paquetes se aplicaron **dos veces** (convergentes), pasaron 72
+  aserciones vivas y seis pruebas de concurrencia con sesiones reales, se
   revirtieron y se reaplicaron — en un contenedor desechable **sin red**,
   sembrado desde un volcado *schema-only* del stack local. Nueve defectos
   salieron de ahí y de ninguna revisión. Lo que queda abierto es más pequeño y
@@ -603,6 +623,43 @@ decisión no tomada nunca abre nada.
   del aislamiento es superficie de gestión. Se compensa con el test de
   aislamiento (`capability-isolation`), que falla si aparece un rol
   `uellix_cap_*` no inventariado.
+* **RR-CAP-12 — una suite verde no es una suite que detecte.**
+  `tests/capability-isolation.test.ts` pasaba 220/220 mientras **22 mutaciones
+  de seguridad sobrevivían**: reapuntar el `TO` de una policy `RESTRICTIVE`,
+  sustituir su `USING` por `true`, vaciar un `WITH CHECK`, fusionar
+  `GRANT INSERT (…), SELECT` en una sola sentencia, devolver el `match_kind`
+  `organization` a CAP-03, o mover la reclamación de la clave de idempotencia
+  de CAP-05 detrás de la creación de la organización. Ninguna cambiaba un
+  conteo, y la suite sólo comprobaba conteos y existencia.
+
+  El riesgo **no** era que faltasen pruebas: era que nadie había demostrado que
+  las que había pudieran ponerse en rojo. Cerrado por construcción, no por más
+  aserciones: el contrato vive en `tests/helpers/capability-gates.ts` como
+  **función pura** sobre el texto de los paquetes, y
+  `tests/capability-mutation.test.ts` lo ejecuta contra 45 copias
+  deliberadamente rotas exigiendo que cada una produzca al menos una violación.
+  `scripts/capability-mutation-audit.ts` mide lo mismo **en disco** y contra la
+  suite antigua, con SHA-256 antes y después.
+
+  Estado medido (2026-08-03): **22/22 sobreviven a la suite antigua, 0/67
+  sobreviven a los gates nuevos, 67/67 restauradas intactas.**
+
+  **No está cerrado, y la razón importa.** «0/67» mide que el catálogo y los
+  gates coinciden — dos ficheros escritos a la vez, por la misma mano. Dos
+  revisores adversariales de solo lectura encontraron **once escapes reales en
+  una sesión**: propiedad de la función (`OWNER TO`), RLS sin habilitar en las
+  tablas nuevas, un segundo `ALTER ROLE` con `BYPASSRLS`, `INHERIT`, policies y
+  grants plantados dentro de un *rollback*, un séptimo booleano de publicación,
+  el rol fundador satisfecho por el payload de auditoría, los flags que
+  `verify_report` no estaba obligado a leer, la denylist de slugs, el privilegio
+  concreto del `REVOKE`, y borrar una policy ajena. Ninguno exigió imaginación y
+  varios eran de la misma clase que mutaciones ya presentes. Todos están ahora
+  catalogados y en rojo.
+
+  El residual se declara en cifras, no en adjetivos: **59 de 117 gates no los
+  ejercita ninguna mutación**, y están listados en `UNEXERCISED_GATES` con un
+  test que falla si esa lista cambia sin que alguien lo escriba. Un gate que
+  nunca se ha puesto en rojo es indistinguible de un gate que no puede.
 * **RR-CAP-5 — Supabase gestionado puede no admitir todo esto.** Las mismas
   tres limitaciones que bloquearon `stella_0004` en remoto
   (ver `DATABASE_ROLE_MODEL.md` §8) aplican a `uellix_stripe`, que es un rol

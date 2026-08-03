@@ -526,6 +526,38 @@ borrarlos, con lo que no puede borrar la prueba de lo que hizo.
 
 ## 13. Rollout
 
+> ### PRECONDICIÓN BLOQUEANTE: RR-CAP-10 / `ORGANIZATION_QUOTA_COLUMN_HARDENING`
+>
+> **CAP-03 no puede declararse implementable mientras RR-CAP-10 siga abierto.**
+>
+> RR-CAP-10 no es un riesgo *de* CAP-03: es preexistente. `stella_0004` §6b
+> concede `UPDATE` **a nivel de tabla** sobre `public.organizations` a
+> `uellix_writer`, `uellix_app` hereda, y `orgs_update_admin_or_super` es una
+> policy `{public}` sin predicado de columna. Cualquier `organization_admin`
+> escribe `stella_monthly_quota` y `stella_plan_label` por el ORM **hoy**, sin
+> que CAP-03 exista.
+>
+> Por qué bloquea de todas formas: la proposición que justifica esta capacidad
+> es *«la cuota sólo se mueve por un evento firmado de Stripe»*. Con RR-CAP-10
+> abierto esa proposición **es falsa**, y montar tres funciones
+> `SECURITY DEFINER`, un rol `LOGIN` nuevo y una credencial adicional para
+> defender una puerta que tiene otra abierta al lado no es una mejora de
+> seguridad: es superficie nueva a cambio de nada. Habilitar CAP-03 antes
+> convertiría una afirmación falsa en una afirmación falsa *documentada como
+> verificada*, que es peor.
+>
+> **Cierre requerido — `ORGANIZATION_QUOTA_COLUMN_HARDENING`:** acotar por
+> columna el `UPDATE` de `uellix_writer` sobre `public.organizations`, de modo
+> que `stella_monthly_quota`, `stella_plan_label` y las tres columnas
+> `stripe_*` queden fuera del alcance del runtime, **y** añadir el predicado de
+> columna que hoy le falta a `orgs_update_admin_or_super`. Es un cambio a la
+> superficie de escritura de la aplicación, con su propio análisis de impacto:
+> **no cabe en un paquete de capacidad y no se intenta en esta unidad.**
+>
+> Estado: **ABIERTO**. Indexado en
+> [`../STELLA_FABLE_RISK_REGISTER.md`](../STELLA_FABLE_RISK_REGISTER.md).
+
+0. **Cerrar RR-CAP-10.** Sin esto, los pasos siguientes no deben ejecutarse.
 1. Dry-run en stack desechable; `L1..L14`.
 2. Generar la credencial de `uellix_stripe` **fuera del paquete** (el script no
    contiene contraseñas, igual que `stella_0004`) y guardarla como
@@ -540,12 +572,45 @@ borrarlos, con lo que no puede borrar la prueba de lo que hizo.
 
 ## 14. Rollback
 
-`REVOKE` → `DROP POLICY` ×4 → `DROP FUNCTION` ×3 → `DROP ROLE uellix_cap_stripe`
-→ `DROP ROLE uellix_stripe` → `DROP SCHEMA` si vacío.
+El orden real de `db/prepared/stella_0008_rollback.sql`, que **no** es el que
+una versión anterior de esta sección describía:
 
-`stripe_webhook_events` **no se borra**: es el registro de qué eventos de
-facturación se procesaron. Borrarlo destruiría la capacidad de responder "¿se
-aplicó este cambio de plan?" en una disputa. Queda con `COMMENT`.
+1. `REVOKE ALL` sobre las tres funciones **desde `uellix_stripe`** (guardado por
+   la existencia del rol: el script sobrevive a un rol ya eliminado).
+2. `DROP FUNCTION` ×3, con la firma completa.
+3. `DROP POLICY` ×4 — `cap_stripe_select_orgs`, `cap_stripe_update_orgs`,
+   `cap_stripe_insert_audit`, `cap_stripe_rw_events`.
+4. `REVOKE ALL` sobre `organizations`, `audit_logs` y `stripe_webhook_events`
+   desde `uellix_cap_stripe`.
+5. `REVOKE ALL ON SCHEMA uellix_capability FROM uellix_stripe`,
+   **`ALTER ROLE uellix_stripe RESET ALL`** — que limpia los tres ajustes de
+   sesión, para que un rol del mismo nombre creado después no los herede — y
+   `DROP ROLE uellix_stripe`.
+6. `REVOKE` de los tres *helpers* de RLS y del esquema desde
+   `uellix_cap_stripe`, `REVOKE uellix_cap_stripe FROM uellix_owner`,
+   `DROP ROLE uellix_cap_stripe`.
+7. `DROP SCHEMA uellix_capability` **sólo si está vacío** — los cinco paquetes
+   son independientes y otro puede tener objetos allí.
+
+**Retención: qué queda y qué no.** La campaña crea cuatro tablas y sus
+rollbacks retienen **dos**:
+
+| Tabla | Paquete | Rollback | Por qué |
+|---|---|---|---|
+| `stripe_webhook_events` | 0008 | **RETENIDA** | Es el registro de qué eventos de facturación se aplicaron. Sin ella no se puede responder «¿se aplicó este cambio de plan?» en una disputa. Queda con `COMMENT` |
+| `report_public_disclosures` | 0007 | **RETENIDA** | Cada fila es una decisión humana de publicar, con autor y fecha |
+| `capability_verification_hits` | 0007 | eliminada | Contador agregado de la capacidad; sin ella no es evidencia de nada |
+| `capability_bootstrap_attempts` | 0010 | eliminada | Sus filas completas duplican hechos ya en `audit_logs`; las incompletas son claves de idempotencia de una capacidad que deja de existir |
+
+La retención **no es un descuido de simetría**: `tests/helpers/capability-gates.ts`
+declara `RETAINED_TABLES` y `ROLLBACK_RETAINED_POLICIES`, y el gate
+`rollback-retention` exige que el rollback *afirme* la supervivencia en su
+postcondición, no que simplemente omita el `DROP`. Una omisión y una decisión
+son indistinguibles si sólo se mira la ausencia de una sentencia.
+
+**Además, fuera de banda:** revocar la credencial de `uellix_stripe`
+(`UELLIX_STRIPE_DATABASE_URL`). `DROP ROLE` no invalida una cadena de conexión
+que ya esté en un secreto de despliegue.
 
 Tras el rollback el handler vuelve a 503 y Stripe vuelve a reintentar — el
 mismo estado que hoy, que es fail-closed y ruidoso, no silencioso.
@@ -561,7 +626,7 @@ mismo estado que hoy, que es fail-closed y ruidoso, no silencioso.
 | **Replay** | Media | `PRIMARY KEY (event_id)` + máquina de estados | Ninguno |
 | **Brute force** | Baja | HMAC; rate limit sobre firmas inválidas | Ninguno |
 | **Enumeration** | Media | Las RPC devuelven `claimed`/`duplicate`/`in_progress`, nunca si una organización existe. Un `org_not_resolved` se registra en la tabla, no se devuelve | Ninguno |
-| **Cross-org** | **Alta** | La organización se resuelve por `stripe_*_id`; el caso `client_reference_id` exige además que no haya un `customer_id` distinto ya asignado (defecto 4) | Si Stripe emitiera un evento con un `customer_id` ajeno, se aplicaría — pero eso exige comprometer Stripe |
+| **Cross-org** | **Alta** | La organización se resuelve **sólo** por `stripe_customer_id` o `stripe_subscription_id`, y ambas ramas exigen que *todos* los identificadores del evento concuerden con la fila que resolvieron. **La rama `client_reference_id` ya no existe** (DP-CAP-15): era el único camino por el que un valor elegido por el comprador llegaba a decidir a qué organización se aplica un plan | Si Stripe emitiera un evento con un `customer_id` ajeno, se aplicaría — pero eso exige comprometer Stripe. **Residual abierto: RR-CAP-10**, que es una vía preexistente por el ORM y no por esta capacidad |
 | **Confused deputy** | **Alta** | `uellix_app` no tiene `EXECUTE`; ningún otro rol puede invocar la mutación de facturación | Ninguno |
 | **Privilege escalation** | Alta | Sin `BYPASSRLS`, sin `CREATEROLE`, sin `CREATE`, sin membresías, sin `SET ROLE` | Ninguno |
 | **Duplicate request** | Media | §9 | Ninguno |
