@@ -237,6 +237,16 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       'stella_0005_runtime_cutover.sql',
       'stella_0005b_admin_bootstrap.sql',
       'stella_0005b_rollback.sql',
+      // 0005c rescopes the three stella_0005 INSERT policies to `uellix_app`
+      // and revokes the pre-cutover INSERT grants of authenticated /
+      // service_role on the two append-only tables (reaudit finding M1).
+      'stella_0005c_rollback.sql',
+      'stella_0005c_runtime_policy_scope.sql',
+      // 0005d repairs the storage SECURITY DEFINER path stella_0004 broke:
+      // uellix_owner owns can_*_evidence_object but had no USAGE on schema
+      // storage, so every evidence object operation was silently refused.
+      'stella_0005d_rollback.sql',
+      'stella_0005d_storage_definer_repair.sql',
     ])
   })
 
