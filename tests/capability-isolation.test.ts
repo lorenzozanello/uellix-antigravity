@@ -635,9 +635,24 @@ describe('CAP-02 — the read capability cannot reach private data', () => {
     expect(body).toMatch(/CREATE OR REPLACE FUNCTION uellix_capability\.verify_report[\s\S]*?\nSTABLE\n/)
   })
 
-  it('all four visibility flags default to false — publishing is opt-in', () => {
-    for (const flag of ['show_organization_name', 'show_report_title', 'show_headline_ratio', 'show_totals']) {
-      expect(body).toMatch(new RegExp(`${flag}\\s+boolean\\s+NOT NULL DEFAULT false`))
+  it('every visibility flag defaults to false — publishing is opt-in', () => {
+    // The flag list is DERIVED from the CREATE TABLE, not written here.
+    //
+    // This test used to iterate four hardcoded names and was titled "all four".
+    // Adversarial round 2 added show_issued_on and show_report_variant, and this
+    // test kept passing while either of them could default to true — mutation
+    // M-08 in tests/helpers/capability-mutations.ts is exactly that edit, and it
+    // survived a 220/220 run of this file. A hardcoded list cannot see the name
+    // that is not on it, which is a property of hardcoded lists and not of that
+    // particular list, so the fix is to stop keeping one.
+    const table = /CREATE TABLE IF NOT EXISTS public\.report_public_disclosures \(([\s\S]*?)\n\);/.exec(body)
+    expect(table).not.toBeNull()
+    const flags = [...table![1].matchAll(/^\s*(show_\w+)\s+boolean/gm)].map((m) => m[1])
+    expect(flags.length, 'the disclosure table declares no visibility flag').toBeGreaterThanOrEqual(6)
+    for (const flag of flags) {
+      expect(body, `${flag} is not NOT NULL DEFAULT false`).toMatch(
+        new RegExp(`${flag}\\s+boolean\\s+NOT NULL DEFAULT false`),
+      )
     }
   })
 
