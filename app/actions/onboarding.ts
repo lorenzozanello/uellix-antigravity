@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { db } from '@/db/client'
 import { organizations } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { requireOrganizationAccess, runWithOrganizationAccess } from '@/lib/auth/session'
 import { ROLES } from '@/lib/auth/roles'
 
 const onboardingSchema = z.object({
@@ -32,7 +32,8 @@ export async function completeOnboarding(formData: FormData) {
 
   const { country, sector, baseCurrency } = parsed.data
 
-  await db.update(organizations)
+  await runWithOrganizationAccess(() =>
+    db.update(organizations)
     .set({
       country,
       sector,
@@ -40,7 +41,8 @@ export async function completeOnboarding(formData: FormData) {
       onboardingCompleted: true,
       updatedAt: new Date()
     })
-    .where(eq(organizations.id, ctx.organization.id))
+      .where(eq(organizations.id, ctx.organization.id))
+  )
 
   return { success: true }
 }

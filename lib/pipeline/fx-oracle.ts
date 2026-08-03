@@ -8,6 +8,9 @@ import Decimal from 'decimal.js'
 
 // Known currencies supported by the European Central Bank (Frankfurter)
 // Used to quickly fail for unsupported currencies.
+/** Upper bound on the Frankfurter round trip. See the call site for why. */
+export const FX_ORACLE_TIMEOUT_MS = 8_000
+
 const SUPPORTED_CURRENCIES = new Set([
   'EUR', 'MXN', 'BRL', 'GBP', 'CAD', 'CHF', 'AUD', 'JPY', 
   'CNY', 'INR', 'ZAR', 'NZD', 'SGD', 'HKD', 'SEK', 'NOK', 
@@ -42,11 +45,18 @@ export async function fetchHistoricalRateToUsd(currency: string, date: string): 
   }
 
   try {
+    // BOUNDED. This call is reachable from write paths that run inside a
+    // database identity context (investments, proxy approval, the FX route),
+    // so a hung upstream would pin a pooled connection with an open
+    // transaction for as long as the socket stayed alive — the default is no
+    // timeout at all. Eight seconds is well past this endpoint's normal
+    // latency and well short of anything that matters to a pool.
     const response = await fetch(`https://api.frankfurter.app/${date}?from=USD&to=${currency}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
-      }
+      },
+      signal: AbortSignal.timeout(FX_ORACLE_TIMEOUT_MS)
     })
 
     if (!response.ok) {

@@ -1,15 +1,13 @@
 // app/app/projects/[projectId]/pipeline/proxies/createProxySource.action.ts
 'use server';
 import { z } from 'zod';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { createOrganizationProxySource } from '@/lib/pipeline/proxies';
 
 export async function createProxySourceAction(projectId: string, input: unknown) {
-  // Ensure the user has organization access
-  await requireOrganizationAccess();
   const data = proxySourceSchema.parse(input);
-  // Underlying function handles organization context
-  return await createOrganizationProxySource(data);
+  // Auth + identity context in one step; the service reads the org from it.
+  return runWithOrganizationAccess(() => createOrganizationProxySource(data));
 }
 
 const proxySourceSchema = z.object({

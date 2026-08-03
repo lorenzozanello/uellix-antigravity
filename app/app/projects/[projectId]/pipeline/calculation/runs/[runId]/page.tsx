@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import {
   getCalculationRunDetail,
   listSroiRunReviews,
@@ -53,17 +53,22 @@ export default async function RunDetailPage({
 }) {
   const { projectId, runId } = await params;
 
-  let detail: Awaited<ReturnType<typeof getCalculationRunDetail>>;
-  try {
-    detail = await getCalculationRunDetail(projectId, runId);
-  } catch {
-    notFound();
-  }
+  const loaded = await runWithOrganizationAccess(async (ctx) => {
+    let detail: Awaited<ReturnType<typeof getCalculationRunDetail>>;
+    try {
+      detail = await getCalculationRunDetail(projectId, runId);
+    } catch {
+      return null;
+    }
+    return {
+      detail,
+      canReview: REVIEW_ROLES.includes(ctx.membership.role),
+      reviews: await listSroiRunReviews(projectId, runId),
+    };
+  });
 
-  const ctx = await requireOrganizationAccess();
-  const canReview = ctx && REVIEW_ROLES.includes(ctx.membership.role);
-
-  const reviews = await listSroiRunReviews(projectId, runId);
+  if (!loaded) notFound();
+  const { detail, canReview, reviews } = loaded;
 
   const { run, lineItems, snapshotJson } = detail;
 

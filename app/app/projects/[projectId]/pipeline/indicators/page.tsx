@@ -5,7 +5,7 @@ import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/s
 import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { fetchIndicators, addIndicator } from '@/app/app/projects/[projectId]/pipeline/indicators.actions';
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -68,9 +68,13 @@ const TEXTAREA_CLASS =
 
 export default async function IndicatorsPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership } = await requireOrganizationAccess();
-  const indicators = await fetchIndicators(projectId) as IndicatorRow[];
-  const outcomes = await fetchOutcomes(projectId) as OutcomeRow[];
+  const { membership, indicators, outcomes } = await runWithOrganizationAccess(
+    async ({ membership }) => ({
+      membership,
+      indicators: (await fetchIndicators(projectId)) as IndicatorRow[],
+      outcomes: (await fetchOutcomes(projectId)) as OutcomeRow[],
+    })
+  );
   // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
   const stellaAdvisorEnabled =
     stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;

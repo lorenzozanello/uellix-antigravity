@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import { upsertProjectInvestment } from '../../../../../../lib/pipeline/sroi-calculation';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 
 const InvestmentSchema = z.object({
   amount: z.string().min(1),
@@ -31,6 +32,8 @@ export async function upsertProjectInvestmentAction(formData: FormData) {
   const projectId = formData.get('projectId') as string;
   if (!projectId) throw new Error('projectId missing');
 
-  const result = await upsertProjectInvestment(projectId, parsed);
+  const result = await runWithOrganizationAccess(() =>
+    upsertProjectInvestment(projectId, parsed)
+  );
   return result;
 }

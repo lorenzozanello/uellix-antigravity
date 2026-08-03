@@ -13,7 +13,35 @@ import { getErrorMessage } from '@/lib/errors/get-error-message'
  * - Signature verification via `constructEvent()` ensures only Stripe can call this.
  * - Idempotency: Each event is processed exactly once using the Stripe event ID.
  * - Audit logging: All quota/plan mutations are recorded in audit_logs.
+ *
+ * ---------------------------------------------------------------------------
+ * BLOCKED BY DESIGN AFTER THE RUNTIME CUTOVER — needs a technical identity.
+ * ---------------------------------------------------------------------------
+ * Everything above still holds: the signature check is real and it is what
+ * authenticates the caller. What this handler does NOT have is a DATABASE
+ * identity, and it cannot have one derived from a user:
+ *
+ *   * There is no session. Stripe is the caller, not a person.
+ *   * The organisation is found by `stripe_customer_id`, so the row this
+ *     handler must reach is by definition NOT scoped to any one user's
+ *     membership — `orgs_update_admin_or_super` is written for a human admin.
+ *   * Borrowing the identity of "some admin of that organisation" would be a
+ *     fabricated claim, and would attribute a billing mutation to a person who
+ *     did not make it. The audit row would then be wrong in the one place it
+ *     most needs to be right.
+ *
+ * With no context the reads return zero rows and the writes update zero rows —
+ * fail-closed, but SILENTLY: Stripe would receive 200 and the subscription
+ * change would never land. That silence is the actual hazard, so the handler
+ * refuses up front instead (503, which Stripe retries) rather than pretending
+ * to have processed the event.
+ *
+ * The fix is a separate least-privilege webhook identity with a narrow grant on
+ * `organizations` and `audit_logs` — a privilege decision, deliberately NOT
+ * taken in this unit. Tracked in docs/ops/DATABASE_RUNTIME_CUTOVER.md.
  */
+const WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false
+
 export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -43,6 +71,23 @@ export async function POST(req: Request) {
       getErrorMessage(error, 'Unknown signature verification error')
     )
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
+
+  // Refuse AFTER signature verification, so an unsigned request still gets 400
+  // and this branch never becomes an unauthenticated availability probe.
+  //
+  // 503 rather than 200: Stripe retries a 5xx with backoff, so the event is not
+  // lost and the operator sees the failure. Returning 200 with no write would
+  // discard the subscription change permanently and look healthy doing it.
+  if (!WEBHOOK_DATABASE_IDENTITY_AVAILABLE) {
+    console.error(
+      '[stripe-webhook] refusing event: no database identity for webhook processing after the runtime cutover',
+      { type: event.type }
+    )
+    return NextResponse.json(
+      { error: 'Billing webhook processing is unavailable' },
+      { status: 503 }
+    )
   }
 
   // ---------------------------------------------------------------------------

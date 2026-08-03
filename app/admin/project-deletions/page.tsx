@@ -5,6 +5,8 @@ import { db } from '@/db/client';
 import { projects } from '@/db/schema';
 import { isNotNull } from 'drizzle-orm';
 import ProjectDeletionClient from './client';
+import { requireAdminAccess } from '@/lib/auth/session';
+import { withSuperAdminDatabaseContext } from '@/lib/auth/database-context';
 
 interface DeletionRequest {
   id: string;
@@ -16,17 +18,22 @@ interface DeletionRequest {
 }
 
 export default async function ProjectDeletionsPage() {
+  // This page previously queried with no identity context AND no auth call of
+  // its own — it relied entirely on app/admin/layout.tsx redirecting. The
+  // super-admin check now happens here, and OUTSIDE the try: `redirect()`
+  // throws, and the catch below would swallow it into an error banner.
+  await requireAdminAccess();
+
   let requests: DeletionRequest[] = [];
   let error: string | null = null;
 
   try {
-    const records = await db
-      .select()
-      .from(projects)
-      .where(isNotNull(projects.deletionRequestedAt));
+    const records = await withSuperAdminDatabaseContext(() =>
+      db.select().from(projects).where(isNotNull(projects.deletionRequestedAt))
+    );
 
     requests = records as unknown as DeletionRequest[];
-  } catch (err) {
+  } catch {
     error = 'No se pudieron cargar las solicitudes de eliminación.';
   }
 

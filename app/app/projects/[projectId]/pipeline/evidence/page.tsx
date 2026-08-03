@@ -12,14 +12,11 @@ import { createFileEvidenceAction } from '@/app/app/projects/[projectId]/pipelin
 import { createUrlEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createUrlEvidence.action'
 import { createTextEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createTextEvidence.action'
 import { verifyEvidenceIntegrityAction } from '@/app/app/projects/[projectId]/pipeline/evidence/verifyEvidenceIntegrity.action'
+import { archiveEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/archiveEvidence.action'
+import { updateEvidenceReviewStatusAction } from '@/app/app/projects/[projectId]/pipeline/evidence/updateEvidenceReviewStatus.action'
 import { canUploadEvidence, hasRole } from '@/lib/auth/permissions'
-import {
-  listEvidenceForProject,
-  archiveEvidenceForProject,
-  updateEvidenceReviewStatus,
-  MAX_EVIDENCE_FILE_SIZE_BYTES,
-} from '@/lib/pipeline/evidence'
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { listEvidenceForProject, MAX_EVIDENCE_FILE_SIZE_BYTES } from '@/lib/pipeline/evidence'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
 import { FileText, Link2, AlignLeft, Archive } from 'lucide-react'
 import { Select } from '@/components/ui/select'
@@ -99,7 +96,10 @@ export const archiveAction = async (formData: FormData) => {
   'use server'
   const projectId = formData.get('projectId') as string
   const evidenceId = formData.get('evidenceId') as string
-  await archiveEvidenceForProject(projectId, evidenceId)
+  // Routed through the wrapped action rather than the service: these two inline
+  // actions were the only evidence mutations that called `lib/pipeline/evidence`
+  // directly, and would therefore have run with no identity context.
+  await archiveEvidenceAction(projectId, evidenceId)
   revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
@@ -109,7 +109,7 @@ export const updateStatusAction = async (formData: FormData) => {
   const evidenceId = formData.get('evidenceId') as string
   const status = formData.get('status') as string
   if (!status) return
-  await updateEvidenceReviewStatus(projectId, evidenceId, { status })
+  await updateEvidenceReviewStatusAction(projectId, evidenceId, { status })
   revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
@@ -147,14 +147,18 @@ const FILE_INPUT_CLASS =
 
 export default async function EvidencePage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
-  const { membership } = await requireOrganizationAccess()
+  const { membership, evidences, outcomes, indicators } = await runWithOrganizationAccess(
+    async ({ membership }) => ({
+      membership,
+      evidences: await listEvidenceForProject(projectId),
+      outcomes: await fetchOutcomes(projectId),
+      indicators: await fetchIndicators(projectId),
+    })
+  )
+
   const canCreate = canUploadEvidence(membership.role)
   const canArchive = hasRole(membership.role, 'analyst')
   const canReview = hasRole(membership.role, 'impact_manager')
-
-  const evidences = await listEvidenceForProject(projectId)
-  const outcomes = await fetchOutcomes(projectId)
-  const indicators = await fetchIndicators(projectId)
 
   // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
   const stellaAdvisorEnabled =

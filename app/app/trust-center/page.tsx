@@ -1,5 +1,5 @@
 import React from 'react'
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { listProjectsForCurrentOrganization } from '@/lib/projects/service'
 import { listEvidenceForOrganizationWithProject } from '@/lib/pipeline/evidence'
 import Link from 'next/link'
@@ -41,12 +41,15 @@ export default async function TrustCenterPage({
 }: {
   searchParams: Promise<{ status?: string; type?: string; projectId?: string }>
 }) {
-  const { organization } = await requireOrganizationAccess()
   const resolvedSearchParams = await searchParams
 
-  const orgProjects = await listProjectsForCurrentOrganization()
-
-  const evidences = await listEvidenceForOrganizationWithProject()
+  const { organization, orgProjects, evidences } = await runWithOrganizationAccess(
+    async ({ organization }) => ({
+      organization,
+      orgProjects: await listProjectsForCurrentOrganization(),
+      evidences: await listEvidenceForOrganizationWithProject(),
+    })
+  )
 
   const statusFilter = resolvedSearchParams.status || ''
   const typeFilter = resolvedSearchParams.type || ''

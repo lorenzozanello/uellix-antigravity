@@ -8,15 +8,20 @@ import {
   deleteOutcomeMapping,
   type OutcomeMappingInput,
 } from '@/lib/taxonomies/service'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 
 export async function createOutcomeMappingAction(projectId: string, input: OutcomeMappingInput) {
-  const result = await createOutcomeMapping(projectId, input)
+  const result = await runWithOrganizationAccess(() =>
+    createOutcomeMapping(projectId, input)
+  )
   revalidatePath(`/app/projects/${projectId}/pipeline/outcomes`)
   return result
 }
 
 export async function deleteOutcomeMappingAction(projectId: string, mappingId: string) {
-  const result = await deleteOutcomeMapping(projectId, mappingId)
+  const result = await runWithOrganizationAccess(() =>
+    deleteOutcomeMapping(projectId, mappingId)
+  )
   revalidatePath(`/app/projects/${projectId}/pipeline/outcomes`)
   return result
 }

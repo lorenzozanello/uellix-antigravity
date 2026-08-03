@@ -1,4 +1,5 @@
 import { listGlobalProxySources, listGlobalFinancialProxies, listPendingReviewProxies } from '@/lib/admin/proxies'
+import { runWithAdminAccess } from '@/lib/auth/session'
 import {
   createGlobalProxySourceAction,
   createGlobalFinancialProxyAction,
@@ -8,6 +9,7 @@ import {
 } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
   invalid_input: 'Completa todos los campos requeridos con valores válidos.',
   not_global: 'Ese proxy pertenece a una organización — no se puede gestionar aquí.',
   missing_fields: 'No se puede aprobar: faltan valor, moneda, unidad o año de referencia.',
@@ -31,11 +33,13 @@ export default async function AdminProxiesPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const searchParams = await props.searchParams
-  const [sources, proxies, pendingProxies] = await Promise.all([
-    listGlobalProxySources(), 
-    listGlobalFinancialProxies(),
-    listPendingReviewProxies()
-  ])
+  const [sources, proxies, pendingProxies] = await runWithAdminAccess(() =>
+    Promise.all([
+      listGlobalProxySources(),
+      listGlobalFinancialProxies(),
+      listPendingReviewProxies(),
+    ])
+  )
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? ERROR_MESSAGES.unknown_error : null
 

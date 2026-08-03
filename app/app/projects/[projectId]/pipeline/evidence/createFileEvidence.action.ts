@@ -24,5 +24,8 @@ const InputSchema = z.object({
 
 export async function createFileEvidenceAction(projectId: string, rawInput: unknown) {
   const input = InputSchema.parse(rawInput)
-  return await createFileEvidenceForProject(projectId, input)
+  // NOT wrapped here on purpose. createFileEvidenceForProject owns three
+  // contexts with a storage upload between them; an outer context would be
+  // reused by all three and put the upload back inside a transaction.
+  return createFileEvidenceForProject(projectId, input)
 }

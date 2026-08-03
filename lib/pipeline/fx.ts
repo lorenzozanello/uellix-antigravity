@@ -43,6 +43,9 @@ export function convertFromUsd(amountUsd: string, rateToUsd: string): string {
 export const COP_TRM_ENDPOINT = 'https://www.datos.gov.co/resource/32sa-8pi3.json'
 export const COP_TRM_SOURCE = 'Superintendencia Financiera de Colombia — TRM oficial (datos.gov.co)'
 
+/** Upper bound on the TRM round trip. See the call site for why it exists. */
+export const COP_TRM_TIMEOUT_MS = 8_000
+
 export interface CopTrmResult {
   /** Units of COP per 1 USD, as returned by the TRM (e.g. "4158.1"). */
   rateToUsd: string
@@ -79,7 +82,9 @@ export async function fetchCopTrmRate(
     const where = `vigenciadesde <= '${stamp}' AND vigenciahasta >= '${stamp}'`
     const url = `${COP_TRM_ENDPOINT}?$where=${encodeURIComponent(where)}&$limit=1`
 
-    const res = await fetchImpl(url)
+    // BOUNDED — see the same note in lib/pipeline/fx-oracle.ts. Reachable from
+    // write paths that hold a transaction open.
+    const res = await fetchImpl(url, { signal: AbortSignal.timeout(COP_TRM_TIMEOUT_MS) })
     if (!res.ok) return null
 
     const rows: unknown = await res.json()

@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 import { updateReportSection } from '@/lib/pipeline/sroi-results';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { revalidatePath } from 'next/cache';
 
 const ReportSectionInputSchema = z.object({
@@ -15,7 +16,9 @@ export async function updateReportSectionAction(projectId: string, reportId: str
   if (!parsed.success) {
     throw new Error('Invalid report section payload');
   }
-  const result = await updateReportSection(projectId, reportId, sectionId, parsed.data);
+  const result = await runWithOrganizationAccess(() =>
+    updateReportSection(projectId, reportId, sectionId, parsed.data)
+  );
   revalidatePath(`/app/projects/${projectId}/report`);
   return result;
 }

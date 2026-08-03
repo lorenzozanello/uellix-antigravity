@@ -23,6 +23,7 @@ import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { stellaInteractions } from '@/db/schema'
 import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
 import { reportStellaFailure } from '@/lib/stella/observability'
@@ -49,7 +50,11 @@ export type StellaReviewerResult =
 // (ids/codes/counts) — never prompt, context or model response content.
 async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
   try {
-    await logAuditAction(entry)
+    // Its own short transaction. Denial paths reach this with no context open,
+    // and the success path reaches it after the model call has already
+    // returned — either way the audit write must never share a transaction
+    // with the seconds-long provider round trip.
+    await withOrganizationDatabaseContext(() => logAuditAction(entry))
   } catch (error) {
     console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
   }
@@ -95,7 +100,9 @@ export async function getStellaReviewer(
     return { ok: false, error: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
   }
 
-  const quotaCheck = await checkStellaQuota(ctx.organization.id)
+  const quotaCheck = await withOrganizationDatabaseContext(() =>
+    checkStellaQuota(ctx.organization.id)
+  )
   if (!quotaCheck.allowed) {
     const message =
       quotaCheck.reason === 'no_quota'
@@ -115,7 +122,9 @@ export async function getStellaReviewer(
   try {
     // Per-role minimization (WS6): each reviewer role receives only its own
     // enrichment slice; omitting the role would return the superset.
-    const context = await buildReviewerContext(projectId, ctx.organization.id, role)
+    const context = await withOrganizationDatabaseContext(() =>
+      buildReviewerContext(projectId, ctx.organization.id, role)
+    )
 
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
@@ -154,7 +163,8 @@ export async function getStellaReviewer(
     const data = await adapter.parseResponse(response.rawOutput, ReviewerOutputSchema)
 
     try {
-      await db.insert(stellaInteractions).values({
+      await withOrganizationDatabaseContext(() =>
+        db.insert(stellaInteractions).values({
         organizationId: ctx.organization.id,
         projectId,
         createdBy: ctx.user.id,
@@ -166,7 +176,8 @@ export async function getStellaReviewer(
         tokensUsed: response.tokensUsed,
         riskLevel: data.risk_level,
         riskFlags: data.findings.length > 0 ? ['finding'] : [],
-      })
+        })
+      )
     } catch (insertError) {
       reportStellaFailure(role, 'AUDIT_ERROR', insertError, { projectId })
       return {

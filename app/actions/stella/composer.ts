@@ -22,6 +22,7 @@ import {
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { stellaInteractions } from '@/db/schema'
 import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
 import { reportStellaFailure } from '@/lib/stella/observability'
@@ -49,7 +50,11 @@ export type StellaComposerResult =
 // (ids/codes/counts) — never prompt, context or model response content.
 async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
   try {
-    await logAuditAction(entry)
+    // Its own short transaction. Denial paths reach this with no context open,
+    // and the success path reaches it after the model call has already
+    // returned — either way the audit write must never share a transaction
+    // with the seconds-long provider round trip.
+    await withOrganizationDatabaseContext(() => logAuditAction(entry))
   } catch (error) {
     console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
   }
@@ -102,7 +107,9 @@ export async function getStellaComposer(
   // against the new month instead of the one it was checked against. This
   // is a narrow, low-severity race (sub-second window, once a month) and
   // an accepted tradeoff, not a bug.
-  const quotaCheck = await checkStellaQuota(ctx.organization.id)
+  const quotaCheck = await withOrganizationDatabaseContext(() =>
+    checkStellaQuota(ctx.organization.id)
+  )
   if (!quotaCheck.allowed) {
     const message =
       quotaCheck.reason === 'no_quota'
@@ -121,7 +128,9 @@ export async function getStellaComposer(
 
   try {
     // Build context — validates project + report ownership before consuming rate limit
-    const context = await buildComposerContext(projectId, ctx.organization.id, reportId)
+    const context = await withOrganizationDatabaseContext(() =>
+      buildComposerContext(projectId, ctx.organization.id, reportId)
+    )
 
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
@@ -205,7 +214,8 @@ export async function getStellaComposer(
 
     // Audit insert — required for compliance; surface failure rather than swallow
     try {
-      await db.insert(stellaInteractions).values({
+      await withOrganizationDatabaseContext(() =>
+        db.insert(stellaInteractions).values({
         organizationId: ctx.organization.id,
         projectId,
         createdBy: ctx.user.id,
@@ -215,7 +225,8 @@ export async function getStellaComposer(
         responseJson: data as unknown,
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,
-      })
+        })
+      )
     } catch (insertError) {
       reportStellaFailure('composer', 'AUDIT_ERROR', insertError, { projectId, reportId })
       return { ok: false, error: 'AUDIT_ERROR', message: 'Failed to record Stella interaction. Please try again.' }

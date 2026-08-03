@@ -3,6 +3,7 @@
 'use server';
 
 import { createUrlEvidenceForProject } from '@/lib/pipeline/evidence';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { z } from 'zod';
 
 const InputSchema = z.object({
@@ -15,5 +16,5 @@ const InputSchema = z.object({
 
 export async function createUrlEvidenceAction(projectId: string, rawInput: unknown) {
   const input = InputSchema.parse(rawInput);
-  return await createUrlEvidenceForProject(projectId, input);
+  return runWithOrganizationAccess(() => createUrlEvidenceForProject(projectId, input));
 }

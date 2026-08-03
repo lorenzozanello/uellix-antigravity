@@ -5,7 +5,7 @@ import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/s
 import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { fetchStakeholders, addStakeholder } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { z } from 'zod';
@@ -43,8 +43,10 @@ interface StakeholderRow {
 
 export default async function StakeholdersPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership } = await requireOrganizationAccess();
-  const stakeholders = await fetchStakeholders(projectId) as StakeholderRow[];
+  const { membership, stakeholders } = await runWithOrganizationAccess(async ({ membership }) => ({
+    membership,
+    stakeholders: (await fetchStakeholders(projectId)) as StakeholderRow[],
+  }));
   // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
   const stellaAdvisorEnabled =
     stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;

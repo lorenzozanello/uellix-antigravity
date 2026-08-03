@@ -6,7 +6,7 @@ import { StellaAdvisorPanel, StellaContextualAdvisorField } from '@/components/s
 import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { fetchNarrative, saveNarrative } from '@/app/app/projects/[projectId]/pipeline/narrative.actions';
 import { z } from 'zod';
 import { listOutcomesForProject } from '@/lib/pipeline/outcomes';
@@ -49,18 +49,20 @@ const TEXTAREA_CLASS =
 
 export default async function NarrativePage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership } = await requireOrganizationAccess();
-  const narrative = await fetchNarrative(projectId);
+  const { membership, narrative, outcomes, nodes, links } = await runWithOrganizationAccess(
+    async ({ membership }) => {
+      const [outcomes, nodes, links] = await Promise.all([
+        listOutcomesForProject(projectId),
+        fetchToCNodes(projectId),
+        fetchToCLinks(projectId),
+      ]);
+      return { membership, narrative: await fetchNarrative(projectId), outcomes, nodes, links };
+    }
+  );
   const data = narrative ?? {};
   // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
   const stellaAdvisorEnabled =
     stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
-
-  const [outcomes, nodes, links] = await Promise.all([
-    listOutcomesForProject(projectId),
-    fetchToCNodes(projectId),
-    fetchToCLinks(projectId),
-  ]);
 
   const activities = nodes.filter((n) => n.nodeType === 'activity');
   const outputs = nodes.filter((n) => n.nodeType === 'output');

@@ -7,9 +7,10 @@ import {
   deleteAllocation,
   listAllocations,
 } from '@/lib/pipeline/outcome-funder-allocations';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 
 export async function listAllocationsAction(outcomeId: string) {
-  return listAllocations(outcomeId);
+  return runWithOrganizationAccess(() => listAllocations(outcomeId));
 }
 
 export async function createAllocationAction(
@@ -17,16 +18,18 @@ export async function createAllocationAction(
   funderId: string,
   allocationPct: number
 ) {
-  return createAllocation(outcomeId, funderId, allocationPct);
+  return runWithOrganizationAccess(() =>
+    createAllocation(outcomeId, funderId, allocationPct)
+  );
 }
 
 export async function updateAllocationAction(
   allocationId: string,
   allocationPct: number
 ) {
-  return updateAllocation(allocationId, allocationPct);
+  return runWithOrganizationAccess(() => updateAllocation(allocationId, allocationPct));
 }
 
 export async function deleteAllocationAction(allocationId: string) {
-  return deleteAllocation(allocationId);
+  return runWithOrganizationAccess(() => deleteAllocation(allocationId));
 }

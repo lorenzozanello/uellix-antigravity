@@ -1,7 +1,9 @@
 import { listSignupAllowlist } from '@/lib/admin/signup-allowlist'
+import { runWithAdminAccess } from '@/lib/auth/session'
 import { createSignupAllowlistEntryAction, removeSignupAllowlistEntryAction } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
   invalid_input: 'Datos inválidos. Revisá el tipo y el patrón ingresado.',
   not_found: 'La entrada no existe o ya fue eliminada.',
 }
@@ -10,7 +12,7 @@ export default async function AdminAccessPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const searchParams = await props.searchParams
-  const entries = await listSignupAllowlist()
+  const entries = await runWithAdminAccess(() => listSignupAllowlist())
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error.' : null
 

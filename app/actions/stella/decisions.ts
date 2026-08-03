@@ -53,6 +53,7 @@ import { requireOrganizationAccess } from '@/lib/auth/session'
 import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig } from '@/lib/stella/config'
 import { db } from '@/db/client'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
 import { StellaDecisionInputSchema, type StellaDecisionInput } from './decisions-schema'
 
@@ -66,7 +67,8 @@ export type StellaDecisionResult =
 // change the user-facing result. Metadata only — no suggestion/previous text.
 async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
   try {
-    await logAuditAction(entry)
+    // Its own short transaction — see the same note in app/actions/stella/advisor.ts.
+    await withOrganizationDatabaseContext(() => logAuditAction(entry))
   } catch (error) {
     console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
   }
@@ -100,49 +102,54 @@ export async function recordStellaDecision(input: StellaDecisionInput): Promise<
   }
 
   try {
-    // Project ownership: the client-supplied projectId must belong to the
-    // session organization. This check is MANDATORY because RLS gives us
-    // nothing here: `db` (db/client.ts) is a direct postgres-js connection over
-    // DATABASE_URL, i.e. the table OWNER — and the owner bypasses row-level
-    // security (there is no FORCE ROW LEVEL SECURITY on these tables). RLS
-    // protects the PostgREST/browser path, not this one. Corrected 2026-08-01:
-    // this comment previously said "the service-role client", which is wrong on
-    // both counts — this is not a service_role client, and after
-    // db/prepared/stella_0003_suggestion_decisions.sql `service_role` holds no
-    // privilege at all on stella_suggestion_decisions.
-    const owned = await db.execute(
-      sql`SELECT 1 FROM projects WHERE id = ${data.projectId} AND organization_id = ${ctx.organization.id} LIMIT 1`,
-    )
-    if ((owned as unknown as unknown[]).length === 0) {
-      return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
-    }
-
-    // interactionId ownership: a client-supplied interaction UUID must exist
-    // AND belong to the session organization and this same project — the FK
-    // alone would let an org-A member attribute a decision to an org-B
-    // interaction (cross-org misattribution). Not-found and cross-org return
-    // the SAME error code and message as schema validation on purpose, so the
-    // response is not an existence oracle for foreign interaction ids.
-    if (data.interactionId !== undefined) {
-      const interaction = await db.execute(
-        sql`SELECT 1 FROM stella_interactions
-            WHERE id = ${data.interactionId}
-              AND organization_id = ${ctx.organization.id}
-              AND project_id = ${data.projectId}
-            LIMIT 1`,
-      )
-      if ((interaction as unknown as unknown[]).length === 0) {
-        return { ok: false, error: 'INVALID_INPUT', message: 'Invalid decision payload.' }
-      }
-    }
-
     // Hash-not-content invariant: the raw previous value never reaches the DB.
     const previousValueHash =
       data.previousValue !== undefined
         ? createHash('sha256').update(data.previousValue, 'utf8').digest('hex')
         : null
 
-    const inserted = await db.execute(sql`
+    // ONE transaction for the two ownership checks AND the insert. They are a
+    // single decision: splitting them would leave a window in which the
+    // project or the interaction stops belonging to this organisation between
+    // the check and the write.
+    const outcome = await withOrganizationDatabaseContext(async () => {
+      // Project ownership: the client-supplied projectId must belong to the
+      // session organization. This check remains MANDATORY even now that RLS
+      // applies to this connection: `projects_select_member_or_admin` scopes
+      // the row to organisations the caller belongs to, but a user who belongs
+      // to TWO organisations would still pass RLS while naming a project from
+      // the other one. RLS bounds the blast radius; this bounds the intent.
+      //
+      // (Historical note: before db/prepared/stella_0005_runtime_cutover.sql
+      // this connection was the table OWNER and RLS did not apply here at all.
+      // It is `uellix_app` now — verified per connection by db/runtime-bootstrap.ts.)
+      const owned = await db.execute(
+        sql`SELECT 1 FROM projects WHERE id = ${data.projectId} AND organization_id = ${ctx.organization.id} LIMIT 1`,
+      )
+      if ((owned as unknown as unknown[]).length === 0) {
+        return { kind: 'unauthorized' as const }
+      }
+
+      // interactionId ownership: a client-supplied interaction UUID must exist
+      // AND belong to the session organization and this same project — the FK
+      // alone would let an org-A member attribute a decision to an org-B
+      // interaction (cross-org misattribution). Not-found and cross-org return
+      // the SAME error code and message as schema validation on purpose, so the
+      // response is not an existence oracle for foreign interaction ids.
+      if (data.interactionId !== undefined) {
+        const interaction = await db.execute(
+          sql`SELECT 1 FROM stella_interactions
+            WHERE id = ${data.interactionId}
+              AND organization_id = ${ctx.organization.id}
+              AND project_id = ${data.projectId}
+            LIMIT 1`,
+        )
+        if ((interaction as unknown as unknown[]).length === 0) {
+          return { kind: 'invalid' as const }
+        }
+      }
+
+      const inserted = await db.execute(sql`
       INSERT INTO stella_suggestion_decisions
         (organization_id, project_id, interaction_id, suggestion_key, decision,
          previous_value_hash, applied_text, rejection_reason, decided_by)
@@ -153,8 +160,17 @@ export async function recordStellaDecision(input: StellaDecisionInput): Promise<
       RETURNING id
     `)
 
-    const rows = inserted as unknown as Array<{ id?: string }>
-    const decisionId = rows[0]?.id ?? null
+      const rows = inserted as unknown as Array<{ id?: string }>
+      return { kind: 'created' as const, decisionId: rows[0]?.id ?? null }
+    })
+
+    if (outcome.kind === 'unauthorized') {
+      return { ok: false, error: 'UNAUTHORIZED', message: 'Project access denied.' }
+    }
+    if (outcome.kind === 'invalid') {
+      return { ok: false, error: 'INVALID_INPUT', message: 'Invalid decision payload.' }
+    }
+    const decisionId = outcome.decisionId
 
     await logStellaAudit({
       organizationId: ctx.organization.id,

@@ -16,6 +16,7 @@ import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { db } from '@/db/client'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { stellaInteractions } from '@/db/schema'
 import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
 import { reportStellaFailure } from '@/lib/stella/observability'
@@ -54,7 +55,11 @@ export type StellaContextualAdvisorResult =
 // (ids/codes/counts) — never prompt, context or model response content.
 async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
   try {
-    await logAuditAction(entry)
+    // Its own short transaction. Denial paths reach this with no context open,
+    // and the success path reaches it after the model call has already
+    // returned — either way the audit write must never share a transaction
+    // with the seconds-long provider round trip.
+    await withOrganizationDatabaseContext(() => logAuditAction(entry))
   } catch (error) {
     console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
   }
@@ -100,7 +105,9 @@ export async function getStellaContextualAdvisor(
   }
 
   // Quota check — enforced per org, per calendar month, DB-backed.
-  const quotaCheck = await checkStellaQuota(ctx.organization.id)
+  const quotaCheck = await withOrganizationDatabaseContext(() =>
+    checkStellaQuota(ctx.organization.id)
+  )
   if (!quotaCheck.allowed) {
     const message =
       quotaCheck.reason === 'no_quota'
@@ -123,7 +130,9 @@ export async function getStellaContextualAdvisor(
     // to the derived-from-persisted summary inside buildAdvisorContext.
     let liveReadiness: { ready: boolean; blockingReasons: string[]; warnings: string[] } | undefined
     try {
-      const r = await getSroiCalculationReadiness(projectId)
+      const r = await withOrganizationDatabaseContext(() =>
+        getSroiCalculationReadiness(projectId)
+      )
       liveReadiness = {
         ready: r.canCalculate,
         blockingReasons: r.blockingReasons,
@@ -136,8 +145,14 @@ export async function getStellaContextualAdvisor(
     // Project ownership check happens inside buildAdvisorContext — throws
     // UNAUTHORIZED if projectId does not belong to ctx.organization.id.
     const context = liveReadiness
-      ? await buildAdvisorContext(projectId, ctx.organization.id, step, { calculationReadiness: liveReadiness })
-      : await buildAdvisorContext(projectId, ctx.organization.id, step)
+      ? await withOrganizationDatabaseContext(() =>
+          buildAdvisorContext(projectId, ctx.organization.id, step, {
+            calculationReadiness: liveReadiness,
+          })
+        )
+      : await withOrganizationDatabaseContext(() =>
+          buildAdvisorContext(projectId, ctx.organization.id, step)
+        )
     const contextHash = buildContextHash(context)
 
     // Consume after context validation and immediately before the model attempt.
@@ -184,7 +199,8 @@ export async function getStellaContextualAdvisor(
     // Audit insert — required for compliance and for quota measurement;
     // surface failure rather than swallow (mirrors getStellaAdvisor below).
     try {
-      await db.insert(stellaInteractions).values({
+      await withOrganizationDatabaseContext(() =>
+        db.insert(stellaInteractions).values({
         organizationId: ctx.organization.id,
         projectId,
         createdBy: ctx.user.id,
@@ -194,7 +210,8 @@ export async function getStellaContextualAdvisor(
         responseJson: result.data as unknown,
         modelUsed: result.modelUsed,
         tokensUsed: result.tokensUsed,
-      })
+        })
+      )
     } catch (insertError) {
       reportStellaFailure('advisor', 'AUDIT_ERROR', insertError, { projectId, step, contextual: true })
       return { ok: false, error: 'AUDIT_ERROR', message: 'Failed to record Stella interaction. Please try again.' }
@@ -284,7 +301,9 @@ export async function getStellaAdvisor(
   // against the new month instead of the one it was checked against. This
   // is a narrow, low-severity race (sub-second window, once a month) and
   // an accepted tradeoff, not a bug.
-  const quotaCheck = await checkStellaQuota(ctx.organization.id)
+  const quotaCheck = await withOrganizationDatabaseContext(() =>
+    checkStellaQuota(ctx.organization.id)
+  )
   if (!quotaCheck.allowed) {
     const message =
       quotaCheck.reason === 'no_quota'
@@ -303,7 +322,9 @@ export async function getStellaAdvisor(
 
   // Build project context (validates project ownership, metadata only)
   try {
-    const context = await buildAdvisorContext(projectId, ctx.organization.id, step)
+    const context = await withOrganizationDatabaseContext(() =>
+      buildAdvisorContext(projectId, ctx.organization.id, step)
+    )
 
     // Consume after context validation and immediately before the model attempt.
     const rateLimit = await consumeStellaRateLimit(ctx.organization.id)
@@ -352,7 +373,8 @@ export async function getStellaAdvisor(
     // Audit insert — required for compliance and for quota measurement;
     // surface failure rather than swallow (mirrors validator.ts).
     try {
-      await db.insert(stellaInteractions).values({
+      await withOrganizationDatabaseContext(() =>
+        db.insert(stellaInteractions).values({
         organizationId: ctx.organization.id,
         projectId,
         createdBy: ctx.user.id,
@@ -362,7 +384,8 @@ export async function getStellaAdvisor(
         responseJson: data as unknown,
         modelUsed: response.modelUsed,
         tokensUsed: response.tokensUsed,
-      })
+        })
+      )
     } catch (insertError) {
       reportStellaFailure('advisor', 'AUDIT_ERROR', insertError, { projectId })
       return {

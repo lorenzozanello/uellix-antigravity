@@ -1,8 +1,12 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { AuthContextError } from '@/lib/auth/database-context'
+import { rethrowNextControlFlow } from '@/lib/errors/next-control-flow'
 import { revalidatePath } from 'next/cache'
 import { updateOrganizationStellaService } from '@/lib/admin/stella-services'
+import { requireAdminAccess } from '@/lib/auth/session'
+import { withSuperAdminDatabaseContext } from '@/lib/auth/database-context'
 
 const SERVICES_PATH = '/admin/services'
 
@@ -23,9 +27,19 @@ export async function updateOrganizationStellaServiceAction(formData: FormData) 
     redirect(`${SERVICES_PATH}?error=invalid_input`)
   }
 
+  await requireAdminAccess()
+
   try {
-    await updateOrganizationStellaService(organizationId, { planLabel, monthlyQuota })
-  } catch {
+    await withSuperAdminDatabaseContext(() =>
+      updateOrganizationStellaService(organizationId, { planLabel, monthlyQuota })
+    )
+  } catch (err) {
+    // Framework control flow first: redirect() throws, and swallowing it here
+    // would render "NEXT_REDIRECT" instead of navigating.
+    rethrowNextControlFlow(err)
+    // A refusal from the identity layer is an authorisation answer, not an
+    // "unknown error" — its internal prose must not reach the query string.
+    if (err instanceof AuthContextError) redirect(`${SERVICES_PATH}?error=not_authorized`)
     redirect(`${SERVICES_PATH}?error=update_failed`)
   }
 

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth/session'
+import { withAuthenticatedDatabaseContext } from '@/lib/auth/database-context'
 import { acceptInvitation } from '@/lib/invitations/service'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ErrorState } from '@/components/states/ErrorState'
@@ -47,7 +48,9 @@ export default async function AcceptInvitationPage(props: {
   }
 
   try {
-    await acceptInvitation(token)
+    // Not organisation-scoped: accepting an invitation is what CREATES the
+    // membership, so the caller has no organisation yet.
+    await withAuthenticatedDatabaseContext(() => acceptInvitation(token))
   } catch (err) {
     const message = err instanceof Error ? err.message : 'No se pudo aceptar la invitación.'
     return (

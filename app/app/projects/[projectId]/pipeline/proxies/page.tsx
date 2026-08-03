@@ -8,7 +8,7 @@ import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
 import { ProxyBankSearch } from '@/app/components/proxy-bank-search/ProxyBankSearch'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
-import { getCurrentOrganizationContext } from '@/lib/auth/session'
+import { runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 import {
   listFinancialProxies,
   listProxySources,
@@ -80,17 +80,41 @@ const TEXTAREA_CLASS =
 
 export default async function ProxiesPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
-  const ctx = await getCurrentOrganizationContext()
-  const canEdit =
-    ctx &&
-    ['organization_admin', 'impact_manager', 'analyst'].includes(ctx.membership.role)
-
-  const [financialProxies, proxySources, assignments, outcomes] = await Promise.all([
-    listFinancialProxies(),
-    listProxySources(),
-    listProxyAssignmentsForProject(projectId),
-    fetchOutcomes(projectId),
-  ])
+  const {
+    canEdit,
+    canReviewMethodologyHere,
+    financialProxies,
+    proxySources,
+    assignments,
+    outcomes,
+  } = await runWithOptionalOrganizationAccess(async (ctx) => {
+      if (!ctx) {
+        return {
+          canEdit: false,
+          canReviewMethodologyHere: false,
+          financialProxies: [],
+          proxySources: [],
+          assignments: [],
+          outcomes: [],
+        } as const
+      }
+      const [financialProxies, proxySources, assignments, outcomes] = await Promise.all([
+        listFinancialProxies(),
+        listProxySources(),
+        listProxyAssignmentsForProject(projectId),
+        fetchOutcomes(projectId),
+      ])
+      return {
+        canEdit: ['organization_admin', 'impact_manager', 'analyst'].includes(
+          ctx.membership.role
+        ),
+        canReviewMethodologyHere: canReviewMethodology(ctx.membership.role),
+        financialProxies,
+        proxySources,
+        assignments,
+        outcomes,
+      }
+    })
 
   // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
   const stellaAdvisorEnabled =
@@ -216,7 +240,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
         title="Revisor de Proxies (Stella)"
         enabled={proxyReviewerEnabled}
       />
-      {ctx && canReviewMethodology(ctx.membership.role) && (
+      {canReviewMethodologyHere && (
         <MethodologyReviewPanel projectId={projectId} step="proxies" title="Revisión metodológica — Proxies" />
       )}
 

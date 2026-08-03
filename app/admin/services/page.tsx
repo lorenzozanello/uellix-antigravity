@@ -1,7 +1,9 @@
 import { listOrganizationsWithStellaUsage } from '@/lib/admin/stella-services'
+import { runWithAdminAccess } from '@/lib/auth/session'
 import { updateOrganizationStellaServiceAction } from './actions'
 
 const ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
   invalid_input: 'Datos inválidos. La cuota debe ser un número entero mayor o igual a 0, o vacía para ilimitado.',
   update_failed: 'No se pudo actualizar el servicio de esta organización.',
 }
@@ -19,7 +21,7 @@ export default async function AdminServicesPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const searchParams = await props.searchParams
-  const orgs = await listOrganizationsWithStellaUsage()
+  const orgs = await runWithAdminAccess(() => listOrganizationsWithStellaUsage())
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error.' : null
 

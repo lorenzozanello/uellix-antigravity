@@ -1,4 +1,4 @@
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { canInviteUsers, canManageUsers } from '@/lib/auth/permissions'
 import { ROLES, ROLE_LABELS } from '@/lib/auth/roles'
 import { listMembersForCurrentOrganization } from '@/lib/organizations/members'
@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/states/EmptyState'
 import { Users } from 'lucide-react'
 
 const ERROR_MESSAGES: Record<string, string> = {
+  not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
   invalid_input: 'Completa todos los campos requeridos.',
   no_permission: 'No tienes permisos para realizar esta acción.',
   invalid_role: 'No se puede invitar a alguien como super administrador.',
@@ -48,13 +49,15 @@ const INVITABLE_ROLES = [
 export default async function MembersPage(props: {
   searchParams: Promise<{ error?: string; success?: string }>
 }) {
-  const ctx = await requireOrganizationAccess()
   const searchParams = await props.searchParams
 
-  const [members, invitations] = await Promise.all([
-    listMembersForCurrentOrganization(),
-    listInvitationsForCurrentOrganization(),
-  ])
+  const { ctx, members, invitations } = await runWithOrganizationAccess(async (ctx) => {
+    const [members, invitations] = await Promise.all([
+      listMembersForCurrentOrganization(),
+      listInvitationsForCurrentOrganization(),
+    ])
+    return { ctx, members, invitations }
+  })
 
   const pendingInvitations = invitations.filter((inv) => inv.status === 'pending')
   const canInvite = canInviteUsers(ctx.membership.role)

@@ -1,6 +1,7 @@
 import { createProjectForCurrentOrganization } from '@/lib/projects/service';
 import { listPortfoliosForCurrentOrganization } from '@/lib/portfolios/service';
 import { redirect } from 'next/navigation';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,9 @@ const TEXTAREA_CLASS =
   'mt-1.5 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y';
 
 export default async function NewProjectPage() {
-  const portfolios = await listPortfoliosForCurrentOrganization();
+  const portfolios = await runWithOrganizationAccess(() =>
+    listPortfoliosForCurrentOrganization()
+  );
 
   async function handleCreate(formData: FormData) {
     'use server';
@@ -27,7 +30,9 @@ export default async function NewProjectPage() {
       status: ((formData.get('status') as string) || 'draft') as 'draft' | 'active' | 'completed' | 'archived',
       portfolioId: (formData.get('portfolioId') as string) || undefined,
     };
-    await createProjectForCurrentOrganization(input);
+    // Redirect AFTER the context commits — `redirect()` throws, and throwing
+    // inside the callback would roll the insert back.
+    await runWithOrganizationAccess(() => createProjectForCurrentOrganization(input));
     redirect('/app/projects');
   }
 

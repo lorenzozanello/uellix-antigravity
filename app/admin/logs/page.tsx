@@ -1,7 +1,8 @@
 import { listRecentAuditLogs } from '@/lib/admin/logs'
+import { runWithAdminAccess } from '@/lib/auth/session'
 
 export default async function AdminLogsPage() {
-  const logs = await listRecentAuditLogs(200)
+  const logs = await runWithAdminAccess(() => listRecentAuditLogs(200))
 
   return (
     <div className="space-y-6">

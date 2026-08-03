@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { AlertTriangle, ArrowLeft, CheckCircle2, FileDown, Lock } from 'lucide-react'
 import { getReportDraft } from '@/lib/pipeline/sroi-results'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { updateReportSectionAction } from '../updateReportSection.action'
 import { lockReportDraftAction } from '../lockReportDraft.action'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -37,12 +38,14 @@ export default async function ReportDetailPage({
 }) {
   const { projectId, reportId } = await params
 
-  let report: ReportDraft
-  try {
-    report = await getReportDraft(projectId, reportId)
-  } catch {
-    notFound()
-  }
+  const report = await runWithOrganizationAccess<ReportDraft | null>(async () => {
+    try {
+      return await getReportDraft(projectId, reportId)
+    } catch {
+      return null
+    }
+  })
+  if (!report) notFound()
 
   const isLocked = report.status === 'locked'
   // Mirrors the getStellaComposer feature-flag gate (app/actions/stella/composer.ts).

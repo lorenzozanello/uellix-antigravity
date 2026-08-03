@@ -1,4 +1,4 @@
-import { requireOrganizationAccess } from '@/lib/auth/session'
+import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { ROLES } from '@/lib/auth/roles'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,24 @@ import { startOfCurrentUtcMonth } from '@/lib/stella/quota'
 import { CheckCircle2, CreditCard, Zap } from 'lucide-react'
 
 export default async function BillingPage() {
-  const ctx = await requireOrganizationAccess()
-  const { organization, membership } = ctx
+  const { organization, membership, usedThisMonth } = await runWithOrganizationAccess(
+    async ({ organization, membership }) => ({
+      organization,
+      membership,
+      // Usage from the same source the admin rollup uses: count of
+      // stella_interactions for this org in the current UTC calendar month.
+      usedThisMonth: await db
+        .select({ value: count() })
+        .from(stellaInteractions)
+        .where(
+          and(
+            eq(stellaInteractions.organizationId, organization.id),
+            gte(stellaInteractions.createdAt, startOfCurrentUtcMonth())
+          )
+        )
+        .then((rows) => rows[0]?.value ?? 0),
+    })
+  )
 
   const isAdmin = membership.role === ROLES.SUPER_ADMIN || membership.role === ROLES.ORGANIZATION_ADMIN
 
@@ -20,19 +36,6 @@ export default async function BillingPage() {
   // and the admin panel (/admin/services). No invented fallback.
   const quotaDisplay = getStellaQuotaDisplay(organization.stellaMonthlyQuota)
   const planLabel = organization.stellaPlanLabel ?? 'Sin plan'
-
-  // Usage from the same source the admin rollup uses: count of
-  // stella_interactions for this org in the current UTC calendar month.
-  const usedThisMonth = await db
-    .select({ value: count() })
-    .from(stellaInteractions)
-    .where(
-      and(
-        eq(stellaInteractions.organizationId, organization.id),
-        gte(stellaInteractions.createdAt, startOfCurrentUtcMonth())
-      )
-    )
-    .then((rows) => rows[0]?.value ?? 0)
 
   const usageLine =
     quotaDisplay.state === 'assigned'

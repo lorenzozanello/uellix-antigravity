@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import { upsertSroiAssignmentInput } from '../../../../../../lib/pipeline/sroi-calculation';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 
 // Validation schema for the incoming FormData
 const AssignmentInputSchema = z.object({
@@ -28,6 +29,8 @@ export async function upsertSroiAssignmentInputAction(formData: FormData) {
   const projectId = formData.get('projectId') as string;
   if (!projectId) throw new Error('projectId missing');
 
-  const result = await upsertSroiAssignmentInput(projectId, parsed.assignmentId, parsed);
+  const result = await runWithOrganizationAccess(() =>
+    upsertSroiAssignmentInput(projectId, parsed.assignmentId, parsed)
+  );
   return result;
 }

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { hasRole } from '@/lib/auth/permissions'
 import { requireOrganizationAccess } from '@/lib/auth/session'
+import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { z } from 'zod'
 import crypto from 'crypto'
 import { recalculateConfidenceScore } from '@/lib/pipeline/confidence-score'
@@ -125,35 +126,61 @@ export async function getEvidenceByIdForProject(projectId: string, evidenceId: s
   return rows[0]
 }
 
+/**
+ * THIS FUNCTION OWNS ITS OWN DATABASE CONTEXTS. Its caller must NOT wrap it.
+ *
+ * A file upload is one logical operation across two systems, and the storage
+ * round trip can be 25 MB. Running it inside the transaction would pin a pooled
+ * connection for the length of the upload, and — worse — would silently invert
+ * the compensation this function was built around:
+ *
+ *   * the original code inserted the row, uploaded, and DELETED the row if the
+ *     upload failed. Inside one transaction that delete is dead code, because
+ *     the throw rolls the insert back anyway;
+ *   * but the OPPOSITE case becomes a new, permanent bug: if the upload
+ *     succeeds and a later step throws, the transaction discards the
+ *     `evidence_items` row while the object stays in the bucket under an id
+ *     that can never be reissued. An orphan with no row to find it from.
+ *
+ * So the phases are explicit: write the row, close; upload, outside any
+ * transaction; finalise or compensate, in a second one. The compensating delete
+ * is live again, and it is the only ordering in which it can be.
+ */
 export async function createFileEvidenceForProject(projectId: string, input: unknown) {
   const { membership, organization, user } = await requireOrganizationAccess()
   if (!hasRole(membership.role, 'analyst')) {
     throw new Error('Insufficient permissions to upload evidence')
   }
   const parsed = CreateFileEvidenceSchema.parse(input)
-  await verifyProjectOwnership(projectId, organization.id)
-  await verifyOutcomeIndicator(projectId, parsed.outcomeId, parsed.indicatorId)
 
   const sha256 = crypto.createHash('sha256').update(parsed.file.buffer).digest('hex')
 
-  const [evidence] = await db
-    .insert(evidenceItems)
-    .values({
-      projectId,
-      organizationId: organization.id,
-      type: 'file',
-      title: parsed.title,
-      description: parsed.description,
-      outcomeId: parsed.outcomeId,
-      indicatorId: parsed.indicatorId,
-      fileSize: parsed.file.size,
-      mimeType: parsed.file.mimeType,
-      contentHash: sha256,
-      status: 'draft',
-      createdBy: user.id,
-    })
-    .returning()
+  // ---- Phase 1: authorise and reserve the row --------------------------------
+  const evidence = await withOrganizationDatabaseContext(async () => {
+    await verifyProjectOwnership(projectId, organization.id)
+    await verifyOutcomeIndicator(projectId, parsed.outcomeId, parsed.indicatorId)
 
+    const [row] = await db
+      .insert(evidenceItems)
+      .values({
+        projectId,
+        organizationId: organization.id,
+        type: 'file',
+        title: parsed.title,
+        description: parsed.description,
+        outcomeId: parsed.outcomeId,
+        indicatorId: parsed.indicatorId,
+        fileSize: parsed.file.size,
+        mimeType: parsed.file.mimeType,
+        contentHash: sha256,
+        status: 'draft',
+        createdBy: user.id,
+      })
+      .returning()
+    return row
+  })
+
+  // ---- Phase 2: the upload, with NO transaction open -------------------------
   const supabase = await createClient()
   const bucket = 'uellix-evidence'
   const filePath = `${projectId}/${evidence.id}/${sanitizeFileName(parsed.file.name)}`
@@ -161,27 +188,31 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
     contentType: parsed.file.mimeType,
     upsert: false,
   })
+
   if (error) {
-    // Atomicity: the DB row was created before the upload. If the upload fails
-    // we must not leave an orphaned evidence row that points at a file which
-    // does not exist, so roll the row back before surfacing the error.
-    await db.delete(evidenceItems).where(eq(evidenceItems.id, evidence.id))
+    // Compensate: the row exists and its file does not. Its own context.
+    await withOrganizationDatabaseContext(async () => {
+      await db.delete(evidenceItems).where(eq(evidenceItems.id, evidence.id))
+    })
     throw new Error(`Storage upload failed: ${error.message}`)
   }
 
-  await db.update(evidenceItems).set({ filePath }).where(eq(evidenceItems.id, evidence.id))
+  // ---- Phase 3: finalise -----------------------------------------------------
+  await withOrganizationDatabaseContext(async () => {
+    await db.update(evidenceItems).set({ filePath }).where(eq(evidenceItems.id, evidence.id))
 
-  await logAuditAction({
-    organizationId: organization.id,
-    projectId,
-    actorUserId: user.id,
-    entityType: 'evidence_item',
-    entityId: evidence.id,
-    action: AUDIT_ACTIONS.EVIDENCE_CREATED,
-    afterJson: { type: 'file', title: parsed.title, sha256 },
+    await logAuditAction({
+      organizationId: organization.id,
+      projectId,
+      actorUserId: user.id,
+      entityType: 'evidence_item',
+      entityId: evidence.id,
+      action: AUDIT_ACTIONS.EVIDENCE_CREATED,
+      afterJson: { type: 'file', title: parsed.title, sha256 },
+    })
+
+    await recalculateConfidenceScore(projectId, evidence.id)
   })
-
-  await recalculateConfidenceScore(projectId, evidence.id)
 
   return evidence
 }
@@ -359,12 +390,18 @@ export async function verifyFileEvidenceIntegrity(
   projectId: string,
   evidenceId: string,
 ): Promise<{ verified: boolean; reason?: string; storedHash: string | null; computedHash: string | null }> {
+  // OWNS ITS OWN CONTEXTS — see createFileEvidenceForProject. The whole stored
+  // file is downloaded and re-hashed between the read and the write; that must
+  // not happen with a transaction open.
   const { membership, organization } = await requireOrganizationAccess()
   if (!hasRole(membership.role, 'impact_manager')) {
     throw new Error('Insufficient permissions to verify evidence integrity')
   }
-  await verifyProjectOwnership(projectId, organization.id)
-  const evidence = await getEvidenceByIdForProject(projectId, evidenceId)
+
+  const evidence = await withOrganizationDatabaseContext(async () => {
+    await verifyProjectOwnership(projectId, organization.id)
+    return getEvidenceByIdForProject(projectId, evidenceId)
+  })
 
   if (evidence.type !== 'file') {
     return { verified: false, reason: 'Integrity verification only applies to file evidence', storedHash: evidence.contentHash, computedHash: null }
@@ -383,11 +420,13 @@ export async function verifyFileEvidenceIntegrity(
   const computedHash = crypto.createHash('sha256').update(buffer).digest('hex')
   const verified = computedHash === evidence.contentHash
 
-  await db
-    .update(evidenceItems)
-    .set({ integrityVerified: verified, integrityVerifiedAt: new Date() })
-    .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.id, evidenceId)))
-  await recalculateConfidenceScore(projectId, evidenceId)
+  await withOrganizationDatabaseContext(async () => {
+    await db
+      .update(evidenceItems)
+      .set({ integrityVerified: verified, integrityVerifiedAt: new Date() })
+      .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.id, evidenceId)))
+    await recalculateConfidenceScore(projectId, evidenceId)
+  })
 
   return { verified, storedHash: evidence.contentHash, computedHash }
 }

@@ -1,5 +1,6 @@
 // app/app/projects/[projectId]/pipeline/outcomes.actions.ts
 import { createOutcomeForProject, listOutcomesForProject, setOutcomeMateriality } from '@/lib/pipeline/outcomes';
+import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { z } from 'zod';
 
 const outcomeSchema = z.object({
@@ -20,17 +21,17 @@ const materialitySchema = z.object({
 
 export async function fetchOutcomes(projectId: string) {
   'use server';
-  return await listOutcomesForProject(projectId);
+  return runWithOrganizationAccess(() => listOutcomesForProject(projectId));
 }
 
 export async function addOutcome(projectId: string, input: unknown) {
   'use server';
   const parsed = outcomeSchema.parse(input);
-  return await createOutcomeForProject(projectId, parsed);
+  return runWithOrganizationAccess(() => createOutcomeForProject(projectId, parsed));
 }
 
 export async function updateOutcomeMateriality(projectId: string, outcomeId: string, input: unknown) {
   'use server';
   const parsed = materialitySchema.parse(input);
-  return await setOutcomeMateriality(projectId, outcomeId, parsed);
+  return runWithOrganizationAccess(() => setOutcomeMateriality(projectId, outcomeId, parsed));
 }

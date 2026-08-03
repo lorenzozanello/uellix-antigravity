@@ -11,6 +11,27 @@ import {
 } from '@/db/schema';
 import { listOutcomeMappingsForProject } from '@/lib/taxonomies/service';
 
+/**
+ * PUBLIC VERIFICATION READ — BLOCKED BY DESIGN AFTER THE RUNTIME CUTOVER.
+ *
+ * The verification hash is a capability: whoever holds it may read that one
+ * locked report. That model was implemented in the APPLICATION (`WHERE
+ * verification_hash = … AND status = 'locked'`) and enforced by nothing else,
+ * because the connection used to bypass RLS.
+ *
+ * `sroi_reports`, `projects`, `organizations` and `sroi_report_sections` all
+ * carry member-scoped SELECT policies and no anonymous one, so as `uellix_app`
+ * with no claims this returns zero rows and both callers — the /verify page and
+ * its PDF route — answer 404.
+ *
+ * That is fail-closed and correct as a default. Making public verification work
+ * again needs a SELECT policy that expresses the capability in the database
+ * (locked reports, matched by hash, readable with no claims) rather than a
+ * bypass — a privilege decision, deliberately NOT taken in this unit.
+ *
+ * No fabricated identity is used here: an anonymous visitor has none, and the
+ * function is left to return `null`.
+ */
 export async function getPublicVerifiedReport(verificationHash: string) {
   const reportRecords = await db
     .select({
