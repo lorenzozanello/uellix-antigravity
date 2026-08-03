@@ -82,6 +82,9 @@ DROP POLICY IF EXISTS cap_invitation_select_members     ON public.organization_m
 DROP POLICY IF EXISTS cap_invitation_insert_members     ON public.organization_members;
 DROP POLICY IF EXISTS cap_invitation_select_users       ON public.users;
 DROP POLICY IF EXISTS cap_invitation_insert_audit       ON public.audit_logs;
+DROP POLICY IF EXISTS cap_invitation_only_accept        ON public.invitations;
+DROP POLICY IF EXISTS cap_invitation_only_member        ON public.organization_members;
+DROP POLICY IF EXISTS cap_invitation_only_self          ON public.users;
 
 -- Column-level grants are revoked at table level: REVOKE ALL on the table
 -- removes column entries too. Guarded so the script survives a role that was

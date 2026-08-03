@@ -153,6 +153,22 @@ BEGIN
     RAISE EXCEPTION 'stella_0006 requires RLS enabled on invitations, organization_members, audit_logs and users.';
   END IF;
 
+  -- The backstop, asserted by SHAPE and not by name. An index of that name
+  -- that had lost UNIQUE, or whose WHERE status = 'active' had been altered,
+  -- would pass a name check while serialising nothing.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_index i
+    JOIN pg_class c ON c.oid = i.indexrelid
+    JOIN pg_class t ON t.oid = i.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public' AND t.relname = 'organization_members'
+      AND c.relname = 'user_single_active_membership'
+      AND i.indisunique AND i.indpred IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION
+      'requires the PARTIAL UNIQUE index user_single_active_membership on organization_members; it is the only thing that serialises two concurrent acceptances or bootstraps that use different keys.';
+  END IF;
+
   -- 0.5 token_hash must already be unique in practice, or the UNIQUE index
   -- below fails halfway through. Report the COUNT, never a value: a duplicated
   -- token hash is still a token hash.
@@ -353,6 +369,34 @@ WITH CHECK (
   AND action IN ('invitation.accepted','membership.created')
 );
 
+-- RESTRICTIVE companions. Everything above is PERMISSIVE, and permissive
+-- policies are combined with OR — including the 105 {public} baseline
+-- policies, which apply to this definer too. Their predicates call
+-- current_user_role_in_org() / current_user_is_super_admin(), which read
+-- auth.uid() — a SESSION GUC that SECURITY DEFINER does not reset — so
+-- inside the definer they resolve to the CALLER, not to the empty set. An
+-- org-admin caller would therefore satisfy the baseline policy and OR away
+-- every bound the permissive cap_* policies above appear to impose.
+--
+-- A RESTRICTIVE policy is ANDed with the permissive result and cannot be
+-- OR-ed away. These are what make the documented bounds true; without them
+-- the only real bound was the column ACL.
+DROP POLICY IF EXISTS cap_invitation_only_accept ON public.invitations;
+CREATE POLICY cap_invitation_only_accept
+ON public.invitations AS RESTRICTIVE FOR UPDATE TO uellix_cap_invitation
+USING (status = 'pending')
+WITH CHECK (status = 'accepted' AND accepted_by IS NOT NULL);
+
+DROP POLICY IF EXISTS cap_invitation_only_member ON public.organization_members;
+CREATE POLICY cap_invitation_only_member
+ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_cap_invitation
+WITH CHECK (status = 'active' AND role <> 'super_admin');
+
+DROP POLICY IF EXISTS cap_invitation_only_self ON public.users;
+CREATE POLICY cap_invitation_only_self
+ON public.users AS RESTRICTIVE FOR SELECT TO uellix_cap_invitation
+USING (id = auth.uid());
+
 RESET ROLE;
 
 -- ============================================================
@@ -477,7 +521,12 @@ BEGIN
   -- Expiry does NOT write. The previous implementation flipped the row to
   -- 'expired' before raising, which let anyone holding an expired token drive
   -- writes. Sweeping expired invitations is a separate operational job.
-  IF v_inv_expires_at <= pg_catalog.now() THEN
+  -- Compared in ONE frame. expires_at is `timestamp WITHOUT time zone` and
+  -- pg_catalog.now() is timestamptz, so a naked comparison coerces the naive
+  -- operand using the session TimeZone GUC — which the function does not set.
+  -- A connection in America/New_York would accept an invitation hours after a
+  -- UTC one refused it: a security deadline decided non-deterministically.
+  IF v_inv_expires_at <= (pg_catalog.now() AT TIME ZONE 'UTC') THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
 
@@ -506,6 +555,29 @@ BEGIN
      FOR UPDATE;
 
   IF NOT FOUND OR v_inv_status <> 'pending' THEN
+    -- Losing the race is not the same as being refused.
+    --
+    -- Two concurrent submissions by the SAME subject both read 'pending' on
+    -- the unlocked read (the first is still uncommitted), both pass every
+    -- check, and the second then blocks here. When the first commits, the
+    -- EPQ recheck applies the UPDATE policy's USING (status = 'pending'), the
+    -- new row version fails it, and the locking read returns NOT FOUND. An
+    -- earlier revision raised unconditionally at that point, so a retried POST
+    -- got a refusal while a sequential reload got the idempotent success —
+    -- the opposite of what the capability document promises.
+    --
+    -- The recovery read must be UNLOCKED, for exactly the reason the locked
+    -- one came back empty: a locking read can never see the accepted row.
+    SELECT i.status, i.accepted_by, i.organization_id, i.role
+      INTO v_inv_status, v_inv_accepted_by, v_inv_org_id, v_inv_role
+      FROM public.invitations i
+     WHERE i.id = v_inv_id;
+
+    IF FOUND AND v_inv_status = 'accepted' AND v_inv_accepted_by = v_subject THEN
+      RETURN QUERY SELECT v_inv_org_id, v_inv_role;
+      RETURN;
+    END IF;
+
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
 
@@ -558,6 +630,14 @@ EXCEPTION
   -- which carries the DETAIL that is the problem in the first place.
   WHEN SQLSTATE 'U0001' THEN
     RAISE;
+  -- OTHERS does NOT match query_canceled (57014) or assert_failure: PL/pgSQL
+  -- excludes both. A statement_timeout firing mid-call would therefore reach
+  -- the caller as 57014 with PostgreSQL's own message, straight through the
+  -- uniform-refusal argument. uellix_stripe carries statement_timeout as a
+  -- ROLE setting, so this is not hypothetical for CAP-03.
+  WHEN query_canceled THEN
+    RAISE LOG 'capability call cancelled (57014)';
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   WHEN OTHERS THEN
     RAISE LOG 'accept_invitation refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -698,8 +778,14 @@ BEGIN
   SELECT count(*) INTO v_policies
     FROM pg_policies
    WHERE schemaname = 'public' AND pg_catalog.left(policyname, 15) = 'cap_invitation_';
-  IF v_policies <> 6 THEN
-    RAISE EXCEPTION 'Expected 6 cap_invitation_* policies, found %.', v_policies;
+  IF v_policies <> 9 THEN
+    RAISE EXCEPTION 'Expected 9 cap_invitation_* policies (6 permissive + 3 restrictive), found %.', v_policies;
+  END IF;
+  IF (SELECT count(*) FROM pg_policies
+       WHERE schemaname = 'public'
+         AND pg_catalog.left(policyname, 15) = 'cap_invitation_'
+         AND permissive = 'RESTRICTIVE') <> 3 THEN
+    RAISE EXCEPTION 'the three RESTRICTIVE cap_invitation_* policies are missing; the documented bounds would be OR-ed away by the {public} baseline policies.';
   END IF;
 
   -- 4.9 The baseline is untouched: this package adds six policies and alters

@@ -70,6 +70,9 @@ DROP POLICY IF EXISTS cap_bootstrap_select_users     ON public.users;
 DROP POLICY IF EXISTS cap_bootstrap_select_allowlist ON public.signup_allowlist;
 DROP POLICY IF EXISTS cap_bootstrap_insert_audit     ON public.audit_logs;
 DROP POLICY IF EXISTS cap_bootstrap_rw_attempts      ON public.capability_bootstrap_attempts;
+DROP POLICY IF EXISTS cap_bootstrap_only_founder     ON public.organization_members;
+DROP POLICY IF EXISTS cap_bootstrap_only_active      ON public.organizations;
+DROP POLICY IF EXISTS cap_bootstrap_only_self        ON public.users;
 
 DO $$
 BEGIN

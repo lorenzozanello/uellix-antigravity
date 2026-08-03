@@ -254,7 +254,7 @@ aplicación.
 | Escenario | Resultado |
 |---|---|
 | El mismo usuario recarga `/invite/accept?token=…` | Paso 7: devuelve `(organization_id, role)` sin escribir. **200 idempotente.** |
-| Dos peticiones concurrentes, mismo usuario | La primera toma el `FOR UPDATE`; la segunda espera y luego ve `accepted` con `accepted_by = ella misma` → paso 7. Una sola membresía. |
+| Dos peticiones concurrentes, mismo usuario | La primera toma el `FOR UPDATE`. La segunda ya pasó su lectura **sin bloqueo** viendo `pending`, así que espera en el `FOR UPDATE`; cuando la primera confirma, la recomprobación EPQ aplica el `USING (status='pending')` de la policy de UPDATE y la fila nueva **no** califica → `NOT FOUND`. Ahí entra la lectura de recuperación, **sin bloqueo** (un `FOR UPDATE` nunca podría ver la fila aceptada, por esa misma policy): ve `accepted` con `accepted_by` = ella misma y devuelve la organización. **Una sola membresía.** Verificado con dos sesiones solapadas en el dry run. Si la primera retiene el bloqueo más de `lock_timeout`, la segunda recibe `U0001` — que es el límite de DoS haciendo su trabajo, no un fallo de idempotencia. |
 | Dos peticiones concurrentes, usuarios distintos | La segunda ve `accepted` con `accepted_by` ajeno → error uniforme. |
 | Token robado y usado por un tercero | El correo no casa → error uniforme. El robo del token **no basta**: hace falta también controlar la cuenta de ese correo. |
 | Token reutilizado tras expirar | Error uniforme, sin escritura. |

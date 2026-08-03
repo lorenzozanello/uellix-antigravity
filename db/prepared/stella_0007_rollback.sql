@@ -82,6 +82,8 @@ DROP POLICY IF EXISTS cap_verification_select_orgs        ON public.organization
 DROP POLICY IF EXISTS cap_verification_select_runs        ON public.sroi_calculation_runs;
 DROP POLICY IF EXISTS cap_verification_select_disclosures ON public.report_public_disclosures;
 DROP POLICY IF EXISTS cap_verification_write_hits         ON public.capability_verification_hits;
+DROP POLICY IF EXISTS cap_verification_only_locked        ON public.sroi_reports;
+DROP POLICY IF EXISTS cap_verification_only_live          ON public.report_public_disclosures;
 
 -- The write path goes with the capability. `disclosures_select_member` stays,
 -- so an administrator can still read what was published while it was live.

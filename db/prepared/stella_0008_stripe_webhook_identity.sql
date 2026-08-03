@@ -216,10 +216,11 @@ CREATE TABLE IF NOT EXISTS public.stripe_webhook_events (
   last_error_code text,
   organization_id uuid REFERENCES public.organizations(id),
   CONSTRAINT stripe_webhook_events_status_check
-    CHECK (status IN ('received','processing','completed','failed')),
+    CHECK (status IN ('received','processing','completed','failed','ignored')),
   CONSTRAINT stripe_webhook_events_error_code_check
     CHECK (last_error_code IS NULL
-           OR last_error_code IN ('signature','org_not_resolved','price_unmapped','internal'))
+           OR last_error_code IN ('signature','org_not_resolved','price_unmapped',
+                                  'internal','not_applicable'))
 );
 
 COMMENT ON TABLE public.stripe_webhook_events IS
@@ -345,10 +346,14 @@ BEGIN
   INSERT INTO public.stripe_webhook_events AS e (event_id, event_type, status, attempts)
   VALUES (p_event_id, p_event_type, 'processing', 1)
   ON CONFLICT (event_id) DO UPDATE
-     SET status      = 'processing',
-         attempts    = e.attempts + 1,
-         received_at = pg_catalog.now(),
-         failed_at   = NULL
+     SET status          = 'processing',
+         attempts        = e.attempts + 1,
+         received_at     = pg_catalog.now(),
+         failed_at       = NULL,
+         -- Cleared with failed_at. A re-claimed event carrying the previous
+         -- attempt's code would keep it through to 'completed', and the CHECK
+         -- permits that, so nothing else would catch the misreport.
+         last_error_code = NULL
    WHERE e.status IN ('failed','received')
       OR (e.status = 'processing'
           AND e.received_at < pg_catalog.now() - interval '15 minutes')
@@ -374,6 +379,14 @@ BEGIN
 EXCEPTION
   WHEN SQLSTATE 'U0001' THEN
     RAISE;
+  -- OTHERS does NOT match query_canceled (57014) or assert_failure: PL/pgSQL
+  -- excludes both. A statement_timeout firing mid-call would therefore reach
+  -- the caller as 57014 with PostgreSQL's own message, straight through the
+  -- uniform-refusal argument. uellix_stripe carries statement_timeout as a
+  -- ROLE setting, so this is not hypothetical for CAP-03.
+  WHEN query_canceled THEN
+    RAISE LOG 'capability call cancelled (57014)';
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   WHEN OTHERS THEN
     RAISE LOG 'stripe_begin_event refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -417,7 +430,30 @@ DECLARE
 BEGIN
   SET LOCAL lock_timeout = '3s';
 
-  IF p_match_kind NOT IN ('customer','subscription','organization')
+  -- Two match kinds, not three. `organization` is gone, and its removal is the
+  -- point of this revision rather than a simplification.
+  --
+  -- That branch resolved the organisation from `session.client_reference_id`,
+  -- which is chosen by whoever creates the checkout session — a Stripe Payment
+  -- Link accepts it as a buyer-supplied parameter, and this repository contains
+  -- no server-side checkout.sessions.create that would constrain it. CAP-03 §1.1
+  -- already classified that value as an assertion to check, and two rounds of
+  -- adversarial review reached opposite conclusions about how to check it: one
+  -- said the guard was too strict (an organisation that cancels and
+  -- re-subscribes is refused forever, because stripe_customer_id is never
+  -- cleared), the other that it was too loose (an organisation that has NEVER
+  -- subscribed has NULL billing columns, so the guard passes and any
+  -- client_reference_id can claim it).
+  --
+  -- Both are right, and that is the answer: no predicate over the CURRENT row
+  -- can distinguish a legitimate first subscription from a hostile claim,
+  -- because the only evidence either way is the attacker-supplied field itself.
+  -- So the capability refuses to be the place where an organisation is bound to
+  -- a Stripe customer for the first time. That binding must be recorded by a
+  -- first-party, authenticated flow BEFORE any webhook arrives — which is
+  -- DP-CAP-15, and is not decided here. Until it is, checkout.session.completed
+  -- has no path through this function, and the handler must not invent one.
+  IF p_match_kind NOT IN ('customer','subscription')
      OR p_match_value IS NULL
      OR p_quota IS NULL OR p_quota < 0 THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -443,8 +479,7 @@ BEGIN
   SELECT pg_catalog.array_agg(o.id) INTO v_org_ids
     FROM public.organizations o
    WHERE (p_match_kind = 'customer'     AND o.stripe_customer_id     = p_match_value)
-      OR (p_match_kind = 'subscription' AND o.stripe_subscription_id = p_match_value)
-      OR (p_match_kind = 'organization' AND o.id::text               = p_match_value);
+      OR (p_match_kind = 'subscription' AND o.stripe_subscription_id = p_match_value);
 
   IF v_org_ids IS NULL OR pg_catalog.array_length(v_org_ids, 1) <> 1 THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -456,31 +491,22 @@ BEGIN
     FROM public.organizations o
    WHERE o.id = v_org_id;
 
-  -- The tenancy guard, in all THREE branches.
-  --
-  -- An earlier revision guarded only the 'organization' branch, and only when
-  -- the target already carried a DIFFERENT customer id — so an organisation
-  -- that had never subscribed could be claimed outright by any
-  -- client_reference_id, and the other two branches would silently repoint an
-  -- established organisation's customer id to whatever the caller passed.
-  --
-  --   * 'organization' comes from checkout's client_reference_id, which is
-  --     chosen by whoever created the session. It is an ASSERTION. Refuse it
-  --     for any organisation that already has billing attached at all.
-  --   * 'customer' resolved by cus_X may only carry cus_X.
-  --   * 'subscription' may only act on the organisation whose customer id
-  --     already matches what the event says.
-  IF p_match_kind = 'organization' THEN
-    IF v_org_customer IS NOT NULL OR v_org_sub IS NOT NULL THEN
-      RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
-    END IF;
-  ELSIF p_match_kind = 'customer' THEN
-    IF p_stripe_customer_id IS DISTINCT FROM p_match_value THEN
+  -- The tenancy guard. Both branches now require the SAME thing: that every
+  -- identifier the event carries agrees with the row it resolved to. An earlier
+  -- revision wrote the subscription branch as "if the caller told us a customer,
+  -- it must match" — which is no guard at all when the caller tells us nothing,
+  -- and it left `stripe_subscription_id = p_stripe_subscription_id` free to
+  -- write a value unrelated to the subscription the row was found BY.
+  IF p_match_kind = 'customer' THEN
+    IF p_stripe_customer_id IS DISTINCT FROM p_match_value
+       OR v_org_customer    IS DISTINCT FROM p_match_value THEN
       RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
     END IF;
   ELSE
-    IF p_stripe_customer_id IS NOT NULL
-       AND v_org_customer IS DISTINCT FROM p_stripe_customer_id THEN
+    IF p_stripe_subscription_id IS DISTINCT FROM p_match_value
+       OR v_org_sub             IS DISTINCT FROM p_match_value
+       OR p_stripe_customer_id  IS NULL
+       OR v_org_customer        IS DISTINCT FROM p_stripe_customer_id THEN
       RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
     END IF;
   END IF;
@@ -530,6 +556,14 @@ EXCEPTION
   -- whole. Collapse it; log the SQLSTATE only, never SQLERRM.
   WHEN SQLSTATE 'U0001' THEN
     RAISE;
+  -- OTHERS does NOT match query_canceled (57014) or assert_failure: PL/pgSQL
+  -- excludes both. A statement_timeout firing mid-call would therefore reach
+  -- the caller as 57014 with PostgreSQL's own message, straight through the
+  -- uniform-refusal argument. uellix_stripe carries statement_timeout as a
+  -- ROLE setting, so this is not hypothetical for CAP-03.
+  WHEN query_canceled THEN
+    RAISE LOG 'capability call cancelled (57014)';
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   WHEN OTHERS THEN
     RAISE LOG 'stripe_apply_subscription refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -554,17 +588,37 @@ VOLATILE
   SET search_path = ''
 AS $$
 BEGIN
-  IF p_error_code NOT IN ('signature','org_not_resolved','price_unmapped','internal') THEN
+  IF p_error_code NOT IN ('signature','org_not_resolved','price_unmapped',
+                          'internal','not_applicable') THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
 
+  -- 'not_applicable' lands in 'ignored', not 'failed'. stripe_begin_event moves
+  -- a row to 'processing' BEFORE the handler knows whether it acts on that
+  -- event type; without a terminal state for the ones it ignores, those rows
+  -- would sit in 'processing' forever and idx_stripe_webhook_events_status
+  -- could no longer tell a dead worker from routine traffic.
   UPDATE public.stripe_webhook_events
-     SET status = 'failed', failed_at = pg_catalog.now(), last_error_code = p_error_code
+     SET status          = CASE WHEN p_error_code = 'not_applicable'
+                                THEN 'ignored' ELSE 'failed' END,
+         failed_at       = CASE WHEN p_error_code = 'not_applicable'
+                                THEN NULL ELSE pg_catalog.now() END,
+         completed_at    = CASE WHEN p_error_code = 'not_applicable'
+                                THEN pg_catalog.now() ELSE NULL END,
+         last_error_code = p_error_code
    WHERE event_id = p_event_id AND status = 'processing';
 
 EXCEPTION
   WHEN SQLSTATE 'U0001' THEN
     RAISE;
+  -- OTHERS does NOT match query_canceled (57014) or assert_failure: PL/pgSQL
+  -- excludes both. A statement_timeout firing mid-call would therefore reach
+  -- the caller as 57014 with PostgreSQL's own message, straight through the
+  -- uniform-refusal argument. uellix_stripe carries statement_timeout as a
+  -- ROLE setting, so this is not hypothetical for CAP-03.
+  WHEN query_canceled THEN
+    RAISE LOG 'capability call cancelled (57014)';
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   WHEN OTHERS THEN
     RAISE LOG 'stripe_fail_event refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';

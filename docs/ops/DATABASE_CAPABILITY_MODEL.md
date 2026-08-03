@@ -113,8 +113,9 @@ las policies que admiten al rol definer son necesariamente amplias (no pueden
 ver los argumentos de la función, así que un `USING (true)` es habitual). La
 respuesta es que **la policy no es la frontera**: el rol definer es `NOLOGIN`,
 tiene cero miembros, y ningún rol del sistema puede `SET ROLE` a él salvo
-`uellix_owner` — que es el rol de DDL y ya podía todo. No existe cadena de
-conexión, sesión ni JWT que resuelva a un rol de capacidad. **La única forma de
+nadie: los roles de capacidad tienen **cero miembros**, así que no existe
+cadena de conexión, sesión ni JWT que resuelva a uno de ellos, ni directamente
+ni por transitividad. (Un superusuario siempre puede, inherentemente.) **La única forma de
 ejecutar con sus privilegios es atravesar el cuerpo de la función**, y el
 cuerpo de la función es la frontera real.
 
@@ -207,7 +208,7 @@ Todo objeto propuesto en este diseño cumple, sin excepción:
 | # | Regla | Cómo se verifica |
 |---|---|---|
 | 1 | El owner es un rol `NOLOGIN`, sin `BYPASSRLS`, sin `CREATEROLE`, sin `CREATEDB`, sin `SUPERUSER` | `pg_roles` |
-| 2 | El owner tiene **cero miembros** salvo `uellix_owner` con `INHERIT FALSE, SET TRUE, ADMIN FALSE` | `pg_auth_members` |
+| 2 | El owner tiene **cero miembros, sin excepción** | `pg_auth_members` (la postcondición aborta si hay uno) |
 | 3 | `SET search_path = ''` en la propia función | `pg_proc.proconfig` |
 | 4 | **Toda** referencia va cualificada por esquema, incluidos `pg_catalog` y `public` | Lint estático sobre el SQL |
 | 5 | `REVOKE ALL ON FUNCTION … FROM PUBLIC` inmediatamente tras crearla | `pg_proc.proacl` |
@@ -225,8 +226,20 @@ Todo objeto propuesto en este diseño cumple, sin excepción:
 suficiente** aquí. Con `pg_temp` en la ruta, un llamante que pueda crear
 objetos temporales puede plantar una función o un operador temporal que
 sombree a uno del esquema `public`, y la función `SECURITY DEFINER` lo
-ejecutaría con los privilegios del definer. La ruta vacía elimina esa clase
-entera: no hay resolución implícita, así que no hay nada que sombrear.
+ejecutaría con los privilegios del definer. La ruta vacía elimina `public` de
+la resolución.
+
+> **Precisión (segunda ronda).** Un borrador decía que la ruta vacía deja "nada
+> que sombrear". No es exacto: PostgreSQL **nunca** busca `pg_temp` para
+> nombres de función ni de operador —esa es una regla del motor, no de la
+> ruta—, y en cambio **sí** lo consulta, implícitamente y en primer lugar, para
+> nombres de relación y de tipo. Lo que cierra la clase que este documento
+> describe es esa regla del motor más la disciplina de cualificar **toda**
+> relación; la ruta vacía añade la eliminación de `public`. Queda como
+> superficie residual el nombre de tipo sin cualificar (`text`, `uuid`,
+> `jsonb`) en los `DECLARE` y los casts, resoluble por un llamante con `TEMP`
+> sobre la base — explotabilidad muy baja, pero la afirmación anterior era más
+> fuerte de lo que la construcción sostiene.
 
 `pg_catalog` sigue siendo alcanzable implícitamente, pero se cualifica de todas
 formas (`pg_catalog.sha256`, `pg_catalog.now`, `pg_catalog.lower`), porque la
@@ -282,9 +295,18 @@ RPC `SECURITY DEFINER`.** Ninguna de las dos por sí sola basta:
 La combinación sí funciona, y produce una propiedad verificable:
 
 > `uellix_stripe` no tiene **ningún** privilegio —ni de tabla ni de columna—
-> sobre ninguna de las 38 tablas de `public`. Sus únicos privilegios en toda
-> la base son `USAGE` sobre `uellix_capability` y `EXECUTE` sobre tres
-> funciones. Un volcado de su credencial no permite leer un solo dato SROI.
+> sobre ninguna relación de `public`, en ninguno de los siete modos. Sus únicos
+> privilegios **concedidos** son `USAGE` sobre `uellix_capability` y `EXECUTE`
+> sobre tres funciones. Un volcado de su credencial no permite leer un solo
+> dato SROI.
+>
+> *Alcance de la verificación, corregido en la segunda ronda:* la postcondición
+> barre `public` y `uellix_capability`. **No** barre `extensions`, `storage`,
+> `auth`, `realtime` ni `vault`, donde las funciones de extensión nacen con
+> `EXECUTE TO PUBLIC` y el rol las hereda igual que hereda `USAGE` sobre
+> `public` (§4.1). La propiedad efectiva —cero acceso a datos SROI o de
+> cliente— se sostiene; la literal "en toda la base" no estaba verificada y se
+> retira.
 
 *Verificación:* `has_any_column_privilege` sobre las 38 tablas, para los cuatro
 modos DML, más `aclexplode` sobre `uellix_capability`.
@@ -335,19 +357,32 @@ Leyenda: `S`=SELECT `I`=INSERT `U`=UPDATE `D`=DELETE `X`=EXECUTE `Us`=USAGE
 
 | Rol | LOGIN | Miembros | BYPASSRLS | CREATEROLE | Owner de | Alcanzable por |
 |---|---|---|---|---|---|---|
-| `uellix_cap_invitation` | **no** | sólo `uellix_owner` (`SET TRUE, INHERIT FALSE`) | no | no | las funciones de CAP-01 | sólo la función |
-| `uellix_cap_verification` | **no** | ídem | no | no | las funciones de CAP-02 | sólo la función |
-| `uellix_cap_stripe` | **no** | ídem | no | no | las funciones de CAP-03 | sólo la función |
-| `uellix_cap_lead` | **no** | ídem | no | no | las funciones de CAP-04 | sólo la función |
-| `uellix_cap_bootstrap` | **no** | ídem | no | no | las funciones de CAP-05 | sólo la función |
+| `uellix_cap_invitation` | **no** | **ninguno** | no | no | las funciones de CAP-01 | sólo la función |
+| `uellix_cap_verification` | **no** | **ninguno** | no | no | las funciones de CAP-02 | sólo la función |
+| `uellix_cap_stripe` | **no** | **ninguno** | no | no | las funciones de CAP-03 | sólo la función |
+| `uellix_cap_lead` | **no** | **ninguno** | no | no | las funciones de CAP-04 | sólo la función |
+| `uellix_cap_bootstrap` | **no** | **ninguno** | no | no | las funciones de CAP-05 | sólo la función |
 | `uellix_stripe` | **sí** | ninguno | no | no | nada | su propia cadena de conexión |
 
-`uellix_owner` recibe membresía en los cinco roles `uellix_cap_*` con
-`INHERIT FALSE, SET TRUE, ADMIN FALSE`. `INHERIT FALSE` significa que su
-operación normal **no** lleva esos privilegios: sólo los adquiere tras un
-`SET ROLE` explícito, que es exactamente lo que hace el script de aplicación al
-transferir la propiedad de cada función. `ADMIN FALSE` impide que los
-reconceda. Es el mismo contrato que ya rige `uellix_migrator → uellix_owner`.
+**Ningún rol es miembro de un rol de capacidad. Ninguno.**
+
+Un borrador de este documento —y de los cinco paquetes— concedía
+`uellix_cap_* TO uellix_owner WITH INHERIT FALSE, SET TRUE`, para que el owner
+pudiera transferirles la propiedad de cada función. La revisión adversarial
+mostró por qué eso era un agujero y no un detalle: **`SET ROLE` es
+transitivo**. `uellix_migrator` es un rol `LOGIN`, alcanza `uellix_owner` por
+`SET ROLE`, y desde ahí habría alcanzado los cinco roles de capacidad en dos
+sentencias — mientras este documento afirmaba que ninguna cadena de conexión
+resuelve a un rol de capacidad. La postcondición de entonces sólo miraba
+miembros **directos**, así que pasaba.
+
+La transferencia de propiedad se hace ahora en la ventana de superusuario, con
+lo que **nadie necesita ser miembro**, y las cinco postcondiciones abortan si
+encuentran uno. La afirmación de §1.1 pasa a ser cierta.
+
+> Un operador que implementara la versión anterior de esta regla **abortaría el
+> paquete**: `IF EXISTS (SELECT 1 FROM pg_auth_members WHERE roleid = <cap>)
+> THEN RAISE EXCEPTION '… has a member; it must have none.'`
 
 ### 5.2 Objeto por objeto
 
@@ -544,14 +579,19 @@ decisión no tomada nunca abre nada.
 
 ## 9. Riesgos residuales del modelo (no de una capacidad concreta)
 
-* **RR-CAP-0 — el diseño no se ha ejecutado contra ninguna base.** Todo lo de
-  este documento es SQL leído, no SQL corrido. Los paquetes llevan
-  precondiciones que abortan si el estado no es el esperado, pero eso no
-  sustituye a un ensayo. Severidad: **alta hasta el primer dry-run**.
-* **RR-CAP-1 — `uellix_owner` puede `SET ROLE` a los cinco roles de capacidad.**
-  Es necesario para transferirles la propiedad de las funciones. Significa que
-  quien controle el camino de DDL controla las cinco capacidades. Aceptado: ya
-  controlaba todo lo demás.
+* **RR-CAP-0 — ACTUALIZADO tras el dry run.** Ya no dice "todo es SQL leído".
+  Los cinco paquetes se aplicaron **dos veces** (convergentes), pasaron 57
+  aserciones vivas y cinco pruebas de concurrencia con sesiones reales, se
+  revirtieron y se reaplicaron — en un contenedor desechable **sin red**,
+  sembrado desde un volcado *schema-only* del stack local. Nueve defectos
+  salieron de ahí y de ninguna revisión. Lo que queda abierto es más pequeño y
+  distinto: **el ensayo no es Supabase gestionado** (ver RR-CAP-5 y RR-09).
+* **RR-CAP-1 — CERRADO.** Decía: *"`uellix_owner` puede `SET ROLE` a los cinco
+  roles de capacidad; es necesario para transferirles la propiedad de las
+  funciones"*. Lo era, y era peor de lo que el riesgo describía: `SET ROLE` es
+  transitivo y `uellix_migrator` es `LOGIN`, así que la cadena llegaba desde una
+  credencial real. La transferencia se hace ahora como superusuario, los cinco
+  roles tienen **cero miembros** y las postcondiciones lo comprueban.
 * **RR-CAP-2 — las policies de los roles de capacidad son amplias por
   construcción.** La narrowness vive en el cuerpo de la función (§1.1). Un bug
   en el cuerpo no lo detiene la policy; lo detiene el grant por columna.

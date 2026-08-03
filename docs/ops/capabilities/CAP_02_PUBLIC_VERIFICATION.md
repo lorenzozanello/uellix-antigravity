@@ -267,9 +267,14 @@ REVOKE ALL    ON FUNCTION uellix_capability.record_verification_hit(text)  FROM 
 | `organizations.stripe_*`, `stella_monthly_quota` | **ninguno** — el grant es por columna |
 | `sroi_reports.summary`, `created_by`, `locked_by` | **ninguno** — grant por columna |
 
-Un bug en el cuerpo de `verify_report` que intentara leer evidencia **no
-compilaría**: `uellix_cap_verification` no tiene privilegio sobre esa tabla, y
-la función se crea y valida bajo su propia propiedad.
+Un bug en el cuerpo de `verify_report` que intentara leer evidencia fallaría
+**en ejecución** con `42501`, no al crearse: PostgreSQL resuelve nombres y
+tipos en `CREATE FUNCTION`, pero las comprobaciones de ACL ocurren al arrancar
+el ejecutor. Para un endpoint público eso significa la primera petición. Lo que
+impide que se llegue ahí es la postcondición del paquete, que barre
+`has_any_column_privilege` sobre todas las relaciones de `public` y aborta la
+aplicación si el grant existe. (`STABLE` **sí** se comprueba al crear la
+función; confundir las dos cosas es de donde venía la afirmación anterior.)
 
 ---
 

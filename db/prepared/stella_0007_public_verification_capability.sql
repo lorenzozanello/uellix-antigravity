@@ -199,6 +199,12 @@ CREATE TABLE IF NOT EXISTS public.report_public_disclosures (
   show_report_title      boolean     NOT NULL DEFAULT false,
   show_headline_ratio    boolean     NOT NULL DEFAULT false,
   show_totals            boolean     NOT NULL DEFAULT false,
+  -- Added after the second adversarial round. issued_on and report_variant
+  -- were returned UNCONDITIONALLY while the header claimed every visible field
+  -- was behind a boolean. The lock date of a private report is a disclosure,
+  -- and so is which of funder / methodological / audit was produced.
+  show_issued_on         boolean     NOT NULL DEFAULT false,
+  show_report_variant    boolean     NOT NULL DEFAULT false,
   disclosure_version     integer     NOT NULL DEFAULT 1,
   created_at             timestamptz NOT NULL DEFAULT now(),
   updated_at             timestamptz NOT NULL DEFAULT now()
@@ -263,7 +269,8 @@ GRANT SELECT (id, sroi_ratio, total_investment, net_social_value, currency)
   ON public.sroi_calculation_runs TO uellix_cap_verification;
 
 GRANT SELECT (report_id, revoked_at, public_summary, show_organization_name,
-              show_report_title, show_headline_ratio, show_totals, disclosure_version)
+              show_report_title, show_headline_ratio, show_totals,
+              show_issued_on, show_report_variant, disclosure_version)
   ON public.report_public_disclosures TO uellix_cap_verification;
 
 GRANT SELECT, INSERT, UPDATE ON public.capability_verification_hits TO uellix_cap_verification;
@@ -320,7 +327,7 @@ ON public.report_public_disclosures FOR SELECT TO uellix_app
 USING (
   EXISTS (
     SELECT 1 FROM public.sroi_reports r
-     WHERE r.id = report_id
+     WHERE r.id = public.report_public_disclosures.report_id
        AND (r.organization_id = ANY(public.current_user_org_ids())
             OR public.current_user_is_super_admin())
   )
@@ -333,7 +340,7 @@ WITH CHECK (
   approved_by = auth.uid()
   AND EXISTS (
     SELECT 1 FROM public.sroi_reports r
-     WHERE r.id = report_id
+     WHERE r.id = public.report_public_disclosures.report_id
        AND (public.current_user_role_in_org(r.organization_id)
               IN ('super_admin', 'organization_admin')
             OR public.current_user_is_super_admin())
@@ -346,16 +353,20 @@ ON public.report_public_disclosures FOR UPDATE TO uellix_app
 USING (
   EXISTS (
     SELECT 1 FROM public.sroi_reports r
-     WHERE r.id = report_id
+     WHERE r.id = public.report_public_disclosures.report_id
        AND (public.current_user_role_in_org(r.organization_id)
               IN ('super_admin', 'organization_admin')
             OR public.current_user_is_super_admin())
   )
 )
 WITH CHECK (
-  EXISTS (
+  -- revoked_by is pinned exactly as approved_by is. The table COMMENT claims
+  -- each row records a human decision with its author; that has to hold for
+  -- the revocation too, or an admin can record a colleague as the revoker.
+  (revoked_by IS NULL OR revoked_by = auth.uid())
+  AND EXISTS (
     SELECT 1 FROM public.sroi_reports r
-     WHERE r.id = report_id
+     WHERE r.id = public.report_public_disclosures.report_id
        AND (public.current_user_role_in_org(r.organization_id)
               IN ('super_admin', 'organization_admin')
             OR public.current_user_is_super_admin())
@@ -370,12 +381,35 @@ WITH CHECK (
 -- claim the table could not keep.
 GRANT SELECT ON public.report_public_disclosures TO uellix_writer;
 GRANT INSERT (report_id, approved_by, public_summary, show_organization_name,
-              show_report_title, show_headline_ratio, show_totals, disclosure_version)
+              show_report_title, show_headline_ratio, show_totals,
+              show_issued_on, show_report_variant, disclosure_version)
   ON public.report_public_disclosures TO uellix_writer;
 GRANT UPDATE (revoked_at, revoked_by, public_summary, show_organization_name,
               show_report_title, show_headline_ratio, show_totals,
-              disclosure_version, updated_at)
+              show_issued_on, show_report_variant, disclosure_version, updated_at)
   ON public.report_public_disclosures TO uellix_writer;
+
+-- RESTRICTIVE companions. Everything above is PERMISSIVE, and permissive
+-- policies are combined with OR — including the 105 {public} baseline
+-- policies, which apply to this definer too. Their predicates call
+-- current_user_role_in_org() / current_user_is_super_admin(), which read
+-- auth.uid() — a SESSION GUC that SECURITY DEFINER does not reset — so
+-- inside the definer they resolve to the CALLER, not to the empty set. An
+-- org-admin caller would therefore satisfy the baseline policy and OR away
+-- every bound the permissive cap_* policies above appear to impose.
+--
+-- A RESTRICTIVE policy is ANDed with the permissive result and cannot be
+-- OR-ed away. These are what make the documented bounds true; without them
+-- the only real bound was the column ACL.
+DROP POLICY IF EXISTS cap_verification_only_locked ON public.sroi_reports;
+CREATE POLICY cap_verification_only_locked
+ON public.sroi_reports AS RESTRICTIVE FOR SELECT TO uellix_cap_verification
+USING (status = 'locked');
+
+DROP POLICY IF EXISTS cap_verification_only_live ON public.report_public_disclosures;
+CREATE POLICY cap_verification_only_live
+ON public.report_public_disclosures AS RESTRICTIVE FOR SELECT TO uellix_cap_verification
+USING (revoked_at IS NULL);
 
 RESET ROLE;
 
@@ -422,8 +456,14 @@ AS $$
     CASE WHEN d.show_organization_name THEN o.name::text END,
     CASE WHEN d.show_report_title      THEN r.title::text END,
     d.public_summary,
-    (r.locked_at AT TIME ZONE 'UTC')::date,
-    r.report_variant::text,
+    -- locked_at is `timestamp WITHOUT time zone` and already naive UTC, so a
+    -- cast is all that is needed. `AT TIME ZONE 'UTC'` on a NAIVE operand does
+    -- the opposite of what it does twelve lines below on a timestamptz one: it
+    -- produces a timestamptz, and the ::date then renders it in the session
+    -- TimeZone. A report locked at 23:30 UTC would publish as the next day in
+    -- Madrid and the previous one in Los Angeles.
+    CASE WHEN d.show_issued_on THEN r.locked_at::date END,
+    CASE WHEN d.show_report_variant THEN r.report_variant::text END,
     d.disclosure_version,
     CASE WHEN d.show_headline_ratio THEN run.sroi_ratio END,
     CASE WHEN d.show_totals THEN run.total_investment END,
@@ -464,8 +504,14 @@ AS $$
 DECLARE
   v_report_id uuid;
 BEGIN
+  -- lock_timeout only. `SET LOCAL statement_timeout` inside a function that is
+  -- ALREADY RUNNING is inert: the timer is armed once, in
+  -- start_xact_command(), before the top-level statement begins, and assigning
+  -- the GUC afterwards does not re-arm it. lock_timeout is different — it is
+  -- read at each lock acquisition — so the contention bound is real; a claim
+  -- of "two timeouts" was not. A statement bound belongs on the role or the
+  -- pool, where it is armed at statement start.
   SET LOCAL lock_timeout = '1s';
-  SET LOCAL statement_timeout = '2s';
 
   SELECT r.id INTO v_report_id
     FROM public.sroi_reports r
@@ -489,6 +535,13 @@ EXCEPTION
   -- Best-effort means best-effort: a contended counter must never turn a
   -- successful verification into an error, and an error here must never carry
   -- a DETAIL back to an anonymous caller.
+  --
+  -- query_canceled is listed SEPARATELY because PL/pgSQL excludes it from
+  -- OTHERS. Without this arm a cancellation would escape the one function in
+  -- the campaign whose contract is that it can never fail.
+  WHEN query_canceled THEN
+    RAISE LOG 'record_verification_hit cancelled (57014)';
+    RETURN;
   WHEN OTHERS THEN
     RAISE LOG 'record_verification_hit skipped with SQLSTATE %', SQLSTATE;
     RETURN;
@@ -644,7 +697,8 @@ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'report_public_disclosures'
       AND column_name IN ('show_organization_name','show_report_title',
-                          'show_headline_ratio','show_totals')
+                          'show_headline_ratio','show_totals',
+                          'show_issued_on','show_report_variant')
       AND column_default IS DISTINCT FROM 'false'
   ) THEN
     RAISE EXCEPTION 'a report_public_disclosures visibility flag does not default to false.';
@@ -662,8 +716,14 @@ BEGIN
   SELECT count(*) INTO v_policies
     FROM pg_policies
    WHERE schemaname = 'public' AND pg_catalog.left(policyname, 17) = 'cap_verification_';
-  IF v_policies <> 5 THEN
-    RAISE EXCEPTION 'Expected 5 cap_verification_* policies, found %.', v_policies;
+  IF v_policies <> 7 THEN
+    RAISE EXCEPTION 'Expected 7 cap_verification_* policies (5 permissive + 2 restrictive), found %.', v_policies;
+  END IF;
+  IF (SELECT count(*) FROM pg_policies
+       WHERE schemaname = 'public'
+         AND pg_catalog.left(policyname, 17) = 'cap_verification_'
+         AND permissive = 'RESTRICTIVE') <> 2 THEN
+    RAISE EXCEPTION 'the two RESTRICTIVE cap_verification_* policies are missing; a locked-but-unpublished report could be read through a baseline policy.';
   END IF;
 
   SELECT count(*) INTO v_policies

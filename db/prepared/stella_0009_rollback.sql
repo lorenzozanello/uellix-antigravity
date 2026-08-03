@@ -64,7 +64,8 @@ DROP FUNCTION IF EXISTS uellix_capability.submit_lead(text, text, text, text);
 
 SET ROLE uellix_owner;
 
-DROP POLICY IF EXISTS cap_lead_insert ON public.marketing_leads;
+DROP POLICY IF EXISTS cap_lead_insert        ON public.marketing_leads;
+DROP POLICY IF EXISTS cap_lead_deny_runtime  ON public.marketing_leads;
 
 DO $$
 BEGIN

@@ -128,12 +128,20 @@ BEGIN
   -- The backstop the design now names explicitly instead of relying on
   -- silently. Without it, two concurrent calls with DIFFERENT idempotency keys
   -- could each pass the membership check and each create an organisation.
+  -- The backstop, asserted by SHAPE and not by name. An index of that name
+  -- that had lost UNIQUE, or whose WHERE status = 'active' had been altered,
+  -- would pass a name check while serialising nothing.
   IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE schemaname = 'public' AND indexname = 'user_single_active_membership'
+    SELECT 1 FROM pg_index i
+    JOIN pg_class c ON c.oid = i.indexrelid
+    JOIN pg_class t ON t.oid = i.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public' AND t.relname = 'organization_members'
+      AND c.relname = 'user_single_active_membership'
+      AND i.indisunique AND i.indpred IS NOT NULL
   ) THEN
     RAISE EXCEPTION
-      'stella_0010 requires the partial unique index user_single_active_membership on organization_members; it is the backstop for concurrent bootstraps with different idempotency keys.';
+      'requires the PARTIAL UNIQUE index user_single_active_membership on organization_members; it is the only thing that serialises two concurrent acceptances or bootstraps that use different keys.';
   END IF;
 
   IF EXISTS (
@@ -305,6 +313,33 @@ DROP POLICY IF EXISTS cap_bootstrap_rw_attempts ON public.capability_bootstrap_a
 CREATE POLICY cap_bootstrap_rw_attempts
 ON public.capability_bootstrap_attempts FOR ALL TO uellix_cap_bootstrap
 USING (true) WITH CHECK (true);
+
+-- RESTRICTIVE companions. Everything above is PERMISSIVE, and permissive
+-- policies are combined with OR — including the 105 {public} baseline
+-- policies, which apply to this definer too. Their predicates call
+-- current_user_role_in_org() / current_user_is_super_admin(), which read
+-- auth.uid() — a SESSION GUC that SECURITY DEFINER does not reset — so
+-- inside the definer they resolve to the CALLER, not to the empty set. An
+-- org-admin caller would therefore satisfy the baseline policy and OR away
+-- every bound the permissive cap_* policies above appear to impose.
+--
+-- A RESTRICTIVE policy is ANDed with the permissive result and cannot be
+-- OR-ed away. These are what make the documented bounds true; without them
+-- the only real bound was the column ACL.
+DROP POLICY IF EXISTS cap_bootstrap_only_founder ON public.organization_members;
+CREATE POLICY cap_bootstrap_only_founder
+ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_cap_bootstrap
+WITH CHECK (role = 'organization_admin' AND status = 'active');
+
+DROP POLICY IF EXISTS cap_bootstrap_only_active ON public.organizations;
+CREATE POLICY cap_bootstrap_only_active
+ON public.organizations AS RESTRICTIVE FOR INSERT TO uellix_cap_bootstrap
+WITH CHECK (status = 'active');
+
+DROP POLICY IF EXISTS cap_bootstrap_only_self ON public.users;
+CREATE POLICY cap_bootstrap_only_self
+ON public.users AS RESTRICTIVE FOR SELECT TO uellix_cap_bootstrap
+USING (id = auth.uid());
 
 RESET ROLE;
 
@@ -507,6 +542,14 @@ EXCEPTION
     RAISE;
   WHEN SQLSTATE 'U0002' THEN
     RAISE;
+  -- OTHERS does NOT match query_canceled (57014) or assert_failure: PL/pgSQL
+  -- excludes both. A statement_timeout firing mid-call would therefore reach
+  -- the caller as 57014 with PostgreSQL's own message, straight through the
+  -- uniform-refusal argument. uellix_stripe carries statement_timeout as a
+  -- ROLE setting, so this is not hypothetical for CAP-03.
+  WHEN query_canceled THEN
+    RAISE LOG 'capability call cancelled (57014)';
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   WHEN OTHERS THEN
     RAISE LOG 'bootstrap_organization refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -655,8 +698,14 @@ BEGIN
 
   SELECT count(*) INTO v_policies
     FROM pg_policies WHERE schemaname = 'public' AND pg_catalog.left(policyname, 14) = 'cap_bootstrap_';
-  IF v_policies <> 8 THEN
-    RAISE EXCEPTION 'Expected 8 cap_bootstrap_* policies, found %.', v_policies;
+  IF v_policies <> 11 THEN
+    RAISE EXCEPTION 'Expected 11 cap_bootstrap_* policies (8 permissive + 3 restrictive), found %.', v_policies;
+  END IF;
+  IF (SELECT count(*) FROM pg_policies
+       WHERE schemaname = 'public'
+         AND pg_catalog.left(policyname, 14) = 'cap_bootstrap_'
+         AND permissive = 'RESTRICTIVE') <> 3 THEN
+    RAISE EXCEPTION 'the three RESTRICTIVE cap_bootstrap_* policies are missing; the founding-role bound would be OR-ed away by members_insert_admin.';
   END IF;
 
   IF (SELECT count(*) FROM pg_policies

@@ -202,6 +202,19 @@ Devuelve:
 | `duplicate` | Ya `completed` — el `ON CONFLICT` no actualizó nada | **200**, sin reprocesar |
 | `in_progress` | Otro worker lo tiene en `processing` | **409/503** para que Stripe reintente |
 
+El `ON CONFLICT DO UPDATE` reclama además cualquier fila en `processing` cuya
+`received_at` sea anterior al *lease* de 15 minutos, y al reclamar limpia
+`failed_at` **y** `last_error_code` — sin lo segundo, un evento re-reclamado
+arrastraría el código del intento anterior hasta `completed`, y el `CHECK` lo
+permite, así que nada más lo detectaría.
+
+Hay un quinto estado, `ignored`, y existe porque `stripe_begin_event` mueve la
+fila a `processing` **antes** de que el handler sepa si actúa sobre ese tipo de
+evento. Sin un estado terminal para los que ignora, esas filas se quedarían en
+`processing` para siempre y `idx_stripe_webhook_events_status` dejaría de
+distinguir un worker muerto de tráfico rutinario. El handler las cierra con
+`stripe_fail_event(id, 'not_applicable')`.
+
 La distinción `duplicate` / `in_progress` se resuelve con un `SELECT status`
 posterior dentro de la misma función cuando el `RETURNING` viene vacío.
 
@@ -226,13 +239,29 @@ Cuerpo, en **una** transacción:
 
 1. Comprobar que el evento está en `processing` y es el que dice ser. Si no →
    error uniforme.
-2. Resolver **una** organización según `p_match_kind`. Si resuelven 0 o >1 →
-   marcar `failed` con código `org_not_resolved` y lanzar error uniforme.
-   *Aquí se cierra el defecto 4:* cuando `match_kind = 'organization'`
-   (el caso `checkout.session.completed`, que viene de
-   `client_reference_id`), se exige además que la organización **no tenga ya**
-   un `stripe_customer_id` distinto del que llega. Una sesión de checkout no
-   puede reasignar la suscripción de otra organización.
+2. Resolver **una** organización con `array_agg` + `array_length` (no `min()`:
+   PostgreSQL no tiene `min(uuid)`). Si resuelven 0 o >1 → lanzar el error
+   uniforme y **no marcar nada**: un `UPDATE … SET status='failed'` seguido de
+   `RAISE` en la misma transacción lo revierte el propio `RAISE`. Marcar el
+   fallo es tarea del handler, con `stripe_fail_event`, en su propia
+   transacción.
+
+   *El defecto 4 se cierra eliminando la vía, no guardándola.* `match_kind =
+   'organization'` —el caso `checkout.session.completed`, que resuelve por
+   `client_reference_id`— **ya no existe**. Las dos rondas adversariales
+   llegaron a conclusiones opuestas sobre cómo guardarlo: una dijo que la
+   guarda era demasiado estricta (una organización que cancela y vuelve a
+   suscribirse queda rechazada para siempre, porque `stripe_customer_id` nunca
+   se limpia), la otra que era demasiado laxa (una organización que **nunca** se
+   suscribió tiene las columnas en `NULL`, así que la guarda pasa y cualquier
+   `client_reference_id` puede reclamarla). Ambas tienen razón, y eso es la
+   respuesta: ningún predicado sobre la fila actual distingue una primera
+   suscripción legítima de una reclamación hostil, porque la única evidencia en
+   cualquiera de los dos sentidos es el campo que elige el atacante. La
+   capacidad se niega a ser el sitio donde una organización se ata por primera
+   vez a un cliente de Stripe; esa atadura la debe registrar un flujo
+   autenticado de primera parte **antes** de que llegue ningún webhook, y eso es
+   **DP-CAP-15**.
 3. Leer el estado previo (para `before_json`).
 4. `UPDATE public.organizations SET …` — sólo las seis columnas concedidas.
 5. `INSERT INTO public.audit_logs` con `action = 'stripe.subscription.*'`,
@@ -300,8 +329,22 @@ REVOKE ALL ON FUNCTION … FROM PUBLIC;   -- las tres
 ```
 
 Que `uellix_app` **no** pueda llamar a estas funciones es tan importante como
-que `uellix_stripe` sí pueda: es lo que impide que un endpoint cualquiera de la
-aplicación mueva una cuota.
+que `uellix_stripe` sí pueda: impide que CAP-03 **añada** al runtime una vía
+para mover cuotas.
+
+> **Lo que esto NO afirma, corregido en la segunda ronda.** Un borrador decía
+> que era *"lo que impide que un endpoint cualquiera de la aplicación mueva una
+> cuota"*. Es falso, y el mecanismo es **preexistente**: `stella_0004` §6b
+> concede `SELECT, INSERT, UPDATE, DELETE` **a nivel de tabla** sobre
+> `organizations` a `uellix_writer`, `uellix_app` hereda, y
+> `orgs_update_admin_or_super` es una policy `{public}` sin predicado de
+> columna. Cualquier `organization_admin` puede escribir
+> `stella_monthly_quota` por el ORM, hoy, sin CAP-03. Negar el `EXECUTE` no
+> cierra esa vía porque esa vía nunca pasó por aquí.
+>
+> Registrado como **RR-CAP-10**. Cerrarlo exige acotar por columna el `UPDATE`
+> de `uellix_writer` sobre `organizations`, que es un cambio a la superficie de
+> escritura del runtime y no cabe en un paquete de capacidad.
 
 `uellix_cap_stripe`, por columna:
 

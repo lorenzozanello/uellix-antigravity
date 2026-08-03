@@ -237,13 +237,37 @@ CREATE POLICY cap_lead_insert
 ON public.marketing_leads FOR INSERT TO uellix_cap_lead
 WITH CHECK (lead_status = 'new');
 
--- 2.5 Take the runtime's privilege away.
+-- 2.5 Take the runtime's privilege away — and keep it away.
 --
--- This is the statement that makes the package a net REDUCTION. After it,
--- uellix_app (which inherits from uellix_writer) cannot select, insert, update
--- or delete a marketing lead by any route: not through the ORM, not through a
--- future endpoint, not by accident.
+-- The REVOKE is what makes the package a net REDUCTION. On its own it is NOT
+-- durable: stella_0004 §6b unconditionally grants these same four privileges
+-- to uellix_writer on every non-append-only table, marketing_leads included,
+-- and its own postcondition ABORTS if they are missing. Both scripts are
+-- documented as re-runnable, so re-applying stella_0004 after this package
+-- would silently restore the grant and pass its own checks, with no diagnostic
+-- anywhere.
+--
+-- The RESTRICTIVE policy is the durable half. A restrictive policy is ANDed
+-- with the permissive set rather than ORed into it, so USING (false) denies
+-- uellix_app every row on this table no matter what grants or permissive
+-- policies exist now or later. The definer is untouched: this policy names
+-- uellix_app, and RLS evaluates only the policies of the role in effect —
+-- inside the SECURITY DEFINER that role is uellix_cap_lead.
+--
+-- The pre-existing table grants of anon and authenticated are deliberately
+-- NOT revoked, and the asymmetry with the two policies this package drops is
+-- worth stating rather than leaving to be inferred: those grants belong to
+-- stella_0004's PostgREST contract, not to this capability, and revoking them
+-- here would make a change to a surface CAP-04 does not own. With both INSERT
+-- policies gone they are inert — which is precisely the "authorisation waiting
+-- for a role" this package warns about, so it is registered (RR-CAP-11) rather
+-- than silently accepted.
 REVOKE SELECT, INSERT, UPDATE, DELETE ON public.marketing_leads FROM uellix_writer;
+
+DROP POLICY IF EXISTS cap_lead_deny_runtime ON public.marketing_leads;
+CREATE POLICY cap_lead_deny_runtime
+ON public.marketing_leads AS RESTRICTIVE FOR ALL TO uellix_app
+USING (false) WITH CHECK (false);
 
 RESET ROLE;
 
@@ -272,6 +296,12 @@ DECLARE
   v_company text;
   v_sroi    text;
 BEGIN
+  -- The house bound, for consistency with the other four capabilities. This is
+  -- the SECOND write reachable by fully anonymous traffic (CAP-02 s counter is
+  -- the other), and it was the only plpgsql function in the campaign without
+  -- one.
+  SET LOCAL lock_timeout = '3s';
+
   -- Normalised HERE, not only in Zod. Uniqueness is defined over the
   -- normalised value, so normalising in two places with two implementations
   -- would produce duplicates the index cannot see.
@@ -332,6 +362,14 @@ EXCEPTION
   -- and an existence oracle for exactly the question §6 exists to refuse.
   WHEN SQLSTATE 'U0001' THEN
     RAISE;
+  -- OTHERS does NOT match query_canceled (57014) or assert_failure: PL/pgSQL
+  -- excludes both. A statement_timeout firing mid-call would therefore reach
+  -- the caller as 57014 with PostgreSQL's own message, straight through the
+  -- uniform-refusal argument. uellix_stripe carries statement_timeout as a
+  -- ROLE setting, so this is not hypothetical for CAP-03.
+  WHEN query_canceled THEN
+    RAISE LOG 'capability call cancelled (57014)';
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   WHEN OTHERS THEN
     RAISE LOG 'submit_lead refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -402,6 +440,26 @@ BEGIN
     RAISE EXCEPTION 'uellix_cap_lead can reach a relation outside CAP-04.';
   END IF;
 
+  -- 4.4a The constraint set the untargeted ON CONFLICT depends on.
+  --
+  -- An untargeted DO NOTHING swallows a violation of ANY unique or exclusion
+  -- constraint on the table, and submit_lead RETURNS void — so a lead
+  -- discarded by an unrelated constraint would be indistinguishable from a
+  -- lead stored: the endpoint answers success and the row does not exist. The
+  -- function body's comment promised this check and an earlier revision never
+  -- wrote it.
+  SELECT pg_catalog.string_agg(c.relname, ', ' ORDER BY c.relname) INTO v_extra
+    FROM pg_index i
+    JOIN pg_class c ON c.oid = i.indexrelid
+   WHERE i.indrelid = 'public.marketing_leads'::regclass
+     AND (i.indisunique OR i.indisexclusion)
+     AND c.relname NOT IN ('marketing_leads_pkey', 'uq_marketing_leads_email_source');
+  IF v_extra IS NOT NULL THEN
+    RAISE EXCEPTION
+      'marketing_leads carries unique/exclusion constraints this design does not account for: %. An untargeted ON CONFLICT DO NOTHING would swallow them silently.',
+      v_extra;
+  END IF;
+
   -- 4.4 No personal-data column crept into the table.
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -456,8 +514,15 @@ BEGIN
   -- appeared.
   SELECT count(*) INTO v_policies
     FROM pg_policies WHERE schemaname = 'public' AND tablename = 'marketing_leads';
-  IF v_policies <> 2 THEN
-    RAISE EXCEPTION 'Expected exactly 2 policies on marketing_leads, found %.', v_policies;
+  IF v_policies <> 3 THEN
+    RAISE EXCEPTION 'Expected exactly 3 policies on marketing_leads, found %.', v_policies;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'marketing_leads'
+      AND policyname = 'cap_lead_deny_runtime' AND permissive = 'RESTRICTIVE'
+  ) THEN
+    RAISE EXCEPTION 'cap_lead_deny_runtime is missing or is not RESTRICTIVE; the runtime denial would not survive a re-application of stella_0004.';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies

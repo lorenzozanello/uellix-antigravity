@@ -99,6 +99,7 @@ interface Capability {
   readonly functions: readonly string[]
   readonly policyPrefix: string
   readonly policyCount: number
+  readonly restrictiveCount: number
   readonly doc: string
 }
 
@@ -111,7 +112,8 @@ const CAPABILITIES: Capability[] = [
     executor: 'uellix_app',
     functions: ['accept_invitation'],
     policyPrefix: 'cap_invitation_',
-    policyCount: 6,
+    policyCount: 9,   // 6 permissive + 3 RESTRICTIVE (round 2, F-02)
+    restrictiveCount: 3,
     doc: 'capabilities/CAP_01_INVITATIONS.md',
   },
   {
@@ -122,7 +124,8 @@ const CAPABILITIES: Capability[] = [
     executor: 'uellix_app',
     functions: ['verify_report', 'record_verification_hit'],
     policyPrefix: 'cap_verification_',
-    policyCount: 5,
+    policyCount: 7,   // 5 permissive + 2 RESTRICTIVE
+    restrictiveCount: 2,
     doc: 'capabilities/CAP_02_PUBLIC_VERIFICATION.md',
   },
   {
@@ -134,6 +137,7 @@ const CAPABILITIES: Capability[] = [
     functions: ['stripe_begin_event', 'stripe_apply_subscription', 'stripe_fail_event'],
     policyPrefix: 'cap_stripe_',
     policyCount: 4,
+    restrictiveCount: 0,
     doc: 'capabilities/CAP_03_STRIPE.md',
   },
   {
@@ -144,7 +148,8 @@ const CAPABILITIES: Capability[] = [
     executor: 'uellix_app',
     functions: ['submit_lead'],
     policyPrefix: 'cap_lead_',
-    policyCount: 1,
+    policyCount: 2,   // cap_lead_insert + the RESTRICTIVE cap_lead_deny_runtime
+    restrictiveCount: 1,
     doc: 'capabilities/CAP_04_PUBLIC_LEADS.md',
   },
   {
@@ -155,7 +160,8 @@ const CAPABILITIES: Capability[] = [
     executor: 'uellix_app',
     functions: ['bootstrap_organization'],
     policyPrefix: 'cap_bootstrap_',
-    policyCount: 8,
+    policyCount: 11,  // 8 permissive + 3 RESTRICTIVE
+    restrictiveCount: 3,
     doc: 'capabilities/CAP_05_ORGANIZATION_BOOTSTRAP.md',
   },
 ]
@@ -535,8 +541,13 @@ describe('capability campaign — dry-run regressions', () => {
     const fns = parseFunctions(code(read('stella_0008_stripe_webhook_identity.sql')))
     const apply = fns.find((f) => f.name === 'stripe_apply_subscription')!
     expect(apply.body).not.toMatch(/SET status\s*=\s*'failed'/)
+    // stripe_fail_event now routes 'not_applicable' to the ignored state, so
+    // the assignment is a CASE rather than a literal. What the gate has to hold
+    // is that the failure marking lives HERE, in its own transaction, and
+    // nowhere else.
     const fail = fns.find((f) => f.name === 'stripe_fail_event')!
-    expect(fail.body).toMatch(/SET status\s*=\s*'failed'/)
+    expect(fail.body).toMatch(/status\s*=\s*CASE WHEN p_error_code/)
+    expect(fail.body).toMatch(/'failed'/)
   })
 
   it.each(CAPABILITIES)('$id: every function collapses engine errors into the uniform refusal', (cap) => {
@@ -814,6 +825,24 @@ describe('capability campaign — packages guard themselves', () => {
       .map((m) => m[1])
       .filter((n) => n.startsWith(cap.policyPrefix))
     expect(created.length).toBe(cap.policyCount)
+  })
+
+  it.each(CAPABILITIES)('$id declares the RESTRICTIVE policies its bounds depend on', (cap) => {
+    // Permissive policies are combined with OR, and the 105 {public} baseline
+    // policies apply to the capability definers too — their predicates call
+    // auth.uid(), a SESSION GUC that SECURITY DEFINER does not reset, so inside
+    // the definer they resolve to the CALLER, not to the empty set. Every "the
+    // policy bounds this even if the body were rewritten" claim was false until
+    // these landed: a RESTRICTIVE policy is ANDed and cannot be OR-ed away.
+    const restrictive = [...code(read(cap.forward)).matchAll(/CREATE POLICY\s+(\w+)[\s\S]*?(?=;)/g)]
+      .filter((m) => /AS RESTRICTIVE/i.test(m[0]))
+      .map((m) => m[1])
+    expect(restrictive.length, `${cap.id} restrictive policy count`).toBe(cap.restrictiveCount)
+    for (const name of restrictive) {
+      expect(code(read(cap.rollback)), `${cap.rollback} does not drop ${name}`).toMatch(
+        new RegExp(`DROP POLICY IF EXISTS\\s+${name}\\b`),
+      )
+    }
   })
 
   it.each(CAPABILITIES)('$id rollback drops every policy the forward creates', (cap) => {
