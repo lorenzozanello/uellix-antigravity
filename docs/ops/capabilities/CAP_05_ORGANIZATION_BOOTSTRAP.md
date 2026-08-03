@@ -395,11 +395,13 @@ parcial.
 * **RR-CAP-05-B** — el error de slug distinguible permite enumerar slugs.
   Justificado mientras los slugs sean públicos (§3.2); debe revisarse si dejan
   de serlo.
-* **RR-CAP-05-C** — la configuración inicial de la organización (paso 13) se
-  diseña como un `INSERT` en la tabla de settings correspondiente. **No se
-  especifican los valores** porque dependen de decisiones de producto
-  (moneda base, país, plan). El paquete lo deja como paso explícito con los
-  defaults del esquema.
+* **RR-CAP-05-C — CERRADO.** No existe tabla de settings en este esquema: la
+  configuración de una organización **son sus propias columnas**. Toda la que
+  la capacidad no nombra en su `INSERT` toma el `DEFAULT` de la columna, cuota
+  incluida — y ese es exactamente el mecanismo por el que el bootstrap no puede
+  elegir plan ni cuota: no tiene grant sobre esas columnas, así que nombrarlas
+  fallaría. Un borrador de este documento describía un `INSERT` en "la tabla de
+  settings correspondiente"; esa tabla no existe y el paquete nunca la tocó.
 * **RR-CAP-05-D** — `syncUserProfile` sigue ocurriendo **fuera** de la RPC, en
   la server action. Si falla, el `SELECT` de `public.users` del paso 7 no
   encuentra al sujeto y el bootstrap devuelve error uniforme. Es fail-closed y

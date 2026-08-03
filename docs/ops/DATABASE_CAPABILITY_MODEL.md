@@ -174,8 +174,23 @@ Las cinco capacidades comparten **una convención**, no una implementación:
 
 `SQLSTATE` reservado: `U0001` (`capability_denied`), con mensaje fijo
 `capability request denied`. No lleva detalle, ni `HINT`, ni el argumento que
-falló. Cada capacidad lo emite desde exactamente un punto de su cuerpo, para
-que no haya dos rutas de error con latencias distintas.
+falló.
+
+> **Precisión (revisión adversarial).** Un borrador afirmaba que cada capacidad
+> emite el error *"desde exactamente un punto de su cuerpo, para que no haya dos
+> rutas de error con latencias distintas"*. **Es falso**, y la conclusión no se
+> seguía de la premisa aunque lo fuera. `accept_invitation` lanza `U0001` desde
+> siete puntos y `bootstrap_organization` desde seis, a profundidades distintas.
+> Lo que sí se afirma, y se verifica, es: **el mismo SQLSTATE y el mismo mensaje
+> desde todos los puntos de rechazo**, sin `HINT` ni `DETAIL`. El número de
+> sentencias ejecutadas antes del rechazo se iguala **sólo** donde el documento
+> de la capacidad lo dice (CAP-01 §14.1, RR-CAP-01-A).
+
+Además, cada función `plpgsql` lleva un bloque `EXCEPTION` que colapsa en
+`U0001` cualquier SQLSTATE que produzca el motor. Sin él la uniformidad valía
+sólo para los caminos que el autor enumeró, no para los que produce PostgreSQL:
+un `23505` llega al llamante con su `DETAIL`, y el `DETAIL` **cita valores de
+fila** — un id de usuario real, o un identificador de suscripción de Stripe.
 
 Esto tiene un coste de usabilidad real y no se oculta: hoy `acceptInvitation`
 distingue cuatro casos ("inválida", "ya no es válida", "expirada", "otro
@@ -374,7 +389,7 @@ reconceda. Es el mismo contrato que ya rige `uellix_migrator → uellix_owner`.
 | `public.organizations` | — | (preex.) | (preex.) | **—** | `S(id,stripe_*)` + `U(stripe_price_id, stella_monthly_quota, stella_plan_label, stripe_customer_id, stripe_subscription_id, updated_at)` | — | — |
 | `public.stripe_webhook_events` (nueva) | — | — | — | **—** | `S,I,U`«col» | — | — |
 | `public.audit_logs` | — | sin INSERT | `S,I` | **—** | `I`«col» | — | — |
-| `public.projects`, `sroi_*`, `evidence_*`, `stella_*` | — | (preex.) | (preex.) | **— ninguno, y sin `USAGE` para nombrarlas** | **—** | — | — |
+| `public.projects`, `sroi_*`, `evidence_*`, `stella_*` | — | (preex.) | (preex.) | **— ningún privilegio de tabla ni de columna** (tiene `USAGE` sobre `public` heredado de `PUBLIC`, §4.1 / RR-CAP-7) | **—** | — | — |
 
 #### CAP-04 — lead público
 
@@ -418,9 +433,19 @@ comprueba con una consulta de catálogo distinta:
 3. **Disyunción de grants.** La intersección de las tablas alcanzables por dos
    roles de capacidad cualesquiera es vacía o está restringida a columnas
    disjuntas. El caso no vacío es `audit_logs` — tres capacidades insertan en
-   él —, y ahí el aislamiento lo da el `WITH CHECK` de la policy, que ata la
-   fila a la organización que la función acaba de tocar.
-   *Verificación:* `aclexplode(relacl)` + `pg_attribute` ACL.
+   él —, y ahí el aislamiento lo dan tres `WITH CHECK` mutuamente excluyentes
+   por **`entity_type`, prefijo de `action` y nulidad de `actor_user_id`**
+   (`cap_stripe_insert_audit` exige actor `NULL` y `action` con prefijo
+   `stripe.`; las otras dos exigen actor **no** nulo y listas de acciones
+   disjuntas). *Verificación:* `aclexplode(relacl)` + `pg_attribute` ACL +
+   `pg_policies.with_check`.
+
+   > **Precisión (revisión adversarial).** Un borrador decía que ese aislamiento
+   > lo da un `WITH CHECK` que *"ata la fila a la organización que la función
+   > acaba de tocar"*. Ninguna de las tres policies menciona `organization_id`,
+   > y no puede: una policy no ve las variables locales de la función que la
+   > invoca. La atadura a la organización vive en el cuerpo. Por eso el punto 4
+   > de esta lista se limita a lo que **sí** es comprobable por catálogo.
 
 4. **Cero privilegio del actor externo.** `uellix_stripe` no tiene ningún
    privilegio, de tabla ni de columna, sobre ninguna de las 38 tablas de
@@ -429,8 +454,11 @@ comprueba con una consulta de catálogo distinta:
    sobre la que no se tiene privilegio no sirve de nada.
    *Verificación:* `has_any_column_privilege` × 38 tablas × 4 modos.
 
-Ninguna de las cuatro depende de leer el cuerpo de una función. Ese es el
-punto: el aislamiento es una propiedad del catálogo, no una promesa del código.
+Los puntos 1, 2 y 4 no dependen de leer el cuerpo de ninguna función: son
+propiedades del catálogo. El punto 3 lo es en su parte de grants; su parte de
+`audit_logs` se apoya en tres `WITH CHECK` disjuntos, que también están en el
+catálogo — pero la atadura de cada fila a **su** organización vive en el cuerpo
+de la función, y eso se dice aquí en vez de dejarlo implícito.
 
 ---
 
@@ -444,7 +472,10 @@ Enumerado para que la ausencia sea deliberada y no un olvido:
 * No concede acceso directo a tabla a ningún actor externo: **todo** pasa por
   una función.
 * No toca los 10 triggers append-only, ni las 107 policies existentes, salvo
-  las tres de `marketing_leads` que CAP-04 retira explícitamente.
+  las **dos** de `marketing_leads` que CAP-04 retira explícitamente
+  (`anon_insert_marketing_leads` y `authenticated_insert_marketing_leads`). La
+  tercera, `super_admins_read_marketing_leads`, se conserva a propósito y la
+  postcondición del paquete falla si desaparece (RR-CAP-6 / RC-13).
 * No aplica nada a ningún stack. Los paquetes viven en `db/prepared/` y son
   inertes por construcción (`tests/prepared-sql-source-of-truth.test.ts`).
 * No habilita ninguna capacidad: los cinco paquetes dejan su superficie

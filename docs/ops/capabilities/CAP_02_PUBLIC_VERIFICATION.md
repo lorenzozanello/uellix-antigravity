@@ -153,8 +153,15 @@ uellix_capability.verify_report(p_hash text)
   `default_transaction_read_only` del script de auditoría.
 * **`LANGUAGE sql`** con un único `SELECT` significa que no hay ramas, ni
   variables, ni bucles. El cuerpo entero es inspeccionable de un vistazo, y no
-  hay ningún camino de error que pueda diferir de otro — lo que elimina por
-  construcción una clase de canal lateral de temporización.
+  hay ningún camino de **error** que pueda diferir de otro: la función no
+  contiene un solo `RAISE`.
+
+  Lo que esto **no** hace es igualar el tiempo. Un plan compartido no es una
+  cantidad de trabajo compartida: un hash inexistente se corta en el índice
+  único y nunca sondea los otros dos. Se registra como **RR-CAP-02-E**, con la
+  misma severidad y el mismo tratamiento que RR-CAP-01-A en CAP-01 — sería
+  incoherente registrar allí una diferencia de una consulta y negar aquí una
+  equivalente.
 
 El cuerpo:
 
@@ -413,7 +420,7 @@ Tras el rollback: `/verify/[hash]` vuelve a 404 para todo. Cero estado parcial.
 | **Token (hash) theft** | Baja por diseño | El hash **es** un bearer token y se comparte a propósito. Lo que protege es *qué* revela: sólo la disclosure aprobada | El titular del hash ve lo publicado. Es el propósito |
 | **Replay** | Ninguna | Sin efectos | Ninguno |
 | **Brute force** | Baja | 256 bits; rate limit; forma validada | Ninguno realista |
-| **Enumeration** | **Crítica si se falla** | Los cuatro casos de fallo devuelven **el mismo conjunto vacío** por construcción del `JOIN`, no por una rama del código | **Timing**: `LANGUAGE sql` con un único `SELECT` hace que todos los caminos ejecuten el mismo plan. Es la razón de elegir `sql` sobre `plpgsql` |
+| **Enumeration** | **Crítica si se falla** | Los cuatro casos de fallo devuelven **el mismo conjunto vacío** por construcción del `JOIN`, no por una rama del código. Verificado en el dry run: hash inexistente, reporte sin disclosure, disclosure revocada y borrador con disclosure devuelven los cuatro cero filas | **RR-CAP-02-E — el tiempo NO está igualado.** Un plan no es una cantidad de trabajo: un hash inexistente se corta en el índice único de `verification_hash` y no llega a sondear `report_public_disclosures`. El *resultado* es indistinguible por construcción; la *latencia* no se ha igualado ni medido, y decir lo contrario sería más fuerte de lo que la construcción sostiene |
 | **Oráculo de existencia** | **Alta** | Un reporte `locked` sin disclosure es indistinguible de un hash inexistente. Publicar no confirma existir, y existir no confirma publicar | Ninguno |
 | **Cross-org** | **Alta** | La función no acepta ningún filtro salvo el hash. No hay `LIMIT`, `OFFSET`, ni predicado de organización que un llamante pueda inyectar. **Por eso no es una vista** | Ninguno |
 | **Confused deputy** | Media | El definer no puede leer nada que no esté en la lista de columnas | Ninguno |

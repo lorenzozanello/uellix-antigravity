@@ -135,7 +135,7 @@ transacción abierta bloquearía filas de `organizations` indefinidamente.
 public.stripe_webhook_events
   event_id        text        PRIMARY KEY          -- la clave de idempotencia
   event_type      text        NOT NULL
-  status          text        NOT NULL DEFAULT 'received'
+  status          text        NOT NULL           -- sin DEFAULT: ver nota
   attempts        integer     NOT NULL DEFAULT 1
   received_at     timestamptz NOT NULL DEFAULT now()
   completed_at    timestamptz
@@ -144,6 +144,10 @@ public.stripe_webhook_events
   organization_id uuid REFERENCES public.organizations(id)
   CHECK (status IN ('received','processing','completed','failed'))
 ```
+
+`status` no tiene `DEFAULT`. La única inserción —en `stripe_begin_event`— escribe
+siempre `'processing'`, así que un `DEFAULT 'received'` sería un estado que nada
+puede alcanzar. Se conserva en el `CHECK` como valor reservado.
 
 **`event_id` es la PRIMARY KEY**, y esa sola decisión sustituye al
 *check-then-act* por una operación atómica: `INSERT … ON CONFLICT (event_id)`.
@@ -510,7 +514,7 @@ mismo estado que hoy, que es fail-closed y ruidoso, no silencioso.
 | Amenaza | Severidad | Mitigación | Residual |
 |---|---|---|---|
 | **Token theft** (fuga de `STRIPE_WEBHOOK_SECRET`) | **Crítica** | El secreto sólo lo lee este handler; no se comparte con otros webhooks; rotable en Stripe | Con el secreto, un atacante puede forjar eventos. Lo que **no** puede es leer nada: las RPC no devuelven datos |
-| **Token theft** (fuga de `UELLIX_STRIPE_DATABASE_URL`) | **Alta** | El rol no tiene `USAGE` sobre `public`; sólo `EXECUTE` sobre tres funciones que mueven cuota. Rotable sin tocar el runtime | Un atacante podría alterar cuotas. **No** puede leer clientes, proyectos ni evidencia |
+| **Token theft** (fuga de `UELLIX_STRIPE_DATABASE_URL`) | **Alta** | El rol no tiene **ningún privilegio de tabla ni de columna** sobre las 38 relaciones de `public`, en los 4 modos DML (verificado por la postcondición del paquete); sólo `EXECUTE` sobre tres funciones que mueven cuota. Rotable sin tocar el runtime | Un atacante podría alterar cuotas. **No** puede leer clientes, proyectos ni evidencia. Nota: sí hereda `USAGE` sobre el esquema `public` de `PUBLIC` y eso no se puede evitar (§3, RR-CAP-7); nombrar una tabla sin privilegio sobre ella no sirve de nada |
 | **Replay** | Media | `PRIMARY KEY (event_id)` + máquina de estados | Ninguno |
 | **Brute force** | Baja | HMAC; rate limit sobre firmas inválidas | Ninguno |
 | **Enumeration** | Media | Las RPC devuelven `claimed`/`duplicate`/`in_progress`, nunca si una organización existe. Un `org_not_resolved` se registra en la tabla, no se devuelve | Ninguno |

@@ -249,3 +249,28 @@ tenía que resolver, y conviene enlazarlas en lugar de duplicarlas:
 | **RR-CAP-05-B** | El error de slug es distinguible **a propósito** (el espacio de slugs es público por diseño). Debe revisarse si DP-CAP-12 cambia el modelo de URL | NIT |
 | **RR-CAP-05-C** | La "configuración inicial" no es una tabla aparte: en este esquema la configuración de una organización **son sus propias columnas**, y toda la que la capacidad no nombra toma el `DEFAULT`. Ese es el mecanismo por el que no puede elegir plan ni cuota | CERRADO — documentado |
 | **RR-CAP-05-D** | `syncUserProfile` ocurre **fuera** de la RPC. Si falla, el `SELECT` sobre `public.users` no encuentra al sujeto y el bootstrap devuelve error uniforme: fail-closed y correcto, pero opaco para un usuario legítimo. El endpoint debe llamarlo y comprobar su resultado **antes** de la RPC | MINOR |
+
+### Riesgos añadidos tras la revisión adversarial y el dry run (2026-08-03)
+
+Inventario completo de hallazgos y su cierre:
+[`capabilities/ADVERSARIAL_FINDINGS.md`](capabilities/ADVERSARIAL_FINDINGS.md).
+**10 BLOCKER y 7 MAJOR cerrados**, todos verificados por ejecución en un
+contenedor desechable sin red. Ninguna severidad se rebajó.
+
+| ID | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| **RR-CAP-02-E** | El tiempo de `verify_report` **no está igualado**. Un hash inexistente se corta en el índice único de `verification_hash` y nunca sondea `report_public_disclosures`; uno existente pero no publicado sí. El *resultado* es indistinguible por construcción del `JOIN`; la *latencia* no. Un borrador afirmaba lo contrario y se corrigió | MINOR | ABIERTO — registrado, no mitigado. Mismo trato que RR-CAP-01-A |
+| **RR-CAP-02-F** | CAP-02 §10 afirmaba que crear y revocar una disclosure se auditan. **No hay trigger, ni inserción en `audit_logs`, ni protección append-only sobre `report_public_disclosures`**: un admin puede publicar, revocar y volver a publicar sin dejar rastro. La afirmación descansaba en código de aplicación inexistente | MINOR | ABIERTO — documento corregido a lo que el SQL hace; el trigger queda como trabajo de implementación |
+| **RR-CAP-02-G** | `capability_verification_hits` no lo lee **nada**: ninguna función y ningún grant lo exponen al producto, y el rollback lo elimina. La pregunta que el diseño dice poder responder —«¿cuántas veces se verificó este certificado?»— no está implementada | NIT | ABIERTO — el `COMMENT` de la tabla dice ahora «recogido, no expuesto» |
+| **RR-CAP-8** | La exclusión de línea base por prefijo (`cap_`, `disclosures_`) es el mecanismo que hace independientes a los cinco paquetes **y** un punto ciego: cualquier policy creada con esos prefijos, sobre cualquier tabla y para cualquier rol, es invisible a las diez precondiciones y postcondiciones | NIT | ABIERTO — acotar la exclusión a nombres exactos es posible; no se hace para no acoplar las precondiciones al inventario de cada paquete |
+
+**RR-CAP-0 actualizado.** Ya no dice «todo es SQL leído, no SQL corrido». Los
+cinco paquetes se aplicaron dos veces, se probaron con 57 aserciones vivas y
+cinco pruebas de concurrencia con sesiones reales, se revirtieron y se
+reaplicaron — en un contenedor desechable **sin red**, sembrado desde un volcado
+*schema-only* del stack local obtenido por lectura. Lo que sigue abierto es
+distinto y más pequeño: **el dry run no es Supabase gestionado**. RR-CAP-5 y
+RR-09 siguen intactos, y `uellix_stripe` (rol `LOGIN` nuevo) y los dos
+`GRANT USAGE ON SCHEMA auth` son exactamente las tres cosas que Supabase
+gestionado puede rechazar. **No verificado: el acceso remoto está prohibido en
+esta unidad.**

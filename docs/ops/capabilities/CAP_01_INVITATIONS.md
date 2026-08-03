@@ -121,13 +121,14 @@ uellix_capability.accept_invitation(p_token text)
 | 2 | `v_subject := auth.uid()`; si es `NULL` → error uniforme | El sujeto **nunca** llega por parámetro. Si no hay JWT, no hay capacidad. |
 | 3 | `v_hash := pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(p_token,'UTF8')),'hex')` | Hash en servidor. `convert_to` fija la codificación: sin él, el resultado dependería de `client_encoding`. |
 | 4 | Rechazar si `p_token` no es exactamente 64 caracteres hex | Barato, y evita gastar un `SELECT` indexado en basura. Mismo error uniforme. |
-| 5 | `SELECT … FROM public.invitations WHERE token_hash = v_hash FOR UPDATE` | Un solo acceso, por índice, bloqueando la fila. |
+| 5 | `SELECT … FROM public.invitations WHERE token_hash = v_hash` — **sin `FOR UPDATE`** | Corregido tras el dry run. `SELECT … FOR UPDATE` se filtra por el `USING` de la policy de UPDATE, que aquí es `status = 'pending'`; una lectura con bloqueo de una fila **ya aceptada** devuelve `NOT FOUND`, con lo que el paso 7 era inalcanzable y recargar la página daba rechazo. |
 | 6 | Si no hay fila → error uniforme | |
-| 7 | **Camino idempotente**: si `status='accepted'` **y** `accepted_by = v_subject` → devolver `(organization_id, role)` y salir **sin escribir** | Replay del mismo sujeto = éxito. Es lo que hace un usuario que recarga la página. |
+| 7 | **Camino idempotente**: si `status='accepted'` **y** `accepted_by = v_subject` → devolver `(organization_id, role)` y salir **sin escribir** | Replay del mismo sujeto = éxito. No necesita bloqueo porque no escribe. |
 | 8 | Si `status <> 'pending'` → error uniforme | Cubre `revoked`, `expired`, y `accepted` por otro sujeto. |
 | 9 | Si `expires_at <= now()` → error uniforme, **sin escribir** | Corrige la debilidad 4: la expiración deja de tener efecto de escritura. El barrido de expirados es un trabajo aparte (§9). |
 | 10 | `SELECT email FROM public.users WHERE id = v_subject` y comparar con `lower(trim(invitation.email))`; si no casa → error uniforme | La comparación se hace contra la tabla, **no** contra `request.jwt.claims->>'email'`: el claim lo emite el IdP y puede ir sin verificar. |
 | 11 | Si ya existe membresía activa para `v_subject` → error uniforme | Invariante de una membresía activa por usuario. |
+| 11b | **Ahora sí**: `SELECT status … WHERE id = v_inv_id FOR UPDATE` y recomprobar `pending` | Todo lo anterior se decidió sobre una lectura sin bloqueo. Este es el punto en que una aceptación concurrente deja de ser posible. La fila sigue `pending`, así que el `USING` de la policy la admite. |
 | 12 | `INSERT INTO public.organization_members (…)` con `role` tomado de **la fila**, nunca del parámetro | El rol es lo que escribió quien invitó. |
 | 13 | `UPDATE public.invitations SET status='accepted', accepted_at=now(), accepted_by=v_subject` | Cierra la invitación y **registra quién**. Es la corrección de la debilidad 3. |
 | 14 | Dos `INSERT` en `public.audit_logs` (invitación aceptada, membresía creada), con `actor_user_id = v_subject` | Cumple `audit_logs_insert_*` de `0005c`, que rechaza actor `NULL`. |
@@ -196,7 +197,7 @@ se concede (no puede reescribir un token), y ningún acceso a `organizations`,
 
 ## 6. Policies necesarias
 
-Cuatro policies nuevas, todas `TO uellix_cap_invitation` y ninguna `TO PUBLIC`:
+**Seis** policies nuevas, todas `TO uellix_cap_invitation` y ninguna `TO PUBLIC`:
 
 | Nombre | Tabla | Cmd | Cláusula |
 |---|---|---|---|
@@ -205,10 +206,20 @@ Cuatro policies nuevas, todas `TO uellix_cap_invitation` y ninguna `TO PUBLIC`:
 | `cap_invitation_insert_members` | `organization_members` | `INSERT` | `WITH CHECK (status = 'active' AND role <> 'super_admin')` |
 | `cap_invitation_insert_audit` | `audit_logs` | `INSERT` | `WITH CHECK (actor_user_id IS NOT NULL AND entity_type IN ('invitation','organization_member'))` |
 
-`cap_invitation_select_users` no hace falta como policy nueva si `users` ya
-tiene una policy que admita al rol; **no la tiene**, así que se añade una
-quinta acotada a la propia fila: `USING (true)` sería innecesariamente amplia
-y aquí sí se puede acotar de verdad, porque el `SELECT` es por `id`.
+Faltan dos, y conviene nombrarlas porque un borrador de este documento decía
+"cuatro" y el paquete crea seis:
+
+| Nombre | Tabla | Cmd | Cláusula |
+|---|---|---|---|
+| `cap_invitation_select_members` | `organization_members` | `SELECT` | `USING (true)` |
+| `cap_invitation_select_users` | `users` | `SELECT` | `USING (id = auth.uid())` |
+
+`cap_invitation_select_users` **sí** está acotada a la propia fila, como este
+documento decía y una revisión anterior del SQL no hacía: el cuerpo sólo lee
+`id = auth.uid()`, así que la policy puede llevar la restricción y la lleva.
+La de `organization_members` no puede acotarse igual —la comprobación es
+"¿existe alguna membresía activa de este sujeto?"— y se queda en `USING (true)`,
+acotada por el grant por columna y por el cuerpo.
 
 El `WITH CHECK` de `cap_invitation_update_invitations` es la pieza que impide
 que un bug convierta la capacidad en una máquina de reabrir invitaciones: la
