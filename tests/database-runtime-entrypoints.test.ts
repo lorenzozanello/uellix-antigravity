@@ -25,6 +25,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
+import { EntrypointScanner } from './helpers/entrypoint-scanner'
 
 const ROOT = process.cwd()
 const APP = path.join(ROOT, 'app')
@@ -611,6 +612,29 @@ describe('every entry point that can reach the database opens an identity contex
     expect(databaseReaching.length).toBeGreaterThan(30)
   })
 
+  // The published regex-layer figures (docs/ops/DATABASE_RUNTIME_CUTOVER.md and
+  // STELLA_FABLE_TEST_LEDGER.md) are pinned here so they cannot drift in silence.
+  // These are the app/** entry-point counts of the REGEX layer, distinct from
+  // the AST layer's 117/95/82/13 over app/** + components/**. Update BOTH the
+  // number and the doc together, deliberately.
+  it('the regex-layer coverage matches the figures the docs publish', () => {
+    const contextualized = databaseReaching.filter((file) => {
+      if (file in ALLOWLIST) return false
+      const source = readFileSync(path.join(ROOT, file), 'utf8')
+      const symbols = databaseSymbols(path.join(ROOT, file), source)
+      return serverRegions(source).every(
+        (region) => !usesDatabase(region.body, symbols) || opensAContext(region.body)
+      )
+    })
+    const allowlisted = databaseReaching.filter((file) => file in ALLOWLIST)
+    expect({
+      inventoried: ENTRY_POINTS.length,
+      reaching: databaseReaching.length,
+      contextualized: contextualized.length,
+      allowlisted: allowlisted.length,
+    }).toEqual({ inventoried: 117, reaching: 93, contextualized: 80, allowlisted: 13 })
+  })
+
   it.each(databaseReaching)('%s', (file) => {
     if (file in ALLOWLIST) return
 
@@ -672,5 +696,206 @@ describe('the allowlist stays honest', () => {
       `${file} was audited as touching no table, and now reaches db/client.ts. Decide whether ` +
         'it needs an identity context, then move it to ALLOWLIST or wrap it.'
     ).toBe(false)
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* 5. The AST scanner — the ten shapes the regex scanner cannot see           */
+/* -------------------------------------------------------------------------- */
+//
+// Everything above this line works on regexes over source text and only walks
+// `app/**`. The reaudit demonstrated ten shapes that survive it — server JSX
+// components, aliased/namespace/dynamic imports, transitive helpers,
+// re-export barrels, decorative and conditional wrappers, non-canonical
+// driver modules, and `db` reassignment. tests/helpers/entrypoint-scanner.ts
+// closes them with a TypeScript AST + import-graph analysis; this section
+// wires it to the real tree, to a versioned inventory, and to one mutant
+// fixture per surviving shape.
+
+const SCANNER_OPTIONS = {
+  root: ROOT,
+  scanDirs: ['app', 'components', 'lib', 'db'],
+  checkedDirs: ['app', 'components'],
+  contextOpeners: [...CONTEXT_OPENERS],
+  contextModulePaths: [
+    'lib/auth/session.ts',
+    'lib/auth/database-context.ts',
+    'db/identity-context.ts',
+  ],
+  allowlist: ALLOWLIST,
+} as const
+
+const FIXTURE_ROOT = path.join(ROOT, 'tests', 'fixtures', 'entrypoint-mutants')
+
+describe('AST scanner — every mutant fixture is caught', () => {
+  const scanner = new EntrypointScanner({
+    root: FIXTURE_ROOT,
+    scanDirs: ['app', 'lib', 'db'],
+    checkedDirs: ['app'],
+    contextOpeners: ['runWithOrganizationAccess'],
+  })
+  const result = scanner.scan()
+  const unguarded = [...result.classified.entries()]
+    .filter(([, classification]) => classification === 'unguarded')
+    .map(([file]) => file)
+
+  const MUTANTS: Array<[string, string]> = [
+    ['form 1: server JSX component (old OutcomeAllocationWrapper shape)', 'app/components/LeakyWidget.tsx'],
+    ['form 1: page rendering the database-reaching component', 'app/m01-jsx/page.tsx'],
+    ['form 2: aliased import', 'app/m02-alias/page.tsx'],
+    ['form 3: namespace import', 'app/m03-namespace/page.tsx'],
+    ['form 4: dynamic import', 'app/m04-dynamic/page.tsx'],
+    ['form 5: transitive local helper', 'app/m05-helper/page.tsx'],
+    ['form 6: re-export barrel', 'app/m06-reexport/page.tsx'],
+    ['form 7: decorative wrapper', 'app/m07-decorative/page.tsx'],
+    ['form 8: conditional wrapper', 'app/m08-conditional/page.tsx'],
+    ['form 9: non-canonical driver module', 'app/m09-noncanonical/page.tsx'],
+    ['form 10: db reassigned to a local variable', 'app/m10-reassigned/page.tsx'],
+  ]
+
+  it.each(MUTANTS)('%s is flagged', (_label, file) => {
+    expect(unguarded, `${file} must be flagged as unguarded`).toContain(file)
+  })
+
+  it('flags nothing else — the clean control page and component pass', () => {
+    expect(unguarded.sort()).toEqual(MUTANTS.map(([, file]) => file).sort())
+    expect(result.classified.get('app/clean/page.tsx')).toBe('contextualized')
+  })
+
+  it('the JSX usage is detected AS a JSX usage, not incidentally', () => {
+    const jsxFindings = result.findings.filter((finding) => finding.form === 'jsx-component')
+    expect(jsxFindings.map((finding) => finding.file)).toContain('app/m01-jsx/page.tsx')
+  })
+
+  it('the decorative wrapper fixture DOES call an opener — that is the point', () => {
+    // If the fixture ever loses its opener call, it degrades into an ordinary
+    // "no opener anywhere" case and stops testing coverage-by-argument.
+    const source = readFileSync(path.join(FIXTURE_ROOT, 'app/m07-decorative/page.tsx'), 'utf8')
+    expect(source).toMatch(/runWithOrganizationAccess\s*\(/)
+  })
+})
+
+describe('AST scanner — the real tree has no unguarded server module', () => {
+  const scanner = new EntrypointScanner(SCANNER_OPTIONS)
+  const result = scanner.scan()
+
+  it('is looking at a realistic tree', () => {
+    expect(result.checkedModules.length).toBeGreaterThan(100)
+    expect(result.databaseReaching.length).toBeGreaterThan(80)
+  })
+
+  it('every database-reaching server module is contextualized or allowlisted', () => {
+    expect(
+      result.findings.map(
+        (finding) => `${finding.file}:${finding.line} [${finding.form}] ${finding.symbol}`
+      ),
+      'A server module (page, action, route, component or helper under app/ or components/)\n' +
+        'reaches the database outside an identity context. As uellix_app that query returns\n' +
+        'ZERO ROWS silently. Load the data inside the page\'s runWith* callback and pass it\n' +
+        'down as props, or wrap the region — see docs/ops/DATABASE_RUNTIME_CUTOVER.md.'
+    ).toEqual([])
+  })
+
+  it('OutcomeAllocationWrapper no longer queries — funders arrive as props', () => {
+    // The B1 regression this closure fixed: the wrapper queried funders during
+    // streaming render and silently vanished under RLS. Its old shape lives on
+    // as the LeakyWidget fixture, which the fixture suite above proves is
+    // caught. The real component still imports the (self-guarded) allocation
+    // ACTIONS it passes to the client section — that is the RPC boundary and
+    // it is fine — but it must never import a lib service or query itself.
+    const wrapper = 'app/components/allocation-form/OutcomeAllocationWrapper.tsx'
+    expect(result.classified.get(wrapper)).toBe('contextualized')
+    expect(scanner.analyzeModule(path.join(ROOT, wrapper))).toEqual([])
+    const source = readFileSync(path.join(ROOT, wrapper), 'utf8')
+    expect(source).not.toMatch(/@\/lib\/pipeline\/funders/)
+    expect(source).not.toMatch(/listFundersForCurrentOrganization/)
+  })
+
+  it('the outcomes page that feeds it stays contextualized', () => {
+    expect(
+      result.classified.get('app/app/projects/[projectId]/pipeline/outcomes/page.tsx')
+    ).toBe('contextualized')
+  })
+})
+
+describe('AST scanner — the versioned inventory stays reconciled', () => {
+  // NOT a fixed count: the inventory is a semantic map of every checked,
+  // database-reaching module to its classification. An unclassified addition
+  // fails; a stale entry fails; a classification CHANGE fails. Counts are
+  // derived from the map, never asserted as bare numbers.
+  const inventory = JSON.parse(
+    readFileSync(path.join(ROOT, 'tests', 'database-entrypoint-inventory.json'), 'utf8')
+  ) as { checkedModules: number; databaseReaching: number; modules: Record<string, string> }
+
+  const scanner = new EntrypointScanner(SCANNER_OPTIONS)
+  const result = scanner.scan()
+  const scanned = new Map([...result.classified.entries()])
+
+  it('every scanned module is in the inventory with the same classification', () => {
+    const unexpected: string[] = []
+    for (const [file, classification] of scanned) {
+      const recorded = inventory.modules[file]
+      if (recorded !== classification) {
+        unexpected.push(`${file}: scanned=${classification} inventory=${recorded ?? 'MISSING'}`)
+      }
+    }
+    expect(
+      unexpected,
+      'New or re-classified database-reaching modules must be recorded DELIBERATELY in\n' +
+        'tests/database-entrypoint-inventory.json after verifying their identity context.'
+    ).toEqual([])
+  })
+
+  it('every inventory entry still exists in the scan — no stale rows', () => {
+    const stale = Object.keys(inventory.modules).filter((file) => !scanned.has(file))
+    expect(stale, 'Remove rows for modules that no longer reach the database.').toEqual([])
+  })
+
+  it('the derived totals in the inventory header match the map', () => {
+    expect(inventory.databaseReaching).toBe(Object.keys(inventory.modules).length)
+    expect(inventory.checkedModules).toBe(result.checkedModules.length)
+  })
+})
+
+describe('AST scanner — documented residual limits (adversarial review)', () => {
+  // The adversarial reviewer surfaced two structural blind spots. Neither is one
+  // of the ten forms the scanner claims to close, and both are covered by the
+  // live runtime suites — but they are pinned here so a regression in the
+  // mitigating layer, or a silent widening of the blind spot, is visible.
+
+  // MINOR-1: the identity layer itself (contextModulePaths) is exempt from the
+  // scanner AND lives outside checkedDirs, so a NEW contextless query added to
+  // one of these three files would not be flagged structurally. The mitigation
+  // is that these three are the modules the runtime suites exercise most
+  // directly. This test asserts the mitigation still exists.
+  it('the identity-layer modules have a live runtime suite guarding them', () => {
+    for (const file of ['lib/auth/session.ts', 'lib/auth/database-context.ts', 'db/identity-context.ts']) {
+      expect(existsSync(path.join(ROOT, file)), `${file} missing`).toBe(true)
+    }
+    // These suites read the identity layer against a live database; if either is
+    // deleted, the structural blind spot on the identity layer stops being
+    // mitigated and this fails.
+    expect(existsSync(path.join(ROOT, 'tests', 'authenticated-database-context.test.ts'))).toBe(true)
+    expect(existsSync(path.join(ROOT, 'tests', 'database-runtime-rls.test.ts'))).toBe(true)
+  })
+
+  // MINOR-3: a tainted function passed BY REFERENCE to a higher-order helper
+  // that invokes it (`run(listX)`) is not classified as a usage. This is a
+  // genuine escape but it is "form 11", outside the ten the docs enumerate.
+  // Recorded so it is a known, not a silent, gap.
+  it('form 11 (tainted callback passed by reference) is a KNOWN residual, not a claim', () => {
+    const scanner = new EntrypointScanner({
+      root: FIXTURE_ROOT,
+      scanDirs: ['app', 'lib', 'db'],
+      checkedDirs: ['app'],
+      contextOpeners: ['runWithOrganizationAccess'],
+    })
+    // The clean control page passes NO tainted reference; the ten mutants cover
+    // forms 1-10. This assertion documents that form 11 has no fixture and is
+    // therefore explicitly out of the closed set — see docs, "residual local
+    // risks".
+    const result = scanner.scan()
+    const flagged = [...result.classified.entries()].filter(([, c]) => c === 'unguarded').length
+    expect(flagged).toBe(11) // 10 mutant pages + LeakyWidget; no form-11 fixture
   })
 })
