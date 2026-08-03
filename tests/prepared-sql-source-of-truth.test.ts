@@ -17,8 +17,25 @@ const MIGRATIONS_DIR = path.join(ROOT, 'db', 'migrations')
 
 const readRoot = (...p: string[]) => readFileSync(path.join(ROOT, ...p), 'utf8')
 
-/** Tables this campaign manages outside the drizzle chain (ADR 21 §4). */
-const GATE_MANAGED_TABLES = ['stella_suggestion_decisions', 'evidence_chunks'] as const
+/**
+ * Tables this campaign manages outside the drizzle chain (ADR 21 §4).
+ *
+ * The last four arrive with the public-capability campaign (stella_0006..0010,
+ * design only — nothing applied). They belong on this list for exactly the
+ * reason the first two do: if any of them appeared in db/schema.ts, a future
+ * `drizzle-kit generate` would emit `CREATE TABLE` without IF NOT EXISTS, which
+ * fails against a database where the prepared package already ran. Adding them
+ * BEFORE the packages are applied is the point — the guard has to exist before
+ * the hazard does, not after someone hits it.
+ */
+const GATE_MANAGED_TABLES = [
+  'stella_suggestion_decisions',
+  'evidence_chunks',
+  'report_public_disclosures',
+  'capability_verification_hits',
+  'stripe_webhook_events',
+  'capability_bootstrap_attempts',
+] as const
 
 const preparedSqlFiles = readdirSync(PREPARED_DIR).filter((f) => f.endsWith('.sql'))
 

@@ -247,6 +247,21 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // storage, so every evidence object operation was silently refused.
       'stella_0005d_rollback.sql',
       'stella_0005d_storage_definer_repair.sql',
+      // 0006..0010 are the public-capability campaign: five INDEPENDENT
+      // packages, one per surface that has been failing closed since the
+      // cutover. They deliberately share no role, no function, no policy and
+      // no grant — see docs/ops/DATABASE_CAPABILITY_MODEL.md. All five are
+      // DESIGN ONLY and none has been applied to any stack.
+      'stella_0006_invitation_capability.sql',
+      'stella_0006_rollback.sql',
+      'stella_0007_public_verification_capability.sql',
+      'stella_0007_rollback.sql',
+      'stella_0008_rollback.sql',
+      'stella_0008_stripe_webhook_identity.sql',
+      'stella_0009_public_lead_capability.sql',
+      'stella_0009_rollback.sql',
+      'stella_0010_organization_bootstrap_capability.sql',
+      'stella_0010_rollback.sql',
     ])
   })
 

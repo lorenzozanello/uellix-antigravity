@@ -352,13 +352,23 @@ USING (true) WITH CHECK (true);
 -- uses the ordinary model: the same helpers every other table uses. It is NOT
 -- part of the capability and does not touch uellix_cap_verification.
 --
+-- These three name `TO uellix_app` explicitly, which departs from the 101
+-- pre-existing `{public}` policies and is deliberate. A policy with no TO
+-- clause is TO PUBLIC — the exact defect stella_0005c had to repair on the
+-- three append-only INSERT policies. Here it would be inert in practice (the
+-- USING clauses evaluate false without auth.uid(), so uellix_cap_verification
+-- would gain nothing), but "inert in practice" is the argument that was wrong
+-- last time: `authenticated` held a grant nobody had accounted for, and the
+-- policy was what turned it into a write path. Naming the runtime role costs
+-- nothing and removes the question.
+--
 -- There is no DELETE policy, deliberately: a disclosure is revoked
 -- (revoked_at), never erased. Who published what, and when, has to remain
 -- answerable after the fact.
 
 DROP POLICY IF EXISTS disclosures_select_member ON public.report_public_disclosures;
 CREATE POLICY disclosures_select_member
-ON public.report_public_disclosures FOR SELECT
+ON public.report_public_disclosures FOR SELECT TO uellix_app
 USING (
   organization_id = ANY(public.current_user_org_ids())
   OR public.current_user_is_super_admin()
@@ -366,7 +376,7 @@ USING (
 
 DROP POLICY IF EXISTS disclosures_insert_admin ON public.report_public_disclosures;
 CREATE POLICY disclosures_insert_admin
-ON public.report_public_disclosures FOR INSERT
+ON public.report_public_disclosures FOR INSERT TO uellix_app
 WITH CHECK (
   public.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin')
   OR public.current_user_is_super_admin()
@@ -374,7 +384,7 @@ WITH CHECK (
 
 DROP POLICY IF EXISTS disclosures_update_admin ON public.report_public_disclosures;
 CREATE POLICY disclosures_update_admin
-ON public.report_public_disclosures FOR UPDATE
+ON public.report_public_disclosures FOR UPDATE TO uellix_app
 USING (
   public.current_user_role_in_org(organization_id) IN ('super_admin', 'organization_admin')
   OR public.current_user_is_super_admin()
