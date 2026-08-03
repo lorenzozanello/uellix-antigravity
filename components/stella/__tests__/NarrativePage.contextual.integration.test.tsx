@@ -27,12 +27,20 @@ vi.mock('@/lib/stella/config', () => ({
   stellaState: { canUseStella: true },
 }))
 
+const ORGANIZATION_CONTEXT = vi.hoisted(() => ({
+  membership: { role: 'analyst' },
+  organization: { id: 'org-1' },
+  user: { id: 'user-1' },
+}))
+
 vi.mock('@/lib/auth/session', () => ({
-  requireOrganizationAccess: vi.fn().mockResolvedValue({
-    membership: { role: 'analyst' },
-    organization: { id: 'org-1' },
-    user: { id: 'user-1' },
-  }),
+  requireOrganizationAccess: vi.fn().mockResolvedValue(ORGANIZATION_CONTEXT),
+  runWithOrganizationAccess: async (cb: (ctx: unknown) => unknown) => cb(ORGANIZATION_CONTEXT),
+}))
+
+vi.mock('@/lib/auth/database-context', () => ({
+  withOrganizationDatabaseContext: async (cb: (ctx: unknown) => unknown) =>
+    cb(ORGANIZATION_CONTEXT),
 }))
 
 const mockFetchNarrative = vi.fn()

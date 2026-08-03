@@ -9,6 +9,8 @@ import { hasRole } from '@/lib/auth/permissions';
 vi.mock('@/lib/auth/session', () => ({
   requireOrganizationAccess: vi.fn(),
   getCurrentOrganizationContext: vi.fn(),
+  // Pass-through: the service guards are what this suite exercises.
+  runWithOrganizationAccess: async (cb: (ctx: unknown) => unknown) => cb(undefined),
 }));
 
 // Mock permission checks

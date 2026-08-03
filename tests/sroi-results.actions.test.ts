@@ -15,6 +15,13 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
+// These actions now open an identity context before delegating. The wrapper is
+// a pass-through here: the suite is about input validation and delegation, and
+// the wrapper itself is proved in tests/authenticated-database-context.test.ts.
+vi.mock('@/lib/auth/session', () => ({
+  runWithOrganizationAccess: async (cb: (ctx: unknown) => unknown) => cb(undefined),
+}));
+
 import {
   createSroiRunReview,
   updateSroiRunReview,

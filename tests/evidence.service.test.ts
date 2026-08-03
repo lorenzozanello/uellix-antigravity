@@ -23,6 +23,15 @@ vi.mock('@/lib/auth/session', () => ({
   requireOrganizationAccess: vi.fn(),
 }));
 
+// createFileEvidenceForProject and verifyFileEvidenceIntegrity own their own
+// contexts — the storage round trip sits BETWEEN them and must not run inside a
+// transaction. Pass-through here: this suite is about hashing, permissions and
+// path sanitisation. The contexts themselves are proved against a live database
+// in tests/authenticated-database-context.test.ts.
+vi.mock('@/lib/auth/database-context', () => ({
+  withOrganizationDatabaseContext: async (cb: () => unknown) => cb(),
+}));
+
 // Mock audit logger
 vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),

@@ -11,8 +11,14 @@ const mockDbData = vi.hoisted(() => ({
   usedThisMonth: 0,
 }))
 
+const mockRequireOrganizationAccess = vi.hoisted(() => vi.fn())
+
 vi.mock('@/lib/auth/session', () => ({
-  requireOrganizationAccess: vi.fn(),
+  requireOrganizationAccess: mockRequireOrganizationAccess,
+  // Pass-through: this suite is about what the page RENDERS, not about the
+  // transaction the data phase runs in.
+  runWithOrganizationAccess: async (cb: (ctx: unknown) => unknown) =>
+    cb(await mockRequireOrganizationAccess()),
 }))
 
 // Avoid importing the real Stripe server action module (touches stripe client).

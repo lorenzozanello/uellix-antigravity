@@ -103,6 +103,12 @@ describe('createInvitation', () => {
     expect(result.invitation.id).toBe('inv-1');
     expect(result.rawToken).toHaveLength(64); // 32 bytes hex
     expect(logAuditAction).toHaveBeenCalled();
+
+    // The send is now DEFERRED: createInvitation returns it so the caller can
+    // run it after the transaction commits. A token in an inbox whose hash was
+    // rolled back is a live link that resolves to nothing.
+    expect(sendInvitationEmail).not.toHaveBeenCalled();
+    await result.sendEmail();
     expect(sendInvitationEmail).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'new@user.com', role: 'analyst', rawToken: result.rawToken }),
     );

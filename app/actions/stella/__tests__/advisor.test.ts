@@ -32,6 +32,18 @@ vi.mock('@/lib/stella/config', () => ({
 const mockRequireOrganizationAccess = vi.fn()
 vi.mock('@/lib/auth/session', () => ({
   requireOrganizationAccess: (...args: unknown[]) => mockRequireOrganizationAccess(...args),
+  runWithOrganizationAccess: async (cb: (ctx: unknown) => unknown) =>
+    cb(await mockRequireOrganizationAccess()),
+}))
+
+// The identity-context wrappers are pass-throughs HERE, and only here: this
+// suite is about the action's own feature-flag, role, quota and audit guards.
+// The wrappers themselves — nesting, organisation validation, rollback, pool
+// isolation — are proved against a live database in
+// tests/authenticated-database-context.test.ts.
+vi.mock('@/lib/auth/database-context', () => ({
+  withOrganizationDatabaseContext: async (cb: (ctx: unknown) => unknown) =>
+    cb(await mockRequireOrganizationAccess()),
 }))
 
 const mockBuildAdvisorContext = vi.fn()
