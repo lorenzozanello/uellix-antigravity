@@ -606,3 +606,37 @@ de la siguiente.
 | `tests/database-entrypoint-safety.test.ts` | 111 | ausencia de efectos de import, guarda antes del driver, superficie de `package.json`, regresión de dotenv, procesos hijo reales que verifican que los scripts abortan **antes** de conectar, el orden del *merge* de `postgresOptions.connection` probado directamente vía `mergeGuardedConnectionOptions()` (hallazgo 34), la comparación case-insensitive de `GUARD_OWNED_CONNECTION_KEYS` (hallazgo 35), y que `sslrootcert` no influye en el `ssl` fijado (hallazgo 36) |
 
 Ambas se ejecutan en `pnpm test:unit` y en el workflow `p1a-validation`.
+
+---
+
+## 11. Cobertura del retrofit de identidad (2026-08-02)
+
+Las dos suites de §10 responden *a qué base se conecta cada cosa*. Después del
+cutover hay una segunda pregunta, con el mismo modo de fallo silencioso: *¿esa
+consulta lleva identidad?* Como `uellix_app`, una consulta sin contexto no
+lanza — devuelve **cero filas**.
+
+| Suite | Tests | Qué fija |
+|---|---|---|
+| `tests/authenticated-database-context.test.ts` | 33 | de dónde sale la identidad: sesión válida, ausente, rechazada, sujeto malformado, Auth caído (503 ≠ logout), usuario Auth sin perfil, cuenta con `deleted_at`, organización propia vs. ajena, super-admin sólo desde servidor, anidamiento, limpieza tras COMMIT y tras ROLLBACK, reutilización del pool, **dos peticiones concurrentes con identidades distintas**, y los flujos de login/logout/dashboard/cross-org/Stella/append-only |
+| `tests/database-runtime-entrypoints.test.ts` | 163 | cobertura estructural: reconstruye el grafo de imports de `app/**` y falla si un entry point alcanza `db/client.ts` sin abrir contexto |
+
+La segunda no es un grep. Casi ningún entry point consulta directo: llegan a la
+base a través de dos o tres servicios, así que la comprobación resuelve
+`@/`, relativos, re-exports y `import()` dinámico, e ignora `import type` y los
+módulos `'use client'` — un componente de navegador no puede abrir una
+transacción, y contar sus imports de tipo marcaría cada página que sólo nombra
+el tipo de una fila.
+
+Lleva dos **controles negativos**, porque una comprobación que siempre pasa no
+prueba nada: `lib/projects/service.ts` debe salir como "alcanza la base **y no**
+abre contexto" (corre dentro del de su llamador) y `lib/auth/roles.ts` como "no
+alcanza la base". Un tercero comprueba que los ocho nombres de wrapper siguen
+exportados: renombrar uno convertiría el archivo entero en un no-op.
+
+La allowlist de 11 entry points no es una supresión: cada entrada lleva su
+motivo, y la suite falla si el archivo desaparece o deja de ser entry point.
+
+Ambas se ejecutan en `pnpm test:unit`. Las partes que necesitan base viva se
+saltan solas cuando el stack local no está levantado, igual que las suites de
+catálogo.

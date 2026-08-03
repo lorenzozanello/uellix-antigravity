@@ -712,3 +712,35 @@ y por tanto no distingue las cinco causas.
 | RR-10 | `uellix_auditor` no ve **ninguna fila**: es no-owner y sin `BYPASSRLS`, y las policies dependen de `auth.uid()`, nulo en una conexión directa | Por diseño | Es un auditor de **estructura y privilegios**, no de datos. Darle visibilidad de filas exigiría `BYPASSRLS` o policies dedicadas — decisión **DP-08** |
 | RR-11 | **`postgres` conserva `CREATE` sobre `public`** por ser el dueño de la base (`pg_database_owner`), y todo lo que cree ahí nace ejecutable/usable por `PUBLIC` (RR-08). Cadena abierta: inyección SQL en el runtime → `CREATE FUNCTION … SECURITY DEFINER` propiedad de `postgres` → invocable por `anon` vía PostgREST `/rpc/` → ejecución con `rolbypassrls` | MAJOR | **ABIERTO.** No es un `GRANT` revocable: quitarlo exige cambiar el propietario de la base de datos, decisión de plataforma. Se cierra de raíz con **DP-07** (el runtime deja de ser `postgres`). Ver §8.1 |
 | RR-12 | El script **no corre** en Supabase gestionado: exige `rolsuper` y allí el rol más alto (`postgres`) no lo es | BLOCKER para G2 remoto | **ABIERTO.** Una variante remota sería un script distinto, con otro modelo de confianza y su propia revisión — §5.0 |
+
+---
+
+## Apéndice — el modelo aplicado al tráfico real (2026-08-02)
+
+Este documento describe **roles y privilegios**. Cerrada la unidad de
+compatibilidad, la parte que faltaba —cómo llega una identidad de usuario a una
+conexión de `uellix_app`— está en
+[`DATABASE_RUNTIME_CUTOVER.md`](DATABASE_RUNTIME_CUTOVER.md) §7–§8. Tres
+consecuencias que sí pertenecen al modelo de roles:
+
+**1. `uellix_app` no es miembro de `anon` ni de `authenticated`.** Medido:
+`pg_has_role` devuelve false para ambos, y para `service_role`. Es lo correcto
+—esa membresía le entregaría todos los grants de esos roles— pero tiene un
+efecto que el modelo no había registrado: **una policy con cláusula `TO` que
+nombre esos roles no aplica al runtime**. `marketing_leads` es la única tabla de
+`public` en esa situación (las otras 104 policies llevan `{public}`), y su
+INSERT público quedó cerrado. La corrección es una policy INSERT para
+`{public}`, no una membresía de rol.
+
+**2. La claim `role: 'authenticated'` que fija el contexto no es un rol de
+base.** Vive dentro del JSON de `request.jwt.claims` y sólo la leen las
+funciones que lo inspeccionan. `TO` se contrasta contra `current_user`. Confundir
+ambas cosas es el error que produjo el punto anterior.
+
+**3. Las operaciones de bootstrap no tienen identidad de usuario.** Alta de
+organización, aceptar invitación, webhook de facturación y verificación pública
+por hash escriben o leen filas que ninguna membresía justifica. Antes pasaban
+por el bypass de `postgres`. Hoy fallan cerrado y esperan una decisión de
+privilegio: policy acotada o identidad técnica separada. **Ninguna se resolvió
+inventando una claim** — ver RC-05 a RC-08 en
+[`STELLA_FABLE_RISK_REGISTER.md`](STELLA_FABLE_RISK_REGISTER.md).

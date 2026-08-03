@@ -130,3 +130,38 @@ Las siete están fijadas por `tests/database-target-safety.test.ts`,
 `tests/database-runtime-identity.test.ts` y
 `tests/database-runtime-rls.test.ts`; las 1–3 también por el paso
 *Validate Loopback URLs* del workflow `p1a-validation`.
+
+---
+
+## De dónde sale la identidad
+
+La invariante 7 dice *dentro de `withDatabaseIdentityContext`*. Quién decide el
+`userId` es la otra mitad, y vive en la aplicación:
+
+```
+lib/auth/identity.ts          sujeto verificado por Supabase Auth   — no consulta la base
+lib/auth/database-context.ts  principal + wrappers de entry point   — consulta dentro de contexto
+db/identity-context.ts        claims, transacción, rollback         — el mecanismo
+```
+
+`getVerifiedAuthIdentity()` usa `supabase.auth.getUser()`, que valida el token
+contra GoTrue. **No** `getSession()`, que decodifica la cookie en proceso: la
+cookie es dato del atacante y su `sub` es exactamente el valor que toda policy
+acaba creyendo.
+
+Un entry point no construye `request.jwt.claims` a mano. Usa uno de:
+
+| Wrapper | Ante fallo | Para |
+|---|---|---|
+| `runWithOrganizationAccess` | `redirect()` | páginas, layouts, server actions |
+| `runWithAdminAccess` | `redirect()` | `/admin` |
+| `runWithOptionalOrganizationAccess` | `cb(null)` | vistas que renderizan vacío |
+| `withOrganizationDatabaseContext` | `AuthContextError` | route handlers, servicios |
+| `withAuthenticatedDatabaseContext` | `AuthContextError` | trabajo de usuario sin organización |
+| `withSuperAdminDatabaseContext` | `AuthContextError` | operaciones administrativas |
+
+`tests/database-runtime-entrypoints.test.ts` reconstruye el grafo de imports de
+`app/**` y falla si un entry point nuevo alcanza `db/client.ts` sin abrir
+contexto. Detalle completo en
+[`docs/ops/DATABASE_RUNTIME_CUTOVER.md`](../docs/ops/DATABASE_RUNTIME_CUTOVER.md)
+§7–§8.

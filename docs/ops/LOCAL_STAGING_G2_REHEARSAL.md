@@ -2152,3 +2152,49 @@ cambia la herramienta de transporte, no el procedimiento ni las garantías
 **Resultado del gate:** `FULL_REBUILD_RUN_2_EXECUTED_VERIFIED_READY_FOR_REAUDIT`.
 G2 formal sigue **sin ejecutar**; RUN 2 es evidencia de reproducibilidad local,
 no una aprobación.
+
+---
+
+## Compatibilidad del runtime — identidad en los entry points (2026-08-02)
+
+Continuación directa del cutover, sobre `b6787a5`. Sin SQL, sin migraciones, sin
+seeds, sin resets.
+
+### Estado vivo confirmado (leído como `uellix_app`, sin `SET ROLE`)
+
+| | |
+|---|---|
+| `session_user` / `current_user` | `uellix_app` / `uellix_app` |
+| Miembro de `anon` / `authenticated` / `service_role` | false / false / false |
+| Tablas en `public` | 38 |
+| Policies | 107 |
+| Triggers append-only | 10 |
+| Decisiones Stella | 1 |
+| Interacciones Stella | 2 |
+| `evidence_chunks` | ausente |
+
+### Lo que esta unidad hizo
+
+- Añadió `lib/auth/identity.ts` y `lib/auth/database-context.ts`.
+- Reescribió `lib/auth/session.ts`: los helpers dejan de consultar y pasan a
+  leer un *principal* memoizado que se resuelve **dentro** de un contexto.
+- Envolvió la fase de datos de 80 entry points de `app/**`.
+- Añadió `tests/authenticated-database-context.test.ts` (33) y
+  `tests/database-runtime-entrypoints.test.ts` (163).
+- Actualizó las suites que mockeaban `@/lib/auth/session` sin conocer los
+  wrappers nuevos (11 archivos, 206 tests) — ninguna falla era del producto.
+
+### Lo que esta unidad **no** hizo
+
+- No aplicó SQL ni creó policies: los cinco caminos de bootstrap quedaron
+  **bloqueados por diseño**, sin bypass.
+- No ejecutó `grounding_0001` ni creó `evidence_chunks`.
+- No ejecutó G2 formal ni G3 (`test:rls`) ni integración remota.
+- No accedió al Supabase remoto.
+- No dejó escrituras permanentes: toda escritura de prueba termina en ROLLBACK,
+  verificado contando `stella_interactions` antes y después.
+- No tocó los respaldos ni los otros stacks locales.
+- No hizo push ni PR.
+
+**Resultado:** `STELLA_RUNTIME_CUTOVER_HARDENED_READY_FOR_REAUDIT`. G2 formal
+sigue **sin ejecutar**.

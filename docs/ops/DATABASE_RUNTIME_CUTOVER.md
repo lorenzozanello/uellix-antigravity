@@ -266,7 +266,175 @@ Supabase.
 
 ---
 
-## 7. Limitación local y adaptación remota pendiente
+## 7. De dónde sale la identidad: el retrofit de la aplicación
+
+El cutover dejó el mecanismo listo y la aplicación sin usarlo. `uellix_app`
+conectaba, RLS aplicaba, y **46 entry points ejecutaban consultas sin abrir
+contexto**. Peor: `getCurrentUser()` consultaba `public.users` *para descubrir
+quién era el usuario*, con lo que el login local dejó de funcionar. El ciclo:
+
+```
+para leer public.users necesitás claims
+  → para fijar claims necesitás un userId
+    → para obtener un userId leías public.users
+```
+
+Se rompe negándole a la base la respuesta. El sujeto viene de Supabase Auth y de
+ningún otro sitio.
+
+### Las tres capas
+
+| Módulo | Responde | Consulta base |
+|---|---|---|
+| `lib/auth/identity.ts` | ¿Quién es el sujeto verificado? | **No** |
+| `lib/auth/database-context.ts` | ¿Qué dice la base de él? + wrappers | Sí, dentro de contexto |
+| `db/identity-context.ts` | Claims, transacción, rollback | Es el mecanismo |
+
+`getVerifiedAuthIdentity()` usa `supabase.auth.getUser()`, **no**
+`getSession()`. `getSession()` decodifica la cookie en proceso; la cookie es
+dato del atacante, y su `sub` es exactamente el valor que toda policy termina
+creyendo. `getUser()` lo valida contra GoTrue. Es un viaje de red por petición:
+ese es el precio de la propiedad, y se memoiza — no se evita.
+
+### El segundo ciclo, más pequeño
+
+Un contexto con organización necesita un `organization_id` antes de abrirse, y
+la única fuente fiable es `organization_members`, que está detrás de RLS.
+
+Se resuelve abriendo primero un contexto **sin** organización (sólo sujeto),
+leyendo perfil y membresía bajo él, y cerrándolo. El contexto organizacional se
+abre una sola vez, con un id que dio la propia base. Ese *principal* se memoiza
+por petición, así que el coste es una transacción corta extra por petición, no
+una por servicio.
+
+Es también por qué el anidamiento nunca se viola: cuando algo abre un contexto
+organizacional, el principal ya está resuelto y ninguna llamada interna reentra
+con otra organización.
+
+### Por qué NO hubo que tocar 115 funciones de servicio
+
+`lib/**` llama `getCurrentOrganizationContext()` / `requireOrganizationAccess()`
+al principio de casi cada función — unas 115 veces. Esas funciones **no
+cambiaron**: ahora son lectoras del principal memoizado y no consultan nada. Lo
+que cambió son los entry points, que abren el contexto en el que esas consultas
+corren.
+
+| Wrapper | Vive en | Ante fallo | Para |
+|---|---|---|---|
+| `runWithOrganizationAccess` | `lib/auth/session.ts` | `redirect()` | páginas, layouts, server actions |
+| `runWithAdminAccess` | `lib/auth/session.ts` | `redirect()` | `/admin` |
+| `runWithOptionalOrganizationAccess` | `lib/auth/session.ts` | `cb(null)` | vistas que renderizan vacío |
+| `withOrganizationDatabaseContext` | `lib/auth/database-context.ts` | `AuthContextError` | route handlers, servicios |
+| `withAuthenticatedDatabaseContext` | `lib/auth/database-context.ts` | `AuthContextError` | trabajo de usuario sin organización |
+| `withSuperAdminDatabaseContext` | `lib/auth/database-context.ts` | `AuthContextError` | operaciones administrativas |
+
+`authContextErrorStatus()` mapea cada refuso a su respuesta: **401** para fallos
+de identidad, **403** para autorización (a un usuario ya autenticado decirle que
+inicie sesión es un bucle, no un arreglo) y **503** para Auth inalcanzable —
+distinguir esos tres evita convertir una caída de GoTrue en un cierre de sesión
+masivo.
+
+### Decisiones de forma que no son cosméticas
+
+- **La fase de datos se envuelve; el JSX no.** Cada página resuelve todo lo que
+  consulta dentro del wrapper y devuelve valores; el JSX se construye después.
+  La transacción **cierra antes del streaming**.
+- **`redirect()` va fuera del contexto.** `redirect()` lanza, y lanzar dentro
+  del callback hace ROLLBACK. Una acción que escribe y luego redirige, con el
+  redirect dentro, **perdería la escritura**. Todas quedaron fuera.
+- **Un `redirect()` no puede caer en un `catch`.** Donde una acción envuelve el
+  servicio en `try/catch` para traducir errores a `?error=`, la comprobación de
+  auth se movió **antes** del `try`: si no, un `NEXT_REDIRECT` se tragaría en un
+  banner de error genérico.
+- **Ninguna transacción abarca una llamada externa.** Las cinco acciones de
+  Stella se dividen: contexto corto para leer, llamada al modelo **fuera**,
+  contexto corto para persistir. La ruta PDF cierra su transacción antes de
+  `renderToBuffer()`. Sostener una conexión del pool durante un viaje a Gemini
+  es exactamente lo que la revisión pedía evitar.
+- **Excepción: `decisions.ts`.** Ahí las dos comprobaciones de pertenencia y el
+  INSERT comparten **una** transacción: separarlos dejaría una ventana en la que
+  el proyecto deja de ser de esa organización entre el chequeo y la escritura.
+
+### Cobertura medida
+
+| | |
+|---|---|
+| Entry points inventariados (`app/**`) | 110 |
+| Alcanzan `db/client.ts` (grafo de imports transitivo) | 93 |
+| Abren contexto de identidad | 80 |
+| En allowlist documentada | 13 |
+
+`tests/database-runtime-entrypoints.test.ts` reconstruye el grafo de imports
+—resolviendo `@/`, relativos, re-exports y `import()` dinámico, e ignorando
+`import type` y módulos `'use client'`— y falla si un entry point alcanza
+`db/client.ts` sin abrir contexto. No es un grep: casi ninguna página consulta
+directo, todas llegan a la base a través de dos o tres servicios.
+
+Lleva dos **controles negativos**: `lib/projects/service.ts` debe salir como
+"alcanza la base y no abre contexto" (corre dentro del de su llamador) y
+`lib/auth/roles.ts` como "no alcanza la base". Si cualquiera de los dos cambia,
+la comprobación dejó de discriminar y la suite lo dice.
+
+---
+
+## 8. Operaciones bloqueadas por diseño
+
+Cuatro caminos **funcionaban únicamente porque `postgres` hacía bypass de RLS**.
+Ninguno recibió un bypass nuevo. Todos fallan cerrado y están documentados en el
+código que los contiene.
+
+| Camino | Por qué no puede pasar | Qué haría falta |
+|---|---|---|
+| Alta autoservicio de organización (`app/app/onboarding/actions.ts`) | `orgs_insert_super_admin` exige super admin; `members_insert_admin` exige ya ser admin de esa organización | policy acotada, o identidad técnica de bootstrap |
+| Aceptar invitación (`lib/invitations/service.ts`) | mismo `members_insert_admin`: quien acepta todavía no es miembro | policy que exprese "invitación válida" en la base |
+| Webhook de Stripe (`app/api/webhooks/stripe/route.ts`) | no hay sesión; la organización se busca por `stripe_customer_id`, no por membresía | identidad técnica de webhook con grant estrecho |
+| Verificación pública por hash (`lib/reports/public-verify.ts`) | no hay policy de SELECT anónima sobre `sroi_reports` | policy de capacidad: reportes `locked`, por hash |
+| Captura de lead público (`app/api/marketing/lead/route.ts`) | ver abajo | policy INSERT para `{public}` |
+
+El comentario de `members_insert_admin` en `001_initial_auth_rls.sql` ya decía
+que el onboarding *"usa el cliente Drizzle que hace bypass de RLS entera"* y que
+la excepción de auto-inserción **no se añadió a propósito**, porque *"permitiría
+a cualquier usuario unirse a cualquier organización"*. Ese cliente ya no existe.
+La nota era correcta entonces y sigue siéndolo: la respuesta no es relajar la
+policy, es expresar la capacidad real.
+
+### `marketing_leads`: el hallazgo del `TO`
+
+Es la **única** tabla de `public` cuyas policies nombran roles de base en vez de
+aplicar a todos (medido: las otras 104 llevan `{public}`):
+
+```
+anon_insert_marketing_leads           TO anon           WITH CHECK (true)
+authenticated_insert_marketing_leads  TO authenticated  WITH CHECK (true)
+super_admins_read_marketing_leads     TO authenticated  USING (is_super_admin)
+```
+
+La cláusula `TO` se contrasta con el **rol de base**, no con el campo `role` de
+`request.jwt.claims`. El runtime autentica como `uellix_app`, que **no es
+miembro de `anon` ni de `authenticated`** — verificado: `pg_has_role` devuelve
+falso para ambos. Ninguna policy aplica y el INSERT se rechaza.
+
+Arreglarlo es una policy INSERT para `{public}` sobre esa tabla — la misma regla
+"cualquiera puede enviar un lead", escrita contra el rol que de verdad conecta.
+Lo que **no** es la respuesta es dar a `uellix_app` membresía en `authenticated`:
+eso le entregaría todos los grants de ese rol en toda la base.
+
+**Ninguna de las cinco se decide en esta unidad.** Son decisiones de privilegio.
+
+### El webhook falla ruidosamente, no en silencio
+
+Sin contexto, las lecturas del webhook devuelven cero filas y los UPDATE afectan
+cero filas: falla cerrado, pero **en silencio**, y Stripe recibiría 200 con el
+cambio de suscripción perdido para siempre. El handler rechaza con **503** —
+después de verificar la firma, para que la rama no sea una sonda anónima de
+disponibilidad — porque Stripe reintenta un 5xx con backoff y el operador ve el
+fallo. Pedir prestada la identidad de "algún admin de esa organización" habría
+atribuido una mutación de facturación a una persona que no la hizo, y la fila de
+auditoría estaría mal exactamente donde más necesita estar bien.
+
+---
+
+## 9. Limitación local y adaptación remota pendiente
 
 Esto se aplicó **sólo en local**. Para llevarlo a un proyecto Supabase
 gestionado quedan por resolver, además de los bloqueos ya registrados en
@@ -282,7 +450,7 @@ gestionado quedan por resolver, además de los bloqueos ya registrados en
   modo *transaction* de PgBouncer, pero hay que verificarlo contra el pooler real
   antes de asumirlo.
 
-## 8. Rollback
+## 10. Rollback
 
 `stella_0005_rollback.sql` y `stella_0005b_rollback.sql` revierten **sólo** lo
 que sus mitades forward aplicaron. **No** revierten `stella_0004` (el ownership

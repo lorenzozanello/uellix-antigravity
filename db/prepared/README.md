@@ -339,3 +339,22 @@ script preparado**; no son parte del gate G2 actual:
 Ambos requerirían un script preparado propio que **todavía no existe**. El
 número `stella_0004` ya está tomado por la separación de roles (ver el
 inventario), así que un futuro paquete para RK-14 sería `stella_0005`.
+
+---
+
+## Nota de compatibilidad (2026-08-02)
+
+`stella_0005` + `stella_0005b` dejaron el runtime como `uellix_app` con RLS
+activa. Las **tres policies de INSERT** que llevaron el conteo de 104 a 107
+(`audit_logs`, `stella_interactions`, `stella_suggestion_decisions`) son la
+mitad SQL de ese cambio; la mitad de aplicación —de dónde sale el `userId` que
+esas policies comparan con `auth.uid()`— se cerró después, sin SQL nuevo.
+
+**Ningún script preparado se añadió ni se modificó en esa unidad.** Cinco
+caminos quedaron bloqueados por diseño (alta de organización, aceptar
+invitación, webhook de Stripe, verificación pública por hash, captura de lead
+público) y **ninguno recibió una policy nueva ni un privilegio nuevo**:
+resolverlos es una decisión de privilegio con su propio script y su propia
+revisión. Ver
+[`docs/ops/DATABASE_RUNTIME_CUTOVER.md`](../../docs/ops/DATABASE_RUNTIME_CUTOVER.md)
+§8.

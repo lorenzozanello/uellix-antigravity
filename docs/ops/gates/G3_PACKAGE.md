@@ -317,3 +317,28 @@ contrato de seguridad y no del estado heredado. Cero deriva funcional.
 
 **G3 no se volvió a ejecutar tras esta corrida.** La regresión posterior
 (246/246, 2553/2553, typecheck, lint) se hizo sin tocar `test:rls`.
+
+---
+
+## Nota tras la compatibilidad del runtime (2026-08-02)
+
+G3 (`test:rls`) **no se volvió a ejecutar** en esta unidad, ni ninguna prueba de
+integración remota. La regresión completa se hizo con `pnpm test:unit`
+(3154/3154), `typecheck`, `lint` y `build`, más las diez suites de base contra
+el stack local (581/581).
+
+Vale la pena registrar por qué eso **no** deja un hueco: las dos suites nuevas
+—`tests/authenticated-database-context.test.ts` y
+`tests/database-runtime-entrypoints.test.ts`— corren dentro de `test:unit` y
+abren conexiones vivas como `uellix_app` a través de la factoría de la propia
+aplicación, no por `SET ROLE`. Cubren aislamiento cross-org, anidamiento de
+identidades, limpieza tras COMMIT y tras ROLLBACK, reutilización de la conexión
+del pool y dos peticiones concurrentes con identidades distintas. Toda escritura
+termina en ROLLBACK.
+
+Cuando G3 se ejecute de verdad, su valor añadido sobre esto es el **camino
+PostgREST/navegador** (roles `anon` y `authenticated` reales), que ninguna suite
+de Node puede ejercitar: `uellix_app` no es miembro de ninguno de los dos —
+medido— y por tanto las policies con cláusula `TO` que los nombran no se
+evalúan nunca desde el runtime. Ese es exactamente el hueco que descubrió el
+bloqueo de `marketing_leads`.

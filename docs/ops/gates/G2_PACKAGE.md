@@ -580,3 +580,50 @@ respaldo remoto verificado, aprobación humana y la *Aclaración sobre A1*. RUN 
 sólo demuestra que los tres scripts hacen lo que dicen sobre un PostgreSQL 17.6
 real y que lo hacen de forma reproducible e idempotente. **G2 formal: NO
 EJECUTADO.**
+
+---
+
+## Compatibilidad de aplicación tras el cutover (2026-08-02) — evidencia local
+
+`stella_0005` + `stella_0005b` llevaron el conteo a **107 policies** y el runtime
+a `uellix_app`. Esa mitad SQL no basta por sí sola: mientras la aplicación no
+abra un contexto de identidad, `uellix_app` ve **cero filas** en todas partes —
+y una pantalla vacía no lanza ningún error que un gate pueda detectar.
+
+Esta unidad cierra la mitad de aplicación. **Sin SQL nuevo, sin policies nuevas,
+sin privilegios nuevos.**
+
+| Evidencia | Estado |
+|---|---|
+| Entry points que alcanzan `db/client.ts` (grafo transitivo, `app/**`) | 93 de 110 |
+| Abren contexto de identidad | 80 |
+| En allowlist documentada, con motivo | 13 |
+| `tests/authenticated-database-context.test.ts` | 33 tests, VERDE (7 offline + 26 contra el stack vivo) |
+| `tests/database-runtime-entrypoints.test.ts` | 163 tests, VERDE |
+| `pnpm test:unit` | 3154 tests, VERDE |
+| `pnpm typecheck` / `pnpm lint` / `pnpm build` | VERDE / 0 errores / completo |
+| Login local | **restaurado** — el ciclo `getCurrentUser` → `public.users` → claims está roto por diseño |
+| Escrituras permanentes en la base | ninguna |
+
+### Cinco caminos bloqueados por diseño — precondición nueva para G2
+
+Funcionaban **sólo** porque `postgres` saltaba RLS. Ninguno recibió un bypass;
+los cinco fallan cerrado. Antes de ejecutar G2 en un entorno real hay que decidir
+qué se hace con cada uno, porque en remoto dejarán de funcionar igual que en
+local:
+
+| Camino | Bloqueo | Decisión pendiente |
+|---|---|---|
+| Alta autoservicio de organización | `orgs_insert_super_admin`, `members_insert_admin` | policy acotada o identidad de bootstrap |
+| Aceptar invitación | `members_insert_admin` (quien acepta aún no es miembro) | policy que exprese "invitación válida" |
+| Webhook de Stripe | no hay sesión; organización localizada por `stripe_customer_id` | identidad técnica de webhook con grant estrecho |
+| Verificación pública por hash | sin policy de SELECT anónima sobre `sroi_reports` | policy de capacidad (reportes `locked`, por hash) |
+| Captura de lead público | policies `TO anon`/`TO authenticated`; `uellix_app` no es miembro de ninguno | policy INSERT para `{public}` |
+
+El webhook es el único que además **fallaba en silencio**: cero filas afectadas
+con respuesta 200 y el evento perdido. Ahora rechaza con **503** tras verificar
+la firma, para que Stripe reintente y el operador lo vea.
+
+**Nada de esto sustituye** el entorno remoto autorizado, la ventana de cambio,
+el respaldo remoto verificado ni la aprobación humana. **G2 formal: NO
+EJECUTADO.**

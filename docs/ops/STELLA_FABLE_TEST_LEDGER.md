@@ -1180,3 +1180,179 @@ PostgREST responde 200. Otros dos stacks locales intactos y con **0** roles
 `uellix_*`.
 
 **Resultado:** `STELLA_DATABASE_PRIVILEGE_HARDENED_READY_FOR_REAUDIT`.
+
+---
+
+### 2026-08-02 · COMPATIBILIDAD DEL RUNTIME: LA IDENTIDAD LLEGA A LOS ENTRY POINTS · rama `codex/stella-g2-local-rehearsal`, sobre `b6787a5`
+
+El cutover dejó el mecanismo listo y la aplicación sin usarlo: 46 entry points
+consultaban sin abrir contexto y `getCurrentUser()` leía `public.users` para
+descubrir el sujeto, con lo que **el login local estaba roto**. Contrato
+completo en [`DATABASE_RUNTIME_CUTOVER.md`](DATABASE_RUNTIME_CUTOVER.md) §7–§8.
+
+| Comando | Resultado | Detalle |
+|---------|-----------|---------|
+| `pnpm vitest run tests/authenticated-database-context.test.ts` | VERDE | **33** tests (archivo nuevo) — 7 offline sobre los estados de sesión + 26 contra el stack vivo |
+| `pnpm vitest run tests/database-runtime-entrypoints.test.ts` | VERDE | **163** tests (archivo nuevo) — grafo de imports + un caso por entry point que alcanza la base |
+| `pnpm vitest run tests/database-runtime-identity.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-runtime-rls.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-migrator-path.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-ddl-containment.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-role-safety.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-default-privileges.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-target-safety.test.ts` | VERDE | sin cambio |
+| `pnpm vitest run tests/database-entrypoint-safety.test.ts` | VERDE | sin cambio |
+| `pnpm test:unit` | VERDE | 145 archivos, **3154** tests (antes 2957 → **+197**) |
+| `pnpm typecheck` | VERDE | exit 0 |
+| `pnpm lint` | VERDE | exit 0, **0 errores**, 50 warnings (51 → 50: se cerró uno introducido y se limpió otro preexistente) |
+| `pnpm build` | VERDE | `next build` completo |
+
+**No ejecutados, por política:** `test:integration`, `test:rls`, seeds,
+migraciones, resets, `grounding_0001`, G2/G3 formales. Cero acceso remoto.
+
+#### Qué prueba realmente `authenticated-database-context.test.ts`
+
+La capa Auth se sustituye en su frontera verdadera —`supabase.auth.getUser`— y
+**no** en `lib/auth/identity.ts`, para que el módulo bajo prueba siga corriendo
+su propia validación de UUID y su propia separación entre "sin sesión" y "sesión
+rechazada". Debajo hay una conexión **viva** como `uellix_app`, abierta por la
+factoría de la propia aplicación.
+
+Ningún test alcanza el rol por `SET ROLE`. Esa es la lección de la reauditoría
+previa: pasó entera mientras el runtime seguía siendo `postgres`, precisamente
+porque los tests llegaban al rol de menor privilegio pidiéndolo prestado desde
+una sesión administrativa.
+
+Cubre: sesión válida · sin sesión · sesión rechazada (expirada/revocada) ·
+sujeto malformado · Auth inalcanzable (503, que no es un logout) · usuario Auth
+sin fila en `public.users` · cuenta con `deleted_at` · organización propia ·
+organización ajena (`AUTH_ORGANIZATION_FORBIDDEN`, sin eco del id) ·
+super-admin sólo desde servidor · anidamiento con la misma identidad (reutiliza)
+· anidamiento con identidad distinta (rechaza) · limpieza tras COMMIT · limpieza
+tras ROLLBACK · reutilización de la conexión del pool · **dos peticiones
+concurrentes con identidades distintas**.
+
+Y los flujos: login resuelve perfil (el ciclo cerrado) · logout no deja residuo ·
+dashboard lista sólo lo propio · proyecto ajeno invisible · lectura de Stella ·
+creación de interacción **revertida** · UPDATE y DELETE append-only rechazados
+**cada uno en su propia transacción** — juntos, el segundo sólo probaría que
+PostgreSQL aborta la transacción tras el primer fallo, que no es lo mismo que un
+trigger rechazando.
+
+#### Qué prueba `database-runtime-entrypoints.test.ts`
+
+Reconstruye el grafo de imports de `app/**` —resolviendo `@/`, relativos,
+re-exports y `import()` dinámico, ignorando `import type` y módulos
+`'use client'`— y pregunta si el entry point alcanza `db/client.ts`. No es un
+grep: casi ninguna página consulta directo.
+
+| | |
+|---|---|
+| Entry points inventariados | 110 |
+| Alcanzan `db/client.ts` | 93 |
+| Abren contexto de identidad | 80 |
+| En allowlist documentada | 13 |
+
+Dos **controles negativos** impiden que la suite se vuelva vacua:
+`lib/projects/service.ts` debe salir como "alcanza la base **y no** abre
+contexto" y `lib/auth/roles.ts` como "no alcanza la base". Un tercer test
+comprueba que los ocho nombres de wrapper siguen exportados: renombrar uno
+convertiría el archivo entero en un no-op silencioso.
+
+#### Regresiones que la migración de suites hizo visibles
+
+11 archivos de test fallaron (206 tests) y **ninguno** por un defecto del
+producto: todos mockeaban `@/lib/auth/session` y no conocían los wrappers
+nuevos. Se les añadió un paso-a-través explícito, con el comentario de que el
+contexto se prueba en su propio archivo y no ahí. `tests/auth/session.test.ts`
+además necesitó UUID sintéticos: la capa de identidad rechaza un sujeto que no
+lo sea, que es exactamente lo que debe hacer.
+
+#### Bloqueadores por diseño (sin bypass)
+
+Cinco caminos funcionaban **sólo** porque `postgres` saltaba RLS. Ninguno
+recibió un bypass nuevo; los cinco fallan cerrado y están documentados en el
+código que los contiene: alta autoservicio de organización, aceptar invitación,
+webhook de Stripe (rechaza con **503** tras verificar la firma, para que Stripe
+reintente en vez de perder el evento), verificación pública por hash y captura
+de lead público.
+
+El último trajo un hallazgo medido: `marketing_leads` es la **única** tabla de
+`public` cuyas policies nombran roles (`TO anon` / `TO authenticated`); las
+otras 104 llevan `{public}`. La cláusula `TO` se contrasta con el rol de base, no
+con el `role` de las claims, y `pg_has_role(uellix_app, 'anon'|'authenticated')`
+es **false** en ambos casos.
+
+**Estado vivo tras la unidad (leído como `uellix_app`):** 38 tablas, 107
+policies, 10 triggers, 1 decisión, 2 interacciones, `evidence_chunks` ausente.
+`session_user` = `current_user` = `uellix_app`. Sin escrituras permanentes.
+
+**Resultado:** `STELLA_RUNTIME_CUTOVER_HARDENED_READY_FOR_REAUDIT`.
+
+#### Revisión adversarial independiente (read-only) — segunda ronda
+
+**1 BLOCKER, 5 MAJOR, 8 MINOR.** El BLOCKER y los cinco MAJOR quedaron cerrados;
+tres MINOR se cerraron también y el resto está registrado como riesgo.
+
+**BLOCKER — dos mutaciones sin contexto, y la prueba de cobertura las aprobaba.**
+`evidence/page.tsx` exporta once cierres `'use server'`; dos de ellos
+(`archiveAction`, `updateStatusAction`) llamaban a `lib/pipeline/evidence`
+directamente en vez de a su `.action.ts` — que existía, estaba correctamente
+envuelto y **no lo importaba nadie**. Archivar evidencia y cambiar su estado de
+revisión estaban rotos para todos los usuarios, con un mensaje engañoso
+(*"Project does not belong to your organization"*), porque `verifyProjectOwnership`
+leía cero filas.
+
+Lo revelador es lo segundo: la comprobación era **por archivo**. Un solo
+`runWithOrganizationAccess(` en la ruta de render satisfacía al archivo entero,
+incluidos sus once endpoints POST independientes.
+
+Se reescribió a **por región**: el archivo se parte en cada directiva
+`'use server'` (emparejando llaves sobre una copia con literales y comentarios
+enmascarados **preservando offsets**, para que una llave dentro de una cadena no
+descuadre el emparejamiento), y una región sólo debe abrir contexto si
+**realmente llama** a un símbolo importado de un módulo que alcanza la base. Se
+permite delegar, pero sólo a otro entry point que la propia suite comprueba.
+Dos controles negativos nuevos: uno reproduce la forma exacta del defecto y
+verifica que la comprobación anterior lo habría aprobado; otro fija que una
+mención en cadena o comentario no cuenta como llamada.
+
+**MAJOR cerrados**
+
+| Hallazgo | Cierre |
+|---|---|
+| Subida a Storage de hasta 25 MB dentro de la transacción — y **un bug nuevo**: si la subida salía bien y un paso posterior fallaba, el ROLLBACK descartaba la fila y el objeto quedaba huérfano para siempre | `createFileEvidenceForProject` pasa a tener tres fases explícitas: reservar fila / subir **sin transacción** / finalizar o compensar. El `DELETE` compensatorio vuelve a estar vivo |
+| Descarga y re-hash del fichero completo dentro de la transacción | `verifyFileEvidenceIntegrity` con el mismo patrón |
+| Envío por Resend dentro de la transacción de la invitación, invalidando el invariante documentado del módulo | `createInvitation` devuelve `sendEmail()`; el llamador lo ejecuta **tras** el COMMIT. Un token en una bandeja cuyo hash se revirtió es un enlace vivo que no resuelve a nada |
+| Dos APIs de FX de terceros **sin timeout**, alcanzables desde rutas de escritura | `AbortSignal.timeout(8s)` en ambas. La eliminación completa exigiría reestructurar el camino de inversiones — registrado como riesgo residual, no declarado cerrado |
+| `NEXT_REDIRECT` y `AuthContextError` devueltos al cliente como texto | `lib/errors/next-control-flow.ts` (sobre `unstable_rethrow` de Next) al principio de cada `catch` que traga; los refusos de autorización pasan a `?error=not_authorized` en vez de `unknown_error`, y a `401/403` vía `authContextErrorStatus()` en los dos route handlers |
+| `/admin/project-deletions` lanzaba `redirect()` desde una server action invocada por un componente cliente | usa `withOrganizationDatabaseContext` (lanza un valor renderizable). El alcance cross-org de `approveProjectDeletion` es **preexistente** y queda documentado en el propio código |
+
+**MINOR cerrados:** seis filas de allowlist que la comprobación nunca consultaba
+—no alcanzan la base, así que su afirmación no era falsable— movidas a
+`AUDITED_NO_DATABASE_REACH`, con una prueba en dirección **contraria**: falla el
+día que una de ellas empiece a tocar la base. Un caché de alcanzabilidad que
+podía envenenarse ante un ciclo de imports (marcando un módulo como "no alcanza"
+y sacando del conjunto comprobado a todo entry point que llegara a través de él)
+ahora sólo memoiza recorridos que no tocaron una arista de retorno. Se añadieron
+las convenciones de servidor que faltaban (`sitemap`, `manifest`, `template`,
+`not-found`, `opengraph-image`…), siendo `sitemap.ts` el candidato realista a
+publicar un sitemap vacío en silencio. El endpoint público de leads pasa a
+rechazar explícitamente con **503** en vez de intentar el INSERT y responder 500
+en cada petición.
+
+**Confirmó también las tres afirmaciones del cambio** —`marketing_leads`,
+bootstrap de organización/invitación y verificación pública— y añadió dos
+precisiones que se incorporaron: `super_admins_read_marketing_leads` es
+igualmente `TO authenticated`, así que la **lectura** de leads por un super admin
+está igual de muerta que la escritura; y en aceptar-invitación el muro que se
+choca primero no es `members_insert_admin` sino `invitations_select_member` — el
+invitado no puede ni leer su propia invitación.
+
+Categorías donde **no encontró nada**: circularidad de `getCurrentUser`, claims
+tomadas del cliente, contexto persistente en el pool, `service_role` o bypass
+reintroducido, anidamiento de identidades en operación normal, y regresiones
+fail-open.
+
+Tras las correcciones: **145 archivos, 3154 tests** (2957 → +197), typecheck
+verde, lint 0 errores, build completo.
