@@ -8,6 +8,7 @@ import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { listCatalogsWithCodes, listOutcomeMappingsForProject } from '@/lib/taxonomies/service';
+import { listFundersForCurrentOrganization } from '@/lib/pipeline/funders';
 import { OutcomeTaxonomyMapper } from '@/components/taxonomy/OutcomeTaxonomyMapper';
 import { fetchOutcomes, addOutcome, updateOutcomeMateriality } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { fetchStakeholders } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
@@ -78,11 +79,12 @@ const TEXTAREA_CLASS =
 
 export default async function OutcomesPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const { membership, outcomes, stakeholders, catalogs, allMappings } =
+  const { membership, outcomes, stakeholders, catalogs, allMappings, funders } =
     await runWithOrganizationAccess(async ({ membership }) => {
-      const [catalogs, allMappings] = await Promise.all([
+      const [catalogs, allMappings, fundersData] = await Promise.all([
         listCatalogsWithCodes(),
         listOutcomeMappingsForProject(projectId),
+        listFundersForCurrentOrganization(),
       ]);
       return {
         membership,
@@ -90,6 +92,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
         stakeholders: (await fetchStakeholders(projectId)) as StakeholderRow[],
         catalogs,
         allMappings,
+        funders: fundersData.map((f) => ({ id: f.id, name: f.name })),
       };
     });
   const canMapTaxonomy = hasRole(membership.role, 'analyst');
@@ -203,6 +206,7 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
                   <OutcomeAllocationWrapper
                     outcomeId={o.id}
                     projectId={projectId}
+                    funders={funders}
                   />
                   <OutcomeTaxonomyMapper
                     projectId={projectId}
