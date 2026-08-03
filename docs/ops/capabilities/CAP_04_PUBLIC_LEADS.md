@@ -200,19 +200,43 @@ sin diseñar su sustituta rompería una capacidad administrativa distinta.
 
 ## 5. Policies necesarias
 
-Una sola:
+**Dos**, no una: la de escritura de la capacidad y la que le quita la tabla al
+runtime.
 
-| Nombre | Tabla | Cmd | Cláusula |
-|---|---|---|---|
-| `cap_lead_insert` | `marketing_leads` | `INSERT` | `TO uellix_cap_lead WITH CHECK (lead_status = 'new')` |
+| Nombre | Modo | Tabla | Cmd | `TO` | Cláusula |
+|---|---|---|---|---|---|
+| `cap_lead_insert` | `PERMISSIVE` | `marketing_leads` | `INSERT` | `uellix_cap_lead` | `WITH CHECK (lead_status = 'new')` |
+| `cap_lead_deny_runtime` | **`RESTRICTIVE`** | `marketing_leads` | `ALL` | `uellix_app` | `USING (false) WITH CHECK (false)` |
+
+`cap_lead_deny_runtime` es **la mitad duradera** de la reducción neta, y no
+estaba en este documento. El `REVOKE` sobre `uellix_writer` por sí solo **no es
+duradero**: `stella_0004` §6b concede incondicionalmente esos cuatro
+privilegios sobre toda tabla no *append-only*, `marketing_leads` incluida, y su
+propia postcondición **aborta si faltan**. Ambos scripts están documentados como
+re-ejecutables, así que reaplicar `stella_0004` después de este paquete
+restauraría el grant en silencio y pasaría sus propias comprobaciones, sin
+diagnóstico en ninguna parte.
+
+Una policy `RESTRICTIVE` se combina con AND en vez de con OR, de modo que
+`USING (false)` niega a `uellix_app` **toda** fila de esta tabla,
+independientemente de qué grants o policies permisivas existan ahora o después.
+El definer no se ve afectado: esta policy nombra a `uellix_app`, y RLS evalúa
+sólo las policies del rol en vigor — dentro del `SECURITY DEFINER` ese rol es
+`uellix_cap_lead`.
+
+Dos mutaciones del catálogo la atacan y ambas sobrevivían: M-20 relaja el
+`USING` a `true`, N-03 la degrada a `PERMISSIVE` (donde un `USING (false)` se
+combina con OR y no niega nada).
 
 El `WITH CHECK` es la tercera capa sobre el mismo invariante (la función fija
 `'new'`, el `DEFAULT` de la columna es `'new'`, y la policy lo exige). Tres
 capas para un invariante trivial puede parecer excesivo; no lo es cuando la
 capa que falla es la que un futuro cambio de código toca sin darse cuenta.
 
-Tras el paquete, la tabla queda con **dos** policies: `cap_lead_insert` y
-`super_admins_read_marketing_leads`.
+Tras el paquete, la tabla queda con **tres** policies: `cap_lead_insert`,
+`cap_lead_deny_runtime` y `super_admins_read_marketing_leads` — esta última
+rota desde el cutover y por razones ajenas a CAP-04 (`RR-CAP-6`: es
+`TO authenticated`, y el runtime no lo es).
 
 ---
 
@@ -325,8 +349,11 @@ huella, no una operación de runtime.
 | S9 | La lista de `source` admitidos está en el SQL y tiene 5 valores |
 | S10 | No hay ninguna columna de IP, UA, referer ni fingerprint en el DDL |
 | S11 | `search_path=''`, todo cualificado, cero dinámico |
-| S12 | `REVOKE ALL … FROM PUBLIC`; `GRANT EXECUTE` sólo a `uellix_app` |
-| S13 | El índice único usa `lower(email)` |
+| S12 | `REVOKE ALL … FROM PUBLIC` —**con `ALL` o `EXECUTE`, no otro privilegio**: revocar `UPDATE` sobre una función no retira nada y satisfacía cualquier comprobación que sólo leyera el objeto y el receptor (gate `function-revoke`, mutación N-42)— y `GRANT EXECUTE` sólo a `uellix_app`, **sin `WITH GRANT OPTION`**: con él, `uellix_app` puede reconceder `EXECUTE` a `anon` y el `REVOKE` deja de significar nada (mutación N-31) |
+| S13 | El índice `uq_marketing_leads_email_source` existe, usa `lower(email)` y **es `UNIQUE`**: sin unicidad el `ON CONFLICT DO NOTHING` nunca dispara y el endpoint responde distinto para un correo conocido (gate `index-uniqueness`) |
+| S14 | Ni la función ni la tabla son re-apropiadas: el `OWNER` de `submit_lead` es `uellix_cap_lead` y `marketing_leads` **no** cambia de dueño. Sin `FORCE ROW LEVEL SECURITY` en la campaña, el dueño de una tabla está **exento de RLS** y tiene DML implícito — una sola línea convertiría al definer que no puede leer en el dueño que puede todo (gates `ownership-*`, mutaciones N-25 y N-26) |
+| S15 | El cuerpo no ejecuta nada que no sea un literal fijo: `EXECUTE <variable>` es inyección SQL en un `SECURITY DEFINER` alcanzable por tráfico anónimo (gate `definer-dynamic-sql`, mutación N-33) |
+| S16 | La rama `WHEN query_canceled` existe: `WHEN OTHERS` **no** captura 57014, así que un `statement_timeout` a mitad de llamada llegaría al cliente con el mensaje de PostgreSQL (gate `definer-query-canceled`, mutación N-44) |
 
 ### 10.2 Vivas (stack desechable)
 
@@ -367,7 +394,10 @@ huella, no una operación de runtime.
 
 ## 12. Rollback
 
-`DROP POLICY cap_lead_insert` → `DROP FUNCTION` → `DROP ROLE uellix_cap_lead` →
+`DROP POLICY cap_lead_insert` **y `cap_lead_deny_runtime`** (las dos, no una:
+retirar la de escritura y dejar la `RESTRICTIVE` en pie dejaría al runtime
+negado sobre una tabla cuya capacidad ya no existe) → `DROP FUNCTION` →
+`DROP ROLE uellix_cap_lead` →
 **restaurar** `GRANT SELECT, INSERT, UPDATE, DELETE ON marketing_leads TO
 uellix_writer` → **recrear** las dos policies de `anon`/`authenticated` →
 `DROP SCHEMA` si vacío.

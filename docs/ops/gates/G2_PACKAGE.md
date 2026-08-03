@@ -645,27 +645,62 @@ EJECUTADO.**
 ## Campaña de capacidades públicas (2026-08-03) — **NO forma parte de G2**
 
 Los cinco paquetes `stella_0006` … `stella_0010` (`db/prepared/`) son **diseño**.
-**Ninguno se ha aplicado a ningún stack, ni local ni remoto**, y ninguna
-capacidad está habilitada.
+**Ninguno se ha aplicado a ningún stack PERSISTENTE, ni local ni remoto**, y
+ninguna capacidad está habilitada.
+
+La precisión importa. Sí se aplicaron —dos veces, con rollback y reaplicación—
+en un **contenedor desechable sin red**, creado y destruido para ese fin.
+Escribir «a ningún stack» a secas contradice el punto 2 de esta misma sección
+trece líneas más abajo, y es exactamente la clase de contradicción interna que
+obligó a reescribir RR-CAP-0.
 
 **No están incluidos en este gate y no deben añadirse a él sin decisión
 explícita**, por tres razones:
 
-1. **Catorce decisiones de producto abiertas** (DP-CAP-01 … DP-CAP-14) que
-   gobiernan qué se publica, qué se conserva y quién puede darse de alta. Ver
+1. **Quince decisiones de producto abiertas** (DP-CAP-01 … DP-CAP-15) que
+   gobiernan qué se publica, qué se conserva, quién puede darse de alta y cómo
+   se vincula una organización a un cliente de Stripe por primera vez. Ver
    [`../DATABASE_CAPABILITY_MODEL.md`](../DATABASE_CAPABILITY_MODEL.md) §8.
-2. **Cero dry-run.** RR-CAP-0: todo es SQL leído, no SQL corrido. Las
-   precondiciones abortan si el estado no es el esperado, pero eso no es un
-   ensayo.
+2. **El dry-run existe, y no es Supabase gestionado.** La afirmación anterior
+   —«cero dry-run: todo es SQL leído, no SQL corrido»— **era falsa** y
+   contradecía tanto a §1 de este mismo documento como a RR-CAP-0 tal y como
+   está redactado hoy. Lo cierto: los cinco paquetes se aplicaron **dos veces**,
+   se probaron con 72 aserciones vivas y seis pruebas de concurrencia con sesiones
+   reales, se revirtieron y se reaplicaron, en un **contenedor desechable sin
+   red** sembrado desde un volcado *schema-only* obtenido por lectura. Lo que
+   falta no es el ensayo: es la **equivalencia con el entorno gestionado**.
 3. **Cada paquete crea al menos un rol**, y `uellix_stripe` es además un rol
    `LOGIN`. Las tres limitaciones de Supabase gestionado que bloquearon
    `stella_0004` en remoto (RR-09) aplican igual, y **no se han verificado**:
    esta unidad tiene prohibido el acceso remoto.
+4. **RR-CAP-10 abierto**, y es precondición bloqueante de CAP-03: la
+   proposición «la cuota sólo se mueve por un evento firmado de Stripe» es
+   falsa mientras el `UPDATE` de `uellix_writer` sobre `public.organizations`
+   siga sin acotar por columna. Ver
+   [`../capabilities/CAP_03_STRIPE.md`](../capabilities/CAP_03_STRIPE.md) §13.
 
-Lo que sí aporta la unidad a este gate: `tests/capability-isolation.test.ts`
-(173 tests, offline) fija que los paquetes no se contaminen entre sí ni
-concedan nada a `anon`, `authenticated`, `service_role` o `PUBLIC`. Si alguna
-vez se incorporan a G2, esa suite es el punto de partida, no la evidencia final.
+**Nada de esto se ha aplicado al stack vivo.** El ensayo ocurrió en un
+contenedor desechable creado y destruido para ese fin; el stack local de
+ensayo permanece en 38 tablas, 107 policies, 10 triggers, cero roles de
+capacidad y sin el esquema `uellix_capability`, verificado por `SELECT`.
+
+Lo que sí aporta la unidad a este gate, y lo que ha cambiado:
+
+* `tests/capability-isolation.test.ts` (offline) fija que los paquetes no se
+  contaminen entre sí ni concedan nada a `anon`, `authenticated`,
+  `service_role` o `PUBLIC`.
+* **`tests/capability-policy-contract.test.ts`** fija el contrato *por tupla*:
+  para cada una de las 36 policies, la tabla, el modo `PERMISSIVE`/`RESTRICTIVE`,
+  el comando, los destinatarios `TO`, el `USING` y el `WITH CHECK`; y para cada
+  privilegio concedido, el privilegio, sus columnas, el objeto y el receptor.
+* **`tests/capability-mutation.test.ts`** es la razón por la que las dos
+  anteriores significan algo: aplica 45 mutaciones de seguridad catalogadas y
+  exige que cada una produzca al menos una violación. Las 22 primeras son las
+  que **sobrevivieron** a una ejecución 220/220 de la suite de aislamiento, con
+  la medición reproducible en `scripts/capability-mutation-audit.ts`.
+
+Si alguna vez se incorporan a G2, esas tres suites son el punto de partida, no
+la evidencia final: siguen siendo estáticas.
 
 **G2 formal: NO EJECUTADO. La campaña de capacidades: NO APROBADA, NO
 APLICADA, NO HABILITADA.**

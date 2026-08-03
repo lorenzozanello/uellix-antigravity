@@ -9,11 +9,24 @@
 --     -f db/prepared/stella_0010_rollback.sql
 --
 -- ============================================================================
--- THIS IS THE ONE ROLLBACK THAT DROPS ITS TABLE, AND THAT IS DELIBERATE
+-- THIS ROLLBACK DROPS ITS TABLE, AND THAT IS DELIBERATE
 -- ============================================================================
--- The other three capability tables are retained because each holds evidence
--- that nothing else records: who approved a publication, which billing events
--- were applied, who accepted an invitation.
+-- The campaign creates FOUR tables and its rollbacks retain TWO of them:
+--
+--   report_public_disclosures  RETAINED by stella_0007_rollback — each row is a
+--                              human decision to publish, with author and date.
+--   stripe_webhook_events      RETAINED by stella_0008_rollback — the record of
+--                              which billing events were applied.
+--   capability_verification_hits  DROPPED by stella_0007_rollback — an aggregate
+--                              counter belonging to the capability, evidence of
+--                              nothing once the capability is gone.
+--   capability_bootstrap_attempts DROPPED here, for the reason below.
+--
+-- So this is not "the one rollback that drops a table": stella_0007_rollback
+-- drops one too. What is retained is evidence; what is dropped is bookkeeping.
+-- (CAP-01 and CAP-04 create no table at all — they retain a COLUMN each,
+-- invitations.accepted_by and marketing_leads.consent_version, which is a
+-- different kind of retention and is stated in their own rollbacks.)
 --
 -- capability_bootstrap_attempts holds none. Its completed rows duplicate facts
 -- already recorded in audit_logs (organization.created, membership.created)

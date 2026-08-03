@@ -125,11 +125,11 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
 |---|---|---|---|---|
-| `stella_0006_invitation_capability.sql` | `stella_0006_rollback.sql` | **ninguno todavía**; requiere DP-CAP-01 y DP-CAP-02 | rol `uellix_cap_invitation` (NOLOGIN); esquema `uellix_capability`; `accept_invitation(text)` SECURITY DEFINER; columna `invitations.accepted_by`; índice único `uq_invitations_token_hash`; 6 policies `cap_invitation_*`; grants por columna sobre 4 tablas | **DISEÑO — no aplicado** |
-| `stella_0007_public_verification_capability.sql` | `stella_0007_rollback.sql` | **ninguno todavía**; requiere DP-CAP-04, 05 y 06 | rol `uellix_cap_verification`; **tablas `report_public_disclosures` (sin `organization_id`: la organización se deriva de `sroi_reports` en las policies) y `capability_verification_hits`**; `verify_report(text)` (STABLE) y `record_verification_hit(text)`; 5 policies `cap_verification_*` + 3 `disclosures_*` internas `TO uellix_app` | **DISEÑO — no aplicado** |
+| `stella_0006_invitation_capability.sql` | `stella_0006_rollback.sql` | **ninguno todavía**; requiere DP-CAP-01 y DP-CAP-02 | rol `uellix_cap_invitation` (NOLOGIN); esquema `uellix_capability`; `accept_invitation(text)` SECURITY DEFINER; columna `invitations.accepted_by`; índice único `uq_invitations_token_hash`; **9** policies `cap_invitation_*` (6 permisivas + 3 `RESTRICTIVE`); grants por columna sobre 4 tablas | **DISEÑO — no aplicado** |
+| `stella_0007_public_verification_capability.sql` | `stella_0007_rollback.sql` | **ninguno todavía**; requiere DP-CAP-04, 05 y 06 | rol `uellix_cap_verification`; **tablas `report_public_disclosures` (sin `organization_id`: la organización se deriva de `sroi_reports` en las policies) y `capability_verification_hits`**; `verify_report(text)` (STABLE) y `record_verification_hit(text)`; **7** policies `cap_verification_*` (5 permisivas + 2 `RESTRICTIVE`) + 3 `disclosures_*` internas `TO uellix_app` | **DISEÑO — no aplicado** |
 | `stella_0008_stripe_webhook_identity.sql` | `stella_0008_rollback.sql` | **ninguno todavía**; requiere DP-CAP-07 y la credencial fuera de banda | roles `uellix_stripe` (**LOGIN, sin contraseña en el script**) y `uellix_cap_stripe`; **tabla `stripe_webhook_events`**; `stripe_begin_event`, `stripe_apply_subscription`, `stripe_fail_event`; 4 policies `cap_stripe_*` | **DISEÑO — no aplicado** |
-| `stella_0009_public_lead_capability.sql` | `stella_0009_rollback.sql` | **ninguno todavía**; requiere DP-CAP-08 … 11 | rol `uellix_cap_lead`; `submit_lead(...)` (`RETURNS void`); columnas `marketing_leads.lead_status` y `.consent_version`; índice único `uq_marketing_leads_email_source`; policy `cap_lead_insert`; **revoca** los 4 privilegios de `uellix_writer` y **elimina** `anon_insert_marketing_leads` y `authenticated_insert_marketing_leads` | **DISEÑO — no aplicado** |
-| `stella_0010_organization_bootstrap_capability.sql` | `stella_0010_rollback.sql` | **ninguno todavía**; requiere DP-CAP-12 y DP-CAP-13 | rol `uellix_cap_bootstrap`; **tabla `capability_bootstrap_attempts`**; `bootstrap_organization(...)`; 8 policies `cap_bootstrap_*` | **DISEÑO — no aplicado** |
+| `stella_0009_public_lead_capability.sql` | `stella_0009_rollback.sql` | **ninguno todavía**; requiere DP-CAP-08 … 11 | rol `uellix_cap_lead`; `submit_lead(...)` (`RETURNS void`); columnas `marketing_leads.lead_status` y `.consent_version`; índice único `uq_marketing_leads_email_source`; policies `cap_lead_insert` y `cap_lead_deny_runtime` (`RESTRICTIVE`, `TO uellix_app`, `USING (false)` — la mitad **duradera** de la reducción neta); **revoca** los 4 privilegios de `uellix_writer` y **elimina** `anon_insert_marketing_leads` y `authenticated_insert_marketing_leads` | **DISEÑO — no aplicado** |
+| `stella_0010_organization_bootstrap_capability.sql` | `stella_0010_rollback.sql` | **ninguno todavía**; requiere DP-CAP-12 y DP-CAP-13 | rol `uellix_cap_bootstrap`; **tabla `capability_bootstrap_attempts`**; `bootstrap_organization(...)`; **11** policies `cap_bootstrap_*` (8 permisivas + 3 `RESTRICTIVE`) | **DISEÑO — no aplicado** |
 
 > **Los cinco corren como superusuario y no dependen entre sí.** Superusuario
 > porque cada uno crea un rol y `uellix_owner` es `NOCREATEROLE` por diseño —
@@ -153,10 +153,20 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 >
 > **Los cinco están probados en ejecución**, no sólo leídos: contenedor
 > desechable `--network none`, línea base 38/107 replicada por volcado
-> *schema-only*, aplicación doble convergente, 57 aserciones vivas, cinco
-> pruebas de concurrencia con sesiones reales, rollback y reaplicación. Nueve
-> defectos salieron de ahí y de ninguna otra parte; ver
+> *schema-only*, aplicación doble convergente a **42 tablas / 141 policies**,
+> **72 aserciones vivas** (los 67 casos `L*` de los cinco documentos, más 3 de
+> aislamiento cruzado y 2 de concurrencia), **seis** pruebas de concurrencia con
+> sesiones reales sincronizadas contra un instante común, rollback y
+> reaplicación al mismo estado. El ensayo es re-ejecutable:
+> `bash scripts/capability-dry-run.sh`. Nueve defectos salieron de la primera
+> ronda y de ninguna otra parte; ver
 > [`docs/ops/capabilities/ADVERSARIAL_FINDINGS.md`](../../docs/ops/capabilities/ADVERSARIAL_FINDINGS.md).
+>
+> Las cifras «132 policies» y «57 aserciones» que aparecían aquí eran de la
+> ronda anterior y **ya no describen estos ficheros**: la segunda ronda
+> adversarial añadió las policies `RESTRICTIVE` y los dos booleanos de
+> publicación, y el recuento de casos vivos diseñados siempre fue 67
+> (13+12+14+13+15). Medidas de nuevo el 2026-08-03.
 >
 > **Independencia comprobable:** las precondiciones cuentan una **línea base**
 > que excluye todo lo que la campaña introduce — las cuatro tablas nuevas, los

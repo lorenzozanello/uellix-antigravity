@@ -197,7 +197,14 @@ se concede (no puede reescribir un token), y ningún acceso a `organizations`,
 
 ## 6. Policies necesarias
 
-**Seis** policies nuevas, todas `TO uellix_cap_invitation` y ninguna `TO PUBLIC`:
+**Nueve** policies nuevas: seis `PERMISSIVE` y tres `RESTRICTIVE`, todas
+`TO uellix_cap_invitation` y ninguna `TO PUBLIC`. El documento decía «seis»
+mientras el paquete creaba nueve — las tres `RESTRICTIVE` llegaron con la
+segunda ronda adversarial (F-02) y no se escribieron aquí. Están abajo, en
+§6.1, y su ausencia de este documento era el mismo tipo de defecto que
+describen: una afirmación de contención que nada comprobaba.
+
+### 6.0 Las seis permisivas
 
 | Nombre | Tabla | Cmd | Cláusula |
 |---|---|---|---|
@@ -231,6 +238,41 @@ la validación de `createInvitation` (que ya rechaza invitar como super_admin) y
 **se pone igualmente**: la redundancia está en dos capas distintas —
 aplicación y base — y la de la base sobrevive a que alguien reescriba la de la
 aplicación.
+
+### 6.1 Las tres RESTRICTIVE, y por qué las seis de arriba no bastaban
+
+| Nombre | Tabla | Cmd | Cláusula |
+|---|---|---|---|
+| `cap_invitation_only_accept` | `invitations` | `UPDATE` | `USING (status = 'pending') WITH CHECK (status = 'accepted' AND accepted_by IS NOT NULL)` |
+| `cap_invitation_only_member` | `organization_members` | `INSERT` | `WITH CHECK (status = 'active' AND role <> 'super_admin')` |
+| `cap_invitation_only_self` | `users` | `SELECT` | `USING (id = auth.uid())` |
+
+Duplican literalmente el predicado de su gemela permisiva, y esa duplicación es
+la corrección, no un descuido.
+
+Las policies permisivas se combinan con **OR** — incluidas las **101** policies
+`{public}` preexistentes, que aplican **también** a este definer. (101 es el
+número de policies cuyo *grantee* es `{public}`; el 105 de las precondiciones
+es otra cosa: la línea base contada EXCLUYENDO los prefijos de la campaña.
+Confundirlos era un error de esta misma sección.) Sus
+predicados llaman a `current_user_role_in_org()` y
+`current_user_is_super_admin()`, que leen `auth.uid()`: una GUC **de sesión**
+que `SECURITY DEFINER` **no** reinicia. Dentro del definer, por tanto, esas
+funciones resuelven al **llamante**, no al conjunto vacío. Un llamante que sea
+org-admin satisface la policy de línea base y **anula por OR** todos los límites
+que las seis `cap_invitation_*` aparentan imponer.
+
+Una policy `RESTRICTIVE` se combina con **AND** y no se puede anular por OR. Sin
+estas tres, la única contención real era el ACL por columna, y cada frase de
+este documento que dice «la policy acota esto aunque se reescriba el cuerpo»
+**era falsa**. Con ellas, es cierta.
+
+**Están fijadas por prueba, no sólo escritas.** El contrato de las nueve —
+tabla, modo, comando, `TO`, `USING` y `WITH CHECK`— está en
+`tests/helpers/capability-gates.ts` y se comprueba tupla a tupla. Cuatro
+mutaciones del catálogo atacan exactamente estas tres policies (M-01 reapunta
+el `TO`, M-03 relaja el `USING`, M-05 y M-22 vacían el `WITH CHECK`), y las
+cuatro **sobrevivían** a la suite anterior.
 
 ---
 
@@ -322,10 +364,16 @@ rotable y tiene retención.
 | S7 | Los grants de tabla del rol definer son **por columna** y las columnas están inventariadas |
 | S8 | El paquete no concede `UPDATE` sobre `invitations.token_hash` |
 | S9 | Sólo hay un `RAISE EXCEPTION` con mensaje literal, y usa `U0001` |
-| S10 | Precondiciones (38/107/10) y `current_user = uellix_owner` presentes |
+| S10 | Precondiciones (38 tablas / **105** policies de línea base EXCLUYENDO los prefijos de la campaña / 10 triggers) y `current_user = uellix_owner` presentes |
 | S11 | El rollback deshace exactamente lo que el forward crea |
 
-### 11.2 Vivas — requieren un stack desechable, **no se ejecutan en esta unidad**
+### 11.2 Vivas — **ejecutadas** el 2026-08-03 en contenedor desechable
+
+Los trece casos están implementados en `scripts/capability-dry-run.sql` (L6 en
+`scripts/capability-dry-run-concurrency.sh`, que necesita dos sesiones) y
+pasaron 13/13. El texto anterior decía «no se ejecutan en esta unidad»: era
+cierto en la ronda 1 y dejó de serlo sin que nadie lo actualizara. CAP-02…CAP-05
+ya lo habían corregido; CAP-01 no.
 
 | # | Prueba | Debe |
 |---|---|---|
@@ -353,7 +401,14 @@ rotable y tiene retención.
    sigue fallando cerrado.
 4. Sólo cuando **DP-CAP-01** y **DP-CAP-02** estén resueltas se reescribe
    `lib/invitations/service.ts::acceptInvitation` para llamar a la RPC.
-5. Gate: `invitation-capability` en verde, `capability-isolation` en verde.
+5. Gate: los trece casos `L*` de §11.2 en verde en el contenedor desechable
+   (`bash scripts/capability-dry-run.sh`), y en verde offline
+   `capability-isolation`, `capability-policy-contract`, `capability-mutation` y
+   `capability-documentation`. **No existe una suite `vitest` llamada
+   `invitation-capability`** y este punto la nombraba: los casos vivos están
+   implementados en `scripts/capability-dry-run.sql`, no como fichero de test,
+   porque necesitan una base y `vitest.config.ts` excluye todo lo que la
+   necesita.
 
 **En ningún momento de este diseño se aplica el paquete a un stack vivo.**
 

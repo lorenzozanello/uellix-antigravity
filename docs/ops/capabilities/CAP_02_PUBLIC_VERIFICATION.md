@@ -93,16 +93,35 @@ public.report_public_disclosures
   approved_at      timestamptz NOT NULL DEFAULT now()
   revoked_at       timestamptz                       -- despublicar sin borrar
   public_summary   text                              -- redactado para publicar
+  revoked_by       uuid REFERENCES public.users(id)  -- fijado a auth.uid() por policy
   show_organization_name  boolean NOT NULL DEFAULT false
   show_report_title       boolean NOT NULL DEFAULT false
   show_headline_ratio     boolean NOT NULL DEFAULT false
   show_totals             boolean NOT NULL DEFAULT false
+  show_issued_on          boolean NOT NULL DEFAULT false   -- ronda 2
+  show_report_variant     boolean NOT NULL DEFAULT false   -- ronda 2
   disclosure_version      integer NOT NULL DEFAULT 1
 ```
 
 **Sin fila → no verificable.** Con fila pero `revoked_at IS NOT NULL` → no
 verificable. Cada campo visible es un booleano que alguien tuvo que poner en
-`true`. Los cuatro nacen en `false`: **el defecto es no publicar nada**.
+`true`. **Los seis** nacen en `false`: el defecto es no publicar nada.
+
+**Son seis, no cuatro, y la diferencia es el hallazgo de la segunda ronda
+adversarial.** `issued_on` y `report_variant` se devolvían
+**incondicionalmente** mientras la cabecera del paquete afirmaba que todo campo
+visible estaba detrás de un booleano. La fecha de bloqueo de un reporte privado
+es una divulgación, y cuál de las tres variantes —*funder*, *methodological*,
+*audit*— se produjo también lo es. Añadir los dos booleanos fue la corrección;
+que el gate estático siguiera iterando **cuatro** nombres es la razón por la que
+un `DEFAULT true` en cualquiera de los dos nuevos habría pasado desapercibido.
+Ese punto ciego está cerrado por construcción, no contando hasta seis: el gate
+`cap02-flag-count` **deriva** la lista de columnas `show_*` del propio
+`CREATE TABLE` y la compara con `DISCLOSURE_FLAGS`, de modo que un séptimo
+booleano —con `DEFAULT true` o sin él— es una violación en cuanto aparece
+(mutación N-38). Y `cap02-flag-honoured` exige, **por columna**, que
+`verify_report` publique cada valor detrás de su `CASE WHEN d.<flag>`: fijar el
+DEFAULT no dice nada sobre si alguien lo lee (mutación N-39).
 
 Esto convierte la pregunta "¿qué se muestra?" (DP-CAP-04, DP-CAP-05) de una
 decisión de código a un dato por reporte, que además queda auditado.
@@ -288,15 +307,62 @@ función; confundir las dos cosas es de donde venía la afirmación anterior.)
 | `cap_verification_select_runs` | `sroi_calculation_runs` | `SELECT` | `USING (true)` |
 | `cap_verification_write_hits` | `capability_verification_hits` | `ALL` | `USING (true) WITH CHECK (true)` |
 
-`report_public_disclosures` necesita además las policies para el camino
-**interno** (quién crea y revoca una disclosure): un `organization_admin` de la
-organización dueña del reporte. Esas policies son del modelo normal, no de la
-capacidad, y el paquete las crea junto a la tabla.
-
 `USING (status = 'locked')` en la policy es redundante con el `WHERE` de la
 función y se pone igualmente: es la misma redundancia de dos capas que en
 CAP-01. Si alguien reescribe el cuerpo, la policy sigue impidiendo que un
 borrador se lea por esta vía.
+
+### 6.1 Las dos RESTRICTIVE
+
+| Nombre | Tabla | Cmd | Cláusula |
+|---|---|---|---|
+| `cap_verification_only_locked` | `sroi_reports` | `SELECT` | `USING (status = 'locked')` |
+| `cap_verification_only_live` | `report_public_disclosures` | `SELECT` | `USING (revoked_at IS NULL)` |
+
+Mismo argumento que en CAP-01 §6.1: las permisivas se combinan con OR junto a
+las 101 policies `{public}` preexistentes, cuyos predicados resuelven al
+**llamante** dentro del definer porque `auth.uid()` es una GUC de sesión que
+`SECURITY DEFINER` no reinicia. Sin estas dos, un llamante org-admin anula por
+OR el `status = 'locked'` y el `revoked_at IS NULL`, y **un borrador se
+verificaría públicamente**. La mutación M-07 hace exactamente eso relajando el
+`USING` a `true`, y sobrevivía a la suite anterior porque el gate contaba dos
+policies `RESTRICTIVE` y nunca leyó su predicado.
+
+### 6.2 El camino interno: las tres `disclosures_*`, `TO uellix_app`
+
+`report_public_disclosures` necesita además las policies del camino **interno**
+—quién crea y revoca una disclosure—: un `organization_admin` de la
+organización dueña del reporte. Son del modelo normal, no de la capacidad, y el
+paquete las crea junto a la tabla. **No estaban en este documento**, y como no
+llevan el prefijo `cap_`, tampoco las contaba ningún gate: borrar
+`disclosures_update_admin` entera dejaba la suite en verde (M-11).
+
+| Nombre | Cmd | `TO` | Cláusula |
+|---|---|---|---|
+| `disclosures_select_member` | `SELECT` | `uellix_app` | `USING (EXISTS … r.organization_id = ANY(current_user_org_ids()) OR current_user_is_super_admin())` |
+| `disclosures_insert_admin` | `INSERT` | `uellix_app` | `WITH CHECK (approved_by = auth.uid() AND EXISTS … current_user_role_in_org(r.organization_id) IN ('super_admin','organization_admin') …)` |
+| `disclosures_update_admin` | `UPDATE` | `uellix_app` | `USING (…mismo EXISTS…) WITH CHECK ((revoked_by IS NULL OR revoked_by = auth.uid()) AND …mismo EXISTS…)` |
+
+Tres propiedades que ahora sí están fijadas:
+
+* **Nombran `TO uellix_app` explícitamente**, apartándose de las 101 policies
+  `{public}` preexistentes. Una policy sin `TO` es `TO PUBLIC` —el defecto que
+  `stella_0005c` tuvo que reparar— y nombrar el rol del runtime no cuesta nada.
+  El gate anterior comprobaba que la sentencia casara con `/TO \w+/`, expresión
+  que **`TO PUBLIC` satisface**: la mutación M-10 explota justo eso.
+* **La organización se deriva de `sroi_reports`, nunca la asevera el llamante.**
+  El `EXISTS` se evalúa además bajo la RLS del propio llamante, así que un
+  reporte de otro tenant es invisible para él y el predicado es falso: dos
+  cerrojos independientes en la misma puerta. Publicar entre organizaciones es
+  imposible por construcción, no por validación.
+* **`approved_by` y `revoked_by` se fijan a `auth.uid()`.** Sin ello, la
+  afirmación del `COMMENT` de la tabla —«cada fila es una decisión humana con su
+  autor»— sería algo que la tabla no puede sostener: un admin podría registrar a
+  un colega como aprobador o como revocador (M-09).
+
+**No hay policy `DELETE`, y es deliberado:** una disclosure se revoca
+(`revoked_at`), nunca se borra. Quién publicó qué, y cuándo, tiene que seguir
+siendo respondible.
 
 ---
 
@@ -348,8 +414,27 @@ hashes.
   un actor identificado, y `audit_logs` exige `actor_user_id NOT NULL` desde
   `stella_0005c`. Forzar un actor sintético ahí sería fabricar una identidad,
   que es exactamente lo que el cutover prohibió.
-* La creación y la revocación de una **disclosure** sí van a `audit_logs`, con
-  el admin que la aprobó como actor. Ese es el acto auditable.
+* **La creación y la revocación de una disclosure NO se auditan.** Esta línea
+  decía lo contrario —«sí van a `audit_logs`, con el admin que la aprobó como
+  actor»— y era falsa: `stella_0007_public_verification_capability.sql` **no
+  contiene la cadena `audit_logs` ni una sola vez**. No hay trigger, no hay
+  inserción y no hay protección *append-only* sobre
+  `report_public_disclosures`. Un admin puede publicar, revocar y volver a
+  publicar sin dejar rastro fuera de las columnas `approved_by` / `revoked_by`
+  de la propia fila, que además son sobrescribibles en el segundo ciclo.
+
+  Esto es **RR-CAP-02-F**, y el registro de riesgos lo daba por cerrado con la
+  nota *«documento corregido a lo que el SQL hace»*. El documento **no** se
+  había corregido: la afirmación falsa seguía dos líneas por debajo de la
+  correcta, dentro de la misma sección de cinco líneas. Corregido ahora, y
+  RR-CAP-02-F reabierto.
+
+  Lo que la tabla sí sostiene es más débil y hay que decirlo así: cada fila
+  registra **quién aprobó y cuándo**, y las policies fijan `approved_by` y
+  `revoked_by` a `auth.uid()` (§6.2), de modo que la autoría no puede
+  atribuirse a un tercero. El historial de publicaciones sucesivas no existe.
+  Construirlo es trabajo de implementación —un trigger `AFTER INSERT OR UPDATE`
+  que escriba en `audit_logs`— y **no forma parte de este paquete**.
 
 ---
 
@@ -366,9 +451,12 @@ hashes.
 | S5 | `search_path = ''` en ambas funciones; todo cualificado |
 | S6 | `REVOKE ALL … FROM PUBLIC` para ambas |
 | S7 | `GRANT EXECUTE` sólo a `uellix_app` |
-| S8 | El paquete crea `report_public_disclosures` con los cuatro booleanos `DEFAULT false` |
+| S8 | El paquete crea `report_public_disclosures` con **los seis** booleanos `NOT NULL DEFAULT false` (gate `cap02-flag-default`, sobre `DISCLOSURE_FLAGS`, longitud fijada en 6) |
 | S9 | `capability_verification_hits` no tiene ninguna columna de IP, UA o sesión |
 | S10 | Precondiciones y rollback simétricos |
+| S11 | Las **diez** policies del paquete coinciden exactamente con el contrato: tabla, `PERMISSIVE`/`RESTRICTIVE`, comando, `TO`, `USING` y `WITH CHECK` (gates `policy-*`). Incluye las tres `disclosures_*`, que son `TO uellix_app` y que el gate anterior —basado en el prefijo `cap_`— **no contaba** |
+| S12 | `disclosures_insert_admin` fija `approved_by = auth.uid()` y `disclosures_update_admin` fija `revoked_by`; ninguna de las dos puede reasignar la autoría de una publicación |
+| S13 | `verify_report` es `STABLE` y no escribe (gates `cap02-stable`, `cap02-readonly`) |
 
 ### 11.2 Vivas (stack desechable)
 

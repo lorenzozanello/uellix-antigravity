@@ -1423,10 +1423,20 @@ una está especificada caso por caso en el documento de su capacidad:
 | `public-lead-capability` | 13 (`L1..L13`) | `capabilities/CAP_04_PUBLIC_LEADS.md` §10.2 |
 | `organization-bootstrap-capability` | 15 (`L1..L15`) | `capabilities/CAP_05_ORGANIZATION_BOOTSTRAP.md` §9.2 |
 
-**67 casos vivos diseñados, 0 ejecutados.** La suite estática cubre la mitad
-que se puede cubrir sin base: que el SQL que produciría ese catálogo dice lo
-que el diseño afirma. No cubre —y su cabecera lo dice— que las capacidades
-funcionen.
+**67 casos vivos diseñados** (13 + 12 + 14 + 13 + 15). La suite **estática**
+cubre la mitad que se puede cubrir sin base: que el SQL que produciría ese
+catálogo dice lo que el diseño afirma. No cubre —y su cabecera lo dice— que las
+capacidades funcionen.
+
+> **Corrección 2026-08-03 (segunda reauditoría).** Este documento afirmaba a la
+> vez «67 casos vivos diseñados» y, en la tabla del dry run, «57/57». Las dos
+> cifras no pueden ser ciertas y la buena es **67**: 13 + 12 + 14 + 13 + 15. El
+> «57» venía de un recuento anterior a que CAP-03 pasara de 12 a 14 casos y
+> CAP-05 de 13 a 15, y se propagó al informe del ensayo previo. Los 67 están
+> ahora **implementados y ejecutados** en `scripts/capability-dry-run.sql` y
+> `scripts/capability-dry-run-concurrency.sh`, que es la diferencia relevante:
+> la evidencia anterior se produjo a mano y por eso no se pudo volver a
+> comprobar.
 
 ### Dry run en entorno desechable sin red (2026-08-03)
 
@@ -1439,15 +1449,62 @@ funcionen.
 `uellix_*`, `auth.uid()` presente, las tres restricciones únicas y el índice
 parcial `user_single_active_membership`.
 
+**Reejecutado el 2026-08-03 sobre los paquetes vigentes**, con
+`scripts/capability-dry-run.sh`. Las cifras de abajo son las de esa ejecución;
+las de la ronda anterior (132 policies, 57/57) correspondían a paquetes que la
+segunda ronda adversarial modificó y **ya no describen estos ficheros**.
+
 | Fase | Resultado |
 |---|---|
-| Forward × 5, primera pasada | 5/5 sin error → 42 tablas, 132 policies, 6 roles, 8 funciones |
+| Línea base replicada | **38 tablas / 107 policies / 0 roles de capacidad / 0 funciones / sin esquema** — idéntica al stack vivo |
+| Forward × 5, primera pasada | 5/5 sin error → **42 tablas, 141 policies, 6 roles, 8 funciones, 1 esquema** |
 | Forward × 5, **segunda** pasada | 5/5 sin error, **estado idéntico** (convergente) |
-| Pruebas de capacidad y aislamiento | **57/57** |
+| Aserciones vivas | **72/72** — los 67 casos `L*` de los cinco documentos, más 3 de aislamiento cruzado y 2 de concurrencia añadidas para CAP-02 y CAP-04 |
+| Concurrencia con sesiones reales | 6/6 — CAP-01 L6, CAP-03 L3, CAP-05 L4, CAP-05 L11, más CAP-02 y CAP-04 bajo contención. Las dos sesiones se sincronizan contra un instante común, no se lanzan y se espera que solapen |
 | Rollback × 5, orden inverso | 5/5 sin error → **0 roles de capacidad, 0 policies `cap_*`, 0 funciones, esquema eliminado** |
-| Residuo tras rollback | Sólo lo retenido por diseño: `report_public_disclosures` y `stripe_webhook_events`; línea base de policies de vuelta en 105 |
-| Reaplicación tras rollback | 5/5 sin error, estado idéntico al de la primera pasada |
-| Concurrencia (dos sesiones reales) | 5/5 |
+| Residuo tras rollback | **40 tablas / 108 policies.** Dos tablas retenidas por diseño (`report_public_disclosures`, `stripe_webhook_events`) y dos eliminadas (`capability_verification_hits`, `capability_bootstrap_attempts`); una policy retenida (`disclosures_select_member`). Los 108 se descomponen así: 107 de línea base — las dos de `marketing_leads` que 0009 retira y su rollback **restaura** — más `disclosures_select_member`. La cifra «105» que aparecía aquí era el conteo *excluyendo prefijos* de las precondiciones, no el total |
+| Reaplicación tras rollback | 5/5 sin error → **42/141/6/8/1**, idéntico a la primera pasada |
+
+**El detalle de siembra que invalidó el primer intento de esta reejecución.**
+`pg_dump --schema-only` no traslada el ACL del esquema `public` cuando el
+esquema se crea a mano en la restauración, y la diferencia no es cosmética: el
+stack vivo tiene la entrada `=U/pg_database_owner` —`PUBLIC` con `USAGE`, que es
+**RR-CAP-7**— y todo rol de capacidad la hereda. Sin ese `GRANT`, los definers
+no pueden ni nombrar `public.users`, las cinco capacidades fallan con 42501 y el
+ensayo mide la siembra en vez de los paquetes. El driver lo restituye de forma
+explícita y lo comenta, porque es el tipo de error que produce un rojo
+convincente y equivocado.
+
+### Matriz de mutaciones (2026-08-03)
+
+`scripts/capability-mutation-audit.ts` aplica cada mutación **al fichero en
+disco**, ejecuta las suites, restaura y compara el SHA-256 antes y después.
+
+| Medida | Resultado |
+|---|---|
+| Mutaciones catalogadas | **67** — `M-01..M-22` (las supervivientes de la reauditoría) + `N-01..N-45` (nuevas) |
+| Sobreviven a `tests/capability-isolation.test.ts` **tal como estaba en `1bfed10`** | **22 de 22** — reproducido, no asumido |
+| Sobreviven a esa suite **tras repararla** | **21 de 22.** M-08 (`show_issued_on DEFAULT true`) ya no sobrevive: la lista de cuatro nombres codificada a mano se sustituyó por una derivada del `CREATE TABLE`. Era el test que la propia M-08 acusaba, y seguía en el repositorio |
+| Sobreviven a los gates nuevos | **0 de 67** |
+| Restauración verificada por SHA | **67/67** idénticas |
+| Reparto por gate | máximo **7** mutaciones muertas por un mismo gate, sobre 67 |
+| Gates sin mutación que los ejercite | **59 de 117**, listados en `UNEXERCISED_GATES` (`tests/capability-mutation.test.ts`) y comprobados por un test que falla si la lista cambia sin decirlo. Es el residual honesto de RR-CAP-12 |
+
+**Qué significa «0 de 67», y qué no.** Es acuerdo entre dos ficheros escritos
+por la misma mano —el catálogo y los gates—, no cobertura del diseño. Lo que le
+da valor es lo otro: dos revisores adversariales de solo lectura, sin permiso de
+escritura y sin base de datos, intentaron escapar de los gates y encontraron
+**once clases reales** en una sesión. Todas están ahora catalogadas
+(`N-24`…`N-45`) y en rojo. Ninguna exigió imaginación. Por eso RR-CAP-12 queda
+**MITIGADO y no CERRADO**.
+
+Además, desde la ronda 3 cada mutación declara **qué gate debe refusarla**
+(`expectedGate`) y el arnés lo comprueba. Sin eso, «45 mutaciones, 0
+supervivientes» era compatible con que una mutación muriese por un gate que no
+tiene nada que ver con la propiedad que dice probar — y N-08 era exactamente ese
+caso: probaba «la primera lectura toma el bloqueo» y la mataba
+`cap01-order-replay`, porque `cap01-order-unlocked-read` resultó ser
+**definicionalmente cierto** y no podía fallar nunca.
 
 **Concurrencia, medida con dos sesiones `psql` simultáneas:**
 
@@ -1459,7 +1516,15 @@ parcial `user_single_active_membership`.
 | Dos entregas Stripe del **mismo** evento | exactamente un `claimed`, un `in_progress`; `attempts` sin incrementar |
 | Dos envíos de lead idénticos | cero errores, **1 fila** |
 
-#### Ocho defectos que sólo la ejecución encontró
+#### Nueve defectos que sólo la ejecución encontró
+
+> **Corrección 2026-08-03.** Este encabezado decía «Ocho» y la tabla lista D1–D8,
+> mientras `capabilities/ADVERSARIAL_FINDINGS.md` §3 lista **D1–D9** y tanto
+> `db/prepared/README.md` como `DATABASE_CAPABILITY_MODEL.md` dicen «Nueve». El
+> que falta es **D9**: el `ON CONFLICT` sin arbiter de CAP-04, medido cuando un
+> `ON CONFLICT (lower(email), source) DO NOTHING` fue denegado a un definer sin
+> `SELECT`. Es, además, el defecto con la consecuencia de diseño más grande de
+> los nueve.
 
 Ninguno era visible leyendo el SQL, y cuatro habrían fallado **en tiempo de
 ejecución** —dentro de un webhook o de un enlace de invitación—, no al aplicar.

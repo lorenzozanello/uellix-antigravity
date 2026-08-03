@@ -108,24 +108,39 @@ uellix_capability.bootstrap_organization(
 | 1 | `SET LOCAL lock_timeout = '3s'` | Igual que CAP-01: un bloqueo sin límite es un vector de DoS |
 | 2 | `v_subject := auth.uid()`; `NULL` → error uniforme | **El sujeto nunca es parámetro.** Es la propiedad que sustituye a la identidad técnica |
 | 3 | `p_idempotency_key` no nula | Sin clave no hay reintento seguro |
-| 4 | **Camino idempotente:** buscar `capability_bootstrap_attempts` por `(user_id, idempotency_key)`. Si existe y `organization_id` no es nulo → devolverlo y salir **sin escribir** | Reintento tras timeout |
-| 5 | Si existe pero `organization_id` es nulo → es un intento en curso o fallido; se reclama con `FOR UPDATE` | Evita dos ejecuciones simultáneas de la misma clave |
+| 4 | **RECLAMAR LA CLAVE, PRIMERO.** `INSERT INTO capability_bootstrap_attempts (user_id, idempotency_key) … ON CONFLICT ON CONSTRAINT capability_bootstrap_attempts_pkey DO NOTHING RETURNING true` | Ésta es la sentencia que serializa. Un `INSERT` sobre una PK compuesta toma un bloqueo de tupla **que existe**, y el perdedor lo descubre en el acto |
+| 5 | Si el `INSERT` no reclamó (`v_claimed` no es `true`): releer la fila **con `FOR UPDATE`**. Si tiene `organization_id` → replay idempotente, devolverlo y salir **sin escribir**. Si no lo tiene → error uniforme; el cliente reintenta con la misma clave | Aquí `FOR UPDATE` sí bloquea, porque **ahora la fila existe**. Ése es el orden que importa |
 | 6 | Rechazar si ya hay membresía **activa** para `v_subject` | Invariante de una organización por usuario (**DP-CAP-13**) |
 | 7 | Leer el correo del sujeto y comprobar la allowlist contra `public.signup_allowlist` | La allowlist sigue siendo la puerta (**DP-CAP-12**); el definer puede leerla, el usuario no |
 | 8 | Validar `p_name`: 2..255 tras `btrim` | |
 | 9 | Validar `p_slug` contra `^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])$` y **denylist** | Cierra el defecto 3 |
 | 10 | Normalizar `p_country` a 2 mayúsculas; truncar `p_legal_name`/`p_sector` | |
-| 11 | `INSERT INTO public.organizations (…) ON CONFLICT (slug) DO NOTHING RETURNING id` | **Atómico**: cierra el *check-then-act* del defecto 2. Si no devuelve fila, el slug está tomado → error **distinguible** `U0002` |
+| 11 | `INSERT INTO public.organizations (…) ON CONFLICT ON CONSTRAINT organizations_slug_unique DO NOTHING RETURNING id` | **Atómico**: cierra el *check-then-act* del defecto 2. Si no devuelve fila, el slug está tomado → error **distinguible** `U0002`. **`ON CONSTRAINT`, no `ON CONFLICT (slug)`**: el `RETURNS TABLE` declara una variable de salida llamada `slug`, y un *conflict target* es contexto de expresión, donde plpgsql la sustituiría |
 | 12 | `INSERT INTO public.organization_members` con `user_id = v_subject`, `role = 'organization_admin'`, `status = 'active'` | Ni el usuario ni el rol llegan por parámetro |
-| 13 | Insertar la configuración inicial de la organización | Cierra el defecto 4 |
+| 13 | *(no hay paso 13)* La configuración inicial **no se inserta**: en este esquema la configuración de una organización son sus propias columnas, y toda la que la capacidad no nombra toma el `DEFAULT` | Ése es el mecanismo por el que el bootstrap no puede elegir plan ni cuota: **no tiene grant sobre esas columnas**, así que nombrarlas fallaría (RR-CAP-05-C) |
 | 14 | Dos `INSERT` en `public.audit_logs` con `actor_user_id = v_subject` | |
-| 15 | `UPDATE capability_bootstrap_attempts SET organization_id = …, completed_at = now()` | Sella la clave de idempotencia |
+| 15 | `UPDATE capability_bootstrap_attempts SET organization_id = …, completed_at = now()` | **Sella** la clave reclamada en el paso 4 |
 | 16 | `RETURN QUERY SELECT v_org_id, v_slug` | Datos mínimos |
 
-**Los pasos 11 a 15 comparten transacción.** Una función es atómica dentro de
-su sentencia: o existen la organización, la membresía, la configuración, las
-dos auditorías y el sello de idempotencia, o no existe ninguna. **No puede
-haber una organización parcial** — que es el requisito literal de la FASE 8.
+**Los pasos 4 a 15 comparten transacción**, no sólo del 11 al 15. Eso importa
+más de lo que parece: la reclamación de la clave revierte con todo lo demás, de
+modo que un fallo a mitad **libera la clave** en vez de dejarla ocupada por un
+intento que nunca existió. O existen la organización, la membresía, las dos
+auditorías y el sello, o no existe ninguna de las cinco cosas —
+**y tampoco el intento**. No puede haber una organización parcial, que es el
+requisito literal de la FASE 8.
+
+**Por qué el orden del paso 4 es la propiedad, y no un detalle de
+implementación.** Una revisión anterior abría con
+`SELECT … FOR UPDATE` sobre `capability_bootstrap_attempts` y sólo tocaba la
+clave primaria al final, como `ON CONFLICT DO UPDATE`. Ninguna de las dos
+sentencias bloquea: `FOR UPDATE` sobre una fila que **todavía no existe** no
+tiene nada que bloquear, y un `DO UPDATE` al final llega cuando la organización
+ya está creada. Las dos llamadas concurrentes pasaban las dos, y la defensa
+documentada no defendía. Reclamar por `INSERT`, **antes de cualquier otra
+escritura**, es lo que convierte la afirmación en cierta: el perdedor no llega
+a crear organización, y no deja intento residual porque su transacción entera
+revierte.
 
 ### 3.2 El error de slug es la única excepción a la uniformidad
 
@@ -223,7 +238,7 @@ REVOKE ALL    ON FUNCTION … FROM PUBLIC;
 | `cap_bootstrap_insert_orgs` | `organizations` | `INSERT` | `WITH CHECK (status = 'active')` |
 | `cap_bootstrap_select_members` | `organization_members` | `SELECT` | `USING (true)` |
 | `cap_bootstrap_insert_members` | `organization_members` | `INSERT` | `WITH CHECK (role = 'organization_admin' AND status = 'active')` |
-| `cap_bootstrap_select_users` | `users` | `SELECT` | `USING (true)` |
+| `cap_bootstrap_select_users` | `users` | `SELECT` | `USING (id = auth.uid())` — acotada a la propia fila, como la de CAP-01 |
 | `cap_bootstrap_select_allowlist` | `signup_allowlist` | `SELECT` | `USING (true)` |
 | `cap_bootstrap_insert_audit` | `audit_logs` | `INSERT` | `WITH CHECK (actor_user_id IS NOT NULL AND entity_type IN ('organization','organization_member'))` |
 | `cap_bootstrap_rw_attempts` | `capability_bootstrap_attempts` | `ALL` | `USING (true) WITH CHECK (true)` |
@@ -239,6 +254,28 @@ nombrar.
 
 `members_insert_admin` y `orgs_insert_super_admin` **se conservan sin tocar**.
 
+### 5.1 Las tres RESTRICTIVE
+
+Son **once** policies, no ocho. Las tres que faltaban en este documento:
+
+| Nombre | Tabla | Cmd | Cláusula |
+|---|---|---|---|
+| `cap_bootstrap_only_founder` | `organization_members` | `INSERT` | `WITH CHECK (role = 'organization_admin' AND status = 'active')` |
+| `cap_bootstrap_only_active` | `organizations` | `INSERT` | `WITH CHECK (status = 'active')` |
+| `cap_bootstrap_only_self` | `users` | `SELECT` | `USING (id = auth.uid())` |
+
+El argumento es el de CAP-01 §6.1, y aquí muerde más fuerte que en ninguna otra
+capacidad: las ocho permisivas de arriba se combinan con OR junto a las 105
+policies `{public}` de la línea base, cuyos predicados llaman a
+`current_user_role_in_org()` — que dentro del definer resuelve al **llamante**,
+porque `auth.uid()` es una GUC de sesión que `SECURITY DEFINER` no reinicia. Un
+llamante que ya fuese org-admin en alguna organización anularía por OR el
+`role = 'organization_admin'` de `cap_bootstrap_insert_members` y podría
+insertarse con cualquier rol que el ACL por columna admita.
+
+`cap_bootstrap_only_founder` es lo que hace **cierta** la frase de §5 sobre
+`members_insert_admin`. La mutación M-22 la vacía, y sobrevivía.
+
 ---
 
 ## 6. Idempotencia
@@ -246,9 +283,10 @@ nombrar.
 | Escenario | Resultado |
 |---|---|
 | Primera llamada | Crea todo; sella `completed_at` |
-| Reenvío con la **misma** clave | Paso 4: devuelve la misma organización, **cero escrituras** |
+| Reenvío con la **misma** clave | Paso 4 no reclama → paso 5 relee y devuelve la misma organización, **cero escrituras** |
 | Reenvío con clave **distinta** | Paso 6: ya hay membresía activa → error uniforme. **No** crea una segunda organización |
-| Dos llamadas concurrentes, misma clave | La PK compuesta + `FOR UPDATE` del paso 5: sólo una procede |
+| Dos llamadas concurrentes, **misma** clave | El `INSERT` del paso 4: sólo una reclama. La perdedora bloquea en el `FOR UPDATE` del paso 5 sobre una fila que **ya existe**, y al desbloquearse o devuelve la organización de la ganadora o se rechaza uniformemente. **Nunca crea una segunda organización, y no deja intento residual** |
+| Dos llamadas concurrentes, claves **distintas** | Las dos reclaman su propia clave; la serialización real es el índice único parcial `user_single_active_membership`, cuyo `23505` el bloque `EXCEPTION` colapsa en `U0001`. La perdedora revierte entera |
 | Timeout del cliente, éxito en el servidor | Reintento con la misma clave → paso 4 |
 | Fallo a mitad | La transacción revierte **entera**, incluida la fila de intento. La clave queda libre para reintentar |
 | Slug tomado | `U0002`; la fila de intento revierte; el usuario corrige y reintenta con la misma clave |
@@ -303,7 +341,10 @@ fallido no debe consumir su propia clave de idempotencia.
 | S4 | La policy de `organization_members` fija `role = 'organization_admin'` |
 | S5 | La denylist de slugs está en el SQL y contiene al menos `app`, `api`, `verify`, `invite` |
 | S6 | `capability_bootstrap_attempts` tiene PK compuesta `(user_id, idempotency_key)` |
-| S7 | El cuerpo usa `ON CONFLICT (slug) DO NOTHING`, no `SELECT` previo |
+| S7 | El cuerpo usa `ON CONFLICT ON CONSTRAINT organizations_slug_unique DO NOTHING`, no un `SELECT` previo **y no un *conflict target* por columna**, que pondría la variable de salida `slug` en contexto de expresión (gate `cap05-slug-atomic`) |
+| S8 | La clave de idempotencia se reclama con `INSERT … ON CONFLICT ON CONSTRAINT capability_bootstrap_attempts_pkey DO NOTHING` **antes** de crear la organización, y ningún `FOR UPDATE` la precede (gates `cap05-claim-order`, `cap05-claim-first`, `cap05-claim-atomic`) |
+| S9 | Las **once** policies coinciden con el contrato en tabla, modo, comando, `TO`, `USING` y `WITH CHECK`, incluidas las tres `RESTRICTIVE` de §5.1 (gates `policy-*`) |
+| S10 | La firma no admite `actor`, `owner`, `user_id`, `role`, `plan`, `quota` ni `flag`, y el sujeto sale de `auth.uid()` (gates `cap05-no-authority-param`, `cap05-subject`, `cap05-no-actor`) |
 | S8 | `search_path=''`, todo cualificado, cero dinámico |
 | S9 | `REVOKE ALL … FROM PUBLIC`; `GRANT EXECUTE` sólo a `uellix_app` |
 | S10 | El paquete **no** crea ningún rol `LOGIN` |
@@ -380,7 +421,7 @@ parcial.
 | **SQL injection** | Alta | Parámetros ligados; la denylist es un array constante | Ninguno |
 | **`search_path` injection** | Alta | `search_path=''`, todo cualificado | Ninguno |
 | **Payload amplification** | Baja | Seis escalares, todos truncados en la base | Ninguno |
-| **Denial of service** | Media | 5/hora por sujeto; `lock_timeout` | Un atacante con muchas cuentas allowlisted podría crear muchas organizaciones. La allowlist es la defensa. **RR-CAP-05-A** |
+| **Denial of service** | Media | 5/hora por sujeto **en la capa de aplicación, no en el SQL**: `stella_0010` no implementa rate limiting, y el único límite por sujeto que la base impone es la guarda de membresía activa única (DP-CAP-13). La cifra es una propuesta de DP-CAP-14, no una medida vigente; `lock_timeout` | Un atacante con muchas cuentas allowlisted podría crear muchas organizaciones. La allowlist es la defensa. **RR-CAP-05-A** |
 | **Abuse automation** | Media | La allowlist (DP-CAP-12) es la puerta real | Si DP-CAP-12 abriera el alta, haría falta CAPTCHA y verificación de correo. **No está en el diseño porque el defecto es la allowlist** |
 
 ---

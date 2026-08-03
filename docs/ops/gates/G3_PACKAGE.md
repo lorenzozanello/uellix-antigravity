@@ -383,4 +383,20 @@ comprobación que aporta valor es la simétrica: que `anon` y `authenticated`
 sigan **sin poder** insertar un lead por PostgREST, y que `PUBLIC` no tenga
 `EXECUTE` sobre ninguna función de `uellix_capability`.
 
-**Estado: la campaña NO está aplicada. G3 sigue sin ejecutarse.**
+**Lo que sí existe, y no debe confundirse con G3.** Hay un dry run, re-ejecutado
+el 2026-08-03 con `scripts/capability-dry-run.sh`: contenedor desechable con
+`--network none`, sembrado desde un volcado *schema-only* obtenido por lectura,
+línea base 38/107 replicada, doble aplicación convergente a 42/141, 72
+aserciones vivas, seis pruebas de concurrencia con sesiones reales, rollback y
+reaplicación. Cuatro de esas aserciones —CAP-04 L8, L9, L10 y L11— ejercitan
+precisamente el camino de arriba: `uellix_app`, `anon` y `authenticated`
+intentando escribir o leer `marketing_leads`, y las cuatro son denegadas con
+42501.
+
+Eso **no** sustituye a G3. El contenedor no tiene PostgREST, no tiene Kong y no
+tiene GoTrue: prueba el ACL y las policies de la base, no la ruta que un cliente
+recorre de verdad. Y no es Supabase gestionado, que es lo que RR-CAP-5 y RR-09
+mantienen abierto.
+
+**Estado: la campaña NO está aplicada a ningún stack vivo. G3 sigue sin
+ejecutarse.**
