@@ -86,6 +86,8 @@ const CAP04 = 'stella_0009_public_lead_capability.sql'
 const CAP05 = 'stella_0010_organization_bootstrap_capability.sql'
 const RB01 = 'stella_0006_rollback.sql'
 const RB02 = 'stella_0007_rollback.sql'
+const CAP06 = 'stella_0011_organization_column_acl.sql'
+const RB06 = 'stella_0011_rollback.sql'
 
 export const MUTATIONS: readonly Mutation[] = [
   // =========================================================================
@@ -337,15 +339,17 @@ USING (true);`,
     severity: 'BLOCKER',
     survivedBecause: 'the suite verified the function existed, was SECURITY DEFINER and had an EXCEPTION block.',
     expectedGate: ['cap03-claimed-event'],
+    // Re-anchored when RR-CAP-14 widened the claim check with the address
+    // correlation. Deleting the whole guard is still the mutation; it is just
+    // six lines longer than it was.
     apply: sub(
       `  IF NOT EXISTS (
     SELECT 1 FROM public.stripe_webhook_events e
-     WHERE e.event_id = p_event_id AND e.status = 'processing'
-  ) THEN
-    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
-  END IF;
-`,
-      '',
+     WHERE e.event_id = p_event_id
+       AND e.status = 'processing'`,
+      `  IF NOT EXISTS (
+    SELECT 1 FROM public.stripe_webhook_events e
+     WHERE true`,
     ),
   },
   {
@@ -1656,6 +1660,1112 @@ VOLATILE
         '  INSERT INTO public.capability_bootstrap_attempts (user_id, idempotency_key)',
     ),
   },
+
+  // =========================================================================
+  // R-* — the design-risk closure (RR-CAP-10, 13, 14, 02-F) and the gates it
+  // added. Every one of these is a property that DID NOT EXIST before this
+  // unit, so "no mutation reaches it" would have meant the repair was
+  // uncontracted — the same shape of hole the repairs were closing.
+  // =========================================================================
+
+  // --- RR-CAP-02-F: the trigger is code on a protected table ---------------
+  {
+    id: 'R-01',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the disclosure audit trigger is retargeted to sroi_reports',
+    breaks:
+      'the trail follows the wrong rows. Publishing a report would produce no event, and editing an unrelated report would produce one.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-shape'],
+    apply: sub(
+      'AFTER INSERT OR UPDATE ON public.report_public_disclosures\nFOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_disclosure();',
+      'AFTER INSERT OR UPDATE ON public.sroi_reports\nFOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_disclosure();',
+    ),
+  },
+  {
+    id: 'R-02',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the audit trigger fires BEFORE instead of AFTER',
+    breaks:
+      'the audit row is written for a change that has not happened yet. A later constraint or policy failure rolls the disclosure back, and the trail records a publication nobody can see.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['trigger-shape'],
+    apply: sub(
+      'CREATE TRIGGER trg_report_disclosure_audit\nAFTER INSERT OR UPDATE',
+      'CREATE TRIGGER trg_report_disclosure_audit\nBEFORE INSERT OR UPDATE',
+    ),
+  },
+  {
+    id: 'R-03',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'FOR EACH ROW is dropped from the audit trigger',
+    breaks:
+      'a statement-level trigger has no NEW, so a multi-row UPDATE produces ONE event with no row to describe. Ten certificates revoked in one statement leave one line.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-shape'],
+    apply: sub(
+      'FOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_disclosure();',
+      'FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_audit_report_disclosure();',
+    ),
+  },
+  {
+    id: 'R-04',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the audit trigger executes a different function',
+    breaks:
+      'the trigger still exists, still fires, and records whatever the substituted function records — which may be nothing at all.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-shape'],
+    apply: sub(
+      'FOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_disclosure();',
+      'FOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();',
+    ),
+  },
+  {
+    id: 'R-05',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'a WHEN clause is added to the audit trigger',
+    breaks:
+      'the blind spot an audit trail must not have. `WHEN (NEW.show_totals)` looks like an optimisation and silently stops recording every publication that discloses nothing but authenticity.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-when'],
+    apply: sub(
+      'AFTER INSERT OR UPDATE ON public.report_public_disclosures\nFOR EACH ROW EXECUTE',
+      'AFTER INSERT OR UPDATE ON public.report_public_disclosures\nFOR EACH ROW WHEN (NEW.show_totals) EXECUTE',
+    ),
+  },
+  {
+    id: 'R-06',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the audit trigger is never created',
+    breaks:
+      'RR-CAP-02-F itself: publishing, revoking and republishing leave no record of who decided what.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-missing'],
+    apply: sub(
+      'CREATE TRIGGER trg_report_disclosure_audit\nAFTER INSERT OR UPDATE ON public.report_public_disclosures\nFOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_disclosure();',
+      '-- trigger removed',
+    ),
+  },
+  {
+    id: 'R-07',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'an undeclared trigger is planted on the disclosure table',
+    breaks:
+      'the inventory. Arbitrary code attached to a protected table, added by a package, that no contract describes — which is how a trigger that rewrites NEW gets in.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-extra'],
+    apply: before(
+      'DROP TRIGGER IF EXISTS trg_report_disclosures_append_only',
+      'CREATE TRIGGER trg_backdoor BEFORE INSERT ON public.report_public_disclosures\nFOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();',
+    ),
+  },
+  {
+    id: 'R-08',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the DROP TRIGGER IF EXISTS before the audit trigger is removed',
+    breaks:
+      'convergence. A second apply raises 42710 — or, on a server that tolerates it, stacks a second trigger and every publication writes two audit rows.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['trigger-not-convergent'],
+    apply: sub(
+      'DROP TRIGGER IF EXISTS trg_report_disclosure_audit ON public.report_public_disclosures;\nCREATE TRIGGER trg_report_disclosure_audit',
+      'CREATE TRIGGER trg_report_disclosure_audit',
+    ),
+  },
+  {
+    id: 'R-09',
+    capability: 'CAP-02',
+    file: RB02,
+    change: 'the rollback drops the audit trigger from the retained rows',
+    breaks:
+      'the traceability of decisions the rollback deliberately KEEPS. uellix_owner is the table owner — exempt from RLS, holding implicit UPDATE, reachable by SET ROLE from a LOGIN role — so with the trigger gone it can flip revoked_at, show_* or public_summary on any retained decision with zero trace, and a later re-apply turns those altered rows back into live certificates.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-trigger-retained'],
+    apply: before(
+      '-- (nothing dropped here: see above)',
+      'DROP TRIGGER IF EXISTS trg_report_disclosure_audit ON public.report_public_disclosures;',
+    ),
+  },
+  {
+    id: 'R-10',
+    capability: 'CAP-02',
+    file: RB02,
+    change: 'the rollback also drops the append-only protection of the retained rows',
+    breaks:
+      'the reason the table survives. The rollback keeps every human decision to publish and then makes them erasable by the owner.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-trigger-retained'],
+    apply: before(
+      'REVOKE INSERT, UPDATE ON public.report_public_disclosures FROM uellix_writer;',
+      'DROP TRIGGER IF EXISTS trg_report_disclosures_append_only ON public.report_public_disclosures;',
+    ),
+  },
+  {
+    id: 'R-11',
+    capability: 'CAP-02',
+    file: RB02,
+    change: 'the rollback CREATES a trigger',
+    breaks:
+      'the rule that a rollback plants nothing. These files run as superuser during an incident, when nobody is reading them.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['rollback-trigger-created'],
+    apply: before(
+      'REVOKE INSERT, UPDATE ON public.report_public_disclosures FROM uellix_writer;',
+      'CREATE TRIGGER trg_rollback_backdoor AFTER INSERT ON public.report_public_disclosures\nFOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();',
+    ),
+  },
+
+  // --- RR-CAP-02-F: what the trail records ---------------------------------
+  {
+    id: 'R-12',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the trigger function stops writing audit_logs',
+    breaks:
+      'everything. The trigger fires, the function runs, and nothing is recorded — which is indistinguishable from the pre-repair state except that a trigger now exists to point at.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-writes'],
+    apply: sub('  INSERT INTO public.audit_logs\n    (organization_id, actor_user_id, entity_type, entity_id, action,\n     before_json, after_json, reason)\n  VALUES\n    (v_org_id, auth.uid()', '  PERFORM (v_org_id, auth.uid()'),
+  },
+  {
+    id: 'R-13',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the trigger function is made SECURITY DEFINER',
+    breaks:
+      'the pinning of the actor. As a definer it writes audit rows with the definer owner’s privileges, so audit_logs’ own policy no longer proves actor_user_id = auth.uid(): the trail becomes self-asserted.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-caller-rights'],
+    apply: sub(
+      'RETURNS trigger\nLANGUAGE plpgsql\n  SET search_path = \'\'',
+      'RETURNS trigger\nLANGUAGE plpgsql\nSECURITY DEFINER\n  SET search_path = \'\'',
+    ),
+  },
+  {
+    id: 'R-14',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the summary is stored as text instead of as a digest',
+    breaks:
+      'the rule that audit_logs holds no payload. It also turns the trail into a second copy of free text a person wrote, with a different retention story from the row it came from.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-digest'],
+    apply: sub(
+      "    'summarySha256',          CASE WHEN NEW.public_summary IS NULL THEN NULL\n                                   ELSE pg_catalog.encode(\n                                     pg_catalog.sha256(\n                                       pg_catalog.convert_to(NEW.public_summary, 'UTF8')), 'hex') END,",
+      "    'summary', NEW.public_summary,",
+    ),
+  },
+  {
+    id: 'R-15',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'revocation is folded into the generic update action',
+    breaks:
+      '"how many certificates were withdrawn, and when" — answerable only by diffing every pair of rows once the transition is no longer named.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-transitions'],
+    apply: sub("      v_action := 'report.disclosure.revoked';", "      v_action := 'report.disclosure.touched';"),
+  },
+
+  // --- RR-CAP-13: the verification identity cannot enumerate ---------------
+  {
+    id: 'R-16',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the RESTRICTIVE bound on organizations becomes USING (true)',
+    breaks:
+      'RR-CAP-13. The verification identity can read the name of every organisation on the platform, published or not — the customer list, one SELECT from a body that no longer has to cooperate.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-using'],
+    apply: sub(
+      'ON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_verification\nUSING (\n  EXISTS (\n    SELECT 1 FROM public.sroi_reports r\n      JOIN public.report_public_disclosures d ON d.report_id = r.id\n     WHERE r.organization_id = public.organizations.id',
+      'ON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_verification\nUSING (\n  true OR EXISTS (\n    SELECT 1 FROM public.sroi_reports r\n      JOIN public.report_public_disclosures d ON d.report_id = r.id\n     WHERE r.organization_id = public.organizations.id',
+    ),
+  },
+  {
+    id: 'R-17',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the run bound stops requiring a live disclosure',
+    breaks:
+      'revocation. Withdrawing a certificate would leave its figures readable by the public verification identity, which is the state the whole capability exists to make impossible.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-using'],
+    apply: sub(
+      "     WHERE r.calculation_run_id = public.sroi_calculation_runs.id\n       AND r.status = 'locked'\n       AND d.revoked_at IS NULL",
+      "     WHERE r.calculation_run_id = public.sroi_calculation_runs.id\n       AND r.status = 'locked'",
+    ),
+  },
+  {
+    id: 'R-18',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the RESTRICTIVE run bound is deleted outright',
+    breaks:
+      'the same property, by omission rather than by predicate. sroi_calculation_runs goes back to USING (true) with no companion.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-inventory'],
+    apply: sub('DROP POLICY IF EXISTS cap_verification_only_published_run ON public.sroi_calculation_runs;\nCREATE POLICY cap_verification_only_published_run', 'DROP POLICY IF EXISTS cap_verification_only_published_run ON public.sroi_calculation_runs;\nCREATE POLICY cap_verification_unused_name'),
+  },
+
+  // --- RR-CAP-14: the Stripe identity reaches one organisation -------------
+  {
+    id: 'R-19',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the RESTRICTIVE UPDATE bound is retargeted to uellix_app',
+    breaks:
+      'the tenancy bound, without removing anything a reviewer counts. The definer keeps its permissive USING (true) and the restriction now applies to a role that never touches this table.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-to'],
+    apply: sub(
+      'ON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_cap_stripe',
+      'ON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_app',
+    ),
+  },
+  {
+    id: 'R-20',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the claimed-event bound is downgraded to PERMISSIVE',
+    breaks:
+      'the only kind of policy that cannot be OR-ed away. As a permissive policy it is combined with the {public} baseline ones and stops bounding anything.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-mode'],
+    apply: sub(
+      'ON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_cap_stripe\nUSING (\n  EXISTS (\n    SELECT 1 FROM public.stripe_webhook_events e',
+      'ON public.organizations FOR UPDATE TO uellix_cap_stripe\nUSING (\n  EXISTS (\n    SELECT 1 FROM public.stripe_webhook_events e',
+    ),
+  },
+  {
+    id: 'R-21',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the bound stops requiring the event to be in the processing state',
+    breaks:
+      '"the event was claimed". Any completed event from months ago would keep the organisation reachable, so the window the bound defines never closes.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-with-check'],
+    apply: sub(
+      "WITH CHECK (\n  EXISTS (\n    SELECT 1 FROM public.stripe_webhook_events e\n     WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '')\n       AND e.status = 'processing'",
+      "WITH CHECK (\n  EXISTS (\n    SELECT 1 FROM public.stripe_webhook_events e\n     WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '')\n       AND true",
+    ),
+  },
+  {
+    id: 'R-22',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the claim stops recording the Stripe address',
+    breaks:
+      'the anchor the RESTRICTIVE policy reads. With both columns NULL the policy matches nothing and the capability fails closed — but a subsequent edit that relaxes the policy would then have nothing to fall back on.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-claim-identity'],
+    apply: sub(
+      '    (event_id, event_type, status, attempts, stripe_customer_id, stripe_subscription_id)',
+      '    (event_id, event_type, status, attempts)',
+    ),
+  },
+  {
+    id: 'R-23',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'an existing event id may be re-claimed under a different address',
+    breaks:
+      'the immutability of the claim. The event row is the tenancy anchor; if its address can be rewritten by re-claiming, the anchor is a parameter.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-claim-identity'],
+    apply: sub(
+      '     AND e.stripe_customer_id     IS NOT DISTINCT FROM p_stripe_customer_id\n     AND e.stripe_subscription_id IS NOT DISTINCT FROM p_stripe_subscription_id',
+      '     AND true',
+    ),
+  },
+  {
+    id: 'R-24',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the capability regains UPDATE on the claimed Stripe address',
+    breaks:
+      'the same anchor from the ACL side. A column the capability can rewrite cannot bound the capability.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['grant-extra'],
+    apply: sub(
+      'GRANT UPDATE (status, attempts, received_at, completed_at, failed_at,\n              last_error_code, organization_id)',
+      'GRANT UPDATE (status, attempts, received_at, completed_at, failed_at,\n              last_error_code, organization_id, stripe_customer_id)',
+    ),
+  },
+
+  // --- RR-CAP-10: the organizations column ACL -----------------------------
+  {
+    id: 'R-25',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the quota column is added back to the runtime UPDATE grant',
+    breaks:
+      'RR-CAP-10 in one word, inside a parenthesis, in a diff that reads like formatting. Every organisation admin can set their own quota through the ORM again.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap06-quota-excluded', 'grant-extra'],
+    apply: sub(
+      '  sector,\n  updated_at,\n  white_label_enabled\n) ON public.organizations TO uellix_writer;',
+      '  sector,\n  stella_monthly_quota,\n  updated_at,\n  white_label_enabled\n) ON public.organizations TO uellix_writer;',
+    ),
+  },
+  {
+    id: 'R-26',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the table-level UPDATE is revoked from uellix_writer only',
+    breaks:
+      'the half of the repair that is always forgotten. `authenticated` is PostgREST’s role: the quota stays writable from a browser holding nothing but the user’s own JWT, and no ORM call site shows it.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap06-revoke'],
+    apply: sub(
+      'REVOKE UPDATE ON public.organizations FROM authenticated, uellix_writer, anon, PUBLIC;',
+      'REVOKE UPDATE ON public.organizations FROM uellix_writer, anon, PUBLIC;',
+    ),
+  },
+  {
+    id: 'R-27',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the definer stops checking that the caller is a platform super_admin',
+    breaks:
+      'the boundary the whole package moves the quota behind. The RESTRICTIVE policy still refuses, so this is defence in depth failing on one side — which is exactly the condition nobody notices.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap06-super-admin-check'],
+    apply: sub(
+      '  IF NOT public.current_user_is_super_admin() THEN\n    RAISE EXCEPTION \'capability request denied\' USING ERRCODE = \'U0001\';\n  END IF;\n\n  -- p_quota IS NULL is refused',
+      '  -- p_quota IS NULL is refused',
+    ),
+  },
+  {
+    id: 'R-28',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the RESTRICTIVE super-admin bound becomes USING (true)',
+    breaks:
+      'the other side of the same boundary. With the body check present this is invisible in behaviour and fatal the day the body is rewritten.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-using'],
+    apply: sub(
+      'ON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_cap_platform\nUSING (public.current_user_is_super_admin())',
+      'ON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_cap_platform\nUSING (true)',
+    ),
+  },
+  {
+    id: 'R-29',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the quota change stops writing an audit row',
+    breaks:
+      'the atomicity the package exists to introduce. The previous code wrote the UPDATE and the audit as two awaited calls; a definer that only updates reproduces that gap inside one transaction.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap06-audit-atomic'],
+    apply: sub(
+      "  INSERT INTO public.audit_logs\n    (organization_id, actor_user_id, entity_type, entity_id, action,\n     before_json, after_json, reason)\n  VALUES\n    (p_organization_id, auth.uid(), 'organization', p_organization_id,\n     'platform.stella_service.updated',",
+      "  PERFORM\n    (p_organization_id, auth.uid(), 'organization', p_organization_id,\n     'platform.stella_service.updated',",
+    ),
+  },
+  {
+    id: 'R-30',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the organisation status accepts any value',
+    breaks:
+      'the fixed vocabulary of a column that has no CHECK constraint. A platform admin could set a state nothing handles — including one that is not "suspended" and therefore reads as active everywhere.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap06-status-allowlist'],
+    apply: sub(
+      "  IF p_organization_id IS NULL OR p_status NOT IN ('active','suspended') THEN",
+      '  IF p_organization_id IS NULL THEN',
+    ),
+  },
+  {
+    id: 'R-31',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the platform definer is given LOGIN',
+    breaks:
+      'the containment of a role that can move any quota on the platform. A NOLOGIN definer is reachable only through its functions; a LOGIN one is reachable by anyone holding a password.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-attributes'],
+    apply: sub(
+      'ALTER ROLE uellix_cap_platform\n  NOLOGIN NOINHERIT NOBYPASSRLS',
+      'ALTER ROLE uellix_cap_platform\n  LOGIN NOINHERIT NOBYPASSRLS',
+    ),
+  },
+  {
+    id: 'R-32',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback keeps the narrowed column grant instead of restoring the table grant',
+    breaks:
+      'the meaning of "rollback". The database ends in a state neither script describes, and the operator who ran it during an incident believes the write surface is the pre-package one.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-grant'],
+    apply: sub(
+      'GRANT UPDATE ON public.organizations TO authenticated;',
+      'GRANT UPDATE (country, sector) ON public.organizations TO authenticated;',
+    ),
+  },
+  {
+    id: 'R-33',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback leaves the RESTRICTIVE super-admin policy behind',
+    breaks:
+      'the worst kind of residue. A RESTRICTIVE policy is ANDed into every statement by a role of that name, so a role recreated later inherits an invisible deny nothing in the catalogue explains.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-policy'],
+    apply: sub(
+      'DROP POLICY IF EXISTS cap_platform_only_super_admin      ON public.organizations;',
+      '-- left in place',
+    ),
+  },
+
+
+  // =========================================================================
+  // P-* — negative evidence for gates that were the SOLE protection of an
+  // authorisation boundary and had none.
+  //
+  // These are not new properties. They are properties the gates already
+  // asserted and that no mutation had ever tried to break, which is a weaker
+  // claim than it reads: an assertion nobody has attacked is an assertion
+  // nobody has measured. RR-CAP-12's residual is allowed to contain
+  // documentary, counting and fail-safe gates; it is not allowed to contain
+  // the only thing standing between a caller and a boundary.
+  // =========================================================================
+
+  {
+    id: 'P-01',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the disclosure audit function is renamed, so the contract finds nothing',
+    breaks:
+      'the whole of RR-CAP-02-F by omission. The trigger contract still names a function; nothing creates it.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-function'],
+    apply: sub(
+      'CREATE OR REPLACE FUNCTION public.uellix_audit_report_disclosure()\nRETURNS trigger',
+      'CREATE OR REPLACE FUNCTION public.uellix_audit_disclosure_v2()\nRETURNS trigger',
+    ),
+  },
+  {
+    id: 'P-02',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the audit row is written with a NULL actor',
+    breaks:
+      'attribution. The trail records that a certificate was published and refuses to say by whom — and audit_logs is append-only, so it can never be corrected.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-actor'],
+    apply: sub(
+      "    (v_org_id, auth.uid(), 'report_public_disclosure', NEW.report_id, v_action,",
+      "    (v_org_id, NULL, 'report_public_disclosure', NEW.report_id, v_action,",
+    ),
+  },
+  {
+    id: 'P-03',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the status function is renamed out of the contract',
+    breaks:
+      'the only path to organizations.status after creation. With the column revoked from the runtime and the function gone, suspension becomes unreachable — a fail-closed outage, but an unannounced one.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap06-function'],
+    apply: sub(
+      'CREATE OR REPLACE FUNCTION uellix_capability.admin_set_organization_status(',
+      'CREATE OR REPLACE FUNCTION uellix_capability.admin_set_org_status_v2(',
+    ),
+  },
+  {
+    id: 'P-04',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the Stripe capability is granted a read of sroi_reports',
+    breaks:
+      'the blast radius. A billing identity that can read impact reports is a billing identity that can be repurposed, and nothing in CAP-03 would ever exercise the grant.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-blast-radius'],
+    apply: before(
+      'GRANT SELECT, INSERT ON public.stripe_webhook_events TO uellix_cap_stripe;',
+      'GRANT SELECT ON public.sroi_reports TO uellix_cap_stripe;',
+    ),
+  },
+  {
+    id: 'P-05',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the LOGIN identity receives a table privilege directly',
+    breaks:
+      'the separation the package is built on. uellix_stripe holds EXECUTE on three functions and nothing else precisely so that a leaked webhook credential is not a customer list.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-login-identity'],
+    apply: before(
+      'GRANT SELECT, INSERT ON public.stripe_webhook_events TO uellix_cap_stripe;',
+      'GRANT SELECT ON public.organizations TO uellix_stripe;',
+    ),
+  },
+  {
+    id: 'P-06',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'a payload column is added to the event table',
+    breaks:
+      '"it stores no Stripe payload, ever". A Stripe event carries payment and customer data Stripe already custodies; copying it here creates a second custodian with no retention story.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap03-no-payload'],
+    apply: sub(
+      '  last_error_code text,\n  organization_id uuid REFERENCES public.organizations(id),',
+      '  last_error_code text,\n  payload         jsonb,\n  organization_id uuid REFERENCES public.organizations(id),',
+    ),
+  },
+  {
+    id: 'P-07',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'event_id stops being the PRIMARY KEY',
+    breaks:
+      'idempotency. Without the constraint the claim degenerates into check-then-act, and two concurrent Stripe deliveries of the same event both pass.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-event-pk'],
+    apply: sub(
+      '  event_id        text        PRIMARY KEY,',
+      '  event_id        text        NOT NULL,',
+    ),
+  },
+  {
+    id: 'P-08',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the organisation resolution accepts more than one row',
+    breaks:
+      'tenancy. `< 1` passes when the match returned two organisations, and the function then applies the change to whichever one array_agg happened to order first.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-single-org'],
+    apply: sub(
+      'SELECT pg_catalog.array_agg(o.id) INTO v_org_ids',
+      'SELECT (SELECT o.id LIMIT 1) INTO v_org_ids',
+    ),
+  },
+  {
+    id: 'P-09',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'a non-pending invitation is no longer refused',
+    breaks:
+      'the state machine. A revoked or already-accepted invitation becomes usable again, which is the difference between withdrawing access and appearing to.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap01-status'],
+    apply: sub("IF v_inv_status <> 'pending' THEN", 'IF false THEN'),
+  },
+  {
+    id: 'P-10',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'the token is compared without being hashed',
+    breaks:
+      'the reason token_hash exists. A read of the invitations table — by a backup, an auditor, or a log — becomes a set of usable invitation tokens.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap01-token-hash'],
+    apply: sub(
+      'pg_catalog.sha256(pg_catalog.convert_to(p_token',
+      'pg_catalog.lower(pg_catalog.convert_to(p_token',
+    ),
+  },
+  {
+    id: 'P-11',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'verify_report stops requiring a locked report',
+    breaks:
+      'the bound the RESTRICTIVE policy and the body were supposed to state twice. A draft with a disclosure row would verify, publishing figures that were never finalised.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-locked'],
+    apply: sub(
+      "  WHERE r.verification_hash = p_hash\n    AND r.status = 'locked'\n    AND d.revoked_at IS NULL",
+      '  WHERE r.verification_hash = p_hash\n    AND d.revoked_at IS NULL',
+    ),
+  },
+  {
+    id: 'P-12',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'verify_report ignores revocation',
+    breaks:
+      'withdrawal. A revoked certificate keeps verifying, so revocation becomes a UI state with no effect on the thing that circulated.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-revoked'],
+    apply: sub(
+      "    AND r.status = 'locked'\n    AND d.revoked_at IS NULL\n$$;",
+      "    AND r.status = 'locked'\n$$;",
+    ),
+  },
+  {
+    id: 'P-13',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'the signup allowlist gate is read from the wrong table',
+    breaks:
+      'who may create an organisation at all. The bootstrap becomes open to any authenticated subject, which is the one thing the allowlist exists to prevent.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap05-allowlist'],
+    apply: sub('FROM public.signup_allowlist s', 'FROM public.users s'),
+  },
+
+
+  {
+    id: 'P-14',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'the subject is taken from a parameter instead of from auth.uid()',
+    breaks:
+      'the whole authorisation model of CAP-01. The subject stops being proven by the session and becomes something the caller asserts.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap01-subject'],
+    apply: sub('v_subject := auth.uid();', 'v_subject := p_token::uuid;'),
+  },
+  {
+    id: 'P-15',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'the single-active-membership guard reads the wrong status',
+    breaks:
+      'the invariant that a user holds one active membership. A subject with a suspended membership acquires a second, and every org-scoped policy that uses current_user_org_ids() then answers for two tenants.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap01-single-membership'],
+    apply: sub("m.status = 'active'", "m.status = 'whatever'"),
+  },
+  {
+    id: 'P-16',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'verify_report reads a column outside the disclosure surface',
+    breaks:
+      'the minimality argument. The public read path names the organisation slug, which no disclosure flag gates and which identifies the tenant whatever the booleans say.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-minimal'],
+    apply: sub(
+      '    CASE WHEN d.show_organization_name THEN o.name::text END,',
+      '    CASE WHEN d.show_organization_name THEN o.slug::text END,',
+    ),
+  },
+  {
+    id: 'P-17',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'verify_report writes',
+    breaks:
+      'the property that makes the anonymous read path safe. A STABLE function cannot write; this turns the one endpoint reachable without any credential into a write path.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap02-readonly'],
+    apply: sub(
+      '  FROM public.sroi_reports r\n  JOIN public.report_public_disclosures d ON d.report_id = r.id',
+      '  FROM public.sroi_reports r\n  JOIN public.report_public_disclosures d ON d.report_id = r.id\n  CROSS JOIN (DELETE FROM public.audit_logs RETURNING 1) w',
+    ),
+  },
+  {
+    id: 'P-18',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the event claim stops being an atomic upsert',
+    breaks:
+      'the idempotency key doing its job. DO NOTHING never returns a row, so nothing is ever claimed and the lease logic is dead code.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-claim-atomic'],
+    apply: sub('ON CONFLICT (event_id) DO UPDATE', 'ON CONFLICT (event_id) DO NOTHING --'),
+  },
+  {
+    id: 'P-19',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'the lead submission accepts a campaign attribution from the caller',
+    breaks:
+      'the rule that attribution is server-derived. An anonymous endpoint that records a caller-supplied campaign is an anonymous endpoint that writes analytics for anybody.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap04-server-derived'],
+    apply: sub('  p_source       text\n) RETURNS void', '  p_source       text,\n  p_campaign     text\n) RETURNS void'),
+  },
+  {
+    id: 'P-20',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'the bootstrap names a billing column',
+    breaks:
+      'the proposition that founding an organisation cannot choose its plan. It is the other half of RR-CAP-10: closing the ORM path is worth nothing if the bootstrap can set the quota on the way in.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap05-no-plan'],
+    apply: sub(
+      '  v_org_id    uuid;',
+      "  v_org_id    uuid;\n  v_quota     text := 'stella_monthly_quota';",
+    ),
+  },
+  {
+    id: 'P-21',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'slug uniqueness goes back to check-then-act',
+    breaks:
+      'atomicity under contention. Two concurrent bootstraps both read "free" and one gets a unique-violation the handler turns into a uniform refusal — after creating a membership.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap05-slug-atomic'],
+    apply: sub(
+      'ON CONFLICT ON CONSTRAINT organizations_slug_unique DO NOTHING',
+      'ON CONFLICT DO NOTHING',
+    ),
+  },
+  {
+    id: 'P-22',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'lead_status stops being pinned in the body',
+    breaks:
+      'the constant the capability is built on. With no parameter and no constant, the column takes its default — and a lead that arrives already qualified is a lead nobody reviewed.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap04-status-constant'],
+    // The FIRST `'new'` in the file is the column DEFAULT, not the constant the
+    // body pins. Anchoring on it would mutate the schema and leave the property
+    // intact — a mutation that changes text without changing the claim.
+    apply: sub(
+      "    (v_email, v_company, v_sroi, p_source, 'new', NULL)",
+      '    (v_email, v_company, v_sroi, p_source, v_status, NULL)',
+    ),
+  },
+  {
+    id: 'P-23',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'a capability function stops being SECURITY DEFINER',
+    breaks:
+      'the only reason the function can reach a column its caller cannot. As INVOKER it runs with uellix_app’s privileges, which this very package revoked — a fail-closed outage, and a definer boundary that silently no longer exists.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['definer-security'],
+    apply: sub(
+      ') RETURNS void\nLANGUAGE plpgsql\nSECURITY DEFINER\nVOLATILE\n  SET search_path = \'\'\nAS $$\nDECLARE\n  v_before jsonb;',
+      ') RETURNS void\nLANGUAGE plpgsql\nVOLATILE\n  SET search_path = \'\'\nAS $$\nDECLARE\n  v_before jsonb;',
+    ),
+  },
+  {
+    id: 'P-24',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the definer reads the organisation with SELECT *',
+    breaks:
+      'the column bound. SELECT * over a table whose grant is five columns fails at run time — and if the grant is ever widened, it silently starts reading everything.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['definer-select-star'],
+    apply: sub(
+      '  SELECT o.status INTO v_before\n    FROM public.organizations o',
+      '  SELECT * INTO v_before\n    FROM public.organizations o',
+    ),
+  },
+  {
+    id: 'P-25',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the platform definer is named in another capability’s grant',
+    breaks:
+      'capability isolation. One definer holding another’s privileges collapses five separately revocable surfaces into one.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-crossgrant'],
+    apply: before(
+      'DROP POLICY IF EXISTS cap_platform_select_orgs ON public.organizations;',
+      'GRANT SELECT (id, name) ON public.organizations TO uellix_cap_verification;',
+    ),
+  },
+  {
+    id: 'P-26',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the RESTRICTIVE super-admin bound is written FOR SELECT instead of FOR UPDATE',
+    breaks:
+      'the command it bounds. Reads stay narrow and every UPDATE by the definer becomes unbounded — the policy is still there, still RESTRICTIVE, still named after the boundary it no longer guards.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-command'],
+    apply: sub(
+      'CREATE POLICY cap_platform_only_super_admin\nON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_cap_platform',
+      'CREATE POLICY cap_platform_only_super_admin\nON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_platform',
+    ),
+  },
+  {
+    id: 'P-27',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback does not drop the platform definer role',
+    breaks:
+      'the teardown. A role that can move any quota on the platform survives the removal of the only functions that were supposed to be able to use it.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-role'],
+    apply: sub("    EXECUTE 'DROP ROLE uellix_cap_platform';", '    NULL;'),
+  },
+  {
+    id: 'P-28',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback leaves one of the two definer functions behind',
+    breaks:
+      'the same teardown from the other side: a SECURITY DEFINER function whose owner the rollback then drops.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-function'],
+    apply: sub(
+      'DROP FUNCTION IF EXISTS uellix_capability.admin_set_stella_service(uuid, integer, text);',
+      '-- left in place',
+    ),
+  },
+  {
+    id: 'P-29',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback uses CASCADE',
+    breaks:
+      'the blast radius of a script that runs as superuser during an incident. CASCADE drops whatever happens to depend on the object, and nobody is reading the output at that moment.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['rollback-cascade'],
+    apply: sub(
+      'DROP FUNCTION IF EXISTS uellix_capability.admin_set_organization_status(uuid, text);',
+      'DROP FUNCTION IF EXISTS uellix_capability.admin_set_organization_status(uuid, text) CASCADE;',
+    ),
+  },
+  {
+    id: 'P-30',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback disables row level security on organizations',
+    breaks:
+      'every tenancy bound in the schema, in the file least likely to be read. One statement, in a rollback, and 107 policies stop applying.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['rollback-rls'],
+    apply: before(
+      'REVOKE UPDATE ON public.organizations FROM authenticated, uellix_writer;',
+      'ALTER TABLE public.organizations DISABLE ROW LEVEL SECURITY;',
+    ),
+  },
+  {
+    id: 'P-31',
+    capability: 'CROSS',
+    file: RB06,
+    change: 'the rollback re-owns a table to the definer it is about to drop',
+    breaks:
+      'ownership, which is RLS exemption in a schema with no FORCE ROW LEVEL SECURITY. Re-owning organizations hands the new owner a bypass of every policy on it.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['rollback-ownership'],
+    apply: before(
+      'REVOKE UPDATE ON public.organizations FROM authenticated, uellix_writer;',
+      'ALTER TABLE public.organizations OWNER TO uellix_cap_platform;',
+    ),
+  },
+
+
+  {
+    id: 'P-32',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'the bootstrap single-membership guard reads the wrong status',
+    breaks:
+      'the invariant that founding an organisation requires having none. A subject with a suspended membership founds a second organisation and holds two.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap05-single-membership'],
+    apply: sub(
+      "     WHERE m.user_id = v_subject AND m.status = 'active'",
+      "     WHERE m.user_id = v_subject AND m.status = 'any'",
+    ),
+  },
+  {
+    id: 'P-33',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'one of the two dead PostgREST-era lead policies is left in place',
+    breaks:
+      'the net reduction the package claims. anon keeps a direct INSERT path into marketing_leads that bypasses the capability entirely — the allowlist, the status constant and the rate limit with it.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap04-retire-dead-policies'],
+    apply: sub(
+      'DROP POLICY IF EXISTS anon_insert_marketing_leads          ON public.marketing_leads;',
+      '-- left in place',
+    ),
+  },
+
+
+  {
+    id: 'R-34',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the sroi_reports visibility trigger is never created',
+    breaks:
+      'the OTHER half of public visibility. Locking a report with a live disclosure takes a certificate public, and unlocking it takes it dark, with nothing written to the audited table — so "publishing cannot happen without a trace" becomes true of the wrong table.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['trigger-missing'],
+    apply: sub(
+      'CREATE TRIGGER trg_report_visibility_audit\nAFTER UPDATE ON public.sroi_reports\nFOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_visibility();',
+      '-- visibility trigger removed',
+    ),
+  },
+  {
+    id: 'R-35',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the row bound stops being correlated to the event being applied',
+    breaks:
+      'the difference between "this event" and "some event". With org B’s event in flight, the transaction handling org A’s event satisfies RLS for B’s row — which is exactly the cross-tenant write the bound was written to stop.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-using'],
+    apply: sub(
+      "ON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_stripe\nUSING (\n  EXISTS (\n    SELECT 1 FROM public.stripe_webhook_events e\n     WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '')\n       AND e.status = 'processing'",
+      "ON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_stripe\nUSING (\n  EXISTS (\n    SELECT 1 FROM public.stripe_webhook_events e\n     WHERE e.status = 'processing'",
+    ),
+  },
+  {
+    id: 'R-36',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the body stops requiring the claimed event to carry the address it matches on',
+    breaks:
+      'the correlation between the signed event and the organisation it moves. The two identity columns become decoration: read by the policy, ignored by the function.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-claim-correlated'],
+    apply: sub(
+      "       AND ( (p_match_kind = 'customer'\n              AND e.stripe_customer_id IS NOT NULL\n              AND e.stripe_customer_id = p_match_value)\n          OR (p_match_kind = 'subscription'\n              AND e.stripe_subscription_id IS NOT NULL\n              AND e.stripe_subscription_id = p_match_value) )\n",
+      '',
+    ),
+  },
+  {
+    id: 'R-37',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'a customer-addressed event may null out the subscription link',
+    breaks:
+      'the organisation’s reachability. Detaching stripe_subscription_id removes it from the subscription branch of the bound forever, and DP-CAP-15 forbids a webhook from re-binding it.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap03-subscription-coalesce'],
+    apply: sub(
+      'stripe_subscription_id = COALESCE(p_stripe_subscription_id, stripe_subscription_id),',
+      'stripe_subscription_id = p_stripe_subscription_id,',
+    ),
+  },
+  {
+    id: 'R-38',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the request id is copied into the audit row unfiltered',
+    breaks:
+      'the rule that audit_logs holds no payload. app.request_id is a custom GUC any role can set, so an unfiltered copy is a free-text channel into a table nothing can ever correct.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap02-audit-request-id'],
+    apply: sub(
+      "    'requestId',              (SELECT CASE WHEN v ~ '^[A-Za-z0-9_.:-]{1,64}$' THEN v END\n                                 FROM (SELECT NULLIF(pg_catalog.current_setting('app.request_id', true), '') AS v) g));",
+      "    'requestId',              NULLIF(pg_catalog.current_setting('app.request_id', true), ''));",
+    ),
+  },
+  {
+    id: 'R-39',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the owner default ACL is left in place on the disclosure table',
+    breaks:
+      'the column-scoped INSERT grant, entirely. ALTER DEFAULT PRIVILEGES already gave uellix_writer table-level SELECT+INSERT when the table was created, and ACLs are additive — so an organisation admin can set approved_at, created_at or a pre-filled revoked_at, and "one human decision with author and timestamp" stops holding.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['default-acl-not-revoked'],
+    apply: sub(
+      'REVOKE ALL ON public.report_public_disclosures FROM uellix_writer, uellix_auditor;',
+      '-- default ACL left in place',
+    ),
+  },
+  {
+    id: 'R-40',
+    capability: 'CROSS',
+    file: CAP06,
+    change: 'the eight runtime columns are re-granted to authenticated',
+    breaks:
+      'the surface the package exists to close. authenticated is PostgREST’s role: a browser holding nothing but the user’s own JWT could rewrite base_currency — an input to the FX/NPV engine — with no application-layer validation at all.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['grant-extra'],
+    apply: sub(
+      ') ON public.organizations TO uellix_writer;',
+      ') ON public.organizations TO uellix_writer;\nGRANT UPDATE (country) ON public.organizations TO authenticated;',
+    ),
+  },
+
 ]
 
 export const PREVIOUSLY_SURVIVING = MUTATIONS.filter((m) => m.id.startsWith('M-'))

@@ -124,8 +124,11 @@ const CAPABILITIES: Capability[] = [
     executor: 'uellix_app',
     functions: ['verify_report', 'record_verification_hit'],
     policyPrefix: 'cap_verification_',
-    policyCount: 7,   // 5 permissive + 2 RESTRICTIVE
-    restrictiveCount: 2,
+    // 5 permissive + 4 RESTRICTIVE. The two added for RR-CAP-13 bound the rows
+    // of organizations and sroi_calculation_runs, whose only bound used to be
+    // the JOIN inside verify_report.
+    policyCount: 9,
+    restrictiveCount: 4,
     doc: 'capabilities/CAP_02_PUBLIC_VERIFICATION.md',
   },
   {
@@ -136,8 +139,11 @@ const CAPABILITIES: Capability[] = [
     executor: 'uellix_stripe',
     functions: ['stripe_begin_event', 'stripe_apply_subscription', 'stripe_fail_event'],
     policyPrefix: 'cap_stripe_',
-    policyCount: 4,
-    restrictiveCount: 0,
+    // 4 permissive + 2 RESTRICTIVE. CAP-03 was the one capability with none at
+    // all (RR-CAP-14): the whole tenancy bound was a six-column GRANT, which
+    // says which FIELDS and never which ROWS.
+    policyCount: 6,
+    restrictiveCount: 2,
     doc: 'capabilities/CAP_03_STRIPE.md',
   },
   {

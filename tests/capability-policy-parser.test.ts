@@ -37,6 +37,8 @@ import {
   parseRoleStatements,
   parseDefaultPrivileges,
   parseIndexes,
+  parseTriggers,
+  parseDroppedTriggers,
   unparsedSecurityStatements,
   executedLiterals,
   stripComments,
@@ -685,18 +687,65 @@ COMMENT ON TABLE public.t IS 'GRANT SELECT ON public.t TO nobody';
 
   it('refuses CREATE RULE and CREATE TRIGGER, which change what runs on a protected table', () => {
     // A rewrite rule changes the query the server ends up executing; a trigger
-    // runs code with the table owner's authority. Neither is expressible in the
-    // capability contract and neither appears in any of the ten packages, so
-    // both are refusals rather than statements nobody looks at.
+    // runs code with the table owner's authority.
+    //
+    // CREATE RULE is still refused outright: no package uses one, and a rewrite
+    // rule changes what RLS is even applied to.
+    //
+    // CREATE TRIGGER is now MODELLED, because stella_0007 creates three for
+    // RR-CAP-02-F. The refusal was not loosened into a skip — the forms the
+    // campaign does not use are still findings, and the three it does use are
+    // pinned tuple-by-tuple in TRIGGER_CONTRACT. The cases below are the
+    // boundary: a readable trigger parses, an unreadable one fails closed.
     expect(
       unparsedSecurityStatements(`CREATE RULE r AS ON SELECT TO public.t DO INSTEAD SELECT 1;`)[0]
         .reason,
     ).toBe('unmodelled-form')
+
+    const ok = parseTriggers(
+      `CREATE TRIGGER g BEFORE INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.f();`,
+    )
+    expect(ok).toHaveLength(1)
+    expect(ok[0]).toMatchObject({
+      name: 'g', table: 'public.t', timing: 'BEFORE', events: ['INSERT'],
+      level: 'ROW', when: null, execute: 'public.f',
+    })
     expect(
       unparsedSecurityStatements(
-        `CREATE TRIGGER g BEFORE INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION f();`,
-      )[0].reason,
-    ).toBe('unmodelled-form')
+        `CREATE TRIGGER g BEFORE INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.f();`,
+      ),
+    ).toEqual([])
+  })
+
+  it('refuses the trigger forms the capability contract cannot describe', () => {
+    // Each of these is a way to attach code to a protected table that the
+    // contract has no field for. Silence on any of them would put the parser
+    // back where RR-CAP-12b found it.
+    const refused = [
+      // A column-scoped trigger: WHICH columns arm it is a security property.
+      `CREATE TRIGGER g AFTER UPDATE OF quota ON public.t FOR EACH ROW EXECUTE FUNCTION public.f();`,
+      // Deferred to transaction end — it can fire after the checks it was
+      // supposed to precede.
+      `CREATE CONSTRAINT TRIGGER g AFTER INSERT ON public.t FOR EACH ROW EXECUTE FUNCTION public.f();`,
+      // No timing at all.
+      `CREATE TRIGGER g INSERT ON public.t EXECUTE FUNCTION public.f();`,
+      // A clause the model does not read.
+      `CREATE TRIGGER g AFTER INSERT ON public.t REFERENCING NEW TABLE AS n FOR EACH ROW EXECUTE FUNCTION public.f();`,
+      // Attached, but executing nothing this model can name.
+      `CREATE TRIGGER g AFTER INSERT ON public.t FOR EACH ROW;`,
+    ]
+    for (const sql of refused) {
+      expect(unparsedSecurityStatements(sql).length, sql).toBeGreaterThan(0)
+      expect(parseTriggers(sql), sql).toEqual([])
+    }
+  })
+
+  it('reads a DROP TRIGGER, so a rollback that forgets one is visible', () => {
+    expect(parseDroppedTriggers(`DROP TRIGGER IF EXISTS g ON public.t;`)).toEqual([
+      { name: 'g', table: 'public.t' },
+    ])
+    // …and a DROP it cannot read is a finding, not a silent zero.
+    expect(unparsedSecurityStatements(`DROP TRIGGER IF EXISTS g;`).length).toBeGreaterThan(0)
   })
 
   it('a non-opener costs one TOKEN, never a statement', () => {

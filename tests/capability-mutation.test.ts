@@ -87,62 +87,64 @@ const ALL_GATE_NAMES: ReadonlySet<string> = new Set(
  * fifty-odd of them rather than implying they are all justified exceptions.
  */
 const UNEXERCISED_GATES: readonly string[] = [
-  'cap01-concurrent-replay',
+  // --- fail-safe: the object is ABSENT --------------------------------------
+  // Each of these fires when a table, a function or the one grant that makes a
+  // capability usable is missing. Breaking them does not open a door; it takes
+  // the door away, and the capability stops working loudly on its first call.
+  // A silent hole and a total outage are not the same residual.
   'cap01-function',
-  'cap01-lock-timeout',
-  'cap01-membership-unique',
-  'cap01-single-membership',
-  'cap01-status',
-  'cap01-subject',
-  'cap01-token-hash',
-  'cap01-token-shape',
   'cap02-function',
-  'cap02-hits',
-  'cap02-hits-personal-data',
-  'cap02-locked',
-  'cap02-minimal',
-  'cap02-readonly',
-  'cap02-revoked',
   'cap02-table',
-  'cap03-blast-radius',
-  'cap03-claim-atomic',
-  'cap03-event-pk',
+  'cap02-hits',
   'cap03-events-table',
   'cap03-function',
-  'cap03-login-identity',
-  'cap03-no-payload',
-  'cap03-single-org',
-  'cap04-lock-timeout',
-  'cap04-no-status-param',
-  'cap04-on-conflict',
-  'cap04-retire-dead-policies',
-  'cap04-server-derived',
-  'cap04-status-constant',
-  'cap05-allowlist',
   'cap05-function',
   'cap05-grant',
-  'cap05-no-plan',
   'cap05-organization',
-  'cap05-single-membership',
-  'cap05-slug-atomic',
-  'cap05-slug-shape',
-  'definer-detail',
+
+  // --- availability, not authorisation ---------------------------------------
+  // A missing lock_timeout on an anonymous write path is a denial-of-service
+  // surface, not a privilege one. Named here rather than folded into the line
+  // above, because the reason it is acceptable is different.
+  'cap04-lock-timeout',
+  'cap01-lock-timeout',
+
+  // --- counting and harness self-checks --------------------------------------
+  // definer-inventory counts functions; mask-desync and source-missing check
+  // that the harness is reading what it thinks it is reading. Mutating them
+  // would be mutating the measuring instrument.
   'definer-inventory',
-  'definer-overqualified',
-  'definer-security',
-  'definer-select-star',
-  'definer-uniform-error',
-  'index-missing',
   'mask-desync',
-  'policy-command',
-  'role-crossgrant',
-  'rollback-cascade',
-  'rollback-function',
-  'rollback-ownership',
-  'rollback-retention',
-  'rollback-rls',
-  'rollback-role',
   'source-missing',
+
+  // --- design and data minimisation, not an authorisation boundary -----------
+  // cap02-hits-personal-data forbids an ip / user_agent / referer column on the
+  // verification counter. It is a privacy property of the schema, enforced by
+  // there being no such column and no grant to add one; nobody's access depends
+  // on it.
+  'cap02-hits-personal-data',
+
+  // --- covered by a sibling that DOES have negative evidence -----------------
+  // The property is exercised; this particular gate is the second statement of
+  // it. Each line names the mutation that reaches the same claim.
+  'cap04-no-status-param',    // P-22 pins lead_status from the body side
+  'cap04-on-conflict',        // the same SELECT-privilege claim as cap04-no-read
+  'cap05-slug-shape',         // P-13 and the reserved-slug denylist reach the same input
+  'definer-overqualified',    // P-23 exercises the definer contract
+  'definer-detail',           // idem — both are about what an error may say
+  'definer-uniform-error',    // idem
+  'index-missing',            // P-10 exercises the single-row-by-construction claim
+  'rollback-retention',       // R-10 exercises "a rollback must not drop what it retains"
+  // Vacuously unexercisable, and that is the finding rather than a gap: after
+  // the adversarial review NO rollback in the campaign drops a trigger, so
+  // ROLLBACK_DROPPED_TRIGGERS is empty and nothing can make this gate fire.
+  // The gate is kept so that a future rollback which DOES drop one has to
+  // declare it; its sibling `rollback-trigger-retained` — the direction that
+  // can actually lose a protection — is exercised by R-09 and R-10.
+  'rollback-trigger',
+  'cap01-token-shape',        // P-10 exercises the token path; this is its input check
+  'cap01-concurrent-replay',  // ordering, exercised live by CAP01-L6 in the dry run
+  'cap01-membership-unique',  // bookkeeping: the membership id the audit row quotes
 ]
 
 function mutate(m: Mutation): Sources {

@@ -668,6 +668,35 @@ export interface ParsedIndex {
   readonly unique: boolean
 }
 
+/**
+ * A trigger, modelled rather than refused.
+ *
+ * Until RR-CAP-02-F needed one, CREATE TRIGGER was an `unmodelled-form`
+ * finding: nothing in the campaign created a trigger, and a trigger on a
+ * protected table runs code with the table owner's authority, so refusing it
+ * was the correct fail-closed answer. Adding a trigger to a package means the
+ * contract has to be able to READ one — the alternative was to widen the
+ * refusal into a skip, which is the exact failure RR-CAP-12b was about.
+ *
+ * `level` defaults to STATEMENT because PostgreSQL's does. Recording the
+ * default explicitly is what makes "FOR EACH ROW was deleted" a diff rather
+ * than an absence.
+ */
+export interface ParsedTrigger {
+  readonly name: string
+  readonly table: string
+  readonly timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF'
+  /** Upper-cased, in the order written: e.g. ['INSERT', 'UPDATE']. */
+  readonly events: readonly string[]
+  readonly level: 'ROW' | 'STATEMENT'
+  /** Normalised WHEN predicate, or null when the trigger is unconditional. */
+  readonly when: string | null
+  /** The function the trigger executes, qualified as written. */
+  readonly execute: string
+  readonly raw: string
+  readonly origin: StatementOrigin
+}
+
 /** Every ALTER/CREATE ROLE for a role, in the order PostgreSQL applies them. */
 export interface ParsedRoleStatement {
   readonly verb: 'CREATE' | 'ALTER' | 'DROP'
@@ -741,6 +770,8 @@ export interface SecurityAnalysis {
   readonly ownedStatements: readonly ParsedOwnedStatement[]
   readonly defaultPrivileges: readonly ParsedDefaultPrivilege[]
   readonly indexes: readonly ParsedIndex[]
+  readonly triggers: readonly ParsedTrigger[]
+  readonly droppedTriggers: readonly { name: string; table: string; origin: StatementOrigin }[]
   readonly unparsed: readonly UnparsedSecurityStatement[]
 }
 
@@ -755,6 +786,8 @@ const EMPTY_ANALYSIS: SecurityAnalysis = {
   ownedStatements: [],
   defaultPrivileges: [],
   indexes: [],
+  triggers: [],
+  droppedTriggers: [],
   unparsed: [],
 }
 
@@ -806,6 +839,8 @@ interface ScanContext {
     ownedStatements: ParsedOwnedStatement[]
     defaultPrivileges: ParsedDefaultPrivilege[]
     indexes: ParsedIndex[]
+    triggers: ParsedTrigger[]
+    droppedTriggers: { name: string; table: string; origin: StatementOrigin }[]
     unparsed: UnparsedSecurityStatement[]
   }
   /** Guards against a pathological body nesting. */
@@ -966,14 +1001,23 @@ function classifyAt(ctx: ScanContext, toks: readonly SqlToken[], at: number, lim
       }
       if (head.upper === 'INDEX' || head.upper === 'UNIQUE') return parseIndexStatement(ctx, span())
       if (head.upper === 'FUNCTION' || head.upper === 'PROCEDURE') return parseFunctionStatement(ctx, span())
-      // A RULE rewrites the query the server ends up running, and a TRIGGER can
-      // run arbitrary code with the table owner's authority. Neither is
-      // expressible in the capability contract and neither appears in any of
-      // the ten packages, so both are refused rather than skipped — a rewrite
-      // rule on a protected table is a way to change what RLS is applied to.
-      if (head.upper === 'RULE' || head.upper === 'TRIGGER') {
+      // A RULE rewrites the query the server ends up running: nothing in the
+      // campaign uses one, and a rewrite rule on a protected table is a way to
+      // change what RLS is applied to. Still refused.
+      if (head.upper === 'RULE') {
         const s = span()
-        fail(ctx, s, 'unmodelled-form', `CREATE ${head.upper} can change what the server executes on a protected table`)
+        fail(ctx, s, 'unmodelled-form', 'CREATE RULE can change what the server executes on a protected table')
+        return s.to
+      }
+      // TRIGGER used to sit on that line with RULE. It is now MODELLED, because
+      // stella_0007 creates three — the publication audit trail and the two
+      // append-only guards. Modelling it is not a relaxation: parseTriggerStatement
+      // fails closed on every clause it does not recognise, so the trigger forms
+      // the campaign does not use are refused exactly as before.
+      if (head.upper === 'TRIGGER') return parseTriggerStatement(ctx, span())
+      if (head.upper === 'CONSTRAINT' && kw(toks[at + 2], 'TRIGGER')) {
+        const s = span()
+        fail(ctx, s, 'unmodelled-form', 'CREATE CONSTRAINT TRIGGER defers to transaction end and is not modelled')
         return s.to
       }
       // Anything else — CREATE TABLE, CREATE VIEW, CREATE EXTENSION — is not a
@@ -1025,6 +1069,7 @@ function classifyAt(ctx: ScanContext, toks: readonly SqlToken[], at: number, lim
       const head = toks[at + 1]
       if (!head || head.kind !== 'word') return at
       if (head.upper === 'POLICY') return parseDropPolicy(ctx, span())
+      if (head.upper === 'TRIGGER') return parseDropTrigger(ctx, span())
       if (head.upper === 'OWNED') return parseOwnedStatement(ctx, span(), 'DROP')
       if (head.upper === 'ROLE' || head.upper === 'USER' || head.upper === 'GROUP') {
         if (kw(toks[at + 2], 'MAPPING')) {
@@ -1535,6 +1580,150 @@ function parseIndexStatement(ctx: ScanContext, span: Span): number {
   return to
 }
 
+/**
+ * CREATE TRIGGER, read fail-closed.
+ *
+ * The clauses this model accepts are exactly the ones the campaign writes:
+ * timing, an event list, ON <table>, an optional FOR [EACH] ROW|STATEMENT, an
+ * optional WHEN, and EXECUTE FUNCTION|PROCEDURE. Anything else — FROM,
+ * REFERENCING, DEFERRABLE, a missing EXECUTE — becomes a finding. A trigger the
+ * contract cannot describe is a trigger the contract cannot pin, and a trigger
+ * it cannot pin is arbitrary code on a protected table.
+ */
+function parseTriggerStatement(ctx: ScanContext, span: Span): number {
+  const { toks, from, to } = span
+  const raw = spanText(ctx, span)
+  let k = from + 2
+  if (matches(toks, k, ['IF', 'NOT', 'EXISTS'])) k += 3
+
+  const nameTok = toks[k]
+  if (!nameTok || (nameTok.kind !== 'word' && nameTok.kind !== 'ident')) {
+    fail(ctx, span, 'incomplete-statement', 'CREATE TRIGGER without a readable name')
+    return to
+  }
+  const name = nameTok.value
+  k++
+
+  let timing: ParsedTrigger['timing']
+  if (kw(toks[k], 'BEFORE')) { timing = 'BEFORE'; k += 1 }
+  else if (kw(toks[k], 'AFTER')) { timing = 'AFTER'; k += 1 }
+  else if (matches(toks, k, ['INSTEAD', 'OF'])) { timing = 'INSTEAD OF'; k += 2 }
+  else {
+    fail(ctx, span, 'unmodelled-form', `CREATE TRIGGER ${name}: no BEFORE / AFTER / INSTEAD OF`)
+    return to
+  }
+
+  const events: string[] = []
+  while (k < to) {
+    const tok = toks[k]
+    if (tok.kind !== 'word') break
+    if (tok.upper === 'INSERT' || tok.upper === 'DELETE' || tok.upper === 'TRUNCATE') {
+      events.push(tok.upper); k++
+    } else if (tok.upper === 'UPDATE') {
+      events.push('UPDATE'); k++
+      // UPDATE OF col, col — a column-scoped trigger. Not used by the campaign
+      // and not modelled: which columns arm a trigger is a security property.
+      if (kw(toks[k], 'OF')) {
+        fail(ctx, span, 'unmodelled-form', `CREATE TRIGGER ${name}: UPDATE OF <columns> is not modelled`)
+        return to
+      }
+    } else break
+    if (kw(toks[k], 'OR')) { k++; continue }
+    break
+  }
+  if (events.length === 0) {
+    fail(ctx, span, 'unmodelled-form', `CREATE TRIGGER ${name}: no event list`)
+    return to
+  }
+
+  if (!kw(toks[k], 'ON')) {
+    fail(ctx, span, 'incomplete-statement', `CREATE TRIGGER ${name} without an ON clause`)
+    return to
+  }
+  const tableRef = readQualifiedName(toks, k + 1, to)
+  if (!tableRef) {
+    fail(ctx, span, 'incomplete-statement', `CREATE TRIGGER ${name} without a readable table`)
+    return to
+  }
+  const table = tableRef.name
+  k = tableRef.next
+
+  let level: ParsedTrigger['level'] = 'STATEMENT'
+  let when: string | null = null
+  let execute = ''
+
+  while (k < to) {
+    const tok = toks[k]
+    if (isPunct(tok, ';')) { k++; continue }
+    if (tok.kind === 'word' && tok.upper === 'FOR') {
+      let j = k + 1
+      if (kw(toks[j], 'EACH')) j++
+      if (kw(toks[j], 'ROW')) { level = 'ROW'; k = j + 1; continue }
+      if (kw(toks[j], 'STATEMENT')) { level = 'STATEMENT'; k = j + 1; continue }
+      fail(ctx, span, 'unmodelled-form', `CREATE TRIGGER ${name}: FOR names neither ROW nor STATEMENT`)
+      return to
+    }
+    if (tok.kind === 'word' && tok.upper === 'WHEN' && isPunct(toks[k + 1], '(')) {
+      const end = skipParens(toks, k + 1, to)
+      when = normalizeExpr(ctx.code.slice(toks[k + 1].end, toks[end - 1].start))
+      k = end
+      continue
+    }
+    if (tok.kind === 'word' && tok.upper === 'EXECUTE'
+        && (kw(toks[k + 1], 'FUNCTION') || kw(toks[k + 1], 'PROCEDURE'))) {
+      const fnRef = readQualifiedName(toks, k + 2, to)
+      if (!fnRef) {
+        fail(ctx, span, 'incomplete-statement', `CREATE TRIGGER ${name}: EXECUTE without a readable function`)
+        return to
+      }
+      execute = fnRef.name
+      k = fnRef.next
+      // Arguments are literals passed to the function; they do not change WHICH
+      // function runs, so they are skipped rather than modelled.
+      if (isPunct(toks[k], '(')) k = skipParens(toks, k, to)
+      continue
+    }
+    fail(
+      ctx,
+      span,
+      'unmodelled-form',
+      `CREATE TRIGGER ${name}: unrecognised clause at token ${tok.kind === 'word' ? tok.upper : tok.kind}`,
+    )
+    return to
+  }
+
+  if (execute === '') {
+    fail(ctx, span, 'incomplete-statement', `CREATE TRIGGER ${name}: no EXECUTE FUNCTION clause`)
+    return to
+  }
+
+  ctx.out.triggers.push({ name, table, timing, events, level, when, execute, raw, origin: ctx.origin })
+  return to
+}
+
+function parseDropTrigger(ctx: ScanContext, span: Span): number {
+  const { toks, from, to } = span
+  let k = from + 2
+  if (matches(toks, k, ['IF', 'EXISTS'])) k += 2
+  const nameTok = toks[k]
+  if (!nameTok || (nameTok.kind !== 'word' && nameTok.kind !== 'ident')) {
+    fail(ctx, span, 'incomplete-statement', 'DROP TRIGGER without a readable name')
+    return to
+  }
+  k++
+  if (!kw(toks[k], 'ON')) {
+    fail(ctx, span, 'incomplete-statement', 'DROP TRIGGER without an ON clause')
+    return to
+  }
+  const tableRef = readQualifiedName(toks, k + 1, to)
+  if (!tableRef) {
+    fail(ctx, span, 'incomplete-statement', 'DROP TRIGGER without a readable table')
+    return to
+  }
+  ctx.out.droppedTriggers.push({ name: nameTok.value, table: tableRef.name, origin: ctx.origin })
+  return to
+}
+
 /** Privilege list of a GRANT/REVOKE, split at depth 0 so column lists survive. */
 function readPrivileges(
   ctx: ScanContext,
@@ -1807,6 +1996,8 @@ export function analyzeSecurity(sql: string): SecurityAnalysis {
     ownedStatements: [],
     defaultPrivileges: [],
     indexes: [],
+    triggers: [],
+    droppedTriggers: [],
     unparsed: [],
   }
   const ctx: ScanContext = {
@@ -1845,6 +2036,8 @@ export function analyzeSecurity(sql: string): SecurityAnalysis {
     ownedStatements: out.ownedStatements,
     defaultPrivileges: out.defaultPrivileges,
     indexes: out.indexes,
+    triggers: out.triggers,
+    droppedTriggers: out.droppedTriggers,
     unparsed: out.unparsed,
   }
   if (ANALYSIS_CACHE.size > 256) ANALYSIS_CACHE.clear()
@@ -1878,6 +2071,14 @@ export function parseRlsToggles(sql: string): RlsToggle[] {
 
 export function parseIndexes(sql: string): ParsedIndex[] {
   return [...analyzeSecurity(sql).indexes]
+}
+
+export function parseTriggers(sql: string): ParsedTrigger[] {
+  return [...analyzeSecurity(sql).triggers]
+}
+
+export function parseDroppedTriggers(sql: string): Array<{ name: string; table: string }> {
+  return analyzeSecurity(sql).droppedTriggers.map((d) => ({ name: d.name, table: d.table }))
 }
 
 export function parseRoleStatements(sql: string): ParsedRoleStatement[] {

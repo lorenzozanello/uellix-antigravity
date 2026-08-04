@@ -64,17 +64,22 @@ BASE_DIR="db/baseline"
 BOX="uellix_cap_dryrun"
 WORK="$(mktemp -d)"
 PSQL=(docker exec "$BOX" psql -U supabase_admin -d postgres)
+# 0011 is applied LAST and rolled back FIRST. It is not a capability in the
+# CAP-01..CAP-05 sense — it narrows an existing ACL — but it creates a definer
+# in the shared uellix_capability schema, and every other rollback drops that
+# schema once it is empty. Rolling 0011 back after the five would find the
+# schema already gone.
 PACKAGES=(0006_invitation_capability 0007_public_verification_capability
           0008_stripe_webhook_identity 0009_public_lead_capability
-          0010_organization_bootstrap_capability)
-ROLLBACKS=(0010_rollback 0009_rollback 0008_rollback 0007_rollback 0006_rollback)
+          0010_organization_bootstrap_capability 0011_organization_column_acl)
+ROLLBACKS=(0011_rollback 0010_rollback 0009_rollback 0008_rollback 0007_rollback 0006_rollback)
 
 # Every number this run must reproduce, in one place, so a change to any of
 # them is a visible edit rather than a drifting expectation.
 EXPECTED_BASELINE="38/107/0/0/0"     # tables/policies/cap roles/cap functions/cap schema
 EXPECTED_BASELINE_TRIGGERS=10
-EXPECTED_FORWARD="42/141/6/8/1"
-EXPECTED_ASSERTIONS=72
+EXPECTED_FORWARD="42/150/7/10/1"
+EXPECTED_ASSERTIONS=115
 EXPECTED_CONCURRENCY=6
 EXPECTED_ROLLBACK_TABLES=40
 EXPECTED_ROLLBACK_POLICIES=108
@@ -236,7 +241,7 @@ DUP_POLICIES=$("${PSQL[@]}" -tAc "
 # contention). 66 + 6 = 72. The design's own count of 67 `L*` cases is spread
 # across both files, which is why a naive count of the .sql gives 66 and looks
 # like a contradiction.
-say "4. The 72 live assertions (66 from dryrun.sql + 6 contended)"
+say "4. The 115 live assertions (109 from dryrun.sql + 6 contended)"
 # --------------------------------------------------------------------------
 "${PSQL[@]}" -q -c "CREATE SCHEMA IF NOT EXISTS dryrun; CREATE TABLE IF NOT EXISTS dryrun.disposable_marker(x int);" >/dev/null
 

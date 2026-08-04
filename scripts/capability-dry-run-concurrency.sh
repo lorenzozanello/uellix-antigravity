@@ -107,7 +107,7 @@ fi
 # CAP-03 L3 — two concurrent begins for the same event id
 # ---------------------------------------------------------------------------
 AT=$(barrier)
-BODY="SELECT uellix_capability.stripe_begin_event('evt_race', 'customer.subscription.updated');"
+BODY="SELECT uellix_capability.stripe_begin_event('evt_race', 'customer.subscription.updated', 'cus_A', 'sub_A');"
 race "$AT" "$BODY" c3a & race "$AT" "$BODY" c3b & wait
 
 if assert_raced 'CAP03-L3' c3a c3b; then

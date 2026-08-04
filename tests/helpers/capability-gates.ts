@@ -28,6 +28,8 @@ import {
   parseOwnerships,
   parseRlsToggles,
   parseIndexes,
+  parseTriggers,
+  parseDroppedTriggers,
   parseDroppedPolicies,
   parseRoleStatements,
   parseOwnedStatements,
@@ -49,6 +51,11 @@ export const FORWARD = {
   CAP03: 'stella_0008_stripe_webhook_identity.sql',
   CAP04: 'stella_0009_public_lead_capability.sql',
   CAP05: 'stella_0010_organization_bootstrap_capability.sql',
+  // Not a sixth capability: stella_0011 NARROWS an existing ACL. It is in this
+  // map because it creates a definer in the same schema, under the same rules,
+  // and every gate below is exactly as applicable to it — leaving it out would
+  // have made "the campaign is contracted" true of five files and false of six.
+  CAP06: 'stella_0011_organization_column_acl.sql',
 } as const
 
 export const ROLLBACK = {
@@ -57,6 +64,7 @@ export const ROLLBACK = {
   CAP03: 'stella_0008_rollback.sql',
   CAP04: 'stella_0009_rollback.sql',
   CAP05: 'stella_0010_rollback.sql',
+  CAP06: 'stella_0011_rollback.sql',
 } as const
 
 export const CAPABILITY_SQL_FILES: readonly string[] = [
@@ -93,6 +101,31 @@ const TENANCY_ADMIN =
   "AND (public.current_user_role_in_org(r.organization_id) IN ('super_admin', 'organization_admin') " +
   'OR public.current_user_is_super_admin()) )'
 
+// RR-CAP-13. One proposition, written for two tables: a row is readable only
+// if some LOCKED report with a LIVE disclosure points at it.
+const PUBLISHED_ORG =
+  "EXISTS ( SELECT 1 FROM public.sroi_reports r JOIN public.report_public_disclosures d " +
+  "ON d.report_id = r.id WHERE r.organization_id = public.organizations.id " +
+  "AND r.status = 'locked' AND d.revoked_at IS NULL )"
+
+const PUBLISHED_RUN =
+  "EXISTS ( SELECT 1 FROM public.sroi_reports r JOIN public.report_public_disclosures d " +
+  "ON d.report_id = r.id WHERE r.calculation_run_id = public.sroi_calculation_runs.id " +
+  "AND r.status = 'locked' AND d.revoked_at IS NULL )"
+
+// RR-CAP-14. The row must already carry the Stripe address of a CLAIMED event.
+// Both halves of the OR require the event side to be NOT NULL: without that the
+// predicate would be satisfied by three-valued logic rather than by a match.
+const CLAIMED_ORG =
+  "EXISTS ( SELECT 1 FROM public.stripe_webhook_events e " +
+  "WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '') " +
+  "AND e.status = 'processing' " +
+  "AND e.received_at > pg_catalog.now() - interval '15 minutes' " +
+  "AND ( (e.stripe_customer_id IS NOT NULL " +
+  "AND e.stripe_customer_id = public.organizations.stripe_customer_id) " +
+  "OR (e.stripe_subscription_id IS NOT NULL " +
+  "AND e.stripe_subscription_id = public.organizations.stripe_subscription_id) ) )"
+
 export const POLICY_CONTRACT: readonly PolicyContract[] = [
   // --- CAP-01 -------------------------------------------------------------
   { name: 'cap_invitation_select_invitations', file: FORWARD.CAP01, table: 'public.invitations', mode: 'PERMISSIVE', command: 'SELECT', roles: ['uellix_cap_invitation'], using: 'true', check: null },
@@ -119,12 +152,20 @@ export const POLICY_CONTRACT: readonly PolicyContract[] = [
   { name: 'disclosures_update_admin', file: FORWARD.CAP02, table: 'public.report_public_disclosures', mode: 'PERMISSIVE', command: 'UPDATE', roles: ['uellix_app'], using: TENANCY_ADMIN, check: `(revoked_by IS NULL OR revoked_by = auth.uid()) AND ${TENANCY_ADMIN}` },
   { name: 'cap_verification_only_locked', file: FORWARD.CAP02, table: 'public.sroi_reports', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_verification'], using: "status = 'locked'", check: null },
   { name: 'cap_verification_only_live', file: FORWARD.CAP02, table: 'public.report_public_disclosures', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_verification'], using: 'revoked_at IS NULL', check: null },
+  // RR-CAP-13. The two tables whose only bound used to live in verify_report's
+  // JOIN. Written as full predicates rather than as "a RESTRICTIVE exists",
+  // because the whole finding was that the bound existed somewhere else.
+  { name: 'cap_verification_only_published_org', file: FORWARD.CAP02, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_verification'], using: PUBLISHED_ORG, check: null },
+  { name: 'cap_verification_only_published_run', file: FORWARD.CAP02, table: 'public.sroi_calculation_runs', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_verification'], using: PUBLISHED_RUN, check: null },
 
   // --- CAP-03 -------------------------------------------------------------
   { name: 'cap_stripe_select_orgs', file: FORWARD.CAP03, table: 'public.organizations', mode: 'PERMISSIVE', command: 'SELECT', roles: ['uellix_cap_stripe'], using: 'true', check: null },
   { name: 'cap_stripe_update_orgs', file: FORWARD.CAP03, table: 'public.organizations', mode: 'PERMISSIVE', command: 'UPDATE', roles: ['uellix_cap_stripe'], using: 'true', check: 'true' },
   { name: 'cap_stripe_rw_events', file: FORWARD.CAP03, table: 'public.stripe_webhook_events', mode: 'PERMISSIVE', command: 'ALL', roles: ['uellix_cap_stripe'], using: 'true', check: 'true' },
   { name: 'cap_stripe_insert_audit', file: FORWARD.CAP03, table: 'public.audit_logs', mode: 'PERMISSIVE', command: 'INSERT', roles: ['uellix_cap_stripe'], using: null, check: "actor_user_id IS NULL AND entity_type = 'organization' AND pg_catalog.left(action, 7) = 'stripe.'" },
+  // RR-CAP-14. CAP-03 was the only capability with no RESTRICTIVE policy at all.
+  { name: 'cap_stripe_only_claimed_read', file: FORWARD.CAP03, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_stripe'], using: CLAIMED_ORG, check: null },
+  { name: 'cap_stripe_only_claimed_org', file: FORWARD.CAP03, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'UPDATE', roles: ['uellix_cap_stripe'], using: CLAIMED_ORG, check: CLAIMED_ORG },
 
   // --- CAP-04 -------------------------------------------------------------
   { name: 'cap_lead_insert', file: FORWARD.CAP04, table: 'public.marketing_leads', mode: 'PERMISSIVE', command: 'INSERT', roles: ['uellix_cap_lead'], using: null, check: "lead_status = 'new'" },
@@ -142,6 +183,13 @@ export const POLICY_CONTRACT: readonly PolicyContract[] = [
   { name: 'cap_bootstrap_only_founder', file: FORWARD.CAP05, table: 'public.organization_members', mode: 'RESTRICTIVE', command: 'INSERT', roles: ['uellix_cap_bootstrap'], using: null, check: "role = 'organization_admin' AND status = 'active'" },
   { name: 'cap_bootstrap_only_active', file: FORWARD.CAP05, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'INSERT', roles: ['uellix_cap_bootstrap'], using: null, check: "status = 'active'" },
   { name: 'cap_bootstrap_only_self', file: FORWARD.CAP05, table: 'public.users', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_bootstrap'], using: 'id = auth.uid()', check: null },
+
+  // --- stella_0011 / RR-CAP-10 --------------------------------------------
+  { name: 'cap_platform_select_orgs', file: FORWARD.CAP06, table: 'public.organizations', mode: 'PERMISSIVE', command: 'SELECT', roles: ['uellix_cap_platform'], using: 'true', check: null },
+  { name: 'cap_platform_update_orgs', file: FORWARD.CAP06, table: 'public.organizations', mode: 'PERMISSIVE', command: 'UPDATE', roles: ['uellix_cap_platform'], using: 'true', check: 'true' },
+  { name: 'cap_platform_only_super_admin_read', file: FORWARD.CAP06, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_platform'], using: 'public.current_user_is_super_admin()', check: null },
+  { name: 'cap_platform_only_super_admin', file: FORWARD.CAP06, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'UPDATE', roles: ['uellix_cap_platform'], using: 'public.current_user_is_super_admin()', check: 'public.current_user_is_super_admin()' },
+  { name: 'cap_platform_insert_audit', file: FORWARD.CAP06, table: 'public.audit_logs', mode: 'PERMISSIVE', command: 'INSERT', roles: ['uellix_cap_platform'], using: null, check: "actor_user_id = auth.uid() AND actor_user_id IS NOT NULL AND entity_type = 'organization' AND pg_catalog.left(action, 9) = 'platform.'" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -230,6 +278,26 @@ export const GRANT_CONTRACT: Readonly<Record<string, readonly string[]>> = {
     G('UPDATE ON TABLE:public.capability_bootstrap_attempts TO uellix_cap_bootstrap'),
     G('EXECUTE ON FUNCTION:uellix_capability.bootstrap_organization TO uellix_app'),
   ],
+  [FORWARD.CAP06]: [
+    G('USAGE ON SCHEMA:uellix_capability TO uellix_cap_platform'),
+    G('USAGE ON SCHEMA:uellix_capability TO uellix_app'),
+    G('USAGE ON SCHEMA:auth TO uellix_cap_platform'),
+    // The repair itself. These two lines ARE RR-CAP-10: the set comparison is
+    // what makes putting stella_monthly_quota back a visible edit rather than a
+    // one-word change inside a parenthesis nobody re-reads.
+    G('UPDATE(base_currency,brand_color,country,logo_url,onboarding_completed,sector,updated_at,white_label_enabled) ON TABLE:public.organizations TO uellix_writer'),
+    // NOTHING for `authenticated`. It is revoked and never re-granted: it has no
+    // call site in the application, and re-granting it would restore the
+    // browser-direct write surface the package exists to close.
+    G('EXECUTE ON FUNCTION:public.current_user_org_ids TO uellix_cap_platform'),
+    G('EXECUTE ON FUNCTION:public.current_user_is_super_admin TO uellix_cap_platform'),
+    G('EXECUTE ON FUNCTION:public.current_user_role_in_org TO uellix_cap_platform'),
+    G('SELECT(id,name,status,stella_monthly_quota,stella_plan_label) ON TABLE:public.organizations TO uellix_cap_platform'),
+    G('UPDATE(status,stella_monthly_quota,stella_plan_label,updated_at) ON TABLE:public.organizations TO uellix_cap_platform'),
+    G('INSERT(action,actor_user_id,after_json,before_json,entity_id,entity_type,organization_id,reason) ON TABLE:public.audit_logs TO uellix_cap_platform'),
+    G('EXECUTE ON FUNCTION:uellix_capability.admin_set_stella_service TO uellix_app'),
+    G('EXECUTE ON FUNCTION:uellix_capability.admin_set_organization_status TO uellix_app'),
+  ],
 }
 
 /**
@@ -248,6 +316,7 @@ export const ROLLBACK_RETAINED_POLICIES: Readonly<Record<string, readonly string
   [ROLLBACK.CAP03]: [],
   [ROLLBACK.CAP04]: [],
   [ROLLBACK.CAP05]: [],
+  [ROLLBACK.CAP06]: [],
 }
 
 /**
@@ -321,6 +390,11 @@ export const OWNERSHIP_CONTRACT: Readonly<Record<string, readonly string[]>> = {
   ],
   [FORWARD.CAP04]: [SCHEMA_OWNER, 'FUNCTION uellix_capability.submit_lead -> uellix_cap_lead'],
   [FORWARD.CAP05]: [SCHEMA_OWNER, 'FUNCTION uellix_capability.bootstrap_organization -> uellix_cap_bootstrap'],
+  [FORWARD.CAP06]: [
+    SCHEMA_OWNER,
+    'FUNCTION uellix_capability.admin_set_stella_service -> uellix_cap_platform',
+    'FUNCTION uellix_capability.admin_set_organization_status -> uellix_cap_platform',
+  ],
 }
 
 /** Tables whose RLS each package must ENABLE, and never disable. */
@@ -330,6 +404,9 @@ export const RLS_CONTRACT: Readonly<Record<string, readonly string[]>> = {
   [FORWARD.CAP03]: ['public.stripe_webhook_events'],
   [FORWARD.CAP04]: [],
   [FORWARD.CAP05]: ['public.capability_bootstrap_attempts'],
+  // stella_0011 creates no table, so it enables no RLS. The tables it touches
+  // already have it, and its preconditions refuse to run if they do not.
+  [FORWARD.CAP06]: [],
 }
 
 /** Indexes the design's arguments rest on, and whether uniqueness is the point. */
@@ -344,6 +421,112 @@ export const INDEX_CONTRACT: Readonly<Record<string, ReadonlyArray<{ name: strin
   // endpoint answers differently for a known address.
   [FORWARD.CAP04]: [{ name: 'uq_marketing_leads_email_source', unique: true }],
   [FORWARD.CAP05]: [],
+  [FORWARD.CAP06]: [],
+}
+
+// ---------------------------------------------------------------------------
+// The authoritative trigger contract (RR-CAP-02-F).
+// ---------------------------------------------------------------------------
+// A trigger is arbitrary code attached to a table, so every field of it is a
+// security property: retarget the TABLE and the audit trail follows the wrong
+// rows; change AFTER to BEFORE and the audit row can be written for a change
+// that never commits; delete FOR EACH ROW and a multi-row UPDATE produces ONE
+// audit event; swap the EXECUTEd function and the trail says whatever the new
+// function says. Pinning the whole tuple is the same argument the policy
+// contract makes, for the same reason.
+//
+// The parser refused CREATE TRIGGER outright until this contract existed. That
+// was the right default and it is why this table had to be written rather than
+// the refusal loosened.
+
+interface TriggerContract {
+  readonly name: string
+  readonly file: string
+  readonly table: string
+  readonly timing: 'BEFORE' | 'AFTER' | 'INSTEAD OF'
+  readonly events: readonly string[]
+  readonly level: 'ROW' | 'STATEMENT'
+  readonly execute: string
+}
+
+export const TRIGGER_CONTRACT: readonly TriggerContract[] = [
+  {
+    name: 'trg_report_disclosure_audit',
+    file: FORWARD.CAP02,
+    table: 'public.report_public_disclosures',
+    timing: 'AFTER',
+    events: ['INSERT', 'UPDATE'],
+    level: 'ROW',
+    execute: 'public.uellix_audit_report_disclosure',
+  },
+  {
+    // The OTHER half of "is this certificate visible". Public visibility is a
+    // conjunction — sroi_reports.status = 'locked' AND revoked_at IS NULL — and
+    // only the second conjunct lives on the audited table. Without this trigger
+    // an analyst can take a certificate live or dark through sroi_reports and
+    // leave no trace on report_public_disclosures at all.
+    name: 'trg_report_visibility_audit',
+    file: FORWARD.CAP02,
+    table: 'public.sroi_reports',
+    timing: 'AFTER',
+    events: ['UPDATE'],
+    level: 'ROW',
+    execute: 'public.uellix_audit_report_visibility',
+  },
+  {
+    name: 'trg_report_disclosures_append_only',
+    file: FORWARD.CAP02,
+    table: 'public.report_public_disclosures',
+    timing: 'BEFORE',
+    events: ['DELETE'],
+    level: 'ROW',
+    execute: 'public.uellix_forbid_mutation',
+  },
+  {
+    name: 'trg_report_disclosures_no_truncate',
+    file: FORWARD.CAP02,
+    table: 'public.report_public_disclosures',
+    timing: 'BEFORE',
+    events: ['TRUNCATE'],
+    level: 'STATEMENT',
+    execute: 'public.uellix_forbid_mutation',
+  },
+]
+
+/**
+ * Triggers a rollback must drop, and triggers it must NOT.
+ *
+ * CAP-02's rollback keeps the rows because each is a human decision to publish;
+ * it therefore keeps what makes those rows unerasable, and drops only the audit
+ * trigger, whose event can no longer happen once the write path is gone.
+ */
+// Revised after adversarial review: NO rollback drops a trigger any more. The
+// audit triggers used to go with the capability, on the argument that the write
+// path was gone so the event could not happen. It could: uellix_owner is the
+// table owner, exempt from RLS, reachable by SET ROLE from a LOGIN role, and
+// sroi_reports.status stays writable by the runtime regardless. The map is kept
+// because a future rollback that DOES drop one must declare it here.
+export const ROLLBACK_DROPPED_TRIGGERS: Readonly<Record<string, readonly string[]>> = {
+  [ROLLBACK.CAP01]: [],
+  [ROLLBACK.CAP02]: [],
+  [ROLLBACK.CAP03]: [],
+  [ROLLBACK.CAP04]: [],
+  [ROLLBACK.CAP05]: [],
+  [ROLLBACK.CAP06]: [],
+}
+
+export const ROLLBACK_RETAINED_TRIGGERS: Readonly<Record<string, readonly string[]>> = {
+  [ROLLBACK.CAP01]: [],
+  [ROLLBACK.CAP02]: [
+    'trg_report_disclosures_append_only',
+    'trg_report_disclosures_no_truncate',
+    'trg_report_disclosure_audit',
+    'trg_report_visibility_audit',
+  ],
+  [ROLLBACK.CAP03]: [],
+  [ROLLBACK.CAP04]: [],
+  [ROLLBACK.CAP05]: [],
+  [ROLLBACK.CAP06]: [],
 }
 
 // ---------------------------------------------------------------------------
@@ -396,6 +579,7 @@ export const CAPABILITY_ROLES: Readonly<Record<string, string>> = {
   [FORWARD.CAP03]: 'uellix_cap_stripe',
   [FORWARD.CAP04]: 'uellix_cap_lead',
   [FORWARD.CAP05]: 'uellix_cap_bootstrap',
+  [FORWARD.CAP06]: 'uellix_cap_platform',
 }
 
 export const CAPABILITY_FUNCTIONS: Readonly<Record<string, readonly string[]>> = {
@@ -404,6 +588,7 @@ export const CAPABILITY_FUNCTIONS: Readonly<Record<string, readonly string[]>> =
   [FORWARD.CAP03]: ['stripe_begin_event', 'stripe_apply_subscription', 'stripe_fail_event'],
   [FORWARD.CAP04]: ['submit_lead'],
   [FORWARD.CAP05]: ['bootstrap_organization'],
+  [FORWARD.CAP06]: ['admin_set_stella_service', 'admin_set_organization_status'],
 }
 
 /** The six publication flags of CAP-02. The old gate knew about four. */
@@ -470,6 +655,16 @@ export const ROLLBACK_GRANT_CONTRACT: Readonly<Record<string, readonly string[]>
     'DELETE ON TABLE:public.marketing_leads TO uellix_writer',
   ],
   [ROLLBACK.CAP05]: [],
+  // The second RESTORATION, and the more uncomfortable one: stella_0011
+  // replaced a table-level UPDATE with a column list, so undoing it puts the
+  // table-level grant back — and with it RR-CAP-10. A rollback that kept the
+  // narrower grant would leave a database matching neither side of the change.
+  [ROLLBACK.CAP06]: [
+    'UPDATE ON TABLE:public.organizations TO authenticated',
+    'UPDATE ON TABLE:public.organizations TO uellix_writer',
+    'DELETE ON TABLE:public.organizations TO authenticated',
+    'DELETE ON TABLE:public.organizations TO uellix_writer',
+  ],
 }
 
 export const ROLLBACK_POLICY_CONTRACT: Readonly<Record<string, readonly string[]>> = {
@@ -478,6 +673,7 @@ export const ROLLBACK_POLICY_CONTRACT: Readonly<Record<string, readonly string[]
   [ROLLBACK.CAP03]: [],
   [ROLLBACK.CAP04]: ['anon_insert_marketing_leads', 'authenticated_insert_marketing_leads'],
   [ROLLBACK.CAP05]: [],
+  [ROLLBACK.CAP06]: [],
 }
 
 /** Every attribute a capability role must NOT have. All seven, not five. */
@@ -864,6 +1060,229 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
     }
   }
 
+  // -- Gate 6e: triggers, pinned as whole tuples (RR-CAP-02-F) --------------
+  {
+    const declared = new Map(TRIGGER_CONTRACT.map((t) => [t.name, t]))
+    for (const file of Object.values(FORWARD)) {
+      for (const got of parseTriggers(src(file))) {
+        const want = declared.get(got.name)
+        if (!want || want.file !== file) {
+          // An UNDECLARED trigger is the finding, not a curiosity: it is code
+          // on a table, added by a package, that no contract describes.
+          add('trigger-extra', `${file}: ${got.name} on ${got.table} is not in TRIGGER_CONTRACT`)
+          continue
+        }
+        const shape = `${got.timing} ${[...got.events].join(',')} ${got.level} -> ${got.execute} ON ${got.table}`
+        const wantShape = `${want.timing} ${[...want.events].join(',')} ${want.level} -> ${want.execute} ON ${want.table}`
+        if (shape !== wantShape) add('trigger-shape', `${file}: ${got.name} is ${shape}, contract says ${wantShape}`)
+        // A WHEN clause narrows when the trigger fires. None of the three has
+        // one, and adding one is how an audit trail acquires a blind spot.
+        if (got.when !== null) add('trigger-when', `${file}: ${got.name} carries a WHEN clause`)
+      }
+    }
+    for (const want of TRIGGER_CONTRACT) {
+      const found = parseTriggers(src(want.file)).some((t) => t.name === want.name)
+      if (!found) add('trigger-missing', `${want.file}: ${want.name}`)
+    }
+    // Every CREATE must be preceded by its own DROP … IF EXISTS, or a re-apply
+    // stacks a second trigger on the same table and the audit trail doubles.
+    for (const want of TRIGGER_CONTRACT) {
+      const dropped = parseDroppedTriggers(src(want.file))
+        .some((d) => d.name === want.name && d.table === want.table)
+      if (!dropped) add('trigger-not-convergent', `${want.file}: ${want.name} is created without a preceding DROP`)
+    }
+  }
+
+  // -- Gate 6f: what a rollback does to a trigger ---------------------------
+  for (const [rb, names] of Object.entries(ROLLBACK_DROPPED_TRIGGERS)) {
+    const dropped = new Set(parseDroppedTriggers(src(rb)).map((d) => d.name))
+    for (const n of names) if (!dropped.has(n)) add('rollback-trigger', `${rb}: ${n} is not dropped`)
+    for (const n of ROLLBACK_RETAINED_TRIGGERS[rb] ?? []) {
+      if (dropped.has(n)) add('rollback-trigger-retained', `${rb}: ${n} must survive the rollback but is dropped`)
+    }
+    // A rollback that CREATES a trigger is planting code during an incident.
+    for (const t of parseTriggers(src(rb))) {
+      add('rollback-trigger-created', `${rb}: creates trigger ${t.name} on ${t.table}`)
+    }
+  }
+
+  // -- Gate 6g: CAP-02, the publication trail (RR-CAP-02-F) ----------------
+  {
+    const cap02 = codeOnly(src(FORWARD.CAP02))
+    const fnMatch = /CREATE OR REPLACE FUNCTION public\.uellix_audit_report_disclosure\(\)([\s\S]*?)\n\$\$;/
+      .exec(cap02)
+    if (!fnMatch) {
+      add('cap02-audit-function', 'uellix_audit_report_disclosure is absent, so publishing leaves no trace')
+    } else {
+      const body = fnMatch[1]
+      if (!/INSERT INTO public\.audit_logs/.test(body)) {
+        add('cap02-audit-writes', 'the disclosure trigger does not write audit_logs')
+      }
+      // Not SECURITY DEFINER: the row must be written with the CALLER's
+      // privileges so audit_logs' own policy pins actor_user_id to auth.uid().
+      // A definer here would let the trigger insert rows the caller could not.
+      if (/SECURITY DEFINER/.test(fnMatch[0])) {
+        add('cap02-audit-caller-rights', 'the disclosure trigger is SECURITY DEFINER; the actor would no longer be pinned by RLS')
+      }
+      if (!/actor_user_id[\s\S]{0,400}auth\.uid\(\)/.test(body) && !/auth\.uid\(\)/.test(body)) {
+        add('cap02-audit-actor', 'the audit row does not record auth.uid() as the actor')
+      }
+      // The summary is free text a person wrote. A digest answers "did what
+      // circulated change?"; the text itself would put a payload in a log that
+      // holds none anywhere else.
+      // `app.request_id` is a custom GUC any role can set to arbitrary text, so
+      // an unvalidated copy is a free-text channel into an APPEND-ONLY table.
+      if (!/\^\[A-Za-z0-9_\.:-\]\{1,64\}\$/.test(body)) {
+        add('cap02-audit-request-id',
+          'app.request_id is copied into audit_logs without a shape bound; it is a free-text channel into an append-only table')
+      }
+      if (!/sha256/.test(body)) {
+        add('cap02-audit-digest', 'public_summary is not reduced to a digest')
+      }
+      if (/'summary'\s*,\s*(?:NEW|OLD)\.public_summary/.test(body)) {
+        add('cap02-audit-digest', 'the audit row carries public_summary as text')
+      }
+      // Each transition named apart, or "how many certificates were withdrawn"
+      // needs a diff of every pair of rows to answer.
+      for (const action of ['report.disclosure.published', 'report.disclosure.revoked',
+                            'report.disclosure.reinstated']) {
+        if (!body.includes(action)) add('cap02-audit-transitions', `${action} is never recorded`)
+      }
+    }
+  }
+
+  // -- Gate 6h: stella_0011, the organizations column ACL (RR-CAP-10) ------
+  {
+    const cap06 = codeOnly(src(FORWARD.CAP06))
+
+    // The columns an organisation admin must never move through the ORM.
+    const ADMINISTRATIVE = [
+      'stella_monthly_quota', 'stella_plan_label', 'status',
+      'stripe_customer_id', 'stripe_subscription_id', 'stripe_price_id',
+    ]
+
+    // (1) The table-level UPDATE must be taken back from BOTH principals.
+    // `authenticated` is the one that gets forgotten: it is PostgREST's role,
+    // reachable from a browser with nothing but a user's own JWT.
+    const revoked = parseRevokes(src(FORWARD.CAP06)).filter(
+      (r) => r.object === 'public.organizations'
+        && r.privileges.some((pr) => pr.privilege === 'UPDATE' && pr.columns === null),
+    )
+    const revokedFrom = new Set(revoked.flatMap((r) => r.grantees))
+    for (const who of ['authenticated', 'uellix_writer']) {
+      if (!revokedFrom.has(who)) {
+        add('cap06-revoke', `the table-level UPDATE on organizations is not revoked from ${who}`)
+      }
+    }
+
+    // (2) …and no runtime grant may name an administrative column. Read from
+    // the parsed grants, not from the text: a column added inside the
+    // parenthesis is a one-word edit that reads like formatting.
+    for (const g of parseGrants(src(FORWARD.CAP06))) {
+      if (g.object !== 'public.organizations') continue
+      if (!g.grantees.some((r) => r === 'uellix_writer' || r === 'authenticated')) continue
+      for (const pr of g.privileges) {
+        for (const col of pr.columns ?? []) {
+          if (ADMINISTRATIVE.includes(col)) {
+            add('cap06-quota-excluded', `the runtime is granted UPDATE (${col}) on organizations`)
+          }
+        }
+      }
+    }
+
+    // (3) The definer must check the CALLER, in the body as well as in the
+    // policy. Two independent locks: the policy survives a rewritten body, the
+    // body survives a policy someone drops by hand during an incident.
+    const fns = parseFunctions(cap06)
+    for (const name of ['admin_set_stella_service', 'admin_set_organization_status']) {
+      const fn = fns.find((f) => f.name === name)
+      if (!fn) {
+        add('cap06-function', `${name} is absent`)
+        continue
+      }
+      if (!/IF NOT public\.current_user_is_super_admin\(\) THEN/.test(fn.body)) {
+        add('cap06-super-admin-check', `${name} does not refuse a caller that is not a platform super_admin`)
+      }
+      if (!/INSERT INTO public\.audit_logs/.test(fn.body)) {
+        add('cap06-audit-atomic', `${name} moves an administrative column without recording it in the same transaction`)
+      }
+    }
+    const status = fns.find((f) => f.name === 'admin_set_organization_status')
+    if (status && !/p_status NOT IN \('active','suspended'\)/.test(status.body)) {
+      // `status` carries no CHECK constraint in the baseline, so an
+      // unvalidated parameter lets a platform admin invent a state nothing
+      // handles — including one that reads as "not suspended".
+      add('cap06-status-allowlist', 'admin_set_organization_status accepts a status outside (active, suspended)')
+    }
+  }
+
+  // -- Gate 6h-bis: the owner default ACL, taken back explicitly -----------
+  // `ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner IN SCHEMA public GRANT
+  // SELECT, INSERT ON TABLES TO uellix_writer` (baseline) fires the moment a
+  // package creates a table in its owner window, at TABLE level, BEFORE any
+  // column-scoped grant runs. ACLs are additive, so a package that creates a
+  // table and then grants by column has narrowed nothing unless it revokes
+  // first. Two of the three tables in this campaign had that hole.
+  {
+    const NEEDS_REVOKE: ReadonlyArray<readonly [string, string]> = [
+      [FORWARD.CAP02, 'public.report_public_disclosures'],
+      [FORWARD.CAP02, 'public.capability_verification_hits'],
+      [FORWARD.CAP03, 'public.stripe_webhook_events'],
+      [FORWARD.CAP05, 'public.capability_bootstrap_attempts'],
+    ]
+    for (const [file, table] of NEEDS_REVOKE) {
+      const revoked = parseRevokes(src(file)).some(
+        (r) => r.object === table && r.grantees.includes('uellix_writer'),
+      )
+      if (!revoked) {
+        add('default-acl-not-revoked',
+          `${file}: creates ${table} without revoking the owner default ACL from uellix_writer`)
+      }
+    }
+  }
+
+  // -- Gate 6i: CAP-03, the claimed Stripe address (RR-CAP-14) -------------
+  {
+    const cap03 = codeOnly(src(FORWARD.CAP03))
+    const begin = parseFunctions(cap03).find((f) => f.name === 'stripe_begin_event')
+    if (begin) {
+      if (!/stripe_customer_id, stripe_subscription_id/.test(begin.body)) {
+        add('cap03-claim-identity', 'the claim does not record the Stripe address the event is addressed to, so no row bound can be derived from it')
+      }
+      if (!/IS NOT DISTINCT FROM p_stripe_customer_id/.test(begin.body)) {
+        add('cap03-claim-identity', 'an existing event id can be re-claimed under a different Stripe address')
+      }
+    }
+    const apply = parseFunctions(cap03).find((f) => f.name === 'stripe_apply_subscription')
+    if (apply) {
+      // The body must correlate the event to the address it matches on, not
+      // merely check that the event is claimed. Both reviewers found the same
+      // consequence independently: without it, the two identity columns
+      // RR-CAP-14 added are read by the policy and IGNORED by the function.
+      if (!/e\.event_id = p_event_id[\s\S]{0,400}e\.stripe_customer_id = p_match_value/.test(apply.body)) {
+        add('cap03-claim-correlated',
+          'stripe_apply_subscription does not require the claimed event to carry the address it matches on')
+      }
+      // …and it must publish WHICH event it is applying, or the RESTRICTIVE
+      // policies fall back to "some event is in flight".
+      if (!/set_config\('app\.stripe_event_id', p_event_id, true\)/.test(apply.body)) {
+        add('cap03-claim-correlated',
+          'stripe_apply_subscription does not publish the event id the policies correlate against')
+      }
+      // A customer-addressed event must not be able to detach a subscription.
+      if (!/stripe_subscription_id = COALESCE\(p_stripe_subscription_id, stripe_subscription_id\)/.test(apply.body)) {
+        add('cap03-subscription-coalesce',
+          'a customer-addressed event can null out the organisation stripe_subscription_id')
+      }
+    }
+
+    // The two-argument form must be dropped, not merely shadowed: an event
+    // claimed through it carries no address and matches no organisation.
+    if (!/DROP FUNCTION IF EXISTS uellix_capability\.stripe_begin_event\(text, text\);/.test(cap03)) {
+      add('cap03-claim-identity', 'the pre-RR-CAP-14 two-argument stripe_begin_event is not dropped')
+    }
+  }
+
   // -- Gate 7: CAP-01, the invitation business guards ------------------------
   {
     const fn = parseFunctions(codeOnly(src(FORWARD.CAP01)))[0]
@@ -1006,7 +1425,11 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
       // the branch that RESOLVES an organisation from a caller-chosen value.
       if (/p_match_kind\s*(=|IN\s*\([^)]*)\s*'?organization/.test(apply.body))
         add('cap03-match-kind', "the removed 'organization' match kind is back")
-      if (!/e\.event_id = p_event_id AND e\.status = 'processing'/.test(apply.body))
+      // Widened when RR-CAP-14 added the address correlation: the two
+      // conjuncts are no longer adjacent. The property is unchanged — the
+      // event named by p_event_id must be one this capability claimed — and
+      // cap03-claim-correlated now asserts the stricter half separately.
+      if (!/e\.event_id = p_event_id[\s\S]{0,80}e\.status = 'processing'/.test(apply.body))
         add('cap03-claimed-event', 'a change can be applied for an event this capability never claimed')
       if (/SET status\s*=\s*'failed'/.test(apply.body))
         add('cap03-failure-transaction', 'the failure is marked inside the transaction the RAISE rolls back')

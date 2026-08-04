@@ -262,6 +262,13 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       'stella_0009_rollback.sql',
       'stella_0010_organization_bootstrap_capability.sql',
       'stella_0010_rollback.sql',
+      // 0011 is NOT a sixth capability: it narrows an ACL that already existed
+      // (RR-CAP-10). It rides with the campaign because it creates a definer in
+      // the same shared schema and is subject to every one of these invariants;
+      // it applies LAST and rolls back FIRST, because the other five rollbacks
+      // drop `uellix_capability` as soon as it is empty. DESIGN ONLY.
+      'stella_0011_organization_column_acl.sql',
+      'stella_0011_rollback.sql',
     ])
   })
 
