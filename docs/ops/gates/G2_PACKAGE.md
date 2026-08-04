@@ -667,8 +667,19 @@ explícita**, por tres razones:
    está redactado hoy. Lo cierto: los cinco paquetes se aplicaron **dos veces**,
    se probaron con 72 aserciones vivas y seis pruebas de concurrencia con sesiones
    reales, se revirtieron y se reaplicaron, en un **contenedor desechable sin
-   red** sembrado desde un volcado *schema-only* obtenido por lectura. Lo que
-   falta no es el ensayo: es la **equivalencia con el entorno gestionado**.
+   red** sembrado desde el baseline versionado de
+   [`../../../db/baseline/`](../../../db/baseline/README.md). Lo que falta no es
+   el ensayo: es la **equivalencia con el entorno gestionado**.
+
+   > **Corrección 2026-08-04.** Hasta esta fecha ese sembrado se obtenía
+   > ejecutando `pg_dump --schema-only` contra el contenedor del stack
+   > persistente, y el volcado se borraba al terminar. El ensayo no era
+   > reproducible: dependía de que ese contenedor concreto estuviera vivo, y
+   > cuando el stack se detuvo el 2026-08-04 quedó bloqueado. El baseline está
+   > ahora **materializado, versionado y verificado por SHA-256**; el dry-run no
+   > tiene ya ninguna referencia ejecutable al stack persistente. Verificable con
+   > `bash scripts/capability-baseline-verify.sh` y
+   > `pnpm vitest run tests/capability-baseline-artifact.test.ts`.
 3. **Cada paquete crea al menos un rol**, y `uellix_stripe` es además un rol
    `LOGIN`. Las tres limitaciones de Supabase gestionado que bloquearon
    `stella_0004` en remoto (RR-09) aplican igual, y **no se han verificado**:

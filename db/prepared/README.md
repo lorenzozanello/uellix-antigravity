@@ -152,8 +152,9 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 > alcanza `uellix_owner`.
 >
 > **Los cinco están probados en ejecución**, no sólo leídos: contenedor
-> desechable `--network none`, línea base 38/107 replicada por volcado
-> *schema-only*, aplicación doble convergente a **42 tablas / 141 policies**,
+> desechable `--network none`, línea base 38/107 restaurada desde el baseline
+> versionado de [`../baseline/`](../baseline/README.md) —verificado por SHA-256,
+> sin tocar ningún stack—, aplicación doble convergente a **42 tablas / 141 policies**,
 > **72 aserciones vivas** (los 67 casos `L*` de los cinco documentos, más 3 de
 > aislamiento cruzado y 2 de concurrencia), **seis** pruebas de concurrencia con
 > sesiones reales sincronizadas contra un instante común, rollback y

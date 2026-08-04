@@ -1445,6 +1445,48 @@ capacidades funcionen.
 **schema-only** del stack local obtenido por lectura (`pg_dump --schema-only`,
 `pg_dumpall --roles-only --no-role-passwords`). Se destruye al terminar.
 
+> **Corrección 2026-08-04 — el baseline era efímero.** Ese volcado se producía
+> en cada ejecución contra el contenedor
+> `supabase_db_uellix-stella-g2-local-rehearsal` y se borraba en el `trap … EXIT`.
+> Nunca se commiteó ni se hasheó, así que el ensayo sólo era re-ejecutable
+> mientras ese contenedor siguiera vivo; al detenerse el stack el 2026-08-04 la
+> unidad de endurecimiento del parser quedó bloqueada por falta de artefacto.
+> El baseline está ahora **materializado y versionado** en
+> [`../../db/baseline/`](../../db/baseline/README.md), verificado por SHA-256, y
+> `scripts/capability-dry-run.sh` no conserva ninguna referencia ejecutable al
+> stack persistente. Evidencia:
+>
+> | Prueba | Resultado |
+> |---|---|
+> | `bash scripts/capability-baseline-verify.sh` | VERDE — 38 tablas / 107 policies / 10 triggers restaurados desde los artefactos |
+> | `bash scripts/capability-dry-run.sh` | VERDE — 38/107 → 42/141 convergente, 72/72 aserciones, rollback 40/108, reaplicación 42/141 |
+> | `pnpm vitest run tests/capability-baseline-artifact.test.ts` | VERDE — 41 pruebas |
+>
+> **Dónde está instrumentada cada aserción.** El desglose «67 `L*` + 3 de
+> aislamiento cruzado + 2 de concurrencia = 72» es correcto, pero los 67 `L*`
+> **no** están todos en el mismo archivo, y por eso un recuento ingenuo del
+> `.sql` da 66 y parece contradecirlo:
+>
+> | Fuente | Filas en `dryrun.results` | Composición |
+> |---|---|---|
+> | `scripts/capability-dry-run.sql` | 66 | 63 casos `L*` + `ISO-ROLES`, `ISO-TABLES`, `ISO-EXECUTE` |
+> | `scripts/capability-dry-run-concurrency.sh` | 6 | 4 casos `L*` (`CAP01-L6`, `CAP03-L3`, `CAP05-L4`, `CAP05-L11`) + `CAP02-CONC`, `CAP04-CONC` |
+> | **Total** | **72** | 67 `L*` + 3 aislamiento + 2 concurrencia |
+>
+> Los cuatro `L*` que viven en el script de concurrencia son precisamente los que
+> necesitan dos sesiones reales sincronizadas: no se pueden expresar en un `.sql`
+> de una sola sesión.
+>
+> **El stack persistente no fue verificado en esta unidad**: está detenido. No se
+> inició, no recibió migraciones, seeds, paquetes de capacidad ni escritura
+> alguna. Los conteos 38/107/10 de esta entrada provienen del artefacto
+> restaurado en un contenedor desechable, no de un `SELECT` contra el stack.
+>
+> **Sigue pendiente** el endurecimiento fail-closed del parser
+> (`CAPABILITY_PARSER_FAIL_CLOSED_HARDENING`, con sus ocho evasiones
+> confirmadas), y siguen **abiertos** RR-CAP-10, RR-CAP-13, RR-CAP-14 y
+> RR-CAP-02-F. Nada de esto habilita `READY_FOR_IMPLEMENTATION`.
+
 **Línea base replicada exactamente: 38 tablas / 107 policies**, los cinco roles
 `uellix_*`, `auth.uid()` presente, las tres restricciones únicas y el índice
 parcial `user_single_active_membership`.

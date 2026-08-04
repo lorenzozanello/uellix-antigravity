@@ -384,8 +384,10 @@ sigan **sin poder** insertar un lead por PostgREST, y que `PUBLIC` no tenga
 `EXECUTE` sobre ninguna función de `uellix_capability`.
 
 **Lo que sí existe, y no debe confundirse con G3.** Hay un dry run, re-ejecutado
-el 2026-08-03 con `scripts/capability-dry-run.sh`: contenedor desechable con
-`--network none`, sembrado desde un volcado *schema-only* obtenido por lectura,
+el 2026-08-04 con `scripts/capability-dry-run.sh`: contenedor desechable con
+`--network none`, sembrado desde el baseline versionado de
+[`../../../db/baseline/`](../../../db/baseline/README.md) —verificado por
+SHA-256 antes de empezar, sin ninguna lectura del stack persistente—,
 línea base 38/107 replicada, doble aplicación convergente a 42/141, 72
 aserciones vivas, seis pruebas de concurrencia con sesiones reales, rollback y
 reaplicación. Cuatro de esas aserciones —CAP-04 L8, L9, L10 y L11— ejercitan
