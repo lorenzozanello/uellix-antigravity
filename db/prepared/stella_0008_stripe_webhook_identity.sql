@@ -223,8 +223,38 @@ CREATE TABLE IF NOT EXISTS public.stripe_webhook_events (
                                   'internal','not_applicable'))
 );
 
+-- 2.1bis. The claimed Stripe identity (RR-CAP-14).
+--
+-- These two columns are what turns "an event was claimed" into "an event was
+-- claimed FOR THIS ORGANISATION", and they exist because no column list can
+-- express that. The `GRANT UPDATE` of six columns bounds WHAT the capability
+-- writes; with `cap_stripe_update_orgs` at USING (true) nothing bounded WHOSE
+-- row it wrote, so a body rewritten to `WHERE id = <anything>` could move the
+-- quota of an organisation the event never mentioned.
+--
+-- They are NOT a payload. They are the two Stripe-issued identifiers the
+-- signed event is addressed to, and they are the only fields of it this
+-- capability ever needs. `client_reference_id` is deliberately absent: it is
+-- buyer-supplied (see stripe_apply_subscription §3.2), and a value an attacker
+-- chooses cannot be the anchor of a tenancy bound.
+--
+-- ADD COLUMN IF NOT EXISTS rather than a wider CREATE TABLE: the table is
+-- CREATE TABLE IF NOT EXISTS, so an operator who applied an earlier revision
+-- of this package gets the columns on the next apply instead of a table that
+-- silently lacks them. Both are nullable — an event may carry a customer, a
+-- subscription, or both — and the policy below requires a NON-NULL match on
+-- whichever side it uses, so nullability is not a hole.
+ALTER TABLE public.stripe_webhook_events
+  ADD COLUMN IF NOT EXISTS stripe_customer_id     text,
+  ADD COLUMN IF NOT EXISTS stripe_subscription_id text;
+
+COMMENT ON COLUMN public.stripe_webhook_events.stripe_customer_id IS
+  'CAP-03 / RR-CAP-14. The Stripe-issued customer id the signed event is addressed to, recorded when the event is CLAIMED. Read by cap_stripe_only_claimed_org to decide which organizations row this capability may touch. Never rewritable: absent from the UPDATE grant.';
+COMMENT ON COLUMN public.stripe_webhook_events.stripe_subscription_id IS
+  'CAP-03 / RR-CAP-14. The Stripe-issued subscription id the signed event is addressed to, recorded when the event is CLAIMED. Same bound, same immutability.';
+
 COMMENT ON TABLE public.stripe_webhook_events IS
-  'CAP-03. One row per Stripe event, keyed by the Stripe event id — the idempotency key. Holds NO payload and no error message, only a fixed error CODE. Not append-only (the state machine needs UPDATE) but the capability has no DELETE: it cannot erase what it did.';
+  'CAP-03. One row per Stripe event, keyed by the Stripe event id — the idempotency key. Holds NO payload and no error message, only a fixed error CODE and the two Stripe-issued identifiers the event is addressed to, which are what bound the capability to one organisation (RR-CAP-14). Not append-only (the state machine needs UPDATE) but the capability has no DELETE: it cannot erase what it did.';
 
 ALTER TABLE public.stripe_webhook_events ENABLE ROW LEVEL SECURITY;
 
@@ -264,6 +294,15 @@ GRANT UPDATE (stripe_customer_id, stripe_subscription_id, stripe_price_id,
               stella_monthly_quota, stella_plan_label, updated_at)
   ON public.organizations TO uellix_cap_stripe;
 
+-- The runtime gets NOTHING on this table, and saying so needs a statement.
+-- `ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner IN SCHEMA public GRANT
+-- SELECT, INSERT ON TABLES TO uellix_writer` (baseline) fires the moment the
+-- table is created in this owner window, at TABLE level, before any of the
+-- column-scoped grants below run. ACLs are additive, so without this REVOKE the
+-- enumerated grants narrow nothing and uellix_app inherits SELECT+INSERT on the
+-- whole event log. Found by adversarial review, 2026-08-04.
+REVOKE ALL ON public.stripe_webhook_events FROM uellix_writer, uellix_auditor;
+
 GRANT SELECT, INSERT ON public.stripe_webhook_events TO uellix_cap_stripe;
 -- No UPDATE on event_id or event_type: what arrived cannot be rewritten.
 -- No DELETE at all: the capability cannot erase the record of what it did.
@@ -287,6 +326,122 @@ DROP POLICY IF EXISTS cap_stripe_update_orgs ON public.organizations;
 CREATE POLICY cap_stripe_update_orgs
 ON public.organizations FOR UPDATE TO uellix_cap_stripe
 USING (true) WITH CHECK (true);
+
+-- 2.3bis. The RESTRICTIVE companions CAP-03 never had (RR-CAP-14).
+--
+-- CAP-01, CAP-02, CAP-04 and CAP-05 all carry them; the argument that
+-- justifies them was simply never applied here. It applies verbatim: the 105
+-- {public} baseline policies are PERMISSIVE and combine with OR, they apply to
+-- this definer too, and their predicates resolve auth.uid() to the CALLER
+-- because SECURITY DEFINER does not reset a session GUC. So the two USING
+-- (true) policies above were not the bound they looked like — the only bound
+-- was the column grant, which says which FIELDS, never which ROWS.
+--
+-- THE PREDICATE, AND WHY EACH CONJUNCT IS THERE.
+--
+--   e.event_id = current_setting(…)  THE event being applied, not merely some
+--                                    event. Two adversarial reviewers found the
+--                                    same hole independently: an uncorrelated
+--                                    EXISTS means that while org B's event is in
+--                                    flight, a transaction handling org A's
+--                                    event satisfies RLS for B's row. The GUC is
+--                                    set by stripe_apply_subscription AFTER it
+--                                    has validated the claim, and it is
+--                                    transaction-local, so a body that forgets
+--                                    to set it reads '' and matches NOTHING —
+--                                    fail-closed, not fail-open.
+--   e.status = 'processing'          the event must have been CLAIMED, by
+--                                    stripe_begin_event, in this transaction's
+--                                    view. An unclaimed event reaches nothing.
+--   e.received_at > now() - 15 min   the SAME lease stripe_begin_event uses to
+--                                    decide re-claimability. Without it a worker
+--                                    that died mid-flight leaves a row in
+--                                    'processing' that nothing sweeps, and that
+--                                    organisation stays writable FOREVER. The
+--                                    role-level statement_timeout bounds the
+--                                    session, never the row.
+--   e.stripe_customer_id IS NOT NULL the claimed identity must exist. Without
+--                                    this, NULL = NULL is NULL, not true — but
+--                                    stating it makes the intent checkable
+--                                    rather than a property of three-valued
+--                                    logic nobody re-derives.
+--   e.<id> = organizations.<id>      the row must ALREADY carry the identity
+--                                    the event is addressed to. This is the
+--                                    whole tenancy bound: organisation B's row
+--                                    carries B's customer id, so an event
+--                                    addressed to A cannot reach it, whatever
+--                                    the function body says.
+--
+-- WHAT THIS DOES *NOT* CLOSE, STATED PLAINLY (RR-CAP-14-A). The database cannot
+-- verify a Stripe signature — that check lives in the Node handler — so anything
+-- holding the `uellix_stripe` credential can claim an event for a customer id it
+-- chose and then apply a change for it. No policy can distinguish that from a
+-- genuine delivery, because both arrive through the same three functions with
+-- the same arguments. The credential IS the trust boundary, and this package has
+-- always said so. What the bound below adds is everything short of that: an
+-- organisation with no Stripe link is unreachable, a rewritten body cannot reach
+-- a row no claimed event is addressed to, and a transaction handling one event
+-- cannot reach the organisation of another.
+--
+-- CONSEQUENCES, STATED SO THEY ARE NOT DISCOVERED LATER:
+--   * An organisation with NO Stripe link (both columns NULL) is unreachable.
+--     That is correct and intentional — first-time binding is DP-CAP-15 and
+--     must happen through an authenticated first-party flow, never through a
+--     webhook (§3.2).
+--   * The SELECT bound is not decoration: stripe_apply_subscription resolves
+--     the organisation BY SCANNING organizations for the match value, so with
+--     USING (true) the definer could read the billing columns of every
+--     customer. Under this policy the scan returns only rows a claimed event
+--     is addressed to, which is exactly the row it is looking for. The
+--     "exactly one" check in the body and the RLS bound now agree by
+--     construction instead of by coincidence.
+--   * WITH CHECK repeats USING because the UPDATE rewrites
+--     stripe_subscription_id: the POST-image must still be a row the claimed
+--     event is addressed to, or the capability could rename a row out of its
+--     own reach on the way past.
+DROP POLICY IF EXISTS cap_stripe_only_claimed_read ON public.organizations;
+CREATE POLICY cap_stripe_only_claimed_read
+ON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_stripe
+USING (
+  EXISTS (
+    SELECT 1 FROM public.stripe_webhook_events e
+     WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '')
+       AND e.status = 'processing'
+       AND e.received_at > pg_catalog.now() - interval '15 minutes'
+       AND ( (e.stripe_customer_id IS NOT NULL
+              AND e.stripe_customer_id = public.organizations.stripe_customer_id)
+          OR (e.stripe_subscription_id IS NOT NULL
+              AND e.stripe_subscription_id = public.organizations.stripe_subscription_id) )
+  )
+);
+
+DROP POLICY IF EXISTS cap_stripe_only_claimed_org ON public.organizations;
+CREATE POLICY cap_stripe_only_claimed_org
+ON public.organizations AS RESTRICTIVE FOR UPDATE TO uellix_cap_stripe
+USING (
+  EXISTS (
+    SELECT 1 FROM public.stripe_webhook_events e
+     WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '')
+       AND e.status = 'processing'
+       AND e.received_at > pg_catalog.now() - interval '15 minutes'
+       AND ( (e.stripe_customer_id IS NOT NULL
+              AND e.stripe_customer_id = public.organizations.stripe_customer_id)
+          OR (e.stripe_subscription_id IS NOT NULL
+              AND e.stripe_subscription_id = public.organizations.stripe_subscription_id) )
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.stripe_webhook_events e
+     WHERE e.event_id = NULLIF(pg_catalog.current_setting('app.stripe_event_id', true), '')
+       AND e.status = 'processing'
+       AND e.received_at > pg_catalog.now() - interval '15 minutes'
+       AND ( (e.stripe_customer_id IS NOT NULL
+              AND e.stripe_customer_id = public.organizations.stripe_customer_id)
+          OR (e.stripe_subscription_id IS NOT NULL
+              AND e.stripe_subscription_id = public.organizations.stripe_subscription_id) )
+  )
+);
 
 DROP POLICY IF EXISTS cap_stripe_rw_events ON public.stripe_webhook_events;
 CREATE POLICY cap_stripe_rw_events
@@ -322,9 +477,22 @@ RESET ROLE;
 -- between begin and apply would otherwise reject every retry forever, and
 -- Stripe would eventually give up — the silent loss the current handler
 -- refuses to commit. Fifteen minutes is a lease, not a lock (RR-CAP-03-A).
+-- The signature gained the two Stripe identifiers in the RR-CAP-14 revision.
+-- The claim is the ONLY moment at which the capability learns, from a
+-- signature-verified event, which organisation the event is addressed to; if
+-- it is not recorded here it cannot be enforced anywhere. Dropping the old
+-- two-argument form is part of the package rather than a manual step, because
+-- leaving it behind would leave a way to claim an event with NO identity — and
+-- an event claimed with both columns NULL matches no organisation, so the
+-- consequence would be a webhook that fails 100% of the time after a partial
+-- upgrade, not a security hole. Removing it makes the state unreachable.
+DROP FUNCTION IF EXISTS uellix_capability.stripe_begin_event(text, text);
+
 CREATE OR REPLACE FUNCTION uellix_capability.stripe_begin_event(
-  p_event_id   text,
-  p_event_type text
+  p_event_id               text,
+  p_event_type             text,
+  p_stripe_customer_id     text,
+  p_stripe_subscription_id text
 ) RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -332,19 +500,37 @@ VOLATILE
   SET search_path = ''
 AS $$
 DECLARE
-  v_claimed boolean := false;
-  v_status  text;
+  v_claimed  boolean := false;
+  v_status   text;
+  v_customer text;
+  v_sub      text;
 BEGIN
   SET LOCAL lock_timeout = '3s';
 
   IF p_event_id IS NULL OR pg_catalog.length(p_event_id) = 0
      OR pg_catalog.length(p_event_id) > 255
-     OR p_event_type IS NULL OR pg_catalog.length(p_event_type) > 255 THEN
+     OR p_event_type IS NULL OR pg_catalog.length(p_event_type) > 255
+     OR pg_catalog.length(p_stripe_customer_id) > 255
+     OR pg_catalog.length(p_stripe_subscription_id) > 255 THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
 
-  INSERT INTO public.stripe_webhook_events AS e (event_id, event_type, status, attempts)
-  VALUES (p_event_id, p_event_type, 'processing', 1)
+  -- At least one identity, or the claim buys nothing: an event recorded with
+  -- both columns NULL satisfies no branch of cap_stripe_only_claimed_org, so
+  -- it could never apply anything. Refusing here turns a guaranteed later
+  -- failure into an immediate, named one.
+  -- COALESCE(length(x), 0) rather than `x IS NOT NULL`: the empty string is
+  -- not NULL and would satisfy a null-check while matching no organisation,
+  -- which is the same dead claim by another spelling.
+  IF COALESCE(pg_catalog.length(p_stripe_customer_id), 0) = 0
+     AND COALESCE(pg_catalog.length(p_stripe_subscription_id), 0) = 0 THEN
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
+  END IF;
+
+  INSERT INTO public.stripe_webhook_events AS e
+    (event_id, event_type, status, attempts, stripe_customer_id, stripe_subscription_id)
+  VALUES (p_event_id, p_event_type, 'processing', 1,
+          p_stripe_customer_id, p_stripe_subscription_id)
   ON CONFLICT (event_id) DO UPDATE
      SET status          = 'processing',
          attempts        = e.attempts + 1,
@@ -354,9 +540,16 @@ BEGIN
          -- attempt's code would keep it through to 'completed', and the CHECK
          -- permits that, so nothing else would catch the misreport.
          last_error_code = NULL
-   WHERE e.status IN ('failed','received')
-      OR (e.status = 'processing'
-          AND e.received_at < pg_catalog.now() - interval '15 minutes')
+   WHERE (e.status IN ('failed','received')
+          OR (e.status = 'processing'
+              AND e.received_at < pg_catalog.now() - interval '15 minutes'))
+     -- A retry of the SAME event carries the SAME identifiers, so this costs a
+     -- legitimate retry nothing. What it forbids is re-claiming an existing
+     -- event id under a different address — the one edit that would otherwise
+     -- let a claim be pointed at another tenant's row. The identity columns are
+     -- absent from the UPDATE grant as well, so this is two locks, not one.
+     AND e.stripe_customer_id     IS NOT DISTINCT FROM p_stripe_customer_id
+     AND e.stripe_subscription_id IS NOT DISTINCT FROM p_stripe_subscription_id
   RETURNING true INTO v_claimed;
 
   IF v_claimed THEN
@@ -366,9 +559,19 @@ BEGIN
   -- The ON CONFLICT matched nothing to update, so the row exists in a state we
   -- may not take. Distinguishing the two is safe: the caller is Stripe, which
   -- already knows it sent this event.
-  SELECT e.status INTO v_status
+  SELECT e.status, e.stripe_customer_id, e.stripe_subscription_id
+    INTO v_status, v_customer, v_sub
     FROM public.stripe_webhook_events e
    WHERE e.event_id = p_event_id;
+
+  -- An existing event whose recorded address differs from the one presented is
+  -- not a duplicate and not an in-flight retry: it is the same event id
+  -- claiming to be about someone else. Refuse rather than report a state.
+  IF v_status IS NOT NULL
+     AND (v_customer IS DISTINCT FROM p_stripe_customer_id
+          OR v_sub   IS DISTINCT FROM p_stripe_subscription_id) THEN
+    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
+  END IF;
 
   IF v_status = 'completed' THEN
     RETURN 'duplicate';
@@ -393,7 +596,7 @@ EXCEPTION
 END
 $$;
 
-ALTER FUNCTION uellix_capability.stripe_begin_event(text, text) OWNER TO uellix_cap_stripe;
+ALTER FUNCTION uellix_capability.stripe_begin_event(text, text, text, text) OWNER TO uellix_cap_stripe;
 
 -- 3.2 Apply a subscription change. ONE transaction, five steps.
 --
@@ -459,14 +662,35 @@ BEGIN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
 
-  -- The event must be one we claimed. Without this, anything that reached the
-  -- function could apply a change no signed event ever asked for.
+  -- The event must be one we claimed, AND it must be the event that carries the
+  -- address we are about to match on. The first half was here from the start;
+  -- the second half was missing, and both adversarial reviewers found the same
+  -- consequence: the two identity columns RR-CAP-14 added were read by the
+  -- policy and ignored by the function, so a handler that picked the wrong
+  -- identifier out of a multi-object Stripe payload (invoice.customer vs
+  -- subscription.customer is a real shape) wrote the wrong tenant's quota with
+  -- every layer saying yes.
   IF NOT EXISTS (
     SELECT 1 FROM public.stripe_webhook_events e
-     WHERE e.event_id = p_event_id AND e.status = 'processing'
+     WHERE e.event_id = p_event_id
+       AND e.status = 'processing'
+       AND e.received_at > pg_catalog.now() - interval '15 minutes'
+       AND ( (p_match_kind = 'customer'
+              AND e.stripe_customer_id IS NOT NULL
+              AND e.stripe_customer_id = p_match_value)
+          OR (p_match_kind = 'subscription'
+              AND e.stripe_subscription_id IS NOT NULL
+              AND e.stripe_subscription_id = p_match_value) )
   ) THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
+
+  -- Publish WHICH event this transaction is applying, so the RESTRICTIVE
+  -- policies can be correlated to it. is_local => true: the setting dies with
+  -- the transaction, so it cannot leak into the next request on the same
+  -- pooled connection. It is set only AFTER the check above passes, so it can
+  -- never name an event this call has not just validated.
+  PERFORM pg_catalog.set_config('app.stripe_event_id', p_event_id, true);
 
   -- Resolve EXACTLY one organisation. Zero or many is a failure, not a
   -- best-effort pick.
@@ -526,7 +750,12 @@ BEGIN
   -- Being grammar rather than a name, it is immune to search_path anyway.
   UPDATE public.organizations
      SET stripe_customer_id     = COALESCE(p_stripe_customer_id, stripe_customer_id),
-         stripe_subscription_id = p_stripe_subscription_id,
+         -- COALESCE, like the line above it. A bare assignment let any
+         -- customer-addressed event with a NULL subscription argument silently
+         -- DETACH the organisation's subscription — after which the
+         -- subscription branch of the policy stops matching it and DP-CAP-15
+         -- forbids a webhook from re-binding it. Found by both reviewers.
+         stripe_subscription_id = COALESCE(p_stripe_subscription_id, stripe_subscription_id),
          stripe_price_id        = p_stripe_price_id,
          stella_monthly_quota   = p_quota,
          stella_plan_label      = p_plan_label,
@@ -627,7 +856,7 @@ $$;
 
 ALTER FUNCTION uellix_capability.stripe_fail_event(text, text) OWNER TO uellix_cap_stripe;
 
-COMMENT ON FUNCTION uellix_capability.stripe_begin_event(text, text) IS
+COMMENT ON FUNCTION uellix_capability.stripe_begin_event(text, text, text, text) IS
   'CAP-03. Atomically claims one Stripe event. Returns claimed | duplicate | in_progress.';
 COMMENT ON FUNCTION uellix_capability.stripe_apply_subscription(text, text, text, text, text, text, integer, text) IS
   'CAP-03. Applies one subscription change in ONE transaction: organisation update, audit row, event completion. Does not mark failures — see stripe_fail_event, which needs its own transaction to survive.';
@@ -637,11 +866,11 @@ COMMENT ON FUNCTION uellix_capability.stripe_fail_event(text, text) IS
 -- EXECUTE goes to uellix_stripe and to NOBODY else. That uellix_app cannot
 -- call these is as important as that uellix_stripe can: it is what stops any
 -- application endpoint from moving a quota.
-REVOKE ALL ON FUNCTION uellix_capability.stripe_begin_event(text, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION uellix_capability.stripe_begin_event(text, text, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION uellix_capability.stripe_apply_subscription(text, text, text, text, text, text, integer, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION uellix_capability.stripe_fail_event(text, text) FROM PUBLIC;
 
-GRANT EXECUTE ON FUNCTION uellix_capability.stripe_begin_event(text, text) TO uellix_stripe;
+GRANT EXECUTE ON FUNCTION uellix_capability.stripe_begin_event(text, text, text, text) TO uellix_stripe;
 GRANT EXECUTE ON FUNCTION uellix_capability.stripe_apply_subscription(text, text, text, text, text, text, integer, text) TO uellix_stripe;
 GRANT EXECUTE ON FUNCTION uellix_capability.stripe_fail_event(text, text) TO uellix_stripe;
 
@@ -767,11 +996,11 @@ BEGIN
   END IF;
 
   IF pg_catalog.has_function_privilege(
-       'public', 'uellix_capability.stripe_begin_event(text,text)', 'EXECUTE') THEN
+       'public', 'uellix_capability.stripe_begin_event(text,text,text,text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'PUBLIC still holds EXECUTE on stripe_begin_event.';
   END IF;
   IF NOT pg_catalog.has_function_privilege(
-       'uellix_stripe', 'uellix_capability.stripe_begin_event(text,text)', 'EXECUTE') THEN
+       'uellix_stripe', 'uellix_capability.stripe_begin_event(text,text,text,text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'uellix_stripe does not hold EXECUTE on stripe_begin_event.';
   END IF;
 
@@ -791,7 +1020,12 @@ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'stripe_webhook_events'
       AND column_name NOT IN ('event_id','event_type','status','attempts','received_at',
-                              'completed_at','failed_at','last_error_code','organization_id')
+                              'completed_at','failed_at','last_error_code','organization_id',
+                              -- RR-CAP-14. The two Stripe-issued identifiers the signed
+                              -- event is addressed to. They are an ADDRESS, not a payload:
+                              -- the forbidden-name check three lines below still refuses
+                              -- payload, body, raw, signature and request.
+                              'stripe_customer_id','stripe_subscription_id')
   ) THEN
     RAISE EXCEPTION 'stripe_webhook_events has an unexpected column.';
   END IF;
@@ -807,8 +1041,64 @@ BEGIN
 
   SELECT count(*) INTO v_policies
     FROM pg_policies WHERE schemaname = 'public' AND pg_catalog.left(policyname, 11) = 'cap_stripe_';
-  IF v_policies <> 4 THEN
-    RAISE EXCEPTION 'Expected 4 cap_stripe_* policies, found %.', v_policies;
+  IF v_policies <> 6 THEN
+    RAISE EXCEPTION 'Expected 6 cap_stripe_* policies (4 permissive + 2 restrictive), found %.', v_policies;
+  END IF;
+
+  -- RR-CAP-14. Named and typed, not counted: CAP-03 was the one capability with
+  -- no RESTRICTIVE policy at all, and a count of six is satisfied by six
+  -- permissive ones.
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname = 'public' AND tablename = 'organizations'
+                    AND policyname = 'cap_stripe_only_claimed_org'
+                    AND permissive = 'RESTRICTIVE' AND cmd = 'UPDATE')
+     OR NOT EXISTS (SELECT 1 FROM pg_policies
+                     WHERE schemaname = 'public' AND tablename = 'organizations'
+                       AND policyname = 'cap_stripe_only_claimed_read'
+                       AND permissive = 'RESTRICTIVE' AND cmd = 'SELECT') THEN
+    RAISE EXCEPTION 'the RR-CAP-14 row bounds are absent; a Stripe event could reach an organisation it is not addressed to.';
+  END IF;
+
+  -- The claimed address must exist and must NOT be rewritable. Both halves
+  -- matter: a column the capability can rewrite is not an anchor, it is a
+  -- parameter.
+  IF (SELECT count(*) FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'stripe_webhook_events'
+         AND column_name IN ('stripe_customer_id','stripe_subscription_id')) <> 2 THEN
+    RAISE EXCEPTION 'stripe_webhook_events does not carry the claimed Stripe identity; cap_stripe_only_claimed_org would match nothing.';
+  END IF;
+  IF pg_catalog.has_column_privilege('uellix_cap_stripe', 'public.stripe_webhook_events',
+                                     'stripe_customer_id', 'UPDATE')
+     OR pg_catalog.has_column_privilege('uellix_cap_stripe', 'public.stripe_webhook_events',
+                                        'stripe_subscription_id', 'UPDATE') THEN
+    RAISE EXCEPTION 'the capability can rewrite the claimed Stripe identity; the tenancy bound would be self-asserted.';
+  END IF;
+
+  -- The default-privilege leak, asserted rather than assumed.
+  IF pg_catalog.has_any_column_privilege('uellix_writer', 'public.stripe_webhook_events'::regclass, 'INSERT')
+     OR pg_catalog.has_any_column_privilege('uellix_writer', 'public.stripe_webhook_events'::regclass, 'SELECT') THEN
+    RAISE EXCEPTION 'uellix_writer holds a privilege on stripe_webhook_events; the owner default ACL was not taken back.';
+  END IF;
+
+  -- The row bound must be correlated to ONE event, not to any event in flight.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public' AND policyname = 'cap_stripe_only_claimed_org'
+       AND qual LIKE '%app.stripe_event_id%'
+       AND with_check LIKE '%app.stripe_event_id%'
+  ) THEN
+    RAISE EXCEPTION 'cap_stripe_only_claimed_org is not correlated to the event being applied; a concurrent event would authorise a cross-tenant write.';
+  END IF;
+
+  -- The pre-RR-CAP-14 two-argument claim must be gone, not merely shadowed: it
+  -- records no identity, so an event claimed through it is addressed to nobody
+  -- and the RESTRICTIVE bound would silently refuse every subsequent apply.
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'uellix_capability' AND p.proname = 'stripe_begin_event'
+       AND p.pronargs = 2
+  ) THEN
+    RAISE EXCEPTION 'the two-argument stripe_begin_event survives; an event could be claimed with no Stripe address.';
   END IF;
 
   IF (SELECT count(*) FROM pg_policies

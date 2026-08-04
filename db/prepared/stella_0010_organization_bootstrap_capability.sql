@@ -262,6 +262,14 @@ GRANT SELECT (type, pattern) ON public.signup_allowlist TO uellix_cap_bootstrap;
 GRANT INSERT (organization_id, actor_user_id, entity_type, entity_id, action, after_json)
   ON public.audit_logs TO uellix_cap_bootstrap;
 
+-- Take back the owner's default ACL first. `ALTER DEFAULT PRIVILEGES FOR ROLE
+-- uellix_owner IN SCHEMA public GRANT SELECT, INSERT ON TABLES TO uellix_writer`
+-- (baseline) fired at TABLE level when this table was created above, so without
+-- this REVOKE the runtime can read every bootstrap attempt — user ids and
+-- idempotency keys — and insert forged ones. Found by adversarial review,
+-- 2026-08-04, and generalised to all four capability tables.
+REVOKE ALL ON public.capability_bootstrap_attempts FROM uellix_writer, uellix_auditor;
+
 GRANT SELECT, INSERT, UPDATE ON public.capability_bootstrap_attempts TO uellix_cap_bootstrap;
 
 -- 2.3 Policies.

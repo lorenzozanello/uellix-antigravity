@@ -46,6 +46,16 @@ BEGIN
       SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'uellix_capability' AND p.proname = 'stripe_begin_event'
     ) THEN
+      -- Both signatures. The RR-CAP-14 revision widened stripe_begin_event to
+      -- carry the claimed Stripe identity; a rollback that knew only the old
+      -- arity would leave a live EXECUTE on a function it then failed to drop.
+      EXECUTE 'REVOKE ALL ON FUNCTION uellix_capability.stripe_begin_event(text,text,text,text) FROM uellix_stripe';
+    END IF;
+    IF EXISTS (
+      SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'uellix_capability' AND p.proname = 'stripe_begin_event'
+        AND p.pronargs = 2
+    ) THEN
       EXECUTE 'REVOKE ALL ON FUNCTION uellix_capability.stripe_begin_event(text,text) FROM uellix_stripe';
     END IF;
     IF EXISTS (
@@ -64,6 +74,9 @@ BEGIN
 END
 $$;
 
+DROP FUNCTION IF EXISTS uellix_capability.stripe_begin_event(text, text, text, text);
+-- The pre-RR-CAP-14 arity, for a database that was rolled forward before the
+-- revision and back after it.
 DROP FUNCTION IF EXISTS uellix_capability.stripe_begin_event(text, text);
 DROP FUNCTION IF EXISTS uellix_capability.stripe_apply_subscription(text, text, text, text, text, text, integer, text);
 DROP FUNCTION IF EXISTS uellix_capability.stripe_fail_event(text, text);
@@ -76,6 +89,12 @@ SET ROLE uellix_owner;
 
 DROP POLICY IF EXISTS cap_stripe_select_orgs  ON public.organizations;
 DROP POLICY IF EXISTS cap_stripe_update_orgs  ON public.organizations;
+-- The two RESTRICTIVE row bounds added for RR-CAP-14. A RESTRICTIVE policy left
+-- behind by a rollback is worse than a permissive one: it is ANDed into every
+-- future query by the named role, so a role of the same name recreated later
+-- would inherit an invisible deny.
+DROP POLICY IF EXISTS cap_stripe_only_claimed_read ON public.organizations;
+DROP POLICY IF EXISTS cap_stripe_only_claimed_org  ON public.organizations;
 DROP POLICY IF EXISTS cap_stripe_insert_audit ON public.audit_logs;
 DROP POLICY IF EXISTS cap_stripe_rw_events    ON public.stripe_webhook_events;
 
@@ -88,6 +107,10 @@ BEGIN
   END IF;
 END
 $$;
+
+-- The runtime's privileges on the event table are NOT restored: it never had
+-- them by design, only by the owner's default ACL, and stella_0008 took them
+-- back. Restoring them would hand a rolled-back capability's log to the app.
 
 -- The event table stays. Nothing can write it any more; nothing needs to.
 COMMENT ON TABLE public.stripe_webhook_events IS
