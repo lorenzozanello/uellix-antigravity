@@ -590,6 +590,36 @@ EXCEPTION
   WHEN query_canceled THEN
     RAISE LOG 'capability call cancelled (57014)';
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
+  -- CONTENTION IS NOT A CLIENT ERROR, and collapsing it into U0001 was how an
+  -- event got LOST — the one failure this whole package exists to prevent.
+  --
+  -- `SET LOCAL lock_timeout = '3s'` above means two concurrent deliveries of
+  -- the same event id can end with the loser raising 55P03. Under U0001 the
+  -- handler cannot tell that from a malformed event and, if it answers 4xx,
+  -- Stripe stops retrying and the subscription change never lands. The three
+  -- codes below are TRANSIENT by definition and leave the row untouched (the
+  -- subtransaction rolled back), so the honest answer is the one the state
+  -- machine already has for "somebody else is on it": 'in_progress', which the
+  -- handler maps to a 5xx and Stripe retries with backoff.
+  --
+  -- Enumerated, never `WHEN OTHERS`: an unexpected error must still fail. A
+  -- handler that answered 'in_progress' to everything would turn a permanent
+  -- defect into an infinite retry loop, which is the same silent loss wearing
+  -- the opposite mask.
+  --
+  -- 57014 is deliberately NOT in this list. It is raised by statement_timeout,
+  -- which uellix_stripe carries as a ROLE setting; catching it and continuing
+  -- risks re-firing immediately on the next statement, and PostgreSQL's own
+  -- guidance is not to swallow it. It stays a uniform refusal.
+  WHEN lock_not_available THEN
+    RAISE LOG 'stripe_begin_event contended on the event row (55P03)';
+    RETURN 'in_progress';
+  WHEN serialization_failure THEN
+    RAISE LOG 'stripe_begin_event lost a serialisation conflict (40001)';
+    RETURN 'in_progress';
+  WHEN deadlock_detected THEN
+    RAISE LOG 'stripe_begin_event chosen as deadlock victim (40P01)';
+    RETURN 'in_progress';
   WHEN OTHERS THEN
     RAISE LOG 'stripe_begin_event refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -793,6 +823,23 @@ EXCEPTION
   WHEN query_canceled THEN
     RAISE LOG 'capability call cancelled (57014)';
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
+  -- CONTENTION HERE IS RETRYABLE TOO, and an adversarial reviewer pointed out
+  -- that patching only stripe_begin_event made this WORSE rather than better:
+  -- stella_0011 added a new concurrent writer to exactly these columns
+  -- (admin_set_stella_service holds the organizations row for the rest of the
+  -- admin request's transaction), so a platform admin saving a quota while a
+  -- Stripe event arrives for the same organisation was newly able to turn a
+  -- transient lock into a permanent U0001 — and, by this file's own reasoning,
+  -- a 4xx answer makes Stripe drop the delivery.
+  --
+  -- A DISTINCT SQLSTATE, not 'in_progress': this function RETURNS void, so it
+  -- has no channel for a status. U0003 means "contended, retry"; U0001 keeps
+  -- meaning "refused, do not retry". The handler maps U0003 to 5xx and must NOT
+  -- mark the event failed — though marking it failed would also be safe, since
+  -- a 'failed' event is re-claimable.
+  WHEN lock_not_available OR serialization_failure OR deadlock_detected THEN
+    RAISE LOG 'stripe_apply_subscription contended with SQLSTATE %', SQLSTATE;
+    RAISE EXCEPTION 'capability request contended' USING ERRCODE = 'U0003';
   WHEN OTHERS THEN
     RAISE LOG 'stripe_apply_subscription refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
