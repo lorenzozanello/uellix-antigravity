@@ -11,17 +11,28 @@
 #   -> re-apply  ->  identical state.
 #
 # WHAT IT NEVER TOUCHES
-#   The live stack is read ONCE, read-only, to produce a schema-only dump and a
-#   password-free role list. Everything after that happens inside a container
-#   started with --network none, which is destroyed at the end. No remote.
+#   Nothing outside its own disposable container. There is no live stack in the
+#   loop: the baseline comes from the VERSIONED artifacts under db/baseline/,
+#   whose hashes are checked before anything starts. No persistent volume is
+#   mounted, no port is published, the container runs with --network none and is
+#   destroyed on exit. No remote.
 #
-# THE SEEDING DETAIL THAT MATTERS. `pg_dump --schema-only` does not carry the
-# ACL of schema `public` when the schema is created by hand at restore time, and
-# the difference is not cosmetic: the live stack has `=U/pg_database_owner` —
-# PUBLIC holds USAGE, which is RR-CAP-7 — and every capability role inherits it.
-# Without that grant the definers cannot even name `public.users`, every
-# capability call fails 42501, and the run measures the seeding rather than the
-# packages. The ACL is restored explicitly below.
+#   Until 2026-08-04 this script began by running `pg_dumpall --roles-only` and
+#   `pg_dump --schema-only` against the container
+#   `supabase_db_uellix-stella-g2-local-rehearsal`. That made the whole rehearsal
+#   unreproducible: the "baseline" was a side effect of a `mktemp -d` that the
+#   exit trap deleted, it was never committed, never hashed, and it only existed
+#   while that one container happened to be alive. See db/baseline/README.md.
+#
+# THE SEEDING DETAIL THAT MATTERS. `pg_dump --schema-only` does not emit the
+# ACL entry of schema `public` that corresponds to PUBLIC, and the difference is
+# not cosmetic: the baseline has `=U/pg_database_owner` — PUBLIC holds USAGE,
+# which is RR-CAP-7 — and every capability role inherits it. Without that grant
+# the definers cannot even name `public.users`, every capability call fails
+# 42501, and the run measures the seeding rather than the packages. That grant
+# used to be patched in by hand, unversioned, right here; it now lives in
+# db/baseline/stella_g2_post_restore.sql, hashed in the manifest and asserted by
+# tests/capability-baseline-artifact.test.ts.
 #
 #   bash scripts/capability-dry-run.sh
 #
@@ -34,8 +45,8 @@
 set -euo pipefail
 export MSYS_NO_PATHCONV=1
 
-LIVE_CONTAINER="${LIVE_CONTAINER:-supabase_db_uellix-stella-g2-local-rehearsal}"
 IMAGE="${IMAGE:-public.ecr.aws/supabase/postgres:17.6.1.143}"
+BASE_DIR="db/baseline"
 BOX="uellix_cap_dryrun"
 WORK="$(mktemp -d)"
 PSQL=(docker exec "$BOX" psql -U supabase_admin -d postgres)
@@ -61,22 +72,27 @@ state() { "${PSQL[@]}" -tAc "
          (SELECT count(*) FROM pg_namespace WHERE nspname='uellix_capability')"; }
 
 # --------------------------------------------------------------------------
-say "0. Read the live stack, read-only"
+say "0. Verify the versioned baseline artifacts"
 # --------------------------------------------------------------------------
-docker exec "$LIVE_CONTAINER" pg_dumpall -U postgres --roles-only --no-role-passwords > "$WORK/roles.sql"
-docker exec "$LIVE_CONTAINER" pg_dump    -U postgres -d postgres --schema-only        > "$WORK/schema.sql"
-LIVE_STATE=$(docker exec "$LIVE_CONTAINER" psql -U postgres -tAc "
-  SELECT (SELECT count(*) FROM pg_tables WHERE schemaname='public') || '/' ||
-         (SELECT count(*) FROM pg_policies WHERE schemaname='public')")
-echo "live baseline: $LIVE_STATE  (tables/policies)"
-[ "$LIVE_STATE" = "38/107" ] || { echo "FATAL: live baseline is not 38/107"; exit 1; }
+[ -f "$BASE_DIR/MANIFEST.sha256" ] || { echo "FATAL: missing $BASE_DIR/MANIFEST.sha256"; exit 1; }
+( cd "$BASE_DIR" && sha256sum -c MANIFEST.sha256 ) \
+  || { echo "FATAL: baseline artifacts do not match the manifest"; exit 1; }
 
 # --------------------------------------------------------------------------
 say "1. Disposable container, no network"
 # --------------------------------------------------------------------------
 docker rm -f "$BOX" >/dev/null 2>&1 || true
+# `-D /etc/postgresql` is the image's own Cmd and carries shared_preload_libraries;
+# passing arguments replaces the Cmd wholesale, so dropping it would leave pg_net
+# unloaded and the restore would die on `CREATE EXTENSION pg_net`.
+# The two `database_name` overrides matter because step 2 recreates the
+# `postgres` database: the pg_cron launcher exits 1 when its database vanishes
+# and the pg_net worker SEGFAULTS, and either death makes the postmaster
+# reinitialise the whole cluster mid-restore.
 docker run -d --name "$BOX" --network none \
-  -e POSTGRES_PASSWORD=dryrun -e POSTGRES_HOST_AUTH_METHOD=trust "$IMAGE" >/dev/null
+  -e POSTGRES_PASSWORD=dryrun -e POSTGRES_HOST_AUTH_METHOD=trust \
+  "$IMAGE" postgres -D /etc/postgresql \
+    -c cron.database_name=template1 -c pg_net.database_name=template1 >/dev/null
 # pg_isready is not enough: the image's entrypoint runs initdb against a
 # TEMPORARY server on the same socket and then shuts it down, so a probe can
 # succeed against a server that is about to disappear. Requiring N consecutive
@@ -91,17 +107,36 @@ done
 "${PSQL[@]}" -tAc "SELECT version()" | head -1
 
 # --------------------------------------------------------------------------
-say "2. Seed from the dump"
+say "2. Restore the baseline, fail-closed"
 # --------------------------------------------------------------------------
-docker cp "$(hp "$WORK/roles.sql")"  "$BOX:/roles.sql"
-docker cp "$(hp "$WORK/schema.sql")" "$BOX:/schema.sql"
-# The reserved-role errors are expected: anon, authenticated and friends already
-# exist in the image, and ALTER on them needs a superuser the dump does not run as.
-"${PSQL[@]}" -q -f /roles.sql >/dev/null 2>&1 || true
-"${PSQL[@]}" -q -c "CREATE SCHEMA IF NOT EXISTS public AUTHORIZATION pg_database_owner" >/dev/null
-"${PSQL[@]}" -q -f /schema.sql >/dev/null 2>&1 || true
-# See the header: this is what makes the run measure the packages.
-"${PSQL[@]}" -q -c "ALTER SCHEMA public OWNER TO pg_database_owner; GRANT USAGE ON SCHEMA public TO PUBLIC;" >/dev/null
+# The image ships its own `postgres` database, already populated with auth,
+# storage, realtime, graphql and vault. Restoring the dump on top of it collides
+# on every CREATE SCHEMA — which is precisely what the previous `|| true` hid.
+# Recreating the database from template0 gives the dump an empty target, so the
+# restore runs with ON_ERROR_STOP=1 and no error is swallowed anywhere.
+docker exec "$BOX" psql -U supabase_admin -d template1 -v ON_ERROR_STOP=1 -q -c \
+  "UPDATE pg_database SET datallowconn = false WHERE datname = 'postgres'" >/dev/null
+dropped=0
+for _ in $(seq 1 15); do
+  docker exec "$BOX" psql -U supabase_admin -d template1 -q -c \
+    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'postgres' AND pid <> pg_backend_pid()" >/dev/null 2>&1 || true
+  if docker exec "$BOX" psql -U supabase_admin -d template1 -v ON_ERROR_STOP=1 -q -c \
+       "DROP DATABASE IF EXISTS postgres" >/dev/null 2>&1; then dropped=1; break; fi
+  sleep 1
+done
+[ "$dropped" = "1" ] || { echo "FATAL: could not drop the factory postgres database"; exit 1; }
+docker exec "$BOX" psql -U supabase_admin -d template1 -v ON_ERROR_STOP=1 -q -c \
+  "CREATE DATABASE postgres TEMPLATE template0 OWNER postgres" >/dev/null \
+  || { echo "FATAL: could not recreate the postgres database"; exit 1; }
+
+for f in stella_g2_roles.sql stella_g2_schema.sql stella_g2_post_restore.sql; do
+  docker cp "$(hp "$BASE_DIR/$f")" "$BOX:/$f"
+done
+# No `|| true` on any of the three. The NOTICEs about memberships that already
+# exist are not errors and do not abort under ON_ERROR_STOP=1.
+"${PSQL[@]}" -v ON_ERROR_STOP=1 -q -f /stella_g2_roles.sql        >/dev/null || { echo "FATAL: roles restore failed";  exit 1; }
+"${PSQL[@]}" -v ON_ERROR_STOP=1 -q -f /stella_g2_schema.sql       >/dev/null || { echo "FATAL: schema restore failed"; exit 1; }
+"${PSQL[@]}" -v ON_ERROR_STOP=1 -q -f /stella_g2_post_restore.sql >/dev/null || { echo "FATAL: post-restore failed";   exit 1; }
 
 BASE=$(state); echo "container baseline: $BASE  (tables/policies/roles/functions/schema)"
 [ "${BASE%%/*}" = "38" ] || { echo "FATAL: seeded table count is not 38"; exit 1; }
