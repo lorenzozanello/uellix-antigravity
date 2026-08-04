@@ -37,6 +37,8 @@ import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import { StellaErrorNotice } from './StellaErrorNotice'
 import type { AppliedSuggestionHistoryEntry, SuggestionDecisionRecord } from './decision-types'
 import { sourceFieldLabel } from './source-field-label'
+import { classifyFindingSupport, classifySuggestionSupport } from './grounding-model'
+import { StellaGroundingBadge } from './StellaGroundingBadge'
 
 export type ContextualFinding = AdvisorContextualOutput['findings'][number]
 export type ContextualSuggestion = AdvisorContextualOutput['suggestions'][number]
@@ -406,6 +408,9 @@ export function StellaContextualAdvisorPanel({
                                 {finding.title}
                               </p>
                               <p className="mt-1 text-muted-foreground">{finding.explanation}</p>
+                              <div className="mt-1 flex items-center gap-1.5">
+                                <StellaGroundingBadge level={classifyFindingSupport(finding)} />
+                              </div>
                               <SourceChips sourceFields={finding.sourceFields} />
                             </div>
                           </div>
@@ -469,6 +474,9 @@ export function StellaContextualAdvisorPanel({
                           </div>
                         )}
 
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <StellaGroundingBadge level={classifySuggestionSupport(suggestion)} />
+                        </div>
                         <SourceChips sourceFields={suggestion.sourceFields} />
 
                         {ui.rejected ? (

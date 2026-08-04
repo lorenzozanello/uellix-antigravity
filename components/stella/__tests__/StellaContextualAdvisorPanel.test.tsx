@@ -250,6 +250,38 @@ describe('StellaContextualAdvisorPanel', () => {
       expect(screen.queryAllByText('Resumen narrativo').length).toBeGreaterThan(0)
     })
 
+    it('renders a grounded badge on the finding whose sourceFields cite a real context path', async () => {
+      await renderSuccess()
+      const groundedFinding = screen.getByText('La narrativa menciona actividades').closest('li')
+      expect(groundedFinding).not.toBeNull()
+      expect(within(groundedFinding as HTMLElement).getByTestId('stella-grounding-badge')).toHaveAttribute(
+        'data-support-level',
+        'grounded'
+      )
+    })
+
+    it('renders an insufficient_evidence badge on the finding whose only sourceField is an .empty sentinel', async () => {
+      await renderSuccess()
+      const emptyFinding = screen.getByText('No hay resultados registrados').closest('li')
+      expect(emptyFinding).not.toBeNull()
+      expect(within(emptyFinding as HTMLElement).getByTestId('stella-grounding-badge')).toHaveAttribute(
+        'data-support-level',
+        'insufficient_evidence'
+      )
+    })
+
+    it('renders a grounded badge on the fully-sourced suggestion', async () => {
+      await renderSuccess()
+      const scope = within(screen.getByTestId('stella-suggestion-s-1'))
+      expect(scope.getByTestId('stella-grounding-badge')).toHaveAttribute('data-support-level', 'grounded')
+    })
+
+    it('renders an insufficient_evidence badge on the abstained suggestion (proposedText: null)', async () => {
+      await renderSuccess()
+      const scope = within(screen.getByTestId('stella-suggestion-s-null'))
+      expect(scope.getByTestId('stella-grounding-badge')).toHaveAttribute('data-support-level', 'insufficient_evidence')
+    })
+
     it('renders limitations and clarifying questions distinctly', async () => {
       await renderSuccess()
       expect(screen.queryByText('Limitaciones')).not.toBeNull()

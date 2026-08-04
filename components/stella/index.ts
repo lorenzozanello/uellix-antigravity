@@ -23,3 +23,6 @@ export type {
   StellaAvailabilityState,
   StellaDecisionStatus,
 } from './grounding-model'
+export { StellaGroundingBadge } from './StellaGroundingBadge'
+export { StellaEvidencePanel } from './StellaEvidencePanel'
+export { StellaAvailabilityNotice } from './StellaAvailabilityNotice'
