@@ -80,7 +80,13 @@ export interface GroundingChunk {
   readonly scope: GroundingScope
   readonly evidenceId: string
   readonly versionId: ContentHash
-  /** 0-based, contiguous, in document order. */
+  /**
+   * 0-based, in document order. NOT contiguous: indexes are assigned before
+   * deduplication and kept afterwards, so a gap says "the chunk that would
+   * have sat here duplicated an earlier one" — see {@link DeduplicationRecord}.
+   * Renumbering after dedup would make a chunk's id depend on what else the
+   * document happened to contain.
+   */
   readonly chunkIndex: number
   readonly text: string
   /** SHA-256 of `text` — the dedupe key within a version. */
