@@ -66,11 +66,25 @@ const sub = (find: string, replace: string) => (sql: string): string => {
   return sql.replace(find, () => replace)
 }
 
+/**
+ * Insert `extra` immediately BEFORE a literal anchor that must exist.
+ *
+ * Appending to the end of a file would also "change the text", but it would
+ * change it somewhere no reviewer looks and somewhere no owner window is open.
+ * Every evasion below lands inside the package's own `SET ROLE uellix_owner`
+ * section — where a real one would have to land to do anything.
+ */
+const before = (anchor: string, extra: string) => (sql: string): string => {
+  if (!sql.includes(anchor)) throw new Error(`mutation anchor not found: ${JSON.stringify(anchor.slice(0, 80))}`)
+  return sql.replace(anchor, () => `${extra}\n${anchor}`)
+}
+
 const CAP01 = 'stella_0006_invitation_capability.sql'
 const CAP02 = 'stella_0007_public_verification_capability.sql'
 const CAP03 = 'stella_0008_stripe_webhook_identity.sql'
 const CAP04 = 'stella_0009_public_lead_capability.sql'
 const CAP05 = 'stella_0010_organization_bootstrap_capability.sql'
+const RB01 = 'stella_0006_rollback.sql'
 const RB02 = 'stella_0007_rollback.sql'
 
 export const MUTATIONS: readonly Mutation[] = [
@@ -1205,7 +1219,450 @@ VOLATILE
       'CREATE INDEX IF NOT EXISTS uq_invitations_token_hash',
     ),
   },
+
+  // =========================================================================
+  // E-01 … E-08 — the eight PostgreSQL-equivalent EVASIONS
+  // =========================================================================
+  //
+  // These are not new properties. Every one of them breaks a property the
+  // catalogue above already covers — and every one was spelled the way
+  // PostgreSQL ALSO accepts, which the mask-and-regex parser could not read.
+  // Each therefore has a double duty: it must be refused by the gate that owns
+  // the property, and its refusal must prove the parser sees the spelling.
+
+  {
+    id: 'E-01',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'a GRANT SELECT is written directly inside a DO block body',
+    breaks:
+      'the INSERT-only capability, through a body the old parser masked wholesale. PL/pgSQL executes utility commands written out in a block exactly as it executes them at file level; the previous parser made the body opaque so the statement was not merely unparsed, it was absent.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap04-no-read', 'grant-extra'],
+    apply: before(
+      'RESET ROLE;',
+      "DO $$\nBEGIN\n  GRANT SELECT ON public.marketing_leads TO uellix_cap_lead;\nEND\n$$;",
+    ),
+  },
+  {
+    id: 'E-02',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'a widening UPDATE grant names its grantee as a double-quoted identifier',
+    breaks:
+      'the column-scoped UPDATE bound on invitations. `"uellix_app"` and `uellix_app` are the SAME role in PostgreSQL and were two different things to a parser whose every grantee pattern was [A-Za-z_][\\w$]*.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['grant-extra'],
+    apply: before('RESET ROLE;', 'GRANT UPDATE ON public.invitations TO "uellix_app";'),
+  },
+  {
+    id: 'E-03',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'one GRANT confers TWO role memberships on the capability role',
+    breaks:
+      'the isolation of the definer. Membership in uellix_owner is the table owner\'s privileges and, with no FORCE ROW LEVEL SECURITY anywhere in the campaign, the ownership RLS exemption. The old parser required the member list to be a single bare identifier and dropped the whole statement on a bare `continue` when it was not — so a two-member GRANT produced ZERO memberships, not two.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-membership'],
+    apply: before('RESET ROLE;', 'GRANT uellix_owner, uellix_writer TO uellix_cap_lead;'),
+  },
+  {
+    id: 'E-04',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'row level security is switched off through a schema-qualified quoted table name',
+    breaks:
+      'every policy on report_public_disclosures at once. The toggle gate matched `ALTER TABLE ([\\w.]+)`, which cannot read `"public"."report_public_disclosures"`, so the statement that disables the entire access-control surface matched nothing.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['rls-disabled'],
+    apply: before(
+      'RESET ROLE;',
+      'ALTER TABLE "public"."report_public_disclosures" DISABLE ROW LEVEL SECURITY;',
+    ),
+  },
+  {
+    id: 'E-05',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'a second ALTER ROLE, with the role quoted, restores SUPERUSER and BYPASSRLS',
+    breaks:
+      'the seven negative attributes the capability role is defined by. The gate read every ALTER ROLE for the role and let the last one win — but it anchored on the BARE name, so quoting the role made the reverting statement invisible to the check written to find exactly it.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-attributes'],
+    apply: before('RESET ROLE;', 'ALTER ROLE "uellix_cap_stripe" BYPASSRLS SUPERUSER;'),
+  },
+  {
+    id: 'E-06',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'REASSIGN OWNED hands the owner\'s entire catalogue to the capability role',
+    breaks:
+      'ownership as a bounded property. One statement re-owns every object uellix_owner holds — not one function but every table in public — and ownership is RLS exemption. REASSIGN OWNED appeared in no pattern in the suite, in either direction.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['ownership-reassigned'],
+    apply: before('RESET ROLE;', 'REASSIGN OWNED BY uellix_owner TO uellix_cap_bootstrap;'),
+  },
+  {
+    id: 'E-07',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'an undeclared policy is created with its name, schema, table and role all quoted',
+    breaks:
+      'the closed policy inventory. Every identifier in the statement is spelled the second way PostgreSQL accepts, and the policy parser recognised none of them — so a policy granting the verification role unrestricted SELECT on organizations was not an undeclared policy, it was no policy at all.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-inventory'],
+    apply: before(
+      'RESET ROLE;',
+      'CREATE POLICY "cap_escape_policy"\nON "public"."organizations"\nFOR SELECT\nTO "uellix_cap_verification"\nUSING (true);',
+    ),
+  },
+  {
+    id: 'E-08',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'a NESTED block comment swallows the REVOKE that makes CAP-04 a net reduction',
+    breaks:
+      'the one statement that removes privilege from the runtime. PostgreSQL NESTS /* */; the masker did not, so it believed the comment closed at the inner `*/` and that the REVOKE survived. The server executes nothing and the gate that requires the REVOKE stays green — the exact inversion a fail-closed parser exists to prevent.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap04-net-reduction'],
+    apply: sub(
+      'REVOKE SELECT, INSERT, UPDATE, DELETE ON public.marketing_leads FROM uellix_writer;',
+      '/* outer /* inner */ REVOKE SELECT, INSERT, UPDATE, DELETE ON public.marketing_leads FROM uellix_writer; */',
+    ),
+  },
+
+  // =========================================================================
+  // F-01 … F-14 — the additional equivalences
+  // =========================================================================
+  //
+  // Same construction, different constructs: default privileges, whole-owner
+  // statements, the second half of an RLS pair, dynamic SQL in each of its
+  // three unresolvable forms, and a rollback used as the delivery vehicle.
+
+  {
+    id: 'F-01',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'ALTER DEFAULT PRIVILEGES grants EXECUTE on future functions to PUBLIC',
+    breaks:
+      'the closing of the implicit EXECUTE default, for everything created AFTERWARDS. It confers nothing today, so no privilege gate reads it, and it re-opens for the next capability function exactly what `REVOKE ALL … FROM PUBLIC` closes for this one.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['default-privileges'],
+    apply: before(
+      'RESET ROLE;',
+      'ALTER DEFAULT PRIVILEGES IN SCHEMA uellix_capability GRANT EXECUTE ON FUNCTIONS TO PUBLIC;',
+    ),
+  },
+  {
+    id: 'F-02',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'DROP OWNED BY removes the capability role\'s objects and privileges wholesale',
+    breaks:
+      'the contract by DELETION rather than by grant. Every gate in the suite asks whether the right things are conferred; none asks whether something removed them, and a package that empties a role in one statement leaves an inventory nothing compares against.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['ownership-dropped'],
+    apply: before('RESET ROLE;', 'DROP OWNED BY uellix_cap_stripe;'),
+  },
+  {
+    id: 'F-03',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'FORCE ROW LEVEL SECURITY is set and then immediately reverted with NO FORCE',
+    breaks:
+      'the ordering property of an RLS pair. Read as a set, ENABLE is present and the table looks protected; read in sequence, the last statement restores the owner\'s exemption on the table that records every bootstrap attempt.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rls-disabled'],
+    apply: before(
+      'RESET ROLE;',
+      'ALTER TABLE public.capability_bootstrap_attempts FORCE ROW LEVEL SECURITY;\n' +
+        'ALTER TABLE public.capability_bootstrap_attempts NO FORCE ROW LEVEL SECURITY;',
+    ),
+  },
+  {
+    id: 'F-04',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'cap_bootstrap_select_orgs is re-attached to a quoted "public"."users"',
+    breaks:
+      'the table half of the policy tuple. The policy keeps its name, its mode, its command and its role, so every cardinality and naming check is unchanged; only the object it protects moved, and it moved behind a spelling the table pattern could not read.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-table'],
+    apply: sub(
+      'CREATE POLICY cap_bootstrap_select_orgs\nON public.organizations FOR SELECT TO uellix_cap_bootstrap',
+      'CREATE POLICY cap_bootstrap_select_orgs\nON "public"."users" FOR SELECT TO uellix_cap_bootstrap',
+    ),
+  },
+  {
+    id: 'F-05',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'a policy names a quoted role whose CASE differs from the capability role',
+    breaks:
+      'role identity itself. `"Uellix_Cap_Invitation"` is a DIFFERENT role from uellix_cap_invitation — PostgreSQL folds only unquoted names — so the policy protects nothing the definer ever assumes, while a case-insensitive comparison reports it as correct.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['policy-to'],
+    apply: sub(
+      'CREATE POLICY cap_invitation_select_members\nON public.organization_members FOR SELECT TO uellix_cap_invitation',
+      'CREATE POLICY cap_invitation_select_members\nON public.organization_members FOR SELECT TO "Uellix_Cap_Invitation"',
+    ),
+  },
+  {
+    id: 'F-06',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'the lead INSERT grant gains WITH GRANT OPTION',
+    breaks:
+      'the terminality of the privilege. The definer may now re-grant INSERT on marketing_leads to anyone it can name, which makes the package\'s privilege inventory a lower bound rather than a description.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['grant-extra'],
+    apply: sub(
+      '  ON public.marketing_leads TO uellix_cap_lead;',
+      '  ON public.marketing_leads TO uellix_cap_lead WITH GRANT OPTION;',
+    ),
+  },
+  {
+    id: 'F-07',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'the verification role is made a member of uellix_writer WITH ADMIN OPTION',
+    breaks:
+      'the read-only shape of the verification identity, and then makes the breach self-propagating: ADMIN OPTION lets the capability role grant that same membership onward without any further statement in any package.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-membership'],
+    apply: before('RESET ROLE;', 'GRANT uellix_writer TO uellix_cap_verification WITH ADMIN OPTION;'),
+  },
+  {
+    id: 'F-08',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'a DO block builds its GRANT with EXECUTE format(...)',
+    breaks:
+      'the resolvability of executed DDL. The old parser appended `EXECUTE \'literal\'` to the source and understood nothing else, so wrapping the identical statement in format() removed it from view. It cannot be resolved from the file, and the only safe reading of an unresolvable DDL string is that it might be the dangerous one.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['unparsed-security-statement'],
+    apply: before(
+      'RESET ROLE;',
+      "DO $$\nBEGIN\n  EXECUTE format('GRANT SELECT ON public.marketing_leads TO %I', 'uellix_cap_lead');\nEND\n$$;",
+    ),
+  },
+  {
+    id: 'F-09',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'a DO block concatenates its DDL into a variable and executes the variable',
+    breaks:
+      'the same resolvability property by the third route. Neither half of the concatenation is a security statement and the EXECUTE names only a variable, so nothing in the file is a GRANT — which is exactly why the statement has to be refused rather than parsed.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['unparsed-security-statement'],
+    apply: before(
+      'RESET ROLE;',
+      "DO $$\nDECLARE\n  v_sql text;\nBEGIN\n  v_sql := 'GRANT SELECT' || ' ON public.users TO uellix_cap_bootstrap';\n  EXECUTE v_sql;\nEND\n$$;",
+    ),
+  },
+  {
+    id: 'F-10',
+    capability: 'CAP-01',
+    file: CAP01,
+    change: 'the REVOKE that closes accept_invitation to PUBLIC is commented out',
+    breaks:
+      'the default EXECUTE grant on a SECURITY DEFINER owned by the capability role. A function created with a NULL proacl is executable by PUBLIC; the REVOKE is the only statement that closes it, and two dashes remove it while leaving the line legible to anyone skimming the diff.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['function-revoke'],
+    apply: sub(
+      'REVOKE ALL ON FUNCTION uellix_capability.accept_invitation(text) FROM PUBLIC;',
+      '-- REVOKE ALL ON FUNCTION uellix_capability.accept_invitation(text) FROM PUBLIC;',
+    ),
+  },
+  {
+    id: 'F-11',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'a later ALTER ROLE restores LOGIN and CREATEROLE on the bootstrap role',
+    breaks:
+      'two of the seven negative attributes, by a statement that comes AFTER the one declaring them. The declaring statement is still there and still correct; PostgreSQL applies both in order, and only the second one is in force.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-attributes'],
+    apply: before('RESET ROLE;', 'ALTER ROLE uellix_cap_bootstrap LOGIN CREATEROLE;'),
+  },
+  {
+    id: 'F-12',
+    capability: 'CAP-01',
+    file: RB01,
+    change: 'the CAP-01 rollback confers a table privilege on the runtime while undoing the package',
+    breaks:
+      'the rule that a rollback restores and never adds. It runs as superuser during an incident, when nobody is reading, and CAP-01\'s rollback is declared to confer nothing at all.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['rollback-grant'],
+    apply: before('RESET ROLE;', 'GRANT SELECT ON public.invitations TO uellix_app;'),
+  },
+  {
+    id: 'F-13',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'ALTER POLICY retargets a policy the contract pins by its CREATE',
+    breaks:
+      'the assumption that a policy is what its CREATE says. ALTER POLICY rewrites TO, USING and WITH CHECK in place; the contract compares CREATE statements, so the tuple it validates and the tuple in the catalogue are two different things.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['unparsed-security-statement'],
+    apply: before('RESET ROLE;', 'ALTER POLICY cap_lead_insert ON public.marketing_leads TO uellix_app;'),
+  },
+  {
+    id: 'F-14',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'a DO block re-owns marketing_leads to the capability role',
+    breaks:
+      'ownership as the RLS exemption it is, from inside an executable body. The table\'s owner is exempt from its own policies while no FORCE ROW LEVEL SECURITY exists anywhere in the campaign, so this one line makes every CAP-04 policy inert for the definer and hands it implicit SELECT.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['ownership-extra'],
+    apply: before(
+      'RESET ROLE;',
+      'DO $$\nBEGIN\n  ALTER TABLE public.marketing_leads OWNER TO uellix_cap_lead;\nEND\n$$;',
+    ),
+  },
+
+  // =========================================================================
+  // A-01 … A-06 — the adversarial round against the NEW parser
+  // =========================================================================
+  //
+  // Reviewer A attacked the rewritten reader rather than the packages and
+  // found three BLOCKERs, all of them the same shape as the eight it was
+  // written to close: a spelling PostgreSQL accepts and the parser did not
+  // read, producing SILENCE rather than a finding. They are catalogued here
+  // because a defect the reviewer found and nothing pins is a defect with a
+  // half-life.
+
+  {
+    id: 'A-01',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: "the GRANT is hidden behind an E-string hex escape (E'\\x47RANT …')",
+    breaks:
+      "the INSERT-only capability, through the parser's own decoder. \\x47 is the letter G: PostgreSQL executes a GRANT while a decoder that knows only \\n, \\t and \\r yields the text `x47RANT`, whose first word opens nothing — so the scanner recorded no statement AND raised no finding.",
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap04-no-read', 'grant-extra'],
+    apply: before(
+      'RESET ROLE;',
+      "DO $$\nBEGIN\n  EXECUTE E'\\x47RANT SELECT ON public.marketing_leads TO uellix_cap_lead';\nEND\n$$;",
+    ),
+  },
+  {
+    id: 'A-02',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'a SECURITY DEFINER helper is defined with a single-quoted body instead of $$',
+    breaks:
+      "the descent into function bodies, and the SECURITY DEFINER inventory with it. `AS '…'` is as valid as `AS $$…$$`; the scanner descended only into dollar-quoted bodies and the definer gate finds functions with a regex anchored on `AS $$`, so the function was outside both.",
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['unparsed-security-statement'],
+    apply: before(
+      'RESET ROLE;',
+      "CREATE OR REPLACE FUNCTION uellix_capability.helper() RETURNS void\n" +
+        "LANGUAGE plpgsql SECURITY DEFINER AS\n" +
+        "'BEGIN EXECUTE ''GRANT SELECT ON public.marketing_leads TO uellix_cap_lead''; END';",
+    ),
+  },
+  {
+    id: 'A-03',
+    capability: 'CAP-04',
+    file: CAP04,
+    change: 'the RUNTIME role, not a capability role, is given BYPASSRLS',
+    breaks:
+      'cap_lead_deny_runtime, the RESTRICTIVE USING (false) the package calls its durable half. The role-attribute gate iterated the five capability roles and filtered every other role out, so a statement naming uellix_writer was parsed and then consumed by nothing.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-dangerous-attribute'],
+    apply: before('RESET ROLE;', 'ALTER ROLE uellix_writer BYPASSRLS;'),
+  },
+  {
+    id: 'A-04',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'the package creates a login superuser under a name no contract mentions',
+    breaks:
+      'the closed role inventory. Nothing in the suite asked which roles a package may touch, only what the five declared ones look like, so an entirely new role was outside every check the campaign has.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['role-foreign', 'role-dangerous-attribute'],
+    apply: before('RESET ROLE;', "CREATE ROLE uellix_backdoor LOGIN SUPERUSER;"),
+  },
+  {
+    id: 'A-05',
+    capability: 'CAP-01',
+    file: RB01,
+    change: 'the rollback grants BYPASSRLS to the capability role before dropping it',
+    breaks:
+      'the assumption that role attributes only matter in a forward file. A rollback runs as superuser during an incident; between this statement and the DROP ROLE the definer is exempt from every policy the campaign wrote for it.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['role-dangerous-attribute'],
+    apply: before('RESET ROLE;', 'ALTER ROLE uellix_cap_invitation BYPASSRLS;'),
+  },
+  {
+    id: 'A-06',
+    capability: 'CAP-02',
+    file: CAP02,
+    change: 'a policy names its role through a U& Unicode-escaped identifier',
+    breaks:
+      'identifier identity itself. `U&"…"` lexed naively becomes the word U, the operator & and an identifier — so the statement the parser judges names a different object from the one PostgreSQL applies. Approximate decoding would be worse than none: a near miss re-lexes as a word that opens nothing.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['unparsed-security-statement'],
+    apply: before(
+      'RESET ROLE;',
+      'CREATE POLICY cap_verification_escape\nON public.organizations FOR SELECT\nTO U&"uellix_cap_verification"\nUSING (true);',
+    ),
+  },
+  {
+    id: 'A-07',
+    capability: 'CAP-05',
+    file: CAP05,
+    change: 'the idempotency key is locked with FOR UPDATE before it is claimed',
+    breaks:
+      'the claim-first ordering, by restoring the exact model CAP-05 documented for three revisions and that does not work: SELECT … FOR UPDATE locks nothing when the row does not exist, so two concurrent callers both proceed. Reviewer B showed the gate that forbids it could not be reached by any mutation in the catalogue — it was on the unexercised list looking like a gate that merely lacked one.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap05-claim-first'],
+    apply: sub(
+      '  INSERT INTO public.capability_bootstrap_attempts (user_id, idempotency_key)',
+      '  PERFORM 1 FROM public.capability_bootstrap_attempts a\n' +
+        '   WHERE a.user_id = v_subject AND a.idempotency_key = p_idempotency_key\n' +
+        '     FOR UPDATE;\n\n' +
+        '  INSERT INTO public.capability_bootstrap_attempts (user_id, idempotency_key)',
+    ),
+  },
 ]
 
 export const PREVIOUSLY_SURVIVING = MUTATIONS.filter((m) => m.id.startsWith('M-'))
 export const NEW_MUTATIONS = MUTATIONS.filter((m) => m.id.startsWith('N-'))
+/** The eight PostgreSQL-equivalent spellings the reaudit confirmed as escapes. */
+export const EVASION_MUTATIONS = MUTATIONS.filter((m) => m.id.startsWith('E-'))
+/** The additional equivalences added alongside the fail-closed parser. */
+export const FAIL_CLOSED_MUTATIONS = MUTATIONS.filter((m) => m.id.startsWith('F-'))
+/** What the adversarial review of the NEW parser found, pinned. */
+export const ADVERSARIAL_MUTATIONS = MUTATIONS.filter((m) => m.id.startsWith('A-'))

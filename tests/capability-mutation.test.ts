@@ -37,6 +37,8 @@ import {
   MUTATIONS,
   PREVIOUSLY_SURVIVING,
   NEW_MUTATIONS,
+  EVASION_MUTATIONS,
+  FAIL_CLOSED_MUTATIONS,
   type Mutation,
 } from './helpers/capability-mutations'
 
@@ -58,26 +60,31 @@ const BASE = baseline()
  * not on it, and a gate added without a mutation is exactly the thing this file
  * exists to make visible.
  */
+const GATES_SOURCE = readFileSync(
+  path.resolve(process.cwd(), 'tests', 'helpers', 'capability-gates.ts'),
+  'utf8',
+)
 const ALL_GATE_NAMES: ReadonlySet<string> = new Set(
-  [
-    ...readFileSync(
-      path.resolve(process.cwd(), 'tests', 'helpers', 'capability-gates.ts'),
-      'utf8',
-    ).matchAll(/\b(?:add|require)\(\s*'([a-z0-9-]+)'/g),
-  ].map((m) => m[1]),
+  [...GATES_SOURCE.matchAll(/\b(?:add|require)\(\s*'([a-z0-9-]+)'/g)].map((m) => m[1]),
 )
 
 /**
- * Gates no mutation exercises, and why that is acceptable for each.
+ * Gates no mutation exercises.
  *
- * Two admissible reasons only:
- *   (a) the gate guards a structural invariant of the HARNESS — a missing
- *       source file, a desynchronised comment mask — which a source-level
- *       mutation cannot produce and which fires when the tooling breaks;
- *   (b) the gate is the second half of a pair whose first half is exercised,
- *       so the branch is reached but the specific message is not.
+ * THE HONEST DESCRIPTION, corrected 2026-08-04. The previous comment claimed
+ * two admissible reasons — (a) a structural invariant of the harness, (b) the
+ * second half of an exercised pair — and closed with "anything else on this
+ * list is a coverage hole wearing a permission slip". An adversarial review
+ * pointed out that by that standard the list is MOSTLY holes: only
+ * `mask-desync` and `source-missing` are (a), and roughly fifty of the entries
+ * below — `cap02-locked`, `cap03-no-payload`, `cap04-status-constant`,
+ * `cap05-allowlist`, `role-crossgrant`, `rollback-role` and the rest — guard
+ * real security properties and have simply never been shown to go red.
  *
- * Anything else on this list is a coverage hole wearing a permission slip.
+ * The list is kept, and so is the test, because a written-down hole is a hole
+ * somebody can close; the wording is what was wrong. A gate that has never
+ * gone red is indistinguishable from a gate that cannot, and this file names
+ * fifty-odd of them rather than implying they are all justified exceptions.
  */
 const UNEXERCISED_GATES: readonly string[] = [
   'cap01-concurrent-replay',
@@ -105,7 +112,6 @@ const UNEXERCISED_GATES: readonly string[] = [
   'cap03-login-identity',
   'cap03-no-payload',
   'cap03-single-org',
-  'cap04-function',
   'cap04-lock-timeout',
   'cap04-no-status-param',
   'cap04-on-conflict',
@@ -113,7 +119,6 @@ const UNEXERCISED_GATES: readonly string[] = [
   'cap04-server-derived',
   'cap04-status-constant',
   'cap05-allowlist',
-  'cap05-claim-first',
   'cap05-function',
   'cap05-grant',
   'cap05-no-plan',
@@ -130,7 +135,6 @@ const UNEXERCISED_GATES: readonly string[] = [
   'index-missing',
   'mask-desync',
   'policy-command',
-  'rls-disabled',
   'role-crossgrant',
   'rollback-cascade',
   'rollback-function',
@@ -225,6 +229,40 @@ describe('mutation harness — coverage of the reaudit findings', () => {
     expect(NEW_MUTATIONS.length).toBeGreaterThanOrEqual(15)
   })
 
+  it('carries the eight PostgreSQL-equivalent evasions the reaudit confirmed', () => {
+    // Eight, by id, not "at least eight". Each of these is a spelling the
+    // previous parser could not read at all, so dropping one silently would
+    // restore a hole rather than reduce coverage.
+    expect(EVASION_MUTATIONS.map((m) => m.id)).toEqual([
+      'E-01', 'E-02', 'E-03', 'E-04', 'E-05', 'E-06', 'E-07', 'E-08',
+    ])
+  })
+
+  it('adds at least twelve further equivalences alongside the parser', () => {
+    expect(FAIL_CLOSED_MUTATIONS.length).toBeGreaterThanOrEqual(12)
+  })
+
+  it('preserves the sixty-seven mutations that existed before the parser rebuild', () => {
+    // The rebuild replaced the mask-and-regex reader wholesale. The claim that
+    // it is strictly stronger is only meaningful if nothing it used to catch
+    // fell out, so the previous catalogue is pinned by COUNT as well as by the
+    // per-mutation assertions above.
+    expect(PREVIOUSLY_SURVIVING.length + NEW_MUTATIONS.length).toBe(67)
+  })
+
+  it('no evasion is detected only by a gate belonging to another property', () => {
+    // The evasions all break properties the catalogue already covered; what is
+    // new is the SPELLING. So each one must be refused by the gate that owns
+    // the property, not merely by something that happened to notice.
+    for (const m of [...EVASION_MUTATIONS, ...FAIL_CLOSED_MUTATIONS]) {
+      const fired = new Set(VIOLATIONS.get(m.id)!.map((v) => v.gate))
+      expect(
+        m.expectedGate.some((g) => fired.has(g)),
+        `${m.id} was refused only by [${[...fired].join(', ')}]`,
+      ).toBe(true)
+    }
+  })
+
   it('every mutation names the gate that must refuse it', () => {
     for (const m of MUTATIONS) {
       expect(m.expectedGate.length, `${m.id} names no gate`).toBeGreaterThan(0)
@@ -244,6 +282,26 @@ describe('mutation harness — coverage of the reaudit findings', () => {
     const exercised = new Set(MUTATIONS.flatMap((m) => VIOLATIONS.get(m.id)!.map((v) => v.gate)))
     const unexercised = [...ALL_GATE_NAMES].filter((g) => !exercised.has(g)).sort()
     expect(unexercised).toEqual([...UNEXERCISED_GATES].sort())
+  })
+
+  it('the derived gate inventory can see every gate that actually fires', () => {
+    // ALL_GATE_NAMES is derived by matching `add('<literal>'` in the gates'
+    // SOURCE. That is deliberate — a hardcoded list cannot see the name that is
+    // not on it — but it has its own blind spot: a gate whose name is computed
+    // at runtime matches nothing, so it is absent from the inventory AND absent
+    // from the unexercised list, which is the one place a missing gate was
+    // supposed to become visible.
+    //
+    // Two gates were written that way while this parser was being built
+    // (`add(o.verb === 'REASSIGN' ? … : …, detail)`) and were invisible to the
+    // check below while firing correctly. This assertion closes the loop from
+    // the other end: any gate observed firing must be one the inventory knows.
+    const fired = new Set(MUTATIONS.flatMap((m) => VIOLATIONS.get(m.id)!.map((v) => v.gate)))
+    const invisible = [...fired].filter((g) => !ALL_GATE_NAMES.has(g)).sort()
+    expect(
+      invisible,
+      'these gates fire but are not written as a literal in add(), so the coverage check cannot see them',
+    ).toEqual([])
   })
 
   it('every previously surviving mutation records WHY it survived', () => {
@@ -267,6 +325,62 @@ describe('mutation harness — coverage of the reaudit findings', () => {
   it('covers all five capabilities', () => {
     const caps = new Set(MUTATIONS.map((m) => m.capability))
     for (const c of ['CAP-01', 'CAP-02', 'CAP-03', 'CAP-04', 'CAP-05']) expect(caps).toContain(c)
+  })
+
+  it('every gate name in the gates source is a single-quoted literal', () => {
+    // ALL_GATE_NAMES is derived by matching `add('<literal>'`. That derivation
+    // has four blind spots, and an adversarial review named all four: a name in
+    // double quotes or backticks, a name outside [a-z0-9-], a violation pushed
+    // through `v.push({gate: …})` instead of the helper, and a name computed at
+    // run time. The last is the dangerous one — such a gate is missing from the
+    // inventory AND from the unexercised list, so it is invisible to the very
+    // check that exists to make a missing gate visible, and the
+    // "gates that fire must be known" test below only sees it if some mutation
+    // happens to trigger it.
+    //
+    // So the derivation is made SOUND rather than merely careful: every call is
+    // required to take a single-quoted lowercase literal, and the only producer
+    // of violations is the helper.
+    const calls = [...GATES_SOURCE.matchAll(/\b(?:add|require)\(/g)].length
+    const literal = [...GATES_SOURCE.matchAll(/\b(?:add|require)\(\s*'[a-z0-9-]+'/g)].length
+    // ONE forwarder is allowed and named exactly: `require('gate-name', ok,
+    // detail)` calls `add(gate, detail)`, so its argument is always a literal
+    // one frame up and the derivation still sees the name. Pinned by shape AND
+    // by count, so a second, unnamed forwarder cannot appear quietly.
+    const forwarders = [...GATES_SOURCE.matchAll(/\badd\(gate, detail\)/g)].length
+    expect(forwarders, 'more than the one documented forwarder').toBe(1)
+    expect(
+      literal + forwarders,
+      `${calls - literal - forwarders} add()/require() call(s) do not take a single-quoted ` +
+        'lowercase gate name, so the derived inventory cannot see them',
+    ).toBe(calls)
+    // `add` and `require` are the only producers. A direct push bypasses both.
+    const directPushes = [...GATES_SOURCE.matchAll(/\bv\.push\(/g)].length
+    expect(directPushes, 'a violation is produced without going through add()').toBe(1)
+    // And no phantom: a commented-out `add('x'` would enter the inventory and
+    // then have to be excused on the unexercised list.
+    for (const line of GATES_SOURCE.split('\n')) {
+      const trimmed = line.trimStart()
+      if (!trimmed.startsWith('//') && !trimmed.startsWith('*')) continue
+      expect(trimmed, 'a comment contains an add() call, which becomes a phantom gate').not.toMatch(
+        /\b(?:add|require)\(\s*'[a-z0-9-]+'/,
+      )
+    }
+  })
+
+  it('no single DECLARED gate accounts for more than half the kills', () => {
+    // The check below counts every gate that FIRED, which collateral inflates:
+    // N-05 declares cap01-no-jwt-email and also trips cap01-email-source and
+    // cap01-order-constant-time-email. Counting the DECLARED gate instead
+    // measures the catalogue's spread over properties rather than over
+    // symptoms, and it is the stricter of the two.
+    const byGate = new Map<string, number>()
+    for (const m of MUTATIONS)
+      for (const g of new Set(m.expectedGate)) byGate.set(g, (byGate.get(g) ?? 0) + 1)
+    const worst = Math.max(...byGate.values())
+    expect(worst, `declared-gate distribution: ${JSON.stringify(Object.fromEntries(byGate))}`).toBeLessThan(
+      Math.ceil(MUTATIONS.length / 2),
+    )
   })
 
   it('no single gate accounts for more than half the kills', () => {

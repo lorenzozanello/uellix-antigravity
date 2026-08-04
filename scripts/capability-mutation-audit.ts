@@ -11,10 +11,19 @@
  * EXISTING suite let these through? tests/capability-isolation.test.ts reads
  * db/prepared itself, so the only way to measure it is to put a mutant there.
  *
- * SAFETY. The original bytes are held in memory, restored in a finally, and the
- * SHA is compared before and after. A mismatch aborts the whole run rather than
+ * SAFETY. The original bytes are held in memory, restored in a finally AND on
+ * SIGINT/SIGTERM/SIGHUP/SIGBREAK and on an uncaught exception, and the SHA is
+ * compared before and after. A mismatch aborts the whole run rather than
  * continuing with a modified tree. Nothing here touches a database, a network,
  * or any file outside db/prepared.
+ *
+ * WHAT THIS MEASUREMENT DOES AND DOES NOT COVER. It runs the CONTRACT suite
+ * (and, for M-*, the legacy isolation suite) against the mutant on disk, so it
+ * answers "did something go red, with the tree in this state, attested by
+ * SHA-256". It does NOT run tests/capability-mutation.test.ts, so the Rule 3
+ * claim — that the gate which refused is the gate that OWNS the property — is
+ * asserted only in memory, in that file. The two measurements are
+ * complementary and neither subsumes the other.
  *
  * RUN IT ALONE. While this script is running, db/prepared contains a
  * deliberately broken file. Anything else reading the working tree at the same
@@ -75,6 +84,29 @@ function summarize(raw: string): Run {
   const j = JSON.parse(raw.slice(at)) as { numPassedTests: number; numFailedTests: number }
   if (typeof j.numPassedTests !== 'number' || typeof j.numFailedTests !== 'number')
     throw new Error('vitest JSON lacks the test counts')
+  // A run in which NOTHING EXECUTED is also a measurement failure, and it is
+  // the dangerous one: a collection error — a broken import, a file caught
+  // half-written — produces valid JSON with numFailedTests 0, and the caller
+  // renders `failed > 0 ? 'RED' : 'GREEN — SURVIVES'`. The script would print
+  // the strongest possible finding from a run that measured nothing.
+  //
+  // Observed, not theorised: N-43 was reported as a survivor during the
+  // 2026-08-04 run because tests/helpers/sql-structure.ts was being edited
+  // while that mutant's vitest was starting. The mutation is refused by
+  // `policy-retired` and always was.
+  if (j.numPassedTests + j.numFailedTests === 0)
+    throw new Error(
+      'vitest executed zero tests: the measurement failed. Nothing can be concluded, and in ' +
+        'particular this is NOT a surviving mutation. Re-run with nothing else touching the tree.',
+    )
+  // A suite that COLLECTED and passed while the process reported an unhandled
+  // error is also not a clean measurement. Narrow — one file runs — but "it
+  // refuses to guess" has to include this case or it is a slogan.
+  const extra = j as unknown as { numFailedTestSuites?: number; unhandledErrors?: unknown[] }
+  if ((extra.numFailedTestSuites ?? 0) > 0 && j.numFailedTests === 0)
+    throw new Error('a test SUITE failed while no test did: the measurement is not interpretable')
+  if ((extra.unhandledErrors?.length ?? 0) > 0)
+    throw new Error('vitest reported an unhandled error: the measurement is not interpretable')
   return { passed: j.numPassedTests, failed: j.numFailedTests }
 }
 
@@ -87,6 +119,46 @@ interface Row {
   readonly gates: Run
 }
 
+/**
+ * The bytes currently displaced from db/prepared, and where they belong.
+ *
+ * A `finally` does NOT run when the process is killed, and Node's default
+ * SIGINT action terminates immediately. This script advertises a run of 89
+ * mutations × up to two full vitest invocations — long enough that Ctrl-C is
+ * the interruption an operator will actually use — and its own SAFETY note
+ * promised a restore that would not have happened. The file would be left on
+ * disk containing, say, `DO $$ BEGIN GRANT SELECT ON public.marketing_leads TO
+ * uellix_cap_lead; END $$;`, with no marker and no warning.
+ */
+let displaced: { path: string; original: string } | null = null
+
+function restoreDisplaced(reason: string): void {
+  if (displaced === null) return
+  try {
+    writeFileSync(displaced.path, displaced.original, 'utf8')
+    console.error(`\n${reason}: restored ${path.basename(displaced.path)}`)
+  } catch (e) {
+    console.error(
+      `\n${reason}: FAILED TO RESTORE ${displaced.path}. ` +
+        `Recover it with: git checkout -- db/prepared/${path.basename(displaced.path)}`,
+      e,
+    )
+  }
+  displaced = null
+}
+
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'] as const) {
+  process.on(signal, () => {
+    restoreDisplaced(signal)
+    process.exit(130)
+  })
+}
+process.on('uncaughtException', (e) => {
+  restoreDisplaced('uncaughtException')
+  console.error(e)
+  process.exit(1)
+})
+
 function audit(m: Mutation, withLegacy: boolean): Row {
   const file = path.join(PREPARED, m.file)
   const original = readFileSync(file, 'utf8')
@@ -96,11 +168,13 @@ function audit(m: Mutation, withLegacy: boolean): Row {
   try {
     const mutated = m.apply(original)
     if (mutated === original) throw new Error(`${m.id} is a no-op`)
+    displaced = { path: file, original }
     writeFileSync(file, mutated, 'utf8')
     if (withLegacy) legacy = vitest(LEGACY)
     gates = vitest(GATES)
   } finally {
     writeFileSync(file, original, 'utf8')
+    displaced = null
   }
   const after = sha(readFileSync(file, 'utf8'))
   if (gates === null) throw new Error(`${m.id}: the gate measurement never completed`)
