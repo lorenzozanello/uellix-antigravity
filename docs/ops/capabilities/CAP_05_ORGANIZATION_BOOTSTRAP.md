@@ -484,3 +484,30 @@ sin bloquearla. El argumento «el bootstrap no elige plan» es cierto dentro del
 paquete —ninguna columna de facturación aparece en la firma, en el cuerpo ni en
 el `GRANT INSERT`— y falso en el sistema, porque el `organization_admin` recién
 creado puede escribir `stella_monthly_quota` por el ORM al minuto siguiente.
+
+
+---
+
+## Cierre de riesgos de diseño (2026-08-04) — qué cambia para este paquete
+
+Nada dentro de este paquete se ha rediseñado. Lo que cambia es el entorno en el
+que sus afirmaciones se leen, y dos de esas afirmaciones dependían de él:
+
+* **RR-CAP-10 está cerrado** (`db/prepared/stella_0011_organization_column_acl.sql`).
+  El `UPDATE` de `public.organizations` es ahora **por columnas**:
+  `stella_monthly_quota`, `stella_plan_label`, `status` y los tres `stripe_*`
+  quedan fuera del alcance del runtime, y el camino legítimo de plataforma pasa
+  por dos funciones `SECURITY DEFINER` con una policy `RESTRICTIVE` que exige
+  `current_user_is_super_admin()` del **llamante**.
+* **El contrato lee ahora los triggers.** `CREATE TRIGGER` dejó de ser un
+  `unparsed-security-statement` y pasó a estar modelado en `TRIGGER_CONTRACT`,
+  con ocho gates propios. Las formas que la campaña no usa siguen siendo
+  hallazgos, y `CREATE RULE` sigue rechazado.
+
+* **La consecuencia para CAP-05 es directa.** Su argumento «el bootstrap no
+  elige plan» era cierto **en el paquete** y falso **en el sistema**: el
+  `organization_admin` recién creado podía escribir la cuota por el ORM al
+  minuto siguiente de fundar la organización. RR-CAP-10 registraba eso como
+  *degradación* de CAP-05, no como defecto suyo. Cerrado el ACL, la frase pasa a
+  ser cierta en los dos niveles — y `cap05-no-plan` tiene desde ahora evidencia
+  negativa propia (mutación `P-20`).

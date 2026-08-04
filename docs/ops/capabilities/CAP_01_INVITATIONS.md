@@ -517,3 +517,22 @@ Detalle completo en
 **Riesgos abiertos que alcanzan a esta capacidad:** ninguno específico; sigue
 aplicando el residual de RR-CAP-12 (58 de 121 gates sin mutación que los
 ejercite).
+
+
+---
+
+## Cierre de riesgos de diseño (2026-08-04) — qué cambia para este paquete
+
+Nada dentro de este paquete se ha rediseñado. Lo que cambia es el entorno en el
+que sus afirmaciones se leen, y dos de esas afirmaciones dependían de él:
+
+* **RR-CAP-10 está cerrado** (`db/prepared/stella_0011_organization_column_acl.sql`).
+  El `UPDATE` de `public.organizations` es ahora **por columnas**:
+  `stella_monthly_quota`, `stella_plan_label`, `status` y los tres `stripe_*`
+  quedan fuera del alcance del runtime, y el camino legítimo de plataforma pasa
+  por dos funciones `SECURITY DEFINER` con una policy `RESTRICTIVE` que exige
+  `current_user_is_super_admin()` del **llamante**.
+* **El contrato lee ahora los triggers.** `CREATE TRIGGER` dejó de ser un
+  `unparsed-security-statement` y pasó a estar modelado en `TRIGGER_CONTRACT`,
+  con ocho gates propios. Las formas que la campaña no usa siguen siendo
+  hallazgos, y `CREATE RULE` sigue rechazado.

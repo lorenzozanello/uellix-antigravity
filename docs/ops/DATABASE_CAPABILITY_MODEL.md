@@ -694,7 +694,7 @@ Consecuencias que ya están fijadas por prueba:
   `tests/capability-policy-parser.test.ts`, para que una regresión del lector se
   vea antes de que un gate se ponga verde por accidente.
 
-  El residual se declara en cifras, no en adjetivos: **56 de 123 gates no los
+  El residual se declara en cifras, no en adjetivos: **27 de 148 gates no los
   ejercita ninguna mutación**, y están listados en `UNEXERCISED_GATES` con un
   test que falla si esa lista cambia sin que alguien lo escriba. Un gate que
   nunca se ha puesto en rojo es indistinguible de un gate que no puede.
@@ -719,3 +719,79 @@ Consecuencias que ya están fijadas por prueba:
 * **RR-CAP-6 — `super_admins_read_marketing_leads` está roto desde el cutover.**
   Hallazgo colateral: es `TO authenticated` y el runtime no lo es. No forma
   parte de ninguna capacidad; se registra aquí para que no se pierda.
+
+
+---
+
+## Anexo — cierre de riesgos de diseño (2026-08-04)
+
+Cuatro riesgos que el registro tenía abiertos porque **cerrarlos era cambiar el
+diseño, no endurecer una prueba**. Los cuatro son ahora SQL preparado, con
+*rollback* explícito y evidencia negativa viva en el *dry run*. Ninguno se ha
+aplicado a ningún stack.
+
+### RR-CAP-10 — el `UPDATE` de `organizations` es por columnas
+
+`db/prepared/stella_0011_organization_column_acl.sql`. El *baseline* concedía
+`UPDATE` **de tabla completa** sobre `public.organizations` a `authenticated`, a
+`service_role` y a `uellix_writer`; `orgs_update_admin_or_super` es `{public}` y
+acota la **fila**, no la columna. Cualquier `organization_admin` podía escribir
+su propia cuota por el ORM.
+
+La reparación es ACL por columnas, y **tiene que serlo**: RLS evalúa una fila
+dos veces (`USING` sobre la pre-imagen, `WITH CHECK` sobre la post-imagen) y no
+recibe la lista de columnas de la sentencia, así que no existe expresión de
+policy que signifique «esta columna cambió». El control de columna es ACL o es
+*trigger*; no es policy.
+
+Las ocho columnas del runtime están **derivadas del código**, no inventadas: son
+exactamente las que aparecen en los cinco `db.update(organizations)` del
+repositorio. Tres consecuencias que no son contabilidad:
+
+* `name`, `slug` y `legal_name` resultan ser **sólo de INSERT** en la práctica y
+  quedan fuera del grant. Eso deja RR-CAP-02-D sin objeto mientras nadie añada
+  una función de renombrado.
+* `status` es una decisión **de plataforma** que llegaba a la base por la misma
+  conexión que la de cualquier admin de organización, así que una organización
+  suspendida podía reactivarse a sí misma. Pasa al *definer*.
+* `white_label_enabled` **se queda** en el grant del runtime, y esto es un juicio
+  escrito, no un olvido: es un flag con forma de *entitlement*, pero nada en el
+  código lo condiciona al plan, así que hoy es marca y no derecho. El día que se
+  condicione al plan tiene que moverse. Queda registrado como riesgo residual.
+
+Como un ACL no distingue un `super_admin` de plataforma de un
+`organization_admin` —ambos llegan como `uellix_app`—, el camino legítimo se
+mueve a dos funciones `SECURITY DEFINER` propiedad de `uellix_cap_platform`, con
+**doble cierre**: el cuerpo exige `current_user_is_super_admin()` y una policy
+`RESTRICTIVE` exige lo mismo del **llamante**. Es el mecanismo que CAP-02
+documenta como *peligro* —`auth.uid()` es un GUC de sesión que `SECURITY
+DEFINER` no resetea— usado a propósito y en la única dirección en que sólo puede
+estrechar.
+
+### RR-CAP-13 — la identidad de verificación no puede enumerar
+
+Dos `RESTRICTIVE` nuevas en `stella_0007` sobre `organizations` y
+`sroi_calculation_runs`. Un ACL de columna dice **qué campos**, nunca **qué
+filas**; con `USING (true)` la identidad pública podía listar el nombre de todas
+las organizaciones y la ratio de todos los cálculos. El predicado es la misma
+proposición que hace el `JOIN` de `verify_report`, movida a donde no se reescribe
+editando una función, y **sin conceder un solo `SELECT` adicional**.
+
+### RR-CAP-14 — el actor Stripe alcanza una organización
+
+Dos `RESTRICTIVE` nuevas en `stella_0008`, y la corrección de un razonamiento:
+la policy no necesita los argumentos de la función, necesita **el evento**.
+`stripe_begin_event` graba ahora la dirección Stripe del evento firmado, la
+policy la lee, y la fila de otra organización deja de ser alcanzable **diga lo
+que diga el cuerpo**. Una organización sin vínculo Stripe es inalcanzable por
+construcción, que es lo que DP-CAP-15 exige.
+
+### RR-CAP-02-F — publicar y revocar dejan rastro
+
+Un *trigger* `AFTER … FOR EACH ROW` sobre `report_public_disclosures` que
+reutiliza `audit_logs` —ya *append-only*, ya con la policy que fija el actor a
+`auth.uid()`— en lugar de inventar una segunda arquitectura. Atómico por ser
+`AFTER` en la misma transacción; **no** `SECURITY DEFINER`, para que el actor lo
+imponga RLS y no la función; y el `public_summary` viaja como **digest**, nunca
+como texto. La tabla es además *append-only* desde esta unidad, con lo que una
+decisión publicada no la borra nadie, ni siquiera el propietario.

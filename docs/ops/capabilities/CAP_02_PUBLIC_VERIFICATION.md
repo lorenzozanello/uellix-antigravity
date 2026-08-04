@@ -318,6 +318,35 @@ borrador se lea por esta vía.
 |---|---|---|---|
 | `cap_verification_only_locked` | `sroi_reports` | `SELECT` | `USING (status = 'locked')` |
 | `cap_verification_only_live` | `report_public_disclosures` | `SELECT` | `USING (revoked_at IS NULL)` |
+| `cap_verification_only_published_org` | `organizations` | `SELECT` | `USING (EXISTS …)` — la fila sólo es legible si algún reporte **bloqueado** con disclosure **viva** apunta a ella |
+| `cap_verification_only_published_run` | `sroi_calculation_runs` | `SELECT` | `USING (EXISTS …)` — idéntica proposición, escrita para el cálculo |
+
+**Las dos últimas cierran RR-CAP-13**, y conviene decir exactamente qué era el
+riesgo y qué no. `cap_verification_select_orgs` y `cap_verification_select_runs`
+eran `USING (true)` y **no tenían compañera `RESTRICTIVE`**: la cota que ata esas
+filas a un reporte publicado vivía en el `JOIN` del cuerpo de `verify_report`, de
+modo que la frase «la policy acota esto aunque se reescriba el cuerpo» era cierta
+de `sroi_reports` y falsa de estas dos.
+
+El ACL por columna ya era estrecho (`id, name`; `id, currency, sroi_ratio,
+total_investment, net_social_value`), así que la exposición nunca fue la fila
+entera. Pero **una lista de columnas dice qué campos, nunca qué filas**: con
+`USING (true)` la identidad de verificación pública podía enumerar el nombre de
+todas las organizaciones de la plataforma y la ratio de todos los cálculos
+jamás ejecutados, publicados o no. Eso es la lista de clientes y los resultados
+no publicados, a un `SELECT` de un cuerpo que ya no tiene que cooperar.
+
+El predicado es la misma proposición que hace el `JOIN`, movida a donde no se
+reescribe editando una función. **No se concede ningún `SELECT` adicional para
+resolverlo**: las subconsultas leen exactamente las columnas que
+`uellix_cap_verification` ya tenía. Revocar una disclosure retira la
+organización y el cálculo del alcance de la capacidad en la misma sentencia que
+retira el reporte — las tres no pueden divergir porque son un predicado escrito
+tres veces.
+
+*Evidencia negativa viva:* `RR13-1..RR13-7` en `scripts/capability-dry-run.sql`
+(sólo una organización visible con dos reportes publicados; cero tras revocar
+todas las disclosures; el cálculo no vinculado nunca aparece).
 
 Mismo argumento que en CAP-01 §6.1: las permisivas se combinan con OR junto a
 las 101 policies `{public}` preexistentes, cuyos predicados resuelven al
@@ -414,27 +443,53 @@ hashes.
   un actor identificado, y `audit_logs` exige `actor_user_id NOT NULL` desde
   `stella_0005c`. Forzar un actor sintético ahí sería fabricar una identidad,
   que es exactamente lo que el cutover prohibió.
-* **La creación y la revocación de una disclosure NO se auditan.** Esta línea
-  decía lo contrario —«sí van a `audit_logs`, con el admin que la aprobó como
-  actor»— y era falsa: `stella_0007_public_verification_capability.sql` **no
-  contiene la cadena `audit_logs` ni una sola vez**. No hay trigger, no hay
-  inserción y no hay protección *append-only* sobre
-  `report_public_disclosures`. Un admin puede publicar, revocar y volver a
-  publicar sin dejar rastro fuera de las columnas `approved_by` / `revoked_by`
-  de la propia fila, que además son sobrescribibles en el segundo ciclo.
+* **La creación, la revocación y cada cambio de visibilidad SÍ se auditan
+  ahora** (RR-CAP-02-F, cerrado 2026-08-04). Durante dos rondas esta línea
+  afirmó lo contrario de lo que el SQL hacía —en ambas direcciones— así que
+  aquí va el mecanismo, no la afirmación:
 
-  Esto es **RR-CAP-02-F**, y el registro de riesgos lo daba por cerrado con la
-  nota *«documento corregido a lo que el SQL hace»*. El documento **no** se
-  había corregido: la afirmación falsa seguía dos líneas por debajo de la
-  correcta, dentro de la misma sección de cinco líneas. Corregido ahora, y
-  RR-CAP-02-F reabierto.
+  `public.uellix_audit_report_disclosure()` es un trigger **`AFTER INSERT OR
+  UPDATE FOR EACH ROW`** sobre `report_public_disclosures` que escribe una fila
+  en `audit_logs` por cada publicación, revocación, reactivación y cambio de
+  visibilidad. Cuatro transiciones con nombre propio
+  (`report.disclosure.published` / `.revoked` / `.reinstated` /
+  `.visibility_changed`), porque colapsarlas en «updated» deja la pregunta
+  «cuántos certificados se retiraron» sin respuesta salvo diferenciando filas.
 
-  Lo que la tabla sí sostiene es más débil y hay que decirlo así: cada fila
-  registra **quién aprobó y cuándo**, y las policies fijan `approved_by` y
-  `revoked_by` a `auth.uid()` (§6.2), de modo que la autoría no puede
-  atribuirse a un tercero. El historial de publicaciones sucesivas no existe.
-  Construirlo es trabajo de implementación —un trigger `AFTER INSERT OR UPDATE`
-  que escriba en `audit_logs`— y **no forma parte de este paquete**.
+  **Atómico por construcción, no por convención.** Al ser `AFTER` dentro de la
+  misma transacción, un fallo de la escritura de auditoría —sin privilegio, por
+  policy, o porque el reporte no resuelve organización— aborta la publicación
+  con él. No existe orden de ejecución en el que la disclosure quede confirmada
+  y el evento no.
+
+  **No es `SECURITY DEFINER`, y eso es deliberado:** corre con los privilegios
+  del llamante y bajo la policy `audit_logs_insert_member_or_admin`, de modo que
+  `actor_user_id = auth.uid()` lo impone RLS y no la función. Un *definer* aquí
+  permitiría insertar filas de auditoría que el llamante no podría haber
+  insertado.
+
+  **Qué se guarda y qué no.** Los seis `show_*`, `disclosure_version`, si la
+  disclosure está viva, y `public_summary` **como digest SHA-256 y longitud —
+  nunca como texto**. `audit_logs` no lleva payload en ningún otro sitio de este
+  esquema y no va a empezar aquí; el digest responde igual a la pregunta que el
+  rastro existe para responder («¿lo que circuló es el mismo texto que hay ahora
+  en la fila?»), que la fila por sí sola no puede, porque `public_summary` es
+  actualizable.
+
+  **Append-only, en las dos tablas.** `audit_logs` ya lo era
+  (`trg_audit_logs_append_only`, `stella_0002b`) y ningún rol de runtime tiene
+  `UPDATE` ni `DELETE` sobre ella. `report_public_disclosures` lo es ahora
+  también: `trg_report_disclosures_append_only` y
+  `trg_report_disclosures_no_truncate` reutilizan
+  `public.uellix_forbid_mutation`, así que una decisión publicada no la borra
+  nadie — **tampoco el propietario de la tabla**. El rollback conserva esos dos
+  triggers y sólo retira el de auditoría: las filas sobreviven a la capacidad,
+  y su protección también.
+
+  *Evidencia negativa viva:* `RR02F-1..RR02F-9` en
+  `scripts/capability-dry-run.sql`, incluida `RR02F-6`, que hace imposible la
+  escritura de auditoría y comprueba que el cambio de visibilidad **se revierte
+  entero**.
 
 ---
 

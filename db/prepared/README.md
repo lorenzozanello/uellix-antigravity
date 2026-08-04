@@ -116,7 +116,7 @@ requiere acción humana explícita.
 > rollback cambia la **tabla primero** y la secuencia después. Se descubrió
 > ejecutándolo, no revisándolo.
 
-### Campaña de capacidades públicas (`stella_0006` … `stella_0010`)
+### Campaña de capacidades públicas (`stella_0006` … `stella_0011`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad
 habilitada.** Fuente de verdad:
@@ -130,6 +130,7 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 | `stella_0008_stripe_webhook_identity.sql` | `stella_0008_rollback.sql` | **ninguno todavía**; requiere DP-CAP-07 y la credencial fuera de banda | roles `uellix_stripe` (**LOGIN, sin contraseña en el script**) y `uellix_cap_stripe`; **tabla `stripe_webhook_events`**; `stripe_begin_event`, `stripe_apply_subscription`, `stripe_fail_event`; 4 policies `cap_stripe_*` | **DISEÑO — no aplicado** |
 | `stella_0009_public_lead_capability.sql` | `stella_0009_rollback.sql` | **ninguno todavía**; requiere DP-CAP-08 … 11 | rol `uellix_cap_lead`; `submit_lead(...)` (`RETURNS void`); columnas `marketing_leads.lead_status` y `.consent_version`; índice único `uq_marketing_leads_email_source`; policies `cap_lead_insert` y `cap_lead_deny_runtime` (`RESTRICTIVE`, `TO uellix_app`, `USING (false)` — la mitad **duradera** de la reducción neta); **revoca** los 4 privilegios de `uellix_writer` y **elimina** `anon_insert_marketing_leads` y `authenticated_insert_marketing_leads` | **DISEÑO — no aplicado** |
 | `stella_0010_organization_bootstrap_capability.sql` | `stella_0010_rollback.sql` | **ninguno todavía**; requiere DP-CAP-12 y DP-CAP-13 | rol `uellix_cap_bootstrap`; **tabla `capability_bootstrap_attempts`**; `bootstrap_organization(...)`; **11** policies `cap_bootstrap_*` (8 permisivas + 3 `RESTRICTIVE`) | **DISEÑO — no aplicado** |
+| `stella_0011_organization_column_acl.sql` | `stella_0011_rollback.sql` | **RR-CAP-10-A**: `lib/admin/stella-services.ts` y `lib/admin/organizations.ts` deben pasar a llamar a las dos funciones **antes** de aplicar | **RR-CAP-10.** `REVOKE UPDATE` de tabla completa sobre `public.organizations` a `authenticated`, `uellix_writer`, `anon` y `PUBLIC`; `GRANT UPDATE` por **ocho columnas** derivadas del código a `uellix_writer` y `authenticated`; rol `uellix_cap_platform`; `admin_set_stella_service(...)` y `admin_set_organization_status(...)`; **5** policies `cap_platform_*` (3 permisivas + 2 `RESTRICTIVE` que exigen `current_user_is_super_admin()` del **llamante**) | **DISEÑO — no aplicado** |
 
 > **Los cinco corren como superusuario y no dependen entre sí.** Superusuario
 > porque cada uno crea un rol y `uellix_owner` es `NOCREATEROLE` por diseño —
@@ -460,3 +461,30 @@ esquema `storage`. Distribución medida tras el cierre: **107 policies = 101
 `{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}`**. Verificación
 ejecutable: `tests/database-insert-policy-scope.test.ts` (19 pruebas, catálogo +
 sondas en vivo con ROLLBACK).
+
+
+---
+
+## `stella_0011` no es una sexta capacidad
+
+Es lo contrario: **estrecha** un ACL que ya existía. Está en la misma lista, se
+aplica **el último** y se revierte **el primero**, y la razón del orden es
+concreta: crea un *definer* en el esquema compartido `uellix_capability`, y los
+otros cinco rollbacks eliminan ese esquema en cuanto queda vacío. Revertirlo
+después de ellos encontraría el esquema ya borrado.
+
+Su rollback **reabre a propósito el riesgo que el paquete cierra**, y lo dice en
+un `RAISE NOTICE` al terminar. Un rollback cuyas postcondiciones afirman un
+estado *más seguro* que aquello que revierte es un rollback que no restaura
+nada; la asimetría sería el defecto, no la simetría.
+
+### Lo que un autor de paquetes debe saber sobre el lector, a partir de esta unidad
+
+`CREATE TRIGGER` **ya no es un `unparsed-security-statement`**: está modelado
+(`ParsedTrigger`, `TRIGGER_CONTRACT`) porque `stella_0007` crea tres. Modelarlo
+no relajó nada — las formas que la campaña no usa (`UPDATE OF <columnas>`,
+`CREATE CONSTRAINT TRIGGER`, `REFERENCING`, un `EXECUTE` ilegible) **siguen
+siendo hallazgos**, y cada trigger que un paquete cree debe estar en
+`TRIGGER_CONTRACT` con su tabla, su momento, sus eventos, su nivel y su función,
+precedido de su propio `DROP TRIGGER IF EXISTS`. `CREATE RULE` sigue rechazado
+sin más.

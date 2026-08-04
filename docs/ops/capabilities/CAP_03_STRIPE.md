@@ -180,7 +180,15 @@ la misma disciplina en forma acotada:
 Tres y no una, para que cada paso tenga su propio límite de privilegio y su
 propio punto de commit.
 
-### 5.1 `stripe_begin_event(p_event_id text, p_event_type text) → text`
+### 5.1 `stripe_begin_event(p_event_id text, p_event_type text, p_stripe_customer_id text, p_stripe_subscription_id text) → text`
+
+> **La firma cambió en la revisión de RR-CAP-14.** La reclamación es el único
+> momento en que la capacidad aprende, de un evento con firma verificada, a qué
+> organización va dirigido; si no se graba ahí no se puede exigir en ningún
+> sitio. La forma de dos argumentos **se elimina** en el propio paquete: un
+> evento reclamado sin dirección no casa con ninguna organización, así que
+> dejarla sería dejar un camino a un webhook que falla el 100 % de las veces.
+> `client_reference_id` sigue sin ser autoridad para nada (§3.2, DP-CAP-15).
 
 `VOLATILE`, `SECURITY DEFINER`, `search_path = ''`.
 
@@ -372,14 +380,50 @@ nada sobre `projects`, `sroi_*`, `evidence_*`, `stella_*`, `outcomes`,
 | `cap_stripe_update_orgs` | `organizations` | `UPDATE` | `USING (true) WITH CHECK (true)` |
 | `cap_stripe_rw_events` | `stripe_webhook_events` | `ALL` | `USING (true) WITH CHECK (true)` |
 | `cap_stripe_insert_audit` | `audit_logs` | `INSERT` | ver §6 |
+| `cap_stripe_only_claimed_read` | `organizations` | `SELECT` **`RESTRICTIVE`** | `USING (EXISTS …)` — la fila debe llevar ya la dirección Stripe de un evento **reclamado** |
+| `cap_stripe_only_claimed_org` | `organizations` | `UPDATE` **`RESTRICTIVE`** | mismo predicado en `USING` y en `WITH CHECK` |
 
-Las tres primeras son `USING (true)` y hay que decir por qué sin adornos: **una
-policy no puede ver los argumentos de la función que la invoca**, así que no
-puede expresar "sólo la organización que casa con este `stripe_customer_id`".
-La restricción efectiva la dan (a) el grant por columna, (b) el cuerpo de la
-función, y (c) el hecho de que `uellix_cap_stripe` es inalcanzable salvo a
-través de esas tres funciones. Es contención en capas, no autorización por
-policy, y llamarlo de otro modo sería mentir sobre lo que la policy hace.
+**Las dos `RESTRICTIVE` cierran RR-CAP-14**, y corrigen un razonamiento que este
+documento sostenía y era erróneo. Decía: «una policy no puede ver los argumentos
+de la función que la invoca, así que no puede expresar *sólo la organización que
+casa con este `stripe_customer_id`*». La premisa es cierta y la conclusión no lo
+es: **la policy no necesita los argumentos, necesita el evento**. Desde esta
+revisión `stripe_begin_event` graba en `stripe_webhook_events` los dos
+identificadores emitidos por Stripe a los que el evento firmado va dirigido, y
+la policy los lee de ahí.
+
+El predicado exige, en una sola proposición: que exista un evento en estado
+`processing` —es decir, **reclamado**—, que su dirección Stripe **no sea NULL**,
+y que **coincida** con `stripe_customer_id` o `stripe_subscription_id` de la
+fila. La fila de la organización B lleva la dirección de B, así que un evento
+dirigido a A no la alcanza **diga lo que diga el cuerpo de la función**.
+
+Tres consecuencias que conviene escribir antes de que se descubran:
+
+* Una organización **sin vínculo Stripe** (ambas columnas `NULL`) es
+  inalcanzable. Es correcto e intencionado: la primera vinculación es DP-CAP-15
+  y debe ocurrir en un flujo autenticado de primera parte, nunca en un webhook.
+* La cota de `SELECT` no es decorativa. `stripe_apply_subscription` resuelve la
+  organización **escaneando** `organizations`, así que con `USING (true)` el
+  *definer* podía leer las columnas de facturación de todos los clientes. Bajo
+  esta policy el escaneo devuelve sólo filas a las que un evento reclamado va
+  dirigido — exactamente la que busca. El «exactamente una» del cuerpo y la cota
+  de RLS ahora **coinciden por construcción**, no por casualidad.
+* Los dos identificadores **no están en el `GRANT UPDATE`** de
+  `stripe_webhook_events`, y `stripe_begin_event` rechaza re-reclamar un
+  `event_id` existente bajo otra dirección. Un ancla que la capacidad pueda
+  reescribir no es un ancla, es un parámetro.
+
+Lo que sigue siendo cierto de las cuatro `PERMISSIVE`: la restricción efectiva
+también la dan el grant por columna, el cuerpo de la función y el hecho de que
+`uellix_cap_stripe` es inalcanzable salvo a través de esas tres funciones. La
+diferencia es que ahora hay además una cota de **fila** que ninguna de esas tres
+capas expresaba.
+
+*Evidencia negativa viva:* `RR14-1..RR14-8` en `scripts/capability-dry-run.sql`
+(cero filas legibles sin reclamación; cero filas actualizadas sobre otra
+organización con una reclamación viva; organización sin vínculo inalcanzable;
+reclamación sin dirección rechazada; *replay* idempotente).
 
 ---
 

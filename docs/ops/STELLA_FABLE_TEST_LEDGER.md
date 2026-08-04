@@ -1595,12 +1595,12 @@ contrato de privilegios.
 
 | Medida | Antes de esta unidad | Después |
 |---|---|---|
-| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **96** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07`) |
-| Supervivientes a los gates | 0 de 67 | **0 de 96** |
-| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 96 |
-| Restauración verificada por SHA | 67/67 | **89/89**, y **96/96** tras la ronda adversarial |
+| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **169** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07` + `R-01..R-40` + `P-01..P-33`) |
+| Supervivientes a los gates | 0 de 67 | **0 de 169** |
+| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 169 |
+| Restauración verificada por SHA | 67/67 | **89/89**, y **169/169** tras el cierre de riesgos de diseño |
 | Gates | **117** | **123** (`unparsed-security-statement`, `default-privileges`, `ownership-reassigned`, `ownership-dropped`, `role-foreign`, `role-dangerous-attribute`) |
-| Gates sin mutación que los ejercite | 59 de 117 | **56 de 123** |
+| Gates sin mutación que los ejercite | 59 de 117 | **27 de 148** |
 | Sentencias de seguridad no interpretables en los diez ficheros | no se medía | **0**, comprobado por fichero |
 
 **Lo que hace fail-closed al parser.** Toda sentencia que *abre* como operación
@@ -1694,3 +1694,81 @@ Y uno más, de la misma familia, encontrado al probar CAP-04:
 Los nueve están fijados como gates estáticos en
 `tests/capability-isolation.test.ts` (§ *dry-run regressions*), de modo que no
 pueden reaparecer sin romper la suite.
+
+
+---
+
+## 2026-08-04 · Cierre de riesgos de diseño de capacidades
+
+Unidad `STELLA_CAPABILITY_DESIGN_RISK_CLOSURE`. Rama
+`codex/stella-g2-local-rehearsal`. **Cero escrituras al stack persistente, cero
+acceso remoto, cero grounding, cero G2 formal.** Todo lo medido aquí sale de
+contenedores desechables con `--network none`, sembrados exclusivamente desde
+`db/baseline/**` con los hashes del manifiesto verificados antes de arrancar.
+
+### Qué se midió
+
+| Medida | Antes | Después |
+|---|---|---|
+| Mutaciones catalogadas | 96 | **169** (`R-01..R-40` cierre de riesgos, `P-01..P-33` evidencia negativa de gates primarios) |
+| Mutaciones supervivientes | 0 de 96 | **0 de 169** |
+| Detectadas por un gate ajeno a su propiedad | 0 | **0** (`expectedGate` exacto en las 169) |
+| Gates del contrato | 123 | **148** (+25: `trigger-*`, `rollback-trigger-*`, `cap02-audit-*`, `cap06-*`, `cap03-claim-*`, `default-acl-not-revoked`) |
+| Gates sin mutación que los ejercite | 56 de 123 | **27 de 148** |
+| Policies del contrato | 36 | **45** |
+| Aserciones vivas del *dry run* | 72 | **115** (109 de `capability-dry-run.sql` + 6 contendidas) |
+| Concurrencia | 6/6 | **6/6** |
+| *Forward* | 42 tablas / 141 policies / 6 roles / 8 funciones | **42 / 150 / 7 / 10 / 1 esquema** |
+| *Rollback* | 40 / 108 | **40 / 108** (sin cambio: todo lo añadido se retira) |
+| *Re-apply* | idéntico | **idéntico** |
+
+### El residual de RR-CAP-12, clasificado
+
+Los 26 gates sin mutación están enumerados **con su razón** en
+`tests/capability-mutation.test.ts`, en cinco clases: *fail-safe* (el objeto
+falta y la capacidad deja de funcionar ruidosamente), disponibilidad, conteo,
+auto-comprobación del arnés, minimización de datos, y *cubierto por un gate
+hermano que sí tiene evidencia negativa*. **Ninguno es la única protección de
+una frontera de autorización**; los que lo eran —`cap05-allowlist`,
+`cap03-blast-radius`, `cap03-login-identity`, `cap02-locked`, `cap02-revoked`,
+`cap01-status`, `cap01-token-hash`, `cap04-retire-dead-policies`,
+`role-crossgrant`, `rollback-role`, `rollback-rls`, `rollback-ownership`,
+`definer-security` y el resto— tienen mutación propia desde esta unidad.
+
+### Hallazgo del propio arnés
+
+El parser **rechazó el primer intento de reparación**. `CREATE TRIGGER` no
+estaba modelado y su regla era fail-closed, así que las tres sentencias del
+trigger de auditoría salieron como `unparsed-security-statement` en lugar de
+pasar en silencio. Modelarlo —`ParsedTrigger`, `TRIGGER_CONTRACT`, ocho gates
+nuevos y once mutaciones— fue el precio correcto; relajar la negativa a un
+salto habría sido exactamente RR-CAP-12b otra vez.
+
+
+### Ronda adversarial del cierre (2026-08-04)
+
+Dos revisores independientes de sólo lectura, con listas de ataque disjuntas
+(A: RLS y ACL; B: atomicidad y auditoría). Veredictos: **A — 1 BLOCKER, 4 MAJOR,
+4 MINOR, 1 NIT**; **B — 2 BLOCKER, 8 MAJOR, 6 MINOR, 3 NIT**. Convergieron por
+caminos distintos en el mismo defecto central de RR-CAP-14, que es la razón por
+la que se corrió a dos revisores y no a uno.
+
+**Corregidos en esta unidad (todos los BLOCKER y MAJOR confirmados):**
+
+| Hallazgo | Corrección |
+|---|---|
+| La cota de fila de Stripe decía «algún evento en vuelo», no «este evento» | La policy se correlaciona con `app.stripe_event_id`, publicado por `stripe_apply_subscription` **después** de validar la reclamación; un cuerpo que lo olvide lee `''` y **no casa con nada** |
+| El cuerpo no exigía que el evento reclamado llevara la dirección con la que casa | Los dos identificadores entran en el `EXISTS` del cuerpo; las dos columnas dejan de ser decoración leída sólo por la policy |
+| La «cota de 15 minutos» no estaba en la policy | El mismo `interval` en las dos policies: un worker muerto ya no deja una organización escribible para siempre |
+| Publicar/despublicar por `sroi_reports.status` no dejaba rastro | `trg_report_visibility_audit`: la visibilidad pública es una **conjunción** y sólo se auditaba un conjunto |
+| El ACL por defecto del *owner* anulaba los grants por columna en **cuatro** tablas | `REVOKE ALL … FROM uellix_writer, uellix_auditor` antes de cada grant, y un gate (`default-acl-not-revoked`) que lo exige en las cuatro |
+| `app.request_id` era un canal de texto libre a una tabla *append-only* | Filtrado por forma (`^[A-Za-z0-9_.:-]{1,64}$`), no truncado |
+| Un evento dirigido a un *customer* podía desvincular la suscripción | `COALESCE`, igual que la línea de encima |
+| El rollback dejaba las decisiones retenidas reescribibles por el *owner* | Los triggers de auditoría **sobreviven** al rollback, por el mismo argumento que los *append-only* |
+| `authenticated` recibía de vuelta ocho columnas sin ningún punto de llamada | No recibe nada; y se comprueba que no retiene **ninguna** columna |
+| `RR14-7` era tautológica y `RR14-2/4/5` daban verde ante cualquier excepción | Fixture que fuerza el estado reclamable; `SQLSTATE IN ('42501','U0001')` en vez de `true` |
+
+**Registrados y NO corregidos**, con su razón: RR-CAP-14-A (la base no puede
+verificar una firma de Stripe), RR-CAP-10-C (`service_role`), RR-CAP-02-H
+(`public_summary` sin booleano), RR-CAP-02-I (`session_replication_role`), y dos
+MINOR de `before_json` obsoleto y `ROW_COUNT` no comprobado.

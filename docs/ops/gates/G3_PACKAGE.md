@@ -410,3 +410,40 @@ mantienen abierto.
 
 **Estado: la campaña NO está aplicada a ningún stack vivo. G3 sigue sin
 ejecutarse.**
+
+
+---
+
+## Cierre de riesgos de diseño (2026-08-04) — qué cambia para G3
+
+Cuatro riesgos que G3 heredaba abiertos están cerrados **en diseño**, con SQL
+preparado, rollback explícito y evidencia negativa viva: RR-CAP-10 (el `UPDATE`
+de `organizations` es por columnas), RR-CAP-13 (la identidad de verificación no
+enumera), RR-CAP-14 (el actor Stripe alcanza sólo la organización reclamada) y
+RR-CAP-02-F (publicar y revocar dejan rastro *append-only* y atómico).
+
+**Nada de esto se ha aplicado a ningún stack.** Las cifras que G3 debe esperar
+del ensayo cambian en consecuencia: *forward* **42 tablas / 150 policies / 7
+roles de capacidad / 10 funciones / 1 esquema**, **115** aserciones vivas
+(109 + 6 contendidas), *rollback* **40 / 108**, *re-apply* idéntico.
+
+Dos cosas que G3 tiene que llevar en su lista y no puede inferir del SQL:
+
+* **RR-CAP-10-A** — aplicar `stella_0011` **exige** haber cambiado antes
+  `lib/admin/stella-services.ts` y `lib/admin/organizations.ts` para que llamen
+  a las dos funciones del *definer*. Sin ese cambio, las dos pantallas de
+  administración de plataforma fallan con 42501 desde el primer minuto. Es una
+  restricción de orden, del mismo tipo que RR-CAP-02-B.
+* **RR-CAP-14** cambió la firma de `stripe_begin_event` a cuatro argumentos y
+  **elimina** la de dos. Cualquier manejador que se escriba contra la forma
+  antigua reclamará eventos sin dirección, y una reclamación sin dirección no
+  casa con ninguna organización.
+
+Sigue siendo cierto lo que esta sección decía antes: un contenedor desechable no
+tiene GoTrue y no es Supabase gestionado. Una **ejecución parcial** de la suite
+viva ya no puede reportarse verde — el recuento de aserciones se compara contra
+`$EXPECTED_ASSERTIONS` — pero eso mide integridad del ensayo, no equivalencia
+con producción.
+
+**Estado: la campaña NO está aplicada a ningún stack vivo. G3 sigue sin
+ejecutarse.**

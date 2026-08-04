@@ -197,3 +197,51 @@ severidad:
 Y el residual de fondo no cambia de naturaleza: «0 de 96 supervivientes» sigue
 siendo acuerdo entre el catálogo y los gates, dos ficheros escritos por la misma
 mano. Lo que ha cambiado es que el lector ya no puede quedarse callado.
+
+
+---
+
+## Anexo 2026-08-04 — el lector detuvo su propia reparación
+
+Esto no lo encontró un revisor: lo encontró el parser, contra el commit que lo
+estaba usando.
+
+El cierre de **RR-CAP-02-F** añade tres `CREATE TRIGGER` a `stella_0007`. El
+lector los devolvió como **`unparsed-security-statement`** y
+`tests/capability-policy-contract.test.ts` se puso en rojo antes de que ninguna
+prueba nueva llegara a ejecutarse. La regla que lo hizo es la misma que este
+documento describe: *una sentencia que abre como operación de seguridad y no
+clasifica es un hallazgo, no un silencio*. `CREATE TRIGGER` estaba en la lista
+de rechazos junto a `CREATE RULE` porque **ningún paquete creaba triggers** y un
+trigger sobre una tabla protegida ejecuta código con la autoridad del
+propietario.
+
+**La tentación era relajar la negativa a un salto. Habría sido RR-CAP-12b otra
+vez**, y por el mismo mecanismo exacto: la ausencia de match interpretada como
+ausencia de riesgo. Lo que se hizo en su lugar:
+
+* `ParsedTrigger` modela nombre, tabla, momento, lista de eventos, nivel
+  (`ROW`/`STATEMENT`), `WHEN` y la función ejecutada. Cada uno de esos campos es
+  una propiedad de seguridad: reapuntar la **tabla** hace que el rastro siga a
+  las filas equivocadas; cambiar `AFTER` por `BEFORE` escribe la auditoría de un
+  cambio que aún no ha ocurrido; borrar `FOR EACH ROW` convierte un `UPDATE` de
+  diez certificados en **un** evento; sustituir la función hace que el trigger
+  siga existiendo y registre lo que la nueva función quiera.
+* `parseTriggerStatement` **sigue fallando cerrado**: `UPDATE OF <columnas>`,
+  `CREATE CONSTRAINT TRIGGER`, `REFERENCING`, un `FOR` que no nombra `ROW` ni
+  `STATEMENT`, y un `EXECUTE` ilegible son hallazgos. Hay control negativo por
+  cada uno en `tests/capability-policy-parser.test.ts`.
+* `DROP TRIGGER` se lee también, porque un rollback que se olvida de uno deja
+  código llamando a una función que ese mismo rollback borra.
+* `TRIGGER_CONTRACT` fija los tres triggers como tuplas completas, y ocho gates
+  nuevos (`trigger-extra`, `trigger-shape`, `trigger-when`, `trigger-missing`,
+  `trigger-not-convergent`, `rollback-trigger`, `rollback-trigger-retained`,
+  `rollback-trigger-created`) tienen once mutaciones que los ponen en rojo.
+* `CREATE RULE` **sigue rechazado sin más**: nada lo usa, y una regla de
+  reescritura cambia sobre qué se aplica RLS.
+
+El residual de fondo tampoco cambia aquí: sigue siendo acuerdo entre el
+catálogo y los gates. Lo que este anexo añade es una observación sobre el
+método, no sobre la cobertura — **el único momento en que un lector fail-closed
+demuestra su valor es cuando te detiene a ti**, y la respuesta correcta es
+modelar, no silenciar.
