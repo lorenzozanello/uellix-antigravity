@@ -142,6 +142,27 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'stella_0007 requires RLS enabled on sroi_reports, organizations and sroi_calculation_runs.';
   END IF;
+
+  -- RR-CAP-02-F reuses the audit infrastructure instead of inventing a second
+  -- one, so it depends on that infrastructure being present: the append-only
+  -- guard function (stella_0002b) and audit_logs' own two triggers. Without
+  -- them "append-only" would be an unsupported claim rather than an inherited
+  -- property, and the failure would surface only when someone tried to erase
+  -- an audit row.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'uellix_forbid_mutation'
+  ) THEN
+    RAISE EXCEPTION 'stella_0007 requires public.uellix_forbid_mutation (stella_0002b); the disclosure trail cannot be made append-only without it.';
+  END IF;
+  IF (SELECT count(*) FROM pg_trigger t
+        JOIN pg_class c ON c.oid = t.tgrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'public' AND c.relname = 'audit_logs'
+         AND NOT t.tgisinternal
+         AND t.tgname IN ('trg_audit_logs_append_only','trg_audit_logs_no_truncate')) <> 2 THEN
+    RAISE EXCEPTION 'stella_0007 requires audit_logs to carry both append-only triggers; the publication trail would be modifiable.';
+  END IF;
 END
 $$;
 
@@ -379,6 +400,17 @@ WITH CHECK (
 -- recorded, which report it is about and who approved it cannot be rewritten.
 -- Without that, "one human decision with author and timestamp" would be a
 -- claim the table could not keep.
+-- Take back the owner's default ACL before granting anything by column.
+-- `ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner IN SCHEMA public GRANT
+-- SELECT, INSERT ON TABLES TO uellix_writer` (baseline) fires when the table is
+-- created above, at TABLE level. ACLs are additive, so without this the
+-- column-scoped INSERT below narrows NOTHING: an organisation admin could set
+-- approved_at, created_at or a pre-filled revoked_at, and the table COMMENT's
+-- "one human decision with author and timestamp" would not hold. Found by
+-- adversarial review, 2026-08-04.
+REVOKE ALL ON public.report_public_disclosures FROM uellix_writer, uellix_auditor;
+REVOKE ALL ON public.capability_verification_hits FROM uellix_writer, uellix_auditor;
+
 GRANT SELECT ON public.report_public_disclosures TO uellix_writer;
 GRANT INSERT (report_id, approved_by, public_summary, show_organization_name,
               show_report_title, show_headline_ratio, show_totals,
@@ -410,6 +442,282 @@ DROP POLICY IF EXISTS cap_verification_only_live ON public.report_public_disclos
 CREATE POLICY cap_verification_only_live
 ON public.report_public_disclosures AS RESTRICTIVE FOR SELECT TO uellix_cap_verification
 USING (revoked_at IS NULL);
+
+-- 2.6bis. The two tables the RESTRICTIVE argument had SKIPPED (RR-CAP-13).
+--
+-- `cap_verification_select_orgs` and `cap_verification_select_runs` are
+-- USING (true), and until this revision they had no RESTRICTIVE companion. The
+-- asymmetry was real and it was a DESIGN gap, not a test gap: the bound that
+-- ties those rows to a published report lived in the BODY of verify_report —
+-- in its JOIN — so the sentence "the policy bounds this even if the body is
+-- rewritten" was true of sroi_reports and report_public_disclosures and false
+-- of these two.
+--
+-- What the column ACL already bounded, and what it never could. The grants are
+-- narrow (`id, name`; `id, currency, sroi_ratio, total_investment,
+-- net_social_value`), so the exposure was never the whole row. But a column
+-- list says WHICH fields, never WHICH rows: with USING (true) the public
+-- verification identity could enumerate the name of every organisation on the
+-- platform and the headline ratio of every calculation ever run, published or
+-- not. That is the customer list and the unpublished results, one SELECT apart
+-- from a body that no longer has to cooperate.
+--
+-- The predicate is the same proposition verify_report's JOIN makes, moved to
+-- where it cannot be rewritten by editing a function: a row is readable only
+-- if some LOCKED report with a LIVE (non-revoked) disclosure points at it.
+-- Revoking a disclosure therefore removes the organisation and the run from
+-- the capability's reach in the same statement that removes the report — the
+-- three cannot drift apart, because they are one predicate written three times.
+--
+-- NO extra SELECT is granted to make these joins resolve. The subqueries read
+-- exactly the columns uellix_cap_verification already holds: sroi_reports
+-- (id, organization_id, calculation_run_id, status) and
+-- report_public_disclosures (report_id, revoked_at). A policy that needed a
+-- wider grant to express its own bound would have widened the surface it was
+-- written to narrow.
+--
+-- No recursion: the subqueries name sroi_reports and report_public_disclosures,
+-- whose own policies for this role reference only their own columns and the
+-- three SECURITY DEFINER helpers. Neither names organizations or
+-- sroi_calculation_runs, so PostgreSQL never re-enters these two policies.
+DROP POLICY IF EXISTS cap_verification_only_published_org ON public.organizations;
+CREATE POLICY cap_verification_only_published_org
+ON public.organizations AS RESTRICTIVE FOR SELECT TO uellix_cap_verification
+USING (
+  EXISTS (
+    SELECT 1 FROM public.sroi_reports r
+      JOIN public.report_public_disclosures d ON d.report_id = r.id
+     WHERE r.organization_id = public.organizations.id
+       AND r.status = 'locked'
+       AND d.revoked_at IS NULL
+  )
+);
+
+DROP POLICY IF EXISTS cap_verification_only_published_run ON public.sroi_calculation_runs;
+CREATE POLICY cap_verification_only_published_run
+ON public.sroi_calculation_runs AS RESTRICTIVE FOR SELECT TO uellix_cap_verification
+USING (
+  EXISTS (
+    SELECT 1 FROM public.sroi_reports r
+      JOIN public.report_public_disclosures d ON d.report_id = r.id
+     WHERE r.calculation_run_id = public.sroi_calculation_runs.id
+       AND r.status = 'locked'
+       AND d.revoked_at IS NULL
+  )
+);
+
+-- ============================================================
+-- 2.7. The publication audit trail (RR-CAP-02-F)
+-- ============================================================
+-- §10 of CAP_02_PUBLIC_VERIFICATION.md used to claim that creating and
+-- revoking a disclosure were audited. They were not: this package contained no
+-- trigger, no INSERT into audit_logs, and no append-only protection on
+-- report_public_disclosures. An administrator could publish with all six
+-- booleans true, let the certificate circulate, revoke it, and republish —
+-- leaving no record of who decided what, or of what had been visible.
+--
+-- REUSES THE EXISTING AUDIT INFRASTRUCTURE, deliberately. audit_logs already
+-- has the append-only triggers (trg_audit_logs_append_only,
+-- trg_audit_logs_no_truncate — stella_0002b), already has the {uellix_app}
+-- INSERT policy that pins actor_user_id to auth.uid(), and already carries no
+-- UPDATE or DELETE grant for any runtime role. A second audit architecture
+-- would have had to re-earn all four properties.
+--
+-- ATOMIC BY CONSTRUCTION, not by convention. This is an AFTER ROW trigger, so
+-- the INSERT into audit_logs runs inside the same transaction as the
+-- publication. If the audit write is refused — no privilege, policy denial,
+-- unresolvable organisation — the trigger raises and the publication is rolled
+-- back with it. There is no ordering in which the disclosure commits and the
+-- audit event does not.
+--
+-- WHAT IS RECORDED, AND WHAT IS DELIBERATELY NOT.
+--   * The six show_* booleans, disclosure_version, and whether the row was
+--     live — the state that decides what a certificate exposes.
+--   * public_summary as a SHA-256 DIGEST and a length, never as text. The
+--     summary is free text a person wrote; audit_logs holds no payload
+--     anywhere else in this schema and must not start here. The digest still
+--     answers the question the trail exists to answer — "was what circulated
+--     the same text as what is in the row now?" — which the row alone cannot,
+--     because public_summary is updatable.
+--   * A correlation id, when the caller set one (`app.request_id`). NULL is a
+--     legitimate value and not an error: nothing in the runtime sets that GUC
+--     today, and inventing a fallback would make the column look populated.
+CREATE OR REPLACE FUNCTION public.uellix_audit_report_disclosure()
+RETURNS trigger
+LANGUAGE plpgsql
+  SET search_path = ''
+AS $$
+DECLARE
+  v_org_id uuid;
+  v_action text;
+  v_before jsonb;
+  v_after  jsonb;
+BEGIN
+  -- The organisation is DERIVED from the report, never asserted: the
+  -- disclosure table deliberately has no organization_id (see §2.1). A
+  -- disclosure whose report cannot be resolved must not commit.
+  SELECT r.organization_id INTO v_org_id
+    FROM public.sroi_reports r
+   WHERE r.id = NEW.report_id;
+
+  -- Plain RAISE, so SQLSTATE is P0001 — the same code public.uellix_forbid_mutation
+  -- raises, and deliberately NOT U0001 or U0002. Those two belong to the
+  -- capability definers' uniform-refusal contract (U0002 is CAP-05's one
+  -- distinguishable error, the slug collision); borrowing either here would put
+  -- a trigger's internal invariant into a vocabulary that means "the capability
+  -- refused your request". This is not a refusal. It is an assertion that
+  -- cannot fire while the foreign key holds.
+  IF v_org_id IS NULL THEN
+    RAISE EXCEPTION 'disclosure audit cannot resolve the organisation of report %', NEW.report_id;
+  END IF;
+
+  v_after := pg_catalog.jsonb_build_object(
+    'live',                   (NEW.revoked_at IS NULL),
+    'disclosureVersion',      NEW.disclosure_version,
+    'showOrganizationName',   NEW.show_organization_name,
+    'showReportTitle',        NEW.show_report_title,
+    'showHeadlineRatio',      NEW.show_headline_ratio,
+    'showTotals',             NEW.show_totals,
+    'showIssuedOn',           NEW.show_issued_on,
+    'showReportVariant',      NEW.show_report_variant,
+    'summarySha256',          CASE WHEN NEW.public_summary IS NULL THEN NULL
+                                   ELSE pg_catalog.encode(
+                                     pg_catalog.sha256(
+                                       pg_catalog.convert_to(NEW.public_summary, 'UTF8')), 'hex') END,
+    'summaryLength',          pg_catalog.length(NEW.public_summary),
+    -- BOUNDED AND FILTERED, not copied. `app.request_id` is a custom GUC any
+    -- role can set to arbitrary text, so an unvalidated copy would be a
+    -- free-text channel into an APPEND-ONLY table — an application that wanted
+    -- the summary, a prompt or a token in audit_logs could simply put it here,
+    -- and nothing could ever remove it. Found by adversarial review, 2026-08-04.
+    -- Anything outside a correlation-id shape becomes NULL rather than being
+    -- truncated: a mangled prefix of a payload is still a payload.
+    --
+    -- NULLIF, not pg_catalog.nullif: like COALESCE it is a grammar production
+    -- and has no pg_proc row, so the over-qualified form fails at RUN time —
+    -- here, inside a publication. Being grammar, it is immune to search_path.
+    'requestId',              (SELECT CASE WHEN v ~ '^[A-Za-z0-9_.:-]{1,64}$' THEN v END
+                                 FROM (SELECT NULLIF(pg_catalog.current_setting('app.request_id', true), '') AS v) g));
+
+  IF TG_OP = 'INSERT' THEN
+    v_action := 'report.disclosure.published';
+    v_before := NULL;
+  ELSE
+    v_before := pg_catalog.jsonb_build_object(
+      'live',                 (OLD.revoked_at IS NULL),
+      'disclosureVersion',    OLD.disclosure_version,
+      'showOrganizationName', OLD.show_organization_name,
+      'showReportTitle',      OLD.show_report_title,
+      'showHeadlineRatio',    OLD.show_headline_ratio,
+      'showTotals',           OLD.show_totals,
+      'showIssuedOn',         OLD.show_issued_on,
+      'showReportVariant',    OLD.show_report_variant,
+      'summarySha256',        CASE WHEN OLD.public_summary IS NULL THEN NULL
+                                   ELSE pg_catalog.encode(
+                                     pg_catalog.sha256(
+                                       pg_catalog.convert_to(OLD.public_summary, 'UTF8')), 'hex') END,
+      'summaryLength',        pg_catalog.length(OLD.public_summary));
+
+    -- Four transitions, named apart. Collapsing them into one 'updated' would
+    -- make "how many certificates were withdrawn" unanswerable without diffing
+    -- every pair of rows.
+    IF OLD.revoked_at IS NULL AND NEW.revoked_at IS NOT NULL THEN
+      v_action := 'report.disclosure.revoked';
+    ELSIF OLD.revoked_at IS NOT NULL AND NEW.revoked_at IS NULL THEN
+      v_action := 'report.disclosure.reinstated';
+    ELSIF v_before - 'summaryLength' IS DISTINCT FROM v_after - ARRAY['summaryLength','requestId'] THEN
+      v_action := 'report.disclosure.visibility_changed';
+    ELSE
+      v_action := 'report.disclosure.touched';
+    END IF;
+  END IF;
+
+  INSERT INTO public.audit_logs
+    (organization_id, actor_user_id, entity_type, entity_id, action,
+     before_json, after_json, reason)
+  VALUES
+    (v_org_id, auth.uid(), 'report_public_disclosure', NEW.report_id, v_action,
+     v_before, v_after, 'disclosure_lifecycle');
+
+  RETURN NULL;
+END
+$$;
+
+COMMENT ON FUNCTION public.uellix_audit_report_disclosure() IS
+  'CAP-02 / RR-CAP-02-F. AFTER ROW trigger on report_public_disclosures. Writes one append-only audit_logs row per publication, revocation, reinstatement and visibility change, in the SAME transaction as the change: a refused audit write rolls the publication back. Records the six show_* flags, disclosure_version, liveness and a SHA-256 digest of public_summary — never the summary text, never a payload.';
+
+DROP TRIGGER IF EXISTS trg_report_disclosure_audit ON public.report_public_disclosures;
+CREATE TRIGGER trg_report_disclosure_audit
+AFTER INSERT OR UPDATE ON public.report_public_disclosures
+FOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_disclosure();
+
+-- Append-only, on the SAME function the four audit tables already use. There
+-- is no DELETE policy and no DELETE grant, so this is defence in depth against
+-- the one principal those two do not bind — the table owner — and against a
+-- future grant added without reading this file. TRUNCATE needs its own
+-- statement-level trigger: it fires no row triggers.
+-- 2.7bis. The other half of "is this certificate visible" (RR-CAP-02-F).
+--
+-- Public visibility is a CONJUNCTION: `sroi_reports.status = 'locked'` AND
+-- `report_public_disclosures.revoked_at IS NULL`. Until this revision only the
+-- second conjunct was audited, and an adversarial reviewer walked straight
+-- through the gap: `sroi_reports_update` is a {public} baseline policy that
+-- admits `analyst` and `impact_manager`, and uellix_writer holds table-level
+-- UPDATE on sroi_reports. So an analyst could run `UPDATE sroi_reports SET
+-- status='locked'` and take a certificate LIVE — or `'draft'` and take it
+-- DARK — without touching the audited table at all. The claim that publishing
+-- cannot happen without a trace was true of the wrong table.
+--
+-- This trigger closes it with the narrowest possible scope: it fires only when
+-- `status` actually changes AND the report carries a disclosure row. A report
+-- nobody ever published is not a publication event, and locking one stays an
+-- ordinary domain action with no audit noise.
+CREATE OR REPLACE FUNCTION public.uellix_audit_report_visibility()
+RETURNS trigger
+LANGUAGE plpgsql
+  SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.status IS NOT DISTINCT FROM OLD.status THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.report_public_disclosures d WHERE d.report_id = NEW.id
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  INSERT INTO public.audit_logs
+    (organization_id, actor_user_id, entity_type, entity_id, action,
+     before_json, after_json, reason)
+  VALUES
+    (NEW.organization_id, auth.uid(), 'report_public_disclosure', NEW.id,
+     'report.disclosure.visibility_changed',
+     pg_catalog.jsonb_build_object('reportStatus', OLD.status),
+     pg_catalog.jsonb_build_object('reportStatus', NEW.status),
+     'disclosure_lifecycle');
+
+  RETURN NULL;
+END
+$$;
+
+COMMENT ON FUNCTION public.uellix_audit_report_visibility() IS
+  'CAP-02 / RR-CAP-02-F. Audits the OTHER half of public visibility: a change to sroi_reports.status on a report that carries a disclosure row. Without it, locking or unlocking a report moves a certificate in and out of public view with no trace, because the disclosure table is untouched.';
+
+DROP TRIGGER IF EXISTS trg_report_visibility_audit ON public.sroi_reports;
+CREATE TRIGGER trg_report_visibility_audit
+AFTER UPDATE ON public.sroi_reports
+FOR EACH ROW EXECUTE FUNCTION public.uellix_audit_report_visibility();
+
+DROP TRIGGER IF EXISTS trg_report_disclosures_append_only ON public.report_public_disclosures;
+CREATE TRIGGER trg_report_disclosures_append_only
+BEFORE DELETE ON public.report_public_disclosures
+FOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+DROP TRIGGER IF EXISTS trg_report_disclosures_no_truncate ON public.report_public_disclosures;
+CREATE TRIGGER trg_report_disclosures_no_truncate
+BEFORE TRUNCATE ON public.report_public_disclosures
+FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
 
 RESET ROLE;
 
@@ -716,14 +1024,94 @@ BEGIN
   SELECT count(*) INTO v_policies
     FROM pg_policies
    WHERE schemaname = 'public' AND pg_catalog.left(policyname, 17) = 'cap_verification_';
-  IF v_policies <> 7 THEN
-    RAISE EXCEPTION 'Expected 7 cap_verification_* policies (5 permissive + 2 restrictive), found %.', v_policies;
+  IF v_policies <> 9 THEN
+    RAISE EXCEPTION 'Expected 9 cap_verification_* policies (5 permissive + 4 restrictive), found %.', v_policies;
   END IF;
   IF (SELECT count(*) FROM pg_policies
        WHERE schemaname = 'public'
          AND pg_catalog.left(policyname, 17) = 'cap_verification_'
-         AND permissive = 'RESTRICTIVE') <> 2 THEN
-    RAISE EXCEPTION 'the two RESTRICTIVE cap_verification_* policies are missing; a locked-but-unpublished report could be read through a baseline policy.';
+         AND permissive = 'RESTRICTIVE') <> 4 THEN
+    RAISE EXCEPTION 'the four RESTRICTIVE cap_verification_* policies are missing; a locked-but-unpublished report, or the name of an organisation that published nothing, could be read through a baseline policy.';
+  END IF;
+  -- Named, not merely counted (RR-CAP-13). A count of four is satisfied by any
+  -- four, including two copies of the two that already existed.
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname = 'public' AND tablename = 'organizations'
+                    AND policyname = 'cap_verification_only_published_org'
+                    AND permissive = 'RESTRICTIVE' AND cmd = 'SELECT')
+     OR NOT EXISTS (SELECT 1 FROM pg_policies
+                     WHERE schemaname = 'public' AND tablename = 'sroi_calculation_runs'
+                       AND policyname = 'cap_verification_only_published_run'
+                       AND permissive = 'RESTRICTIVE' AND cmd = 'SELECT') THEN
+    RAISE EXCEPTION 'the RR-CAP-13 row bounds on organizations / sroi_calculation_runs are absent; the verification identity could enumerate every organisation and every calculation run.';
+  END IF;
+
+  -- RR-CAP-02-F. The publication trail, asserted as three objects rather than
+  -- as a sentence in the design document — which is exactly how §10 came to
+  -- claim an audit that did not exist.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+      JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public' AND c.relname = 'report_public_disclosures'
+       AND t.tgname = 'trg_report_disclosure_audit' AND NOT t.tgisinternal
+       -- 'O' (origin) or 'A' (always). 'A' is the hardened state that survives
+       -- `SET session_replication_role = 'replica'`; pinning 'O' would have
+       -- made this package ABORT on a database an operator had hardened.
+       AND t.tgenabled IN ('O','A')
+  ) THEN
+    RAISE EXCEPTION 'trg_report_disclosure_audit is absent or disabled; publishing and revoking would leave no trace.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public' AND c.relname = 'report_public_disclosures'
+       AND t.tgname = 'trg_report_disclosures_append_only' AND t.tgenabled IN ('O','A'))
+     OR NOT EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public' AND c.relname = 'report_public_disclosures'
+       AND t.tgname = 'trg_report_disclosures_no_truncate' AND t.tgenabled IN ('O','A')) THEN
+    RAISE EXCEPTION 'report_public_disclosures is not protected against DELETE/TRUNCATE; a published decision could be erased.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public' AND c.relname = 'sroi_reports'
+       AND t.tgname = 'trg_report_visibility_audit' AND NOT t.tgisinternal
+       AND t.tgenabled IN ('O','A')
+  ) THEN
+    RAISE EXCEPTION 'trg_report_visibility_audit is absent; locking or unlocking a published report would move a certificate in and out of public view with no trace.';
+  END IF;
+
+  -- The owner default ACL must be back off both CAP-02 tables, or the
+  -- column-scoped INSERT grant below is decorative.
+  IF pg_catalog.has_any_column_privilege('uellix_writer', 'public.report_public_disclosures'::regclass, 'INSERT')
+     AND pg_catalog.has_column_privilege('uellix_writer', 'public.report_public_disclosures', 'approved_at', 'INSERT') THEN
+    RAISE EXCEPTION 'the runtime can set approved_at on a disclosure; the owner default ACL was not taken back.';
+  END IF;
+  IF pg_catalog.has_any_column_privilege('uellix_writer', 'public.capability_verification_hits'::regclass, 'SELECT') THEN
+    RAISE EXCEPTION 'uellix_writer holds a privilege on capability_verification_hits; the COMMENT claims nothing exposes it.';
+  END IF;
+
+  -- NOT SECURITY DEFINER, on purpose. The trigger must write the audit row
+  -- with the CALLER's privileges and under the CALLER's audit_logs policy, so
+  -- that actor_user_id = auth.uid() is enforced by RLS rather than asserted by
+  -- the function. A definer here would let the trigger insert audit rows the
+  -- caller could not have inserted itself.
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public' AND p.proname = 'uellix_audit_report_disclosure'
+       AND p.prosecdef
+  ) THEN
+    RAISE EXCEPTION 'uellix_audit_report_disclosure is SECURITY DEFINER; it must run as the caller so audit_logs RLS pins the actor.';
+  END IF;
+  -- No runtime role may rewrite or erase what the trigger wrote.
+  IF pg_catalog.has_table_privilege('uellix_writer', 'public.audit_logs', 'UPDATE')
+     OR pg_catalog.has_table_privilege('uellix_writer', 'public.audit_logs', 'DELETE')
+     OR pg_catalog.has_table_privilege('uellix_app', 'public.audit_logs', 'UPDATE')
+     OR pg_catalog.has_table_privilege('uellix_app', 'public.audit_logs', 'DELETE') THEN
+    RAISE EXCEPTION 'a runtime role can modify or delete audit_logs; the publication trail is not append-only.';
   END IF;
 
   SELECT count(*) INTO v_policies

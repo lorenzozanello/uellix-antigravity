@@ -84,6 +84,36 @@ DROP POLICY IF EXISTS cap_verification_select_disclosures ON public.report_publi
 DROP POLICY IF EXISTS cap_verification_write_hits         ON public.capability_verification_hits;
 DROP POLICY IF EXISTS cap_verification_only_locked        ON public.sroi_reports;
 DROP POLICY IF EXISTS cap_verification_only_live          ON public.report_public_disclosures;
+DROP POLICY IF EXISTS cap_verification_only_published_org ON public.organizations;
+DROP POLICY IF EXISTS cap_verification_only_published_run ON public.sroi_calculation_runs;
+
+-- The publication trail (RR-CAP-02-F), and the asymmetry it inherits from the
+-- table it protects.
+--
+-- REVISED after adversarial review (2026-08-04). The audit triggers used to be
+-- dropped here, on the argument that the write path was gone so the event could
+-- not happen. That argument was wrong twice over: `uellix_owner` is the table
+-- owner, exempt from RLS and holding implicit UPDATE, and it is reachable by
+-- SET ROLE from the LOGIN role `uellix_migrator` — so with the trigger gone it
+-- could flip `revoked_at`, `show_*` or `public_summary` on any retained decision
+-- with zero trace, and a later re-apply of stella_0007 would turn those
+-- silently-altered rows back into live certificates. And `sroi_reports.status`
+-- stays writable by the runtime regardless of this rollback.
+--
+-- So the audit triggers STAY, for the same reason the append-only ones do: they
+-- are not part of the capability, they protect the rows this rollback
+-- deliberately retains. What goes is only what SERVES the capability.
+--
+-- The two APPEND-ONLY triggers STAY. They are not part of the capability; they
+-- protect the rows this rollback deliberately retains — each one a human
+-- decision to publish, which is the entire reason the table survives. Dropping
+-- them would leave those decisions erasable by the owner the moment the
+-- capability that justified protecting them was removed. The rows already
+-- outlive the capability; so does their protection.
+--
+-- The audit rows themselves are untouched, in audit_logs, where they are
+-- append-only by construction and outlive every capability.
+-- (nothing dropped here: see above)
 
 -- The write path goes with the capability. `disclosures_select_member` stays,
 -- so an administrator can still read what was published while it was live.
@@ -91,6 +121,10 @@ DROP POLICY IF EXISTS disclosures_insert_admin ON public.report_public_disclosur
 DROP POLICY IF EXISTS disclosures_update_admin ON public.report_public_disclosures;
 
 REVOKE INSERT, UPDATE ON public.report_public_disclosures FROM uellix_writer;
+
+-- The two audit functions stay with their triggers. Dropping a function whose
+-- trigger survives is how a retained table acquires "function does not exist"
+-- on every write.
 
 DO $$
 BEGIN
@@ -195,6 +229,32 @@ BEGIN
     WHERE schemaname = 'public' AND policyname = 'disclosures_select_member'
   ) THEN
     RAISE EXCEPTION 'disclosures_select_member was dropped; an admin must still be able to read what was published.';
+  END IF;
+
+  -- RR-CAP-02-F. The rollback keeps the decisions, so it keeps everything that
+  -- makes them unerasable AND everything that makes a change to them traceable.
+  IF (SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'public' AND c.relname = 'report_public_disclosures'
+         AND NOT t.tgisinternal
+         AND t.tgname IN ('trg_report_disclosures_append_only',
+                          'trg_report_disclosures_no_truncate',
+                          'trg_report_disclosure_audit')) <> 3 THEN
+    RAISE EXCEPTION 'a retained-row protection was dropped; the rollback keeps the decisions, so it must keep what makes them unerasable and traceable.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'public' AND c.relname = 'sroi_reports'
+       AND t.tgname = 'trg_report_visibility_audit'
+  ) THEN
+    RAISE EXCEPTION 'trg_report_visibility_audit was dropped; a retained decision could be made public again with no trace.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public' AND p.proname = 'uellix_audit_report_disclosure'
+  ) THEN
+    RAISE EXCEPTION 'uellix_audit_report_disclosure was dropped while its trigger survives.';
   END IF;
 
   -- The baseline is back to what it was, counted excluding whatever the OTHER
