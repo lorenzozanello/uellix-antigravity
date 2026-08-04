@@ -420,14 +420,21 @@ BEGIN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
 
-  -- p_quota IS NULL is refused, not tolerated. `stella_monthly_quota` is
-  -- nullable in the baseline with DEFAULT 0, so a NULL here would produce a
-  -- state no organisation reaches through creation, and one whose meaning to
-  -- the runtime's `used < quota` comparison is three-valued. Same shape as the
-  -- fixed list admin_set_organization_status already uses.
+  -- NULL IS A VALUE HERE, NOT AN ABSENCE, and a previous revision of this
+  -- package got that wrong. An adversarial reviewer read `stella_monthly_quota`
+  -- as nullable-with-DEFAULT-0 and called a NULL argument a three-valued state;
+  -- the reviewer was reasoning from the schema, and the schema is not where the
+  -- meaning lives. `lib/stella/quota.ts:36` is explicit:
+  --
+  --     // null quota means unlimited (no cap assigned/enforced)
+  --     if (quota === null) return { allowed: true, used: 0, quota: null }
+  --
+  -- so NULL is the platform's way of granting UNLIMITED Stella usage, the admin
+  -- form offers it as an empty field, and refusing it here removed a capability
+  -- the product has — a functional regression wearing the costume of a
+  -- hardening. Only a NEGATIVE quota is nonsense, and only that is refused.
   IF p_organization_id IS NULL
-     OR p_quota IS NULL
-     OR p_quota < 0
+     OR (p_quota IS NOT NULL AND p_quota < 0)
      OR pg_catalog.length(p_plan_label) > 100 THEN
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
   END IF;
@@ -465,6 +472,12 @@ EXCEPTION
   WHEN query_canceled THEN
     RAISE LOG 'capability call cancelled (57014)';
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
+  -- Contended, not refused. The mirror of CAP-03's U0003: a Stripe webhook
+  -- holding this organisation's row must not make the admin screen say
+  -- "update failed" with no hint that retrying would work.
+  WHEN lock_not_available OR serialization_failure OR deadlock_detected THEN
+    RAISE LOG 'admin capability contended with SQLSTATE %', SQLSTATE;
+    RAISE EXCEPTION 'capability request contended' USING ERRCODE = 'U0003';
   WHEN OTHERS THEN
     RAISE LOG 'admin_set_stella_service refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
@@ -532,6 +545,12 @@ EXCEPTION
   WHEN query_canceled THEN
     RAISE LOG 'capability call cancelled (57014)';
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';
+  -- Contended, not refused. The mirror of CAP-03's U0003: a Stripe webhook
+  -- holding this organisation's row must not make the admin screen say
+  -- "update failed" with no hint that retrying would work.
+  WHEN lock_not_available OR serialization_failure OR deadlock_detected THEN
+    RAISE LOG 'admin capability contended with SQLSTATE %', SQLSTATE;
+    RAISE EXCEPTION 'capability request contended' USING ERRCODE = 'U0003';
   WHEN OTHERS THEN
     RAISE LOG 'admin_set_organization_status refused with SQLSTATE %', SQLSTATE;
     RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';

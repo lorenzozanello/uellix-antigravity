@@ -8,7 +8,10 @@ import { organizations, stellaInteractions } from '@/db/schema'
 import { eq, and, gte, count, sum } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireAdminAccess } from '@/lib/auth/session'
-import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
+import {
+  callAdminSetStellaService,
+  OrganizationAdministrationError,
+} from './organization-administration'
 import { startOfCurrentUtcMonth } from '@/lib/stella/quota'
 import { estimateCostUsd } from '@/lib/stella/cost-model'
 
@@ -60,45 +63,52 @@ export async function listOrganizationsWithStellaUsage() {
   return results
 }
 
-/** Assign or update an organization's Stella plan label and monthly quota. */
+/**
+ * Assign or update an organization's Stella plan label and monthly quota.
+ *
+ * Goes through `uellix_capability.admin_set_stella_service`, not through the
+ * ORM: since `stella_0011` these two columns are outside every runtime UPDATE
+ * grant, so `db.update(organizations).set({ stellaMonthlyQuota })` is refused
+ * by the ACL and would be refused for any caller, super_admin or not. See
+ * lib/admin/organization-administration.ts for why the deployment is coupled.
+ *
+ * THE AUDIT ROW IS NOT WRITTEN HERE ANY MORE, and that is the point rather
+ * than a simplification. The definer writes the change and its audit_logs row
+ * in ONE transaction; this function used to issue them as two awaited calls,
+ * so a failure between them left a quota moved with no record of why. Calling
+ * `logAuditAction` as well would now produce two rows for one decision.
+ *
+ * The "organization not found" pre-check is gone with it. The capability
+ * answers every refusal identically — not a super_admin, no such organisation,
+ * negative quota — so a caller cannot use this endpoint to discover which
+ * organisation ids exist.
+ */
 export async function updateOrganizationStellaService(
   organizationId: string,
   input: unknown
 ) {
-  const admin = await requireAdminAccess()
+  await requireAdminAccess()
   const data = StellaServiceInput.parse(input)
 
-  const before = await db
+  await callAdminSetStellaService(organizationId, {
+    monthlyQuota: data.monthlyQuota,
+    planLabel: data.planLabel,
+  })
+
+  // Read back for the caller's benefit. The write is already committed and
+  // audited; this is a projection, not part of the transaction.
+  const [updated] = await db
     .select({
+      id: organizations.id,
+      name: organizations.name,
       stellaMonthlyQuota: organizations.stellaMonthlyQuota,
       stellaPlanLabel: organizations.stellaPlanLabel,
     })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
-    .then((rows) => rows[0])
 
-  if (!before) throw new Error('Organization not found')
-
-  const [updated] = await db
-    .update(organizations)
-    .set({
-      stellaMonthlyQuota: data.monthlyQuota,
-      stellaPlanLabel: data.planLabel,
-      updatedAt: new Date(),
-    })
-    .where(eq(organizations.id, organizationId))
-    .returning()
-
-  if (!updated) throw new Error('Organization not found')
-
-  await logAuditAction({
-    actorUserId: admin.id,
-    entityType: 'organization',
-    entityId: organizationId,
-    action: AUDIT_ACTIONS.STELLA_SERVICE_UPDATED,
-    beforeJson: { stellaMonthlyQuota: before.stellaMonthlyQuota, stellaPlanLabel: before.stellaPlanLabel },
-    afterJson: { stellaMonthlyQuota: updated.stellaMonthlyQuota, stellaPlanLabel: updated.stellaPlanLabel },
-  })
+  // See lib/admin/organizations.ts: the declared type says a row.
+  if (!updated) throw new OrganizationAdministrationError('stella service read-back')
 
   return updated
 }
