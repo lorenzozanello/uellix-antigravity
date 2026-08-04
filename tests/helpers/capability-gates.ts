@@ -56,6 +56,11 @@ export const FORWARD = {
   // and every gate below is exactly as applicable to it — leaving it out would
   // have made "the campaign is contracted" true of five files and false of six.
   CAP06: 'stella_0011_organization_column_acl.sql',
+  // Not a capability either, and unlike 0011 it creates NOTHING: no role, no
+  // function, no policy, no table. It narrows two ACLs. It is in this map so
+  // that every gate that reads a package's text reads it too — a file the
+  // contract does not parse is a file the contract cannot judge.
+  CAP07: 'stella_0012_super_admin_column_acl.sql',
 } as const
 
 export const ROLLBACK = {
@@ -65,6 +70,7 @@ export const ROLLBACK = {
   CAP04: 'stella_0009_rollback.sql',
   CAP05: 'stella_0010_rollback.sql',
   CAP06: 'stella_0011_rollback.sql',
+  CAP07: 'stella_0012_rollback.sql',
 } as const
 
 export const CAPABILITY_SQL_FILES: readonly string[] = [
@@ -189,6 +195,12 @@ export const POLICY_CONTRACT: readonly PolicyContract[] = [
   { name: 'cap_platform_update_orgs', file: FORWARD.CAP06, table: 'public.organizations', mode: 'PERMISSIVE', command: 'UPDATE', roles: ['uellix_cap_platform'], using: 'true', check: 'true' },
   { name: 'cap_platform_only_super_admin_read', file: FORWARD.CAP06, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'SELECT', roles: ['uellix_cap_platform'], using: 'public.current_user_is_super_admin()', check: null },
   { name: 'cap_platform_only_super_admin', file: FORWARD.CAP06, table: 'public.organizations', mode: 'RESTRICTIVE', command: 'UPDATE', roles: ['uellix_cap_platform'], using: 'public.current_user_is_super_admin()', check: 'public.current_user_is_super_admin()' },
+  // --- stella_0012 / RR-CAP-15 --------------------------------------------
+  // The only policy in the campaign that bounds a VALUE rather than a row, and
+  // the only one that names a pre-existing role — because RESTRICTIVE can only
+  // narrow, and `authenticated` is the principal the escalation ran through.
+  { name: 'cap_members_no_super_admin_grant', file: FORWARD.CAP07, table: 'public.organization_members', mode: 'RESTRICTIVE', command: 'INSERT', roles: ['uellix_app', 'authenticated'], using: null, check: "role <> 'super_admin'" },
+
   { name: 'cap_platform_insert_audit', file: FORWARD.CAP06, table: 'public.audit_logs', mode: 'PERMISSIVE', command: 'INSERT', roles: ['uellix_cap_platform'], using: null, check: "actor_user_id = auth.uid() AND actor_user_id IS NOT NULL AND entity_type = 'organization' AND pg_catalog.left(action, 9) = 'platform.'" },
 ]
 
@@ -298,6 +310,12 @@ export const GRANT_CONTRACT: Readonly<Record<string, readonly string[]>> = {
     G('EXECUTE ON FUNCTION:uellix_capability.admin_set_stella_service TO uellix_app'),
     G('EXECUTE ON FUNCTION:uellix_capability.admin_set_organization_status TO uellix_app'),
   ],
+  [FORWARD.CAP07]: [
+    // The repair, and nothing else. These two lines ARE RR-CAP-15: the set
+    // comparison is what makes adding is_super_admin back a visible edit.
+    G('UPDATE(avatar_url,email,full_name,updated_at) ON TABLE:public.users TO uellix_writer'),
+    G('UPDATE(status,updated_at) ON TABLE:public.organization_members TO uellix_writer'),
+  ],
 }
 
 /**
@@ -317,6 +335,7 @@ export const ROLLBACK_RETAINED_POLICIES: Readonly<Record<string, readonly string
   [ROLLBACK.CAP04]: [],
   [ROLLBACK.CAP05]: [],
   [ROLLBACK.CAP06]: [],
+  [ROLLBACK.CAP07]: [],
 }
 
 /**
@@ -395,6 +414,8 @@ export const OWNERSHIP_CONTRACT: Readonly<Record<string, readonly string[]>> = {
     'FUNCTION uellix_capability.admin_set_stella_service -> uellix_cap_platform',
     'FUNCTION uellix_capability.admin_set_organization_status -> uellix_cap_platform',
   ],
+  // stella_0012 transfers no ownership: it never creates an object to own.
+  [FORWARD.CAP07]: [],
 }
 
 /** Tables whose RLS each package must ENABLE, and never disable. */
@@ -407,6 +428,7 @@ export const RLS_CONTRACT: Readonly<Record<string, readonly string[]>> = {
   // stella_0011 creates no table, so it enables no RLS. The tables it touches
   // already have it, and its preconditions refuse to run if they do not.
   [FORWARD.CAP06]: [],
+  [FORWARD.CAP07]: [],
 }
 
 /** Indexes the design's arguments rest on, and whether uniqueness is the point. */
@@ -422,6 +444,7 @@ export const INDEX_CONTRACT: Readonly<Record<string, ReadonlyArray<{ name: strin
   [FORWARD.CAP04]: [{ name: 'uq_marketing_leads_email_source', unique: true }],
   [FORWARD.CAP05]: [],
   [FORWARD.CAP06]: [],
+  [FORWARD.CAP07]: [],
 }
 
 // ---------------------------------------------------------------------------
@@ -513,6 +536,7 @@ export const ROLLBACK_DROPPED_TRIGGERS: Readonly<Record<string, readonly string[
   [ROLLBACK.CAP04]: [],
   [ROLLBACK.CAP05]: [],
   [ROLLBACK.CAP06]: [],
+  [ROLLBACK.CAP07]: [],
 }
 
 export const ROLLBACK_RETAINED_TRIGGERS: Readonly<Record<string, readonly string[]>> = {
@@ -527,6 +551,7 @@ export const ROLLBACK_RETAINED_TRIGGERS: Readonly<Record<string, readonly string
   [ROLLBACK.CAP04]: [],
   [ROLLBACK.CAP05]: [],
   [ROLLBACK.CAP06]: [],
+  [ROLLBACK.CAP07]: [],
 }
 
 // ---------------------------------------------------------------------------
@@ -573,13 +598,17 @@ export function codeOnly(sql: string): string {
   return stripComments(sql)
 }
 
-export const CAPABILITY_ROLES: Readonly<Record<string, string>> = {
+export const CAPABILITY_ROLES: Readonly<Record<string, string | null>> = {
   [FORWARD.CAP01]: 'uellix_cap_invitation',
   [FORWARD.CAP02]: 'uellix_cap_verification',
   [FORWARD.CAP03]: 'uellix_cap_stripe',
   [FORWARD.CAP04]: 'uellix_cap_lead',
   [FORWARD.CAP05]: 'uellix_cap_bootstrap',
   [FORWARD.CAP06]: 'uellix_cap_platform',
+  // stella_0012 creates NO role. The rollback gate below must therefore not
+  // demand a DROP ROLE from its rollback: `undefined` would have produced the
+  // regex /DROP ROLE undefined/ and a permanent false positive.
+  [FORWARD.CAP07]: null,
 }
 
 export const CAPABILITY_FUNCTIONS: Readonly<Record<string, readonly string[]>> = {
@@ -589,6 +618,7 @@ export const CAPABILITY_FUNCTIONS: Readonly<Record<string, readonly string[]>> =
   [FORWARD.CAP04]: ['submit_lead'],
   [FORWARD.CAP05]: ['bootstrap_organization'],
   [FORWARD.CAP06]: ['admin_set_stella_service', 'admin_set_organization_status'],
+  [FORWARD.CAP07]: [],
 }
 
 /** The six publication flags of CAP-02. The old gate knew about four. */
@@ -665,6 +695,16 @@ export const ROLLBACK_GRANT_CONTRACT: Readonly<Record<string, readonly string[]>
     'DELETE ON TABLE:public.organizations TO authenticated',
     'DELETE ON TABLE:public.organizations TO uellix_writer',
   ],
+  // The third RESTORATION, and the one that reopens a privilege escalation.
+  // stella_0012 replaced two table-level UPDATE grants with column lists;
+  // undoing it puts the table grants back, and with them the ability of any
+  // authenticated subject to write users.is_super_admin.
+  [ROLLBACK.CAP07]: [
+    'UPDATE ON TABLE:public.users TO authenticated',
+    'UPDATE ON TABLE:public.users TO uellix_writer',
+    'UPDATE ON TABLE:public.organization_members TO authenticated',
+    'UPDATE ON TABLE:public.organization_members TO uellix_writer',
+  ],
 }
 
 export const ROLLBACK_POLICY_CONTRACT: Readonly<Record<string, readonly string[]>> = {
@@ -674,6 +714,7 @@ export const ROLLBACK_POLICY_CONTRACT: Readonly<Record<string, readonly string[]
   [ROLLBACK.CAP04]: ['anon_insert_marketing_leads', 'authenticated_insert_marketing_leads'],
   [ROLLBACK.CAP05]: [],
   [ROLLBACK.CAP06]: [],
+  [ROLLBACK.CAP07]: [],
 }
 
 /** Every attribute a capability role must NOT have. All seven, not five. */
@@ -766,7 +807,17 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
       if (p.roles.length === 0)
         add('policy-to-absent', `${file}: policy ${p.name} has no TO clause, which is TO PUBLIC`)
       for (const r of p.roles) {
-        if (['public', 'anon', 'authenticated', 'service_role'].includes(r))
+        // ONE exception, by name. Every PERMISSIVE policy that reaches a
+        // pre-existing role is a widening; a RESTRICTIVE one that reaches
+        // `authenticated` can only ever NARROW what that role may do, and
+        // cap_members_no_super_admin_grant has to name it precisely because
+        // `authenticated` is the PostgREST principal the escalation ran
+        // through. Naming the exception keeps the general rule intact.
+        const NARROWING_EXCEPTION =
+          p.name === 'cap_members_no_super_admin_grant' &&
+          p.permissive === 'RESTRICTIVE' &&
+          (r === 'authenticated' || r === 'uellix_app')
+        if (!NARROWING_EXCEPTION && ['public', 'anon', 'authenticated', 'service_role'].includes(r))
           add('policy-to-widened', `${file}: policy ${p.name} names ${r}`)
       }
     }
@@ -889,6 +940,11 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
 
   // -- Gate 6: role attributes and role isolation ---------------------------
   for (const [file, role] of Object.entries(CAPABILITY_ROLES)) {
+    // A package that creates no role has no attributes to constrain. Skipping
+    // is safe BECAUSE the map is the authority: a package that did create one
+    // and forgot to declare it here would be caught by `role-dangerous-attribute`
+    // below, which reads every CREATE/ALTER ROLE in the file regardless.
+    if (role === null) continue
     // matchAll, not exec. The first version read only the FIRST ALTER ROLE for
     // the role, so appending a second one — `ALTER ROLE uellix_cap_stripe
     // BYPASSRLS;` — left the gate green while every policy in the package
@@ -943,7 +999,9 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
       ...parseOwnedStatements(src(file)).flatMap((o) => [...o.from, ...(o.to ? [o.to] : [])]),
     ])
     for (const other of Object.values(CAPABILITY_ROLES)) {
-      if (other === role) continue
+      // `null` is a package that declares no role of its own; there is nothing
+      // for another package to cross-grant to.
+      if (other === null || other === role) continue
       if (recipients.has(other)) add('role-crossgrant', `${file}: names ${other}`)
     }
   }
@@ -960,7 +1018,13 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
   //
   // Two properties, both over EVERY file including the rollbacks — a rollback
   // runs as superuser during an incident, which is when nobody is reading.
-  const DECLARED_ROLES = new Set<string>([...Object.values(CAPABILITY_ROLES), 'uellix_stripe'])
+  const DECLARED_ROLES = new Set<string>([
+    // `.filter(Boolean)` with a type guard, not a cast: a package that declares
+    // no role contributes no name, and a `null` in this set would silently make
+    // `role-foreign` unable to see a role literally called "null".
+    ...Object.values(CAPABILITY_ROLES).filter((r): r is string => r !== null),
+    'uellix_stripe',
+  ])
   const DANGEROUS_ROLE_ATTRIBUTES = ['SUPERUSER', 'BYPASSRLS', 'CREATEROLE', 'CREATEDB', 'REPLICATION']
   for (const file of CAPABILITY_SQL_FILES) {
     for (const s of parseRoleStatements(src(file))) {
@@ -1241,6 +1305,80 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
     }
   }
 
+  // -- Gate 6h-ter: stella_0012, the authority columns (RR-CAP-15) ---------
+  // stella_0011 moved the Stella quota behind current_user_is_super_admin().
+  // That predicate reads exactly one column, and the runtime could write it:
+  // `UPDATE public.users SET is_super_admin = true WHERE id = auth.uid()`
+  // passed the table-level ACL and passed `users_update_own`, whose bound is
+  // the ROW — and the row is the privilege. The quota boundary was real and
+  // the predicate it delegated to was self-granting.
+  {
+    const cap07 = src(FORWARD.CAP07)
+    const AUTHORITY: ReadonlyArray<readonly [string, readonly string[]]> = [
+      ['public.users', ['is_super_admin', 'deleted_at', 'deleted_by', 'id', 'created_at']],
+      ['public.organization_members', ['role', 'organization_id', 'user_id', 'invited_by', 'id', 'created_at']],
+    ]
+
+    for (const [table] of AUTHORITY) {
+      const revoked = parseRevokes(cap07).filter(
+        (r) => r.object === table
+          && r.privileges.some((pr) => pr.privilege === 'UPDATE' && pr.columns === null),
+      )
+      const from = new Set(revoked.flatMap((r) => r.grantees))
+      for (const who of ['authenticated', 'uellix_writer']) {
+        if (!from.has(who)) {
+          add('cap07-revoke', `${FORWARD.CAP07}: table-level UPDATE on ${table} is not revoked from ${who}`)
+        }
+      }
+    }
+
+    // …and no grant in the package may name an authority column.
+    for (const g of parseGrants(cap07)) {
+      const spec = AUTHORITY.find(([t]) => t === g.object)
+      if (!spec) continue
+      for (const pr of g.privileges) {
+        for (const col of pr.columns ?? []) {
+          if (spec[1].includes(col)) {
+            add('cap07-authority-column', `${FORWARD.CAP07}: grants UPDATE (${col}) on ${g.object}`)
+          }
+        }
+      }
+      // A table-level UPDATE grant would defeat the whole package.
+      if (g.privileges.some((pr) => pr.privilege === 'UPDATE' && pr.columns === null)) {
+        add('cap07-authority-column', `${FORWARD.CAP07}: grants table-level UPDATE on ${g.object}`)
+      }
+    }
+
+    // INSERT must survive: sign-up, the founder membership and an accepted
+    // invitation all need it, and handle_new_user pins is_super_admin to false
+    // on the path it owns.
+    if (parseRevokes(cap07).some(
+      (r) => r.privileges.some((pr) => pr.privilege === 'INSERT' || pr.privilege === 'ALL'))) {
+      add('cap07-insert-preserved', `${FORWARD.CAP07}: revokes INSERT, which sign-up and membership creation need`)
+    }
+
+    // The repair is an ACL for COLUMNS and a policy for the one VALUE bound an
+    // ACL cannot express. Exactly one policy is allowed, by name: a package
+    // that reached for a policy to control a COLUMN would be making the mistake
+    // RR-CAP-10 documents at length.
+    for (const pol of parsePolicies(cap07)) {
+      if (pol.name !== 'cap_members_no_super_admin_grant') {
+        add('cap07-acl-not-policy',
+          `${FORWARD.CAP07}: creates policy ${pol.name}; column control is ACL, never RLS`)
+      }
+    }
+    // …and that one must actually bound the value, for the runtime principals.
+    if (!parsePolicies(cap07).some(
+      (pol) => pol.name === 'cap_members_no_super_admin_grant'
+        && pol.permissive === 'RESTRICTIVE'
+        && pol.command === 'INSERT'
+        && pol.roles.includes('uellix_app')
+        && pol.roles.includes('authenticated'))) {
+      add('cap07-super-admin-value',
+        `${FORWARD.CAP07}: cap_members_no_super_admin_grant is absent or does not bound both runtime principals`)
+    }
+  }
+
   // -- Gate 6i: CAP-03, the claimed Stripe address (RR-CAP-14) -------------
   {
     const cap03 = codeOnly(src(FORWARD.CAP03))
@@ -1274,6 +1412,36 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
         add('cap03-subscription-coalesce',
           'a customer-addressed event can null out the organisation stripe_subscription_id')
       }
+    }
+
+    if (begin) {
+      // Contention is not a client error. `SET LOCAL lock_timeout = '3s'` means
+      // two concurrent deliveries of one event id can end with the loser
+      // raising 55P03; collapsing that into the uniform U0001 gave the handler
+      // no retry signal, and a 4xx answer makes Stripe drop the event — the
+      // silent loss this package exists to prevent.
+      for (const code of ['lock_not_available', 'serialization_failure', 'deadlock_detected']) {
+        const re = new RegExp(`WHEN ${code} THEN[\\s\\S]{0,200}RETURN 'in_progress'`)
+        if (!re.test(begin.body)) {
+          add('cap03-contention-retryable',
+            `stripe_begin_event does not answer ${code} with 'in_progress'`)
+        }
+      }
+      // …and the catch-all must still fail. A handler that answered
+      // 'in_progress' to everything would turn a permanent defect into an
+      // infinite retry loop — the same loss wearing the opposite mask.
+      if (/WHEN OTHERS THEN[\s\S]{0,200}RETURN 'in_progress'/.test(begin.body)) {
+        add('cap03-contention-retryable',
+          'stripe_begin_event answers WHEN OTHERS with in_progress; an unexpected error would retry forever')
+      }
+    }
+    // stripe_apply_subscription RETURNS void, so it signals contention with a
+    // distinct SQLSTATE instead. Patching only the claim made this worse, not
+    // better: stella_0011 added a second concurrent writer to the same columns.
+    const applyFn = parseFunctions(cap03).find((f) => f.name === 'stripe_apply_subscription')
+    if (applyFn && !/WHEN lock_not_available OR serialization_failure OR deadlock_detected THEN[\s\S]{0,240}U0003/.test(applyFn.body)) {
+      add('cap03-contention-retryable',
+        'stripe_apply_subscription collapses contention into the permanent U0001 refusal')
     }
 
     // The two-argument form must be dropped, not merely shadowed: an event
@@ -1617,8 +1785,11 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
       if (!new RegExp(`DROP FUNCTION IF EXISTS uellix_capability\\.${fn}\\b`).test(rb))
         add('rollback-function', `${ROLLBACK[key]} does not drop ${fn}`)
     }
-    if (!new RegExp(`DROP ROLE ${CAPABILITY_ROLES[FORWARD[key]]}`).test(rb))
-      add('rollback-role', `${ROLLBACK[key]} does not drop ${CAPABILITY_ROLES[FORWARD[key]]}`)
+    // A package that creates no role has no role to drop. Reading the map
+    // unguarded produced /DROP ROLE undefined/, which no rollback can satisfy.
+    const rbRole = CAPABILITY_ROLES[FORWARD[key]]
+    if (rbRole && !new RegExp(`DROP ROLE ${rbRole}`).test(rb))
+      add('rollback-role', `${ROLLBACK[key]} does not drop ${rbRole}`)
     if (/\bCASCADE\b/i.test(rb)) add('rollback-cascade', `${ROLLBACK[key]} uses CASCADE`)
 
     // A rollback confers and creates almost nothing, and what it does is

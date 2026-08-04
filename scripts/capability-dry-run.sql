@@ -1171,6 +1171,151 @@ END
 $rr02f$;
 
 -- ===========================================================================
+-- RR-CAP-15 — the platform authority bit is not self-granting (stella_0012)
+-- ===========================================================================
+-- stella_0011 moved the Stella quota behind current_user_is_super_admin().
+-- That predicate reads ONE column of public.users, and until stella_0012 the
+-- runtime held table-level UPDATE on that table while `users_update_own`
+-- bounded only the ROW — and the row is the privilege. One statement made the
+-- caller a platform super_admin. These cases are the statement itself.
+DO $rr15$
+DECLARE
+  c_admin constant uuid := 'dddddddd-0000-4000-8000-000000000004';
+  c_alice constant uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  v_n     integer;
+  v_super boolean;
+BEGIN
+  -- --- the escalation, from every principal that could reach it ------------
+  PERFORM dryrun.denied('RR15-1', 'uellix_writer',
+    'UPDATE public.users SET is_super_admin = true WHERE true');
+  PERFORM dryrun.denied('RR15-2', 'authenticated',
+    'UPDATE public.users SET is_super_admin = true WHERE true');
+  -- uellix_app holds no direct grant on public.users; it inherits
+  -- uellix_writer, so this is the inheritance path stated in its own right.
+  PERFORM dryrun.denied('RR15-3', 'uellix_app',
+    'UPDATE public.users SET is_super_admin = true WHERE true');
+  -- The shape an attacker actually writes: it looks like a profile save.
+  PERFORM dryrun.denied('RR15-4', 'uellix_writer',
+    'UPDATE public.users SET full_name = ''x'', is_super_admin = true WHERE true');
+  -- Membership authority, the other half.
+  PERFORM dryrun.denied('RR15-5', 'uellix_writer',
+    'UPDATE public.organization_members SET role = ''super_admin'' WHERE true');
+  PERFORM dryrun.denied('RR15-6', 'uellix_writer',
+    'UPDATE public.organization_members SET organization_id = gen_random_uuid() WHERE true');
+  PERFORM dryrun.denied('RR15-7', 'authenticated',
+    'UPDATE public.organization_members SET role = ''super_admin'' WHERE true');
+  -- Soft-deletion of a user is not a profile edit.
+  PERFORM dryrun.denied('RR15-8', 'uellix_writer',
+    'UPDATE public.users SET deleted_at = now() WHERE true');
+
+  -- --- and the writes that must still work ---------------------------------
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  BEGIN
+    SET LOCAL ROLE uellix_app;
+    EXECUTE 'UPDATE public.users SET email = ''admin2@allowed.test'', full_name = ''A'', '
+         || 'avatar_url = NULL, updated_at = now() WHERE id = ' || quote_literal(c_admin) || '::uuid';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-9', v_n = 1, 'profile update rows=' || v_n);
+  EXCEPTION WHEN OTHERS THEN
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-9', false, 'profile update refused: ' || SQLSTATE);
+  END;
+
+  -- THE statement lib/auth/session.ts issues. `ON CONFLICT DO UPDATE` needs the
+  -- UPDATE privilege on every column of its SET list, which is the whole reason
+  -- stella_0012 grants four columns instead of none — and the failure it would
+  -- otherwise cause appears on the SECOND sign-in, not the first.
+  BEGIN
+    SET LOCAL ROLE uellix_app;
+    EXECUTE 'INSERT INTO public.users (id, email, full_name, avatar_url) VALUES ('
+         || quote_literal(c_admin) || '::uuid, ''admin@allowed.test'', ''Admin'', NULL) '
+         || 'ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, '
+         || 'full_name = EXCLUDED.full_name, avatar_url = EXCLUDED.avatar_url, updated_at = now()';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-10', v_n = 1, 'session bootstrap upsert rows=' || v_n);
+  EXCEPTION WHEN OTHERS THEN
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-10', false, 'session bootstrap refused: ' || SQLSTATE);
+  END;
+
+  BEGIN
+    SET LOCAL ROLE uellix_app;
+    EXECUTE 'UPDATE public.organization_members SET status = ''removed'', updated_at = now() '
+         || 'WHERE user_id = ' || quote_literal(c_admin) || '::uuid';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-11', v_n >= 1, 'member removal rows=' || v_n);
+  EXCEPTION WHEN OTHERS THEN
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-11', false, 'member removal refused: ' || SQLSTATE);
+  END;
+  -- Put it back: later blocks and a re-run depend on the membership existing.
+  UPDATE public.organization_members SET status = 'active' WHERE user_id = c_admin;
+
+  -- --- the trigger path is untouched, which is what makes the REVOKE safe ---
+  PERFORM dryrun.rec('RR15-12',
+    EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+             WHERE n.nspname = 'public' AND p.proname = 'handle_new_user'
+               AND p.prosecdef AND pg_get_userbyid(p.proowner) = 'uellix_owner'),
+    'handle_new_user is a SECURITY DEFINER owned by uellix_owner');
+
+  -- --- and the predicate the whole boundary rests on is still false --------
+  PERFORM set_config('request.jwt.claim.sub', c_alice::text, true);
+  SELECT public.current_user_is_super_admin() INTO v_super;
+  PERFORM dryrun.rec('RR15-13', v_super IS NOT TRUE,
+    'current_user_is_super_admin for an ordinary subject=' || COALESCE(v_super::text, 'NULL'));
+
+  -- THE ESCALATION AN ADVERSARIAL REVIEWER FOUND AFTER THE REVOKE: not UPDATE
+  -- but DELETE + INSERT. `members_insert_admin` bounds only the organisation,
+  -- never NEW.role, and role_check permits 'super_admin'. A column ACL cannot
+  -- express a VALUE bound, which is why this one case is a RESTRICTIVE policy.
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  PERFORM dryrun.denied('RR15-14', 'uellix_app',
+    'INSERT INTO public.organization_members (organization_id, user_id, role, status) VALUES '
+    || '(''11111111-1111-4111-8111-111111111111'', ''bbbbbbbb-0000-4000-8000-000000000002'', '
+    || '''super_admin'', ''active'')');
+
+  -- …and the legitimate membership INSERT still works, or the bound would be
+  -- an outage rather than a boundary.
+  BEGIN
+    SET LOCAL ROLE uellix_app;
+    EXECUTE 'INSERT INTO public.organization_members (organization_id, user_id, role, status) VALUES '
+         || '(''11111111-1111-4111-8111-111111111111'', ''cccccccc-0000-4000-8000-000000000003'', '
+         || '''analyst'', ''active'') ON CONFLICT DO NOTHING';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-15', v_n >= 0, 'ordinary membership insert rows=' || v_n);
+  EXCEPTION WHEN OTHERS THEN
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-15', false, 'ordinary membership insert refused: ' || SQLSTATE);
+  END;
+
+  -- THE ACTOR COMES FROM THE SESSION, asserted behaviourally rather than by
+  -- grepping the module for a parameter name. With no claim set, auth.uid() is
+  -- NULL, current_user_is_super_admin() is false, and the definer must refuse
+  -- before writing anything.
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  BEGIN
+    SET LOCAL ROLE uellix_app;
+    PERFORM uellix_capability.admin_set_stella_service(
+      '11111111-1111-4111-8111-111111111111'::uuid, 5, 'NoSession');
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-16', false, 'the definer accepted a caller with no session identity');
+  EXCEPTION WHEN OTHERS THEN
+    RESET ROLE;
+    PERFORM dryrun.rec('RR15-16', SQLSTATE = 'U0001', 'SQLSTATE ' || SQLSTATE);
+  END;
+
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+EXCEPTION WHEN OTHERS THEN
+  RESET ROLE;
+  PERFORM dryrun.rec('RR15-ABORTED', false, SQLSTATE || ' ' || SQLERRM);
+END
+$rr15$;
+
+-- ===========================================================================
 -- Cross-capability isolation: no definer reaches another capability's surface
 -- ===========================================================================
 DO $isolation$

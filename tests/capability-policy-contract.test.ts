@@ -133,6 +133,14 @@ describe('capability contract — the contract itself is complete', () => {
     for (const file of Object.values(FORWARD)) {
       for (const p of parsePolicies(SOURCES[file])) {
         expect(p.roles.length, `${p.name} has no TO clause`).toBeGreaterThan(0)
+        // A RESTRICTIVE policy can only ever NARROW what the role it names may
+        // do, so naming a pre-existing role is not a widening. Exactly one
+        // policy in the campaign does it, and it does it because
+        // `authenticated` is the PostgREST principal the privilege escalation
+        // ran through — bounding it anywhere else would miss the browser.
+        const narrowing =
+          p.name === 'cap_members_no_super_admin_grant' && p.permissive === 'RESTRICTIVE'
+        if (narrowing) continue
         for (const r of p.roles)
           expect(['public', 'anon', 'authenticated', 'service_role'], `${p.name} → ${r}`).not.toContain(r)
       }

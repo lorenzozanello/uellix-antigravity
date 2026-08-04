@@ -581,7 +581,15 @@ describe('capability campaign — uniform refusal', () => {
       const raises = [...fn.body.matchAll(/RAISE EXCEPTION\s+'([^']*)'/g)].map((m) => m[1])
       for (const message of raises) {
         expect(
-          ['capability request denied', 'organization slug is already taken'],
+          [
+            'capability request denied',
+            // Contention is not a refusal, and the two must not share a
+            // message: 'denied' tells the handler to stop, 'contended'
+            // tells it to retry. Collapsing them is how a signed Stripe
+            // delivery got dropped (RR-CAP-03-B).
+            'capability request contended',
+            'organization slug is already taken',
+          ],
           `${fn.name} raises "${message}"`,
         ).toContain(message)
       }
@@ -923,14 +931,41 @@ describe('capability campaign — no capability is enabled by this design', () =
     expect(route).toMatch(/const LEAD_CAPTURE_POLICY_AVAILABLE = false/)
   })
 
-  it('no application module calls a capability function yet', () => {
-    // Enabling a capability is a separate, reviewed act. If this ever fails,
-    // someone wired a surface without going through the rollout in its
+  it('only the declared administrative wrapper calls a capability function', () => {
+    // Enabling a capability is a separate, reviewed act. If a NEW name appears
+    // here, someone wired a surface without going through the rollout in its
     // capability document.
+    //
+    // The allowlist has exactly one entry, and it is not a relaxation: the two
+    // administrative columns of `organizations` left the runtime UPDATE grant
+    // in stella_0011, so `db.update(organizations).set({ stellaMonthlyQuota })`
+    // is now refused by the ACL for every caller. RR-CAP-10-A recorded that as
+    // "a code change must land before the package"; this module IS that change.
+    // The two admin services reach the capability only through it.
+    const ALLOWED = new Set([
+      path.join('lib', 'admin', 'organization-administration.ts'),
+      // These two import the wrapper and name the functions in their prose, so
+      // they match the pattern without issuing a call. The assertion below
+      // proves that: only the wrapper may contain `uellix_capability.` in CODE.
+      path.join('lib', 'admin', 'organizations.ts'),
+      path.join('lib', 'admin', 'stella-services.ts'),
+    ])
+
     for (const dir of ['lib', 'app']) {
       const root = path.join(process.cwd(), dir)
-      const hits = grepTree(root, /uellix_capability\./)
-      expect(hits, `${dir}/ references uellix_capability`).toEqual([])
+      const hits = grepTree(root, /uellix_capability\./).filter((f) => !ALLOWED.has(f))
+      expect(hits, `${dir}/ references uellix_capability outside the wrapper`).toEqual([])
+    }
+
+    // …and in the two services the reference must be PROSE, never a statement.
+    // Stripping comments is the difference between "documents the boundary" and
+    // "issues its own capability call behind the wrapper's back".
+    for (const f of ['lib/admin/organizations.ts', 'lib/admin/stella-services.ts']) {
+      const code = readFileSync(path.join(process.cwd(), f), 'utf8')
+        .split(String.fromCharCode(10))
+        .filter((l) => !l.trim().startsWith('*') && !l.trim().startsWith('//') && !l.trim().startsWith('/*'))
+        .join(String.fromCharCode(10))
+      expect(code, `${f} calls a capability function directly`).not.toMatch(/uellix_capability\./)
     }
   })
 })

@@ -117,6 +117,35 @@ if assert_raced 'CAP03-L3' c3a c3b; then
 fi
 
 # ---------------------------------------------------------------------------
+# CAP-03 LOCK — a contended claim answers 'in_progress', not a client error
+# ---------------------------------------------------------------------------
+# The only way to observe the 55P03 handler: one session holds the event row,
+# the other calls stripe_begin_event and hits its 3s lock_timeout. Before the
+# handler existed this returned U0001 — indistinguishable from a malformed
+# event — and a handler that answered 4xx would have made Stripe drop the
+# delivery. The row is seeded 'failed' so the loser WOULD have claimed it.
+docker exec "$BOX" psql -U supabase_admin -d postgres -q -c "
+  INSERT INTO public.stripe_webhook_events
+    (event_id, event_type, status, attempts, stripe_customer_id)
+  VALUES ('evt_lock', 'customer.subscription.updated', 'failed', 1, 'cus_A')
+  ON CONFLICT (event_id) DO UPDATE SET status = 'failed', stripe_customer_id = 'cus_A';" >/dev/null
+
+AT=$(barrier)
+HOLD="SELECT 1 FROM public.stripe_webhook_events WHERE event_id='evt_lock' FOR UPDATE;
+SELECT pg_sleep(6);"
+TRY="SELECT uellix_capability.stripe_begin_event('evt_lock','customer.subscription.updated','cus_A',NULL);"
+race "$AT" "$HOLD" clkA & race "$AT" "$TRY" clkB & wait
+
+if assert_raced 'CAP03-LOCK' clkA clkB; then
+  # 'in_progress' in the loser's output, and NO error: a uniform refusal would
+  # have surfaced as «capability request denied» and a non-zero status.
+  GOT=$(grep -c 'in_progress' "$RACE_DIR/race_clkB.out" || true)
+  ERR=$(grep -c 'capability request denied' "$RACE_DIR/race_clkB.out" || true)
+  rec 'CAP03-LOCK' "$([ "$GOT" -ge 1 ] && [ "$ERR" = "0" ] && echo true || echo false)" \
+      "in_progress=$GOT denied=$ERR"
+fi
+
+# ---------------------------------------------------------------------------
 # CAP-05 L4 — two concurrent bootstraps with the SAME idempotency key
 # ---------------------------------------------------------------------------
 docker exec "$BOX" psql -U supabase_admin -d postgres -q -c "

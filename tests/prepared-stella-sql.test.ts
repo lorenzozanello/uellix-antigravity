@@ -269,6 +269,11 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // drop `uellix_capability` as soon as it is empty. DESIGN ONLY.
       'stella_0011_organization_column_acl.sql',
       'stella_0011_rollback.sql',
+      // 0012 closes the self-escalation that made 0011's boundary decorative:
+      // current_user_is_super_admin() reads one column and the runtime could
+      // write it. Creates nothing — two column ACLs. DESIGN ONLY.
+      'stella_0012_rollback.sql',
+      'stella_0012_super_admin_column_acl.sql',
     ])
   })
 

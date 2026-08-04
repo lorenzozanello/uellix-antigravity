@@ -88,6 +88,8 @@ const RB01 = 'stella_0006_rollback.sql'
 const RB02 = 'stella_0007_rollback.sql'
 const CAP06 = 'stella_0011_organization_column_acl.sql'
 const RB06 = 'stella_0011_rollback.sql'
+const CAP07 = 'stella_0012_super_admin_column_acl.sql'
+const RB07 = 'stella_0012_rollback.sql'
 
 export const MUTATIONS: readonly Mutation[] = [
   // =========================================================================
@@ -2069,8 +2071,8 @@ VOLATILE
     survivedBecause: '',
     expectedGate: ['cap06-super-admin-check'],
     apply: sub(
-      '  IF NOT public.current_user_is_super_admin() THEN\n    RAISE EXCEPTION \'capability request denied\' USING ERRCODE = \'U0001\';\n  END IF;\n\n  -- p_quota IS NULL is refused',
-      '  -- p_quota IS NULL is refused',
+      '  IF NOT public.current_user_is_super_admin() THEN\n    RAISE EXCEPTION \'capability request denied\' USING ERRCODE = \'U0001\';\n  END IF;\n\n  -- NULL IS A VALUE HERE',
+      '  -- NULL IS A VALUE HERE',
     ),
   },
   {
@@ -2763,6 +2765,202 @@ VOLATILE
     apply: sub(
       ') ON public.organizations TO uellix_writer;',
       ') ON public.organizations TO uellix_writer;\nGRANT UPDATE (country) ON public.organizations TO authenticated;',
+    ),
+  },
+
+
+  // =========================================================================
+  // S-* — the self-escalation that made stella_0011's boundary decorative, and
+  // the Stripe contention that could lose an event.
+  //
+  // S-01..S-08 exist because the final reaudit returned BLOCKED_QUOTA: the
+  // quota was moved behind current_user_is_super_admin(), and the runtime
+  // could write the one column that predicate reads. A boundary is only as
+  // good as the cheapest way to satisfy it.
+  // =========================================================================
+
+  {
+    id: 'S-01',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'the table-level UPDATE on public.users is not revoked',
+    breaks:
+      'everything downstream of it. `UPDATE public.users SET is_super_admin = true WHERE id = auth.uid()` passes the ACL and passes users_update_own, whose bound is the ROW — and the row is the privilege. The caller becomes a platform super_admin, which satisfies 114 policy predicates and the RESTRICTIVE bound stella_0011 depends on.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-revoke'],
+    apply: sub(
+      'REVOKE UPDATE ON public.users FROM authenticated, uellix_writer, anon, PUBLIC;',
+      '-- table-level UPDATE left in place',
+    ),
+  },
+  {
+    id: 'S-02',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'is_super_admin is added back to the runtime UPDATE grant',
+    breaks:
+      'the same boundary in one word, inside a parenthesis, in a diff that reads like an alphabetical insertion.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-authority-column'],
+    apply: sub(
+      '  avatar_url,\n  email,\n  full_name,\n  updated_at\n) ON public.users TO uellix_writer;',
+      '  avatar_url,\n  email,\n  full_name,\n  is_super_admin,\n  updated_at\n) ON public.users TO uellix_writer;',
+    ),
+  },
+  {
+    id: 'S-03',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'role is added back to the membership UPDATE grant',
+    breaks:
+      'what CAP-01 and CAP-05 are built to forbid. CAP-01 carries `role <> \'super_admin\'` as a RESTRICTIVE check and CAP-05 pins the founder to organization_admin; with this column writable an organisation admin mints the membership both packages refuse to create.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-authority-column'],
+    apply: sub(
+      '  status,\n  updated_at\n) ON public.organization_members TO uellix_writer;',
+      '  role,\n  status,\n  updated_at\n) ON public.organization_members TO uellix_writer;',
+    ),
+  },
+  {
+    id: 'S-04',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'organization_id is added back to the membership UPDATE grant',
+    breaks:
+      'tenancy of the membership itself. Today `members_update_admin`’s WITH CHECK blocks moving a membership to another organisation; that is a policy, and this campaign’s whole argument is that the ACL is the durable layer.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-authority-column'],
+    apply: sub(
+      '  status,\n  updated_at\n) ON public.organization_members TO uellix_writer;',
+      '  organization_id,\n  status,\n  updated_at\n) ON public.organization_members TO uellix_writer;',
+    ),
+  },
+  {
+    id: 'S-05',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'the package revokes INSERT as well',
+    breaks:
+      'sign-up and both membership paths. It is the over-correction this package explicitly refuses: a REVOKE that looks stricter and takes the product down on the first new account.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap07-insert-preserved'],
+    apply: sub(
+      'REVOKE UPDATE ON public.users FROM authenticated, uellix_writer, anon, PUBLIC;',
+      'REVOKE UPDATE, INSERT ON public.users FROM authenticated, uellix_writer, anon, PUBLIC;',
+    ),
+  },
+  {
+    id: 'S-06',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'the repair is attempted with a policy instead of a column ACL',
+    breaks:
+      'the one thing RR-CAP-10 documents at length: RLS evaluates a row twice and is never handed the statement’s target list, so no policy expression can mean "this column changed". A policy here would look like a fix and stop nothing.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-acl-not-policy'],
+    apply: before(
+      'COMMENT ON COLUMN public.users.is_super_admin IS',
+      "CREATE POLICY users_no_self_promote ON public.users AS RESTRICTIVE FOR UPDATE TO uellix_writer\nUSING (id = auth.uid());",
+    ),
+  },
+  {
+    id: 'S-07',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'the membership revoke forgets authenticated',
+    breaks:
+      'the PostgREST half, which is the half that gets forgotten. A browser holding nothing but the user’s own JWT keeps table-level UPDATE on organization_members.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-revoke'],
+    apply: sub(
+      'REVOKE UPDATE ON public.organization_members FROM authenticated, uellix_writer, anon, PUBLIC;',
+      'REVOKE UPDATE ON public.organization_members FROM uellix_writer, anon, PUBLIC;',
+    ),
+  },
+  {
+    id: 'S-08',
+    capability: 'CROSS',
+    file: RB07,
+    change: 'the rollback does not restore the table-level UPDATE it removed',
+    breaks:
+      'the meaning of "rollback". The database ends in a state neither script describes, and an operator who ran it during an incident believes the write surface is the pre-package one.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['rollback-grant'],
+    apply: sub(
+      'GRANT UPDATE ON public.users TO authenticated;',
+      'GRANT UPDATE (email) ON public.users TO authenticated;',
+    ),
+  },
+
+  // --- Stripe contention ---------------------------------------------------
+  {
+    id: 'S-09',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the lock_not_available handler is removed',
+    breaks:
+      'retry semantics. A 3s lock_timeout during a concurrent claim falls through to WHEN OTHERS and returns U0001 — indistinguishable from a malformed event. If the handler answers 4xx, Stripe stops retrying and the subscription change never lands.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-contention-retryable'],
+    apply: sub(
+      "  WHEN lock_not_available THEN\n    RAISE LOG 'stripe_begin_event contended on the event row (55P03)';\n    RETURN 'in_progress';\n",
+      '',
+    ),
+  },
+  {
+    id: 'S-10',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'the serialization_failure handler is removed',
+    breaks:
+      'the same property under a different transaction isolation. 40001 is transient by definition and leaves the row untouched; collapsing it into a client error loses the event.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-contention-retryable'],
+    apply: sub(
+      "  WHEN serialization_failure THEN\n    RAISE LOG 'stripe_begin_event lost a serialisation conflict (40001)';\n    RETURN 'in_progress';\n",
+      '',
+    ),
+  },
+  {
+    id: 'S-11',
+    capability: 'CAP-03',
+    file: CAP03,
+    change: 'WHEN OTHERS answers in_progress',
+    breaks:
+      'the opposite half. Answering "retry" to every unexpected error turns a permanent defect into an infinite retry loop — the same silent loss wearing the opposite mask, which is why the handlers are enumerated rather than generic.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap03-contention-retryable'],
+    apply: sub(
+      "  WHEN OTHERS THEN\n    RAISE LOG 'stripe_begin_event refused with SQLSTATE %', SQLSTATE;\n    RAISE EXCEPTION 'capability request denied' USING ERRCODE = 'U0001';",
+      "  WHEN OTHERS THEN\n    RAISE LOG 'stripe_begin_event refused with SQLSTATE %', SQLSTATE;\n    RETURN 'in_progress';",
+    ),
+  },
+
+
+  {
+    id: 'S-12',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'the value bound is retargeted away from the runtime principals',
+    breaks:
+      'the only bound a column ACL cannot express. INSERT column privileges say which columns may be written, never which VALUES — so with this policy pointed elsewhere an organisation admin can DELETE a member and re-INSERT them as super_admin, which is exactly what CAP-01 and CAP-05 refuse to do for their own definers.',
+    severity: 'BLOCKER',
+    survivedBecause: '',
+    expectedGate: ['cap07-super-admin-value'],
+    apply: sub(
+      'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated',
+      'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_cap_invitation',
     ),
   },
 

@@ -69,18 +69,24 @@ PSQL=(docker exec "$BOX" psql -U supabase_admin -d postgres)
 # in the shared uellix_capability schema, and every other rollback drops that
 # schema once it is empty. Rolling 0011 back after the five would find the
 # schema already gone.
+# 0012 closes the self-escalation that made 0011's boundary decorative: the
+# quota was moved behind current_user_is_super_admin(), and the runtime could
+# write the single column that predicate reads. It creates NOTHING — two column
+# ACLs — so the state tuple below is unchanged by it.
 PACKAGES=(0006_invitation_capability 0007_public_verification_capability
           0008_stripe_webhook_identity 0009_public_lead_capability
-          0010_organization_bootstrap_capability 0011_organization_column_acl)
-ROLLBACKS=(0011_rollback 0010_rollback 0009_rollback 0008_rollback 0007_rollback 0006_rollback)
+          0010_organization_bootstrap_capability 0011_organization_column_acl
+          0012_super_admin_column_acl)
+ROLLBACKS=(0012_rollback 0011_rollback 0010_rollback 0009_rollback 0008_rollback
+           0007_rollback 0006_rollback)
 
 # Every number this run must reproduce, in one place, so a change to any of
 # them is a visible edit rather than a drifting expectation.
 EXPECTED_BASELINE="38/107/0/0/0"     # tables/policies/cap roles/cap functions/cap schema
 EXPECTED_BASELINE_TRIGGERS=10
-EXPECTED_FORWARD="42/150/7/10/1"
-EXPECTED_ASSERTIONS=115
-EXPECTED_CONCURRENCY=6
+EXPECTED_FORWARD="42/151/7/10/1"
+EXPECTED_ASSERTIONS=132
+EXPECTED_CONCURRENCY=7
 EXPECTED_ROLLBACK_TABLES=40
 EXPECTED_ROLLBACK_POLICIES=108
 EXPECTED_RETAINED_TABLES=2
@@ -241,7 +247,7 @@ DUP_POLICIES=$("${PSQL[@]}" -tAc "
 # contention). 66 + 6 = 72. The design's own count of 67 `L*` cases is spread
 # across both files, which is why a naive count of the .sql gives 66 and looks
 # like a contradiction.
-say "4. The 115 live assertions (109 from dryrun.sql + 6 contended)"
+say "4. The 129 live assertions (122 from dryrun.sql + 7 contended)"
 # --------------------------------------------------------------------------
 "${PSQL[@]}" -q -c "CREATE SCHEMA IF NOT EXISTS dryrun; CREATE TABLE IF NOT EXISTS dryrun.disposable_marker(x int);" >/dev/null
 
@@ -279,7 +285,7 @@ bash scripts/capability-dry-run-concurrency.sh "$BOX"
 # The six contended cases are recorded by the concurrency script under ids the
 # single-session harness cannot produce. Counting them separately is what makes
 # "6/6" a measurement rather than a restatement of the total.
-CONC_IDS="'CAP01-L6','CAP02-CONC','CAP03-L3','CAP04-CONC','CAP05-L4','CAP05-L11'"
+CONC_IDS="'CAP01-L6','CAP02-CONC','CAP03-L3','CAP04-CONC','CAP05-L4','CAP05-L11','CAP03-LOCK'"
 read -r TOTAL PASSED FAILED CONC_TOTAL CONC_PASSED <<<"$("${PSQL[@]}" -tAc "
   SELECT count(*) || ' ' ||
          count(*) FILTER (WHERE ok) || ' ' ||
