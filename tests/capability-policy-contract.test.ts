@@ -28,7 +28,11 @@ import {
   DISCLOSURE_FLAGS,
   type Sources,
 } from './helpers/capability-gates'
-import { parsePolicies } from './helpers/sql-structure'
+import {
+  parsePolicies,
+  analyzeSecurity,
+  unparsedSecurityStatements,
+} from './helpers/sql-structure'
 
 const PREPARED = path.resolve(process.cwd(), 'db', 'prepared')
 
@@ -46,6 +50,57 @@ describe('capability contract — the packages on disk satisfy every gate', () =
     // Printed in full rather than counted: a gate that fires has to say what it
     // saw, or the next person debugging it re-derives the whole contract.
     expect(violations.map((v) => `${v.gate}: ${v.detail}`)).toEqual([])
+  })
+})
+
+describe('capability contract — nothing in the packages is unreadable', () => {
+  it.each(CAPABILITY_SQL_FILES)('%s contains no unparsed security statement', (file) => {
+    // The fail-closed half of the guarantee, asserted on its own rather than
+    // only through the aggregate gate. "Zero violations" is a claim about the
+    // contract; "zero unparsed" is a claim about the PARSER, and the second one
+    // is what makes the first one mean anything: a reader that silently drops
+    // what it cannot understand reports the same zero either way.
+    expect(
+      unparsedSecurityStatements(SOURCES[file]).map(
+        (u) => `${u.reason} @${u.line} (${u.origin}): ${u.lead}`,
+      ),
+    ).toEqual([])
+  })
+
+  it('descends into the executable bodies rather than treating them as opaque', () => {
+    // The rollbacks issue almost all of their DCL from inside DO blocks. If the
+    // scanner stopped at the dollar quote, every one of those files would parse
+    // as "no security statements at all" — and every rollback gate would be
+    // green for a file that could contain anything.
+    const rb = analyzeSecurity(SOURCES['stella_0006_rollback.sql'])
+    const fromBodies = rb.revokes.filter((r) => r.origin !== 'file')
+    expect(fromBodies.length, 'no statement was read from an executable body').toBeGreaterThan(0)
+  })
+
+  it('reads a role attribute statement for every capability role', () => {
+    // Structured rather than regex-matched, so a quoted spelling of the role is
+    // the same role. Without this the role-attribute gate can only report on
+    // the statements it happened to recognise.
+    const roles = [
+      ['stella_0006_invitation_capability.sql', 'uellix_cap_invitation'],
+      ['stella_0007_public_verification_capability.sql', 'uellix_cap_verification'],
+      ['stella_0008_stripe_webhook_identity.sql', 'uellix_cap_stripe'],
+      ['stella_0009_public_lead_capability.sql', 'uellix_cap_lead'],
+      ['stella_0010_organization_bootstrap_capability.sql', 'uellix_cap_bootstrap'],
+    ] as const
+    for (const [file, role] of roles) {
+      const stmts = analyzeSecurity(SOURCES[file]).roleStatements.filter((s) => s.role === role)
+      expect(stmts.some((s) => s.verb === 'ALTER'), `${file}: no ALTER ROLE for ${role}`).toBe(true)
+      expect(stmts.some((s) => s.verb === 'CREATE'), `${file}: no CREATE ROLE for ${role}`).toBe(true)
+    }
+  })
+
+  it('the campaign contains no whole-catalogue ownership statement and no default privilege', () => {
+    for (const file of CAPABILITY_SQL_FILES) {
+      const a = analyzeSecurity(SOURCES[file])
+      expect(a.ownedStatements, `${file}: REASSIGN/DROP OWNED`).toEqual([])
+      expect(a.defaultPrivileges, `${file}: ALTER DEFAULT PRIVILEGES`).toEqual([])
+    }
   })
 })
 

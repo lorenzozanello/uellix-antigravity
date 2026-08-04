@@ -21,13 +21,17 @@
 // report WHICH property refused, not merely that something did.
 
 import {
+  analyzeSecurity,
   parsePolicies,
   parseGrants,
   parseRevokes,
   parseOwnerships,
   parseRlsToggles,
   parseIndexes,
-  withExecutedLiterals,
+  parseDroppedPolicies,
+  parseRoleStatements,
+  parseOwnedStatements,
+  parseDefaultPrivileges,
   stripComments,
   normalizeExpr,
 } from './sql-structure'
@@ -294,19 +298,29 @@ function grantSignatures(sql: string): string[] {
  * the single thing that capability exists to deny. No gate read ownership at
  * all until this contract existed.
  */
+// `CREATE SCHEMA … AUTHORIZATION uellix_owner` is an ownership statement and is
+// declared here as one. It was invisible until 2026-08-04: the classifier
+// returned early on CREATE SCHEMA with a comment claiming AUTHORIZATION was read
+// "below", and nothing read it — so `CREATE SCHEMA … AUTHORIZATION
+// uellix_cap_lead`, which confers CREATE and DROP over every capability
+// function, produced no record and no finding.
+const SCHEMA_OWNER = 'SCHEMA uellix_capability -> uellix_owner'
+
 export const OWNERSHIP_CONTRACT: Readonly<Record<string, readonly string[]>> = {
-  [FORWARD.CAP01]: ['FUNCTION uellix_capability.accept_invitation -> uellix_cap_invitation'],
+  [FORWARD.CAP01]: [SCHEMA_OWNER, 'FUNCTION uellix_capability.accept_invitation -> uellix_cap_invitation'],
   [FORWARD.CAP02]: [
+    SCHEMA_OWNER,
     'FUNCTION uellix_capability.verify_report -> uellix_cap_verification',
     'FUNCTION uellix_capability.record_verification_hit -> uellix_cap_verification',
   ],
   [FORWARD.CAP03]: [
+    SCHEMA_OWNER,
     'FUNCTION uellix_capability.stripe_begin_event -> uellix_cap_stripe',
     'FUNCTION uellix_capability.stripe_apply_subscription -> uellix_cap_stripe',
     'FUNCTION uellix_capability.stripe_fail_event -> uellix_cap_stripe',
   ],
-  [FORWARD.CAP04]: ['FUNCTION uellix_capability.submit_lead -> uellix_cap_lead'],
-  [FORWARD.CAP05]: ['FUNCTION uellix_capability.bootstrap_organization -> uellix_cap_bootstrap'],
+  [FORWARD.CAP04]: [SCHEMA_OWNER, 'FUNCTION uellix_capability.submit_lead -> uellix_cap_lead'],
+  [FORWARD.CAP05]: [SCHEMA_OWNER, 'FUNCTION uellix_capability.bootstrap_organization -> uellix_cap_bootstrap'],
 }
 
 /** Tables whose RLS each package must ENABLE, and never disable. */
@@ -481,14 +495,40 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
   const v: Violation[] = []
   const add = (gate: string, detail: string) => v.push({ gate, detail })
   /**
-   * The text a gate judges INCLUDES what the file executes from a string
-   * literal. These packages build DDL that way, and a masker that hides string
-   * contents — which it must, to parse anything at all — hides that DDL with
-   * it. `EXECUTE 'GRANT SELECT ON public.marketing_leads TO uellix_cap_lead'`
-   * was, to every structural gate, a statement that did not exist.
+   * The text a gate judges is the file, and the parser goes INTO it.
+   *
+   * The previous version appended every `EXECUTE '<literal>'` to the end of the
+   * source, because the masker could not see inside a string. That worked for
+   * the literal form and for nothing else: DDL written directly inside a DO
+   * body, or built with format(), was neither appended nor visible. The scanner
+   * now descends into DO blocks, function bodies and executed literals itself,
+   * so appending would count every executed statement twice — and a policy
+   * created from a literal would trip the duplicate-name check for the wrong
+   * reason.
    */
-  const src = (f: string): string => withExecutedLiterals(sources[f] ?? '')
+  const src = (f: string): string => sources[f] ?? ''
   const verbatim = (f: string): string => sources[f] ?? ''
+
+  // -- Gate 0: nothing that looks like a security statement is unreadable ----
+  //
+  // THE FAIL-CLOSED GATE. Every other gate in this file answers "does the text
+  // say the right thing?", and every one of them treats an unmatched pattern as
+  // a satisfied condition. That inversion is what let eight PostgreSQL-
+  // equivalent spellings of a security operation pass: a quoted grantee, a
+  // nested block comment, a REASSIGN OWNED and a DO block full of DDL each
+  // matched nothing, and matching nothing read as containing nothing.
+  //
+  // This gate asserts the parser's own completeness. A statement that OPENS
+  // like a security operation and does not classify is a violation with a file,
+  // a line and a reason — never an absence.
+  for (const file of CAPABILITY_SQL_FILES) {
+    for (const u of analyzeSecurity(src(file)).unparsed) {
+      add(
+        'unparsed-security-statement',
+        `${file}:${u.line} (${u.origin}, ${u.reason}) ${u.lead} — ${u.detail}`,
+      )
+    }
+  }
 
   // -- Gate 1: the policy tuple contract ------------------------------------
   for (const file of Object.values(FORWARD)) {
@@ -578,9 +618,29 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
   ])
   for (const file of Object.values(FORWARD)) {
     const created = new Set(parsePolicies(src(file)).map((p) => p.name))
-    for (const m of codeOnly(src(file)).matchAll(/DROP POLICY IF EXISTS\s+(\w+)/g)) {
-      if (created.has(m[1]) || DECLARED_RETIREMENTS.has(m[1])) continue
-      add('policy-retired', `${file}: drops ${m[1]}, which it does not create and was not declared retired`)
+    // Structured, not `/DROP POLICY IF EXISTS\s+(\w+)/`: `\w+` cannot read
+    // `DROP POLICY IF EXISTS "tenancy policy" ON …`, and a name it cannot read
+    // is a drop this gate would not have seen.
+    for (const d of parseDroppedPolicies(src(file))) {
+      if (created.has(d.name) || DECLARED_RETIREMENTS.has(d.name)) continue
+      add('policy-retired', `${file}: drops ${d.name}, which it does not create and was not declared retired`)
+    }
+  }
+  // The ROLLBACKS need the same rule and did not have it. Gate 4b iterated the
+  // forward files only, so `DROP POLICY IF EXISTS <someone else's tenancy
+  // policy>` planted in a rollback was checked by nothing — in the file that
+  // runs as superuser during an incident. A rollback may drop what its own
+  // forward created, what that forward declared retired, and what the rollback
+  // itself restores.
+  for (const key of Object.keys(FORWARD) as Array<keyof typeof FORWARD>) {
+    const created = new Set(parsePolicies(src(FORWARD[key])).map((p) => p.name))
+    const restored = new Set(ROLLBACK_POLICY_CONTRACT[ROLLBACK[key]] ?? [])
+    for (const d of parseDroppedPolicies(src(ROLLBACK[key]))) {
+      if (created.has(d.name) || DECLARED_RETIREMENTS.has(d.name) || restored.has(d.name)) continue
+      add(
+        'policy-retired',
+        `${ROLLBACK[key]}: drops ${d.name}, which its forward package does not create`,
+      )
     }
   }
 
@@ -633,31 +693,39 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
 
   // -- Gate 6: role attributes and role isolation ---------------------------
   for (const [file, role] of Object.entries(CAPABILITY_ROLES)) {
-    const body = codeOnly(src(file))
     // matchAll, not exec. The first version read only the FIRST ALTER ROLE for
     // the role, so appending a second one — `ALTER ROLE uellix_cap_stripe
     // BYPASSRLS;` — left the gate green while every policy in the package
     // became decoration. Every attribute statement for the role is considered,
     // and the LAST one wins, because that is what PostgreSQL does.
-    const statements = [
-      ...body.matchAll(new RegExp(`ALTER ROLE\\s+${role}\\s*\\n?\\s*([^;]+);`, 'gi')),
-    ].map((m) => m[1].toUpperCase())
-    if (statements.length === 0) {
+    //
+    // STRUCTURED, not `/ALTER ROLE\s+<role>\s*\n?\s*([^;]+);/`. That pattern
+    // anchored on a BARE role name, so `ALTER ROLE "uellix_cap_lead"
+    // BYPASSRLS SUPERUSER;` — the same role, spelled the way PostgreSQL also
+    // accepts — matched nothing at all, and matching nothing left every
+    // attribute "declared" by the first statement and none contradicted.
+    // CREATE ROLE counts too: these packages create the role inside a DO block
+    // through EXECUTE, and its attributes are no less real for that.
+    const roleStmts = parseRoleStatements(src(file)).filter(
+      (s) => s.role === role && s.verb !== 'DROP',
+    )
+    const altered = roleStmts.filter((s) => s.verb === 'ALTER')
+    if (altered.length === 0) {
       add('role-attributes', `${file}: no ALTER ROLE for ${role}`)
     } else {
       for (const forbidden of FORBIDDEN_ROLE_ATTRIBUTES) {
         const positive = forbidden.slice(2) // NOBYPASSRLS -> BYPASSRLS
-        const declared = statements.some((s) => new RegExp(`\\b${forbidden}\\b`).test(s))
-        const contradicted = statements.some((s) =>
-          new RegExp(`(?<!NO)\\b${positive}\\b`).test(s),
-        )
+        const declared = roleStmts.some((s) => s.attributes.includes(forbidden))
+        const contradicted = roleStmts.some((s) => s.attributes.includes(positive))
         if (!declared) add('role-attributes', `${role} is missing ${forbidden}`)
         if (contradicted) add('role-attributes', `${role} is given ${positive}`)
       }
     }
     // Outbound: the capability role handed to someone else.
-    if (new RegExp(`GRANT\\s+${role}\\s+TO\\s`, 'i').test(body))
-      add('role-membership', `${file}: ${role} is granted to another role`)
+    for (const g of parseGrants(src(file))) {
+      if (g.objectType === 'ROLE' && g.object === role)
+        add('role-membership', `${file}: ${role} is granted to another role`)
+    }
     // INBOUND: the capability role made a member of someone else. This is the
     // direction that matters most and the one the first version could not see —
     // `GRANT uellix_owner TO uellix_cap_bootstrap` gives the definer the table
@@ -668,10 +736,95 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
       if (g.grantees.includes(role))
         add('role-membership', `${file}: ${role} is made a member of ${g.object}`)
     }
+    // Another capability's role named as a recipient anywhere in this package.
+    // Read from the parsed statements rather than from `/\bTO\s+<role>\b/` over
+    // the text, so a quoted spelling is the same finding and a mention inside a
+    // comment is not a finding at all.
+    const recipients = new Set<string>([
+      ...parseGrants(src(file)).flatMap((g) => [...g.grantees, ...(g.objectType === 'ROLE' ? [g.object] : [])]),
+      ...parsePolicies(src(file)).flatMap((p) => [...p.roles]),
+      ...parseOwnerships(src(file)).map((o) => o.owner),
+      ...parseOwnedStatements(src(file)).flatMap((o) => [...o.from, ...(o.to ? [o.to] : [])]),
+    ])
     for (const other of Object.values(CAPABILITY_ROLES)) {
       if (other === role) continue
-      if (new RegExp(`\\bTO\\s+${other}\\b`, 'i').test(body))
-        add('role-crossgrant', `${file}: names ${other}`)
+      if (recipients.has(other)) add('role-crossgrant', `${file}: names ${other}`)
+    }
+  }
+
+  // -- Gate 6z: the campaign touches ONLY the roles it declares -------------
+  //
+  // Gate 6 reads role statements for the five capability roles and for nothing
+  // else, because it iterates CAPABILITY_ROLES. That left every OTHER role
+  // unguarded: `ALTER ROLE uellix_writer BYPASSRLS;` parses cleanly, produces
+  // no unparsed finding, and is consumed by no gate — while making the runtime
+  // exempt from cap_lead_deny_runtime, the RESTRICTIVE USING(false) that
+  // CAP-04 calls its durable half. `CREATE ROLE backdoor LOGIN SUPERUSER` had
+  // the same standing: parsed, then ignored.
+  //
+  // Two properties, both over EVERY file including the rollbacks — a rollback
+  // runs as superuser during an incident, which is when nobody is reading.
+  const DECLARED_ROLES = new Set<string>([...Object.values(CAPABILITY_ROLES), 'uellix_stripe'])
+  const DANGEROUS_ROLE_ATTRIBUTES = ['SUPERUSER', 'BYPASSRLS', 'CREATEROLE', 'CREATEDB', 'REPLICATION']
+  for (const file of CAPABILITY_SQL_FILES) {
+    for (const s of parseRoleStatements(src(file))) {
+      if (!DECLARED_ROLES.has(s.role))
+        add(
+          'role-foreign',
+          `${file}: ${s.verb} ROLE ${s.role} — the campaign declares no role by that name, ` +
+            'and a role statement is unbounded by any policy',
+        )
+      for (const a of s.attributes) {
+        if (DANGEROUS_ROLE_ATTRIBUTES.includes(a))
+          add('role-dangerous-attribute', `${file}: ${s.verb} ROLE ${s.role} is given ${a}`)
+      }
+    }
+  }
+
+  // -- Gate 6a: ownership transferred wholesale ----------------------------
+  //
+  // REASSIGN OWNED BY uellix_owner TO uellix_cap_lead re-owns EVERY object the
+  // owner holds in one statement — every table in public, not one function.
+  // With no FORCE ROW LEVEL SECURITY anywhere in the campaign, that is a
+  // blanket RLS exemption for a role whose entire purpose is to be bounded by
+  // RLS. DROP OWNED BY is its destructive twin: it removes the privileges and
+  // the objects, which changes the contract by deletion rather than by grant.
+  //
+  // Neither appeared in any pattern in this file before, in either direction.
+  for (const file of CAPABILITY_SQL_FILES) {
+    for (const o of parseOwnedStatements(src(file))) {
+      // TWO LITERAL CALLS, not one with a ternary for the gate name.
+      // tests/capability-mutation.test.ts derives the set of gate names by
+      // matching the helper call and a single-quoted literal in this file's
+      // SOURCE — so a gate name computed at
+      // runtime is a gate the coverage check CANNOT SEE — and that check exists
+      // precisely to make an unexercised gate visible. Written as a ternary,
+      // these two were exercised by E-06 and F-02 and still absent from the
+      // derived inventory.
+      const detail =
+        `${file}: ${o.verb} OWNED BY ${o.from.join(', ')}${o.to ? ` TO ${o.to}` : ''} — ` +
+        'a whole-catalogue ownership change is not expressible in the capability contract'
+      if (o.verb === 'REASSIGN') add('ownership-reassigned', detail)
+      else add('ownership-dropped', detail)
+    }
+  }
+
+  // -- Gate 6a2: default privileges ---------------------------------------
+  //
+  // ALTER DEFAULT PRIVILEGES … GRANT EXECUTE ON FUNCTIONS TO PUBLIC does not
+  // grant anything today; it grants it to everything created tomorrow. Every
+  // capability function depends on `REVOKE ALL … FROM PUBLIC` closing the
+  // implicit default, and a default privilege re-opens it for the NEXT
+  // function without touching any statement this file inspects.
+  //
+  // The campaign uses none, so the contract is: none.
+  for (const file of CAPABILITY_SQL_FILES) {
+    for (const d of parseDefaultPrivileges(src(file))) {
+      add(
+        'default-privileges',
+        `${file}: ALTER DEFAULT PRIVILEGES ${d.action} ${d.privileges.join(' ')} ON ${d.objectKind} ` +
+          `TO ${d.grantees.join(', ')} — the campaign declares no default privileges`,
+      )
     }
   }
 
@@ -1010,8 +1163,13 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
     const fwd = codeOnly(src(FORWARD[key]))
     const rb = codeOnly(src(ROLLBACK[key]))
     const retained = ROLLBACK_RETAINED_POLICIES[ROLLBACK[key]] ?? []
+    // The DROPs the rollback actually performs, read structurally. A regex over
+    // the text answers a different question — "does this string appear?" — and
+    // a nested block comment or a quoted policy name makes the two answers
+    // disagree in the dangerous direction.
+    const rbDropped = new Set(parseDroppedPolicies(src(ROLLBACK[key])).map((d) => d.name))
     for (const p of parsePolicies(fwd)) {
-      const dropped = new RegExp(`DROP POLICY IF EXISTS\\s+${p.name}\\b`).test(rb)
+      const dropped = rbDropped.has(p.name)
       if (retained.includes(p.name)) {
         // Retention has to be a decision the script states, not a DROP someone
         // forgot: the rollback must leave the policy alone AND assert it lived.
@@ -1070,7 +1228,10 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
   // unterminated dollar quote, an unbalanced literal — the tail of the file
   // becomes invisible and the gates go quiet rather than red. Cheap invariant,
   // catastrophic failure mode.
-  for (const file of Object.values(FORWARD)) {
+  // Over EVERY file, not only the forward ones. A desynchronised mask in a
+  // rollback makes its tail invisible, and the rollback files are the ones that
+  // run as superuser with nobody watching.
+  for (const file of CAPABILITY_SQL_FILES) {
     const raw = verbatim(file)
     if (raw.length === 0) {
       add('source-missing', `${file} is empty or absent`)
