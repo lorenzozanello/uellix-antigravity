@@ -39,6 +39,18 @@ vi.mock('@/db/client', () => ({
       },
     }
   ),
+  // The webhook no longer imports `db` at all: its statements moved onto a
+  // connection that authenticates as `uellix_stripe`, built through
+  // `createDatabaseClient` in db/capabilities/stripe-capability-executor.ts.
+  // Mocking it as a thrower keeps the "zero database access" claim total —
+  // without this entry the suite would only prove the ORM was untouched, and
+  // the new path does not use the ORM.
+  createDatabaseClient: () => {
+    dbAccesses.push('createDatabaseClient')
+    throw new Error(
+      'stripe webhook built a database client — it must not, while the capability is disabled'
+    )
+  },
 }))
 
 const stripeMocks = vi.hoisted(() => ({
@@ -153,12 +165,31 @@ describe('C: the gate constant cannot be flipped without the technical identity'
     expect(source).toMatch(/const WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false/)
   })
 
-  it('the gate actually consults the constant before the first query', () => {
+  it('the gate actually consults the constant before anything can reach the database', () => {
+    // The anchor moved with the code. It used to be `await db.` — the first ORM
+    // statement in the handler — and there is no ORM statement left to anchor
+    // on: the three `db.update(organizations)` calls became one
+    // `processStripeEvent`, and the connection is built by the executor
+    // resolver. BOTH must sit after the gate, so neither a query nor a
+    // credential read can precede it.
     const gateIndex = source.indexOf('if (!WEBHOOK_DATABASE_IDENTITY_AVAILABLE)')
-    const firstQueryIndex = source.indexOf('await db.')
+    const processIndex = source.indexOf('await processStripeEvent(')
+    const resolverIndex = source.indexOf('resolveStripeCapabilityExecutor()')
+
     expect(gateIndex).toBeGreaterThan(-1)
-    expect(firstQueryIndex).toBeGreaterThan(-1)
-    expect(gateIndex).toBeLessThan(firstQueryIndex)
+    expect(processIndex).toBeGreaterThan(-1)
+    expect(resolverIndex).toBeGreaterThan(-1)
+    expect(gateIndex).toBeLessThan(processIndex)
+    expect(gateIndex).toBeLessThan(resolverIndex)
+  })
+
+  it('no direct write to the organisations table survives anywhere in the handler', () => {
+    // The statements RR-CAP-10-A named. They were unreachable behind the flag
+    // and still had to go: the billing columns left every runtime UPDATE grant
+    // in stella_0011, so flipping the flag would have raised 42501 from a line
+    // whose cause was an ACL applied weeks earlier.
+    expect(source).not.toMatch(/db\s*\.\s*update\s*\(/)
+    expect(source).not.toMatch(/from '@\/db\/client'/)
   })
 
   it('no technical webhook identity exists yet anywhere in the runtime configuration', () => {
