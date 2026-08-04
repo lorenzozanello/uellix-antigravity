@@ -949,6 +949,19 @@ describe('capability campaign — no capability is enabled by this design', () =
       // proves that: only the wrapper may contain `uellix_capability.` in CODE.
       path.join('lib', 'admin', 'organizations.ts'),
       path.join('lib', 'admin', 'stella-services.ts'),
+      // The SECOND declared surface, added when the three dead
+      // `db.update(organizations)` statements left the Stripe webhook.
+      //
+      // Neither of these issues a call: `contracts.ts` is types plus frozen
+      // descriptors that NAME each package's functions, and `stripe-webhook.ts`
+      // holds the same names as data so a signature drift in stella_0008 fails
+      // a focused test rather than a live webhook. The statements themselves
+      // live in db/capabilities/stripe-capability-executor.ts, on a connection
+      // that authenticates as `uellix_stripe` — which is the point: `uellix_app`
+      // has no EXECUTE on them, so the runtime client could not call them even
+      // if one of these files tried.
+      path.join('lib', 'capabilities', 'contracts.ts'),
+      path.join('lib', 'capabilities', 'stripe-webhook.ts'),
     ])
 
     for (const dir of ['lib', 'app']) {
