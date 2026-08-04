@@ -1595,12 +1595,12 @@ contrato de privilegios.
 
 | Medida | Antes de esta unidad | Después |
 |---|---|---|
-| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **169** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07` + `R-01..R-40` + `P-01..P-33`) |
-| Supervivientes a los gates | 0 de 67 | **0 de 169** |
-| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 169 |
-| Restauración verificada por SHA | 67/67 | **89/89**, y **169/169** tras el cierre de riesgos de diseño |
+| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **181** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07` + `R-01..R-40` + `P-01..P-33` + `S-01..S-12`) |
+| Supervivientes a los gates | 0 de 67 | **0 de 181** |
+| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 181 |
+| Restauración verificada por SHA | 67/67 | **89/89**, y **181/181** tras el cierre de la autoescalada |
 | Gates | **117** | **123** (`unparsed-security-statement`, `default-privileges`, `ownership-reassigned`, `ownership-dropped`, `role-foreign`, `role-dangerous-attribute`) |
-| Gates sin mutación que los ejercite | 59 de 117 | **27 de 148** |
+| Gates sin mutación que los ejercite | 59 de 117 | **27 de 154** |
 | Sentencias de seguridad no interpretables en los diez ficheros | no se medía | **0**, comprobado por fichero |
 
 **Lo que hace fail-closed al parser.** Toda sentencia que *abre* como operación
@@ -1772,3 +1772,70 @@ la que se corrió a dos revisores y no a uno.
 verificar una firma de Stripe), RR-CAP-10-C (`service_role`), RR-CAP-02-H
 (`public_summary` sin booleano), RR-CAP-02-I (`session_replication_role`), y dos
 MINOR de `before_json` obsoleto y `ROW_COUNT` no comprobado.
+
+
+---
+
+## 2026-08-04 (tarde) · Autoescalada de super-admin y adaptación de aplicación
+
+Unidad `STELLA_PRIVILEGE_ESCALATION_AND_APPLICATION_ADAPTATION`, sobre
+`8d0d7ab`. **Cero escrituras al stack persistente, cero acceso remoto, cero
+grounding, cero G2 formal.**
+
+### Por qué existía esta unidad
+
+La reauditoría final devolvió `BLOCKED_QUOTA`. `stella_0011` movió la cuota
+detrás de `public.current_user_is_super_admin()`, y ese predicado lee **una
+columna**:
+
+```sql
+UPDATE public.users SET is_super_admin = true WHERE id = auth.uid();
+```
+
+pasaba el ACL (grant de tabla completa a `authenticated` **y** a
+`uellix_writer`) y pasaba `users_update_own`, cuya cota es la **fila** — y la
+fila *es* el privilegio. Una sentencia convertía a cualquier usuario en
+super-admin de plataforma, lo que satisface **114 predicados de policy** en este
+esquema y vacía la frontera de RR-CAP-10.
+
+Es la misma forma que RR-CAP-10 — grant de tabla completa con policy acotada
+por fila y sin cota de columna — una tabla más allá. Y el motivo por el que no
+se vio antes: las dos listas de ataque adversariales partían de `organizations`
+y de `stripe_webhook_events`, nunca de `users`.
+
+### Qué se midió
+
+| Medida | Antes | Después |
+|---|---|---|
+| Mutaciones catalogadas | 169 | **181** (`S-01..S-12`) |
+| Mutaciones supervivientes | 0 de 169 | **0 de 181** |
+| Gates del contrato | 148 | **154** (`cap07-revoke`, `cap07-authority-column`, `cap07-insert-preserved`, `cap07-acl-not-policy`, `cap07-super-admin-value`, `cap03-contention-retryable`) |
+| Gates sin mutación | 27 de 148 | **27 de 154** |
+| Aserciones vivas del *dry run* | 115 | **132** (125 + 7 contendidas) |
+| Concurrencia | 6/6 | **7/7** (nueva: `CAP03-LOCK`) |
+| *Forward* | 42/150/7/10/1 | **42/151/7/10/1** — `stella_0012` añade una sola policy |
+| *Rollback* | 40/108 | **40/108** |
+| Paquetes preparados | 0006..0011 | **0006..0012** |
+
+### Dos correcciones que esta unidad hizo sobre sí misma
+
+* **`NULL` en `stella_monthly_quota` significa ILIMITADO.** La unidad anterior
+  aceptó un MINOR de revisor que lo llamaba «estado de tres valores» y lo
+  rechazó en `admin_set_stella_service`. El revisor razonaba desde el esquema;
+  el significado está en `lib/stella/quota.ts:36` — `// null quota means
+  unlimited` — y el formulario de administración lo ofrece como campo vacío.
+  Rechazarlo era una **regresión funcional disfrazada de endurecimiento**, y un
+  test preexistente (`accepts null monthlyQuota (unlimited)`) lo decía. Revertido.
+* **El enunciado de la unidad asumía columnas `role` y `organization_id` en
+  `public.users`.** No existen: viven en `organization_members`, donde
+  `members_update_admin` sí acota por ROL y no por propiedad — motivo por el
+  que un `viewer` nunca pudo escalar por ahí. Se endurecen igualmente, porque
+  `role` es autoridad y CAP-01 y CAP-05 se construyen para no acuñar
+  `super_admin`.
+
+### Contrato de aplicación
+
+RR-CAP-10-A pasa de «el código debe cambiar antes» a **despliegue acoplado**:
+`lib/admin/organization-administration.ts` llama a las dos funciones del
+*definer* y no hay *fallback* ni *feature flag*. Desplegar el código sin el
+paquete da 42883; aplicar el paquete sin el código da 42501. Van juntos.

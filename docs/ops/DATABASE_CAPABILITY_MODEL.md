@@ -694,7 +694,7 @@ Consecuencias que ya están fijadas por prueba:
   `tests/capability-policy-parser.test.ts`, para que una regresión del lector se
   vea antes de que un gate se ponga verde por accidente.
 
-  El residual se declara en cifras, no en adjetivos: **27 de 148 gates no los
+  El residual se declara en cifras, no en adjetivos: **27 de 154 gates no los
   ejercita ninguna mutación**, y están listados en `UNEXERCISED_GATES` con un
   test que falla si esa lista cambia sin que alguien lo escriba. Un gate que
   nunca se ha puesto en rojo es indistinguible de un gate que no puede.
@@ -795,3 +795,42 @@ reutiliza `audit_logs` —ya *append-only*, ya con la policy que fija el actor a
 imponga RLS y no la función; y el `public_summary` viaja como **digest**, nunca
 como texto. La tabla es además *append-only* desde esta unidad, con lo que una
 decisión publicada no la borra nadie, ni siquiera el propietario.
+
+
+---
+
+## Anexo — la frontera bajo la frontera (2026-08-04, tarde)
+
+`stella_0011` es correcto y no bastaba. Movió tres columnas administrativas de
+`organizations` detrás de `public.current_user_is_super_admin()`, y ese
+predicado lee **una columna de otra tabla** que el runtime podía escribir. La
+lección es de método, no de SQL:
+
+> Cuando una reparación **delega** una frontera en un predicado, la frontera
+> pasa a valer lo que valga el camino más barato de satisfacer ese predicado.
+> Endurecer la columna A y delegar en la columna B deja el sistema tan seguro
+> como B.
+
+Aquí B era `public.users.is_super_admin`, con un ACL de tabla completa y una
+policy —`users_update_own`— cuya cota es la propiedad de la fila. **La
+propiedad es una cota segura para datos sobre ti y nunca para autoridad sobre
+ti**, y la diferencia se ve comparando con `organization_members`, donde la
+columna de autoridad está acotada por un predicado de rol y por eso nunca fue
+escalable desde abajo.
+
+`stella_0012` cierra B con la misma disciplina que `stella_0011` usó con A:
+ACL por columnas derivado del código, `authenticated` sin nada porque no tiene
+*call site*, `INSERT` intacto, y una lista de cuatro columnas que existe porque
+`ON CONFLICT DO UPDATE` exige el privilegio `UPDATE` sobre cada columna de su
+`SET` — un detalle que habría roto el bootstrap de sesión en el **segundo**
+inicio de sesión de cada usuario si el `REVOKE` hubiera ido solo.
+
+### El contrato de aplicación dejó de ser opcional
+
+RR-CAP-10-A ya no es «cambiar el código antes de aplicar». Con
+`lib/admin/organization-administration.ts` es **despliegue acoplado**: el
+envoltorio llama a las dos funciones del *definer*, sin *fallback* y sin
+bandera. Esa ausencia es deliberada — un *fallback* mantendría viva la
+sentencia que RR-CAP-10 existe para quitar, y una bandera con el camino
+antiguo por defecto significaría que la frontera está apagada en producción
+mientras las pruebas ejercitan la nueva.

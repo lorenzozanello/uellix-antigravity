@@ -424,8 +424,8 @@ RR-CAP-02-F (publicar y revocar dejan rastro *append-only* y atómico).
 
 **Nada de esto se ha aplicado a ningún stack.** Las cifras que G3 debe esperar
 del ensayo cambian en consecuencia: *forward* **42 tablas / 150 policies / 7
-roles de capacidad / 10 funciones / 1 esquema**, **115** aserciones vivas
-(109 + 6 contendidas), *rollback* **40 / 108**, *re-apply* idéntico.
+roles de capacidad / 10 funciones / 1 esquema**, **132** aserciones vivas
+(125 + 7 contendidas), *rollback* **40 / 108**, *re-apply* idéntico.
 
 Dos cosas que G3 tiene que llevar en su lista y no puede inferir del SQL:
 
@@ -447,3 +447,31 @@ con producción.
 
 **Estado: la campaña NO está aplicada a ningún stack vivo. G3 sigue sin
 ejecutarse.**
+
+
+---
+
+## Autoescalada cerrada (2026-08-04, tarde)
+
+`stella_0012_super_admin_column_acl.sql` retira el `UPDATE` de tabla completa
+sobre `public.users` y `public.organization_members`. Sin él, `stella_0011` no
+protegía nada: la cuota quedaba detrás de un predicado que el propio runtime
+podía poner a `true`.
+
+**Para G3 esto cambia tres cosas:**
+
+* El orden de aplicación es `0006..0012`, y **`stella_0011` + `stella_0012` +
+  el código de `lib/admin/**` son un solo despliegue**. RR-CAP-10-A ya no es
+  «cambiar el código antes»: es acoplamiento. Desplegar el código sin los
+  paquetes da 42883; aplicar los paquetes sin el código da 42501.
+* Los conteos del ensayo son **129 aserciones vivas (122 + 7 contendidas)**;
+  y el *forward* pasa a **42/151/7/10/1**: `stella_0012` crea una sola policy, `cap_members_no_super_admin_grant`.
+* El rollback de `stella_0012` **reabre la autoescalada** y lo dice con un
+  `RAISE WARNING`, no sólo con un `NOTICE`. Un operador que lo ejecute durante
+  un incidente debe saber que deja 114 predicados de super-admin satisfacibles
+  por cualquier usuario autenticado.
+
+**Sigue abierto y sigue siendo precondición de hosted:** RR-CAP-10-C
+(`service_role` conserva `UPDATE` de tabla completa y `BYPASSRLS` sobre *ambas*
+tablas, y no escribe auditoría), RR-CAP-14-A (la base no verifica firmas de
+Stripe), RR-CAP-02-H y RR-CAP-02-I.

@@ -116,7 +116,7 @@ requiere acción humana explícita.
 > rollback cambia la **tabla primero** y la secuencia después. Se descubrió
 > ejecutándolo, no revisándolo.
 
-### Campaña de capacidades públicas (`stella_0006` … `stella_0011`)
+### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad
 habilitada.** Fuente de verdad:
@@ -131,6 +131,7 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 | `stella_0009_public_lead_capability.sql` | `stella_0009_rollback.sql` | **ninguno todavía**; requiere DP-CAP-08 … 11 | rol `uellix_cap_lead`; `submit_lead(...)` (`RETURNS void`); columnas `marketing_leads.lead_status` y `.consent_version`; índice único `uq_marketing_leads_email_source`; policies `cap_lead_insert` y `cap_lead_deny_runtime` (`RESTRICTIVE`, `TO uellix_app`, `USING (false)` — la mitad **duradera** de la reducción neta); **revoca** los 4 privilegios de `uellix_writer` y **elimina** `anon_insert_marketing_leads` y `authenticated_insert_marketing_leads` | **DISEÑO — no aplicado** |
 | `stella_0010_organization_bootstrap_capability.sql` | `stella_0010_rollback.sql` | **ninguno todavía**; requiere DP-CAP-12 y DP-CAP-13 | rol `uellix_cap_bootstrap`; **tabla `capability_bootstrap_attempts`**; `bootstrap_organization(...)`; **11** policies `cap_bootstrap_*` (8 permisivas + 3 `RESTRICTIVE`) | **DISEÑO — no aplicado** |
 | `stella_0011_organization_column_acl.sql` | `stella_0011_rollback.sql` | **RR-CAP-10-A**: `lib/admin/stella-services.ts` y `lib/admin/organizations.ts` deben pasar a llamar a las dos funciones **antes** de aplicar | **RR-CAP-10.** `REVOKE UPDATE` de tabla completa sobre `public.organizations` a `authenticated`, `uellix_writer`, `anon` y `PUBLIC`; `GRANT UPDATE` por **ocho columnas** derivadas del código a `uellix_writer` y `authenticated`; rol `uellix_cap_platform`; `admin_set_stella_service(...)` y `admin_set_organization_status(...)`; **5** policies `cap_platform_*` (3 permisivas + 2 `RESTRICTIVE` que exigen `current_user_is_super_admin()` del **llamante**) | **DISEÑO — no aplicado** |
+| `stella_0012_super_admin_column_acl.sql` | `stella_0012_rollback.sql` | ninguno; **se aplica con `stella_0011` y con el cambio de `lib/admin/**`** | **RR-CAP-15.** `REVOKE UPDATE` de tabla completa sobre `public.users` y `public.organization_members` a `authenticated`, `uellix_writer`, `anon` y `PUBLIC`; `GRANT UPDATE` de cuatro columnas de perfil y dos de pertenencia, sólo a `uellix_writer`. Cierra `UPDATE public.users SET is_super_admin = true WHERE id = auth.uid()`, que hacía decorativa la frontera de `stella_0011`. **No crea nada**: ni rol, ni función, ni policy, ni tabla | **DISEÑO — no aplicado** |
 
 > **Los cinco corren como superusuario y no dependen entre sí.** Superusuario
 > porque cada uno crea un rol y `uellix_owner` es `NOCREATEROLE` por diseño —
@@ -488,3 +489,29 @@ siendo hallazgos**, y cada trigger que un paquete cree debe estar en
 `TRIGGER_CONTRACT` con su tabla, su momento, sus eventos, su nivel y su función,
 precedido de su propio `DROP TRIGGER IF EXISTS`. `CREATE RULE` sigue rechazado
 sin más.
+
+
+---
+
+## `stella_0012` y el orden de aplicación
+
+Se aplica **el último** y se revierte **el primero**, igual que `stella_0011`,
+aunque por una razón distinta: no comparte esquema con nadie, no crea objetos y
+es independiente de la campaña. El orden es una convención para que las
+postcondiciones de `stella_0011` corran contra el ACL que describen.
+
+**Lo que sí es obligatorio:** `stella_0011`, `stella_0012` y el cambio de
+`lib/admin/stella-services.ts` / `lib/admin/organizations.ts` /
+`lib/admin/organization-administration.ts` son **un solo despliegue**. Ninguno
+de los tres funciona sin los otros dos:
+
+| Se despliega | Falta | Síntoma |
+|---|---|---|
+| código | paquetes | `42883 function uellix_capability.admin_set_stella_service does not exist` |
+| paquetes | código | `42501 permission denied for table organizations` en las dos pantallas de plataforma |
+| `0011` sin `0012` | — | la cuota queda detrás de un predicado que cualquier usuario puede poner a `true` |
+
+Su rollback **reabre una escalada de privilegio** y lo anuncia con
+`RAISE WARNING`. No es un defecto del rollback: un rollback cuyas
+postcondiciones afirman un estado más seguro que aquello que revierte no
+restaura nada.
