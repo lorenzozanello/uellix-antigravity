@@ -1,2 +1,11 @@
 *.pdf binary
 *.xlsx binary
+
+# Los artefactos de baseline se verifican por SHA-256 contra
+# db/baseline/MANIFEST.sha256. Con core.autocrlf=true un checkout en Windows los
+# reescribiría a CRLF y el manifiesto dejaría de cuadrar, así que el final de
+# línea queda fijado a LF en toda plataforma.
+db/baseline/** text eol=lf
+
+# bash no ejecuta un script con CRLF: falla con «\r: command not found».
+*.sh text eol=lf
