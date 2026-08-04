@@ -4,11 +4,25 @@
 # The capability campaign's dry run, end to end, in a DISPOSABLE container.
 #
 # WHAT IT PROVES
-#   baseline 38 tables / 107 policies  ->  apply 0006..0010 twice  ->  42 / 141
-#   -> 67 live assertions (13+12+14+13+15) + cross-isolation + concurrency = 72
-#   -> roll back all five  ->  0 capability roles, 0 cap_* policies, 0 functions,
-#      schema gone, exactly two tables retained
-#   -> re-apply  ->  identical state.
+#   baseline 38 tables / 107 policies / 10 triggers
+#     -> apply 0006..0010 twice -> 42 tables / 141 policies / 6 roles / 8 functions
+#     -> 72 live assertions (single-session + cross-isolation + 6 contended)
+#     -> roll back all five -> 40 tables / 108 policies, 0 capability roles,
+#        0 cap_* policies, 0 functions, schema gone, exactly two tables and
+#        exactly one policy retained
+#     -> re-apply -> identical state.
+#
+# EVERY ONE OF THOSE NUMBERS IS AN ASSERTION, NOT A PRINTOUT.
+#
+# Until this revision the run reported the teardown as a nine-row table and
+# moved on, and step 4 ended with `| grep -Ev '…' || true`. The combination has
+# a specific failure mode: psql exiting non-zero was discarded by the pipe and
+# then by the `|| true`, and the only completeness check afterwards asked how
+# many recorded assertions had FAILED. A run that died after thirty assertions
+# had thirty rows, none of them failing, and reported success. Absence of
+# failure is not evidence of completion, so the assertion COUNT is now checked
+# against $EXPECTED_ASSERTIONS and the concurrency subset against
+# $EXPECTED_CONCURRENCY.
 #
 # WHAT IT NEVER TOUCHES
 #   Nothing outside its own disposable container. There is no live stack in the
@@ -54,6 +68,18 @@ PACKAGES=(0006_invitation_capability 0007_public_verification_capability
           0008_stripe_webhook_identity 0009_public_lead_capability
           0010_organization_bootstrap_capability)
 ROLLBACKS=(0010_rollback 0009_rollback 0008_rollback 0007_rollback 0006_rollback)
+
+# Every number this run must reproduce, in one place, so a change to any of
+# them is a visible edit rather than a drifting expectation.
+EXPECTED_BASELINE="38/107/0/0/0"     # tables/policies/cap roles/cap functions/cap schema
+EXPECTED_BASELINE_TRIGGERS=10
+EXPECTED_FORWARD="42/141/6/8/1"
+EXPECTED_ASSERTIONS=72
+EXPECTED_CONCURRENCY=6
+EXPECTED_ROLLBACK_TABLES=40
+EXPECTED_ROLLBACK_POLICIES=108
+EXPECTED_RETAINED_TABLES=2
+EXPECTED_RETAINED_POLICIES=1
 
 cleanup() { docker rm -f "$BOX" >/dev/null 2>&1 || true; rm -rf "$WORK"; }
 trap cleanup EXIT
@@ -105,6 +131,16 @@ for _ in $(seq 1 90); do
 done
 [ "$ok" -ge 3 ] || { echo "FATAL: the disposable server never came up"; docker logs --tail 20 "$BOX"; exit 1; }
 "${PSQL[@]}" -tAc "SELECT version()" | head -1
+# The server version is part of what the run proves. A different major would
+# change RLS, ownership and privilege semantics under the same SQL, and the
+# report would attribute the result to the packages.
+PGVER="$("${PSQL[@]}" -tAc "SHOW server_version")"
+case "$PGVER" in
+  17.6*) echo "  server_version: $PGVER" ;;
+  *) echo "FATAL: server_version is $PGVER, expected 17.6"; exit 1 ;;
+esac
+echo "  image: $IMAGE"
+docker image inspect "$IMAGE" --format '  image id: {{.Id}}' || true
 
 # --------------------------------------------------------------------------
 say "2. Restore the baseline, fail-closed"
@@ -139,8 +175,21 @@ done
 "${PSQL[@]}" -v ON_ERROR_STOP=1 -q -f /stella_g2_post_restore.sql >/dev/null || { echo "FATAL: post-restore failed";   exit 1; }
 
 BASE=$(state); echo "container baseline: $BASE  (tables/policies/roles/functions/schema)"
-[ "${BASE%%/*}" = "38" ] || { echo "FATAL: seeded table count is not 38"; exit 1; }
-[ "$(echo "$BASE" | cut -d/ -f2)" = "107" ] || { echo "FATAL: seeded policy count is not 107"; exit 1; }
+# HARD, not advisory. The baseline is the denominator of every number this run
+# reports: 42 tables means nothing without 38 before it. A partially restored
+# baseline would make the packages look like they created more than they do.
+[ "$BASE" = "$EXPECTED_BASELINE" ] \
+  || { echo "FATAL: baseline is $BASE, expected $EXPECTED_BASELINE (tables/policies/cap roles/cap functions/cap schema)"; exit 1; }
+BASE_TRIGGERS=$("${PSQL[@]}" -tAc "
+  SELECT count(*) FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+   WHERE n.nspname = 'public' AND NOT t.tgisinternal")
+[ "$BASE_TRIGGERS" = "$EXPECTED_BASELINE_TRIGGERS" ] \
+  || { echo "FATAL: baseline trigger count is $BASE_TRIGGERS, expected $EXPECTED_BASELINE_TRIGGERS"; exit 1; }
+BASE_CAP_POL=$("${PSQL[@]}" -tAc "SELECT count(*) FROM pg_policies WHERE policyname LIKE 'cap\\_%'")
+[ "$BASE_CAP_POL" = "0" ] || { echo "FATAL: the baseline already carries $BASE_CAP_POL cap_* policies"; exit 1; }
+echo "  baseline asserted: 38 tables / 107 policies / 10 triggers / 0 capability objects"
 
 for f in "${PACKAGES[@]}" "${ROLLBACKS[@]}"; do
   docker cp "db/prepared/stella_$f.sql" "$BOX:/prepared_stella_$f.sql"
@@ -150,6 +199,7 @@ docker cp scripts/capability-dry-run.sql "$BOX:/dryrun.sql"
 # --------------------------------------------------------------------------
 say "3. Apply 0006..0010, twice"
 # --------------------------------------------------------------------------
+PASS1_STATE=""
 for pass in 1 2; do
   for f in "${PACKAGES[@]}"; do
     printf '  pass %s  stella_%-46s ' "$pass" "$f"
@@ -159,23 +209,92 @@ for pass in 1 2; do
       echo "FAIL"; cat "$WORK/err"; exit 1
     fi
   done
-  echo "  state after pass $pass: $(state)"
+  PASS_STATE=$(state)
+  echo "  state after pass $pass: $PASS_STATE"
+  # `[ … ] && X` would be the loop body's LAST command, and a false test then
+  # makes the body exit non-zero — which `set -e` treats as a failed run.
+  if [ "$pass" = "1" ]; then PASS1_STATE="$PASS_STATE"; fi
 done
 AFTER=$(state)
-[ "$AFTER" = "42/141/6/8/1" ] || { echo "FATAL: expected 42/141/6/8/1, got $AFTER"; exit 1; }
+[ "$AFTER" = "$EXPECTED_FORWARD" ] || { echo "FATAL: expected $EXPECTED_FORWARD, got $AFTER"; exit 1; }
+# Convergence is the property that makes a second apply safe. Asserting the two
+# passes produce the same state is what "idempotent" means here; a duplicate
+# policy or a second role would show up as a different tuple.
+[ "$PASS1_STATE" = "$AFTER" ] \
+  || { echo "FATAL: pass 1 left $PASS1_STATE and pass 2 left $AFTER — the packages are not convergent"; exit 1; }
+DUP_POLICIES=$("${PSQL[@]}" -tAc "
+  SELECT count(*) FROM (
+    SELECT schemaname, tablename, policyname FROM pg_policies WHERE schemaname='public'
+    GROUP BY 1,2,3 HAVING count(*) > 1) d")
+[ "$DUP_POLICIES" = "0" ] || { echo "FATAL: $DUP_POLICIES duplicated policies after two passes"; exit 1; }
 
 # --------------------------------------------------------------------------
-say "4. The 67 live assertions, cross-isolation and concurrency"
+# 72, and the split that matters to whoever edits $EXPECTED_ASSERTIONS is the
+# one BY SOURCE, not by document. capability-dry-run.sql records 66 rows (63
+# `L*` cases plus three cross-isolation ones); the concurrency script records 6
+# (four `L*` cases that need two real sessions, plus CAP-02 and CAP-04 under
+# contention). 66 + 6 = 72. The design's own count of 67 `L*` cases is spread
+# across both files, which is why a naive count of the .sql gives 66 and looks
+# like a contradiction.
+say "4. The 72 live assertions (66 from dryrun.sql + 6 contended)"
 # --------------------------------------------------------------------------
 "${PSQL[@]}" -q -c "CREATE SCHEMA IF NOT EXISTS dryrun; CREATE TABLE IF NOT EXISTS dryrun.disposable_marker(x int);" >/dev/null
-"${PSQL[@]}" -v ON_ERROR_STOP=1 -f /dryrun.sql 2>&1 | tail -n +2 | grep -Ev '^(DO|CREATE|TRUNCATE|NOTICE)' || true
+
+# THE EXIT CODE OF dryrun.sql IS THE POINT, AND IT USED TO BE THROWN AWAY.
+#
+# The previous line ended `| tail -n +2 | grep -Ev '…' || true`. Two separate
+# losses, and they compound:
+#
+#   * the pipe hands the pipeline's status to grep, and `|| true` then discards
+#     even that, so psql exiting 3 on ON_ERROR_STOP was indistinguishable from
+#     psql exiting 0;
+#   * the only completeness check afterwards was "how many rows say NOT ok",
+#     and a run that DIED after thirty assertions has thirty rows, none of them
+#     failing. A partial execution reported as green.
+#
+# So: the output goes to a file, the real status is captured, the file is
+# scanned for ERROR, and the row COUNT is asserted against the expected total.
+# Absence of failure is not evidence of completion.
+set +e
+"${PSQL[@]}" -v ON_ERROR_STOP=1 -f /dryrun.sql >"$WORK/dryrun.out" 2>&1
+DRY_RC=$?
+set -e
+# Display only. grep exits 1 when nothing matches, which is not a failure of
+# anything — the run's status was captured above and is checked below.
+grep -Ev '^(DO|CREATE|TRUNCATE|NOTICE)' "$WORK/dryrun.out" | tail -n +2 || true
+if [ "$DRY_RC" != "0" ]; then
+  echo "FATAL: dryrun.sql exited $DRY_RC"; tail -n 40 "$WORK/dryrun.out"; exit 1
+fi
+if grep -qE '(^|:)ERROR:' "$WORK/dryrun.out"; then
+  echo "FATAL: dryrun.sql reported an ERROR"; grep -nE '(^|:)ERROR:' "$WORK/dryrun.out" | head -n 20; exit 1
+fi
+
 bash scripts/capability-dry-run-concurrency.sh "$BOX"
-"${PSQL[@]}" -tAc "SELECT 'live assertions: ' || count(*) FILTER (WHERE ok) || ' passed, ' || count(*) FILTER (WHERE NOT ok) || ' failed' FROM dryrun.results"
-FAILED=$("${PSQL[@]}" -tAc "SELECT count(*) FROM dryrun.results WHERE NOT ok")
+
+# The six contended cases are recorded by the concurrency script under ids the
+# single-session harness cannot produce. Counting them separately is what makes
+# "6/6" a measurement rather than a restatement of the total.
+CONC_IDS="'CAP01-L6','CAP02-CONC','CAP03-L3','CAP04-CONC','CAP05-L4','CAP05-L11'"
+read -r TOTAL PASSED FAILED CONC_TOTAL CONC_PASSED <<<"$("${PSQL[@]}" -tAc "
+  SELECT count(*) || ' ' ||
+         count(*) FILTER (WHERE ok) || ' ' ||
+         count(*) FILTER (WHERE NOT ok) || ' ' ||
+         count(*) FILTER (WHERE id IN ($CONC_IDS)) || ' ' ||
+         count(*) FILTER (WHERE id IN ($CONC_IDS) AND ok)
+    FROM dryrun.results")"
+echo "live assertions: $PASSED passed, $FAILED failed, $TOTAL executed (concurrency $CONC_PASSED/$CONC_TOTAL)"
 if [ "$FAILED" != "0" ]; then
   "${PSQL[@]}" -c "SELECT id, detail FROM dryrun.results WHERE NOT ok ORDER BY id"
   echo "FATAL: $FAILED live assertions failed"; exit 1
 fi
+[ "$TOTAL" = "$EXPECTED_ASSERTIONS" ] \
+  || { echo "FATAL: $TOTAL assertions executed, expected $EXPECTED_ASSERTIONS — the run is PARTIAL, not green"; exit 1; }
+[ "$PASSED" = "$EXPECTED_ASSERTIONS" ] \
+  || { echo "FATAL: $PASSED assertions passed, expected $EXPECTED_ASSERTIONS"; exit 1; }
+[ "$CONC_TOTAL" = "$EXPECTED_CONCURRENCY" ] \
+  || { echo "FATAL: $CONC_TOTAL concurrency assertions executed, expected $EXPECTED_CONCURRENCY"; exit 1; }
+[ "$CONC_PASSED" = "$EXPECTED_CONCURRENCY" ] \
+  || { echo "FATAL: $CONC_PASSED concurrency assertions passed, expected $EXPECTED_CONCURRENCY"; exit 1; }
 
 # --------------------------------------------------------------------------
 say "5. Roll back all five, in reverse order"
@@ -203,6 +322,42 @@ UNION ALL SELECT 'dropped: capability_bootstrap_attempts', count(*) FROM pg_tabl
 UNION ALL SELECT 'tables', count(*) FROM pg_tables WHERE schemaname='public'
 UNION ALL SELECT 'policies', count(*) FROM pg_policies WHERE schemaname='public';"
 
+# The table above is a REPORT. What follows are the assertions, and the
+# difference matters: printing nine numbers proves nothing unless something
+# refuses when one of them is wrong. Until now the teardown step printed and
+# moved on, so a rollback that left a capability role behind produced a run
+# that ended «DRY RUN COMPLETE».
+read -r RB_TABLES RB_POLICIES RB_CAPROLES RB_CAPFN RB_SCHEMA RB_CAPPOL RB_DISC RB_RETAINED RB_DROPPED <<<"$("${PSQL[@]}" -tAc "
+  SELECT (SELECT count(*) FROM pg_tables   WHERE schemaname='public') || ' ' ||
+         (SELECT count(*) FROM pg_policies WHERE schemaname='public') || ' ' ||
+         (SELECT count(*) FROM pg_roles WHERE rolname LIKE 'uellix_cap%' OR rolname='uellix_stripe') || ' ' ||
+         (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='uellix_capability') || ' ' ||
+         (SELECT count(*) FROM pg_namespace WHERE nspname='uellix_capability') || ' ' ||
+         (SELECT count(*) FROM pg_policies WHERE policyname LIKE 'cap\\_%') || ' ' ||
+         (SELECT count(*) FROM pg_policies WHERE policyname LIKE 'disclosures\\_%') || ' ' ||
+         (SELECT count(*) FROM pg_tables WHERE schemaname='public'
+            AND tablename IN ('report_public_disclosures','stripe_webhook_events')) || ' ' ||
+         (SELECT count(*) FROM pg_tables WHERE schemaname='public'
+            AND tablename IN ('capability_verification_hits','capability_bootstrap_attempts'))")"
+
+rb_assert() { # name actual expected
+  if [ "$2" != "$3" ]; then echo "FATAL: after rollback, $1 is $2, expected $3"; exit 1; fi
+}
+rb_assert "public tables"                "$RB_TABLES"    "$EXPECTED_ROLLBACK_TABLES"
+rb_assert "public policies"              "$RB_POLICIES"  "$EXPECTED_ROLLBACK_POLICIES"
+rb_assert "capability roles"             "$RB_CAPROLES"  "0"
+rb_assert "capability functions"         "$RB_CAPFN"     "0"
+rb_assert "uellix_capability schema"     "$RB_SCHEMA"    "0"
+rb_assert "cap_* policies"               "$RB_CAPPOL"    "0"
+# Exactly ONE policy survives the campaign: CAP-02 retains
+# disclosures_select_member so an organisation admin can still read what was
+# published. "At least one" would be satisfied by the two the rollback was
+# supposed to drop.
+rb_assert "retained disclosures_ policies" "$RB_DISC"    "$EXPECTED_RETAINED_POLICIES"
+rb_assert "retained tables"              "$RB_RETAINED"  "$EXPECTED_RETAINED_TABLES"
+rb_assert "capability tables still present" "$RB_DROPPED" "0"
+echo "  rollback asserted: $RB_TABLES tables / $RB_POLICIES policies / 2 retained tables / 1 retained policy"
+
 # --------------------------------------------------------------------------
 say "7. Re-apply — the state must be identical to step 3"
 # --------------------------------------------------------------------------
@@ -217,5 +372,17 @@ done
 REAPPLIED=$(state)
 echo "  after re-apply: $REAPPLIED   (was $AFTER)"
 [ "$REAPPLIED" = "$AFTER" ] || { echo "FATAL: re-apply did not converge"; exit 1; }
+# Compared against the LITERAL too, not only against $AFTER. If the first apply
+# had been wrong in the same way, comparing the two would agree and prove
+# nothing.
+[ "$REAPPLIED" = "$EXPECTED_FORWARD" ] \
+  || { echo "FATAL: re-apply produced $REAPPLIED, expected $EXPECTED_FORWARD"; exit 1; }
 
 say "DRY RUN COMPLETE — container destroyed on exit"
+echo "  image            : $IMAGE"
+echo "  server_version   : $PGVER"
+echo "  baseline         : $BASE + $BASE_TRIGGERS triggers"
+echo "  forward          : $AFTER"
+echo "  live assertions  : $PASSED/$TOTAL (concurrency $CONC_PASSED/$CONC_TOTAL)"
+echo "  rollback         : $RB_TABLES tables / $RB_POLICIES policies"
+echo "  re-apply         : $REAPPLIED"

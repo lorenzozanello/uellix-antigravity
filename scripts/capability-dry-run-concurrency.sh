@@ -11,7 +11,14 @@
 # first can finish before the second connects, and the assertion then passes
 # without ever having tested contention. So both sessions are given the SAME
 # wall-clock start instant and sleep until it, inside their transaction, after
-# connecting. The overlap is engineered, not hoped for.
+# connecting. The overlap is engineered, not hoped for — and since 2026-08-04
+# it is also CHECKED. That sentence used to be an unverified claim: `race()`
+# ended in `|| true` with ON_ERROR_STOP=0, so a session that never connected was
+# indistinguishable from one that legitimately lost, and four of the six
+# assertions ("exactly one membership", "exactly one organisation", "one lead",
+# "one claimed event") are equally true of a run with a single writer. Each
+# session now brackets its contended statement with a marker, and a case where
+# both did not run records a FAILING row instead of a passing one.
 #
 #   bash scripts/capability-dry-run-concurrency.sh <container>
 set -euo pipefail
@@ -19,6 +26,12 @@ export MSYS_NO_PATHCONV=1
 
 BOX="${1:?usage: capability-dry-run-concurrency.sh <container>}"
 PSQL=(docker exec -i "$BOX" psql -U supabase_admin -d postgres -q -v ON_ERROR_STOP=0)
+
+# Run-scoped, not /tmp/race_<tag>.out. Fixed paths meant two dry runs on the
+# same host interleaved their evidence, and CAP-03's assertion — the one that
+# actually READS these files — could be computed from a previous run's output.
+RACE_DIR="$(mktemp -d)"
+trap 'rm -rf "$RACE_DIR"' EXIT
 
 rec() { docker exec "$BOX" psql -U supabase_admin -d postgres -q -tAc \
         "SELECT dryrun.rec('$1', $2, '$3')" >/dev/null; }
@@ -30,15 +43,41 @@ barrier() { scalar "SELECT (clock_timestamp() + interval '4 seconds')::text"; }
 
 # One racing session. Everything before the sleep is setup; everything after is
 # the contended statement.
+#
+# Each session brackets its contended statement with a marker so the parent can
+# prove BOTH ran and that their windows OVERLAPPED. Without that, four of the
+# six assertions below are satisfied by a run in which no contention occurred:
+# "exactly one membership" is equally true when the second session never
+# connected, and `|| true` plus ON_ERROR_STOP=0 made a session that died
+# indistinguishable from one that legitimately lost. The header claimed "the
+# overlap is engineered, not hoped for" and nothing checked it.
 race() {
-  local at="$1" body="$2" tag="$3"
+  local at="$1" body="$2" tag="$3" rc=0
   { "${PSQL[@]}" <<SQL
 BEGIN;
 SELECT pg_sleep(GREATEST(0, EXTRACT(epoch FROM (TIMESTAMPTZ '$at' - clock_timestamp()))));
+SELECT 'RACE_START ' || clock_timestamp();
 $body
+SELECT 'RACE_END ' || clock_timestamp();
 COMMIT;
 SQL
-  } >"/tmp/race_$tag.out" 2>&1 || true
+  } >"$RACE_DIR/race_$tag.out" 2>&1 || rc=$?
+  echo "$rc" >"$RACE_DIR/race_$tag.rc"
+}
+
+# `true` when the session reached its contended statement at all.
+ran() { grep -q 'RACE_START' "$RACE_DIR/race_$1.out" 2>/dev/null; }
+
+# Record a FAILING row when a "concurrent" case did not actually contend.
+#
+# Called before each assertion below, so a run in which one session never
+# reached its statement is a RED result rather than a green one computed from a
+# single writer. The parent driver requires 6/6, so a false here fails the run.
+assert_raced() {
+  local id="$1" a="$2" b="$3"
+  if ran "$a" && ran "$b"; then return 0; fi
+  rec "$id" false "NO CONTENTION: $a ran=$(ran "$a" && echo y || echo n), $b ran=$(ran "$b" && echo y || echo n)"
+  return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -59,8 +98,10 @@ BODY="SELECT set_config('request.jwt.claim.sub','a1a1a1a1-0000-4000-8000-0000000
 SELECT * FROM uellix_capability.accept_invitation(repeat('1', 64));"
 race "$AT" "$BODY" c1a & race "$AT" "$BODY" c1b & wait
 
-N=$(scalar "SELECT count(*) FROM public.organization_members WHERE user_id='a1a1a1a1-0000-4000-8000-0000000000c1' AND status='active'")
-rec 'CAP01-L6' "$([ "$N" = "1" ] && echo true || echo false)" "memberships=$N"
+if assert_raced 'CAP01-L6' c1a c1b; then
+  N=$(scalar "SELECT count(*) FROM public.organization_members WHERE user_id='a1a1a1a1-0000-4000-8000-0000000000c1' AND status='active'")
+  rec 'CAP01-L6' "$([ "$N" = "1" ] && echo true || echo false)" "memberships=$N"
+fi
 
 # ---------------------------------------------------------------------------
 # CAP-03 L3 — two concurrent begins for the same event id
@@ -69,9 +110,11 @@ AT=$(barrier)
 BODY="SELECT uellix_capability.stripe_begin_event('evt_race', 'customer.subscription.updated');"
 race "$AT" "$BODY" c3a & race "$AT" "$BODY" c3b & wait
 
-CLAIMED=$(grep -ho 'claimed\|duplicate\|in_progress' /tmp/race_c3a.out /tmp/race_c3b.out | grep -c '^claimed$' || true)
-ROWS=$(scalar "SELECT count(*) FROM public.stripe_webhook_events WHERE event_id='evt_race'")
-rec 'CAP03-L3' "$([ "$CLAIMED" = "1" ] && [ "$ROWS" = "1" ] && echo true || echo false)" "claimed=$CLAIMED rows=$ROWS"
+if assert_raced 'CAP03-L3' c3a c3b; then
+  CLAIMED=$(grep -ho 'claimed\|duplicate\|in_progress' "$RACE_DIR/race_c3a.out" "$RACE_DIR/race_c3b.out" | grep -c '^claimed$' || true)
+  ROWS=$(scalar "SELECT count(*) FROM public.stripe_webhook_events WHERE event_id='evt_race'")
+  rec 'CAP03-L3' "$([ "$CLAIMED" = "1" ] && [ "$ROWS" = "1" ] && echo true || echo false)" "claimed=$CLAIMED rows=$ROWS"
+fi
 
 # ---------------------------------------------------------------------------
 # CAP-05 L4 — two concurrent bootstraps with the SAME idempotency key
@@ -87,11 +130,13 @@ SELECT * FROM uellix_capability.bootstrap_organization(
   '5a5a5a5a-0000-4000-8000-0000000000c5'::uuid, 'Race Co', 'race-co', NULL, 'ES', NULL);"
 race "$AT" "$BODY" c5a & race "$AT" "$BODY" c5b & wait
 
-ORGS=$(scalar "SELECT count(*) FROM public.organizations WHERE slug='race-co'")
-MEMB=$(scalar "SELECT count(*) FROM public.organization_members WHERE user_id='a5a5a5a5-0000-4000-8000-0000000000c5' AND status='active'")
-ATT=$(scalar "SELECT count(*) FROM public.capability_bootstrap_attempts WHERE user_id='a5a5a5a5-0000-4000-8000-0000000000c5'")
-rec 'CAP05-L4' "$([ "$ORGS" = "1" ] && [ "$MEMB" = "1" ] && [ "$ATT" = "1" ] && echo true || echo false)" \
-    "orgs=$ORGS memberships=$MEMB attempts=$ATT"
+if assert_raced 'CAP05-L4' c5a c5b; then
+  ORGS=$(scalar "SELECT count(*) FROM public.organizations WHERE slug='race-co'")
+  MEMB=$(scalar "SELECT count(*) FROM public.organization_members WHERE user_id='a5a5a5a5-0000-4000-8000-0000000000c5' AND status='active'")
+  ATT=$(scalar "SELECT count(*) FROM public.capability_bootstrap_attempts WHERE user_id='a5a5a5a5-0000-4000-8000-0000000000c5'")
+  rec 'CAP05-L4' "$([ "$ORGS" = "1" ] && [ "$MEMB" = "1" ] && [ "$ATT" = "1" ] && echo true || echo false)" \
+      "orgs=$ORGS memberships=$MEMB attempts=$ATT"
+fi
 
 # ---------------------------------------------------------------------------
 # CAP-05 L11 — a failure injected AFTER the organisation exists
@@ -129,14 +174,18 @@ rec 'CAP05-L11' "$([ "$O" = "0" ] && [ "$A" = "0" ] && [ "$M" = "0" ] && echo tr
 AT=$(barrier)
 BODY="SELECT uellix_capability.record_verification_hit('hash_totals');"
 race "$AT" "$BODY" c2a & race "$AT" "$BODY" c2b & wait
-ROWS=$(scalar "SELECT count(*) FROM public.capability_verification_hits")
-HITS=$(scalar "SELECT COALESCE(max(hit_count),0) FROM public.capability_verification_hits")
-rec 'CAP02-CONC' "$([ "$ROWS" = "1" ] && [ "$HITS" = "2" ] && echo true || echo false)" "rows=$ROWS count=$HITS"
+if assert_raced 'CAP02-CONC' c2a c2b; then
+  ROWS=$(scalar "SELECT count(*) FROM public.capability_verification_hits")
+  HITS=$(scalar "SELECT COALESCE(max(hit_count),0) FROM public.capability_verification_hits")
+  rec 'CAP02-CONC' "$([ "$ROWS" = "1" ] && [ "$HITS" = "2" ] && echo true || echo false)" "rows=$ROWS count=$HITS"
+fi
 
 AT=$(barrier)
 BODY="SELECT uellix_capability.submit_lead('race@example.test','R',NULL,'pricing');"
 race "$AT" "$BODY" c4a & race "$AT" "$BODY" c4b & wait
-LEADS=$(scalar "SELECT count(*) FROM public.marketing_leads WHERE email='race@example.test'")
-rec 'CAP04-CONC' "$([ "$LEADS" = "1" ] && echo true || echo false)" "rows=$LEADS"
+if assert_raced 'CAP04-CONC' c4a c4b; then
+  LEADS=$(scalar "SELECT count(*) FROM public.marketing_leads WHERE email='race@example.test'")
+  rec 'CAP04-CONC' "$([ "$LEADS" = "1" ] && echo true || echo false)" "rows=$LEADS"
+fi
 
 echo "concurrency: recorded CAP01-L6, CAP02-CONC, CAP03-L3, CAP04-CONC, CAP05-L4, CAP05-L11"
