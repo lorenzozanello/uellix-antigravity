@@ -636,10 +636,10 @@ Consecuencias que ya están fijadas por prueba:
   las que había pudieran ponerse en rojo. Cerrado por construcción, no por más
   aserciones: el contrato vive en `tests/helpers/capability-gates.ts` como
   **función pura** sobre el texto de los paquetes, y
-  `tests/capability-mutation.test.ts` lo ejecuta contra 45 copias
-  deliberadamente rotas exigiendo que cada una produzca al menos una violación.
-  `scripts/capability-mutation-audit.ts` mide lo mismo **en disco** y contra la
-  suite antigua, con SHA-256 antes y después.
+  `tests/capability-mutation.test.ts` lo ejecuta contra copias deliberadamente
+  rotas exigiendo que cada una produzca al menos una violación **y que la
+  produzca el gate correcto**. `scripts/capability-mutation-audit.ts` mide lo
+  mismo **en disco** y contra la suite antigua, con SHA-256 antes y después.
 
   Estado medido (2026-08-03): **22/22 sobreviven a la suite antigua, 0/67
   sobreviven a los gates nuevos, 67/67 restauradas intactas.**
@@ -656,10 +656,56 @@ Consecuencias que ya están fijadas por prueba:
   varios eran de la misma clase que mutaciones ya presentes. Todos están ahora
   catalogados y en rojo.
 
-  El residual se declara en cifras, no en adjetivos: **59 de 117 gates no los
+* **RR-CAP-12b — el lector divergía de PostgreSQL, y la divergencia era
+  silenciosa.** (2026-08-04.) Una reauditoría independiente confirmó **ocho
+  formas de escribir en PostgreSQL una operación de seguridad que el parser no
+  veía**. No eran ocho propiedades nuevas: eran ocho **grafías** de propiedades
+  que el catálogo ya cubría.
+
+  | # | Grafía | Por qué no se veía |
+  | --- | --- | --- |
+  | E-01 | DDL/DCL dentro de un bloque `DO` | el cuerpo `$$…$$` se enmascaraba entero; la sentencia no era ilegible, era **inexistente** |
+  | E-02 | *grantee* entre comillas dobles | todo patrón de identificador era `[A-Za-z_][\w$]*` |
+  | E-03 | `GRANT a, b TO c` | la lista de miembros exigía un identificador desnudo y se descartaba con un `continue` |
+  | E-04 | `DISABLE ROW LEVEL SECURITY` con tabla cualificada y entrecomillada | `ALTER TABLE ([\w.]+)` no lee `"public"."t"` |
+  | E-05 | segundo `ALTER ROLE` con el rol entrecomillado | el gate se anclaba al nombre desnudo del rol |
+  | E-06 | `REASSIGN OWNED` | no aparecía en ningún patrón, en ninguna dirección |
+  | E-07 | `CREATE POLICY` con nombre, esquema, tabla y rol entrecomillados | ninguno de los cuatro identificadores era legible |
+  | E-08 | comentario de bloque **anidado** | PostgreSQL los anida; el enmascarador no, así que creía que el `REVOKE` sobrevivía |
+
+  La causa raíz es una sola y se nombra sin adornos: **la ausencia de match se
+  interpretaba como ausencia de riesgo.** Un gate que no encuentra su patrón
+  informaba lo mismo que un gate satisfecho.
+
+  Cerrado por construcción: `tests/helpers/sql-structure.ts` es ahora un
+  **lexer** con las reglas léxicas de PostgreSQL (identificadores normalizados,
+  comillas dobles con escape, comentarios anidados, `E''`, *dollar quoting* con
+  y sin etiqueta) y un **escáner** que desciende a los cuerpos ejecutables —
+  bloques `DO`, cuerpos de función y literales llegados por `EXECUTE`. Toda
+  sentencia que **abre** como operación de seguridad y no clasifica produce la
+  violación `unparsed-security-statement` con fichero, línea, origen y motivo,
+  y nunca un silencio. El `EXECUTE` de un `format(…)`, de una variable o de una
+  concatenación no se interpreta: se **rechaza**.
+
+  Estado medido (2026-08-04): **96 mutaciones catalogadas (22 M + 45 N + 8 E +
+  14 F + 7 A), 0 supervivientes, 0 detectadas por un gate ajeno a su propiedad,
+  restauración verificada por SHA.** Las 8 evasiones tienen además un control
+  negativo independiente a nivel de parser en
+  `tests/capability-policy-parser.test.ts`, para que una regresión del lector se
+  vea antes de que un gate se ponga verde por accidente.
+
+  El residual se declara en cifras, no en adjetivos: **56 de 123 gates no los
   ejercita ninguna mutación**, y están listados en `UNEXERCISED_GATES` con un
   test que falla si esa lista cambia sin que alguien lo escriba. Un gate que
   nunca se ha puesto en rojo es indistinguible de un gate que no puede.
+
+  Y el inventario de gates tiene a su vez un punto ciego que ahora se comprueba:
+  se deriva casando `add('<literal>'` en el código fuente, así que **un gate
+  cuyo nombre se calcule en tiempo de ejecución es invisible para la propia
+  comprobación de cobertura**. Ocurrió durante esta unidad — dos gates escritos
+  con un ternario disparaban correctamente y no figuraban en ninguna de las dos
+  listas. Se cierra desde el otro extremo: todo gate que se observe disparar
+  debe estar en el inventario derivado.
 * **RR-CAP-5 — Supabase gestionado puede no admitir todo esto.** Las mismas
   tres limitaciones que bloquearon `stella_0004` en remoto
   (ver `DATABASE_ROLE_MODEL.md` §8) aplican a `uellix_stripe`, que es un rol

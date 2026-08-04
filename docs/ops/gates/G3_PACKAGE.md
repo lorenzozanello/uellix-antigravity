@@ -395,6 +395,14 @@ precisamente el camino de arriba: `uellix_app`, `anon` y `authenticated`
 intentando escribir o leer `marketing_leads`, y las cuatro son denegadas con
 42501.
 
+Desde el 2026-08-04 ese dry run además **falla ante una ejecución parcial**: el
+paso de aserciones vivas capturaba el código de salida de `psql` a través de una
+tubería y lo descartaba con `|| true`, y sólo comprobaba cuántas aserciones
+habían fallado — de modo que una ejecución muerta a la mitad tenía sus filas,
+ninguna fallida, y se reportaba verde. Ahora el recuento se compara contra 72 y
+contra 6 de concurrencia, y el teardown **afirma** sus nueve números en vez de
+imprimirlos.
+
 Eso **no** sustituye a G3. El contenedor no tiene PostgREST, no tiene Kong y no
 tiene GoTrue: prueba el ACL y las policies de la base, no la ruta que un cliente
 recorre de verdad. Y no es Supabase gestionado, que es lo que RR-CAP-5 y RR-09

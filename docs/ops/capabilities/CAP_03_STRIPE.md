@@ -657,3 +657,41 @@ mismo estado que hoy, que es fail-closed y ruidoso, no silencioso.
 * **RR-CAP-5** (global) — `uellix_stripe` es un rol `LOGIN` nuevo y Supabase
   gestionado puede no permitir crearlo. **No verificado**: prohibido acceder a
   remoto en esta unidad.
+
+
+---
+
+## Cómo se lee este paquete (2026-08-04)
+
+El contrato estático de arriba lo evalúa un **lexer** con las reglas léxicas de
+PostgreSQL, no expresiones regulares sobre texto enmascarado. La diferencia es
+medible: una reauditoría independiente confirmó **ocho grafías válidas** que el
+lector anterior no veía —DDL dentro de un bloque `DO`, identificadores y
+*grantees* entre comillas dobles, `GRANT a, b TO c`,
+`DISABLE ROW LEVEL SECURITY`, un segundo `ALTER ROLE` que revierte atributos
+seguros, `REASSIGN OWNED`, `CREATE POLICY` con identificadores entrecomillados y
+comentarios de bloque **anidados**—. Ninguna era una propiedad nueva: eran ocho
+maneras de escribir propiedades que este documento ya declaraba.
+
+Consecuencias al editar este fichero `.sql`:
+
+* un `GRANT`, `CREATE POLICY` o `ALTER TABLE` emitido **desde dentro** de un
+  bloque `DO`, del cuerpo de una función o de un literal de `EXECUTE` cuenta
+  exactamente igual que uno escrito fuera;
+* `EXECUTE format(…)`, `EXECUTE <variable>` y `EXECUTE 'a' || b` **se rechazan**
+  con `unparsed-security-statement`: si un paquete necesita SQL dinámico, tiene
+  que ser un literal autocontenido;
+* `"Rol"` y `rol` son **roles distintos** — entrecomillar suprime el plegado a
+  minúsculas — y el contrato compara la forma normalizada.
+
+Detalle completo en
+[`ADVERSARIAL_FINDINGS_PARSER.md`](ADVERSARIAL_FINDINGS_PARSER.md).
+
+**Riesgos abiertos que alcanzan a esta capacidad:** **RR-CAP-10** —precondición
+bloqueante, ver §13— y **RR-CAP-14**, que es **independiente** de aquélla:
+RR-CAP-10 es que un admin humano puede escribir la cuota por el ORM; RR-CAP-14
+es que el definer del webhook no tiene ninguna cota de *fila*. Su alcance es
+cross-organization —`USING (true)` sobre `organizations` significa que las seis
+columnas del `GRANT` acotan *qué* se escribe, nunca *de quién*— y **no se cierra
+sólo con ACL de columnas**: se cierra atando la fila a la identidad Stripe ya
+vinculada.

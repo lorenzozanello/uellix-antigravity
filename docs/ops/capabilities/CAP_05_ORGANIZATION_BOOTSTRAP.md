@@ -449,3 +449,38 @@ parcial.
   correcto, pero produce un error opaco para un usuario legítimo cuyo perfil no
   se sincronizó. Mitigación: el endpoint debe llamar a `syncUserProfile` y
   comprobar su resultado **antes** de llamar a la RPC.
+
+
+---
+
+## Cómo se lee este paquete (2026-08-04)
+
+El contrato estático de arriba lo evalúa un **lexer** con las reglas léxicas de
+PostgreSQL, no expresiones regulares sobre texto enmascarado. La diferencia es
+medible: una reauditoría independiente confirmó **ocho grafías válidas** que el
+lector anterior no veía —DDL dentro de un bloque `DO`, identificadores y
+*grantees* entre comillas dobles, `GRANT a, b TO c`,
+`DISABLE ROW LEVEL SECURITY`, un segundo `ALTER ROLE` que revierte atributos
+seguros, `REASSIGN OWNED`, `CREATE POLICY` con identificadores entrecomillados y
+comentarios de bloque **anidados**—. Ninguna era una propiedad nueva: eran ocho
+maneras de escribir propiedades que este documento ya declaraba.
+
+Consecuencias al editar este fichero `.sql`:
+
+* un `GRANT`, `CREATE POLICY` o `ALTER TABLE` emitido **desde dentro** de un
+  bloque `DO`, del cuerpo de una función o de un literal de `EXECUTE` cuenta
+  exactamente igual que uno escrito fuera;
+* `EXECUTE format(…)`, `EXECUTE <variable>` y `EXECUTE 'a' || b` **se rechazan**
+  con `unparsed-security-statement`: si un paquete necesita SQL dinámico, tiene
+  que ser un literal autocontenido;
+* `"Rol"` y `rol` son **roles distintos** — entrecomillar suprime el plegado a
+  minúsculas — y el contrato compara la forma normalizada.
+
+Detalle completo en
+[`ADVERSARIAL_FINDINGS_PARSER.md`](ADVERSARIAL_FINDINGS_PARSER.md).
+
+**Riesgos abiertos que alcanzan a esta capacidad:** **RR-CAP-10** la *degrada*
+sin bloquearla. El argumento «el bootstrap no elige plan» es cierto dentro del
+paquete —ninguna columna de facturación aparece en la firma, en el cuerpo ni en
+el `GRANT INSERT`— y falso en el sistema, porque el `organization_admin` recién
+creado puede escribir `stella_monthly_quota` por el ORM al minuto siguiente.

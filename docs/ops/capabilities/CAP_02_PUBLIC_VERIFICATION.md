@@ -560,3 +560,40 @@ material aprobado para publicación.
   `true`, y `name` es editable por la organización. Un nombre malicioso se
   publicaría tal cual. Mitigación: la aprobación de disclosure es un acto
   humano que ve el nombre en ese momento; no hay revalidación posterior.
+
+
+---
+
+## Cómo se lee este paquete (2026-08-04)
+
+El contrato estático de arriba lo evalúa un **lexer** con las reglas léxicas de
+PostgreSQL, no expresiones regulares sobre texto enmascarado. La diferencia es
+medible: una reauditoría independiente confirmó **ocho grafías válidas** que el
+lector anterior no veía —DDL dentro de un bloque `DO`, identificadores y
+*grantees* entre comillas dobles, `GRANT a, b TO c`,
+`DISABLE ROW LEVEL SECURITY`, un segundo `ALTER ROLE` que revierte atributos
+seguros, `REASSIGN OWNED`, `CREATE POLICY` con identificadores entrecomillados y
+comentarios de bloque **anidados**—. Ninguna era una propiedad nueva: eran ocho
+maneras de escribir propiedades que este documento ya declaraba.
+
+Consecuencias al editar este fichero `.sql`:
+
+* un `GRANT`, `CREATE POLICY` o `ALTER TABLE` emitido **desde dentro** de un
+  bloque `DO`, del cuerpo de una función o de un literal de `EXECUTE` cuenta
+  exactamente igual que uno escrito fuera;
+* `EXECUTE format(…)`, `EXECUTE <variable>` y `EXECUTE 'a' || b` **se rechazan**
+  con `unparsed-security-statement`: si un paquete necesita SQL dinámico, tiene
+  que ser un literal autocontenido;
+* `"Rol"` y `rol` son **roles distintos** — entrecomillar suprime el plegado a
+  minúsculas — y el contrato compara la forma normalizada.
+
+Detalle completo en
+[`ADVERSARIAL_FINDINGS_PARSER.md`](ADVERSARIAL_FINDINGS_PARSER.md).
+
+**Riesgos abiertos que alcanzan a esta capacidad:** **RR-CAP-02-F** (publicar y
+revocar no dejan rastro: ni `public_summary` ni el estado de los seis `show_*`
+en el momento de publicar; no bloquea *aplicar* `stella_0007`, sí bloquea
+**habilitar** la verificación pública) y **RR-CAP-13** (`sroi_calculation_runs`
+y `organizations` tienen `SELECT` `USING (true)` sin compañera `RESTRICTIVE`;
+la exposición real la acota el `GRANT` por columna, lo que falta es la defensa
+en profundidad).

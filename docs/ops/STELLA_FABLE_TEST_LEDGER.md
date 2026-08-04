@@ -1558,6 +1558,109 @@ caso: probaba «la primera lectura toma el bloqueo» y la mataba
 | Dos entregas Stripe del **mismo** evento | exactamente un `claimed`, un `in_progress`; `attempts` sin incrementar |
 | Dos envíos de lead idénticos | cero errores, **1 fila** |
 
+### Endurecimiento fail-closed del parser (2026-08-04)
+
+Unidad `CAPABILITY_PARSER_FAIL_CLOSED_HARDENING`. Reconstruye
+`tests/helpers/sql-structure.ts` como **lexer + escáner** con las reglas léxicas
+de PostgreSQL, en lugar del enmascarador y los regex que tenía.
+
+**Por qué.** La reauditoría anterior confirmó ocho grafías válidas de PostgreSQL
+que el parser no veía. Ninguna era una propiedad nueva: eran ocho maneras de
+escribir propiedades que el catálogo ya cubría, y la causa raíz era una sola —
+**la ausencia de match se interpretaba como ausencia de riesgo.**
+
+Medido antes de tocar nada, contra los gates de `709914b`, sobre los ficheros
+reales (`0 violaciones` en la línea base):
+
+| Evasión | Antes | Después | Gate que la refuta |
+|---|---|---|---|
+| E-01 DDL/DCL escrito dentro de un bloque `DO` | **SOBREVIVE** | RED | `cap04-no-read`, `grant-extra` |
+| E-01c el mismo `GRANT` vía `EXECUTE format(…)` | **SOBREVIVE** | RED | `unparsed-security-statement` |
+| E-02 *grantee* entre comillas dobles | **SOBREVIVE** | RED | `grant-extra` |
+| E-03 `GRANT a, b TO c` (dos membresías) | **SOBREVIVE** | RED | `role-membership` |
+| E-04 `DISABLE ROW LEVEL SECURITY`, tabla entrecomillada | **SOBREVIVE** | RED | `rls-disabled` |
+| E-05 segundo `ALTER ROLE`, rol entrecomillado | **SOBREVIVE** | RED | `role-attributes` |
+| E-06 `REASSIGN OWNED` | **SOBREVIVE** | RED | `ownership-reassigned` |
+| E-07 `CREATE POLICY` con los cuatro identificadores entrecomillados | **SOBREVIVE** | RED | `policy-inventory` |
+| E-08 comentario de bloque **anidado** que traga el `REVOKE` | **SOBREVIVE** | RED | `cap04-net-reduction` |
+| `DROP OWNED BY` | **SOBREVIVE** | RED | `ownership-dropped` |
+| `ALTER DEFAULT PRIVILEGES … EXECUTE TO PUBLIC` | capturada (colateral) | RED | `default-privileges` |
+| `NO FORCE ROW LEVEL SECURITY` | capturada | RED | `rls-disabled` |
+
+Nueve variantes sobrevivían. El «capturada (colateral)» de `ALTER DEFAULT
+PRIVILEGES` es exactamente el caso que la regla del `expectedGate` existe para
+señalar: moría por `grant-extra`, un gate que no tiene nada que ver con los
+privilegios por defecto, y habría dejado de morir el día que alguien ajustase el
+contrato de privilegios.
+
+| Medida | Antes de esta unidad | Después |
+|---|---|---|
+| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **96** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07`) |
+| Supervivientes a los gates | 0 de 67 | **0 de 96** |
+| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 96 |
+| Restauración verificada por SHA | 67/67 | **89/89**, y **96/96** tras la ronda adversarial |
+| Gates | **117** | **123** (`unparsed-security-statement`, `default-privileges`, `ownership-reassigned`, `ownership-dropped`, `role-foreign`, `role-dangerous-attribute`) |
+| Gates sin mutación que los ejercite | 59 de 117 | **56 de 123** |
+| Sentencias de seguridad no interpretables en los diez ficheros | no se medía | **0**, comprobado por fichero |
+
+**Lo que hace fail-closed al parser.** Toda sentencia que *abre* como operación
+de seguridad y no clasifica produce `unparsed-security-statement` con fichero,
+línea, origen (`file` / `do-block` / `function-body` / `executed-literal`) y
+motivo. Nunca produce silencio. El `EXECUTE` de un `format(…)`, de una variable
+o de una concatenación **se rechaza**: no se puede resolver desde el fichero, y
+la única lectura segura de una cadena DDL irresoluble es que podría ser la
+peligrosa. Los mensajes llevan **sólo palabras clave**, jamás literales, para
+que un hallazgo no pueda arrastrar un token a un log.
+
+**Hallazgo propio de esta unidad.** El inventario de gates se deriva casando
+`add('<literal>'` en el fuente de `capability-gates.ts` — precisamente para que
+una lista escrita a mano no pueda omitir un nombre. Tiene su propio punto ciego:
+**un gate cuyo nombre se calcule en tiempo de ejecución no lo ve nadie**, ni el
+inventario ni la lista de gates sin ejercitar. Ocurrió aquí con dos gates
+escritos como `add(cond ? 'a' : 'b', …)`, que disparaban correctamente y no
+figuraban en ninguna de las dos listas. Se cierra desde el otro extremo: todo
+gate que se observe disparar debe estar en el inventario derivado.
+
+**Dry-run: el `|| true` que convertía una ejecución parcial en verde.** El paso
+4 de `scripts/capability-dry-run.sh` terminaba en
+`| tail -n +2 | grep -Ev '…' || true`. Dos pérdidas que se componen: la tubería
+entrega el estado a `grep` y el `|| true` descarta incluso ese, de modo que un
+`psql` saliendo 3 por `ON_ERROR_STOP` era indistinguible de uno saliendo 0; y la
+única comprobación posterior preguntaba **cuántas aserciones habían fallado**.
+Una ejecución que muriese tras treinta aserciones tenía treinta filas, ninguna
+fallida, y se reportaba como éxito. Corregido: el código de salida real se
+captura, la salida se examina en busca de `ERROR:`, y el **recuento** se compara
+contra 72 y contra 6 de concurrencia. Además, la fase de teardown pasa de
+imprimir nueve números a **afirmarlos**: 40 tablas, 108 policies, exactamente
+dos tablas y exactamente una policy retenidas, cero roles, cero funciones,
+esquema ausente.
+
+**La ronda adversarial contra el parser NUEVO.** Dos revisores independientes de
+solo lectura —uno sobre la semántica PostgreSQL del lector, otro sobre el arnés
+de mutación y el dry-run— encontraron **3 BLOCKER, 6 MAJOR y 8 MINOR**, todos
+con línea citada, y los tres BLOCKER son de la misma familia que las ocho
+evasiones: una grafía válida que producía **silencio**. Un decodificador de
+`E''` incompleto convertía un `GRANT` en una palabra que no abre nada; un cuerpo
+de función escrito con comillas simples no se recorría y quedaba además fuera
+del inventario de `SECURITY DEFINER`; y las sentencias de rol sólo se
+comprobaban para los cinco roles de capacidad, de modo que dar `BYPASSRLS` al
+**runtime** —lo que anula `cap_lead_deny_runtime`— no lo consumía ningún gate.
+Todos corregidos y catalogados como `A-01`…`A-07`; el detalle está en
+[`capabilities/ADVERSARIAL_FINDINGS_PARSER.md`](capabilities/ADVERSARIAL_FINDINGS_PARSER.md) §6.
+
+Dos hallazgos del arnés merecen figurar aquí porque son sobre la **medición**,
+no sobre el diseño: el auditor en disco no restauraba ante `Ctrl-C` (un `finally`
+no corre cuando el proceso muere), y cuatro de las seis aserciones de
+concurrencia se satisfacían con una sola sesión, porque nada comprobaba que la
+segunda hubiese llegado a ejecutar su sentencia. La frase «el solapamiento está
+diseñado, no esperado» era, hasta esta unidad, una afirmación sin comprobar.
+
+**Lo que esta unidad NO tocó**, y consta: el stack persistente
+`uellix-stella-g2-local-rehearsal` quedó **detenido**; no se inició, no recibió
+migraciones, seeds ni escritura alguna, y su contenido **no se reverificó** aquí.
+Cero acceso remoto, cero *grounding*, cero G2 formal. Siguen **abiertos**
+RR-CAP-10, RR-CAP-13, RR-CAP-14 y RR-CAP-02-F.
+
 #### Nueve defectos que sólo la ejecución encontró
 
 > **Corrección 2026-08-03.** Este encabezado decía «Ocho» y la tabla lista D1–D8,

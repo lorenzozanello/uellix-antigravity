@@ -705,12 +705,33 @@ Lo que sí aporta la unidad a este gate, y lo que ha cambiado:
   el comando, los destinatarios `TO`, el `USING` y el `WITH CHECK`; y para cada
   privilegio concedido, el privilegio, sus columnas, el objeto y el receptor.
 * **`tests/capability-mutation.test.ts`** es la razón por la que las dos
-  anteriores significan algo: aplica 45 mutaciones de seguridad catalogadas y
-  exige que cada una produzca al menos una violación. Las 22 primeras son las
-  que **sobrevivieron** a una ejecución 220/220 de la suite de aislamiento, con
-  la medición reproducible en `scripts/capability-mutation-audit.ts`.
+  anteriores significan algo: aplica **96** mutaciones de seguridad catalogadas
+  y exige que cada una produzca al menos una violación **y que la produzca el
+  gate correcto**. Las 22 primeras son las que **sobrevivieron** a una ejecución
+  220/220 de la suite de aislamiento, con la medición reproducible en
+  `scripts/capability-mutation-audit.ts`.
+* **`tests/capability-policy-parser.test.ts`** fija el lector sobre el que se
+  apoyan las tres anteriores. Desde el 2026-08-04 el parser es un **lexer con
+  las reglas léxicas de PostgreSQL** (identificadores normalizados con y sin
+  comillas dobles, comentarios de bloque **anidados**, `E''`, *dollar quoting*)
+  y un escáner que **desciende a los cuerpos ejecutables**: bloques `DO`,
+  cuerpos de función y literales llegados por `EXECUTE`.
 
-Si alguna vez se incorporan a G2, esas tres suites son el punto de partida, no
+  > **Corrección 2026-08-04.** Hasta esta fecha el lector enmascaraba y luego
+  > aplicaba regex, y una reauditoría independiente confirmó **ocho grafías
+  > válidas de PostgreSQL que no veía** — DDL dentro de un `DO`, identificadores
+  > entrecomillados, `GRANT a, b TO c`, `DISABLE ROW LEVEL SECURITY`, un segundo
+  > `ALTER ROLE`, `REASSIGN OWNED`, `CREATE POLICY` entrecomillada y comentarios
+  > de bloque anidados. Ninguna era una propiedad nueva; eran ocho maneras de
+  > escribir propiedades ya cubiertas, y la causa raíz era una sola: **la
+  > ausencia de match se interpretaba como ausencia de riesgo.** Ahora toda
+  > sentencia que abre como operación de seguridad y no clasifica produce la
+  > violación `unparsed-security-statement` con fichero, línea y motivo. Medido:
+  > 89/89 mutaciones detectadas, 0 supervivientes, 0 sentencias no
+  > interpretables en los diez ficheros. Residual declarado: **56 de 123 gates
+  > no los ejercita ninguna mutación** (`UNEXERCISED_GATES`).
+
+Si alguna vez se incorporan a G2, esas cuatro suites son el punto de partida, no
 la evidencia final: siguen siendo estáticas.
 
 **G2 formal: NO EJECUTADO. La campaña de capacidades: NO APROBADA, NO

@@ -180,6 +180,26 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 > propósito: un rollback que mejora la seguridad de paso produce un estado que
 > no coincide ni con el anterior ni con el posterior, y el siguiente operador no
 > puede saber cuál está mirando.
+>
+> **Cómo se leen estos ficheros (2026-08-04).** El contrato estático se evalúa
+> con un **lexer** que implementa las reglas léxicas de PostgreSQL, no con
+> regex sobre texto enmascarado. La diferencia es medible: una reauditoría
+> independiente confirmó **ocho grafías válidas** que el lector anterior no veía
+> —DDL escrito dentro de un bloque `DO`, identificadores y *grantees* entre
+> comillas dobles, `GRANT a, b TO c`, `DISABLE ROW LEVEL SECURITY`, un segundo
+> `ALTER ROLE` que revierte atributos seguros, `REASSIGN OWNED`, `CREATE POLICY`
+> con los cuatro identificadores entrecomillados, y comentarios de bloque
+> **anidados**, que PostgreSQL anida y el enmascarador no—. Ninguna era una
+> propiedad nueva: eran ocho maneras de escribir propiedades ya cubiertas.
+>
+> Consecuencia práctica **al escribir un paquete nuevo**: el lector desciende a
+> los cuerpos ejecutables (`DO`, cuerpos de función, literales de `EXECUTE`), de
+> modo que un `GRANT` emitido desde dentro de un bloque cuenta igual que uno
+> escrito fuera; y **un `EXECUTE format(…)`, de una variable o de una
+> concatenación se rechaza** con la violación `unparsed-security-statement`, no
+> se interpreta. Si un paquete necesita SQL dinámico, tiene que ser un literal
+> autocontenido. Medido: **89 mutaciones catalogadas, 0 supervivientes,
+> 0 sentencias no interpretables** en los diez ficheros.
 
 **Tablas gestionadas fuera de Drizzle (ADR 21):** `stella_suggestion_decisions`,
 `evidence_chunks`, y —cuando la campaña de capacidades se aplique—

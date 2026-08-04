@@ -403,8 +403,8 @@ ya lo habían corregido; CAP-01 no.
    `lib/invitations/service.ts::acceptInvitation` para llamar a la RPC.
 5. Gate: los trece casos `L*` de §11.2 en verde en el contenedor desechable
    (`bash scripts/capability-dry-run.sh`), y en verde offline
-   `capability-isolation`, `capability-policy-contract`, `capability-mutation` y
-   `capability-documentation`. **No existe una suite `vitest` llamada
+   `capability-isolation`, `capability-policy-contract`, `capability-mutation`,
+   `capability-policy-parser` y `capability-documentation`. **No existe una suite `vitest` llamada
    `invitation-capability`** y este punto la nombraba: los casos vivos están
    implementados en `scripts/capability-dry-run.sql`, no como fichero de test,
    porque necesitan una base y `vitest.config.ts` excluye todo lo que la
@@ -484,3 +484,36 @@ ejecutar.
   capacidad. Sin él, las filas `pending` caducadas se acumulan. No es un
   riesgo de seguridad (la función comprueba `expires_at`), es de higiene.
 * **RR-CAP-3** (global) — el token crudo cruza a la base.
+
+
+---
+
+## Cómo se lee este paquete (2026-08-04)
+
+El contrato estático de arriba lo evalúa un **lexer** con las reglas léxicas de
+PostgreSQL, no expresiones regulares sobre texto enmascarado. La diferencia es
+medible: una reauditoría independiente confirmó **ocho grafías válidas** que el
+lector anterior no veía —DDL dentro de un bloque `DO`, identificadores y
+*grantees* entre comillas dobles, `GRANT a, b TO c`,
+`DISABLE ROW LEVEL SECURITY`, un segundo `ALTER ROLE` que revierte atributos
+seguros, `REASSIGN OWNED`, `CREATE POLICY` con identificadores entrecomillados y
+comentarios de bloque **anidados**—. Ninguna era una propiedad nueva: eran ocho
+maneras de escribir propiedades que este documento ya declaraba.
+
+Consecuencias al editar este fichero `.sql`:
+
+* un `GRANT`, `CREATE POLICY` o `ALTER TABLE` emitido **desde dentro** de un
+  bloque `DO`, del cuerpo de una función o de un literal de `EXECUTE` cuenta
+  exactamente igual que uno escrito fuera;
+* `EXECUTE format(…)`, `EXECUTE <variable>` y `EXECUTE 'a' || b` **se rechazan**
+  con `unparsed-security-statement`: si un paquete necesita SQL dinámico, tiene
+  que ser un literal autocontenido;
+* `"Rol"` y `rol` son **roles distintos** — entrecomillar suprime el plegado a
+  minúsculas — y el contrato compara la forma normalizada.
+
+Detalle completo en
+[`ADVERSARIAL_FINDINGS_PARSER.md`](ADVERSARIAL_FINDINGS_PARSER.md).
+
+**Riesgos abiertos que alcanzan a esta capacidad:** ninguno específico; sigue
+aplicando el residual de RR-CAP-12 (58 de 121 gates sin mutación que los
+ejercite).
