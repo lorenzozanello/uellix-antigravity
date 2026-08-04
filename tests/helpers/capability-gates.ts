@@ -199,7 +199,10 @@ export const POLICY_CONTRACT: readonly PolicyContract[] = [
   // The only policy in the campaign that bounds a VALUE rather than a row, and
   // the only one that names a pre-existing role — because RESTRICTIVE can only
   // narrow, and `authenticated` is the principal the escalation ran through.
-  { name: 'cap_members_no_super_admin_grant', file: FORWARD.CAP07, table: 'public.organization_members', mode: 'RESTRICTIVE', command: 'INSERT', roles: ['uellix_app', 'authenticated'], using: null, check: "role <> 'super_admin'" },
+  // `uellix_writer` is named too, even though it is NOLOGIN and not reachable
+  // via SET ROLE today: the property must not depend on that attribute never
+  // changing, and naming a third role in a RESTRICTIVE policy costs nothing.
+  { name: 'cap_members_no_super_admin_grant', file: FORWARD.CAP07, table: 'public.organization_members', mode: 'RESTRICTIVE', command: 'INSERT', roles: ['uellix_app', 'authenticated', 'uellix_writer'], using: null, check: "role <> 'super_admin'" },
 
   { name: 'cap_platform_insert_audit', file: FORWARD.CAP06, table: 'public.audit_logs', mode: 'PERMISSIVE', command: 'INSERT', roles: ['uellix_cap_platform'], using: null, check: "actor_user_id = auth.uid() AND actor_user_id IS NOT NULL AND entity_type = 'organization' AND pg_catalog.left(action, 9) = 'platform.'" },
 ]
@@ -1367,15 +1370,19 @@ export function evaluateCapabilityGates(sources: Sources): Violation[] {
           `${FORWARD.CAP07}: creates policy ${pol.name}; column control is ACL, never RLS`)
       }
     }
-    // …and that one must actually bound the value, for the runtime principals.
+    // …and that one must actually bound the value, for every principal that
+    // could conceivably reach INSERT on this table — including uellix_writer,
+    // which is only safe today because it is NOLOGIN and SET FALSE. Naming it
+    // removes the dependency on that attribute never changing.
     if (!parsePolicies(cap07).some(
       (pol) => pol.name === 'cap_members_no_super_admin_grant'
         && pol.permissive === 'RESTRICTIVE'
         && pol.command === 'INSERT'
         && pol.roles.includes('uellix_app')
-        && pol.roles.includes('authenticated'))) {
+        && pol.roles.includes('authenticated')
+        && pol.roles.includes('uellix_writer'))) {
       add('cap07-super-admin-value',
-        `${FORWARD.CAP07}: cap_members_no_super_admin_grant is absent or does not bound both runtime principals`)
+        `${FORWARD.CAP07}: cap_members_no_super_admin_grant is absent or does not bound all three runtime principals`)
     }
   }
 

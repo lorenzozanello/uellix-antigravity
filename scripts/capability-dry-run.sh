@@ -247,7 +247,7 @@ DUP_POLICIES=$("${PSQL[@]}" -tAc "
 # contention). 66 + 6 = 72. The design's own count of 67 `L*` cases is spread
 # across both files, which is why a naive count of the .sql gives 66 and looks
 # like a contradiction.
-say "4. The 129 live assertions (122 from dryrun.sql + 7 contended)"
+say "4. The 132 live assertions (125 from dryrun.sql + 7 concurrency assertions)"
 # --------------------------------------------------------------------------
 "${PSQL[@]}" -q -c "CREATE SCHEMA IF NOT EXISTS dryrun; CREATE TABLE IF NOT EXISTS dryrun.disposable_marker(x int);" >/dev/null
 

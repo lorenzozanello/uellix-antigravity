@@ -257,8 +257,14 @@ GRANT UPDATE (
 -- cap_ or disclosures_", so a policy named outside that convention makes
 -- stella_0006..0010 abort on their SECOND apply. Measured in the dry run.
 DROP POLICY IF EXISTS cap_members_no_super_admin_grant ON public.organization_members;
+-- `uellix_writer` is named here too, even though it is NOLOGIN and granted to
+-- uellix_app with SET FALSE — not reachable via SET ROLE from a session today.
+-- The point is that this property must not depend on that attribute staying
+-- true forever: a RESTRICTIVE policy can only NARROW, so naming a third role
+-- costs nothing and removes the implicit dependency. Found by adversarial
+-- review of the final diff, 2026-08-04.
 CREATE POLICY cap_members_no_super_admin_grant
-ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated
+ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated, uellix_writer
 WITH CHECK (role <> 'super_admin');
 
 COMMENT ON COLUMN public.users.is_super_admin IS

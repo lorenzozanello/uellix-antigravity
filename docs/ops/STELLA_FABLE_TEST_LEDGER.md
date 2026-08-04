@@ -1595,10 +1595,10 @@ contrato de privilegios.
 
 | Medida | Antes de esta unidad | Después |
 |---|---|---|
-| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **181** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07` + `R-01..R-40` + `P-01..P-33` + `S-01..S-12`) |
-| Supervivientes a los gates | 0 de 67 | **0 de 181** |
-| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 181 |
-| Restauración verificada por SHA | 67/67 | **89/89**, y **181/181** tras el cierre de la autoescalada |
+| Mutaciones catalogadas | **67** (`M-01..M-22` + `N-01..N-45`) | **182** (+ `E-01..E-08` + `F-01..F-14` + `A-01..A-07` + `R-01..R-40` + `P-01..P-33` + `S-01..S-13`) |
+| Supervivientes a los gates | 0 de 67 | **0 de 182** |
+| Detectadas por un gate ajeno a su propiedad | 0 | **0** — comprobado por `expectedGate` para las 182 |
+| Restauración verificada por SHA | 67/67 | **89/89**, y **182/182** tras el cierre de la autoescalada |
 | Gates | **117** | **123** (`unparsed-security-statement`, `default-privileges`, `ownership-reassigned`, `ownership-dropped`, `role-foreign`, `role-dangerous-attribute`) |
 | Gates sin mutación que los ejercite | 59 de 117 | **27 de 154** |
 | Sentencias de seguridad no interpretables en los diez ficheros | no se medía | **0**, comprobado por fichero |
@@ -1807,8 +1807,8 @@ y de `stripe_webhook_events`, nunca de `users`.
 
 | Medida | Antes | Después |
 |---|---|---|
-| Mutaciones catalogadas | 169 | **181** (`S-01..S-12`) |
-| Mutaciones supervivientes | 0 de 169 | **0 de 181** |
+| Mutaciones catalogadas | 169 | **182** (`S-01..S-13`) |
+| Mutaciones supervivientes | 0 de 169 | **0 de 182** |
 | Gates del contrato | 148 | **154** (`cap07-revoke`, `cap07-authority-column`, `cap07-insert-preserved`, `cap07-acl-not-policy`, `cap07-super-admin-value`, `cap03-contention-retryable`) |
 | Gates sin mutación | 27 de 148 | **27 de 154** |
 | Aserciones vivas del *dry run* | 115 | **132** (125 + 7 contendidas) |

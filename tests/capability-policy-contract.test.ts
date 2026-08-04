@@ -147,6 +147,22 @@ describe('capability contract — the contract itself is complete', () => {
     }
   })
 
+  it('cap_members_no_super_admin_grant covers all three runtime principals, not just the reachable two', () => {
+    // uellix_writer is NOLOGIN and granted to uellix_app with SET FALSE, so it
+    // is not reachable via SET ROLE today — the omission would not have been
+    // exploitable. The policy names it anyway, because the guarantee must not
+    // rest on that role attribute never changing: a RESTRICTIVE policy can
+    // only narrow, so naming a third role costs nothing.
+    const policy = parsePolicies(SOURCES[FORWARD.CAP07]).find(
+      (p) => p.name === 'cap_members_no_super_admin_grant',
+    )
+    expect(policy, 'cap_members_no_super_admin_grant is absent').toBeDefined()
+    expect(policy!.roles).toEqual(
+      expect.arrayContaining(['uellix_app', 'authenticated', 'uellix_writer']),
+    )
+    expect(policy!.roles).toHaveLength(3)
+  })
+
   it('pins a predicate on every policy that can carry one', () => {
     // A policy with neither USING nor WITH CHECK bounds nothing. INSERT has no
     // USING and SELECT/DELETE have no WITH CHECK, so the requirement is that at

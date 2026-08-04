@@ -705,7 +705,7 @@ Lo que sí aporta la unidad a este gate, y lo que ha cambiado:
   el comando, los destinatarios `TO`, el `USING` y el `WITH CHECK`; y para cada
   privilegio concedido, el privilegio, sus columnas, el objeto y el receptor.
 * **`tests/capability-mutation.test.ts`** es la razón por la que las dos
-  anteriores significan algo: aplica **181** mutaciones de seguridad catalogadas
+  anteriores significan algo: aplica **182** mutaciones de seguridad catalogadas
   y exige que cada una produzca al menos una violación **y que la produzca el
   gate correcto**. Las 22 primeras son las que **sobrevivieron** a una ejecución
   220/220 de la suite de aislamiento, con la medición reproducible en

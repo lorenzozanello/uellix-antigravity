@@ -2959,8 +2959,23 @@ VOLATILE
     survivedBecause: '',
     expectedGate: ['cap07-super-admin-value'],
     apply: sub(
-      'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated',
+      'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated, uellix_writer',
       'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_cap_invitation',
+    ),
+  },
+  {
+    id: 'S-13',
+    capability: 'CROSS',
+    file: CAP07,
+    change: 'uellix_writer is dropped from the value bound',
+    breaks:
+      'a dependency the policy is written to NOT have. uellix_writer is only unreachable via SET ROLE today because it is NOLOGIN and granted to uellix_app with SET FALSE; the property this policy exists to guarantee must not rest on that attribute never changing. Found by adversarial review of the final diff.',
+    severity: 'MAJOR',
+    survivedBecause: '',
+    expectedGate: ['cap07-super-admin-value'],
+    apply: sub(
+      'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated, uellix_writer',
+      'ON public.organization_members AS RESTRICTIVE FOR INSERT TO uellix_app, authenticated',
     ),
   },
 
