@@ -4,7 +4,7 @@
 |---|---|
 | **Solicitante** | CAPABILITIES |
 | **Propietaria** | INTEGRACIÓN |
-| **Estado** | `solicitado` |
+| **Estado** | `aceptado` — **opción A aplicada** (integración, tren 1, 2026-08-04). Alias retirado; `RR-CAP-10-A` es el identificador canónico |
 | **Fecha** | 2026-08-04 |
 | **Ruta afectada** | `docs/ops/STELLA_FABLE_RISK_REGISTER.md`, `lib/admin/organization-administration.ts` |
 

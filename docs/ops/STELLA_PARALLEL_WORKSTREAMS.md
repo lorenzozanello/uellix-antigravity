@@ -42,15 +42,17 @@ directamente y sin contrato previo:
 - Paquetes de capacidad **CAP-01 a CAP-05**
   (`docs/ops/capabilities/CAP_01_INVITATIONS.md` …
   `CAP_05_ORGANIZATION_BOOTSTRAP.md`, ya presentes en el repo).
-- **RR-CAP-10-A-bis**: nombrado así en la instrucción de origen. La
-  verificación contra el repositorio encuentra el hallazgo **RR-CAP-10**
-  (asimetría de grant `UPDATE` preexistente sobre `organizations` /
-  `stella_monthly_quota`, registrado en
-  `docs/ops/capabilities/ADVERSARIAL_FINDINGS_ROUND2.md`, hallazgo B2-F3).
-  No se ha encontrado una variante `-A-bis` en el árbol actual. CAPABILITIES
-  debe tratar `RR-CAP-10` como el hallazgo de referencia y, si la numeración
-  `-A-bis` corresponde a un desglose posterior no documentado aún, registrarlo
-  explícitamente al abrir esa unidad — no asumir que ya existe.
+- **RR-CAP-10-A-bis** — *resuelto en el tren 1 de integración (2026-08-04).*
+  Nombrado así en la instrucción de origen. La verificación de CAPABILITIES
+  contra el árbol confirmó que **no existe** en
+  `docs/ops/STELLA_FABLE_RISK_REGISTER.md`: era un alias acuñado en un
+  comentario de `lib/admin/organization-administration.ts`. **El identificador
+  canónico es `RR-CAP-10-A`**, y los tres `UPDATE` directos del webhook eran su
+  resto no cerrado. CAPABILITIES los eliminó; integración retiró el alias
+  (CT-CAP-002, opción A) y anotó el cierre en la entrada `RR-CAP-10-A` del
+  registro. **No se creó una entrada `-A-bis`** — dar existencia registral a un
+  identificador que nunca la tuvo sería peor que la referencia colgante que se
+  estaba corrigiendo.
 
 Ninguna otra línea escribe en estas rutas. Ver §7 para el protocolo cuando
 otra línea necesita algo de estas rutas.
@@ -150,6 +152,27 @@ Si el árbol real revela más superficie compartida durante la ejecución
 (por ejemplo un nuevo archivo de tipos compartidos), la línea que lo
 descubre debe registrarlo aquí vía integración, no asumir propiedad tácita.
 
+### 7.1 Propiedad registrada en el tren 1
+
+La revisión de integración del tren 1 encontró cuatro rutas ocupadas sin
+entrada previa. Ninguna causó conflicto — el aislamiento se sostuvo — pero
+quedan registradas aquí en vez de consolidarse como propiedad tácita, que es
+lo que §7 prohíbe:
+
+| Ruta | Ocupada por | Registro |
+|---|---|---|
+| `app/api/webhooks/stripe/route.ts` | CAPABILITIES | **Propiedad de CAPABILITIES.** Es el manejador de CAP-03 y §3 le concede el dominio de los paquetes CAP-01…CAP-05; la ruta faltaba por nombre. Ninguna otra línea la edita sin contrato. |
+| `lib/capabilities/**`, `db/capabilities/**` | CAPABILITIES | **Propiedad de CAPABILITIES**, declarada por la propia línea en su documento por paridad con lo que §4 concede a GROUNDING. Ratificado. `db/capabilities/**` es TypeScript, no SQL. |
+| `lib/grounding/contracts/**`, `lib/grounding/ingest/**` | GROUNDING | **Propiedad de GROUNDING.** El barrel `lib/grounding/contracts/index.ts` es la **única** superficie publicada: nadie importa desde `ingest/**` ni desde los archivos de contrato sueltos. |
+| `docs/superpowers/plans/**` | PRODUCT | Notas de plan de la línea. Sin dueño declarado y sin impacto; se registra para que no se lea como superficie compartida. |
+
+Además, **integración editó `lib/admin/organization-administration.ts`** (sólo
+comentario) y **`tests/eval/stella-release/fixtures.ts`** (sólo comentario) en
+el tren 1. Las dos son correcciones de afirmaciones factualmente falsas
+—CT-CAP-002 pidió la primera explícitamente— y ninguna cambia comportamiento.
+Integración corrige un comentario falso en cualquier ruta; no cambia lógica
+fuera de §7.
+
 ## 8. Protocolo de contratos
 
 Ubicación: `docs/ops/contracts/` (**ruta nueva prevista** — no existe en la
@@ -159,7 +182,17 @@ Estructura:
 
 - `docs/ops/contracts/CONTRACT_LEDGER.md` — índice único, una fila por
   contrato: id, línea solicitante, línea propietaria, estado
-  (`solicitado` / `aceptado` / `incompatible`), fecha, enlace al documento.
+  (`solicitado` / `aceptado` / `incompatible` / `parcialmente satisfecho`),
+  fecha, enlace al documento.
+  - `parcialmente satisfecho` lo añadió integración en el tren 1: la necesidad
+    **sí** está cubierta por la línea propietaria, pero con una forma distinta
+    de la pedida, de modo que hace falta una capa de adaptación. No es
+    `aceptado` (la forma pedida no existe) ni `incompatible` (la necesidad está
+    resuelta).
+  - **El estado de la fila del ledger y el del encabezado del documento de
+    contrato deben coincidir.** Un lector llega al documento por el enlace de
+    la fila; un `solicitado` obsoleto ahí hace que se vuelva a aplicar algo ya
+    aplicado. Integración actualiza los dos en la misma edición.
 - `docs/ops/contracts/<ID>_<slug>.md` — un archivo por contrato con la
   forma propuesta (tipos TypeScript, forma de tabla/función si aplica),
   justificación, y la decisión de integración cuando exista.
@@ -230,6 +263,102 @@ En ese caso, la línea:
 3. Continúa con el resto de su unidad si es posible sin ese archivo;
    si no es posible, lo documenta como bloqueador en su propio
    `docs/ops/workstreams/<LINEA>.md` (campo "riesgos").
+
+## 13. Trenes integrados
+
+### Tren 1 — integrado 2026-08-04
+
+`INTEGRATION_ROOT_HEAD` = `ff1ffb6`. Las cuatro líneas entregaron dos commits
+cada una y las cuatro descendían del root sin divergencias intermedias.
+
+| Línea | HEAD integrado | Commits fusionados | Merge commit | Pruebas focalizadas |
+|---|---|---|---|---|
+| CAPABILITIES | `4c40a8e` | `7002f86`, `4c40a8e` | `95ce36b` | 1184 passed / 61 skipped (16 archivos) |
+| GROUNDING | `0698937` | `7020288`, `0698937` | `24dc14d` | 145 passed (6 archivos) |
+| PRODUCT | `9e57301` | `21468ca`, `9e57301` | `fa3a13c` | 261 passed (13 archivos) |
+| RELEASE | `55a9e48` | `74d559a`, `55a9e48` | `847795d` | 14/14 harness + 14/14 script offline |
+
+Merges explícitos `--no-ff`, en ese orden. Sin cherry-pick, sin reescritura de
+historia, sin push, sin acceso a remoto.
+
+**Único conflicto, y era previsible:** `docs/ops/contracts/CONTRACT_LEDGER.md`,
+add/add, tres veces. Las tres líneas que publicaron contratos crearon el índice
+en paralelo el mismo día, cada una con su propia cabecera. Integración
+reconcilió los tres sin alterar autoría, fecha ni texto de ninguna solicitud.
+Ningún otro archivo fue tocado por más de una línea — el aislamiento de rutas
+de §3–§6 se sostuvo en la práctica.
+
+**Superficie compartida tocada por integración** (§7, ninguna línea la tocó):
+
+- `.gitattributes` — `db/prepared/** text eol=lf` (CT-CAP-003).
+- `docs/ops/STELLA_FABLE_RISK_REGISTER.md` y
+  `lib/admin/organization-administration.ts` (CT-CAP-002).
+- `.env.example` — **no tocado**; CT-CAP-004 sigue `solicitado` (ver ledger).
+
+**Estado de contratos:** ver
+[`contracts/CONTRACT_LEDGER.md`](contracts/CONTRACT_LEDGER.md). Resumen:
+CT-CAP-001/002/003 `aceptado`, CT-CAP-004 `solicitado`, GR-001/GR-002
+`solicitado` (pendientes de CAPABILITIES), PRODUCT-001
+`parcialmente satisfecho`, INTEGRATION-001 `solicitado` — la decisión está
+registrada, la implementación del adaptador **no está hecha** y es trabajo de
+PRODUCT en el tren 2.
+
+**Batería integrada** (serializada, un gate pesado a la vez, §11):
+`test:unit` 3920 passed / 2 failed / 125 skipped · `typecheck` limpio ·
+`lint` 0 errores / 44 warnings · `build` verde · `capability-baseline-verify`
+38/107/10 · `capability-dry-run` 42/151/7/10/1, 132/132 aserciones (7/7
+concurrencia), rollback 40/108, reaplicación 42/151/7/10/1 — todas las cifras
+idénticas a las vigentes antes del tren.
+
+Los 2 fallos de `test:unit` están clasificados con evidencia y **ninguno es
+regresión de integración**: ver §Riesgos abiertos de cada línea y el informe de
+integración. Ninguna base de datos fue modificada; el dry-run corrió en un
+contenedor desechable con `--network none` sobre `db/baseline/**`.
+
+### Revisión adversarial del tren 1
+
+Dos revisores de sólo lectura sobre el diff integrado: **A — contratos**,
+**B — integridad**. **Cero BLOCKER.** Lo corregido y lo asignado:
+
+**Corregido en el commit de integración** (artefactos de integración, y dos
+comentarios factualmente falsos):
+
+| # | Hallazgo | Acción |
+|---|---|---|
+| A-F3 | INTEGRATION-001 §7 declaraba «regla» algo que ningún tipo, guard ni prueba impone | Reescrito: es convención documentada hasta que el tren 2 añada la prueba que la haga fallar |
+| A-F4 | INTEGRATION-001 §1 afirmaba que no existe otra noción de provenance; existen tres, una **persistida** | Reescrito con las tres enumeradas, y con la advertencia dirigida a CAPABILITIES: **aplicar `grounding_0001` tal cual NO satisface GR-001** |
+| A-F5 / B-M7 | Ledger marcaba INTEGRATION-001 `aceptado` mientras su documento decía `solicitado`, y el entregable no existe | INTEGRATION-001 → `solicitado`, propietaria PRODUCT. Integración no se acepta trabajo a sí misma |
+| A-F6 / B-M7 | CT-CAP-001/002/003 y PRODUCT-001 conservaban `solicitado` en su encabezado | Encabezados sincronizados con el ledger; §8 ahora exige que coincidan |
+| A-F7 | `CAPABILITIES.md` con dos tablas de estado contradictorias | Nota de reenvío al ledger bajo la tabla de entrega |
+| A-F8 | §8 no listaba `parcialmente satisfecho` | Añadido y definido |
+| B-M1 / B-m1 / B-m2 | Cuatro rutas ocupadas sin entrada en §7 | Registradas en §7.1 |
+| B-M2 | `fixtures.ts` atribuía `lib/stella/context/**` a GROUNDING; el harness no evalúa `lib/grounding/**` | Comentario corregido: borrar el tren entero de GROUNDING dejaría los 14 checks en verde |
+| B-M8 | El fix de CT-CAP-003 vivía sólo en el working tree | Incluido en el commit de integración |
+| B-m3 | `db/prepared/README.md` seguía en CRLF | Renormalizado; los 33 archivos de `db/prepared/**` en LF |
+
+**No corregido — asignado a la línea propietaria.** Ninguno es regresión de
+integración; los cinco son defectos internos de una unidad, y parchearlos
+desde integración sería tomar decisiones de diseño que §3–§6 reservan a su
+dueño. Se registran con dueño y tren, no se silencian:
+
+| # | Hallazgo | Sev. | Dueño / tren |
+|---|---|---|---|
+| A-F1 | `validateAnswerCitations` compara **sólo** `organizationId`; `availableChunks` no puede ni recibir `projectId`, y `scopeContains` tiene cero llamadas en producción. Una cita de otro proyecto de la misma organización se valida como correcta | **MAJOR** | GROUNDING tren 2 |
+| A-F2 | `capabilityUnavailable` dice `retryable:false` para `feature_flag_disabled`; `stripeCapabilityUnavailable` responde siempre 503 retryable. El comportamiento de CAP-03 es defendible (un 200 haría que Stripe abandonara el evento), pero el contrato genérico afirma lo contrario y `route.ts` dice que «no puede divergir». `capabilityUnavailable` tiene cero llamadas | **MAJOR** | CAPABILITIES tren 2 |
+| B-M4 | `cap-01-05-regression-surface-present` es `existsSync` + una tautología (`every(f => !f.startsWith('tests/integration/'))` sobre un array literal): pasa con los `.sql` truncados a cero bytes | **MAJOR** | RELEASE tren 2 |
+| B-M5 | El check de contradicción compara un regex contra sus propios literales y cuenta como `passed` pese a `offlineMeasurable:false` | **MAJOR** | RELEASE tren 2 |
+| B-M6 | `structural-regression` está declarada en la matriz y **no se emite** en `computeReleaseMetrics`; `latency` se declara en dos checks y está cableada a `null` | **MAJOR** | RELEASE tren 2 |
+| B-M3 | El harness importa `@/components/stella/error-messages` (interno) en vez del barrel de PRODUCT. **Rebajado a MINOR por integración:** el `Record<StellaPanelErrorCode, boolean>` que el revisor leyó como acoplamiento accidental es el propósito declarado del check `retryable-code-set-pinned` — debe fallar si alguien añade un código sin decidir su retryabilidad. Queda sólo la ruta de import | MINOR | PRODUCT (exportar) / RELEASE (importar), tren 2 |
+| A-F9 | `capability-isolation` escanea `lib/` y `app/`, no `db/`, donde viven las tres invocaciones `uellix_capability.*` | MINOR | CAPABILITIES tren 2 |
+| A-F10 | `abstention-schema-enforced` no declara `offlineLimitation` pese a evaluar sólo literales | MINOR | RELEASE tren 2 |
+| B-m4 | Ciclo **sólo de tipos** entre `grounding-model.ts` y `StellaContextualAdvisorPanel.tsx`; se borra en transform por `import type` + `isolatedModules` | MINOR | PRODUCT tren 2 |
+| B-m5 | `scripts/eval-release-offline.ts` no tiene entrada `eval:release` en `package.json` (§7) y RELEASE no abrió fila de contrato | MINOR | RELEASE tren 2 — abrir la fila |
+
+**Siguiente tren por línea:** CAPABILITIES → evaluar GR-001/GR-002, CT-CAP-004,
+A-F2, A-F9. GROUNDING → retrieval real, calibración de umbrales (R4) y **A-F1**.
+PRODUCT → adaptador puro de INTEGRATION-001 con la prueba que impone §7.
+RELEASE → cerrar B-M4/M5/M6, abrir la fila de `package.json`, y extender el
+harness a los contratos de grounding cuando exista retrieval.
 
 ## Documentos de línea
 

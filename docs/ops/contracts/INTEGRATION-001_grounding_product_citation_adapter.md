@@ -1,8 +1,11 @@
 # INTEGRATION-001 — Adaptador de citas GROUNDING → PRODUCT
 
 **Línea solicitante:** INTEGRACIÓN
-**Línea propietaria:** INTEGRACIÓN (implementación: PRODUCT, tren 2)
-**Estado:** `solicitado` (2026-08-04)
+**Línea propietaria:** PRODUCT (implementación, tren 2)
+**Estado:** `solicitado` (2026-08-04) — la **decisión** está tomada y registrada
+abajo; lo que sigue `solicitado` es su **implementación**, que no existe en el
+árbol. Integración no marca `aceptado` una petición que se hizo a sí misma y
+cuyo entregable no ha escrito.
 **Resuelve:** [PRODUCT-001](PRODUCT-001_grounded-citation-provenance.md) →
 `parcialmente satisfecho, pendiente de adaptador`
 
@@ -38,8 +41,34 @@ El barrel [`lib/grounding/contracts/index.ts`](../../../lib/grounding/contracts/
 es la superficie publicada. PRODUCT consume desde ahí y no importa desde
 `lib/grounding/ingest/**` ni desde los archivos de contrato individuales.
 
-Ningún otro módulo del árbol define una segunda noción de "de dónde vino
-esta afirmación".
+**Canónica no significa única: hoy hay otras tres nociones de «de dónde vino
+esta afirmación» en el árbol, y la revisión de integración las localizó.**
+Enumerarlas es parte de la decisión, porque leer «es la fuente canónica» como
+«es la única» es exactamente el error que haría daño:
+
+1. `components/stella/grounding-model.ts` — `EvidenceReference`
+   (`sourceField` + `label`), construida desde
+   `AdvisorContextualOutput.sourceFields`. Es **presentación derivada de la
+   salida del advisor**, no de `CitationReference`, y la §2 la permite
+   mientras no se persista. El adaptador del tren 2 es lo que la reconcilia.
+2. `lib/stella/context/decode-provider-source-ref-indexes.ts` — decodifica
+   índices de referencia del proveedor a rutas canónicas. Es la vía por la que
+   el advisor de hoy dice de dónde salió una afirmación, y seguirá existiendo
+   mientras el advisor no consuma retrieval.
+3. **`db/prepared/grounding_0001_evidence_chunks.sql` — y ésta es la
+   peligrosa.** Es un paquete **preparado y no aplicado** que persiste
+   `content_hash`, `page`, `char_start`, `char_end` **sin**
+   `normalized_content_hash`, `version_id`, `chunk_id` ni versiones de
+   pipeline. GR-001 §1 ya lo nombra como el hueco más grave de la forma
+   actual.
+
+   **Consecuencia operativa, dirigida a CAPABILITIES tren 2:** aplicar
+   `grounding_0001` tal cual para desbloquear la persistencia de GROUNDING
+   **no** satisface GR-001. Los offsets quedarían anclados sin espacio de
+   coordenadas, y un cambio de `NORMALIZATION_VERSION` los re-resolvería
+   contra un texto distinto — offsets en rango, pasajes equivocados, sin
+   error. Es el fallo silencioso que `normalizedContentHash` existe para
+   impedir. GR-001 debe resolverse **modificando** esa forma, no aplicándola.
 
 ### 2. La presentación de PRODUCT no persiste una segunda forma de provenance
 
@@ -133,15 +162,25 @@ heredan esa incertidumbre y deben revisarse cuando exista una.
 `CitationReference`, `resolution: 'requires_human_resolution'` como literal
 único y `severity: 'warning'`.
 
-Ningún componente de `components/stella/**` infiere una contradicción
+Ningún componente de `components/stella/**` debe inferir una contradicción
 comparando textos, puntuaciones o etiquetas. `EvidenceSupportLevel:
-'contradictory_evidence'` sólo se produce cuando existe un
+'contradictory_evidence'` sólo debe producirse cuando existe un
 `ContradictionMarker` real.
 
-Esto ya es el estado actual del árbol y es deliberado: PRODUCT documentó que
-ningún mapper de `grounding-model.ts` fabrica `'contradictory_evidence'`, y
-que el estado sólo es alcanzable vía fixtures. Esta decisión lo convierte de
-limitación temporal en regla.
+**Esta regla hoy no está aplicada por nada más que este documento, y decirlo
+importa.** El estado del árbol es: ningún mapper de `grounding-model.ts`
+fabrica `'contradictory_evidence'`, `components/**` no importa nada de
+`lib/grounding/**`, y `StellaGroundingBadge` recibe `level` como prop libre
+sin validación. Es decir, la regla se cumple **por ausencia de código**, no
+por un tipo ni por un guard: un mapper de tren 2 que dedujera la
+contradicción de dos `sourceFields` opuestos compilaría, renderizaría el
+badge rojo y pasaría CI.
+
+**Obligación del tren 2, no opcional:** el adaptador debe ser el *único*
+productor de `'contradictory_evidence'`, y debe llevar una prueba focalizada
+que falle si ese valor se alcanza sin un `ContradictionMarker` de entrada.
+Hasta que esa prueba exista, esto es una convención documentada, no un
+invariante.
 
 ## Efecto sobre PRODUCT-001
 

@@ -2,7 +2,9 @@
 
 **Línea solicitante:** PRODUCT
 **Línea propietaria:** GROUNDING
-**Estado:** solicitado (2026-08-04)
+**Estado:** `parcialmente satisfecho, pendiente de adaptador`
+(`PARTIALLY_SATISFIED_PENDING_ADAPTER`) — integración, tren 1, 2026-08-04.
+Abierto originalmente como `solicitado`; ver §Decisión al final.
 
 ## Por qué
 

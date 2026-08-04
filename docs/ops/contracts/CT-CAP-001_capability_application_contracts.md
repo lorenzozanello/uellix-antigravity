@@ -4,7 +4,7 @@
 |---|---|
 | **Solicitante** | CAPABILITIES |
 | **Propietaria** | CAPABILITIES |
-| **Estado** | `solicitado` |
+| **Estado** | `aceptado` (integración, tren 1, 2026-08-04) — ver [decisión](CONTRACT_LEDGER.md#ct-cap-001--aceptado) |
 | **Fecha** | 2026-08-04 |
 | **Módulo** | `lib/capabilities/contracts.ts` |
 | **Consumidores previstos** | PRODUCT, RELEASE |

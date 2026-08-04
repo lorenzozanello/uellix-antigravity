@@ -162,3 +162,99 @@ de pnpm — sin red y sin modificar `pnpm-lock.yaml` (INTEGRATION-OWNED).
 **Listo para integración.** Árbol limpio, dos commits locales, sin push, sin
 acceso remoto, sin gates pesados ejecutados. Ninguna ruta prohibida ni
 `INTEGRATION-OWNED` fue modificada.
+
+---
+
+## Integración — tren 1 (2026-08-04)
+
+**Fusionada.** HEAD integrado `0698937`, commits `7020288` y `0698937`, merge
+commit `24dc14d` (`--no-ff`).
+
+**Conflicto:** `docs/ops/contracts/CONTRACT_LEDGER.md` (add/add). Esta línea y
+CAPABILITIES crearon el índice el mismo día, cada una con su cabecera.
+Integración lo reconcilió preservando las cuatro filas `CT-CAP-*` y añadiendo
+GR-001 y GR-002 **sin cambiar su autoría, su fecha ni su estado**. Ningún otro
+archivo entró en conflicto.
+
+### Pruebas focalizadas en el HEAD integrado
+
+`vitest run lib/grounding/` → 6 archivos, **145 passed**. Idéntico a lo
+declarado por la línea. Las 69 nuevas y las 76 preexistentes de WS5, todas en
+verde. El typecheck integrado (`tsc --noEmit`, limpio) es el que da valor real
+a los bloques `@ts-expect-error` de las pruebas de contratos.
+
+Confirmado en el árbol integrado:
+
+- **Cero cambios en `db/**` y `supabase/**`** desde esta línea. El diff completa
+  contra `ff1ffb6` no toca ninguna de esas rutas.
+- Provenance y hashing conservados: `ProvenanceRecord` mantiene los seis campos
+  de la cadena de verificación (`rawContentHash`, `normalizedContentHash`,
+  `normalizationVersion`, `chunkerVersion`, `injectionScannerVersion`,
+  `versionId`).
+- Detección de instrucciones embebidas conservada, en dos etapas (`raw` y
+  `normalized`), sin mutar el texto.
+
+### Contratos
+
+- **GR-001 y GR-002 → siguen `solicitado`.** CAPABILITIES no las evaluó en el
+  tren 1: su unidad fue CAP-03 (Stripe), no el esquema de evidencia.
+  Integración **no las resuelve por su cuenta** — decidir sobre `db/**` está
+  reservado a la línea propietaria, y suplantarla sería exactamente lo que §8
+  impide. Son el trabajo de entrada de CAPABILITIES tren 2.
+- **PRODUCT-001 → `parcialmente satisfecho`.** PRODUCT pidió a esta línea un
+  `GroundingCitation` con `excerpt`, `location: string` y `relevance` en
+  buckets. Los contratos publicados aquí cubren la necesidad con una forma más
+  estricta (`CitationReference` con `quotedTextHash` y `ChunkLocation`
+  estructurado; el score numérico en `RetrievalCandidate`). Integración decidió
+  que **estos contratos son la fuente técnica canónica de provenance** y que la
+  adaptación es responsabilidad de PRODUCT — ver
+  [`INTEGRATION-001`](../contracts/INTEGRATION-001_grounding_product_citation_adapter.md).
+  Esta línea **no** debe añadir `excerpt` ni buckets a sus contratos.
+
+### Riesgos tras la integración
+
+R1 (persistencia bloqueada por GR-001) **sigue abierto y sin cambio**: es la
+consecuencia directa de que GR-001 siga `solicitado`. R2 (cobertura de
+formatos), R3 (calibración del escáner), R4 (umbrales de abstención sin
+calibrar) y R5 (sin cableado al pipeline) siguen abiertos tal como se
+declararon.
+
+R4 gana una consecuencia nueva: los umbrales de `relevance` del adaptador de
+INTEGRATION-001 heredan esa incertidumbre y deben revisarse cuando exista
+retrieval real.
+
+### Trabajo de entrada del tren 2
+
+Implementación de retrieval y calibración de `DEFAULT_RETRIEVAL_MIN_SCORE` /
+`DEFAULT_RETRIEVAL_TOP_K` sobre datos medidos. Sin retrieval real no hay
+`RetrievalCandidate` en runtime, así que el adaptador de PRODUCT será
+verificable por pruebas antes de ser observable en producto.
+
+### Hallazgo de la revisión adversarial de integración — A-F1 (MAJOR, abierto)
+
+**`validateAnswerCitations` no comprueba el aislamiento por proyecto.**
+`lib/grounding/contracts/answer.ts:248` tipa `availableChunks` como
+`ReadonlyMap<ContentHash, { contentHash; organizationId }>` — `projectId` no
+puede siquiera suministrarse — y el predicado de `citation_out_of_scope`
+(`:273`) compara sólo `chunk.organizationId !== state.query.scope.organizationId`.
+
+`GroundingChunk` lleva un `GroundingScope` completo y `scopeContains` existe
+exactamente para esto (`core.ts:87`), pero **tiene cero llamadas en producción**:
+sus únicas apariciones son el barrel y `__tests__/contracts.test.ts:77-83`.
+
+Contradice la cabecera del propio módulo (`core.ts:11-14`), que promete que un
+chunk fuera de scope es «un defecto comprobable en runtime» en vez de una fuga
+silenciosa. A nivel de proyecto no lo es. `contracts.test.ts:288` sólo cubre el
+caso cross-organización, así que la suite sigue verde.
+
+**Escenario:** una organización con dos proyectos. Una consulta con
+`scope = {org, proj-confidencial}` recupera un chunk de
+`{org, proj-publico}`. `validateAnswerCitations` devuelve una lista vacía, la
+respuesta sale `grounded` y el `quotedTextHash` verifica — todas las señales de
+honestidad dicen que la cita es sólida.
+
+**No corregido por integración**, y es deliberado: cambiar la firma de un
+contrato publicado es una decisión de diseño de esta línea, no de integración.
+Hoy es inalcanzable (cero productores de `GroundingAnswerState` en runtime, sin
+retrieval); **pasa a BLOCKER en cuanto el tren 2 cablee retrieval**. Es trabajo
+de entrada de GROUNDING tren 2, junto con la prueba cross-proyecto que falta.

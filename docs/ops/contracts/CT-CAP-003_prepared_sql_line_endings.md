@@ -4,7 +4,7 @@
 |---|---|
 | **Solicitante** | CAPABILITIES |
 | **Propietaria** | INTEGRACIÓN |
-| **Estado** | `solicitado` |
+| **Estado** | `aceptado` — **aplicado** (integración, tren 1, 2026-08-04). `db/prepared/** text eol=lf` en `.gitattributes`; renormalización con cero blobs nuevos |
 | **Fecha** | 2026-08-04 |
 | **Ruta afectada** | `.gitattributes` (**INTEGRATION-OWNED**, gobernanza §7) |
 

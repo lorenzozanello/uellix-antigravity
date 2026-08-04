@@ -3,12 +3,16 @@
 // THE ONLY REACHABLE WAY THE APPLICATION MOVES AN ADMINISTRATIVE COLUMN OF
 // `organizations`.
 //
-// "Reachable" is doing real work in that sentence. `app/api/webhooks/stripe/route.ts`
-// still contains three `db.update(organizations).set({ stellaMonthlyQuota, … })`
-// statements; they are dead behind `WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false`
-// and would raise 42501 the moment that flag is flipped after stella_0011 is
-// applied, because none of those columns is in the runtime grant. Rewriting
-// them belongs to enabling CAP-03, not here — tracked as RR-CAP-10-A-bis.
+// "Reachable" no longer needs a caveat. `app/api/webhooks/stripe/route.ts` used
+// to hold three `db.update(organizations).set({ stellaMonthlyQuota, … })`
+// statements — dead behind `WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false`, and
+// guaranteed to raise 42501 the moment that flag was flipped after stella_0011,
+// because none of those columns is in the runtime grant. CAPABILITIES train 1
+// removed them: the webhook now goes through `lib/capabilities/stripe-webhook.ts`
+// onto the `uellix_capability` functions of stella_0008, on the dedicated
+// `uellix_stripe` connection. They were the webhook remainder of RR-CAP-10-A
+// (canonical id — `RR-CAP-10-A-bis` was an alias coined in this comment and
+// never entered the risk register; see CT-CAP-002).
 //
 // After `stella_0011_organization_column_acl.sql`, `stella_monthly_quota`,
 // `stella_plan_label` and `status` are outside every runtime UPDATE grant. The

@@ -7,5 +7,12 @@
 # línea queda fijado a LF en toda plataforma.
 db/baseline/** text eol=lf
 
+# Los paquetes SQL preparados se comparan carácter a carácter contra las
+# aserciones de las suites de capacidad, que anclan en «\n». Con
+# core.autocrlf=true el checkout en Windows los materializaba en CRLF y cuatro
+# suites fallaban aunque los blobs del repositorio ya estaban en LF
+# (CT-CAP-003). El final de línea queda fijado a LF en toda plataforma.
+db/prepared/** text eol=lf
+
 # bash no ejecuta un script con CRLF: falla con «\r: command not found».
 *.sh text eol=lf

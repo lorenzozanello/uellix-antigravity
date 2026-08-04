@@ -55,6 +55,12 @@ Ledger: [`docs/ops/contracts/CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.m
 | CT-CAP-003 | CAPABILITIES **pide** a integración `db/prepared/** text eol=lf` en `.gitattributes` | `solicitado` |
 | CT-CAP-004 | CAPABILITIES **pide** a integración documentar `UELLIX_STRIPE_DATABASE_URL` en `.env.example` | `solicitado` |
 
+> **Estados desactualizados.** Esta tabla registra los estados *en el momento
+> de la entrega*. Tras el tren 1 de integración, CT-CAP-001, CT-CAP-002 y
+> CT-CAP-003 están `aceptado` y sólo CT-CAP-004 sigue `solicitado`. La fuente
+> de verdad es [`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md); el
+> detalle está en §Integración — tren 1 al final de este documento.
+
 ## Unidad actual
 
 **TRAIN 1 — `CAP-03`: escrituras de capacidad por funciones gobernadas, y
@@ -189,3 +195,98 @@ Nada aplicado a ninguna base de datos. Ningún acceso a remoto. Ningún paquete
 `.gitattributes` (CT-CAP-003), `.env.example` (CT-CAP-004),
 `docs/ops/STELLA_FABLE_RISK_REGISTER.md` y
 `lib/admin/organization-administration.ts` (CT-CAP-002).
+
+---
+
+## Integración — tren 1 (2026-08-04)
+
+**Fusionada.** HEAD integrado `4c40a8e`, commits `7002f86` y `4c40a8e`, merge
+commit `95ce36b` (`--no-ff`). Primera de las cuatro en entrar, sin conflictos.
+
+### Pruebas focalizadas en el HEAD integrado
+
+16 archivos: **1184 passed, 61 skipped, 0 failed**. Incluye las 32 pruebas
+nuevas de `stripe-webhook-capability` y las 9 de `stripe-webhook-route`.
+
+Confirmado en el árbol integrado, no reafirmado desde el documento de entrega:
+
+- `WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false` y se evalúa antes de que nada
+  alcance la base de datos (`route.ts:58`, `:113`).
+- Cero `db.update(organizations)` alcanzable. Ni el route ni la capa tipada
+  importan `@/db/client`.
+- `client_reference_id` sobrevive **sólo en prosa** que explica su retirada:
+  ningún camino de código lo lee.
+- `U0003` → `retry` sin escribir fila `failed`; `U0001` → `refused` con
+  `org_not_resolved`; cualquier otro SQLSTATE se propaga.
+- `db/prepared/**` y `db/baseline/**` sin un solo cambio de contenido.
+- Ninguna base de datos modificada.
+
+### Contratos
+
+- **CT-CAP-001 → `aceptado`.** El tren incorporó la unidad, que era la
+  condición declarada. Aceptarlo no habilita ninguna capacidad.
+- **CT-CAP-002 → `aceptado`, opción A.** Alias retirado; `RR-CAP-10-A` es el
+  identificador canónico. Comentario falso de
+  `lib/admin/organization-administration.ts` reescrito y cierre del resto del
+  webhook anotado en el registro de riesgos.
+- **CT-CAP-003 → `aceptado`.** `.gitattributes` recibió
+  `db/prepared/** text eol=lf`. La renormalización produjo **cero blobs
+  nuevos** — los `.sql` ya estaban en LF en el índice; era el checkout el que
+  los materializaba en CRLF. Las cuatro suites afectadas entregan **687
+  passed**, la misma cifra que esta línea midió a mano.
+- **CT-CAP-004 → sigue `solicitado`.** No aplicado: la unidad de integración
+  tiene prohibido modificar archivos `.env`. No es un rechazo; es trabajo de
+  entrada del primer tren con `.env.example` entre sus rutas.
+
+### Riesgos de esta línea tras la integración
+
+- **CT-CAP-003 — cerrado.** Ya no es un riesgo.
+- **`tests/database-entrypoint-safety.test.ts` — sigue abierto, ambiental.**
+  Reproducido en el worktree de integración: la suite colecta **0 de 49**
+  porque no hay `.env.local` y `resolveRuntimeDatabaseUrl()` aborta al importar.
+  Los cinco archivos implicados tienen **0 commits desde `ff1ffb6`**. No es
+  regresión de integración y no se corrige aquí (exigiría crear un archivo de
+  entorno, prohibido en esta unidad).
+- **Precio no mapeado → cuota gratuita** — abierto, atado a habilitar CAP-03.
+- **RR-CAP-14-A** — abierto e inherente: la base de datos no puede verificar
+  una firma de Stripe.
+
+### Trabajo de entrada del tren 2
+
+Evaluar **GR-001** y **GR-002** (peticiones de GROUNDING sobre
+`evidence_chunks` e historia de versiones). Son el bloqueo R1 de esa línea: sin
+ellas, cualquier persistencia de grounding perdería los campos que hacen
+verificable una cita. Y **CT-CAP-004**, si la unidad recibe `.env.example`.
+
+### Hallazgos de la revisión adversarial de integración
+
+- **A-F2 (MAJOR, abierto) — `unavailable` tiene dos definiciones de
+  retryabilidad dentro de CT-CAP-001.** `capabilityUnavailable`
+  (`lib/capabilities/contracts.ts:466`) devuelve
+  `retryable: reason !== feature_flag_disabled`, con el razonamiento escrito
+  en `:156-160`. `stripeCapabilityUnavailable` pasa por `result()`
+  (`stripe-webhook.ts:329`), donde `unavailable` es **siempre** retryable con
+  503. `route.ts:66-68` afirma que la regla «está declarada en un solo sitio y
+  no puede divergir»; ya divergió.
+
+  **El comportamiento de CAP-03 es el correcto** y no debe cambiarse a la
+  ligera: contestar 200 a un evento de Stripe con la bandera apagada haría que
+  Stripe abandonara la entrega, y una suscripción no llegaría nunca. Lo que
+  está mal es el contrato genérico, que documenta lo contrario.
+
+  Agravante: `capabilityUnavailable` **tiene cero llamadas** en todo el árbol, y
+  `tests/stripe-webhook-capability.test.ts:176` sólo ejercita
+  `database_identity_unavailable` — el único motivo en que ambas reglas
+  coinciden. `feature_flag_disabled`, el único alcanzable hoy en producción,
+  es justo el caso divergente sin prueba.
+
+  **Caveat sobre la aceptación de CT-CAP-001:** el contrato se aceptó porque el
+  tren incorporó la unidad, no porque sea internamente coherente. Reconciliar
+  las dos reglas es trabajo de entrada de CAPABILITIES tren 2.
+
+- **A-F9 (MINOR, abierto)** — `tests/capability-isolation.test.ts` recorre
+  `lib/` y `app/`, no `db/`. Las tres invocaciones literales
+  `uellix_capability.stripe_*` viven en
+  `db/capabilities/stripe-capability-executor.ts:137,147,160`, fuera del
+  escaneo. Una cuarta invocación añadida ahí no rompería el invariante que el
+  propio comentario del test declara.

@@ -403,3 +403,142 @@ la suite completa tiene fallas preexistentes documentadas arriba, ninguna
 introducida por esta entrega.
 
 `STELLA_RELEASE_TRAIN_1_READY_FOR_INTEGRATION`
+
+---
+
+## Integración — tren 1 (2026-08-04)
+
+**Fusionada.** HEAD integrado `55a9e48`, commits `74d559a` y `55a9e48`, merge
+commit `847795d` (`--no-ff`). Última de las cuatro en entrar, sin conflictos —
+esta línea no tocó ningún archivo compartido ni ninguna ruta de otra línea.
+
+### Pruebas en el HEAD integrado
+
+| Comando | Resultado |
+|---|---|
+| `vitest run tests/eval/stella-release/harness.test.ts` | **14 passed** |
+| `tsx scripts/eval-release-offline.ts` | **14/14 checks**, `pass=11 abstention=3 system-error=0 isolation-violation=0`, cero `providerCalls` |
+
+Confirmado en el árbol integrado:
+
+- Matriz versionada: `RELEASE_EVAL_MATRIX_VERSION = '1.0.0'`, fixtures `1.0.0`.
+- **14 casos**, ni uno más ni uno menos, y el harness falla si un check
+  implementado no tiene entrada en la matriz.
+- **Cero dependencia de red**: ninguna llamada `fetch`/HTTP ni lectura de
+  `GEMINI_API_KEY`/`GOOGLE_*` en todo `tests/eval/stella-release/` ni en el
+  script.
+- Métricas no baselined reportadas como `null` con razón explícita, nunca
+  fabricadas: `latency`, `token-usage` y `estimated-provider-cost` salen
+  `measurable: false, value: null` apuntando a los gates G1 y G9.
+- Riesgos hosted conservados: `RR-CAP-14-A`, `RR-CAP-10-C`, `RR-CAP-02-H` y
+  `RR-CAP-02-I` siguen listados con su estado y su mitigación operativa
+  requerida.
+
+### La suite completa, resuelta
+
+Esta línea entregó registrando **7 tests fallando en 8 archivos** y dos causas
+raíz sospechadas. Integración las verificó y **ambas eran correctas**; una está
+cerrada y la otra caracterizada:
+
+1. **`GEMINI_API_KEY` ambiental — confirmada y neutralizada.** Eliminando la
+   variable únicamente del entorno del proceso de prueba (`env -u`, sin tocar
+   ningún archivo `.env`), los fallos de `StellaAdvisorPanel`,
+   `StellaValidatorPanel` y `contextual-advisor` desaparecen. La recomendación
+   de esta línea era la correcta.
+2. **La aserción de regex de `tests/prepared-stella-sql.test.ts` — no era el
+   texto del comentario, era CRLF.** Es CT-CAP-003: con `core.autocrlf=true` el
+   checkout materializaba `db/prepared/**` en CRLF y las aserciones anclan en
+   `\n`. Cerrado por integración con `db/prepared/** text eol=lf` en
+   `.gitattributes`. La suite entrega ahora **687 passed** junto a las otras
+   tres afectadas. Esta línea hizo bien en no investigarlo: era ruta prohibida.
+
+**`pnpm test:unit` en el HEAD integrado: 3920 passed / 2 failed / 125 skipped**
+(162 archivos). Los 2 restantes, clasificados con evidencia:
+
+- `tests/database-entrypoint-safety.test.ts` — **ambiental, no regresión.** La
+  suite de integración colecta 0 de 49 porque el worktree no tiene `.env.local`.
+  Los cinco archivos implicados tienen 0 commits desde `ff1ffb6`.
+- `tests/database-runtime-entrypoints.test.ts` — **flake por carga.** Un import
+  dinámico excede el `testTimeout` de 5 s bajo la batería completa. El mismo
+  archivo, en el mismo HEAD, pasa en aislamiento (308 passed) y dentro de la
+  corrida focalizada de capacidades. No se cambiaron timeouts.
+
+### Gates pesados integrados
+
+Serializados, un gate a la vez (§11): `typecheck` limpio · `lint` 0 errores /
+44 warnings · `build` verde · `capability-baseline-verify` **38/107/10** ·
+`capability-dry-run` forward **42/151/7/10/1**, **132/132** aserciones vivas
+(concurrencia **7/7**), rollback **40/108**, reaplicación **42/151/7/10/1**.
+Todas las cifras idénticas a las vigentes antes del tren: la integración no
+movió el comportamiento de la base de datos, que es lo que se esperaba porque
+ninguna línea aplicó ni modificó un paquete SQL.
+
+Dry-run en contenedor desechable con `--network none` sobre `db/baseline/**`,
+destruido al salir. Cero escrituras a ninguna base real.
+
+### Criterios de release tras el tren 1
+
+**Local integration:** todos los gates obligatorios en verde salvo los dos
+fallos caracterizados arriba, ninguno de los cuales es una regresión. Las
+banderas `STELLA_*_ENABLED` siguen en `false` y
+`WEBHOOK_DATABASE_IDENTITY_AVAILABLE` sigue en `false`.
+
+**Staging y superiores:** sin cambio. Ningún gate G1–G10 se ejecutó ni se
+declaró superado en esta integración, y nada aquí acerca ni aleja los cuatro
+riesgos que bloquean hosted.
+
+### Trabajo de entrada del tren 2
+
+Extender el harness a los contratos de grounding cuando exista retrieval real
+(hoy la matriz evalúa el contrato del advisor, no el de `lib/grounding`), y
+definir los presupuestos de latencia p50/p95 y costo por interacción — que
+siguen sin baseline porque siguen requiriendo G1.
+
+### Hallazgos de la revisión adversarial de integración
+
+Ninguno es regresión: los cuatro MAJOR son defectos internos del harness
+entregado. Integración no los parcheó porque exigen lógica nueva, que es trabajo
+de esta línea.
+
+- **B-M4 (MAJOR)** — `cap-01-05-regression-surface-present`
+  (`harness.ts:523-544`) es `existsSync` sobre 13 rutas **más una tautología**:
+  `CAP_REGRESSION_TEST_FILES.every((f) => !f.startsWith(tests/integration/))`
+  evalúa un array literal contra un prefijo literal y es `true` por
+  construcción. El comentario afirma que confirma que las pruebas de regresión
+  no están excluidas del vitest config por defecto; nunca lee un config.
+  Truncar `stella_0008_*.sql` a cero bytes deja el check en verde.
+- **B-M5 (MAJOR)** — `contradiction-acknowledgment-heuristic`
+  (`harness.ts:176-201`) comprueba que `CONTRACTION_KEYWORDS` matchea un
+  literal definido tres líneas más arriba. La entrada de matriz declara
+  `offlineMeasurable: false` y aun así se cuenta en `passed`, sin distinción,
+  dentro del titular «14/14».
+- **B-M6 (MAJOR)** — `structural-regression` está declarada
+  (`matrix.ts:27`, `:171`) y **no se emite** en `computeReleaseMetrics`.
+  Simétricamente, `matrix.ts:139` y `:155` declaran `metrics: [latency]` para
+  dos checks mientras `latency` está cableada a `measurable:false, value:null`
+  sin leerlos. `validateReleaseEvalMatrix` valida ids, duplicados, categorías y
+  limitaciones — nunca el enlace matriz-métrica.
+- **B-M3 (rebajado a MINOR por integración)** — `harness.ts:38` importa
+  `@/components/stella/error-messages`, un interno de PRODUCT, en vez del
+  barrel. El revisor leyó `Record<StellaPanelErrorCode, boolean>` como
+  acoplamiento que bloquearía a PRODUCT; **es el propósito declarado del
+  check**, que se llama `retryable-code-set-pinned` y existe para fallar si
+  alguien añade un código sin decidir su retryabilidad. Queda por corregir sólo
+  la ruta de import (PRODUCT exporta, RELEASE consume el barrel).
+- **B-M2 (corregido por integración)** — la cabecera de `fixtures.ts`
+  atribuía `lib/stella/context/**` a GROUNDING. Es código de fundación
+  preexistente; GROUNDING nunca lo tocó y su superficie publicada es
+  `lib/grounding/contracts/index.ts`, que **nadie importa**. Borrar los 18
+  archivos del tren de GROUNDING dejaría estos 14 checks en verde. Comentario
+  corregido para que la tabla de evidencias no se lea como cobertura de
+  grounding.
+- **A-F10 (MINOR)** — `abstention-schema-enforced` es `offlineMeasurable: true`
+  sin `offlineLimitation`, pese a evaluar dos literales escritos a mano.
+  `cross-organization-no-leak` sí declara la limitación en la misma situación.
+  Además `abstention-correctness: 4/4` incluye dos checks que no son de
+  abstención (`quota-exhausted-non-retryable`, `human-decision-literal-true`).
+- **B-m5 (MINOR)** — `scripts/eval-release-offline.ts` sólo es invocable como
+  `pnpm exec tsx …`: falta la entrada `eval:release` en `package.json`, que es
+  `INTEGRATION-OWNED` (§7). Esta línea lo anotó como nota pero **no abrió fila
+  de contrato**, a diferencia de CT-CAP-004, que sí la tiene para el mismo tipo
+  de necesidad. Abrirla es trabajo de entrada del tren 2.

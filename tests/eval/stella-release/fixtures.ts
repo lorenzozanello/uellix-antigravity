@@ -2,9 +2,17 @@
 // RELEASE line — offline grounding/isolation evaluation fixtures
 // (STELLA_RELEASE_EVALUATION_FOUNDATION_TRAIN_1, Fase 2/3).
 //
-// Consumes GROUNDING's published TypeScript contracts
-// (lib/stella/context/**) as a read-only caller. RELEASE never modifies
-// functional contracts — it only evaluates behavior against them.
+// Consumes the ADVISOR's context contracts (lib/stella/context/**) as a
+// read-only caller. RELEASE never modifies functional contracts — it only
+// evaluates behavior against them.
+//
+// CORRECTED BY INTEGRATION (train 1): lib/stella/context/** is pre-existing
+// foundation code, NOT a GROUNDING deliverable — GROUNDING's published surface
+// is lib/grounding/contracts/index.ts, and nothing here imports it. This
+// harness evaluates the advisor's citation/abstention/isolation contract; it
+// does NOT evaluate lib/grounding/**. Deleting GROUNDING's entire train would
+// leave these 14 checks green. Extending coverage to the grounding contracts
+// is RELEASE train 2 work and depends on a real retrieval implementation.
 //
 // Two synthetic tenants (ORG_ALPHA_CONTEXT / ORG_BETA_CONTEXT), each with a
 // unique marker string baked into its evidence title, so isolation cases can

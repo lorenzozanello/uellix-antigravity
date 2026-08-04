@@ -112,3 +112,108 @@ estado normal del producto, sin cálculo SROI en cliente, sin tocar
 Listo. Árbol limpio, dos commits (`feat(stella): model grounded response
 states`, `feat(stella): render evidence and human decision workflow`), sin
 push, sin tocar `db/**`/SQL/INTEGRATION-OWNED.
+
+---
+
+## Integración — tren 1 (2026-08-04)
+
+**Fusionada.** HEAD integrado `9e57301`, commits `21468ca` y `9e57301`, merge
+commit `fa3a13c` (`--no-ff`).
+
+**Conflicto:** `docs/ops/contracts/CONTRACT_LEDGER.md` (add/add), el mismo
+índice que CAPABILITIES y GROUNDING habían creado en paralelo. Resuelto
+preservando `CT-CAP-001..004`, `GR-001`, `GR-002` y añadiendo `PRODUCT-001`.
+Ningún otro archivo entró en conflicto.
+
+### Pruebas focalizadas en el HEAD integrado
+
+`vitest run components/stella` → 13 archivos, **261 passed, 0 failed**.
+
+Los 2 fallos que esta línea reportó (`StellaAdvisorPanel.test.tsx` y
+`StellaValidatorPanel.test.tsx`, «does not read GEMINI_API_KEY env var`) **eran
+contaminación ambiental, confirmada por experimento controlado**: la misma
+suite, en el mismo HEAD, entrega 259/261 con `GEMINI_API_KEY` en el entorno y
+261/261 sin ella. Integración eliminó la variable únicamente del entorno del
+proceso de prueba (`env -u`); no se modificó ningún archivo `.env`. La
+sospecha de esta línea era correcta.
+
+Confirmado en el árbol integrado:
+
+- Componentes nuevos presentes: `StellaGroundingBadge`, `StellaEvidencePanel`,
+  `StellaAvailabilityNotice`, más los badges en `StellaContextualAdvisorPanel`.
+- Estados tipados presentes: `EvidenceSupportLevel` (5),
+  `StellaAvailabilityState` (4), `StellaDecisionStatus` (5).
+- Abstención visible: `insufficient_evidence` se produce desde señales reales
+  (`sourceFields` vacío / sentinela de colección vacía), no desde un fixture.
+- Citas no inventadas: `buildEvidenceReferences` sólo mapea rutas canónicas ya
+  presentes en la salida del advisor.
+- Flujo de decisión humana intacto: `StellaDecisionStatus` refleja
+  `SuggestionDecisionAction` 1:1 menos `'copied'`.
+- Cero cambios de base de datos y cero SQL.
+
+### Contratos
+
+**PRODUCT-001 → `PARTIALLY_SATISFIED_PENDING_ADAPTER`.**
+
+GROUNDING publicó el mismo día, sin ver esta solicitud, contratos que cubren la
+necesidad con una forma **distinta y más estricta**. Integración no eligió
+arbitrariamente entre ambas: registró
+[`INTEGRATION-001`](../contracts/INTEGRATION-001_grounding_product_citation_adapter.md),
+que establece que `lib/grounding/contracts/**` es la fuente técnica canónica de
+provenance y que la presentación **no persiste una segunda forma** de la misma.
+
+Razón concreta, no estilística: `CitationReference` no lleva el texto de la
+cita, lleva `quotedTextHash`. Un `excerpt` persistido junto a la cita es un
+segundo registro del mismo hecho que puede divergir del hash; en cuanto diverge,
+el sistema tiene dos respuestas a «¿qué dice el documento?» y la que se ve en
+pantalla es la que no está verificada.
+
+`EvidenceSupportLevel: 'contradictory_evidence'` sigue sin productor real, y eso
+deja de ser una limitación temporal: por decisión de integración, sólo un
+`ContradictionMarker` puede producirlo — nunca una inferencia hecha en un
+componente de UI.
+
+### Riesgos tras la integración
+
+- El riesgo de `GEMINI_API_KEY` queda **cerrado como riesgo de esta línea**: era
+  ambiental y está caracterizado. Sigue siendo una nota operativa para quien
+  ejecute la batería en una shell con la variable presente.
+- `'contradictory_evidence'` sin productor: abierto, ahora con una regla
+  explícita que lo gobierna.
+
+### Trabajo de entrada del tren 2
+
+**Implementar el adaptador puro** de INTEGRATION-001, previsto en
+`components/stella/grounding-adapter.ts`, bajo sus siete reglas: `excerpt`
+derivado de `GroundingChunk.text`, `location` renderizado desde `ChunkLocation`
+sin volver a entrar como ubicación, buckets de `relevance` con umbrales
+nombrados y probados en el borde que **no** sustituyen al score, y
+`contradiction` exclusivamente desde `ContradictionMarker`.
+
+No se implementó aquí: PRODUCT compila y pasa sin él, así que la excepción
+«sólo si es estrictamente necesario para compilar» no aplica. Verificado que
+`components/**` no importa nada de `lib/grounding/**` en el HEAD integrado.
+
+### Hallazgos de la revisión adversarial de integración
+
+- **A-F3 — la regla de contradicción no está impuesta por nada.**
+  INTEGRATION-001 §7 dice que sólo un `ContradictionMarker` puede producir
+  `contradictory_evidence`. Hoy eso se cumple **por ausencia de código**:
+  `StellaGroundingBadge` recibe `level` como prop libre sin validación, el badge
+  y el tipo se re-exportan desde `components/stella/index.ts`, y `components/**`
+  no importa nada de `lib/grounding/**`. Un mapper de tren 2 que dedujera la
+  contradicción de dos `sourceFields` opuestos compilaría, renderizaría el badge
+  rojo y pasaría CI. **El adaptador del tren 2 debe llevar una prueba focalizada
+  que falle si ese valor se alcanza sin un `ContradictionMarker` de entrada.**
+- **B-m4 (MINOR)** — ciclo entre `grounding-model.ts:22` y
+  `StellaContextualAdvisorPanel.tsx:40`. Es **sólo de tipos**: el lado de tipos
+  usa `import type` explícito y `tsconfig.json` fija `isolatedModules: true`, así
+  que se borra en transform y no hay ciclo en runtime. Se convierte en uno real
+  el día que alguien quite la palabra `type`.
+- **Nota de cobertura, no defecto:** `StellaEvidencePanel`,
+  `StellaAvailabilityNotice`, `buildEvidenceReferences` y `classifyAvailability`
+  tienen **cero call sites fuera de `components/stella/`**. Están exportados,
+  probados y montados en ninguna parte. Es coherente con el estado declarado
+  (el adaptador no existe), pero significa que sus pruebas seguirían verdes
+  aunque el pipeline nunca produjera un `EvidenceReference` — que es exactamente
+  la situación de hoy.
