@@ -14,6 +14,8 @@ vi.mock('@/app/actions/stella/advisor', () => ({
 }))
 
 import { StellaContextualAdvisorPanel } from '../StellaContextualAdvisorPanel'
+import type { GroundedAnswerView } from '../grounding-adapter'
+import { groundedAnswerView } from './grounded-fixtures'
 import React from 'react'
 
 // ---------------------------------------------------------------------------
@@ -91,9 +93,11 @@ const TWO_SUGGESTIONS_OUTPUT: AdvisorContextualOutput = {
 function TargetHarness({
   onDecision,
   initialValue = 'valor original',
+  groundedAnswer,
 }: {
   onDecision?: (record: SuggestionDecisionRecord) => void
   initialValue?: string
+  groundedAnswer?: GroundedAnswerView
 }) {
   const [value, setValue] = React.useState(initialValue)
   return (
@@ -110,6 +114,7 @@ function TargetHarness({
         targetValue={value}
         onApply={(_suggestion, text) => setValue(text)}
         onDecision={onDecision}
+        groundedAnswer={groundedAnswer}
       />
     </>
   )
@@ -709,6 +714,89 @@ describe('StellaContextualAdvisorPanel', () => {
       for (const button of Array.from(panel.querySelectorAll('button'))) {
         expect(button.getAttribute('type')).toBe('button')
       }
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // TRAIN 2 — grounded evidence seam (INTEGRATION-001)
+  // -------------------------------------------------------------------------
+  describe('Grounded evidence seam', () => {
+    it('renders nothing grounded unless a caller supplies an adapted answer', async () => {
+      await renderSuccess()
+      expect(screen.queryByTestId('stella-grounded-answer-panel')).not.toBeInTheDocument()
+    })
+
+    it('renders the grounded answer a caller hands it', () => {
+      render(
+        <StellaContextualAdvisorPanel
+          projectId="proj-1"
+          step="narrative"
+          groundedAnswer={groundedAnswerView()}
+        />
+      )
+      expect(screen.getByTestId('stella-grounded-answer-panel')).toHaveAttribute(
+        'data-status',
+        'grounded'
+      )
+    })
+
+    it('does not tie grounded evidence to the advisor request — it does not come from that action', () => {
+      // The contextual advisor action does not consume retrieval. Showing the
+      // grounded panel only after "Consultar a Stella" would imply it did.
+      render(
+        <StellaContextualAdvisorPanel
+          projectId="proj-1"
+          step="narrative"
+          groundedAnswer={groundedAnswerView()}
+        />
+      )
+      expect(screen.getByTestId('stella-grounded-answer-panel')).toBeInTheDocument()
+      expect(mockGetStellaContextualAdvisor).not.toHaveBeenCalled()
+    })
+
+    it('forwards grounded citation navigation to the caller', () => {
+      const onNavigateCitation = vi.fn()
+      const answer = groundedAnswerView()
+      render(
+        <StellaContextualAdvisorPanel
+          projectId="proj-1"
+          step="narrative"
+          groundedAnswer={answer}
+          onNavigateCitation={onNavigateCitation}
+        />
+      )
+      fireEvent.click(screen.getByRole('button', { name: /informe-2025\.pdf/ }))
+      expect(onNavigateCitation).toHaveBeenCalledWith(answer.claims[0].citations[0])
+    })
+
+    it('leaves the accept / edit / reject / undo workflow untouched while grounded evidence is mounted', async () => {
+      const onDecision = vi.fn()
+      success(TWO_SUGGESTIONS_OUTPUT)
+      render(
+        <TargetHarness
+          onDecision={onDecision}
+          initialValue="valor inicial"
+          groundedAnswer={groundedAnswerView()}
+        />
+      )
+      askStella()
+      await waitFor(() => expect(screen.queryByTestId('stella-contextual-result')).not.toBeNull())
+      expect(screen.getByTestId('stella-grounded-answer-panel')).toBeInTheDocument()
+
+      fireEvent.click(within(screen.getByTestId('stella-suggestion-s-1')).getByText('Aceptar'))
+      expect(harnessTarget().value).toBe('Texto A')
+
+      fireEvent.click(undoButtonIn('s-1'))
+      expect(harnessTarget().value).toBe('valor inicial')
+
+      fireEvent.click(within(screen.getByTestId('stella-suggestion-s-2')).getByText('Rechazar'))
+      fireEvent.click(screen.getByText('Confirmar rechazo'))
+
+      expect(onDecision.mock.calls.map((call) => call[0].action)).toEqual([
+        'accepted',
+        'undone',
+        'rejected',
+      ])
     })
   })
 })

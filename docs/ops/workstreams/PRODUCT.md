@@ -51,11 +51,21 @@ recursos). Este documento es el estado vivo de esta línea únicamente.
   nivel documento/chunk (`documentId`/`excerpt`/`location`/`relevance`) y una
   señal explícita de contradicción entre dos evidencias. Ver
   [`docs/ops/contracts/PRODUCT-001_grounded-citation-provenance.md`](../contracts/PRODUCT-001_grounded-citation-provenance.md).
-  Hasta que se resuelva, `EvidenceSupportLevel: 'contradictory_evidence'`
-  queda modelado en el tipo pero ningún mapper de
-  `components/stella/grounding-model.ts` lo produce.
+  Resuelto por integración en el tren 1 como
+  `PARTIALLY_SATISFIED_PENDING_ADAPTER`; el adaptador que faltaba está
+  implementado en el tren 2 de esta línea —
+  **`PRODUCT-001_IMPLEMENTED_PENDING_INTEGRATION_ACCEPTANCE`**, ver
+  [§Tren 2](#tren-2--stella_product_grounding_adapter_train_2-2026-08-04).
+  Esta línea no marca el contrato `aceptado`: la aceptación es de integración.
 
 ## Unidad actual
+
+**STELLA_PRODUCT_GROUNDING_ADAPTER_TRAIN_2** — ver
+[§Tren 2](#tren-2--stella_product_grounding_adapter_train_2-2026-08-04) al
+final de este documento. Lo que sigue en esta sección es el registro histórico
+de la unidad del tren 1, ya integrada.
+
+## Unidad del tren 1 (histórico)
 
 **STELLA_PRODUCT_GROUNDED_EXPERIENCE_TRAIN_1** — modelo de presentación
 tipado para respuestas fundamentadas de Stella (grounded / partially
@@ -217,3 +227,191 @@ No se implementó aquí: PRODUCT compila y pasa sin él, así que la excepción
   (el adaptador no existe), pero significa que sus pruebas seguirían verdes
   aunque el pipeline nunca produjera un `EvidenceReference` — que es exactamente
   la situación de hoy.
+
+---
+
+## Tren 2 — STELLA_PRODUCT_GROUNDING_ADAPTER_TRAIN_2 (2026-08-04)
+
+**HEAD base:** `597819b` (`TRAIN_2_ROOT_HEAD`, «chore(integration): prepare
+shared Stella train 2 root»). Sin push.
+
+Unidad: implementar el **adaptador puro** de
+[INTEGRATION-001](../contracts/INTEGRATION-001_grounding_product_citation_adapter.md)
+y conectar los contratos canónicos de GROUNDING con la presentación de Stella.
+
+### Commits
+
+- `42b68dc` — `feat(stella): adapt grounding provenance for presentation`
+- (este commit) — `feat(stella): connect grounded citations to Stella experience`
+
+### Adaptador
+
+`components/stella/grounding-adapter.ts`. Entradas: `GroundingChunk`,
+`ChunkLocation`, `CitationReference`, `RetrievalCandidate`,
+`ContradictionMarker`. Salida: el modelo de presentación de PRODUCT
+(`GroundedCitationView` / `GroundedClaimView` / `GroundedContradictionView` /
+`GroundedAbstentionView` / `GroundedAnswerView`).
+
+Puro: sin I/O, sin base de datos, sin proveedor, sin reloj, sin aleatoriedad.
+
+**Todas las importaciones desde `@/lib/grounding/contracts` son `import type`,
+y eso no es estilo.** `lib/grounding/contracts/core.ts` importa `node:crypto`
+en scope de módulo; un solo import de runtime metería Node crypto en el bundle
+de cliente de toda página que monte un panel de Stella. `isolatedModules: true`
+borra los `import type` en transform, así que lo que se envía es un módulo sin
+dependencia alguna de grounding. Una prueba escanea **todo**
+`components/stella/**` y falla si alguien convierte uno en import de valor.
+
+Costo asumido y anotado en el código: los helpers de runtime publicados
+(`citationsOf`, `scopeContains`) no pueden llamarse. `citationsOf` se re-deriva
+localmente — seis líneas sobre el discriminante, que el tipo unión rompe en
+compilación si GROUNDING cambia qué campo lleva las citas. `scopeContains`
+**no** se re-implementa: ver §Riesgos.
+
+### Provenance canónica
+
+`lib/grounding/contracts/**` sigue siendo la única fuente técnica. La
+presentación **no persiste una segunda forma**: la vista es derivada y efímera,
+no se escribe, no se serializa como registro de origen, y **no existe función
+inversa** — no hay forma de reconstruir un `CitationReference` a partir de una
+vista. `EvidenceReference` (`sourceField` + `label`, derivada de
+`AdvisorContextualOutput.sourceFields`) sigue existiendo sin cambios como la
+otra noción de presentación que INTEGRATION-001 §1 enumera; el adaptador no la
+sustituye ni la mezcla: son dos modos disjuntos del mismo panel.
+
+### Reglas §4–§7, y qué las sostiene
+
+| Regla | Implementación | Prueba que falla si se rompe |
+|---|---|---|
+| `excerpt` desde `GroundingChunk.text` | `buildExcerpt`, truncado a `CITATION_EXCERPT_MAX_LENGTH` (280) | «derives the excerpt from GroundingChunk.text», «truncates … WITHOUT changing the hash» |
+| Truncado no altera el hash | `quotedTextHash` se copia de la cita, nunca se recalcula | idem |
+| Cita sin chunk no inventa texto | `availability: 'source_unavailable'`, `excerpt: null` | «represents a citation whose chunk was not loaded …» |
+| `location` estructurada | `CitationLocationView` conserva `span` y `coordinateSpace`; `label` es sólo display | «keeps the structured location (rule 5) …» |
+| `score` conservado | `RelevanceAssessment` lleva `score`, `strategy`, `rank`, `thresholdsVersion` | «keeps the numeric score, the strategy, the rank …» |
+| Umbrales nombrados y versionados | `RELEVANCE_HIGH_MIN_SCORE` 0.6, `RELEVANCE_MEDIUM_MIN_SCORE` 0.3, `RELEVANCE_THRESHOLDS_VERSION` | 3 pruebas de frontera (valor exacto → bucket superior; un `Number.EPSILON` por debajo → inferior) |
+| Contradicción sólo desde marcador | `contradictedChunkIds` se construye **únicamente** desde `state.contradictions` | «never infers a contradiction from opposing statements, opposing sources or diverging scores» + «does not turn an abstention CODED contradictory_evidence into a contradictory support level» |
+
+**Sobre A-F3 del tren 1** («la regla de contradicción no está impuesta por
+nada»): queda impuesta. El único camino hacia `'contradictory_evidence'` en el
+adaptador es que una cita de la afirmación aparezca en un `ContradictionMarker`
+de entrada. El cruce más plausible para colarlo —`AbstentionReasonCode` tiene
+un miembro que **se escribe igual** pero significa otra cosa («retrieval vio
+candidatos en conflicto», no «existe un marcador»)— tiene una prueba dedicada.
+
+### Presentación
+
+- `StellaEvidencePanel` gana un segundo modo (`citations`), disjunto del modo
+  `references` existente. Un componente y no dos: responden la misma pregunta
+  del lector y separarlos habría bifurcado el estado vacío, el contrato de
+  navegación y la accesibilidad. `source_unavailable` es un estado de primera
+  clase, con su propio texto, nunca relleno con texto sustituto.
+- `StellaGroundedAnswerPanel` (nuevo) renderiza un `GroundedAnswerView`
+  completo: nivel de soporte (badge), afirmaciones con su tipo
+  (evidencia / inferencia / recomendación / ausencia), paso de razonamiento de
+  las inferencias, citas navegables con página/sección/fragmento/score,
+  contradicción con ambos lados y la negativa explícita a resolverla,
+  abstención con el código y la explicación de GROUNDING, conteo de citas sin
+  pasaje, y aprobación humana requerida. **No calcula nada**: renderiza un
+  valor ya derivado por el adaptador. Cero aritmética SROI en cliente.
+- `StellaContextualAdvisorPanel` gana la costura tipada
+  `groundedAnswer` / `onNavigateCitation`. Se renderiza **fuera** del ciclo de
+  la petición del advisor a propósito: esa acción no consume retrieval, y
+  atarla a `panelState` afirmaría que la evidencia fundamentada vino de ahí.
+  Nada la fabrica — sin retrieval real no hay `RetrievalCandidate` en runtime
+  (INTEGRATION-001, «Qué NO decide este documento»), y **ningún fixture está
+  cableado como runtime**.
+- El barrel `components/stella/index.ts` publica el adaptador, sus tipos y sus
+  constantes de umbral. También publica `stellaErrorPresentation` /
+  `StellaPanelErrorCode`, que cierra la mitad de PRODUCT del hallazgo **B-M3**
+  del tren 1 (RELEASE puede ahora mover su import al barrel; el cambio del lado
+  de RELEASE es suyo, esta línea no toca `tests/eval/**`).
+
+### Estados soportados
+
+Cita navegable · página / sección · fragmento · nivel de soporte · score ·
+contradicción · fuente no disponible · evidencia insuficiente · evidencia
+parcial · abstención · aprobación humana. Todos con prueba.
+
+«Evidencia parcial» tiene un productor real y explícito: el estado
+`partially_grounded` del propio `GroundingAnswerState`, no una heurística de
+UI.
+
+### PRODUCT-001
+
+**`PRODUCT-001_IMPLEMENTED_PENDING_INTEGRATION_ACCEPTANCE`.**
+
+Lo que el adaptador satisface de la forma pedida originalmente:
+
+| Pedido en PRODUCT-001 | Cómo llega ahora |
+|---|---|
+| `GroundingCitation.documentId` | `GroundedCitationView.evidenceId` + `versionId` + `chunkId`, sin colapsarlos |
+| `GroundingCitation.excerpt` | `CitationExcerpt` derivado de `GroundingChunk.text`, con `truncated` y `fullLength`; `null` cuando el pasaje no está cargado |
+| `GroundingCitation.location: string` | `CitationLocationView.label` («p. 4 · Metodología · líneas 12–18»), con la ubicación estructurada intacta al lado |
+| `GroundingCitation.relevance` | `RelevanceAssessment.bucket`, **acompañado** de `score` / `strategy` / `rank` / `thresholdsVersion` |
+| `GroundingContradiction` | `GroundedContradictionView` desde `ContradictionMarker`, con `resolution` y `severity` |
+
+**Esta línea no marca el contrato `aceptado`.** La aceptación es de
+integración, y el ledger compartido (`docs/ops/contracts/CONTRACT_LEDGER.md`)
+y los encabezados de `PRODUCT-001` / `INTEGRATION-001` **no fueron tocados**
+por esta unidad: son propiedad del protocolo de contratos (§8), no de la línea
+que implementa el entregable.
+
+### Pruebas ejecutadas
+
+- `vitest run components/stella/__tests__/grounding-adapter.test.ts` — **32/32**
+  (adaptación completa, excerpt derivado, truncado sin tocar el hash, ubicación
+  estructurada, formato de ubicación en 4 variantes, score conservado,
+  relevance derivada, 3 pruebas de umbral fronterizo, score no finito, chunk
+  ausente, cita inválida por hash, lookup mal indexado, cross-project rechazada
+  por upstream, evidencia parcial, abstención, ausencia como afirmación,
+  recomendación sin soporte, inferencia con su paso de razonamiento,
+  contradicción con y sin marcador, y las 4 pruebas de pureza).
+- `vitest run components/stella/__tests__/StellaGroundedAnswerPanel.test.tsx
+  components/stella/__tests__/StellaEvidencePanel.test.tsx` — **31/31**
+  (navegación, accesibilidad, estados de disponibilidad, contradicción).
+- `vitest run components/stella/__tests__/StellaContextualAdvisorPanel.test.tsx`
+  — **48/48** (43 preexistentes + 5 de la costura del tren 2, incluida una que
+  ejecuta accept → undo → reject con el panel fundamentado montado).
+- `vitest run components/stella` (paquete focalizado completo) — **324/324**,
+  15 archivos, 0 fallos. Ejecutado con `env -u GEMINI_API_KEY` siguiendo la
+  práctica establecida por el tren 1; ningún archivo `.env` tocado.
+- `tsc --noEmit` — limpio.
+- `eslint components/stella` — 0 errores, 0 warnings.
+- No se ejecutó `test:unit` completo ni `build` (§11: gates pesados los
+  coordina integración).
+
+### Riesgos
+
+- **Sin productor de runtime.** El adaptador es verificable por pruebas y no
+  observable en producto: no hay implementación de retrieval, así que no hay
+  `RetrievalCandidate` real. Es exactamente lo que INTEGRATION-001 anticipó,
+  pero significa que la nota de cobertura del tren 1 sigue vigente y ahora
+  cubre más superficie: `StellaGroundedAnswerPanel` y el modo `citations` de
+  `StellaEvidencePanel` no tienen call sites fuera de `components/stella/**`.
+- **Umbrales sin calibrar.** 0.6 / 0.3 heredan la incertidumbre de
+  `DEFAULT_RETRIEVAL_MIN_SCORE` (0.15), que GROUNDING declara marcador de
+  posición (riesgo R4). Por eso están versionados: cuando exista retrieval
+  real y se recalibren, se sube `RELEVANCE_THRESHOLDS_VERSION`.
+- **El adaptador no es una compuerta de scope, y es deliberado.** El
+  aislamiento organización/proyecto se decide upstream (scoping de retrieval y
+  `validateAnswerCitations`). Re-implementarlo en un módulo de UI crearía una
+  segunda respuesta, divergente, a «¿puede leerse esto?» — el mismo fallo que
+  §2 prohíbe para provenance. Lo que esta línea garantiza es más estrecho y
+  está probado: un chunk que no se le entregó **nunca** adquiere excerpt,
+  etiqueta de fuente ni score. **Esto no cierra A-F1**
+  (`validateAnswerCitations` compara sólo `organizationId`, así que una cita de
+  otro proyecto de la misma organización se valida como correcta): sigue
+  asignado a GROUNDING tren 2, y hasta que se cierre, una cita cross-project
+  *entregada* por upstream se renderizaría con su pasaje.
+- **B-m4 (ciclo sólo de tipos)** entre `grounding-model.ts` y
+  `StellaContextualAdvisorPanel.tsx` sigue abierto y sin empeorar: el adaptador
+  importa `grounding-model` como valor (`decisionStatusFromAction`) pero
+  `grounding-model` no importa el adaptador, así que no se añadió ningún ciclo
+  nuevo.
+
+### Estado de entrega
+
+**STELLA_PRODUCT_TRAIN_2_READY_FOR_INTEGRATION.** Árbol limpio, dos commits,
+sin push. Cero cambios en `db/**`, `supabase/**`, SQL o archivos
+`INTEGRATION-OWNED`; cero cambios en `lib/grounding/**`; cero cambios en el
+ledger de contratos.
