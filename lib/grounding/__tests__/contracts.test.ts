@@ -9,6 +9,11 @@
 
 import { describe, it, expect } from 'vitest'
 import {
+  CHUNKER_VERSION,
+  EXTRACTOR_VERSION,
+  INJECTION_SCANNER_VERSION,
+  NORMALIZATION_VERSION,
+  PIPELINE_VERSIONS,
   GroundingScopeViolationError,
   assertSameScope,
   assertValidScope,
@@ -31,6 +36,7 @@ import {
   type CitableChunkRecord,
   type CitationReference,
   type ContentHash,
+  type DocumentVersion,
   type GroundedAnswerState,
   type GroundingAnswerState,
   type GroundingAssertion,
@@ -114,6 +120,44 @@ describe('document version identity', () => {
     // A shared boilerplate annex uploaded twice must not collapse into one
     // version, or provenance would name the wrong upload.
     expect(deriveVersionId('ev-1', rawHash)).not.toBe(deriveVersionId('ev-2', rawHash))
+  })
+})
+
+describe('pipeline versions — GR-CAP-002 (EXTRACTOR_VERSION)', () => {
+  it('EXTRACTOR_VERSION is a stable literal, unchanged across reads', () => {
+    expect(EXTRACTOR_VERSION).toBe('extract-1')
+    expect(EXTRACTOR_VERSION).toBe(EXTRACTOR_VERSION)
+  })
+
+  it('participates in PIPELINE_VERSIONS alongside the other three pipeline stages', () => {
+    expect(PIPELINE_VERSIONS.extractor).toBe(EXTRACTOR_VERSION)
+    expect(PIPELINE_VERSIONS).toEqual({
+      normalization: NORMALIZATION_VERSION,
+      chunker: CHUNKER_VERSION,
+      injectionScanner: INJECTION_SCANNER_VERSION,
+      extractor: EXTRACTOR_VERSION,
+    })
+  })
+
+  it('a change in extractor version changes pipeline identity: two DocumentVersion stamps that agree on every other field but extractorVersion are not the same pipeline state', () => {
+    const base: Omit<DocumentVersion, 'extractorVersion'> = {
+      versionId: deriveVersionId('ev-1', hashContent('bytes')),
+      evidenceId: 'ev-1',
+      scope: { organizationId: ORG_A, projectId: PROJECT_1 },
+      rawContentHash: hashContent('bytes'),
+      normalizedContentHash: hashContent('normalized'),
+      normalizationVersion: NORMALIZATION_VERSION,
+      ordinal: null,
+      supersedes: null,
+    }
+    const underCurrentExtractor: DocumentVersion = { ...base, extractorVersion: EXTRACTOR_VERSION }
+    const underAHypotheticalNextExtractor: DocumentVersion = { ...base, extractorVersion: 'extract-2' }
+
+    // versionId (content identity) is unchanged — GR-CAP-002's point is exactly
+    // that this stays true even though the two stamps must not be confused.
+    expect(underAHypotheticalNextExtractor.versionId).toBe(underCurrentExtractor.versionId)
+    expect(underAHypotheticalNextExtractor).not.toEqual(underCurrentExtractor)
+    expect(underAHypotheticalNextExtractor.extractorVersion).not.toBe(underCurrentExtractor.extractorVersion)
   })
 })
 

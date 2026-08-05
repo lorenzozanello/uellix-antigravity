@@ -73,6 +73,15 @@ export interface DocumentVersion {
   readonly normalizedContentHash: ContentHash
   /** Normalization contract version the normalized hash was produced under. */
   readonly normalizationVersion: string
+  /**
+   * Extraction contract version this version's text was extracted under (see
+   * `EXTRACTOR_VERSION` in ./core.ts). NOT part of `versionId`'s preimage —
+   * see {@link deriveVersionId} — so re-extracting identical bytes under a new
+   * extractor keeps the same version identity while this field changes,
+   * which is the signal a persistence layer needs to tell "same version,
+   * needs re-extraction" apart from "brand new version".
+   */
+  readonly extractorVersion: string
   /** 1-based position in this document's history, when the caller knows it. */
   readonly ordinal: number | null
   /** versionId of the version this one replaces, when the caller knows it. */

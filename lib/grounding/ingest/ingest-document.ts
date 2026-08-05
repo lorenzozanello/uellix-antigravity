@@ -18,6 +18,7 @@
 
 import { extractDocument, MAX_GROUNDING_INPUT_BYTES, type ExtractionResult } from '../extract'
 import {
+  EXTRACTOR_VERSION,
   NORMALIZATION_VERSION,
   assertValidScope,
   deriveVersionId,
@@ -153,6 +154,7 @@ export function ingestDocument(
     rawContentHash,
     normalizedContentHash,
     normalizationVersion: NORMALIZATION_VERSION,
+    extractorVersion: EXTRACTOR_VERSION,
     ordinal: options.previousVersion ? (options.previousVersion.ordinal ?? 0) + 1 : null,
     supersedes: options.previousVersion ? options.previousVersion.versionId : null,
   }

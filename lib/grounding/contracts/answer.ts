@@ -96,6 +96,23 @@ export interface AbstentionReason {
 // ---------------------------------------------------------------------------
 
 /**
+ * Which assertion sustains one side of a contradiction, and a
+ * content-addressed fingerprint of what it said.
+ *
+ * Two assertions can cite the very same chunk without disagreeing — that is
+ * ordinary corroboration — so "which chunks are cited" is never enough to
+ * tell two contradicting claims apart. `assertionHash` names WHAT was said
+ * (via {@link hashContent}, never the raw statement) so attribution never
+ * becomes a second place free-form prose is stored; `claimId` names WHICH
+ * claim said it, for a caller that already tracks claim identity.
+ */
+export interface ContradictionClaimAttribution {
+  readonly claimId: string
+  /** SHA-256 of the assertion's statement text. */
+  readonly assertionHash: ContentHash
+}
+
+/**
  * Two cited passages that cannot both be true.
  *
  * `resolution` is a single literal on purpose. Stella does not average two
@@ -104,12 +121,22 @@ export interface AbstentionReason {
  * one-member union means no future code path can quietly add a
  * 'resolved_automatically' state without editing this contract in a diff a
  * reviewer will see.
+ *
+ * `sideAClaim` / `sideBClaim` are OPTIONAL and additive (GR-CAP-002 follow-up,
+ * grounding train 3): a marker built by a caller that does not yet track
+ * per-claim attribution — including every marker constructed before this
+ * field existed — is still valid; it simply cannot answer "which claim said
+ * this" beyond the citations themselves. `sideA` / `sideB` keep their
+ * original shape so existing consumers (the PRODUCT citation adapter,
+ * INTEGRATION-001) are unaffected.
  */
 export interface ContradictionMarker {
   readonly id: string
   readonly summary: string
   readonly sideA: NonEmptyReadonlyArray<CitationReference>
   readonly sideB: NonEmptyReadonlyArray<CitationReference>
+  readonly sideAClaim?: ContradictionClaimAttribution | null
+  readonly sideBClaim?: ContradictionClaimAttribution | null
   readonly resolution: 'requires_human_resolution'
   readonly severity: 'warning'
 }

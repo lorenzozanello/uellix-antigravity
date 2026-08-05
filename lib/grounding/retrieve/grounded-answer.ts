@@ -18,6 +18,7 @@
 
 import {
   citationsOf,
+  hashContent,
   requireNonEmpty,
   toCitableChunkRecord,
   validateAnswerCitations,
@@ -27,6 +28,7 @@ import {
   type CitableChunkRecord,
   type CitationReference,
   type ContentHash,
+  type ContradictionClaimAttribution,
   type ContradictionMarker,
   type GroundedAnswerState,
   type GroundingAnswerState,
@@ -57,10 +59,24 @@ export interface DraftClaim {
   readonly inferenceBasis?: string
 }
 
+/**
+ * Which claim asserts one side of a draft contradiction, in the generator's
+ * own terms: an id it uses to refer to the claim, and the statement it made.
+ * Optional — a contradiction can still be reported without it, exactly as
+ * before this field existed; it just cannot be attributed to a specific
+ * claim beyond its citations.
+ */
+export interface DraftContradictionSide {
+  readonly claimId: string
+  readonly statement: string
+}
+
 export interface DraftContradiction {
   readonly summary: string
   readonly sideAChunkIds: readonly ContentHash[]
   readonly sideBChunkIds: readonly ContentHash[]
+  readonly sideAClaim?: DraftContradictionSide | null
+  readonly sideBClaim?: DraftContradictionSide | null
 }
 
 export interface AnswerDraft {
@@ -199,6 +215,8 @@ export function buildGroundedAnswer(
       summary: draftContradiction.summary,
       sideA: requireNonEmpty(sideA.citations, 'contradiction sideA'),
       sideB: requireNonEmpty(sideB.citations, 'contradiction sideB'),
+      sideAClaim: attributionOf(draftContradiction.sideAClaim),
+      sideBClaim: attributionOf(draftContradiction.sideBClaim),
       resolution: 'requires_human_resolution',
       severity: 'warning',
     })
@@ -355,6 +373,17 @@ function resolveCitations(
   return { citations, missing }
 }
 
+/**
+ * Turn a draft's claim reference into published attribution, or null when the
+ * draft did not supply one. `assertionHash` is computed here — never
+ * transported as-is from the draft — so a caller cannot forge a fingerprint
+ * for a statement it never asserted.
+ */
+function attributionOf(side: DraftContradictionSide | null | undefined): ContradictionClaimAttribution | null {
+  if (!side) return null
+  return { claimId: side.claimId, assertionHash: hashContent(side.statement) }
+}
+
 function toAssertion(claim: DraftClaim, citations: CitationReference[]): GroundingAssertion {
   switch (claim.kind) {
     // requireNonEmpty rather than a cast: the caller has already rejected
@@ -423,13 +452,26 @@ function abstentionFor(
       inspected,
     }
   }
-  if (claimsWereRejected) {
-    // Passages WERE retrieved; no claim rested on one. `inspected.total` shows
-    // the difference, and the explanation states it, because the code alone
-    // would read as "your evidence contains nothing about this".
+  // R6. `no_matching_evidence` covers two materially different situations, and
+  // the DISCRIMINATOR IS WHETHER PASSAGES WERE RETRIEVED — not whether claims
+  // were rejected. An empty draft over retrieved passages rejects nothing, yet
+  // the corpus is just as non-silent as when a claim was thrown out; keying on
+  // `claimsWereRejected` used to send that case to the "nothing indexed"
+  // wording while `inspected.total` said otherwise. Metadata and prose
+  // disagreeing is worse than either being vague, because prose is what the
+  // human reads.
+  //
+  // The code stays single (see __tests__/r6.test.ts for the decision and its
+  // cost/benefit): within `no_matching_evidence`, `inspected.total === 0` is
+  // "nothing was there" and `> 0` is "something was there and nothing got
+  // grounded", so the two are machine-separable without widening a union that
+  // other workstreams consume.
+  if (retrieval.candidates.length > 0) {
     return {
       code: 'no_matching_evidence',
-      explanation: `${retrieval.candidates.length} passage(s) were retrieved, but no claim could be grounded in one.`,
+      explanation: claimsWereRejected
+        ? `${retrieval.candidates.length} passage(s) were retrieved, but no claim could be grounded in one.`
+        : `${retrieval.candidates.length} passage(s) were retrieved, but the answer rested no claim on any of them.`,
       query: retrieval.query,
       inspected,
     }

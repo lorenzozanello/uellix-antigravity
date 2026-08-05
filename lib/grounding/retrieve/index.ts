@@ -43,6 +43,7 @@ export type {
   ClaimRejectionReason,
   DraftClaim,
   DraftContradiction,
+  DraftContradictionSide,
   GroundedOutcome,
   GroundedOutcomeKind,
   ProviderUnavailableOutcome,
