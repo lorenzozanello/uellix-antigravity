@@ -36,3 +36,16 @@ export {
   relevanceBucket,
 } from './calibration'
 export type { PresentedRelevance, RelevanceBucket } from './calibration'
+
+export { buildGroundedAnswer, providerUnavailableOutcome } from './grounded-answer'
+export type {
+  AnswerDraft,
+  ClaimRejectionReason,
+  DraftClaim,
+  DraftContradiction,
+  GroundedOutcome,
+  GroundedOutcomeKind,
+  ProviderUnavailableOutcome,
+  RejectedClaim,
+  RejectedContradiction,
+} from './grounded-answer'

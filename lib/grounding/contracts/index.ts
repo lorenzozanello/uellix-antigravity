@@ -76,13 +76,14 @@ export type {
   RetrievalStrategy,
 } from './retrieval'
 
-export { citationsOf, validateAnswerCitations } from './answer'
+export { citationsOf, toCitableChunkRecord, validateAnswerCitations } from './answer'
 export type {
   AbsenceAssertion,
   AbstainedAnswerState,
   AbstentionReason,
   AbstentionReasonCode,
   AnswerValidationIssue,
+  CitableChunkRecord,
   CitationReference,
   ContradictionMarker,
   EvidenceAssertion,
