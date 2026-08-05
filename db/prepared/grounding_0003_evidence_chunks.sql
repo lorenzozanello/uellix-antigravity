@@ -209,8 +209,14 @@ CREATE TABLE IF NOT EXISTS public.evidence_chunks (
   -- over the sealed file, not an audit trail. Losing it to a deletion loses
   -- nothing that cannot be rebuilt from Storage plus lib/grounding.
   evidence_id uuid NOT NULL REFERENCES public.evidence_items(id) ON DELETE CASCADE,
-  document_version_id uuid NOT NULL
-    REFERENCES public.evidence_document_versions(id) ON DELETE CASCADE,
+  -- TRAIN 3 HARDENING: no inline REFERENCES here on purpose. The FK is
+  -- declared as the table-level CONSTRAINT evidence_chunks_version_scope_fk
+  -- below, over this column PLUS every scope/provenance column, so "this
+  -- chunk's version exists" and "this chunk's scope and provenance agree with
+  -- that version" become ONE un-bypassable check instead of a plain FK for
+  -- existence plus an RLS RESTRICTIVE policy for consistency that the table
+  -- OWNER does not observe.
+  document_version_id uuid NOT NULL,
 
   -- The verification chain, carried on the row rather than reached by join.
   -- A join can be written wrong; a column cannot be forgotten.
@@ -300,7 +306,52 @@ CREATE TABLE IF NOT EXISTS public.evidence_chunks (
     CHECK (jsonb_typeof(signals) = 'array'),
   CONSTRAINT evidence_chunks_pipeline_version_check
     CHECK (normalization_version <> '' AND chunker_version <> '' AND injection_scanner_version <> ''
-           AND (embedding_provider_id IS NULL OR embedding_provider_id <> ''))
+           AND (embedding_provider_id IS NULL OR embedding_provider_id <> '')),
+
+  -- ============================================================
+  -- TRAIN 3 HARDENING (risks #1, #2, #5) — see the header note below section 2
+  -- for the full argument. Two composite foreign keys, both un-bypassable by
+  -- the table owner because FOREIGN KEY has no owner exemption (unlike RLS).
+  -- ============================================================
+
+  -- FK target: a chunk's own identity plus its full scope/provenance tuple.
+  -- Trivially unique — chunk_id alone is already UNIQUE — but PostgreSQL only
+  -- accepts a FK whose referenced side is backed by a UNIQUE/PK constraint
+  -- over EXACTLY the referencing column list.
+  CONSTRAINT evidence_chunks_identity_scope_unique
+    UNIQUE (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash),
+
+  -- "This chunk's version exists, and this chunk's scope and provenance agree
+  -- with it" — replaces what the RESTRICTIVE scope_consistency policy (section
+  -- 6) stated only for RLS-bound roles. ON DELETE CASCADE mirrors the rest of
+  -- this table's posture: a derived, regenerable index, unlike the version
+  -- history it points to.
+  CONSTRAINT evidence_chunks_version_scope_fk
+    FOREIGN KEY (document_version_id, organization_id, project_id, evidence_id, version_id,
+                 raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+    REFERENCES public.evidence_document_versions (id, organization_id, project_id, evidence_id, version_id,
+                 raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+    ON DELETE CASCADE,
+
+  -- The dedup relation's referential integrity. canonical_chunk_id must name a
+  -- chunk that EXISTS and shares this row's organization, project, evidence
+  -- item, document version AND content_hash — "the same passage, the same
+  -- document, the same tenant" — closing risk #1 (no FK existed at all: any
+  -- 64-hex string was accepted, canonical or not, in scope or out of it).
+  --
+  -- This does NOT by itself stop a chain (A -> B -> C) or a cycle (A -> B,
+  -- B -> A): a FK only proves the target row exists and matches scope, not
+  -- that the target is ITSELF canonical. That half of risk #2 is closed by
+  -- trg_evidence_chunks_canonical_integrity in section 7b, which requires the
+  -- target's OWN canonical_chunk_id to be NULL — so canonical_chunk_id can
+  -- only ever point one level deep, at a row nothing else points through, and
+  -- a chain or a cycle of any length becomes unrepresentable rather than
+  -- merely undetected. Self-reference (A -> A) is already excluded by
+  -- evidence_chunks_hash_shape_check's `canonical_chunk_id <> chunk_id`.
+  CONSTRAINT evidence_chunks_canonical_fk
+    FOREIGN KEY (canonical_chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)
+    REFERENCES public.evidence_chunks (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)
+    ON DELETE CASCADE
 );
 
 -- ============================================================
@@ -448,6 +499,59 @@ BEGIN
   ELSIF position('UNIQUE (document_version_id, chunk_index)' in def) = 0 THEN
     RAISE EXCEPTION
       'grounding_0003 aborted: constraint evidence_chunks_version_index_unique exists with an unexpected definition (%). Resolve manually — this script will not drop a uniqueness guarantee.',
+      def;
+  END IF;
+
+  -- --- TRAIN 3 HARDENING: the composite FK target, and the two composite FKs
+  --     themselves. CREATE TABLE IF NOT EXISTS is a no-op against a table that
+  --     already exists, so on a database where an earlier (pre-train-3)
+  --     evidence_chunks is already present, these three would otherwise never
+  --     be added. Same asymmetry as every UNIQUE above: added when missing,
+  --     the script aborts rather than silently replacing a stale definition.
+  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint
+  WHERE conrelid = 'public.evidence_chunks'::regclass
+    AND conname = 'evidence_chunks_identity_scope_unique';
+  IF def IS NULL THEN
+    ALTER TABLE public.evidence_chunks
+      ADD CONSTRAINT evidence_chunks_identity_scope_unique
+      UNIQUE (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash);
+  ELSIF position('UNIQUE (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)' in def) = 0 THEN
+    RAISE EXCEPTION
+      'grounding_0003 aborted: constraint evidence_chunks_identity_scope_unique exists with an unexpected definition (%). Resolve manually — this script will not drop a uniqueness guarantee.',
+      def;
+  END IF;
+
+  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint
+  WHERE conrelid = 'public.evidence_chunks'::regclass
+    AND conname = 'evidence_chunks_version_scope_fk';
+  IF def IS NULL THEN
+    ALTER TABLE public.evidence_chunks
+      ADD CONSTRAINT evidence_chunks_version_scope_fk
+      FOREIGN KEY (document_version_id, organization_id, project_id, evidence_id, version_id,
+                   raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+      REFERENCES public.evidence_document_versions (id, organization_id, project_id, evidence_id, version_id,
+                   raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+      ON DELETE CASCADE;
+  ELSIF position('REFERENCES evidence_document_versions(id, organization_id, project_id, evidence_id, version_id, raw_content_hash, normalized_content_hash, normalization_version, chunker_version)' in def) = 0
+     OR position('ON DELETE CASCADE' in def) = 0 THEN
+    RAISE EXCEPTION
+      'grounding_0003 aborted: constraint evidence_chunks_version_scope_fk exists with an unexpected definition (%). Resolve manually — this script will not drop a referential guarantee.',
+      def;
+  END IF;
+
+  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint
+  WHERE conrelid = 'public.evidence_chunks'::regclass
+    AND conname = 'evidence_chunks_canonical_fk';
+  IF def IS NULL THEN
+    ALTER TABLE public.evidence_chunks
+      ADD CONSTRAINT evidence_chunks_canonical_fk
+      FOREIGN KEY (canonical_chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)
+      REFERENCES public.evidence_chunks (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)
+      ON DELETE CASCADE;
+  ELSIF position('REFERENCES evidence_chunks(chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)' in def) = 0
+     OR position('ON DELETE CASCADE' in def) = 0 THEN
+    RAISE EXCEPTION
+      'grounding_0003 aborted: constraint evidence_chunks_canonical_fk exists with an unexpected definition (%). Resolve manually — this script will not drop a referential guarantee.',
       def;
   END IF;
 END $$;
@@ -632,6 +736,72 @@ COMMENT ON TRIGGER trg_evidence_chunks_no_update ON public.evidence_chunks IS
 COMMENT ON TRIGGER trg_evidence_chunks_no_truncate ON public.evidence_chunks IS
   'GR-001 (prepared grounding_0003): TRUNCATE is forbidden — it is a delete that no RLS policy governs and no row trigger can observe.';
 
+-- ============================================================
+-- 7b. Canonical-chunk acyclicity (TRAIN 3 HARDENING — risk #2)
+-- ============================================================
+-- evidence_chunks_canonical_fk (section 1) proves canonical_chunk_id names a
+-- row that EXISTS and shares this row's scope, evidence item, document
+-- version and content_hash. It does NOT prove that row is itself canonical —
+-- a FOREIGN KEY can compare column values, not another row's nullability — so
+-- a FK alone still permits a chain (A -> B -> C) or a cycle (A -> B, B -> A).
+--
+-- This trigger closes that: the target's OWN canonical_chunk_id must be NULL.
+-- Since canonical_chunk_id can then only ever point at a row nothing else
+-- points through, the relation is AT MOST ONE LEVEL DEEP by construction —
+-- which is a stronger statement than "no cycle of length 2": no chain of any
+-- length, and therefore no cycle of any length, is representable at all.
+-- Self-reference (A -> A) is excluded separately by
+-- evidence_chunks_hash_shape_check's `canonical_chunk_id <> chunk_id`.
+--
+-- AFTER, not BEFORE: it must observe the FINAL state of the row it looks up,
+-- and — together with insert_evidence_chunks' two-pass insert above — every
+-- canonical row a batch contributes is already committed within this
+-- transaction before any duplicate naming it is checked.
+CREATE OR REPLACE FUNCTION public.uellix_check_canonical_chunk()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_target_canonical char(64);
+BEGIN
+  IF NEW.canonical_chunk_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT ch.canonical_chunk_id INTO v_target_canonical
+  FROM public.evidence_chunks ch
+  WHERE ch.chunk_id = NEW.canonical_chunk_id;
+
+  -- Existence and scope agreement are already the job of
+  -- evidence_chunks_canonical_fk; NOT FOUND here would mean that FK did not
+  -- fire, which never happens for a real INSERT/UPDATE. Failing closed rather
+  -- than assuming it is cheap and correct either way.
+  IF NOT FOUND OR v_target_canonical IS NOT NULL THEN
+    RAISE EXCEPTION 'grounding: canonical_chunk_id must reference a canonical chunk (one whose own canonical_chunk_id is NULL) — chained or cyclic duplicate references are not representable'
+      USING ERRCODE = 'U0105';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_evidence_chunks_canonical_integrity ON public.evidence_chunks;
+CREATE TRIGGER trg_evidence_chunks_canonical_integrity
+  AFTER INSERT ON public.evidence_chunks
+  FOR EACH ROW EXECUTE FUNCTION public.uellix_check_canonical_chunk();
+
+COMMENT ON TRIGGER trg_evidence_chunks_canonical_integrity ON public.evidence_chunks IS
+  'GR-001 hardening (train 3, risk #2): canonical_chunk_id may only reference a chunk that is itself canonical, so a chain or a cycle of any length is unrepresentable rather than merely undetected.';
+
+-- TRAIN 3 HARDENING — risk #4, same reasoning as grounding_0002 §7b: a plain
+-- trigger's default tgenabled='O' does not fire under
+-- session_replication_role = replica. ENABLE ALWAYS fires in origin, local AND
+-- replica. Verified convergent under apply/rollback/reapply
+-- (scripts/grounding-dry-run.sh) — it does not survive a DROP TABLE.
+ALTER TABLE public.evidence_chunks ENABLE ALWAYS TRIGGER trg_evidence_chunks_no_update;
+ALTER TABLE public.evidence_chunks ENABLE ALWAYS TRIGGER trg_evidence_chunks_no_truncate;
+ALTER TABLE public.evidence_chunks ENABLE ALWAYS TRIGGER trg_evidence_chunks_canonical_integrity;
+
 COMMENT ON TABLE public.evidence_chunks IS
   'Anchored, provenance-carrying grounding index over evidence documents (GR-001, prepared grounding_0003; supersedes grounding_0001). Derived and regenerable from the sealed file plus lib/grounding; the file remains the source of truth. Rows are never UPDATEd. Managed outside the drizzle chain — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
 
@@ -669,10 +839,12 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_version public.evidence_document_versions%ROWTYPE;
-  v_scanner varchar(32);
-  v_bad     int;
-  v_inserted int;
+  v_version    public.evidence_document_versions%ROWTYPE;
+  v_scanner    varchar(32);
+  v_bad        int;
+  v_mismatched int;
+  v_inserted   int;
+  v_batch      int;
 BEGIN
   IF p_document_version_id IS NULL THEN
     RAISE EXCEPTION 'grounding: document version id is required' USING ERRCODE = 'U0100';
@@ -708,7 +880,12 @@ BEGIN
   -- Validate the whole payload BEFORE inserting any of it. A CHECK constraint
   -- would also reject these, but as a constraint-violation SQLSTATE the caller
   -- cannot tell a malformed payload from a genuine conflict — and the error
-  -- text would quote the offending value.
+  -- text would quote the offending value. chunk_id is still required and
+  -- format-checked here even though TRAIN 3 makes the STORED value
+  -- server-derived (below): requiring the caller to state one and comparing
+  -- it turns a caller-side bug (wrong version, stale content) into a loud
+  -- U0104 instead of a silent divergence from what lib/grounding computed and
+  -- already quoted in a citation.
   SELECT count(*) INTO v_bad
   FROM jsonb_array_elements(p_chunks) AS c
   WHERE (c ->> 'chunk_id') IS NULL
@@ -734,9 +911,51 @@ BEGIN
       USING ERRCODE = 'U0100';
   END IF;
 
-  -- Explicit column list on both sides. `SELECT *` over jsonb_to_recordset
-  -- would bind by position, so reordering the record definition would silently
-  -- write offsets into hash columns.
+  -- TRAIN 3 HARDENING (risk #3) — chunk_id is DERIVED here, never trusted from
+  -- the payload for storage. The formula is the contract's own —
+  -- lib/grounding/contracts/chunks.ts#deriveChunkId's preimage,
+  -- "grounding/chunk/v1\n<version_id>\n<chunk_index>\n<content_hash>",
+  -- SHA-256, lowercase hex — so a chunk_id a citation already quotes continues
+  -- to resolve to the row this function stores. Every row is inserted under
+  -- the SERVER-computed value below; the caller's chunk_id is used only to
+  -- VERIFY, never to write, so a caller cannot choose a colliding or
+  -- out-of-scope identity even by accident.
+  --
+  -- pg_catalog.sha256 is a builtin — no pgcrypto, so no reference to the
+  -- `extensions` schema from a function whose search_path is empty. Same
+  -- construction as db/prepared/stella_0006_invitation_capability.sql's token
+  -- hash. convert_to pins UTF8 so the digest cannot depend on client_encoding.
+  SELECT count(*) INTO v_mismatched
+  FROM jsonb_to_recordset(p_chunks) AS c(chunk_id char(64), chunk_index integer, content_hash char(64))
+  WHERE c.chunk_id IS DISTINCT FROM pg_catalog.encode(
+    pg_catalog.sha256(pg_catalog.convert_to(
+      'grounding/chunk/v1' || chr(10) || v_version.version_id || chr(10) || c.chunk_index::text || chr(10) || c.content_hash,
+      'UTF8')),
+    'hex');
+
+  IF v_mismatched > 0 THEN
+    RAISE EXCEPTION
+      'grounding: % chunk(s) carry a chunk_id that does not derive from (version_id, chunk_index, content_hash)', v_mismatched
+      USING ERRCODE = 'U0104';
+  END IF;
+
+  -- TRAIN 3 HARDENING (risk #2) — inserted in TWO passes, canonical chunks
+  -- first. trg_evidence_chunks_canonical_integrity (section 7b) requires a
+  -- duplicate's canonical_chunk_id to name a row that ALREADY has
+  -- canonical_chunk_id IS NULL, and a plain trigger (not a deferrable
+  -- CONSTRAINT TRIGGER) fires immediately as each row lands — so within a
+  -- SINGLE statement a duplicate could be physically inserted before the
+  -- canonical row it names, an ordering the JSON array does not promise. Two
+  -- statements in the same transaction remove the ambiguity: every canonical
+  -- row this batch contributes exists before any duplicate referencing it is
+  -- attempted. The two FOREIGN KEYs (evidence_chunks_version_scope_fk,
+  -- evidence_chunks_canonical_fk) have no such concern — PostgreSQL checks
+  -- FOREIGN KEY constraints at the end of each statement, not per row, so a
+  -- canonical inserted in pass 1 already satisfies a duplicate's FK in pass 2.
+  --
+  -- Explicit column list on both sides, in both passes. `SELECT *` over
+  -- jsonb_to_recordset would bind by position, so reordering the record
+  -- definition would silently write offsets into hash columns.
   INSERT INTO public.evidence_chunks (
     chunk_id, organization_id, project_id, evidence_id, document_version_id,
     version_id, raw_content_hash, normalized_content_hash,
@@ -746,7 +965,11 @@ BEGIN
     signals, canonical_chunk_id, embedding_provider_id
   )
   SELECT
-    c.chunk_id,
+    pg_catalog.encode(
+      pg_catalog.sha256(pg_catalog.convert_to(
+        'grounding/chunk/v1' || chr(10) || v_version.version_id || chr(10) || c.chunk_index::text || chr(10) || c.content_hash,
+        'UTF8')),
+      'hex'),
     v_version.organization_id,
     v_version.project_id,
     v_version.evidence_id,
@@ -780,9 +1003,64 @@ BEGIN
     canonical_chunk_id char(64),
     embedding_provider_id varchar(64)
   )
+  WHERE c.canonical_chunk_id IS NULL
   ON CONFLICT (chunk_id) DO NOTHING;
 
   GET DIAGNOSTICS v_inserted = ROW_COUNT;
+
+  INSERT INTO public.evidence_chunks (
+    chunk_id, organization_id, project_id, evidence_id, document_version_id,
+    version_id, raw_content_hash, normalized_content_hash,
+    chunk_index, content, content_hash, char_start, char_end,
+    page, section_index,
+    normalization_version, chunker_version, injection_scanner_version,
+    signals, canonical_chunk_id, embedding_provider_id
+  )
+  SELECT
+    pg_catalog.encode(
+      pg_catalog.sha256(pg_catalog.convert_to(
+        'grounding/chunk/v1' || chr(10) || v_version.version_id || chr(10) || c.chunk_index::text || chr(10) || c.content_hash,
+        'UTF8')),
+      'hex'),
+    v_version.organization_id,
+    v_version.project_id,
+    v_version.evidence_id,
+    v_version.id,
+    v_version.version_id,
+    v_version.raw_content_hash,
+    v_version.normalized_content_hash,
+    c.chunk_index,
+    c.content,
+    c.content_hash,
+    c.char_start,
+    c.char_end,
+    c.page,
+    c.section_index,
+    v_version.normalization_version,
+    v_version.chunker_version,
+    v_scanner,
+    coalesce(c.signals, '[]'::jsonb),
+    c.canonical_chunk_id,
+    c.embedding_provider_id
+  FROM jsonb_to_recordset(p_chunks) AS c(
+    chunk_id char(64),
+    chunk_index integer,
+    content text,
+    content_hash char(64),
+    char_start integer,
+    char_end integer,
+    page integer,
+    section_index integer,
+    signals jsonb,
+    canonical_chunk_id char(64),
+    embedding_provider_id varchar(64)
+  )
+  WHERE c.canonical_chunk_id IS NOT NULL
+  ON CONFLICT (chunk_id) DO NOTHING;
+
+  GET DIAGNOSTICS v_batch = ROW_COUNT;
+  v_inserted := v_inserted + v_batch;
+
   RETURN v_inserted;
 END;
 $$;
@@ -993,12 +1271,63 @@ BEGIN
     RAISE EXCEPTION 'grounding_0003 FAILED verification: % UPDATE policy(ies) present. A chunk is never rewritten in place', n;
   END IF;
 
-  -- (6) Both triggers, and nothing else.
+  -- (6) Both immutability triggers, bound to public.uellix_forbid_mutation.
   SELECT count(*) INTO n FROM pg_trigger t
   WHERE t.tgrelid = tbl_oid AND NOT t.tgisinternal
     AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')::oid;
   IF n <> 2 THEN
     RAISE EXCEPTION 'grounding_0003 FAILED verification: expected 2 triggers bound to public.uellix_forbid_mutation(), found %', n;
+  END IF;
+
+  -- (6b) TRAIN 3 HARDENING — risk #2. The canonical-acyclicity trigger, AFTER
+  --      INSERT, bound to the new function, distinct from the two
+  --      immutability triggers counted above.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = tbl_oid AND NOT t.tgisinternal
+      AND t.tgname = 'trg_evidence_chunks_canonical_integrity'
+      AND t.tgfoid = to_regprocedure('public.uellix_check_canonical_chunk()')::oid
+  ) THEN
+    RAISE EXCEPTION 'grounding_0003 FAILED verification: trg_evidence_chunks_canonical_integrity is missing or bound to the wrong function';
+  END IF;
+
+  SELECT count(*) INTO n FROM pg_trigger WHERE tgrelid = tbl_oid AND NOT tgisinternal;
+  IF n <> 3 THEN
+    RAISE EXCEPTION 'grounding_0003 FAILED verification: unexpected trigger count (total %, expected 3: 2 immutability + 1 canonical-acyclicity)', n;
+  END IF;
+
+  -- (6c) TRAIN 3 HARDENING — risk #4. Every trigger on this table must be
+  --      ENABLE ALWAYS (tgenabled='A'), or session_replication_role=replica
+  --      silently disables immutability and canonical-acyclicity alike.
+  SELECT count(*) INTO n FROM pg_trigger WHERE tgrelid = tbl_oid AND NOT tgisinternal AND tgenabled = 'A';
+  IF n <> 3 THEN
+    RAISE EXCEPTION 'grounding_0003 FAILED verification: % of 3 triggers are ENABLE ALWAYS (tgenabled=''A''); a plain-enabled trigger is skipped under session_replication_role=replica', n;
+  END IF;
+
+  -- (6d) TRAIN 3 HARDENING — risks #1 and #5. The two composite FOREIGN KEYs:
+  --      scope/provenance consistency against evidence_document_versions, and
+  --      canonical_chunk_id's existence + scope match against this table
+  --      itself. Both ON DELETE CASCADE, both un-bypassable by the owner.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint c
+    WHERE c.conrelid = tbl_oid AND c.contype = 'f'
+      AND c.conname = 'evidence_chunks_version_scope_fk'
+      AND c.confrelid = to_regclass('public.evidence_document_versions')
+      AND c.confdeltype = 'c'
+      AND array_length(c.conkey, 1) = 9
+  ) THEN
+    RAISE EXCEPTION 'grounding_0003 FAILED verification: evidence_chunks_version_scope_fk is missing, does not target evidence_document_versions, is not ON DELETE CASCADE, or does not cover all 9 scope/provenance columns';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint c
+    WHERE c.conrelid = tbl_oid AND c.contype = 'f'
+      AND c.conname = 'evidence_chunks_canonical_fk'
+      AND c.confrelid = tbl_oid
+      AND c.confdeltype = 'c'
+      AND array_length(c.conkey, 1) = 6
+  ) THEN
+    RAISE EXCEPTION 'grounding_0003 FAILED verification: evidence_chunks_canonical_fk is missing, is not self-referencing, is not ON DELETE CASCADE, or does not cover all 6 identity/scope/hash columns';
   END IF;
 
   -- (7) No write privilege outside the definer role, and nothing for PUBLIC.
@@ -1057,5 +1386,5 @@ BEGIN
     RAISE EXCEPTION 'grounding_0003 FAILED verification: uellix_cap_grounding has % member(s)', n;
   END IF;
 
-  RAISE NOTICE 'grounding_0003: verification passed — 23 columns with the six GR-001 provenance columns NOT NULL, superseded UNIQUE absent, deduplication index unique and predicated, RLS on with 4 policies and no UPDATE policy, 2 triggers, no write privilege outside uellix_cap_grounding, all functions SECURITY DEFINER with empty search_path, capability role with 0 members.';
+  RAISE NOTICE 'grounding_0003: verification passed — 23 columns with the six GR-001 provenance columns NOT NULL, superseded UNIQUE absent, deduplication index unique and predicated, RLS on with 4 policies and no UPDATE policy, 3 triggers (2 immutability + 1 canonical-acyclicity) all ENABLE ALWAYS, 2 composite FOREIGN KEYs (version-scope, canonical) both ON DELETE CASCADE, no write privilege outside uellix_cap_grounding, all functions SECURITY DEFINER with empty search_path, capability role with 0 members.';
 END $$;

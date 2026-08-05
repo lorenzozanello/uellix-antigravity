@@ -64,10 +64,18 @@ BEGIN
     EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.insert_evidence_chunks(uuid, jsonb)';
     EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.finalize_document_ingestion(uuid, integer)';
     EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.chunks_in_scope(uuid, uuid, uuid)';
-    -- Policies, indexes (including uq_evidence_chunks_version_content) and
-    -- triggers fall with the table. No IF EXISTS: existence was proven above,
-    -- in this same block.
+    -- Policies, indexes (including uq_evidence_chunks_version_content),
+    -- triggers and the two composite FOREIGN KEYs fall with the table. No IF
+    -- EXISTS: existence was proven above, in this same block.
     EXECUTE 'DROP TABLE public.evidence_chunks';
+    -- TRAIN 3 HARDENING. public.uellix_check_canonical_chunk() is a plain
+    -- (non-SECURITY-DEFINER) trigger function created BY this package, unlike
+    -- public.uellix_forbid_mutation() which is baseline and shared with other
+    -- immutable tables — that one is never dropped here. This one is
+    -- exclusive to evidence_chunks and has no other caller. Dropped AFTER the
+    -- table: trg_evidence_chunks_canonical_integrity depends on it, and
+    -- PostgreSQL refuses to drop a function a live trigger still references.
+    EXECUTE 'DROP FUNCTION IF EXISTS public.uellix_check_canonical_chunk()';
   END IF;
 
   -- The version history must survive. Asserted rather than assumed: a CASCADE
