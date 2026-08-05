@@ -118,17 +118,40 @@ requiere acción humana explícita.
 > rollback cambia la **tabla primero** y la secuencia después. Se descubrió
 > ejecutándolo, no revisándolo.
 
-### Train 4 — runtime local de grounding (`stella_0013`)
+### Train 4 — runtime local de grounding (`stella_0013`, `grounding_0004`)
 
-**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
-Cierra **INT-CAP-001**, la primera de las cinco solicitudes que la revisión
-adversarial del tren 3 dejó abiertas hacia esta línea
-(`docs/ops/contracts/CONTRACT_LEDGER.md`, respuesta en
-[`CAP-TRAIN4-001`](../../docs/ops/contracts/CAP-TRAIN4-001_grounded_query_quota_response.md)).
+**Estado: DISEÑO. Ninguno aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierran las cinco solicitudes que la revisión adversarial del tren 3 dejó
+abiertas hacia esta línea: **INT-CAP-001** … **INT-CAP-004** e **INT-GR-004**
+(`docs/ops/contracts/CONTRACT_LEDGER.md`, respuestas en
+[`CAP-TRAIN4-001`](../../docs/ops/contracts/CAP-TRAIN4-001_grounded_query_quota_response.md)
+y [`CAP-TRAIN4-002`](../../docs/ops/contracts/CAP-TRAIN4-002_grounding_scope_attestation_response.md)).
 
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
 |---|---|---|---|---|
 | `stella_0013_grounded_query_quota.sql` | `stella_0013_rollback.sql` | **ninguno todavía**; requiere el baseline de migraciones (0012, 0030, 0031) y `stella_0004` para los roles | **INT-CAP-001.** Rol `uellix_cap_stella_quota` (NOLOGIN, cero miembros); esquema `uellix_stella`; columna `stella_interactions.idempotency_key` + 2 CHECK + índice único **parcial** `uq_stella_interactions_idempotency`; CHECK `stella_interactions_stella_role_check` ampliado a **7** valores (añade `grounded_query`); policy `stella_interactions_quota_definer_insert`; `consume_stella_quota(uuid, uuid, varchar, char)` SECURITY DEFINER — comprueba y **consume** una unidad en la transacción del llamante, bajo lock de advisory por organización, idempotente por `(organization_id, idempotency_key)` | **DISEÑO — no aplicado** |
+| `grounding_0004_runtime_attestation.sql` | `grounding_0004_rollback.sql` | **ninguno todavía**; requiere `grounding_0002` y `grounding_0003` aplicados **en ese orden** | **INT-GR-004 + INT-CAP-002/003/004.** `chunks_in_scope_attested(uuid, uuid, uuid)` SECURITY DEFINER — mismas 13 columnas que `chunks_in_scope` **más** `organization_id`, `project_id`, `evidence_id`, `document_version_id` leídas **de la fila**; 3 CHECK nuevos sobre `evidence_chunks` (`content_hash` = `sha256(content)`; cota de span; derivación de `chunk_id`); `evidence_chunks_select` re-creada **sin** `authenticated` y `REVOKE SELECT ... FROM authenticated`; **y las dos policies de SELECT re-creadas para nombrar a `uellix_cap_grounding`** — sin ese rol, las seis funciones gobernadas leían el conjunto vacío | **DISEÑO — no aplicado** |
+
+> **Por qué `chunks_in_scope_attested` es una función NUEVA y no la misma con
+> dos columnas más.** `CREATE OR REPLACE FUNCTION` no puede cambiar el tipo de
+> retorno (`42P13`), y `grounding_0003` crea `chunks_in_scope` con esa misma
+> sentencia. Un paquete que la sustituyera por `DROP`+`CREATE` bajo el mismo
+> nombre haría que la cadena forward `0002 → 0003 → 0004` **abortara dentro de
+> 0003** al aplicarse por segunda vez, y la idempotencia de cadena es lo que
+> mide el dry-run. El precio es una ruta de lectura deprecada que sigue siendo
+> invocable hasta que el adaptador de repositorio se mueva; el precio de la
+> alternativa era una cadena que no se puede re-aplicar.
+
+> **El rol de capacidad no leía nada, y no lo dijo.** `uellix_cap_grounding`
+> tenía `SELECT` sobre las dos tablas de grounding y no estaba nombrado por
+> ninguna de las dos policies permisivas de SELECT. Sin `BYPASSRLS` y sin ser
+> dueño de ninguna, RLS se le aplicaba entera: `chunks_in_scope` devolvía 0
+> filas, `finalize_document_ingestion` declaraba toda ingestión incompleta, y
+> `register_document_version` nunca veía la versión anterior, así que la
+> **versión 2 de cualquier documento era inalmacenable**. Un GRANT ausente
+> lanza; una POLICY ausente calla. Se reparó **re-creando** las dos policies
+> bajo sus propios nombres, no añadiendo una quinta: `grounding_0002` §9 afirma
+> exactamente 3 policies y `grounding_0003` §9 exactamente 4.
 
 > **El rollback de `stella_0013` puede NEGARSE, y es correcto.** Estrechar el
 > CHECK a seis valores sobre un ledger que ya registró filas `grounded_query`
@@ -137,6 +160,14 @@ adversarial del tren 3 dejó abiertas hacia esta línea
 > pueden retirar para hacerle sitio a la constraint más estrecha. El script las
 > cuenta primero y explica, en vez de dejar que el operador lea una violación
 > de constraint cruda y adivine.
+
+> **El rollback de `grounding_0004` REABRE INT-CAP-002 y lo anuncia con
+> `RAISE WARNING`.** Volver al estado de `grounding_0003` significa devolver el
+> `GRANT SELECT` y el rol `authenticated` a la policy — y quitar
+> `uellix_cap_grounding` de las dos policies de lectura, con lo que las
+> funciones gobernadas vuelven a leer el conjunto vacío. Dejar la superficie
+> estrecha mientras se afirma un rollback limpio haría que la siguiente
+> comparación aplicar/revertir se leyera como convergente sin serlo.
 
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
