@@ -274,6 +274,15 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // write it. Creates nothing — two column ACLs. DESIGN ONLY.
       'stella_0012_rollback.sql',
       'stella_0012_super_admin_column_acl.sql',
+      // 0013 closes INT-CAP-001: `checkStellaQuota` counts rows of
+      // stella_interactions and the grounded-query action inserts none, so the
+      // capability enforces a monthly quota it cannot charge. It widens the
+      // stella_role CHECK to admit `grounded_query`, adds an idempotency key
+      // with a partial unique index behind it, and installs ONE governed
+      // SECURITY DEFINER function that checks and charges in the caller's
+      // transaction under a per-organization advisory lock. DESIGN ONLY.
+      'stella_0013_grounded_query_quota.sql',
+      'stella_0013_rollback.sql',
     ])
   })
 

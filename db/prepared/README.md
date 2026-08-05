@@ -118,6 +118,26 @@ requiere acción humana explícita.
 > rollback cambia la **tabla primero** y la secuencia después. Se descubrió
 > ejecutándolo, no revisándolo.
 
+### Train 4 — runtime local de grounding (`stella_0013`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra **INT-CAP-001**, la primera de las cinco solicitudes que la revisión
+adversarial del tren 3 dejó abiertas hacia esta línea
+(`docs/ops/contracts/CONTRACT_LEDGER.md`, respuesta en
+[`CAP-TRAIN4-001`](../../docs/ops/contracts/CAP-TRAIN4-001_grounded_query_quota_response.md)).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0013_grounded_query_quota.sql` | `stella_0013_rollback.sql` | **ninguno todavía**; requiere el baseline de migraciones (0012, 0030, 0031) y `stella_0004` para los roles | **INT-CAP-001.** Rol `uellix_cap_stella_quota` (NOLOGIN, cero miembros); esquema `uellix_stella`; columna `stella_interactions.idempotency_key` + 2 CHECK + índice único **parcial** `uq_stella_interactions_idempotency`; CHECK `stella_interactions_stella_role_check` ampliado a **7** valores (añade `grounded_query`); policy `stella_interactions_quota_definer_insert`; `consume_stella_quota(uuid, uuid, varchar, char)` SECURITY DEFINER — comprueba y **consume** una unidad en la transacción del llamante, bajo lock de advisory por organización, idempotente por `(organization_id, idempotency_key)` | **DISEÑO — no aplicado** |
+
+> **El rollback de `stella_0013` puede NEGARSE, y es correcto.** Estrechar el
+> CHECK a seis valores sobre un ledger que ya registró filas `grounded_query`
+> es imposible: `stella_interactions` es append-only para **todo** rol incluido
+> el dueño (`trg_stella_interactions_append_only`), así que las filas no se
+> pueden retirar para hacerle sitio a la constraint más estrecha. El script las
+> cuenta primero y explica, en vez de dejar que el operador lea una violación
+> de constraint cruda y adivine.
+
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad
