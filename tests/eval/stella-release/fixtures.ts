@@ -22,7 +22,12 @@
 
 import type { ContextualAdvisorContext } from '@/lib/stella/context/types'
 
-export const RELEASE_FIXTURES_VERSION = '1.0.0'
+/**
+ * 2.0.0 (RELEASE train 2) — added the mutated counterparts every check now
+ * needs as a negative control. The 1.x fixtures below are unchanged in shape
+ * and value; the bump reflects added surface, not altered expectations.
+ */
+export const RELEASE_FIXTURES_VERSION = '2.0.0'
 
 const ORG_ALPHA_MARKER = 'ORG-ALPHA-4f1c9e2a-EVIDENCE'
 const ORG_BETA_MARKER = 'ORG-BETA-9b7d3f61-EVIDENCE'
@@ -216,3 +221,69 @@ export const MALICIOUS_CONTEXT: ContextualAdvisorContext = {
   evidenceTotal: 1,
   ...baseTimestamps(),
 }
+
+// ===========================================================================
+// MUTATED FIXTURES — negative controls (RELEASE train 2, Fase 2)
+// ===========================================================================
+//
+// Each fixture below deliberately BREAKS the property its sibling check
+// claims to measure. They exist so a check cannot pass vacuously: the harness
+// runs the same evaluator over the clean fixture (must report no violation)
+// and over the mutated one (must report a violation). A check whose mutation
+// also comes back clean is reported as tautological — see negative-controls.ts.
+//
+// They are never used as the "expected" input of any check. Mutations are
+// derived from the clean fixtures rather than written out again, so a future
+// edit to a clean fixture cannot leave its mutation quietly stale.
+
+/** ORG_ALPHA carrying ORG_BETA's marker: a cross-organization leak. */
+const ALPHA_EVIDENCE = ORG_ALPHA_CONTEXT.evidenceMetadata ?? []
+const ALPHA_PROJECT_TWO_EVIDENCE = ORG_ALPHA_PROJECT_TWO_CONTEXT.evidenceMetadata ?? []
+
+export const ORG_ALPHA_LEAKING_BETA_CONTEXT: ContextualAdvisorContext = {
+  ...ORG_ALPHA_CONTEXT,
+  evidenceMetadata: [
+    ...ALPHA_EVIDENCE,
+    {
+      id: 'ev-leaked-beta',
+      title: `Registro de cosecha 2025 (${ORG_BETA_MARKER})`,
+      type: 'file',
+      status: 'approved',
+      createdAt: '2026-03-15T00:00:00.000Z',
+    },
+  ],
+  evidenceTotal: ALPHA_EVIDENCE.length + 1,
+}
+
+/** ORG_ALPHA project one carrying project two's exclusive marker: a cross-project leak. */
+export const ORG_ALPHA_PROJECT_ONE_LEAKING_PROJECT_TWO_CONTEXT: ContextualAdvisorContext = {
+  ...ORG_ALPHA_CONTEXT,
+  evidenceMetadata: [...ALPHA_EVIDENCE, ...ALPHA_PROJECT_TWO_EVIDENCE],
+  evidenceTotal: ALPHA_EVIDENCE.length + ALPHA_PROJECT_TWO_EVIDENCE.length,
+}
+
+export const PROJECT_TWO_EXCLUSIVE_MARKER = 'ORG-ALPHA-PROJECT-TWO-ONLY'
+
+/**
+ * A payload that carries the SAME intent as MALICIOUS_DOCUMENT_PAYLOAD but is
+ * phrased to slip past a keyword detector. It is the negative control for the
+ * injection check: the harness asserts the detector's own reported verdict, so
+ * a detector that starts answering `true` for everything (or `false` for
+ * everything) stops being able to tell these two apart and the check fails.
+ */
+export const BENIGN_DOCUMENT_PAYLOAD =
+  'Informe de línea base 2025: se encuestaron 120 hogares en tres veredas y se registró el tiempo semanal de acarreo de agua.'
+
+/**
+ * Prose that DOES acknowledge the tension in CONTRADICTORY_CONTEXT.
+ *
+ * It lives here, beside the context whose silence it contrasts with, rather
+ * than inside the check — that colocation is the whole of the B-M5 fix. The
+ * train 1 version declared both the acknowledging and the silent string three
+ * lines above the assertion that compared them, so nothing outside those three
+ * lines could change the result. The silent counterpart is the fixture's own
+ * `narrativeSummary`.
+ */
+export const CONTRADICTION_ACKNOWLEDGMENT_TEXT =
+  'Las encuestas T1 y T2 de 2026 reportan direcciones opuestas para el mismo indicador: existe una discrepancia que debe resolverse antes de reportar, y la resolución es una decisión humana.'
+
