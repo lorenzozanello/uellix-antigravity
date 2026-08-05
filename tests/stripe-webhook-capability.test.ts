@@ -34,6 +34,8 @@ import path from 'node:path'
 import {
   CAPABILITY_OUTCOMES,
   CAPABILITY_SQLSTATE,
+  CAPABILITY_UNAVAILABLE_REASONS,
+  capabilityUnavailable,
   STRIPE_EVENT_DISPOSITIONS,
   STRIPE_FAILURE_CODES,
   type CapabilityOutcome,
@@ -177,6 +179,68 @@ describe('2. the capability stays disabled', () => {
     expect(result.disposition).toBe('unavailable')
     expect(result.httpStatus).toBe(503)
     expect(result.retryable).toBe(true)
+  })
+
+  // --- A-F2 closure --------------------------------------------------------
+  // The finding: CT-CAP-001 held two definitions of retryability for
+  // `unavailable`, and the only reason exercised anywhere was
+  // `database_identity_unavailable` — the single one where both agree. So the
+  // divergent case, and the only reason reachable in production today, had no
+  // test at all.
+  //
+  // These pin BOTH answers for `feature_flag_disabled`. They are not asserting
+  // that the two agree; they assert that they differ, deliberately, and in
+  // which direction — so collapsing them later has to be an explicit act with a
+  // failing test in front of it.
+  describe('A-F2 — the two retryability questions, for the reason where they differ', () => {
+    it('the capability-level answer for a disabled flag is NOT retryable', () => {
+      // Nothing retried without a deploy will change this.
+      const generic = capabilityUnavailable('CAP-03', 'feature_flag_disabled')
+      expect(generic.outcome).toBe('unavailable')
+      expect(generic.reason).toBe('feature_flag_disabled')
+      expect(generic.retryable).toBe(false)
+      expect(isRetryableCapabilityResult(generic)).toBe(false)
+    })
+
+    it('the transport answer for the same reason is still a retryable 503', () => {
+      // Stripe abandons delivery after a 2xx or a 4xx, and an abandoned
+      // delivery is a subscription change that never lands. A redelivered one
+      // merely arrives after the flag is on.
+      const wire = stripeCapabilityUnavailable('evt_1', 'feature_flag_disabled')
+      expect(wire.disposition).toBe('unavailable')
+      expect(wire.unavailableReason).toBe('feature_flag_disabled')
+      expect(wire.httpStatus).toBe(503)
+      expect(wire.retryable).toBe(true)
+    })
+
+    it('they agree on every other reason, so the divergence is the flag and only the flag', () => {
+      for (const reason of CAPABILITY_UNAVAILABLE_REASONS) {
+        if (reason === 'feature_flag_disabled') continue
+        expect(capabilityUnavailable('CAP-03', reason).retryable, reason).toBe(true)
+        expect(stripeCapabilityUnavailable('evt_1', reason).retryable, reason).toBe(true)
+      }
+    })
+
+    it('the generic constructor is actually reachable from the CAP-03 path', () => {
+      // The finding's aggravating factor was that `capabilityUnavailable` had
+      // ZERO call sites in the tree, so the rule it states was documentation
+      // with nothing behind it. It is now called by stripeCapabilityUnavailable
+      // — which is also what validates the reason through one function.
+      const source = readFileSync(
+        path.resolve(process.cwd(), 'lib', 'capabilities', 'stripe-webhook.ts'),
+        'utf8',
+      )
+      expect(source).toMatch(/capabilityUnavailable\('CAP-03', reason\)/)
+    })
+
+    it('the route no longer claims the rule is stated in a single place', () => {
+      const route = readFileSync(
+        path.resolve(process.cwd(), 'app', 'api', 'webhooks', 'stripe', 'route.ts'),
+        'utf8',
+      )
+      expect(route).not.toMatch(/stated in\s*\n?\/\/ one place and cannot drift/)
+      expect(route).toMatch(/A-F2/)
+    })
   })
 })
 

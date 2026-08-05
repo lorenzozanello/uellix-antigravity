@@ -1,6 +1,41 @@
 -- db/prepared/grounding_0001_evidence_chunks.sql
 -- WS5 (document grounding): evidence_chunks table + org-scoped RLS.
 --
+-- ############################################################################
+-- ##  SUPERSEDED BY db/prepared/grounding_0003_evidence_chunks.sql          ##
+-- ##  DO NOT APPLY THIS SCRIPT.                                            ##
+-- ############################################################################
+--
+-- Superseded 2026-08-04 by the CAPABILITIES train-2 resolution of contracts
+-- GR-001 and GR-002 (docs/ops/contracts/GR-CAP-001_grounding_persistence_response.md).
+-- It has never been applied to any database, so nothing needs migrating.
+--
+-- The file is kept BYTE-IDENTICAL below this banner, and not deleted, for two
+-- reasons: the G2 grounding addendum's evidence refers to it by name, and
+-- lib/grounding/__tests__/prepared-sql.test.ts (owned by the GROUNDING line)
+-- pins its contents. Only comments were added.
+--
+-- Three defects, none of which an additive follow-up script could repair:
+--
+--   1. `UNIQUE (evidence_id, chunk_index)` scopes uniqueness to the EVIDENCE
+--      ITEM. Under GR-002's version history, version 2 of a document collides
+--      with version 1 on chunk_index 0, so a second version is unstorable. The
+--      correct scope is (document_version_id, chunk_index) — and §2 of this
+--      script deliberately refuses to drop a uniqueness guarantee, which is
+--      right and is exactly why the repair has to be a new package.
+--   2. The shape guard in §0c ABORTS when columns are missing. That is correct
+--      behaviour, and it means GR-001's six provenance columns cannot be added
+--      by an ALTER without editing this guard too — at which point the file is
+--      a different package wearing this one's number and gate evidence.
+--   3. It couples to the undecided G5 P3 decision (pgvector vs. lexical), while
+--      GR-001 §4 places vector work outside the request. grounding_0003 is
+--      pgvector-free, so persisting provenance no longer waits on a retrieval
+--      decision it does not depend on.
+--
+-- If this script was already applied somewhere, run grounding_0001_rollback.sql
+-- BEFORE grounding_0003; that package's shape guard detects the legacy
+-- constraint and says so by name.
+--
 -- PREPARED ONLY — NOT A MIGRATION. This file lives in db/prepared/ (never in
 -- db/migrations/, where drizzle-kit would apply it). Application to any
 -- database is the external gate G2, executed manually by Lorenzo following

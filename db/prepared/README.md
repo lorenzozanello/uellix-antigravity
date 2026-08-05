@@ -96,8 +96,9 @@ requiere acción humana explícita.
 | `stella_0002_interactions_hardening.sql` | `stella_0002_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`) | trigger `trg_stella_interactions_append_only`; grants de `stella_interactions`; CHECK `stella_interactions_stella_role_check` | PREPARADO |
 | `stella_0002b_append_only_truncate_hardening.sql` | `stella_0002b_rollback.sql` (**no reversible**) | G2 (`docs/ops/gates/G2_PACKAGE.md`) | 4 triggers `*_no_truncate` (`BEFORE TRUNCATE FOR EACH STATEMENT`) sobre `stella_interactions`, `audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y además `UPDATE/DELETE` a `service_role` | PREPARADO |
 | `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + `REVOKE ALL` a los 3 roles + grant SELECT a `authenticated` + RLS + política `stella_suggestion_decisions_select` + 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO |
-| `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | PREPARADO |
+| `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | **SUPERSEDIDO por `grounding_0003` — NO APLICAR.** Nunca aplicado en ninguna base; se conserva byte a byte bajo su banner (ver «Disposición de `grounding_0001`») |
 | `grounding_0002_document_versions.sql` | `grounding_0002_rollback.sql` | **ninguno todavía**; requiere `stella_0004` aplicado (roles) y decisión de integración sobre GR-002 | rol `uellix_cap_grounding` (NOLOGIN, cero miembros); esquema `uellix_grounding`; **tabla `evidence_document_versions`** (14 columnas) + 2 índices + 3 UNIQUE + 5 CHECK + 3 policies (1 SELECT, 1 INSERT `TO uellix_cap_grounding`, 1 `RESTRICTIVE`) + 2 triggers append-only + `register_document_version(...)` y `claim_active_document_version(uuid)` SECURITY DEFINER | **DISEÑO — no aplicado** |
+| `grounding_0003_evidence_chunks.sql` | `grounding_0003_rollback.sql` | **ninguno todavía**; requiere `grounding_0002` aplicado **primero** | **tabla `evidence_chunks`** en la forma GR-001 (23 columnas) + 3 índices + 1 índice único **parcial** de deduplicación + 2 UNIQUE + 7 CHECK + 4 policies (1 SELECT, 1 INSERT, 1 DELETE, 1 `RESTRICTIVE`) + 2 triggers (`no_update`, `no_truncate`) + `insert_evidence_chunks(uuid, jsonb)`, `finalize_document_ingestion(uuid, integer)` y `chunks_in_scope(uuid, uuid, uuid)` SECURITY DEFINER. **Sin pgvector** | **DISEÑO — no aplicado** |
 | `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | 5 roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`); ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y `service_role` en las 38; repara `pg_default_acl` de `postgres` y `supabase_admin`; 4 entradas **globales** que suprimen `EXECUTE`/`USAGE` a `PUBLIC`; `USAGE ON SCHEMA auth` para el owner | PREPARADO — ensayado y aplicado **sólo en local** |
 | `stella_0005_runtime_cutover.sql` | `stella_0005_rollback.sql` | **local únicamente**; se aplica con `pnpm db:prepared:apply:local`, que conecta como `uellix_migrator` y hace `SET LOCAL ROLE uellix_owner`. El script **se niega** a correr con cualquier otra identidad, incluido un superusuario | 3 políticas `INSERT` (`audit_logs`, `stella_interactions`, `stella_suggestion_decisions`) → **104 → 107**; `search_path=''` en las 3 funciones SECURITY DEFINER que aún estaban en `search_path=public`; 4 entradas de `pg_default_acl` para `uellix_owner` en `public` (SELECT+INSERT a `uellix_writer`, SELECT a `uellix_auditor`; **nunca** UPDATE/DELETE) | PREPARADO — ensayado en contenedor efímero y aplicado **sólo en local** |
 | `stella_0005b_admin_bootstrap.sql` | `stella_0005b_rollback.sql` | **local únicamente**; requiere **superusuario** (en local, `supabase_admin`) y se aplica **antes** de `stella_0005` | `ALTER ROLE ... SET` (search_path, statement/lock/idle timeouts) para los 3 roles LOGIN; ownership del esquema `drizzle` y de `__drizzle_migrations` → `uellix_owner` + `USAGE` para `uellix_migrator`. Sobre el default de TYPES de `postgres` en `public`: el script lo **documenta y verifica**, pero **NO ejecuta un `REVOKE USAGE ON TYPES` efectivo** — un `REVOKE` solo no almacena nada en `pg_default_acl` y la fila que un `GRANT` previo guardaría **nunca se consulta** (ver el propio script, secciones "DELIBERATELY NOT CHANGED", y `docs/ops/DATABASE_RUNTIME_CUTOVER.md`). La contención real de TYPES son las 2 entradas **globales** de `stella_0004` para `uellix_owner`/`uellix_migrator` | PREPARADO — aplicado **sólo en local** |
@@ -210,6 +211,74 @@ capacidades se aplique— `report_public_disclosures`,
 `capability_verification_hits`, `stripe_webhook_events` y
 `capability_bootstrap_attempts`. Consecuencia aceptada:
 `pnpm db:migrate:local` sobre una base limpia **no** las reproduce.
+
+## Disposición de `grounding_0001` (2026-08-04)
+
+`grounding_0001_evidence_chunks.sql` queda **supersedido** por
+`grounding_0003_evidence_chunks.sql` al resolverse los contratos
+[GR-001](../../docs/ops/contracts/GR-001_evidence_chunks_provenance.md) y
+[GR-002](../../docs/ops/contracts/GR-002_document_version_history.md). Respuesta
+completa en
+[`GR-CAP-001`](../../docs/ops/contracts/GR-CAP-001_grounding_persistence_response.md).
+
+**No fue una ampliación porque no podía serlo.** Tres razones, en orden de peso:
+
+1. `UNIQUE (evidence_id, chunk_index)` no está incompleta: es **incompatible**
+   con GR-002. Con historia de versiones, la versión 2 de un documento colisiona
+   con la 1 en `chunk_index = 0`, así que la segunda versión es inalmacenable.
+   El alcance correcto es `(document_version_id, chunk_index)` — y la §2 del
+   propio script se niega, con razón, a soltar una garantía de unicidad.
+2. Su guarda de forma **aborta** ante columnas faltantes. Es el comportamiento
+   correcto, y por eso las seis columnas de GR-001 §2 no pueden añadirse con un
+   `ALTER` en un script posterior sin editar también la guarda: en ese momento
+   el archivo es otro paquete llevando este número y su evidencia de gate.
+3. Acopla a la decisión **G5 P3** (pgvector vs. léxico), que sigue sin tomarse,
+   mientras GR-001 §4 deja el trabajo vectorial **fuera** de la solicitud.
+   `grounding_0003` no usa pgvector — `SET search_path = public` a secas, sin
+   extensión y sin tipo `vector` — de modo que persistir provenance ya no espera
+   a una decisión de retrieval de la que no depende. La columna
+   `embedding vector(N)` llega de forma aditiva en su propio paquete bajo G5 P3;
+   `embedding_provider_id` viaja **ya** en `grounding_0003` para que ese paquete
+   pueda añadir el vector y su invariante de emparejamiento a la vez.
+
+El archivo **se conserva byte a byte** bajo un banner de comentario: la evidencia
+del addendum G2 lo referencia por nombre y
+`lib/grounding/__tests__/prepared-sql.test.ts` —propiedad de la línea
+GROUNDING— fija su contenido. Sólo se añadieron comentarios; esa suite entrega
+**27 passed** con el banner puesto.
+
+**Si alguien lo aplicó**, `grounding_0001_rollback.sql` va **antes** de
+`grounding_0003`: la guarda de forma de ese paquete detecta la constraint
+heredada y lo dice por nombre en vez de reportar un desajuste genérico.
+
+### Orden de aplicación y de reversión
+
+| Sentido | Orden |
+|---|---|
+| Forward | `stella_0004` (roles) → `grounding_0002` → `grounding_0003` |
+| Rollback | `grounding_0003` → `grounding_0002` |
+
+`grounding_0002_rollback` **se niega** a correr mientras `evidence_chunks`
+mantenga su clave foránea, y `grounding_0003_rollback` **aborta** si al terminar
+`evidence_document_versions` ya no existe: la cadena de custodia no puede
+desaparecer por un `CASCADE` que alguien añada al `DROP`.
+
+**Asimetría deliberada de los dos rollbacks.** El de `grounding_0002` exige
+`SET grounding.rollback_confirm = 'true'` de sesión cuando la tabla tiene filas
+—la historia de versiones **no** es regenerable desde Storage— y rechaza la
+autorización persistida vía `ALTER DATABASE/ROLE`. El de `grounding_0003` **no
+pide confirmación**: cada fila es reproducible desde el archivo sellado y
+`lib/grounding` en las versiones de pipeline que la propia fila registra, y un
+prompt aquí entrenaría al operador a teclear la misma confirmación en el sitio
+donde sí se pierde evidencia.
+
+**Desviación deliberada de tipos — no "arreglar":**
+`stella_suggestion_decisions.decided_at` es `timestamptz`, mientras el resto de
+`db/schema.ts` (incluido `stella_interactions.created_at`) usa `timestamp` sin
+zona. `timestamptz` es la elección correcta para un audit trail; la
+inconsistencia es un argumento para migrar el resto del esquema más adelante,
+**no** para degradar esta columna. La app nunca escribe `decided_at` (tiene
+DEFAULT), así que el tipo es indiferente para el código.
 
 ## Notas por script
 

@@ -962,13 +962,37 @@ describe('capability campaign — no capability is enabled by this design', () =
       // if one of these files tried.
       path.join('lib', 'capabilities', 'contracts.ts'),
       path.join('lib', 'capabilities', 'stripe-webhook.ts'),
+      // THE WRAPPER ITSELF (adversarial finding A-F9). It is the one file that
+      // may name these functions in code, and until now it was not merely
+      // allowed — it was OUT OF SCAN. The loop below walked `lib` and `app`,
+      // and all three literal `uellix_capability.stripe_*` invocations live in
+      // `db/`, so a FOURTH invocation added anywhere under db/ would not have
+      // broken the invariant this test's own comment declares.
+      path.join('db', 'capabilities', 'stripe-capability-executor.ts'),
     ])
 
-    for (const dir of ['lib', 'app']) {
+    // `db` is scanned, not assumed. The whole claim is "only the wrapper issues
+    // these calls", and a scan that cannot see the directory the wrapper lives
+    // in cannot make it.
+    for (const dir of ['lib', 'app', 'db']) {
       const root = path.join(process.cwd(), dir)
       const hits = grepTree(root, /uellix_capability\./).filter((f) => !ALLOWED.has(f))
       expect(hits, `${dir}/ references uellix_capability outside the wrapper`).toEqual([])
     }
+
+    // ...and the wrapper is the file that actually contains them, so the
+    // allow-list entry above is not excusing an empty file. Without this, the
+    // scan would still pass on the day the executor was emptied or renamed —
+    // which is the same blind spot A-F9 named, one level in.
+    const wrapper = readFileSync(
+      path.join(process.cwd(), 'db', 'capabilities', 'stripe-capability-executor.ts'),
+      'utf8',
+    )
+    expect([...wrapper.matchAll(/uellix_capability\.stripe_\w+/g)].map((m) => m[0]).sort()).toEqual([
+      'uellix_capability.stripe_apply_subscription',
+      'uellix_capability.stripe_begin_event',
+      'uellix_capability.stripe_fail_event',
+    ])
 
     // …and in the two services the reference must be PROSE, never a statement.
     // Stripping comments is the difference between "documents the boundary" and

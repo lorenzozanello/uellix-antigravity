@@ -64,8 +64,18 @@ const WEBHOOK_DATABASE_IDENTITY_AVAILABLE = false
 const resolveStripePlan = stripePlanResolverFrom(mapStripePriceToQuota, mapStripePriceToLabel)
 
 // The refusal, as a typed value rather than a literal 503 written twice. The
-// status comes from the contract, so "unavailable is retryable" is stated in
-// one place and cannot drift between the two branches that use it.
+// status comes from the contract, so the two branches below cannot answer
+// differently.
+//
+// CORRECTED (adversarial finding A-F2): the previous wording claimed the rule
+// "is stated in one place and cannot drift". It is stated in TWO, because there
+// are two questions. `capabilityUnavailable` in lib/capabilities/contracts.ts
+// answers whether retrying can succeed without a deploy — for
+// `feature_flag_disabled`, no. THIS path answers what to tell Stripe, and that
+// is 503 for every reason, because Stripe abandons delivery after a 2xx or a
+// 4xx. The difference is a decision, documented on both functions and pinned by
+// tests/stripe-webhook-capability.test.ts; what was wrong was the claim that no
+// second rule existed.
 function refuseUnavailable(
   event: Stripe.Event,
   reason: 'feature_flag_disabled' | 'database_identity_unavailable'
