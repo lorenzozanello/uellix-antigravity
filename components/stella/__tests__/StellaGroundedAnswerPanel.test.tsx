@@ -13,6 +13,7 @@ import {
   REPORT_TEXT,
   abstainedAnswerView,
   contradictedAnswerView,
+  sameChunkContradictionAnswerView,
   groundedAnswerView,
   partiallyGroundedAnswerView,
   unresolvedAnswerView,
@@ -193,5 +194,59 @@ describe('StellaGroundedAnswerPanel — accessibility', () => {
     for (const icon of icons) {
       expect(icon).toHaveAttribute('aria-hidden', 'true')
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// TRAIN 3 — contradiction attribution on screen (finding A-M, integration)
+// ---------------------------------------------------------------------------
+
+describe('StellaGroundedAnswerPanel — contradiction attribution', () => {
+  it('names the claim behind each side when the marker attributes them', () => {
+    render(<StellaGroundedAnswerPanel answer={sameChunkContradictionAnswerView()} />)
+
+    const sideA = screen.getByTestId('stella-contradiction-contra-shared-side-A-claim')
+    const sideB = screen.getByTestId('stella-contradiction-contra-shared-side-B-claim')
+
+    expect(sideA).toHaveAttribute('data-attributed', 'true')
+    expect(sideB).toHaveAttribute('data-attributed', 'true')
+    expect(sideA).toHaveAttribute('data-claim-id', 'claim-a')
+    expect(sideB).toHaveAttribute('data-claim-id', 'claim-b')
+  })
+
+  it('keeps the two sides distinguishable even though BOTH cite the same chunk', () => {
+    render(<StellaGroundedAnswerPanel answer={sameChunkContradictionAnswerView()} />)
+
+    const a = screen.getByTestId('stella-contradiction-contra-shared-side-A-claim')
+    const b = screen.getByTestId('stella-contradiction-contra-shared-side-B-claim')
+
+    // This is the premise of A-M: identical citations.
+    const view = sameChunkContradictionAnswerView()
+    expect(view.contradictions[0].sideA[0].chunkId).toBe(view.contradictions[0].sideB[0].chunkId)
+
+    // And the screen still tells them apart.
+    expect(a.getAttribute('data-claim-id')).not.toBe(b.getAttribute('data-claim-id'))
+    expect(a.getAttribute('data-assertion-hash')).not.toBe(b.getAttribute('data-assertion-hash'))
+  })
+
+  it('DEGRADES EXPLICITLY for a historical marker with no attribution — it says so, it does not guess', () => {
+    render(<StellaGroundedAnswerPanel answer={contradictedAnswerView()} />)
+
+    const sideA = screen.getByTestId('stella-contradiction-contra-1-side-A-unattributed')
+    expect(sideA).toHaveAttribute('data-attributed', 'false')
+    expect(sideA).toHaveTextContent(/Sin atribución de afirmación/)
+
+    // No attributed row was rendered for either side.
+    expect(screen.queryByTestId('stella-contradiction-contra-1-side-A-claim')).toBeNull()
+    expect(screen.queryByTestId('stella-contradiction-contra-1-side-B-claim')).toBeNull()
+  })
+
+  it('the full assertion hash stays in the DOM even though the label truncates it', () => {
+    // Same discipline as `excerpt` truncation never touching `quotedTextHash`.
+    render(<StellaGroundedAnswerPanel answer={sameChunkContradictionAnswerView()} />)
+    const view = sameChunkContradictionAnswerView()
+    const sideA = screen.getByTestId('stella-contradiction-contra-shared-side-A-claim')
+    expect(sideA).toHaveAttribute('data-assertion-hash', view.contradictions[0].sideAClaim!.assertionHash)
+    expect(sideA.getAttribute('data-assertion-hash')).toHaveLength(64)
   })
 })

@@ -175,24 +175,30 @@ describe('GR-002 — version history', () => {
     }
   })
 
-  it('carries an extractor version, which the TypeScript contract does not yet publish', () => {
+  it('carries an extractor version, and the TypeScript contract now publishes exactly one (GR-CAP-002, closed in train 3)', () => {
     // versionId = hash(evidenceId, rawContentHash) — the extractor is NOT in
     // that preimage. So a change of extractor produces a different
     // normalized_content_hash under the SAME version_id, and without this
     // column the re-ingestion is indistinguishable from a replay.
     expect(VERSIONS).toMatch(/^\s*extractor_version varchar\(32\) NOT NULL,/m)
 
-    // The corresponding constant does not exist in lib/grounding yet. Pinned so
-    // that publishing one is a visible act rather than a quiet divergence — and
-    // so this assertion fails, loudly, on the day it appears.
+    // TRAIN 3 INVERSION. This assertion was a tripwire pinning the ABSENCE of
+    // the constant, so that publishing one would be a visible act rather than
+    // a quiet divergence. GROUNDING published it; the pin is inverted, not
+    // dropped — it now states the satisfied contract, and still fails if the
+    // constant disappears or if a SECOND, divergent one is introduced.
     const core = read('lib', 'grounding', 'contracts', 'core.ts')
     expect(core).toMatch(/export const NORMALIZATION_VERSION/)
     expect(core).toMatch(/export const CHUNKER_VERSION/)
     expect(core).toMatch(/export const INJECTION_SCANNER_VERSION/)
+    expect(core).toMatch(/export const EXTRACTOR_VERSION = 'extract-1' as const/)
     expect(
-      core,
-      'lib/grounding now publishes an EXTRACTOR_VERSION: update the GR-CAP-001 response and drop this pin',
-    ).not.toMatch(/export const EXTRACTOR_VERSION/)
+      core.match(/export const EXTRACTOR_VERSION/g) ?? [],
+      'EXTRACTOR_VERSION must be declared exactly once in lib/grounding/contracts/core.ts',
+    ).toHaveLength(1)
+
+    // And it must be storable in the column above: varchar(32), non-empty.
+    expect('extract-1'.length).toBeLessThanOrEqual(32)
   })
 })
 
@@ -206,16 +212,42 @@ describe('the schema and lib/grounding describe the same pipeline', () => {
     const published = [...core.matchAll(/export const (\w+_VERSION) = '([\w-]+)'/g)].map((m) => m[1])
     expect(published.length).toBeGreaterThan(0)
 
-    const columnFor: Record<string, string> = {
-      NORMALIZATION_VERSION: 'normalization_version',
-      CHUNKER_VERSION: 'chunker_version',
-      INJECTION_SCANNER_VERSION: 'injection_scanner_version',
+    // TRAIN 3: the mapping now names the TABLE as well as the column.
+    // `EXTRACTOR_VERSION` is the first published version that does NOT land in
+    // `evidence_chunks` — extraction happens once per document version, not
+    // once per chunk, so `evidence_document_versions` is the only table where
+    // it is meaningful. Before this, "every version constant is a column of
+    // evidence_chunks" was true by coincidence, and the coincidence is exactly
+    // what a fourth constant would have broken silently.
+    const landingFor: Record<string, { table: string; column: string }> = {
+      NORMALIZATION_VERSION: { table: 'evidence_chunks', column: 'normalization_version' },
+      CHUNKER_VERSION: { table: 'evidence_chunks', column: 'chunker_version' },
+      INJECTION_SCANNER_VERSION: { table: 'evidence_chunks', column: 'injection_scanner_version' },
+      EXTRACTOR_VERSION: { table: 'evidence_document_versions', column: 'extractor_version' },
     }
+    const sourceFor: Record<string, string> = {
+      evidence_chunks: CHUNKS,
+      evidence_document_versions: VERSIONS,
+    }
+
     for (const constant of published) {
-      const column = columnFor[constant]
-      expect(column, `lib/grounding publishes ${constant} and no column is mapped to it`).toBeDefined()
-      expect(CHUNKS, `${column} is missing`).toMatch(new RegExp(`^\\s*${column} varchar\\(32\\) NOT NULL,`, 'm'))
+      const landing = landingFor[constant]
+      expect(landing, `lib/grounding publishes ${constant} and no column is mapped to it`).toBeDefined()
+      expect(
+        sourceFor[landing.table],
+        `${landing.table}.${landing.column} is missing`,
+      ).toMatch(new RegExp(`^\\s*${landing.column} varchar\\(32\\) NOT NULL,`, 'm'))
     }
+  })
+
+  it('extractor_version lands on the VERSION row, not on the chunk row — and that asymmetry is deliberate', () => {
+    // A chunk carries the versions of everything that shaped ITS text
+    // (normalization, chunking, injection scanning). Extraction produced the
+    // document text those three then operated on, once, so it belongs to the
+    // version. Storing it per chunk would let one version's chunks disagree
+    // about which extractor produced the document they came from.
+    expect(VERSIONS).toMatch(/^\s*extractor_version varchar\(32\) NOT NULL,/m)
+    expect(CHUNKS).not.toMatch(/^\s*extractor_version\s/m)
   })
 
   it('the hash width matches CONTENT_HASH_HEX_LENGTH', () => {

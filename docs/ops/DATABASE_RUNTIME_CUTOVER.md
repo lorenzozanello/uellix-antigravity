@@ -376,15 +376,16 @@ Dos capas, en el mismo archivo (`tests/database-runtime-entrypoints.test.ts`):
 
 | | |
 |---|---|
-| Entry points inventariados (`app/**`) | 117 |
-| Alcanzan `db/client.ts` (grafo de imports transitivo) | 93 |
-| Abren contexto de identidad | 80 |
+| Entry points inventariados (`app/**`) | 118 |
+| Alcanzan `db/client.ts` (grafo de imports transitivo) | 94 |
+| Abren contexto de identidad | 81 |
 | En allowlist documentada | 13 |
 
 > Cifra corregida en el cierre de reauditoría (2026-08-02): el inventario de la
 > capa regex es **117**, no 110 — un test que sólo comprobaba `> 40` dejó
 > derivar el número publicado. Ahora `tests/database-runtime-entrypoints.test.ts`
-> fija los cuatro valores exactos (117/93/80/13) y falla si cualquiera cambia
+> fija los cuatro valores exactos (118/94/81/13 tras el tren 3 de Stella, que
+> añadió `app/actions/stella/grounded-query.ts`) y falla si cualquiera cambia
 > sin actualizar esta tabla.
 
 Reconstruye el grafo de imports —resolviendo `@/`, relativos, re-exports y
@@ -412,9 +413,9 @@ protegido si está **dentro del argumento** de un opener aprobado.
 
 | | |
 |---|---|
-| Módulos servidor verificados (`app/**` + `components/**`) | 117 |
-| Alcanzan la base (raíz = `db/client.ts` **o** import de driver) | 95 |
-| Contextualizados | 82 |
+| Módulos servidor verificados (`app/**` + `components/**`) | 119 |
+| Alcanzan la base (raíz = `db/client.ts` **o** import de driver) | 97 |
+| Contextualizados | 84 |
 | En allowlist documentada (la misma de la capa regex) | 13 |
 | Sin guardia | 0 |
 
@@ -530,7 +531,7 @@ dejó 2 BLOCKER y 5 MAJOR. Cierre, con evidencia local:
 | Hallazgo | Cierre |
 |---|---|
 | B1 — `OutcomeAllocationWrapper` consultaba fuera del contexto de la página y desaparecía en silencio | Funders cargados dentro del `runWithOrganizationAccess` de `outcomes/page.tsx` (transacción cerrada antes del render), pasados por props; estado vacío explícito. La forma antigua vive como fixture mutante y hace fallar el escáner |
-| B2 — el escáner no veía JSX de servidor ni 10 formas indirectas | Capa AST por export con grafo de imports (§7, "Cobertura medida"): 117 módulos, 95 alcanzan la base, 0 sin guardia, inventario versionado + 10 fixtures |
+| B2 — el escáner no veía JSX de servidor ni 10 formas indirectas | Capa AST por export con grafo de imports (§7, "Cobertura medida"): 119 módulos, 97 alcanzan la base, 0 sin guardia, inventario versionado + 10 fixtures |
 | M1 — policies INSERT `TO PUBLIC` + grants viejos | `stella_0005c` (arriba, §5) |
 | M2 — `_guard.ts` leía `DATABASE_URL` y la integración era inejecutable | Guard y setup resuelven `UELLIX_RUNTIME_DATABASE_URL` (rol verificado, loopback:56322, sin fallback); fixtures por la ruta owner (`tests/integration/_owner.ts`); **49/49 en verde** en el stack local. Colateral: `stella_0005d` repara las funciones SECURITY DEFINER de Storage que `stella_0004` dejó sin `USAGE` sobre `storage` — todo upload de evidencia fallaba y nada lo medía |
 | M3 — cifras y afirmaciones inconsistentes | Este documento, el risk register, `db/prepared/README.md`, los paquetes G2/G3 y el test ledger reconciliados con las cifras medidas |

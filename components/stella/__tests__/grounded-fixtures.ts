@@ -288,3 +288,39 @@ export function unresolvedAnswerView(): GroundedAnswerView {
   }
   return adaptGroundedAnswer(state, inputFor([]))
 }
+
+/**
+ * TRAIN 3 — a contradiction where BOTH sides cite the SAME chunk, and the
+ * marker attributes each side to a distinct claim.
+ *
+ * The hard case for finding A-M: identical citations, so nothing derivable
+ * from `sideA`/`sideB` can tell the two claims apart. Only the attribution
+ * can, which is what the panel must render.
+ */
+export function sameChunkContradictionAnswerView(): GroundedAnswerView {
+  const report = makeChunk(REPORT_TEXT)
+  const state: GroundedAnswerState = {
+    status: 'grounded',
+    query: QUERY,
+    assertions: [
+      { kind: 'evidence', statement: '1.240 beneficiarios.', citations: [citationFor(report)] },
+      { kind: 'evidence', statement: '890 beneficiarios.', citations: [citationFor(report)] },
+    ],
+    abstention: null,
+    contradictions: [
+      {
+        id: 'contra-shared',
+        summary: 'Dos afirmaciones leen el mismo pasaje de forma incompatible.',
+        sideA: [citationFor(report)] as [CitationReference],
+        sideB: [citationFor(report)] as [CitationReference],
+        sideAClaim: { claimId: 'claim-a', assertionHash: hashContent('1.240 beneficiarios.') },
+        sideBClaim: { claimId: 'claim-b', assertionHash: hashContent('890 beneficiarios.') },
+        resolution: 'requires_human_resolution',
+        severity: 'warning',
+      },
+    ],
+    signals: [],
+    requiresHumanReview: true,
+  }
+  return adaptGroundedAnswer(state, inputFor([report]))
+}

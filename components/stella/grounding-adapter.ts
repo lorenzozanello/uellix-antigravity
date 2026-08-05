@@ -57,6 +57,7 @@ import type {
   ChunkLocation,
   CitationReference,
   ContentHash,
+  ContradictionClaimAttribution,
   ContradictionMarker,
   GroundingAnswerState,
   GroundingAssertion,
@@ -189,11 +190,51 @@ export interface GroundedCitationView {
   readonly relevance: RelevanceAssessment | null
 }
 
+/**
+ * Which assertion sustains one side of a contradiction.
+ *
+ * INTEGRATION, TRAIN 3. Train 2 closed with finding A-M open: `sideA`/`sideB`
+ * are `CitationReference[]`, and two assertions that cite the same chunk
+ * produce the SAME `CitationReference`, so citations alone could never tell
+ * two contradicting claims apart. GROUNDING answered it by adding
+ * `ContradictionClaimAttribution` to the marker; this view carries it through
+ * unchanged.
+ *
+ * BOTH FIELDS COME FROM THE MARKER AND NOWHERE ELSE. There is deliberately no
+ * attempt to match a side back to a `GroundedClaimView`:
+ *
+ *   - by ORDER — "sideA is claims[0]" — is an invention;
+ *   - by TEXT — re-hashing a claim's statement and comparing `assertionHash`
+ *     — is the text coincidence the contract forbids, and would need
+ *     `hashContent`, a RUNTIME import that would drag `node:crypto` into the
+ *     client bundle (see the purity note in this file's header);
+ *   - by CITATIONS — is precisely the defect A-M describes.
+ *
+ * `claimId` is the generator's own identifier for the claim; it is NOT
+ * `GroundedClaimView.key` (`${kind}-${index}`, a presentation-local index) and
+ * must never be rendered as if it were. `assertionHash` is derived in
+ * GROUNDING from the statement text via `hashContent` — never transported
+ * from a model — so two assertions over the same chunk differ here even when
+ * every citation they carry is identical.
+ */
+export interface GroundedContradictionClaimView {
+  readonly claimId: string
+  readonly assertionHash: string
+}
+
 export interface GroundedContradictionView {
   readonly id: string
   readonly summary: string
   readonly sideA: readonly GroundedCitationView[]
   readonly sideB: readonly GroundedCitationView[]
+  /**
+   * `null` when the marker carries no attribution — which is the case for
+   * every marker built before GROUNDING train 3, and for any generator that
+   * does not track per-claim identity. The UI states that absence explicitly
+   * rather than filling it in; see StellaGroundedAnswerPanel.
+   */
+  readonly sideAClaim: GroundedContradictionClaimView | null
+  readonly sideBClaim: GroundedContradictionClaimView | null
   readonly resolution: 'requires_human_resolution'
   readonly severity: 'warning'
 }
@@ -431,9 +472,24 @@ export function adaptContradiction(
     summary: marker.summary,
     sideA: marker.sideA.map((citation) => adaptCitation(citation, input)),
     sideB: marker.sideB.map((citation) => adaptCitation(citation, input)),
+    sideAClaim: adaptContradictionClaim(marker.sideAClaim),
+    sideBClaim: adaptContradictionClaim(marker.sideBClaim),
     resolution: marker.resolution,
     severity: marker.severity,
   }
+}
+
+/**
+ * Carry attribution through, or state its absence. `undefined` (a marker from
+ * before the field existed) and `null` (a generator that tracks no claim
+ * identity) are the same fact for presentation — "this side is not attributed"
+ * — and both become `null` so the UI has one case to handle, not two.
+ */
+function adaptContradictionClaim(
+  attribution: ContradictionClaimAttribution | null | undefined,
+): GroundedContradictionClaimView | null {
+  if (!attribution) return null
+  return { claimId: attribution.claimId, assertionHash: attribution.assertionHash }
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 {
   "description": "Versioned inventory of every checked server module that can reach the database, classified by tests/database-runtime-entrypoints.test.ts (AST scanner section). A new database-reaching module must be added here DELIBERATELY after wiring its identity context (or allowlisting it with a reason in the test).",
-  "checkedModules": 117,
-  "databaseReaching": 95,
+  "checkedModules": 119,
+  "databaseReaching": 97,
   "modules": {
     "app/(public)/login/actions.ts": "allowlisted",
     "app/(public)/login/page.tsx": "allowlisted",
@@ -14,6 +14,7 @@
     "app/actions/stella/advisor.ts": "contextualized",
     "app/actions/stella/composer.ts": "contextualized",
     "app/actions/stella/decisions.ts": "contextualized",
+    "app/actions/stella/grounded-query.ts": "contextualized",
     "app/actions/stella/reviewer.ts": "contextualized",
     "app/actions/stella/validator.ts": "contextualized",
     "app/actions/taxonomy.ts": "contextualized",
@@ -47,6 +48,7 @@
     "app/app/portfolios/new/page.tsx": "contextualized",
     "app/app/portfolios/page.tsx": "contextualized",
     "app/app/projects/[projectId]/page.tsx": "contextualized",
+    "app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/calculateSroiRun.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/compare/page.tsx": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/funderAllocation.actions.ts": "contextualized",

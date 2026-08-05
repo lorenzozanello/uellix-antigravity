@@ -835,3 +835,99 @@ prohibida ni `INTEGRATION-OWNED` fue modificada.
    hay acción obligatoria; el adaptador sigue compilando y funcionando sin
    leerlos. Si la UI quiere mostrar «qué afirmación sostiene cada lado», el dato
    está en `sideAClaim` / `sideBClaim`.
+
+## Integración — tren 3 (2026-08-05)
+
+`4d59348..65c6c2c`, merge `--no-ff`. Dos commits declarados, nada más.
+
+### GR-CAP-002 — cerrado
+
+`EXTRACTOR_VERSION = 'extract-1'`, declarado **una sola vez** en
+`lib/grounding/contracts/core.ts`, presente en `PIPELINE_VERSIONS`,
+transportado por `DocumentVersion.extractorVersion` y estampado por
+`ingestDocument`. Cabe en `extractor_version varchar(32) NOT NULL` y satisface
+la restricción de no-vacío del paquete de CAPABILITIES.
+
+Corresponde al primer contrato observable del extractor (los MIME types que
+`extract.ts` lee y cómo), y un cambio futuro de ese comportamiento exige
+versión nueva: `contracts.test.ts` fija que dos `DocumentVersion` idénticos
+salvo `extractorVersion` no son el mismo estado de pipeline. `versionId` no
+incluye al extractor en su preimagen, que es exactamente el hueco que la
+columna cierra.
+
+Los **dos test-trampa** que fijaban su ausencia
+(`tests/grounding-persistence-contract.test.ts`,
+`tests/cross-workstream/capabilities-to-grounding.test.ts`) se **invirtieron,
+no se borraron**: ahora afirman el contrato satisfecho y siguen fallando si la
+constante desaparece o si aparece una segunda divergente.
+
+### Contradicciones atribuidas
+
+Verificado en el árbol integrado:
+
+- `ContradictionClaimAttribution` = `{ claimId, assertionHash }`, opcional y
+  aditivo — un marcador anterior sigue siendo válido;
+- `assertionHash` se **deriva en el sistema** (`hashContent` dentro de
+  `buildGroundedAnswer`); un hash enviado por el modelo nunca se almacena;
+- `CitationReference[]` conservan su forma en `sideA` / `sideB`;
+- `requires_human_resolution` sigue siendo unión de un solo miembro;
+- dos afirmaciones que citan **el mismo chunk** siguen siendo distinguibles:
+  `claimId` y `assertionHash` difieren aunque toda `CitationReference` sea
+  idéntica. Probado explícitamente en `grounding-to-product.test.ts` §6 y en
+  `StellaGroundedAnswerPanel.test.tsx`.
+
+### Orquestador
+
+- scope exacto obligatorio (`assertValidScope` primero);
+- repository **inyectado**, envuelto en `enforceRepositoryScope`;
+- **cero imports desde `db/`** en todo `lib/grounding/` — verificado;
+- retrieval scoped, citas validadas;
+- `provider_unavailable` separado de falta de evidencia;
+- errores de scope (`GroundingScopeViolationError`,
+  `RepositoryContractViolationError`) **rethrow**, no degradan;
+- errores operativos degradan según contrato;
+- cero proveedor externo.
+
+### R6 — un solo código, conservado
+
+`no_matching_evidence` sigue siendo único, y **la metadata distingue de forma
+inequívoca** los dos casos: dentro de ese código, `inspected.total === 0` es
+«no había nada indexado» y `> 0` es «había pasajes y ninguna afirmación quedó
+fundamentada». El defecto real era la **prosa**, que contradecía a
+`inspected.total`; se corrigió el texto, no el contrato. La unión no se
+ensanchó porque la consumen otras líneas.
+
+### R7 — piso de dos fuentes, provisional
+
+Se conserva `DEFAULT_MIN_DISTINCT_SOURCES: 2` **provisionalmente**, con los
+seis escenarios de `r7.test.ts` probando el comportamiento. **No se declara
+calibración óptima**: no existe conjunto etiquetado. Los seis casos quedan como
+referencia fija para la próxima pasada de calibración.
+
+### R8 — vocabulario canónico en la frontera
+
+**Decisión de integración:** en la frontera del server action el vocabulario
+canónico es **`GroundingOrchestrationClassification`** (6 miembros).
+`GroundedOutcomeKind` (5) es la decisión del constructor de respuestas y **no
+se lee** en esa frontera — leer ambos sería el comienzo de un tercer
+vocabulario, y no se creó ninguno.
+
+El mapeo es **uno solo**: `CLASSIFICATION_IS_ANSWERABLE`, un
+`Record<GroundingOrchestrationClassification, boolean>` en
+`app/actions/stella/grounded-query.ts`, exhaustivo por construcción (tsc
+rechaza una clave faltante). Product no aprende ninguno de los dos: recibe
+`StellaGroundedQueryResult`, cuyo éxito lleva `GroundedAnswerView.status` y
+cuyo error lleva la taxonomía de 12 códigos ya existente. Fijado por prueba en
+`runtime-grounded-query.test.ts` §6.
+
+### Contratos abiertos hacia esta línea
+
+- **INT-GR-001** — se pide una función `STABLE` sin lock para resolver la
+  versión activa en scope; hoy la única gobernada
+  (`claim_active_document_version`) toma `FOR UPDATE` sobre la fila de
+  evidencia, que es correcto para ingesta y caro para lectura.
+- **INT-GR-002** — A-F1 sigue abierto: `validateAnswerCitations` compara sólo
+  `organizationId`. El tren 3 **no lo cierra**; lo compensa declarando
+  `project_id` explícitamente en el adaptador y una segunda vez dentro de
+  `chunks_in_scope`, porque la policy RLS de `evidence_document_versions` es
+  org-scoped y no project-scoped.

@@ -346,6 +346,29 @@ export function StellaGroundedQueryPanel({
                   )}
                 </div>
               )}
+
+              {/* INTEGRATION, TRAIN 3. `decisionStatus` flips to "Aceptada" /
+                  "Rechazada" the moment the button is pressed, and
+                  StellaGroundedAnswerPanel paints that badge exactly as it does
+                  for flows whose decisions ARE written by recordStellaDecision.
+                  With no `onDecision` wired, nothing receives the record and it
+                  dies on unmount — so the badge alone would tell a reviewer
+                  their decision was filed when it was not.
+
+                  There is no canonical decision key for a grounded answer yet
+                  (contract INT-PR-001: recordStellaDecision keys on
+                  `suggestionKey`, and a grounded answer is not a suggestion),
+                  so the honest thing is to SAY SO rather than to hide the
+                  affordance or to invent a key. */}
+              {hasDecision && onDecision === undefined && (
+                <p
+                  role="note"
+                  data-testid="stella-grounded-query-decision-not-persisted"
+                  className="mt-2 text-xs text-muted-foreground"
+                >
+                  Esta decisión no se guardó: queda sólo en esta sesión y se pierde al recargar.
+                </p>
+              )}
             </div>
           </div>
         )}

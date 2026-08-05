@@ -22,7 +22,7 @@ import {
   evaluateGroundingGates,
   type Sources,
 } from '@/tests/helpers/grounding-gates'
-import { PIPELINE_VERSIONS } from '@/lib/grounding/contracts'
+import { EXTRACTOR_VERSION, PIPELINE_VERSIONS } from '@/lib/grounding/contracts'
 
 const PREPARED = path.join(process.cwd(), 'db/prepared')
 
@@ -189,20 +189,34 @@ describe('CAPABILITIES → GROUNDING: extractor_version has an explicit contract
     expect(line).toMatch(/NOT NULL/)
   })
 
-  it('GROUNDING publishes no EXTRACTOR_VERSION yet — recorded as an open contract, not as an invented value', () => {
-    // INTEGRATION DECISION (train 2): this stays PENDING and is registered in
-    // the ledger as GR-CAP-002. Integration did not publish the constant itself,
-    // for three reasons: `lib/grounding/**` belongs to GROUNDING; choosing a
-    // string like 'extract-1' would be inventing a governed value in silence;
-    // and `tests/grounding-persistence-contract.test.ts` pins its ABSENCE as a
-    // tripwire, so adding it here would break a CAPABILITIES-owned test to
-    // satisfy a column nothing writes yet.
+  it('GR-CAP-002 is CLOSED: GROUNDING publishes exactly one EXTRACTOR_VERSION, and it is the one the pipeline reports', () => {
+    // INTEGRATION DECISION (train 2) was to keep this PENDING and register it
+    // as GR-CAP-002 rather than invent 'extract-1' from the integration branch:
+    // `lib/grounding/**` belongs to GROUNDING, and a governed value chosen in
+    // silence is exactly what the ledger exists to prevent.
     //
-    // The day GROUNDING publishes it, THIS test fails too — which is the
-    // intended signal to close the contract rather than to delete the test.
-    expect(PIPELINE_VERSIONS).not.toHaveProperty('extractor')
+    // TRAIN 3: GROUNDING published it (`extract-1`, contracts/core.ts). The
+    // tripwire is INVERTED rather than deleted — the same assertion, now
+    // stating the contract is satisfied, so a later edit that removes the
+    // constant, forgets it in PIPELINE_VERSIONS, or introduces a SECOND
+    // divergent one still fails here.
+    expect(EXTRACTOR_VERSION).toBe('extract-1')
+    expect(PIPELINE_VERSIONS).toHaveProperty('extractor')
+    expect(PIPELINE_VERSIONS.extractor).toBe(EXTRACTOR_VERSION)
+
     const core = readFileSync(path.join(process.cwd(), 'lib/grounding/contracts/core.ts'), 'utf8')
-    expect(core).not.toMatch(/export const EXTRACTOR_VERSION/)
+    const declarations = core.match(/export const EXTRACTOR_VERSION/g) ?? []
+    expect(declarations, 'EXTRACTOR_VERSION must be declared exactly once').toHaveLength(1)
+  })
+
+  it('the published EXTRACTOR_VERSION satisfies the SQL column CAPABILITIES declared for it', () => {
+    // varchar(32) NOT NULL, plus evidence_document_versions_pipeline_version_check's
+    // `extractor_version <> ''`. A constant that cannot be stored is not a
+    // closed contract — it is a compile-time-only agreement.
+    expect(VERSIONS_TABLE).toMatch(/^\s*extractor_version varchar\(32\) NOT NULL,/m)
+    expect(VERSIONS_SQL).toMatch(/extractor_version <> ''/)
+    expect(EXTRACTOR_VERSION.length).toBeGreaterThan(0)
+    expect(EXTRACTOR_VERSION.length).toBeLessThanOrEqual(32)
   })
 
   it('the gap it closes is real: version_id does not cover the extractor', () => {
@@ -244,5 +258,76 @@ describe('CAPABILITIES → GROUNDING: the superseded package', () => {
 
   it('the replacement detects the legacy constraint by name if the old script was ever applied', () => {
     expect(CHUNKS_SQL).toMatch(/evidence_chunks_evidence_id_chunk_index_key|grounding_0001/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 5. chunk_id derivation (train 3) — the SQL formula and the TS formula
+// ---------------------------------------------------------------------------
+//
+// CAPABILITIES made `insert_evidence_chunks` DERIVE `chunk_id` server-side
+// instead of trusting the payload (risk #3). That closes a forgery, and it
+// opens a new failure the two lines cannot see from inside themselves: if the
+// SQL preimage and `deriveChunkId`'s preimage ever differ by one character, a
+// citation quoting an id computed in TypeScript resolves to nothing in a
+// table whose rows were computed in SQL — silently, with no error anywhere.
+
+describe('CAPABILITIES → GROUNDING: chunk_id is derived from the SAME preimage on both sides', () => {
+  const CHUNKS_SQL = SOURCES['grounding_0003_evidence_chunks.sql']
+
+  it('the SQL derivation uses the contract preimage, component by component', () => {
+    // 'grounding/chunk/v1' || chr(10) || version_id || chr(10) || chunk_index || chr(10) || content_hash
+    expect(CHUNKS_SQL).toContain("'grounding/chunk/v1' || chr(10) || v_version.version_id || chr(10) || c.chunk_index::text || chr(10) || c.content_hash")
+  })
+
+  it('it is SHA-256, lowercase hex, over UTF-8 — matching hashContent', () => {
+    expect(CHUNKS_SQL).toMatch(/pg_catalog\.sha256\(pg_catalog\.convert_to\(/)
+    expect(CHUNKS_SQL).toMatch(/'UTF8'\)\),\s*\n?\s*'hex'\)/)
+    // pgcrypto is deliberately NOT used: the function's search_path is empty,
+    // so a reference to the `extensions` schema would not resolve.
+    expect(CHUNKS_SQL).not.toMatch(/\bdigest\s*\(/)
+  })
+
+  it('the TypeScript side builds exactly that preimage', () => {
+    const chunks = readFileSync(path.join(process.cwd(), 'lib/grounding/contracts/chunks.ts'), 'utf8')
+    // `\\n` on purpose: this asserts on the SOURCE TEXT, where the separator
+    // is the two characters backslash-n inside a template literal, not a
+    // newline. Matching an actual newline here would pass against a file that
+    // wrapped the expression across lines and said nothing about the preimage.
+    expect(chunks).toContain('`grounding/chunk/v1\\n${versionId}\\n${chunkIndex}\\n${contentHash}`')
+  })
+
+  it('the STORED value is the derived one — the payload chunk_id is only VERIFIED', () => {
+    // Both insert passes must select the computed expression, never c.chunk_id.
+    const inserts = CHUNKS_SQL.split('INSERT INTO public.evidence_chunks (').slice(1)
+    expect(inserts.length).toBeGreaterThanOrEqual(2)
+    for (const block of inserts) {
+      const selectList = block.slice(block.indexOf('SELECT'), block.indexOf('FROM jsonb_to_recordset'))
+      expect(selectList).toContain('pg_catalog.sha256')
+      expect(selectList).not.toMatch(/^\s*c\.chunk_id,/m)
+    }
+    // And a mismatch is loud, not silent.
+    expect(CHUNKS_SQL).toContain('U0104')
+  })
+
+  it('canonical_chunk_id can only point at a chunk in the SAME scope, and only one level deep', () => {
+    // The FK proves existence + scope; the trigger proves the target is itself
+    // canonical, which is what makes chains — and therefore cycles of any
+    // length — unrepresentable rather than merely undetected.
+    expect(CHUNKS_SQL).toMatch(/CONSTRAINT evidence_chunks_canonical_fk[\s\S]*?FOREIGN KEY \(canonical_chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash\)/)
+    expect(CHUNKS_SQL).toMatch(/v_target_canonical IS NOT NULL/)
+    expect(CHUNKS_SQL).toContain('U0105')
+    // Self-reference is excluded separately, by a CHECK.
+    expect(CHUNKS_SQL).toMatch(/canonical_chunk_id <> chunk_id/)
+  })
+
+  it('every trigger on both grounding tables is ENABLE ALWAYS', () => {
+    // tgenabled='O' does not fire under session_replication_role = replica.
+    const versions = SOURCES['grounding_0002_document_versions.sql']
+    for (const source of [versions, CHUNKS_SQL]) {
+      const always = source.match(/ENABLE ALWAYS TRIGGER/g) ?? []
+      expect(always.length).toBe(3)
+      expect(source).toMatch(/tgenabled = 'A'/)
+    }
   })
 })

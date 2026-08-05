@@ -19,7 +19,12 @@ import { AlertTriangle, GitCompareArrows, Info, ShieldQuestion } from 'lucide-re
 import { cn } from '@/lib/utils'
 import { StellaGroundingBadge } from './StellaGroundingBadge'
 import { StellaEvidencePanel } from './StellaEvidencePanel'
-import type { GroundedAnswerView, GroundedCitationView, GroundedClaimView } from './grounding-adapter'
+import type {
+  GroundedAnswerView,
+  GroundedCitationView,
+  GroundedClaimView,
+  GroundedContradictionClaimView,
+} from './grounding-adapter'
 import type { GroundingAssertionKind, GroundingAnswerStatus } from '@/lib/grounding/contracts'
 import type { StellaDecisionStatus } from './grounding-model'
 
@@ -136,6 +141,11 @@ export function StellaGroundedAnswerPanel({
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Lado A
                     </p>
+                    <ContradictionSideAttribution
+                      side="A"
+                      contradictionId={contradiction.id}
+                      claim={contradiction.sideAClaim}
+                    />
                     <StellaEvidencePanel
                       citations={contradiction.sideA}
                       onNavigateCitation={onNavigateCitation}
@@ -145,6 +155,11 @@ export function StellaGroundedAnswerPanel({
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Lado B
                     </p>
+                    <ContradictionSideAttribution
+                      side="B"
+                      contradictionId={contradiction.id}
+                      claim={contradiction.sideBClaim}
+                    />
                     <StellaEvidencePanel
                       citations={contradiction.sideB}
                       onNavigateCitation={onNavigateCitation}
@@ -253,5 +268,64 @@ function ClaimBlock({
         />
       </div>
     </div>
+  )
+}
+
+/**
+ * Which assertion sustains one side of a contradiction — INTEGRATION train 3,
+ * closing finding A-M.
+ *
+ * The attribution rendered here comes ENTIRELY from the marker
+ * (`GroundedContradictionView.sideAClaim` / `sideBClaim`). This component
+ * receives no claim list, no citation list and no sibling side, so it is not
+ * structurally capable of inferring attribution from order, from statement
+ * text, or from which chunks the two sides happen to share — the three
+ * inferences A-M is about. Two assertions that cite the SAME chunk stay
+ * distinguishable because `claimId` and `assertionHash` differ even when every
+ * citation is identical.
+ *
+ * `assertionHash` is shown truncated: it is a 64-hex SHA-256 of the statement,
+ * displayed so a reviewer can tell two sides apart at a glance and quote a
+ * stable handle in a resolution note. The full value stays in the data and in
+ * `data-assertion-hash` — truncation is presentational only, exactly as
+ * `excerpt` truncation never touches `quotedTextHash`.
+ *
+ * A marker with no attribution DEGRADES EXPLICITLY: it says so. It does not
+ * fall back to "the first claim", and it does not hide the row, because a
+ * missing row would read as "there is nothing to attribute" rather than "this
+ * marker predates attribution".
+ */
+function ContradictionSideAttribution({
+  side,
+  contradictionId,
+  claim,
+}: {
+  side: 'A' | 'B'
+  contradictionId: string
+  claim: GroundedContradictionClaimView | null
+}) {
+  if (claim === null) {
+    return (
+      <p
+        data-testid={`stella-contradiction-${contradictionId}-side-${side}-unattributed`}
+        data-attributed="false"
+        className="mb-1 text-[10px] italic text-muted-foreground"
+      >
+        Sin atribución de afirmación: este marcador no indica qué afirmación sostiene este lado.
+      </p>
+    )
+  }
+
+  return (
+    <p
+      data-testid={`stella-contradiction-${contradictionId}-side-${side}-claim`}
+      data-attributed="true"
+      data-claim-id={claim.claimId}
+      data-assertion-hash={claim.assertionHash}
+      className="mb-1 text-[10px] text-muted-foreground"
+    >
+      <span className="font-medium text-foreground">Afirmación {claim.claimId}</span>
+      <span className="ml-1 font-mono">({claim.assertionHash.slice(0, 12)}…)</span>
+    </p>
   )
 }

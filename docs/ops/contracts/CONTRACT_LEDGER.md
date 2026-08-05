@@ -25,7 +25,17 @@ falta una capa de adaptación antes de poder consumirlo. No es `aceptado`
 | GR-002 | GROUNDING | CAPABILITIES | `aceptado` (tren 2) | 2026-08-04 | [`GR-002_document_version_history.md`](GR-002_document_version_history.md) |
 | PRODUCT-001 | PRODUCT | GROUNDING | `aceptado` (tren 2, vía adaptador) | 2026-08-04 | [PRODUCT-001_grounded-citation-provenance.md](PRODUCT-001_grounded-citation-provenance.md) |
 | INTEGRATION-001 | INTEGRACIÓN | PRODUCT | `aceptado` (tren 2) | 2026-08-04 | [Adaptador de citas GROUNDING → PRODUCT](INTEGRATION-001_grounding_product_citation_adapter.md) |
-| GR-CAP-002 | CAPABILITIES | GROUNDING | `solicitado` | 2026-08-04 | [`EXTRACTOR_VERSION` canónico](#gr-cap-002--extractor_version-tren-3) (§ abajo) |
+| GR-CAP-002 | CAPABILITIES | GROUNDING | `aceptado` (tren 3) | 2026-08-05 | [`EXTRACTOR_VERSION` canónico](#gr-cap-002--extractor_version-tren-3) (§ abajo) |
+| PRODUCT-002 | PRODUCT | INTEGRACIÓN | `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE` (tren 3) | 2026-08-05 | [Punto de entrada del orquestador](PRODUCT-002_grounded_query_orchestrator_entry_point.md) |
+| INT-GR-001 | INTEGRACIÓN | GROUNDING | `solicitado` | 2026-08-05 | [Lectura gobernada de versión activa](#int-gr-001--lectura-gobernada-de-versión-activa-tren-3) (§ abajo) |
+| INT-GR-002 | INTEGRACIÓN | GROUNDING | `solicitado` | 2026-08-05 | [Aislamiento por proyecto en `validateAnswerCitations`](#int-gr-002--aislamiento-por-proyecto-a-f1-tren-3) (§ abajo) |
+| INT-GR-003 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [`ChunkLocation` no reconstruible desde persistencia](#int-gr-003--chunklocation-no-reconstruible-tren-3) (§ abajo) |
+| INT-PR-001 | INTEGRACIÓN | PRODUCT | `solicitado` | 2026-08-05 | [Clave canónica de decisión para respuestas fundamentadas](#int-pr-001--clave-canónica-de-decisión-tren-3) (§ abajo) |
+| INT-CAP-001 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [Rol `grounded_query` en el ledger de cuota](#int-cap-001--rol-grounded_query-en-el-ledger-de-cuota) (§ abajo) |
+| INT-CAP-002 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [`evidence_chunks` concede SELECT directo a `authenticated`](#int-cap-002--evidence_chunks-concede-select-directo-a-authenticated) (§ abajo) |
+| INT-CAP-003 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [`content_hash` nunca se verifica contra `content`](#int-cap-003--content_hash-nunca-se-verifica-contra-content) (§ abajo) |
+| INT-CAP-004 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [Rollback incompleto y forja de `chunk_id` por el owner](#int-cap-004--rollback-incompleto-y-forja-de-chunk_id-por-el-owner) (§ abajo) |
+| INT-GR-004 | INTEGRACIÓN | GROUNDING | `solicitado` | 2026-08-05 | [`chunks_in_scope` debería devolver el scope de la fila](#int-gr-004--chunks_in_scope-debería-devolver-el-scope-de-la-fila) (§ abajo) |
 
 ## Resolución del tren 1 (integración, 2026-08-04)
 
@@ -358,3 +368,279 @@ content_hash)`, con `ON CONFLICT DO NOTHING` global; triggers append-only sin
 de que `validateAnswerCitations` y `retrieveGroundedChunks` **no tienen ningún
 llamante fuera de las pruebas** — los mecanismos que bloquean la cita cruzada son
 hoy de biblioteca, no de ruta.
+
+---
+
+## Resolución del tren 3 (integración, 2026-08-05)
+
+`INTEGRATION_ROOT_HEAD` = `4d59348`. Las cuatro líneas entregaron dos commits
+cada una, las cuatro descendían del root sin commits intermedios no
+declarados, y los cuatro worktrees estaban limpios. Merges explícitos
+`--no-ff` en el orden CAPABILITIES → GROUNDING → PRODUCT → RELEASE.
+
+### GR-CAP-002 — `aceptado`
+
+GROUNDING publicó `EXTRACTOR_VERSION = 'extract-1'` en
+`lib/grounding/contracts/core.ts`. Integración verificó, y **fijó como
+prueba**, las seis condiciones de cierre:
+
+| Condición | Evidencia |
+|---|---|
+| Existe **una sola vez** | `capabilities-to-grounding.test.ts` cuenta las declaraciones y exige exactamente 1 |
+| Valor `extract-1` | pinned en dos suites |
+| Forma parte de `PIPELINE_VERSIONS` | `PIPELINE_VERSIONS.extractor === EXTRACTOR_VERSION` |
+| `DocumentVersion` lo transporta | campo `extractorVersion` |
+| `ingestDocument` lo estampa | `ingest.test.ts`, incl. reingesta de bytes idénticos |
+| Cabe en la columna SQL | `varchar(32) NOT NULL` + `extractor_version <> ''`, comprobado contra el literal |
+
+**Los dos test-trampa se invirtieron, no se borraron.**
+`tests/grounding-persistence-contract.test.ts` y
+`tests/cross-workstream/capabilities-to-grounding.test.ts` fijaban la
+**ausencia** de la constante como alarma. Ahora afirman el contrato
+satisfecho y **siguen fallando** si la constante desaparece o si aparece una
+segunda divergente — que es la propiedad que la trampa protegía.
+
+Que un cambio futuro de comportamiento del extractor exige una versión nueva
+está fijado por `contracts.test.ts`: dos `DocumentVersion` idénticos salvo
+`extractorVersion` no son el mismo estado de pipeline. `versionId` **no**
+incluye al extractor en su preimagen, y ése es precisamente el hueco que la
+columna cierra.
+
+### PRODUCT-002 — `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`
+
+Los seis criterios de aceptación del documento se cumplen:
+
+| # | Criterio | Dónde |
+|---|---|---|
+| 1 | Satisface `StellaGroundedQueryRunner` sin que `components/stella/**` lo importe | `app/actions/stella/grounded-query.ts`; la costura es una prop |
+| 2 | Scope de `requireOrganizationAccess`, no del argumento | `runStellaGroundedQuery` paso 4 |
+| 3 | `DISABLED` con la bandera apagada, sin llamar al orquestador | probado: cero SQL, cero auth, cero cuota |
+| 4 | `QUOTA_EXCEEDED` con el mensaje del servidor intacto | probado |
+| 5 | Ningún detalle de proveedor en `message` | probado contra un error real de driver (42P01) |
+| 6 | `GroundedAnswerView` vía `adaptGroundedAnswer`, no a mano | `toProductResult` |
+
+**No se marca `aceptado`, y el motivo es el séptimo criterio que el documento
+no lista: nadie puede alcanzarlo.** Siete páginas de pipeline montan Stella,
+cada una bajo un `AdvisorPipelineStep` distinto; no existe una superficie
+canónica inequívoca para una pregunta de alcance de proyecto, e inventar una
+octava página crearía una segunda experiencia de Stella. Integración
+implementó el wrapper tipado
+(`app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx`) y
+**no lo montó**.
+
+**El único montaje pendiente** es una línea en la página que PRODUCT designe
+como canónica:
+
+```tsx
+<StellaGroundedQuerySection projectId={projectId} step="<el paso de esa página>" />
+```
+
+No requiere cambio de navegación global, ni ruta nueva, ni tocar el server
+action. La decisión de *cuál* de las siete es de PRODUCT, no de integración.
+
+### INT-GR-001 — Lectura gobernada de versión activa (tren 3)
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** GROUNDING (con CAPABILITIES
+para el SQL) · **Estado:** `solicitado`
+
+`uellix_grounding.chunks_in_scope` toma un `document_version_id uuid`, y la
+única función gobernada que lo devuelve es
+`claim_active_document_version(evidence_id)` — que toma `FOR UPDATE` sobre la
+fila de evidencia. Es la función de la ruta de **ingesta**; usarla para
+responder una lectura tomaría un lock de fila por elemento de evidencia en
+cada pregunta.
+
+El adaptador lee por eso directamente de `public.evidence_document_versions`
+con predicados explícitos de organización, proyecto y evidencia. Funciona y es
+seguro, pero duplica la definición de «versión activa»
+(`ORDER BY ordinal DESC NULLS LAST`) fuera del paquete que la posee.
+
+**Se pide:** una función `STABLE`, sin lock, del tipo
+`active_document_versions_in_scope(org, project, evidence_id[])`.
+
+### INT-GR-002 — Aislamiento por proyecto (A-F1, tren 3)
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** GROUNDING · **Estado:** `solicitado`
+
+A-F1 sigue abierto: `validateAnswerCitations` compara sólo `organizationId`,
+así que una cita de **otro proyecto de la misma organización** se valida como
+correcta. El tren 3 **no lo cierra** y **no lo compensa en la UI** — hacerlo
+crearía una segunda respuesta divergente a «¿puede leerse esto?».
+
+Lo que sí hizo integración es **no delegar** el aislamiento por proyecto en esa
+función: el adaptador declara `project_id` explícitamente en su `WHERE`, y
+`chunks_in_scope` lo declara una segunda vez. Dos afirmaciones independientes
+de la misma frontera. La policy RLS de `evidence_document_versions` es
+**org-scoped, no project-scoped**, así que RLS no lo aporta y el predicado
+explícito no es redundante.
+
+### INT-GR-003 — `ChunkLocation` no reconstruible (tren 3)
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** CAPABILITIES · **Estado:** `solicitado`
+
+`evidence_chunks` almacena `char_start`/`char_end` (el span autoritativo),
+`page` y `section_index`. **No** almacena `section_label`, `line_start` ni
+`line_end`, que `ChunkLocation` declara. `sectionLabel` es nulable y se mapea a
+`null` sin problema; el rango de líneas está tipado `number`.
+
+El adaptador usa el centinela `0`, **fuera del dominio 1-based documentado**,
+para que «no recuperable desde persistencia» sea distinguible de un número de
+línea plausible pero equivocado — que es lo que sería cualquier valor dentro
+del dominio. El contrato ya llama al rango de líneas «derivado, no
+autoritativo».
+
+**Se pide:** o persistir las dos columnas, o hacerlas nulables en el contrato.
+Integración no eligió por las dos líneas.
+
+### INT-PR-001 — Clave canónica de decisión (tren 3)
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** PRODUCT · **Estado:** `solicitado`
+
+`recordStellaDecision` se ancla en `suggestionKey`. Una respuesta fundamentada
+**no es una sugerencia**: una sugerencia propone texto que sobrescribe un campo
+del informe; una respuesta fundamentada lleva afirmaciones verificadas con
+citas respaldadas por hash, y editarlas las desataría de su evidencia.
+Reutilizar `suggestionKey` archivaría dos entidades distintas en una tabla y
+haría que «¿esto se guardó?» tuviera dos respuestas divergentes.
+
+Por eso el wrapper **no cablea `onDecision`**. El panel emite la decisión a
+nadie, no muestra nada que afirme persistencia, y
+`STELLA_DECISIONS_PERSISTENCE_ENABLED` sigue en `false`.
+
+**Se pide:** una clave canónica de decisión para respuestas fundamentadas
+—anclada en `answerId`, que el servidor ya genera— o una demostración de que
+`suggestionKey` representa la misma entidad. No se retrasó el query runtime
+por esta decisión, que es independiente.
+
+---
+
+## Revisión adversarial del tren 3 (integración, 2026-08-05)
+
+Dos revisores independientes de sólo lectura, sin ejecutar nada:
+**A — datos y seguridad** y **B — runtime y producto**. Se corrigieron
+únicamente los BLOCKER y MAJOR **confirmados**; lo que pertenece a otra línea
+se registra abajo como solicitud, no se edita durante integración (§12).
+
+### Corregido en esta integración
+
+| # | Severidad | Hallazgo | Corrección |
+|---|---|---|---|
+| A-F1 | **BLOCKER** | El adaptador seleccionaba `v.source_label`, columna que `evidence_document_versions` **no tiene** (14 columnas, y el paquete afirma el conteo). Toda consulta habría lanzado 42703 — y el sanitizador lo habría convertido en el **mismo** `provider_unavailable` que el estado esperado, haciendo el defecto invisible | `source_label` se une desde `evidence_items.title` bajo los mismos predicados de organización y proyecto. Cuatro pruebas cruzadas nuevas reconcilian **cada** columna que el adaptador nombra contra el DDL y contra la firma de `chunks_in_scope` |
+| A-F3 | MAJOR | El guard de scope era **tautológico**: `chunks_in_scope` no devuelve `organization_id`/`project_id`, así que `chunk.scope` se estampaba desde la consulta y `enforceRepositoryScope` se comparaba consigo mismo | No se falsificó una comprobación. Se documenta exactamente dónde reside la imposición real (tres afirmaciones en SQL), se prohíbe explícitamente añadir una cuarta comprobación decorativa, y se abre **INT-GR-004** |
+| A-F9 | MAJOR | `GroundingRepositoryContractError` extendía `Error`, así que `orchestrateGroundedResponse` lo degradaba a `provider_unavailable` — una ruptura de frontera reportada como una caída reintentable | Ahora extiende `RepositoryContractViolationError`, con lo que entra en la familia relanzada **por construcción**, no por una segunda lista que alguien deba recordar |
+| A-F5 | MAJOR (impacto acotado) | Todo export de un módulo `'use server'` es un endpoint invocable, así que exportar la forma de dos argumentos publicaba un segundo endpoint cuyo `options` lo elige el cliente | Superficie reducida a **un** export. El proyecto se re-verifica contra la organización de la sesión igual que en `getStellaContextualAdvisor`; la pertenencia a la organización es la frontera de acceso a proyectos de este producto (no hay tabla de membresía por proyecto), así que nombrar un proyecto propio no es escalada |
+| B-9 | MAJOR | La cuota se **lee** y nunca se **consume**: `checkStellaQuota` cuenta filas de `stella_interactions`, y esta acción no inserta ninguna | No se falsificó. `stella_interactions_stella_role_check` admite seis roles y `grounded_query` no está entre ellos; misfilarlo como `advisor` corrompería la atribución. Se escribe **ya** la mitad auditable (`STELLA_INVOKED`, sólo metadata), se abre **INT-CAP-001**, y el gate de release lista la cuota no consumida como evidencia faltante para `local-runtime-ready` |
+| B-12 | MAJOR | El panel pintaba «Aceptada» / «Rechazada» idéntico a los flujos con persistencia real, sin `onDecision` conectado — y el comentario del wrapper afirmaba falsamente que «no muestra nada que afirme persistencia» | El panel **lo dice**: «Esta decisión no se guardó: queda sólo en esta sesión y se pierde al recargar», visible sólo cuando no hay sink. Comentario corregido. Tres pruebas nuevas |
+| B-doc | MINOR | El wrapper afirmaba que el `projectId` ligado «nunca es parte de la petición que envía el navegador». Con `.bind`, Next.js sí lo transmite, cifrado | Comentario corregido: el navegador no puede leerlo ni forjarlo, y **la frontera real** es la re-verificación contra la organización de la sesión |
+
+### Confirmado sin defecto
+
+Ataques que **fallan**, verificados por el revisor A contra el código: cadena
+canónica, ciclo de cualquier longitud, `canonical_chunk_id` inexistente,
+bypass con `session_replication_role` desde cualquier superficie alcanzable
+por la aplicación, escritura directa fuera de las funciones gobernadas,
+identidad incorrecta en el adaptador, scope recibido desde el cliente en la
+capa del adaptador. Y por el revisor B: tercer vocabulario, mapeo divergente,
+atribución inferida, `node:crypto` en cliente, retrieval dentro de componente,
+fallback mock alcanzable en runtime, bandera comprobada tarde, permiso
+omitido, error interno expuesto, evento con prompt o evidencia,
+`local-runtime-ready` satisfacible por mera existencia de archivos.
+
+Sobre el último: el revisor B verificó que la degradación es **incondicional**
+— `missingForLocalRuntime` añade sin filtro las líneas de persistencia sin
+aplicar y de generador ausente, así que `localRuntimeReady` no puede ser
+`true` mientras esos hechos sigan siendo hechos.
+
+### INT-CAP-001 — Rol `grounded_query` en el ledger de cuota
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** CAPABILITIES · **Estado:** `solicitado`
+
+`checkStellaQuota` cuenta filas de `stella_interactions`;
+`stella_interactions_stella_role_check` admite `advisor`, `validator`,
+`composer`, `proxy_reviewer`, `evidence_reviewer`, `audit_assistant`. Una
+consulta fundamentada no es ninguno de esos seis, así que la capacidad
+**impone** una cuota mensual que no puede **cobrar**.
+
+**Se pide:** añadir `grounded_query` al CHECK. Integración no lo hizo: es un
+cambio de esquema en ruta de CAPABILITIES, y las dos alternativas locales
+—misfilar como `advisor`, o ensanchar el CHECK unilateralmente— son peores que
+la brecha. Bloquea `local-runtime-ready` y por tanto el encendido de la
+bandera.
+
+### INT-CAP-002 — `evidence_chunks` concede SELECT directo a `authenticated`
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** CAPABILITIES · **Estado:** `solicitado`
+
+`grounding_0003` §5 concede `SELECT` sobre `public.evidence_chunks` al rol
+`authenticated`, y la policy `evidence_chunks_select` filtra **sólo**
+`organization_id`. La cabecera de §6 dice «organization **and** project
+isolation»; el código impone organización. Lo mismo en `grounding_0002` §RLS.
+
+Consecuencia: con el paquete aplicado, PostgREST expondría los chunks de
+**todos los proyectos de la organización** del llamante, saltándose
+`chunks_in_scope` y su filtro `canonical_chunk_id IS NULL`, que es lo único
+que impide citar un duplicado suprimido.
+
+**Atenuante, no descargo:** este producto no tiene membresía por proyecto —
+`buildAdvisorContext` autoriza un proyecto comprobando sólo que pertenezca a la
+organización de la sesión— así que el alcance coincide con el que ya tiene
+cualquier otra acción de Stella. Pero entonces la cabecera de §6 **sobreafirma**
+y el adaptador está defendiendo una frontera que la base de datos no tiene.
+
+**Se pide:** o añadir el predicado de proyecto, o corregir la cabecera. No
+alcanzable hoy: el paquete no está aplicado en ninguna base.
+
+### INT-CAP-003 — `content_hash` nunca se verifica contra `content`
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** CAPABILITIES · **Estado:** `solicitado`
+
+`insert_evidence_chunks` valida que `content_hash` sea 64-hex y **deriva**
+`chunk_id` de él, pero nada calcula `sha256(content)` y compara; `char_start` /
+`char_end` tampoco se contrastan contra el texto normalizado. El `chunk_id`
+derivado en servidor certifica por tanto un digest **elegido por el llamante**,
+y la comprobación de re-derivación del adaptador pasa porque re-deriva del
+mismo valor sin verificar.
+
+Esto no rompe el aislamiento, pero sí la afirmación de la cabecera del propio
+paquete: que un tercero pueda re-normalizar, cortar el span declarado, hashear
+y recuperar `content_hash`. No alcanzable desde la aplicación: ningún
+TypeScript llama a `insert_evidence_chunks`.
+
+### INT-CAP-004 — Rollback incompleto y forja de `chunk_id` por el owner
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** CAPABILITIES · **Estado:** `solicitado`
+
+Dos defectos menores del mismo paquete:
+
+1. `grounding_0003_rollback.sql` condiciona **todos** sus `DROP FUNCTION` a que
+   la tabla exista. Si `evidence_chunks` desapareció por otra vía, el rollback
+   informa éxito y deja `insert_evidence_chunks`,
+   `finalize_document_ingestion` y `chunks_in_scope` instaladas y ejecutables
+   por `uellix_app`; el rollback de `0002` encuentra entonces funciones
+   residuales y se niega permanentemente a soltar el esquema y el rol.
+2. `evidence_chunks_hash_shape_check` sólo exige que `chunk_id` sea 64-hex; la
+   derivación vive únicamente en el cuerpo de la función. §5 revoca de siete
+   principales pero no de `uellix_owner`, que conserva INSERT y no está sujeto
+   a RLS — así que un `chunk_id` forjado es representable por el owner. El
+   impacto está acotado por la re-derivación del adaptador, que lanza… y al ser
+   por consulta y no por fila, **una** fila corrupta mata la consulta entera.
+
+### INT-GR-004 — `chunks_in_scope` debería devolver el scope de la fila
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** GROUNDING (SQL: CAPABILITIES) · **Estado:** `solicitado`
+
+`chunks_in_scope` devuelve 13 columnas y ni `organization_id` ni `project_id`
+están entre ellas, así que el adaptador no puede leer el scope de la fila y lo
+estampa desde la consulta. Consecuencia exacta: las comprobaciones
+`isSameScope` / `scopeContains` de `enforceRepositoryScope` son
+**tautológicas** contra el único repositorio de producción — sus
+comprobaciones de `evidenceId` / `versionId` siguen siendo reales.
+
+La imposición efectiva descansa en tres afirmaciones SQL independientes y en
+cero de TypeScript. Es suficiente, pero **no es lo que un lector de
+`enforceRepositoryScope` supondría**.
+
+**Se pide:** devolver ambas columnas, para que el guard sea portante en vez de
+decorativo. Integración documentó la situación en el adaptador y prohibió
+explícitamente añadir una cuarta comprobación que leyera los campos
+fabricados: parecería verificación y no verificaría nada.

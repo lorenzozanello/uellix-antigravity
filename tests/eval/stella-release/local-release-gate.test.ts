@@ -13,13 +13,19 @@ const CLEAN_RUN_2 = runReleaseEvalHarness()
 describe('evaluateLocalReleaseGates — the 11 named gates on a real, clean run', () => {
   const gates = evaluateLocalReleaseGates(CLEAN_RUN_1, CLEAN_RUN_2)
 
-  it('has exactly 11 gates, matching Fase 3 by name, no duplicates', () => {
+  it('has exactly 12 gates — the 11 of Fase 3 plus the train-3 runtime entrypoint — by name, no duplicates', () => {
+    // INTEGRATION, TRAIN 3. The eleven Fase-3 gates all read the harness's own
+    // output over its own fixtures, and all eleven passed throughout train 2,
+    // when no server action existed and `components/stella/**` had zero call
+    // sites. A twelfth gate was added that asks a question the fixtures cannot
+    // answer — see runtimeEntrypointGate. The count is DERIVED here, not
+    // assumed: it is asserted against the enumerated names below.
     const ids = gates.map((g) => g.id)
-    expect(new Set(ids).size).toBe(11)
+    expect(new Set(ids).size).toBe(12)
     expect(ids).toEqual(expect.arrayContaining([
       'contract-complete', 'isolation', 'citation-validity', 'unsupported-claims', 'abstention-correctness',
       'contradiction-attribution', 'feature-flag-safety', 'decision-provenance', 'no-provider-calls',
-      'no-secrets', 'determinism',
+      'no-secrets', 'determinism', 'runtime-entrypoint',
     ]))
   })
 
@@ -36,10 +42,36 @@ describe('evaluateLocalReleaseGates — the 11 named gates on a real, clean run'
 describe('computeLocalReleaseGateReport — reduction to the 5 readiness levels', () => {
   const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2)
 
-  it('is library-ready, integration-ready and local-runtime-ready on the real, clean matrix', () => {
+  it('is library-ready and integration-ready on the real, clean matrix, and DEGRADES local-runtime-ready', () => {
+    // INTEGRATION, TRAIN 3 — the assertion this test used to make
+    // (`localRuntimeReady === true`) was true for a system nothing could
+    // reach. The grounded-query seam now exists end to end, but it is
+    // UNMOUNTED and the two grounding SQL packages are applied to no database,
+    // so "a human can run this journey locally" is still false — and saying so
+    // is the point of the level.
     expect(report.libraryReady).toBe(true)
     expect(report.integrationReady).toBe(true)
-    expect(report.localRuntimeReady).toBe(true)
+    expect(report.localRuntimeReady).toBe(false)
+  })
+
+  it('says exactly WHY local-runtime is not ready — never a bare false', () => {
+    expect(report.missingForLocalRuntime.length).toBeGreaterThan(0)
+    const joined = report.missingForLocalRuntime.join(' ')
+    // The seam is unmounted...
+    expect(joined).toMatch(/StellaGroundedQuerySection/)
+    expect(joined).toMatch(/IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE/)
+    // ...and the persistence it reads is prepared but unapplied.
+    expect(joined).toMatch(/grounding_0003_evidence_chunks\.sql/)
+    expect(joined).toMatch(/applied to NO database/)
+  })
+
+  it('does NOT list a missing entrypoint MODULE — the seam itself exists on disk', () => {
+    // The distinction that matters: EXISTENCE is satisfied (the gate passes),
+    // REACHABILITY is not. Collapsing the two would let a future edit delete
+    // the server action and keep the same report.
+    const runtimeGate = report.gates.find((g) => g.id === 'runtime-entrypoint')
+    expect(runtimeGate?.passed).toBe(true)
+    expect(report.missingForLocalRuntime.join(' ')).not.toMatch(/missing: app\/actions\/stella\/grounded-query\.ts/)
   })
 
   it('is UNCONDITIONALLY staging-blocked and hosted-blocked, regardless of how clean the run is', () => {
@@ -146,9 +178,13 @@ describe('computeLocalReleaseGateReport — readiness levels discriminate on a b
     expect(report.localRuntimeReady).toBe(false)
   })
 
-  it('staging/hosted stay blocked even when every other gate is clean', () => {
+  it('staging/hosted stay blocked even when every harness gate is clean', () => {
     const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2)
-    expect(report.localRuntimeReady).toBe(true)
+    // Every one of the twelve gates passes, and local-runtime is STILL not
+    // ready — because readiness depends on reachability and on applied
+    // persistence, neither of which a gate over fixtures can grant.
+    expect(report.gates.filter((g) => !g.passed)).toEqual([])
+    expect(report.localRuntimeReady).toBe(false)
     expect(report.stagingBlocked).toBe(true)
     expect(report.hostedBlocked).toBe(true)
   })

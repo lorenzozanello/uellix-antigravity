@@ -66,6 +66,7 @@ export type {
   GroundedCitationErrorCode,
   GroundedCitationView,
   GroundedClaimView,
+  GroundedContradictionClaimView,
   GroundedContradictionView,
   GroundedPresentationInput,
   RelevanceAssessment,

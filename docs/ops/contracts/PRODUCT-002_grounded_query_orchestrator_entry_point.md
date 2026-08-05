@@ -3,7 +3,8 @@
 **Línea solicitante:** PRODUCT
 **Línea propietaria:** INTEGRACIÓN (la ruta es INTEGRATION-OWNED; el orquestador
 que debe invocar es de GROUNDING)
-**Estado:** `solicitado` (PRODUCT tren 3, 2026-08-05)
+**Estado:** `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`
+(integración tren 3, 2026-08-05 — ver §«Decisión de integración» al final)
 **Depende de:** [INTEGRATION-001](INTEGRATION-001_grounding_product_citation_adapter.md)
 (`aceptado`), [PRODUCT-001](PRODUCT-001_grounded-citation-provenance.md) (`aceptado`)
 
@@ -177,3 +178,82 @@ Integración puede marcar este contrato `aceptado` cuando exista un módulo que:
 
 Los seis son verificables sin retrieval real. El séptimo —que la respuesta sea
 útil— no lo es, y por eso no está en la lista.
+
+---
+
+## Decisión de integración (tren 3, 2026-08-05)
+
+**`IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`.**
+
+### Qué se construyó
+
+| Pieza | Ruta |
+|---|---|
+| Server action | `app/actions/stella/grounded-query.ts` |
+| Adaptador de repositorio | `db/grounding/grounding-chunk-repository.ts` |
+| Wrapper server/client tipado | `app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx` |
+| Bandera canónica | `STELLA_GROUNDED_QUERY_ENABLED` (`lib/stella/config.ts`, `.env.example`), **`false`** |
+| Pruebas cruzadas de runtime | `tests/cross-workstream/runtime-grounded-query.test.ts` (22 casos) |
+
+El recorrido completo existe y está tipado de extremo a extremo:
+
+```
+query autenticada -> scope derivado en servidor -> permiso -> cuota
+  -> repository adapter (chunks_in_scope) -> retrieval scoped
+  -> orquestación -> validación de citas -> adaptación de presentación
+  -> StellaGroundedQueryPanel -> revisión humana
+```
+
+### Los seis criterios de aceptación
+
+Los seis se cumplen; la tabla está en
+[`CONTRACT_LEDGER.md` §Resolución del tren 3](CONTRACT_LEDGER.md).
+
+### Por qué NO es `aceptado`
+
+Porque nadie puede alcanzarlo. **Siete** páginas de pipeline montan Stella
+(`stakeholders`, `outcomes`, `indicators`, `proxies`, `evidence`,
+`calculation`, `narrative`), cada una bajo un `AdvisorPipelineStep` distinto.
+Una pregunta fundamentada tiene alcance de **proyecto**, no de paso, así que
+ninguna de las siete es inequívocamente la superficie canónica, y montarlo en
+las siete crearía siete experiencias de Stella donde debería haber una.
+Inventar una octava página está explícitamente fuera de lo pedido.
+
+Integración no eligió por PRODUCT. El estado lo dice y el gate de RELEASE lo
+mide: `runtimeEntrypointMountReasons` recorre `app/**/page.tsx` buscando
+`StellaGroundedQuerySection`, no lo encuentra, y por eso
+`local-runtime-ready` es **`false`** con la razón enumerada en vez de un
+booleano pelado.
+
+### El único montaje pendiente
+
+Una línea, en la página que PRODUCT designe:
+
+```tsx
+<StellaGroundedQuerySection projectId={projectId} step="<el paso de esa página>" />
+```
+
+No requiere ruta nueva, ni cambio de navegación global, ni tocar el server
+action, ni encender ninguna bandera.
+
+### Lo que la aceptación NO habilita
+
+- `STELLA_GROUNDED_QUERY_ENABLED` sigue `false`, y se comprueba **antes** de
+  autenticar, de abrir conexión, de leer cuota y de emitir observabilidad.
+- `grounding_0002` y `grounding_0003` siguen **preparados y sin aplicar a
+  ninguna base**. Con la bandera encendida hoy, cada consulta devolvería
+  `provider_unavailable` sanitizado. El adaptador **no** cae a datos simulados
+  cuando el paquete falta — está probado que no lo hace.
+- No existe generador de respuestas fundamentadas. El proveedor inyectado
+  **rechaza** por contrato (`absentAnswerDraftProvider`), lo que
+  `orchestrateGroundedResponse` convierte en `provider_unavailable`. No es un
+  mock: no produce contenido de ninguna clase.
+- La persistencia de la decisión humana **no** se cableó — ver INT-PR-001.
+
+### Advertencia heredada, tratada
+
+A-F1 (`validateAnswerCitations` compara sólo `organizationId`) sigue abierto,
+y el punto de entrada **no lo delega**: declara `project_id` explícitamente en
+la lectura de versiones y una segunda vez dentro de `chunks_in_scope`. La
+policy RLS de `evidence_document_versions` es org-scoped, no project-scoped,
+así que ese predicado no es redundante. Registrado como INT-GR-002.

@@ -1265,3 +1265,80 @@ modificada, sin push, sin acceso a remoto, sin gates pesados, cero escrituras
 a base de datos, cero llamadas a proveedor.
 
 `STELLA_RELEASE_TRAIN_3_READY_FOR_INTEGRATION`
+
+## Integración — tren 3 (2026-08-05)
+
+`4d59348..8eaf760`, merge `--no-ff`. Dos commits declarados, nada más.
+
+### Conteos, derivados y no asumidos
+
+| Magnitud | Valor derivado |
+|---|---|
+| Versión de matriz runtime | `3.0.0` |
+| Checks | **24** |
+| Controles negativos ejecutados | **45** (0 no detectados) |
+| Checks tautológicos | 0 |
+| Eventos de observabilidad | **13** |
+| Gates locales | **12** (11 de Fase 3 + `runtime-entrypoint`) |
+| Llamadas a proveedor | **0** |
+
+Los seis primeros se leen del propio arnés (`runReleaseEvalHarness`,
+`RELEASE_EVAL_MATRIX`, `STELLA_OBSERVABILITY_EVENT_NAMES`), no de esta tabla.
+
+### Verificado
+
+- allowlist de campos por evento + lista prohibida + detector de secretos;
+- cero prompts completos, cero evidencia completa, cero texto privado completo;
+- tokens y coste `null` **con razón estructurada** (`nullReason`), nunca un
+  `null` pelado — el arnés hace cero llamadas a proveedor;
+- salida determinista: dos corridas independientes producen `summary` y
+  `results` byte a byte idénticos (el reloj de pared vive fuera de `summary`).
+
+### `local-runtime-ready` NO se conservó automáticamente
+
+**Degradado a `integration-ready=true` / `local-runtime-ready=false`.**
+
+Las once gates de Fase 3 leen la salida del propio arnés sobre sus propios
+fixtures. Las once estuvieron **verdes durante todo el tren 2**, cuando no
+existía ningún server action y `components/stella/` tenía cero call sites — es
+decir, un conjunto de gates que no distinguía una biblioteca de un sistema en
+marcha. Integración añadió una **duodécima**, `runtime-entrypoint`, que hace
+una pregunta que los fixtures no pueden responder: ¿existe la costura en
+disco, de extremo a extremo?
+
+`runtime-entrypoint` **pasa**: los cinco módulos existen (contrato de cliente,
+panel, server action, adaptador de repositorio, wrapper). Pero **existencia no
+es alcanzabilidad**, y `computeLocalReleaseGateReport` ahora separa las dos.
+`missingForLocalRuntime` enumera lo que falta, nunca un booleano pelado:
+
+1. ninguna `page.tsx` bajo `app/` renderiza `StellaGroundedQuerySection` —
+   PRODUCT-002 es `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`;
+2. `grounding_0002` + `grounding_0003` existen como SQL preparado y **no están
+   aplicados a ninguna base**; hasta que lo estén, toda consulta fundamentada
+   devuelve `provider_unavailable`;
+3. no existe generador de respuestas fundamentadas: el proveedor inyectado
+   **rechaza** por contrato, así que la costura se ejercita completa pero no
+   produce borrador — eso es el gate G1.
+
+`missingForStaging` es ahora un superconjunto de `missingForLocalRuntime`, y
+`missingForHosted` de aquél.
+
+### Staging y hosted siguen bloqueados
+
+Sin cambios: `stagingBlocked` y `hostedBlocked` son literalmente `true` en el
+tipo. Este módulo es **estructuralmente incapaz** de concederlos. Se añadió a
+la lista de staging que `STELLA_GROUNDED_QUERY_ENABLED` debe llegar allí en
+`false`.
+
+### Pruebas ajustadas, no debilitadas
+
+Tres aserciones propiedad de RELEASE codificaban el supuesto que este tren
+tenía instrucción de romper. Se **actualizaron con su razón**, no se borraron
+ni se saltaron:
+
+- «tiene exactamente 11 gates» → 12, con los doce enumerados por nombre;
+- «es local-runtime-ready sobre la matriz limpia» → afirma la degradación y
+  **exige que se diga por qué**;
+- «staging/hosted siguen bloqueados» → ahora también comprueba que las doce
+  gates pasan **y aun así** `localRuntimeReady` es `false`, que es la propiedad
+  interesante.

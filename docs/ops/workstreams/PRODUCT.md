@@ -689,3 +689,76 @@ mientras un componente hermano empieza a recuperar y le pasa el resultado.
 push. Cero cambios en `db/**`, `supabase/**`, SQL, `lib/grounding/**` o archivos
 `INTEGRATION-OWNED`; cero cambios en `CONTRACT_LEDGER.md`; cero mocks como
 runtime; cero aritmética SROI en cliente; cero capacidades habilitadas.
+
+## Integración — tren 3 (2026-08-05)
+
+`4d59348..61a36ba`, merge `--no-ff`. Dos commits declarados (`556a57e`,
+`61a36ba`), **ningún tercer commit no declarado**, worktree limpio. La historia
+previa no se reescribió.
+
+### Verificado
+
+- `StellaGroundedQueryRequest` contiene **sólo** `query` — fijado por una
+  prueba que compara el conjunto de campos del contrato publicado, no su
+  contenido;
+- el cliente no envía `organizationId`, `projectId` ni `scope`; un payload que
+  los lleve **no tiene lector**, y el SQL emitido sigue portando el scope de la
+  sesión (probado con valores hostiles de otra organización y otro proyecto);
+- `runQuery` permanece **inyectado**; no hay implementación por defecto en
+  `components/stella/`;
+- los componentes no hacen retrieval ni validan scope;
+- `node:crypto` **no llega al bundle de cliente**: todos los imports de
+  `@/lib/grounding/contracts` en `grounding-adapter.ts` son `import type`, y el
+  único import de valor es `retrieve/calibration`, hoja sin dependencias de
+  Node;
+- `enabled={false}` evita toda ejecución;
+- **no existe fallback mock** en ninguna capa.
+
+### Reconciliación de contradicciones
+
+PRODUCT cerró antes de recibir `sideAClaim` / `sideBClaim` / `claimId` /
+`assertionHash`. Integración adaptó el modelo de presentación y la UI:
+
+- `GroundedContradictionView` gana `sideAClaim` / `sideBClaim`, tipados
+  `GroundedContradictionClaimView | null`;
+- la atribución llega **verbatim del `ContradictionMarker`** — el adaptador no
+  deriva ninguna parte de ella;
+- **no se infiere por orden, texto ni coincidencia de citas.** Emparejar una
+  claim publicada re-hasheando su statement sería exactamente la coincidencia
+  de texto que el contrato prohíbe, y además exigiría `hashContent`, un import
+  de valor que arrastraría `node:crypto` al cliente;
+- `claimId` **no** es `GroundedClaimView.key` (`${kind}-${index}`, un índice de
+  presentación) y no se pinta como si lo fuera;
+- dos afirmaciones sobre el **mismo chunk** siguen diferenciándose en pantalla;
+- la UI **degrada explícitamente** cuando un marcador histórico no lleva
+  atribución: dice «Sin atribución de afirmación», no oculta la fila ni
+  rellena con la primera claim;
+- una atribución parcial (un lado sí, el otro no) es representable y no se
+  redondea hacia arriba.
+
+Pruebas cruzadas nuevas: 8 en `grounding-to-product.test.ts` §6 y 4 en
+`StellaGroundedAnswerPanel.test.tsx`, más el fixture
+`sameChunkContradictionAnswerView`, cuyo caso duro es el que cierra A-M: los
+dos lados citan el mismo chunk.
+
+### PRODUCT-002
+
+**`IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`.** Los seis criterios de
+aceptación se cumplen y están probados. No se marca `aceptado` porque el punto
+de entrada **no está montado**: siete páginas de pipeline montan Stella bajo
+siete `AdvisorPipelineStep` distintos y ninguna es inequívocamente la
+superficie canónica de una pregunta con alcance de proyecto. Integración no
+inventó una octava página.
+
+El único montaje pendiente está documentado línea a línea en
+`docs/ops/contracts/PRODUCT-002_grounded_query_orchestrator_entry_point.md`.
+
+### Decisiones humanas
+
+`onDecision` **no se cableó**. No existe clave canónica de decisión para
+respuestas fundamentadas: `recordStellaDecision` se ancla en `suggestionKey`, y
+una respuesta fundamentada no es una sugerencia — una sugerencia propone texto
+que sobrescribe un campo; una respuesta fundamentada lleva afirmaciones con
+citas respaldadas por hash. El panel no muestra nada que afirme persistencia y
+`STELLA_DECISIONS_PERSISTENCE_ENABLED` sigue `false`. Registrado como
+**INT-PR-001**. No retrasó el query runtime, que es independiente.

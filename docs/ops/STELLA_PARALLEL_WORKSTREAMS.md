@@ -572,3 +572,61 @@ se desvió, que es exactamente cómo se rompió el harness de RELEASE.
 - [`docs/ops/workstreams/GROUNDING.md`](workstreams/GROUNDING.md)
 - [`docs/ops/workstreams/PRODUCT.md`](workstreams/PRODUCT.md)
 - [`docs/ops/workstreams/RELEASE.md`](workstreams/RELEASE.md)
+
+### Tren 3 — integrado 2026-08-05
+
+`INTEGRATION_ROOT_HEAD` = `4d59348`. Las cuatro líneas entregaron dos commits
+cada una, las cuatro descendían del root **sin commits intermedios no
+declarados**, y los cuatro worktrees estaban limpios (staging vacío, untracked
+vacío, sin upstream). PRODUCT se verificó específicamente: el rango
+`4d59348..61a36ba` contiene exactamente `556a57e` y `61a36ba`, y no se
+reescribió su historia.
+
+| Línea | HEAD integrado | Commits fusionados | Pruebas focalizadas |
+|---|---|---|---|
+| CAPABILITIES | `6e3cbee` | `233f2f6`, `6e3cbee` | 201 + 851 passed / 18 skipped |
+| GROUNDING | `65c6c2c` | `21949a5`, `65c6c2c` | 271 passed (14 archivos) |
+| PRODUCT | `61a36ba` | `556a57e`, `61a36ba` | 363 passed (17 archivos) |
+| RELEASE | `8eaf760` | `b0bcc3b`, `8eaf760` | 120 passed (5 archivos) |
+
+Merges explícitos `--no-ff`, en ese orden. Sin cherry-pick, sin rebase, sin
+reescritura de historia, sin push, sin acceso a remoto.
+
+#### Qué añadió integración
+
+El tren 3 tenía objetivo propio además de fusionar: convertir cuatro
+bibliotecas en un **recorrido runtime alcanzable y fail-closed**.
+
+| Pieza | Ruta | Nota |
+|---|---|---|
+| Server action | `app/actions/stella/grounded-query.ts` | bandera primero, scope derivado, mapeo único |
+| Adaptador de repositorio | `db/grounding/grounding-chunk-repository.ts` | sobre `uellix_grounding.chunks_in_scope` |
+| Wrapper server/client | `app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx` | **no montado** |
+| Bandera | `STELLA_GROUNDED_QUERY_ENABLED` | **`false`** |
+| Gate de runtime | `runtime-entrypoint` (12.ª) | degrada `local-runtime-ready` |
+| Pruebas cruzadas | `tests/cross-workstream/runtime-grounded-query.test.ts` | 22 casos |
+
+#### Rutas ocupadas por integración en este tren
+
+Registradas aquí en vez de asumirse como propiedad tácita (§7):
+
+| Ruta | Motivo |
+|---|---|
+| `app/actions/stella/grounded-query.ts` | PRODUCT-002 pide explícitamente que la escriba integración |
+| `db/grounding/**` | costura de persistencia entre `db/**` (CAPABILITIES) y `lib/grounding/**` (GROUNDING); ninguna de las dos puede escribirla sin cruzar a la otra |
+| `app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx` | cableado; no es una ruta |
+| `.env.example` | ya `INTEGRATION-OWNED` (§7) |
+| `lib/stella/config.ts` | una bandera nueva, `false`; la bandera es la mitad del contrato PRODUCT-002 §5 |
+| `components/stella/grounding-adapter.ts`, `index.ts`, `StellaGroundedAnswerPanel.tsx` | reconciliación de contradicciones atribuidas: PRODUCT cerró antes de que GROUNDING publicara los campos |
+| `tests/eval/stella-release/local-release-gate.{ts,test.ts}` | la instrucción de integración prohíbe conservar `local-runtime-ready=true` sin costura real |
+
+#### Estado al cerrar
+
+- Ninguna bandera encendida.
+- Ningún paquete SQL aplicado a ninguna base persistente.
+- Ningún proveedor externo llamado; ningún embedding remoto.
+- Sin `service_role` en ninguna ruta nueva.
+- Stack persistente no usado; toda la evidencia de base de datos viene de un
+  contenedor desechable sin red.
+- PRODUCT-002 queda `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`:
+  el único montaje pendiente está documentado y es una línea.

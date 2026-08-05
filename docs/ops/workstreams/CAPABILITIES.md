@@ -682,3 +682,67 @@ remoto. Ningún stack persistente. Ninguna bandera habilitada. Ningún uso de
 **Ficheros solicitados a integración:** ninguno. Esta unidad no editó
 `CONTRACT_LEDGER.md`; no hay contrato nuevo que registrar, sólo el
 endurecimiento de dos ya aceptados.
+
+## Integración — tren 3 (2026-08-05)
+
+`4d59348..6e3cbee`, merge `--no-ff`. Dos commits declarados, nada más.
+
+**GR-CAP-003 aceptado en su totalidad.** Las siete reparaciones se verificaron
+en el árbol integrado y con datos reales en contenedor desechable.
+
+| Riesgo | Cierre | Verificado por |
+|---|---|---|
+| `canonical_chunk_id` sin FK | `evidence_chunks_canonical_fk` (6 columnas: identidad + scope + `content_hash`) | dry-run §6-ter + prueba cruzada |
+| Cadenas y ciclos | `trg_evidence_chunks_canonical_integrity` exige que el destino tenga su propio `canonical_chunk_id IS NULL` → **profundidad máxima 1 por construcción**; ninguna cadena de ninguna longitud, luego ningún ciclo | dry-run + `U0105` |
+| `chunk_id` no derivado | `insert_evidence_chunks` lo deriva con la preimagen del contrato y sólo **verifica** el del payload (`U0104`) | prueba cruzada nueva que compara la fórmula SQL con `deriveChunkId` componente a componente |
+| Triggers sin `ENABLE ALWAYS` | los 6 en las 2 tablas | dry-run §13 bajo modo replica → 42501 |
+| Bypass del owner sobre el scope | FK compuesta de 9 columnas + `trg_evidence_document_versions_scope_check` | dry-run §6-ter con `SET ROLE uellix_owner` |
+| `FORCE RLS` | **no activado**, con razón técnica | ver abajo |
+| Rollbacks | cada uno dropea su propia función de trigger, **después** de la tabla | dry-run §7–§9 |
+
+### Revisión crítica del residual declarado
+
+CAPABILITIES señaló que las `FOREIGN KEY` también se implementan como triggers
+internos (`RI_ConstraintTrigger_*`) y por tanto también respetan
+`session_replication_role`. **Integración confirma la clasificación como riesgo
+de superusuario y la acepta.** La verificación fue:
+
+- `session_replication_role` es un GUC `SUSET`: sólo un superusuario puede
+  fijarlo. No existe ningún `GRANT SET ON PARAMETER` en el árbol.
+- **Ningún rol accesible a la aplicación puede explotarlo.** `uellix_owner`,
+  `uellix_app`, `uellix_writer`, `uellix_migrator`, `uellix_auditor` y
+  `uellix_cap_grounding` están declarados `NOSUPERUSER NOBYPASSRLS
+  NOREPLICATION` (`stella_0004:321-325`, `grounding_0002:189`).
+- Ninguna función `SECURITY DEFINER` del paquete fija ese GUC; todas fijan
+  `search_path = ''` y nada más.
+- `tests/database-ddl-containment.test.ts:73` ya prohíbe fijar el modo replica
+  en superficie de runtime.
+- Quien puede fijarlo puede además `ALTER TABLE ... DROP CONSTRAINT`, así que
+  endurecer las FK no cambiaría la postura frente a ese adversario.
+
+**No necesita gate adicional y no requiere Train 4.** Endurecerlas exigiría SQL
+dinámico sobre nombres OID no deterministas, camino que la instrucción de
+integración prohíbe expresamente. Queda como **riesgo residual aceptado y
+documentado**, no como omisión.
+
+### Decisión FORCE RLS
+
+**No se activó, y integración lo sostiene.** `FORCE ROW LEVEL SECURITY` quita
+la excepción del dueño de forma indiscriminada —incluida la del definer, que no
+tiene `BYPASSRLS`— y haría que el propio rollback de `grounding_0002` contara
+0 filas sobre una tabla poblada, mintiendo sobre cuánta historia destruye. Los
+constraints y triggers dirigidos cierran el mismo hueco sin ese efecto.
+
+### Estado de aplicación
+
+**`grounding_0002` y `grounding_0003` siguen preparados y sin aplicar a
+ninguna base persistente.** Toda la evidencia de este tren viene de
+`scripts/grounding-dry-run.sh` en contenedor desechable sin red, destruido al
+salir.
+
+### Contratos abiertos hacia esta línea
+
+- **INT-GR-003** — `evidence_chunks` no almacena `section_label`, `line_start`
+  ni `line_end`, que `ChunkLocation` declara. El adaptador de repositorio usa
+  el centinela `0`, fuera del dominio 1-based, para que «no recuperable desde
+  persistencia» sea distinguible de un valor plausible pero equivocado.

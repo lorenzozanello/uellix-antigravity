@@ -481,3 +481,50 @@ describe('StellaGroundedQueryPanel — accessibility', () => {
     expect(screen.getByRole('heading', { level: 3, name: 'Respuesta fundamentada de Stella' })).toBeInTheDocument()
   })
 })
+
+// ---------------------------------------------------------------------------
+// ADVERSARIAL REVIEW, TRAIN 3 (reviewer B, #12) — a decision nobody receives
+// must not LOOK like a decision that was filed.
+// ---------------------------------------------------------------------------
+//
+// `decisionStatus` flips to "Aceptada" / "Rechazada" the instant the button is
+// pressed, and StellaGroundedAnswerPanel paints that badge exactly as it does
+// for flows whose decisions ARE written by recordStellaDecision. With no
+// `onDecision` wired the record dies on unmount, so the badge alone would tell
+// a reviewer their decision was saved when it was not.
+
+describe('StellaGroundedQueryPanel — a decision with no sink says so', () => {
+  const okAnswer = groundedAnswerView()
+  const runOk: StellaGroundedQueryRunner = async () => ({
+    status: 'ok',
+    answerId: 'ans-persistence',
+    answer: okAnswer,
+  })
+
+  async function askAndAccept(onDecision?: (record: SuggestionDecisionRecord) => void) {
+    render(<StellaGroundedQueryPanel step="evidence" runQuery={runOk} onDecision={onDecision} />)
+    await ask()
+    await screen.findByTestId('stella-grounded-answer-panel')
+    fireEvent.click(screen.getByRole('button', { name: 'Aceptar' }))
+  }
+
+  it('states that the decision was not saved when no onDecision is wired', async () => {
+    await askAndAccept()
+    const note = await screen.findByTestId('stella-grounded-query-decision-not-persisted')
+    expect(note).toHaveTextContent(/no se guardó/i)
+    expect(note).toHaveTextContent(/sólo en esta sesión/i)
+  })
+
+  it('does NOT state it when a sink IS wired — the note is about absence, not about grounded answers', async () => {
+    await askAndAccept(vi.fn())
+    expect(screen.queryByTestId('stella-grounded-query-decision-not-persisted')).toBeNull()
+  })
+
+  it('the note appears alongside the decision badge, not instead of it', async () => {
+    // The affordance is not hidden and the outcome is not faked: the reviewer
+    // sees both what they decided and that it was not filed.
+    await askAndAccept()
+    expect(screen.getByTestId('stella-grounded-answer-decision')).toHaveTextContent('Aceptada')
+    expect(screen.getByTestId('stella-grounded-query-decision-not-persisted')).toBeTruthy()
+  })
+})

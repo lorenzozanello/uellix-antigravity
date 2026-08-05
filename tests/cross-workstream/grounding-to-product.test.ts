@@ -339,3 +339,113 @@ describe('GROUNDING → PRODUCT: an absent chunk cannot become text', () => {
     expect(citationsOf(answer.assertions[0])).toHaveLength(2)
   })
 })
+
+// ---------------------------------------------------------------------------
+// 6. Contradiction ATTRIBUTION (train 3) — closing finding A-M
+// ---------------------------------------------------------------------------
+//
+// Train 2 closed with A-M open: `sideA`/`sideB` are `CitationReference[]`, and
+// two assertions that cite the SAME chunk produce the SAME reference, so an
+// answer could not say WHICH claim sustained which side. GROUNDING answered
+// with `ContradictionClaimAttribution`; PRODUCT's adapter and panel were
+// finished before that field existed. These tests are the join.
+
+describe('GROUNDING → PRODUCT: contradiction attribution survives the seam', () => {
+  // The hard case, stated first: ONE chunk, cited by BOTH sides. Every
+  // citation-based way of telling the two claims apart is unavailable here by
+  // construction — which is exactly what A-M was about.
+  const SHARED = REPORT_CHUNK
+  const sharedChunks = new Map([[SHARED.chunkId as string, SHARED]])
+
+  const attributed: ContradictionMarker = {
+    id: 'contra-mismo-chunk',
+    summary: 'Dos afirmaciones leen el mismo pasaje de forma incompatible.',
+    sideA: [citationOf(SHARED)],
+    sideB: [citationOf(SHARED)],
+    sideAClaim: { claimId: 'claim-a', assertionHash: hashContent('1.240 hogares en 2025') },
+    sideBClaim: { claimId: 'claim-b', assertionHash: hashContent('890 hogares en 2025') },
+    resolution: 'requires_human_resolution',
+    severity: 'warning',
+  }
+
+  const answerWith = (marker: ContradictionMarker): GroundedAnswerState => ({
+    ...evidenceAnswer([citationOf(SHARED)]),
+    contradictions: [marker],
+  })
+
+  it('two assertions over the SAME chunk stay distinguishable after adaptation', () => {
+    const view = adaptGroundedAnswer(answerWith(attributed), { chunks: sharedChunks })
+    const contradiction = view.contradictions[0]
+
+    // The citations are identical — this is the premise, not an accident.
+    expect(contradiction.sideA[0].chunkId).toBe(contradiction.sideB[0].chunkId)
+
+    // And the two sides are still told apart, by attribution.
+    expect(contradiction.sideAClaim).not.toBeNull()
+    expect(contradiction.sideBClaim).not.toBeNull()
+    expect(contradiction.sideAClaim!.claimId).not.toBe(contradiction.sideBClaim!.claimId)
+    expect(contradiction.sideAClaim!.assertionHash).not.toBe(contradiction.sideBClaim!.assertionHash)
+  })
+
+  it('the attribution is carried VERBATIM from the marker — the adapter derives none of it', () => {
+    const view = adaptGroundedAnswer(answerWith(attributed), { chunks: sharedChunks })
+    expect(view.contradictions[0].sideAClaim).toEqual(attributed.sideAClaim)
+    expect(view.contradictions[0].sideBClaim).toEqual(attributed.sideBClaim)
+  })
+
+  it('assertionHash is SYSTEM-DERIVED from the statement, never a value a model could choose', () => {
+    // GROUNDING computes it in buildGroundedAnswer via hashContent; a draft
+    // that supplied its own fingerprint could not make it stick. Pinned here
+    // as the cross-line agreement: PRODUCT may treat the hash as trustworthy
+    // precisely because PRODUCT never computes it.
+    expect(attributed.sideAClaim!.assertionHash).toBe(hashContent('1.240 hogares en 2025'))
+    expect(attributed.sideAClaim!.assertionHash).toHaveLength(64)
+  })
+
+  it('a HISTORICAL marker with no attribution degrades to null on BOTH sides — never to a guess', () => {
+    const historical: ContradictionMarker = {
+      id: 'contra-historico',
+      summary: 'Marcador anterior al contrato de atribución.',
+      sideA: [citationOf(REPORT_CHUNK)],
+      sideB: [citationOf(ANNEX_CHUNK)],
+      resolution: 'requires_human_resolution',
+      severity: 'warning',
+    }
+    const view = adaptGroundedAnswer(
+      { ...evidenceAnswer([citationOf(REPORT_CHUNK)]), contradictions: [historical] },
+      {
+        chunks: new Map([
+          [REPORT_CHUNK.chunkId as string, REPORT_CHUNK],
+          [ANNEX_CHUNK.chunkId as string, ANNEX_CHUNK],
+        ]),
+      },
+    )
+    expect(view.contradictions[0].sideAClaim).toBeNull()
+    expect(view.contradictions[0].sideBClaim).toBeNull()
+  })
+
+  it('an explicit null and an absent field are the SAME fact for presentation', () => {
+    const explicitNull: ContradictionMarker = { ...attributed, sideAClaim: null, sideBClaim: null }
+    const view = adaptGroundedAnswer(answerWith(explicitNull), { chunks: sharedChunks })
+    expect(view.contradictions[0].sideAClaim).toBeNull()
+    expect(view.contradictions[0].sideBClaim).toBeNull()
+  })
+
+  it('attribution is NOT inferred from order: swapping the sides swaps the attribution with them', () => {
+    const swapped: ContradictionMarker = {
+      ...attributed,
+      sideAClaim: attributed.sideBClaim,
+      sideBClaim: attributed.sideAClaim,
+    }
+    const view = adaptGroundedAnswer(answerWith(swapped), { chunks: sharedChunks })
+    expect(view.contradictions[0].sideAClaim!.claimId).toBe('claim-b')
+    expect(view.contradictions[0].sideBClaim!.claimId).toBe('claim-a')
+  })
+
+  it('one side attributed and the other not is representable — partial attribution is not rounded up', () => {
+    const partial: ContradictionMarker = { ...attributed, sideBClaim: null }
+    const view = adaptGroundedAnswer(answerWith(partial), { chunks: sharedChunks })
+    expect(view.contradictions[0].sideAClaim!.claimId).toBe('claim-a')
+    expect(view.contradictions[0].sideBClaim).toBeNull()
+  })
+})

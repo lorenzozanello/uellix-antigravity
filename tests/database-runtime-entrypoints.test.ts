@@ -625,8 +625,17 @@ describe('every entry point that can reach the database opens an identity contex
   // The published regex-layer figures (docs/ops/DATABASE_RUNTIME_CUTOVER.md and
   // STELLA_FABLE_TEST_LEDGER.md) are pinned here so they cannot drift in silence.
   // These are the app/** entry-point counts of the REGEX layer, distinct from
-  // the AST layer's 117/95/82/13 over app/** + components/**. Update BOTH the
+  // the AST layer's 119/97/84/13 over app/** + components/**. Update BOTH the
   // number and the doc together, deliberately.
+  //
+  // TRAIN 3 (+1 here, +2 in the AST layer): the grounded-query server action
+  // `app/actions/stella/grounded-query.ts` is an entry point by both layers.
+  // `app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx` is
+  // seen only by the AST layer — it is a server component, not an entry point
+  // (`isEntryPoint`), which is exactly the JSX-shaped gap B2 added the AST
+  // layer to close. Both are `contextualized`: the action opens
+  // `withOrganizationDatabaseContext` around every read, and the wrapper
+  // reaches the database only through that action.
   it('the regex-layer coverage matches the figures the docs publish', () => {
     const contextualized = databaseReaching.filter((file) => {
       if (file in ALLOWLIST) return false
@@ -642,7 +651,7 @@ describe('every entry point that can reach the database opens an identity contex
       reaching: databaseReaching.length,
       contextualized: contextualized.length,
       allowlisted: allowlisted.length,
-    }).toEqual({ inventoried: 117, reaching: 93, contextualized: 80, allowlisted: 13 })
+    }).toEqual({ inventoried: 118, reaching: 94, contextualized: 81, allowlisted: 13 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

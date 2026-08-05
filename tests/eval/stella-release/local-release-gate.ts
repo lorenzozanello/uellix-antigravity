@@ -23,7 +23,7 @@
 // real, outside this harness, which this module cannot do and does not
 // pretend to.
 
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { stellaConfig } from '@/lib/stella/config'
 import type { ReleaseEvalRun, ReleaseEvalSummary } from './harness'
@@ -40,6 +40,7 @@ export type LocalReleaseGateId =
   | 'no-provider-calls'
   | 'no-secrets'
   | 'determinism'
+  | 'runtime-entrypoint'
 
 export interface LocalReleaseGateResult {
   id: LocalReleaseGateId
@@ -83,6 +84,8 @@ function metricValue(summary: ReleaseEvalSummary, metric: string): number | null
 export function evaluateLocalReleaseGates(
   run: ReleaseEvalRun,
   secondRunForDeterminism: ReleaseEvalRun,
+  /** Repo root, for the twelfth (train 3) gate's existence checks. */
+  root: string = process.cwd(),
 ): LocalReleaseGateResult[] {
   const { summary, results } = run
 
@@ -142,9 +145,100 @@ export function evaluateLocalReleaseGates(
       passed: JSON.stringify(secondRunForDeterminism.summary) === JSON.stringify(summary) && JSON.stringify(secondRunForDeterminism.results) === JSON.stringify(results),
       detail: 'two independent runs of the same matrix produce byte-identical summary and results (harness wall-clock excluded from both, by design)',
     },
+    // TRAIN 3 — the twelfth gate. See RUNTIME_ENTRYPOINT_MODULES.
+    runtimeEntrypointGate(root),
   ]
 
   return gates
+}
+
+/* -------------------------------------------------------------------------- */
+/* Runtime entrypoint (train 3)                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * THE GATE THAT STOPS THIS HARNESS FROM CERTIFYING ITSELF.
+ *
+ * Every one of the eleven gates above reads the harness's OWN output over the
+ * harness's OWN fixtures. All eleven passed for the whole of train 2, when
+ * `components/stella/**` had zero call sites and no server action existed at
+ * all — so "local-runtime-ready" was true for a system in which no user could
+ * reach a single one of the paths being measured. A gate set that cannot tell
+ * a library from a running system is not measuring readiness.
+ *
+ * This one asks a question the fixtures cannot answer: does the seam EXIST on
+ * disk, end to end — client contract, server action, repository adapter over
+ * the governed SQL surface, and a typed wrapper that binds a server-derived
+ * project? Existence only, by path: nothing is imported, nothing is executed,
+ * no database is opened and no flag is read for its value here. That is the
+ * same discipline as `decisionsPersistencePackageIsPrepared`.
+ */
+const RUNTIME_ENTRYPOINT_MODULES: readonly (readonly [label: string, relativePath: string])[] = [
+  ['client contract', path.posix.join('components', 'stella', 'grounded-query.ts')],
+  ['client panel', path.posix.join('components', 'stella', 'StellaGroundedQueryPanel.tsx')],
+  ['server action', path.posix.join('app', 'actions', 'stella', 'grounded-query.ts')],
+  ['repository adapter', path.posix.join('db', 'grounding', 'grounding-chunk-repository.ts')],
+  [
+    'server/client wrapper',
+    path.posix.join('app', 'app', 'projects', '[projectId]', 'pipeline', 'StellaGroundedQuerySection.tsx'),
+  ],
+]
+
+export function missingRuntimeEntrypointModules(root: string): string[] {
+  return RUNTIME_ENTRYPOINT_MODULES.filter(([, rel]) => !existsSync(path.join(root, rel))).map(
+    ([label, rel]) => `${label} missing: ${rel}`,
+  )
+}
+
+function runtimeEntrypointGate(root: string): LocalReleaseGateResult {
+  const missing = missingRuntimeEntrypointModules(root)
+  return {
+    id: 'runtime-entrypoint',
+    passed: missing.length === 0,
+    detail:
+      missing.length === 0
+        ? `all ${RUNTIME_ENTRYPOINT_MODULES.length} modules of the grounded-query seam exist (existence only — never imported, never executed here)`
+        : missing.join('; '),
+  }
+}
+
+/**
+ * Is the seam REACHABLE by a human? Existence is not reachability: an action
+ * nothing renders is dead code with tests.
+ *
+ * Answered by asking whether any `page.tsx` under `app/` names the wrapper.
+ * As of train 3 the answer is NO, deliberately — seven pipeline pages each
+ * mount Stella under a different `AdvisorPipelineStep`, so there is no single
+ * unambiguous surface, and inventing an eighth page would create a second
+ * Stella experience. PRODUCT-002 is therefore
+ * IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE and this returns the reason
+ * rather than a bare false.
+ */
+const RUNTIME_WRAPPER_SYMBOL = 'StellaGroundedQuerySection'
+
+export function runtimeEntrypointMountReasons(root: string): string[] {
+  const pagesDir = path.join(root, 'app')
+  if (!existsSync(pagesDir)) return ['app/ not found — cannot determine whether the seam is mounted']
+
+  const mountedIn: string[] = []
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === '__tests__') continue
+        walk(full)
+      } else if (entry.name === 'page.tsx' && readFileSync(full, 'utf8').includes(RUNTIME_WRAPPER_SYMBOL)) {
+        mountedIn.push(path.relative(root, full).split(path.sep).join('/'))
+      }
+    }
+  }
+  walk(pagesDir)
+
+  return mountedIn.length > 0
+    ? []
+    : [
+        `no page.tsx under app/ renders <${RUNTIME_WRAPPER_SYMBOL}>: the grounded-query seam exists and is typed end to end but no human can reach it — PRODUCT-002 is IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE (seven pipeline steps, no unambiguous canonical surface; integration did not invent an eighth page)`,
+      ]
 }
 
 export interface LocalReleaseGateReport {
@@ -156,6 +250,13 @@ export interface LocalReleaseGateReport {
   stagingBlocked: true
   /** Always true from this module — see the file header. */
   hostedBlocked: true
+  /**
+   * TRAIN 3. What stands between `integration-ready` and
+   * `local-runtime-ready`. Empty iff `localRuntimeReady` is true — never a
+   * bare false, for the same reason `missingForStaging` is never a bare
+   * "blocked".
+   */
+  missingForLocalRuntime: string[]
   missingForStaging: string[]
   missingForHosted: string[]
 }
@@ -164,6 +265,12 @@ export interface LocalReleaseGateReport {
  *  package. Existence-only check — never read for content, never executed,
  *  matching the discipline of checkCapRegressionSurfacePresent. */
 const DECISIONS_PERSISTENCE_PACKAGE = path.posix.join('db', 'prepared', 'stella_0003_suggestion_decisions.sql')
+
+/** The two prepared packages the grounded-query repository adapter reads. */
+const GROUNDING_PERSISTENCE_PACKAGES: readonly string[] = [
+  path.posix.join('db', 'prepared', 'grounding_0002_document_versions.sql'),
+  path.posix.join('db', 'prepared', 'grounding_0003_evidence_chunks.sql'),
+]
 
 function decisionsPersistencePackageIsPrepared(root: string): boolean {
   return existsSync(path.join(root, DECISIONS_PERSISTENCE_PACKAGE))
@@ -193,7 +300,7 @@ export function computeLocalReleaseGateReport(
   secondRunForDeterminism: ReleaseEvalRun,
   root: string = process.cwd(),
 ): LocalReleaseGateReport {
-  const gates = evaluateLocalReleaseGates(run, secondRunForDeterminism)
+  const gates = evaluateLocalReleaseGates(run, secondRunForDeterminism, root)
   const byId = new Map(gates.map((g) => [g.id, g]))
 
   const libraryReady =
@@ -206,9 +313,36 @@ export function computeLocalReleaseGateReport(
     (byId.get('no-provider-calls')?.passed ?? false) &&
     (byId.get('determinism')?.passed ?? false)
 
-  const localRuntimeReady = integrationReady && gates.every((g) => g.passed)
+  // TRAIN 3 — local-runtime-ready is NO LONGER derivable from the harness's
+  // own gates alone. See runtimeEntrypointGate: eleven fixture-fed gates all
+  // passed throughout train 2, when nothing was reachable. A level named
+  // "runtime ready" must depend on something outside the fixtures.
+  const missingForLocalRuntime: string[] = [
+    ...gates.filter((g) => !g.passed).map((g) => `gate ${g.id} failed: ${g.detail}`),
+    ...missingRuntimeEntrypointModules(root),
+    ...runtimeEntrypointMountReasons(root),
+    ...GROUNDING_PERSISTENCE_PACKAGES.filter((rel) => !existsSync(path.join(root, rel))).map(
+      (rel) => `${rel} not found — the grounded-query repository adapter reads the surface this package creates`,
+    ),
+    // Not conditional, and not verifiable from here: this harness opens no
+    // database, so it can never observe that a package was applied. Stated as
+    // permanently-missing evidence rather than silently assumed satisfied.
+    `${GROUNDING_PERSISTENCE_PACKAGES.join(' + ')} exist as PREPARED SQL and have been applied to NO database — until they are, every grounded query returns provider_unavailable. Applying them is a gate this harness cannot run and does not simulate`,
+    `no grounded-answer generator exists: app/actions/stella/grounded-query.ts injects a provider that REJECTS by contract, so the seam is exercised end to end but produces no drafted answer (that is gate G1, a real provider round trip)`,
+    // Adversarial review, train 3 (reviewer B, #9). checkStellaQuota counts
+    // stella_interactions rows, and stella_interactions_stella_role_check
+    // admits six roles of which `grounded_query` is not one — so this
+    // capability ENFORCES a monthly quota it cannot CONSUME. Not fixable from
+    // integration (widening a CHECK is a CAPABILITIES-owned schema change);
+    // listed here so the flag cannot be turned on while it is open.
+    `quota is enforced but not consumed: stella_interactions has no \`grounded_query\` role (contract INT-CAP-001), so a live grounded query would read the org's monthly quota and never charge it`,
+  ]
+
+  const localRuntimeReady = integrationReady && missingForLocalRuntime.length === 0
 
   const missingForStaging: string[] = [
+    ...missingForLocalRuntime,
+    `STELLA_GROUNDED_QUERY_ENABLED is ${stellaConfig.isGroundedQueryEnabled} (must reach staging still false; enabling it requires the grounding packages applied first)`,
     `STELLA_DECISIONS_PERSISTENCE_ENABLED is ${stellaConfig.isDecisionsPersistenceEnabled} (must reach staging still false; enabling it is its own gate, never automatic)`,
     decisionsPersistencePackageIsPrepared(root)
       ? `${DECISIONS_PERSISTENCE_PACKAGE} exists as PREPARED SQL but has not been applied to any database — that is gate G2 (docs/ops/gates/G2_PACKAGE.md), owned by CAPABILITIES, not run by this harness`
@@ -232,6 +366,7 @@ export function computeLocalReleaseGateReport(
     localRuntimeReady,
     stagingBlocked: true,
     hostedBlocked: true,
+    missingForLocalRuntime,
     missingForStaging,
     missingForHosted,
   }
