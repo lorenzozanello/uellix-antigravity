@@ -18,8 +18,14 @@
 // mistaken for provider latency.
 
 import { releaseEvalFailureReasons, runReleaseEvalHarness } from '../tests/eval/stella-release/harness'
+import { computeLocalReleaseGateReport } from '../tests/eval/stella-release/local-release-gate'
 
-const { summary, results, observations } = runReleaseEvalHarness()
+const run = runReleaseEvalHarness()
+const { summary, results, observations } = run
+// A second run, solely to feed the determinism gate below — cheap (~30ms),
+// and it is what "determinism" means: two independent runs, not one run
+// compared to itself.
+const secondRunForDeterminism = runReleaseEvalHarness()
 
 const structured = {
   version: {
@@ -105,11 +111,33 @@ console.log(`[eval:release] json ${JSON.stringify(structured)}`)
 // Deliberately outside the deterministic block — see the header note.
 console.log(`[eval:release] observation (non-deterministic): harnessWallClockMs=${observations.harnessWallClockMs}`)
 
+// --- local release gate (train 3, Fases 3 and 5) ---------------------------
+const gateReport = computeLocalReleaseGateReport(run, secondRunForDeterminism)
+
+console.log('[eval:release] local release gates:')
+for (const gate of gateReport.gates) {
+  console.log(`[eval:release]   ${gate.passed ? 'PASS' : 'FAIL'} ${gate.id} — ${gate.detail}`)
+}
+console.log(
+  `[eval:release] readiness: library-ready=${gateReport.libraryReady} integration-ready=${gateReport.integrationReady} local-runtime-ready=${gateReport.localRuntimeReady} staging-blocked=${gateReport.stagingBlocked} hosted-blocked=${gateReport.hostedBlocked}`,
+)
+console.log('[eval:release] missing for staging:')
+for (const item of gateReport.missingForStaging) console.log(`[eval:release]   - ${item}`)
+console.log('[eval:release] missing for hosted (additive):')
+for (const item of gateReport.missingForHosted) {
+  if (!gateReport.missingForStaging.includes(item)) console.log(`[eval:release]   - ${item}`)
+}
+
 // --- failure gates ---------------------------------------------------------
 // The gate logic lives in the harness (releaseEvalFailureReasons) so it can be
 // tested against synthetic summaries: proving "the process fails on an
 // isolation violation" must not require engineering a real tenant leak.
 const reasons = releaseEvalFailureReasons(summary)
+// determinism is the one Fase-3 gate releaseEvalFailureReasons cannot see —
+// it needs a SECOND run to compare against, which a single summary never has.
+if (!gateReport.gates.find((g) => g.id === 'determinism')?.passed) {
+  reasons.push('determinism gate failed — two independent runs of the same matrix produced different output')
+}
 
 if (reasons.length > 0) {
   for (const reason of reasons) console.error(`[eval:release] FAILED: ${reason}`)

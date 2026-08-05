@@ -1,6 +1,8 @@
 // tests/eval/stella-release/matrix.ts
 // RELEASE line — versioned evaluation matrix
-// (STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2, Fases 2-3).
+// (STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2, Fases 2-3;
+// STELLA_RELEASE_RUNTIME_GATE_FOUNDATION_TRAIN_3 extends it — see the 5
+// decision-journey entries added below).
 //
 // One entry per case category. harness.ts implements exactly one check
 // function per `checkId` below; harness.test.ts and
@@ -14,8 +16,21 @@
 // structured reason. Train 1 attached `latency` to two checks that could not
 // measure it (finding B-M6) — declaring a metric a check cannot produce is how
 // a dashboard ends up showing a number nobody computed.
+//
+// TRAIN 3 — closing the runtime journey's last step. The 19 train-2 entries
+// cover evidence → ingestion(version/chunks) → retrieval → grounded answer →
+// citations. Nothing in the matrix reached the journey's final step — the
+// human DECISION over a suggestion (accept/reject/rollback) and the two ways
+// recording it can fail (feature flag off, persistence error). That surface
+// already exists as real code — app/actions/stella/decisions.ts +
+// decisions-schema.ts (WS3b, pre-parallel-split foundation, not owned by any
+// of the four lines' §3-§6 grants) — so these 5 entries are built against the
+// REAL exported contract, never a simulated database. The persistence table
+// itself (stella_suggestion_decisions) exists only as prepared SQL guarded by
+// STELLA_DECISIONS_PERSISTENCE_ENABLED=false; no entry here pretends that
+// table is live.
 
-export const RELEASE_EVAL_MATRIX_VERSION = '2.0.0'
+export const RELEASE_EVAL_MATRIX_VERSION = '3.0.0'
 
 export type ReleaseEvalMetric =
   | 'citation-precision'
@@ -60,6 +75,11 @@ export type ReleaseEvalCategory =
   | 'grounding-retrieval-score'
   | 'grounding-contradiccion-marcada'
   | 'grounding-product-adapter'
+  | 'feature-flag-desactivada'
+  | 'decision-aceptada'
+  | 'decision-rechazada'
+  | 'decision-rollback'
+  | 'error-persistencia-decision'
 
 export interface ReleaseEvalMatrixEntry {
   checkId: string
@@ -248,6 +268,56 @@ export const RELEASE_EVAL_MATRIX: readonly ReleaseEvalMatrixEntry[] = [
     offlineLimitation:
       'Mide COMPLETITUD DE ENTRADA, no el adaptador. Reconciliado por integración en el tren 2: components/stella/grounding-adapter.ts SÍ existe ahora e INTEGRATION-001 quedó `aceptado`; lo que sigue siendo cierto es el alcance de esta comprobación, no la ausencia del adaptador. RELEASE mantiene deliberadamente el criterio del lado de la ENTRADA —lo que una cita debe llevar— porque el comportamiento del adaptador lo cubren sus propias pruebas focalizadas (components/stella, 331 casos) y duplicarlo aquí mediría dos veces lo mismo mientras deja sin medir la forma que lo alimenta.',
   },
+  // ---------------------------------------------------------------------
+  // Tren 3 — el último tramo del recorrido: decisión humana sobre una
+  // sugerencia (aceptar/rechazar/deshacer) y sus dos modos de fallo.
+  // Construidas contra el contrato REAL — app/actions/stella/decisions.ts +
+  // decisions-schema.ts — nunca contra una base simulada.
+  // ---------------------------------------------------------------------
+  {
+    checkId: 'stella-decision-feature-flag-blocks-persistence',
+    category: 'feature-flag-desactivada',
+    description:
+      'Dos verificaciones sobre el contrato real, ninguna recreada: (1) `stellaConfig.isDecisionsPersistenceEnabled` — el booleano REAL, computado en runtime desde `process.env`, no una constante del check — debe ser false, el default de .env.example; (2) inspección ESTRUCTURAL (lectura de código fuente, nunca ejecución — mismo patrón que cap-01-05-regression-surface-present) de app/actions/stella/decisions.ts confirmando que el gate de la bandera es la PRIMERA sentencia de recordStellaDecision(), antes de StellaDecisionInputSchema.safeParse y antes de requireOrganizationAccess/db. Este harness nunca ejecuta recordStellaDecision (es una server action con I/O real) — mide el booleano real y el orden real del código, no un recreado.',
+    metrics: ['structural-regression'],
+    offlineMeasurable: true,
+    offlineLimitation:
+      'Confirma que el booleano vive apagado y que el gate es textualmente el primero, no que la tabla stella_suggestion_decisions funcione una vez habilitada — eso requiere gate G2 (aplicar db/prepared/stella_0003_suggestion_decisions.sql) y no se simula aquí. Si STELLA_DECISIONS_PERSISTENCE_ENABLED=true contamina el entorno que corre este harness, el check falla cerrado en vez de asumir el default.',
+  },
+  {
+    checkId: 'stella-decision-accepted-contract-valid',
+    category: 'decision-aceptada',
+    description:
+      'StellaDecisionInputSchema (contrato real, no recreado) acepta "accepted" con sólo los campos base, y "accepted_edited" cuando además trae editedText — el texto que reemplazó a la sugerencia. Controles negativos: "accepted_edited" con editedText por encima del límite de 20000 caracteres debe rechazarse, y un campo no declarado en el esquema `.strict()` (p.ej. decidedBy del cliente) debe rechazarse — la identidad del decisor viene siempre de la sesión server-side, nunca del payload.',
+    metrics: ['structural-regression'],
+    offlineMeasurable: true,
+  },
+  {
+    checkId: 'stella-decision-rejected-contract-valid',
+    category: 'decision-rechazada',
+    description:
+      '"rejected" es aceptado con rejectionReason opcional; cuando está presente debe respetar el límite de 2000 caracteres del esquema real. Control negativo: rejectionReason por encima del límite debe rechazarse — un rechazador que aceptara cualquier longitud no estaría fijando el contrato, sólo observándolo pasar.',
+    metrics: ['structural-regression'],
+    offlineMeasurable: true,
+  },
+  {
+    checkId: 'stella-decision-rollback-append-only',
+    category: 'decision-rollback',
+    description:
+      '"undone" es un VALOR de decisión más — una fila nueva que referencia el mismo suggestionKey — nunca una mutación de la fila anterior: el esquema real no lleva ningún campo (id/decisionId) capaz de señalar una fila existente para actualizarla, así que el rollback es append-only por construcción, no por convención documentada. Control negativo: un payload que añade un campo de referencia a fila existente (p.ej. "decisionId") debe ser rechazado por el `.strict()` del esquema real — si lo aceptara, "append-only" dejaría de ser cierto del contrato.',
+    metrics: ['structural-regression'],
+    offlineMeasurable: true,
+  },
+  {
+    checkId: 'stella-decision-persistence-error-non-leaking',
+    category: 'error-persistencia-decision',
+    description:
+      'Inspección ESTRUCTURAL (lectura de código fuente versionado, nunca ejecución) de app/actions/stella/decisions.ts: la rama DB_ERROR devuelve un mensaje literal fijo en vez de interpolar el error capturado, el log de servidor imprime sólo error.name (nunca el objeto completo, que podría llevar texto de consulta SQL), y el fallo de auditoría (logStellaAudit) se atrapa sin relanzar — un audit_logs caído nunca puede cambiar el resultado que ve el usuario. Controles negativos: una sonda sobre una copia del texto fuente con `${error.message}` interpolado en el mensaje de retorno debe detectarse, igual que una copia sin el try/catch alrededor de la auditoría.',
+    metrics: ['structural-regression'],
+    offlineMeasurable: true,
+    offlineLimitation:
+      'No ejecuta una escritura real ni provoca un DB_ERROR verdadero — eso requiere una base levantada, prohibida en esta unidad. Mide que el CONTRATO de no-fuga se sostiene en el código tal como está escrito, no que la excepción real ocurra.',
+  },
 ] as const
 
 const REQUIRED_CATEGORIES: readonly ReleaseEvalCategory[] = [
@@ -270,6 +340,11 @@ const REQUIRED_CATEGORIES: readonly ReleaseEvalCategory[] = [
   'grounding-retrieval-score',
   'grounding-contradiccion-marcada',
   'grounding-product-adapter',
+  'feature-flag-desactivada',
+  'decision-aceptada',
+  'decision-rechazada',
+  'decision-rollback',
+  'error-persistencia-decision',
 ]
 
 export class ReleaseEvalMatrixError extends Error {

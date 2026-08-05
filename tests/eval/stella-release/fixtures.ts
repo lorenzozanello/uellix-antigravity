@@ -44,8 +44,12 @@ import type {
  * needs as a negative control, plus grounding-contract fixtures. The 1.x
  * advisor fixtures below are unchanged in shape and value; the bump reflects
  * added surface, not altered expectations.
+ *
+ * 3.0.0 (RELEASE train 3) — added StellaDecisionInput fixtures for the
+ * journey's last step (human decision over a suggestion). Nothing above this
+ * line changed shape or value.
  */
-export const RELEASE_FIXTURES_VERSION = '2.0.0'
+export const RELEASE_FIXTURES_VERSION = '3.0.0'
 
 const ORG_ALPHA_MARKER = 'ORG-ALPHA-4f1c9e2a-EVIDENCE'
 const ORG_BETA_MARKER = 'ORG-BETA-9b7d3f61-EVIDENCE'
@@ -590,3 +594,43 @@ export const CONTRADICTION_IGNORED_ANSWER: GroundedAnswerState = {
 export const KNOWN_CONTRADICTORY_EVIDENCE_PAIRS: readonly (readonly [string, string])[] = [
   ['ev-contra-approved', 'ev-contra-rejected'],
 ]
+
+// -----------------------------------------------------------------------------
+// Tren 3 — decisión humana sobre una sugerencia (app/actions/stella/decisions.ts
+// + decisions-schema.ts). Fixtures ficticias; ningún projectId/suggestionKey
+// corresponde a un proyecto o interacción real.
+// -----------------------------------------------------------------------------
+
+const DECISION_PROJECT_ID = '11111111-1111-4111-8111-111111111111'
+const DECISION_INTERACTION_ID = '22222222-2222-4222-8222-222222222222'
+
+export const DECISION_ACCEPTED_INPUT = {
+  projectId: DECISION_PROJECT_ID,
+  suggestionKey: 'advisor.suggested_next_actions[0]',
+  decision: 'accepted' as const,
+  interactionId: DECISION_INTERACTION_ID,
+}
+
+export const DECISION_ACCEPTED_EDITED_INPUT = {
+  projectId: DECISION_PROJECT_ID,
+  suggestionKey: 'advisor.suggested_next_actions[1]',
+  decision: 'accepted_edited' as const,
+  interactionId: DECISION_INTERACTION_ID,
+  editedText: 'Texto ajustado por el revisor humano antes de aplicar la sugerencia.',
+  previousValue: 'Texto original sugerido por Stella.',
+}
+
+export const DECISION_REJECTED_INPUT = {
+  projectId: DECISION_PROJECT_ID,
+  suggestionKey: 'advisor.suggested_next_actions[2]',
+  decision: 'rejected' as const,
+  interactionId: DECISION_INTERACTION_ID,
+  rejectionReason: 'La sugerencia no aplica a la línea base vigente del proyecto.',
+}
+
+export const DECISION_UNDONE_INPUT = {
+  projectId: DECISION_PROJECT_ID,
+  suggestionKey: 'advisor.suggested_next_actions[0]',
+  decision: 'undone' as const,
+  interactionId: DECISION_INTERACTION_ID,
+}
