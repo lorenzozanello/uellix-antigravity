@@ -14,7 +14,38 @@ export type {
   IngestionRejected,
   IngestionSkipReason,
   IngestionSkipped,
+  PreviousVersionRef,
 } from './ingest-document'
+
+export {
+  GroundingPersistenceError,
+  buildEvidenceChunkPayload,
+  currentPipelineIdentity,
+  isRetryablePersistenceFailure,
+  parseDocumentVersionRef,
+} from './persistence'
+export type {
+  ActiveDocumentVersionState,
+  DocumentVersionRef,
+  EvidenceChunkPayloadRow,
+  FinalizeDocumentIngestionRequest,
+  GroundingIngestionRepository,
+  GroundingPersistenceFailureKind,
+  GroundingPersistenceOperation,
+  InsertEvidenceChunksRequest,
+  RegisterDocumentVersionRequest,
+} from './persistence'
+
+export { ingestEvidenceDocument } from './orchestrate-ingestion'
+export type {
+  IngestEvidenceOptions,
+  IngestionRunFailure,
+  IngestionRunNotIndexed,
+  IngestionRunOutcome,
+  IngestionRunPersisted,
+  IngestionStage,
+  ReingestionKind,
+} from './orchestrate-ingestion'
 
 export { MAX_NORMALIZED_CHARS, normalizeDocumentText } from './normalize'
 export type { NormalizationOutput } from './normalize'
