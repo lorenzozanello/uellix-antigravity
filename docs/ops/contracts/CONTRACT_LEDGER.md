@@ -20,7 +20,7 @@ falta una capa de adaptación antes de poder consumirlo. No es `aceptado`
 | CT-CAP-001 | CAPABILITIES | CAPABILITIES | `aceptado` (tren 1) | 2026-08-04 | [Contratos de aplicación CAP-01…CAP-05](CT-CAP-001_capability_application_contracts.md) |
 | CT-CAP-002 | CAPABILITIES | INTEGRACIÓN | `aceptado` (tren 1, opción A) | 2026-08-04 | [Normalización de `RR-CAP-10-A-bis`](CT-CAP-002_rr_cap_10_a_bis_normalization.md) |
 | CT-CAP-003 | CAPABILITIES | INTEGRACIÓN | `aceptado` (tren 1) | 2026-08-04 | [Fin de línea de `db/prepared/**`](CT-CAP-003_prepared_sql_line_endings.md) |
-| CT-CAP-004 | CAPABILITIES | INTEGRACIÓN | `solicitado` | 2026-08-04 | [`UELLIX_STRIPE_DATABASE_URL` en `.env.example`](CT-CAP-004_stripe_capability_env_var.md) |
+| CT-CAP-004 | CAPABILITIES | INTEGRACIÓN | `aceptado` (raíz tren 2) | 2026-08-04 | [`UELLIX_STRIPE_DATABASE_URL` en `.env.example`](CT-CAP-004_stripe_capability_env_var.md) |
 | GR-001 | GROUNDING | CAPABILITIES | `solicitado` | 2026-08-04 | [`GR-001_evidence_chunks_provenance.md`](GR-001_evidence_chunks_provenance.md) |
 | GR-002 | GROUNDING | CAPABILITIES | `solicitado` | 2026-08-04 | [`GR-002_document_version_history.md`](GR-002_document_version_history.md) |
 | PRODUCT-001 | PRODUCT | GROUNDING | `parcialmente satisfecho` (pendiente de adaptador) | 2026-08-04 | [PRODUCT-001_grounded-citation-provenance.md](PRODUCT-001_grounded-citation-provenance.md) |
@@ -71,19 +71,26 @@ CAPABILITIES reportó en rojo (`capability-isolation`, `prepared-stella-sql`,
 `capability-policy-contract`, `capability-mutation`) entregan **687 passed**,
 exactamente la cifra que esa línea midió al normalizar a mano en su worktree.
 
-### CT-CAP-004 — sigue `solicitado`
+### CT-CAP-004 — `aceptado` (raíz tren 2)
 
-**No aplicado.** La instrucción de esta unidad de integración prohíbe modificar
-archivos `.env`, y la petición es precisamente añadir
-`UELLIX_STRIPE_DATABASE_URL` a `.env.example`.
+**Aplicado** en la unidad de preparación de raíz compartida de tren 2, que sí
+tiene `.env.example` entre sus rutas autorizadas. Se añadió únicamente el
+nombre de variable, con valor vacío, en la sección «Stripe (Monetization &
+Billing)»:
 
-No es un rechazo del contrato: la petición es razonable y no expone ningún
-secreto (documenta un **nombre** de variable, no un valor). Queda como trabajo
-de entrada del primer tren que tenga `.env.example` entre sus rutas
-autorizadas. Mientras tanto, la variable está documentada en
-`db/capabilities/stripe-capability-executor.ts` y en CT-CAP-004, y su ausencia
-es fail-closed: sin credencial el resolutor devuelve `null` y el handler
-contesta `unavailable` / 503.
+```dotenv
+# CAP-03 — conexión exclusiva del handler del webhook de Stripe.
+# Debe declarar el rol uellix_stripe. NO se comparte con ningún otro servicio.
+# Sin aprovisionar: el handler devuelve 503 y no intenta nada.
+# Ver docs/ops/capabilities/CAP_03_STRIPE.md §13.
+UELLIX_STRIPE_DATABASE_URL=
+```
+
+No se reutilizó `DATABASE_URL`, no se usó `service_role`, no se afirmó que
+Stripe esté habilitado y `WEBHOOK_DATABASE_IDENTITY_AVAILABLE` permanece en
+`false`. La variable sigue sin aprovisionar: el resolutor devuelve `null` y el
+handler contesta `unavailable` / 503 exactamente como antes. Este cambio es de
+legibilidad operativa, no de desbloqueo.
 
 ### GR-001 y GR-002 — siguen `solicitado`
 

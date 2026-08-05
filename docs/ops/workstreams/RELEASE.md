@@ -542,3 +542,32 @@ de esta línea.
   `INTEGRATION-OWNED` (§7). Esta línea lo anotó como nota pero **no abrió fila
   de contrato**, a diferencia de CT-CAP-004, que sí la tiene para el mismo tipo
   de necesidad. Abrirla es trabajo de entrada del tren 2.
+
+## Preparación de raíz compartida — tren 2 (integración, 2026-08-04)
+
+**B-m5 → cerrado.** `package.json` gana
+`"test:stella:release-eval": "tsx scripts/eval-release-offline.ts"` (nombre
+`test:stella:release-eval` en vez de `eval:release`, sin conflicto real con
+ningún script existente). Sigue invocable también como `pnpm exec tsx
+scripts/eval-release-offline.ts`. Nueva prueba estructural,
+`tests/eval/stella-release/wiring.test.ts`, fija que el script apunta
+exactamente al harness correcto y que el entrypoint no contiene llamadas de
+red, secretos ni activación de proveedor/flags — no ejecuta el harness (eso ya
+lo cubre `harness.test.ts`), sólo la superficie de `package.json`. Resultado
+de referencia sin cambios: `14/14 checks`,
+`pass=11 abstention=3 system-error=0 isolation-violation=0`, cero
+`providerCalls`.
+
+**El flake por carga de `tests/database-runtime-entrypoints.test.ts` →
+reparado**, no sólo caracterizado. El `await import(...)` dentro del `it()`
+que competía con el `testTimeout` de 5s bajo la batería completa se convirtió
+en import estático de los tres módulos que la prueba inspecciona
+(`@/lib/auth/session`, `@/lib/auth/database-context`, `@/db/identity-context`)
+— el costo se paga en la colección del archivo, no en la prueba. `187/187`
+verdes en aislamiento; `0/2` fallos en dos corridas completas de `test:unit`
+tras el cambio (detalle completo, incluida una **segunda instancia** del mismo
+patrón encontrada en un archivo ajeno a esta línea, en
+[`STELLA_PARALLEL_WORKSTREAMS.md` §13](../STELLA_PARALLEL_WORKSTREAMS.md#preparación-de-raíz-compartida-para-el-tren-2--2026-08-04)).
+
+No se tocó ningún hallazgo MAJOR de esta sección (B-M4/M5/M6): siguen siendo
+trabajo de entrada de RELEASE en el tren 2, sin cambios.

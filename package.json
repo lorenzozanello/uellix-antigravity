@@ -31,7 +31,8 @@
     "db:seed:proxies": "tsx scripts/blocked-command.ts db:seed:proxies db:seed:local:proxies",
     "db:seed:taxonomies": "tsx scripts/blocked-command.ts db:seed:taxonomies db:seed:local:taxonomies",
     "eval:offline": "tsx scripts/eval-offline.ts",
-    "eval:roles": "tsx scripts/eval-roles-offline.ts"
+    "eval:roles": "tsx scripts/eval-roles-offline.ts",
+    "test:stella:release-eval": "tsx scripts/eval-release-offline.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

@@ -11,6 +11,18 @@ import {
   DECIMAL_TO_EXP_NEG,
   DECIMAL_TO_EXP_POS,
 } from '@/lib/pipeline/decimal-config'
+// Side-effect-only warmup import. `vi.resetModules()` below clears vitest's
+// module REGISTRY so the later `await import(...)` re-executes fresh (that
+// fresh execution is exactly what these tests assert on) — it does not force
+// a re-transform of already-compiled source. Without this static import,
+// fx.ts/fx-oracle.ts's first-ever transform happens inside a 5s-timeout test
+// body, racing every other worker's transforms under the full battery; a cold
+// transform occasionally lost that race (observed: 3/4 full `test:unit` runs
+// timed out here under load, 0/2 in isolation). Statically importing once
+// during this file's own collection — which carries no per-test timeout —
+// moves that one-time cost out of the timed window without changing what any
+// assertion below actually exercises.
+import '@/lib/pipeline/fx-oracle'
 
 describe('decimal-config (determinism guard)', () => {
   it('pins the documented values (equal to decimal.js defaults)', () => {

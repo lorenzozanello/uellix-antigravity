@@ -90,11 +90,9 @@ const TWO_SUGGESTIONS_OUTPUT: AdvisorContextualOutput = {
  */
 function TargetHarness({
   onDecision,
-  output = VALID_OUTPUT,
   initialValue = 'valor original',
 }: {
   onDecision?: (record: SuggestionDecisionRecord) => void
-  output?: AdvisorContextualOutput
   initialValue?: string
 }) {
   const [value, setValue] = React.useState(initialValue)
@@ -452,7 +450,7 @@ describe('StellaContextualAdvisorPanel', () => {
       // then resurrect A from s2.
       const onDecision = vi.fn()
       success(TWO_SUGGESTIONS_OUTPUT)
-      render(<TargetHarness onDecision={onDecision} output={TWO_SUGGESTIONS_OUTPUT} initialValue="orig" />)
+      render(<TargetHarness onDecision={onDecision} initialValue="orig" />)
       askStella()
       await waitFor(() => {
         expect(screen.queryAllByText('Aceptar').length).toBe(2)

@@ -26,6 +26,19 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { EntrypointScanner } from './helpers/entrypoint-scanner'
+// Statically imported (not `await import(...)` inside the test below) so the
+// module graph loads during this file's own collection, which carries no
+// per-test timeout, rather than inside a 5s `it()` body. Under the full
+// battery this cold import competed with every other worker for CPU and
+// occasionally missed vitest's default testTimeout — a load-driven flake, not
+// a defect in the modules or the check itself (see docs/ops/workstreams/RELEASE.md,
+// "flake por carga"). The three modules are read-only inspected for their
+// export names below; importing them has no database or network effect (proven
+// by tests/database-entrypoint-safety.test.ts's "no import-time connection"
+// coverage of db/client.ts, which db/identity-context.ts sits in front of).
+import * as sessionModule from '@/lib/auth/session'
+import * as databaseContextModule from '@/lib/auth/database-context'
+import * as identityContextModule from '@/db/identity-context'
 
 const ROOT = process.cwd()
 const APP = path.join(ROOT, 'app')
@@ -588,14 +601,11 @@ describe('the entry-point scanner is actually looking at something', () => {
     expect(opensAContext(`await runWithOrganizationAccess(() => x())`)).toBe(true)
   })
 
-  it('every approved wrapper name is a real export — a rename cannot silently disable this file', async () => {
-    const session = await import('@/lib/auth/session')
-    const context = await import('@/lib/auth/database-context')
-    const identity = await import('@/db/identity-context')
+  it('every approved wrapper name is a real export — a rename cannot silently disable this file', () => {
     const exported = new Set([
-      ...Object.keys(session),
-      ...Object.keys(context),
-      ...Object.keys(identity),
+      ...Object.keys(sessionModule),
+      ...Object.keys(databaseContextModule),
+      ...Object.keys(identityContextModule),
     ])
     for (const opener of CONTEXT_OPENERS) {
       expect(exported.has(opener), `${opener} is no longer exported`).toBe(true)

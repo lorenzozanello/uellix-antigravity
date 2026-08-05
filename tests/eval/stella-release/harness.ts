@@ -20,7 +20,7 @@
 //                             broken)
 //   - 'isolation-violation' → cross-tenant/cross-project data leaked
 
-import { readFileSync, existsSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
@@ -28,7 +28,6 @@ import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contex
 import {
   decodeProviderSourceRefIndexes,
   ProviderSourceRefIndexesError,
-  ProviderOutputContractError,
   MAX_SOURCE_REFS_PER_ITEM,
 } from '@/lib/stella/context/decode-provider-source-ref-indexes'
 import { ContextualIndexTokenLeakError, findBareIndexReferenceTokens } from '@/lib/stella/context/validate-no-index-reference-tokens'

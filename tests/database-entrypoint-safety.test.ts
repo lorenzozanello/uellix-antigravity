@@ -37,6 +37,28 @@ const FAKE_REMOTE_URL =
   'postgresql://seeduser:nOt-a-ReAl-p4ssw0rd@db.projectref123.supabase.co:5432/postgres'
 const FAKE_REMOTE_API_URL = 'https://projectref123.supabase.co'
 
+/**
+ * A syntactically valid, loopback-only, synthetic `UELLIX_RUNTIME_DATABASE_URL`
+ * for spawning `vitest list` against the integration config in isolation.
+ *
+ * `vitest.setup.integration.ts` and `tests/integration/_guard.ts` both run
+ * `resolveRuntimeDatabaseUrl()` and `assertDatabaseOperationAllowed()` at
+ * COLLECTION time (vitest evaluates setup files before it can even list a
+ * file's test names), so a subprocess that inherits this repo's real
+ * environment — which has no `.env.local` and no exported
+ * `UELLIX_RUNTIME_DATABASE_URL` in CI or a clean checkout — aborts before
+ * listing anything: `process.exit(1)`, zero tests collected. That is a gap in
+ * this SUITE's own environment, not a defect the guard is supposed to catch;
+ * the guard is validating a URL shape (role `uellix_app`, loopback, this
+ * worktree's db port), never opening a socket, so a well-formed fake target
+ * satisfies it without a running database, `.env.local`, or any real
+ * credential. The guard itself stays fully exercised — a wrong role or a
+ * remote host here would still abort collection, which is exactly what
+ * `tests/database-target-safety.test.ts` and the in-process refusal tests
+ * below already pin down.
+ */
+const SYNTHETIC_LOCAL_RUNTIME_URL_FOR_COLLECTION = `postgresql://uellix_app:not-a-real-password@127.0.0.1:${LOCAL_DB_PORT}/postgres`
+
 const read = (relative: string) => readFileSync(path.join(ROOT, relative), 'utf8')
 
 /**
@@ -141,7 +163,15 @@ describe('the integration suites cannot be run ungated', () => {
         '--config',
         configPath,
       ],
-      { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CI: 'true' } }
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CI: 'true',
+          UELLIX_RUNTIME_DATABASE_URL: SYNTHETIC_LOCAL_RUNTIME_URL_FOR_COLLECTION,
+        },
+      }
     )
     return (result.stdout ?? '')
       .split('\n')
@@ -211,7 +241,15 @@ describe('the integration suites cannot be run ungated', () => {
         '--config',
         'vitest.integration.config.ts',
       ],
-      { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CI: 'true' } }
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CI: 'true',
+          UELLIX_RUNTIME_DATABASE_URL: SYNTHETIC_LOCAL_RUNTIME_URL_FOR_COLLECTION,
+        },
+      }
     )
     const tests = (result.stdout ?? '')
       .split('\n')

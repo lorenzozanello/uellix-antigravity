@@ -8,11 +8,9 @@
 // here — see docs/ops/workstreams/RELEASE.md).
 // Exits non-zero on any failure.
 //
-// WIRING NOTE for whoever next has package.json write access (RELEASE must
-// not edit package.json — see docs/ops/STELLA_PARALLEL_WORKSTREAMS.md §7):
-// add
-//   "eval:release": "tsx scripts/eval-release-offline.ts"
-// to the "scripts" block, after "eval:roles". Until then, run directly:
+// Wired as `pnpm test:stella:release-eval` (package.json "scripts" block,
+// added by the Stella train 2 shared-root preparation unit). Still runnable
+// directly:
 //   pnpm exec tsx scripts/eval-release-offline.ts
 
 import { runReleaseEvalHarness } from '../tests/eval/stella-release/harness'

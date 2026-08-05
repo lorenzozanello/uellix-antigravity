@@ -360,6 +360,104 @@ PRODUCT → adaptador puro de INTEGRATION-001 con la prueba que impone §7.
 RELEASE → cerrar B-M4/M5/M6, abrir la fila de `package.json`, y extender el
 harness a los contratos de grounding cuando exista retrieval.
 
+### Preparación de raíz compartida para el tren 2 — 2026-08-04
+
+Unidad de integración sobre `INTEGRATION_ROOT_HEAD` del tren 1 (`48c54b3`,
+reconciliación de contratos). Cierra cuatro asuntos INTEGRATION-OWNED
+pendientes antes de abrir el tren 2; no desarrolla funcionalidad de tren 2.
+
+**1. CT-CAP-004 → `aceptado`.** `.env.example` recibe únicamente el nombre de
+variable `UELLIX_STRIPE_DATABASE_URL=` (vacío, con comentario que la describe
+como identidad de BD separada para CAP-03), en la sección Stripe. No se tocó
+`DATABASE_URL`, no se usó `service_role`, `WEBHOOK_DATABASE_IDENTITY_AVAILABLE`
+permanece `false`. Detalle en
+[`CONTRACT_LEDGER.md`](contracts/CONTRACT_LEDGER.md). Esto también cierra B-m5
+del tren 1 (RELEASE no tenía dueño de `package.json` para su propia fila).
+
+**2. Comando oficial del harness de RELEASE.** `package.json` gana
+`"test:stella:release-eval": "tsx scripts/eval-release-offline.ts"`. Sigue
+siendo 100% offline (probado por `tests/eval/stella-release/wiring.test.ts`,
+nuevo: confirma el nombre exacto del script, que apunta al harness correcto, y
+que el entrypoint no contiene `fetch`/URLs http(s)/secretos/activación de
+flags). Referencia: `14/14 checks passed` vía `pnpm test:stella:release-eval`,
+mismas cifras que el tren 1.
+
+**3. `tests/database-entrypoint-safety.test.ts` → reparado, no es
+ambiental.** El fallo (colecta 0 de 49 tests de integración sin `.env.local`)
+se reprodujo antes de tocar nada: `vitest.setup.integration.ts` y
+`tests/integration/_guard.ts` resuelven `UELLIX_RUNTIME_DATABASE_URL` en el
+momento de LISTAR pruebas, no sólo de ejecutarlas, así que un subproceso que
+hereda este entorno (sin `.env.local`, sin la variable exportada) aborta antes
+de listar nada. La reparación inyecta una URL sintética de loopback
+(`postgresql://uellix_app:...@127.0.0.1:56322/postgres`, el rol y puerto que
+el guard exige) sólo en el `env` de los dos `spawnSync` que listan la
+suite de integración — sin `.env.local`, sin BD real, sin credencial real. El
+guard se probó activo tras el cambio: un rol incorrecto o un host remoto en
+esa misma variable siguen colectando 0 pruebas. `122/122` tests verdes.
+
+**4. Flake bajo carga — dos instancias, ambas reparadas.**
+
+- La documentada por el tren 1: `tests/database-runtime-entrypoints.test.ts`,
+  un `await import(...)` dentro de un `it()` con el `testTimeout` por defecto
+  de 5s, corriendo bajo la batería completa. Convertido a import estático de
+  los tres módulos inspeccionados (`@/lib/auth/session`,
+  `@/lib/auth/database-context`, `@/db/identity-context`) — el costo de
+  transformar/ejecutar el módulo se paga durante la colección del archivo, sin
+  timeout de prueba, no dentro del `it()`. `187/187` verdes en aislamiento.
+- Una **segunda instancia no documentada por el tren 1**, encontrada durante
+  la verificación de esta unidad: `tests/sroi-decimal-config.test.ts` ›
+  `importing fx-oracle.ts re-applies the pinned config`. Mismo patrón
+  estructural — `vi.resetModules()` + `await import('@/lib/pipeline/fx-oracle')`
+  dentro de un `it()` de 5s — pero aquí el `resetModules()` es intencional (la
+  prueba verifica el efecto de una importación *fresca*), así que no se podía
+  simplemente izar a import estático sin perder lo que la prueba verifica.
+  Reproducida con evidencia antes de aceptar la clasificación: **3 de 4**
+  corridas completas de `pnpm test:unit` fallaron ahí (siempre el mismo
+  `it()`), **0 de 2** en aislamiento — el archivo que se importa
+  (`lib/pipeline/fx-oracle.ts`) no tiene efectos de import más allá de un
+  `Set` literal, así que el costo es enteramente de *transformación en frío*
+  bajo contención de CPU, no del código en sí. Reparación: un import estático
+  de sólo-efecto-secundario (`import '@/lib/pipeline/fx-oracle'`) al principio
+  del archivo de prueba, que precalienta la caché de transformación de Vite
+  durante la colección; el `vi.resetModules()` posterior sigue forzando una
+  re-ejecución fresca del módulo para la aserción real — no se debilitó nada
+  que la prueba verifica. Validado con **2 corridas completas consecutivas en
+  verde** tras el cambio (0/2 fallos, contra 3/4 antes).
+  No se tocó `fx.ts` (mismo patrón, misma línea): no mostró fallos en las 4
+  corridas observadas y tocarlo sin evidencia habría sido un cambio no
+  verificado.
+  **No se aumentó ningún timeout, global ni de prueba, en ningún punto de
+  esta reparación.**
+
+**5. Tres warnings de lint nuevos del tren 1 → 0.** `44 → 41` warnings totales
+(0 errores en ambos extremos). Los tres pertenecían a archivos nuevos del tren
+1: `tests/eval/stella-release/harness.ts` (`readFileSync` y
+`ProviderOutputContractError`, ambos importados sin uso) y
+`components/stella/__tests__/StellaContextualAdvisorPanel.test.tsx` (una prop
+`output` desestructurada en `TargetHarness` que el componente nunca consumía —
+el único sitio que la pasaba también llamaba `success(TWO_SUGGESTIONS_OUTPUT)`
+por separado, que es lo que realmente configura el mock; eliminarla no cambia
+ningún comportamiento observable). Los 41 warnings restantes son históricos,
+anteriores al tren 1, y no se tocaron.
+
+**Batería final de esta unidad:** `test:unit` **3927 passed / 0 failed / 125
+skipped** (162 archivos, 1 skip de suite) — verificado en **2 corridas
+completas consecutivas en verde** tras las reparaciones de #3 y #4 (contra 1
+corrida en verde de 6 corridas totales antes de la segunda reparación de
+flake) · `typecheck` limpio · `lint` **0 errores / 41 warnings** (ninguno
+nuevo) · `build` verde. `GEMINI_API_KEY` se retiró sólo del entorno del
+proceso de prueba (`env -u`, ningún archivo `.env` tocado) antes de correr
+`test:unit`, siguiendo la práctica ya establecida por el tren 1. Cero
+escrituras a base de datos, cero acceso remoto, cero `fetch`/`pull`, cero
+`supabase start`, cero stack persistente, cero push.
+
+`TRAIN_2_ROOT_HEAD` = el commit `chore(integration): prepare shared Stella
+train 2 root` que contiene esta sección. Los cuatro worktrees de desarrollo
+(`uellix-stella-capabilities`, `-grounding`, `-product`, `-release`) deben
+arrancar el tren 2 desde ese HEAD mediante fast-forward estricto sobre
+`codex/stella-integration` — ninguno tenía commits propios más allá de lo ya
+integrado en el tren 1 al momento de esta preparación.
+
 ## Documentos de línea
 
 - [`docs/ops/workstreams/CAPABILITIES.md`](workstreams/CAPABILITIES.md)
