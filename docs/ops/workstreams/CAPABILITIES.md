@@ -502,3 +502,183 @@ sido inventar en silencio lo que el contrato pide gobernar.
 de crear un ordinal nuevo. Es la lectura estricta y es defendible; la
 alternativa también. Es una decisión de producto, no de esquema, y sigue sin
 tomarse.
+
+---
+
+# TRAIN 3 — endurecimiento de la persistencia de grounding
+
+**HEAD inicial `4d59348`. Entregada. Árbol limpio. Sin push.**
+
+## Unidad
+
+Cerrar siete riesgos locales confirmados durante la integración del tren 2,
+todos sobre `grounding_0002`/`grounding_0003`: `canonical_chunk_id` sin FK,
+ciclos directos e indirectos en esa relación, `chunk_id` aceptado del llamador
+sin rederivación, triggers append-only sin `ENABLE ALWAYS`, bypass del owner
+sobre el acuerdo de scope, y la elección explícita entre `FORCE ROW LEVEL
+SECURITY` y validación mediante funciones/constraints/triggers.
+
+### 1–2. `canonical_chunk_id`: FK compuesta + trigger de aciclicidad
+
+Dos mecanismos, cada uno cerrando la mitad que el otro no puede:
+
+- **`evidence_chunks_canonical_fk`** (FK compuesta, `ON DELETE CASCADE`):
+  `(canonical_chunk_id, organization_id, project_id, evidence_id,
+  document_version_id, content_hash)` → las mismas columnas de la propia fila.
+  Prueba existencia y que canonical/duplicate comparten organización,
+  proyecto, evidence item, document version y content hash — los cinco
+  requisitos de la Fase 2. Se apoya en una UNIQUE nueva,
+  `evidence_chunks_identity_scope_unique`, porque PostgreSQL exige que el lado
+  referenciado de una FK esté respaldado por una UNIQUE/PK sobre exactamente
+  esas columnas.
+- **`trg_evidence_chunks_canonical_integrity`** (`AFTER INSERT FOR EACH ROW`,
+  función `public.uellix_check_canonical_chunk()`): una FK sólo prueba que el
+  objetivo EXISTE y coincide en scope, nunca que el objetivo es a su vez
+  canónico. Este trigger exige que `canonical_chunk_id` señale una fila cuyo
+  propio `canonical_chunk_id` sea `NULL` — así que la relación sólo puede tener
+  **un nivel de indirección**, nunca una cadena, y por construcción ningún
+  ciclo de longitud 2 o mayor es representable (no sólo "no detectado":
+  **irrepresentable**). El autorreferencia (`A -> A`) sigue excluida por el
+  `CHECK canonical_chunk_id <> chunk_id` ya existente.
+
+`insert_evidence_chunks` se reescribió para insertar en **dos pasadas**
+(canónicos primero, duplicados después) dentro de la misma transacción: el
+trigger es `AFTER INSERT` inmediato por fila (no una `CONSTRAINT TRIGGER`
+diferible), así que sin ese orden un duplicado podría procesarse antes de que
+su canónico exista en un único `INSERT` multi-fila. Las dos FK compuestas no
+tienen ese problema — PostgreSQL las comprueba al final de cada sentencia, no
+por fila.
+
+**Probado en vivo, no sólo por inspección** (`scripts/grounding-dry-run.sh`
+§6-ter): canónico inexistente, autorreferencia, cross-project,
+cross-organización, hash distinto, versión distinta, ciclo de dos nodos (dos
+filas mutuamente referenciadas en el mismo `INSERT`, ninguna existente aún) y
+cadena/ciclo largo (un duplicado intentando apuntar a otro duplicado) — los
+nueve, rechazados, con cero filas persistidas para el ciclo de dos nodos.
+
+## 3. `chunk_id` de servidor
+
+`insert_evidence_chunks` ya no confía en el `chunk_id` del payload para
+almacenar. Lo deriva con la MISMA fórmula que
+`lib/grounding/contracts/chunks.ts#deriveChunkId` —
+`SHA-256("grounding/chunk/v1\n<version_id>\n<chunk_index>\n<content_hash>")`,
+hex minúscula — usando `pg_catalog.sha256`/`pg_catalog.convert_to` (builtin,
+sin `pgcrypto`, la misma construcción que el hash de token de
+`stella_0006_invitation_capability.sql`). El `chunk_id` del payload se sigue
+exigiendo y se **compara**: una discrepancia levanta `U0104` en vez de
+almacenarse en silencio o de corregirse sin decirlo. Resultado:
+determinista, idempotente (misma entrada ⇒ mismo id, siempre), verificable
+por un tercero, compatible con reingesta (vía el `ON CONFLICT DO NOTHING`
+existente) y sin colisión silenciosa posible salvo una colisión SHA-256 real.
+
+**Por qué la derivación usa exactamente `(version_id, chunk_index,
+content_hash)` y no más:** es la firma que el propio contrato TypeScript
+publica. Añadir `evidence_id` o el scope a la fórmula la haría divergir de lo
+que `lib/grounding/ingest/chunk-document.ts` ya computa client-side, rompiendo
+la promesa central de GR-001 — que un `chunk_id` citado siga resolviendo a la
+fila que esta función almacena.
+
+## 4–5. Append-only, `ENABLE ALWAYS`, y el bypass del owner
+
+**El owner podía violar el acuerdo de scope directamente.** RLS —incluida la
+policy `RESTRICTIVE` que repite el invariante de scope— no ata al dueño de la
+tabla salvo con `FORCE ROW LEVEL SECURITY`. Antes de este tren,
+`SET ROLE uellix_owner; INSERT INTO evidence_chunks ...` (o
+`evidence_document_versions`) podía escribir una fila con scope inconsistente
+sin que nada lo impidiera.
+
+Cerrado con **constraints y triggers explícitos, nunca `FORCE RLS`**:
+
+| Tabla | Mecanismo nuevo | Cierra |
+|---|---|---|
+| `evidence_chunks` | `evidence_chunks_version_scope_fk` (FK compuesta, 9 columnas, `ON DELETE CASCADE`) | scope/provenance vs. su propia document version — **antes** sólo la policy RESTRICTIVE lo afirmaba |
+| `evidence_document_versions` | `trg_evidence_document_versions_scope_check` (`BEFORE INSERT`, función `public.uellix_check_document_version_scope()`) | scope vs. `evidence_items` — no se pudo usar una FK compuesta porque `evidence_items` es tabla base fuera de esta línea (no se le añadió una UNIQUE nueva) |
+
+**Por qué no `FORCE ROW LEVEL SECURITY`:** habría quitado la excepción del
+owner de forma indiscriminada — incluyendo la del propio definer, que corre
+como `SECURITY DEFINER` pero no tiene `BYPASSRLS` y necesita su propio INSERT
+sin obstáculos — y el propio rollback de grounding_0002 ya documentaba (desde
+el tren 2) que un owner sin `rolbypassrls` bajo FORCE cuenta 0 sobre una tabla
+poblada. La alternativa —constraint o trigger dirigido exactamente al riesgo—
+cierra el mismo hueco sin ese efecto secundario, y es lo que se aplicó.
+
+**`ENABLE ALWAYS` en los seis triggers de ambas tablas** (los cuatro que ya
+existían más los dos nuevos de arriba): sin él, `tgenabled='O'` no dispara bajo
+`session_replication_role = replica`, que sólo puede fijar un superusuario pero
+que de otro modo desactivaría el append-only y el chequeo de scope
+silenciosamente. Probado en vivo bajo replica: seis intentos de owner
+(`UPDATE`/`DELETE`/`TRUNCATE` en ambas tablas) rechazados igual que en modo
+normal.
+
+**Hallazgo no pedido, y riesgo remanente documentado:** las FOREIGN KEY
+también se implementan como triggers internos en PostgreSQL
+(`RI_ConstraintTrigger_*`), y **también** respetan
+`session_replication_role` — se reprodujo en vivo (una FK compuesta que
+rechazaba correctamente en modo normal dejó de hacerlo bajo replica). A
+diferencia de los triggers propios de este paquete, el nombre de ese trigger
+interno es un OID generado por base y sólo es alcanzable con SQL dinámico
+(`EXECUTE format(...)`) — que el contrato estático de esta línea prohíbe
+(`tests/helpers/sql-structure.ts` lo reporta como `unparsed-security-statement`
+antes que dejarlo pasar sin juzgarlo). Dado que fijar
+`session_replication_role` ya exige ser superusuario —quien de todos modos
+puede `ALTER TABLE ... DROP CONSTRAINT` sin este rodeo—, se deja como riesgo
+residual aceptado en vez de forzar SQL dinámico sobre un nombre no
+determinista.
+
+## Pruebas ejecutadas
+
+Focalizadas (§11). Sin gates pesados, sin `test:unit` completo, sin build.
+
+| Suite | Resultado |
+|---|---|
+| `tests/grounding-persistence-contract.test.ts`, `tests/grounding-persistence-mutation.test.ts` | **126 passed** |
+| `tests/cross-workstream/capabilities-to-grounding.test.ts`, `grounding-to-product`, `grounding-product-to-release` | **verde** |
+| `tests/capability-isolation`, `capability-mutation`, `capability-policy-contract`, `capability-policy-parser`, `capability-documentation`, `prepared-stella-sql`, `prepared-sql-source-of-truth`, `database-ddl-containment` | **771 passed** |
+| `lib/grounding/__tests__/prepared-sql.test.ts` (GROUNDING, **no modificada**) | **verde** |
+| `scripts/grounding-dry-run.sh` (contenedor desechable, `--network none`) | **completo**: aplicar ×2 (idempotente), 6 aserciones estructurales nuevas, §6-ter con datos reales (17 escenarios), rollback en orden inverso, reaplicar == aplicado |
+| `pnpm tsc --noEmit`, `pnpm eslint` (focalizado a los ficheros tocados) | **verde** |
+
+**11 mutaciones nuevas** (`G-54`…`G-65`, salteando `G-53` ya usado), cada una
+con `expectedGate` exacto: FK canónica y su UNIQUE objetivo, FK de
+scope-consistencia y su UNIQUE objetivo, el `CHECK` de autorreferencia, la
+derivación y la verificación de `chunk_id` (por separado), `ENABLE ALWAYS` en
+ambas tablas, el trigger de scope-check, el trigger de aciclicidad canónica y
+su temporización (`BEFORE` en vez de `AFTER`). `G-30` (search_path) se
+realineó a la nueva declaración de variables de `insert_evidence_chunks`, sin
+cambiar lo que comprueba.
+
+## Ficheros modificados
+
+`db/prepared/grounding_000{2,3}_*.sql` y sus rollbacks;
+`scripts/grounding-dry-run.sh`; `tests/helpers/grounding-{gates,mutations}.ts`;
+`tests/grounding-persistence-contract.test.ts`. Ninguno fuera de las rutas
+autorizadas de esta línea.
+
+## Riesgos
+
+- **`session_replication_role` y las FOREIGN KEY** — ver arriba. Residual,
+  aceptado, requiere superusuario para siquiera intentarse.
+- **Los mismos riesgos heredados del tren 2** siguen abiertos y ajenos a esta
+  unidad: `EXTRACTOR_VERSION` no publicada en `lib/grounding` (ahora
+  `GR-CAP-002`), la decisión producto de `register_document_version` sobre
+  reingesta bajo pipeline distinto, y `tests/database-entrypoint-safety.test.ts`
+  ambiental (sin `.env.local`).
+- **Ninguno de los dos paquetes ha corrido contra una base persistente.** Toda
+  la evidencia de aplicación es el contenedor desechable de
+  `grounding-dry-run.sh`; la validación en un entorno real es un gate externo,
+  prohibido en esta unidad.
+
+## Estado de entrega a integración
+
+**Entregado. Árbol limpio.** Dos commits locales sobre `4d59348`, sin push:
+
+1. `fix(db): enforce canonical grounding chunk integrity`
+2. `fix(db): harden grounding append-only boundaries`
+
+Nada aplicado a ninguna base de datos, local o remota. Ningún acceso a
+remoto. Ningún stack persistente. Ninguna bandera habilitada. Ningún uso de
+`service_role`.
+
+**Ficheros solicitados a integración:** ninguno. Esta unidad no editó
+`CONTRACT_LEDGER.md`; no hay contrato nuevo que registrar, sólo el
+endurecimiento de dos ya aceptados.

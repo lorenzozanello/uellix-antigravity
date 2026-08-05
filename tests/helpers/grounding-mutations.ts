@@ -465,8 +465,8 @@ export const DEFINER_MUTATIONS: readonly Mutation[] = [
     breaks: "With pg_temp on the path a caller creates a temporary object that shadows an unqualified name, and the SECURITY DEFINER then runs the caller's version with the definer's privileges.",
     expectedGate: ['definer-search-path'],
     apply: sub(
-      "SET search_path = ''\nAS $$\nDECLARE\n  v_version public.evidence_document_versions%ROWTYPE;",
-      "SET search_path = 'public, pg_temp'\nAS $$\nDECLARE\n  v_version public.evidence_document_versions%ROWTYPE;",
+      "SET search_path = ''\nAS $$\nDECLARE\n  v_version    public.evidence_document_versions%ROWTYPE;",
+      "SET search_path = 'public, pg_temp'\nAS $$\nDECLARE\n  v_version    public.evidence_document_versions%ROWTYPE;",
     ),
   },
   {
@@ -780,6 +780,232 @@ export const INTEGRITY_MUTATIONS: readonly Mutation[] = [
   },
 ]
 
+// TRAIN 3 HARDENING — canonical_chunk_id integrity, server-derived chunk_id,
+// and ENABLE ALWAYS. Each mutation removes one property this train added and
+// names the gate that must be the one to notice.
+export const CANONICAL_INTEGRITY_MUTATIONS: readonly Mutation[] = [
+  {
+    id: 'G-54',
+    file: FORWARD.CHUNKS,
+    severity: 'CRITICAL',
+    contract: 'GR-001',
+    change: 'evidence_chunks_canonical_fk is removed from the table definition',
+    breaks: 'canonical_chunk_id can name ANY 64-hex string again — out of scope, out of version, or with different content — because nothing checks that the target row exists and agrees on organization, project, evidence item, document version and content_hash.',
+    expectedGate: ['canonical-fk'],
+    apply: sub(
+      `  -- The dedup relation's referential integrity. canonical_chunk_id must name a
+  -- chunk that EXISTS and shares this row's organization, project, evidence
+  -- item, document version AND content_hash — "the same passage, the same
+  -- document, the same tenant" — closing risk #1 (no FK existed at all: any
+  -- 64-hex string was accepted, canonical or not, in scope or out of it).
+  --
+  -- This does NOT by itself stop a chain (A -> B -> C) or a cycle (A -> B,
+  -- B -> A): a FK only proves the target row exists and matches scope, not
+  -- that the target is ITSELF canonical. That half of risk #2 is closed by
+  -- trg_evidence_chunks_canonical_integrity in section 7b, which requires the
+  -- target's OWN canonical_chunk_id to be NULL — so canonical_chunk_id can
+  -- only ever point one level deep, at a row nothing else points through, and
+  -- a chain or a cycle of any length becomes unrepresentable rather than
+  -- merely undetected. Self-reference (A -> A) is already excluded by
+  -- evidence_chunks_hash_shape_check's \`canonical_chunk_id <> chunk_id\`.
+  CONSTRAINT evidence_chunks_canonical_fk
+    FOREIGN KEY (canonical_chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)
+    REFERENCES public.evidence_chunks (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)
+    ON DELETE CASCADE
+);`,
+      ');',
+    ),
+  },
+  {
+    id: 'G-55',
+    file: FORWARD.CHUNKS,
+    severity: 'MAJOR',
+    contract: 'GR-001',
+    change: 'evidence_chunks_identity_scope_unique (the FK target) is removed from the table definition',
+    breaks: "Without it, PostgreSQL has no UNIQUE/PK constraint over exactly (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash) to bind evidence_chunks_canonical_fk to — the package would fail to install at all, which is worse than a weaker guarantee: the failure mode is silent until someone tries to apply it.",
+    expectedGate: ['canonical-fk'],
+    apply: sub(
+      `  CONSTRAINT evidence_chunks_identity_scope_unique
+    UNIQUE (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash),
+
+`,
+      '',
+    ),
+  },
+  {
+    id: 'G-56',
+    file: FORWARD.CHUNKS,
+    severity: 'CRITICAL',
+    contract: 'GR-001',
+    change: 'evidence_chunks_version_scope_fk is removed from the table definition',
+    breaks: "A chunk's organization, project, evidence item or pipeline versions can disagree with its own document version row again. Only the RESTRICTIVE RLS policy would say so, and RLS does not bind the table owner — a direct `SET ROLE uellix_owner; INSERT ...` bypasses it completely.",
+    expectedGate: ['version-scope-fk'],
+    apply: sub(
+      `  CONSTRAINT evidence_chunks_version_scope_fk
+    FOREIGN KEY (document_version_id, organization_id, project_id, evidence_id, version_id,
+                 raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+    REFERENCES public.evidence_document_versions (id, organization_id, project_id, evidence_id, version_id,
+                 raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+    ON DELETE CASCADE,
+
+`,
+      '',
+    ),
+  },
+  {
+    id: 'G-57',
+    file: FORWARD.VERSIONS,
+    severity: 'MAJOR',
+    contract: 'GR-002',
+    change: 'evidence_document_versions_identity_unique (evidence_chunks\' FK target) is removed from the table definition',
+    breaks: 'evidence_chunks_version_scope_fk has no UNIQUE/PK constraint over exactly its 9 referenced columns to bind to — grounding_0003 fails to install.',
+    expectedGate: ['identity-unique'],
+    apply: sub(
+      `  CONSTRAINT evidence_document_versions_identity_unique
+    UNIQUE (id, organization_id, project_id, evidence_id, version_id,
+            raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
+);`,
+      ');',
+    ),
+  },
+  {
+    id: 'G-58',
+    file: FORWARD.CHUNKS,
+    severity: 'CRITICAL',
+    contract: 'GR-001',
+    change: 'the self-reference clause is dropped from evidence_chunks_hash_shape_check',
+    breaks: 'A chunk can name itself as its own canonical_chunk_id. Combined with the content-presence biconditional, a self-referencing row has canonical_chunk_id NOT NULL and so content IS NULL — a chunk that cites nothing and resolves nowhere, forever.',
+    expectedGate: ['canonical-self-reference-check'],
+    apply: sub(
+      "AND (canonical_chunk_id IS NULL\n                OR (canonical_chunk_id ~ '^[0-9a-f]{64}$' AND canonical_chunk_id <> chunk_id))),",
+      "AND (canonical_chunk_id IS NULL\n                OR canonical_chunk_id ~ '^[0-9a-f]{64}$')),",
+    ),
+  },
+  {
+    id: 'G-59',
+    file: FORWARD.CHUNKS,
+    severity: 'CRITICAL',
+    contract: 'GR-001',
+    change: 'insert_evidence_chunks stores the caller\'s chunk_id directly instead of the server-derived one',
+    breaks: "A caller can choose ANY chunk_id — including one already used by another tenant's chunk sharing the same UNIQUE(chunk_id), or one that simply does not derive from what was actually stored, so a citation naming it can never be re-verified from the sealed file.",
+    expectedGate: ['chunk-id-server-derivation'],
+    apply: sub(
+      `  SELECT
+    pg_catalog.encode(
+      pg_catalog.sha256(pg_catalog.convert_to(
+        'grounding/chunk/v1' || chr(10) || v_version.version_id || chr(10) || c.chunk_index::text || chr(10) || c.content_hash,
+        'UTF8')),
+      'hex'),
+    v_version.organization_id,`,
+      `  SELECT
+    c.chunk_id,
+    v_version.organization_id,`,
+    ),
+  },
+  {
+    id: 'G-60',
+    file: FORWARD.CHUNKS,
+    severity: 'MAJOR',
+    contract: 'GR-001',
+    change: 'the chunk_id derivation/verification check is removed from insert_evidence_chunks',
+    breaks: 'A caller-supplied chunk_id that does NOT derive from (version_id, chunk_index, content_hash) is no longer rejected — the mismatch is never surfaced, even though (with G-59 absent) the row would still be stored under the correct derived value, so a citation computed the same way the caller did would silently point at a different row than the one the caller believed it created.',
+    expectedGate: ['chunk-id-server-derivation'],
+    apply: sub(
+      `  SELECT count(*) INTO v_mismatched
+  FROM jsonb_to_recordset(p_chunks) AS c(chunk_id char(64), chunk_index integer, content_hash char(64))
+  WHERE c.chunk_id IS DISTINCT FROM pg_catalog.encode(
+    pg_catalog.sha256(pg_catalog.convert_to(
+      'grounding/chunk/v1' || chr(10) || v_version.version_id || chr(10) || c.chunk_index::text || chr(10) || c.content_hash,
+      'UTF8')),
+    'hex');
+
+  IF v_mismatched > 0 THEN
+    RAISE EXCEPTION
+      'grounding: % chunk(s) carry a chunk_id that does not derive from (version_id, chunk_index, content_hash)', v_mismatched
+      USING ERRCODE = 'U0104';
+  END IF;
+
+`,
+      '',
+    ),
+  },
+  {
+    id: 'G-61',
+    file: FORWARD.VERSIONS,
+    severity: 'MAJOR',
+    contract: 'GR-002',
+    change: 'ENABLE ALWAYS is dropped for the append-only trigger',
+    breaks: 'session_replication_role=replica silences the trigger. A session that sets replica mode — deliberately, to bypass triggers, or incidentally, via logical replication — can UPDATE or DELETE a version row with nothing to stop it.',
+    expectedGate: ['history-append-only-triggers'],
+    apply: sub(
+      'ALTER TABLE public.evidence_document_versions ENABLE ALWAYS TRIGGER trg_evidence_document_versions_append_only;\n',
+      '',
+    ),
+  },
+  {
+    id: 'G-62',
+    file: FORWARD.CHUNKS,
+    severity: 'MAJOR',
+    contract: 'GR-001',
+    change: 'ENABLE ALWAYS is dropped for the no-update trigger',
+    breaks: 'session_replication_role=replica silences the trigger, so a chunk can be rewritten in place under replica mode with nothing to stop it.',
+    expectedGate: ['chunk-immutability-triggers'],
+    apply: sub(
+      'ALTER TABLE public.evidence_chunks ENABLE ALWAYS TRIGGER trg_evidence_chunks_no_update;\n',
+      '',
+    ),
+  },
+  {
+    id: 'G-63',
+    file: FORWARD.VERSIONS,
+    severity: 'CRITICAL',
+    contract: 'GR-002',
+    change: 'the owner-proof scope-check trigger is removed entirely',
+    breaks: "`SET ROLE uellix_owner; INSERT INTO evidence_document_versions ...` can file a version under an organization or project its evidence item does not belong to — the RLS WITH CHECK that used to be the only guard does not bind the table owner.",
+    expectedGate: ['history-append-only-triggers'],
+    apply: sub(
+      `DROP TRIGGER IF EXISTS trg_evidence_document_versions_scope_check ON public.evidence_document_versions;
+CREATE TRIGGER trg_evidence_document_versions_scope_check
+  BEFORE INSERT ON public.evidence_document_versions
+  FOR EACH ROW EXECUTE FUNCTION public.uellix_check_document_version_scope();
+
+`,
+      '',
+    ),
+  },
+  {
+    id: 'G-64',
+    file: FORWARD.CHUNKS,
+    severity: 'CRITICAL',
+    contract: 'GR-001',
+    change: 'the canonical-acyclicity trigger is removed entirely',
+    breaks: 'canonical_chunk_id can chain through a non-canonical row (A -> B, B -> C where B is itself a duplicate) — the composite FK alone proves the target EXISTS and matches scope, never that the target is itself canonical, so a chain or a cycle of any length becomes representable again.',
+    expectedGate: ['chunk-immutability-triggers'],
+    apply: sub(
+      `DROP TRIGGER IF EXISTS trg_evidence_chunks_canonical_integrity ON public.evidence_chunks;
+CREATE TRIGGER trg_evidence_chunks_canonical_integrity
+  AFTER INSERT ON public.evidence_chunks
+  FOR EACH ROW EXECUTE FUNCTION public.uellix_check_canonical_chunk();
+
+`,
+      '',
+    ),
+  },
+  {
+    id: 'G-65',
+    file: FORWARD.CHUNKS,
+    severity: 'MAJOR',
+    contract: 'GR-001',
+    change: 'the canonical-acyclicity trigger fires BEFORE instead of AFTER',
+    breaks: "BEFORE INSERT sees the row being inserted but not the FINAL state of other rows the same statement or transaction is still writing — combined with insert_evidence_chunks' two-pass insert, a BEFORE trigger checking a duplicate in pass 2 could race a canonical row pass 1 has not yet made visible to it, in the ways PostgreSQL's own visibility rules for BEFORE vs AFTER triggers differ.",
+    expectedGate: ['chunk-immutability-triggers'],
+    apply: sub(
+      'CREATE TRIGGER trg_evidence_chunks_canonical_integrity\n  AFTER INSERT ON public.evidence_chunks',
+      'CREATE TRIGGER trg_evidence_chunks_canonical_integrity\n  BEFORE INSERT ON public.evidence_chunks',
+    ),
+  },
+]
+
 export const MUTATIONS: readonly Mutation[] = [
   ...ISOLATION_MUTATIONS,
   ...PRIVILEGE_MUTATIONS,
@@ -788,4 +1014,5 @@ export const MUTATIONS: readonly Mutation[] = [
   ...DEFINER_MUTATIONS,
   ...ROLLBACK_MUTATIONS,
   ...INTEGRITY_MUTATIONS,
+  ...CANONICAL_INTEGRITY_MUTATIONS,
 ]

@@ -312,6 +312,18 @@ export function evaluateGroundingGates(sources: Sources): Violation[] {
     for (const problem of triggerProblems(sources[FORWARD.VERSIONS], 'public.evidence_document_versions', [
       { events: ['UPDATE', 'DELETE'], level: 'ROW' },
       { events: ['TRUNCATE'], level: 'STATEMENT' },
+      // TRAIN 3, risk #5 — the owner-proof scope-consistency trigger. Not an
+      // immutability guard, so it executes a different function.
+      { events: ['INSERT'], level: 'ROW', execute: 'public.uellix_check_document_version_scope' },
+    ])) {
+      add('history-append-only-triggers', problem)
+    }
+    // TRAIN 3, risk #4 — every trigger on this table must resist
+    // session_replication_role=replica.
+    for (const problem of enableAlwaysProblems(sources[FORWARD.VERSIONS], 'public.evidence_document_versions', [
+      'trg_evidence_document_versions_append_only',
+      'trg_evidence_document_versions_no_truncate',
+      'trg_evidence_document_versions_scope_check',
     ])) {
       add('history-append-only-triggers', problem)
     }
@@ -329,6 +341,19 @@ export function evaluateGroundingGates(sources: Sources): Violation[] {
     for (const problem of triggerProblems(sources[FORWARD.CHUNKS], 'public.evidence_chunks', [
       { events: ['UPDATE'], level: 'ROW' },
       { events: ['TRUNCATE'], level: 'STATEMENT' },
+      // TRAIN 3, risk #2 — canonical-chunk acyclicity. AFTER, not BEFORE: it
+      // must see the final state of the row it looks up (see the SQL comment
+      // in grounding_0003 §7b for why that is safe under the two-pass insert).
+      { events: ['INSERT'], level: 'ROW', execute: 'public.uellix_check_canonical_chunk', timing: 'AFTER' },
+    ])) {
+      add('chunk-immutability-triggers', problem)
+    }
+    // TRAIN 3, risk #4 — every trigger on this table must resist
+    // session_replication_role=replica.
+    for (const problem of enableAlwaysProblems(sources[FORWARD.CHUNKS], 'public.evidence_chunks', [
+      'trg_evidence_chunks_no_update',
+      'trg_evidence_chunks_no_truncate',
+      'trg_evidence_chunks_canonical_integrity',
     ])) {
       add('chunk-immutability-triggers', problem)
     }
@@ -417,11 +442,85 @@ export function evaluateGroundingGates(sources: Sources): Violation[] {
     `${FORWARD.CHUNKS}: the content/duplicate biconditional is absent from the table definition, so a suppressed occurrence could store a second copy of the passage`)
 
   // =====================================================================
+  // TRAIN 3 HARDENING — canonical_chunk_id integrity (risks #1, #2, #5)
+  // =====================================================================
+  {
+    const chunks = chunksTable !== null ? code(chunksTable) : ''
+
+    // Risk #1 — the FK target and the FK itself. Existence, scope
+    // (organization/project/evidence/version) AND content_hash agreement, in
+    // ONE constraint.
+    require_('canonical-fk',
+      chunksTable !== null && chunks.includes(
+        'CONSTRAINT evidence_chunks_identity_scope_unique\n    UNIQUE (chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash)',
+      ),
+      `${FORWARD.CHUNKS}: evidence_chunks_identity_scope_unique is absent from the table definition — canonical_chunk_id's FK has no target to bind to`)
+    require_('canonical-fk',
+      chunksTable !== null &&
+        /CONSTRAINT evidence_chunks_canonical_fk\s+FOREIGN KEY \(canonical_chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash\)\s+REFERENCES public\.evidence_chunks \(chunk_id, organization_id, project_id, evidence_id, document_version_id, content_hash\)\s+ON DELETE CASCADE/.test(chunks),
+      `${FORWARD.CHUNKS}: evidence_chunks_canonical_fk is missing, or does not cover organization_id/project_id/evidence_id/document_version_id/content_hash — canonical_chunk_id could then name a chunk out of scope, out of version, or with different content`)
+
+    // Risk #1/#5 — the version-scope FK: existence AND every scope/provenance
+    // column agreeing with the version row, replacing what the RESTRICTIVE
+    // policy alone could not enforce against the table owner.
+    require_('version-scope-fk',
+      chunksTable !== null &&
+        /CONSTRAINT evidence_chunks_version_scope_fk\s+FOREIGN KEY \(document_version_id, organization_id, project_id, evidence_id, version_id,\s+raw_content_hash, normalized_content_hash, normalization_version, chunker_version\)\s+REFERENCES public\.evidence_document_versions \(id, organization_id, project_id, evidence_id, version_id,\s+raw_content_hash, normalized_content_hash, normalization_version, chunker_version\)\s+ON DELETE CASCADE/.test(chunks),
+      `${FORWARD.CHUNKS}: evidence_chunks_version_scope_fk is missing, or does not cover every scope/provenance column — a chunk could disagree with its own document version's organization, project, evidence item or pipeline versions, and only RLS (which the table owner bypasses) would have said so`)
+
+    // Risk #2 (half): self-reference. The other half (no chain, no cycle of
+    // any length) is a TRIGGER, not a constraint — asserted below via
+    // triggerProblems, because a FOREIGN KEY cannot compare a referenced row's
+    // OWN nullability against anything.
+    require_('canonical-self-reference-check',
+      chunksTable !== null && chunks.includes('canonical_chunk_id <> chunk_id'),
+      `${FORWARD.CHUNKS}: the CHECK forbidding canonical_chunk_id = chunk_id is absent from the table definition`)
+  }
+
+  require_('identity-unique',
+    versionsTable !== null && code(versionsTable).includes(
+      'CONSTRAINT evidence_document_versions_identity_unique\n    UNIQUE (id, organization_id, project_id, evidence_id, version_id,\n            raw_content_hash, normalized_content_hash, normalization_version, chunker_version)',
+    ),
+    `${FORWARD.VERSIONS}: evidence_document_versions_identity_unique is absent from the table definition — evidence_chunks' scope-consistency FK has no target to bind to`)
+
+  // Risk #3 — chunk_id is server-derived, not trusted from the payload for
+  // storage. Both halves matter: the derivation formula must be present, AND
+  // the INSERT actually stores the DERIVED value rather than the caller's
+  // c.chunk_id.
+  {
+    const insertFn = parseFunctions(sources[FORWARD.CHUNKS]).find((f) => f.name === 'uellix_grounding.insert_evidence_chunks')
+    const body = insertFn !== undefined ? code(insertFn.body) : ''
+    require_('chunk-id-server-derivation', insertFn !== undefined,
+      `${FORWARD.CHUNKS}: uellix_grounding.insert_evidence_chunks is missing`)
+    require_('chunk-id-server-derivation',
+      /pg_catalog\.sha256\(pg_catalog\.convert_to\(\s*'grounding\/chunk\/v1' \|\| chr\(10\) \|\| v_version\.version_id \|\| chr\(10\) \|\| c\.chunk_index::text \|\| chr\(10\) \|\| c\.content_hash,/.test(body),
+      `${FORWARD.CHUNKS}: insert_evidence_chunks does not derive chunk_id from (version_id, chunk_index, content_hash) via SHA-256 — a client-chosen identity would be trusted for storage`)
+    require_('chunk-id-server-derivation',
+      /WHERE c\.chunk_id IS DISTINCT FROM pg_catalog\.encode/.test(body),
+      `${FORWARD.CHUNKS}: insert_evidence_chunks does not verify the caller's chunk_id against the derived one`)
+    // The stored value must be the DERIVED expression, not a bare c.chunk_id
+    // reference — a mismatch check with no consequence on the write path
+    // would be exactly that: checked, and then ignored.
+    require_('chunk-id-server-derivation',
+      !/INSERT INTO public\.evidence_chunks \([\s\S]*?\)\s*\n\s*SELECT\s+c\.chunk_id,/.test(body),
+      `${FORWARD.CHUNKS}: insert_evidence_chunks stores the caller's c.chunk_id directly instead of the server-derived value`)
+  }
+
+  // =====================================================================
   // SECURITY DEFINER contract
   // =====================================================================
-  const allFunctions = forwardFiles.flatMap((f) =>
-    parseFunctions(sources[f]).map((fn) => ({ file: f, ...fn })),
-  )
+  // Scoped to uellix_grounding.* — the capability role's own schema and the
+  // API surface this contract governs. TRAIN 3 adds two plain (non-SECURITY-
+  // DEFINER) trigger-executor functions in `public`
+  // (uellix_check_document_version_scope, uellix_check_canonical_chunk),
+  // exactly like the pre-existing public.uellix_forbid_mutation(): neither
+  // needs the definer contract below, and parseFunctions' naive `$$;` search
+  // would in any case misparse a body that (like theirs) closes with
+  // `$$ LANGUAGE plpgsql;` rather than a bare `$$;` — harmless here only
+  // because the malformed entry is filtered out before any gate inspects it.
+  const allFunctions = forwardFiles
+    .flatMap((f) => parseFunctions(sources[f]).map((fn) => ({ file: f, ...fn })))
+    .filter((fn) => fn.name.startsWith('uellix_grounding.'))
   require_('definer-inventory', allFunctions.length === 5,
     `expected 5 SECURITY DEFINER functions across the two packages, found ${allFunctions.length}`)
 
@@ -615,16 +714,31 @@ function topLevelStatements(sql: string): string[] {
 function triggerProblems(
   sql: string,
   table: string,
-  expected: readonly { events: readonly string[]; level: 'ROW' | 'STATEMENT' }[],
+  expected: readonly {
+    events: readonly string[]
+    level: 'ROW' | 'STATEMENT'
+    /** Defaults to public.uellix_forbid_mutation — the immutability guard. */
+    execute?: string
+    /** Defaults to BEFORE. TRAIN 3's canonical-acyclicity trigger is AFTER: it
+     *  must observe the row's FINAL state and, together with the two-pass
+     *  insert in insert_evidence_chunks, the final state of rows a prior
+     *  statement in the same transaction already committed. */
+    timing?: 'BEFORE' | 'AFTER'
+  }[],
 ): string[] {
   const problems: string[] = []
   const triggers = analyzeSecurity(sql).triggers.filter((t) => t.table === table)
 
+  // Every trigger on the table must be accounted for by one of `expected`: an
+  // exact count, not a subset check, so an UNDOCUMENTED trigger — one this
+  // caller did not list — is exactly as visible as a missing one.
   if (triggers.length !== expected.length) {
     problems.push(`${table}: expected ${expected.length} trigger(s), found ${triggers.length}`)
   }
 
   for (const want of expected) {
+    const wantTiming = want.timing ?? 'BEFORE'
+    const wantExecute = want.execute ?? 'public.uellix_forbid_mutation'
     const found = triggers.find(
       (t) =>
         t.level === want.level &&
@@ -632,20 +746,31 @@ function triggerProblems(
         want.events.every((e) => t.events.includes(e)),
     )
     if (found === undefined) {
-      problems.push(`${table}: no BEFORE ${want.events.join(' OR ')} FOR EACH ${want.level} trigger`)
+      problems.push(`${table}: no ${wantTiming} ${want.events.join(' OR ')} FOR EACH ${want.level} trigger`)
       continue
     }
-    if (found.timing !== 'BEFORE') {
-      problems.push(`${table}: trigger ${found.name} is ${found.timing}, not BEFORE — an AFTER trigger cannot prevent the row change`)
+    if (found.timing !== wantTiming) {
+      problems.push(`${table}: trigger ${found.name} is ${found.timing}, not ${wantTiming}${wantTiming === 'BEFORE' ? ' — an AFTER trigger cannot prevent the row change' : ''}`)
     }
-    if (found.execute !== 'public.uellix_forbid_mutation') {
-      problems.push(`${table}: trigger ${found.name} executes ${found.execute}, not public.uellix_forbid_mutation`)
+    if (found.execute !== wantExecute) {
+      problems.push(`${table}: trigger ${found.name} executes ${found.execute}, not ${wantExecute}`)
     }
     if (found.when !== null) {
       problems.push(`${table}: trigger ${found.name} is conditional (WHEN ${found.when}), so some mutations pass`)
     }
   }
   return problems
+}
+
+/** ENABLE ALWAYS (tgenabled='A') — TRAIN 3, risk #4. Not modelled by
+ *  ParsedTrigger, so read directly off the ALTER TABLE statement text: every
+ *  trigger this file creates must be armed against
+ *  session_replication_role=replica, not just against a plain client. */
+function enableAlwaysProblems(sql: string, table: string, triggerNames: readonly string[]): string[] {
+  const text = code(sql)
+  return triggerNames
+    .filter((name) => !new RegExp(`ALTER TABLE ${table.replace(/\./g, '\\.')} ENABLE ALWAYS TRIGGER ${name};`).test(text))
+    .map((name) => `${table}: ${name} is not ENABLE ALWAYS — session_replication_role=replica would silently disable it`)
 }
 
 /** Re-exported so a test can assert on the parsed shape directly. */

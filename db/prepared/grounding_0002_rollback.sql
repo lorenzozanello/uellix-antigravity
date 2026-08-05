@@ -154,6 +154,15 @@ BEGIN
     EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.claim_active_document_version(uuid)';
     -- Policies, indexes and triggers fall with the table.
     EXECUTE 'DROP TABLE public.evidence_document_versions';
+    -- TRAIN 3 HARDENING. public.uellix_check_document_version_scope() is a
+    -- plain (non-SECURITY-DEFINER) trigger function created BY this package,
+    -- unlike public.uellix_forbid_mutation() which is baseline and shared with
+    -- other append-only tables — that one is never dropped here. This one is
+    -- exclusive to evidence_document_versions and has no other caller. Dropped
+    -- AFTER the table: trg_evidence_document_versions_scope_check depends on
+    -- it, and PostgreSQL refuses to drop a function a live trigger still
+    -- references.
+    EXECUTE 'DROP FUNCTION IF EXISTS public.uellix_check_document_version_scope()';
   END IF;
 
   -- ------------------------------------------------------------------
