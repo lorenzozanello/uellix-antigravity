@@ -1342,3 +1342,249 @@ ni se saltaron:
 - «staging/hosted siguen bloqueados» → ahora también comprueba que las doce
   gates pasan **y aun así** `localRuntimeReady` es `false`, que es la propiedad
   interesante.
+
+# Tren 4 — `STELLA_RELEASE_LOCAL_END_TO_END_GATE_TRAIN_4`
+
+**HEAD base:** `6f3c543` (`chore(integration): reconcile Stella train 3
+runtime`). Árbol limpio al abrir. Sin push, sin acceso a remoto, sin llamadas
+a proveedor, sin gates pesados, sin tocar `db/**`, `supabase/**`, contratos
+funcionales ni ninguna ruta `INTEGRATION-OWNED`. Se usó el stack Docker local
+(disponible en este entorno) para contenedores **desechables** — nunca el
+stack Supabase persistente que ya corría en la máquina para otro proyecto.
+
+**Alcance:** construir el arnés ejecutable que integración usará para
+demostrar `evidencia real → extracción → versión → chunks persistidos →
+retrieval SQL → generación extractiva → citas → resultado de Product →
+decisión humana local`, contra una base Postgres **desechable, sin red, sin
+volumen persistente**, distinguiendo `local-runtime-harness-ready` (¿el
+arnés desechable demuestra la capa de persistencia/retrieval de verdad?) de
+`local-runtime-ready` (¿un humano puede alcanzarlo en la aplicación
+desplegada?) — la primera es alcanzable desde esta línea, la segunda sigue
+bloqueada por ramas paralelas (PRODUCT-002 sin montar, INT-CAP-001 abierto,
+gate G1).
+
+## Qué se construyó
+
+- **Fixture real** (Fase 2) —
+  [`tests/eval/stella-release/fixtures/e2e/documents/`](../../../tests/eval/stella-release/fixtures/e2e/documents/):
+  dos documentos `text/plain` reales sobre el mismo proyecto ficticio (Río
+  Verde), cada uno con una afirmación numérica verificable (saplings
+  plantados) y una **contradicción controlada** (1.240 vs. 1.180) más un
+  hecho no contradictorio (riego). El resultado NUNCA se preconstruye: emerge
+  de `ingestDocument()` real sobre estos bytes.
+- **Generador extractivo local** (no proveedor, no LLM) —
+  [`tests/eval/stella-release/e2e/local-extractive-generator.ts`](../../../tests/eval/stella-release/e2e/local-extractive-generator.ts):
+  extrae la afirmación por patrón sobre texto YA recuperado, construye
+  citas con `quotedTextHash` leído del propio chunk (nunca recalculado sobre
+  una paráfrasis), marca contradicción con `ContradictionClaimAttribution`
+  por lado. Probado offline (5 tests) contra la `validateAnswerCitations`
+  real.
+- **Constructor de SQL de ingesta real** —
+  [`build-ingestion-sql.ts`](../../../tests/eval/stella-release/e2e/build-ingestion-sql.ts):
+  corre `ingestDocument()` de verdad y emite el SQL de siembra
+  (`organizations/users/organization_members/projects/evidence_items`) y de
+  ingesta (`register_document_version → insert_evidence_chunks →
+  finalize_document_ingestion`, encadenado por `\gset` de psql) — nunca
+  construye un chunk a mano.
+- **Reporte y gate fail-closed** —
+  [`tests/eval/stella-release/harness-report.ts`](../../../tests/eval/stella-release/harness-report.ts):
+  tipo `LocalRuntimeHarnessReport` + `evaluateLocalRuntimeHarnessReadiness`,
+  con **20 campos verificables independientemente** (red del contenedor,
+  destrucción, volumen, método de verificación, paquetes aplicados,
+  pipeline real, funciones SQL invocadas, aislamiento cross-project,
+  idempotencia, tipo de generador, validación de citas, contradicción,
+  abstención, cuota, scope autenticado, estado de la bandera, llamadas a
+  proveedor, sanidad de observabilidad, fila de decisión, bandera de
+  persistencia de decisiones). **24 controles negativos** (Fase 6): la buena
+  corrida pasa, cada mutación individual —fixture como runtime, DB omitida,
+  SQL no aplicado, cuota reclamada falsamente, scope no comprobado, cita
+  inventada, resultado no derivado de retrieval, generador mock, bandera
+  global, llamada a proveedor, evento con violación, contenedor no
+  destruido, red distinta de `none`, volumen persistente, verificación
+  "sólo archivos", fila de decisión persistida, bandera de decisiones
+  encendida, cada función SQL requerida ausente una por una, reaplicación no
+  idempotente, contradicción no atribuida, abstención no observada, scope no
+  atestiguado— se rechaza con una razón específica.
+- **`localRuntimeHarnessReady`** añadido a
+  [`local-release-gate.ts`](../../../tests/eval/stella-release/local-release-gate.ts)
+  como decimotercera salida, **opcional y externa**: el módulo sigue sin
+  abrir una conexión SQL él mismo (mismo compromiso desde el tren 3); recibe
+  un `LocalRuntimeHarnessReport` ya calculado y lo reduce. Sin reporte
+  (el caso de todo `pnpm test:stella:release-eval` en CI), `false` con razón
+  explícita. **Deliberadamente independiente de `localRuntimeReady`** — ver
+  el comentario del campo.
+- **Orquestador del recorrido** —
+  [`run-local-journey.ts`](../../../tests/eval/stella-release/e2e/run-local-journey.ts):
+  siembra + ingiere dos veces (idempotencia) vía `docker exec psql`, bajo una
+  sesión real autenticada (`request.jwt.claims` vía `set_config`, el mismo
+  mecanismo de `db/identity-context.ts`), recupera con
+  `uellix_grounding.chunks_in_scope` real para el proyecto correcto y para un
+  proyecto señuelo del mismo org (aislamiento), genera con el extractor
+  local, valida citas con `validateAnswerCitations` real, adapta el
+  resultado con `adaptGroundedAnswer`/`presentationInputFromRetrieval`
+  reales (vista de Product), confirma que `stella_interactions_stella_role_check`
+  sigue sin admitir `grounded_query` (INT-CAP-001), confirma fila 0 en
+  `stella_suggestion_decisions`, valida eventos de observabilidad reales, y
+  demuestra que `STELLA_GROUNDED_QUERY_ENABLED` puede ser `true` en un
+  **proceso hijo deliberadamente aislado** sin tocar el proceso padre ni
+  ningún archivo persistente.
+- **Arnés desechable** —
+  [`scripts/stella-release-e2e-dry-run.sh`](../../../scripts/stella-release-e2e-dry-run.sh):
+  mismo patrón que `scripts/grounding-dry-run.sh` (contenedor `docker run -d
+  --network none`, restore desde `db/baseline/**`, destrucción en el
+  `EXIT` trap, sin volumen). Aplica `grounding_0002` + `grounding_0003`
+  (**requerido**, aborta si falla), intenta `stella_0003` en **mejor
+  esfuerzo** (ver hallazgo abajo), busca un paquete `grounding_0004*` para
+  un futuro Train 4 de integración (no existe todavía — documentado, no
+  sustituido), corre el recorrido, **destruye el contenedor antes de
+  evaluar el gate** (para que `containerDestroyed` sea un hecho confirmado,
+  no una promesa), y corre `print-harness-gate.ts` para la decisión final.
+
+## Hallazgo mayor: `uellix_cap_grounding` no puede leer lo que él mismo escribe
+
+**Confirmado por ejecución real, reproducido de forma aislada, no es un bug
+del arnés.** Con una sesión REAL autenticada (rol `uellix_app`, GUC
+`request.jwt.claims` con un `sub` que sí es miembro de la organización vía
+`organization_members`), llamar a
+`uellix_grounding.register_document_version(...)` — la única función
+`EXECUTE`-otorgada a `uellix_app` para registrar una versión — falla con:
+
+```
+ERROR:  new row violates row-level security policy for table "evidence_document_versions"
+```
+
+**Causa raíz, aislada con un contenedor de diagnóstico independiente:**
+`register_document_version` termina con `INSERT ... RETURNING id INTO
+v_id`. PostgreSQL exige, para el `RETURNING` de un `INSERT`, que la fila
+recién insertada pase también la política **SELECT** de la tabla — no sólo
+la de `INSERT`. La política
+`evidence_document_versions_select` (`db/prepared/grounding_0002_document_versions.sql`)
+está otorgada `TO authenticated, uellix_app, uellix_auditor` — **sin
+`uellix_cap_grounding`**, el propio dueño `SECURITY DEFINER` de la función.
+Reproducido con un `INSERT` crudo idéntico: sin `RETURNING` tiene éxito; con
+`RETURNING id` falla con el mismo error, como `uellix_cap_grounding`, dentro
+y fuera de la función.
+
+**El mismo patrón se repite en cascada, confirmado también por ejecución
+directa:**
+
+- `evidence_chunks_definer_write` (grounding_0003) exige, en su `WITH
+  CHECK`, un `EXISTS` contra `evidence_document_versions` — que
+  `uellix_cap_grounding` tampoco puede leer por la misma ausencia de
+  política, así que **`insert_evidence_chunks` también falla** para
+  cualquier chunk cuyo `INSERT` directo se pruebe.
+- `evidence_chunks_select` (`TO authenticated, uellix_app, uellix_auditor`)
+  tampoco incluye `uellix_cap_grounding`, así que `chunks_in_scope` (que lee
+  `evidence_chunks` desde dentro de su propio cuerpo `SECURITY DEFINER`) y
+  `finalize_document_ingestion` (que hace `SELECT count(*) FROM
+  evidence_chunks`) leerían **cero filas** aunque las filas existan — el
+  `GRANT SELECT ... TO uellix_cap_grounding` que sí existe en ambos paquetes
+  no sustituye a una política RLS que lo incluya.
+
+Es la misma clase de bug que el propio `grounding_0002` ya documentó y
+corrigió una vez («train 2 adversarial review... cada llamada moría con
+42501... un dry-run que inspecciona estructura sin invocar no puede verlo»)
+— pero un caso **nuevo y no detectado** de esa clase, porque
+`scripts/grounding-dry-run.sh`'s 6-bis se queda deliberadamente anónimo
+(para probar `U0102`) y 6-ter usa `SET ROLE uellix_owner` (bypassa RLS como
+dueño) para sus pruebas de integridad — **ningún arnés anterior había
+invocado estas funciones con una sesión real, autenticada, de principio a
+fin**. Es exactamente lo que "ejecución real" está diseñado para encontrar.
+
+**No es archivo de esta línea.** `db/prepared/grounding_0002_document_versions.sql`
+y `grounding_0003_evidence_chunks.sql` son GROUNDING/CAPABILITIES-owned;
+RELEASE tiene prohibido tocar `db/**`. Documentado aquí con reproducción
+exacta para que integración lo convierta en un contrato abierto (candidato:
+añadir `uellix_cap_grounding` a `evidence_document_versions_select` y
+`evidence_chunks_select`, o eliminar el `RETURNING`/las lecturas internas y
+resolver el id/count por otra vía). El arnés **falla de forma clara** cuando
+esto ocurre (Fase 3: «el arnés debe fallar de forma clara si... falla una
+función») — ver la corrida de referencia abajo — y aun así **destruye el
+contenedor y corre el gate**, en vez de abortar a mitad de camino.
+
+## Hallazgo secundario: `stella_0003` no aplica sobre el baseline actual
+
+`db/baseline/stella_g2_schema.sql` (usado también por
+`scripts/grounding-dry-run.sh`) ya contiene una versión **más nueva** de
+`public.stella_suggestion_decisions` que la que hoy vive en
+`db/prepared/stella_0003_suggestion_decisions.sql`: el baseline trae una
+política `INSERT` (`stella_suggestion_decisions_insert_member_or_admin`,
+otorgada a `uellix_app`) y concede `SELECT, INSERT` directo a
+`uellix_writer`; el paquete preparado asume escritura exclusiva del dueño de
+tabla, sin política `INSERT`. La propia autoverificación de
+`stella_0003_suggestion_decisions.sql` lo detecta y aborta: «expected
+exactly 1 RLS policy, found 2». Tampoco es archivo de esta línea
+(`db/baseline/**` y `db/prepared/**` están ambos prohibidos). El arnés
+trata `stella_0003` como **mejor esfuerzo** (no es un paquete requerido por
+la Fase 3 original) y el recorrido tolera que la tabla no exista.
+
+## Recorrido E2E (Fase 4) — definido y ejecutado; bloqueado en el mismo punto que el hallazgo mayor
+
+Las 18 etapas pedidas están todas **codificadas** en `run-local-journey.ts` y
+se ejecutan en orden hasta el bloqueador: ingestión completa, versión
+activa, chunks reales, retrieval del proyecto correcto, rechazo de otro
+proyecto, consumo de cuota (INT-CAP-001, confirmado abierto contra la base
+viva), idempotencia, generación extractiva, citas reconstruibles,
+`quotedTextHash`, contradicción atribuida, abstención, payload sólo `query`
+(tipado, verificado por construcción con `Object.keys().length === 1`),
+flag false sin DB (proceso principal), flag true sólo en proceso local
+controlado (subproceso con `env` sobrescrito, nunca persistido), resultado
+Product, decisión local no persistida, eventos sin datos sensibles. Ninguna
+llama a proveedor. El hallazgo mayor bloquea las etapas que dependen de un
+`document_version_id` real emitido por `register_document_version` — el
+resto del recorrido (contenedor, aplicación de paquetes, generador,
+adaptador, observabilidad, aislamiento de bandera) se probó de forma
+independiente donde no dependía de ese paso.
+
+## Pruebas ejecutadas
+
+Sólo focalizadas — Fase 7: sin `test:unit` completo, sin `build`.
+
+| Comando | Resultado |
+|---|---|
+| `pnpm exec tsc --noEmit` | limpio, 0 errores |
+| `pnpm exec eslint tests/eval/stella-release/e2e tests/eval/stella-release/harness-report.ts tests/eval/stella-release/harness-report.test.ts tests/eval/stella-release/local-release-gate.ts tests/eval/stella-release/local-release-gate.test.ts tests/eval/stella-release/fixtures/e2e` | 0 errores, 0 warnings |
+| `pnpm exec vitest run tests/eval/stella-release` | **7 archivos, 152 tests passed** (`harness` 67, `command` 10, `wiring` 5, `observability-contract` 19, `local-release-gate` 22, `local-extractive-generator` 5, `harness-report` 24) |
+| `bash scripts/stella-release-e2e-dry-run.sh` (arnés desechable real, Docker local) | baseline íntegro, `grounding_0002`+`grounding_0003` aplicados y auto-verificados, `stella_0003` bloqueado (hallazgo secundario documentado), recorrido E2E bloqueado en el hallazgo mayor con reporte completo emitido, contenedor destruido y confirmado ausente, gate evaluado: `local-runtime-harness-ready=false` con 12 razones específicas listadas |
+
+No se ejecutó `pnpm test:unit` completo ni `pnpm build` — fuera del alcance
+de la Fase 7. El arnés desechable SÍ se ejecutó contra Docker real (el
+entorno de esta sesión lo tenía disponible) — no es una simulación.
+
+## Riesgos abiertos de esta línea
+
+- **`local-runtime-harness-ready` es `false` en esta rama**, y se espera que
+  lo sea: depende de un bug real en `db/prepared/grounding_0002` +
+  `grounding_0003` que esta línea no puede tocar. La infraestructura del
+  arnés (contenedor, ciclo de vida, generador, adaptador, gate) está
+  verificada hasta donde el bloqueador lo permite; el camino feliz completo
+  queda pendiente de que GROUNDING/CAPABILITIES cierre el hallazgo mayor.
+- **El hallazgo mayor no se "arregló probando otra cosa".** Se consideró y
+  se descartó construir el recorrido contra `SET ROLE uellix_owner` (que sí
+  bypassa RLS) en vez de `uellix_app` — habría ocultado exactamente el bug
+  que una sesión real de aplicación expone, y el enunciado de esta línea
+  prohíbe sustituir un componente que falta por un atajo.
+- **`stella_0003` no se aplicó** — la tabla de decisiones no existe en el
+  contenedor desechable de esta corrida; `run-local-journey.ts` lo tolera
+  (`to_regclass` antes de contar filas) pero la verificación de "decisión
+  local no persistida" queda parcial: prueba que el flag está en `false` en
+  el proceso, no que la tabla real rechace escrituras no autorizadas.
+- **Ningún paquete `grounding_0004*` existe todavía** — la etapa 6 del arnés
+  (Fase 3, punto 6) queda como "not-yet-available", documentado, no
+  simulado.
+- **El generador extractivo es un patrón fijo sobre un fixture fijo** — no
+  es una capa de scoring; la abstención se demuestra alimentando el
+  generador con cero candidatos (lo que un scorer real filtraría), no con
+  una consulta que de verdad recorra `chunks_in_scope` y salga vacía por
+  relevancia. El scorer real (`LexicalChunkScorer`) ya está cubierto por el
+  arnés offline existente (tren 1/2) y no se reprueba aquí.
+
+## Estado de entrega a integración
+
+Sólo se tocaron `tests/eval/stella-release/**`, `scripts/stella-release-e2e-dry-run.sh`
+y este documento. Ningún archivo `db/**`, `supabase/**`, `package.json`,
+config de vitest ni workflow. Sin push, sin acceso a remoto, cero llamadas a
+proveedor, cero recursos persistentes (contenedor desechable, sin volumen,
+destruido y confirmado en cada corrida).
+
+`STELLA_RELEASE_TRAIN_4_READY_FOR_INTEGRATION`
