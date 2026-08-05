@@ -987,3 +987,281 @@ tragan pruebas de regresión en silencio.
 con `value: 1`, tres métricas `null` **con `code` y `gate`** (G1/G1/G9), salida
 byte-idéntica entre procesos, wall-clock fuera del bloque determinista,
 `providerCalls: 0`.
+
+---
+
+# Tren 3 — `STELLA_RELEASE_RUNTIME_GATE_FOUNDATION_TRAIN_3`
+
+**HEAD base:** `4d59348` (`chore(integration): reconcile Stella train 2
+contracts`). Árbol limpio al abrir y al cerrar. Sin push, sin acceso a
+remoto, sin llamadas a proveedor, sin gates pesados, sin tocar `db/**`,
+`supabase/**`, contratos funcionales ni ninguna ruta `INTEGRATION-OWNED`.
+
+**Alcance:** cerrar el único tramo del recorrido runtime que la matriz del
+tren 2 no medía — la **decisión humana** sobre una sugerencia
+(aceptar/rechazar/deshacer) y sus dos modos de fallo (bandera apagada, error
+de persistencia) — y, sobre esa matriz ampliada, definir los 11 gates locales
+de la Fase 3, el contrato mínimo de observabilidad de la Fase 4, y el harness
+de release-gate local de la Fase 5.
+
+## Por qué exactamente 5 checks nuevos, y no más
+
+El recorrido pedido es evidencia → ingestion → version → chunks → retrieval →
+grounded answer → citations → decisión humana. Los ocho pasos hasta
+"citations" ya estaban cubiertos por los 19 checks del tren 2 (contrato de
+`lib/grounding/contracts`, aislamiento, provenance, score, contradicción,
+adaptador de PRODUCT). El único tramo sin check era el último: nada en la
+matriz medía qué pasa cuando un humano decide sobre una sugerencia de Stella.
+
+Ese tramo SÍ tiene contrato real y versionado —
+[`app/actions/stella/decisions.ts`](../../../app/actions/stella/decisions.ts) +
+[`decisions-schema.ts`](../../../app/actions/stella/decisions-schema.ts),
+código de fundación pre-reparto paralelo, fuera de las rutas prohibidas de
+RELEASE (no es SQL, no es contrato de otra línea, no es UI de Composer)— así
+que los 5 checks se construyeron contra él, nunca contra una base simulada:
+
+| Caso pedido | `checkId` | Categoría |
+|---|---|---|
+| feature flag off | `stella-decision-feature-flag-blocks-persistence` | `feature-flag-desactivada` |
+| decisión aceptada | `stella-decision-accepted-contract-valid` | `decision-aceptada` |
+| decisión rechazada | `stella-decision-rejected-contract-valid` | `decision-rechazada` |
+| rollback de decisión | `stella-decision-rollback-append-only` | `decision-rollback` |
+| error de persistencia | `stella-decision-persistence-error-non-leaking` | `error-persistencia-decision` |
+
+**"Evidencia parcial" y "abstención"** del enunciado no generaron una sexta
+entrada: ya son exactamente `insufficient-evidence-empty-sentinel` +
+`abstention-schema-enforced` del tren 1/2 — escribir una categoría paralela
+habría medido la misma propiedad dos veces con nombres distintos.
+
+## Ninguno de los 5 ejecuta `recordStellaDecision`
+
+`recordStellaDecision` es una **server action async con I/O real** (auth,
+Postgres). El harness completo —24 checks, `CHECKS: Record<string, () =>
+ReleaseCaseResult>`— es deliberadamente **síncrono**: `runReleaseEvalHarness`
+mapea la matriz con `.map()`, no con `Promise.all`. Convertirlo a async para
+ejecutar la función real habría tocado los 5 puntos de llamada de
+`harness.test.ts`/`scripts/eval-release-offline.ts` que ya estaban en verde
+desde el tren 1, y — más importante — habría requerido mockear auth/DB para
+que la ejecución no fallara por falta de sesión real, exactamente el tipo de
+recreación que este documento lleva dos trenes evitando.
+
+En vez de eso, cada uno de los 5 checks es **o bien una llamada real a
+esquema/config síncrona, o bien inspección ESTRUCTURAL de código fuente
+(lectura, nunca ejecución)** — la misma disciplina que
+`cap-01-05-regression-surface-present` ya aplicaba desde el tren 1:
+
+- **`stella-decision-feature-flag-blocks-persistence`** — lee
+  `stellaConfig.isDecisionsPersistenceEnabled` (booleano real, computado en
+  runtime desde `process.env`, no recreado) y confirma que es `false`; falla
+  cerrado si el entorno lo contaminó a `true` en vez de asumir el default.
+  Además confirma por inspección de texto que el gate de la bandera es
+  textualmente el **primero** en `recordStellaDecision`, antes de
+  `StellaDecisionInputSchema.safeParse` y antes de `requireOrganizationAccess`.
+- **`stella-decision-accepted-contract-valid`** /
+  **`-rejected-contract-valid`** / **`-rollback-append-only`** — llaman al
+  `StellaDecisionInputSchema.safeParse` REAL (no recreado) contra los 4
+  valores documentados (`accepted`, `accepted_edited`, `rejected`, `undone`).
+  El caso de rollback es el más estricto: el esquema real es `.strict()` y no
+  lleva ningún campo (`id`/`decisionId`) capaz de señalar una fila existente
+  para mutarla — el control negativo confirma que un `decisionId` inyectado
+  por el cliente es rechazado, así que "append-only" es una propiedad del
+  contrato, no un comentario en el código.
+- **`stella-decision-persistence-error-non-leaking`** — lee el código fuente
+  de `decisions.ts` (normalizado a LF antes de comparar: este worktree lo
+  checkea en CRLF) y confirma tres invariantes de no-fuga: el retorno
+  `DB_ERROR` es un literal fijo (nunca interpola el error capturado), el log
+  de servidor imprime sólo `error.name`, y `logStellaAudit` atrapa su propio
+  fallo sin relanzar — un audit_logs caído nunca cambia lo que ve el usuario.
+
+**Consecuencia declarada, no oculta:** ninguno de los 5 prueba que la tabla
+`stella_suggestion_decisions` funcione una vez habilitada. Esa tabla existe
+sólo como SQL preparado
+(`db/prepared/stella_0003_suggestion_decisions.sql`) — aplicarla es gate G2,
+propiedad de CAPABILITIES, y esta unidad no la toca ni la simula.
+
+## Matriz de evaluación — v3.0.0
+
+`RELEASE_EVAL_MATRIX_VERSION = '3.0.0'`, `RELEASE_FIXTURES_VERSION = '3.0.0'`,
+`RELEASE_HARNESS_VERSION = '3.0.0'`. **24 entradas** (19 del tren 2 sin
+cambio de `checkId` ni de categoría + 5 nuevas). Las 5 nuevas alimentan
+`structural-regression` — igual que `human-decision-literal-true` y
+`retryable-code-set-pinned` ya hacían: fijan un contrato, no una decisión de
+abstención.
+
+```bash
+pnpm test:stella:release-eval
+```
+
+`24/24 checks passed` · `pass=19 abstention=5 system-error=0
+isolation-violation=0` · `offline coverage: 23 fully measurable, 1
+offline-limited` (sin cambio: sigue siendo sólo `contradiction-acknowledgment-heuristic`)
+· `negative controls: 45 run, 0 undetected` (37 del tren 2 + 8 nuevos: 2+2+1+1+2
+por los 5 checks nuevos) · `providerCalls=0`.
+
+`structural-regression` sube de `1` (6/6) a `1` (**11/11**) — los 5 contratos
+de decisión se suman a los 6 ya fijados sin bajar la proporción.
+
+## Fase 3 — 11 gates locales
+
+Nuevo módulo
+[`tests/eval/stella-release/local-release-gate.ts`](../../../tests/eval/stella-release/local-release-gate.ts).
+Cada gate lee el `ReleaseEvalSummary`/`results` del harness — ninguno
+reimplementa una propiedad que el harness ya mide, todos la **reducen** a un
+booleano con detalle:
+
+| Gate | Fuente |
+|---|---|
+| `contract-complete` | `totalChecks === results.length`, `failed === 0`, `tautologicalChecks.length === 0` |
+| `isolation` | `isolationViolations === 0` |
+| `citation-validity` | `citationValidationFailures === 0` |
+| `unsupported-claims` | métrica `unsupported-claim-rate === 0` |
+| `abstention-correctness` | métrica `abstention-correctness === 1` |
+| `contradiction-attribution` | `contradiction-acknowledgment-heuristic` + `grounding-contradiction-marked` en verde |
+| `feature-flag-safety` | `stella-decision-feature-flag-blocks-persistence` en verde |
+| `decision-provenance` | los 4 checks de decisión (accepted/rejected/rollback/persistence-error) en verde |
+| `no-provider-calls` | `providerCalls === 0` |
+| `no-secrets` | `provider-unavailable-presentation` + `stella-decision-persistence-error-non-leaking` en verde |
+| `determinism` | dos corridas independientes del harness producen resumen y resultados byte-idénticos |
+
+`determinism` es el único gate que `releaseEvalFailureReasons` (tren 2) no
+podía ver — necesita una SEGUNDA corrida para comparar, y una función que
+recibe un solo `ReleaseEvalSummary` no tiene con qué. `scripts/eval-release-offline.ts`
+ahora corre el harness dos veces (~30 ms cada una) y lo añade como razón de
+fallo explícita, separada de `releaseEvalFailureReasons`.
+
+**Resultado de referencia:** los 11 gates en verde sobre el árbol de esta
+unidad — ver la corrida citada arriba.
+
+## Fase 5 — release gate local: 5 niveles de disponibilidad
+
+`computeLocalReleaseGateReport()` reduce los 11 gates a una jerarquía
+estricta, no a un booleano plano:
+
+- **`library-ready`** — `contract-complete` en verde, cero controles
+  negativos no detectados, cero checks tautológicos. Es la condición mínima:
+  el harness es honesto consigo mismo.
+- **`integration-ready`** — `library-ready` **y** `no-provider-calls` **y**
+  `determinism`. Corresponde a los gates obligatorios de "Local integration"
+  ya definidos en el tren 1 (`pnpm typecheck`, `test:unit`,
+  `test:stella:release-eval`).
+- **`local-runtime-ready`** — `integration-ready` **y** los 11 gates en
+  verde. El recorrido completo (evidencia → ingestion/version/chunks →
+  retrieval → grounded answer → citations → decisión humana) queda verificado
+  contra todo lo que este harness puede ver sin base de datos ni proveedor.
+- **`staging-blocked`** — **siempre `true`**. No existe combinación de
+  entradas que lo vuelva `false`: `STELLA_DECISIONS_PERSISTENCE_ENABLED` es
+  `false` en todo entorno que este harness pueda observar, y la tabla de
+  decisiones no fue aplicada a ninguna base desde este worktree. La única
+  forma real de cambiarlo es correr el gate G2 de verdad, fuera de este
+  harness.
+- **`hosted-blocked`** — **siempre `true`**, por las mismas razones más G1,
+  G4, G7 y los 4 riesgos abiertos de la sección de hosted más abajo.
+
+**`missingForStaging`** y **`missingForHosted`** listan la evidencia exacta
+que falta (nunca un "bloqueado" desnudo) — ver la corrida de referencia en
+§Pruebas ejecutadas. `missingForHosted` es superset aditivo de
+`missingForStaging`, probado en
+[`local-release-gate.test.ts`](../../../tests/eval/stella-release/local-release-gate.test.ts).
+
+**Resultado de referencia sobre esta unidad:** `library-ready=true
+integration-ready=true local-runtime-ready=true staging-blocked=true
+hosted-blocked=true`.
+
+## Fase 4 — contrato mínimo de observabilidad
+
+Nuevo módulo
+[`tests/eval/stella-release/observability-contract.ts`](../../../tests/eval/stella-release/observability-contract.ts).
+**Contrato, no implementación** — ningún evento se emite de verdad; nada aquí
+se conecta a un logger o exportador real.
+
+**13 eventos** (`STELLA_OBSERVABILITY_EVENT_NAMES`), exactamente los pedidos:
+`ingestion.started/completed/failed`, `retrieval.started/completed/abstained`,
+`citations.validated/rejected`, `response.produced`,
+`human_decision.recorded`, `retry.attempted`, `quota.rejected`,
+`permission.rejected`.
+
+**Exclusiones — por allowlist, no por denylist.** Cada evento declara los
+campos que SÍ puede llevar (`EVENT_SPECIFIC_ALLOWED_FIELDS`); cualquier campo
+fuera de esa lista se rechaza, aunque el nombre parezca inofensivo. Además,
+tres guardas independientes de la allowlist, para que un campo permitido no
+se convierta en fuga por otra vía:
+
+1. **Lista permanente de nombres prohibidos** (`prompt`, `systemPrompt`,
+   `fullText`, `evidenceText`, `apiKey`, `secret`, `authToken`, …) — gana
+   sobre cualquier allowlist futura que los incluya por error.
+2. **Tope de longitud** (`MAX_EVENT_FIELD_VALUE_LENGTH = 200`) — un prompt o
+   un texto de evidencia completo excede esto por construcción; un
+   identificador o código no.
+3. **Detector de secretos compartido** — reutiliza `hasForbiddenPattern` de
+   `lib/stella/context/sanitize.ts` (el mismo que ya usa
+   `provider-unavailable-presentation`), en vez de reimplementarlo — los dos
+   contratos no pueden divergir silenciosamente.
+
+**Métricas — 7 dimensiones separadas** (`STELLA_OBSERVABILITY_METRIC_CATEGORIES`):
+latencia, uso de tokens, costo, aislamiento, unsupported claims, abstención,
+errores. Las 3 dependientes de proveedor (latencia, tokens, costo) — mismo
+principio que `PROVIDER_DEPENDENT_METRICS` en `matrix.ts`, declarado aparte a
+propósito para que un cambio en un contrato no mueva el otro en silencio — se
+fuerzan `measurable:false, value:null` con razón estructurada vía
+`assertProviderDependentMetricsAreNull`, que además rechaza un `null` sin
+razón y un valor con razón simultáneamente.
+
+`isValidObservedDecisionValue` pinea el campo `decision` de
+`human_decision.recorded` contra `STELLA_DECISION_VALUES`, el enum real de
+`decisions-schema.ts` — no una recreación de los 4 valores.
+
+## Pruebas ejecutadas
+
+Sólo focalizadas, sin `test:unit` completo, sin `build`, sin gates pesados
+(§11 del documento de gobernanza). Sin red, sin BD, sin secretos reales.
+
+| Comando | Resultado |
+|---|---|
+| `pnpm exec tsc --noEmit` | limpio, 0 errores |
+| `pnpm exec eslint tests/eval/stella-release scripts/eval-release-offline.ts` | **0 errores, 0 warnings** |
+| `pnpm exec vitest run tests/eval/stella-release` | **5 archivos, 118 tests passed** (`harness` 67, `command` 10, `wiring` 5, `observability-contract` 19, `local-release-gate` 17) |
+| `pnpm exec tsx scripts/eval-release-offline.ts` | `24/24 checks`, `pass=19 abstention=5 system-error=0 isolation-violation=0`, 45 controles negativos todos detectando, 11/11 gates locales en verde, `library-ready=true integration-ready=true local-runtime-ready=true staging-blocked=true hosted-blocked=true`, 0 `providerCalls` |
+
+No se ejecutó `pnpm test:unit` completo, `pnpm build`, `test:integration` ni
+`test:rls` — fuera del alcance "sin gates pesados" de esta unidad (Fase 6 de
+la instrucción de origen los prohíbe explícitamente).
+
+## Riesgos abiertos de esta línea
+
+- **Los 5 checks nuevos son estructurales/contractuales, no de ejecución.**
+  Ninguno demuestra que `recordStellaDecision` funcione end-to-end contra una
+  base real, ni que la tabla `stella_suggestion_decisions` acepte las
+  escrituras que el código espera — eso requiere gate G2 aplicado y una base
+  levantada, ambos fuera de alcance. Declarado arriba, no oculto.
+- **`stella-decision-persistence-error-non-leaking` compara contra literales
+  de texto exactos** (mensaje `DB_ERROR`, línea de `console.error`, bloque
+  `catch` de `logStellaAudit`). Un refactor de `decisions.ts` que preserve el
+  comportamiento pero cambie la redacción exacta de esas líneas haría fallar
+  el check por `system-error` — no porque la propiedad de no-fuga se haya
+  roto, sino porque el marcador textual se movió. Es el mismo trade-off que
+  `cap-01-05-regression-surface-present` ya acepta desde el tren 1
+  (comparación de marcador, no un parser AST) — mantenido por consistencia,
+  no por descuido.
+- **`missingForStaging`/`missingForHosted` son listas de hechos verificados
+  contra el árbol actual, no una proyección.** Si CAPABILITIES aplica G2 en un
+  tren futuro, esta lista queda obsoleta de inmediato y debe regenerarse, no
+  editarse a mano — es exactamente la corrida (`pnpm test:stella:release-eval`)
+  la que la recalcula, nunca este documento.
+- **El determinismo del gate de release depende de que `Date.now()`/timers no
+  entren en la ruta determinista.** Ya era cierto desde el tren 2
+  (`harnessWallClockMs` vive fuera de `summary`); esta unidad no añadió
+  ninguna fuente de no-determinismo nueva — los 5 checks nuevos son puros
+  (mismo input, mismo output).
+- **`hasForbiddenPattern` es un detector heurístico**, no una prueba
+  formal de ausencia de secretos — comparte la misma limitación que ya tenía
+  declarada en `provider-unavailable-presentation` desde el tren 1/2. El
+  contrato de observabilidad lo reutiliza tal cual, a propósito: dos
+  implementaciones divergentes serían peor que una heurística compartida.
+
+## Estado de entrega a integración
+
+Dos commits, árbol limpio, ninguna ruta `INTEGRATION-OWNED` ni de otra línea
+modificada, sin push, sin acceso a remoto, sin gates pesados, cero escrituras
+a base de datos, cero llamadas a proveedor.
+
+`STELLA_RELEASE_TRAIN_3_READY_FOR_INTEGRATION`
