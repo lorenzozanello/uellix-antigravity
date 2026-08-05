@@ -27,6 +27,16 @@ export { StellaGroundingBadge } from './StellaGroundingBadge'
 export { StellaEvidencePanel } from './StellaEvidencePanel'
 export { StellaAvailabilityNotice } from './StellaAvailabilityNotice'
 export { StellaGroundedAnswerPanel } from './StellaGroundedAnswerPanel'
+// TRAIN 3 — the real request/response loop (grounded-query.ts, PRODUCT-002).
+export { StellaGroundedQueryPanel } from './StellaGroundedQueryPanel'
+export { isStellaGroundedQuerySuccess } from './grounded-query'
+export type {
+  StellaGroundedQueryRequest,
+  StellaGroundedQueryResult,
+  StellaGroundedQueryRunner,
+  StellaGroundedQuerySuccess,
+  StellaGroundedQueryFailure,
+} from './grounded-query'
 // TRAIN 2 — the GROUNDING → presentation adapter (INTEGRATION-001). The barrel
 // is the surface other lines consume; nobody reaches into the module directly.
 // `RELEVANCE_THRESHOLDS` / `RELEVANCE_THRESHOLDS_VERSION` are GROUNDING's, and

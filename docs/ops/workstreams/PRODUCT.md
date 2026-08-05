@@ -60,8 +60,8 @@ recursos). Este documento es el estado vivo de esta línea únicamente.
 
 ## Unidad actual
 
-**STELLA_PRODUCT_GROUNDING_ADAPTER_TRAIN_2** — ver
-[§Tren 2](#tren-2--stella_product_grounding_adapter_train_2-2026-08-04) al
+**STELLA_PRODUCT_GROUNDED_RUNTIME_FLOW_TRAIN_3** — ver
+[§Tren 3](#tren-3--stella_product_grounded_runtime_flow_train_3-2026-08-05) al
 final de este documento. Lo que sigue en esta sección es el registro histórico
 de la unidad del tren 1, ya integrada.
 
@@ -474,3 +474,218 @@ coincidan por accidente.
 con un único productor; accept/edit/reject/undo intacto.
 
 **Pruebas focalizadas:** 331 passed (324 antes de la unificación, +7).
+
+---
+
+## Tren 3 — STELLA_PRODUCT_GROUNDED_RUNTIME_FLOW_TRAIN_3 (2026-08-05)
+
+**HEAD base declarado en la orden:** `4d59348`
+(`chore(integration): reconcile Stella train 2 contracts`).
+**HEAD real al empezar esta corrida:** `556a57e` — el primer commit de la unidad
+ya existía de una corrida anterior, con la tarea 2 sin commitear en el árbol. Se
+registra en vez de corregirse: reescribir historia para que el hash coincidiera
+con la orden habría destruido el commit que la orden pide producir. Sin push.
+
+Unidad: llevar Stella desde una respuesta fundamentada hasta la revisión humana
+**en runtime**, sin crear una segunda lógica de retrieval y sin tocar base de
+datos.
+
+### Commits
+
+- `556a57e` — `feat(stella): model grounded runtime response flow`
+- (este commit) — `feat(stella): connect grounded review experience`
+
+### El hueco que cierra
+
+El tren 2 dejó el adaptador completo y probado con **cero call sites fuera de
+`components/stella/**`**. Era coherente con lo declarado —sin retrieval no hay
+`RetrievalCandidate`— pero significaba que `StellaGroundedAnswerPanel` y el modo
+`citations` de `StellaEvidencePanel` renderizaban un valor que nada producía, y
+que sus pruebas seguirían verdes aunque el pipeline nunca emitiera una cita.
+
+Faltaba el ciclo: nada preguntaba y esperaba una respuesta.
+`StellaGroundedAnswerPanel` es un renderer puro sin ciclo de petición, y
+`StellaContextualAdvisorPanel` recibe `groundedAnswer` como prop desde fuera de
+su propio ciclo, a propósito.
+
+### Contrato de presentación en runtime
+
+[`components/stella/grounded-query.ts`](../../../components/stella/grounded-query.ts).
+Describe **un** viaje de ida y vuelta y nada sobre cómo se produjo:
+
+| Lo que la orden pedía representar | Cómo llega |
+|---|---|
+| respuesta, claims, citas, contradicciones atribuidas | `GroundedAnswerView`, sin cambios respecto del tren 2 |
+| abstención | `GroundedAnswerView.abstention` |
+| aprobación requerida | `GroundedAnswerView.requiresHumanReview`, literal `true` en el contrato de GROUNDING |
+| disponibilidad, permiso, cuota, error de proveedor | la taxonomía `StellaPanelErrorCode` de 12 códigos que ya devuelven las cinco server actions de Stella |
+
+La taxonomía de error se **reutiliza**, no se reinventa: un segundo vocabulario
+obligaría a quien llame a aprender dos, y `StellaErrorNotice` ya renderiza éste
+sin cambios.
+
+El módulo tiene **un solo export de runtime** (un type guard) y no importa nada
+de `@/lib/grounding`.
+
+### Flujo real de UI
+
+[`components/stella/StellaGroundedQueryPanel.tsx`](../../../components/stella/StellaGroundedQueryPanel.tsx).
+
+**No hace retrieval, no valida scope y no llama a ningún modelo.** `runQuery` lo
+suministra quien monta el panel y es la **única** costura por la que entra una
+respuesta, una evidencia o un error. No existe implementación por defecto ni
+fixture cableado como runtime en ninguna parte de `components/stella/**`: no hay
+a qué caer si integración no entrega el punto de entrada, y eso es deliberado.
+
+Estados conectados: `idle` · `loading` · `grounded` · `partially_grounded` ·
+contradicción atribuida · evidencia insuficiente / abstención · fuente no
+disponible · no disponible (`DISABLED`) · reintento · cuota agotada · permiso
+denegado · error de proveedor.
+
+**Respuesta completa, no streaming**, y es una lectura de la infraestructura
+existente, no una preferencia: las cinco server actions de Stella devuelven una
+`Promise` de un resultado ya validado contra un esquema (`AdvisorOutputSchema` y
+compañía). No hay transporte incremental que consumir, y simularlo en el cliente
+mostraría fragmentos que todavía no pasaron validación.
+
+Cada cita de cada claim muestra: excerpt (derivado del chunk, `null` cuando el
+pasaje no se cargó), fuente, ubicación estructurada, nivel de soporte, score
+**junto** al bucket, y la contradicción cuando existe un `ContradictionMarker`.
+
+### Revisión humana
+
+`accept` · `accept con comentario` · `reject` con motivo opcional · `undo`.
+El vocabulario es el de `decision-types.ts`, reutilizado, no uno paralelo.
+
+Difiere del flujo de sugerencias en un punto en que los dos flujos son
+genuinamente distintos: una sugerencia propone texto destinado a sobrescribir un
+campo del informe, así que «editar» cambia ese texto. Los claims de una respuesta
+fundamentada son evidencia verificada y anclada a un hash — editar su redacción
+los desprendería en silencio de las citas que los respaldan, que es exactamente
+lo que existe para impedir `grounding-adapter.ts`. Por eso aquí «aceptar con
+comentario» adjunta el comentario del revisor junto a una respuesta **intacta**;
+nunca reescribe un claim ni una cita.
+
+`undo` es un estado terminal propio («Deshecha»), no un reset a «sin revisar» —
+la misma regla que ya usa el ciclo de vida de sugerencias. Una decisión revertida
+no es una decisión que nunca ocurrió.
+
+**Nada se presenta como aprobado por defecto:** una respuesta recién llegada dice
+«Requiere aprobación humana», incluso si abstuvo. Una abstención no es una
+aprobación.
+
+**No se persiste con el backend apagado, y no hizo falta código nuevo para eso.**
+`recordStellaDecision` aplica `STELLA_DECISIONS_PERSISTENCE_ENABLED` **antes** de
+tocar la base, y `persistStellaDecision` traga su `DISABLED` en silencio porque
+es el resultado esperado hasta el gate G2. El panel emite `onDecision` y deja el
+cableado a quien lo monta, igual que `StellaContextualAdvisorField`. Repetir la
+decisión de persistencia dentro del componente crearía una segunda respuesta a
+«¿esto se guardó?».
+
+**Los cuatro registros quedan explícitamente distintos** en pantalla, con etiqueta
+propia y `data-claim-kind`: evidencia (cita un documento), inferencia (declara su
+paso de razonamiento, obligatorio en el contrato de GROUNDING), recomendación
+(propone una acción y puede no citar nada), ausencia (estructuralmente incitable
+— `citations?: never`). La decisión humana vive **fuera** de la lista de claims:
+no es un quinto tipo de afirmación, y hay una prueba que lo fija.
+
+### Banderas y cuota
+
+Esta unidad **no crea ninguna bandera y no habilita ninguna capacidad**. El panel
+acepta `enabled` (pasada por el servidor desde `lib/stella/config`) y con ella en
+`false` queda inerte: botón y textarea deshabilitados y `runQuery` **nunca
+llamado** — probado. Un `DISABLED` que llega post-click produce el mismo estado
+inerte, no un cartel de error.
+
+Cuota y permiso llegan como `QUOTA_EXCEEDED` / `UNAUTHORIZED` y se renderizan con
+la presentación ya existente: ninguno de los dos ofrece «Reintentar», y el
+mensaje de cuota se muestra **textual** porque lleva cuota, uso y fecha de
+reinicio del servidor.
+
+### Solicitud de integración
+
+**[PRODUCT-002](../contracts/PRODUCT-002_grounded_query_orchestrator_entry_point.md)
+— `solicitado`.** El otro extremo de la costura tiene que correr en el servidor,
+leer el scope de la sesión autenticada y hablar con el orquestador de GROUNDING;
+las tres cosas están fuera de las rutas autorizadas de PRODUCT, así que §12
+aplica: no se modifica el archivo, se registra la solicitud.
+
+Pide seis cosas verificables **sin retrieval real**: invocar el orquestador y
+adaptar con `adaptGroundedAnswer` (nunca construir un `GroundedAnswerView` a
+mano), obtener el scope de `requireOrganizationAccess` y no del argumento,
+aplicar la bandera **antes** de llamar a nada, aplicar cuota y límite por hora,
+devolver el `answerId` al que se ata la decisión humana, y sanitizar el error del
+proveedor.
+
+**El backend no se implementa dentro de ningún componente**, y esta línea no
+escribió `CONTRACT_LEDGER.md`: el estado de la fila lo fija integración (§8).
+
+### Pruebas
+
+- `vitest run components/stella/__tests__/StellaGroundedQueryPanel.test.tsx` —
+  **30/30**: grounded, parcial, contradicción atribuida, abstención, cita sin
+  pasaje, loading, permiso, cuota, error de proveedor, `DISABLED` post-click,
+  bandera apagada, reintento (con la query anterior, no el borrador actual),
+  navegación, accept / accept-con-comentario / reject / undo, ausencia de
+  decisión por defecto, los cinco datos de cada cita, los cuatro tipos de claim,
+  decisión fuera de los claims, y las tres estructurales de abajo.
+- `vitest run components/stella/__tests__/grounded-query.test.ts` — **2/2**.
+- `vitest run components/stella` (paquete focalizado completo) — **363/363**,
+  17 archivos, 0 fallos, con `env -u GEMINI_API_KEY` según la práctica del tren 1.
+  Ningún archivo `.env` tocado.
+- `tsc --noEmit` — limpio. `eslint components/stella` — 0 errores, 0 warnings.
+- No se ejecutó `test:unit` completo ni `build` (§11: los gates pesados los
+  coordina integración).
+
+**Las tres pruebas estructurales, y la mutación que demuestra que muerden.** Una
+prueba estructural que no puede fallar es peor que ninguna, porque afirma una
+garantía que no sostiene — es el defecto M1 que la revisión adversarial del tren
+2 encontró. Verificado por mutación real, no por lectura:
+
+| Prueba | Mutación aplicada | Resultado |
+|---|---|---|
+| la petición lleva **sólo** `query` (se compara el conjunto de claves, no el contenido) | `runQuery({ query, projectId })` | falla |
+| ni `organizationId` ni `projectId` ni `scope` aparecen en el código del flujo (comentarios excluidos) | `const projectId`, `const scope` en el panel | falla |
+| cero retrieval, cero proveedor, cero I/O en **todo** `components/stella/**` | `fetch(...)` + `validateAnswerCitations()` en el panel | falla, con los 2 infractores nombrados |
+
+La primera es de conjunto de claves y no de contenido a propósito:
+`toHaveBeenCalledWith({ query })` seguiría verde ante una petición que además
+llevara `organizationId`. La tercera se aplica al paquete entero y no sólo a este
+flujo, también a propósito: la garantía no vale nada si el panel queda limpio
+mientras un componente hermano empieza a recuperar y le pasa el resultado.
+
+### Riesgos
+
+- **Sigue sin productor de runtime, y ahora es la única pieza que falta.** La
+  nota de cobertura del tren 1 —ampliada en el tren 2— queda acotada a una sola
+  causa: existe el contenedor, existe el adaptador, existen los estados; no
+  existe quien satisfaga `StellaGroundedQueryRunner`. Eso es PRODUCT-002. Hasta
+  entonces `StellaGroundedQueryPanel` tampoco tiene call sites fuera de
+  `components/stella/**`.
+- **A-M (atribución de contradicción por co-cita) sigue abierto y no se toca
+  aquí.** Una afirmación que cita un chunk nombrado por *cualquier*
+  `ContradictionMarker` se pinta `contradictory_evidence` aunque la contradicción
+  sea sobre otro dato del mismo chunk. No es reparable en presentación:
+  `sideA`/`sideB` son `CitationReference[]` y dos afirmaciones sobre el mismo
+  chunk producen la misma `CitationReference`. Sigue siendo petición a GROUNDING.
+- **A-F1 sigue abierto en GROUNDING** (`validateAnswerCitations` compara sólo
+  `organizationId`). Una cita cross-project *entregada* por upstream se
+  renderizaría con su pasaje. PRODUCT no lo compensa en la UI, y es deliberado:
+  una segunda compuerta de scope en presentación sería una segunda respuesta,
+  divergente, a «¿puede leerse esto?».
+- **Umbrales sin calibrar** — sin cambios respecto del tren 2: son de GROUNDING y
+  están versionados.
+- **Desvío de la orden, declarado:** la Fase 7 pedía actualizar «únicamente»
+  `docs/ops/workstreams/PRODUCT.md`, y esta unidad además **crea**
+  `docs/ops/contracts/PRODUCT-002_*.md`. La Fase 5 pedía publicar la solicitud,
+  §8 dice que cada línea la publica en `docs/ops/contracts/`, el tren 1 sentó el
+  precedente con PRODUCT-001, y el commit `556a57e` ya citaba esa ruta. Se
+  interpretó «únicamente» como restricción sobre documentos **existentes**.
+  `CONTRACT_LEDGER.md` no se tocó.
+
+### Estado de entrega
+
+**STELLA_PRODUCT_TRAIN_3_READY_FOR_INTEGRATION.** Árbol limpio, dos commits, sin
+push. Cero cambios en `db/**`, `supabase/**`, SQL, `lib/grounding/**` o archivos
+`INTEGRATION-OWNED`; cero cambios en `CONTRACT_LEDGER.md`; cero mocks como
+runtime; cero aritmética SROI en cliente; cero capacidades habilitadas.
