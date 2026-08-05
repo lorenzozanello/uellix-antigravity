@@ -59,10 +59,14 @@ silencioso, no un error.
 
 ## Unidad actual
 
-`STELLA_GROUNDING_RETRIEVAL_AND_ISOLATION_TRAIN_2` — **completada**. Ver
-[Tren 2](#tren-2--retrieval-y-aislamiento-2026-08-04) al final del documento.
+`STELLA_GROUNDING_RUNTIME_ORCHESTRATION_TRAIN_3` — **completada**. Ver
+[Tren 3](#tren-3--versión-de-extracción-atribución-y-orquestación-2026-08-05)
+al final del documento.
 
 ## Unidad anterior
+
+`STELLA_GROUNDING_RETRIEVAL_AND_ISOLATION_TRAIN_2` — **completada**. Ver
+[Tren 2](#tren-2--retrieval-y-aislamiento-2026-08-04).
 
 `STELLA_GROUNDING_INGESTION_CORE_TRAIN_1` — **completada**.
 
@@ -585,3 +589,249 @@ esa preimagen, así que un extractor distinto sobre los mismos bytes produce otr
 etiquetado), R6 (`no_matching_evidence` frente a «hay evidencia y no es
 relevante»), R7 (suelo de diversidad de fuentes). Los tres se calibran contra
 scores reales de un retrieval con datos, que no existe.
+
+---
+
+## Tren 3 — versión de extracción, atribución y orquestación (2026-08-05)
+
+`STELLA_GROUNDING_RUNTIME_ORCHESTRATION_TRAIN_3`. Dos commits sobre `4d59348`.
+Sin push, sin acceso remoto, sin gates pesados, **cero cambios en `db/**`,
+`supabase/**`, SQL y `components/**`**.
+
+### GR-CAP-002 — `EXTRACTOR_VERSION` publicado
+
+`EXTRACTOR_VERSION = 'extract-1'` en `lib/grounding/contracts/core.ts`,
+exportado por el barrel de contratos e incorporado a `PIPELINE_VERSIONS`, que
+pasa de tres campos a cuatro (`normalization`, `chunker`, `injectionScanner`,
+`extractor`).
+
+**El valor deriva del comportamiento real del extractor**, no es un nombre
+arbitrario: `extract.ts` está en su primer contrato de extracción — CSV
+RFC 4180-ish y `text/plain` verbatim, todo lo demás `unsupported` — y nunca ha
+cambiado de forma observable, así que la primera versión es `-1`, igual que
+`norm-1`, `chunk-1` e `inj-1`. La constante es **una por módulo, no una por
+MIME type**: `extract.ts` registra varios formatos bajo un único contrato, y
+versionar por formato inventaría una granularidad que el código no tiene.
+
+`DocumentVersion` gana `extractorVersion`, y `ingestDocument` lo estampa. Lo que
+**no** cambió, deliberadamente: `deriveVersionId` sigue siendo función de
+`(evidenceId, rawContentHash)` únicamente. Ese es el punto del contrato, no un
+descuido — re-extraer los mismos bytes bajo otro extractor debe conservar la
+identidad de versión **y** hacer visible que el texto derivado cambió. Si el
+extractor entrara en la preimagen, una reingesta bajo extractor nuevo se vería
+como una versión distinta del documento, que es justo la confusión que
+`evidence_document_versions.extractor_version` existe para evitar.
+
+**Consecuencia para integración:**
+`tests/cross-workstream/capabilities-to-grounding.test.ts` **falla ahora**, en
+el caso «GROUNDING publishes no EXTRACTOR_VERSION yet». Es el disparo previsto
+por el propio ledger: la prueba fija la ausencia como cable trampa y su comentario
+dice que el día que GROUNDING publique la constante, fallar **es la señal para
+cerrar el contrato, no para borrar la prueba**. Esta línea **no la tocó** — es
+propiedad de CAPABILITIES.
+
+### Contradicciones atribuidas por afirmación
+
+El modelo del tren 2 no podía distinguir dos afirmaciones que citan **el mismo
+chunk**: `sideA` y `sideB` son listas de `CitationReference`, y dos lecturas
+opuestas de un mismo pasaje producen dos lados idénticos.
+
+Extensión mínima y **aditiva**:
+
+- `ContradictionClaimAttribution { claimId, assertionHash }` en
+  `contracts/answer.ts`;
+- `ContradictionMarker.sideAClaim` / `sideBClaim`, **opcionales y nulables**;
+- `DraftContradictionSide { claimId, statement }` en el borrador.
+
+Decisiones que conviene conocer:
+
+- **Los campos son opcionales por compatibilidad estructural, no por comodidad.**
+  `components/stella/grounding-adapter.ts` y
+  `tests/cross-workstream/grounding-to-product.test.ts` construyen y consumen
+  literales de `ContradictionMarker` con exactamente los cinco campos previos, y
+  ninguno de los dos archivos es modificable por esta línea. Un campo requerido
+  habría roto su compilación; uno opcional no. `sideA` / `sideB` conservan su
+  forma, así que INTEGRATION-001 no se entera.
+- **`assertionHash` se calcula aquí, nunca se transporta desde el borrador.**
+  `attributionOf` aplica `hashContent(statement)` sobre el texto que el borrador
+  declaró. Un generador no puede fabricar la huella de una afirmación que no
+  hizo — es el mismo principio que ya rige las citas: los campos verificables no
+  se toman del modelo.
+- **Se guarda el hash y no la prosa.** La atribución no debe convertirse en un
+  segundo sitio donde se almacena texto libre.
+- **Ausente sigue significando ausente:** cuando el borrador no aporta
+  atribución, el marcador sale con `null`, no con un `claimId` inventado.
+- **Nada de esto deriva contradicciones.** Dos chunks que comparten cifras
+  siguen sin ser una contradicción; sólo un `DraftContradiction` explícito lo es.
+
+### Orquestador
+
+`lib/grounding/retrieve/orchestrate.ts`. Raíz de composición, **no** sitio donde
+se inventa política nueva:
+
+```
+scope + query
+  → GroundingChunkRepository (inyectado, envuelto en enforceRepositoryScope)
+  → retrieveGroundedChunks
+  → AnswerDraftProvider (inyectado)
+  → buildGroundedAnswer (construcción + validación de citas)
+  → clasificación
+```
+
+**Cero imports de `db/**`**, cero `fetch`, cero proveedor. Las dos costuras
+inyectables son `GroundingChunkRepository` —la interfaz que GR-001/GR-002
+implementarán sobre SQL preparado, sin que este archivo cambie— y
+`AnswerDraftProvider`, la única costura por la que entra un modelo real. Una
+prueba lee el propio fuente del módulo y falla si aparece un import de `db/`,
+`supabase`, `fetch`, `axios` o un SDK de proveedor.
+
+Clasificación de seis valores: `grounded`, `partially_grounded`,
+`contradictory`, `insufficient_evidence`, `abstention`, `provider_unavailable`.
+
+**Es más fina que `GroundedOutcomeKind` en un punto, y a propósito.**
+`buildGroundedAnswer` colapsa en `insufficient_evidence` toda abstención que no
+sea contradicción ni proveedor caído — incluidas `content_quarantined`, que su
+propia cabecera llama «un evento de seguridad», y `out_of_scope`. Colapsarlas en
+la frontera del orquestador sería exactamente lo que ese módulo advierte que no
+se haga: le diría al llamador «sube más documentos» cuando el problema real es
+una señal de inyección o una frontera cruzada. Así que
+`insufficient_evidence` queda para los códigos que de verdad significan «no hay
+nada o nada es relevante» (`no_matching_evidence`, `below_relevance_threshold`,
+`evidence_unreadable`) y todo lo demás abstenido cae en `abstention`.
+
+**Dos superficies de fallo, tratadas distinto:**
+
+- `GroundingScopeViolationError` y `RepositoryContractViolationError` **se
+  relanzan**. Un repositorio que devuelve un chunk fuera de scope es un defecto
+  de programación —un `WHERE` al que se le cayó un predicado—, y tragárselo como
+  `provider_unavailable` escondería una rotura de frontera detrás de un estado
+  que un llamador podría simplemente reintentar.
+- Cualquier otro fallo del repositorio (conexión rechazada, timeout) es
+  operativo, no una afirmación sobre la evidencia, y sale como
+  `provider_unavailable`.
+
+### R6 — decisión provisional: **un solo código**
+
+`no_matching_evidence` cubre dos situaciones: (a) no había nada indexado que
+coincidiera; (b) sí había pasajes y ninguna afirmación se fundamentó.
+
+**Decisión: no se ensancha `AbstentionReasonCode`.** Las dos situaciones ya son
+separables por datos publicados en el mismo objeto: dentro de
+`no_matching_evidence`, `inspected.total === 0` es exactamente (a) y `> 0` es
+exactamente (b). Las pruebas fijan esa partición como propiedad, no como
+accidente del orden de las ramas. La unión la consumen INTEGRATION-001 y el
+adaptador de PRODUCT; añadir una variante obligaría a cada consumidor a manejar
+una distinción que ya puede hacer. Sin necesidad demostrada, no se ensancha.
+
+**Lo que la investigación sí demostró fue un defecto en la explicación, no en el
+código.** Un borrador con cero afirmaciones sobre pasajes recuperados salía con
+«No indexed passage within scope addresses the question» mientras
+`inspected.total` decía lo contrario: metadato y prosa en desacuerdo, y la prosa
+es lo que lee el humano. La causa era el discriminante: `abstentionFor`
+ramificaba por `claimsWereRejected`, y un borrador vacío no rechaza nada. Ahora
+ramifica por **si se recuperaron pasajes**, que es la pregunta real. Es un cambio
+de cadena, no de contrato.
+
+Reproducido primero con una prueba que falla (`__tests__/r6.test.ts`). Si más
+adelante se observa a consumidores ramificando por `inspected.total` o por el
+texto para recuperar (a) frente a (b), **eso** es la necesidad demostrada y la
+partición pasa a ser lo correcto. Hoy no lo está.
+
+### R7 — decisión provisional: **conservar el suelo de dos fuentes**
+
+`DEFAULT_MIN_DISTINCT_SOURCES = 2` puede desplazar al candidato mejor puntuado.
+**Se conserva el comportamiento** —greedy con reparación, suelo efectivo
+`min(minDistinctSources, topK)`— sin tocar `selectWithDiversity`. Lo que añade
+este tren es el banco de seis escenarios que el tren pidió, en
+`__tests__/r7.test.ts`, para que la próxima calibración compare contra casos
+fijos en vez de volver a derivarlos:
+
+| Escenario | Comportamiento observado |
+|---|---|
+| Una fuente excelente | No se fabrica una segunda; contenido irrelevante nunca se promueve |
+| Dos fuentes medianas | El suelo ya se cumple; cero desplazamientos |
+| Contradicción potencial | Sin el suelo el resultado es de fuente única y la contradicción **no puede existir**; con el suelo, sí |
+| `topK: 1` | El suelo cede ante topK; no hay intercambio degenerado |
+| `topK: 2` | Reparación real: se desplaza el chunk más débil de la fuente dominante, registrado |
+| Una sola fuente disponible | El suelo se abandona antes que inventarse |
+
+**No se declara óptima.** Sigue sin haber conjunto etiquetado, y el escenario de
+contradicción es un argumento a favor del suelo, no una medición de calidad de
+respuesta.
+
+Dos fixtures de este banco fallaron primero por la razón equivocada, y ambas
+enseñan algo sobre el scorer que conviene dejar escrito:
+
+- un término de la consulta **ausente de todo el conjunto candidato** agranda
+  igualmente el denominador normalizador de `LexicalChunkScorer` (`maximum` suma
+  idf sobre todos los términos), deprimiendo todos los scores a la vez; la
+  segunda fuente caía bajo `DEFAULT_RETRIEVAL_MIN_SCORE` y la prueba «mostraba»
+  una sola fuente por un motivo que nada tenía que ver con diversidad;
+- el desempate por `evidenceId.localeCompare` hacía que `ev-audit` precediera a
+  `ev-report`, de modo que `topK: 2` **ya** devolvía dos fuentes y la premisa de
+  «una fuente domina» era falsa para ese corpus.
+
+### Pruebas ejecutadas
+
+Focalizadas, según §11 (ningún gate pesado; sin `test:unit` completo, sin
+`build`):
+
+```
+pnpm exec vitest run lib/grounding/  → 14 archivos, 271 pruebas, todas en verde
+pnpm exec eslint lib/grounding       → limpio
+pnpm exec tsc --noEmit               → limpio
+```
+
+De las 271, **34 son nuevas** de este tren: 3 de `EXTRACTOR_VERSION` (constante
+estable, participación en `PIPELINE_VERSIONS`, identidad de pipeline distinta
+con `versionId` idéntico), 2 de ingestión (estampado y conservación entre
+reingestas), 3 de atribución de contradicciones (incluida la del **mismo chunk
+sostenido por dos afirmaciones**), 12 de orquestador (scoped, cross-project,
+cross-organización, cita inválida que **lanza**, dos rutas de
+`provider_unavailable`, determinismo, cero proveedor externo, cuarentena como
+`abstention`), 8 de R6 y 6 de R7.
+
+El typecheck completo del proyecto está limpio, que es lo que demuestra que la
+extensión de `ContradictionMarker` es realmente compatible: `components/**` y
+`tests/cross-workstream/**` compilan sin tocarse.
+
+### Riesgos
+
+- **R1** (persistencia bloqueada por GR-001) y **R2** (cobertura de formatos)
+  siguen abiertos sin cambio.
+- **R3** (calibración del escáner) sin cambio.
+- **R4** (umbrales sin calibrar) sin cambio: este tren no calibró nada contra
+  datos etiquetados, porque siguen sin existir.
+- **R5 — sin cableado al pipeline: sigue abierto, y ahora es más pequeño.** El
+  orquestador es el punto de entrada que faltaba, pero nadie lo llama todavía:
+  no hay ruta, job ni handler que lo invoque, y `AnswerDraftProvider` no tiene
+  implementación real. Lo que queda es cableado de aplicación, no de esta línea.
+- **R6 — cerrado como decisión provisional**, con el defecto de explicación
+  corregido. Reabrir sólo con necesidad demostrada por uso real.
+- **R7 — sigue abierto por diseño**, ahora con seis escenarios fijos y
+  reproducibles. Cierra con evals, no con este tren.
+- **R8 — nuevo. La clasificación del orquestador es una segunda taxonomía.**
+  `GroundingOrchestrationClassification` y `GroundedOutcomeKind` conviven, y la
+  primera reinterpreta a la segunda leyendo `AbstentionReasonCode`. Está probado
+  y documentado por qué difieren, pero son dos vocabularios para una misma
+  realidad: si aparece un tercer consumidor con su propio mapeo, la respuesta
+  correcta es unificar, no añadir.
+
+### Estado de entrega a integración
+
+**Listo para integración.** Árbol limpio, dos commits locales, sin push, sin
+acceso remoto, sin datos simulados en runtime, sin gates pesados. Ninguna ruta
+prohibida ni `INTEGRATION-OWNED` fue modificada.
+
+**Peticiones a integración:**
+
+1. **Cerrar GR-CAP-002.** La constante está publicada y participa en
+   `PIPELINE_VERSIONS`, `DocumentVersion` e ingestión. La fila del ledger pasa de
+   `solicitado` a resuelto, y la aserción de ausencia en
+   `tests/cross-workstream/capabilities-to-grounding.test.ts` debe invertirse
+   —pasar a exigir la presencia y el valor— por **CAPABILITIES**, su propietaria.
+   Esta línea la dejó fallando a propósito.
+2. **Nota para PRODUCT:** `ContradictionMarker` gana dos campos opcionales. No
+   hay acción obligatoria; el adaptador sigue compilando y funcionando sin
+   leerlos. Si la UI quiere mostrar «qué afirmación sostiene cada lado», el dato
+   está en `sideAClaim` / `sideBClaim`.

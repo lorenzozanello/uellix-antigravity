@@ -37,6 +37,15 @@ export {
 } from './calibration'
 export type { PresentedRelevance, RelevanceBucket } from './calibration'
 
+export { orchestrateGroundedResponse } from './orchestrate'
+export type {
+  AnswerDraftProvider,
+  AnswerDraftRequest,
+  GroundingOrchestrationClassification,
+  GroundingOrchestrationResult,
+  OrchestrateGroundedResponseOptions,
+} from './orchestrate'
+
 export { buildGroundedAnswer, providerUnavailableOutcome } from './grounded-answer'
 export type {
   AnswerDraft,
