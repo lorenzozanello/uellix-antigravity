@@ -571,3 +571,350 @@ patrón encontrada en un archivo ajeno a esta línea, en
 
 No se tocó ningún hallazgo MAJOR de esta sección (B-M4/M5/M6): siguen siendo
 trabajo de entrada de RELEASE en el tren 2, sin cambios.
+
+---
+
+# Tren 2 — `STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2`
+
+**HEAD base:** `597819b` (`chore(integration): prepare shared Stella train 2
+root`, = `TRAIN_2_ROOT_HEAD`). Árbol limpio al abrir y al cerrar. Sin push, sin
+acceso a remoto, sin llamadas a proveedor, sin gates pesados, sin tocar
+`db/**`, `supabase/**`, contratos funcionales ni ninguna ruta
+`INTEGRATION-OWNED`.
+
+**Alcance:** cerrar B-M4, B-M5 y B-M6; hacer que ningún check pueda pasar por
+construcción; emitir de verdad las métricas declaradas; y dejar criterios
+medibles de grounding y aislamiento listos para el tren 2 integrado.
+
+## El problema real del tren 1, y por qué no se arregló función por función
+
+Los tres MAJOR no eran tres errores independientes. Los dos primeros comparten
+una forma: **el check afirma una propiedad del sistema pero sólo evalúa datos
+que el propio check acaba de construir.** Reescribir esas dos funciones no
+habría impedido la tercera aparición del mismo patrón.
+
+Reproducidos antes de tocar nada:
+
+| Hallazgo | Reproducción |
+|---|---|
+| **B-M4** | Se replicó la lógica exacta de `checkCapRegressionSurfacePresent` contra un root sintético donde los 13 archivos existen y **pesan cero bytes**: `missing.length = 0`, `stillOwnedByDefaultConfig = true`, veredicto **PASS**. Y `CAP_REGRESSION_TEST_FILES.every(f => !f.startsWith('tests/integration/'))` sobre un array literal de módulo evalúa `true` para las tres rutas, siempre. El comentario afirmaba confirmar que las pruebas no están excluidas del config por defecto; nunca leía un config. **La reproducción no tocó `db/**`** — se hizo en un directorio temporal fuera del repo. |
+| **B-M5** | `acknowledging` y `silent` estaban declarados tres líneas por encima de la aserción que los comparaba (`harness.ts:177-179` del tren 1). Nada fuera de esas tres líneas podía cambiar el resultado. Además la entrada de matriz declara `offlineMeasurable: false` y el check contaba en `passed` sin ninguna distinción en el titular «14/14». |
+| **B-M6** | Directamente en la salida de referencia del tren 1: la matriz declara `structural-regression` y el bloque de métricas emite **8**, sin ella. Simétricamente, dos entradas declaraban `metrics: ['latency']` mientras `latency` estaba cableada a `null` sin leerlas. Nada reconciliaba los dos catálogos. |
+
+Por eso el cambio es **estructural**: un check ya no prueba nada por devolver
+`ok`. Debe además demostrar que **el mismo evaluador** rechaza una entrada
+donde la propiedad está rota a propósito. Un check que pasa mientras su propia
+mutación también pasa se reporta como `system-error` con prefijo
+`TAUTOLOGICAL` y **hace fallar el proceso** — un check que no puede fallar
+declara una cobertura que no existe, y eso es peor que no tener el check.
+
+## Controles negativos
+
+[`tests/eval/stella-release/negative-controls.ts`](../../../tests/eval/stella-release/negative-controls.ts)
+(nuevo). **37 controles, uno o más por cada uno de los 19 checks**, todos
+detectando en la corrida de referencia. Una sonda que lanza cuenta como **no
+detectada**: «no se pudo establecer» nunca puede leerse como «establecido».
+
+Cobertura exigida por la Fase 2:
+
+| Propiedad | Control | Qué muta |
+|---|---|---|
+| aislamiento de organización | `nc-cross-organization-planted-marker` | fixture de alpha con el marcador de beta plantado |
+| aislamiento de organización | `nc-cross-organization-wrong-org-id` | `organizationId` esperado que no coincide |
+| aislamiento de proyecto | `nc-cross-project-planted-evidence` | evidencia del proyecto dos dentro del proyecto uno |
+| aislamiento de proyecto (contrato) | `nc-scope-sibling-project-citation` | cita a un proyecto hermano de la **misma** organización |
+| cita inexistente | `nc-scope-citation-without-source`, `nc-adapter-phantom-chunk` | `chunkId` que ningún retrieval produjo |
+| cita incorrecta | `nc-adapter-drifted-quote`, `nc-provenance-tampered-text` | `quotedTextHash` que no corresponde al pasaje |
+| abstención incorrecta | `nc-abstention-human-review-false`, `nc-reviewer-false-not-rescued-by-low-risk` | `requires_human_review: false`, y con el resto de campos «buenos» |
+| contradicción ignorada | `nc-contradiction-ignored`, `nc-contradiction-auto-resolved` | ambos lados citados sin marcador; marcador que afirma resolución automática |
+| prompt injection aceptada | `nc-injection-detector-benign-document` | documento benigno que el detector **no** debe marcar |
+| error de sistema como abstención | `nc-system-error-not-classified-as-abstention` | `TypeError` a través del clasificador compartido |
+
+Además hay controles de **no-sobre-rechazo**, que es el fallo simétrico y el
+que un control negativo ingenuo no ve: `nc-rejector-still-accepts-valid`
+(un decodificador que rechazara todo satisfaría las tres variantes de
+«cita incorrecta» y sería inútil), `nc-provider-not-everything-retryable`,
+`nc-quota-echo-is-code-specific`.
+
+**Ningún control compara una constante con otra constante.** Los que evalúan
+texto lo toman de fixtures (`CONTRADICTION_ACKNOWLEDGMENT_TEXT` frente al
+`narrativeSummary` del propio `CONTRADICTORY_CONTEXT`), y el check se niega a
+correr si esa narrativa está vacía — un detector que respondiera `true` a todo
+seguiría devolviendo `false` sobre `''`, y ese verde sería falso.
+
+### Verificación de extremo a extremo, no sólo por prueba unitaria
+
+Se comprobó dos veces que el harness **falla de verdad**, mutando el árbol y
+revirtiendo después:
+
+| Mutación | Resultado |
+|---|---|
+| marcador de beta plantado en `ORG_ALPHA_CONTEXT` | `EXIT 1`; `FAIL [isolation-violation] cross-organization-no-leak`; `isolation-violations: 1`; dos razones de fallo reportadas |
+| `BENIGN_DOCUMENT_PAYLOAD` reescrito para parecer una inyección | `EXIT 1`; `FAIL [system-error] malicious-document-envelope-holds — TAUTOLOGICAL`; `negativeControlsUndetected: 1` |
+
+Ambas mutaciones fueron revertidas; el árbol entregado no las contiene.
+
+## B-M4 — cerrado
+
+`cap-01-05-regression-surface-present` ya no es `existsSync` más una
+tautología:
+
+- **Contenido, no presencia.** Cada paquete debe superar un piso de 1024 bytes
+  y conservar su marcador estructural (`uellix_capability` en los forward,
+  `DROP` en los rollback). Los reales pesan 27–62 kB.
+- **El config real, no un literal.** Las rutas de los tests de regresión se
+  comparan contra las globs de exclusión **leídas de `vitest.shared.ts`**
+  (sólo lectura; el archivo es `INTEGRATION-OWNED` y no se modificó). Si
+  alguien mueve un test de CAP bajo una ruta excluida, o añade una exclusión
+  que se lo trague, el check lo dice.
+- **Sonda inyectable.** El control negativo presenta un root donde todo existe
+  y todo pesa cero **sin escribir un solo archivo**. El harness declara que su
+  único I/O es lectura de archivos versionados; demostrar un punto violando esa
+  garantía habría cambiado una afirmación falsa por otra.
+
+## B-M5 — cerrado
+
+- Los dos textos de sonda vienen de fixtures, no de literales internos.
+- La propiedad **estructural** («ambos lados de la contradicción llegan al
+  catálogo de citas») ahora se mide con control negativo: un contexto al que se
+  le quita un lado debe reportarse.
+- El titular ya no puede esconder la limitación: la salida separa
+  `offline coverage: N fully measurable, M offline-limited`. En la corrida de
+  referencia son **18 y 1**.
+- La entrada de matriz sigue `offlineMeasurable: false`, y su
+  `offlineLimitation` ahora distingue explícitamente lo que sí se mide offline
+  (la parte estructural) de lo que no (calificación semántica de prosa
+  **generada**, que requiere G1).
+
+Se añadió además una categoría nueva de contradicción sobre el contrato de
+GROUNDING — ver `grounding-contradiction-marked` más abajo — que sí mide la
+regla dura: citar ambos lados sin `ContradictionMarker` y sin abstenerse es un
+fallo.
+
+## B-M6 — cerrado
+
+- `structural-regression` **se emite**. Vale `1` (6/6) en la corrida de
+  referencia.
+- `assertMetricsMatchMatrix()` reconcilia los dos catálogos en cada corrida y
+  lanza si la matriz declara una métrica que nadie emite, o si se emite una que
+  nadie declara. Ese enlace era exactamente lo que no existía.
+- Las métricas dependientes de proveedor **ya no se atan a ningún check**. Se
+  declaran una sola vez en `PROVIDER_DEPENDENT_METRICS`, y
+  `validateReleaseEvalMatrix` **rechaza** una entrada que pretenda alimentarlas.
+  Declarar una métrica que un check no puede producir es exactamente cómo un
+  tablero termina mostrando un número que nadie calculó.
+- Los dos checks que declaraban `latency` (`provider-unavailable-presentation`,
+  `retryable-code-set-pinned`) alimentan ahora `structural-regression`, que es
+  lo que de verdad fijan.
+
+## A-F10 — cerrado
+
+- `abstention-schema-enforced` declara su `offlineLimitation`: evalúa fixtures
+  contra un esquema Zod, y lo que mide es que el **contrato** rechaza lo que
+  debe rechazar, no que un modelo real se abstenga cuando debe.
+- `abstention-correctness` dejó de incluir dos checks que no son de abstención.
+  `quota-exhausted-non-retryable` (agotar la cuota no es que el pipeline decida
+  abstenerse: es que no llegó a ejecutarse) y `human-decision-literal-true` (un
+  literal de contrato que el esquema impone siempre) pasaron a
+  `structural-regression`. La métrica bajó de 4/4 a **3/3** y ahora cuenta
+  contratos de abstención genuinos.
+
+## Matriz de evaluación — v2.0.0
+
+`RELEASE_EVAL_MATRIX_VERSION = '2.0.0'`, `RELEASE_FIXTURES_VERSION = '2.0.0'`,
+`RELEASE_HARNESS_VERSION = '2.0.0'` (el harness gana su propia versión: la
+semántica de los checks puede cambiar sin que cambie la forma de la matriz).
+
+**19 entradas**, 19 categorías. Las 14 del tren 1 conservan su `checkId` y su
+categoría; cambian su implementación, su descripción (que ahora nombra el
+control negativo que la mantiene honesta) y, en cuatro casos, la métrica que
+alimentan. Las 5 nuevas son de contrato de grounding:
+
+| Categoría | `checkId` | Métrica | Offline |
+|---|---|---|---|
+| grounding — project scope | `grounding-project-scope-enforced` | isolation-violations, unsupported-claim-rate | Sí (contrato, no RLS) |
+| grounding — provenance | `grounding-provenance-canonical` | citation-coverage | Sí |
+| grounding — score | `grounding-retrieval-score-ordering` | structural-regression | Sí |
+| grounding — contradicción | `grounding-contradiction-marked` | abstention-correctness | Sí |
+| grounding — adaptador PRODUCT | `grounding-product-adapter-input-complete` | citation-precision | Sí |
+
+**Ampliar la matriz era trabajo previsto**: el propio documento del tren 1 lo
+declaró como «trabajo legítimo de una próxima unidad de RELEASE».
+
+## Métricas emitidas — corrida de referencia
+
+```bash
+pnpm test:stella:release-eval
+```
+
+`19/19 checks passed` · `pass=15 abstention=4 system-error=0
+isolation-violation=0` · `offline coverage: 18 fully measurable, 1
+offline-limited` · `negative controls: 37 run, 0 undetected` · `providerCalls=0`
+
+| Métrica | Valor | Base |
+|---|---|---|
+| `citation-precision` | `1` | 4/4 checks de citación resolvieron/rechazaron/proyectaron correctamente |
+| `citation-coverage` | `1` | 2/2 — la evidencia real es alcanzable por una cita válida **y** su cadena de provenance cierra |
+| `unsupported-claim-rate` | `0` | 4/4 canarios de reclamo no soportado rechazados (`1 - caught/total`) |
+| `abstention-correctness` | `1` | 3/3 contratos de abstención genuinos (ver A-F10) |
+| `isolation-violations` | `0` | conteo, no proporción, sobre 4 checks |
+| `structural-regression` | `1` | 6/6 contratos estructurales fijados |
+| `latency` | `null` | `requires-provider-call`, gate **G1** |
+| `token-usage` | `null` | `requires-provider-usage-metadata`, gate **G1** |
+| `estimated-provider-cost` | `null` | `requires-token-usage-and-calibration`, gate **G9** |
+
+**Cada `null` lleva razón estructurada** — código, gate y una frase — y el
+harness lanza si una métrica es `null` sin razón, o si lleva valor **y** razón
+a la vez. Un `null` desnudo es indistinguible de cero en un log y de «no
+calculado» en un reporte.
+
+### Latencia: por qué sigue en `null` habiendo una medición local
+
+La Fase 3 pide latencia «cuando sea medible localmente». Se mide y se emite,
+pero **fuera del bloque determinista** y con otro nombre:
+`observation (non-deterministic): harnessWallClockMs=…`. No se reporta como
+`latency` por dos razones, y conviene que queden escritas:
+
+1. **No mide a Stella.** El harness hace cero llamadas a proveedor. Ese
+   número es el costo de transformar y ejecutar módulos en la máquina que corrió
+   la suite; publicarlo como `latency` invitaría a compararlo con un
+   presupuesto p50/p95 que describe otra cosa por completo.
+2. **Rompería el determinismo** que la Fase 4 exige de la salida estructurada.
+
+`latency` como métrica de release sigue significando ida y vuelta real al
+proveedor, y eso sigue siendo G1. **Es una decisión de esta unidad, no una
+omisión** — si integración prefiere que el reloj local no se emita en absoluto,
+es un cambio de una línea en el script.
+
+## Salida y fallo
+
+La salida estructurada (`[eval:release] json …`, una sola línea) incluye
+**versión** (harness, matriz, fixtures), y por cada check **`checkId`**,
+**`fixtureId`**, **`result`**, **`outcome`** y sus controles negativos con
+veredicto; más el bloque completo de métricas con sus razones de nulidad y los
+totales. Es **determinista**: dos procesos distintos producen la línea
+byte-idéntica, y eso está probado, no afirmado.
+
+`releaseEvalFailureReasons()` vive en el harness y no en el script,
+precisamente para que «el proceso falla ante un aislamiento» sea demostrable
+contra un resumen sintético en vez de requerir una fuga real. **Todas** las
+razones aplicables se reportan, no sólo la primera: una corrida que fuga entre
+tenants **y** fabrica una cita debe decir las dos cosas, porque colapsarlas es
+cómo la segunda se arregla un release más tarde.
+
+El proceso sale distinto de cero ante: cualquier check en rojo, **cualquier
+check tautológico**, cualquier control negativo no detectado, **cualquier
+violación de aislamiento**, **cualquier fallo de validación de citación**,
+cualquier `system-error`, y cualquier llamada a proveedor.
+
+`system-error` y `abstention-response` siguen siendo `outcome` distintos, y
+ahora el clasificador que los separa (`classifyRejection`) tiene su propio
+control negativo.
+
+## Fixtures para el tren 2 integrado
+
+Construidas **sólo** contra el barrel publicado `lib/grounding/contracts`
+(la superficie que §7.1 declara como contrato de GROUNDING). No se importa
+`lib/grounding/ingest/**` ni código de ninguna rama que no esté ya en la raíz
+compartida.
+
+- **project-scope enforcement** — tres scopes (`alphaProjectOne`,
+  `alphaProjectTwo`, `betaProjectOne`, más `alphaOrgWide`) y chunks reales en
+  cada uno. El caso que importa es el proyecto **hermano de la misma
+  organización**: una comparación por organización no puede distinguirlo.
+- **provenance canónica** — los chunks se construyen con hashes reales
+  (`hashContent`, `deriveChunkId`, `lineRangeForSpan`), así que la cadena de
+  verificación **cierra**: el texto re-hashea a `contentHash` y el `chunkId`
+  se re-deriva. Una cita a ellos puede falsificarse como describe `chunks.ts`,
+  que es el motivo de no usar hex escrito a mano.
+- **score numérico** — `RetrievalResult` con puntajes literales (deterministas),
+  ranking monótono y ambos contadores de descarte poblados, más sus mutaciones:
+  ranking invertido, candidato bajo umbral admitido, y `NaN`.
+- **contradiction marker** — `ContradictionMarker` con ambos lados anclados y
+  `resolution: 'requires_human_resolution'`, frente a la respuesta que ignora la
+  contradicción y la presenta como hecho.
+- **adaptador de PRODUCT** — se mide **completitud de la entrada**, no el
+  adaptador: `components/stella/grounding-adapter.ts` no existe
+  (INTEGRATION-001 sigue `solicitado`, propietaria PRODUCT). RELEASE no lo
+  implementa ni importa nada de otra línea; fija el criterio de aceptación que
+  ese adaptador tendrá que cumplir cuando PRODUCT lo escriba.
+
+### A-F1 queda registrado, no parcheado
+
+`validateAnswerCitations` compara **sólo** `organizationId`, y su mapa
+`availableChunks` ni siquiera puede llevar `projectId`. El check
+`grounding-project-scope-enforced` **no depende de esa función**: mide la
+propiedad con `scopeContains`, que GROUNDING sí publica y que sí compara
+proyecto. El harness deja constancia en su propio `detail` de que la función
+del contrato sigue sin ver el caso proyecto-hermano. **Corregirla es de
+GROUNDING** (§ Rutas prohibidas: RELEASE consume contratos funcionales, no los
+modifica); el criterio medible ya está puesto y seguirá sosteniéndose cuando
+A-F1 se cierre.
+
+## Pruebas ejecutadas
+
+Sólo focalizadas, sin `test:unit` completo, sin `build`, sin gates pesados
+(§11). Sin red, sin BD, sin secretos reales.
+
+| Comando | Resultado |
+|---|---|
+| `pnpm exec tsc --noEmit` | limpio, 0 errores |
+| `pnpm exec eslint tests/eval/stella-release scripts/eval-release-offline.ts` | **0 errores, 0 warnings** |
+| `pnpm exec vitest run tests/eval/stella-release` | **3 archivos, 77 tests passed** (`harness` 62, `command` 10, `wiring` 5) |
+| `pnpm test:stella:release-eval` | `19/19 checks`, `pass=15 abstention=4 system-error=0 isolation-violation=0`, 37 controles negativos todos detectando, 0 `providerCalls` |
+| Mutación adversarial ×2 (revertidas) | `EXIT 1` en ambas — ver §Verificación de extremo a extremo |
+
+### La prueba del comando oficial
+
+[`tests/eval/stella-release/command.test.ts`](../../../tests/eval/stella-release/command.test.ts)
+**ejecuta** `pnpm test:stella:release-eval` como subproceso y comprueba código
+de salida, versiones, `fixtureId` por check, distinción abstención/error de
+sistema, controles negativos, razones estructuradas de nulidad, cero llamadas a
+proveedor y **determinismo entre dos procesos distintos**.
+
+`wiring.test.ts` ya fijaba la cadena de `package.json`; eso es otra cosa. Una
+entrada de script puede apuntar a un archivo que existe, parsear bien, y aun
+así salir distinto de cero, no imprimir nada estructurado o variar entre
+corridas — nada de eso se ve desde el manifiesto.
+
+**`package.json` no fue modificado.** El comando ya existía desde la unidad de
+preparación de raíz del tren 2. Si `pnpm` no estuviera en el `PATH`, la prueba
+**falla**, no se salta: una prueba de extremo a extremo silenciosamente omitida
+declara una cobertura que no está dando. Cuesta ~12 s (dos procesos); es el
+único test de esta línea que arranca un subproceso.
+
+## Riesgos abiertos de esta línea
+
+- **B-M3 sigue abierto y está bloqueado fuera de esta línea.** El harness
+  importa `@/components/stella/error-messages` (interno de PRODUCT) porque
+  `components/stella/index.ts` **no exporta** `stellaErrorPresentation` ni
+  `StellaPanelErrorCode` — verificado en este árbol, no supuesto. RELEASE no
+  puede editar el barrel (propiedad de PRODUCT). **Acción pendiente: abrir fila
+  de contrato a PRODUCT.** No se abrió en esta unidad porque la Fase 7 de la
+  instrucción limita las escrituras de documentación a este archivo; es la
+  primera acción de la próxima unidad de RELEASE, o de integración si prefiere
+  resolverlo antes.
+- **`command.test.ts` corre bajo `pnpm test:unit`** y arranca un subproceso.
+  Bajo la batería completa compite por CPU con el resto; lleva `timeout` de
+  180 s por eso, y **no se aumentó ningún timeout global**. Si integración
+  prefiere sacarlo de la batería por disciplina de recursos (§11), moverlo a un
+  glob aparte es decisión suya: la ruta es `INTEGRATION-OWNED`.
+- **El aislamiento sigue siendo de capa de aplicación y de contrato, nunca
+  RLS.** Ni los 3 checks de contexto ni `grounding-project-scope-enforced`
+  sustituyen `tests/integration/rls.test.ts` ni el gate G3. Está declarado en
+  la matriz para que nadie lo lea como cobertura de RLS.
+- **Sin baseline de latencia ni de costo.** Siguen requiriendo G1 (y G9 para
+  calibración). Esta unidad **no fijó ningún umbral final**, y los presupuestos
+  p50/p95 de §Staging siguen sin definir por la misma razón que en el tren 1.
+- **`grounding-retrieval-score-ordering` mide invariantes sobre puntajes de
+  fixture**, no sobre un motor de retrieval — no existe uno. El criterio está
+  puesto antes que la implementación a propósito, para que no se escriba
+  después para encajar con ella.
+
+## Estado de entrega a integración
+
+Dos commits, árbol limpio, ninguna ruta `INTEGRATION-OWNED` ni de otra línea
+modificada, sin push, sin acceso a remoto, sin gates pesados, cero escrituras a
+base de datos, cero llamadas a proveedor.
+
+`STELLA_RELEASE_TRAIN_2_READY_FOR_INTEGRATION`
