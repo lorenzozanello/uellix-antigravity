@@ -60,10 +60,10 @@ recursos). Este documento es el estado vivo de esta línea únicamente.
 
 ## Unidad actual
 
-**STELLA_PRODUCT_GROUNDED_RUNTIME_FLOW_TRAIN_3** — ver
-[§Tren 3](#tren-3--stella_product_grounded_runtime_flow_train_3-2026-08-05) al
-final de este documento. Lo que sigue en esta sección es el registro histórico
-de la unidad del tren 1, ya integrada.
+**STELLA_PRODUCT_CANONICAL_PROJECT_SURFACE_TRAIN_4** — ver
+[§Tren 4](#tren-4--stella_product_canonical_project_surface_train_4-2026-08-05)
+al final de este documento. Lo que sigue en esta sección es el registro
+histórico de la unidad del tren 1, ya integrada.
 
 ## Unidad del tren 1 (histórico)
 
@@ -762,3 +762,167 @@ que sobrescribe un campo; una respuesta fundamentada lleva afirmaciones con
 citas respaldadas por hash. El panel no muestra nada que afirme persistencia y
 `STELLA_DECISIONS_PERSISTENCE_ENABLED` sigue `false`. Registrado como
 **INT-PR-001**. No retrasó el query runtime, que es independiente.
+
+---
+
+## Tren 4 — STELLA_PRODUCT_CANONICAL_PROJECT_SURFACE_TRAIN_4 (2026-08-05)
+
+**HEAD base:** `6f3c543` (`chore(integration): reconcile Stella train 3
+runtime`). Sin push.
+
+Unidad: cerrar PRODUCT-002 montando `StellaGroundedQuerySection` en una
+superficie de proyecto real, no en un octavo paso metodológico.
+
+### Superficie canónica elegida
+
+`app/app/projects/[projectId]/page.tsx` — el resumen general del proyecto,
+primera opción del orden de preferencia de la orden de trabajo.
+
+**Por qué es canónica:**
+
+- Es de alcance de **proyecto**, no de paso: no renderiza `<Stepper />`, no
+  pertenece a `pipeline/**` y no tiene ningún `AdvisorPipelineStep` propio —
+  exactamente el desajuste que dejó PRODUCT-002 sin aceptar (una pregunta
+  fundamentada tiene alcance de proyecto, ninguna de las siete páginas de
+  paso es inequívocamente canónica).
+- No está marcada `INTEGRATION-OWNED` (verificado contra
+  `docs/ops/STELLA_PARALLEL_WORKSTREAMS.md` §7 y una búsqueda literal del
+  marcador en todo el repo).
+- Es la única página que ya actúa como landing del proyecto (enlaza a
+  `pipeline`, no al revés), consistente con "resumen general del proyecto"
+  siendo la superficie de mayor jerarquía, no una entre siete equivalentes.
+- Alternativas descartadas: `pipeline/page.tsx` (el hub) también calificaba
+  por no ser un paso, pero el resumen general puntúa más alto en el orden de
+  preferencia de la orden y evita cualquier cercanía visual con el
+  `<Stepper />` que podría sugerir que la pregunta fundamentada es un octavo
+  paso.
+
+### Montaje
+
+Una línea, sin lógica nueva de scope ni retrieval:
+
+```tsx
+<StellaGroundedQuerySection projectId={project.id} step="outcomes" />
+```
+
+`projectId` es el mismo valor server-resuelto (`project.id`, ya validado por
+`getProjectByIdForCurrentOrganization`) que la página ya usaba para sus otros
+enlaces — no se introduce un segundo canal para él. `StellaGroundedQuerySection`
+(train 3, `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`) no se modificó: el
+único cambio de esta unidad es el punto de montaje.
+
+**`step`.** `AdvisorPipelineStep` no tiene variante de proyecto — es un tipo
+publicado que esta línea no está autorizada a extender (no es
+`components/stella/**` ni una página de proyecto propia). Hoy `step` sólo
+etiqueta el registro de decisión humana, que en este montaje no se cablea
+(ver abajo), así que la elección no tiene efecto en runtime. Se eligió
+`"outcomes"` porque una pregunta fundamentada de SROI es, en esencia, sobre
+evidencia de resultados. Documentado en un comentario junto al montaje para
+que quien cablee `onDecision` en el futuro (si INT-PR-001 se cierra) lo
+revise.
+
+### Payload del cliente
+
+Sin cambios respecto del contrato ya probado en train 3:
+`StellaGroundedQueryRequest` sigue llevando únicamente `{ query }`. Esta
+unidad no tocó `components/stella/grounded-query.ts` ni
+`StellaGroundedQueryPanel.tsx`, y una prueba estructural nueva (ver abajo)
+fija que el archivo de montaje tampoco nombra `organizationId` ni `scope`.
+
+### Comportamiento de la bandera
+
+Sin cambios: `StellaGroundedQuerySection` sigue leyendo
+`stellaConfig.isEnabled && stellaConfig.isGroundedQueryEnabled &&
+stellaState.canUseStella` y con la bandera apagada el panel queda inerte
+(input y botón deshabilitados, `runQuery` nunca invocado) — comportamiento
+ya probado en `StellaGroundedQueryPanel.test.tsx` (train 3) y no reprobado
+aquí porque no se tocó esa lógica.
+
+### Estados fundamentados
+
+Sin cambios: los doce estados (`idle`, `loading`, `grounded`,
+`partially_grounded`, contradicción atribuida, evidencia insuficiente,
+abstención, cuota agotada, permiso denegado, proveedor no disponible, error
+reintentable, bandera apagada) ya están conectados y probados por
+`StellaGroundedQueryPanel` desde el tren 3. Esta unidad no reimplementa
+presentación: monta el contenedor que ya la tiene.
+
+### Decisión humana
+
+`onDecision` **no se cablea** en este montaje — INT-PR-001 sigue abierto.
+`StellaGroundedQueryPanel` ya declara en pantalla «Esta decisión no se
+guardó: queda sólo en esta sesión y se pierde al recargar» cuando no hay
+`onDecision`, así que el estado se mantiene local y honesto sin código nuevo.
+La consulta fundamentada en sí **no** queda bloqueada por esta limitación:
+sólo el paso de decisión carece de persistencia.
+
+### Accesibilidad
+
+Sin cambios funcionales: el formulario con label, el envío por teclado, el
+`aria-busy`/`aria-live` de carga, los `role="note"`/`role="alert"` de errores
+y notas, la navegación de citas y el foco tras respuesta ya están cubiertos
+por `StellaGroundedQueryPanel.test.tsx` (train 3, describe «accessibility» +
+«navigation»). Esta unidad no cambia el árbol de accesibilidad del panel,
+sólo dónde vive en la página.
+
+### Guardas estructurales nuevas
+
+`app/app/projects/[projectId]/__tests__/grounded-query-mount.test.ts` — 7
+pruebas, todas source-scanning (la página es un server component async
+detrás de auth/DB que esta línea no está autorizada a fingir fuera de
+`tests/cross-workstream/**`, propiedad de INTEGRACIÓN):
+
+| Prueba | Mutación aplicada | Resultado |
+|---|---|---|
+| monta `StellaGroundedQuerySection` en la superficie canónica | (RED antes de implementar: no había mount) | fallaba, correctamente |
+| no lo monta en ninguna página de `pipeline/**` ni `report/**` | `StellaGroundedQuerySection` insertado en `stakeholders/page.tsx` | falla |
+| no cablea `onDecision` en el montaje | `onDecision={...}` añadido a la prop | falla |
+| no nombra `organizationId` ni `scope` cerca del montaje | `const organizationId = '...'` añadido a la página | falla |
+| la superficie sigue siendo server component (`'use client'` ausente) | no mutada (invariante estructural, no de negocio) | — |
+| sin `node:crypto` en la superficie | no mutada | — |
+| el inventario de páginas metodológicas no está vacío | guarda-la-guarda: evita que las aserciones "sin ofensores" pasen vacuamente | — |
+
+Las tres primeras mutaciones se aplicaron, se confirmó el fallo, y se
+revirtieron antes de continuar (no quedan en el árbol).
+
+### Pruebas ejecutadas
+
+- `vitest run "app/app/projects/[projectId]/__tests__/grounded-query-mount.test.ts"`
+  — **7/7** verde.
+- `vitest run components/stella "app/app/projects/[projectId]/__tests__/grounded-query-mount.test.ts"`
+  con `env -u GEMINI_API_KEY` (misma práctica que trenes 1–3, la contaminación
+  ambiental de `GEMINI_API_KEY` sigue confirmada y no relacionada con esta
+  unidad) — **377/377**, 18 archivos, 0 fallos.
+- `pnpm typecheck` (`tsc --noEmit`) — limpio.
+- `eslint "app/app/projects/[projectId]/page.tsx" "app/app/projects/[projectId]/__tests__/grounded-query-mount.test.ts"`
+  — 0 errores, 0 warnings.
+- No se ejecutó `test:unit` completo ni `build` (§11: gates pesados los
+  coordina integración).
+
+### PRODUCT-002
+
+El montaje pendiente que documentaba el contrato está hecho. Esta línea no
+marca el contrato `aceptado` — eso es de integración (§8) — pero registra
+aquí que el séptimo criterio informal («que alguien pueda alcanzarlo») ya
+tiene una superficie real detrás.
+
+### INT-PR-001
+
+Sin cambios de estado: sigue `solicitado`, propiedad de integración. Esta
+unidad respeta su alcance sin intentar cerrarlo — no inventa una clave de
+decisión, no reutiliza `suggestionKey`, no cablea persistencia y no bloquea
+la consulta por la ausencia de persistencia.
+
+### Riesgos
+
+- La elección de `step="outcomes"` es una decisión de producto sin efecto en
+  runtime hoy, pero quedará "viva" el día que `onDecision` se cablee en este
+  montaje. Documentado en el código y aquí para que ese trabajo futuro la
+  revise explícitamente en vez de heredarla en silencio.
+- Ningún cambio a `components/stella/**`, `app/actions/stella/**`,
+  `lib/grounding/**`, `db/**`, `supabase/**` o `CONTRACT_LEDGER.md`.
+
+### Estado de entrega
+
+**STELLA_PRODUCT_TRAIN_4_READY_FOR_INTEGRATION.** Árbol limpio antes de
+commitear, dos commits, sin push.
