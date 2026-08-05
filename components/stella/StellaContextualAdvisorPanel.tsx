@@ -39,6 +39,8 @@ import type { AppliedSuggestionHistoryEntry, SuggestionDecisionRecord } from './
 import { sourceFieldLabel } from './source-field-label'
 import { classifyFindingSupport, classifySuggestionSupport } from './grounding-model'
 import { StellaGroundingBadge } from './StellaGroundingBadge'
+import { StellaGroundedAnswerPanel } from './StellaGroundedAnswerPanel'
+import type { GroundedAnswerView, GroundedCitationView } from './grounding-adapter'
 
 export type ContextualFinding = AdvisorContextualOutput['findings'][number]
 export type ContextualSuggestion = AdvisorContextualOutput['suggestions'][number]
@@ -115,6 +117,18 @@ export interface StellaContextualAdvisorPanelProps {
   onApply?: (suggestion: ContextualSuggestion, text: string) => void
   /** Decision persistence hook (default no-op) — see decision-types.ts. */
   onDecision?: (record: SuggestionDecisionRecord) => void
+  /**
+   * A grounded answer, already adapted from GROUNDING's canonical contracts by
+   * `grounding-adapter.ts`. TRAIN 2 SEAM — this is the typed entry point for
+   * retrieval-backed evidence, and it is intentionally caller-supplied rather
+   * than fetched here: the contextual advisor action does not consume
+   * retrieval, and there is no retrieval implementation yet (INTEGRATION-001,
+   * "Qué NO decide este documento"). The panel renders whatever a caller
+   * hands it and never fabricates one — no fixture is wired as runtime.
+   */
+  groundedAnswer?: GroundedAnswerView
+  /** Navigation hook for grounded citations; the page owns what "go there" means. */
+  onNavigateCitation?: (citation: GroundedCitationView) => void
 }
 
 export function StellaContextualAdvisorPanel({
@@ -128,6 +142,8 @@ export function StellaContextualAdvisorPanel({
   targetLabel,
   onApply,
   onDecision,
+  groundedAnswer,
+  onNavigateCitation,
 }: StellaContextualAdvisorPanelProps) {
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
   const [suggestionUi, setSuggestionUi] = useState<Record<string, SuggestionUiState>>({})
@@ -322,6 +338,20 @@ export function StellaContextualAdvisorPanel({
           antes de su uso externo.
         </p>
       </div>
+
+      {/* TRAIN 2: grounded evidence, when the caller has it. Rendered outside
+          the advisor's own request lifecycle on purpose — it does not come
+          from `getStellaContextualAdvisor`, so tying it to panelState would
+          misrepresent where it came from. */}
+      {groundedAnswer !== undefined && (
+        <div className="mt-3">
+          <StellaGroundedAnswerPanel
+            answer={groundedAnswer}
+            onNavigateCitation={onNavigateCitation}
+            headingLevel={Math.min(headingLevel + 1, 4) as 2 | 3 | 4}
+          />
+        </div>
+      )}
 
       {/* U5: inert informative state (server-disabled or post-click DISABLED). */}
       {isInertDisabled && (
