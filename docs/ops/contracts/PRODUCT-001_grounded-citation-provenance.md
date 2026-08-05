@@ -72,3 +72,23 @@ Hasta entonces, `EvidenceSupportLevel: 'contradictory_evidence'` sigue sin
 productor real, y eso deja de ser una limitación temporal para convertirse en
 regla: sólo un `ContradictionMarker` puede producirlo, nunca una inferencia de
 un componente de UI.
+
+## Decisión de integración (tren 2, 2026-08-04)
+
+**`aceptado`.** El adaptador existe
+(`components/stella/grounding-adapter.ts`) y cumple las siete reglas de
+INTEGRATION-001, verificado con 331 pruebas focalizadas de `components/stella` y
+47 pruebas cruzadas en `tests/cross-workstream/`.
+
+La regla del párrafo anterior ya **no depende de este documento**: es un
+invariante comprobado. `supportForClaim` construye `contradictedChunkIds`
+exclusivamente desde `state.contradictions`, y hay una prueba que alimenta al
+adaptador los dos chunks con cifras opuestas **sin** marcador y exige que
+`contradictory_evidence` **no** aparezca. Con eso se cierra **A-F3** del tren 1.
+
+Una corrección sobre la fila `relevance` de la tabla: PRODUCT publicó en el tren
+2 sus propios umbrales (`product-relevance-v1`, 0.6 / 0.3) junto al score.
+Integración los **retiró**. La clasificación en `high | medium | low` es
+canónica de GROUNDING (`grounding-relevance-2026-08-local-1`, 0.4 / 0.2) y
+PRODUCT la consume; la UI conserva lenguaje, icono e intensidad visual, no la
+clasificación semántica. Ver INTEGRATION-001 §6-bis.

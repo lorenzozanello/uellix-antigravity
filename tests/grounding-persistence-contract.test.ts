@@ -363,15 +363,55 @@ describe('SECURITY DEFINER contract', () => {
     expect(body).toMatch(/U0101/)
   })
 
-  it('the registrar locks the evidence row before it reads the history', () => {
+  it('the registrar takes its lock before it reads the history', () => {
     // The UNIQUE constraints would catch a concurrent registration, but as a
     // constraint violation the caller cannot tell a race from a real conflict.
+    //
+    // The lock is an ADVISORY lock, not `SELECT ... FOR UPDATE`, since the
+    // train-2 integration: PostgreSQL requires UPDATE privilege on a table to
+    // row-lock it, and `uellix_cap_grounding` deliberately holds only SELECT on
+    // `evidence_items` — granting it write there so a lock is convenient is how
+    // a boundary becomes decorative. What this test protects is the ORDERING,
+    // which is unchanged: mutual exclusion first, history read second.
     const register = functions.find((f) => f.name.endsWith('register_document_version'))!
     const body = code(register.body)
-    const lock = body.indexOf('FOR UPDATE')
+    const lock = body.indexOf('pg_advisory_xact_lock')
     const historyRead = body.indexOf('FROM public.evidence_document_versions')
-    expect(lock).toBeGreaterThan(-1)
+    expect(lock, 'the registrar takes no lock at all').toBeGreaterThan(-1)
     expect(lock).toBeLessThan(historyRead)
+    // Transaction-scoped, not session-scoped: a session lock leaks past commit
+    // and a pooled connection would carry it into an unrelated request.
+    expect(body).not.toMatch(/pg_advisory_lock\s*\(/)
+  })
+
+  it('the registrar re-imposes the caller organization boundary, like every sibling definer', () => {
+    // ADDED BY THE TRAIN-2 ADVERSARIAL REVIEW. This function was the only
+    // definer in either package with no caller-org check, and it is the only
+    // WRITE entry point into an append-only history. EXECUTE is granted to the
+    // shared runtime role, so without it a caller holding another
+    // organization's evidence id appended a permanent forged version to that
+    // organization's chain of custody.
+    const register = functions.find((f) => f.name.endsWith('register_document_version'))!
+    const body = code(register.body)
+    expect(body).toMatch(/current_user_org_ids\(\)/)
+    expect(body).toMatch(/current_user_is_super_admin\(\)/)
+    // The check must come BEFORE the first write.
+    const guard = body.indexOf('current_user_org_ids()')
+    const insert = body.indexOf('INSERT INTO public.evidence_document_versions')
+    expect(insert).toBeGreaterThan(-1)
+    expect(guard).toBeLessThan(insert)
+  })
+
+  it('every definer function in both packages re-imposes that boundary', () => {
+    // Stated over ALL of them rather than one at a time: the defect above was
+    // "one of four forgot", and a per-function test would have to be remembered
+    // for each new function.
+    for (const fn of functions) {
+      const body = code(fn.body)
+      expect(body, `${fn.name} does not re-impose the caller organization boundary`).toMatch(
+        /current_user_org_ids\(\)/,
+      )
+    }
   })
 })
 
@@ -398,12 +438,22 @@ describe('rollbacks', () => {
     }
   })
 
-  it('every DROP is a fixed literal — no format(), no concatenation, no variable', () => {
+  it('every EXECUTEd statement is a fixed literal — no format(), no concatenation, no variable', () => {
+    // The invariant is "no dynamic SQL in a teardown path", not "only DROPs".
+    // REVOKE joined the list when the train-2 dry-run showed that DROP ROLE is
+    // blocked by privileges the role HOLDS, not only by objects it owns:
+    // grounding_0002 grants EXECUTE on two baseline RLS helpers, and without
+    // revoking them the rollback aborted on every run. Those REVOKEs are fixed
+    // literals like every other statement here, so they satisfy what this test
+    // is actually protecting.
+    const ALLOWED = /^(DROP (TABLE|FUNCTION|SCHEMA|ROLE)|REVOKE )\b/i
     for (const file of [ROLLBACK.VERSIONS, ROLLBACK.CHUNKS]) {
       const executed = [...SOURCES[file].matchAll(/EXECUTE\s+'((?:[^']|'')*)'/g)].map((m) => m[1])
       expect(executed.length, `${file} executes nothing`).toBeGreaterThan(0)
       for (const stmt of executed) {
-        expect(stmt).toMatch(/^DROP (TABLE|FUNCTION|SCHEMA|ROLE)\b/i)
+        expect(stmt, `${file}: EXECUTEd statement`).toMatch(ALLOWED)
+        // No interpolation of any kind reaches the executed string.
+        expect(stmt, `${file}: EXECUTEd statement`).not.toMatch(/%[sIL]|\|\|/)
       }
       expect(SOURCES[file]).not.toMatch(/EXECUTE\s+format/i)
       expect(SOURCES[file]).not.toMatch(/EXECUTE\s+[a-z_]+\s*;/i)
@@ -421,8 +471,13 @@ describe('rollbacks', () => {
   })
 
   it('each rollback drops only what its own forward script created', () => {
+    // `code()` strips comments FIRST, and that is not tidiness. Scanning the raw
+    // source made prose satisfy the assertion: a comment reading "DROP ROLE is
+    // blocked by..." contributed the object name "is", and — worse in the other
+    // direction — a comment mentioning `DROP TABLE public.foo` would have made
+    // this test report a drop that no statement performs.
     const dropped = (sql: string) =>
-      [...sql.matchAll(/DROP (?:TABLE|SCHEMA|ROLE|FUNCTION)(?: IF EXISTS)? ([\w.]+)/g)].map((m) => m[1])
+      [...code(sql).matchAll(/DROP (?:TABLE|SCHEMA|ROLE|FUNCTION)(?: IF EXISTS)? ([\w.]+)/g)].map((m) => m[1])
 
     expect(dropped(SOURCES[ROLLBACK.CHUNKS]).sort()).toEqual([
       'public.evidence_chunks',
@@ -504,13 +559,42 @@ describe('grounding_0001 is superseded, not silently replaced', () => {
 // ---------------------------------------------------------------------------
 
 describe('containment', () => {
-  it('neither package touches a table it does not own', () => {
+  it('neither package touches a table it does not own, beyond one audited read grant', () => {
     const OWN = new Set(['public.evidence_document_versions', 'public.evidence_chunks'])
+    /**
+     * The single exception, narrowed to the exact privilege and the exact table.
+     *
+     * `register_document_version` derives a version's organization and project
+     * from its parent evidence item — that derivation is the whole reason the
+     * payload is not trusted to declare them — so the definer must be able to
+     * READ that row. It held nothing, and the train-2 dry-run showed every call
+     * dying with "permission denied for table evidence_items": the packages
+     * installed cleanly and could not be used.
+     *
+     * Encoded as `(table, privilege)` rather than by adding the table to `OWN`,
+     * because the property worth keeping is not "this table is untouched" but
+     * "this package can only READ it". An INSERT, UPDATE or DELETE grant on
+     * `evidence_items` still fails this test.
+     */
+    const AUDITED_FOREIGN_GRANTS = new Map<string, ReadonlySet<string>>([
+      ['public.evidence_items', new Set(['SELECT'])],
+    ])
     for (const file of [FORWARD.VERSIONS, FORWARD.CHUNKS]) {
       const analysis = analyzeSecurity(SOURCES[file])
       for (const stmt of [...analysis.grants, ...analysis.revokes]) {
         if (stmt.objectType !== 'TABLE') continue
-        expect(OWN, `${file} confers privileges on ${stmt.object}`).toContain(stmt.object)
+        if (OWN.has(stmt.object)) continue
+        const allowed = AUDITED_FOREIGN_GRANTS.get(stmt.object)
+        expect(allowed, `${file} confers privileges on ${stmt.object}`).toBeTruthy()
+        for (const granted of stmt.privileges) {
+          expect(
+            allowed,
+            `${file} confers ${granted.privilege} on ${stmt.object}; only ${[...allowed!].join(', ')} is audited`,
+          ).toContain(granted.privilege)
+          // Column-level grants on a foreign table are a different animal and
+          // are not audited here; a whole-table SELECT is what was reviewed.
+          expect(granted.columns, `${file}: column-level grant on ${stmt.object}`).toBeNull()
+        }
       }
       for (const toggle of analysis.rlsToggles) {
         expect(OWN, `${file} toggles RLS on ${toggle.table}`).toContain(toggle.table)

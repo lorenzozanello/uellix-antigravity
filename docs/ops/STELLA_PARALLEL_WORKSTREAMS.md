@@ -458,6 +458,114 @@ arrancar el tren 2 desde ese HEAD mediante fast-forward estricto sobre
 `codex/stella-integration` — ninguno tenía commits propios más allá de lo ya
 integrado en el tren 1 al momento de esta preparación.
 
+## Integración del tren 2 — 2026-08-04
+
+Cuatro merges `--no-ff` sobre `597819b` (`TRAIN_2_ROOT_HEAD`), en el orden
+CAPABILITIES → GROUNDING → PRODUCT → RELEASE. Sin cherry-pick, sin reescribir
+ninguna rama, sin borrar ninguna rama ni worktree, sin push, sin acceso remoto.
+
+Las cuatro ramas tocaron **rutas disjuntas**, así que Git no señaló un solo
+conflicto. Eso no significa que no los hubiera: los tres conflictos reales del
+tren 2 fueron **semánticos**, vivían en archivos distintos, y ninguno era
+visible desde dentro de la línea que lo causó.
+
+### Los tres desacuerdos entre líneas, y su resolución
+
+**1. Dos clasificaciones de relevancia.** GROUNDING publicó `high >= 0.4` /
+`medium >= 0.2` (`grounding-relevance-2026-08-local-1`); PRODUCT publicó
+`>= 0.6` / `>= 0.3` (`product-relevance-v1`). No era cosmético: **0.42** —el
+caso principal de la propia prueba de PRODUCT— era `medium` para una línea y
+`high` para la otra. Resuelto a favor de GROUNDING como fuente única; los
+umbrales de PRODUCT quedan retirados del módulo y del barrel. Detalle en
+[INTEGRATION-001 §6-bis](contracts/INTEGRATION-001_grounding_product_citation_adapter.md).
+
+**2. `CitableChunkRecord` cambió de forma bajo el harness de RELEASE.**
+GROUNDING sustituyó `{ contentHash, organizationId }` por un registro con
+**scope completo** —el cierre de A-F1—, y RELEASE construía ese mapa a mano.
+Compilaba en su worktree y **lanzaba en la primera corrida integrada**. Resuelto
+proyectando con `toCitableChunkRecord`, el helper que GROUNDING publicó para
+esto; copiar los campos a mano habría compilado y reproducido el bug viejo en un
+sitio nuevo.
+
+**3. Un hallazgo cerrado seguía afirmado como abierto.** El harness llevaba A-F1
+codificado como nota al pie *dentro de una aserción viva*. Convertido en la
+aserción inversa: si `validateAnswerCitations` deja de reportar
+`citation_out_of_scope`, el check falla como `isolation-violation`.
+
+### Estado de contratos tras la integración
+
+| Contrato | Antes | Después |
+|---|---|---|
+| GR-001 | `solicitado` | **`aceptado`** |
+| GR-002 | `solicitado` | **`aceptado`** |
+| PRODUCT-001 | `parcialmente satisfecho` | **`aceptado`** |
+| INTEGRATION-001 | `solicitado` | **`aceptado`** |
+| GR-CAP-002 (`EXTRACTOR_VERSION`) | — | **`solicitado`** (fila nueva, → GROUNDING tren 3) |
+
+### Hallazgos del tren 1 cerrados en el HEAD integrado
+
+| # | Estado | Evidencia |
+|---|---|---|
+| A-F1 | **CLOSED** | `CitableChunkRecord` lleva `GroundingScope`; el scope se comprueba **antes** que cualquier issue más suave; 6 casos en `lib/grounding/__tests__/isolation.test.ts` |
+| A-F2 | **CLOSED** | `capabilityUnavailable` reconciliado con `stripeCapabilityUnavailable`; +5 casos en `tests/stripe-webhook-capability.test.ts` |
+| A-F3 | **CLOSED** | `contradictory_evidence` tiene un único productor comprobado; ya no es convención documentada |
+| A-F9 | **CLOSED** | `capability-isolation` recorre también `db/` |
+| A-F10 | **CLOSED** | `abstention-correctness` deja de contar presentación de cuota y `requires_human_review`; ambos se mueven a `structural-regression` |
+| B-M3 | **CLOSED** | `components/stella/index.ts:66-67` exporta `stellaErrorPresentation` y `StellaPanelErrorCode` |
+| B-M4 | **CLOSED** | el check detecta paquetes de cero bytes y exclusiones de config; control negativo `nc-cap-surface-zero-byte-packages` |
+| B-M5 | **CLOSED** | el check de contradicción discrimina prosa real; control negativo `nc-contradiction-detector-silent-prose` |
+| B-M6 | **CLOSED** | `structural-regression` se emite con `value: 1` (6/6); `latency` ya no se declara en checks que no pueden medirla |
+
+**B-M3 — decisión adicional, con medición.** Cerrar el hallazgo no obliga a
+mover la ruta de import. Medido 3× cada variante: consumir el barrel lleva el
+eval de RELEASE de **6.2 s a 11.7 s (+90 %)**, porque arrastra ~15 paneles React
+a un script Node offline que necesita un solo mapa de presentación de errores.
+El import directo se conserva, y ahora es una elección con evidencia en vez de
+un rodeo por un export que faltaba.
+
+### Lo que NO se cerró, y por qué
+
+- **Riesgos hosted** — ningún gate externo (G1…G9) se ejecutó ni puede
+  ejecutarse offline.
+- **pgvector (G5 P3)** — `grounding_0003` es deliberadamente pgvector-free
+  precisamente para no forzar esa decisión; sigue abierta.
+- **Calibración final de umbrales (R4)** — los umbrales canónicos siguen
+  declarados como calibración local provisional. No hay conjunto etiquetado
+  contra el que medirlos.
+- **Retrieval con proveedor** — no existe. Las tres métricas dependientes de
+  proveedor siguen `null` **con razón estructurada y gate nombrado**, no
+  estimadas.
+- **R6 (`no_matching_evidence`) y R7 (diversidad de fuentes)** — se calibran
+  contra scores reales; cerrarlos ahora sería declarar calibrada una heurística
+  que nadie midió.
+- **Capacidades no habilitadas** — ninguna bandera cambió; ningún paquete SQL se
+  aplicó a ninguna base.
+
+### `command.test.ts`
+
+Se **mantiene** en `pnpm test:unit`. Medido ~**15.9 s** (10 casos, 2
+subprocesos). **No hay recursión**: lanza `tsx scripts/eval-release-offline.ts`,
+no `vitest`. No duplica una batería: `harness.test.ts` mide los checks a nivel de
+módulo; esto mide el **comando empaquetado** —exit code, salida estructurada,
+determinismo entre procesos—, que ningún test de módulo puede observar.
+Excluirlo exigiría un glob en `vitest.shared.ts`, y el propio harness tiene un
+control negativo (`nc-cap-regression-test-excluded`) que existe porque los globs
+de exclusión se tragan pruebas de regresión en silencio.
+
+### Pruebas cruzadas nuevas
+
+`tests/cross-workstream/` — 47 casos, 3 archivos, propiedad de integración:
+
+| Archivo | Qué prueba |
+|---|---|
+| `grounding-to-product.test.ts` | conduce el retrieval **real** de GROUNDING sobre sus fixtures y lo mete en el adaptador **real** de PRODUCT: el score cruza intacto, el bucket no se recalcula, cross-project muere antes de la UI, el `ContradictionMarker` llega íntegro, y un chunk ausente nunca produce excerpt |
+| `capabilities-to-grounding.test.ts` | el SQL entregado satisface GR-001 §5 y GR-002 §2, medido con el **parser de CAPABILITIES** y no con uno nuevo; scope compartido; `extractor_version` con contrato explícito y abierto |
+| `grounding-product-to-release.test.ts` | las fixtures de RELEASE cierran su cadena de verificación con las primitivas de GROUNDING; el harness **no reimplementa** provenance ni umbrales; el check de aislamiento falla con proyecto cruzado; las métricas reconocen la forma integrada |
+
+Ninguna usa fixtures inventadas por integración para representar el artefacto de
+otra línea: una fixture así la escribiría la parte con menos razón para notar que
+se desvió, que es exactamente cómo se rompió el harness de RELEASE.
+
 ## Documentos de línea
 
 - [`docs/ops/workstreams/CAPABILITIES.md`](workstreams/CAPABILITIES.md)

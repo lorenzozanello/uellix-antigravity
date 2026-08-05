@@ -205,6 +205,19 @@ GRANT USAGE ON SCHEMA uellix_grounding TO uellix_cap_grounding;
 GRANT EXECUTE ON FUNCTION public.current_user_org_ids()        TO uellix_cap_grounding;
 GRANT EXECUTE ON FUNCTION public.current_user_is_super_admin() TO uellix_cap_grounding;
 
+-- ADDED BY INTEGRATION (train 2 adversarial review). The definer resolves a
+-- version's scope from its parent evidence item — that derivation is the whole
+-- reason the payload is not trusted to declare organization and project — and
+-- it held NO privilege on that table, so every call failed with "permission
+-- denied for table evidence_items".
+--
+-- SELECT, and only SELECT. Not UPDATE: the row lock that used to require it is
+-- now an advisory lock (see register_document_version), because widening a
+-- business table's write surface to make a lock convenient is how a boundary
+-- stops meaning anything. Not DELETE, not INSERT: this role must never change
+-- an evidence item, only read the two columns that place it.
+GRANT SELECT ON public.evidence_items TO uellix_cap_grounding;
+
 -- ============================================================
 -- 2. Table (owner window)
 -- ============================================================
@@ -667,17 +680,55 @@ BEGIN
     RAISE EXCEPTION 'grounding: pipeline versions and mime type are required' USING ERRCODE = 'U0100';
   END IF;
 
-  -- Lock the evidence row FIRST. It serialises two concurrent registrations for
-  -- the same document against each other, which is what makes the ordinal and
-  -- the supersedes link consistent rather than racy — the UNIQUE constraints
-  -- would catch a race, but as a constraint violation the caller cannot
-  -- distinguish from a genuine conflict.
+  -- Serialise two concurrent registrations for the same document against each
+  -- other, which is what makes the ordinal and the supersedes link consistent
+  -- rather than racy — the UNIQUE constraints would catch a race, but as a
+  -- constraint violation the caller cannot distinguish from a genuine conflict.
+  --
+  -- FIXED BY INTEGRATION (train 2 adversarial review). This was
+  -- `SELECT ... FROM public.evidence_items ... FOR UPDATE`, and PostgreSQL
+  -- requires UPDATE privilege on a table to take a row lock on it — not just
+  -- SELECT. `uellix_cap_grounding` holds neither (verified in a disposable
+  -- container: `has_table_privilege` returns false for SELECT and for UPDATE),
+  -- so EVERY call failed with "permission denied for table evidence_items" and
+  -- no document version could ever be registered. The packages installed
+  -- cleanly and were functionally dead; a dry-run that inspects structure
+  -- without INVOKING the functions cannot see that, which is why this one now
+  -- calls them.
+  --
+  -- The repair is a transaction-scoped ADVISORY lock rather than
+  -- `GRANT UPDATE ON public.evidence_items TO uellix_cap_grounding`. Granting
+  -- write on a business table so that a lock in another table's function is
+  -- convenient is exactly what §6 of this package warns against: it is how a
+  -- boundary becomes decorative. The advisory lock gives the same mutual
+  -- exclusion, keyed on the same row, and needs no privilege at all.
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_evidence_id::text, 0));
+
   SELECT e.organization_id, e.project_id INTO v_org, v_project
   FROM public.evidence_items e
-  WHERE e.id = p_evidence_id
-  FOR UPDATE;
+  WHERE e.id = p_evidence_id;
 
   IF v_org IS NULL THEN
+    RAISE EXCEPTION 'grounding: evidence item not found' USING ERRCODE = 'U0102';
+  END IF;
+
+  -- The definer bypasses RLS, so the caller's boundary has to be re-imposed
+  -- here explicitly.
+  --
+  -- FIXED BY INTEGRATION (train 2 adversarial review). This check was ABSENT,
+  -- and it is present in all three sibling definer functions
+  -- (`claim_active_document_version` below, `insert_evidence_chunks` and
+  -- `chunks_in_scope` in grounding_0003). This is the only WRITE entry point
+  -- into the version history, EXECUTE is granted to the shared runtime role
+  -- `uellix_app`, and the table is append-only — so a caller holding another
+  -- organization's `evidence_items.id` appended a permanent, attacker-chosen
+  -- row to that organization's chain of custody, which
+  -- `claim_active_document_version` then returned as the active version, with
+  -- no UPDATE or DELETE path for anyone to remove it.
+  --
+  -- Same message as "not found", for the same reason as everywhere else here:
+  -- telling the two apart is a tenancy oracle.
+  IF NOT (v_org = ANY(public.current_user_org_ids()) OR public.current_user_is_super_admin()) THEN
     RAISE EXCEPTION 'grounding: evidence item not found' USING ERRCODE = 'U0102';
   END IF;
 
@@ -922,7 +973,17 @@ BEGIN
   SELECT string_agg(p.proname, ', ' ORDER BY p.proname) INTO problem
   FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
   WHERE ns.nspname = 'uellix_grounding'
-    AND (NOT p.prosecdef OR p.proconfig IS NULL OR NOT ('search_path=' = ANY(p.proconfig)));
+    -- BOTH spellings, and this is not defensive padding: PostgreSQL stores
+    -- `SET search_path = ''` in proconfig as `search_path=""` — it QUOTES the
+    -- empty value. Checking only the bare form makes this predicate always
+    -- true, so the RAISE below fired on every apply and the package could not
+    -- be installed at all (found by scripts/grounding-dry-run.sh; the functions
+    -- themselves were correct, the verifier was not). Every stella_0006..0011
+    -- package in this directory already checks both forms; this one did not.
+    AND (NOT p.prosecdef
+         OR p.proconfig IS NULL
+         OR NOT (p.proconfig @> ARRAY['search_path=']::text[]
+                 OR p.proconfig @> ARRAY['search_path=""']::text[]));
   IF problem IS NOT NULL THEN
     RAISE EXCEPTION 'grounding_0002 FAILED verification: function(s) % are not SECURITY DEFINER with search_path=''''', problem;
   END IF;

@@ -24,9 +24,12 @@ import type {
   AbstentionReason,
 } from '@/lib/grounding/contracts'
 import {
+  RELEVANCE_THRESHOLDS as CANONICAL_THRESHOLDS,
+  RELEVANCE_THRESHOLDS_VERSION as CANONICAL_THRESHOLDS_VERSION,
+} from '@/lib/grounding/retrieve/calibration'
+import {
   CITATION_EXCERPT_MAX_LENGTH,
-  RELEVANCE_HIGH_MIN_SCORE,
-  RELEVANCE_MEDIUM_MIN_SCORE,
+  RELEVANCE_THRESHOLDS,
   RELEVANCE_THRESHOLDS_VERSION,
   GroundedCitationError,
   adaptCitation,
@@ -171,10 +174,43 @@ describe('grounding-adapter — purity (INTEGRATION-001 §3)', () => {
     'utf8',
   )
 
+  /**
+   * The ONE value import integration allows, and the reason it is safe. Anything
+   * else from `@/lib/grounding` must be type-only.
+   */
+  const CALIBRATION_MODULE = '@/lib/grounding/retrieve/calibration'
+
   it('imports the canonical contracts as TYPES only, so nothing from lib/grounding reaches the client bundle', () => {
     const groundingImports = source.match(GROUNDING_IMPORT_RE) ?? []
     expect(groundingImports.length).toBeGreaterThan(0)
     for (const statement of groundingImports) {
+      if (statement.includes(CALIBRATION_MODULE)) continue
+      expect(statement.startsWith('import type')).toBe(true)
+    }
+  })
+
+  it('takes its relevance classification from GROUNDING at RUNTIME, not as a type', () => {
+    // The opposite of the rule above, and deliberately so: a type-only import
+    // could not deliver the numbers, and copying them is what created the
+    // divergence integration removed. This asserts the exception is USED.
+    expect(source).toMatch(
+      new RegExp(`import \\{[\\s\\S]*?\\} from '${CALIBRATION_MODULE.replace(/\//g, '\\/')}'`),
+    )
+  })
+
+  it('imports a LEAF: calibration.ts must itself have zero runtime imports', () => {
+    // This is the whole safety argument for the exception above. `calibration.ts`
+    // erases to a dependency-free module, so importing it as a value cannot drag
+    // `contracts/core.ts` — and therefore `node:crypto` — into the bundle. The
+    // day someone adds a runtime import there, that stops being true, and this
+    // test is what makes it stop being true LOUDLY.
+    const calibration = readFileSync(
+      path.join(process.cwd(), 'lib/grounding/retrieve/calibration.ts'),
+      'utf8',
+    )
+    const imports = calibration.match(/^import\b(?:(?!^import\b)[\s\S])*?from '[^']*'/gm) ?? []
+    expect(imports.length).toBeGreaterThan(0)
+    for (const statement of imports) {
       expect(statement.startsWith('import type')).toBe(true)
     }
   })
@@ -204,6 +240,9 @@ describe('grounding-adapter — purity (INTEGRATION-001 §3)', () => {
     for (const file of files) {
       const text = readFileSync(path.join(dir, file), 'utf8')
       for (const statement of text.match(GROUNDING_IMPORT_RE) ?? []) {
+        // The calibration leaf is the single audited exception (see above): it
+        // has no runtime imports of its own, so it cannot pull `node:crypto`.
+        if (statement.includes(CALIBRATION_MODULE)) continue
         if (!statement.startsWith('import type')) offenders.push(`${file}: ${statement}`)
       }
     }
@@ -306,7 +345,11 @@ describe('relevance (INTEGRATION-001 §6)', () => {
     expect(view.relevance?.score).toBe(0.42)
     expect(view.relevance?.strategy).toBe('hybrid')
     expect(view.relevance?.rank).toBe(2)
-    expect(view.relevance?.bucket).toBe('medium')
+    // 0.42 is `high` under the CANONICAL calibration (>= 0.4). Under PRODUCT's
+    // retired thresholds it was `medium`. The number moved bucket, which is
+    // exactly the divergence integration removed: the same score must not mean
+    // two things depending on which module you ask.
+    expect(view.relevance?.bucket).toBe('high')
     expect(view.relevance?.thresholdsVersion).toBe(RELEVANCE_THRESHOLDS_VERSION)
   })
 
@@ -316,24 +359,162 @@ describe('relevance (INTEGRATION-001 §6)', () => {
     expect(view.relevance).toBeNull()
   })
 
-  it('buckets scores by the named thresholds', () => {
+  it('buckets scores by the canonical thresholds', () => {
     expect(relevanceBucket(0.95)).toBe('high')
-    expect(relevanceBucket(0.5)).toBe('medium')
-    expect(relevanceBucket(0.2)).toBe('low')
+    expect(relevanceBucket(0.3)).toBe('medium')
+    expect(relevanceBucket(0.05)).toBe('low')
   })
 
   it('places the exact threshold values in the HIGHER bucket (boundary is inclusive)', () => {
-    expect(relevanceBucket(RELEVANCE_HIGH_MIN_SCORE)).toBe('high')
-    expect(relevanceBucket(RELEVANCE_MEDIUM_MIN_SCORE)).toBe('medium')
+    expect(relevanceBucket(RELEVANCE_THRESHOLDS.high)).toBe('high')
+    expect(relevanceBucket(RELEVANCE_THRESHOLDS.medium)).toBe('medium')
   })
 
   it('drops to the lower bucket just below each threshold', () => {
-    expect(relevanceBucket(RELEVANCE_HIGH_MIN_SCORE - Number.EPSILON)).toBe('medium')
-    expect(relevanceBucket(RELEVANCE_MEDIUM_MIN_SCORE - Number.EPSILON)).toBe('low')
+    expect(relevanceBucket(RELEVANCE_THRESHOLDS.high - Number.EPSILON)).toBe('medium')
+    expect(relevanceBucket(RELEVANCE_THRESHOLDS.medium - Number.EPSILON)).toBe('low')
   })
 
   it('never invents a bucket for a non-finite score', () => {
-    expect(() => relevanceBucket(Number.NaN)).toThrow(/finito/i)
+    expect(() => relevanceBucket(Number.NaN)).toThrow(GroundedCitationError)
+    expect(() => relevanceBucket(Number.NaN)).toThrow(RELEVANCE_THRESHOLDS_VERSION)
+  })
+
+  it('refuses an off-scale score instead of clamping it to the top bucket', () => {
+    // Inherited from the canonical implementation: a score outside [0, 1] means
+    // the scorer changed scale and the thresholds did not. Returning `high`
+    // would let a decalibrated retrieval look confident.
+    expect(() => relevanceBucket(1.5)).toThrow(GroundedCitationError)
+    expect(() => relevanceBucket(-0.1)).toThrow(GroundedCitationError)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// INTEGRATION (train 2) — one source of truth for the relevance classification
+// ---------------------------------------------------------------------------
+
+describe('relevance thresholds have exactly one owner (INTEGRATION-001 §6)', () => {
+  const adapterSource = readFileSync(
+    path.join(process.cwd(), 'components/stella/grounding-adapter.ts'),
+    'utf8',
+  )
+
+  /**
+   * Source with comment lines removed. The retired thresholds are NAMED in the
+   * header, on purpose — a reader has to be able to learn what was retired and
+   * why. Scanning the raw text would force that history to be deleted to keep
+   * the test green, which trades a real explanation for a regex.
+   */
+  const adapterCode = adapterSource
+    .split('\n')
+    .filter((line) => {
+      const t = line.trimStart()
+      return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*')
+    })
+    .join('\n')
+
+  it('uses GROUNDING’s canonical constants verbatim, not a copy', () => {
+    expect(RELEVANCE_THRESHOLDS).toBe(CANONICAL_THRESHOLDS)
+    expect(RELEVANCE_THRESHOLDS_VERSION).toBe(CANONICAL_THRESHOLDS_VERSION)
+    expect(RELEVANCE_THRESHOLDS_VERSION).toMatch(/^grounding-/)
+  })
+
+  it('does not resurrect PRODUCT’s retired thresholds under any name', () => {
+    expect(adapterCode).not.toMatch(/product-relevance/)
+    expect(adapterCode).not.toMatch(/RELEVANCE_HIGH_MIN_SCORE/)
+    expect(adapterCode).not.toMatch(/RELEVANCE_MEDIUM_MIN_SCORE/)
+    // Nor anywhere else in the barrel's surface.
+    const barrel = readFileSync(path.join(process.cwd(), 'components/stella/index.ts'), 'utf8')
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('//'))
+      .join('\n')
+    expect(barrel).not.toMatch(/RELEVANCE_HIGH_MIN_SCORE|RELEVANCE_MEDIUM_MIN_SCORE/)
+  })
+
+  it('declares no numeric threshold of its own anywhere in components/stella', () => {
+    // A bucket boundary written as a literal is a second source of truth even
+    // when it happens to agree today.
+    //
+    // HARDENED BY THE TRAIN-2 ADVERSARIAL REVIEW, which broke the first version
+    // in two ways and both are worth naming:
+    //
+    //   1. It required a bucket word AND a decimal comparison ON THE SAME LINE.
+    //      Splitting them across two lines — `const HIGH_MIN = 0.6` then
+    //      `return score >= HIGH_MIN ? 'high' : 'medium'` — evaded it entirely
+    //      and restored PRODUCT's retired calibration with every test green.
+    //   2. `readdirSync` is not recursive, so a threshold in any subdirectory
+    //      of components/stella was invisible.
+    //
+    // Now: the scan walks the tree, and it flags a fractional literal in ANY
+    // non-comment line of a file that talks about relevance buckets at all,
+    // rather than requiring the two to coincide. `CITATION_EXCERPT_MAX_LENGTH`
+    // (280) is a genuine UI constant and is exempt because it is an integer,
+    // not because of where it sits.
+    const root = path.join(process.cwd(), 'components/stella')
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = path.join(dir, e.name)
+        if (e.isDirectory()) return walk(full)
+        return e.name.endsWith('.ts') || e.name.endsWith('.tsx') ? [full] : []
+      })
+
+    const files = walk(root).filter((f) => !f.includes(`${path.sep}__tests__${path.sep}`))
+    expect(files.length, 'the walk found no source files — the scan is vacuous').toBeGreaterThan(5)
+
+    // TWO VIEWS of each file, and using one for both questions is a mistake this
+    // test made and its own probe caught:
+    //
+    //   * "is this module about relevance buckets?" must be asked of code WITH
+    //     string literals — the bucket names ARE strings ('high', 'medium');
+    //   * "does it declare a fractional constant?" must be asked of code
+    //     WITHOUT them — a Tailwind class is a string (`px-2.5`, `gap-1.5`) and
+    //     a threshold is not. Scanning strings reports 72 class names, and a
+    //     rule that noisy gets relaxed back into uselessness.
+    //
+    // Stripping strings before the bucket-word gate silently disabled the whole
+    // scan: the words vanished with the strings, no file ever qualified, and the
+    // test passed by examining nothing.
+    const noComments = (text: string) =>
+      text.split('\n').filter((l) => {
+        const t = l.trimStart()
+        return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*')
+      })
+    const noStrings = (lines: string[]) =>
+      lines.map((l) =>
+        l
+          .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+          .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+          .replace(/`(?:[^`\\]|\\.)*`/g, '``'),
+      )
+
+    const offenders: string[] = []
+    let scanned = 0
+    for (const file of files) {
+      const code = noComments(readFileSync(file, 'utf8'))
+      if (!code.some((l) => /\b(?:high|medium|low)\b/i.test(l))) continue
+      scanned += 1
+      for (const line of noStrings(code)) {
+        if (/(?:^|[^\w.])\d*\.\d+/.test(line)) {
+          offenders.push(`${path.relative(root, file)}: ${line.trim()}`)
+        }
+      }
+    }
+    // Without this the assertion above passes when the gate matches nothing —
+    // exactly the failure mode described in the comment.
+    expect(scanned, 'no bucket-aware module was scanned — the gate is disabled').toBeGreaterThan(0)
+    expect(offenders).toEqual([])
+  })
+
+  it('never re-derives a bucket: `adaptRelevance` has no comparison of its own', () => {
+    // Structural, because a behavioural test would keep passing on the day
+    // someone reimplements the comparison with numbers that agree by accident.
+    const body = adapterSource.slice(
+      adapterSource.indexOf('function adaptRelevance'),
+      adapterSource.indexOf('// Location'),
+    )
+    expect(body).toContain('relevanceBucket(candidate.score)')
+    expect(body).not.toMatch(/[><]=?\s*0?\.\d/)
+    expect(body).not.toMatch(/'high'|'medium'|'low'/)
   })
 })
 

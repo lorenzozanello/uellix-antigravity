@@ -415,3 +415,62 @@ que implementa el entregable.
 sin push. Cero cambios en `db/**`, `supabase/**`, SQL o archivos
 `INTEGRATION-OWNED`; cero cambios en `lib/grounding/**`; cero cambios en el
 ledger de contratos.
+
+---
+
+## Estado en el HEAD integrado del tren 2 (integración, 2026-08-04)
+
+Sección añadida por **integración**, no por esta línea. No reescribe nada de lo
+anterior: registra qué de lo que esta línea declaró queda confirmado sobre el
+árbol fusionado, y qué cambió al cruzarlo con las otras tres.
+
+**Contratos:** PRODUCT-001 → **`aceptado`** (vía adaptador),
+INTEGRATION-001 → **`aceptado`**.
+
+**Hallazgos:** A-F3 → **CLOSED**, B-M3 → **CLOSED** (los exports existen),
+B-m4 → **CLOSED** (el ciclo es sólo de tipos y se borra en transform).
+
+**Lo que integración cambió en esta línea, y por qué.**
+
+Esta línea publicó su propio juego de umbrales de relevancia —
+`product-relevance-v1`, `high >= 0.6`, `medium >= 0.3` — el mismo día en que
+GROUNDING publicó `grounding-relevance-2026-08-local-1`, `0.4` / `0.2`. Ninguna
+de las dos podía ver a la otra.
+
+No era una diferencia cosmética. Un score de **0.42** —el caso principal de la
+prueba de esta misma línea— era `medium` aquí y `high` allí. El sistema tenía dos
+respuestas a «cuán relevante es este pasaje», y la que un auditor leería en
+pantalla no era la que quedaría registrada junto al score: el mismo fallo de
+credibilidad que INTEGRATION-001 §2 prohíbe para la provenance.
+
+Retirado: `RELEVANCE_HIGH_MIN_SCORE`, `RELEVANCE_MEDIUM_MIN_SCORE` y la versión
+propia, del módulo **y** del barrel. `relevanceBucket` pasa a ser una delegación
+sin números propios; lo único que añade es el **tipo de error**, porque un panel
+necesita distinguir un fallo de datos de un fallo de render — traducir el fallo
+no es reclasificar la evidencia. `CitationRelevanceBucket` pasa a ser un **alias**
+de `RelevanceBucket`, no una unión paralela que compilaría el día que GROUNDING
+añadiera un cuarto bucket.
+
+**La UI no perdió nada que le corresponda.** Lenguaje, icono e intensidad visual
+siguen siendo decisión de esta línea. Lo que ya no es decisión suya es **a qué
+bucket cae un score**, que es una clasificación semántica de la evidencia.
+
+**Efecto colateral aceptado:** el borde se endurece. GROUNDING **lanza** ante un
+score fuera de `[0, 1]`; esta línea sólo rechazaba `NaN` y devolvía `high` para
+`1.5`. Heredar el rechazo es deseable: un score fuera de escala significa que el
+scorer cambió y los umbrales no.
+
+**Cuatro pruebas anti-regresión**, dos de ellas estructurales a propósito —cero
+literales numéricos junto a `high|medium|low` en **todo** `components/stella/**`,
+y `adaptRelevance` sin comparación propia—, porque una prueba de comportamiento
+seguiría verde el día que alguien reimplemente la clasificación con números que
+coincidan por accidente.
+
+**Confirmado sin cambios:** imports type-only salvo la excepción auditada de
+`calibration.ts`; `node:crypto` fuera del bundle de cliente, comprobado sobre
+**todos** los archivos de `components/stella`; sin función inversa vista →
+`CitationReference`; `excerpt` derivado del chunk y truncado sin tocar
+`quotedTextHash`; `location` estructurada conservada; `contradictory_evidence`
+con un único productor; accept/edit/reject/undo intacto.
+
+**Pruebas focalizadas:** 331 passed (324 antes de la unificación, +7).

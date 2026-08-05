@@ -54,9 +54,11 @@ import {
   deriveChunkId,
   hashContent,
   scopeContains,
+  toCitableChunkRecord,
   validateAnswerCitations,
 } from '@/lib/grounding/contracts'
 import type {
+  CitableChunkRecord,
   CitationReference,
   ContentHash,
   GroundingAnswerState,
@@ -502,10 +504,17 @@ function checkCitationIncorrectRejected(): ReleaseCaseResult {
 // ---------------------------------------------------------------------------
 // documento-malicioso
 // ---------------------------------------------------------------------------
-function evaluateInjectionEnvelope(context: typeof MALICIOUS_CONTEXT, payload: string): string[] {
+/**
+ * The envelope inspection itself, over an envelope STRING.
+ *
+ * Extracted by integration (train 2) so the negative control can drive the real
+ * inspection with a genuinely multi-line envelope instead of asserting that a
+ * literal it just built contains the newline it just put in it. The check and
+ * the control now share this function, which is the only arrangement under
+ * which deleting a rule here makes the control fail.
+ */
+function inspectEnvelope(envelope: string, systemPrompt: string, payload: string): string[] {
   const violations: string[] = []
-  const request = buildContextualAdvisorRequest(EVIDENCE_STEP, context)
-  const envelope = wrapUntrustedData(request.serializedContext)
   const parts = envelope.split(`${UNTRUSTED_DATA_MARKER}\n`)
   if (parts.length !== 2) {
     violations.push('envelope does not contain exactly one untrusted-data marker')
@@ -518,8 +527,34 @@ function evaluateInjectionEnvelope(context: typeof MALICIOUS_CONTEXT, payload: s
   } catch (error) {
     violations.push(`envelope payload is not valid JSON: ${describeError(error)}`)
   }
-  if (request.systemPrompt.includes(payload)) violations.push('injected payload leaked into the trusted system prompt')
+  if (systemPrompt.includes(payload)) violations.push('injected payload leaked into the trusted system prompt')
   return violations
+}
+
+function evaluateInjectionEnvelope(context: typeof MALICIOUS_CONTEXT, payload: string): string[] {
+  const request = buildContextualAdvisorRequest(EVIDENCE_STEP, context)
+  return inspectEnvelope(wrapUntrustedData(request.serializedContext), request.systemPrompt, payload)
+}
+
+/**
+ * An envelope whose body genuinely spans two lines.
+ *
+ * Assembled DIRECTLY rather than through `wrapUntrustedData`, and that is the
+ * whole point: `wrapUntrustedData` is `MARKER + "\n" + JSON.stringify(payload)`
+ * (lib/stella/context/sanitize.ts:148), so it CANNOT emit a multi-line body —
+ * JSON escaping is the protection. Feeding it a string with a raw newline just
+ * produces an escaped `\n` inside one line, which is the correct behaviour and
+ * therefore useless as a mutation: it produces zero violations and proves
+ * nothing.
+ *
+ * What this control has to falsify is the INSPECTOR, not the serializer: "if a
+ * two-line envelope ever did reach the model — a serializer regression, a
+ * different wrapper, a hand-built prompt — would `inspectEnvelope` say so?" So
+ * the mutation is the shape such a regression would produce, handed to the real
+ * inspector.
+ */
+function brokenOutEnvelope(): string {
+  return `${UNTRUSTED_DATA_MARKER}\n{"primera":"linea"}\n{"segunda":"linea"}`
 }
 
 function checkMaliciousDocumentEnvelopeHolds(): ReleaseCaseResult {
@@ -538,14 +573,22 @@ function checkMaliciousDocumentEnvelopeHolds(): ReleaseCaseResult {
     ),
     // A payload with an embedded newline must not be able to break the
     // single-line envelope; the evaluator must see it if it ever does.
-    controlExpectsVerdict(
+    //
+    // FIXED BY INTEGRATION (train 2 adversarial review). This control used to
+    // build the string `'primera línea\nsegunda línea'` and assert that it
+    // `.includes('\n')` — a literal compared against itself, which cannot fail
+    // and never called `evaluateInjectionEnvelope` at all. Deleting the
+    // envelope check from the evaluator left this control reporting
+    // `detected: true`, the parent check green and `tautologicalChecks` empty.
+    // That is precisely the B-M5 defect this file's header claims to have
+    // removed structurally, surviving in a control instead of in a check.
+    //
+    // It now drives the REAL inspection with a real envelope whose body spans
+    // two lines, so removing the rule makes this control fail.
+    controlExpectsViolations(
       'nc-envelope-rejects-multiline-body',
       'the envelope evaluator must reject a body that spans more than one line',
-      () => {
-        const body = 'primera línea\nsegunda línea'
-        return body.includes('\n')
-      },
-      true,
+      () => inspectEnvelope(brokenOutEnvelope(), '', MALICIOUS_DOCUMENT_PAYLOAD),
     ),
   ]
 
@@ -941,11 +984,59 @@ export function realCapSurfaceProbe(root: string, excludedGlobs: readonly string
   }
 }
 
-/** A prefix-style glob (`tests/integration/**`) matched against a repo path. */
+/**
+ * Does a vitest exclusion glob cover this repo-relative path?
+ *
+ * REWRITTEN BY INTEGRATION (train 2 adversarial review). The previous version
+ * stripped trailing `*` and did `startsWith`, which handles `tests/integration/**`
+ * and nothing else. `**` /`capability-*.test.ts` — the shape anyone would reach
+ * for to exclude a family of tests — became the prefix `**` + `/capability-`,
+ * which no relative path starts with, so the exclusion was invisible and
+ * `cap-01-05-regression-surface-present` stayed green while `pnpm test:unit`
+ * silently stopped collecting all three CAP regression suites. The check that
+ * exists to catch a swallowed regression test could be defeated by the ordinary
+ * way of writing the glob that swallows it.
+ *
+ * Now a real translation: `**` crosses separators, `*` does not, `?` is one
+ * character, everything else is literal. A trailing `/**` also matches the
+ * directory itself, matching how vitest treats it.
+ */
 function globExcludes(glob: string, relativePath: string): boolean {
   const normalized = relativePath.replace(/\\/g, '/')
-  const prefix = glob.replace(/\*+$/, '')
-  return normalized.startsWith(prefix)
+  const source = glob.replace(/\\/g, '/')
+
+  // Single pass, no placeholder substitution. A chained `.replace()` pipeline
+  // needs sentinels to keep `**` from being eaten by the `*` rule, and a
+  // sentinel is a string that must never occur in the input — a promise this
+  // file cannot keep and, in the first version of this function, did not:
+  // the sentinels were written with NUL bytes, which made git classify the
+  // whole module as binary and skip its line-ending normalization.
+  let pattern = ''
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i]!
+    if (char === '*') {
+      if (source[i + 1] === '*') {
+        // `a/**/b` must also match `a/b`, which is what vitest does.
+        if (source[i + 2] === '/') {
+          pattern += '(?:.*/)?'
+          i += 2
+        } else {
+          pattern += '.*'
+          i += 1
+        }
+      } else {
+        pattern += '[^/]*'
+      }
+      continue
+    }
+    if (char === '?') {
+      pattern += '[^/]'
+      continue
+    }
+    pattern += char.replace(/[.+^${}()|[\]\\/]/, '\\$&')
+  }
+
+  return new RegExp(`^${pattern}$`).test(normalized) || new RegExp(`^${pattern}`).test(normalized)
 }
 
 /**
@@ -1058,9 +1149,24 @@ function checkCapRegressionSurfacePresent(): ReleaseCaseResult {
 // retrieval layer will have to satisfy, so the criteria exist before the
 // implementation does rather than being written to fit it afterwards.
 
-const AVAILABLE_CHUNKS: ReadonlyMap<ContentHash, { contentHash: ContentHash; organizationId: string }> = new Map(
+/**
+ * Built with GROUNDING's own `toCitableChunkRecord`, never by hand.
+ *
+ * RECONCILED BY INTEGRATION (train 2). RELEASE wrote this map against the
+ * pre-merge signature, where `availableChunks` was
+ * `{ contentHash, organizationId }` — a shape that could not carry a projectId,
+ * which is what finding A-F1 was about. GROUNDING's train-2 unit replaced it
+ * with `CitableChunkRecord` (chunkId, contentHash, FULL scope, evidenceId,
+ * versionId, location) and published `toCitableChunkRecord` for exactly this
+ * reason: every field copied by hand is a field that can be copied from the
+ * wrong place, and the fields in question ARE the isolation boundary.
+ *
+ * Hand-copying the new shape here would have compiled and reproduced the old
+ * bug in a new place. Projecting through the published helper cannot.
+ */
+const AVAILABLE_CHUNKS: ReadonlyMap<ContentHash, CitableChunkRecord> = new Map(
   [ALPHA_PROJECT_ONE_CHUNK, CONTRADICTION_SIDE_A_CHUNK, CONTRADICTION_SIDE_B_CHUNK, ALPHA_PROJECT_TWO_CHUNK, BETA_PROJECT_ONE_CHUNK]
-    .map((c) => [c.chunkId, { contentHash: c.contentHash, organizationId: c.scope.organizationId }] as const),
+    .map((c) => [c.chunkId, toCitableChunkRecord(c)] as const),
 )
 
 const CHUNKS_BY_ID: ReadonlyMap<ContentHash, GroundingChunk> = new Map(
@@ -1071,12 +1177,17 @@ const CHUNKS_BY_ID: ReadonlyMap<ContentHash, GroundingChunk> = new Map(
 /**
  * Project-scope enforcement over a whole answer.
  *
- * This exists because `validateAnswerCitations` compares organizationId only —
- * its `availableChunks` map cannot even carry a projectId (train 1 finding
- * A-F1, owned by GROUNDING). RELEASE does not fix that contract; it measures
- * the property with the primitive GROUNDING already publishes for it,
- * `scopeContains`, so the criterion is in place and will keep holding once
- * A-F1 is closed.
+ * Written when `validateAnswerCitations` compared organizationId only and its
+ * `availableChunks` map could not even carry a projectId (train 1 finding
+ * A-F1). GROUNDING closed A-F1 in train 2, so the contract now enforces project
+ * scope on its own — and the check above asserts that it does.
+ *
+ * This function is KEPT anyway, and deliberately: it measures the same property
+ * from the other side, over `GroundingChunk.provenance.scope` rather than over
+ * the projected citable record, using the primitive GROUNDING publishes for it
+ * (`scopeContains`). Two independent paths to "may this be read?" is the right
+ * number when the answer is an isolation boundary — a single implementation
+ * regressing takes its own test with it.
  */
 export function evaluateProjectScopeEnforcement(
   state: GroundingAnswerState,
@@ -1139,16 +1250,32 @@ function checkGroundingProjectScopeEnforced(): ReleaseCaseResult {
     return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'isolation-violation', detail: violations.join(' | ') }, controls)
   }
 
-  // Declared, not hidden: the same sibling-project citation that this check
-  // catches is NOT caught by GROUNDING's own validateAnswerCitations, because
-  // its available-chunk map carries no projectId. That is A-F1.
+  // A-F1 IS CLOSED (GROUNDING train 2, reconciled by integration). Before the
+  // merge this block recorded the finding as still open and carried the note
+  // forward in `detail`. That reading is now stale, and leaving a closed finding
+  // open is not a harmless conservatism: a reader of the eval output would keep
+  // treating GROUNDING's validator as unable to see project scope and would keep
+  // building the compensating layer this check used to be.
+  //
+  // So the note becomes an ASSERTION, in the strict direction: the contract must
+  // report the sibling-project citation itself. If GROUNDING ever regresses to
+  // organization-only comparison, this check fails as an isolation violation
+  // instead of quietly reverting to a footnote.
   const contractIssues = validateAnswerCitations(answerCiting(CROSS_PROJECT_CITATION), AVAILABLE_CHUNKS)
-  const afOneStillOpen = !contractIssues.some((i) => i.code === 'citation_out_of_scope')
+  if (!contractIssues.some((i) => i.code === 'citation_out_of_scope')) {
+    return withNegativeControls(
+      {
+        checkId, fixtureId, ok: false, outcome: 'isolation-violation',
+        detail: `validateAnswerCitations did not report the sibling-project citation as citation_out_of_scope — A-F1 has regressed (issues: ${contractIssues.map((i) => i.code).join(', ') || 'none'})`,
+      },
+      controls,
+    )
+  }
 
   return withNegativeControls(
     {
       checkId, fixtureId, ok: true, outcome: 'pass',
-      detail: `in-scope answer clean; sibling-project, cross-organization and phantom citations all reported${afOneStillOpen ? ' — NOTE: validateAnswerCitations alone still misses the sibling-project case (train 1 finding A-F1, GROUNDING-owned); this check does not depend on it' : ''}`,
+      detail: 'in-scope answer clean; sibling-project, cross-organization and phantom citations all reported, by this check AND by validateAnswerCitations itself (A-F1 closed)',
     },
     controls,
   )
@@ -1357,11 +1484,16 @@ function checkGroundingContradictionMarked(): ReleaseCaseResult {
 
 // --- adaptador de PRODUCT --------------------------------------------------
 /**
- * What PRODUCT's citation adapter (INTEGRATION-001, still `solicitado` — the
- * deliverable does not exist) needs in order to render a citation as an
- * EvidenceReference. RELEASE does not implement the adapter and imports no
- * code from another line; it measures whether the INPUT is complete, so the
- * acceptance criterion exists before the adapter is written.
+ * What PRODUCT's citation adapter needs in order to render a citation as an
+ * EvidenceReference.
+ *
+ * RECONCILED BY INTEGRATION (train 2): the adapter now EXISTS
+ * (`components/stella/grounding-adapter.ts`) and INTEGRATION-001 is `aceptado`.
+ * This projection is kept as-is and still imports nothing from PRODUCT, because
+ * what it measures is the INPUT side — whether a citation carries everything a
+ * renderer would need. That criterion does not become redundant once a renderer
+ * exists; it is what tells you whether a failure is the adapter's fault or the
+ * data's.
  */
 export interface AdapterInputProjection {
   sourceField: string
@@ -1423,7 +1555,7 @@ function checkGroundingProductAdapterInputComplete(): ReleaseCaseResult {
   return withNegativeControls(
     {
       checkId, fixtureId, ok: true, outcome: 'pass',
-      detail: `every field PRODUCT's adapter needs is present: sourceField="${projection.sourceField}", label="${projection.label}" (adapter itself is INTEGRATION-001, still unimplemented — nothing from another line is imported here)`,
+      detail: `every field PRODUCT's adapter needs is present: sourceField="${projection.sourceField}", label="${projection.label}" (measures the INPUT; the adapter's own behaviour is covered by components/stella tests — nothing from another line is imported here)`,
     },
     controls,
   )
@@ -1556,6 +1688,77 @@ function assertMetricsMatchMatrix(
     const value = emitted.find((m) => m.metric === metric)
     if (value && (value.measurable || value.value !== null)) {
       throw new ReleaseEvalHarnessError(`provider-dependent metric "${metric}" was reported as measurable offline — this harness makes zero provider calls`)
+    }
+  }
+
+  assertContributorsMatchMatrix(matrix)
+}
+
+/**
+ * The metric a `METRIC_CONTRIBUTORS` key feeds. Explicit, because the key names
+ * are camelCase abbreviations of the kebab-case metric ids and nothing else in
+ * the file relates the two.
+ */
+const CONTRIBUTOR_METRIC: Record<keyof typeof METRIC_CONTRIBUTORS, ReleaseEvalMetric> = {
+  citationPrecision: 'citation-precision',
+  citationCoverage: 'citation-coverage',
+  isolation: 'isolation-violations',
+  abstention: 'abstention-correctness',
+  unsupportedClaim: 'unsupported-claim-rate',
+  structural: 'structural-regression',
+}
+
+/**
+ * Per-CHECK reconciliation between the matrix and `METRIC_CONTRIBUTORS`.
+ *
+ * ADDED BY INTEGRATION (train 2 adversarial review). `assertMetricsMatchMatrix`
+ * reconciled only the metric NAME sets, so the two declarations of "which check
+ * feeds which metric" — `matrix.ts`'s per-entry `metrics` and this file's
+ * `METRIC_CONTRIBUTORS` — could disagree completely while every existing gate
+ * passed. Add a 20th matrix entry declaring `metrics: ['citation-precision']`
+ * and forget the contributor list, and the check can fail forever without ever
+ * moving the metric it claims to feed. That is B-M6 — "a metric declared and
+ * nothing reads it" — in its inverse form, in the file written to eliminate it.
+ *
+ * Both directions are checked, because each catches a different mistake: a
+ * matrix entry claiming a metric it does not feed, and a contributor list
+ * feeding a metric the matrix entry never declared.
+ */
+function assertContributorsMatchMatrix(matrix: readonly ReleaseEvalMatrixEntry[]): void {
+  const declaredBy = new Map<string, ReadonlySet<ReleaseEvalMetric>>(
+    matrix.map((e) => [e.checkId, new Set(e.metrics)]),
+  )
+
+  for (const [key, checkIds] of Object.entries(METRIC_CONTRIBUTORS)) {
+    const metric = CONTRIBUTOR_METRIC[key as keyof typeof METRIC_CONTRIBUTORS]
+    for (const checkId of checkIds) {
+      const declared = declaredBy.get(checkId)
+      if (!declared) throw new ReleaseEvalHarnessError(`METRIC_CONTRIBUTORS.${key} names "${checkId}", which has no matrix entry`)
+      if (!declared.has(metric)) {
+        throw new ReleaseEvalHarnessError(
+          `check "${checkId}" feeds metric "${metric}" via METRIC_CONTRIBUTORS.${key}, but its matrix entry does not declare it`,
+        )
+      }
+    }
+  }
+
+  const fedBy = new Map<ReleaseEvalMetric, ReadonlySet<string>>(
+    Object.entries(METRIC_CONTRIBUTORS).map(([key, ids]) => [
+      CONTRIBUTOR_METRIC[key as keyof typeof METRIC_CONTRIBUTORS],
+      new Set<string>(ids),
+    ]),
+  )
+  for (const entry of matrix) {
+    for (const metric of entry.metrics) {
+      // Provider-dependent metrics have no contributors by design: no offline
+      // check can feed them, which is why they are always null with a reason.
+      if (PROVIDER_DEPENDENT_METRICS.includes(metric)) continue
+      const contributors = fedBy.get(metric)
+      if (!contributors || !contributors.has(entry.checkId)) {
+        throw new ReleaseEvalHarnessError(
+          `matrix entry "${entry.checkId}" declares metric "${metric}", but METRIC_CONTRIBUTORS does not list it — the check could fail forever without moving the metric`,
+        )
+      }
     }
   }
 }

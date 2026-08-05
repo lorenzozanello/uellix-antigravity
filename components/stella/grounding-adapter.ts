@@ -31,6 +31,25 @@
 // where one is genuinely needed it is re-derived locally from the discriminant
 // and marked as such. See the purity tests in
 // `__tests__/grounding-adapter.test.ts`.
+//
+// THE ONE VALUE IMPORT, AND WHY (integration, train 2 — INTEGRATION-001 §6):
+// `@/lib/grounding/retrieve/calibration` is imported as a VALUE, because the
+// relevance classification has exactly one source of truth and it is
+// GROUNDING's. PRODUCT published a second set of thresholds (0.6 / 0.3, version
+// `product-relevance-v1`) on the same day GROUNDING published 0.4 / 0.2; the two
+// were never reconciled because the lines could not see each other. They are now:
+// GROUNDING owns score, bucket and version; this module consumes them and
+// recomputes nothing.
+//
+// It is a DEEP import, not the `retrieve` barrel, and that is not a shortcut.
+// The barrel re-exports the repository, the scorer and `buildGroundedAnswer`,
+// all of which reach `contracts/core.ts` — so importing it as a value would put
+// `node:crypto` in the client bundle, the exact failure the rule above exists to
+// prevent. `calibration.ts` is a leaf: BOTH of its own imports are `import type`,
+// so it erases to a module with no dependencies at all. That leaf property is
+// itself pinned by a test, because it is what makes this exception safe, and the
+// day someone adds a runtime import to it the exception stops being safe
+// silently.
 
 import type {
   AbstentionReason,
@@ -49,6 +68,12 @@ import type {
   RetrievalStrategy,
   TextSpan,
 } from '@/lib/grounding/contracts'
+import {
+  RELEVANCE_THRESHOLDS,
+  RELEVANCE_THRESHOLDS_VERSION,
+  relevanceBucket as groundingRelevanceBucket,
+} from '@/lib/grounding/retrieve/calibration'
+import type { RelevanceBucket } from '@/lib/grounding/retrieve/calibration'
 import { decisionStatusFromAction } from './grounding-model'
 import type { EvidenceSupportLevel, StellaDecisionStatus } from './grounding-model'
 
@@ -57,26 +82,22 @@ import type { EvidenceSupportLevel, StellaDecisionStatus } from './grounding-mod
 // ---------------------------------------------------------------------------
 
 /**
- * Version of the score → bucket mapping below. It is recorded on every
- * assessment so a stored screenshot, a report or a bug report can be read
- * against the thresholds that were in force when it was produced.
+ * The canonical thresholds and their version, RE-EXPORTED, not redefined.
  *
- * OPEN CALIBRATION RISK (INTEGRATION-001 §6, GROUNDING risk R4): there is no
- * retrieval implementation yet, so `DEFAULT_RETRIEVAL_MIN_SCORE` (0.15) is a
- * placeholder and these thresholds inherit that uncertainty. Bump the version
- * when they are calibrated against real scores.
+ * PRODUCT does not own these numbers and must never own them again. A UI is
+ * free to change the wording, the icon or the visual intensity attached to a
+ * bucket; it is not free to change WHICH bucket a score falls in, because that
+ * is a semantic classification of the evidence and two independent answers to
+ * "how relevant is this passage" is the same credibility failure INTEGRATION-001
+ * §2 forbids for provenance.
+ *
+ * OPEN CALIBRATION RISK (INTEGRATION-001 §6, GROUNDING risk R4): the numbers are
+ * a first LOCAL calibration and are NOT optimal. There is no retrieval
+ * implementation to measure against and `DEFAULT_RETRIEVAL_MIN_SCORE` (0.15) is
+ * itself a placeholder. Recalibration happens in `calibration.ts` and reaches
+ * this module for free — which is the point of consuming rather than copying.
  */
-export const RELEVANCE_THRESHOLDS_VERSION = 'product-relevance-v1' as const
-
-/** At or above this score a candidate is shown as strongly relevant. */
-export const RELEVANCE_HIGH_MIN_SCORE = 0.6
-
-/**
- * At or above this score a candidate is shown as moderately relevant. Below
- * it, `low` — which still means "above the retrieval threshold", since
- * anything under `RetrievalQuery.minScore` never reaches presentation.
- */
-export const RELEVANCE_MEDIUM_MIN_SCORE = 0.3
+export { RELEVANCE_THRESHOLDS, RELEVANCE_THRESHOLDS_VERSION }
 
 /** Display budget for one excerpt. A UI decision, not a provenance one. */
 export const CITATION_EXCERPT_MAX_LENGTH = 280
@@ -85,7 +106,12 @@ export const CITATION_EXCERPT_MAX_LENGTH = 280
 // Presentation model
 // ---------------------------------------------------------------------------
 
-export type CitationRelevanceBucket = 'high' | 'medium' | 'low'
+/**
+ * Alias of GROUNDING's `RelevanceBucket`, not a parallel union. Declaring the
+ * three literals again here would compile happily on the day GROUNDING adds a
+ * fourth, and the adapter would then narrow a bucket it was handed.
+ */
+export type CitationRelevanceBucket = RelevanceBucket
 
 /** A bucket that never stands alone: the number it came from travels with it. */
 export interface RelevanceAssessment {
@@ -94,6 +120,24 @@ export interface RelevanceAssessment {
   readonly score: number
   readonly strategy: RetrievalStrategy
   readonly rank: number
+  /**
+   * Identity of the scorer that produced `score`, or null when the caller did
+   * not supply it.
+   *
+   * ADDED BY INTEGRATION (train 2 adversarial review). `calibration.ts` states
+   * that the score must travel with "the strategy and scorer identity" so that
+   * a scorer changing SCALE under fixed thresholds is noticeable — and this
+   * field did not exist, so it structurally could not. Swap the lexical scorer
+   * for an embedding scorer whose scale runs 0.6–0.95 and every citation
+   * renders "alta" under an unchanged `thresholdsVersion`, with nothing on
+   * screen or in a saved view recording which scorer produced the numbers.
+   *
+   * It is nullable rather than required because it is NOT on the contract's
+   * `RetrievalResult` — it lives on GROUNDING's `ScopedRetrievalResult`. A
+   * caller that has it passes it; a caller that does not says so, instead of
+   * the view implying an identity nobody supplied.
+   */
+  readonly scorerId: string | null
   readonly thresholdsVersion: typeof RELEVANCE_THRESHOLDS_VERSION
 }
 
@@ -207,6 +251,12 @@ export interface GroundedAnswerView {
 export interface GroundedPresentationInput {
   readonly chunks: ReadonlyMap<string, GroundingChunk>
   readonly candidates?: ReadonlyMap<string, RetrievalCandidate>
+  /**
+   * Identity of the scorer that produced the candidates' scores, when the
+   * caller knows it. Carried through to `RelevanceAssessment.scorerId` — see
+   * the note there for why a bucket without it is unattributable.
+   */
+  readonly scorerId?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -239,26 +289,41 @@ export class GroundedCitationError extends Error {
 // Relevance
 // ---------------------------------------------------------------------------
 
-/** Score → bucket, by the named thresholds. Boundaries are inclusive upward. */
+/**
+ * Score → bucket. A THIN DELEGATION to GROUNDING's `relevanceBucket`, kept as a
+ * named export only so `components/stella` consumers have one import path; it
+ * contains no comparison of its own and no number of its own.
+ *
+ * The only thing added is the error TYPE. GROUNDING throws a plain `Error` for
+ * a score outside [0, 1] — off-scale means the scorer moved and the thresholds
+ * did not, which must not pass silently — and PRODUCT surfaces failures as
+ * `GroundedCitationError` so a panel can distinguish them from a render bug.
+ * Translating the failure is not reclassifying the evidence.
+ */
 export function relevanceBucket(score: number): CitationRelevanceBucket {
-  if (!Number.isFinite(score)) {
+  try {
+    return groundingRelevanceBucket(score)
+  } catch (cause) {
     throw new GroundedCitationError(
       'invalid_score',
-      `El score de recuperación debe ser un número finito, se recibió ${String(score)}`,
+      `El score de recuperación no es válido bajo la calibración canónica ${RELEVANCE_THRESHOLDS_VERSION}: ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`,
     )
   }
-  if (score >= RELEVANCE_HIGH_MIN_SCORE) return 'high'
-  if (score >= RELEVANCE_MEDIUM_MIN_SCORE) return 'medium'
-  return 'low'
 }
 
-function adaptRelevance(candidate: RetrievalCandidate | null): RelevanceAssessment | null {
+function adaptRelevance(
+  candidate: RetrievalCandidate | null,
+  scorerId: string | undefined,
+): RelevanceAssessment | null {
   if (candidate === null) return null
   return {
     bucket: relevanceBucket(candidate.score),
     score: candidate.score,
     strategy: candidate.strategy,
     rank: candidate.rank,
+    scorerId: scorerId ?? null,
     thresholdsVersion: RELEVANCE_THRESHOLDS_VERSION,
   }
 }
@@ -349,7 +414,7 @@ export function adaptCitation(
     availability: chunk === null ? 'source_unavailable' : 'passage_loaded',
     excerpt: chunk === null ? null : buildExcerpt(chunk.text),
     sourceLabel: chunk === null ? null : chunk.provenance.sourceLabel,
-    relevance: adaptRelevance(candidate),
+    relevance: adaptRelevance(candidate, input.scorerId),
   }
 }
 
@@ -510,9 +575,19 @@ export function adaptGroundedAnswer(
  * lookup maps `adaptGroundedAnswer` expects. Pure, and still not a scope gate
  * — it indexes exactly the candidates retrieval decided to return.
  */
-export function presentationInputFromRetrieval(result: RetrievalResult): GroundedPresentationInput {
+export function presentationInputFromRetrieval(
+  result: RetrievalResult,
+  /**
+   * GROUNDING's `ScopedRetrievalResult` carries `scorerId`; the contract's
+   * `RetrievalResult` does not. Taken as a separate argument rather than
+   * widening the parameter type, so a caller holding only the contract shape
+   * still compiles and simply reports the identity as unknown.
+   */
+  scorerId?: string,
+): GroundedPresentationInput {
   return {
     chunks: new Map(result.candidates.map((candidate) => [candidate.chunk.chunkId as string, candidate.chunk])),
     candidates: new Map(result.candidates.map((candidate) => [candidate.chunk.chunkId as string, candidate])),
+    scorerId,
   }
 }

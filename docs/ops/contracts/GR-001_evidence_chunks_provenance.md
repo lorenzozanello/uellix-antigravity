@@ -94,4 +94,33 @@ en un fallo silencioso.
 
 ## 6. Decisión de integración
 
-_Pendiente._
+**`aceptado` — integración, tren 2, 2026-08-04.**
+
+El criterio de §5 se comprueba en el HEAD integrado, no se acepta por
+declaración. `tests/cross-workstream/capabilities-to-grounding.test.ts`:
+
+- las seis columnas de §2 están en el **cuerpo del `CREATE TABLE`** de
+  `public.evidence_chunks` (no en un comentario), y las seis son `NOT NULL`;
+- la guarda de forma de `grounding_0003` las nombra y **aborta** si faltan;
+- el paquete es **pgvector-free**, así que §4 se respeta: persistir provenance no
+  espera al gate G5 P3.
+
+Las tres secciones recomendadas (§2.1 `project_id`, §2.2 `signals` +
+`injection_scanner_version`, §2.3 `embedding_provider_id`) también se
+entregaron.
+
+**Un desvío, aceptado con su fundamento:** §2.1 proponía `project_id uuid NULL`
+(«nulo = evidencia de alcance organizacional»). Se entrega `NOT NULL`, porque ese
+caso **no existe**: `evidence_items.project_id` es `NOT NULL` en `db/schema.ts`.
+Una columna nulable obligaría a cada predicado con alcance de proyecto a llevar
+una rama `OR IS NULL`, y esa rama sólo puede ensanchar la frontera. La prueba
+cruzada fija el fundamento —que `evidence_items.project_id` siga `NOT NULL`—, no
+sólo el resultado.
+
+**Un defecto que esta solicitud no nombraba** apareció al cruzarla con GR-002:
+`UNIQUE (evidence_id, chunk_index)` de `grounding_0001` es **incompatible** con
+la historia de versiones (la versión 2 colisiona con la 1 en `chunk_index = 0` y
+es inalmacenable). Por eso `grounding_0001` quedó supersedido en vez de ampliado.
+
+**Lo que esto NO cierra:** el paquete no está aplicado a ninguna base; la
+decisión pgvector (G5 P3) sigue abierta; y no habilita ninguna capacidad.

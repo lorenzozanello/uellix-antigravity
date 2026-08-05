@@ -29,10 +29,14 @@ export { StellaAvailabilityNotice } from './StellaAvailabilityNotice'
 export { StellaGroundedAnswerPanel } from './StellaGroundedAnswerPanel'
 // TRAIN 2 — the GROUNDING → presentation adapter (INTEGRATION-001). The barrel
 // is the surface other lines consume; nobody reaches into the module directly.
+// `RELEVANCE_THRESHOLDS` / `RELEVANCE_THRESHOLDS_VERSION` are GROUNDING's, and
+// pass through this barrel unchanged. PRODUCT's own `RELEVANCE_HIGH_MIN_SCORE`
+// / `RELEVANCE_MEDIUM_MIN_SCORE` (0.6 / 0.3, `product-relevance-v1`) were
+// RETIRED by integration in train 2: they were a second, silently divergent
+// classification of the same evidence. See INTEGRATION-001 §6.
 export {
   CITATION_EXCERPT_MAX_LENGTH,
-  RELEVANCE_HIGH_MIN_SCORE,
-  RELEVANCE_MEDIUM_MIN_SCORE,
+  RELEVANCE_THRESHOLDS,
   RELEVANCE_THRESHOLDS_VERSION,
   GroundedCitationError,
   adaptCitation,

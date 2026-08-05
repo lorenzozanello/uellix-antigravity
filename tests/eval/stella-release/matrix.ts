@@ -246,7 +246,7 @@ export const RELEASE_EVAL_MATRIX: readonly ReleaseEvalMatrixEntry[] = [
     metrics: ['citation-precision'],
     offlineMeasurable: true,
     offlineLimitation:
-      'Mide COMPLETITUD DE ENTRADA, no el adaptador: components/stella/grounding-adapter.ts no existe (INTEGRATION-001 sigue `solicitado`, propietaria PRODUCT). RELEASE no importa código de otra línea ni lo implementa; fija el criterio de aceptación que ese adaptador tendrá que cumplir.',
+      'Mide COMPLETITUD DE ENTRADA, no el adaptador. Reconciliado por integración en el tren 2: components/stella/grounding-adapter.ts SÍ existe ahora e INTEGRATION-001 quedó `aceptado`; lo que sigue siendo cierto es el alcance de esta comprobación, no la ausencia del adaptador. RELEASE mantiene deliberadamente el criterio del lado de la ENTRADA —lo que una cita debe llevar— porque el comportamiento del adaptador lo cubren sus propias pruebas focalizadas (components/stella, 331 casos) y duplicarlo aquí mediría dos veces lo mismo mientras deja sin medir la forma que lo alimenta.',
   },
 ] as const
 

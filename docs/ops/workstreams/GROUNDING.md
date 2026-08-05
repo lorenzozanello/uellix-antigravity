@@ -532,3 +532,56 @@ Nota para PRODUCT: el barrel nuevo es `lib/grounding/retrieve/index.ts`
 (`lib/grounding/contracts/index.ts` sigue siendo la superficie de contratos).
 `presentRelevance` es el punto previsto para los buckets de INTEGRATION-001 §6,
 y ya cumple su condición: score y estrategia viajan junto al bucket.
+
+---
+
+## Estado en el HEAD integrado del tren 2 (integración, 2026-08-04)
+
+Sección añadida por **integración**, no por esta línea. No reescribe nada de lo
+anterior: registra qué de lo que esta línea declaró queda confirmado sobre el
+árbol fusionado, y qué cambió al cruzarlo con las otras tres.
+
+**Hallazgo:** A-F1 → **CLOSED**.
+
+`CitableChunkRecord` lleva `scope: GroundingScope` completo, y `scopeContains`
+se evalúa **antes** que cualquier otra comprobación — así una cita fuera de
+frontera se reporta como tal y nunca se degrada a un issue más suave sobre su
+contenido. `toCitableChunkRecord` es la proyección publicada, y existe porque
+cada campo copiado a mano es un campo que puede copiarse del sitio equivocado, y
+los campos en cuestión **son** la frontera de aislamiento.
+
+Esa decisión de publicar el helper es la que salvó la integración: RELEASE
+construía ese mapa a mano contra la firma anterior. El harness compilaba en su
+worktree y lanzaba en la primera corrida integrada.
+
+**Confirmado sobre el árbol integrado:**
+
+- retrieval filtra scope **en la fuente** (guarda del repositorio), no al final:
+  `fetch (scope-guarded) → quarantine → score → threshold → rank`;
+- **cero** imports desde `db/**` en `lib/grounding/**`;
+- **cero** proveedores, `fetch` o embeddings remotos en el runtime;
+- el score numérico sobrevive junto al bucket, la estrategia y la identidad del
+  scorer;
+- las contradicciones sólo se emiten si **ambos** lados resuelven a chunks
+  recuperados.
+
+**`calibration.ts` pasó a ser canónico para todo el árbol.** PRODUCT había
+publicado un segundo juego de umbrales; integración lo retiró. Consecuencia para
+esta línea: `RELEVANCE_THRESHOLDS` y `RELEVANCE_THRESHOLDS_VERSION` son ahora
+superficie consumida por `components/stella`, y recalibrar es editar **un**
+archivo. El módulo se importa como valor desde el cliente, lo cual sólo es seguro
+porque es una **hoja** —sus dos imports son `import type`—; esa propiedad tiene
+ahora su propia prueba, así que dejará de ser cierta ruidosamente.
+
+**Contrato de vuelta, para el tren 3: GR-CAP-002 — `EXTRACTOR_VERSION`.**
+`evidence_document_versions.extractor_version` es `NOT NULL`. El hueco es real:
+`versionId` se deriva de `(evidenceId, rawContentHash)` y el extractor no está en
+esa preimagen, así que un extractor distinto sobre los mismos bytes produce otro
+`normalized_content_hash` bajo el **mismo** `version_id`. Y
+`lib/grounding/extract.ts` ya tiene un registro real de extractores. Integración
+**no** eligió el valor.
+
+**Sigue abierto, correctamente:** R4 (umbrales sin calibrar — no hay conjunto
+etiquetado), R6 (`no_matching_evidence` frente a «hay evidencia y no es
+relevante»), R7 (suelo de diversidad de fuentes). Los tres se calibran contra
+scores reales de un retrieval con datos, que no existe.

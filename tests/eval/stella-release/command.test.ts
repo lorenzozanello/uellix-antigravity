@@ -58,16 +58,48 @@ function extractStructured(stdout: string): StructuredOutput {
   return JSON.parse(line.slice(line.indexOf('[eval:release] json ') + '[eval:release] json '.length)) as StructuredOutput
 }
 
+/**
+ * The pin, CHECKED BEFORE THE SPAWN. Integration moved it here in train 2.
+ *
+ * It used to live in an `it` below, while `runOfficialCommand()` ran in the
+ * describe body — i.e. during vitest COLLECTION, before any assertion. The
+ * ordering was the whole safety argument and it was inverted: point
+ * `test:stella:release-eval` at anything that re-enters vitest and `pnpm test`
+ * collects this file, spawns vitest, which collects this file, which spawns
+ * vitest… an unbounded fork before a single expectation runs. The per-test
+ * `timeout` at the bottom does not apply to collection.
+ *
+ * Throwing here fails the suite at collection instead, which is the only
+ * moment at which the check can still prevent anything.
+ */
+function assertOfficialCommandIsNotVitest(): string {
+  const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')) as {
+    scripts: Record<string, string>
+  }
+  const script = pkg.scripts['test:stella:release-eval']
+  if (script !== 'tsx scripts/eval-release-offline.ts') {
+    throw new Error(
+      `test:stella:release-eval must be "tsx scripts/eval-release-offline.ts" — got "${script}". ` +
+        'This test spawns that script; a script that re-enters vitest would recurse without bound.',
+    )
+  }
+  return script
+}
+
 describe('pnpm test:stella:release-eval (official command)', () => {
+  const pinnedScript = assertOfficialCommandIsNotVitest()
   const first = runOfficialCommand()
 
   it('exits zero', () => {
     expect(first.status, `stderr:\n${first.stderr}\nstdout tail:\n${first.stdout.split('\n').slice(-15).join('\n')}`).toBe(0)
   })
 
-  it('is the command package.json declares, unmodified by this test', () => {
-    const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> }
-    expect(pkg.scripts['test:stella:release-eval']).toBe('tsx scripts/eval-release-offline.ts')
+  it('is the command package.json declares, unmodified by this test, and cannot re-enter vitest', () => {
+    // The enforcement is `assertOfficialCommandIsNotVitest`, which ran BEFORE
+    // the spawn. This restates it as a visible expectation so the guarantee
+    // appears in the test report rather than only as a collection-time throw.
+    expect(pinnedScript).toBe('tsx scripts/eval-release-offline.ts')
+    expect(pinnedScript).not.toMatch(/vitest/)
   })
 
   it('reports harness, matrix and fixture versions', () => {

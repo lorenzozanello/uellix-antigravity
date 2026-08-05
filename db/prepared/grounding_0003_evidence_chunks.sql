@@ -1030,7 +1030,13 @@ BEGIN
   SELECT string_agg(p.proname, ', ' ORDER BY p.proname) INTO problem
   FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
   WHERE ns.nspname = 'uellix_grounding'
-    AND (NOT p.prosecdef OR p.proconfig IS NULL OR NOT ('search_path=' = ANY(p.proconfig)));
+    -- BOTH spellings — see the identical note in grounding_0002. PostgreSQL
+    -- stores `SET search_path = ''` as `search_path=""`, so the bare-form-only
+    -- check was always true and this package aborted on every apply.
+    AND (NOT p.prosecdef
+         OR p.proconfig IS NULL
+         OR NOT (p.proconfig @> ARRAY['search_path=']::text[]
+                 OR p.proconfig @> ARRAY['search_path=""']::text[]));
   IF problem IS NOT NULL THEN
     RAISE EXCEPTION 'grounding_0003 FAILED verification: function(s) % are not SECURITY DEFINER with search_path=''''', problem;
   END IF;

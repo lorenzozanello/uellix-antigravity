@@ -2,12 +2,14 @@
 
 **Línea solicitante:** INTEGRACIÓN
 **Línea propietaria:** PRODUCT (implementación, tren 2)
-**Estado:** `solicitado` (2026-08-04) — la **decisión** está tomada y registrada
-abajo; lo que sigue `solicitado` es su **implementación**, que no existe en el
-árbol. Integración no marca `aceptado` una petición que se hizo a sí misma y
-cuyo entregable no ha escrito.
+**Estado:** `aceptado` (integración, tren 2, 2026-08-04). El entregable existe:
+[`components/stella/grounding-adapter.ts`](../../../components/stella/grounding-adapter.ts),
+verificado en el HEAD integrado con 331 pruebas focalizadas de
+`components/stella` en verde. La única condición que quedaba abierta al
+aceptarlo —la doble definición de umbrales— la resolvió integración y está
+registrada en §6-bis.
 **Resuelve:** [PRODUCT-001](PRODUCT-001_grounded-citation-provenance.md) →
-`parcialmente satisfecho, pendiente de adaptador`
+`aceptado`
 
 ## Por qué existe esta decisión
 
@@ -156,6 +158,89 @@ declarado por GROUNDING (riesgo R4), no un valor calibrado — no hay
 implementación de retrieval con la que medirlo. Los umbrales del adaptador
 heredan esa incertidumbre y deben revisarse cuando exista una.
 
+### 6-bis. Resolución de la divergencia de umbrales (integración, tren 2)
+
+El tren 2 entregó **dos** clasificaciones de relevancia, publicadas el mismo día
+sin verse, exactamente como había pasado con la forma de la cita:
+
+| | Umbral `high` | Umbral `medium` | Versión |
+|---|---|---|---|
+| GROUNDING (`lib/grounding/retrieve/calibration.ts`) | `>= 0.4` | `>= 0.2` | `grounding-relevance-2026-08-local-1` |
+| PRODUCT (`components/stella/grounding-adapter.ts`) | `>= 0.6` | `>= 0.3` | `product-relevance-v1` |
+
+No es una diferencia cosmética. Un score de **0.42** —el que la propia prueba de
+PRODUCT usaba como caso principal— era `medium` para PRODUCT y `high` para
+GROUNDING. El sistema tenía dos respuestas a «cuán relevante es este pasaje» y
+la que un auditor leía en pantalla no era la que quedaría registrada junto al
+score. Es el mismo fallo de credibilidad que §2 prohíbe para la provenance,
+aplicado a la clasificación.
+
+**Decisión: GROUNDING es la fuente única.** Concretamente:
+
+1. `RELEVANCE_THRESHOLDS` y `RELEVANCE_THRESHOLDS_VERSION` de
+   `lib/grounding/retrieve/calibration.ts` son canónicos. PRODUCT los
+   **reexporta**; no los redefine.
+2. `RELEVANCE_HIGH_MIN_SCORE` y `RELEVANCE_MEDIUM_MIN_SCORE` de PRODUCT quedan
+   **retirados**, también del barrel `components/stella/index.ts`.
+3. `relevanceBucket` de PRODUCT pasa a ser una delegación fina: no contiene
+   ninguna comparación ni ningún número propio. Lo único que añade es el **tipo
+   de error** (`GroundedCitationError`), porque un panel necesita distinguir un
+   fallo de datos de un fallo de render. Traducir el fallo no es reclasificar la
+   evidencia.
+4. `CitationRelevanceBucket` pasa a ser un **alias** de `RelevanceBucket` de
+   GROUNDING, no una unión paralela de tres literales: la unión duplicada
+   compilaría el día que GROUNDING añadiera un cuarto bucket, y el adaptador
+   estrecharía en silencio un valor que le fue entregado.
+5. La UI conserva toda su libertad sobre **lenguaje, icono e intensidad
+   visual**; pierde la de cambiar **a qué bucket cae un score**.
+6. Los umbrales siguen declarados como **calibración local provisional, no
+   óptima** — ver la cabecera de `calibration.ts`, que lo dice como estado y no
+   como descargo. Recalibrar ahora es editar un archivo, no dos que puedan
+   divergir.
+
+#### Efecto colateral aceptado: el borde se endurece
+
+`relevanceBucket` de GROUNDING **lanza** ante un score fuera de `[0, 1]`; el de
+PRODUCT sólo rechazaba `NaN` y devolvía `high` para `1.5`. Al consumir el
+canónico, PRODUCT hereda el rechazo. Es deseable: un score fuera de escala
+significa que el scorer cambió y los umbrales no, y devolver `high` dejaría que
+un retrieval descalibrado se viera confiado.
+
+#### La excepción de import, y por qué es segura
+
+El adaptador importa `@/lib/grounding/retrieve/calibration` **como valor**, no
+como tipo, y **en profundidad**, no por el barrel de `retrieve`. Ambas cosas son
+excepciones a §1 y a la regla de pureza, y ambas están medidas:
+
+- El barrel `lib/grounding/retrieve/index.ts` reexporta el repositorio, el
+  scorer y `buildGroundedAnswer`, que alcanzan `contracts/core.ts` — que importa
+  `node:crypto` a nivel de módulo. Importarlo como valor metería Node crypto en
+  el bundle de cliente de toda página que monte un panel de Stella. El barrel es
+  **hostil al cliente**; no es una preferencia de estilo.
+- `calibration.ts` es una **hoja**: sus dos únicos imports son `import type`, así
+  que se borra en transform a un módulo sin dependencias. Esa propiedad es lo que
+  hace segura la excepción, y por eso está fijada por su propia prueba
+  (`imports a LEAF: calibration.ts must itself have zero runtime imports`): el día
+  que alguien le añada un import de runtime, la excepción deja de ser segura
+  **ruidosamente**.
+
+#### Pruebas que impiden la regresión
+
+En `components/stella/__tests__/grounding-adapter.test.ts`, bloque
+`relevance thresholds have exactly one owner`:
+
+| Prueba | Qué rompe |
+|---|---|
+| identidad de constantes (`toBe`, no `toEqual`) | una copia con los mismos números |
+| `product-relevance` / `RELEVANCE_*_MIN_SCORE` ausentes del **código** (no de los comentarios) | resucitar los nombres retirados, en el módulo o en el barrel |
+| cero literales numéricos junto a `high`/`medium`/`low` en **todo** `components/stella/**` | un umbral incrustado en cualquier panel, no sólo en el adaptador |
+| `adaptRelevance` sin comparación ni literal de bucket propios | reimplementar la clasificación con números que hoy coincidan por accidente |
+
+La tercera y la cuarta son estructurales a propósito: una prueba de
+comportamiento seguiría verde el día que alguien reimplemente la comparación con
+números que casualmente coincidan, y volvería a haber dos fuentes de verdad sin
+que nada lo dijera.
+
 ### 7. `contradiction` proviene de `ContradictionMarker`, nunca de la UI
 
 `ContradictionMarker` lleva `sideA` y `sideB` como tuplas **no vacías** de
@@ -181,6 +266,14 @@ productor de `'contradictory_evidence'`, y debe llevar una prueba focalizada
 que falle si ese valor se alcanza sin un `ContradictionMarker` de entrada.
 Hasta que esa prueba exista, esto es una convención documentada, no un
 invariante.
+
+> **Cumplido (integración, tren 2).** Ya es un invariante comprobado.
+> `supportForClaim` construye `contradictedChunkIds` **exclusivamente** a partir
+> de `state.contradictions`, así que ninguna otra entrada abre esa puerta: ni
+> afirmaciones opuestas, ni scores divergentes, ni un `AbstentionReason` cuyo
+> código se escribe igual. Las pruebas correspondientes están en
+> `components/stella/__tests__/grounding-adapter.test.ts`, y con ellas se cierra
+> **A-F3** del tren 1.
 
 ## Efecto sobre PRODUCT-001
 

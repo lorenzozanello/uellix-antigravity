@@ -168,10 +168,43 @@ BEGIN
 
     IF other_funcs = 0 THEN
       EXECUTE 'DROP SCHEMA uellix_grounding';
-      -- The role owns nothing once its functions are gone. DROP ROLE
-      -- still fails if any object anywhere is owned by it, which is the
-      -- desired behaviour: it surfaces an object this rollback did not
-      -- know about instead of orphaning it.
+
+      -- FIXED BY INTEGRATION (train 2 dry-run). DROP ROLE is blocked by two
+      -- distinct things, and the reasoning below only covered one of them:
+      --
+      --   * OWNERSHIP — objects the role owns. Those are gone: its five
+      --     functions lived in uellix_grounding, dropped one statement above.
+      --   * PRIVILEGES HELD — grants made TO the role on objects it does NOT
+      --     own. Section 2 of grounding_0002 grants EXECUTE on
+      --     public.current_user_org_ids() and public.current_user_is_super_admin()
+      --     so the definer can call the RLS helpers. Those two functions belong
+      --     to the BASELINE and are not dropped by anything here, so the grants
+      --     survive and PostgreSQL refuses with
+      --     "role ... cannot be dropped because some objects depend on it".
+      --
+      -- The rollback therefore aborted every time, leaving the role and the
+      -- (already dropped) schema in an inconsistent half-state. No static test
+      -- could see this: it only appears when the script is actually run.
+      --
+      -- Revoked EXPLICITLY, naming the two grants this package made, rather
+      -- than with DROP OWNED BY: a blunt DROP OWNED would also silently
+      -- discard a grant some OTHER package made to the same role, which is
+      -- exactly the "object this rollback did not know about" the note below
+      -- wants surfaced, not swallowed.
+      EXECUTE 'REVOKE EXECUTE ON FUNCTION public.current_user_org_ids() FROM uellix_cap_grounding';
+      EXECUTE 'REVOKE EXECUTE ON FUNCTION public.current_user_is_super_admin() FROM uellix_cap_grounding';
+      -- Same class, third grant: §2 also gives the definer SELECT on
+      -- public.evidence_items so it can derive a version's scope from its
+      -- parent. That table is baseline and outlives this package, so the
+      -- privilege outlives it too and blocks DROP ROLE identically. Caught by
+      -- scripts/grounding-dry-run.sh on the very run that proved the grant was
+      -- needed — which is the argument for a rollback stage in a dry-run.
+      EXECUTE 'REVOKE SELECT ON public.evidence_items FROM uellix_cap_grounding';
+
+      -- DROP ROLE still fails if any object anywhere is owned by it, or if any
+      -- privilege this package did not grant is still held — which is the
+      -- desired behaviour: it surfaces something this rollback did not know
+      -- about instead of orphaning it.
       IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_cap_grounding') THEN
         EXECUTE 'DROP ROLE uellix_cap_grounding';
       END IF;

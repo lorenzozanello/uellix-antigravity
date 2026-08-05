@@ -918,3 +918,72 @@ modificada, sin push, sin acceso a remoto, sin gates pesados, cero escrituras a
 base de datos, cero llamadas a proveedor.
 
 `STELLA_RELEASE_TRAIN_2_READY_FOR_INTEGRATION`
+
+---
+
+## Estado en el HEAD integrado del tren 2 (integración, 2026-08-04)
+
+Sección añadida por **integración**, no por esta línea. No reescribe nada de lo
+anterior: registra qué de lo que esta línea declaró queda confirmado sobre el
+árbol fusionado, y qué cambió al cruzarlo con las otras tres.
+
+**Hallazgos:** B-M3 → **CLOSED**, B-M4 → **CLOSED**, B-M5 → **CLOSED**,
+B-M6 → **CLOSED**, A-F10 → **CLOSED**, B-m5 → **CLOSED** (la fila de
+`package.json` la cerró la preparación de raíz del tren 2).
+
+**Esta línea se rompió en el merge, y la rotura era la correcta.**
+
+`harness.test.ts` lanzaba `Cannot read properties of undefined (reading
+'organizationId')`. Causa: `AVAILABLE_CHUNKS` se construía a mano contra la
+firma pre-merge `{ contentHash, organizationId }`, y GROUNDING la sustituyó por
+`CitableChunkRecord` con **scope completo** — el cierre de A-F1. El harness
+compilaba en este worktree porque el contrato viejo era el único que veía.
+
+La lección es estrecha y vale la pena enunciarla: **un harness de evaluación que
+re-declara la forma que está juzgando no puede detectar que la forma se movió.**
+Reconciliado proyectando con `toCitableChunkRecord`; copiar los campos a mano
+—incluso los nuevos— habría compilado y reproducido el bug viejo en un sitio
+nuevo.
+
+**Un hallazgo cerrado seguía afirmado como abierto.** El check
+`grounding-project-scope-enforced` llevaba A-F1 codificado como nota al pie
+dentro de una aserción viva («validateAnswerCitations alone still misses the
+sibling-project case»). Eso ya no era cierto, y mantenerlo no es conservadurismo
+inocuo: un lector de la salida del eval seguiría tratando al validador de
+GROUNDING como incapaz de ver el alcance de proyecto, y seguiría construyendo la
+capa compensatoria que este check solía ser.
+
+Convertido en **aserción**, y en la dirección estricta: si
+`validateAnswerCitations` deja de reportar `citation_out_of_scope`, el check
+falla como `isolation-violation`. `evaluateProjectScopeEnforcement` se conserva
+igualmente, midiendo la misma propiedad desde el otro lado — dos caminos
+independientes a «¿puede leerse esto?» es el número correcto cuando la respuesta
+es una frontera de aislamiento.
+
+**Una afirmación obsoleta más, corregida:** `matrix.ts` y `harness.ts` decían que
+`components/stella/grounding-adapter.ts` «no existe». Existe desde el merge de
+PRODUCT. El **alcance** del check sigue siendo correcto —mide la ENTRADA, no el
+adaptador— y se conserva por eso, no por la ausencia del adaptador.
+
+**B-M3 — cerrado, y la ruta de import se queda donde está.** Los exports existen
+(`components/stella/index.ts:66-67`). Pero medido 3× cada variante, consumir el
+barrel lleva el eval de **6.2 s a 11.7 s (+90 %)**, porque arrastra ~15 paneles
+React a un script Node offline que necesita un solo mapa. Cerrar el hallazgo no
+obliga a aceptar el coste que su remedio literal implicaba; el import directo es
+ahora una elección con evidencia, no un rodeo por un export que faltaba.
+
+**`command.test.ts` — se mantiene en `test:unit`, y es INTEGRATION-OWNED.**
+Medido: **~15.9 s**, 10 casos, 2 subprocesos. **No hay recursión** — lanza
+`tsx scripts/eval-release-offline.ts`, no `vitest`. **No duplica una batería** —
+`harness.test.ts` mide los checks a nivel de módulo; esto mide el comando
+empaquetado (exit code, salida estructurada, determinismo entre procesos), que
+ningún test de módulo puede observar. Excluirlo exigiría un glob en
+`vitest.shared.ts`, y este mismo harness tiene un control negativo
+(`nc-cap-regression-test-excluded`) que existe porque los globs de exclusión se
+tragan pruebas de regresión en silencio.
+
+**Verificado en el árbol integrado:** 19/19 checks, 37 controles negativos con
+**0 no detectados**, `tautologicalChecks: []`, `structural-regression` emitida
+con `value: 1`, tres métricas `null` **con `code` y `gate`** (G1/G1/G9), salida
+byte-idéntica entre procesos, wall-clock fuera del bloque determinista,
+`providerCalls: 0`.

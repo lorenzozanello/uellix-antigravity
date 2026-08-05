@@ -454,3 +454,51 @@ independiente; con este orden lo son.
 **Ficheros solicitados a integración** (no modificados por esta línea):
 `docs/ops/contracts/CONTRACT_LEDGER.md` — actualizar las filas GR-001 y GR-002
 tras evaluar [`GR-CAP-001`](../contracts/GR-CAP-001_grounding_persistence_response.md).
+
+---
+
+## Estado en el HEAD integrado del tren 2 (integración, 2026-08-04)
+
+Sección añadida por **integración**, no por esta línea. No reescribe nada de lo
+anterior: registra qué de lo que esta línea declaró queda confirmado sobre el
+árbol fusionado, y qué cambió al cruzarlo con las otras tres.
+
+**Contratos:** GR-001 → **`aceptado`**, GR-002 → **`aceptado`**. El criterio de
+aceptación de GR-001 §5 se comprueba mecánicamente en
+`tests/cross-workstream/capabilities-to-grounding.test.ts`, sobre el cuerpo del
+`CREATE TABLE` y no sobre el archivo entero — una columna nombrada en un
+comentario no es una columna.
+
+**Hallazgos:** A-F2 → **CLOSED**, A-F9 → **CLOSED**.
+
+**Confirmado sobre el árbol integrado:**
+
+- `grounding_0001` conservado **byte a byte** bajo el banner: cola idéntica
+  (15 279 B), cabecera preservada, 2 175 B insertados, **cero** líneas no
+  comentario añadidas y **cero** eliminadas.
+- Orden forward y rollback impuesto por el propio SQL, no por documentación: la
+  guarda de `0003` aborta sin `0002`; el rollback de `0002` se niega mientras
+  exista la FK de `evidence_chunks`.
+- Cinco funciones `SECURITY DEFINER`, todas con `search_path = ''` y owner
+  `uellix_cap_grounding` (cero miembros).
+- Cero `SELECT *` en proyección — los dos hits son `SELECT * INTO` sobre
+  `%ROWTYPE`. Cero SQL dinámico — todo `EXECUTE` es literal fijo; `format(` sólo
+  construye mensajes de error. Cero `service_role` salvo en `REVOKE`.
+- **Cero SQL aplicado a ninguna base.** Ningún stack persistente usado.
+
+**Desvío `project_id NOT NULL` aceptado con su fundamento.** La prueba cruzada no
+fija sólo el desvío: fija que `evidence_items.project_id` sigue `NOT NULL` en
+`db/schema.ts`. Si eso cambiara, la razón del desvío se evapora y la prueba
+dispara.
+
+**Petición devuelta, ahora registrada:** la solicitud de `EXTRACTOR_VERSION` de
+GR-CAP-001 §5.4 vivía dentro de un documento de respuesta, sin fila propia. Es
+ahora **GR-CAP-002** en el ledger, dirigida a GROUNDING tren 3. Integración no
+publicó la constante: `lib/grounding/**` no es suyo, y elegir un valor habría
+sido inventar en silencio lo que el contrato pide gobernar.
+
+**Decisión abierta que sigue abierta:** `register_document_version` **rechaza**
+(`U0101`) una reingesta del mismo `version_id` bajo un pipeline distinto, en vez
+de crear un ordinal nuevo. Es la lectura estricta y es defendible; la
+alternativa también. Es una decisión de producto, no de esquema, y sigue sin
+tomarse.

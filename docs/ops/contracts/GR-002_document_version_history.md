@@ -70,4 +70,36 @@ la versión 2 el <fecha>" — que es exactamente lo que un auditor necesita leer
 
 ## 5. Decisión de integración
 
-_Pendiente._
+**`aceptado` — integración, tren 2, 2026-08-04.**
+
+`db/prepared/grounding_0002_document_versions.sql` entrega las nueve columnas y
+las dos constraints de §2, más `project_id`, `extractor_version`,
+`chunker_version` y `mime_type`.
+
+La semántica append-only de §2 se comprueba en el sentido fuerte, no por
+inspección: **ningún** `GRANT` sobre la tabla lleva `UPDATE`, `DELETE`,
+`TRUNCATE` ni `ALL`, para ningún principal — y hay triggers
+`BEFORE UPDATE OR DELETE` y `BEFORE TRUNCATE` que alcanzan también al owner, a
+quien los `GRANT` no obligan.
+
+La asimetría con `evidence_chunks` —que sí admite `DELETE`— es exactamente la
+distinción que §2 pedía («a diferencia de `evidence_chunks`, que sí es
+regenerable») y está fijada por una prueba en **ambas** direcciones.
+
+**Tres adiciones que esta solicitud no pedía, y por qué se aceptan:**
+
+1. `UNIQUE (evidence_id, supersedes_version_id)` + `CHECK ((ordinal = 1) =
+   (supersedes_version_id IS NULL))`. Sin ellas «una única versión activa» no es
+   demostrable: dos registros concurrentes pueden declararse ambos sustitutos de
+   la versión N y la historia se bifurca. La alternativa habitual —una columna
+   `is_active`— exige un `UPDATE`, que es justo lo que una tabla append-only no
+   acepta. Con las cuatro constraints, la actividad es **derivada**
+   (`max(ordinal)`, única) y hay cero `UPDATE`.
+2. `extractor_version`. Ver **GR-CAP-002** en el ledger: cierra un hueco que
+   ninguna de las dos solicitudes nombraba.
+3. `mime_type`, y ninguna otra metadata. El `sourceLabel` de `ProvenanceRecord`
+   **no se almacena**: es texto de usuario que rutinariamente lleva datos
+   personales, y nada de la cadena de verificación lo necesita.
+
+**Lo que esto NO cierra:** el paquete no está aplicado; §4 (retención de
+archivos, reindexado automático) sigue fuera de alcance.
