@@ -47,6 +47,8 @@ import { hasForbiddenPattern, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '@
 import { ValidatorOutputSchema } from '@/lib/stella/schemas/validator-output'
 import { ReviewerOutputSchema } from '@/lib/stella/schemas/reviewer-output'
 import { stellaErrorPresentation, type StellaPanelErrorCode } from '@/components/stella/error-messages'
+import { stellaConfig } from '@/lib/stella/config'
+import { StellaDecisionInputSchema } from '@/app/actions/stella/decisions-schema'
 import {
   CONTENT_HASH_HEX_LENGTH,
   PIPELINE_VERSIONS,
@@ -98,6 +100,10 @@ import {
   CROSS_PROJECT_CITATION,
   CROSS_ORGANIZATION_CITATION,
   citationTo,
+  DECISION_ACCEPTED_INPUT,
+  DECISION_ACCEPTED_EDITED_INPUT,
+  DECISION_REJECTED_INPUT,
+  DECISION_UNDONE_INPUT,
 } from './fixtures'
 import {
   controlExpectsThrow,
@@ -119,7 +125,7 @@ import {
 import { RELEASE_FIXTURES_VERSION } from './fixtures'
 
 /** Bumped whenever check semantics change, independently of the matrix shape. */
-export const RELEASE_HARNESS_VERSION = '2.0.0'
+export const RELEASE_HARNESS_VERSION = '3.0.0'
 
 export type ReleaseCaseOutcome = 'pass' | 'abstention-response' | 'system-error' | 'isolation-violation'
 
@@ -1561,6 +1567,254 @@ function checkGroundingProductAdapterInputComplete(): ReleaseCaseResult {
   )
 }
 
+// ===========================================================================
+// DECISION-JOURNEY CHECKS (train 3, STELLA_RELEASE_RUNTIME_GATE_FOUNDATION_TRAIN_3)
+// ===========================================================================
+// Built against the REAL exported contract of app/actions/stella/decisions.ts
+// + decisions-schema.ts — pre-parallel-split foundation code, consumed here
+// read-only exactly like stellaErrorPresentation/ReviewerOutputSchema above.
+// The persisted table (stella_suggestion_decisions) exists only as prepared
+// SQL guarded by STELLA_DECISIONS_PERSISTENCE_ENABLED=false; nothing below
+// EXECUTES recordStellaDecision() (a 'use server' action with real DB/auth
+// I/O — the harness stays 100% synchronous and makes zero async calls) or
+// simulates that table. Each check is either a real schema/config call, or
+// structural source inspection — never execution — the same discipline
+// checkCapRegressionSurfacePresent already applies above.
+
+function checkStellaDecisionFeatureFlagBlocksPersistence(): ReleaseCaseResult {
+  const checkId = 'stella-decision-feature-flag-blocks-persistence'
+  const fixtureId = 'stellaConfig.isDecisionsPersistenceEnabled + app/actions/stella/decisions.ts (source inspection)'
+
+  // The real, live-computed flag — not a recreated constant. If this
+  // environment contaminated it to true, calling the real action would touch
+  // auth/DB, which this harness never does; fail closed instead of assuming.
+  if (stellaConfig.isDecisionsPersistenceEnabled) {
+    return withNegativeControls(
+      {
+        checkId, fixtureId, ok: false, outcome: 'system-error',
+        detail: 'environment contamination: STELLA_DECISIONS_PERSISTENCE_ENABLED=true in the process running this harness — cannot verify the flag-off path offline',
+      },
+      [],
+    )
+  }
+
+  const root = process.cwd()
+  const relativePath = path.posix.join('app', 'actions', 'stella', 'decisions.ts')
+  let source: string
+  try {
+    // Normalized to LF: this worktree checks the file out as CRLF, and a
+    // literal/marker search must not depend on line-ending policy.
+    source = readFileSync(path.join(root, relativePath), 'utf8').replace(/\r\n/g, '\n')
+  } catch (error) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: `could not read ${relativePath}: ${describeError(error)}` }, [])
+  }
+
+  const FLAG_GATE_MARKER = 'if (!stellaConfig.isDecisionsPersistenceEnabled)'
+  const SCHEMA_VALIDATION_MARKER = 'StellaDecisionInputSchema.safeParse'
+  const AUTH_MARKER = 'requireOrganizationAccess()'
+
+  const evaluateGateOrder = (text: string): string[] => {
+    const problems: string[] = []
+    const flagIndex = text.indexOf(FLAG_GATE_MARKER)
+    const schemaIndex = text.indexOf(SCHEMA_VALIDATION_MARKER)
+    const authIndex = text.indexOf(AUTH_MARKER)
+    if (flagIndex === -1) problems.push('flag gate marker not found — recordStellaDecision may no longer check the flag at all')
+    if (schemaIndex === -1) problems.push('schema validation marker not found')
+    if (authIndex === -1) problems.push('auth marker not found')
+    if (flagIndex !== -1 && schemaIndex !== -1 && flagIndex > schemaIndex) {
+      problems.push('flag gate appears AFTER schema validation — a disabled feature would still parse untrusted input')
+    }
+    if (flagIndex !== -1 && authIndex !== -1 && flagIndex > authIndex) {
+      problems.push('flag gate appears AFTER the auth check — a disabled feature would still authenticate the caller')
+    }
+    return problems
+  }
+
+  const controls = [
+    // Synthetic mutated text run through the SAME evaluator — same pattern as
+    // emptySurfaceProbe() for the CAP check above: the probe is not a real
+    // file, but the function judging it is identical to the one judging the
+    // real source.
+    controlExpectsViolations(
+      'nc-decision-flag-gate-after-schema',
+      'a flag gate written after schema validation must be reported',
+      () => evaluateGateOrder(`${SCHEMA_VALIDATION_MARKER}(input)\n${FLAG_GATE_MARKER} { return DISABLED }\n${AUTH_MARKER}`),
+    ),
+    controlExpectsViolations(
+      'nc-decision-flag-gate-after-auth',
+      'a flag gate written after the auth check must be reported',
+      () => evaluateGateOrder(`${AUTH_MARKER}\n${FLAG_GATE_MARKER} { return DISABLED }\n${SCHEMA_VALIDATION_MARKER}(input)`),
+    ),
+  ]
+
+  const problems = evaluateGateOrder(source)
+  if (problems.length > 0) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: problems.join(' | ') }, controls)
+  }
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'abstention-response',
+      detail: 'isDecisionsPersistenceEnabled=false (real, live config); the flag gate is textually first in recordStellaDecision, before schema validation and before the auth check',
+    },
+    controls,
+  )
+}
+
+function checkStellaDecisionAcceptedContractValid(): ReleaseCaseResult {
+  const checkId = 'stella-decision-accepted-contract-valid'
+  const fixtureId = 'DECISION_ACCEPTED_INPUT / DECISION_ACCEPTED_EDITED_INPUT (StellaDecisionInputSchema)'
+
+  const acceptedResult = StellaDecisionInputSchema.safeParse(DECISION_ACCEPTED_INPUT)
+  const acceptedEditedResult = StellaDecisionInputSchema.safeParse(DECISION_ACCEPTED_EDITED_INPUT)
+
+  const controls = [
+    controlExpectsVerdict(
+      'nc-decision-accepted-edited-text-over-limit',
+      '"accepted_edited" with editedText over the 20000-char limit must be rejected',
+      () => StellaDecisionInputSchema.safeParse({ ...DECISION_ACCEPTED_EDITED_INPUT, editedText: 'x'.repeat(20001) }).success,
+      false,
+    ),
+    controlExpectsVerdict(
+      'nc-decision-accepted-client-supplied-decider',
+      'a client-supplied decider identity field must be rejected by the strict schema — decidedBy always comes from the session, never the payload',
+      () => StellaDecisionInputSchema.safeParse({ ...DECISION_ACCEPTED_INPUT, decidedBy: 'attacker-user-id' }).success,
+      false,
+    ),
+  ]
+
+  if (!acceptedResult.success) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: `"accepted" rejected by the real schema: ${acceptedResult.error.message}` }, controls)
+  }
+  if (!acceptedEditedResult.success) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: `"accepted_edited" rejected by the real schema: ${acceptedEditedResult.error.message}` }, controls)
+  }
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'pass',
+      detail: '"accepted" and "accepted_edited" (with editedText) both accepted by the real schema; oversized editedText and a client-supplied decider identity are both rejected',
+    },
+    controls,
+  )
+}
+
+function checkStellaDecisionRejectedContractValid(): ReleaseCaseResult {
+  const checkId = 'stella-decision-rejected-contract-valid'
+  const fixtureId = 'DECISION_REJECTED_INPUT (StellaDecisionInputSchema)'
+
+  const rejectedResult = StellaDecisionInputSchema.safeParse(DECISION_REJECTED_INPUT)
+
+  const controls = [
+    controlExpectsVerdict(
+      'nc-decision-rejected-reason-over-limit',
+      'rejectionReason over the 2000-char limit must be rejected',
+      () => StellaDecisionInputSchema.safeParse({ ...DECISION_REJECTED_INPUT, rejectionReason: 'x'.repeat(2001) }).success,
+      false,
+    ),
+  ]
+
+  if (!rejectedResult.success) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: `"rejected" rejected by the real schema: ${rejectedResult.error.message}` }, controls)
+  }
+  return withNegativeControls(
+    { checkId, fixtureId, ok: true, outcome: 'pass', detail: '"rejected" accepted with rejectionReason within the 2000-char limit; an over-limit reason is correctly rejected' },
+    controls,
+  )
+}
+
+function checkStellaDecisionRollbackAppendOnly(): ReleaseCaseResult {
+  const checkId = 'stella-decision-rollback-append-only'
+  const fixtureId = 'DECISION_UNDONE_INPUT (StellaDecisionInputSchema)'
+
+  const undoneResult = StellaDecisionInputSchema.safeParse(DECISION_UNDONE_INPUT)
+
+  const controls = [
+    // "Append-only" is a property of the CONTRACT only if nothing in it can
+    // target an existing row for mutation. A client-supplied reference to an
+    // existing decision row must be rejected by the real .strict() schema —
+    // otherwise this would be a comment in decisions.ts, not an enforced rule.
+    controlExpectsVerdict(
+      'nc-decision-rollback-mutation-field-rejected',
+      'a client-supplied decisionId (a reference to an existing row) must be rejected by the strict schema',
+      () => StellaDecisionInputSchema.safeParse({ ...DECISION_UNDONE_INPUT, decisionId: 'some-existing-row-id' }).success,
+      false,
+    ),
+  ]
+
+  if (!undoneResult.success) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: `"undone" rejected by the real schema: ${undoneResult.error.message}` }, controls)
+  }
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'pass',
+      detail: '"undone" is accepted as a forward-referencing decision value (a new row), and the real strict schema rejects any client-supplied field that could target an existing decision row for mutation — rollback is append-only by construction, not by convention',
+    },
+    controls,
+  )
+}
+
+function checkStellaDecisionPersistenceErrorNonLeaking(): ReleaseCaseResult {
+  const checkId = 'stella-decision-persistence-error-non-leaking'
+  const fixtureId = 'app/actions/stella/decisions.ts (source inspection)'
+
+  const root = process.cwd()
+  const relativePath = path.posix.join('app', 'actions', 'stella', 'decisions.ts')
+  let source: string
+  try {
+    source = readFileSync(path.join(root, relativePath), 'utf8').replace(/\r\n/g, '\n')
+  } catch (error) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: `could not read ${relativePath}: ${describeError(error)}` }, [])
+  }
+
+  const DB_ERROR_RETURN_LITERAL = "return { ok: false, error: 'DB_ERROR', message: 'Failed to record decision. Please try again.' }"
+  const SERVER_LOG_NARROWED = "console.error('[stella] recordStellaDecision insert failed:', error instanceof Error ? error.name : 'unknown')"
+  const AUDIT_CATCH_SWALLOWED = "} catch (error) {\n    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')\n  }"
+
+  const evaluate = (text: string): string[] => {
+    const problems: string[] = []
+    if (!text.includes(DB_ERROR_RETURN_LITERAL)) {
+      problems.push('DB_ERROR does not return the fixed, non-interpolated message literal — a caught error could leak into the user-facing message')
+    }
+    if (!text.includes(SERVER_LOG_NARROWED)) {
+      problems.push('server log does not narrow the caught error down to error.name — a raw error could leak query/connection detail to logs')
+    }
+    if (!text.includes(AUDIT_CATCH_SWALLOWED)) {
+      problems.push('logStellaAudit does not swallow its own failure without rethrowing — an audit-write failure could change the user-facing result')
+    }
+    return problems
+  }
+
+  const controls = [
+    controlExpectsViolations(
+      'nc-decision-db-error-message-interpolates-error',
+      'a DB_ERROR return that interpolates the caught error into its message must be reported',
+      () => evaluate(source.replace(
+        DB_ERROR_RETURN_LITERAL,
+        "return { ok: false, error: 'DB_ERROR', message: `Failed: ${error instanceof Error ? error.message : String(error)}` }",
+      )),
+    ),
+    controlExpectsViolations(
+      'nc-decision-audit-failure-rethrown',
+      'an audit-log catch block that rethrows must be reported',
+      () => evaluate(source.replace(
+        AUDIT_CATCH_SWALLOWED,
+        "} catch (error) {\n    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')\n    throw error\n  }",
+      )),
+    ),
+  ]
+
+  const problems = evaluate(source)
+  if (problems.length > 0) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: problems.join(' | ') }, controls)
+  }
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'pass',
+      detail: 'DB_ERROR returns a fixed literal message, the server log narrows the caught error to error.name, and logStellaAudit swallows its own failure without rethrowing',
+    },
+    controls,
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Harness entry point
 // ---------------------------------------------------------------------------
@@ -1584,6 +1838,11 @@ const CHECKS: Record<string, () => ReleaseCaseResult> = {
   'grounding-retrieval-score-ordering': checkGroundingRetrievalScoreOrdering,
   'grounding-contradiction-marked': checkGroundingContradictionMarked,
   'grounding-product-adapter-input-complete': checkGroundingProductAdapterInputComplete,
+  'stella-decision-feature-flag-blocks-persistence': checkStellaDecisionFeatureFlagBlocksPersistence,
+  'stella-decision-accepted-contract-valid': checkStellaDecisionAcceptedContractValid,
+  'stella-decision-rejected-contract-valid': checkStellaDecisionRejectedContractValid,
+  'stella-decision-rollback-append-only': checkStellaDecisionRollbackAppendOnly,
+  'stella-decision-persistence-error-non-leaking': checkStellaDecisionPersistenceErrorNonLeaking,
 }
 
 export class ReleaseEvalHarnessError extends Error {
@@ -1791,7 +2050,13 @@ const METRIC_CONTRIBUTORS = {
   // structural-regression instead of inflating abstention correctness.
   abstention: ['insufficient-evidence-empty-sentinel', 'abstention-schema-enforced', 'grounding-contradiction-marked'],
   unsupportedClaim: ['insufficient-evidence-empty-sentinel', 'citation-incorrect-rejected', 'grounding-project-scope-enforced', 'contradiction-acknowledgment-heuristic'],
-  structural: ['cap-01-05-regression-surface-present', 'retryable-code-set-pinned', 'provider-unavailable-presentation', 'quota-exhausted-non-retryable', 'human-decision-literal-true', 'grounding-retrieval-score-ordering'],
+  structural: [
+    'cap-01-05-regression-surface-present', 'retryable-code-set-pinned', 'provider-unavailable-presentation',
+    'quota-exhausted-non-retryable', 'human-decision-literal-true', 'grounding-retrieval-score-ordering',
+    'stella-decision-feature-flag-blocks-persistence', 'stella-decision-accepted-contract-valid',
+    'stella-decision-rejected-contract-valid', 'stella-decision-rollback-append-only',
+    'stella-decision-persistence-error-non-leaking',
+  ],
 } as const
 
 function ratio(passed: number, total: number): number | null {

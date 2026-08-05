@@ -56,7 +56,11 @@ import {
   CROSS_ORGANIZATION_CITATION,
   ISOLATION_MARKERS,
   citationTo,
+  DECISION_ACCEPTED_INPUT,
+  DECISION_REJECTED_INPUT,
+  DECISION_UNDONE_INPUT,
 } from './fixtures'
+import { StellaDecisionInputSchema } from '@/app/actions/stella/decisions-schema'
 import { ProviderSourceRefIndexesError } from '@/lib/stella/context/decode-provider-source-ref-indexes'
 import type { ContentHash, GroundingAnswerState, GroundingChunk } from '@/lib/grounding/contracts'
 
@@ -468,6 +472,41 @@ describe('failure gates (what makes pnpm test:stella:release-eval exit non-zero)
   it('reports every applicable reason, not just the first', () => {
     const reasons = releaseEvalFailureReasons(mutate({ isolationViolations: 1, citationValidationFailures: 1, systemErrors: 1 }))
     expect(reasons.length).toBe(3)
+  })
+})
+
+describe('decision journey (train 3: accept/reject/rollback + its two failure modes)', () => {
+  const byId = new Map(runReleaseEvalHarness().results.map((r) => [r.checkId, r]))
+
+  it('the feature-flag gate is classified as an abstention, not a plain pass', () => {
+    expect(byId.get('stella-decision-feature-flag-blocks-persistence')?.outcome).toBe('abstention-response')
+  })
+
+  it('accepted, rejected and rollback all resolve against the real schema, never a system error', () => {
+    expect(byId.get('stella-decision-accepted-contract-valid')?.outcome).toBe('pass')
+    expect(byId.get('stella-decision-rejected-contract-valid')?.outcome).toBe('pass')
+    expect(byId.get('stella-decision-rollback-append-only')?.outcome).toBe('pass')
+  })
+
+  it('the persistence-error check is structural (source inspection), and never a system error on the real file', () => {
+    expect(byId.get('stella-decision-persistence-error-non-leaking')?.outcome).toBe('pass')
+  })
+
+  // The append-only claim in stella-decision-rollback-append-only is checked
+  // against "undone" only inside the harness; here it is checked directly
+  // against the real schema for EVERY decision value, not just "undone" — a
+  // mutation-target field must never be accepted regardless of which
+  // decision it rides in on.
+  it('the real schema rejects a client-supplied decisionId on every decision value', () => {
+    for (const input of [DECISION_ACCEPTED_INPUT, DECISION_REJECTED_INPUT, DECISION_UNDONE_INPUT]) {
+      expect(StellaDecisionInputSchema.safeParse({ ...input, decisionId: 'some-existing-row-id' }).success).toBe(false)
+    }
+  })
+
+  it('the real schema accepts every documented decision value with its matching optional field', () => {
+    expect(StellaDecisionInputSchema.safeParse(DECISION_ACCEPTED_INPUT).success).toBe(true)
+    expect(StellaDecisionInputSchema.safeParse(DECISION_REJECTED_INPUT).success).toBe(true)
+    expect(StellaDecisionInputSchema.safeParse(DECISION_UNDONE_INPUT).success).toBe(true)
   })
 })
 
