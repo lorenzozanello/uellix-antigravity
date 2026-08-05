@@ -22,11 +22,26 @@
 // stagingBlocked to false; the only way to change it is to run gate G2 for
 // real, outside this harness, which this module cannot do and does not
 // pretend to.
+//
+// TRAIN 4 (STELLA_RELEASE_LOCAL_END_TO_END_GATE_TRAIN_4) adds a THIRTEENTH
+// output, `localRuntimeHarnessReady`, computed by reducing an OPTIONAL,
+// externally-supplied `LocalRuntimeHarnessReport` (./harness-report.ts). This
+// module still performs none of the I/O that produces that report — see
+// scripts/stella-release-e2e-dry-run.sh and
+// tests/eval/stella-release/e2e/run-local-journey.ts for the disposable
+// Postgres container that actually runs it. `localRuntimeHarnessReady` is a
+// DIFFERENT claim from `localRuntimeReady`: the harness ready level says the
+// persistence + retrieval + generation + citation chain works for real
+// against a real (disposable) database; the runtime level says a human can
+// reach it in the deployed application. Train 4's scope permits proving the
+// first and not the second — see the report's own field doc comments for
+// exactly why.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { stellaConfig } from '@/lib/stella/config'
 import type { ReleaseEvalRun, ReleaseEvalSummary } from './harness'
+import { evaluateLocalRuntimeHarnessReadiness, type LocalRuntimeHarnessReport } from './harness-report'
 
 export type LocalReleaseGateId =
   | 'contract-complete'
@@ -246,6 +261,29 @@ export interface LocalReleaseGateReport {
   libraryReady: boolean
   integrationReady: boolean
   localRuntimeReady: boolean
+  /**
+   * TRAIN 4. Whether scripts/stella-release-e2e-dry-run.sh's disposable-
+   * database journey ran for real and reported every claim
+   * evaluateLocalRuntimeHarnessReadiness (./harness-report.ts) checks —
+   * real ingestion, real SQL functions invoked against a real disposable
+   * Postgres, real retrieval, real (non-provider) extractive generation,
+   * real citation validation, cross-project rejection, idempotency,
+   * container torn down with no persistent volume.
+   *
+   * DELIBERATELY NOT THE SAME QUESTION AS `localRuntimeReady`. That level
+   * asks "can a human reach this in the running application" — blocked by
+   * the unmounted seam, the two grounding packages unapplied to ANY real
+   * database this train can see, and INT-CAP-001's missing quota role, none
+   * of which this train's scope permits fixing (see RELEASE_LOCAL prohibitions:
+   * no db/**, no contracts, no push). This level asks the narrower question
+   * "does the disposable local harness ITSELF prove the persistence and
+   * retrieval layer for real" — which this train's own scope DOES permit
+   * proving, and which staying false for `localRuntimeReady` should not be
+   * allowed to hide.
+   */
+  localRuntimeHarnessReady: boolean
+  /** Empty iff localRuntimeHarnessReady is true — never a bare false. */
+  missingForLocalRuntimeHarness: string[]
   /** Always true from this module — see the file header. */
   stagingBlocked: true
   /** Always true from this module — see the file header. */
@@ -294,14 +332,24 @@ function decisionsPersistencePackageIsPrepared(root: string): boolean {
  *                        without a database or a provider.
  * staging-blocked      — ALWAYS true. Reasons enumerated in missingForStaging.
  * hosted-blocked       — ALWAYS true. Reasons enumerated in missingForHosted.
+ *
+ * `harnessReport` (TRAIN 4, optional) is the ONLY way `localRuntimeHarnessReady`
+ * can become true — this function performs no I/O of its own to obtain it.
+ * Omitting it (the default) reduces to "no harness report provided", matching
+ * every CI run of `pnpm test:stella:release-eval`, which never starts a
+ * disposable container. Only a real invocation of
+ * scripts/stella-release-e2e-dry-run.sh, piping its JSON report back in here,
+ * can flip it.
  */
 export function computeLocalReleaseGateReport(
   run: ReleaseEvalRun,
   secondRunForDeterminism: ReleaseEvalRun,
   root: string = process.cwd(),
+  harnessReport?: LocalRuntimeHarnessReport | null,
 ): LocalReleaseGateReport {
   const gates = evaluateLocalReleaseGates(run, secondRunForDeterminism, root)
   const byId = new Map(gates.map((g) => [g.id, g]))
+  const harnessReadiness = evaluateLocalRuntimeHarnessReadiness(harnessReport)
 
   const libraryReady =
     (byId.get('contract-complete')?.passed ?? false) &&
@@ -364,6 +412,8 @@ export function computeLocalReleaseGateReport(
     libraryReady,
     integrationReady,
     localRuntimeReady,
+    localRuntimeHarnessReady: harnessReadiness.localRuntimeHarnessReady,
+    missingForLocalRuntimeHarness: [...harnessReadiness.missingForLocalRuntimeHarness],
     stagingBlocked: true,
     hostedBlocked: true,
     missingForLocalRuntime,

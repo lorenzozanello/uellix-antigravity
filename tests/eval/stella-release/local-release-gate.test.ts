@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest'
 import { runReleaseEvalHarness, type ReleaseEvalRun, type ReleaseCaseResult } from './harness'
 import { evaluateLocalReleaseGates, computeLocalReleaseGateReport } from './local-release-gate'
+import type { LocalRuntimeHarnessReport } from './harness-report'
 
 const CLEAN_RUN_1 = runReleaseEvalHarness()
 const CLEAN_RUN_2 = runReleaseEvalHarness()
@@ -187,5 +188,68 @@ describe('computeLocalReleaseGateReport — readiness levels discriminate on a b
     expect(report.localRuntimeReady).toBe(false)
     expect(report.stagingBlocked).toBe(true)
     expect(report.hostedBlocked).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// TRAIN 4 — localRuntimeHarnessReady. This module still opens zero SQL
+// connections itself (see the file header); everything below feeds a
+// SYNTHETIC harness report through the same reduction the real
+// scripts/stella-release-e2e-dry-run.sh output goes through.
+// ---------------------------------------------------------------------------
+const GOOD_HARNESS_REPORT: LocalRuntimeHarnessReport = {
+  containerNetworkMode: 'none',
+  containerDestroyed: true,
+  usedPersistentVolume: false,
+  verificationMethod: 'live-database-execution',
+  packagesApplied: ['grounding_0002', 'grounding_0003', 'stella_0003'],
+  train4PackageStatus: 'not-yet-available',
+  documentsIngestedViaRealPipeline: true,
+  sqlFunctionsInvoked: ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope'],
+  databaseApplied: true,
+  crossProjectRetrievalRejected: true,
+  idempotentReapplyVerified: true,
+  generatorKind: 'local-extractive-test-only',
+  answerDerivedFromRetrieval: true,
+  citationsValidatedAgainstRealChunks: true,
+  citationValidationIssueCount: 0,
+  contradictionAttributed: true,
+  abstentionObserved: true,
+  quotaConsumptionClaimed: false,
+  quotaRoleExists: false,
+  scopeAttestedViaJwtClaims: true,
+  groundedQueryFlagState: 'enabled-in-process-only',
+  providerCallCount: 0,
+  observabilityEventsSanitized: true,
+  observabilityEventViolationCount: 0,
+  localDecisionRowCount: 0,
+  decisionsPersistenceFlagState: 'disabled',
+}
+
+describe('computeLocalReleaseGateReport — TRAIN 4 localRuntimeHarnessReady', () => {
+  it('defaults to NOT ready when no harness report is supplied — matches every CI run of pnpm test:stella:release-eval', () => {
+    const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2)
+    expect(report.localRuntimeHarnessReady).toBe(false)
+    expect(report.missingForLocalRuntimeHarness.length).toBeGreaterThan(0)
+    expect(report.missingForLocalRuntimeHarness[0]).toMatch(/no harness report provided/)
+  })
+
+  it('is ready when a real, clean harness report is supplied — and this does NOT change localRuntimeReady', () => {
+    const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2, process.cwd(), GOOD_HARNESS_REPORT)
+    expect(report.localRuntimeHarnessReady).toBe(true)
+    expect(report.missingForLocalRuntimeHarness).toEqual([])
+    // The two readiness levels are DELIBERATELY independent — see the
+    // localRuntimeHarnessReady doc comment in local-release-gate.ts. A real
+    // disposable-DB run proves the persistence/retrieval layer works; it does
+    // not mount the seam, apply the packages to a real database this train's
+    // scope can touch, or close INT-CAP-001.
+    expect(report.localRuntimeReady).toBe(false)
+  })
+
+  it('is not ready, with the specific reason, when the harness report itself reports a gap', () => {
+    const broken: LocalRuntimeHarnessReport = { ...GOOD_HARNESS_REPORT, providerCallCount: 1 }
+    const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2, process.cwd(), broken)
+    expect(report.localRuntimeHarnessReady).toBe(false)
+    expect(report.missingForLocalRuntimeHarness.some((item) => item.includes('providerCallCount is 1'))).toBe(true)
   })
 })
