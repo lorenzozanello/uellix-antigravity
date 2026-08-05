@@ -97,6 +97,7 @@ requiere acción humana explícita.
 | `stella_0002b_append_only_truncate_hardening.sql` | `stella_0002b_rollback.sql` (**no reversible**) | G2 (`docs/ops/gates/G2_PACKAGE.md`) | 4 triggers `*_no_truncate` (`BEFORE TRUNCATE FOR EACH STATEMENT`) sobre `stella_interactions`, `audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y además `UPDATE/DELETE` a `service_role` | PREPARADO |
 | `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + `REVOKE ALL` a los 3 roles + grant SELECT a `authenticated` + RLS + política `stella_suggestion_decisions_select` + 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO |
 | `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | PREPARADO |
+| `grounding_0002_document_versions.sql` | `grounding_0002_rollback.sql` | **ninguno todavía**; requiere `stella_0004` aplicado (roles) y decisión de integración sobre GR-002 | rol `uellix_cap_grounding` (NOLOGIN, cero miembros); esquema `uellix_grounding`; **tabla `evidence_document_versions`** (14 columnas) + 2 índices + 3 UNIQUE + 5 CHECK + 3 policies (1 SELECT, 1 INSERT `TO uellix_cap_grounding`, 1 `RESTRICTIVE`) + 2 triggers append-only + `register_document_version(...)` y `claim_active_document_version(uuid)` SECURITY DEFINER | **DISEÑO — no aplicado** |
 | `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | 5 roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`); ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y `service_role` en las 38; repara `pg_default_acl` de `postgres` y `supabase_admin`; 4 entradas **globales** que suprimen `EXECUTE`/`USAGE` a `PUBLIC`; `USAGE ON SCHEMA auth` para el owner | PREPARADO — ensayado y aplicado **sólo en local** |
 | `stella_0005_runtime_cutover.sql` | `stella_0005_rollback.sql` | **local únicamente**; se aplica con `pnpm db:prepared:apply:local`, que conecta como `uellix_migrator` y hace `SET LOCAL ROLE uellix_owner`. El script **se niega** a correr con cualquier otra identidad, incluido un superusuario | 3 políticas `INSERT` (`audit_logs`, `stella_interactions`, `stella_suggestion_decisions`) → **104 → 107**; `search_path=''` en las 3 funciones SECURITY DEFINER que aún estaban en `search_path=public`; 4 entradas de `pg_default_acl` para `uellix_owner` en `public` (SELECT+INSERT a `uellix_writer`, SELECT a `uellix_auditor`; **nunca** UPDATE/DELETE) | PREPARADO — ensayado en contenedor efímero y aplicado **sólo en local** |
 | `stella_0005b_admin_bootstrap.sql` | `stella_0005b_rollback.sql` | **local únicamente**; requiere **superusuario** (en local, `supabase_admin`) y se aplica **antes** de `stella_0005` | `ALTER ROLE ... SET` (search_path, statement/lock/idle timeouts) para los 3 roles LOGIN; ownership del esquema `drizzle` y de `__drizzle_migrations` → `uellix_owner` + `USAGE` para `uellix_migrator`. Sobre el default de TYPES de `postgres` en `public`: el script lo **documenta y verifica**, pero **NO ejecuta un `REVOKE USAGE ON TYPES` efectivo** — un `REVOKE` solo no almacena nada en `pg_default_acl` y la fila que un `GRANT` previo guardaría **nunca se consulta** (ver el propio script, secciones "DELIBERATELY NOT CHANGED", y `docs/ops/DATABASE_RUNTIME_CUTOVER.md`). La contención real de TYPES son las 2 entradas **globales** de `stella_0004` para `uellix_owner`/`uellix_migrator` | PREPARADO — aplicado **sólo en local** |
@@ -204,18 +205,11 @@ y un documento por capacidad en `docs/ops/capabilities/`.
 > 0 sentencias no interpretables** en los diez ficheros.
 
 **Tablas gestionadas fuera de Drizzle (ADR 21):** `stella_suggestion_decisions`,
-`evidence_chunks`, y —cuando la campaña de capacidades se aplique—
-`report_public_disclosures`, `capability_verification_hits`,
-`stripe_webhook_events` y `capability_bootstrap_attempts`. Consecuencia
-aceptada: `pnpm db:migrate:local` sobre una base limpia **no** las reproduce.
-
-**Desviación deliberada de tipos — no "arreglar":**
-`stella_suggestion_decisions.decided_at` es `timestamptz`, mientras el resto de
-`db/schema.ts` (incluido `stella_interactions.created_at`) usa `timestamp` sin
-zona. `timestamptz` es la elección correcta para un audit trail; la
-inconsistencia es un argumento para migrar el resto del esquema más adelante,
-**no** para degradar esta columna. La app nunca escribe `decided_at` (tiene
-DEFAULT), así que el tipo es indiferente para el código.
+`evidence_chunks`, `evidence_document_versions`, y —cuando la campaña de
+capacidades se aplique— `report_public_disclosures`,
+`capability_verification_hits`, `stripe_webhook_events` y
+`capability_bootstrap_attempts`. Consecuencia aceptada:
+`pnpm db:migrate:local` sobre una base limpia **no** las reproduce.
 
 ## Notas por script
 
