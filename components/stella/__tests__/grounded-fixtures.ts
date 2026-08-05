@@ -218,6 +218,56 @@ export function contradictedAnswerView(): GroundedAnswerView {
   return adaptGroundedAnswer(state, inputFor([report, annex]))
 }
 
+/**
+ * TRAIN 3 — one answer carrying all four assertion kinds at once.
+ *
+ * The four are not decoration: evidence quotes a document, inference states
+ * its own reasoning step, recommendation proposes an action and may cite
+ * nothing, and absence is structurally uncitable. A reader who cannot tell
+ * them apart cannot tell what the system *knows* from what it *suggests*.
+ */
+export function allClaimKindsAnswerView(): GroundedAnswerView {
+  const chunk = makeChunk(REPORT_TEXT)
+  const state: GroundedAnswerState = {
+    status: 'partially_grounded',
+    query: QUERY,
+    assertions: [
+      {
+        kind: 'evidence',
+        statement: 'El informe registra 1.240 beneficiarios directos en 2025.',
+        citations: [citationFor(chunk)],
+      },
+      {
+        kind: 'inference',
+        statement: 'La cobertura creció respecto del año anterior.',
+        derivedFrom: [citationFor(chunk)],
+        inferenceBasis: 'Se compara la cifra de 2025 con la de 2024 del mismo informe.',
+      },
+      {
+        kind: 'recommendation',
+        statement: 'Conviene adjuntar el padrón desagregado antes de la revisión.',
+        supportedBy: [],
+        requiresHumanReview: true,
+      },
+      {
+        kind: 'absence',
+        statement: 'La evidencia no indica el costo por beneficiario.',
+        abstention: {
+          code: 'below_relevance_threshold',
+          explanation: 'Los pasajes recuperados no abordan el costo por beneficiario.',
+          query: QUERY,
+          inspected: { total: 6, belowThreshold: 6, quarantined: 0 },
+        },
+      },
+    ],
+    abstention: null,
+    contradictions: [],
+    signals: [],
+    requiresHumanReview: true,
+  }
+  return adaptGroundedAnswer(state, inputFor([chunk], [candidateFor(chunk, 0.82)]))
+}
+
 /** A grounded claim whose passage was withheld upstream. */
 export function unresolvedAnswerView(): GroundedAnswerView {
   const chunk = makeChunk(REPORT_TEXT)
