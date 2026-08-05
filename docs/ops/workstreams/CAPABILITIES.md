@@ -746,3 +746,117 @@ salir.
   ni `line_end`, que `ChunkLocation` declara. El adaptador de repositorio usa
   el centinela `0`, fuera del dominio 1-based, para que «no recuperable desde
   persistencia» sea distinguible de un valor plausible pero equivocado.
+
+---
+
+## Train 4 — runtime local de grounding (2026-08-05)
+
+**Estado: DISEÑO. Nada aplicado a ninguna base. Ninguna bandera habilitada.**
+
+Cierra las cinco solicitudes que la revisión adversarial del tren 3 dejó
+abiertas hacia esta línea. Dos paquetes preparados, dos rollbacks, un arnés
+desechable nuevo.
+
+| Contrato | Estado | Dónde |
+|---|---|---|
+| **INT-CAP-001** — `grounded_query` en el ledger de cuota | cerrado | `stella_0013` · [respuesta](../contracts/CAP-TRAIN4-001_grounded_query_quota_response.md) |
+| **INT-CAP-002** — `evidence_chunks` concede SELECT a `authenticated` | cerrado | `grounding_0004` §2b · [respuesta](../contracts/CAP-TRAIN4-002_grounding_scope_attestation_response.md) |
+| **INT-CAP-003** — `content_hash` nunca verificado contra `content` | cerrado | `grounding_0004` §1a/§1b |
+| **INT-CAP-004** — forja de `chunk_id` por el owner | cerrado (parte 2) | `grounding_0004` §1c |
+| **INT-CAP-004** — rollback incompleto de `grounding_0003` | **abierto** | ver «Lo que queda abierto» |
+| **INT-GR-004** — `chunks_in_scope` no devuelve el scope de la fila | cerrado en SQL | `grounding_0004` §3 · falta el cambio de adaptador (INTEGRACIÓN) |
+
+### Lo que cambia, en una frase cada uno
+
+**`stella_0013_grounded_query_quota.sql`** — el CHECK del ledger admite siete
+roles en vez de seis, y una función gobernada
+(`uellix_stella.consume_stella_quota`) comprueba **y cobra** una unidad dentro
+de la transacción del llamante, bajo un lock de advisory por organización,
+idempotente sobre `(organization_id, idempotency_key)`.
+
+**`grounding_0004_runtime_attestation.sql`** — publica
+`chunks_in_scope_attested` (17 columnas: las 13 más el scope real de cada
+fila), ata tres invariantes de integridad con `CHECK` en vez de con trigger
+—porque un CHECK alcanza al dueño y no lo silencia el modo replica—, y cierra
+la lectura directa de PostgREST sobre el índice de chunks.
+
+### El hallazgo que sólo aparece invocando
+
+`uellix_cap_grounding` tenía `SELECT` sobre las dos tablas de grounding y **no
+estaba nombrado por ninguna de las dos policies permisivas de SELECT**. Sin
+`BYPASSRLS` y sin ser dueño de ninguna, RLS se le aplica entera: **toda lectura
+devolvía el conjunto vacío**.
+
+No era una función degradada, era la superficie completa —`chunks_in_scope`
+devolvía 0 filas, `finalize_document_ingestion` declaraba toda ingestión
+incompleta, y `register_document_version` nunca veía la versión anterior, así
+que `ordinal` era siempre 1 y **la versión 2 de cualquier documento era
+inalmacenable**.
+
+Misma clase que el hallazgo del tren 2 (el definer sin privilegio sobre
+`evidence_items`, 42501 en toda llamada) y estrictamente peor: **un GRANT
+ausente lanza; una POLICY ausente calla.** Reparado re-creando las dos policies
+bajo sus propios nombres con un rol más — reemplazo y no adición, porque
+`grounding_0002` §9 afirma exactamente 3 policies y `grounding_0003` §9
+exactamente 4, y una quinta rompería la re-aplicabilidad de la cadena.
+
+### Evidencia
+
+`scripts/stella-train4-dry-run.sh` — contenedor desechable, `--network none`,
+destruido en el trap de salida. Aplica `0002 → 0003 → 0013 → 0004` dos veces,
+siembra dos organizaciones y dos proyectos, **invoca** las funciones, y mide:
+
+| Vector | Valor |
+|---|---|
+| baseline | `38/107/0/0/0/10/13/0` |
+| forward | `40/115/2/7/2/16/14/0` |
+| rollback | `38/107/0/0/0/10/13/0` |
+| re-apply | `40/115/2/7/2/16/14/0` |
+
+*(tablas / policies / roles de capacidad / funciones / esquemas / triggers /
+columnas de `stella_interactions` / grants de `authenticated` en `evidence_chunks`)*
+
+Aserciones vivas que pasan: primer consumo, reintento con la misma clave
+(`replayed`), clave distinta, agotamiento, organización cruzada `U0102`,
+proyecto cruzado `U0102`, rol no gobernado `U0106`, clave malformada `U0100`,
+cero residuo tras los rechazos, **dos sesiones reales disputando la última
+unidad** (la segunda espera al COMMIT de la primera y recibe `quota_exceeded`),
+scope pedido comparado contra scope devuelto fila a fila, y tres ataques de
+escritura con `SET ROLE uellix_owner` rechazados con `23514` junto a un control
+positivo que sí entra.
+
+Estática: `tests/train4-persistence-mutation.test.ts` — **60 mutaciones**, cada
+una rechazada por el gate que posee la propiedad, baseline limpio, y un único
+gate sin ejercitar (`source-missing`) declarado por escrito.
+
+### Dos decisiones que conviene conocer
+
+**`chunks_in_scope_attested` es una función NUEVA.** `CREATE OR REPLACE` no
+puede cambiar el tipo de retorno (`42P13`), y `grounding_0003` crea
+`chunks_in_scope` con esa sentencia. Sustituirla por `DROP`+`CREATE` bajo el
+mismo nombre haría que la cadena forward, aplicada dos veces, abortara dentro
+de `0003`. El precio es una ruta deprecada invocable hasta que el adaptador
+migre; el de la alternativa era una cadena no re-aplicable.
+
+**El rollback de `stella_0013` se niega sobre un ledger ya cobrado.** La tabla
+es append-only para todo rol incluido el dueño, así que las filas
+`grounded_query` no se pueden retirar para hacer sitio al CHECK de seis
+valores. El script las cuenta y explica, en vez de dejar que el operador lea
+una violación de constraint cruda.
+
+### Lo que queda abierto
+
+1. **`grounding_0003_rollback.sql`** sigue con sus tres `DROP FUNCTION` dentro
+   del `ELSE` de «si la tabla existe» — INT-CAP-004 (1). Repararlo exige editar
+   un fichero cuyo texto ancla once mutaciones del arnés del tren 3; se hace en
+   un paquete propio con su re-anclaje, no de paso.
+2. **El adaptador de repositorio sigue llamando a `chunks_in_scope`.**
+   Migrarlo a `chunks_in_scope_attested` y comparar las cuatro columnas es
+   trabajo de INTEGRACIÓN; hasta entonces `enforceRepositoryScope` sigue siendo
+   tautológico y esta línea no lo puede cerrar sola.
+3. **`app/actions/stella/grounded-query.ts` no llama a la función de cuota.**
+   La constante `QUOTA_LEDGER_ROLE_MISSING` ya no describe un bloqueo: describe
+   una llamada pendiente.
+4. **Las FOREIGN KEY internas siguen respetando `session_replication_role`** —
+   riesgo de superusuario aceptado en el tren 3. Los tres `CHECK` nuevos de
+   `grounding_0004` **no** comparten esa debilidad.
