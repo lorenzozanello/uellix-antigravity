@@ -31,8 +31,26 @@ async function ask(query = '¿Cuántos beneficiarios reporta el informe?') {
   fireEvent.click(screen.getByRole('button', { name: /Preguntar a Stella/ }))
 }
 
-function okResult(answer = groundedAnswerView(), answerId = 'answer-1'): StellaGroundedQueryResult {
-  return { status: 'ok', answerId, answer }
+/**
+ * R9 — every success declares what produced it. The default is the local
+ * extractive strategy because that is what the integrated runtime selects;
+ * `kind` is overridable so the disclosure can be tested for its ABSENCE too,
+ * which is the half that a hardcoded notice would pass by accident.
+ */
+function okResult(
+  answer = groundedAnswerView(),
+  answerId = 'answer-1',
+  kind: 'extractive' | 'generative' = 'extractive',
+): StellaGroundedQueryResult {
+  return {
+    status: 'ok',
+    answerId,
+    answer,
+    answerStrategy: {
+      generatorId: kind === 'extractive' ? 'grounding-local-extractive/extractive-1' : 'some-model/v9',
+      kind,
+    },
+  }
 }
 
 describe('StellaGroundedQueryPanel — grounded states', () => {
@@ -499,6 +517,7 @@ describe('StellaGroundedQueryPanel — a decision with no sink says so', () => {
     status: 'ok',
     answerId: 'ans-persistence',
     answer: okAnswer,
+    answerStrategy: { generatorId: 'grounding-local-extractive/extractive-1', kind: 'extractive' },
   })
 
   async function askAndAccept(onDecision?: (record: SuggestionDecisionRecord) => void) {
@@ -526,5 +545,69 @@ describe('StellaGroundedQueryPanel — a decision with no sink says so', () => {
     await askAndAccept()
     expect(screen.getByTestId('stella-grounded-answer-decision')).toHaveTextContent('Aceptada')
     expect(screen.getByTestId('stella-grounded-query-decision-not-persisted')).toBeTruthy()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// R9 — extractive disclosure
+// ---------------------------------------------------------------------------
+// The integrated runtime answers by QUOTING: every sentence is a verbatim
+// slice of a retrieved passage. That is a real guarantee and a real
+// limitation, and a reviewer who reads the output as a summary will read
+// absence of a sentence as absence of the fact.
+//
+// The disclosure is therefore conditional on the RUN, not on a constant. Both
+// halves are tested — that it appears for an extractive run AND that it
+// vanishes for a generative one — because a notice rendered unconditionally
+// passes the first test and is not a disclosure.
+
+describe('StellaGroundedQueryPanel — extractive disclosure (R9)', () => {
+  it('says the answer was quoted, not written, and that it needs review', async () => {
+    const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
+    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    await ask()
+
+    const note = await screen.findByTestId('stella-grounded-query-extractive-disclosure')
+    expect(note).toHaveTextContent(/copiada\s+literalmente/i)
+    expect(note).toHaveTextContent(/pasajes citados/i)
+    expect(note).toHaveTextContent(/no es un resumen ni una\s+interpretación/i)
+    expect(note).toHaveTextContent(/rev[ií]sala/i)
+  })
+
+  it('does NOT appear when a different strategy produced the answer', async () => {
+    const runQuery: StellaGroundedQueryRunner = vi
+      .fn()
+      .mockResolvedValue(okResult(groundedAnswerView(), 'answer-gen', 'generative'))
+    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    await ask()
+
+    await screen.findByTestId('stella-grounded-answer-panel')
+    expect(screen.queryByTestId('stella-grounded-query-extractive-disclosure')).toBeNull()
+  })
+
+  it('is announced as a note and precedes the answer it qualifies', async () => {
+    // Accessibility: role="note" puts it in the accessibility tree as an aside
+    // rather than as part of the answer prose, and DOM order is reading order
+    // for a screen reader — a caveat read AFTER the text it qualifies arrives
+    // too late.
+    const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
+    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    await ask()
+
+    const note = await screen.findByTestId('stella-grounded-query-extractive-disclosure')
+    const answer = screen.getByTestId('stella-grounded-answer-panel')
+    expect(note).toHaveAttribute('role', 'note')
+    expect(note.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows no generator id or version string to the reader', async () => {
+    // The disclosure is about what the reader must do, not about which build
+    // produced it. `provenance.generatorId` stays in the result for support.
+    const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
+    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    await ask()
+
+    const note = await screen.findByTestId('stella-grounded-query-extractive-disclosure')
+    expect(note.textContent ?? '').not.toMatch(/extractive-1|grounding-local-extractive|v\d/)
   })
 })

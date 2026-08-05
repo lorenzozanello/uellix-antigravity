@@ -34,7 +34,7 @@ import { StellaErrorNotice } from './StellaErrorNotice'
 import { decisionStatusFromAction } from './grounding-model'
 import type { StellaDecisionStatus } from './grounding-model'
 import type { GroundedAnswerView, GroundedCitationView } from './grounding-adapter'
-import type { StellaGroundedQueryRunner } from './grounded-query'
+import type { AnswerStrategyDescriptor, StellaGroundedQueryRunner } from './grounded-query'
 import type { SuggestionDecisionRecord, SuggestionDecisionAction } from './decision-types'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { StellaPanelErrorCode } from './error-messages'
@@ -42,7 +42,13 @@ import type { StellaPanelErrorCode } from './error-messages'
 type PanelState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'ok'; answerId: string; answer: GroundedAnswerView }
+  | {
+      status: 'ok'
+      answerId: string
+      answer: GroundedAnswerView
+      /** R9 — carried so the disclosure below is conditional on the RUN, not on a constant. */
+      strategy: AnswerStrategyDescriptor
+    }
   | { status: 'error'; code: StellaPanelErrorCode; message: string }
   | { status: 'disabled' }
 
@@ -113,7 +119,12 @@ export function StellaGroundedQueryPanel({
     try {
       const result = await runQuery({ query })
       if (result.status === 'ok') {
-        setPanelState({ status: 'ok', answerId: result.answerId, answer: result.answer })
+        setPanelState({
+          status: 'ok',
+          answerId: result.answerId,
+          answer: result.answer,
+          strategy: result.answerStrategy,
+        })
       } else if (result.code === 'DISABLED') {
         setPanelState({ status: 'disabled' })
       } else {
@@ -228,6 +239,34 @@ export function StellaGroundedQueryPanel({
 
         {panelState.status === 'ok' && (
           <div ref={resultRef} tabIndex={-1} className="mt-3 space-y-3 focus-visible:outline-none">
+            {/* R9 — what wrote this answer, said BEFORE it is read.
+                Placed above the answer on purpose: a disclosure that qualifies
+                a text and appears underneath it arrives after the reader has
+                already taken the text at face value.
+
+                Conditional on the RUN, never on a constant: `strategy.kind` is
+                derived server-side from the run's provenance (see
+                AnswerStrategyDescriptor). A future generative strategy simply
+                does not match, and this notice disappears without anyone
+                having to remember to remove it.
+
+                No version string and no generator id in the copy. A reviewer
+                needs to know the answer was cut out of their documents rather
+                than written; `grounding-local-extractive/extractive-1` tells
+                them nothing they can act on. */}
+            {panelState.strategy.kind === 'extractive' && (
+              <p
+                role="note"
+                data-testid="stella-grounded-query-extractive-disclosure"
+                className="rounded-md border border-border bg-muted/40 px-2.5 py-2 text-xs text-muted-foreground"
+              >
+                Stella no redactó esta respuesta: cada frase está copiada
+                literalmente de los pasajes citados. No es un resumen ni una
+                interpretación de tus documentos, así que puede quedar
+                incompleta. Revísala antes de usarla.
+              </p>
+            )}
+
             <StellaGroundedAnswerPanel
               answer={{ ...panelState.answer, decisionStatus }}
               onNavigateCitation={onNavigateCitation}

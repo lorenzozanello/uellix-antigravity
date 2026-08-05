@@ -70,7 +70,12 @@ import {
   type PromptInjectionSignal,
 } from '@/lib/grounding/contracts'
 import { RepositoryContractViolationError } from '@/lib/grounding/retrieve/repository'
-import type { ChunkQuery, GroundingChunkRepository } from '@/lib/grounding/retrieve/repository'
+import type {
+  ChunkQuery,
+  ChunkScopeAttestation,
+  ChunkScopeProvenance,
+  GroundingChunkRepository,
+} from '@/lib/grounding/retrieve/repository'
 
 /** Versioned identity, recorded in retrieval provenance (see `ChunkScorer.id`). */
 export const PERSISTED_GROUNDING_REPOSITORY_ID = 'db-grounding-chunks-v1'
@@ -130,10 +135,43 @@ export function createPersistedGroundingChunkRepository(
 ): GroundingChunkRepository {
   assertValidScope(scope)
 
+  /**
+   * Attestations of the CURRENT fetch, keyed by chunk id.
+   *
+   * `GroundingChunkRepository.attestScope(chunk, query)` is handed a chunk and
+   * not the row it came from, so the row's four scope columns have to survive
+   * the mapping step somewhere. This map is that somewhere.
+   *
+   * CLEARED AT THE TOP OF EVERY `fetchCandidates`, which is what keeps it from
+   * being a cache: an entry from a previous query — necessarily a previous
+   * scope, since the scope is fixed at construction and re-compared — could
+   * otherwise answer for a chunk the current query never received. It is
+   * populated and consumed inside one `await`-free stretch of
+   * `enforceRepositoryScope`'s loop, so no second fetch can interleave.
+   *
+   * A chunk with no entry is NOT treated as attested-by-default: `attestScope`
+   * returns an explicit {@link UnattestedChunkScope} naming the gap, which
+   * `requireScopeAttestation` then refuses. Silence never becomes assent.
+   */
+  const attestations = new Map<string, ChunkScopeAttestation>()
+
   return {
     id: PERSISTED_GROUNDING_REPOSITORY_ID,
+
+    attestScope(chunk: GroundingChunk): ChunkScopeProvenance {
+      const attested = attestations.get(chunk.chunkId)
+      if (attested === undefined) {
+        return {
+          source: 'restated_from_query',
+          reason: `no attestation was recorded for chunk ${chunk.chunkId} in the fetch that produced it`,
+        }
+      }
+      return attested
+    },
+
     async fetchCandidates(query: ChunkQuery): Promise<readonly GroundingChunk[]> {
       assertValidScope(query.scope)
+      attestations.clear()
 
       // The construction scope is the authority. `enforceRepositoryScope`
       // (GROUNDING) verifies the RESULT against the query; this verifies the
@@ -168,7 +206,10 @@ export function createPersistedGroundingChunkRepository(
         const rows = await readChunksInScope(scope, version)
         for (const row of rows) {
           if (chunks.length >= query.limit) break
-          chunks.push(toGroundingChunk(scope, version, row))
+          const attestation = attestationFromRow(row, version)
+          const chunk = toGroundingChunk(attestation, version, row)
+          attestations.set(chunk.chunkId, attestation)
+          chunks.push(chunk)
         }
       }
       return chunks
@@ -250,10 +291,25 @@ async function resolveVersions(scope: GroundingScope, query: ChunkQuery): Promis
 /* -------------------------------------------------------------------------- */
 
 /**
- * Chunks come from `uellix_grounding.chunks_in_scope` and from no other
- * statement. It is SECURITY DEFINER, re-checks organization membership, and
- * already filters `canonical_chunk_id IS NULL` — so a deduplicated duplicate
- * can never be cited as if it were the passage.
+ * Chunks come from `uellix_grounding.chunks_in_scope_attested` and from no
+ * other statement. It is SECURITY DEFINER, re-checks organization membership,
+ * and already filters `canonical_chunk_id IS NULL` — so a deduplicated
+ * duplicate can never be cited as if it were the passage.
+ *
+ * INT-GR-004 — WHY THE ATTESTED READER AND NOT `chunks_in_scope`
+ * -------------------------------------------------------------
+ * The predecessor returns 13 columns and neither `organization_id` nor
+ * `project_id` is among them, so this adapter could only stamp the scope THE
+ * QUERY ASKED FOR onto every chunk — which made `enforceRepositoryScope`'s
+ * `isSameScope` / `scopeContains` compare the query with itself. Four extra
+ * columns (`organization_id`, `project_id`, `evidence_id`,
+ * `document_version_id`, prepared grounding_0004 §3) turn that tautology into
+ * a real comparison of two independently-derived values.
+ *
+ * `chunks_in_scope` is NOT dropped by that package and stays callable, because
+ * grounding_0003's rollback and its re-application both need it. It is simply
+ * no longer named by any runtime path — see the DEPRECATED comment
+ * grounding_0004 puts on the live function.
  *
  * The three scope arguments are the SERVER-DERIVED ones (see the server
  * action). No value here originates in a client payload.
@@ -266,8 +322,9 @@ async function readChunksInScope(
     return (await db.execute(sql`
       SELECT chunk_id, chunk_index, content, content_hash, char_start, char_end,
              page, section_index, normalized_content_hash, normalization_version,
-             chunker_version, injection_scanner_version, signals
-      FROM uellix_grounding.chunks_in_scope(
+             chunker_version, injection_scanner_version, signals,
+             organization_id, project_id, evidence_id, document_version_id
+      FROM uellix_grounding.chunks_in_scope_attested(
         ${scope.organizationId}::uuid,
         ${scope.projectId}::uuid,
         ${version.documentVersionUuid}::uuid
@@ -275,6 +332,87 @@ async function readChunksInScope(
     `)) as unknown as readonly Record<string, unknown>[]
   } catch (error) {
     throw sanitizeRepositoryFailure('chunk read', error)
+  }
+}
+
+/**
+ * The scope a ROW carries, read from the four attestation columns — plus the
+ * two cross-checks that make the reading worth anything.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT IS READ FROM THE ROW AND WHAT IS NOT
+ * ---------------------------------------------------------------------------
+ * `organizationId`, `projectId`, `evidenceId` and `chunkId` come from the row.
+ * `versionId` does NOT, and cannot: `ChunkScopeAttestation.versionId` is the
+ * contract's `char(64)` content-addressed version id, while the attested
+ * reader returns `document_version_id`, the row's `uuid` primary key. They are
+ * two identifiers of the same version, not the same value.
+ *
+ * So the version is attested INDIRECTLY, and that is the point of the two
+ * assertions below rather than a gap they paper over:
+ *
+ *   1. `document_version_id` must equal the uuid the version lookup resolved.
+ *      A row for a different version cannot survive this — and the two reads
+ *      are independent (one is a SELECT over evidence_document_versions, the
+ *      other a SECURITY DEFINER function over evidence_chunks), so agreement
+ *      is evidence rather than restatement.
+ *   2. `evidence_id` must equal the evidence item that lookup resolved. This
+ *      is the cross-check INT-GR-004 named specifically: it is the one column
+ *      that can reveal a DISAGREEMENT between the version lookup and the chunk
+ *      rows, which is the class of bug the tautological guard could never see.
+ *
+ * Once both hold, carrying the lookup's `versionId` is a licensed conclusion
+ * about a version the row itself just identified — not a value copied from the
+ * request.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY AN ABSENT COLUMN THROWS INSTEAD OF DEFAULTING
+ * ---------------------------------------------------------------------------
+ * A missing `organization_id` would produce `undefined`, `String(undefined)`
+ * is `'undefined'`, and that compares unequal to every real uuid — so the
+ * guard downstream would report a SCOPE VIOLATION for what is actually a
+ * schema mismatch. Naming the real cause here is the difference between
+ * "someone reached across a tenant boundary" and "grounding_0004 is not
+ * applied to this database".
+ */
+function attestationFromRow(
+  row: Record<string, unknown>,
+  version: ResolvedVersion,
+): ChunkScopeAttestation {
+  for (const column of [
+    'organization_id',
+    'project_id',
+    'evidence_id',
+    'document_version_id',
+    'chunk_id',
+  ]) {
+    if (row[column] === null || row[column] === undefined) {
+      throw new GroundingRepositoryContractError(
+        `the governed reader returned no ${column} — db/prepared/grounding_0004_runtime_attestation.sql is not applied to this database`,
+      )
+    }
+  }
+
+  if (String(row.document_version_id) !== version.documentVersionUuid) {
+    throw new GroundingRepositoryContractError(
+      'a chunk row reports a different document version than the one it was read for',
+    )
+  }
+  if (String(row.evidence_id) !== version.evidenceId) {
+    throw new GroundingRepositoryContractError(
+      'a chunk row reports a different evidence item than its own document version does',
+    )
+  }
+
+  return {
+    source: 'governed_row',
+    scope: {
+      organizationId: String(row.organization_id),
+      projectId: String(row.project_id),
+    },
+    evidenceId: String(row.evidence_id),
+    versionId: version.versionId,
+    chunkId: String(row.chunk_id) as ContentHash,
   }
 }
 
@@ -301,44 +439,47 @@ async function readChunksInScope(
 const LINE_RANGE_NOT_PERSISTED = 0
 
 /**
- * WHERE SCOPE IS ACTUALLY ENFORCED FOR THIS REPOSITORY — read this before
- * trusting `enforceRepositoryScope`.
+ * WHERE SCOPE IS ENFORCED FOR THIS REPOSITORY — INT-GR-004, CLOSED.
  *
- * `uellix_grounding.chunks_in_scope` RETURNS 13 columns and `organization_id`
- * / `project_id` are NOT among them. So `toGroundingChunk` below cannot read a
- * chunk's scope off the row; it stamps the SCOPE THE QUERY ASKED FOR onto
- * `chunk.scope` and `chunk.provenance.scope`.
+ * Until Train 4 this said the opposite, and the correction is worth stating
+ * rather than deleting. `chunks_in_scope` returned 13 columns with no
+ * `organization_id` and no `project_id`, so this mapper stamped the scope THE
+ * QUERY ASKED FOR onto `chunk.scope` and `chunk.provenance.scope`, and
+ * `enforceRepositoryScope`'s `isSameScope` / `scopeContains` checks compared
+ * the query with itself. They could not fail. The boundary held anyway,
+ * entirely in SQL — but nothing a reader of the TypeScript could see.
  *
- * The consequence is precise and must not be papered over:
- * `enforceRepositoryScope`'s `isSameScope` / `scopeContains` checks are
- * TAUTOLOGICAL against this repository — they compare the query's scope with
- * itself and can never fail. Its `evidenceId` / `versionId` checks remain
- * real, because those DO derive from the row.
+ * `chunks_in_scope_attested` (prepared grounding_0004 §3) returns those two
+ * columns plus `evidence_id` and `document_version_id`, so the scope now comes
+ * off the ROW. Four independent statements of the boundary, and the fourth is
+ * finally observable here:
  *
- * Scope enforcement for this repository therefore rests entirely on SQL, in
- * three independent places:
- *
- *   1. `chunks_in_scope` re-checks `current_user_org_ids()` before returning
+ *   1. the attested reader re-checks `current_user_org_ids()` before returning
  *      any row (SECURITY DEFINER, `search_path = ''`);
  *   2. its WHERE clause filters `organization_id` AND `project_id`;
  *   3. the version lookup above filters both a second time, and the composite
  *      FK `evidence_chunks_version_scope_fk` makes a chunk whose scope
- *      disagrees with its version unrepresentable at rest.
+ *      disagrees with its version unrepresentable at rest;
+ *   4. `attestationFromRow` reads the row's own scope and
+ *      `assertScopeAttestation` compares it against the chunk AND against the
+ *      query — two values with different origins, so a mismatch is a finding
+ *      and not a coincidence.
  *
- * That is three statements of the boundary and zero in TypeScript. It is
- * enough, but it is not what a reader of `enforceRepositoryScope` would
- * assume, so: contract request INT-GR-004 asks GROUNDING/CAPABILITIES to have
- * `chunks_in_scope` return `organization_id` and `project_id`, which would
- * make the guard load-bearing instead of decorative. Until then, DO NOT add a
- * fourth TypeScript check that reads these fabricated fields — it would look
- * like verification and verify nothing.
+ * The server action turns this on with `requireScopeAttestation: true`. Under
+ * that option a repository that CANNOT attest fails instead of passing a
+ * vacuous check, which is the property the whole type exists for.
  */
 
 function toGroundingChunk(
-  scope: GroundingScope,
+  attestation: ChunkScopeAttestation,
   version: ResolvedVersion,
   row: Record<string, unknown>,
 ): GroundingChunk {
+  // THE ROW'S scope, not the query's. This single substitution is what makes
+  // every downstream comparison non-tautological — including the ones in
+  // `assertChunkSatisfiesQuery` that were already written and already correct,
+  // and were simply being fed the wrong value.
+  const scope = attestation.scope
   const chunkIndex = Number(row.chunk_index)
   const contentHash = String(row.content_hash) as ContentHash
   const storedChunkId = String(row.chunk_id) as ContentHash

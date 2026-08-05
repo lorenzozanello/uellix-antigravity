@@ -74,15 +74,48 @@ export interface LocalRuntimeHarnessReport {
   readonly contradictionAttributed: boolean
   /** The no-match query produced status: 'abstained'. */
   readonly abstentionObserved: boolean
+  /**
+   * INT-GR-004 — every retrieved row carried its OWN organization, project,
+   * evidence item and document version, and each was compared against what
+   * the query asked for.
+   *
+   * Distinct from `crossProjectRetrievalRejected`, which proves the FILTER
+   * held (the decoy project returned nothing). This proves the ATTESTATION
+   * held: the rows that DID come back can be checked, rather than being
+   * stamped with the request and compared against itself.
+   */
+  readonly scopeAttestationVerified: boolean
   /** Whether the report CLAIMS a grounded_query interaction was charged
    *  against the org's monthly quota. Cross-checked against quotaRoleExists
    *  below — see evaluateLocalRuntimeHarnessReadiness. */
   readonly quotaConsumptionClaimed: boolean
-  /** Ground truth observed FROM THE DATABASE this run: does
-   *  stella_interactions_stella_role_check admit 'grounded_query'? False on
-   *  this branch — INT-CAP-001 is open and CAPABILITIES-owned, not fixable
-   *  from RELEASE. */
+  /**
+   * Ground truth observed FROM THE DATABASE this run: does
+   * `stella_interactions_stella_role_check` admit `grounded_query`?
+   *
+   * TRUE since Train 4 — `stella_0013` is a required package now, so a run
+   * that reports false is a run whose package list did not apply, not a run
+   * against an open INT-CAP-001.
+   */
   readonly quotaRoleExists: boolean
+  /**
+   * Did the RUNTIME actually charge a unit through
+   * `uellix_stella.consume_stella_quota` this run?
+   *
+   * Separate from `quotaRoleExists` (can the ledger record it?) and from
+   * `quotaConsumptionClaimed` (does the report say so?), because Train 4 made
+   * the first true while the third stays false, and one boolean covering both
+   * would let "the schema can" be read as "the runtime did".
+   *
+   * FALSE on this branch, and the reason is INT-INT-001, not a missing
+   * package: `consume_stella_quota` requires an idempotency key and this
+   * application has no canonical server-side source for one. See the
+   * QUOTA_LEDGER_NOT_CHARGED comment in app/actions/stella/grounded-query.ts.
+   * It is required for `localRuntimeHarnessReady`, so this reduces to false
+   * and says why — an enforced quota that cannot be charged must not ship
+   * behind a flag someone could turn on.
+   */
+  readonly quotaChargedByRuntime: boolean
   /** The grounding functions were called under a real, non-anonymous
    *  request.jwt.claims GUC (a real organization member), not as an
    *  unauthenticated superuser session. */
@@ -96,6 +129,23 @@ export interface LocalRuntimeHarnessReport {
   /** Every event this run emitted passed the REAL validateObservabilityEvent
    *  contract (tests/eval/stella-release/observability-contract.ts). */
   readonly observabilityEventsSanitized: boolean
+  /**
+   * WHERE those events came from — adversarial review B, train 4.
+   *
+   * `observabilityEventsSanitized` validates a schema, and a schema check is
+   * only evidence about a RUNTIME if the runtime produced the input. It does
+   * not today: no code in `app/**`, `lib/grounding/**` or `db/grounding/**`
+   * calls `validateObservabilityEvent` or emits a named event at all — the
+   * journey CONSTRUCTS nine representative events and validates those.
+   *
+   * That is a reasonable thing to check and a dishonest thing to report as
+   * "the flow's observability was proven sanitized", because the field passes
+   * green whether or not the runtime emits anything. Splitting the source out
+   * makes the limitation a value in the report rather than a caveat in a
+   * comment, and the reducer REQUIRES 'runtime-emitted' — so the gate cannot
+   * call a runtime ready while its telemetry has never been observed.
+   */
+  readonly observabilityEventSource: 'runtime-emitted' | 'harness-constructed'
   readonly observabilityEventViolationCount: number
   /** Rows found in stella_suggestion_decisions after simulating a local
    *  accept/reject decision. Must be 0 — STELLA_DECISIONS_PERSISTENCE_ENABLED
@@ -109,13 +159,34 @@ export interface LocalRuntimeHarnessReadiness {
   readonly missingForLocalRuntimeHarness: readonly string[]
 }
 
-const REQUIRED_PACKAGES = ['grounding_0002', 'grounding_0003'] as const
+/**
+ * TRAIN 4 — four required packages, not two.
+ *
+ * `stella_0013` and `grounding_0004` moved from "apply if integration has
+ * landed one" to REQUIRED. A harness that can pass without the attested
+ * reader is a harness that certifies the tautological scope check, and one
+ * that can pass without the quota package certifies a runtime whose enforced
+ * quota has no ledger to charge.
+ *
+ * `stella_0003` is deliberately NOT here and deliberately not applied — see
+ * scripts/stella-release-e2e-dry-run.sh §4. Decision persistence is not a leg
+ * of this journey, and its absence makes `localDecisionRowCount === 0` a
+ * stronger claim, not a weaker one.
+ */
+const REQUIRED_PACKAGES = [
+  'grounding_0002',
+  'grounding_0003',
+  'stella_0013',
+  'grounding_0004',
+] as const
 
 const REQUIRED_SQL_FUNCTIONS = [
   'register_document_version',
   'insert_evidence_chunks',
   'finalize_document_ingestion',
-  'chunks_in_scope',
+  // INT-GR-004: the ATTESTED reader. Naming the predecessor here would let a
+  // run that never exercised the scope columns report a closed contract.
+  'chunks_in_scope_attested',
 ] as const
 
 /**
@@ -196,6 +267,21 @@ export function evaluateLocalRuntimeHarnessReadiness(
   if (!report.abstentionObserved) {
     missing.push('abstentionObserved is false — the no-match query was not shown to abstain')
   }
+  if (!report.scopeAttestationVerified) {
+    missing.push(
+      'scopeAttestationVerified is false — retrieved rows were not shown to carry their own scope, so the TypeScript scope comparison is tautological (INT-GR-004)',
+    )
+  }
+  if (!report.quotaRoleExists) {
+    missing.push(
+      "quotaRoleExists is false — stella_interactions_stella_role_check does not admit 'grounded_query', so stella_0013 did not apply this run",
+    )
+  }
+  if (!report.quotaChargedByRuntime) {
+    missing.push(
+      'quotaChargedByRuntime is false — the runtime enforces a monthly quota it never charges. consume_stella_quota requires an idempotency key and this application has no canonical server-side source for one (INT-INT-001), so the call is deliberately not made rather than made with a key that would double-charge every retry',
+    )
+  }
   if (report.quotaConsumptionClaimed && !report.quotaRoleExists) {
     missing.push(
       "quotaConsumptionClaimed is true but quotaRoleExists is false — INT-CAP-001 is open (grounded_query is not a legal stella_interactions role), so a report claiming quota was consumed under that condition is false",
@@ -206,6 +292,11 @@ export function evaluateLocalRuntimeHarnessReadiness(
   }
   if (report.groundedQueryFlagState === 'enabled-globally') {
     missing.push("groundedQueryFlagState is 'enabled-globally' — STELLA_GROUNDED_QUERY_ENABLED must never be turned on outside this harness's own controlled local process")
+  }
+  if (report.observabilityEventSource !== 'runtime-emitted') {
+    missing.push(
+      `observabilityEventSource is '${report.observabilityEventSource}' — the events validated this run were built BY the harness, not emitted by the runtime. Nothing in app/** or lib/grounding/** emits a named observability event, so the sanitization check proves a schema validator works, not that the flow's telemetry is clean`,
+    )
   }
   if (!report.observabilityEventsSanitized || report.observabilityEventViolationCount !== 0) {
     missing.push(

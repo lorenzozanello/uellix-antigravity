@@ -926,3 +926,69 @@ la consulta por la ausencia de persistencia.
 
 **STELLA_PRODUCT_TRAIN_4_READY_FOR_INTEGRATION.** Árbol limpio antes de
 commitear, dos commits, sin push.
+
+---
+
+## Tren 4 — integración (2026-08-05)
+
+**Estado: DISEÑO + RUNTIME LOCAL VERIFICADO PARCIALMENTE. Nada aplicado a
+ninguna base persistente. Ninguna bandera habilitada en el repositorio.**
+
+Resultado global: **`STELLA_PARALLEL_TRAIN_4_INTEGRATION_BLOCKED_IDEMPOTENCY`**.
+El recorrido local completo se ejecuta y pasa; lo único que falta para
+`local-runtime-ready` es INT-INT-001 — ver
+[`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+### PRODUCT-002 — ACCEPTED
+
+Los cuatro criterios se cumplen y están verificados:
+
+* **superficie montada** — `app/app/projects/[projectId]/page.tsx`, la vista de
+  proyecto, fuera de los siete pasos metodológicos;
+* **server action conectado** — `runStellaGroundedQueryForProject.bind(null, projectId)`;
+* **el E2E alcanza la superficie** — `adaptGroundedAnswer` produce la vista de
+  Product sobre chunks realmente recuperados;
+* **payload sigue siendo `{ query }`** — comprobado como propiedad del tipo, no
+  como convención.
+
+### El parámetro `step` es metadata inerte
+
+Revisado sobre la pregunta explícita «¿esto hace que una consulta de proyecto
+parezca limitada a outcomes?». La respuesta es **no**, y ahora es una propiedad
+con pruebas (`__tests__/grounded-query-mount.test.ts`, «the step prop is
+inert»), no un argumento:
+
+* el server action **no tiene** parámetro `step` ni importa
+  `AdvisorPipelineStep`, luego `step` no puede estrechar retrieval, scope,
+  cuota, el conjunto de evidencia ni la auditoría — todos se computan allí;
+* el panel lo lee en **un** sitio, `emitDecision`, y `onDecision` no está
+  cableado en el montaje canónico;
+* nunca se renderiza.
+
+Existe sólo porque el panel comparte `SuggestionDecisionRecord` con el advisor
+y ese `step` no es nulable. Es un marcador de posición, no una afirmación —
+cuando INT-PR-001 cierre, este montaje debe dejar de tomar prestado un paso
+metodológico.
+
+### R9 — divulgación extractiva
+
+`StellaGroundedQuerySuccess` lleva `answerStrategy: { generatorId, kind }`,
+**obligatorio**: un campo opcional permitiría una respuesta sin estrategia
+declarada, y el panel no pintaría nada — una divulgación ausente
+indistinguible de una estrategia que no la necesita.
+
+La **condición** viaja desde la provenance del run (el server action deriva
+`kind` de `run.provenance.generatorId` con un prefijo sobre el NOMBRE, no una
+igualdad con el id versionado, para que `extractive-2` no la apague en
+silencio). El **texto** vive en Product. `components/stella/**` no conoce el id
+del generador.
+
+Se muestra **encima** de la respuesta (una advertencia que califica un texto y
+aparece debajo llega tarde), con `role="note"`, y **desaparece** con cualquier
+otra estrategia — probado en ambos sentidos.
+
+### INT-PR-001 — sigue pendiente
+
+Aceptar / comentar / rechazar / deshacer siguen siendo estado local. No se
+persiste, no se reutiliza `suggestionKey`, y la UI lo **dice**: «Esta decisión
+no se guardó». El E2E lo comprueba contando filas tras tomar una decisión real.

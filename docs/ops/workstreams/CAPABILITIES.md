@@ -860,3 +860,67 @@ una violación de constraint cruda.
 4. **Las FOREIGN KEY internas siguen respetando `session_replication_role`** —
    riesgo de superusuario aceptado en el tren 3. Los tres `CHECK` nuevos de
    `grounding_0004` **no** comparten esa debilidad.
+
+---
+
+## Tren 4 — integración (2026-08-05)
+
+**Estado: DISEÑO + RUNTIME LOCAL VERIFICADO PARCIALMENTE. Nada aplicado a
+ninguna base persistente. Ninguna bandera habilitada en el repositorio.**
+
+Resultado global: **`STELLA_PARALLEL_TRAIN_4_INTEGRATION_BLOCKED_IDEMPOTENCY`**.
+El recorrido local completo se ejecuta y pasa; lo único que falta para
+`local-runtime-ready` es INT-INT-001 — ver
+[`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+### Qué cerró la integración de esta línea
+
+| Contrato | Estado tras el tren 4 |
+|---|---|
+| INT-CAP-001 | **ACCEPTED** — `stella_0013` instala `consume_stella_quota`, verificado en vivo |
+| INT-CAP-002 | **ACCEPTED** — `grounding_0004` §2b |
+| INT-CAP-003 | **ACCEPTED** — `grounding_0004` §1a/§1b |
+| INT-CAP-004 | **ACCEPTED, las dos partes** — §1c, y el rollback reparado aquí |
+
+### El rollback de `grounding_0003`, reparado
+
+La parte (1) de INT-CAP-004 quedaba abierta porque repararla exigía editar un
+fichero cuyo texto ancla mutaciones del arnés del tren 3. Se hizo en esta
+integración, con su reanclaje:
+
+* los cuatro `DROP FUNCTION` salieron del `ELSE` de «si la tabla existe» y son
+  incondicionales, **después** del `END IF` (el orden importa: el trigger
+  `trg_evidence_chunks_canonical_integrity` referencia a
+  `public.uellix_check_canonical_chunk()` y PostgreSQL no deja retirar una
+  función que un trigger vivo nombra);
+* una aserción posterior falla la transacción si alguna sobrevivió;
+* el gate `rollback-function-drop-unconditional` de
+  `tests/helpers/train4-gates.ts` ahora **lee ese fichero**
+  (`ROLLBACK.CHUNKS_T3`), y dos mutaciones nuevas —`T-61` reintroduce el
+  anidamiento, `T-62` mete un `CASCADE`— demuestran que el gate va rojo;
+* las mutaciones y aserciones del tren 3 que anclan en ese texto siguen
+  pasando **sin debilitarse**: `G-43`, `G-44`, `G-45` y las siete aserciones de
+  `tests/grounding-persistence-contract.test.ts` (`dropped()` sigue dando
+  exactamente los cinco mismos objetos, sin duplicados).
+
+**Por qué importaba.** `uellix_cap_grounding` posee las tres funciones, y
+PostgreSQL se niega a retirar un rol que aún posee algo. Un rollback que
+reportaba éxito dejando funciones vivas hacía el rollback de `grounding_0002`
+**permanentemente imposible**.
+
+### Evidencia ejecutada
+
+* `scripts/grounding-dry-run.sh` — baseline `38/107/0/0/0/10`, forward
+  `40/114/1/5/1/16`, **rollback == baseline**, re-apply == forward.
+* `scripts/stella-train4-dry-run.sh` — baseline `38/107/0/0/0/10/13/0`,
+  forward `40/115/2/7/2/16/14/0`, rollback == baseline, re-apply == forward.
+* `tests/train4-persistence-mutation.test.ts` — 62 mutaciones, todas rechazadas
+  por su gate exacto; único gate sin ejercitar: `source-missing`, declarado.
+* `scripts/grounding-rollback-defect-path.sh` — **la ruta del defecto**, que
+  ningún otro arnés recorre. El dry-run de grounding sólo ejercita la rama en
+  la que `evidence_chunks` existe; este script la retira por otro camino
+  (el escenario que INT-CAP-004 (1) describe: restore parcial, `DROP` manual,
+  forward muerto a medias) y comprueba que el rollback reparado retira las
+  cuatro funciones igualmente **y** que `grounding_0002_rollback` vuelve a
+  completarse, retirando el rol y el esquema. Antes de la reparación esa
+  segunda parte era imposible: el rol seguía poseyendo tres funciones.

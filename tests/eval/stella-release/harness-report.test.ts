@@ -14,10 +14,10 @@ const GOOD_REPORT: LocalRuntimeHarnessReport = {
   containerDestroyed: true,
   usedPersistentVolume: false,
   verificationMethod: 'live-database-execution',
-  packagesApplied: ['grounding_0002', 'grounding_0003', 'stella_0003'],
-  train4PackageStatus: 'not-yet-available',
+  packagesApplied: ['grounding_0002', 'grounding_0003', 'stella_0013', 'grounding_0004'],
+  train4PackageStatus: 'applied',
   documentsIngestedViaRealPipeline: true,
-  sqlFunctionsInvoked: ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope'],
+  sqlFunctionsInvoked: ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope_attested'],
   databaseApplied: true,
   crossProjectRetrievalRejected: true,
   idempotentReapplyVerified: true,
@@ -27,12 +27,15 @@ const GOOD_REPORT: LocalRuntimeHarnessReport = {
   citationValidationIssueCount: 0,
   contradictionAttributed: true,
   abstentionObserved: true,
+  scopeAttestationVerified: true,
   quotaConsumptionClaimed: false,
-  quotaRoleExists: false,
+  quotaRoleExists: true,
+  quotaChargedByRuntime: true,
   scopeAttestedViaJwtClaims: true,
   groundedQueryFlagState: 'enabled-in-process-only',
   providerCallCount: 0,
   observabilityEventsSanitized: true,
+  observabilityEventSource: 'runtime-emitted',
   observabilityEventViolationCount: 0,
   localDecisionRowCount: 0,
   decisionsPersistenceFlagState: 'disabled',
@@ -133,7 +136,7 @@ describe('evaluateLocalRuntimeHarnessReadiness — Fase 6 negative controls (eac
   })
 
   it('rejects missing SQL function invocations one at a time', () => {
-    for (const fn of ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope']) {
+    for (const fn of ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope_attested']) {
       const withoutFn = GOOD_REPORT.sqlFunctionsInvoked.filter((name) => name !== fn)
       expectRejected(mutate({ sqlFunctionsInvoked: withoutFn }), new RegExp(`required SQL function '${fn}' was not invoked`))
     }

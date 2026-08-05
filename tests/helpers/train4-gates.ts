@@ -35,6 +35,25 @@ export const FORWARD = {
 export const ROLLBACK = {
   QUOTA: 'stella_0013_rollback.sql',
   ATTEST: 'grounding_0004_rollback.sql',
+  /**
+   * INT-CAP-004 (1) — a TRAIN 3 file, guarded here.
+   *
+   * `grounding_0003_rollback.sql` is not a Train 4 package, and this constant
+   * deliberately does not pretend otherwise. It is listed because the defect
+   * INT-CAP-004 (1) reports lives in it and was repaired in the Train 4
+   * integration: its four `DROP FUNCTION`s were nested inside "if the table
+   * exists", so a database whose evidence_chunks had gone by another route got
+   * a rollback that exited 0 and left three callable SECURITY DEFINER
+   * functions — which then made grounding_0002's `DROP ROLE
+   * uellix_cap_grounding` permanently impossible.
+   *
+   * A repair nobody can re-break by accident is a repair with a gate on it, so
+   * the property moved here rather than staying a claim in a commit message.
+   * Only the three rollback-shape gates read it (§Rollbacks); the gates that
+   * check a Train 4 forward package's own vocabulary are not pointed at a file
+   * that never had it.
+   */
+  CHUNKS_T3: 'grounding_0003_rollback.sql',
 } as const
 
 export const TRAIN4_SQL_FILES = [
@@ -42,6 +61,7 @@ export const TRAIN4_SQL_FILES = [
   ROLLBACK.QUOTA,
   FORWARD.ATTEST,
   ROLLBACK.ATTEST,
+  ROLLBACK.CHUNKS_T3,
 ] as const
 
 export type Sources = Record<string, string>
@@ -172,7 +192,10 @@ export function evaluateTrain4Gates(sources: Sources): Violation[] {
   if (v.length > 0) return v
 
   const forwardFiles = [FORWARD.QUOTA, FORWARD.ATTEST] as const
-  const rollbackFiles = [ROLLBACK.QUOTA, ROLLBACK.ATTEST] as const
+  // grounding_0003's rollback is included: INT-CAP-004 (1) is a property of
+  // rollback SHAPE, and shape is exactly what these three gates read. Excluding
+  // it would leave the repaired file guarded by nothing.
+  const rollbackFiles = [ROLLBACK.QUOTA, ROLLBACK.ATTEST, ROLLBACK.CHUNKS_T3] as const
 
   // ---------------------------------------------------------------------
   // Fail-closed: nothing in these packages may be unreadable.

@@ -20,6 +20,15 @@
 -- Refusing to acquire a habit is the point; the asymmetry is deliberate and the
 -- row count is still reported so nothing happens silently.
 --
+-- INT-CAP-004 (1) — REPAIRED IN THE TRAIN 4 INTEGRATION
+-- -----------------------------------------------------
+-- The four `DROP FUNCTION` statements used to be nested inside the `ELSE` of
+-- "if public.evidence_chunks exists". They are now unconditional, after that
+-- block. See the comment at the statements themselves for why the nesting was
+-- a defect and why AFTER is the only correct position. The gate
+-- `rollback-function-drop-unconditional` in tests/helpers/train4-gates.ts now
+-- reads this file, and mutation T-61 reintroduces the nesting to prove it.
+--
 -- WHAT THIS ROLLBACK DOES NOT TOUCH
 -- ---------------------------------
 --   * public.evidence_document_versions — grounding_0002 owns it.
@@ -41,7 +50,7 @@ BEGIN
   tbl_oid := to_regclass('public.evidence_chunks');
 
   IF tbl_oid IS NULL THEN
-    RAISE NOTICE 'grounding_0003 rollback: public.evidence_chunks is absent — nothing to drop.';
+    RAISE NOTICE 'grounding_0003 rollback: public.evidence_chunks is absent — no rows to destroy. The four functions this package created are dropped below regardless, because their existence never depended on the table.';
   ELSE
     -- Report what is being destroyed, and report it truthfully. FORCE ROW LEVEL
     -- SECURITY removes the owner's bypass, so an owner without rolbypassrls
@@ -59,23 +68,98 @@ BEGIN
 
     RAISE NOTICE 'grounding_0003 rollback: dropping % chunk row(s) (% canonical). All are regenerable from Storage via lib/grounding at the pipeline versions each row records.', n_rows, n_canon;
 
-    -- Fixed literals through EXECUTE: no ||, no format(), no variable. The
-    -- surrounding code decides WHETHER, never WHAT.
-    EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.insert_evidence_chunks(uuid, jsonb)';
-    EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.finalize_document_ingestion(uuid, integer)';
-    EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.chunks_in_scope(uuid, uuid, uuid)';
     -- Policies, indexes (including uq_evidence_chunks_version_content),
     -- triggers and the two composite FOREIGN KEYs fall with the table. No IF
     -- EXISTS: existence was proven above, in this same block.
+    -- Fixed literal through EXECUTE: no ||, no format(), no variable. The
+    -- surrounding code decides WHETHER, never WHAT.
     EXECUTE 'DROP TABLE public.evidence_chunks';
-    -- TRAIN 3 HARDENING. public.uellix_check_canonical_chunk() is a plain
-    -- (non-SECURITY-DEFINER) trigger function created BY this package, unlike
-    -- public.uellix_forbid_mutation() which is baseline and shared with other
-    -- immutable tables — that one is never dropped here. This one is
-    -- exclusive to evidence_chunks and has no other caller. Dropped AFTER the
-    -- table: trg_evidence_chunks_canonical_integrity depends on it, and
-    -- PostgreSQL refuses to drop a function a live trigger still references.
-    EXECUTE 'DROP FUNCTION IF EXISTS public.uellix_check_canonical_chunk()';
+  END IF;
+
+  -- ------------------------------------------------------------------
+  -- INT-CAP-004 (1) — the four functions, UNCONDITIONALLY.
+  --
+  -- These four DROPs used to live inside the ELSE above, and that was the
+  -- defect. A function does not depend on a table for its existence: a
+  -- database whose evidence_chunks went by another route — a partially
+  -- applied forward package, a manual DROP, a restore from a dump taken
+  -- between the two — took the `IF tbl_oid IS NULL` branch, printed
+  -- "nothing to drop", exited 0, and left three callable SECURITY DEFINER
+  -- functions behind.
+  --
+  -- The consequence is not cosmetic. `uellix_cap_grounding` OWNS all three
+  -- (grounding_0003 §11), and PostgreSQL refuses to remove a role that still
+  -- owns anything — so grounding_0002's rollback, which retires that role,
+  -- became permanently impossible. A rollback that reports success and
+  -- bricks its predecessor's rollback is worse than one that fails loudly.
+  --
+  -- (Phrased without the two-word DDL spelling on purpose: the sibling
+  -- assertion in tests/grounding-persistence-contract.test.ts scans this file
+  -- WITHOUT stripping comments, so prose naming a statement this rollback must
+  -- never execute would read as the statement itself.)
+  --
+  -- Placed AFTER the END IF rather than before it, and that order is load
+  -- bearing in both directions:
+  --   * the table branch must have run first, because
+  --     trg_evidence_chunks_canonical_integrity references
+  --     public.uellix_check_canonical_chunk() and PostgreSQL refuses to drop
+  --     a function a live trigger still names;
+  --   * when the table is absent there is no trigger, so the same four
+  --     statements are safe on that path too — which is the whole point.
+  --
+  -- `IF EXISTS` on each: this is now the branch reached whether or not the
+  -- table was there, so absence is an expected state and not an error.
+  --
+  -- public.uellix_check_canonical_chunk() is a plain (non-SECURITY-DEFINER)
+  -- trigger function created BY this package, unlike
+  -- public.uellix_forbid_mutation() which is baseline and shared with other
+  -- immutable tables — that one is never dropped here. This one is exclusive
+  -- to evidence_chunks and has no other caller.
+  -- ------------------------------------------------------------------
+  EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.insert_evidence_chunks(uuid, jsonb)';
+  EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.finalize_document_ingestion(uuid, integer)';
+  EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.chunks_in_scope(uuid, uuid, uuid)';
+  EXECUTE 'DROP FUNCTION IF EXISTS public.uellix_check_canonical_chunk()';
+
+  -- The four are gone whichever branch ran. Asserted rather than assumed:
+  -- this is the last moment at which the transaction can still roll back, and
+  -- a surviving SECURITY DEFINER function is exactly what INT-CAP-004 (1)
+  -- reports. Named individually — "the schema is empty" is a weaker statement
+  -- and would also be satisfied by grounding_0002 having gone first.
+  IF to_regprocedure('uellix_grounding.insert_evidence_chunks(uuid, jsonb)') IS NOT NULL
+     OR to_regprocedure('uellix_grounding.finalize_document_ingestion(uuid, integer)') IS NOT NULL
+     OR to_regprocedure('uellix_grounding.chunks_in_scope(uuid, uuid, uuid)') IS NOT NULL
+     OR to_regprocedure('public.uellix_check_canonical_chunk()') IS NOT NULL THEN
+    RAISE EXCEPTION
+      'grounding_0003 rollback FAILED: a function this package created is still installed and still callable. uellix_cap_grounding would keep owning it, and grounding_0002''s rollback could never drop that role — aborting so the transaction rolls back.';
+  END IF;
+
+  -- ------------------------------------------------------------------
+  -- The SUCCESSOR must be gone first. Found by adversarial review, train 4.
+  --
+  -- grounding_0004 publishes uellix_grounding.chunks_in_scope_attested and
+  -- OWNS it through uellix_cap_grounding. This rollback does not drop it —
+  -- correctly, since it belongs to the later package — but running out of
+  -- order used to leave it behind: a SECURITY DEFINER function still
+  -- EXECUTE-able by uellix_app, reading a table this script just destroyed,
+  -- and still owned by the capability role. grounding_0002's rollback would
+  -- then be unable to retire that role and would abort.
+  --
+  -- That is exactly the class of defect INT-CAP-004 (1) reports, one package
+  -- up: a rollback exiting 0 while bricking its predecessor's. Repairing the
+  -- nesting above without this check would have closed the reported instance
+  -- and left the same shape reachable through the successor this very train
+  -- introduced.
+  --
+  -- It REFUSES rather than dropping. Dropping another package's object is how
+  -- a rollback comes to own something it did not create, and the operator's
+  -- next step is a one-line command this message names. Same shape as
+  -- grounding_0002_rollback's own refusal while evidence_chunks still
+  -- references it.
+  -- ------------------------------------------------------------------
+  IF to_regprocedure('uellix_grounding.chunks_in_scope_attested(uuid, uuid, uuid)') IS NOT NULL THEN
+    RAISE EXCEPTION
+      'grounding_0003 rollback refused: uellix_grounding.chunks_in_scope_attested is still installed. It belongs to grounding_0004 and is owned by uellix_cap_grounding, so leaving it behind would make grounding_0002''s rollback unable to retire that role. Roll back grounding_0004 first (db/prepared/grounding_0004_rollback.sql).';
   END IF;
 
   -- The version history must survive. Asserted rather than assumed: a CASCADE

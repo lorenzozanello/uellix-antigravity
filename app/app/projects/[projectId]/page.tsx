@@ -121,12 +121,38 @@ export default async function ProjectDetailPage({
       </Card>
 
       {/*
-        `step` is typed as AdvisorPipelineStep because that type has no
-        project-level variant yet — it only tags the (currently unwired,
-        see onDecision below) human-decision record, and has no effect on
-        the query itself. "outcomes" is the closest fit: an SROI grounded
-        question is fundamentally about outcome evidence. Revisit if
-        INT-PR-001 closes and this mount starts wiring onDecision.
+        `step` IS INERT METADATA HERE. This is NOT a query limited to outcome
+        evidence, and the value must not be read as narrowing anything.
+
+        Traced end to end (and pinned by tests in
+        __tests__/grounded-query-mount.test.ts, "the step prop is inert"):
+
+          * it is NOT sent to the server. The bound action is
+            `runStellaGroundedQueryForProject.bind(null, projectId)` — one
+            bound argument, the project — and the client payload is
+            `StellaGroundedQueryRequest`, which has exactly one field,
+            `query`. `app/actions/stella/grounded-query.ts` contains no
+            `step` parameter and no `AdvisorPipelineStep` import;
+          * so it cannot reach retrieval, the scope the server derives, the
+            quota charge, the evidence set, or the audit record. Every one of
+            those is computed from the session and the bound project;
+          * it is never rendered. `StellaGroundedQueryPanel` reads it in
+            exactly one place, `emitDecision`, where it fills
+            `SuggestionDecisionRecord.step`;
+          * and `onDecision` is deliberately not wired at this mount, so that
+            record is built and handed to nobody.
+
+        It exists only because the panel shares `SuggestionDecisionRecord`
+        with the advisor, and that type's `step` is non-nullable. Widening it
+        would touch the advisor and its tests to express a field that is
+        currently unreachable — a cost paid in two other flows for no
+        behaviour.
+
+        The value is therefore a placeholder, not a claim. When INT-PR-001
+        closes and grounded decisions get a real key, this mount must stop
+        borrowing a methodology step: a grounded question is project-scoped,
+        and filing it under "outcomes" would then be a persisted falsehood
+        rather than an inert one.
       */}
       <StellaGroundedQuerySection projectId={project.id} step="outcomes" />
 

@@ -876,6 +876,41 @@ export const ROLLBACK_MUTATIONS: readonly Mutation[] = [
       'DROP FUNCTION IF EXISTS uellix_stella.consume_stella_quota(uuid, uuid, character varying, character);\n\nDO $$\nDECLARE\n  tbl_oid     oid;',
     ),
   },
+
+  // -------------------------------------------------------------------------
+  // INT-CAP-004 (1) — the Train 3 rollback this train repaired.
+  //
+  // grounding_0003_rollback.sql is not a Train 4 package. It is mutated here
+  // because the repair landed here, and a repair with no mutation behind it is
+  // a claim rather than a property: the next person to "simplify" that file by
+  // pulling the four DROPs back under the table guard would face nothing.
+  // -------------------------------------------------------------------------
+  {
+    id: 'T-61',
+    file: ROLLBACK.CHUNKS_T3,
+    severity: 'CRITICAL',
+    contract: 'INT-CAP-004',
+    change: "the four function drops are nested back inside grounding_0003's table-existence guard",
+    breaks: 'The exact defect INT-CAP-004 (1) reports, restored. A function does not depend on a table for its existence, so a database whose evidence_chunks went by another route takes the IF-NULL branch, prints "nothing to drop" and exits 0 while three SECURITY DEFINER functions stay callable. uellix_cap_grounding owns all three, PostgreSQL refuses DROP ROLE for a role that owns anything, and grounding_0002 rollback becomes permanently impossible — a teardown path bricked by its own predecessor reporting success.',
+    expectedGate: ['rollback-function-drop-unconditional'],
+    apply: sub(
+      "  EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.insert_evidence_chunks(uuid, jsonb)';",
+      "  IF tbl_oid IS NOT NULL THEN\n    EXECUTE 'DROP FUNCTION IF EXISTS uellix_grounding.insert_evidence_chunks(uuid, jsonb)';\n  END IF;",
+    ),
+  },
+  {
+    id: 'T-62',
+    file: ROLLBACK.CHUNKS_T3,
+    severity: 'CRITICAL',
+    contract: 'INT-CAP-004',
+    change: 'the chunk index is dropped with CASCADE once the function drops no longer depend on the table branch',
+    breaks: 'Moving the DROPs out of the guard makes the DROP TABLE look like the only statement that needs the table, and CASCADE looks like the cheap way to stop it failing. It would silently take every dependent object this rollback never named — including grounding_0004\'s attested reader if a future package makes one depend on the table, and any view an operator added between packages. The rollback would still report success and would still be measured as convergent by a script that only counts what it expected to lose.',
+    expectedGate: ['rollback-no-cascade'],
+    apply: sub(
+      "EXECUTE 'DROP TABLE public.evidence_chunks';",
+      "EXECUTE 'DROP TABLE public.evidence_chunks CASCADE';",
+    ),
+  },
 ]
 
 export const MUTATIONS: readonly Mutation[] = [

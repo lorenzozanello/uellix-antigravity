@@ -630,3 +630,34 @@ Registradas aquí en vez de asumirse como propiedad tácita (§7):
   contenedor desechable sin red.
 - PRODUCT-002 queda `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE`:
   el único montaje pendiente está documentado y es una línea.
+
+---
+
+## Tren 4 — integración (2026-08-05)
+
+**Estado: DISEÑO + RUNTIME LOCAL VERIFICADO PARCIALMENTE. Nada aplicado a
+ninguna base persistente. Ninguna bandera habilitada en el repositorio.**
+
+Resultado global: **`STELLA_PARALLEL_TRAIN_4_INTEGRATION_BLOCKED_IDEMPOTENCY`**.
+El recorrido local completo se ejecuta y pasa; lo único que falta para
+`local-runtime-ready` es INT-INT-001 — ver
+[`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+### Resultado del tren 4
+
+**`STELLA_PARALLEL_TRAIN_4_INTEGRATION_BLOCKED_IDEMPOTENCY`**
+
+Las cuatro ramas se fusionaron con `--no-ff` y sus contratos cruzados quedaron
+reconciliados. El recorrido local completo —documentos reales, extracción,
+normalización, versión, chunks persistidos, retrieval SQL atestado, generación
+extractiva, citas verificadas, presentación de Product, decisión humana local—
+**se ejecuta en un contenedor desechable y pasa**.
+
+`local-runtime-ready` **no** pasa a `true`, por una causa única y nombrada:
+INT-INT-001. `consume_stella_quota` exige una clave de idempotencia y esta
+aplicación no tiene fuente canónica para una. Toda clave derivable o bien cobra
+dos veces un reintento, o bien deduplica una consulta legítima repetida. La
+llamada **no** se hace, en vez de hacerse con una clave que parecería cerrar el
+hueco y cobraría de más en silencio.
+
+No se abre el tren 5.

@@ -222,12 +222,20 @@ function runtimeEntrypointGate(root: string): LocalReleaseGateResult {
  * nothing renders is dead code with tests.
  *
  * Answered by asking whether any `page.tsx` under `app/` names the wrapper.
- * As of train 3 the answer is NO, deliberately — seven pipeline pages each
- * mount Stella under a different `AdvisorPipelineStep`, so there is no single
- * unambiguous surface, and inventing an eighth page would create a second
- * Stella experience. PRODUCT-002 is therefore
- * IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE and this returns the reason
- * rather than a bare false.
+ *
+ * Through train 3 the answer was NO, deliberately: seven pipeline pages each
+ * mount Stella under a different `AdvisorPipelineStep`, so there was no single
+ * unambiguous surface and inventing an eighth page would have created a second
+ * Stella experience.
+ *
+ * TRAIN 4 answered it — the project OVERVIEW page. A grounded question has
+ * PROJECT scope, not step scope, so it belongs above the seven methodology
+ * steps rather than inside one of them. PRODUCT-002 leaves
+ * IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE.
+ *
+ * This function is unchanged and still asks the same question, which is the
+ * point: it went from returning a reason to returning nothing because the
+ * TREE changed, not because the check was relaxed.
  */
 const RUNTIME_WRAPPER_SYMBOL = 'StellaGroundedQuerySection'
 
@@ -376,14 +384,26 @@ export function computeLocalReleaseGateReport(
     // database, so it can never observe that a package was applied. Stated as
     // permanently-missing evidence rather than silently assumed satisfied.
     `${GROUNDING_PERSISTENCE_PACKAGES.join(' + ')} exist as PREPARED SQL and have been applied to NO database — until they are, every grounded query returns provider_unavailable. Applying them is a gate this harness cannot run and does not simulate`,
-    `no grounded-answer generator exists: app/actions/stella/grounded-query.ts injects a provider that REJECTS by contract, so the seam is exercised end to end but produces no drafted answer (that is gate G1, a real provider round trip)`,
-    // Adversarial review, train 3 (reviewer B, #9). checkStellaQuota counts
-    // stella_interactions rows, and stella_interactions_stella_role_check
-    // admits six roles of which `grounded_query` is not one — so this
-    // capability ENFORCES a monthly quota it cannot CONSUME. Not fixable from
-    // integration (widening a CHECK is a CAPABILITIES-owned schema change);
-    // listed here so the flag cannot be turned on while it is open.
-    `quota is enforced but not consumed: stella_interactions has no \`grounded_query\` role (contract INT-CAP-001), so a live grounded query would read the org's monthly quota and never charge it`,
+    // TRAIN 4: the generator gap is CLOSED. app/actions/stella/grounded-query.ts
+    // now names createExtractiveAnswerProvider() explicitly, a real local
+    // component that answers by quoting retrieved passages. It is not a
+    // provider round trip and does not claim to be — G1 stays open for that —
+    // but "no generator exists" stopped being true, so the line is gone rather
+    // than kept for symmetry.
+    // TRAIN 4: still open, for a DIFFERENT reason, and the difference matters.
+    //
+    // INT-CAP-001 is closed — stella_0013 widens the role CHECK and installs
+    // uellix_stella.consume_stella_quota, verified against a live disposable
+    // database. What blocks the charge now is INT-INT-001: that function
+    // REQUIRES an idempotency key, and this application has no canonical
+    // server-side source for one (no request id, no signing secret, no ticket
+    // table; a bound server-action argument is fixed per render, not per
+    // question). Every key the action could derive either charges a retry
+    // twice or silently deduplicates a legitimately repeated question.
+    //
+    // So the call is deliberately NOT made. Listed here so the flag cannot be
+    // turned on while an enforced quota has no way to be charged.
+    `quota is enforced but not consumed: consume_stella_quota requires an idempotency key with no canonical server-side source (contract INT-INT-001), so a live grounded query would read the org's monthly quota and never charge it`,
   ]
 
   const localRuntimeReady = integrationReady && missingForLocalRuntime.length === 0

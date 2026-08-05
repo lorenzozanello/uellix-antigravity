@@ -16,6 +16,7 @@ describe('isStellaGroundedQuerySuccess', () => {
       status: 'ok',
       answerId: 'answer-1',
       answer: groundedAnswerView(),
+      answerStrategy: { generatorId: 'grounding-local-extractive/extractive-1', kind: 'extractive' },
     }
     expect(isStellaGroundedQuerySuccess(result)).toBe(true)
   })

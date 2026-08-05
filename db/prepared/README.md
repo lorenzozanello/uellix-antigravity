@@ -16,6 +16,47 @@ requiere acción humana explícita.
 > `tests/prepared-sql-source-of-truth.test.ts` verifica automáticamente que
 > este registro y la realidad no diverjan.
 
+## AVISO OPERATIVO (tren 4) — la cadena de grounding se re-aplica ENTERA
+
+Cada paquete se anuncia individualmente como «idempotente y convergente», y lo
+es **respecto de su propio estado final**. Eso no es lo mismo que ser seguro de
+re-aplicar aisladamente dentro de una cadena.
+
+**`grounding_0003` re-aplicado solo revierte, en silencio, las dos reparaciones
+de seguridad de `grounding_0004`.** Su §5 vuelve a conceder
+`SELECT ON public.evidence_chunks TO authenticated` y su §6 recrea la policy
+`evidence_chunks_select` con `TO authenticated, uellix_app, uellix_auditor` —
+sin `uellix_cap_grounding`. El resultado:
+
+1. **INT-CAP-002 reabierto** — PostgREST vuelve a leer el índice de chunks de
+   toda la organización, esquivando el filtro `canonical_chunk_id IS NULL` que
+   es lo único que impide citar un duplicado suprimido como si fuera el pasaje;
+2. **el hallazgo RLS del tren 4 vuelve** — `uellix_cap_grounding` deja de estar
+   nombrado por una policy SELECT permisiva, y como no tiene `BYPASSRLS`,
+   **toda lectura gobernada devuelve el conjunto vacío en silencio**:
+   `chunks_in_scope*` responde 0 filas, `finalize_document_ingestion` declara
+   toda ingesta incompleta y `register_document_version` clava cada documento
+   en `ordinal = 1`.
+
+Ninguna autoverificación lo detecta, y por construcción: la §9 de
+`grounding_0003` afirma **su** estado final, que es exactamente el que acaba de
+producir. Un GRANT ausente lanza; una POLICY ausente calla.
+
+**Regla, por tanto:** aplicar `grounding_0002 → 0003 → 0004` **siempre como
+unidad**. Si hace falta re-aplicar `0003` por cualquier motivo, re-aplicar
+`0004` inmediatamente después, en la misma ventana. `scripts/stella-train4-dry-run.sh`
+§12 comprueba que `0003` se re-aplica con `0004` puesto y que `0004` vuelve a
+cerrar la superficie; ese orden es el único ejercitado.
+
+**Y el rollback, en orden inverso:** `0004 → 0003 → 0002`.
+`grounding_0003_rollback` **se niega** si `chunks_in_scope_attested` sigue
+instalada, porque dejarla viva impediría retirar `uellix_cap_grounding` y
+bloquearía el rollback de `0002` de forma permanente.
+
+(Hallazgos de la revisión adversarial del tren 4, registrados aquí porque el
+arreglo estructural exigiría editar `grounding_0003` por razones ajenas a su
+rollback.)
+
 ## Reglas
 
 1. **Nada de este directorio se ejecuta automáticamente.** Ni drizzle, ni CI,

@@ -5,7 +5,11 @@
 
 import { describe, it, expect } from 'vitest'
 import { runReleaseEvalHarness, type ReleaseEvalRun, type ReleaseCaseResult } from './harness'
-import { evaluateLocalReleaseGates, computeLocalReleaseGateReport } from './local-release-gate'
+import {
+  evaluateLocalReleaseGates,
+  computeLocalReleaseGateReport,
+  runtimeEntrypointMountReasons,
+} from './local-release-gate'
 import type { LocalRuntimeHarnessReport } from './harness-report'
 
 const CLEAN_RUN_1 = runReleaseEvalHarness()
@@ -58,12 +62,34 @@ describe('computeLocalReleaseGateReport — reduction to the 5 readiness levels'
   it('says exactly WHY local-runtime is not ready — never a bare false', () => {
     expect(report.missingForLocalRuntime.length).toBeGreaterThan(0)
     const joined = report.missingForLocalRuntime.join(' ')
-    // The seam is unmounted...
-    expect(joined).toMatch(/StellaGroundedQuerySection/)
-    expect(joined).toMatch(/IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE/)
-    // ...and the persistence it reads is prepared but unapplied.
+    // The persistence the seam reads is prepared but unapplied — permanently
+    // unverifiable from an offline gate, and stated as such.
     expect(joined).toMatch(/grounding_0003_evidence_chunks\.sql/)
     expect(joined).toMatch(/applied to NO database/)
+    // ...and the enforced quota still cannot be charged. TRAIN 4 changed the
+    // REASON, not the fact: INT-CAP-001 is closed (stella_0013 installs
+    // consume_stella_quota) and INT-INT-001 replaced it (that function needs
+    // an idempotency key with no canonical server-side source).
+    expect(joined).toMatch(/quota is enforced but not consumed/)
+    expect(joined).toMatch(/INT-INT-001/)
+    expect(joined).not.toMatch(/INT-CAP-001/)
+  })
+
+  it('no longer lists the seam as unmounted — train 4 mounted it', () => {
+    // The mirror of the assertion above, and the reason it is a SEPARATE test:
+    // "the reason disappeared" is a different claim from "a reason is
+    // present", and collapsing them would let a future refactor that breaks
+    // `runtimeEntrypointMountReasons` read as a mount.
+    const joined = report.missingForLocalRuntime.join(' ')
+    expect(joined).not.toMatch(/IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE/)
+    expect(joined).not.toMatch(/no page\.tsx under app\/ renders/)
+    // And the check itself still works — it is returning nothing because the
+    // tree changed, not because it was deleted.
+    expect(runtimeEntrypointMountReasons(process.cwd())).toEqual([])
+  })
+
+  it('no longer claims there is no generator — train 4 selected the extractive one', () => {
+    expect(report.missingForLocalRuntime.join(' ')).not.toMatch(/no grounded-answer generator exists/)
   })
 
   it('does NOT list a missing entrypoint MODULE — the seam itself exists on disk', () => {
@@ -202,10 +228,10 @@ const GOOD_HARNESS_REPORT: LocalRuntimeHarnessReport = {
   containerDestroyed: true,
   usedPersistentVolume: false,
   verificationMethod: 'live-database-execution',
-  packagesApplied: ['grounding_0002', 'grounding_0003', 'stella_0003'],
-  train4PackageStatus: 'not-yet-available',
+  packagesApplied: ['grounding_0002', 'grounding_0003', 'stella_0013', 'grounding_0004'],
+  train4PackageStatus: 'applied',
   documentsIngestedViaRealPipeline: true,
-  sqlFunctionsInvoked: ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope'],
+  sqlFunctionsInvoked: ['register_document_version', 'insert_evidence_chunks', 'finalize_document_ingestion', 'chunks_in_scope_attested'],
   databaseApplied: true,
   crossProjectRetrievalRejected: true,
   idempotentReapplyVerified: true,
@@ -215,12 +241,15 @@ const GOOD_HARNESS_REPORT: LocalRuntimeHarnessReport = {
   citationValidationIssueCount: 0,
   contradictionAttributed: true,
   abstentionObserved: true,
+  scopeAttestationVerified: true,
   quotaConsumptionClaimed: false,
-  quotaRoleExists: false,
+  quotaRoleExists: true,
+  quotaChargedByRuntime: true,
   scopeAttestedViaJwtClaims: true,
   groundedQueryFlagState: 'enabled-in-process-only',
   providerCallCount: 0,
   observabilityEventsSanitized: true,
+  observabilityEventSource: 'runtime-emitted',
   observabilityEventViolationCount: 0,
   localDecisionRowCount: 0,
   decisionsPersistenceFlagState: 'disabled',

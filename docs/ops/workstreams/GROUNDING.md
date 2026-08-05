@@ -1206,3 +1206,56 @@ server actions INTEGRATION-OWNED) fue modificada; el diff completo vive bajo
    este tren, y con qué texto en la UI (R9). El cambio de código es sustituir
    `absentAnswerDraftProvider` por `createExtractiveAnswerProvider()`, o llamar
    directamente a `runGroundedQuery`, que ya la trae por defecto.
+
+---
+
+## Tren 4 — integración (2026-08-05)
+
+**Estado: DISEÑO + RUNTIME LOCAL VERIFICADO PARCIALMENTE. Nada aplicado a
+ninguna base persistente. Ninguna bandera habilitada en el repositorio.**
+
+Resultado global: **`STELLA_PARALLEL_TRAIN_4_INTEGRATION_BLOCKED_IDEMPOTENCY`**.
+El recorrido local completo se ejecuta y pasa; lo único que falta para
+`local-runtime-ready` es INT-INT-001 — ver
+[`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+### Estado de los contratos tras la integración
+
+| Contrato | Estado |
+|---|---|
+| INT-GR-001 | **pendiente, con defecto exacto** (propietaria: CAPABILITIES) |
+| INT-GR-002 | **ACCEPTED** — el arreglo ya existía en `8b8693e`; el tren 4 añadió validación E2E |
+| INT-GR-003 | **pendiente explícito** — `LINE_RANGE_NOT_PERSISTED` sigue visible |
+| INT-GR-004 | **ACCEPTED** — SQL (`grounding_0004` §3) + adaptador migrado |
+
+### INT-GR-001 — el hueco, nombrado con precisión
+
+`claim_active_document_version` **sí** reimpone la frontera de organización
+(`v_org = ANY(public.current_user_org_ids())`) y **no** filtra `project_id`: su
+predicado final es `WHERE v.evidence_id = p_evidence_id`, sin más. Un
+`evidence_id` de otro proyecto de la propia organización se responde. Devuelve
+además siete columnas y ninguna es scope, así que el llamante tampoco puede
+detectar la discrepancia — el gemelo exacto de INT-GR-004, en la ruta de
+ingesta.
+
+No se declara cerrado porque el llamante ya conozca el scope. Repararlo cambia
+el tipo de retorno, que `CREATE OR REPLACE` prohíbe (`42P13`), luego requiere un
+paquete nuevo de CAPABILITIES. **Mitigado, no cerrado:**
+`db/grounding/grounding-ingestion-repository.ts` reimpone el proyecto
+localmente (`assertEvidenceInScope`) antes de nombrar la evidencia en cualquier
+llamada gobernada.
+
+### INT-GR-004 — el adaptador dejó de compararse consigo mismo
+
+`db/grounding/grounding-chunk-repository.ts` llama a
+`chunks_in_scope_attested` y construye cada chunk con el scope **de la fila**.
+`attestScope` devuelve `governed_row` con los cinco campos, y dos
+comprobaciones cruzadas hacen la atestación no trivial: `document_version_id` y
+`evidence_id` de la fila deben coincidir con lo que la búsqueda de versión
+—una lectura independiente— resolvió. El server action activa
+`requireScopeAttestation: true`, de modo que un repositorio que **no** pueda
+atestar falla en vez de pasar una comprobación vacua.
+
+`versionId` es el único campo de la atestación que no se lee de la fila, y se
+documenta por qué: la fila devuelve el `uuid` de la versión, no el `char(64)`
+del contrato. Se concluye del cruce (1), no se copia de la petición.

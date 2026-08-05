@@ -8,13 +8,24 @@
 //   StellaGroundedQueryPanel (client)   asks { query }
 //        |                               ^
 //        v                               |
-//   runStellaGroundedQuery (here)  ------+   flag -> auth -> scope -> permission
-//        |                                    -> quota -> repository -> orchestrator
-//        v                                    -> ONE mapping -> sanitized result
-//   orchestrateGroundedResponse (GROUNDING)
+//   runStellaGroundedQuery (here)  ------+   1 flag -> 2 auth -> 3 org scope ->
+//        |                                   4 project scope -> 5 permission ->
+//        |                                   6 project membership -> 7 quota ->
+//        v                                   8 repository -> 9 query journey ->
+//   runGroundedQuery (GROUNDING)             10 ONE mapping -> 11 sanitized audit
 //        |
 //        v
-//   createPersistedGroundingChunkRepository (db/grounding) -> chunks_in_scope
+//   createPersistedGroundingChunkRepository (db/grounding)
+//        -> uellix_grounding.chunks_in_scope_attested
+//
+// WHY PERMISSION (5) SITS AFTER THE SCOPE IS DERIVED (3, 4) BUT BEFORE THE
+// DATABASE IS TOUCHED (6). Steps 3 and 4 are pure derivations — the
+// organization comes out of the session object step 2 already returned, and
+// the project is the bound argument, trimmed and shape-checked. Neither reads
+// a row. So ordering them ahead of the role check costs nothing and gives the
+// permission failure a scope to be reported against, while the first statement
+// that actually queries (6, project membership) still happens only after a
+// caller has been shown to hold the capability at all.
 //
 // It satisfies `StellaGroundedQueryRunner` exactly, and `components/stella/**`
 // does not import it: the runner is a PROP, wired at the mount site. That is
@@ -47,12 +58,20 @@
 // ---------------------------------------------------------------------------
 // THERE IS NO FIXTURE PATH
 // ---------------------------------------------------------------------------
-// No mock repository, no seeded corpus, no sample answer. The generation step
-// does not exist yet, and its absence is reported as `provider_unavailable`
-// (see `absentAnswerDraftProvider`) — a claim about the SYSTEM — rather than
-// filled in with plausible text, which would put unverifiable statements
-// behind a citation UI whose whole purpose is that its statements are
-// verifiable.
+// No mock repository, no seeded corpus, no sample answer.
+//
+// Until Train 4 there was no generator either, and its absence was reported as
+// `provider_unavailable` — a claim about the SYSTEM — rather than filled in
+// with plausible text. That placeholder is gone: `runGroundedQuery` is given
+// the LOCAL EXTRACTIVE generator explicitly (step 9), a real component that
+// answers by quoting retrieved passages verbatim and runs offline.
+//
+// IT IS SELECTED, NEVER FALLEN BACK TO. The generator is named in the request
+// unconditionally; there is no branch that reaches for it because a database
+// was down, a package was missing or authorization failed. Those remain
+// operational failures and remain `provider_unavailable`: answering them with
+// quotations from an empty retrieval would present a system fault as an
+// evidence finding.
 
 import { randomUUID } from 'node:crypto'
 import { and, eq, inArray } from 'drizzle-orm'
@@ -75,11 +94,12 @@ import {
   type GroundingScope,
 } from '@/lib/grounding/contracts'
 import {
-  orchestrateGroundedResponse,
+  EXTRACTIVE_GENERATOR_NAME,
   RepositoryContractViolationError,
-  type AnswerDraftProvider,
+  createExtractiveAnswerProvider,
+  runGroundedQuery,
+  type GroundedQueryRun,
   type GroundingOrchestrationClassification,
-  type GroundingOrchestrationResult,
 } from '@/lib/grounding/retrieve'
 import { adaptGroundedAnswer, presentationInputFromRetrieval } from '@/components/stella/grounding-adapter'
 import type {
@@ -138,26 +158,6 @@ const CLASSIFICATION_IS_ANSWERABLE: Record<GroundingOrchestrationClassification,
 /* The generation seam                                                        */
 /* -------------------------------------------------------------------------- */
 
-/**
- * There is no grounded-answer generator in this train.
- *
- * `AnswerDraftProvider` documents that an implementation must REJECT rather
- * than return a degraded draft when it could not run, and that
- * `orchestrateGroundedResponse` turns that rejection into
- * `provider_unavailable`. So the honest implementation of "no generator
- * exists" is one that rejects — not one that returns an empty draft, which
- * would assert "nothing to say about your evidence", a claim nothing measured.
- *
- * This is NOT a mock and NOT a fallback: it produces no content of any kind.
- */
-const absentAnswerDraftProvider: AnswerDraftProvider = {
-  id: 'stella-grounded-answer-generator-absent',
-  draftAnswer() {
-    return Promise.reject(
-      new Error('no grounded-answer generator is configured in this build'),
-    )
-  },
-}
 
 /* -------------------------------------------------------------------------- */
 /* Entry point                                                                */
@@ -172,32 +172,75 @@ const absentAnswerDraftProvider: AnswerDraftProvider = {
 const MAX_EVIDENCE_ITEMS_PER_QUERY = 25
 
 /**
- * THE QUOTA LEDGER HAS NO ROW TYPE FOR THIS CAPABILITY, AND THAT IS WHY
- * NOTHING IS CHARGED HERE.
+ * QUOTA IS ENFORCED HERE AND STILL NOT CHARGED — AND THE REASON CHANGED IN
+ * TRAIN 4. READ THIS BEFORE "JUST CALLING THE FUNCTION".
  *
- * `checkStellaQuota` counts rows in `stella_interactions`, and every sibling
- * Stella action inserts one after a successful call precisely so the next
- * caller's quota check sees it. This action reads the quota (below) and does
- * NOT insert — so as written it would never CONSUME what it enforces.
+ * ---------------------------------------------------------------------------
+ * WHAT IS NO LONGER THE PROBLEM
+ * ---------------------------------------------------------------------------
+ * INT-CAP-001 is closed. `db/prepared/stella_0013_grounded_query_quota.sql`
+ * widens `stella_interactions_stella_role_check` to admit `grounded_query` and
+ * installs `uellix_stella.consume_stella_quota`, which checks AND charges one
+ * unit inside the caller's transaction under a per-organization advisory lock.
+ * It is verified against a live disposable database
+ * (`scripts/stella-train4-dry-run.sh`): first consumption, exhaustion,
+ * cross-organization `U0102`, cross-project `U0102`, ungoverned role `U0106`,
+ * and two real sessions racing for the last unit where the second waits for
+ * the first to COMMIT and gets `quota_exceeded`.
  *
- * That is a real gap and it is not being hidden. It is also not fixable from
- * here: `stella_interactions_stella_role_check` admits exactly six values —
- * advisor, validator, composer, proxy_reviewer, evidence_reviewer,
- * audit_assistant — and `grounded_query` is not one of them. The two ways to
- * "fix" it locally are both worse than the gap:
+ * ---------------------------------------------------------------------------
+ * WHAT IS THE PROBLEM — INT-INT-001, THE IDEMPOTENCY KEY HAS NO SOURCE
+ * ---------------------------------------------------------------------------
+ * `consume_stella_quota` REQUIRES an `idempotency_key`, and the requirement is
+ * right: `uq_stella_interactions_idempotency` is what turns "do not charge a
+ * retry twice" into a property of the DATA rather than of who called. But a
+ * key is only worth the distinction it draws, and it must draw exactly one:
  *
- *   - file the interaction as `advisor`, which corrupts quota attribution and
- *     the compliance trail for a capability that is not the advisor;
- *   - widen the CHECK constraint, which is `db/**` — CAPABILITIES-owned, and
- *     a schema change integration does not get to make unilaterally.
+ *     a RETRY of one question  ->  same key   (charge once)
+ *     a NEW question           ->  new key    (charge again)
  *
- * So: contract request INT-CAP-001 asks CAPABILITIES for a `grounded_query`
- * value, the audit trail below is written NOW (it has no such constraint), and
- * the release gate lists the uncharged quota as missing evidence for
- * local-runtime-ready. The flag cannot be turned on without closing it.
+ * Everything this action can reach fails one side of that:
+ *
+ *   * `randomUUID()` per invocation — the client cannot influence it, and a
+ *     retry gets a fresh key. Charges twice. Fails the left side.
+ *   * a digest of (user, project, query) — stable across a retry, and equally
+ *     stable across a reviewer legitimately asking the same question twice
+ *     after uploading new evidence. The second one is free. Fails the right
+ *     side, and is named as prohibited in the Train 4 dispatch.
+ *   * a timestamp bucket — the same collapse, with an arbitrary window, and
+ *     unsigned so it protects nothing.
+ *   * a value in the payload — `StellaGroundedQueryRequest` is `{ query }`
+ *     and must stay `{ query }`; a client-chosen key is a client-chosen
+ *     discount.
+ *   * a bound server-action argument — the one mechanism here that IS
+ *     unforgeable (Next.js seals it server-side and it travels encrypted).
+ *     But it is bound at RENDER, and one render serves many questions, so a
+ *     bound token is constant exactly where it needs to vary. Re-binding per
+ *     question would require a server round trip whose response the client
+ *     then chooses to use or ignore — which returns the choice to the client.
+ *
+ * Searched for and NOT FOUND in this application: any canonical `requestId`,
+ * `correlationId` or `invocationId` (no middleware, no request-scoped id —
+ * `headers()` is used only for a rate-limit IP); any general-purpose signing
+ * secret (only `STRIPE_*`, another domain's credential); any table of issued
+ * operation tickets. `lib/capabilities/contracts.ts` CAP-05 defines the
+ * `replayed` vocabulary but is `enabled: false` and mints no keys.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY NOTHING IS CHARGED RATHER THAN SOMETHING BEING CHARGED
+ * ---------------------------------------------------------------------------
+ * Calling the function with a per-invocation uuid would look like the gap was
+ * closed, pass a naive reading of the ledger, and double-charge every retry —
+ * a worse state than the honest one, because the failure would be invisible
+ * and would land on the customer's bill. So the call is NOT made, the quota is
+ * still ENFORCED (the read below refuses an exhausted organization), and the
+ * shortfall is recorded as contract request INT-INT-001.
+ *
+ * This is what blocks `local-runtime-ready`. The feature flag must not be
+ * turned on while an enforced quota cannot be charged.
  */
-const QUOTA_LEDGER_ROLE_MISSING =
-  'stella_interactions has no `grounded_query` role (INT-CAP-001); quota is enforced but not consumed'
+const QUOTA_LEDGER_NOT_CHARGED =
+  'consume_stella_quota requires an idempotency key with no canonical server-side source (INT-INT-001); quota is enforced but not consumed'
 
 export interface StellaGroundedQueryOptions {
   /**
@@ -245,13 +288,13 @@ async function runStellaGroundedQuery(
     return failure('UNAUTHORIZED', 'Se requiere autenticación.')
   }
 
-  // 3. PERMISSION — set inclusion, same gate as every other Stella action.
-  if (!canUseStella(ctx.membership.role)) {
-    return failure('UNAUTHORIZED', 'Tu rol no tiene permiso para usar Stella.')
-  }
+  // 3. ORGANIZATION SCOPE — DERIVED, never received. It is the id the session
+  //    object already carries; there is no parameter for it anywhere in this
+  //    module and no read happens to obtain it.
+  const organizationId = ctx.organization.id
 
-  // 4. SCOPE — DERIVED. organizationId from the session; the project verified
-  //    to belong to it.
+  // 4. PROJECT SCOPE — DERIVED from the SERVER-BOUND argument, never from the
+  //    payload.
   //
   //    `GroundingScope.projectId` is `string | null` ("the whole organization"
   //    is a representable scope), and this path REFUSES that width: a grounded
@@ -260,18 +303,31 @@ async function runStellaGroundedQuery(
   //    reviewer is looking at nothing of. `projectId` is narrowed to a
   //    non-empty string before the scope is built, and stays the value every
   //    query below uses.
+  //
+  //    Still no row has been read: this is a trim and a shape check.
   const projectId = typeof options.boundProjectId === 'string' ? options.boundProjectId.trim() : ''
   if (projectId === '') {
     return failure('UNAUTHORIZED', 'El proyecto solicitado no es válido para esta sesión.')
   }
 
-  const scope: GroundingScope = { organizationId: ctx.organization.id, projectId }
+  const scope: GroundingScope = { organizationId, projectId }
   try {
     assertValidScope(scope)
   } catch {
     return failure('UNAUTHORIZED', 'El proyecto solicitado no es válido para esta sesión.')
   }
 
+  // 5. PERMISSION — set inclusion, same gate as every other Stella action.
+  //    Last of the checks that cost no I/O, and deliberately the last one
+  //    before any statement runs: a caller without the capability never
+  //    reaches the database at all.
+  if (!canUseStella(ctx.membership.role)) {
+    return failure('UNAUTHORIZED', 'Tu rol no tiene permiso para usar Stella.')
+  }
+
+  // 6. PROJECT MEMBERSHIP — the FIRST read. The bound project must belong to
+  //    the authenticated session's organization; `bind` makes the argument
+  //    unforgeable, this makes it irrelevant whether it was.
   const projectBelongs = await withOrganizationDatabaseContext(() =>
     db
       .select({ id: projects.id })
@@ -289,7 +345,8 @@ async function runStellaGroundedQuery(
     return failure('UNAUTHORIZED', 'El proyecto solicitado no es válido para esta sesión.')
   }
 
-  // 5. QUOTA, then the per-hour rate limit. Both before any chunk is read.
+  // 7. QUOTA, then the per-hour rate limit. Both before any chunk is read.
+  //    ENFORCED here; NOT charged — see QUOTA_LEDGER_NOT_CHARGED (INT-INT-001).
   const quota = await withOrganizationDatabaseContext(() => checkStellaQuota(scope.organizationId)).catch(
     () => null,
   )
@@ -314,7 +371,7 @@ async function runStellaGroundedQuery(
     return failure('RATE_LIMITED', 'Alcanzaste el límite de consultas por hora. Intentá de nuevo más tarde.')
   }
 
-  // 6. AUTHORIZED EVIDENCE SET — named explicitly, because the governed SQL
+  // 8. AUTHORIZED EVIDENCE SET — named explicitly, because the governed SQL
   //    surface cannot enumerate "anything within scope" (see the repository).
   const evidenceIds = await withOrganizationDatabaseContext(() =>
     db
@@ -346,18 +403,39 @@ async function runStellaGroundedQuery(
     return failure('UNSUPPORTED_STEP', 'Este proyecto no tiene evidencia cargada para fundamentar una respuesta.')
   }
 
-  // 7. REPOSITORY + ORCHESTRATOR. Everything below runs inside the identity
-  //    context so `chunks_in_scope` sees the session's claims.
-  let orchestration: GroundingOrchestrationResult
+  // 8/9. REPOSITORY + QUERY JOURNEY. Everything below runs inside the identity
+  //       context so `chunks_in_scope_attested` sees the session's claims.
+  //
+  //       `runGroundedQuery` is the whole journey as one call — scope ->
+  //       repository -> retrieval -> extractive generation -> citation
+  //       validation -> canonical classification -> provenance. It adds NO
+  //       vocabulary: it returns `GroundingOrchestrationResult` verbatim plus
+  //       one provenance field, so the six-member
+  //       `GroundingOrchestrationClassification` remains the only status
+  //       vocabulary at this boundary (R8).
+  let run: GroundedQueryRun
   try {
-    orchestration = await withOrganizationDatabaseContext(() =>
-      orchestrateGroundedResponse(
-        createPersistedGroundingChunkRepository(scope),
-        absentAnswerDraftProvider,
+    run = await withOrganizationDatabaseContext(() =>
+      runGroundedQuery({
+        repository: createPersistedGroundingChunkRepository(scope),
         scope,
-        queryText,
-        { evidenceIds: evidenceIds.map((row) => row.id) },
-      ),
+        text: queryText,
+        // The strategy is CHOSEN here, in the composition root, and named in
+        // the request rather than left to the default. Relying on the default
+        // would make "which generator answered?" a question about another
+        // module's constant.
+        generator: createExtractiveAnswerProvider(),
+        retrieval: {
+          evidenceIds: evidenceIds.map((row) => row.id),
+          // INT-GR-004. The persisted adapter reads
+          // `chunks_in_scope_attested`, so every chunk arrives with the scope
+          // its ROW carries and `enforceRepositoryScope`'s comparison is real.
+          // Demanding attestation here is what makes a repository that CANNOT
+          // attest fail loudly instead of passing a vacuous check — including,
+          // specifically, a database where grounding_0004 is not applied.
+          requireScopeAttestation: true,
+        },
+      }),
     )
   } catch (error) {
     // A scope or repository-contract break is a BOUNDARY BREAK, not an
@@ -375,21 +453,23 @@ async function runStellaGroundedQuery(
     return failure('UNKNOWN_ERROR', 'La consulta no pudo completarse.')
   }
 
-  // 8/9. VALIDATE + ADAPT — exactly once, through the ONE authorized producer
-  //      of the presentation model.
-  const result = toProductResult(orchestration)
+  // 10. ADAPT — exactly once, through the ONE authorized producer of the
+  //     presentation model. Citation validation already happened inside the
+  //     journey, against the chunks retrieval actually returned.
+  const result = toProductResult(run)
 
-  // 10. AUDIT. Metadata only — ids, codes and counts, never the query text,
+  // 11. AUDIT (sanitized observability). Metadata only — ids, codes and counts, never the query text,
   //     never a claim, never a passage. Fire-and-forget: an audit_logs failure
   //     must not change what the reviewer sees, which is the same rule
   //     app/actions/stella/advisor.ts states for its own trail.
   //
   //     This is the half of the compliance record that IS writable today. The
   //     other half — the `stella_interactions` row that would CONSUME quota —
-  //     is blocked on INT-CAP-001; see QUOTA_LEDGER_ROLE_MISSING.
+  //     is blocked on INT-INT-001; see QUOTA_LEDGER_NOT_CHARGED.
   void auditGroundedQuery(ctx, projectId, {
-    outcome: result.status === 'ok' ? orchestration.classification : result.code,
-    quotaLedger: QUOTA_LEDGER_ROLE_MISSING,
+    outcome: result.status === 'ok' ? run.classification : result.code,
+    generator: run.provenance.generatorId,
+    quotaLedger: QUOTA_LEDGER_NOT_CHARGED,
   })
 
   return result
@@ -462,13 +542,34 @@ export async function runStellaGroundedQueryForProject(
  * The ONE function that turns an orchestration result into a product result.
  * See `CLASSIFICATION_IS_ANSWERABLE` for why the split is where it is.
  */
-function toProductResult(orchestration: GroundingOrchestrationResult): StellaGroundedQueryResult {
-  const { classification, outcome } = orchestration
+function toProductResult(run: GroundedQueryRun): StellaGroundedQueryResult {
+  const { classification, outcome } = run
 
   if (!CLASSIFICATION_IS_ANSWERABLE[classification]) {
     // No provider detail crosses the boundary. `outcome.answer.abstention`
     // names the failing component internally; the client gets a fixed string.
-    return failure('GEMINI_ERROR', 'Stella no pudo generar una respuesta fundamentada en este momento.')
+    //
+    // `UNKNOWN_ERROR`, NOT `GEMINI_ERROR` — adversarial review B, train 4.
+    //
+    // The only unanswerable classification is `provider_unavailable`, and in
+    // THIS flow there is no provider. The generator is local and offline, so
+    // the condition can only originate in the repository: a grounding package
+    // not applied, a missing attestation column, a connection refused.
+    //
+    // `GEMINI_ERROR` renders as "Error del servicio de IA … Podés intentar de
+    // nuevo en unos minutos" with `retryable: true`. Both halves are wrong
+    // here: it names a service this path never calls, and it invites a retry
+    // for a condition that is typically PERMANENT until an operator applies a
+    // package. In a tool whose output is meant to be auditable, telling a
+    // reviewer the AI service failed when the evidence index is missing is a
+    // misattribution they cannot see through.
+    //
+    // `UNKNOWN_ERROR` renders as "Stella no está disponible temporalmente"
+    // with `retryable: false`. It claims nothing about a component, and its
+    // non-retryable stance matches a fault a retry does not clear. The 12-code
+    // taxonomy is reused rather than widened — a thirteenth code would be a
+    // second error vocabulary for the five sibling actions to learn.
+    return failure('UNKNOWN_ERROR', 'Stella no pudo generar una respuesta fundamentada en este momento.')
   }
 
   // `retrieval` is null only when retrieval itself failed, which is
@@ -486,6 +587,26 @@ function toProductResult(orchestration: GroundingOrchestrationResult): StellaGro
     // identities for the same exchange (PRODUCT-002 §4).
     answerId: randomUUID(),
     answer: adaptGroundedAnswer(outcome.answer, input),
+    // R9 — the disclosure input, DERIVED from what actually ran.
+    //
+    // `kind` is computed from `run.provenance.generatorId`, which
+    // `runGroundedQuery` read off the generator object it invoked. It is not a
+    // constant this file chose and not a value the panel could have guessed:
+    // the comparison lives here because this is the layer that imports
+    // `lib/grounding`, and shipping the CLASSIFICATION instead of the id keeps
+    // the generator's name out of `components/stella/**` entirely.
+    //
+    // Prefix match on the NAME, not equality with the full id: the id embeds a
+    // contract version (`grounding-local-extractive/extractive-1`) that is
+    // expected to move. An equality check would silently stop matching at
+    // `extractive-2` and silently drop the disclosure — the one failure mode a
+    // disclosure must not have.
+    answerStrategy: {
+      generatorId: run.provenance.generatorId,
+      kind: run.provenance.generatorId.startsWith(`${EXTRACTIVE_GENERATOR_NAME}/`)
+        ? 'extractive'
+        : 'generative',
+    },
   }
 }
 

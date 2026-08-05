@@ -26,16 +26,17 @@ falta una capa de adaptación antes de poder consumirlo. No es `aceptado`
 | PRODUCT-001 | PRODUCT | GROUNDING | `aceptado` (tren 2, vía adaptador) | 2026-08-04 | [PRODUCT-001_grounded-citation-provenance.md](PRODUCT-001_grounded-citation-provenance.md) |
 | INTEGRATION-001 | INTEGRACIÓN | PRODUCT | `aceptado` (tren 2) | 2026-08-04 | [Adaptador de citas GROUNDING → PRODUCT](INTEGRATION-001_grounding_product_citation_adapter.md) |
 | GR-CAP-002 | CAPABILITIES | GROUNDING | `aceptado` (tren 3) | 2026-08-05 | [`EXTRACTOR_VERSION` canónico](#gr-cap-002--extractor_version-tren-3) (§ abajo) |
-| PRODUCT-002 | PRODUCT | INTEGRACIÓN | `IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE` (tren 3) | 2026-08-05 | [Punto de entrada del orquestador](PRODUCT-002_grounded_query_orchestrator_entry_point.md) |
-| INT-GR-001 | INTEGRACIÓN | GROUNDING | `solicitado` | 2026-08-05 | [Lectura gobernada de versión activa](#int-gr-001--lectura-gobernada-de-versión-activa-tren-3) (§ abajo) |
-| INT-GR-002 | INTEGRACIÓN | GROUNDING | `solicitado` | 2026-08-05 | [Aislamiento por proyecto en `validateAnswerCitations`](#int-gr-002--aislamiento-por-proyecto-a-f1-tren-3) (§ abajo) |
-| INT-GR-003 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [`ChunkLocation` no reconstruible desde persistencia](#int-gr-003--chunklocation-no-reconstruible-tren-3) (§ abajo) |
+| PRODUCT-002 | PRODUCT | INTEGRACION | `aceptado` (tren 4: montado en la superficie de proyecto) | 2026-08-05 | [Punto de entrada del orquestador](PRODUCT-002_grounded_query_orchestrator_entry_point.md) |
+| INT-GR-001 | INTEGRACION | CAPABILITIES | `solicitado` (tren 4: defecto acotado) | 2026-08-05 | [Lectura gobernada de version activa](#int-gr-001--lectura-gobernada-de-versión-activa-tren-3) (ver resolucion del tren 4, abajo) |
+| INT-GR-002 | INTEGRACION | GROUNDING | `aceptado` (tren 4) | 2026-08-05 | [Aislamiento por proyecto en `validateAnswerCitations`](#int-gr-002--aislamiento-por-proyecto-a-f1-tren-3) |
+| INT-GR-003 | INTEGRACION | CAPABILITIES | `solicitado` (decidido, SQL pendiente) | 2026-08-05 | [`ChunkLocation` no reconstruible desde persistencia](#int-gr-003--chunklocation-no-reconstruible-tren-3) |
 | INT-PR-001 | INTEGRACIÓN | PRODUCT | `solicitado` | 2026-08-05 | [Clave canónica de decisión para respuestas fundamentadas](#int-pr-001--clave-canónica-de-decisión-tren-3) (§ abajo) |
-| INT-CAP-001 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [Rol `grounded_query` en el ledger de cuota](#int-cap-001--rol-grounded_query-en-el-ledger-de-cuota) (§ abajo) |
-| INT-CAP-002 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [`evidence_chunks` concede SELECT directo a `authenticated`](#int-cap-002--evidence_chunks-concede-select-directo-a-authenticated) (§ abajo) |
-| INT-CAP-003 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [`content_hash` nunca se verifica contra `content`](#int-cap-003--content_hash-nunca-se-verifica-contra-content) (§ abajo) |
-| INT-CAP-004 | INTEGRACIÓN | CAPABILITIES | `solicitado` | 2026-08-05 | [Rollback incompleto y forja de `chunk_id` por el owner](#int-cap-004--rollback-incompleto-y-forja-de-chunk_id-por-el-owner) (§ abajo) |
-| INT-GR-004 | INTEGRACIÓN | GROUNDING | `solicitado` | 2026-08-05 | [`chunks_in_scope` debería devolver el scope de la fila](#int-gr-004--chunks_in_scope-debería-devolver-el-scope-de-la-fila) (§ abajo) |
+| INT-CAP-001 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4, `stella_0013`) | 2026-08-05 | [Rol `grounded_query` en el ledger de cuota](#int-cap-001--rol-grounded_query-en-el-ledger-de-cuota) |
+| INT-CAP-002 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4, `grounding_0004` 2b) | 2026-08-05 | [`evidence_chunks` concede SELECT directo a `authenticated`](#int-cap-002--evidence_chunks-concede-select-directo-a-authenticated) |
+| INT-CAP-003 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4, `grounding_0004` 1a/1b) | 2026-08-05 | [`content_hash` nunca se verifica contra `content`](#int-cap-003--content_hash-nunca-se-verifica-contra-content) |
+| INT-CAP-004 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4: 1c + rollback reparado) | 2026-08-05 | [Rollback incompleto y forja de `chunk_id` por el owner](#int-cap-004--rollback-incompleto-y-forja-de-chunk_id-por-el-owner) |
+| INT-INT-001 | INTEGRACION | INTEGRACION | `solicitado` (BLOQUEANTE) | 2026-08-05 | [Clave de idempotencia sin fuente canonica](#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4) |
+| INT-GR-004 | INTEGRACION | GROUNDING | `aceptado` (tren 4: SQL + adaptador atestado) | 2026-08-05 | [`chunks_in_scope` deberia devolver el scope de la fila](#int-gr-004--chunks_in_scope-debería-devolver-el-scope-de-la-fila) |
 
 ## Resolución del tren 1 (integración, 2026-08-04)
 
@@ -644,3 +645,134 @@ cero de TypeScript. Es suficiente, pero **no es lo que un lector de
 decorativo. Integración documentó la situación en el adaptador y prohibió
 explícitamente añadir una cuarta comprobación que leyera los campos
 fabricados: parecería verificación y no verificaría nada.
+
+
+---
+
+## Resolución del tren 4 (integración, 2026-08-05)
+
+Cuatro ramas fusionadas con `--no-ff`: `codex/stella-capabilities` (`e47b34f`),
+`codex/stella-grounding` (`04f950e`), `codex/stella-product` (`19e8f5b`),
+`codex/stella-release` (`a08bd7a`).
+
+### Lo que cierra
+
+**INT-CAP-001 → `aceptado`.** `db/prepared/stella_0013_grounded_query_quota.sql`
+admite `grounded_query` en el CHECK del ledger e instala
+`uellix_stella.consume_stella_quota`, que comprueba **y cobra** dentro de la
+transacción del llamante bajo un lock de advisory por organización. Verificado
+en vivo (`scripts/stella-train4-dry-run.sh`): primer consumo, agotamiento,
+organización cruzada `U0102`, proyecto cruzado `U0102`, rol no gobernado
+`U0106`, y dos sesiones reales disputando la última unidad.
+
+**INT-CAP-002 / INT-CAP-003 → `aceptado`.** `grounding_0004` §2b retira el
+`SELECT` de `authenticated` sobre `evidence_chunks` y lo saca de la policy;
+§1a/§1b atan `content_hash = sha256(content)` y la cota del span con `CHECK`
+—que alcanza al dueño y no lo silencia `session_replication_role`.
+
+**INT-CAP-004 → `aceptado`, las dos partes.** §1c ata la derivación de
+`chunk_id` como `CHECK`. La parte (1), el rollback, se reparó **en esta
+integración**: los cuatro `DROP FUNCTION` de `grounding_0003_rollback.sql`
+salieron del `ELSE` de «si la tabla existe» y son ahora incondicionales, con
+una aserción posterior que verifica que ninguna sobrevivió. El defecto no era
+cosmético: `uellix_cap_grounding` posee las tres funciones, PostgreSQL se niega
+a retirar un rol que aún posee algo, y por tanto un rollback que reportaba
+éxito dejaba el rollback de `grounding_0002` **permanentemente imposible**.
+Vigilado por el gate `rollback-function-drop-unconditional` (extendido para
+leer ese fichero) y por dos mutaciones nuevas, `T-61` y `T-62`. Convergencia
+comprobada en vivo: `grounding-dry-run.sh` vuelve exactamente al baseline
+`38/107/0/0/0/10` y la reaplicación da `40/114/1/5/1/16`.
+
+**INT-GR-002 → `aceptado`.** El arreglo **ya existía** en `8b8693e`, anterior
+al HEAD del tren 3; la descripción del contrato estaba desactualizada. Lo que
+el tren 4 añadió es **validación E2E**, no implementación — no debe
+describirse como trabajo hecho de nuevo.
+
+**INT-GR-004 → `aceptado`.** `grounding_0004` §3 publica
+`chunks_in_scope_attested` (17 columnas: las 13 más el scope real de la fila) y
+`db/grounding/grounding-chunk-repository.ts` migró a ella: el scope de cada
+chunk se lee **de la fila**, y el server action activa
+`requireScopeAttestation: true`. La comparación de `enforceRepositoryScope`
+dejó de ser tautológica. `chunks_in_scope` no se elimina —su rollback y su
+reaplicación la necesitan— simplemente ya no la usa ninguna ruta de runtime.
+
+**PRODUCT-002 → `aceptado`.** Montado en
+`app/app/projects/[projectId]/page.tsx` — la superficie de proyecto, fuera de
+los siete pasos metodológicos. Payload `{ query }`, scope derivado en
+servidor, `onDecision` sin cablear.
+
+### Lo que queda abierto
+
+**INT-GR-001 — defecto acotado, propietaria reasignada a CAPABILITIES.**
+`claim_active_document_version` reimpone la frontera de **organización**
+(`v_org = ANY(current_user_org_ids())`) y **no filtra `project_id`**: su
+predicado final es `v.evidence_id = p_evidence_id` a secas. Un `evidence_id` de
+otro proyecto de la propia organización se responde. Además devuelve siete
+columnas y ninguna es scope, así que el llamante tampoco puede detectarlo — el
+gemelo de INT-GR-004 en la ruta de ingesta. **No se declara cerrado porque el
+llamante conozca el scope.** Repararlo cambia el tipo de retorno, que
+`CREATE OR REPLACE` prohíbe (`42P13`), luego exige un paquete nuevo. Mitigado,
+no cerrado: `db/grounding/grounding-ingestion-repository.ts` reimpone el
+proyecto localmente con un `SELECT` scoped antes de nombrar la evidencia.
+
+**INT-GR-003 — pendiente explícito.** Se conserva la decisión de GROUNDING:
+persistir `line_start`/`line_end` cuando exista el contrato SQL, **no**
+hacerlos nulables, **no** inventarlos hoy. `LINE_RANGE_NOT_PERSISTED = 0` sigue
+siendo explícito y fuera del dominio 1-based, de modo que «no recuperable desde
+persistencia» es distinguible de un número plausible pero equivocado. No
+bloquea el runtime local: la limitación está representada sin inventar datos.
+
+**INT-PR-001 — pendiente.** Sin clave canónica de decisión; `suggestionKey` no
+se reutiliza. La UI declara por escrito que la decisión no se guardó y el E2E
+lo comprueba contando filas.
+
+### INT-INT-001 — Clave de idempotencia sin fuente canonica (tren 4)
+
+**Solicitante:** INTEGRACIÓN · **Propietaria:** INTEGRACIÓN ·
+**Estado:** `solicitado`, **bloqueante de `local-runtime-ready`**.
+
+`uellix_stella.consume_stella_quota` exige `idempotency_key`, y la exigencia es
+correcta: `uq_stella_interactions_idempotency` convierte «no cobrar dos veces
+un reintento» en una propiedad de los **datos** y no de quién llamó. Pero una
+clave sólo vale por la distinción que traza, y debe trazar exactamente una:
+
+```
+reintento de una consulta  ->  misma clave   (cobra una vez)
+consulta nueva             ->  clave nueva   (vuelve a cobrar)
+```
+
+Ninguna fuente alcanzable satisface ambos lados:
+
+| Candidata | Falla |
+|---|---|
+| `randomUUID()` por invocación | el cliente no la influye, pero el reintento recibe clave nueva → **cobra dos veces** |
+| digest de (usuario, proyecto, consulta) | estable en el reintento y **también** entre dos preguntas legítimas iguales → la segunda es gratis; prohibido explícitamente por el despacho |
+| bucket temporal | el mismo colapso, con ventana arbitraria, y sin firma no protege reintentos |
+| valor en el payload | `StellaGroundedQueryRequest` es `{ query }` y debe seguir siéndolo; una clave elegida por el cliente es un descuento elegido por el cliente |
+| argumento vinculado (`bind`) | **inforjable** —Next.js lo sella en servidor y viaja cifrado— pero se fija en el **render**, y un render sirve muchas preguntas: es constante justo donde debe variar |
+
+Buscado y **no encontrado** en esta aplicación: `requestId` / `correlationId` /
+`invocationId` canónico (no hay middleware; `headers()` sólo se usa para la IP
+del rate limit); secreto de firma de propósito general (sólo `STRIPE_*`, de
+otro dominio); tabla de tickets de operación emitidos.
+`lib/capabilities/contracts.ts` CAP-05 define el vocabulario `replayed` pero
+está `enabled: false` y no emite claves.
+
+**Decisión: no se llama a la función.** Llamarla con un uuid por invocación
+parecería cerrar el hueco, pasaría una lectura ingenua del ledger y
+**cobraría dos veces cada reintento** — un estado peor que el honesto, porque
+el fallo sería invisible y aterrizaría en la factura del cliente. La cuota
+sigue **impuesta** (la lectura rechaza una organización agotada) y el faltante
+queda registrado aquí y en `QUOTA_LEDGER_NOT_CHARGED`
+(`app/actions/stella/grounded-query.ts`).
+
+**Qué lo cerraría** — cualquiera de las tres, todas fuera del alcance de una
+integración:
+
+1. un `requestId` de aplicación, emitido por middleware y estable entre
+   reintentos de una misma invocación;
+2. una tabla de tickets de un solo uso emitidos por servidor, con la
+   **re-ejecución rechazada** sobre un ticket ya cobrado — lo que además evita
+   que reutilizar un ticket consiga trabajo gratis;
+3. un secreto de firma dedicado que permita un token opaco por consulta cuya
+   integridad sea demostrable.

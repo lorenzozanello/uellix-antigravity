@@ -35,6 +35,49 @@ export interface StellaGroundedQueryRequest {
   readonly query: string
 }
 
+/**
+ * WHAT PRODUCED THIS ANSWER — the disclosure input (R9).
+ *
+ * ---------------------------------------------------------------------------
+ * WHY `kind` IS SENT AND NOT COMPUTED HERE
+ * ---------------------------------------------------------------------------
+ * The obvious shape is for the panel to compare `generatorId` against
+ * `'grounding-local-extractive'` and show the notice on a match. That would
+ * put the generator's identity — a `lib/grounding` constant — into the
+ * presentation layer as a duplicated string literal, and a duplicated literal
+ * drifts: the day the generator is versioned to `extractive-2` the comparison
+ * silently stops matching and the disclosure silently disappears, which is the
+ * one failure mode a disclosure must not have.
+ *
+ * So the CLASSIFICATION travels with the result. It is derived server-side
+ * from the run's own provenance (`GroundedQueryProvenance.generatorId`) by the
+ * layer that already imports `lib/grounding`, and this module — which
+ * deliberately touches nothing from `@/lib/grounding` — reads a two-value
+ * discriminant it cannot get wrong.
+ *
+ * `generatorId` rides along for display and for support tickets. Nothing
+ * branches on it.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY IT IS NOT OPTIONAL
+ * ---------------------------------------------------------------------------
+ * An optional field would let a runner return a successful answer with no
+ * declared strategy, and the panel would then render nothing — a missing
+ * disclosure that looks exactly like a strategy that needs none. A required
+ * field makes "I did not say" unrepresentable.
+ */
+export interface AnswerStrategyDescriptor {
+  /** e.g. `grounding-local-extractive/extractive-1`. Displayed, never branched on. */
+  readonly generatorId: string
+  /**
+   * `extractive` — every sentence is a verbatim slice of a retrieved passage.
+   * `generative` — a model wrote prose. Nothing produces this today; the
+   * member exists so the disclosure has something to be ABSENT for, rather
+   * than being unconditional in practice while pretending to be conditional.
+   */
+  readonly kind: 'extractive' | 'generative'
+}
+
 export interface StellaGroundedQuerySuccess {
   readonly status: 'ok'
   /**
@@ -44,6 +87,8 @@ export interface StellaGroundedQuerySuccess {
    */
   readonly answerId: string
   readonly answer: GroundedAnswerView
+  /** R9 — see {@link AnswerStrategyDescriptor}. */
+  readonly answerStrategy: AnswerStrategyDescriptor
 }
 
 export interface StellaGroundedQueryFailure {

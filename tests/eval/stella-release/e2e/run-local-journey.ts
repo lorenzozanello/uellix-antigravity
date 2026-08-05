@@ -18,7 +18,8 @@
 //      uellix_grounding.* SECURITY DEFINER functions via `docker exec psql`,
 //      under a real (non-anonymous) request.jwt.claims session;
 //   3. re-applies the same ingestion SQL a second time to prove idempotency;
-//   4. retrieves chunks via the REAL `chunks_in_scope` SQL function, once for
+//   4. retrieves chunks via the REAL `chunks_in_scope_attested` SQL function,
+//      comparing each row's OWN scope columns against the requested scope, once for
 //      the correct project and once for a same-org decoy project, proving
 //      project-scope isolation;
 //   5. runs the LOCAL, provider-free extractive generator over the real
@@ -148,6 +149,14 @@ interface ChunksInScopeRow {
   readonly chunker_version: string
   readonly injection_scanner_version: string
   readonly signals: readonly unknown[]
+  // INT-GR-004 — the four attestation columns grounding_0004 §3 adds. Typed
+  // as REQUIRED, not optional: a run against a database without that package
+  // must fail to typecheck its own result rather than quietly reading
+  // `undefined` and comparing it against a uuid.
+  readonly organization_id: string
+  readonly project_id: string
+  readonly evidence_id: string
+  readonly document_version_id: string
 }
 
 interface ManifestDocument {
@@ -283,6 +292,8 @@ async function main(): Promise<void> {
       containerNetworkMode: 'none',
       containerDestroyed: false,
       usedPersistentVolume: false,
+      scopeAttestationVerified: false,
+      quotaChargedByRuntime: false,
       verificationMethod: 'live-database-execution',
       packagesApplied: [],
       train4PackageStatus: 'not-yet-available',
@@ -303,6 +314,7 @@ async function main(): Promise<void> {
       groundedQueryFlagState: flagCheck.defaultIsFalse && flagCheck.childReportedTrue ? 'enabled-in-process-only' : flagCheck.defaultIsFalse ? 'disabled' : 'enabled-globally',
       providerCallCount: 0,
       observabilityEventsSanitized: false,
+      observabilityEventSource: 'harness-constructed',
       observabilityEventViolationCount: 1,
       localDecisionRowCount: 0,
       decisionsPersistenceFlagState: 'disabled',
@@ -371,7 +383,7 @@ async function main(): Promise<void> {
   log(`idempotency check: chunk counts stable across two applications (A=${countTags.CHUNK_COUNT_A}, B=${countTags.CHUNK_COUNT_B}) -> ${idempotentReapplyVerified}`)
 
   // ---- 4. Retrieval — real project (both docs) and decoy project ------------
-  log('retrieving via the real uellix_grounding.chunks_in_scope SQL function')
+  log('retrieving via the real uellix_grounding.chunks_in_scope_attested SQL function (INT-GR-004)')
   const retrievalTags = runTaggedQueries(
     box,
     path.join(tmpDir, 'retrieval.sql'),
@@ -380,14 +392,14 @@ async function main(): Promise<void> {
       'RESET ROLE;',
       'SET ROLE uellix_app;',
       `SELECT set_config('request.jwt.claims', ${sqlStringLiteral(claims)}, true);`,
-      `SELECT 'RETRIEVAL_REAL_A=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.projectId)}::uuid, ${sqlStringLiteral(docverA)}::uuid)) t;`,
-      `SELECT 'RETRIEVAL_REAL_B=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.projectId)}::uuid, ${sqlStringLiteral(docverB)}::uuid)) t;`,
-      `SELECT 'RETRIEVAL_DECOY_A=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.decoyProjectId)}::uuid, ${sqlStringLiteral(docverA)}::uuid)) t;`,
-      `SELECT 'RETRIEVAL_DECOY_B=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.decoyProjectId)}::uuid, ${sqlStringLiteral(docverB)}::uuid)) t;`,
+      `SELECT 'RETRIEVAL_REAL_A=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope_attested(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.projectId)}::uuid, ${sqlStringLiteral(docverA)}::uuid)) t;`,
+      `SELECT 'RETRIEVAL_REAL_B=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope_attested(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.projectId)}::uuid, ${sqlStringLiteral(docverB)}::uuid)) t;`,
+      `SELECT 'RETRIEVAL_DECOY_A=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope_attested(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.decoyProjectId)}::uuid, ${sqlStringLiteral(docverA)}::uuid)) t;`,
+      `SELECT 'RETRIEVAL_DECOY_B=' || COALESCE(json_agg(t)::text, '[]') FROM (SELECT * FROM uellix_grounding.chunks_in_scope_attested(${sqlStringLiteral(manifest.organizationId)}::uuid, ${sqlStringLiteral(manifest.decoyProjectId)}::uuid, ${sqlStringLiteral(docverB)}::uuid)) t;`,
       'RESET ROLE;',
     ].join('\n') + '\n',
   )
-  sqlFunctionsInvoked.add('chunks_in_scope')
+  sqlFunctionsInvoked.add('chunks_in_scope_attested')
 
   const rowsA: ChunksInScopeRow[] = JSON.parse(retrievalTags.RETRIEVAL_REAL_A ?? '[]')
   const rowsB: ChunksInScopeRow[] = JSON.parse(retrievalTags.RETRIEVAL_REAL_B ?? '[]')
@@ -399,6 +411,38 @@ async function main(): Promise<void> {
   }
   const crossProjectRetrievalRejected = decoyRowsA.length === 0 && decoyRowsB.length === 0
   log(`real-project retrieval: A=${rowsA.length} row(s), B=${rowsB.length} row(s). decoy-project retrieval: A=${decoyRowsA.length}, B=${decoyRowsB.length} -> isolation held = ${crossProjectRetrievalRejected}`)
+
+  // ---- 4b. INT-GR-004 — the scope each ROW carries, compared row by row ----
+  //
+  // The decoy probe above proves the FILTER holds. This proves the
+  // ATTESTATION does: every returned row states its own organization,
+  // project, evidence item and document version, and each is compared against
+  // what was asked for. Before grounding_0004 these columns did not exist and
+  // the adapter restated the request, so this comparison could not fail — it
+  // is new, and it is the whole content of INT-GR-004.
+  //
+  // A DISAGREEMENT is fatal rather than counted: a chunk that reports a scope
+  // other than the one it was read for is either a broken WHERE clause or a
+  // cross-tenant read, and neither may be reported as a degraded success.
+  let attestedRowCount = 0
+  for (const [row, doc, docverUuid] of [
+    ...rowsA.map((r) => [r, docA, docverA] as const),
+    ...rowsB.map((r) => [r, docB, docverB] as const),
+  ]) {
+    const mismatches: string[] = []
+    if (row.organization_id !== manifest.organizationId) mismatches.push('organization_id')
+    if (row.project_id !== manifest.projectId) mismatches.push('project_id')
+    if (row.evidence_id !== doc.evidenceId) mismatches.push('evidence_id')
+    if (row.document_version_id !== docverUuid) mismatches.push('document_version_id')
+    if (mismatches.length > 0) {
+      throw new Error(
+        `run-local-journey: chunk ${row.chunk_id} was returned for a scope it does not carry — disagreeing column(s): ${mismatches.join(', ')}`,
+      )
+    }
+    attestedRowCount++
+  }
+  const scopeAttestationVerified = attestedRowCount === rowsA.length + rowsB.length && attestedRowCount > 0
+  log(`scope attestation: ${attestedRowCount} row(s) carried their own organization/project/evidence/version and every one matched the request`)
 
   const chunksA = rowsA.map((row) => toGroundingChunk(scope, { ...docA }, row))
   const chunksB = rowsB.map((row) => toGroundingChunk(scope, { ...docB }, row))
@@ -451,7 +495,7 @@ async function main(): Promise<void> {
   const payloadIsQueryOnly = Object.keys(requestPayload).length === 1 && 'query' in requestPayload
 
   // ---- 6a. INT-CAP-001 — quota role check, against the LIVE database --------
-  log('checking whether stella_interactions_stella_role_check admits grounded_query yet (INT-CAP-001)')
+  log('checking stella_interactions_stella_role_check admits grounded_query (INT-CAP-001, closed by stella_0013)')
   const catalogTags = runTaggedQueries(
     box,
     path.join(tmpDir, 'catalog.sql'),
@@ -469,8 +513,14 @@ async function main(): Promise<void> {
   const quotaRoleExists = (catalogTags.QUOTA_ROLE_CHECK_DEF ?? '').includes('grounded_query')
   const decisionsTableExists = catalogTags.DECISIONS_TABLE_EXISTS === 'true'
   const decisionsRowCount = Number(catalogTags.DECISIONS_ROW_COUNT ?? '0')
-  log(`quotaRoleExists (grounded_query in CHECK) = ${quotaRoleExists} — expected false (INT-CAP-001 open, CAPABILITIES-owned)`)
-  log(`stella_suggestion_decisions table present = ${decisionsTableExists}; row count (must stay 0, flag disabled) = ${decisionsRowCount}`)
+  log(`quotaRoleExists (grounded_query in CHECK) = ${quotaRoleExists} — expected TRUE since stella_0013 is a required package`)
+  log('quotaChargedByRuntime = false — the runtime does not call consume_stella_quota: it requires an idempotency key with no canonical server-side source (INT-INT-001)')
+  // The table comes from db/baseline/stella_g2_schema.sql, NOT from
+  // db/prepared/stella_0003 (which this harness deliberately no longer
+  // applies). So "present" here says nothing about the package — what carries
+  // the claim is the row COUNT: a decision was taken in this run and the table
+  // that could have received it has zero rows.
+  log(`stella_suggestion_decisions present in BASELINE = ${decisionsTableExists}; row count after a local decision (must stay 0) = ${decisionsRowCount}`)
 
   // ---- 6b. Local human decision — held in this process, never persisted ----
   // Simulates the ONE thing this train's scope allows: a caller "deciding"
@@ -523,12 +573,27 @@ async function main(): Promise<void> {
     citationValidationIssueCount: citationIssues.length,
     contradictionAttributed,
     abstentionObserved,
+    scopeAttestationVerified,
     quotaConsumptionClaimed: false,
     quotaRoleExists,
+    // INT-INT-001. The runtime does not call consume_stella_quota: the
+    // function requires an idempotency key and this application has no
+    // canonical server-side source for one. Hardcoded false rather than
+    // observed, because there is nothing to observe — no call is made — and a
+    // field derived from "did we see a row?" would report true the day some
+    // OTHER path writes a grounded_query interaction.
+    quotaChargedByRuntime: false,
     scopeAttestedViaJwtClaims: true,
     groundedQueryFlagState,
     providerCallCount: 0,
     observabilityEventsSanitized: observabilityViolations.length === 0,
+    // Hardcoded, and hardcoded HONESTLY: these nine events were built above by
+    // this file. Nothing in app/** or lib/grounding/** emits a named
+    // observability event, so there is no runtime telemetry to collect. The
+    // day something does emit, this becomes an observation instead of a
+    // constant — and until then the reducer refuses to call the runtime ready
+    // on the strength of a schema check over the harness's own strings.
+    observabilityEventSource: 'harness-constructed',
     observabilityEventViolationCount: observabilityViolations.length,
     localDecisionRowCount: decisionsRowCount < 0 ? 0 : decisionsRowCount,
     decisionsPersistenceFlagState: 'disabled',

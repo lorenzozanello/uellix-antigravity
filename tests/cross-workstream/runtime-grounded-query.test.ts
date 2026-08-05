@@ -183,10 +183,14 @@ describe('RUNTIME: the client payload carries the query and nothing else', () =>
     const source = await import('node:fs').then((fs) =>
       fs.readFileSync('components/stella/grounded-query.ts', 'utf8'),
     )
-    const block = source.slice(
-      source.indexOf('export interface StellaGroundedQueryRequest'),
-      source.indexOf('export interface StellaGroundedQuerySuccess'),
-    )
+    // Bounded by the interface's OWN closing brace, not by whatever
+    // declaration happens to follow it. Train 4 added
+    // `AnswerStrategyDescriptor` between the two anchors this used to slice
+    // on, and the check then read that type's fields as if they were the
+    // request's — a false failure produced by declaration order rather than by
+    // the contract widening.
+    const start = source.indexOf('export interface StellaGroundedQueryRequest')
+    const block = source.slice(start, source.indexOf('\n}', start))
     const fields = block.match(/readonly\s+(\w+)\s*:/g) ?? []
     expect(fields).toEqual(['readonly query:'])
   })
@@ -372,23 +376,64 @@ describe('RUNTIME: the repository adapter reads the governed surface, scoped, an
 /* -------------------------------------------------------------------------- */
 
 describe('RUNTIME: provider unavailability is a claim about the system, never about the evidence', () => {
-  it('with no generator configured the seam completes and reports a provider failure, not an evidence gap', async () => {
-    // Version lookup returns nothing -> zero chunks -> the orchestrator still
-    // reaches the draft provider, which rejects by contract.
-    const result = await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1 })
-    expect(result).toMatchObject({ status: 'error', code: 'GEMINI_ERROR' })
-    // And it says nothing about the user's evidence.
-    expect((result as { message: string }).message).not.toMatch(/evidencia|documento/i)
-  })
-
-  it('the injected provider produces no content of any kind — it rejects', async () => {
+  it('a real generator IS configured now, and it is named rather than defaulted to', async () => {
+    // TRAIN 4 REPLACES THIS ASSERTION, and the replacement is the point.
+    //
+    // Through train 3 the action injected `absentAnswerDraftProvider`, whose
+    // whole job was to REJECT: there was no generator, and reporting that as
+    // `provider_unavailable` was the honest description of a system with no
+    // generation step. That placeholder is gone. `createExtractiveAnswerProvider()`
+    // is a real component that answers by quoting retrieved passages, offline
+    // and deterministically.
+    //
+    // So the old test's expectation — "the seam completes and reports a
+    // provider failure" — now describes a REGRESSION rather than the contract,
+    // and keeping it would have pinned the placeholder in place.
     const source = await import('node:fs').then((fs) =>
       fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
     )
-    const block = source.slice(source.indexOf('absentAnswerDraftProvider'))
-    expect(block).toMatch(/Promise\.reject/)
-    // No fabricated claims, no fixtures, no seeded corpus.
-    expect(block.slice(0, 600)).not.toMatch(/claims\s*:/)
+    expect(source).not.toMatch(/absentAnswerDraftProvider/)
+    expect(source).toMatch(/generator: createExtractiveAnswerProvider\(\)/)
+  })
+
+  it('the generator is a STRATEGY, never a fallback — nothing reaches for it on failure', async () => {
+    // The property that survived the replacement, and the one that matters:
+    // an extractive answer produced BECAUSE a database was down would present
+    // a system fault as an evidence finding. There must be no `catch` and no
+    // `??` that arrives at the generator.
+    const source = await import('node:fs').then((fs) =>
+      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
+    )
+    expect(source).not.toMatch(/catch[\s\S]{0,200}createExtractiveAnswerProvider/)
+    expect(source).not.toMatch(/\?\?\s*createExtractiveAnswerProvider/)
+  })
+
+  it('zero retrieved chunks now ABSTAINS instead of reporting a provider failure', async () => {
+    // A behaviour change train 4 introduced, and the right one.
+    //
+    // Through train 3 this path produced `GEMINI_ERROR`, but only as an
+    // artefact: the version lookup returned nothing, retrieval returned zero
+    // candidates, and the orchestrator still reached the placeholder provider,
+    // which rejected — so "no evidence matched" was reported as "the system
+    // failed". Those are different claims and a reviewer acts on them
+    // differently.
+    //
+    // With a real generator the same input produces what R6 specifies: an
+    // ABSTENTION, carried through as a presentable answer with its own reason
+    // code, and `inspected.total` is what separates "nothing was indexed" from
+    // "passages existed and none got grounded".
+    const result = await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1 })
+    expect(result).toMatchObject({ status: 'ok' })
+    const answer = (result as { answer: { abstention: unknown; status: string } }).answer
+    expect(answer.abstention, 'an empty retrieval must produce a stated abstention').toBeTruthy()
+
+    // The claim that did NOT change: provider unavailability is still a
+    // separate outcome and is still reachable — it is what a THROWN repository
+    // failure maps to, not what an empty result maps to.
+    const actionSource = await import('node:fs').then((fs) =>
+      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
+    )
+    expect(actionSource).toMatch(/provider_unavailable: false/)
   })
 
   it('a project with zero evidence is reported as itself, not as a provider failure', async () => {
@@ -509,11 +554,16 @@ describe('RUNTIME: every column the adapter reads exists in the shipped DDL', ()
     expect(versions).not.toMatch(/^\s{2}source_label\s/m)
   })
 
-  it('every column the chunk read names is returned by chunks_in_scope', async () => {
+  it('every column the chunk read names is returned by chunks_in_scope_attested', async () => {
+    // TRAIN 4: the adapter moved to the ATTESTED reader, so the DDL this
+    // checks against moved with it — from grounding_0003's 13-column function
+    // to grounding_0004's 17-column one. Pointing it at the old package would
+    // make the four attestation columns read as columns the function does not
+    // return.
     const source = await readFile('db/grounding/grounding-chunk-repository.ts')
-    const chunksSql = await readFile('db/prepared/grounding_0003_evidence_chunks.sql')
+    const chunksSql = await readFile('db/prepared/grounding_0004_runtime_attestation.sql')
     const signature = chunksSql.slice(
-      chunksSql.indexOf('CREATE OR REPLACE FUNCTION uellix_grounding.chunks_in_scope'),
+      chunksSql.indexOf('CREATE OR REPLACE FUNCTION uellix_grounding.chunks_in_scope_attested'),
     )
     const returns = signature.slice(signature.indexOf('RETURNS TABLE ('), signature.indexOf(')\nLANGUAGE'))
     const returned = new Set([...returns.matchAll(/^\s{2}([a-z_]+) /gm)].map((m) => m[1]))
@@ -521,7 +571,7 @@ describe('RUNTIME: every column the adapter reads exists in the shipped DDL', ()
 
     const selectList = source.slice(
       source.indexOf('SELECT chunk_id, chunk_index'),
-      source.indexOf('FROM uellix_grounding.chunks_in_scope'),
+      source.indexOf('FROM uellix_grounding.chunks_in_scope_attested'),
     )
     for (const column of selectList.replace('SELECT', '').split(',').map((c) => c.trim()).filter(Boolean)) {
       expect(returned.has(column), `the chunk read selects ${column}, which chunks_in_scope does not return`).toBe(true)

@@ -1588,3 +1588,99 @@ proveedor, cero recursos persistentes (contenedor desechable, sin volumen,
 destruido y confirmado en cada corrida).
 
 `STELLA_RELEASE_TRAIN_4_READY_FOR_INTEGRATION`
+
+---
+
+## Tren 4 — integración (2026-08-05)
+
+**Estado: DISEÑO + RUNTIME LOCAL VERIFICADO PARCIALMENTE. Nada aplicado a
+ninguna base persistente. Ninguna bandera habilitada en el repositorio.**
+
+Resultado global: **`STELLA_PARALLEL_TRAIN_4_INTEGRATION_BLOCKED_IDEMPOTENCY`**.
+El recorrido local completo se ejecuta y pasa; lo único que falta para
+`local-runtime-ready` es INT-INT-001 — ver
+[`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+### El arnés dejó de tener paquetes best-effort
+
+`scripts/stella-release-e2e-dry-run.sh` aplica **cuatro paquetes obligatorios**
+en orden derivado por dependencias, y falla cerrado si cualquiera no aplica:
+
+```
+baseline -> grounding_0002 -> grounding_0003 -> stella_0013 -> grounding_0004
+```
+
+`stella_0003` **ya no se aplica**. Sirve sólo a la persistencia de decisiones,
+que este recorrido no camina (INT-PR-001 abierto, bandera apagada, ninguna
+escritura). No es dependencia SQL real del recorrido local. Su ausencia **no**
+debilita la afirmación de no-persistencia: `stella_suggestion_decisions` ya
+viene en `db/baseline/stella_g2_schema.sql`, así que el paso 6 sigue tomando
+una decisión local real y sigue demostrando que la tabla que **podría** haberla
+recibido tiene cero filas. (El paquete estaba además bloqueado por un drift
+real entre baseline y prepared; ahora simplemente no está en esta ruta.)
+
+### El hallazgo RLS, vuelto a ejecutar
+
+El §5 del arnés interroga el **catálogo vivo**, no el `.sql`: que
+`uellix_cap_grounding` esté nombrado por una policy SELECT permisiva en las dos
+tablas, que `authenticated` no conserve grants sobre `evidence_chunks`, y que
+`chunks_in_scope_attested` exista con sus 20 nombres de argumento (3 IN + 17
+OUT). La distinción es la razón de ser del chequeo: **un GRANT ausente lanza;
+una POLICY ausente calla**, y un dry-run estructural no ve ninguna de las dos.
+
+Resultado de la ejecución: sin conjunto vacío silencioso, sin `42501`
+inesperado, sin error lavado como `provider_unavailable`.
+
+### Lo que la ejecución produjo
+
+Contenedor desechable, `--network none`, sin volumen, destruido y confirmado
+ausente antes de evaluar el gate:
+
+| Etapa | Resultado |
+|---|---|
+| ingestión real de dos `text/plain` | pipeline real de `lib/grounding/ingest` |
+| reingesta idéntica | convergente (A=1, B=1 estables) |
+| retrieval atestado | 2 filas, cada una con su propio scope, todas coincidentes |
+| ataque cross-project | 0 filas desde el proyecto señuelo |
+| generación extractiva | `local-extractive-test-only`, 0 llamadas a proveedor |
+| validación de citas | 0 incidencias contra los chunks realmente recuperados |
+| contradicción | atribuida a ambos lados (1.240 vs 1.180) |
+| abstención | `status: 'abstained'` con cero candidatos |
+| vista de Product | `partially_grounded`, 1 claim, 1 contradicción |
+| decisión local | tomada, **0 filas** en la tabla |
+| observabilidad | 9 eventos, 0 violaciones |
+| bandera | `enabled-in-process-only` |
+
+`local-runtime-harness-ready = false`, y el reductor nombra **una sola** causa:
+`quotaChargedByRuntime` (INT-INT-001). Ese es el estado honesto: todo el
+recorrido funciona y la cuota impuesta no puede cobrarse.
+
+### Riesgos operativos que la revisión adversarial dejó registrados
+
+**La cadena de grounding se aplica y se revierte entera.** `grounding_0003`
+re-aplicado aisladamente revierte en silencio las dos reparaciones de
+`grounding_0004` (el `SELECT` de `authenticated` vuelve, y
+`uellix_cap_grounding` sale de la policy, con lo que toda lectura gobernada
+pasa a devolver vacío sin lanzar). Documentado como aviso operativo en
+`db/prepared/README.md`; no se arregla estructuralmente porque exigiría editar
+`grounding_0003` por razones ajenas a su rollback.
+
+**La observabilidad de este flujo no se ha observado.** Ningún módulo de
+`app/**`, `lib/grounding/**` ni `db/grounding/**` emite un evento con nombre.
+El arnés construye nueve eventos representativos y los valida contra el
+contrato real — lo que prueba que el validador funciona, no que la telemetría
+del flujo esté limpia. El reporte lo declara ahora en
+`observabilityEventSource: 'harness-constructed'`, y el reductor **exige**
+`'runtime-emitted'`, de modo que el gate no puede declarar listo un runtime
+cuya telemetría nunca se miró.
+
+**Menores registrados, no corregidos:** exhaustión de cuota disputable contra
+la ruta de escritura directa de las cinco acciones hermanas; el corte mensual
+supone `TimeZone = UTC` sin precondición que lo afirme; el guard del rechazo de
+`stella_0013_rollback` depende de que la columna `idempotency_key` exista; el
+índice de idempotencia no lleva componente temporal (restricción de diseño a
+tener en cuenta al elegir la fuente canónica de INT-INT-001); el tope de 25
+ítems de evidencia por consulta no se comunica al usuario; y la agrupación por
+corroboración del generador extractivo fija el `statement` al primer pasaje del
+grupo, de modo que una segunda fuente citada puede diferir en espaciado o
+capitalización.

@@ -93,3 +93,84 @@ describe('grounded query — canonical project surface', () => {
     expect(read(CANONICAL_SURFACE)).not.toMatch(/node:crypto|require\(['"]crypto['"]\)/)
   })
 })
+
+/**
+ * INTEGRATION (train 4) — the `step` prop is inert.
+ *
+ * The canonical mount passes `step="outcomes"`. Reviewed on the explicit
+ * question "does this make a project-wide query look like one limited to
+ * outcome evidence?", the answer is no — but "no" was an argument about three
+ * files, and an argument is not a property. These tests make it one.
+ *
+ * They are source scans for the same reason the block above is: the project
+ * page is an async server component behind auth and database access, and the
+ * seam where `step` WOULD do damage (retrieval, scope, quota) is server-side,
+ * where `tests/cross-workstream/` exercises it against a real runtime.
+ */
+describe('grounded query — the step prop is inert', () => {
+  const ACTION = path.join(process.cwd(), 'app/actions/stella/grounded-query.ts')
+  const SECTION = path.join(PROJECT_ROOT, 'pipeline/StellaGroundedQuerySection.tsx')
+
+  it('the server action takes no step parameter and knows no pipeline step type', () => {
+    // The decisive one. If `step` cannot be named in the action, it cannot
+    // narrow retrieval, scope, quota, the evidence set or the audit record —
+    // all of which are computed there.
+    const code = stripComments(read(ACTION))
+    expect(code).not.toMatch(/\bAdvisorPipelineStep\b/)
+    expect(code).not.toMatch(/\bstep\s*[:,)]/)
+    expect(code).not.toMatch(/\brequest\.step\b/)
+  })
+
+  it('the bound server action carries the project and nothing else', () => {
+    // One bound argument. A second one would be a second server-derived value
+    // travelling to the client as an encrypted closure reference, and the
+    // whole point of the payload being `{ query }` is that there is exactly
+    // one thing the browser cannot forge.
+    expect(stripComments(read(SECTION))).toMatch(
+      /runStellaGroundedQueryForProject\.bind\(null,\s*projectId\)/,
+    )
+  })
+
+  it('the client request type has exactly one field, and it is not step', () => {
+    const contract = stripComments(
+      readFileSync(path.join(process.cwd(), 'components/stella/grounded-query.ts'), 'utf8'),
+    )
+    const match = contract.match(/export interface StellaGroundedQueryRequest\s*\{([\s\S]*?)\n\}/)
+    expect(match, 'StellaGroundedQueryRequest not found').not.toBeNull()
+    const fields = [...match![1].matchAll(/^\s*(?:readonly\s+)?([A-Za-z_]\w*)\s*[?]?\s*:/gm)].map(
+      (m) => m[1],
+    )
+    expect(fields).toEqual(['query'])
+  })
+
+  it('the canonical mount states in words that step is inert, and says what closes it', () => {
+    // The comment is load-bearing: it is the only place a reader meets the
+    // value. A future edit that keeps `step="outcomes"` while deleting the
+    // explanation would leave a project-wide query wearing a methodology step
+    // with nothing saying it means nothing.
+    const source = read(CANONICAL_SURFACE)
+    expect(source).toMatch(/step`? IS INERT METADATA/i)
+    expect(source).toMatch(/INT-PR-001/)
+  })
+
+  it('the panel reads step in exactly one place, and that place is the decision record', () => {
+    const panel = stripComments(
+      readFileSync(path.join(process.cwd(), 'components/stella/StellaGroundedQueryPanel.tsx'), 'utf8'),
+    )
+    // Bare `step` occurrences, excluding the two typed declarations (the prop
+    // signature `step: AdvisorPipelineStep` and the import), leaves exactly
+    // two: the props destructuring that binds it, and the one place it is
+    // read. Pinned as a COUNT because a third occurrence is the whole risk —
+    // the day someone threads it into `runQuery` or into a rendered label,
+    // this goes red and the comment above the mount stops being true.
+    const uses = [...panel.matchAll(/(?<![\w.])step(?![\w:])/g)]
+    expect(uses.length, 'step appears somewhere beyond the binding and the decision record').toBe(2)
+
+    // ...and the one read is the decision record.
+    expect(panel).toMatch(/const record: SuggestionDecisionRecord = \{[\s\S]*?\bstep,/)
+
+    // The negative that matters most: it never enters the request.
+    expect(panel).not.toMatch(/runQuery\([^)]*\bstep\b/)
+    expect(panel).toMatch(/runQuery\(\{\s*query[^}]*\}\)/)
+  })
+})
