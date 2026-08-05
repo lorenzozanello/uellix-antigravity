@@ -10,21 +10,67 @@
 //
 // Invoked as `pnpm test:stella:release-eval`. Still runnable directly:
 //   pnpm exec tsx scripts/eval-release-offline.ts
+//
+// OUTPUT CONTRACT (train 2, Fase 4). The structured block emitted under
+// [eval:release] json is deterministic: two runs over the same matrix produce
+// byte-identical output. Harness wall-clock is printed OUTSIDE that block,
+// because it is a real measurement that is not reproducible and must never be
+// mistaken for provider latency.
 
 import { releaseEvalFailureReasons, runReleaseEvalHarness } from '../tests/eval/stella-release/harness'
-import { RELEASE_EVAL_MATRIX_VERSION } from '../tests/eval/stella-release/matrix'
-import { RELEASE_FIXTURES_VERSION } from '../tests/eval/stella-release/fixtures'
 
-const { summary, results } = runReleaseEvalHarness()
+const { summary, results, observations } = runReleaseEvalHarness()
 
-console.log(`[eval:release] matrix v${RELEASE_EVAL_MATRIX_VERSION}, fixtures v${RELEASE_FIXTURES_VERSION}`)
+const structured = {
+  version: {
+    harness: summary.harnessVersion,
+    matrix: summary.matrixVersion,
+    fixtures: summary.fixturesVersion,
+  },
+  results: results.map((result) => ({
+    checkId: result.checkId,
+    fixtureId: result.fixtureId,
+    result: result.ok ? 'pass' : 'fail',
+    outcome: result.outcome,
+    detail: result.detail,
+    negativeControls: result.negativeControls.map((control) => ({
+      controlId: control.controlId,
+      property: control.property,
+      detected: control.detected,
+      detail: control.detail,
+    })),
+  })),
+  metrics: summary.metrics.map((metric) => ({
+    metric: metric.metric,
+    measurable: metric.measurable,
+    value: metric.value,
+    nullReason: metric.nullReason,
+    detail: metric.detail,
+  })),
+  totals: {
+    totalChecks: summary.totalChecks,
+    passed: summary.passed,
+    failed: summary.failed,
+    abstentionResponses: summary.abstentionResponses,
+    systemErrors: summary.systemErrors,
+    isolationViolations: summary.isolationViolations,
+    citationValidationFailures: summary.citationValidationFailures,
+    offlineMeasurableChecks: summary.offlineMeasurableChecks,
+    offlineLimitedChecks: summary.offlineLimitedChecks,
+    negativeControlsRun: summary.negativeControlsRun,
+    negativeControlsUndetected: summary.negativeControlsUndetected,
+    tautologicalChecks: summary.tautologicalChecks,
+    providerCalls: summary.providerCalls,
+  },
+}
+
+console.log(
+  `[eval:release] harness v${summary.harnessVersion}, matrix v${summary.matrixVersion}, fixtures v${summary.fixturesVersion}`,
+)
 
 for (const result of results) {
   const status = result.ok ? 'PASS' : 'FAIL'
   console.log(`[eval:release] ${status} [${result.outcome}] ${result.checkId} <${result.fixtureId}> — ${result.detail}`)
-  // Every negative control is printed with its verdict. A check is only worth
-  // its green if the mutation it claims to catch was actually caught, and that
-  // has to be visible in the log, not just inside the harness.
   for (const control of result.negativeControls) {
     const mark = control.detected ? 'detected' : 'NOT-DETECTED'
     console.log(`[eval:release]     control ${mark}: ${control.controlId} — ${control.detail}`)
@@ -46,10 +92,20 @@ console.log(
 
 console.log('[eval:release] metrics:')
 for (const metric of summary.metrics) {
-  const value = metric.measurable ? metric.value : 'N/A (offline)'
-  console.log(`[eval:release]   ${metric.metric}: ${value} — ${metric.detail}`)
+  if (metric.value === null && metric.nullReason) {
+    console.log(
+      `[eval:release]   ${metric.metric}: null [${metric.nullReason.code}${metric.nullReason.gate ? `, gate ${metric.nullReason.gate}` : ''}] — ${metric.nullReason.detail}`,
+    )
+  } else {
+    console.log(`[eval:release]   ${metric.metric}: ${metric.value} — ${metric.detail}`)
+  }
 }
 
+console.log(`[eval:release] json ${JSON.stringify(structured)}`)
+// Deliberately outside the deterministic block — see the header note.
+console.log(`[eval:release] observation (non-deterministic): harnessWallClockMs=${observations.harnessWallClockMs}`)
+
+// --- failure gates ---------------------------------------------------------
 // The gate logic lives in the harness (releaseEvalFailureReasons) so it can be
 // tested against synthetic summaries: proving "the process fails on an
 // isolation violation" must not require engineering a real tenant leak.

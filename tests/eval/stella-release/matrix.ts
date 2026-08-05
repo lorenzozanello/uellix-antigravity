@@ -1,18 +1,21 @@
 // tests/eval/stella-release/matrix.ts
 // RELEASE line — versioned evaluation matrix
-// (STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2, Fase 2).
+// (STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2, Fases 2-3).
 //
-// One entry per required case category. harness.ts implements exactly one
-// check function per `checkId` below; harness.test.ts and
+// One entry per case category. harness.ts implements exactly one check
+// function per `checkId` below; harness.test.ts and
 // scripts/eval-release-offline.ts both run the full matrix and assert it stays
-// in sync via `validateReleaseEvalMatrix`.
+// in sync via `validateReleaseEvalMatrix` + the harness's own
+// assertChecksMatchMatrix / assertMetricsMatchMatrix.
 //
-// Train 2 rewrote the DESCRIPTIONS as well as the checks: each one now names
-// the negative control that keeps it honest, because a description that only
-// states what a check asserts cannot tell a reader whether the check is
-// capable of failing.
+// No metric here is a fabricated number: metrics whose measurement needs a
+// real provider call are NOT attached to any check. They are declared once, in
+// PROVIDER_DEPENDENT_METRICS, and always emitted with `value: null` plus a
+// structured reason. Train 1 attached `latency` to two checks that could not
+// measure it (finding B-M6) — declaring a metric a check cannot produce is how
+// a dashboard ends up showing a number nobody computed.
 
-export const RELEASE_EVAL_MATRIX_VERSION = '1.1.0'
+export const RELEASE_EVAL_MATRIX_VERSION = '2.0.0'
 
 export type ReleaseEvalMetric =
   | 'citation-precision'
@@ -24,6 +27,18 @@ export type ReleaseEvalMetric =
   | 'token-usage'
   | 'estimated-provider-cost'
   | 'structural-regression'
+
+/**
+ * Metrics the release criteria require and NO offline check can feed. They are
+ * emitted on every run with `value: null` and a structured reason naming the
+ * gate that would unblock them. Attaching one of these to a matrix entry is a
+ * validation error, not a style preference — see `validateReleaseEvalMatrix`.
+ */
+export const PROVIDER_DEPENDENT_METRICS: readonly ReleaseEvalMetric[] = [
+  'latency',
+  'token-usage',
+  'estimated-provider-cost',
+]
 
 export type ReleaseEvalCategory =
   | 'evidencia-suficiente'
@@ -40,6 +55,11 @@ export type ReleaseEvalCategory =
   | 'reintento'
   | 'decision-humana'
   | 'regresion-cap-01-a-cap-05'
+  | 'grounding-project-scope'
+  | 'grounding-provenance'
+  | 'grounding-retrieval-score'
+  | 'grounding-contradiccion-marcada'
+  | 'grounding-product-adapter'
 
 export interface ReleaseEvalMatrixEntry {
   checkId: string
@@ -137,32 +157,40 @@ export const RELEASE_EVAL_MATRIX: readonly ReleaseEvalMatrixEntry[] = [
     category: 'provider-unavailable',
     description:
       'GEMINI_ERROR y TIMEOUT se presentan como retryable=true, sin fragmentos de secretos en la descripción. Control negativo: la capa de presentación NO puede reportar todo como reintentable.',
-    metrics: ['latency'],
+    metrics: ['structural-regression'],
     offlineMeasurable: true,
+    offlineLimitation:
+      'B-M6 (tren 1): esta entrada declaraba `latency` y nada la leía. Fija la SEMÁNTICA de presentación de un proveedor caído, no su latencia — medir latencia requiere gate G1 y se reporta como métrica nula con razón estructurada, no atada a este check.',
   },
   {
     checkId: 'quota-exhausted-non-retryable',
     category: 'cuota-agotada',
     description:
       'QUOTA_EXCEEDED se presenta como retryable=false con el mensaje del servidor verbatim. Control negativo: el eco verbatim debe ser específico de ese código, no universal.',
-    metrics: ['abstention-correctness'],
+    metrics: ['structural-regression'],
     offlineMeasurable: true,
+    offlineLimitation:
+      'A-F10 (tren 1): esta entrada alimentaba `abstention-correctness` e inflaba esa métrica. Agotar la cuota no es que el pipeline decida abstenerse — es que no llegó a ejecutarse. Reasignada a structural-regression.',
   },
   {
     checkId: 'retryable-code-set-pinned',
     category: 'reintento',
     description:
       'El conjunto exacto de códigos reintentables y no reintentables queda fijado como regresión. Controles negativos: invertir una expectativa debe producir un mismatch, y el conjunto fijado debe contener ambas clases.',
-    metrics: ['latency'],
+    metrics: ['structural-regression'],
     offlineMeasurable: true,
+    offlineLimitation:
+      'B-M6 (tren 1): declaraba `latency` sin medirla. Fija semántica de reintento, que es estructural.',
   },
   {
     checkId: 'human-decision-literal-true',
     category: 'decision-humana',
     description:
       'ValidatorOutputSchema y ReviewerOutputSchema rechazan requires_human_review=false. Control negativo: ninguna combinación de otros campos válidos (bajo riesgo, sin hallazgos) lo rescata.',
-    metrics: ['abstention-correctness'],
+    metrics: ['structural-regression'],
     offlineMeasurable: true,
+    offlineLimitation:
+      'A-F10 (tren 1): contaba como abstención. Es un literal de contrato que el esquema impone siempre, no una decisión de abstenerse ante evidencia insuficiente. Reasignada a structural-regression.',
   },
   {
     checkId: 'cap-01-05-regression-surface-present',
@@ -173,6 +201,52 @@ export const RELEASE_EVAL_MATRIX: readonly ReleaseEvalMatrixEntry[] = [
     offlineMeasurable: true,
     offlineLimitation:
       'B-M4 (tren 1): la versión anterior era existsSync más una tautología y pasaba con los 13 archivos truncados a cero bytes. Sigue siendo presencia estructural, no ejecución: confirma que la superficie de regresión está y es sustantiva, nunca que las policies funcionan — eso es el gate pesado de CAPABILITIES.',
+  },
+  {
+    checkId: 'grounding-project-scope-enforced',
+    category: 'grounding-project-scope',
+    description:
+      'Sobre el contrato publicado de GROUNDING: toda cita de una respuesta debe resolver a un chunk cuyo scope esté contenido en el scope del lector (scopeContains). Controles negativos: cita a un proyecto hermano de la misma organización, cita a otra organización, y cita a un chunk nunca recuperado.',
+    metrics: ['isolation-violations', 'unsupported-claim-rate'],
+    offlineMeasurable: true,
+    offlineLimitation:
+      'Mide el contrato, no una capa de retrieval real (no existe todavía) ni RLS (gate G3). Registrado además: validateAnswerCitations por sí sola NO detecta el caso proyecto-hermano porque su mapa de chunks no puede llevar projectId — es el hallazgo A-F1 del tren 1, propiedad de GROUNDING. Este check no depende de esa función.',
+  },
+  {
+    checkId: 'grounding-provenance-canonical',
+    category: 'grounding-provenance',
+    description:
+      'La cadena de verificación de un chunk cierra: el texto re-hashea a contentHash, chunkId se re-deriva de (versionId, chunkIndex, contentHash), coordinateSpace es el hash del texto normalizado que el span indexa, y las versiones de pipeline son las constantes vigentes. Controles negativos: texto alterado, versión de pipeline obsoleta, y sourceLabel ausente.',
+    metrics: ['citation-coverage'],
+    offlineMeasurable: true,
+  },
+  {
+    checkId: 'grounding-retrieval-score-ordering',
+    category: 'grounding-retrieval-score',
+    description:
+      'Un RetrievalResult es un ranking real: puntajes finitos, rank coincidente con la posición, orden monótono descendente, y ningún candidato por debajo del minScore de la consulta. Controles negativos: ranking invertido, candidato bajo umbral admitido, y puntaje NaN.',
+    metrics: ['structural-regression'],
+    offlineMeasurable: true,
+    offlineLimitation:
+      'Los puntajes son literales de fixture, no salida de un motor de retrieval — no existe uno. Mide las invariantes que un motor tendrá que satisfacer, de modo que el criterio exista antes que la implementación y no se escriba después para encajar con ella.',
+  },
+  {
+    checkId: 'grounding-contradiction-marked',
+    category: 'grounding-contradiccion-marcada',
+    description:
+      'Cuando ambos lados de una contradicción conocida están citados, la respuesta debe llevar un ContradictionMarker o abstenerse con contradictory_evidence; y una respuesta sin contradicción no debe marcarse falsamente. Controles negativos: contradicción ignorada presentada como hecho, y un marcador que afirma resolución automática.',
+    metrics: ['abstention-correctness'],
+    offlineMeasurable: true,
+  },
+  {
+    checkId: 'grounding-product-adapter-input-complete',
+    category: 'grounding-product-adapter',
+    description:
+      'Toda cita debe llevar lo que el adaptador de PRODUCT (INTEGRATION-001) necesita para renderar una EvidenceReference: evidenceId, un chunk recuperado, sourceLabel, un quotedTextHash que coincide, y un rango de líneas coherente. Controles negativos: cita con hash desviado, chunk fantasma, y sourceLabel ausente.',
+    metrics: ['citation-precision'],
+    offlineMeasurable: true,
+    offlineLimitation:
+      'Mide COMPLETITUD DE ENTRADA, no el adaptador: components/stella/grounding-adapter.ts no existe (INTEGRATION-001 sigue `solicitado`, propietaria PRODUCT). RELEASE no importa código de otra línea ni lo implementa; fija el criterio de aceptación que ese adaptador tendrá que cumplir.',
   },
 ] as const
 
@@ -191,6 +265,11 @@ const REQUIRED_CATEGORIES: readonly ReleaseEvalCategory[] = [
   'reintento',
   'decision-humana',
   'regresion-cap-01-a-cap-05',
+  'grounding-project-scope',
+  'grounding-provenance',
+  'grounding-retrieval-score',
+  'grounding-contradiccion-marcada',
+  'grounding-product-adapter',
 ]
 
 export class ReleaseEvalMatrixError extends Error {
@@ -202,7 +281,8 @@ export class ReleaseEvalMatrixError extends Error {
 
 /**
  * Fails closed on duplicate/missing checkIds, undeclared limitations, missing
- * categories, or a check that declares no metric at all.
+ * categories, a check that declares no metric at all, or — the B-M6 guard — a
+ * check that claims to feed a metric no offline check can produce.
  */
 export function validateReleaseEvalMatrix(matrix: readonly ReleaseEvalMatrixEntry[]): void {
   const seen = new Set<string>()
@@ -216,6 +296,13 @@ export function validateReleaseEvalMatrix(matrix: readonly ReleaseEvalMatrixEntr
     }
     if (entry.metrics.length === 0) {
       throw new ReleaseEvalMatrixError(`${entry.checkId}: declares no metric — a check that feeds nothing cannot move a release criterion`)
+    }
+    for (const metric of entry.metrics) {
+      if (PROVIDER_DEPENDENT_METRICS.includes(metric)) {
+        throw new ReleaseEvalMatrixError(
+          `${entry.checkId}: declares provider-dependent metric "${metric}", which no offline check can produce. Provider-dependent metrics are declared once in PROVIDER_DEPENDENT_METRICS and always emitted null with a reason.`,
+        )
+      }
     }
   }
   const covered = new Set(matrix.map((e) => e.category))

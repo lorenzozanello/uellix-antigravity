@@ -1,6 +1,6 @@
 // tests/eval/stella-release/harness.ts
 // RELEASE line — offline grounding/isolation evaluation harness
-// (STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2, Fase 2).
+// (STELLA_RELEASE_EVALUATION_HARDENING_TRAIN_2, Fases 2-4).
 //
 // One function per matrix.ts `checkId`. Fully offline: no network, no DB, no
 // provider, no env secrets — the only filesystem I/O is reading committed
@@ -9,12 +9,11 @@
 //
 // TRAIN 2 — WHAT CHANGED AND WHY
 //
-// Train 1 shipped 14 green checks. The adversarial review found that two of
+// Train 1 shipped 14 green checks. The adversarial review found that three of
 // them could not fail: B-M4 stayed green with every CAP package truncated to
-// zero bytes, and B-M5 matched a regex against two literals it had written
-// three lines above. So this file no longer treats "the check returned ok" as
-// evidence of anything. (B-M6, the metric-catalog drift, is closed by the
-// metrics commit of this same unit.)
+// zero bytes, B-M5 matched a regex against literals it had just written, and
+// B-M6's declared `structural-regression` metric was never emitted at all. So
+// this file no longer treats "the check returned ok" as evidence of anything.
 //
 // Every check now has two obligations:
 //   1. its evaluator reports no violation on the clean fixture, AND
@@ -48,6 +47,23 @@ import { hasForbiddenPattern, wrapUntrustedData, UNTRUSTED_DATA_MARKER } from '@
 import { ValidatorOutputSchema } from '@/lib/stella/schemas/validator-output'
 import { ReviewerOutputSchema } from '@/lib/stella/schemas/reviewer-output'
 import { stellaErrorPresentation, type StellaPanelErrorCode } from '@/components/stella/error-messages'
+import {
+  CONTENT_HASH_HEX_LENGTH,
+  PIPELINE_VERSIONS,
+  citationsOf,
+  deriveChunkId,
+  hashContent,
+  scopeContains,
+  validateAnswerCitations,
+} from '@/lib/grounding/contracts'
+import type {
+  CitationReference,
+  ContentHash,
+  GroundingAnswerState,
+  GroundingChunk,
+  GroundingScope,
+  RetrievalResult,
+} from '@/lib/grounding/contracts'
 
 import {
   ORG_ALPHA_CONTEXT,
@@ -62,7 +78,24 @@ import {
   MALICIOUS_CONTEXT,
   MALICIOUS_DOCUMENT_PAYLOAD,
   BENIGN_DOCUMENT_PAYLOAD,
-  CONTRADICTION_ACKNOWLEDGMENT_TEXT,
+  ALPHA_PROJECT_ONE_CHUNK,
+  ALPHA_PROJECT_TWO_CHUNK,
+  BETA_PROJECT_ONE_CHUNK,
+  CONTRADICTION_SIDE_A_CHUNK,
+  CONTRADICTION_SIDE_B_CHUNK,
+  ALPHA_PROJECT_ONE_QUERY,
+  ALPHA_PROJECT_ONE_RETRIEVAL,
+  MISRANKED_RETRIEVAL,
+  BELOW_THRESHOLD_ADMITTED_RETRIEVAL,
+  GROUNDED_ANSWER,
+  CONTRADICTION_ACKNOWLEDGED_ANSWER,
+  CONTRADICTION_IGNORED_ANSWER,
+  KNOWN_CONTRADICTORY_EVIDENCE_PAIRS,
+  NONEXISTENT_CITATION,
+  DRIFTED_CITATION,
+  CROSS_PROJECT_CITATION,
+  CROSS_ORGANIZATION_CITATION,
+  citationTo,
 } from './fixtures'
 import {
   controlExpectsThrow,
@@ -73,7 +106,18 @@ import {
   undetectedControls,
   type NegativeControlResult,
 } from './negative-controls'
-import { RELEASE_EVAL_MATRIX, validateReleaseEvalMatrix, type ReleaseEvalMatrixEntry } from './matrix'
+import {
+  PROVIDER_DEPENDENT_METRICS,
+  RELEASE_EVAL_MATRIX,
+  RELEASE_EVAL_MATRIX_VERSION,
+  validateReleaseEvalMatrix,
+  type ReleaseEvalMatrixEntry,
+  type ReleaseEvalMetric,
+} from './matrix'
+import { RELEASE_FIXTURES_VERSION } from './fixtures'
+
+/** Bumped whenever check semantics change, independently of the matrix shape. */
+export const RELEASE_HARNESS_VERSION = '2.0.0'
 
 export type ReleaseCaseOutcome = 'pass' | 'abstention-response' | 'system-error' | 'isolation-violation'
 
@@ -284,12 +328,12 @@ function evaluateContradictionReachability(context: typeof CONTRADICTORY_CONTEXT
 
 function checkContradictionAcknowledgmentHeuristic(): ReleaseCaseResult {
   const checkId = 'contradiction-acknowledgment-heuristic'
-  const fixtureId = 'CONTRADICTORY_CONTEXT + CONTRADICTION_ACKNOWLEDGMENT_TEXT'
+  const fixtureId = 'CONTRADICTORY_CONTEXT + CONTRADICTION_ACKNOWLEDGED_ANSWER'
 
   // B-M5 fix, part 1: both probe texts now come from FIXTURES, not from string
   // literals declared inside this function. Editing a fixture changes what this
   // check reads; before, nothing outside these two lines could affect it.
-  const acknowledging = CONTRADICTION_ACKNOWLEDGMENT_TEXT
+  const acknowledging = CONTRADICTION_ACKNOWLEDGED_ANSWER.abstention!.explanation
   const silent = CONTRADICTORY_CONTEXT.narrativeSummary
   // An empty narrative would make the "silence" control pass for the wrong
   // reason — a detector that answers true to everything still returns false on
@@ -1005,6 +1049,386 @@ function checkCapRegressionSurfacePresent(): ReleaseCaseResult {
     controls,
   )
 }
+
+// ===========================================================================
+// GROUNDING CONTRACT CHECKS (train 2, Fase 5)
+// ===========================================================================
+// Built only against the published lib/grounding/contracts barrel. No
+// retrieval implementation is assumed; these measure the properties a
+// retrieval layer will have to satisfy, so the criteria exist before the
+// implementation does rather than being written to fit it afterwards.
+
+const AVAILABLE_CHUNKS: ReadonlyMap<ContentHash, { contentHash: ContentHash; organizationId: string }> = new Map(
+  [ALPHA_PROJECT_ONE_CHUNK, CONTRADICTION_SIDE_A_CHUNK, CONTRADICTION_SIDE_B_CHUNK, ALPHA_PROJECT_TWO_CHUNK, BETA_PROJECT_ONE_CHUNK]
+    .map((c) => [c.chunkId, { contentHash: c.contentHash, organizationId: c.scope.organizationId }] as const),
+)
+
+const CHUNKS_BY_ID: ReadonlyMap<ContentHash, GroundingChunk> = new Map(
+  [ALPHA_PROJECT_ONE_CHUNK, CONTRADICTION_SIDE_A_CHUNK, CONTRADICTION_SIDE_B_CHUNK, ALPHA_PROJECT_TWO_CHUNK, BETA_PROJECT_ONE_CHUNK]
+    .map((c) => [c.chunkId, c] as const),
+)
+
+/**
+ * Project-scope enforcement over a whole answer.
+ *
+ * This exists because `validateAnswerCitations` compares organizationId only —
+ * its `availableChunks` map cannot even carry a projectId (train 1 finding
+ * A-F1, owned by GROUNDING). RELEASE does not fix that contract; it measures
+ * the property with the primitive GROUNDING already publishes for it,
+ * `scopeContains`, so the criterion is in place and will keep holding once
+ * A-F1 is closed.
+ */
+export function evaluateProjectScopeEnforcement(
+  state: GroundingAnswerState,
+  chunks: ReadonlyMap<ContentHash, GroundingChunk>,
+  readerScope: GroundingScope,
+): string[] {
+  const violations: string[] = []
+  const assertions = state.status === 'abstained' ? [] : state.assertions
+  const allCitations: CitationReference[] = [
+    ...assertions.flatMap((a) => citationsOf(a)),
+    ...state.contradictions.flatMap((c) => [...c.sideA, ...c.sideB]),
+  ]
+  for (const citation of allCitations) {
+    const chunk = chunks.get(citation.chunkId)
+    if (!chunk) {
+      violations.push(`citation to ${citation.chunkId.slice(0, 12)}… has no chunk in the retrieved set`)
+      continue
+    }
+    if (!scopeContains(readerScope, chunk.provenance.scope)) {
+      violations.push(
+        `citation to evidence ${chunk.evidenceId} crosses the reader scope: reader is organization ${readerScope.organizationId} / project ${readerScope.projectId ?? '(org-wide)'}, chunk is organization ${chunk.provenance.scope.organizationId} / project ${chunk.provenance.scope.projectId ?? '(org-wide)'}`,
+      )
+    }
+  }
+  return violations
+}
+
+function answerCiting(citation: CitationReference): GroundingAnswerState {
+  return {
+    ...GROUNDED_ANSWER,
+    assertions: [{ kind: 'evidence', statement: 'Afirmación con una cita fuera de alcance.', citations: [citation] }],
+  }
+}
+
+function checkGroundingProjectScopeEnforced(): ReleaseCaseResult {
+  const checkId = 'grounding-project-scope-enforced'
+  const fixtureId = 'GROUNDED_ANSWER + ALPHA_PROJECT_TWO_CHUNK + BETA_PROJECT_ONE_CHUNK'
+  const readerScope = ALPHA_PROJECT_ONE_QUERY.scope
+
+  const controls = [
+    controlExpectsViolations(
+      'nc-scope-sibling-project-citation',
+      'a citation to a SIBLING PROJECT of the same organization must be reported out of scope',
+      () => evaluateProjectScopeEnforcement(answerCiting(CROSS_PROJECT_CITATION), CHUNKS_BY_ID, readerScope),
+    ),
+    controlExpectsViolations(
+      'nc-scope-cross-organization-citation',
+      'a citation to another organization must be reported out of scope',
+      () => evaluateProjectScopeEnforcement(answerCiting(CROSS_ORGANIZATION_CITATION), CHUNKS_BY_ID, readerScope),
+    ),
+    controlExpectsViolations(
+      'nc-scope-citation-without-source',
+      'a citation to a chunk that was never retrieved must be reported',
+      () => evaluateProjectScopeEnforcement(answerCiting(NONEXISTENT_CITATION), CHUNKS_BY_ID, readerScope),
+    ),
+  ]
+
+  const violations = evaluateProjectScopeEnforcement(GROUNDED_ANSWER, CHUNKS_BY_ID, readerScope)
+  if (violations.length > 0) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'isolation-violation', detail: violations.join(' | ') }, controls)
+  }
+
+  // Declared, not hidden: the same sibling-project citation that this check
+  // catches is NOT caught by GROUNDING's own validateAnswerCitations, because
+  // its available-chunk map carries no projectId. That is A-F1.
+  const contractIssues = validateAnswerCitations(answerCiting(CROSS_PROJECT_CITATION), AVAILABLE_CHUNKS)
+  const afOneStillOpen = !contractIssues.some((i) => i.code === 'citation_out_of_scope')
+
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'pass',
+      detail: `in-scope answer clean; sibling-project, cross-organization and phantom citations all reported${afOneStillOpen ? ' — NOTE: validateAnswerCitations alone still misses the sibling-project case (train 1 finding A-F1, GROUNDING-owned); this check does not depend on it' : ''}`,
+    },
+    controls,
+  )
+}
+
+// --- provenance canónica ---------------------------------------------------
+/** Every field of the verification chain must be present and internally consistent. */
+export function evaluateCanonicalProvenance(chunk: GroundingChunk): string[] {
+  const violations: string[] = []
+  const p = chunk.provenance
+  const isHash = (v: string) => new RegExp(`^[0-9a-f]{${CONTENT_HASH_HEX_LENGTH}}$`).test(v)
+
+  if (!p.evidenceId) violations.push('provenance.evidenceId is empty')
+  if (!p.sourceLabel) violations.push('provenance.sourceLabel is empty')
+  if (!p.mimeType) violations.push('provenance.mimeType is empty')
+  if (!isHash(p.rawContentHash)) violations.push('provenance.rawContentHash is not a lowercase-hex SHA-256')
+  if (!isHash(p.normalizedContentHash)) violations.push('provenance.normalizedContentHash is not a lowercase-hex SHA-256')
+  if (!isHash(p.versionId)) violations.push('provenance.versionId is not a lowercase-hex SHA-256')
+  if (p.normalizationVersion !== PIPELINE_VERSIONS.normalization) violations.push(`provenance.normalizationVersion "${p.normalizationVersion}" does not match the pipeline constant`)
+  if (p.chunkerVersion !== PIPELINE_VERSIONS.chunker) violations.push(`provenance.chunkerVersion "${p.chunkerVersion}" does not match the pipeline constant`)
+  if (p.injectionScannerVersion !== PIPELINE_VERSIONS.injectionScanner) violations.push(`provenance.injectionScannerVersion "${p.injectionScannerVersion}" does not match the pipeline constant`)
+  if (p.evidenceId !== chunk.evidenceId) violations.push('provenance.evidenceId disagrees with the chunk it describes')
+  if (p.versionId !== chunk.versionId) violations.push('provenance.versionId disagrees with the chunk it describes')
+  if (chunk.location.coordinateSpace !== p.normalizedContentHash) violations.push('location.coordinateSpace is not the normalized text this provenance names')
+
+  // The chain has to actually close: re-hash the text, re-derive the id.
+  if (hashContent(chunk.text) !== chunk.contentHash) violations.push('contentHash is not the hash of the chunk text — the citation could not be falsified')
+  if (deriveChunkId(chunk.versionId, chunk.chunkIndex, chunk.contentHash) !== chunk.chunkId) violations.push('chunkId does not re-derive from (versionId, chunkIndex, contentHash)')
+
+  return violations
+}
+
+function checkGroundingProvenanceCanonical(): ReleaseCaseResult {
+  const checkId = 'grounding-provenance-canonical'
+  const fixtureId = 'ALPHA_PROJECT_ONE_CHUNK'
+
+  const controls = [
+    controlExpectsViolations(
+      'nc-provenance-tampered-text',
+      'a chunk whose text was edited after hashing must be reported',
+      () => evaluateCanonicalProvenance({ ...ALPHA_PROJECT_ONE_CHUNK, text: `${ALPHA_PROJECT_ONE_CHUNK.text} (texto alterado)` }),
+    ),
+    controlExpectsViolations(
+      'nc-provenance-stale-pipeline-version',
+      'a chunk carrying a pipeline version other than the current constants must be reported',
+      () => evaluateCanonicalProvenance({
+        ...ALPHA_PROJECT_ONE_CHUNK,
+        provenance: { ...ALPHA_PROJECT_ONE_CHUNK.provenance, normalizationVersion: 'norm-0' },
+      }),
+    ),
+    controlExpectsViolations(
+      'nc-provenance-missing-source-label',
+      'a chunk with no source label must be reported — an unlabelled citation is unverifiable by a human',
+      () => evaluateCanonicalProvenance({
+        ...ALPHA_PROJECT_ONE_CHUNK,
+        provenance: { ...ALPHA_PROJECT_ONE_CHUNK.provenance, sourceLabel: '' },
+      }),
+    ),
+  ]
+
+  const violations = [
+    ...evaluateCanonicalProvenance(ALPHA_PROJECT_ONE_CHUNK),
+    ...evaluateCanonicalProvenance(CONTRADICTION_SIDE_A_CHUNK),
+  ]
+  if (violations.length > 0) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: violations.join(' | ') }, controls)
+  }
+  return withNegativeControls(
+    { checkId, fixtureId, ok: true, outcome: 'pass', detail: 'verification chain closes: text re-hashes to contentHash, chunkId re-derives, coordinate space matches provenance, pipeline versions current' },
+    controls,
+  )
+}
+
+// --- score numérico --------------------------------------------------------
+/** A ranking must be a ranking: finite scores, monotone order, threshold honoured. */
+export function evaluateRetrievalScoring(result: RetrievalResult): string[] {
+  const violations: string[] = []
+  const { candidates, query } = result
+  candidates.forEach((candidate, i) => {
+    if (!Number.isFinite(candidate.score)) violations.push(`candidate ${i} score is not a finite number`)
+    if (candidate.rank !== i) violations.push(`candidate ${i} declares rank ${candidate.rank} but sits at position ${i}`)
+    if (candidate.score < query.minScore) violations.push(`candidate ${i} scores ${candidate.score}, below the query minScore ${query.minScore}, and was returned anyway`)
+    if (i > 0 && candidate.score > candidates[i - 1]!.score) {
+      violations.push(`ranking is not monotone: candidate ${i} scores ${candidate.score} above candidate ${i - 1} at ${candidates[i - 1]!.score}`)
+    }
+  })
+  if (result.belowThresholdCount < 0) violations.push('belowThresholdCount is negative')
+  if (result.quarantinedCount < 0) violations.push('quarantinedCount is negative')
+  return violations
+}
+
+function checkGroundingRetrievalScoreOrdering(): ReleaseCaseResult {
+  const checkId = 'grounding-retrieval-score-ordering'
+  const fixtureId = 'ALPHA_PROJECT_ONE_RETRIEVAL'
+
+  const controls = [
+    controlExpectsViolations(
+      'nc-score-ranking-inverted',
+      'a ranking that contradicts its own scores must be reported',
+      () => evaluateRetrievalScoring(MISRANKED_RETRIEVAL),
+    ),
+    controlExpectsViolations(
+      'nc-score-below-threshold-admitted',
+      'a candidate below the query minScore must not be returned silently',
+      () => evaluateRetrievalScoring(BELOW_THRESHOLD_ADMITTED_RETRIEVAL),
+    ),
+    controlExpectsViolations(
+      'nc-score-not-a-number',
+      'a non-finite score must be reported rather than compared',
+      () => evaluateRetrievalScoring({
+        ...ALPHA_PROJECT_ONE_RETRIEVAL,
+        candidates: [{ ...ALPHA_PROJECT_ONE_RETRIEVAL.candidates[0]!, score: Number.NaN }],
+      }),
+    ),
+  ]
+
+  const violations = evaluateRetrievalScoring(ALPHA_PROJECT_ONE_RETRIEVAL)
+  if (violations.length > 0) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: violations.join(' | ') }, controls)
+  }
+  return withNegativeControls(
+    { checkId, fixtureId, ok: true, outcome: 'pass', detail: `${ALPHA_PROJECT_ONE_RETRIEVAL.candidates.length} candidates: finite scores, monotone ranking, none below minScore ${ALPHA_PROJECT_ONE_RETRIEVAL.query.minScore}` },
+    controls,
+  )
+}
+
+// --- contradiction marker --------------------------------------------------
+function contradictoryPairPresent(evidenceIds: readonly string[]): readonly [string, string] | null {
+  for (const [a, b] of KNOWN_CONTRADICTORY_EVIDENCE_PAIRS) {
+    if (evidenceIds.includes(a) && evidenceIds.includes(b)) return [a, b]
+  }
+  return null
+}
+
+/**
+ * The structural rule: when both sides of a known contradiction are cited, the
+ * answer must either carry a ContradictionMarker or abstain with
+ * `contradictory_evidence`. Presenting one side as settled fact is the failure.
+ */
+export function evaluateContradictionHandling(
+  state: GroundingAnswerState,
+  chunks: ReadonlyMap<ContentHash, GroundingChunk>,
+): string[] {
+  const assertions = state.status === 'abstained' ? [] : state.assertions
+  const citedEvidenceIds = assertions
+    .flatMap((a) => citationsOf(a))
+    .map((c) => chunks.get(c.chunkId)?.evidenceId)
+    .filter((id): id is string => Boolean(id))
+
+  const pair = contradictoryPairPresent(citedEvidenceIds)
+  if (!pair) return []
+
+  const violations: string[] = []
+  const marked = state.contradictions.length > 0
+  const abstainedOnContradiction = state.status !== 'grounded' && state.abstention?.code === 'contradictory_evidence'
+  if (!marked && !abstainedOnContradiction) {
+    violations.push(`evidence ${pair[0]} and ${pair[1]} contradict each other and are both cited, but the answer carries no ContradictionMarker and does not abstain on contradictory_evidence`)
+  }
+  for (const marker of state.contradictions) {
+    if (marker.resolution !== 'requires_human_resolution') violations.push(`contradiction ${marker.id} claims resolution "${marker.resolution}" — Stella never resolves a contradiction itself`)
+    if (marker.sideA.length === 0 || marker.sideB.length === 0) violations.push(`contradiction ${marker.id} does not anchor both sides`)
+  }
+  return violations
+}
+
+function checkGroundingContradictionMarked(): ReleaseCaseResult {
+  const checkId = 'grounding-contradiction-marked'
+  const fixtureId = 'CONTRADICTION_ACKNOWLEDGED_ANSWER vs CONTRADICTION_IGNORED_ANSWER'
+
+  const controls = [
+    controlExpectsViolations(
+      'nc-contradiction-ignored',
+      'citing both sides of a contradiction while presenting it as settled must be reported',
+      () => evaluateContradictionHandling(CONTRADICTION_IGNORED_ANSWER, CHUNKS_BY_ID),
+    ),
+    controlExpectsViolations(
+      'nc-contradiction-auto-resolved',
+      'a contradiction marker claiming automatic resolution must be reported',
+      () => evaluateContradictionHandling(
+        {
+          ...CONTRADICTION_IGNORED_ANSWER,
+          contradictions: [{ ...CONTRADICTION_ACKNOWLEDGED_ANSWER.contradictions[0]!, resolution: 'resolved_automatically' as never }],
+        },
+        CHUNKS_BY_ID,
+      ),
+    ),
+  ]
+
+  const violations = [
+    ...evaluateContradictionHandling(CONTRADICTION_ACKNOWLEDGED_ANSWER, CHUNKS_BY_ID),
+    // A non-contradictory answer must not be flagged: the rule has to be about
+    // contradiction, not about "any answer with more than one citation".
+    ...evaluateContradictionHandling(GROUNDED_ANSWER, CHUNKS_BY_ID),
+  ]
+  if (violations.length > 0) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: violations.join(' | ') }, controls)
+  }
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'abstention-response',
+      detail: 'the acknowledged answer marks both sides and defers to a human; the clean answer is not falsely flagged; an ignored contradiction and a self-resolved marker are both reported',
+    },
+    controls,
+  )
+}
+
+// --- adaptador de PRODUCT --------------------------------------------------
+/**
+ * What PRODUCT's citation adapter (INTEGRATION-001, still `solicitado` — the
+ * deliverable does not exist) needs in order to render a citation as an
+ * EvidenceReference. RELEASE does not implement the adapter and imports no
+ * code from another line; it measures whether the INPUT is complete, so the
+ * acceptance criterion exists before the adapter is written.
+ */
+export interface AdapterInputProjection {
+  sourceField: string
+  label: string
+}
+
+export function projectCitationForProduct(
+  citation: CitationReference,
+  chunks: ReadonlyMap<ContentHash, GroundingChunk>,
+): { projection: AdapterInputProjection | null; violations: string[] } {
+  const violations: string[] = []
+  const chunk = chunks.get(citation.chunkId)
+  if (!chunk) {
+    return { projection: null, violations: [`no retrieved chunk for citation ${citation.chunkId.slice(0, 12)}…`] }
+  }
+  if (!citation.evidenceId) violations.push('citation carries no evidenceId — PRODUCT cannot link the reference to an evidence item')
+  if (!chunk.provenance.sourceLabel) violations.push('chunk carries no sourceLabel — the reference would render without a human-readable source')
+  if (citation.quotedTextHash !== chunk.contentHash) violations.push('quotedTextHash does not match the chunk — PRODUCT would render a verified badge over an unverified quote')
+  if (citation.location.lineEnd < citation.location.lineStart) violations.push('citation line range is inverted')
+  if (violations.length > 0) return { projection: null, violations }
+  return {
+    projection: {
+      sourceField: `evidence/${citation.evidenceId}/chunk/${chunk.chunkIndex}`,
+      label: `${chunk.provenance.sourceLabel} (líneas ${citation.location.lineStart}–${citation.location.lineEnd})`,
+    },
+    violations: [],
+  }
+}
+
+function checkGroundingProductAdapterInputComplete(): ReleaseCaseResult {
+  const checkId = 'grounding-product-adapter-input-complete'
+  const fixtureId = 'citationTo(ALPHA_PROJECT_ONE_CHUNK)'
+
+  const controls = [
+    controlExpectsViolations(
+      'nc-adapter-drifted-quote',
+      'a citation whose quoted hash drifted off its passage must not project into a PRODUCT reference',
+      () => projectCitationForProduct(DRIFTED_CITATION, CHUNKS_BY_ID).violations,
+    ),
+    controlExpectsViolations(
+      'nc-adapter-phantom-chunk',
+      'a citation with no retrieved chunk must not project',
+      () => projectCitationForProduct(NONEXISTENT_CITATION, CHUNKS_BY_ID).violations,
+    ),
+    controlExpectsViolations(
+      'nc-adapter-missing-source-label',
+      'a chunk with no source label must not project into a rendered reference',
+      () => {
+        const stripped = { ...ALPHA_PROJECT_ONE_CHUNK, provenance: { ...ALPHA_PROJECT_ONE_CHUNK.provenance, sourceLabel: '' } }
+        return projectCitationForProduct(citationTo(ALPHA_PROJECT_ONE_CHUNK), new Map([[stripped.chunkId, stripped]])).violations
+      },
+    ),
+  ]
+
+  const { projection, violations } = projectCitationForProduct(citationTo(ALPHA_PROJECT_ONE_CHUNK), CHUNKS_BY_ID)
+  if (violations.length > 0 || !projection) {
+    return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: violations.join(' | ') || 'projection was null with no reported violation' }, controls)
+  }
+  return withNegativeControls(
+    {
+      checkId, fixtureId, ok: true, outcome: 'pass',
+      detail: `every field PRODUCT's adapter needs is present: sourceField="${projection.sourceField}", label="${projection.label}" (adapter itself is INTEGRATION-001, still unimplemented — nothing from another line is imported here)`,
+    },
+    controls,
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Harness entry point
 // ---------------------------------------------------------------------------
@@ -1023,6 +1447,11 @@ const CHECKS: Record<string, () => ReleaseCaseResult> = {
   'retryable-code-set-pinned': checkRetryableCodeSetPinned,
   'human-decision-literal-true': checkHumanDecisionLiteralTrue,
   'cap-01-05-regression-surface-present': checkCapRegressionSurfacePresent,
+  'grounding-project-scope-enforced': checkGroundingProjectScopeEnforced,
+  'grounding-provenance-canonical': checkGroundingProvenanceCanonical,
+  'grounding-retrieval-score-ordering': checkGroundingRetrievalScoreOrdering,
+  'grounding-contradiction-marked': checkGroundingContradictionMarked,
+  'grounding-product-adapter-input-complete': checkGroundingProductAdapterInputComplete,
 }
 
 export class ReleaseEvalHarnessError extends Error {
@@ -1033,16 +1462,40 @@ export class ReleaseEvalHarnessError extends Error {
 }
 
 // ---------------------------------------------------------------------------
-// Metrics
+// Metrics (B-M6)
 // ---------------------------------------------------------------------------
+
+/**
+ * Why a metric has no value. A bare `null` is indistinguishable from "zero" in
+ * a log and from "not computed" in a dashboard, so every null carries a code, a
+ * gate when one exists, and a sentence.
+ */
+export type MetricNullReasonCode =
+  | 'requires-provider-call'
+  | 'requires-provider-usage-metadata'
+  | 'requires-token-usage-and-calibration'
+  | 'no-contributing-checks'
+
+export interface MetricNullReason {
+  code: MetricNullReasonCode
+  /** The external gate that would unblock it, when one is defined. */
+  gate: 'G1' | 'G9' | null
+  detail: string
+}
+
 export interface ReleaseEvalMetricValue {
-  metric: string
+  metric: ReleaseEvalMetric
   measurable: boolean
   value: number | null
+  /** Required whenever `value` is null; absent otherwise. */
+  nullReason: MetricNullReason | null
   detail: string
 }
 
 export interface ReleaseEvalSummary {
+  harnessVersion: string
+  matrixVersion: string
+  fixturesVersion: string
   totalChecks: number
   passed: number
   failed: number
@@ -1056,6 +1509,7 @@ export interface ReleaseEvalSummary {
   negativeControlsRun: number
   negativeControlsUndetected: number
   tautologicalChecks: string[]
+  citationValidationFailures: number
   providerCalls: number
   metrics: ReleaseEvalMetricValue[]
 }
@@ -1072,90 +1526,218 @@ function assertChecksMatchMatrix(matrix: readonly ReleaseEvalMatrixEntry[]): voi
 }
 
 /**
- * Computes the metrics from case results. Metrics whose measurement needs a
- * real provider call are reported as non-measurable — never fabricated.
- *
- * NOTE (B-M6, still open after this commit): `structural-regression` is
- * declared by a matrix entry and is NOT emitted here, and two entries declare
- * `latency` while latency is hardwired null. Nothing reconciles the two
- * catalogs yet. Closing that is the metrics commit of this unit.
+ * B-M6: the matrix declared `structural-regression` and nothing emitted it,
+ * while two checks declared `latency` that nothing read. Neither drift was
+ * detectable, because nothing compared the two catalogs. This does.
  */
-function computeReleaseMetrics(results: readonly ReleaseCaseResult[]): ReleaseEvalMetricValue[] {
+function assertMetricsMatchMatrix(
+  matrix: readonly ReleaseEvalMatrixEntry[],
+  emitted: readonly ReleaseEvalMetricValue[],
+): void {
+  const declared = new Set<ReleaseEvalMetric>([...matrix.flatMap((e) => e.metrics), ...PROVIDER_DEPENDENT_METRICS])
+  const produced = new Set(emitted.map((m) => m.metric))
+  for (const metric of declared) {
+    if (!produced.has(metric)) throw new ReleaseEvalHarnessError(`matrix declares metric "${metric}" but computeReleaseMetrics never emits it`)
+  }
+  for (const metric of produced) {
+    if (!declared.has(metric)) throw new ReleaseEvalHarnessError(`metric "${metric}" is emitted but no matrix entry declares it`)
+  }
+  // Every null must say why. A metric reported as a bare null is
+  // indistinguishable from zero in a log and from "not computed" in a report.
+  for (const metric of emitted) {
+    if (metric.value === null && metric.nullReason === null) {
+      throw new ReleaseEvalHarnessError(`metric "${metric.metric}" is null with no structured reason`)
+    }
+    if (metric.value !== null && metric.nullReason !== null) {
+      throw new ReleaseEvalHarnessError(`metric "${metric.metric}" carries both a value and a null reason`)
+    }
+  }
+  for (const metric of PROVIDER_DEPENDENT_METRICS) {
+    const value = emitted.find((m) => m.metric === metric)
+    if (value && (value.measurable || value.value !== null)) {
+      throw new ReleaseEvalHarnessError(`provider-dependent metric "${metric}" was reported as measurable offline — this harness makes zero provider calls`)
+    }
+  }
+}
+
+/**
+ * Checks whose failure means a citation itself was wrong — resolved when it
+ * should not have, drifted off its passage, crossed a scope, or projected into
+ * a PRODUCT reference it cannot support. Listed explicitly rather than matched
+ * by substring on the checkId: a rename would silently shrink the gate, and a
+ * failure gate that quietly stops covering something is the failure mode this
+ * whole unit exists to remove.
+ */
+const CITATION_VALIDATION_CHECKS: readonly string[] = [
+  'sufficient-evidence-citation-resolves',
+  'citation-correct-decodes',
+  'citation-incorrect-rejected',
+  'insufficient-evidence-empty-sentinel',
+  'grounding-project-scope-enforced',
+  'grounding-provenance-canonical',
+  'grounding-product-adapter-input-complete',
+]
+
+/** The checks that feed each computed metric, kept beside the matrix declaration. */
+const METRIC_CONTRIBUTORS = {
+  citationPrecision: ['sufficient-evidence-citation-resolves', 'citation-correct-decodes', 'citation-incorrect-rejected', 'grounding-product-adapter-input-complete'],
+  citationCoverage: ['sufficient-evidence-citation-resolves', 'grounding-provenance-canonical'],
+  isolation: ['cross-organization-no-leak', 'cross-project-no-leak', 'malicious-document-envelope-holds', 'grounding-project-scope-enforced'],
+  // A-F10: quota presentation and reviewer human-review are NOT abstention
+  // decisions. They pin a retry/human-review contract and now feed
+  // structural-regression instead of inflating abstention correctness.
+  abstention: ['insufficient-evidence-empty-sentinel', 'abstention-schema-enforced', 'grounding-contradiction-marked'],
+  unsupportedClaim: ['insufficient-evidence-empty-sentinel', 'citation-incorrect-rejected', 'grounding-project-scope-enforced', 'contradiction-acknowledgment-heuristic'],
+  structural: ['cap-01-05-regression-surface-present', 'retryable-code-set-pinned', 'provider-unavailable-presentation', 'quota-exhausted-non-retryable', 'human-decision-literal-true', 'grounding-retrieval-score-ordering'],
+} as const
+
+function ratio(passed: number, total: number): number | null {
+  return total === 0 ? null : passed / total
+}
+
+const NO_CONTRIBUTORS: MetricNullReason = {
+  code: 'no-contributing-checks',
+  gate: null,
+  detail: 'no check in the current matrix feeds this metric; a ratio over zero samples is not zero',
+}
+
+export function computeReleaseMetrics(results: readonly ReleaseCaseResult[]): ReleaseEvalMetricValue[] {
   const byId = new Map(results.map((r) => [r.checkId, r]))
   const ok = (id: string) => byId.get(id)?.ok === true
+  const present = (ids: readonly string[]) => ids.filter((id) => byId.has(id))
+  const score = (ids: readonly string[]) => {
+    const live = present(ids)
+    return { passed: live.filter(ok).length, total: live.length }
+  }
 
-  const citationChecks = ['sufficient-evidence-citation-resolves', 'citation-correct-decodes', 'citation-incorrect-rejected']
-  const citationPassed = citationChecks.filter(ok).length
-  const isolationChecks = ['cross-organization-no-leak', 'cross-project-no-leak', 'malicious-document-envelope-holds']
-  const isolationViolations = isolationChecks.filter((id) => byId.get(id)?.outcome === 'isolation-violation').length
-  const abstentionChecks = ['insufficient-evidence-empty-sentinel', 'abstention-schema-enforced', 'quota-exhausted-non-retryable', 'human-decision-literal-true']
-  const abstentionCorrect = abstentionChecks.filter(ok).length
-  const unsupportedClaimChecks = ['insufficient-evidence-empty-sentinel', 'citation-incorrect-rejected']
-  const unsupportedClaimsCaught = unsupportedClaimChecks.filter(ok).length
+  const citation = score(METRIC_CONTRIBUTORS.citationPrecision)
+  const coverage = score(METRIC_CONTRIBUTORS.citationCoverage)
+  const abstention = score(METRIC_CONTRIBUTORS.abstention)
+  const unsupported = score(METRIC_CONTRIBUTORS.unsupportedClaim)
+  const structural = score(METRIC_CONTRIBUTORS.structural)
+  const isolationViolations = present(METRIC_CONTRIBUTORS.isolation)
+    .filter((id) => byId.get(id)?.outcome === 'isolation-violation').length
 
-  return [
+  const metrics: ReleaseEvalMetricValue[] = [
     {
       metric: 'citation-precision',
       measurable: true,
-      value: citationChecks.length ? citationPassed / citationChecks.length : null,
-      detail: `${citationPassed}/${citationChecks.length} citation checks resolved/rejected correctly`,
+      value: ratio(citation.passed, citation.total),
+      nullReason: citation.total === 0 ? NO_CONTRIBUTORS : null,
+      detail: `${citation.passed}/${citation.total} citation checks resolved/rejected/projected correctly`,
     },
     {
       metric: 'citation-coverage',
       measurable: true,
-      value: ok('sufficient-evidence-citation-resolves') ? 1 : 0,
-      detail: 'binary: whether real evidence in context is reachable via a valid sourceRefIndexes citation',
+      value: ratio(coverage.passed, coverage.total),
+      nullReason: coverage.total === 0 ? NO_CONTRIBUTORS : null,
+      detail: `${coverage.passed}/${coverage.total}: real evidence in context is reachable via a valid citation AND that citation's provenance chain closes`,
     },
     {
       metric: 'unsupported-claim-rate',
       measurable: true,
-      value: unsupportedClaimChecks.length ? 1 - unsupportedClaimsCaught / unsupportedClaimChecks.length : null,
-      detail: `${unsupportedClaimsCaught}/${unsupportedClaimChecks.length} unsupported-claim canaries correctly rejected (rate = 1 - caught/total)`,
+      value: unsupported.total === 0 ? null : 1 - unsupported.passed / unsupported.total,
+      nullReason: unsupported.total === 0 ? NO_CONTRIBUTORS : null,
+      detail: `${unsupported.passed}/${unsupported.total} unsupported-claim canaries correctly rejected (rate = 1 - caught/total)`,
     },
     {
       metric: 'abstention-correctness',
       measurable: true,
-      value: abstentionChecks.length ? abstentionCorrect / abstentionChecks.length : null,
-      detail: `${abstentionCorrect}/${abstentionChecks.length} abstention/human-review contracts held`,
+      value: ratio(abstention.passed, abstention.total),
+      nullReason: abstention.total === 0 ? NO_CONTRIBUTORS : null,
+      detail: `${abstention.passed}/${abstention.total} genuine abstention contracts held (A-F10: quota presentation and reviewer human-review moved to structural-regression — neither is an abstention decision)`,
     },
     {
       metric: 'isolation-violations',
       measurable: true,
       value: isolationViolations,
-      detail: `${isolationViolations} structural cross-tenant/cross-project/prompt-injection leaks detected across ${isolationChecks.length} checks (application layer only, not RLS — see G3)`,
+      nullReason: null,
+      detail: `${isolationViolations} structural cross-tenant/cross-project/prompt-injection leaks across ${present(METRIC_CONTRIBUTORS.isolation).length} checks (application + grounding-contract layer only, not RLS — see G3)`,
+    },
+    {
+      metric: 'structural-regression',
+      measurable: true,
+      value: ratio(structural.passed, structural.total),
+      nullReason: structural.total === 0 ? NO_CONTRIBUTORS : null,
+      detail: `${structural.passed}/${structural.total} pinned structural contracts held (CAP-01..05 surface, retry semantics, quota/provider presentation, reviewer human-review literal, retrieval score ordering)`,
     },
     {
       metric: 'latency',
       measurable: false,
       value: null,
-      detail: 'requires a real provider round-trip (gate G1); this harness makes zero provider calls by design',
+      nullReason: {
+        code: 'requires-provider-call',
+        gate: 'G1',
+        detail: 'this harness makes zero provider calls by design, so there is no round-trip to time. Harness wall-clock is reported separately under summary observations and is NOT provider latency — it measures module transformation cost on the host that ran it.',
+      },
+      detail: 'provider round-trip latency — requires gate G1',
     },
     {
       metric: 'token-usage',
       measurable: false,
       value: null,
-      detail: 'requires a real provider response with usage metadata (gate G1); lib/stella/cost-model.ts documents the formula to apply once real tokens exist',
+      nullReason: {
+        code: 'requires-provider-usage-metadata',
+        gate: 'G1',
+        detail: 'requires a real provider response carrying usage metadata; no offline substitute exists and estimating it would fabricate the baseline this harness refuses to invent',
+      },
+      detail: 'prompt + completion tokens per interaction — requires gate G1',
     },
     {
       metric: 'estimated-provider-cost',
       measurable: false,
       value: null,
-      detail: 'derived from token-usage via lib/stella/cost-model.ts; not computable without gate G1 data. Pricing constants there are themselves flagged pending calibration (gate G9)',
+      nullReason: {
+        code: 'requires-token-usage-and-calibration',
+        gate: 'G9',
+        detail: 'derived from token-usage via lib/stella/cost-model.ts, which is blocked on G1; the pricing constants there are themselves flagged as uncalibrated pending G9, so even with tokens the number would carry two unquantified errors',
+      },
+      detail: 'estimated cost per interaction — requires gate G1 for tokens and gate G9 for calibration',
     },
   ]
+
+  return metrics
+}
+
+export interface ReleaseEvalRun {
+  summary: ReleaseEvalSummary
+  results: ReleaseCaseResult[]
+  /**
+   * Measurements that are real but NOT deterministic, kept out of `summary` so
+   * two runs of the same matrix produce byte-identical structured output.
+   */
+  observations: { harnessWallClockMs: number }
 }
 
 export function runReleaseEvalHarness(
   matrix: readonly ReleaseEvalMatrixEntry[] = RELEASE_EVAL_MATRIX,
-): { summary: ReleaseEvalSummary; results: ReleaseCaseResult[] } {
+): ReleaseEvalRun {
   validateReleaseEvalMatrix(matrix)
   assertChecksMatchMatrix(matrix)
+  // A renamed check must not silently drop out of the citation failure gate.
+  for (const id of CITATION_VALIDATION_CHECKS) {
+    if (!(id in CHECKS)) throw new ReleaseEvalHarnessError(`CITATION_VALIDATION_CHECKS names "${id}", which is not an implemented check`)
+  }
+  for (const ids of Object.values(METRIC_CONTRIBUTORS)) {
+    for (const id of ids) {
+      if (!(id in CHECKS)) throw new ReleaseEvalHarnessError(`METRIC_CONTRIBUTORS names "${id}", which is not an implemented check`)
+    }
+  }
 
+  const startedAt = Date.now()
   const results = matrix.map((entry) => CHECKS[entry.checkId]!())
+  const harnessWallClockMs = Date.now() - startedAt
+
+  const metrics = computeReleaseMetrics(results)
+  assertMetricsMatchMatrix(matrix, metrics)
+
   const offlineMeasurable = new Set(matrix.filter((e) => e.offlineMeasurable).map((e) => e.checkId))
   const allControls = results.flatMap((r) => r.negativeControls)
 
   const summary: ReleaseEvalSummary = {
+    harnessVersion: RELEASE_HARNESS_VERSION,
+    matrixVersion: RELEASE_EVAL_MATRIX_VERSION,
+    fixturesVersion: RELEASE_FIXTURES_VERSION,
     totalChecks: results.length,
     passed: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
@@ -1167,19 +1749,23 @@ export function runReleaseEvalHarness(
     negativeControlsRun: allControls.length,
     negativeControlsUndetected: undetectedControls(allControls).length,
     tautologicalChecks: results.filter((r) => r.detail.startsWith('TAUTOLOGICAL')).map((r) => r.checkId),
+    citationValidationFailures: results.filter((r) => !r.ok && CITATION_VALIDATION_CHECKS.includes(r.checkId)).length,
     providerCalls: 0,
-    metrics: computeReleaseMetrics(results),
+    metrics,
   }
 
-  return { summary, results }
+  return { summary, results, observations: { harnessWallClockMs } }
 }
 
 /**
  * Why the process must exit non-zero, or an empty list.
  *
  * Lives here rather than inside the CLI so the gates are testable against
- * synthetic summaries: "the process fails on a check that cannot fail" is a
- * claim that has to be provable without breaking a real detector.
+ * synthetic summaries: "the process fails on an isolation violation" is a
+ * claim that has to be provable without engineering a real tenant leak.
+ * Every gate is evaluated — a run that both leaked across tenants AND
+ * fabricated a citation reports both, because collapsing them into the first
+ * failure is how the second one gets fixed a release later.
  */
 export function releaseEvalFailureReasons(summary: ReleaseEvalSummary): string[] {
   const reasons: string[] = []
@@ -1193,8 +1779,10 @@ export function releaseEvalFailureReasons(summary: ReleaseEvalSummary): string[]
   if (summary.isolationViolations > 0) {
     reasons.push(`${summary.isolationViolations} isolation violation(s) — cross-tenant or cross-project data reached a request`)
   }
+  if (summary.citationValidationFailures > 0) {
+    reasons.push(`${summary.citationValidationFailures} citation validation failure(s) — a citation resolved, drifted or projected incorrectly`)
+  }
   if (summary.systemErrors > 0) reasons.push(`${summary.systemErrors} system error(s)`)
   if (summary.providerCalls !== 0) reasons.push('harness made a provider call — must stay fully offline')
   return reasons
 }
-
