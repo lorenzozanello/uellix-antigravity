@@ -259,9 +259,19 @@ describe('the schema and lib/grounding describe the same pipeline', () => {
 // ---------------------------------------------------------------------------
 
 describe('SECURITY DEFINER contract', () => {
-  const functions = [FORWARD.VERSIONS, FORWARD.CHUNKS].flatMap((f) =>
-    parseFunctions(SOURCES[f]).map((fn) => ({ file: f, ...fn })),
-  )
+  // Scoped to uellix_grounding.* — the capability role's own schema and the
+  // governed API surface. TRAIN 3 adds two plain (non-SECURITY-DEFINER)
+  // trigger-executor functions in `public`
+  // (uellix_check_document_version_scope, uellix_check_canonical_chunk):
+  // exactly like the pre-existing public.uellix_forbid_mutation(), neither is
+  // part of this contract — they take no p_* arguments (PL/pgSQL trigger
+  // functions receive NEW/OLD, not a caller-supplied argument list) and they
+  // don't re-impose an organization boundary because they never honour a
+  // caller's claim about scope; they verify the INSERTed row's own internal
+  // consistency instead.
+  const functions = [FORWARD.VERSIONS, FORWARD.CHUNKS]
+    .flatMap((f) => parseFunctions(SOURCES[f]).map((fn) => ({ file: f, ...fn })))
+    .filter((fn) => fn.name.startsWith('uellix_grounding.'))
 
   it('there are exactly five, and they are the five the contract names', () => {
     expect(functions.map((f) => f.name).sort()).toEqual([
@@ -481,12 +491,20 @@ describe('rollbacks', () => {
 
     expect(dropped(SOURCES[ROLLBACK.CHUNKS]).sort()).toEqual([
       'public.evidence_chunks',
+      // TRAIN 3: the canonical-acyclicity trigger function this package
+      // creates. Dropped AFTER the table (its trigger depends on it), unlike
+      // public.uellix_forbid_mutation() which is baseline/shared and never
+      // dropped by any rollback.
+      'public.uellix_check_canonical_chunk',
       'uellix_grounding.chunks_in_scope',
       'uellix_grounding.finalize_document_ingestion',
       'uellix_grounding.insert_evidence_chunks',
     ])
     expect(dropped(SOURCES[ROLLBACK.VERSIONS]).sort()).toEqual([
       'public.evidence_document_versions',
+      // TRAIN 3: the owner-proof scope-check trigger function, same reasoning
+      // as uellix_check_canonical_chunk above.
+      'public.uellix_check_document_version_scope',
       'uellix_cap_grounding',
       'uellix_grounding',
       'uellix_grounding.claim_active_document_version',

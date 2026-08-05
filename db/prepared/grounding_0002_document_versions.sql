@@ -309,7 +309,20 @@ CREATE TABLE IF NOT EXISTS public.evidence_document_versions (
   CONSTRAINT evidence_document_versions_pipeline_version_check
     CHECK (normalization_version <> '' AND extractor_version <> '' AND chunker_version <> ''),
   CONSTRAINT evidence_document_versions_mime_type_check
-    CHECK (mime_type ~ '^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$')
+    CHECK (mime_type ~ '^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$'),
+
+  -- TRAIN 3 HARDENING. The composite target evidence_chunks binds its
+  -- scope-consistency foreign key to (see grounding_0003 §2). Trivially
+  -- unique — `id` alone is already a PRIMARY KEY — but PostgreSQL only accepts
+  -- a FOREIGN KEY whose referenced side is backed by a UNIQUE (or PK)
+  -- constraint over EXACTLY that column list, and "a chunk's scope and
+  -- provenance agree with its version row" was, before this, an RLS
+  -- RESTRICTIVE policy only. RLS does not bind the table owner: `SET ROLE
+  -- uellix_owner; INSERT INTO evidence_chunks ...` bypassed it completely. A
+  -- FOREIGN KEY has no owner exemption.
+  CONSTRAINT evidence_document_versions_identity_unique
+    UNIQUE (id, organization_id, project_id, evidence_id, version_id,
+            raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
 );
 
 -- ============================================================
@@ -455,6 +468,21 @@ BEGIN
       'grounding_0002 aborted: constraint evidence_document_versions_supersedes_unique exists with an unexpected definition (%). Resolve manually — this script will not drop a uniqueness guarantee.',
       def;
   END IF;
+
+  -- TRAIN 3 HARDENING — the FK target composite unique (see section 2).
+  SELECT pg_get_constraintdef(oid) INTO def FROM pg_constraint
+  WHERE conrelid = 'public.evidence_document_versions'::regclass
+    AND conname = 'evidence_document_versions_identity_unique';
+  IF def IS NULL THEN
+    ALTER TABLE public.evidence_document_versions
+      ADD CONSTRAINT evidence_document_versions_identity_unique
+      UNIQUE (id, organization_id, project_id, evidence_id, version_id,
+              raw_content_hash, normalized_content_hash, normalization_version, chunker_version);
+  ELSIF position('UNIQUE (id, organization_id, project_id, evidence_id, version_id, raw_content_hash, normalized_content_hash, normalization_version, chunker_version)' in def) = 0 THEN
+    RAISE EXCEPTION
+      'grounding_0002 aborted: constraint evidence_document_versions_identity_unique exists with an unexpected definition (%). Resolve manually — this script will not drop a uniqueness guarantee.',
+      def;
+  END IF;
 END $$;
 
 -- ============================================================
@@ -594,6 +622,60 @@ COMMENT ON TRIGGER trg_evidence_document_versions_append_only ON public.evidence
   'GR-002 (prepared grounding_0002): document version history is append-only; UPDATE/DELETE are forbidden even for the table owner.';
 COMMENT ON TRIGGER trg_evidence_document_versions_no_truncate ON public.evidence_document_versions IS
   'GR-002 (prepared grounding_0002): TRUNCATE is forbidden on this append-only table, including for the table owner.';
+
+-- ============================================================
+-- 7b. Scope consistency, enforced for every role including the owner
+--     (TRAIN 3 HARDENING — risk #5)
+-- ============================================================
+-- evidence_document_versions_definer_insert already states this invariant as
+-- a WITH CHECK, but RLS does not bind the table owner unless FORCE ROW LEVEL
+-- SECURITY is set — and FORCE is deliberately NOT used here (see §Fase 4 of
+-- the train 3 response: it would remove the owner's bypass indiscriminately,
+-- including for maintenance, while the actual gap is narrow and a trigger
+-- closes it exactly). A BEFORE INSERT trigger has no owner exemption: it
+-- fires for `SET ROLE uellix_owner` exactly as it does for uellix_cap_grounding,
+-- so a version filed directly against the table, bypassing
+-- register_document_version entirely, can no longer disagree with the
+-- evidence item it names.
+CREATE OR REPLACE FUNCTION public.uellix_check_document_version_scope()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_org     uuid;
+  v_project uuid;
+BEGIN
+  SELECT e.organization_id, e.project_id INTO v_org, v_project
+  FROM public.evidence_items e
+  WHERE e.id = NEW.evidence_id;
+
+  IF NOT FOUND OR v_org IS DISTINCT FROM NEW.organization_id OR v_project IS DISTINCT FROM NEW.project_id THEN
+    RAISE EXCEPTION 'grounding: evidence_document_versions.organization_id/project_id do not match the evidence item they name'
+      USING ERRCODE = 'U0106';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_evidence_document_versions_scope_check ON public.evidence_document_versions;
+CREATE TRIGGER trg_evidence_document_versions_scope_check
+  BEFORE INSERT ON public.evidence_document_versions
+  FOR EACH ROW EXECUTE FUNCTION public.uellix_check_document_version_scope();
+
+COMMENT ON TRIGGER trg_evidence_document_versions_scope_check ON public.evidence_document_versions IS
+  'GR-002 hardening (train 3, risk #5): re-checks organization_id/project_id against evidence_items for every role, including the owner, which the RLS WITH CHECK alone does not reach.';
+
+-- TRAIN 3 HARDENING — risk #4. A trigger's default tgenabled='O' does not
+-- fire under session_replication_role = replica, which disables it both for
+-- logical replication AND for a session that sets replica mode deliberately to
+-- bypass triggers — exactly the posture this table exists to make impossible.
+-- ENABLE ALWAYS fires in origin, local AND replica. Verified convergent under
+-- a fresh apply, rollback and reapply (scripts/grounding-dry-run.sh) — it does
+-- not survive a DROP TABLE, so the rollback needs no matching change.
+ALTER TABLE public.evidence_document_versions ENABLE ALWAYS TRIGGER trg_evidence_document_versions_append_only;
+ALTER TABLE public.evidence_document_versions ENABLE ALWAYS TRIGGER trg_evidence_document_versions_no_truncate;
+ALTER TABLE public.evidence_document_versions ENABLE ALWAYS TRIGGER trg_evidence_document_versions_scope_check;
 
 COMMENT ON TABLE public.evidence_document_versions IS
   'Append-only chain of custody for evidence document versions (GR-002, prepared grounding_0002). Not a derived index: a row is never modified or deleted. Managed outside the drizzle chain — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
@@ -906,6 +988,16 @@ BEGIN
     RAISE EXCEPTION 'grounding_0002 FAILED verification: missing UNIQUE constraint(s): %. Without them the version history can fork and "the active version" stops being well defined', problem;
   END IF;
 
+  -- (3b) TRAIN 3 HARDENING — the composite identity/scope UNIQUE that
+  --      evidence_chunks binds its scope-consistency FK to.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = tbl_oid AND contype = 'u'
+      AND conname = 'evidence_document_versions_identity_unique'
+  ) THEN
+    RAISE EXCEPTION 'grounding_0002 FAILED verification: missing UNIQUE constraint evidence_document_versions_identity_unique, the target evidence_chunks binds its scope-consistency foreign key to';
+  END IF;
+
   -- (4) RLS on, FORCE off. FORCE would remove the owner's bypass; with no
   --     UPDATE/DELETE policy that is harmless, but it would also block the
   --     definer's INSERT path, and the script would still report success.
@@ -931,9 +1023,28 @@ BEGIN
   IF n <> 2 THEN
     RAISE EXCEPTION 'grounding_0002 FAILED verification: expected 2 triggers bound to public.uellix_forbid_mutation(), found %', n;
   END IF;
+  -- (6b) TRAIN 3 HARDENING — the owner-proof scope-consistency trigger (risk
+  --      #5), distinct from the two append-only triggers counted above.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = tbl_oid AND NOT t.tgisinternal
+      AND t.tgname = 'trg_evidence_document_versions_scope_check'
+      AND t.tgfoid = to_regprocedure('public.uellix_check_document_version_scope()')::oid
+  ) THEN
+    RAISE EXCEPTION 'grounding_0002 FAILED verification: trg_evidence_document_versions_scope_check is missing or bound to the wrong function';
+  END IF;
+
   SELECT count(*) INTO n FROM pg_trigger WHERE tgrelid = tbl_oid AND NOT tgisinternal;
-  IF n <> 2 THEN
-    RAISE EXCEPTION 'grounding_0002 FAILED verification: unexpected extra trigger(s) (total %, expected 2)', n;
+  IF n <> 3 THEN
+    RAISE EXCEPTION 'grounding_0002 FAILED verification: unexpected trigger count (total %, expected 3: 2 append-only + 1 scope-consistency)', n;
+  END IF;
+
+  -- (6c) TRAIN 3 HARDENING — risk #4. Every trigger on this table must be
+  --      ENABLE ALWAYS (tgenabled='A'), or session_replication_role=replica
+  --      silently disables append-only and scope enforcement alike.
+  SELECT count(*) INTO n FROM pg_trigger WHERE tgrelid = tbl_oid AND NOT tgisinternal AND tgenabled = 'A';
+  IF n <> 3 THEN
+    RAISE EXCEPTION 'grounding_0002 FAILED verification: % of 3 triggers are ENABLE ALWAYS (tgenabled=''A''); a plain-enabled trigger is skipped under session_replication_role=replica', n;
   END IF;
 
   -- (7) No write privilege for any principal other than the definer role, and
@@ -996,5 +1107,5 @@ BEGIN
     RAISE EXCEPTION 'grounding_0002 FAILED verification: PUBLIC holds EXECUTE on %', problem;
   END IF;
 
-  RAISE NOTICE 'grounding_0002: verification passed — 14 columns, evidence FK NO ACTION, 3 UNIQUE constraints, RLS on with 3 policies and no UPDATE/DELETE policy, 2 append-only triggers, no write privilege outside uellix_cap_grounding, capability role with 0 members, both functions SECURITY DEFINER with empty search_path.';
+  RAISE NOTICE 'grounding_0002: verification passed — 14 columns, evidence FK NO ACTION, 4 UNIQUE constraints (train 3 adds the identity/scope target), RLS on with 3 policies and no UPDATE/DELETE policy, 3 triggers (2 append-only + 1 owner-proof scope-check), all ENABLE ALWAYS, no write privilege outside uellix_cap_grounding, capability role with 0 members, both functions SECURITY DEFINER with empty search_path.';
 END $$;
