@@ -4,6 +4,14 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Calendar, MapPin, FolderKanban } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+// PRODUCT-002 canonical mount (train 4). StellaGroundedQuerySection is the
+// typed server/client wrapper INTEGRATION built in train 3 and left
+// IMPLEMENTED_UNMOUNTED_PENDING_CANONICAL_SURFACE: a grounded question has
+// project scope, not step scope, so it belongs here (the project overview),
+// not on any of the seven methodology pipeline pages. See
+// docs/ops/contracts/PRODUCT-002_grounded_query_orchestrator_entry_point.md
+// and the "Superficie canónica" note in docs/ops/workstreams/PRODUCT.md.
+import { StellaGroundedQuerySection } from './pipeline/StellaGroundedQuerySection';
 
 type ProjectStatus = 'draft' | 'active' | 'completed' | 'archived';
 
@@ -111,6 +119,16 @@ export default async function ProjectDetailPage({
           </dl>
         </CardContent>
       </Card>
+
+      {/*
+        `step` is typed as AdvisorPipelineStep because that type has no
+        project-level variant yet — it only tags the (currently unwired,
+        see onDecision below) human-decision record, and has no effect on
+        the query itself. "outcomes" is the closest fit: an SROI grounded
+        question is fundamentally about outcome evidence. Revisit if
+        INT-PR-001 closes and this mount starts wiring onDecision.
+      */}
+      <StellaGroundedQuerySection projectId={project.id} step="outcomes" />
 
       <Link
         href={`/app/projects/${project.id}/pipeline`}
