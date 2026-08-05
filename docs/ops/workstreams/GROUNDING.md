@@ -59,6 +59,11 @@ silencioso, no un error.
 
 ## Unidad actual
 
+`STELLA_GROUNDING_RETRIEVAL_AND_ISOLATION_TRAIN_2` — **completada**. Ver
+[Tren 2](#tren-2--retrieval-y-aislamiento-2026-08-04) al final del documento.
+
+## Unidad anterior
+
 `STELLA_GROUNDING_INGESTION_CORE_TRAIN_1` — **completada**.
 
 Alcance entregado:
@@ -258,3 +263,272 @@ contrato publicado es una decisión de diseño de esta línea, no de integració
 Hoy es inalcanzable (cero productores de `GroundingAnswerState` en runtime, sin
 retrieval); **pasa a BLOCKER en cuanto el tren 2 cablee retrieval**. Es trabajo
 de entrada de GROUNDING tren 2, junto con la prueba cross-proyecto que falta.
+
+**Estado: CERRADO en el tren 2.** Ver
+[A-F1 — reproducción y reparación](#a-f1--reproducción-y-reparación).
+
+---
+
+## Tren 2 — retrieval y aislamiento (2026-08-04)
+
+`STELLA_GROUNDING_RETRIEVAL_AND_ISOLATION_TRAIN_2`. Dos commits sobre
+`597819b`. Sin push, sin acceso remoto, sin gates pesados, **cero cambios en
+`db/**` y `supabase/**`**.
+
+### A-F1 — reproducción y reparación
+
+**Reproducido primero, con una prueba que falla.** La primera versión de esa
+prueba pasó por la razón equivocada: el chunk de fixture no llevaba
+`organizationId`, así que `undefined !== 'org-aaaa'` disparaba
+`citation_out_of_scope` por accidente. Corregida para satisfacer la
+comprobación vieja y violar sólo la que faltaba, devolvió `[]` — respuesta
+`grounded`, cita de otro proyecto, ninguna señal de alarma. Ése es A-F1.
+
+**La causa no era un `if` olvidado, era una firma demasiado pobre.**
+`availableChunks` estaba tipado como
+`ReadonlyMap<ContentHash, { contentHash; organizationId }>`: el `projectId` no
+estaba sin comprobar, estaba **sin poder suministrarse**. Ningún cuidado en el
+punto de llamada podía haberlo aportado, y por eso `scopeContains` llevaba
+desde el tren 1 con cero llamadas en producción.
+
+La reparación ensancha el contrato publicado:
+
+- nuevo `CitableChunkRecord` (`chunkId`, `contentHash`, `scope` completo,
+  `evidenceId`, `versionId`, `location`);
+- `toCitableChunkRecord(chunk)` lo deriva de un `GroundingChunk`, para que
+  nadie copie los seis campos a mano — cada campo copiado a mano es un campo
+  que se puede copiar del sitio equivocado, y estos son el límite de
+  aislamiento;
+- `validateAnswerCitations` usa `scopeContains` real y verifica la cadena
+  completa: **organización, proyecto, documento, versión, chunk, hash y
+  ubicación**;
+- cuatro códigos nuevos: `citation_evidence_mismatch`,
+  `citation_version_mismatch`, `citation_location_mismatch`,
+  `citation_duplicated`.
+
+Decisiones que conviene conocer:
+
+- **Se reportan todas las violaciones de una cita, no la primera.** Una cita
+  falsificada rompe varios eslabones a la vez; truncar haría que el registro de
+  auditoría describiera un problema más estrecho que el real.
+- **`coordinateSpace` se compara con el mismo rigor que los offsets.** Dos
+  spans con enteros idénticos en espacios de coordenadas distintos no son el
+  mismo pasaje: resuelven en rango y citan otra cosa.
+- **La duplicación se evalúa por afirmación, no globalmente.** Dos
+  afirmaciones apoyadas en el mismo pasaje son corroboración normal; una
+  afirmación que cuenta el mismo pasaje dos veces infla su respaldo aparente.
+
+**Pruebas de ataque** (`__tests__/isolation.test.ts`, 16): misma organización
+y otro proyecto; degradación silenciosa; organización ajena; organización
+ajena con `projectId` que colisiona; evidence item falso; versión ajena; hash
+desplazado; chunk no recuperado; span movido; espacio de coordenadas ajeno;
+cita duplicada; contradicción con un lado fuera de scope.
+
+### Contrato de repositorio
+
+`lib/grounding/retrieve/repository.ts`. Interfaz pura: **no importa `db/**`**,
+no abre conexión, no conoce SQL. Consulta por `scope`, `evidenceIds`
+autorizados, `versionIds`, texto y `limit`.
+
+`evidenceIds` y `versionIds` son filtros de **autorización**, no preferencias:
+la autorización puede ser más estrecha que el límite de aislamiento — un
+revisor asignado a tres documentos de un proyecto no debe recuperar el cuarto.
+
+**El repositorio se trata como NO CONFIABLE respecto del scope**, porque filtrar
+de menos es exactamente el aspecto que tiene un `WHERE` al que se le cayó un
+predicado. `enforceRepositoryScope` verifica cada chunk devuelto y **lanza**:
+
+- un guard que filtra produce una respuesta correcta desde un repositorio roto,
+  con lo cual la rotura nunca se observa y llega a producción;
+- un guard que lanza convierte la misma rotura en una petición fallida con el
+  límite nombrado en el mensaje.
+
+También verifica que `chunk.scope` y `chunk.provenance.scope` coincidan. Se
+escriben en momentos distintos de la ingestión; si discrepan, una de las dos
+escrituras fue incorrecta y no hay forma de saber cuál.
+
+Compatible con GR-001 y GR-002 sin depender de ellas: la implementación
+persistida y `InMemoryChunkRepository` son intercambiables, y el aislamiento se
+prueba una vez para ambas.
+
+### Retrieval
+
+`lib/grounding/retrieve/retrieve.ts`. Estrategia local determinista:
+
+```
+fetch (con guard de scope) → cuarentena → score → umbral → ranking
+  → deduplicación → tope por documento → top-k → diversidad de fuentes
+```
+
+**Sin proveedores, sin embeddings remotos, sin red.** `ChunkScorer` es la
+interfaz por la que entrará un scorer semántico después **sin cambiar el
+contrato de respuesta**: es `async` aunque la implementación léxica no lo
+necesite, porque hacerla síncrona obligaría a cambiar todas las firmas
+superiores el día que se añada un proveedor real.
+
+`LexicalChunkScorer` (`lexical-idf-tf-v1`): idf sobre el conjunto candidato,
+ponderado por frecuencia de término saturada, normalizado a `[0, 1]`.
+
+- **La saturación existe** para que un pasaje con relleno de palabras clave no
+  supere al pasaje que responde la pregunta.
+- **El idf se calcula sobre el conjunto candidato, no sobre un corpus global.**
+  Mantiene la función pura, al precio de que los scores no sean comparables
+  entre consultas. El contrato ya decía exactamente eso (`score` es «comparable
+  sólo dentro de una consulta y una estrategia»), así que la implementación
+  cumple la garantía publicada en lugar de excederla en silencio.
+
+**Toda etapa sólo puede quitar candidatos, y toda eliminación queda registrada
+con su razón** (`RetrievalExclusion`): `below_min_score`, `quarantined`,
+`duplicate_content`, `over_document_limit`, `beyond_top_k`,
+`displaced_for_source_diversity`. Un candidato que desaparece sin razón
+registrada es indistinguible de uno que nunca estuvo, y las dos situaciones
+exigen respuestas distintas.
+
+`displaced_for_source_diversity` se nombra en vez de esconderse: marca un chunk
+que puntuó **más alto** que otro que sí se conservó. Quien no vea eso no puede
+distinguir ranking de política.
+
+Decisiones de ranking:
+
+- **La cuarentena ocurre antes del scoring**, para que el contenido retenido
+  tampoco influya en el idf.
+- **Los empates se rompen por `(evidenceId, chunkIndex, chunkId)`**, nunca por
+  orden de entrada: el orden en que el repositorio enumera no debe ser el
+  ranking.
+- **La deduplicación es posterior al ranking**, para que la ocurrencia que
+  sobrevive sea la determinista y no la que llegó primero.
+- **Diversidad: greedy con reparación, no round-robin.** Round-robin
+  reordenaría todos los resultados para servir un piso que la mayoría de
+  consultas ya cumple. La reparación sólo toca el resultado cuando el piso se
+  incumple de verdad.
+- **El piso efectivo es `min(minDistinctSources, topK)`.** Un resultado de k
+  chunks no puede apoyarse en más de k fuentes; pedir más no es una política
+  más estricta sino una insatisfacible. Sin ese tope, el bucle intercambiaba la
+  única plaza hasta agotar candidatos y perdía por el camino las exclusiones
+  `beyond_top_k` — lo detectó una prueba, no una revisión.
+
+`DEFAULT_MIN_DISTINCT_SOURCES` es 2 y no 1 porque una respuesta de fuente única
+no puede aflorar una contradicción, y una respuesta que no puede aflorar
+contradicciones reporta la primera cifra que encuentra como si no estuviera
+disputada. Es un piso, no una cuota: se abandona antes que fabricarse.
+
+### Respuesta grounded
+
+`lib/grounding/retrieve/grounded-answer.ts`. Estados:
+`sufficient_evidence`, `partial_evidence`, `contradictory_evidence`,
+`insufficient_evidence` y **`provider_unavailable` como estado separado**.
+
+`provider_unavailable` no es una afirmación sobre la evidencia. «Tu evidencia
+no responde a esto» y «no pudimos mirar» son hechos distintos sobre cosas
+distintas; colapsarlos le dice a un revisor que su documentación carece de algo
+que puede muy bien contener. `providerUnavailableOutcome` se construye aquí y
+no en el llamador, para que no pueda recibir afirmaciones, un `inspected` no
+nulo ni una explicación con sabor a evidencia.
+
+**El mecanismo central: un borrador nunca aporta una cita.** Aporta una frase y
+un `chunkId`. Todos los campos verificables — evidence item, versión, hash,
+ubicación — se **leen del chunk recuperado**. Un modelo que emita un `versionId`
+o un hash plausibles no consigue nada, porque esos campos no se toman de él
+jamás.
+
+Esto es más fuerte que validar: validar detecta una cita falsificada después de
+que existe; construir no deja dónde ponerla. La validación se ejecuta igual
+como segunda línea — cubre el caso en que el `ScopedRetrievalResult` y el scope
+de su propia query discrepan, que la construcción no puede ver.
+
+`ContradictionMarker` proviene de la evidencia y nunca de la UI. Una
+contradicción con un lado que no resuelve a un chunk recuperado **se descarta
+entera**: no es evidencia más débil de un conflicto, es ninguna evidencia de
+uno, y emitirla dejaría a la UI mostrando un conflicto apoyado en un chunk que
+nadie puede abrir. Dos chunks con cifras distintas no son una contradicción;
+sólo un `ContradictionMarker` explícito lo es.
+
+### Calibración
+
+`lib/grounding/retrieve/calibration.ts`.
+
+**Los umbrales son una primera calibración local. NO son óptimos y NO han sido
+evaluados.** Se eligieron leyendo la escala que produce el scorer léxico, no
+midiendo calidad de respuesta contra un conjunto etiquetado, porque tal
+conjunto no existe todavía. Es el mismo estado que R4 declara sobre
+`DEFAULT_RETRIEVAL_MIN_SCORE` y que INTEGRATION-001 §6 anticipa para el
+adaptador. **Pendientes de evals.**
+
+`RELEVANCE_THRESHOLDS_VERSION = 'grounding-relevance-2026-08-local-1'`;
+`high >= 0.4`, `medium >= 0.2`. Referencia de escala para quien recalibre: un
+chunk con todos los términos de la consulta una vez cae cerca de 0.45; con la
+mitad, cerca de 0.23.
+
+Lo que sí está diseñado y no adivinado:
+
+- **el conjunto está versionado**, de modo que un bucket almacenado se puede
+  rastrear hasta la calibración que lo produjo y una recalibración se ve en los
+  datos en vez de reinterpretar el histórico en silencio;
+- **el bucket nunca sustituye al score.** `presentRelevance` devuelve ambos más
+  la estrategia y el scorer. Descartar el número dejaría al sistema sin forma de
+  recalibrar sobre datos históricos ni de notar que una estrategia cambió de
+  escala;
+- **un score fuera de `[0, 1]` lanza en vez de recortarse**, porque significa
+  que el scorer cambió y los umbrales no.
+
+### Pruebas ejecutadas
+
+Focalizadas, según §11 (ningún gate pesado; sin `test:unit` completo, sin
+`build`):
+
+```
+pnpm exec vitest run lib/grounding/  → 11 archivos, 237 pruebas, todas en verde
+pnpm exec eslint lib/grounding       → limpio
+pnpm exec tsc --noEmit               → limpio
+```
+
+De las 237, **92 son nuevas** de este tren (16 de aislamiento, 13 de
+repositorio, 32 de retrieval, 24 de respuesta grounded, 10 de calibración,
+más las de fixtures compartidos). Las 145 del tren 1 siguen en verde; dos
+archivos preexistentes se actualizaron a la firma nueva de
+`validateAnswerCitations`.
+
+Escritas antes que la implementación y vistas fallar: la reproducción de A-F1,
+las 31 de retrieval y las 31 de respuesta/calibración. Dos defectos reales los
+encontró ese ciclo y no una revisión: el falso verde de la fixture de A-F1 y el
+bucle degenerado de diversidad con `topK: 1`.
+
+### Riesgos
+
+- **R1** (persistencia bloqueada por GR-001) sigue abierto. El contrato de
+  repositorio está diseñado para que GR-001/GR-002 lo implementen sin cambiar
+  nada de retrieval, pero hasta entonces no hay repositorio persistido.
+- **R2** (cobertura de formatos) y **R5** (sin cableado al pipeline) siguen
+  abiertos sin cambio.
+- **R3** (calibración del escáner de inyección) sin cambio. Retrieval respeta
+  la política existente: sólo `critical` pone en cuarentena, `warning` sigue
+  siendo citable.
+- **R4 — parcialmente atendido, no cerrado.** Ya existe retrieval con el que
+  medir, y los umbrales de presentación están versionados y probados en sus
+  bordes. Pero **siguen sin calibrar contra datos**: `RELEVANCE_THRESHOLDS`,
+  `DEFAULT_RETRIEVAL_MIN_SCORE`, `DEFAULT_MAX_PER_DOCUMENT` y
+  `DEFAULT_MIN_DISTINCT_SOURCES` son todos de primera pasada. Cierra con evals,
+  no con este tren.
+- **R6 — nuevo. `no_matching_evidence` cubre dos situaciones distintas.**
+  Cuando se recuperan pasajes pero ninguna afirmación del borrador logra
+  fundamentarse, la abstención sale con `code: 'no_matching_evidence'` aunque sí
+  hubiera evidencia relevante. La `explanation` lo dice explícitamente y
+  `inspected.total` lo delata, pero el código por sí solo se lee como «tu
+  evidencia no contiene nada sobre esto». No se añadió un código nuevo a la
+  unión publicada para no ensanchar un contrato ya consumido por INTEGRATION-001
+  sin necesidad demostrada. Revisar si aparece en uso real.
+- **R7 — nuevo. La diversidad de fuentes puede desplazar al mejor candidato.**
+  Es intencionado y queda registrado como `displaced_for_source_diversity`,
+  pero significa que el pasaje mejor puntuado no siempre aparece. Sin evals no
+  hay forma de saber si el intercambio mejora las respuestas.
+
+### Estado de entrega a integración
+
+**Listo para integración.** Árbol limpio, dos commits locales, sin push, sin
+acceso remoto, sin datos simulados en runtime, sin gates pesados. Ninguna ruta
+prohibida ni `INTEGRATION-OWNED` fue modificada.
+
+Nota para PRODUCT: el barrel nuevo es `lib/grounding/retrieve/index.ts`
+(`lib/grounding/contracts/index.ts` sigue siendo la superficie de contratos).
+`presentRelevance` es el punto previsto para los buckets de INTEGRATION-001 §6,
+y ya cumple su condición: score y estrategia viajan junto al bucket.

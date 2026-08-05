@@ -18,7 +18,9 @@ import { describe, it, expect } from 'vitest'
 import {
   hashContent,
   requireNonEmpty,
+  toCitableChunkRecord,
   validateAnswerCitations,
+  type CitableChunkRecord,
   type CitationReference,
   type ContentHash,
   type GroundedAnswerState,
@@ -207,11 +209,8 @@ describe('anchors reconstruct the cited passage from the original bytes alone', 
 
 describe('citations resolve only against chunks that were really produced', () => {
   const ingested = expectIngested(ingestText(REPORT))
-  const available = new Map<ContentHash, { contentHash: ContentHash; organizationId: string }>(
-    ingested.chunks.map((chunk) => [
-      chunk.chunkId,
-      { contentHash: chunk.contentHash, organizationId: chunk.scope.organizationId },
-    ]),
+  const available = new Map<ContentHash, CitableChunkRecord>(
+    ingested.chunks.map((chunk) => [chunk.chunkId, toCitableChunkRecord(chunk)]),
   )
 
   const citationTo = (chunk: GroundingChunk): CitationReference => ({

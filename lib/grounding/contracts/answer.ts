@@ -18,8 +18,9 @@
 // point: the failure mode this whole workstream exists to prevent is a
 // confident sentence with a citation that supports something else.
 
-import type { ContentHash, NonEmptyReadonlyArray } from './core'
-import type { ChunkLocation } from './chunks'
+import type { ContentHash, GroundingScope, NonEmptyReadonlyArray } from './core'
+import { scopeContains } from './core'
+import type { ChunkLocation, GroundingChunk } from './chunks'
 import type { PromptInjectionSignal } from './safety'
 import type { RetrievalQuery } from './retrieval'
 
@@ -224,10 +225,74 @@ export interface AnswerValidationIssue {
     | 'citation_without_source'
     | 'citation_hash_mismatch'
     | 'citation_out_of_scope'
+    | 'citation_evidence_mismatch'
+    | 'citation_version_mismatch'
+    | 'citation_location_mismatch'
+    | 'citation_duplicated'
     | 'partial_without_abstention'
     | 'grounded_with_abstention'
     | 'contradiction_unresolved_but_answered'
   readonly detail: string
+}
+
+/**
+ * What a citation is checked AGAINST: the chunk as retrieval actually returned
+ * it, carrying its full isolation boundary rather than an organization id.
+ *
+ * The distinction is the whole of A-F1. The previous shape of this map could
+ * only express `{ contentHash, organizationId }`, so the project half of the
+ * boundary was not merely unchecked — it was unrepresentable, and no amount of
+ * care at the call site could have supplied it. Widening the record is what
+ * makes {@link scopeContains} reachable from production code at all.
+ */
+export interface CitableChunkRecord {
+  readonly chunkId: ContentHash
+  readonly contentHash: ContentHash
+  /** Full isolation boundary of the chunk: organization AND project. */
+  readonly scope: GroundingScope
+  readonly evidenceId: string
+  readonly versionId: ContentHash
+  readonly location: ChunkLocation
+}
+
+/**
+ * Project a retrieved chunk onto the record citations are checked against.
+ *
+ * Callers should build the validation map with this rather than by hand: every
+ * field copied manually is a field that can be copied from the wrong place,
+ * and the fields in question are precisely the isolation boundary.
+ */
+export function toCitableChunkRecord(chunk: GroundingChunk): CitableChunkRecord {
+  return {
+    chunkId: chunk.chunkId,
+    contentHash: chunk.contentHash,
+    scope: chunk.scope,
+    evidenceId: chunk.evidenceId,
+    versionId: chunk.versionId,
+    location: chunk.location,
+  }
+}
+
+/**
+ * Whether a citation's location addresses the same passage the chunk occupies.
+ *
+ * `coordinateSpace` is compared as strictly as the offsets. Two spans with
+ * identical integers but different coordinate spaces are not the same passage:
+ * they index two different normalized texts, and the citation would resolve in
+ * range and quote something else.
+ */
+function sameLocation(a: ChunkLocation, b: ChunkLocation): boolean {
+  return (
+    a.coordinateSpace === b.coordinateSpace &&
+    a.span.start === b.span.start &&
+    a.span.end === b.span.end &&
+    a.page === b.page
+  )
+}
+
+/** Identity of a citation for duplicate detection within one claim. */
+function citationKey(citation: CitationReference): string {
+  return `${citation.chunkId}\n${citation.location.span.start}\n${citation.location.span.end}`
 }
 
 /**
@@ -236,45 +301,87 @@ export interface AnswerValidationIssue {
  * The type system guarantees that a citation LIST is non-empty; it cannot
  * guarantee that the citations point at chunks that exist, since a model can
  * emit a plausible-looking chunk id. So every citation is checked against the
- * candidate set that was actually placed in context, by id AND by quoted-text
- * hash — an id that resolves to a chunk whose text hashes differently is a
- * citation that has drifted off its passage.
+ * candidate set that was actually placed in context along the whole
+ * verification chain: scope, evidence item, version, chunk, quoted-text hash
+ * and location. A citation that satisfies five of the six is not a weaker
+ * citation — it is a citation to something other than what it claims.
+ *
+ * Every violation a citation commits is reported, not just the first. A forged
+ * citation typically breaks several links at once, and truncating to the first
+ * would make the audit trail describe a narrower problem than the real one.
  *
  * Returns issues rather than throwing: a caller usually wants to degrade the
  * answer to an abstention, not crash the request.
  */
 export function validateAnswerCitations(
   state: GroundingAnswerState,
-  availableChunks: ReadonlyMap<ContentHash, { contentHash: ContentHash; organizationId: string }>,
+  availableChunks: ReadonlyMap<ContentHash, CitableChunkRecord>,
 ): readonly AnswerValidationIssue[] {
   const issues: AnswerValidationIssue[] = []
   const assertions: readonly GroundingAssertion[] = state.status === 'abstained' ? [] : state.assertions
 
-  const allCitations = [
-    ...assertions.flatMap((assertion) => citationsOf(assertion)),
-    ...state.contradictions.flatMap((c) => [...c.sideA, ...c.sideB]),
+  // Citations are grouped by the claim that carries them. A duplicate is
+  // "one claim counting a passage twice", so the groups must stay separate:
+  // two assertions resting on the same chunk is ordinary corroboration.
+  const citationGroups: readonly (readonly CitationReference[])[] = [
+    ...assertions.map((assertion) => citationsOf(assertion)),
+    ...state.contradictions.flatMap((c) => [c.sideA, c.sideB] as const),
   ]
 
-  for (const citation of allCitations) {
-    const chunk = availableChunks.get(citation.chunkId)
-    if (!chunk) {
-      issues.push({
-        code: 'citation_without_source',
-        detail: `Citation references chunk ${citation.chunkId} which was not in the retrieved context`,
-      })
-      continue
-    }
-    if (chunk.contentHash !== citation.quotedTextHash) {
-      issues.push({
-        code: 'citation_hash_mismatch',
-        detail: `Citation to chunk ${citation.chunkId} carries quotedTextHash ${citation.quotedTextHash} but the chunk hashes to ${chunk.contentHash}`,
-      })
-    }
-    if (chunk.organizationId !== state.query.scope.organizationId) {
-      issues.push({
-        code: 'citation_out_of_scope',
-        detail: `Citation to chunk ${citation.chunkId} belongs to another organization`,
-      })
+  for (const group of citationGroups) {
+    const seen = new Set<string>()
+    for (const citation of group) {
+      const key = citationKey(citation)
+      if (seen.has(key)) {
+        issues.push({
+          code: 'citation_duplicated',
+          detail: `Citation to chunk ${citation.chunkId} appears more than once in the same claim`,
+        })
+        continue
+      }
+      seen.add(key)
+
+      const chunk = availableChunks.get(citation.chunkId)
+      if (!chunk) {
+        issues.push({
+          code: 'citation_without_source',
+          detail: `Citation references chunk ${citation.chunkId} which was not in the retrieved context`,
+        })
+        continue
+      }
+
+      // Scope first: a chunk outside the boundary must be reported as such,
+      // never demoted to a milder issue about its contents.
+      if (!scopeContains(state.query.scope, chunk.scope)) {
+        issues.push({
+          code: 'citation_out_of_scope',
+          detail: `Citation to chunk ${citation.chunkId} resolves to organization ${chunk.scope.organizationId} / project ${chunk.scope.projectId ?? '(org-wide)'}, outside the queried organization ${state.query.scope.organizationId} / project ${state.query.scope.projectId ?? '(org-wide)'}`,
+        })
+      }
+      if (chunk.evidenceId !== citation.evidenceId) {
+        issues.push({
+          code: 'citation_evidence_mismatch',
+          detail: `Citation to chunk ${citation.chunkId} names evidence item ${citation.evidenceId} but the chunk comes from ${chunk.evidenceId}`,
+        })
+      }
+      if (chunk.versionId !== citation.versionId) {
+        issues.push({
+          code: 'citation_version_mismatch',
+          detail: `Citation to chunk ${citation.chunkId} names version ${citation.versionId} but the chunk belongs to version ${chunk.versionId}`,
+        })
+      }
+      if (chunk.contentHash !== citation.quotedTextHash) {
+        issues.push({
+          code: 'citation_hash_mismatch',
+          detail: `Citation to chunk ${citation.chunkId} carries quotedTextHash ${citation.quotedTextHash} but the chunk hashes to ${chunk.contentHash}`,
+        })
+      }
+      if (!sameLocation(chunk.location, citation.location)) {
+        issues.push({
+          code: 'citation_location_mismatch',
+          detail: `Citation to chunk ${citation.chunkId} points at span [${citation.location.span.start}, ${citation.location.span.end}) in coordinate space ${citation.location.coordinateSpace}, but the chunk occupies [${chunk.location.span.start}, ${chunk.location.span.end}) in ${chunk.location.coordinateSpace}`,
+        })
+      }
     }
   }
 

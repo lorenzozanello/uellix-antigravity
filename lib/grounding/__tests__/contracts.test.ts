@@ -28,6 +28,7 @@ import {
   validateAnswerCitations,
   type AbstentionReason,
   type ChunkLocation,
+  type CitableChunkRecord,
   type CitationReference,
   type ContentHash,
   type GroundedAnswerState,
@@ -248,7 +249,16 @@ describe('assertion kinds keep evidence, inference, recommendation and absence a
 describe('validateAnswerCitations — the runtime half of "no citation without a source"', () => {
   const chunkId = hashContent('chunk-1')
   const chunkHash = hashContent('El informe registra 120 beneficiarios.')
-  const available = new Map([[chunkId, { contentHash: chunkHash, organizationId: ORG_A }]])
+  const record = (overrides: Partial<CitableChunkRecord> = {}): CitableChunkRecord => ({
+    chunkId,
+    contentHash: chunkHash,
+    scope: scopeA,
+    evidenceId: 'ev-1',
+    versionId: deriveVersionId('ev-1', hashContent('doc')),
+    location,
+    ...overrides,
+  })
+  const available = new Map([[chunkId, record()]])
   const query = buildRetrievalQuery(scopeA, 'beneficiarios')
 
   const grounded = (assertions: GroundingAssertion[]): GroundedAnswerState => ({
@@ -283,7 +293,9 @@ describe('validateAnswerCitations — the runtime half of "no citation without a
   })
 
   it('flags a citation that resolves into another organization', () => {
-    const foreign = new Map([[chunkId, { contentHash: chunkHash, organizationId: ORG_B }]])
+    const foreign = new Map([
+      [chunkId, record({ scope: { organizationId: ORG_B, projectId: PROJECT_1 } })],
+    ])
     const state = grounded([
       { kind: 'evidence', statement: 'Cruzada.', citations: [citation(chunkId, chunkHash)] },
     ])
