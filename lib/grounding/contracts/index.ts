@@ -57,7 +57,7 @@ export type {
   SourceDocumentKind,
 } from './documents'
 
-export { deriveChunkId, lineRangeForSpan } from './chunks'
+export { LINE_RANGE_NOT_PERSISTED, deriveChunkId, hasResolvedLineRange, lineRangeForSpan } from './chunks'
 export type {
   ChunkLocation,
   DeduplicationRecord,
