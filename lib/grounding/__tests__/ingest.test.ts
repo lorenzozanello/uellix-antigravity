@@ -16,6 +16,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
+  EXTRACTOR_VERSION,
   hashContent,
   requireNonEmpty,
   toCitableChunkRecord,
@@ -97,6 +98,17 @@ describe('the same document produces the same chunks and the same hashes', () =>
     expect(second.chunks).toEqual(first.chunks)
     expect(second.duplicates).toEqual(first.duplicates)
     expect(second.stats).toEqual(first.stats)
+  })
+
+  it('stamps the current EXTRACTOR_VERSION on the document version (GR-CAP-002)', () => {
+    const ingested = expectIngested(ingestText(REPORT))
+    expect(ingested.document.version.extractorVersion).toBe(EXTRACTOR_VERSION)
+  })
+
+  it('preserves extractorVersion across a re-ingestion of the identical bytes', () => {
+    const first = expectIngested(ingestText(REPORT))
+    const second = expectIngested(ingestText(REPORT))
+    expect(second.document.version.extractorVersion).toBe(first.document.version.extractorVersion)
   })
 
   it('carries no timestamp anywhere in its output', () => {

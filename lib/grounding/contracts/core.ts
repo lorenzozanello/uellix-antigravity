@@ -145,16 +145,33 @@ export const CHUNKER_VERSION = 'chunk-1' as const
  */
 export const INJECTION_SCANNER_VERSION = 'inj-1' as const
 
+/**
+ * Version of the extraction contract (see ../extract.ts): which MIME types are
+ * read and how (RFC 4180-ish CSV, verbatim UTF-8 text, everything else
+ * 'unsupported'). GR-CAP-002: `versionId` is derived from
+ * `(evidenceId, rawContentHash)` alone — the extractor is not in that
+ * preimage, so a different extractor over the same bytes yields a different
+ * `normalizedContentHash` under the SAME `versionId`. Recording this constant
+ * on {@link DocumentVersion} (see ./documents.ts) is what lets a persistence
+ * layer notice that mismatch instead of discarding the re-ingestion as a
+ * replica. One constant for the whole module, at the same granularity as the
+ * other three: `extract.ts` registers several MIME types under one contract,
+ * not one version per format.
+ */
+export const EXTRACTOR_VERSION = 'extract-1' as const
+
 export interface PipelineVersions {
   readonly normalization: typeof NORMALIZATION_VERSION
   readonly chunker: typeof CHUNKER_VERSION
   readonly injectionScanner: typeof INJECTION_SCANNER_VERSION
+  readonly extractor: typeof EXTRACTOR_VERSION
 }
 
 export const PIPELINE_VERSIONS: PipelineVersions = {
   normalization: NORMALIZATION_VERSION,
   chunker: CHUNKER_VERSION,
   injectionScanner: INJECTION_SCANNER_VERSION,
+  extractor: EXTRACTOR_VERSION,
 }
 
 // ---------------------------------------------------------------------------

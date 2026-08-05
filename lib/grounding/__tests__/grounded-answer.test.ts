@@ -238,6 +238,89 @@ describe('contradictory evidence', () => {
   })
 })
 
+describe('contradiction attribution — which claim sustains each side (GR-CAP-002 follow-up)', () => {
+  it('records claimId and a content hash of the statement for each side, when the draft supplies one', async () => {
+    const retrieval = await retrieveFrom()
+    const outcome = buildGroundedAnswer(retrieval, {
+      claims: [
+        { kind: 'evidence', statement: 'El informe registra 120 beneficiarios.', chunkIds: [beneficiaries.chunkId] },
+        { kind: 'evidence', statement: 'La evaluación externa registra 90 beneficiarios.', chunkIds: [conflicting.chunkId] },
+      ],
+      contradictions: [
+        {
+          summary: 'Dos cifras de beneficiarios',
+          sideAChunkIds: [beneficiaries.chunkId],
+          sideBChunkIds: [conflicting.chunkId],
+          sideAClaim: { claimId: 'claim-informe', statement: 'El informe registra 120 beneficiarios.' },
+          sideBClaim: { claimId: 'claim-evaluacion', statement: 'La evaluación externa registra 90 beneficiarios.' },
+        },
+      ],
+    })
+
+    const [marker] = outcome.answer.contradictions
+    expect(marker.sideAClaim).toEqual({
+      claimId: 'claim-informe',
+      assertionHash: hashContent('El informe registra 120 beneficiarios.'),
+    })
+    expect(marker.sideBClaim).toEqual({
+      claimId: 'claim-evaluacion',
+      assertionHash: hashContent('La evaluación externa registra 90 beneficiarios.'),
+    })
+  })
+
+  it('distinguishes two claims that cite the SAME chunk on opposite sides — the gap this closes', async () => {
+    // Before attribution, a contradiction whose sideA and sideB name the same
+    // chunk was indistinguishable from a data error: nothing said WHICH
+    // assertion put that chunk on which side. Two distinct claims can rest on
+    // one shared passage while disagreeing about what it implies; attribution
+    // must keep them apart even though the citation itself cannot.
+    const retrieval = await retrieveFrom()
+    const outcome = buildGroundedAnswer(retrieval, {
+      claims: [
+        { kind: 'evidence', statement: 'El pasaje confirma 120 beneficiarios.', chunkIds: [beneficiaries.chunkId] },
+        { kind: 'evidence', statement: 'El mismo pasaje en realidad subestima la cifra real.', chunkIds: [beneficiaries.chunkId] },
+      ],
+      contradictions: [
+        {
+          summary: 'Dos lecturas del mismo pasaje',
+          sideAChunkIds: [beneficiaries.chunkId],
+          sideBChunkIds: [beneficiaries.chunkId],
+          sideAClaim: { claimId: 'claim-lectura-literal', statement: 'El pasaje confirma 120 beneficiarios.' },
+          sideBClaim: { claimId: 'claim-lectura-critica', statement: 'El mismo pasaje en realidad subestima la cifra real.' },
+        },
+      ],
+    })
+
+    const [marker] = outcome.answer.contradictions
+    // Same chunk on both sides — citations alone cannot tell the sides apart.
+    expect(marker.sideA[0].chunkId).toBe(marker.sideB[0].chunkId)
+    // Attribution can.
+    expect(marker.sideAClaim?.claimId).toBe('claim-lectura-literal')
+    expect(marker.sideBClaim?.claimId).toBe('claim-lectura-critica')
+    expect(marker.sideAClaim?.assertionHash).not.toBe(marker.sideBClaim?.assertionHash)
+  })
+
+  it('defaults attribution to null rather than undefined when the draft omits it — unchanged from before this field existed', async () => {
+    const retrieval = await retrieveFrom()
+    const outcome = buildGroundedAnswer(retrieval, {
+      claims: [
+        { kind: 'evidence', statement: 'El informe registra 120.', chunkIds: [beneficiaries.chunkId] },
+      ],
+      contradictions: [
+        {
+          summary: 'Dos cifras de beneficiarios',
+          sideAChunkIds: [beneficiaries.chunkId],
+          sideBChunkIds: [conflicting.chunkId],
+        },
+      ],
+    })
+
+    const [marker] = outcome.answer.contradictions
+    expect(marker.sideAClaim).toBeNull()
+    expect(marker.sideBClaim).toBeNull()
+  })
+})
+
 describe('insufficient evidence and abstention', () => {
   it('abstains with no_matching_evidence when retrieval found nothing', async () => {
     const retrieval = await retrieveFrom([beneficiaries], 'presupuesto municipal ejecutado')
