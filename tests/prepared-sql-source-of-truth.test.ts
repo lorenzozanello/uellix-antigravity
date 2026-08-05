@@ -31,6 +31,10 @@ const readRoot = (...p: string[]) => readFileSync(path.join(ROOT, ...p), 'utf8')
 const GATE_MANAGED_TABLES = [
   'stella_suggestion_decisions',
   'evidence_chunks',
+  // GR-002 (prepared grounding_0002). Same reason as the rest, and one more:
+  // this table is chain of custody, so a `drizzle-kit generate` that decided to
+  // drop and recreate it would destroy history rather than an index.
+  'evidence_document_versions',
   'report_public_disclosures',
   'capability_verification_hits',
   'stripe_webhook_events',

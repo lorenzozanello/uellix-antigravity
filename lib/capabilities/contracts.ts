@@ -154,9 +154,23 @@ export interface CapabilityUnavailable {
   readonly capability: CapabilityId
   readonly reason: CapabilityUnavailableReason
   /**
-   * Whether the caller should try again later. A feature flag being off is
-   * NOT retryable — the answer will be the same until someone deploys — but a
-   * missing credential often is, because it is provisioned out of band.
+   * Whether RETRYING THIS CALL can plausibly succeed without a deploy. A
+   * feature flag being off is NOT retryable — the answer stays the same until
+   * someone ships — but a missing credential often is, because it is
+   * provisioned out of band.
+   *
+   * IT IS NOT A TRANSPORT DIRECTIVE, and the distinction is not academic
+   * (adversarial finding A-F2). A capability whose caller is an external system
+   * may have to answer "try again" at the transport layer even when this field
+   * says the answer will not change: CAP-03 replies 503 to EVERY `unavailable`,
+   * including `feature_flag_disabled`, because Stripe abandons delivery after a
+   * 2xx or a 4xx — and an abandoned delivery is a subscription change that
+   * never lands, whereas a redelivered one merely arrives after the flag is on.
+   *
+   * So the two answers CAN differ, and where they do it is a decision, not a
+   * drift. `stripeCapabilityUnavailable` is the one place that makes the
+   * difference explicit; `tests/stripe-webhook-capability.test.ts` pins both
+   * values for `feature_flag_disabled`, the reason where they diverge.
    */
   readonly retryable: boolean
 }

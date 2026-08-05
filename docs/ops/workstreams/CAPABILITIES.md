@@ -54,6 +54,8 @@ Ledger: [`docs/ops/contracts/CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.m
 | CT-CAP-002 | CAPABILITIES **pide** a integración normalizar `RR-CAP-10-A-bis` | `solicitado` |
 | CT-CAP-003 | CAPABILITIES **pide** a integración `db/prepared/** text eol=lf` en `.gitattributes` | `solicitado` |
 | CT-CAP-004 | CAPABILITIES **pide** a integración documentar `UELLIX_STRIPE_DATABASE_URL` en `.env.example` | `solicitado` |
+| GR-001 | GROUNDING **pide** a CAPABILITIES provenance y versionado en `evidence_chunks` | `IMPLEMENTED_PENDING_INTEGRATION_ACCEPTANCE` (tren 2) |
+| GR-002 | GROUNDING **pide** a CAPABILITIES historia append-only de versiones | `IMPLEMENTED_PENDING_INTEGRATION_ACCEPTANCE` (tren 2) |
 
 > **Estados desactualizados.** Esta tabla registra los estados *en el momento
 > de la entrega*. Tras el tren 1 de integración, CT-CAP-001, CT-CAP-002 y
@@ -290,3 +292,165 @@ verificable una cita. Y **CT-CAP-004**, si la unidad recibe `.env.example`.
   `db/capabilities/stripe-capability-executor.ts:137,147,160`, fuera del
   escaneo. Una cuarta invocación añadida ahí no rompería el invariante que el
   propio comentario del test declara.
+
+---
+
+# TRAIN 2 — GR-001 y GR-002: persistencia de grounding
+
+**HEAD inicial `597819b`. Entregada. Árbol limpio. Sin push.**
+
+## Unidad
+
+Resolver los dos contratos que GROUNDING dirigió a esta línea, y cerrar los
+hallazgos adversariales asignados a CAPABILITIES.
+
+Respuesta técnica completa:
+[`GR-CAP-001`](../contracts/GR-CAP-001_grounding_persistence_response.md).
+**No se editó `CONTRACT_LEDGER.md`** — el estado lo fija integración (§8), no la
+línea propietaria. Los dos contratos quedan declarados
+`IMPLEMENTED_PENDING_INTEGRATION_ACCEPTANCE`, **nunca `ACCEPTED`**.
+
+### Qué se entregó
+
+| Paquete | Rollback | Objeto | Contrato |
+|---|---|---|---|
+| `db/prepared/grounding_0002_document_versions.sql` | `grounding_0002_rollback.sql` | `evidence_document_versions` (14 col.) + rol `uellix_cap_grounding` + esquema `uellix_grounding` + 2 funciones | GR-002 |
+| `db/prepared/grounding_0003_evidence_chunks.sql` | `grounding_0003_rollback.sql` | `evidence_chunks` (23 col.) + 3 funciones | GR-001 |
+
+Forward: `stella_0004` → `grounding_0002` → `grounding_0003`.
+Rollback: `grounding_0003` → `grounding_0002`.
+
+**Nada aplicado a ninguna base.** Sin remoto, sin stack persistente, sin Docker,
+sin banderas, sin `service_role`.
+
+### `grounding_0001` queda supersedido, no ampliado
+
+El hallazgo que decidió el diseño, y que **ninguno de los dos contratos
+nombra**: `UNIQUE (evidence_id, chunk_index)` no está incompleta, es
+**incompatible** con GR-002. Con historia de versiones, la versión 2 de un
+documento colisiona con la 1 en `chunk_index = 0` — la segunda versión es
+inalmacenable. Sumado a que su guarda de forma **aborta** ante columnas
+faltantes (correcto, y por eso no ampliable con un `ALTER`) y a que acopla al
+gate G5 P3 que sigue sin decidirse, la sustitución era la única salida.
+
+`grounding_0003` es **pgvector-free**: persistir provenance ya no espera a una
+decisión de retrieval de la que no depende. El archivo antiguo se conserva byte
+a byte bajo un banner de comentario, porque la evidencia del addendum G2 lo
+referencia por nombre y porque `lib/grounding/__tests__/prepared-sql.test.ts`
+—propiedad de GROUNDING— fija su contenido: **27 passed** con el banner puesto.
+
+### El segundo hallazgo: `extractor_version`
+
+`versionId = hash(evidenceId, rawContentHash)` **no incluye el extractor**. Un
+cambio de extractor produce un `normalized_content_hash` distinto bajo el mismo
+`version_id`, y `UNIQUE (evidence_id, version_id)` haría que la reingesta se
+descarte como réplica, conservando offsets obsoletos en silencio. La columna
+convierte ese fallo silencioso en `U0101`.
+
+**Petición de vuelta a GROUNDING:** `lib/grounding/contracts/core.ts` no publica
+`EXTRACTOR_VERSION`. Su ausencia queda fijada por prueba, para que publicarlo
+sea un acto visible.
+
+### Aislamiento y camino de escritura
+
+Cero `INSERT`/`UPDATE`/`DELETE` alcanzable por `uellix_app`, `authenticated`,
+`anon`, `service_role`, `uellix_writer` o `uellix_auditor` en ninguna de las dos
+tablas. Las escrituras pasan por cinco funciones `SECURITY DEFINER` con
+`search_path = ''`, propiedad de un rol con **cero miembros**, en su propio
+esquema `uellix_grounding` (no `uellix_capability`, para no acoplar el orden de
+rollback a la campaña de capacidades). El scope se **deriva** en ingestión y se
+**comprueba** en lectura; una policy `RESTRICTIVE FOR ALL` repite el invariante
+para todo comando y todo rol.
+
+La historia de versiones no tiene `GRANT DELETE` para **nadie**, ni siquiera
+para el definer: es cadena de custodia, no índice derivado. Los chunks sí lo
+tienen, porque un reindexado es `DELETE` + `INSERT`.
+
+## Pruebas ejecutadas
+
+Focalizadas (§11). Sin gates pesados, sin Docker, sin remoto, sin `test:unit`
+completo.
+
+| Suite | Resultado |
+|---|---|
+| `tests/grounding-persistence-contract.test.ts` (nueva, 47 casos) | **verde** |
+| `tests/grounding-persistence-mutation.test.ts` (nueva, 65 casos; **53 mutaciones, 0 supervivientes**) | **verde** |
+| `capability-isolation`, `prepared-stella-sql`, `capability-policy-contract`, `capability-mutation` | **687 passed** |
+| `stripe-webhook-capability` (+5 casos, cierre de A-F2), `stripe-webhook-route`, `prepared-sql-source-of-truth`, `capability-policy-parser`, `capability-documentation`, `database-ddl-containment` | **349 passed / 18 skipped** |
+| `lib/grounding/__tests__/prepared-sql.test.ts` (GROUNDING, **no modificada**) | **27 passed** |
+| `tsc --noEmit`, `eslint` focalizado | **verde** |
+
+Cada mutación declara el gate que **debe** rechazarla. Tres defectos de los
+propios gates salieron de esa exigencia y de ninguna otra parte: tres
+comprobaciones buscaban su fragmento **en todo el archivo** y quedaban
+satisfechas por la copia del bloque de reconciliación mientras la constraint
+había desaparecido de la definición de la tabla.
+
+## Hallazgos adversariales — cierre
+
+- **A-F2 (MAJOR) — cerrado.** Reproducido: `capabilityUnavailable` devuelve
+  `retryable: false` para `feature_flag_disabled` y `stripeCapabilityUnavailable`
+  devuelve `true` con 503. **El comportamiento de CAP-03 es el correcto** y no
+  se cambió: contestar 200 o 4xx a Stripe hace que abandone la entrega, y una
+  suscripción no llega nunca. Lo que estaba mal era el contrato genérico, que
+  documentaba lo contrario, y la afirmación de `route.ts` de que la regla
+  «está declarada en un solo sitio y no puede divergir».
+
+  Reparación mínima, sin cambio de comportamiento: las dos preguntas quedan
+  **nombradas y distinguidas** en la documentación de ambas funciones (la de
+  planificación del llamante frente a la de transporte), `capabilityUnavailable`
+  recibe **su primer call site del árbol** dentro de `stripeCapabilityUnavailable`
+  —cerrando el agravante de «cero llamadas»—, y cinco pruebas nuevas fijan
+  **ambas** respuestas para `feature_flag_disabled`, el único motivo alcanzable
+  hoy en producción y justo el que no tenía prueba. Colapsarlas más adelante
+  exige ahora un test en rojo delante.
+
+- **A-F9 (MINOR) — cerrado.** `tests/capability-isolation.test.ts` recorre ahora
+  `db/` además de `lib/` y `app/`, con el wrapper en la lista de permitidos. Y
+  una aserción más de la que el hallazgo no habla: el wrapper **contiene** las
+  tres invocaciones, exactamente esas tres — sin ella el escaneo seguiría verde
+  el día que el ejecutor se vaciara o se renombrara, que es el mismo punto ciego
+  un nivel más adentro.
+
+## Riesgos
+
+- **Finales de línea de `db/prepared/**` — reparado en el worktree, causa
+  ambiental.** 31 de los 36 `.sql` estaban materializados en CRLF pese a que
+  `.gitattributes` ya declara `db/prepared/** text eol=lf` (CT-CAP-003,
+  `aceptado` en el tren 1): el atributo se añadió después de que este worktree
+  los sacara. Consecuencia medida: `capability-isolation` fallaba en
+  `verify_report is STABLE`, cuyo patrón ancla en `\nSTABLE\n`. Normalizados a
+  LF en el worktree, las cuatro suites entregan **687 passed**. **La
+  normalización es neutra en contenido**: los blobs del índice ya eran LF, y
+  `git add` de cualquiera de esos 31 archivos produce cero cambio.
+- **`register_document_version` rechaza la reingesta bajo pipeline distinto**
+  (`U0101`) en vez de abrir un ordinal nuevo. Es la lectura estricta y está
+  argumentada en GR-CAP-001 §7; la alternativa es una decisión de producto y
+  está confinada a esa función y a una prueba.
+- **`EXTRACTOR_VERSION` no existe en `lib/grounding`.** La columna es `NOT NULL`
+  y quien llame debe declarar algo; publicar la constante lo convierte en un
+  valor gobernado. Petición registrada en GR-CAP-001 §5.4.
+- **Ninguno de los dos paquetes ha corrido contra una base.** Toda la evidencia
+  es estática. La validación real es un gate externo, y este tren tiene
+  prohibido ejecutarlo.
+- **`tests/database-entrypoint-safety.test.ts`** — sigue abierto y ambiental
+  (sin `.env.local`, colecta 0 de 49). Sin cambios desde el tren 1.
+- **Precio no mapeado → cuota gratuita** y **RR-CAP-14-A** — abiertos, sin
+  relación con esta unidad.
+
+## Estado de entrega a integración
+
+**Entregado.** Dos commits locales sobre `597819b`, sin push:
+
+1. `feat(db): add append-only document version history`
+2. `feat(db): persist grounded evidence provenance`
+
+El orden de los mensajes está **invertido** respecto del enunciado de la unidad,
+y es deliberado: `grounding_0003` tiene una clave foránea a la tabla que crea
+`grounding_0002`, así que el orden inverso dejaría el primer commit referenciando
+una tabla que no existe. §10 exige que cada commit sea verde de forma
+independiente; con este orden lo son.
+
+**Ficheros solicitados a integración** (no modificados por esta línea):
+`docs/ops/contracts/CONTRACT_LEDGER.md` — actualizar las filas GR-001 y GR-002
+tras evaluar [`GR-CAP-001`](../contracts/GR-CAP-001_grounding_persistence_response.md).

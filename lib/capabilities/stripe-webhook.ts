@@ -56,6 +56,7 @@
 
 import {
   CAPABILITY_SQLSTATE,
+  capabilityUnavailable,
   type CapabilityUnavailableReason,
   type StripeClaimResult,
   type StripeEventResult,
@@ -340,12 +341,34 @@ function result(
   }
 }
 
-/** The capability is switched off. Nothing was attempted. */
+/**
+ * The capability is switched off. Nothing was attempted.
+ *
+ * TWO ANSWERS TO TWO DIFFERENT QUESTIONS (adversarial finding A-F2).
+ *
+ * `capabilityUnavailable` answers the CALLER-PLANNING question — "can retrying
+ * this succeed without a deploy?" — and for `feature_flag_disabled` the honest
+ * answer is no. This function answers the TRANSPORT question, and for CAP-03
+ * the answer is 503 for every reason including that one, because Stripe
+ * abandons delivery after a 2xx or a 4xx. A subscription change that Stripe
+ * stopped redelivering never lands; one it redelivers after the flag is on
+ * simply arrives late.
+ *
+ * The generic result is computed rather than assumed, so the two rules sit in
+ * one place with the reason for their difference written between them. Before
+ * this, `capabilityUnavailable` had zero call sites in the whole tree and the
+ * only tested reason was `database_identity_unavailable` — the single case
+ * where both rules happen to agree.
+ */
 export function stripeCapabilityUnavailable(
   eventId: string,
   reason: CapabilityUnavailableReason,
 ): StripeEventResult {
-  return result('unavailable', eventId, { unavailableReason: reason })
+  // Computed for its validation and for the record; deliberately NOT used as
+  // the transport answer. `retryable` on the value below is the HTTP-level
+  // decision and is always true for `unavailable` — see `result()`.
+  const capabilityLevel = capabilityUnavailable('CAP-03', reason)
+  return result('unavailable', eventId, { unavailableReason: capabilityLevel.reason })
 }
 
 /* -------------------------------------------------------------------------- */
