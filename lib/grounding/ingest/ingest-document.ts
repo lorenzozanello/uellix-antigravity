@@ -36,13 +36,26 @@ import {
 import { chunkNormalizedDocument, type ChunkDocumentOptions } from './chunk-document'
 import { normalizeDocumentText } from './normalize'
 
+/**
+ * The two facts a predecessor contributes to a new version's history.
+ *
+ * Narrowed from a full {@link DocumentVersion} because the governed
+ * `claim_active_document_version` returns seven columns and a whole
+ * DocumentVersion is not among them — asking for one would force a caller to
+ * fabricate `scope` and `rawContentHash` for a row it only knows partially,
+ * which is exactly the invention `ordinal`/`supersedes` are nullable to
+ * prevent. A full DocumentVersion still satisfies this type structurally, so
+ * every existing caller keeps compiling.
+ */
+export type PreviousVersionRef = Pick<DocumentVersion, 'versionId' | 'ordinal'>
+
 export interface IngestOptions extends ChunkDocumentOptions {
   /**
    * The version this ingestion supersedes, when the caller knows the history.
    * Supplying it fills `ordinal` and `supersedes`; omitting it leaves both
    * null rather than inventing a history that may be wrong.
    */
-  readonly previousVersion?: DocumentVersion | null
+  readonly previousVersion?: PreviousVersionRef | null
 }
 
 export type IngestionSkipReason = 'unsupported_format' | 'empty_document'

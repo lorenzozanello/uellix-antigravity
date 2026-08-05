@@ -9,10 +9,19 @@ export {
   InMemoryChunkRepository,
   RepositoryContractViolationError,
   assertChunkSatisfiesQuery,
+  assertScopeAttestation,
   buildChunkQuery,
   enforceRepositoryScope,
+  isAttestedScope,
 } from './repository'
-export type { ChunkQuery, GroundingChunkRepository } from './repository'
+export type {
+  ChunkQuery,
+  ChunkScopeAttestation,
+  ChunkScopeProvenance,
+  EnforceRepositoryScopeOptions,
+  GroundingChunkRepository,
+  UnattestedChunkScope,
+} from './repository'
 
 export { LexicalChunkScorer, TF_SATURATION_K, normalizeQueryText } from './scorer'
 export type { ChunkScorer, NormalizedQuery } from './scorer'
@@ -45,6 +54,23 @@ export type {
   GroundingOrchestrationResult,
   OrchestrateGroundedResponseOptions,
 } from './orchestrate'
+
+export {
+  DEFAULT_MAX_SENTENCES_PER_CLAIM,
+  DEFAULT_MIN_TERM_MATCHES,
+  EXTRACTIVE_GENERATOR_ID,
+  EXTRACTIVE_GENERATOR_NAME,
+  EXTRACTIVE_GENERATOR_VERSION,
+  EXTRACTIVE_QUOTE_CLOSE,
+  EXTRACTIVE_QUOTE_OPEN,
+  createExtractiveAnswerProvider,
+  draftExtractiveAnswer,
+  unwrapExtractiveStatement,
+} from './extractive-generator'
+export type { DeclaredContradiction, ExtractiveGeneratorOptions } from './extractive-generator'
+
+export { runGroundedQuery } from './grounded-query'
+export type { GroundedQueryProvenance, GroundedQueryRequest, GroundedQueryRun } from './grounded-query'
 
 export { buildGroundedAnswer, providerUnavailableOutcome } from './grounded-answer'
 export type {

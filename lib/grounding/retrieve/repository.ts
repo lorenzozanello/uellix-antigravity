@@ -89,6 +89,84 @@ export function buildChunkQuery(
 // Repository
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Scope attestation (INT-GR-004)
+// ---------------------------------------------------------------------------
+
+/**
+ * Scope AS STATED BY THE ROW, not restated from the query that asked for it.
+ *
+ * ---------------------------------------------------------------------------
+ * THE PROBLEM THIS TYPE EXISTS FOR, STATED WITHOUT FLATTERY
+ * ---------------------------------------------------------------------------
+ * `uellix_grounding.chunks_in_scope` returns thirteen columns and neither
+ * `organization_id` nor `project_id` is among them. So the production adapter
+ * cannot read a chunk's scope from the row — it stamps `chunk.scope` from the
+ * query arguments it just passed in. The consequence is exact, and INT-GR-004
+ * records it: {@link isSameScope} / {@link scopeContains} inside
+ * {@link assertChunkSatisfiesQuery} compare the query against itself. They are
+ * TAUTOLOGICAL against that repository. (Its `evidenceId` / `versionId` checks
+ * are not — those fields do come from the row.)
+ *
+ * The real isolation lives in three independent SQL assertions and in zero
+ * lines of TypeScript. That is sufficient. It is not what a reader of
+ * `enforceRepositoryScope` would assume.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THIS TYPE DOES, AND WHAT IT CANNOT DO
+ * ---------------------------------------------------------------------------
+ * It CANNOT prove a scope came from a governed row. No type can: an adapter
+ * that fabricated `{ source: 'governed_row', ... }` from its own query
+ * arguments would satisfy every check below, because the fabricated values
+ * would agree with everything they are compared against. Adding a check that
+ * read those fabricated fields and pronounced them correct is precisely the
+ * fourth decorative comparison INT-GR-004's resolution forbids.
+ *
+ * What it DOES is make the gap unrepresentable by silence:
+ *
+ *   1. `source` is a deliberate, reviewable claim. An adapter that cannot read
+ *      the row's scope must write {@link UnattestedChunkScope} and say why; it
+ *      cannot reach `'governed_row'` by omission or by a cast.
+ *   2. Under `requireScopeAttestation`, an unattested repository FAILS rather
+ *      than passing a check that would have been vacuous.
+ *   3. The five attested fields are cross-checked against the chunk AND the
+ *      query, so an attestation that disagrees with either is loud — which is
+ *      the case that becomes reachable the moment the columns are returned.
+ *
+ * This guard becomes load-bearing when, and only when, `chunks_in_scope`
+ * returns `organization_id` and `project_id`. Until then it is a declared
+ * boundary with a declared hole, which is the honest state of the thing.
+ */
+export interface ChunkScopeAttestation {
+  readonly source: 'governed_row'
+  /** Organization and project AS RETURNED, not as requested. */
+  readonly scope: GroundingScope
+  readonly evidenceId: string
+  readonly versionId: ContentHash
+  readonly chunkId: ContentHash
+}
+
+/**
+ * The repository could not attest scope from the result, and says so.
+ *
+ * This is the TEMPORARY COMPATIBILITY SHAPE, and it is a type rather than a
+ * missing field on purpose: an adapter that omitted attestation entirely would
+ * be indistinguishable from one that had not been updated, and a silent cast to
+ * {@link ChunkScopeAttestation} would be indistinguishable from a real one.
+ * Naming the state costs one field and removes both ambiguities.
+ */
+export interface UnattestedChunkScope {
+  readonly source: 'restated_from_query'
+  /** Why not — an open contract id, or the surface that cannot supply it. */
+  readonly reason: string
+}
+
+export type ChunkScopeProvenance = ChunkScopeAttestation | UnattestedChunkScope
+
+export function isAttestedScope(provenance: ChunkScopeProvenance): provenance is ChunkScopeAttestation {
+  return provenance.source === 'governed_row'
+}
+
 /**
  * A source of candidate chunks.
  *
@@ -104,6 +182,15 @@ export interface GroundingChunkRepository {
   /** Versioned identity, recorded in retrieval provenance. */
   readonly id: string
   fetchCandidates(query: ChunkQuery): Promise<readonly GroundingChunk[]>
+  /**
+   * What the underlying result says about this chunk's isolation boundary.
+   *
+   * Optional so every repository written before INT-GR-004 keeps compiling.
+   * A repository that omits it is treated exactly like one that returns
+   * {@link UnattestedChunkScope}: acceptable by default, rejected under
+   * `requireScopeAttestation`.
+   */
+  attestScope?(chunk: GroundingChunk, query: ChunkQuery): ChunkScopeProvenance
 }
 
 export class RepositoryContractViolationError extends Error {
@@ -123,18 +210,113 @@ export class RepositoryContractViolationError extends Error {
  * break into a failed request with a named boundary in the message — loud,
  * attributable, and impossible to mistake for "no results".
  */
+export interface EnforceRepositoryScopeOptions {
+  /**
+   * Reject any repository that cannot attest a chunk's scope FROM THE RESULT.
+   *
+   * Off by default, and that default is a statement about today rather than a
+   * preference: the only production repository is backed by
+   * `uellix_grounding.chunks_in_scope`, which does not return the two columns
+   * (INT-GR-004). Defaulting to `true` would fail every real query while the
+   * SQL that would satisfy it belongs to another workstream — turning an open
+   * contract request into an outage.
+   *
+   * Turn it on the moment the columns are returned. See
+   * {@link ChunkScopeAttestation} for what this does and does not prove.
+   */
+  readonly requireScopeAttestation?: boolean
+}
+
 export function enforceRepositoryScope(
   repository: GroundingChunkRepository,
+  options: EnforceRepositoryScopeOptions = {},
 ): GroundingChunkRepository {
+  const requireAttestation = options.requireScopeAttestation ?? false
   return {
     id: repository.id,
+    attestScope: repository.attestScope?.bind(repository),
     async fetchCandidates(query: ChunkQuery): Promise<readonly GroundingChunk[]> {
       const chunks = await repository.fetchCandidates(query)
       for (const chunk of chunks) {
         assertChunkSatisfiesQuery(chunk, query, repository.id)
+        const attestation = repository.attestScope?.(chunk, query) ?? MISSING_ATTESTATION
+        assertScopeAttestation(chunk, attestation, query, repository.id, requireAttestation)
       }
       return chunks
     },
+  }
+}
+
+const MISSING_ATTESTATION: UnattestedChunkScope = {
+  source: 'restated_from_query',
+  reason: 'the repository does not implement attestScope',
+}
+
+/**
+ * Check what a repository claims about a chunk's provenance.
+ *
+ * When the claim is `restated_from_query`, there is nothing to verify — the
+ * whole point of that variant is that the repository has said so. It is
+ * accepted unless the caller demanded attestation, and rejected loudly when it
+ * did. NO substitute check is run in its place: comparing the query's scope to
+ * a scope copied from the query is the tautology this type exists to stop
+ * pretending about.
+ *
+ * When the claim is `governed_row`, all five fields are cross-checked. Three of
+ * them (`chunkId`, `evidenceId`, `versionId`) are already non-tautological
+ * today, because they come from real returned columns — so an attestation that
+ * disagrees with the chunk it describes is caught NOW, not once the scope
+ * columns land.
+ */
+export function assertScopeAttestation(
+  chunk: GroundingChunk,
+  attestation: ChunkScopeProvenance,
+  query: ChunkQuery,
+  repositoryId: string,
+  required: boolean,
+): void {
+  if (!isAttestedScope(attestation)) {
+    if (!required) return
+    throw new RepositoryContractViolationError(
+      `Repository ${repositoryId} cannot attest the scope of chunk ${chunk.chunkId} from its result (${attestation.reason}), and scope attestation was required`,
+    )
+  }
+
+  if (attestation.chunkId !== chunk.chunkId) {
+    throw new RepositoryContractViolationError(
+      `Repository ${repositoryId} attested chunk ${attestation.chunkId} while returning chunk ${chunk.chunkId}`,
+    )
+  }
+  if (attestation.evidenceId !== chunk.evidenceId) {
+    throw new RepositoryContractViolationError(
+      `Repository ${repositoryId} attested evidence item ${attestation.evidenceId} for chunk ${chunk.chunkId}, which reports ${chunk.evidenceId}`,
+    )
+  }
+  if (attestation.versionId !== chunk.versionId) {
+    throw new RepositoryContractViolationError(
+      `Repository ${repositoryId} attested version ${attestation.versionId} for chunk ${chunk.chunkId}, which reports ${chunk.versionId}`,
+    )
+  }
+  // Against the CHUNK first: a disagreement here means the row and the record
+  // built from it describe two different boundaries, and there is no way to
+  // tell which is right — the same reasoning as the provenance check above.
+  if (!isSameScope(attestation.scope, chunk.scope)) {
+    throw new GroundingScopeViolationError(
+      attestation.scope,
+      chunk.scope,
+      `chunk ${chunk.chunkId} from repository ${repositoryId} (attested scope disagrees with the chunk's own)`,
+    )
+  }
+  // Then against the QUERY. This is the comparison INT-GR-004 makes real: once
+  // `attestation.scope` is read from `organization_id` / `project_id` columns
+  // rather than restated, this line is the first TypeScript that can observe a
+  // cross-tenant row.
+  if (!scopeContains(query.scope, attestation.scope)) {
+    throw new GroundingScopeViolationError(
+      query.scope,
+      attestation.scope,
+      `attested scope of chunk ${chunk.chunkId} returned by repository ${repositoryId}`,
+    )
   }
 }
 
@@ -214,5 +396,29 @@ export class InMemoryChunkRepository implements GroundingChunkRepository {
       if (admitted.length >= query.limit) break
     }
     return admitted
+  }
+
+  /**
+   * This repository CAN attest, and the attestation is not a restatement.
+   *
+   * Its rows are `GroundingChunk` values produced by ingestion, each carrying
+   * the scope stamped at chunking time — a different origin from the query. So
+   * `attestation.scope` here is genuinely "what the row says", and
+   * {@link assertScopeAttestation} comparing it to `query.scope` is a real
+   * comparison of two independently-derived values.
+   *
+   * That is what the persisted repository will look like once
+   * `chunks_in_scope` returns the two columns (INT-GR-004), which is why this
+   * implementation is worth having before then: it exercises the guard on the
+   * path where it is already load-bearing.
+   */
+  attestScope(chunk: GroundingChunk): ChunkScopeProvenance {
+    return {
+      source: 'governed_row',
+      scope: chunk.scope,
+      evidenceId: chunk.evidenceId,
+      versionId: chunk.versionId,
+      chunkId: chunk.chunkId,
+    }
   }
 }

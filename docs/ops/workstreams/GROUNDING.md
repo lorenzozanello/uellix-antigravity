@@ -59,13 +59,15 @@ silencioso, no un error.
 
 ## Unidad actual
 
-`STELLA_GROUNDING_RUNTIME_ORCHESTRATION_TRAIN_3` — **completada**. Ver
-[Tren 3](#tren-3--versión-de-extracción-atribución-y-orquestación-2026-08-05)
-al final del documento.
+`STELLA_GROUNDING_LOCAL_END_TO_END_TRAIN_4` — **completada**. Ver
+[Tren 4](#tren-4--ingesta-orquestada-y-generador-extractivo-2026-08-05) al
+final del documento.
 
 ## Unidad anterior
 
-`STELLA_GROUNDING_RETRIEVAL_AND_ISOLATION_TRAIN_2` — **completada**. Ver
+`STELLA_GROUNDING_RUNTIME_ORCHESTRATION_TRAIN_3` — **completada**. Ver
+[Tren 3](#tren-3--versión-de-extracción-atribución-y-orquestación-2026-08-05).
+Antes, `STELLA_GROUNDING_RETRIEVAL_AND_ISOLATION_TRAIN_2` — ver
 [Tren 2](#tren-2--retrieval-y-aislamiento-2026-08-04).
 
 `STELLA_GROUNDING_INGESTION_CORE_TRAIN_1` — **completada**.
@@ -931,3 +933,276 @@ cuyo error lleva la taxonomía de 12 códigos ya existente. Fijado por prueba en
   `project_id` explícitamente en el adaptador y una segunda vez dentro de
   `chunks_in_scope`, porque la policy RLS de `evidence_document_versions` es
   org-scoped y no project-scoped.
+
+## Tren 4 — ingesta orquestada y generador extractivo (2026-08-05)
+
+`STELLA_GROUNDING_LOCAL_END_TO_END_TRAIN_4`. Dos commits, sin push, sin acceso
+remoto, sin gates pesados. HEAD inicial `6f3c543`.
+
+El objetivo era cerrar las dos piezas que faltaban para un recorrido local
+real: **orquestación de ingestión conectable a persistencia** y **un generador
+fundamentado determinista, ejecutable y no simulado**. Proveedor generativo
+real, embeddings remotos, pgvector y calibración quedan fuera por instrucción.
+
+### Orquestador de ingestión
+
+`lib/grounding/ingest/orchestrate-ingestion.ts` compone:
+
+```
+bytes -> claim histórico -> ingestDocument (extract, normalize, version,
+chunk, scan) -> register version -> insert chunks -> finalize
+```
+
+No inventa ninguna etapa de pipeline: extracción, normalización, versionado,
+troceado y escaneo siguen dentro de `ingestDocument`, sin tocar. Lo que añade
+es el **orden**, la consulta de historia que `ingestDocument` se niega
+deliberadamente a inventar, y el vocabulario de fallo.
+
+**Interfaz de persistencia** — `lib/grounding/ingest/persistence.ts`,
+`GroundingIngestionRepository`, cuatro operaciones que mapean **uno a uno**
+contra la superficie gobernada de `grounding_0002` + `grounding_0003`:
+`claimActiveDocumentVersion`, `registerDocumentVersion`,
+`insertEvidenceChunks`, `finalizeDocumentIngestion`. Cuatro y no cinco porque
+una quinta no sería implementable sin escribir SQL fuera del paquete.
+
+Propiedades sostenidas:
+
+- **scope obligatorio** (`assertValidScope` primero; una violación **lanza**);
+- **el scope es expectativa aquí, nunca argumento allá.**
+  `register_document_version` deriva organización y proyecto de
+  `evidence_items` y se niega a aceptarlos.
+  `RegisterDocumentVersionRequest.scope` existe para que un adaptador pueda
+  reimponer localmente esa creencia, y el contrato prohíbe reenviarlo;
+- `evidenceId`, MIME type y las **cuatro versiones de pipeline** estampadas;
+- `chunk_id` **derivado con `deriveChunkId`**, la función del contrato, porque
+  `insert_evidence_chunks` lo re-deriva en servidor con la misma preimagen y
+  lanza U0104 ante cualquier desacuerdo. Una plantilla escrita a mano
+  compilaría y fallaría en la base;
+- **idempotencia y reingesta**: bytes idénticos convergen. Un replay
+  re-registra (idempotente), reofrece los chunks (`ON CONFLICT DO NOTHING`
+  inserta sólo los que falten) y re-finaliza (asserta el conteo). No es un
+  no-op y no se reporta como tal: **es la ruta de reparación** de una ingesta
+  que murió entre la escritura y el finalize;
+- **error tipado** — `GroundingPersistenceError` con seis clases mapeadas a los
+  SQLSTATE del paquete (U0100…U0104 y «cualquier otro» a `unavailable`). La
+  tabla de mapeo vive en el contrato, no en el adaptador, para que las dos
+  mitades de la frontera no puedan divergir;
+- **cero imports desde la capa de base de datos**, verificado por prueba.
+
+**Ninguna persistencia parcial silenciosa.** Todo fallo devuelto nombra la
+etapa y **qué había quedado escrito** cuando ocurrió: `ref` no nulo en cuanto
+la fila de versión existe, `insertedChunkCount` no nulo en cuanto el escritor
+respondió. Y no hay catch-all que convierta un fallo de escritura en `skipped`
+— saltar es una afirmación sobre el **documento**, fallar al escribir es una
+afirmación sobre el **sistema**.
+
+**Deriva de pipeline detectada antes de la escritura.** Si la versión activa
+tiene el mismo `versionId` bajo otro extractor, otra normalización, otro
+chunker o con otro hash normalizado, el orquestador falla en
+`register_version` **sin llamar a `register_document_version`** y **nombra qué
+hecho cambió**. La función gobernada levantaría U0101 con un mensaje que no
+nombra ningún campo — deliberadamente, porque un error devuelto a un llamante
+no confiable es un oráculo. De este lado de la frontera no hay tal restricción
+y el operador necesita saber cuál cambió: una subida de normalización invalida
+todos los offsets almacenados, una de extractor invalida el texto pero no el
+espacio de coordenadas, y se reparan distinto.
+
+### Generador extractivo
+
+`lib/grounding/retrieve/extractive-generator.ts`.
+
+- **Nombre y versión explícitos**: `grounding-local-extractive`,
+  `extractive-1`, id `grounding-local-extractive/extractive-1`.
+- Consume **únicamente `RetrievalCandidate` reales**; construye afirmaciones
+  `evidence` citando los chunks de los que cortó el texto.
+- `CitationReference` válidas por construcción: `buildGroundedAnswer` ya lee
+  `quotedTextHash`, `versionId` y `location` **del chunk recuperado**, nunca
+  del draft. El generador aporta prosa y `chunkIds`, y nada más.
+
+**La invariante**, que es lo que hace segura toda la pieza:
+
+> Toda afirmación emitida, quitadas sus comillas, es **subcadena exacta** del
+> texto de al menos uno de los chunks que cita.
+
+Comprobada por prueba, no afirmada en prosa. Porque una afirmación sólo puede
+ser un corte de un pasaje recuperado:
+
+- **no puede inventar causalidad** — no hay dónde escribir un «porque»;
+- **no puede calcular un SROI, una razón ni ninguna cifra** que el documento no
+  enuncie ya — la aritmética no tiene canal de salida. Fijado con el CSV de
+  municipios: `0.77` es el promedio de `0.81`, `0.76` y `0.74`, no aparece en
+  ningún documento y por tanto no puede aparecer en la respuesta;
+- **no puede aprobar una metodología ni certificar un impacto** — una
+  aprobación es una frase que ningún documento de evidencia contiene sobre esta
+  petición;
+- una cita no puede desligarse de su afirmación, porque la afirmación se cortó
+  del texto citado.
+
+**Abstención frente a fallo operativo.** Sin nada que fundamentar devuelve
+**cero afirmaciones** y `buildGroundedAnswer` lo convierte en abstención.
+**Nunca lanza por falta de evidencia** — un throw se convierte en
+`provider_unavailable`, y lanzarlo cuando la evidencia simplemente calla le
+diría a un revisor que el sistema se rompió cuando lo que pasó es que su
+corpus no cubre la pregunta. Sólo lanza ante una violación de scope, que es un
+defecto de composición.
+
+**Contradicciones sólo desde markers.** El generador **no las detecta nunca**.
+Decidir que dos pasajes no pueden ser ambos ciertos es un juicio semántico, y
+un extractor léxico haciéndolo estaría inventando exactamente lo que este
+módulo existe para evitar — dos documentos con cifras distintas pueden estar
+midiendo cosas distintas. Llegan como `DeclaredContradiction` explícitas que
+nombran dos `chunkId`, y el generador sólo las transporta;
+`buildGroundedAnswer` exige independientemente que **ambos** lados resuelvan.
+Probado en las dos direcciones: dos fuentes con 78 % y 62 % **no** producen
+contradicción, y un marker declarado sí, atribuido a las dos afirmaciones que
+citaron cada lado.
+
+**Limitaciones, dichas sin adorno.** No es equivalente a un modelo generativo y
+no debe presentarse como tal. No sintetiza, no resume, no compara, no traduce y
+no responde a una pregunta cuya respuesta no esté literalmente escrita en uno
+de los pasajes recuperados. Preguntado «¿por qué cayeron los resultados en
+Q3?», devuelve las frases que mencionan resultados y Q3 — no una razón.
+
+**No es un fallback.** No debe seleccionarse porque falle la base, falte el
+paquete SQL, falle la autorización o lance el repositorio: son fallos
+operativos, y responderlos con citas de una recuperación vacía o parcial
+presentaría una avería del sistema como un hallazgo de evidencia. Es una
+estrategia **explícita**, elegida por configuración, y es el **valor por
+defecto** de `runGroundedQuery`.
+
+### Atestación de scope (INT-GR-004)
+
+`ChunkScopeAttestation` / `UnattestedChunkScope` en
+`lib/grounding/retrieve/repository.ts`, más
+`enforceRepositoryScope(repo, { requireScopeAttestation })`. El detalle y —lo
+más importante— **lo que el tipo no demuestra** están en
+[la respuesta a INT-GR-004](../contracts/INT-GR-004_scope_attestation_response.md).
+Resumen: no prueba procedencia, hace el hueco **irrepresentable por silencio**,
+y no se añadió ninguna cuarta comprobación decorativa.
+
+### Recorrido de consulta
+
+`lib/grounding/retrieve/grounded-query.ts`, `runGroundedQuery`. Compone
+repositorio, retrieval, generador extractivo (por defecto), validación de
+citas y clasificación, y **no define ningún vocabulario nuevo**: devuelve
+`GroundingOrchestrationResult` tal cual y añade un solo campo, `provenance`,
+porque «¿qué generador escribió esto?» es una pregunta que los tipos
+existentes genuinamente no podían responder.
+
+Conservado y fijado por prueba: R6 (un código, `inspected.total` separa los dos
+casos), R7 (piso de dos fuentes, **provisional y sin calibrar**, reportado en
+`provenance.minDistinctSources` en vez de asumido), R8 (una sola taxonomía),
+contradicción atribuida, `provider_unavailable` separado de la falta de
+evidencia, errores de scope **relanzados** —ahora también los que lance el
+generador—, errores operativos degradados.
+
+### INT-GR-001…004
+
+| Contrato | Estado tras el tren 4 | Respuesta |
+|---|---|---|
+| INT-GR-001 | Parcialmente resuelto; SQL pendiente de CAPABILITIES | [respuesta](../contracts/INT-GR-001_active_document_version_read_response.md) |
+| INT-GR-002 | **Ya resuelto en HEAD** — cerrado en `8b8693e`, antes del tren 3 | [respuesta](../contracts/INT-GR-002_project_isolation_response.md) |
+| INT-GR-003 | Decidido por GROUNDING (persistir); dos columnas pendientes de CAPABILITIES | [respuesta](../contracts/INT-GR-003_chunk_location_line_range_response.md) |
+| INT-GR-004 | Contrato preparado; dos columnas pendientes de CAPABILITIES | [respuesta](../contracts/INT-GR-004_scope_attestation_response.md) |
+
+**Corrección al registro del tren 3.** La sección
+«[Contratos abiertos hacia esta línea](#contratos-abiertos-hacia-esta-línea)»
+de este documento —escrita por integración— afirma que A-F1 sigue abierto y que
+`validateAnswerCitations` compara sólo `organizationId`. Eso dejó de ser cierto
+en `8b8693e`, que es antepasado de `6f3c543`. Esta línea no reescribe el
+registro histórico del tren 3, que es de integración; lo señala aquí y en la
+respuesta a INT-GR-002.
+
+### Pruebas ejecutadas
+
+Sólo focalizadas, según §11 (ningún gate pesado, ni `test:unit` completo, ni
+`build`):
+
+```
+pnpm exec vitest run lib/grounding/  → 18 archivos, 343 pruebas, todas en verde
+pnpm exec tsc --noEmit               → limpio (proyecto completo)
+pnpm exec eslint lib/grounding       → limpio, cero avisos
+```
+
+De las 343, **72 son nuevas** de este tren: 21 de orquestación de ingestión
+(dos formatos, MIME no soportado, documento vacío, reingesta idéntica, versión
+nueva, cambio de extractor, cambio de normalización, hash movido sin subida de
+versión, cuatro rutas de persistencia parcial, identidad de chunk determinista,
+deduplicación, frontera de scope, cero acceso a la capa de base de datos), 17
+del generador (fuente única, varias fuentes corroborantes, fuentes discordantes
+sin contradicción inventada, marker declarado, marker con lado no recuperado,
+dos ramas de R6, CSV, sin aritmética, determinismo, cero proveedor, scope), 15
+de atestación de scope y 19 del recorrido completo.
+
+**Documentos de prueba, no respuestas preconstruidas.** `__tests__/corpus.ts`
+contiene documentos —un informe, una nota de auditoría, un consolidado
+regional, un CSV, un memorando ajeno— y cada prueba los **ingiere de verdad**
+con el pipeline real antes de preguntar. `__tests__/fixtures.ts` (chunks a
+mano) sigue existiendo donde el chunk **es** el fixture, que es lo correcto
+para una prueba de retrieval que coloca un pasaje concreto en un scope
+concreto.
+
+`__tests__/ingestion-repository-double.ts` es un doble de la **base de datos**,
+no del código bajo prueba: reproduce las garantías de `grounding_0002` y
+`grounding_0003` (idempotencia, U0101, re-derivación de `chunk_id` con U0104,
+`ON CONFLICT DO NOTHING`, aserción de conteo con U0103) para que una prueba que
+pasa aquí pasara allí. No modela RLS, roles ni locks: no se pueden recrear en
+TypeScript, y un doble que fingiera hacerlo dejaría afirmar una garantía que
+esta capa no da.
+
+**Cero datos simulados en runtime**, verificado por prueba: ningún módulo bajo
+`lib/grounding/` fuera de `__tests__` importa un fixture de prueba, la capa de
+base de datos o Supabase.
+
+### Riesgos
+
+- **R1 — persistencia bloqueada.** Cambia de forma: el orquestador y el puerto
+  existen y están probados, pero `grounding_0002` / `grounding_0003` **no están
+  aplicados en ninguna base**, así que el recorrido de ingestión no se ha
+  ejecutado nunca contra Postgres. Lo que hoy está probado es que el pipeline y
+  el contrato son correctos frente a las garantías declaradas del paquete.
+- **R2 — cobertura de formatos.** Sin cambio: `text/plain` y `text/csv`. PDF,
+  XLSX y DOCX siguen tras la decisión G5.
+- **R3 — calibración del escáner.** Sin cambio.
+- **R4 — umbrales sin calibrar.** Sin cambio, y **el generador añade dos más**:
+  `minTermMatches` (1) y `maxSentencesPerClaim` (2). Ambos declarados de
+  primera pasada y sin medir, como sus vecinos. No existe conjunto etiquetado.
+- **R5 — sin cableado al pipeline.** Más pequeño y todavía abierto. Ya existen
+  las dos piezas que faltaban; lo que queda es cableado de aplicación
+  (INTEGRATION): montar `ingestEvidenceDocument` en la subida de evidencia y
+  sustituir `absentAnswerDraftProvider` por el generador extractivo, si PRODUCT
+  decide que la estrategia local es aceptable para el tren.
+- **R6** cerrado como decisión provisional, sin cambio.
+- **R7** abierto por diseño, sin cambio. Cierra con evals.
+- **R8** resuelto en la frontera del server action por integración. Esta línea
+  no añadió taxonomía.
+- **R9 — nuevo. La estrategia extractiva puede confundirse con una respuesta.**
+  Un lector que ve prosa entrecomillada y una cita puede leerla como una
+  respuesta a su pregunta cuando es la frase más cercana a sus términos. La
+  mitigación estructural existe (comillas angulares, `requiresHumanReview`
+  literal, la invariante de subcadena), pero **la mitigación de producto no**:
+  la UI no dice todavía «esta respuesta es un extracto, no una síntesis». Es
+  una decisión de PRODUCT, no de esta línea.
+
+### Estado de entrega a integración
+
+**Listo para integración.** Árbol limpio, dos commits locales, sin push, sin
+acceso remoto, sin llamadas a proveedor, sin datos simulados en runtime, sin
+gates pesados. Ninguna ruta prohibida (`db/**`, `supabase/**`, `components/**`,
+server actions INTEGRATION-OWNED) fue modificada; el diff completo vive bajo
+`lib/grounding/**` más las cuatro respuestas de contrato y este documento.
+
+**Peticiones a integración:**
+
+1. **Mover la fila de INT-GR-002** a resuelto, citando `8b8693e`, y corregir la
+   prosa del registro del tren 3.
+2. **Enlazar las cuatro respuestas** desde `CONTRACT_LEDGER.md`. Esta línea no
+   toca el ledger.
+3. **Reenviar a CAPABILITIES** las dos peticiones de SQL que quedan: las dos
+   columnas de `chunks_in_scope` (INT-GR-004) y las dos de `evidence_chunks`
+   (INT-GR-003). Ambas son de una línea cada una y ambas convierten una
+   comprobación decorativa o un centinela en algo portante.
+4. **Decidir con PRODUCT** si la estrategia extractiva local se enciende en
+   este tren, y con qué texto en la UI (R9). El cambio de código es sustituir
+   `absentAnswerDraftProvider` por `createExtractiveAnswerProvider()`, o llamar
+   directamente a `runGroundedQuery`, que ya la trae por defecto.

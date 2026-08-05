@@ -148,15 +148,21 @@ function classify(outcome: GroundedOutcome): GroundingOrchestrationClassificatio
 // ---------------------------------------------------------------------------
 
 /**
- * Retrieval policy for one orchestrated request.
+ * Retrieval policy for one orchestrated request, plus the orchestrator's own.
  *
- * An alias rather than an empty extending interface: today the orchestrator
- * adds no options of its own, and an interface that declares no members is
- * indistinguishable from its supertype. Publishing the name anyway means a
- * caller writes `OrchestrateGroundedResponseOptions` and keeps compiling on
- * the day the orchestrator does gain an option retrieval has no notion of.
+ * This was an alias of {@link ScopedRetrievalOptions} while the orchestrator
+ * added nothing of its own; the alias was published anyway so callers would
+ * keep compiling on the day it did. That day is `requireScopeAttestation` —
+ * a decision about the REPOSITORY GUARD, which retrieval has no notion of.
  */
-export type OrchestrateGroundedResponseOptions = ScopedRetrievalOptions
+export interface OrchestrateGroundedResponseOptions extends ScopedRetrievalOptions {
+  /**
+   * Demand that the repository attest each chunk's scope from its result
+   * rather than restating the query. See {@link ChunkScopeAttestation} for
+   * what that does and does not prove, and why the default is off.
+   */
+  readonly requireScopeAttestation?: boolean
+}
 
 /**
  * Ask one scoped question of one repository, and get back a classified,
@@ -190,7 +196,9 @@ export async function orchestrateGroundedResponse(
 ): Promise<GroundingOrchestrationResult> {
   assertValidScope(scope)
 
-  const guarded = enforceRepositoryScope(repository)
+  const guarded = enforceRepositoryScope(repository, {
+    requireScopeAttestation: options.requireScopeAttestation,
+  })
 
   let retrieval: ScopedRetrievalResult
   try {
@@ -207,6 +215,15 @@ export async function orchestrateGroundedResponse(
   try {
     draft = await draftProvider.draftAnswer({ scope, text, retrieval })
   } catch (error) {
+    // Same rule as the retrieval catch above, and for the same reason. A
+    // generator that rejects because the retrieval it was handed sits outside
+    // the requested scope has found a COMPOSITION DEFECT, not an outage:
+    // reporting it as `provider_unavailable` would invite a retry of a request
+    // that is broken in a way retrying cannot fix, and would hide a boundary
+    // break behind a transient-looking status.
+    if (error instanceof GroundingScopeViolationError || error instanceof RepositoryContractViolationError) {
+      throw error
+    }
     const outcome = providerUnavailableOutcome(scope, text, describeFailure(draftProvider.id, error))
     return { classification: 'provider_unavailable', outcome }
   }

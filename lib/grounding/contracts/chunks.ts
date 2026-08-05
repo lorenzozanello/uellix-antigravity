@@ -40,9 +40,42 @@ export interface ChunkLocation {
   /**
    * 1-based line range within the normalized text, for humans. Derived, not
    * authoritative — the span is the authority.
+   *
+   * INT-GR-003. `evidence_chunks` does not store these two columns, and they
+   * cannot be re-derived from what it does store: line numbers are positions in
+   * the WHOLE normalized document, and `chunks_in_scope` returns one chunk's
+   * text, not the document. So a chunk read back from persistence has no line
+   * range to report, and every value inside the 1-based domain would be a
+   * plausible, wrong one.
+   *
+   * The type stays `number` rather than becoming nullable, and the sentinel
+   * {@link LINE_RANGE_NOT_PERSISTED} carries the "unknown" state instead. That
+   * is a deliberate choice, not an omission: widening to `number | null` would
+   * break the PRODUCT citation adapter and the release harness, both of which
+   * are outside this workstream's ownership, in exchange for expressing a state
+   * a named out-of-domain constant already expresses unambiguously. Ask
+   * {@link hasResolvedLineRange} rather than testing for a magic zero.
+   *
+   * The request to CAPABILITIES stands: persist the two columns, and this
+   * sentinel becomes unreachable.
    */
   readonly lineStart: number
   readonly lineEnd: number
+}
+
+/**
+ * The line range is not recoverable from where this chunk was read.
+ *
+ * Zero is OUTSIDE the documented 1-based domain, which is the whole reason it
+ * works: any value a reader could mistake for a real line number would make
+ * "we don't know" indistinguishable from "line 1". Consumers must branch on
+ * {@link hasResolvedLineRange} and render the span or the page instead.
+ */
+export const LINE_RANGE_NOT_PERSISTED = 0 as const
+
+/** Whether a location carries a real, 1-based line range. */
+export function hasResolvedLineRange(location: ChunkLocation): boolean {
+  return location.lineStart >= 1 && location.lineEnd >= location.lineStart
 }
 
 // ---------------------------------------------------------------------------
