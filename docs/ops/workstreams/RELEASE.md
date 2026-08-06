@@ -1684,3 +1684,281 @@ tener en cuenta al elegir la fuente canónica de INT-INT-001); el tope de 25
 corroboración del generador extractivo fija el `statement` al primer pasaje del
 grupo, de modo que una segunda fuente citada puede diferir en espaciado o
 capitalización.
+
+---
+
+# Tren 4.1 — `STELLA_RELEASE_IDEMPOTENCY_GATE_TRAIN_4_1`
+
+**HEAD base:** `71add139` (`chore(integration): verify Stella local end-to-end
+runtime`). Árbol limpio al abrir y al cerrar. Sin push, sin acceso a remoto,
+sin llamadas a proveedor, sin gates pesados, sin tocar `db/**`, `supabase/**`,
+`app/actions/**`, `components/**`, `lib/grounding/**`, `package.json`,
+workflows ni `vitest.config`. Esta línea no implementa SQL ni server actions.
+
+**Alcance:** el bloqueador de `local-runtime-ready` que dejó abierto el tren 4
+es [INT-INT-001](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4) —
+`uellix_stella.consume_stella_quota` exige una `idempotency_key` sin fuente
+canónica en la aplicación, así que la cuota impuesta se lee y nunca se cobra
+(`QUOTA_LEDGER_NOT_CHARGED` en `app/actions/stella/grounded-query.ts`). El
+propio contrato nombra tres cierres posibles y los tres están fuera del
+alcance de una integración; uno de ellos es «una tabla de tickets de un solo
+uso emitidos por servidor, con la re-ejecución rechazada sobre un ticket ya
+cobrado». Esta unidad construye el **contrato de evaluación** de ese cierre —
+la interfaz abstracta del protocolo de tickets, la matriz de 20 casos
+semánticos, el oráculo de cuota, 18 controles negativos y la extensión de
+observabilidad — para que cuando otra línea (o una futura unidad de
+integración) escriba el paquete SQL y el adaptador real, exista ya un arnés
+no-tautológico contra el cual demostrarlo. No se llama a
+`consume_stella_quota`, no se escribe SQL, y `local-runtime-ready` sigue
+siendo `false` — nada aquí lo cambia.
+
+## Interfaz de evaluación abstracta
+
+[`tests/eval/stella-release/ticket-protocol.ts`](../../../tests/eval/stella-release/ticket-protocol.ts).
+`OperationTicketProtocol` — siete verbos, ninguno con nombre de tabla, columna
+ni tipo SQL:
+
+```
+issue(scope, now) -> OperationTicket
+bind(ticketId, scope, queryFingerprint, now) -> OperationTicket
+complete(ticketId, scope, now) -> OperationOutcome
+abort(ticketId, scope, now) -> OperationTicket
+retry(ticketId, scope, queryFingerprint, now) -> OperationOutcome   // nunca lanza
+expire(ticketId, now) -> OperationTicket
+inspect(ticketId) -> OperationTicket | null                         // sólo lectura
+```
+
+`createReferenceTicketProtocol()` es un **modelo determinista en memoria**
+que satisface esa interfaz — nunca una base de datos, nunca una llamada de
+red. Existe para que la matriz de 20 casos y los controles negativos tengan un
+evaluador real y no-tautológico antes de que exista una implementación SQL,
+la misma disciplina «criterio antes que implementación» que
+`grounding-retrieval-score-ordering` ya aplica desde el tren 2 para un motor
+de retrieval que tampoco existía. Cada `TicketProtocolDefect` cambia
+exactamente una propiedad del modelo sano — nunca dos a la vez — para que un
+control negativo que lo detecta esté probado que mide esa propiedad y
+ninguna otra.
+
+`OperationTicketReferenceProtocol` añade, sólo para el modelo de referencia
+(nunca en la interfaz abstracta), la superficie de lectura del ledger que el
+oráculo necesita (`snapshotLedger`, `chargesFor`, `allCharges`) y dos puntos
+de entrada de sólo-prueba (`issueTrustingClientIdempotencyKey`,
+`issueTrustingClientScope`) que modelan «qué pasaría si un adaptador
+defectuoso reenviara un valor del cliente hacia `issue()`» — la interfaz sana
+no tiene parámetro para ninguno de los dos.
+
+## Matriz de semántica — 20 casos
+
+[`tests/eval/stella-release/idempotency-matrix.ts`](../../../tests/eval/stella-release/idempotency-matrix.ts),
+`IDEMPOTENCY_MATRIX_VERSION = '1.0.0'`, validada por `validateIdempotencyMatrix`
+(falla cerrado ante `caseId` duplicado/faltante, categoría faltante, o un
+conteo distinto de 20). Distingue explícitamente las cuatro nociones que el
+despacho pide no confundir — **retry** (mismo ticket, misma pregunta),
+**nueva operación** (ticket nuevo, texto igual), **entrega duplicada**
+(reenvío de transporte, indistinguible de un retry en esta capa — por eso
+`retry()` debe ser idempotente en vez de delegar en el transporte) y
+**ataque de replay** (ticket o clave reutilizados para algo distinto,
+siempre rechazado) — en el campo `distinguishes` de cada entrada.
+
+| # | `caseId` | Qué prueba |
+|---|---|---|
+| 1 | `first-execution-charges-once` | issue→bind→complete cobra exactamente una unidad, atribuible a la clave del ticket |
+| 2 | `retry-same-ticket-same-query-charges-once` | retry() del mismo ticket, misma query, tras un complete() exitoso: `replayed`, cero cargo adicional |
+| 3 | `new-ticket-same-query-text-charges-again` | un SEGUNDO ticket para el mismo texto de pregunta cobra de nuevo |
+| 4 | `same-ticket-different-query-text-rejected` | re-bind o retry con texto distinto: rechazado, nunca repuntado en silencio |
+| 5 | `cross-organization-ticket-rejected` | scope de otra organización: rechazado, cero cargo |
+| 6 | `cross-project-ticket-rejected` | scope de otro proyecto de la MISMA organización: rechazado |
+| 7 | `cross-actor-ticket-rejected` | scope de otro actor de la misma organización y proyecto: rechazado |
+| 8 | `expired-ticket-rejected-not-charged` | ticket vencido: rechazado por complete(), transicionado por expire(), cero cargo |
+| 9 | `nonexistent-ticket-rejected` | `ticketId` nunca emitido: rechazado, nunca tratado como operación nueva |
+| 10 | `failure-before-reserve-charges-nothing` | ticket emitido y nunca vinculado (bind): cero cargo, complete() se niega |
+| 11 | `failure-after-reserve-charges-nothing-until-retried` | reservado, orquestación falla antes de complete(): cero cargo; una recuperación posterior vía retry() sí cobra, una vez |
+| 12 | `explicit-abort-charges-nothing-definitively` | abort() de un ticket reservado: cero cargo definitivo; un ticket completado no puede abortarse |
+| 13 | `retry-after-abort-rejected` | retry() de un ticket abortado: rechazado, no resucita en un cargo |
+| 14 | `retry-after-complete-is-free` | entrega duplicada tras un complete() exitoso: `replayed`, gratis |
+| 15 | `concurrent-same-ticket-charges-once` | dos intentos simulados y concurrentes sobre el MISMO ticket: exactamente un cargo bajo el modelo con lock |
+| 16 | `concurrent-distinct-tickets-last-unit-charges-once` | dos tickets DISTINTOS disputando la última unidad de cuota: un cargo, un `quota_exceeded` |
+| 17 | `client-cannot-choose-idempotency-key` | una clave ofrecida por el cliente nunca se honra |
+| 18 | `client-cannot-choose-ticket-scope` | un scope ofrecido por el cliente nunca se honra — siempre el de la sesión |
+| 19 | `feature-flag-off-blocks-issuance` | `STELLA_GROUNDED_QUERY_ENABLED=false` en este worktree — cero operaciones de ticket posibles |
+| 20 | `ticket-lifecycle-events-carry-no-secrets` | los 10 eventos nuevos validan limpio contra el contrato de observabilidad compartido |
+
+## Oráculo de cuota
+
+[`tests/eval/stella-release/idempotency-oracle.ts`](../../../tests/eval/stella-release/idempotency-oracle.ts).
+`evaluateQuotaOracle()` compara un par `QuotaLedgerSnapshot` antes/después más
+el log completo de cargos contra una expectativa — nunca un código HTTP, nunca
+un string de UI. Cada bala del caso bueno de la Fase 3 queda probada por
+separado en `idempotency-harness.test.ts`: una operación completada = un
+cargo; retry = cero cargos adicionales; nueva operación = un cargo adicional;
+abort = cero cargo definitivo; fallo = cero cargo definitivo; ticket
+cross-scope = cero cargo; replay con query distinta = cero cargo **y**
+rechazo (`outcomeWasRejected`).
+
+## Controles negativos — 18 corridos, 0 no detectados
+
+[`tests/eval/stella-release/idempotency-harness.ts`](../../../tests/eval/stella-release/idempotency-harness.ts),
+reutilizando `runNegativeControl`/`controlExpectsViolations`/`controlExpectsVerdict`
+de `negative-controls.ts` — el mismo evaluador de mutaciones que el arnés de
+grounding, nunca una segunda implementación que pudiera divergir. Cada control
+usa el MISMO evaluador que el caso bueno (Fase 4), y `withControls` reporta
+`TAUTOLOGICAL` — fallando el proceso — ante cualquier control cuya mutación
+también pase.
+
+Catorce mutaciones deliberadas del protocolo o del punto de llamada, más una
+decimoquinta a nivel de gate (ver más abajo):
+
+| Mutación deliberada | `controlId` |
+|---|---|
+| UUID nuevo por retry (bug del llamante, no del protocolo) | `nc-caller-reissues-ticket-on-every-retry` |
+| hash de query como clave de idempotencia | `nc-idempotency-key-from-query-hash` |
+| bucket temporal como clave | `nc-idempotency-key-from-timestamp-bucket` |
+| ticket sin organización en el scope | `nc-ticket-missing-organization-scope` |
+| ticket sin proyecto en el scope | `nc-ticket-missing-project-scope` |
+| ticket sin actor en el scope | `nc-ticket-missing-actor-scope` |
+| ticket sin expiración exigible | `nc-ticket-missing-expiry` |
+| hash de query reescribible tras el bind | `nc-query-fingerprint-rewritable` |
+| complete no idempotente | `nc-complete-not-idempotent` (+ variante de entrega duplicada) |
+| abort que no libera | `nc-abort-does-not-release` (+ variante vía retry) |
+| reserva sin recuperación (expire() no-op) | `nc-reservation-never-recoverable` |
+| doble cargo concurrente | `nc-concurrent-double-charge-same-ticket` + `nc-concurrent-double-charge-last-unit` |
+| idempotencyKey provista por el cliente | `nc-client-supplied-idempotency-key-honoured` |
+| scope provisto por el cliente | `nc-client-supplied-scope-honoured` |
+| evento con texto de query | `nc-ticket-event-query-text-rejected` |
+
+**local-runtime-ready afirmado sin cargo real** (la decimoquinta, Fase 4) vive
+a nivel de gate, no de protocolo: `runtime-quota-charged` en
+`idempotency-release-gate.ts` rechaza cualquier `RuntimeQuotaChargeReport`
+cuya afirmación (`claimedCharged`) contradiga su propia evidencia
+(`chargesObservedForTicket`) — probado en
+`idempotency-release-gate.test.ts` en ambas direcciones (afirma cobro sin
+evidencia, y afirma no-cobro con evidencia de cobro).
+
+## Observabilidad — 10 eventos nuevos, contrato existente extendido
+
+`tests/eval/stella-release/observability-contract.ts` gana 10 nombres de
+evento sobre los 13 ya existentes (23 en total, ninguno de los 13 renombrado
+ni retirado): `operation_ticket_issued`, `operation_ticket_bound`,
+`operation_ticket_expired`, `grounded_query_reserved`,
+`grounded_query_completed`, `grounded_query_aborted`,
+`grounded_query_retried`, `quota_consumed`, `quota_reuse_detected`,
+`replay_rejected`. Cada uno con su propia allowlist (`ticketId`, `chargeId`,
+`attempt`, `reasonCode` — todos opacos) sobre el mismo mecanismo de las tres
+guardas ya existentes: lista permanente de nombres prohibidos, tope de 200
+caracteres, y el detector de secretos compartido (`hasForbiddenPattern`). No
+se duplicó el contrato: es el mismo `validateObservabilityEvent` el que valida
+los 23.
+
+## E2E desechable preparado — `idempotency-harness-ready`
+
+[`tests/eval/stella-release/e2e/ticket-protocol-journey-report.ts`](../../../tests/eval/stella-release/e2e/ticket-protocol-journey-report.ts)
+define `TicketProtocolJourneyReport` (los 13 puntos de la Fase 6: base
+desechable, baseline, paquetes tren 4, paquete de tickets, cuota pequeña,
+ticket emitido, operación completada, retry, misma query como nueva
+operación, fallo y abort, ataque cross-project, concurrencia, teardown) y su
+reductor fail-closed `evaluateTicketProtocolJourneyReadiness`. **No hay
+paquete SQL de tickets en este árbol** — llamar al reductor sin reporte (todo
+llamado en esta rama) devuelve `false` nombrando INT-INT-001 y la ausencia del
+paquete. No se simuló SQL ausente: el reductor está preparado para aceptar un
+reporte real el día que otra línea escriba el paquete y el adaptador
+conectado.
+
+`idempotency-release-gate.ts` reduce por separado los 8 gates offline a
+`idempotencyHarnessReady` — verde en esta rama, con **0** líneas en
+`missingForIdempotencyHarness` — que es una pregunta distinta de
+«¿existe runtime real?». Confirmado en la corrida de referencia:
+
+```
+idempotency-harness-ready=true
+local-runtime-ready=false
+```
+
+`local-runtime-ready` (definido en `local-release-gate.ts`, propiedad del
+tren 3/4) **no se modificó** — sigue leyendo únicamente los 12 gates del
+grounding journey y no conoce esta unidad. Esta rama no lo cambia, ni lo
+pretende: sólo registra, en `missingForOperationTicketRuntime`, qué le falta
+específicamente al protocolo de tickets para dejar de bloquearlo.
+
+## Gate de release — 9 identificadores estables
+
+[`tests/eval/stella-release/idempotency-release-gate.ts`](../../../tests/eval/stella-release/idempotency-release-gate.ts):
+
+| Gate | Lee |
+|---|---|
+| `operation-ticket-contract` | los 20 casos, 0 tautológicos, 0 controles no detectados |
+| `retry-no-double-charge` | casos 2 y 14 |
+| `same-query-new-operation` | caso 3 |
+| `failure-no-charge` | casos 10, 11, 12, 13 |
+| `cross-scope-ticket-rejected` | casos 4, 5, 6, 7, 8, 9 |
+| `client-cannot-select-idempotency` | casos 17, 18 |
+| `concurrency-last-unit` | casos 15, 16 |
+| `ticket-observability-safe` | caso 20 |
+| `runtime-quota-charged` | reporte externo opcional — **siempre `false` en esta rama**, con la razón nombrando INT-INT-001 |
+
+`local-runtime-ready` sólo podrá pasar a `true` cuando: exista el paquete SQL
+de tickets; exista el adapter/server action conectado;
+`app/actions/stella/grounded-query.ts` llame a la función real y el E2E cobre
+una vez; el retry no cobre; una nueva operación sí cobre; un fallo no cobre;
+la observabilidad provenga del runtime (`observabilityEventSource:
+'runtime-emitted'`, no `'harness-constructed'`); y el teardown del contenedor
+desechable termine limpio — exactamente lo que `runtime-quota-charged` y
+`ticketProtocolJourneyReady` ya están preparados para exigir.
+
+## Pruebas ejecutadas
+
+Sólo focalizadas — Fase 8: sin `test:unit` completo, sin `build`, sin
+`test:integration`/`test:rls`. Sin red, sin BD, sin secretos reales.
+
+| Comando | Resultado |
+|---|---|
+| `pnpm exec tsc --noEmit` | limpio, 0 errores |
+| `pnpm exec eslint tests/eval/stella-release/ticket-protocol.ts tests/eval/stella-release/idempotency-*.ts tests/eval/stella-release/idempotency-*.test.ts tests/eval/stella-release/e2e/ticket-protocol-journey-report.ts tests/eval/stella-release/e2e/ticket-protocol-journey-report.test.ts tests/eval/stella-release/observability-contract.ts tests/eval/stella-release/observability-contract.test.ts scripts/eval-idempotency-offline.ts` | 0 errores, 0 warnings |
+| `pnpm exec vitest run tests/eval/stella-release` (suite completa de la línea, no sólo lo nuevo) | **10 archivos, 207 tests passed** (152 preexistentes del tren 4 + 55 nuevos/ajustados de esta unidad — incluye la extensión de `observability-contract.test.ts` a 23 eventos) |
+| `pnpm exec tsx scripts/eval-idempotency-offline.ts` | `20/20 cases`, `18` controles negativos, **0** no detectados, `idempotency-harness-ready=true`, `local-runtime-ready=false`, `EXIT 0` |
+| `pnpm exec tsx scripts/eval-idempotency-offline.ts` ×2, diff de la línea `json` | **byte-idéntica** — determinismo confirmado entre procesos |
+
+**Nota de wiring** (igual que hizo `eval-release-offline.ts` en el tren 1):
+`scripts/eval-idempotency-offline.ts` sólo es invocable como `pnpm exec tsx
+…` — `package.json` es `INTEGRATION-OWNED` (§7) y esta línea no lo toca.
+Nombre sugerido para cuando integración lo cablee:
+`test:stella:idempotency-eval`.
+
+## Riesgos abiertos de esta línea
+
+- **El modelo de referencia es un modelo, no un adaptador.** Ninguna prueba
+  aquí demuestra que `uellix_stella.consume_stella_quota` (o cualquier función
+  SQL futura de tickets) satisfaga esta interfaz — eso exige el paquete SQL y
+  el arnés desechable de la Fase 6, ninguno de los dos construidos aquí. Lo
+  que sí se demuestra es que la INTERFAZ es coherente, no-tautológica y
+  distingue exactamente las cuatro nociones (retry / nueva operación /
+  entrega duplicada / replay) que el despacho pide no confundir.
+- **La concurrencia es simulada, no real.** `simulateConcurrentAttempts`
+  reproduce la propiedad «lectura antes de cualquier escritura» de una
+  ausencia de lock — la misma propiedad que `pg_advisory_xact_lock` en
+  `stella_0013` existe para impedir — pero un evaluador síncrono en JavaScript
+  no puede producir hilos reales. Declarado así en el comentario de
+  `ConcurrencyAttempt`, no ocultado.
+- **`nonexistent-ticket-rejected` y `failure-before-reserve-charges-nothing`
+  no llevan control negativo propio** — no hay una mutación del modelo de
+  referencia que represente «aceptar un ticket que nunca se emitió» sin
+  inventar una forma completamente distinta de protocolo. Los 18 controles se
+  concentran en las 14 mutaciones que el despacho nombra explícitamente.
+- **El contrato de observabilidad de tickets es eso: un contrato.** Igual que
+  el harness de grounding del tren 3/4, ningún módulo de `app/**` ni de
+  `lib/**` emite hoy un evento con nombre — `ticket-lifecycle-events-carry-no-secrets`
+  prueba que el validador acepta eventos bien formados y rechaza texto de
+  query, nunca que un runtime real los emite limpios.
+- **`local-runtime-ready` sigue exactamente donde lo dejó el tren 4** — esta
+  unidad no lo movió ni un bit, ni lo pretendió: sólo dejó preparado, con sus
+  propios 9 identificadores y su propio reductor `idempotencyHarnessReady`,
+  el arnés que demostrará el día que otra línea cierre INT-INT-001.
+
+## Estado de entrega a integración
+
+Ninguna ruta prohibida tocada: `db/**`, `supabase/**`, `app/actions/**`,
+`components/**`, `lib/grounding/**`, `package.json`, workflows y config de
+vitest permanecen sin cambios. Sin push, sin acceso a remoto, sin gates
+pesados, cero llamadas a proveedor, cero SQL ejecutado, cero server actions
+tocadas.
+
+`STELLA_RELEASE_TRAIN_4_1_READY_FOR_INTEGRATION`
