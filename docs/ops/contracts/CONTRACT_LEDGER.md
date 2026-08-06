@@ -1194,3 +1194,191 @@ adversarial A**.
 | R6e | `tests/eval/stella-release/reserved-quota-release-gate.ts` describe R6-INT como abierto y no conoce el tren 4.3 | MINOR | Abierto. Fail-closed: sub-declara, no sobre-declara |
 | R6f | `uellix_owner` puede filar una fila con cualquier clave de 64 hex — el CHECK sólo exige `NOT NULL` | MINOR | Aceptado por diseño. `uellix_owner` es `NOLOGIN` y sólo se alcanza por `SET ROLE` desde el migrador |
 | R6g | `scripts/stella-train4-dry-run.sh` afirma que `uellix_app` **puede** llamar a `consume_stella_quota` | MINOR | Correcto **para ese guion**: aplica la cadena hasta `stella_0014`, no `stella_0018`, y mide el estado pre-ticket a propósito |
+
+---
+
+## Tren 4.3c — EVIDENCIA MULTICATEGORÍA (R1 / R6-INT / R6d)
+
+**Fecha:** 2026-08-06. **Rama:** `codex/stella-integration`.
+
+Cierra el hueco que el cierre de R6a/R6b dejó declarado: la evidencia existía
+sólo para `grounded_query`. Ahora existe para las **siete** categorías, contra
+una base PostgreSQL desechable, conducida por las **server actions reales**.
+
+### Qué es real, y qué está sustituido
+
+`tests/e2e/stella-multicategory-quota.e2e.test.ts` conduce
+`getStellaAdvisor`, `getStellaValidator`, `getStellaComposer`,
+`getStellaReviewer` (×3 roles) y `runStellaGroundedQueryForProject`, con sus
+superficies de emisión, sus constructores de contexto —que leen la base **bajo
+RLS**—, sus prompts, su validación de esquema, el adaptador SQL, el driver
+`runGovernedStellaOperation`, el emisor de observabilidad y el ledger.
+
+Se sustituyen **cinco** cosas y ninguna es el protocolo:
+
+| Sustituido | Por qué |
+|---|---|
+| `@/lib/auth/session` | lee cookies de una petición HTTP que no existe en un proceso de prueba |
+| `@/lib/auth/database-context` | por una implementación que llama a `withDatabaseIdentityContext` **REAL**: claims, policies, `auth.uid()` y RLS son los de producción |
+| `@/lib/stella/config` | las banderas. Encenderlas aquí es lo que permite ejercer el camino **y seguir entregándolas apagadas** |
+| `@/lib/stella/rate-limit` | usa Upstash/Redis; no es parte de la idempotencia |
+| `@/lib/stella/adapter/gemini-client` | **el proveedor** — el único ejecutor inyectado, y exactamente el «trabajo de dominio» que la fase 5 permite sustituir. `parseResponse` delega en el esquema Zod **real** |
+
+Cada `bind`, `complete` y `abort` es una llamada a la función `SECURITY DEFINER`
+real. Cada aserción de cobro cuenta filas **COMMITEADAS** leídas por una
+**segunda conexión**, con otro rol, fuera de la transacción de la acción.
+
+### Los dieciocho casos, y lo que midieron
+
+| # | Caso | Resultado medido |
+|---|---|---|
+| 1 | grounded reserva la última unidad | advisor rechazado **antes de ejecutar** (cero llamadas al proveedor), grounded completa, **un** cargo |
+| 2 | advisor reserva la última unidad | grounded rechazado antes de recuperar y generar, **un** cargo |
+| 3 | validator vs composer, concurrentes | **≤1** ganador, cargo = nº de ganadores |
+| 4 | proxy_reviewer vs evidence_reviewer | **≤1** ganador |
+| 5 | audit_assistant | reserva, completa, fila bajo **su** categoría |
+| 6 | dos actores, misma organización | la reserva **VIVA** de M1 (bind real por el adaptador) rechaza a M2 sin ejecutar — **R1b** |
+| 7 | dos proyectos, misma organización | atribución correcta **y** pool compartido: agotar en M1 rechaza a M2 antes de ejecutar |
+| 8 | otra organización | aislada: agotar M no la afecta |
+| 9 | reintento del mismo ticket | **cero** filas nuevas, `ALREADY_COMPLETED_RESULT_UNAVAILABLE` |
+| 10 | operación nueva, mismo contenido | ticket nuevo, fila nueva, **idempotency_key distinta** |
+| 11 | dos entregas concurrentes | **≤1** respuesta utilizable, **exactamente 1** cargo |
+| 12 | fallo después de bind | `aborted`, cero cargo, unidad devuelta y reutilizada por otra categoría |
+| 13 | expiración | deja de contar **sin cron**, complete rechazado, unidad reutilizable |
+| 14 | transición de periodo | reserva viva de otro mes **sigue contando**, sin doble conteo |
+| 15 | escrituras directas | `uellix_app`, `uellix_writer`, `authenticated`, `COPY FROM` y el **owner** sin identidad gobernada: **todas rechazadas** |
+| 16 | cruces de categoría (5 direcciones) | rechazados **antes de ejecutar**, cero filas, cero reservas vivas |
+| 17 | cross-project / cross-actor / cross-organization | rechazados, cero cargo |
+| 18 | bandera en false | cero ticket, cero ejecución, cero proveedor, **cero evento** |
+
+Y, después de **cada** escenario: `ΔConsumed + LiveReserved <= hueco`.
+
+### Inspección del ledger
+
+Por cada operación completada se leyó la fila real: `organization_id`,
+`project_id`, `stella_role`, `pipeline_step`, `context_hash`, `model_used`,
+`tokens_used`, `response_json`, `idempotency_key`, `created_at`; y se construyó
+el mapeo **ticket → ejecución → categoría esperada → proyecto esperado → fila**.
+Exactamente una fila por ticket completado; claves distintas para operaciones
+distintas; ni el documento sembrado ni el prompt aparecen en el ledger.
+
+Las **dos poblaciones** están medidas y son del contrato, no del arnés:
+`grounded_query` se liquida por el verbo de tres argumentos —sin payload, con
+`model_used = 'not-applicable'`, la fila exacta que `stella_0016` fija y
+`stella_0017` reproduce pasando NULL— y las seis hermanas por el de siete, que
+transporta modelo y tokens.
+
+**CHECK `NOT VALID`:** una fila NUEVA sin identidad gobernada es rechazada
+(también para el owner). Inventario del histórico en la base desechable: **cero**
+filas incompatibles, y `VALIDATE CONSTRAINT` se demostró aplicable dentro de una
+transacción que se deshace. **No se validó el paquete publicado**: en una base
+con historia previa a `stella_0017` el inventario sería distinto, y esa decisión
+es del operador que la conozca.
+
+### Observabilidad
+
+Capturada de lo que `emitTicketEvent` escribe de verdad
+(`console.log('[stella-ticket]', payload)`), no fabricada. Se observaron
+`operation_ticket_issued`, `operation_ticket_bound`, `quota_reservation_created`,
+`quota_reservation_converted`, `quota_consumed`, `quota_reservation_released`,
+`quota_capacity_rejected`, `quota_reuse_detected` y `replay_rejected`.
+
+Los dos rechazos que la fase 7 nombra por separado viajan como `replay_rejected`
+con su propio `reasonCode` (`category_mismatch`, `out_of_scope`), que es el
+vocabulario que el runtime emite; se afirma sobre ese vocabulario y no sobre uno
+inventado para la ocasión.
+
+**Allowlist:** ningún evento lleva prompt, consulta, contexto, `response_json`,
+evidencia, `context_hash`, nonce, clave de idempotencia ni token. Descartes de
+telemetría: **0**.
+
+### El gate `runtime-reserved-quota-verified`
+
+`tests/eval/stella-release/multicategory-release-gate.ts` — función **pura** que
+no abre conexión, no importa el runtime y no lee el entorno. Veintiún campos,
+todos obligatorios, veredicto por conjunción, todas las razones devueltas.
+
+Su **único** productor de evidencia es el E2E, y una prueba cruzada lo afirma
+recorriendo el repositorio. El modelo de referencia
+(`reserved-quota-protocol.ts`) **no** lo alimenta: sería usar la respuesta como
+prueba.
+
+**Control negativo por campo**, en las dos suites: retirar cualquiera de los
+veintiún campos devuelve el gate a `false` con una razón nombrada.
+
+### Correcciones que salieron de la revisión adversarial
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| A-16b / MINOR | `crossProjectSharedPool` medía sólo la atribución; «comparten límite» estaba **afirmado, no medido** — un pool por proyecto habría pasado | el caso 7 y el gate agotan el hueco desde `PROJECT_M1` y exigen que una operación de `PROJECT_M2` sea rechazada antes de ejecutar |
+| A-16a / B-V13 / MINOR | `teardownVerified` era un literal de entorno con semántica que sobre-afirmaba: el contenedor se destruye **después** de que el proceso termine | renombrado a `disposableDatabaseGuarded` y **medido**: la conexión apunta al contenedor efímero en loopback 56322 **y** el guion declaró su trap. La destrucción real la afirma el §6 del guion, cuyo fallo aborta la ejecución sea cual sea el veredicto |
+| A-13 / MINOR | `scripts/seed-stella-local.ts` hacía `ON CONFLICT DO UPDATE` sobre una tabla **append-only**: su segunda ejecución fallaba, contradiciendo la convergencia que su cabecera promete | `DO NOTHING`, y la prueba que exigía el `DO UPDATE` ahora exige lo contrario |
+| A-15 / MINOR | el comentario de `rewriteTicketWindow` reclamaba indistinguibilidad con el paso del tiempo, que la ventana de quince minutos hace falsa | reformulado: se declara qué columnas fija el arnés y qué propiedad mide (que la aritmética **no** filtra por periodo) |
+
+### Mutaciones nuevas
+
+`K-127…K-138` sobre el gate y su batería: categoría omitida, ledger no
+inspeccionado, retry cobra, operación nueva no cobra, hermana ejecuta antes del
+rechazo, escritura directa no probada, base no desechable, evento fabricado,
+veredicto que deja de ser conjunción, campo declarado en vez de medido,
+controles negativos retirados. Cada mutante muere por **su propia** gate.
+
+### Estado de los contratos
+
+| Contrato / gate | Estado |
+|---|---|
+| `R1` | **ACCEPTED** — medido con runtime real entre categorías hermanas, entre actores y entre proyectos |
+| `R6-INT` | **ACCEPTED** — cero escritores de runtime, cero superficies de consumo sin ticket, ambas cosas medidas contra el catálogo y atacadas en vivo |
+| `R6a` | **ACCEPTED** |
+| `R6b` | **ACCEPTED** |
+| `R6d` | **ACCEPTED** — las cinco acciones hermanas tienen cobertura E2E contra base real |
+| `runtime-reserved-quota-verified` | **true** |
+| `local-runtime-ready` | **true** |
+| staging | **bloqueado** |
+| hosted | **bloqueado** |
+| feature flags | **`false`** (no existe `.env.local` en este worktree) |
+| `INT-GR-001`, `INT-GR-003`, `INT-PR-001` | **pendientes** |
+
+### Riesgos residuales
+
+| # | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| R6e | `tests/eval/stella-release/reserved-quota-release-gate.ts` describe R6-INT como abierto y no conoce el tren 4.3 | MINOR | Abierto. Fail-closed: sub-declara, no sobre-declara. El gate vigente es el multicategoría |
+| R6f | `uellix_owner` puede filar una fila con cualquier clave de 64 hex — el CHECK sólo exige `NOT NULL` | MINOR | Aceptado por diseño. `uellix_owner` es `NOLOGIN` y sólo se alcanza por `SET ROLE` desde el migrador |
+| R6g | `scripts/stella-train4-dry-run.sh` afirma que `uellix_app` puede llamar a `consume_stella_quota` | MINOR | Correcto **para ese guion**: aplica la cadena hasta `stella_0014`, no `stella_0018` |
+| R6h | El CHECK de identidad gobernada sigue `NOT VALID` sobre bases con historia previa a `stella_0017` | MINOR | Declarado. Validarlo es una decisión del operador que conozca su histórico |
+
+### Evidencia EJECUTADA en esta sesión
+
+Todo en serie, con `env -u GEMINI_API_KEY`, sin dos gates pesados a la vez.
+
+| Gate | Resultado |
+|---|---|
+| `scripts/stella-multicategory-quota-e2e.sh` (PostgreSQL desechable, loopback `127.0.0.1:56322`, 0 volúmenes, cadena `0013`…`0018`) | **25/25** |
+| `scripts/stella-ticket-e2e.sh` (misma forma, recorrido grounded) | **37/37** |
+| `tests/cross-workstream/multicategory-quota.test.ts` | **22/22** |
+| `tests/multicategory-gate-mutation.test.ts` (**K-127…K-138**) | **20/20**, cada mutante muere por su propia gate |
+| `pnpm test:unit` | **5204 pasan, 0 fallan, 125 saltados** (210 ficheros). Incluye **K-01…K-138** |
+| `pnpm typecheck` | 0 errores |
+| `pnpm lint` | 0 errores, 46 avisos preexistentes |
+| `pnpm build` | correcto |
+| `capability-baseline-verify` | **EXIT 0** — baseline verificado 38/107/10 |
+| `capability-dry-run` | **EXIT 0** — forward 42/151/7/10/1, 132/132 aserciones en vivo, concurrencia 7/7, rollback y re-apply |
+| `grounding-dry-run` | **EXIT 0** |
+| `stella-train4-dry-run` | **EXIT 0** |
+| `stella-ticket-dry-run` (`0014`) | **EXIT 0** |
+| `stella-reserved-quota-dry-run` (`0016`) | **EXIT 0** |
+| `stella-governed-consumption-dry-run` (`0017`) | **EXIT 0** |
+| `stella-category-binding-dry-run` (`0018`) | **EXIT 0** |
+| Revisión adversarial A (Fable, sólo lectura) | **0 BLOCKER, 0 MAJOR**, 4 MINOR |
+| Revisión adversarial B (Sonnet, sólo lectura) | **0 BLOCKER, 0 MAJOR**, 1 MINOR |
+
+**Project-binding `0015`:** no existe un guion de dry-run independiente para ese
+paquete, y no se inventa uno. El arnés que lo ejercita realmente es
+`scripts/stella-ticket-e2e.sh` —que lo aplica en la cadena y comprueba en §4d las
+cuatro firmas ligadas al proyecto, cero firmas ciegas, cero DEFAULT y cero
+EXECUTE para PUBLIC— más `tests/cross-workstream/project-binding.test.ts` y el
+catálogo de mutación **K-40…K-53**. Los tres corrieron en esta sesión.
+
+**Residuos:** cero contenedores de esta sesión, cero volúmenes, cero bases
+persistentes tocadas, cero acceso a remoto, cero llamadas a proveedor externo.

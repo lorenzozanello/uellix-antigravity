@@ -18,7 +18,7 @@
 // could do to point it at a remote host.
 //
 // DETERMINISTIC: both rows use fixed, obviously-synthetic UUIDs and are
-// upserted (ON CONFLICT ... DO UPDATE), so re-running this script — including
+// inserted idempotently (ON CONFLICT ... DO NOTHING), so re-running this script — including
 // after a full `pnpm db:reset:local` — always converges to the same state.
 //
 // ZERO REAL DATA: no real person, organization, email or evidence file is
@@ -211,9 +211,17 @@ async function main() {
         '{}',
         ${SYNTHETIC_IDEMPOTENCY_KEY}
       )
-      ON CONFLICT (id) DO UPDATE SET
-        context_hash = EXCLUDED.context_hash,
-        response_json = EXCLUDED.response_json
+      -- DO NOTHING, y no DO UPDATE. \`public.stella_interactions\` es append-only
+      -- para TODO rol incluido el owner: \`trg_stella_interactions_append_only\`
+      -- (prepared stella_0002) es ENABLE ALWAYS y refusa cualquier UPDATE, así
+      -- que la cláusula anterior hacía fallar la SEGUNDA ejecución de este
+      -- guion — contradiciendo la convergencia que su propia cabecera promete.
+      -- Lo encontró la revisión adversarial A del tren 4.3c.
+      --
+      -- Converger sigue siendo cierto y ahora es alcanzable: la fila es
+      -- sintética, su contenido es fijo, y «ya existe» es exactamente el estado
+      -- final que este guion busca.
+      ON CONFLICT (id) DO NOTHING
     `
 
     console.log('Stella rehearsal fixtures ready:', {

@@ -84,9 +84,22 @@ describe('scripts/seed-stella-local.ts — determinism and idempotency', () => {
     expect(raw).toMatch(/SYNTHETIC_INTERACTION_ID = '00000000-0000-4000-8000-\d+'/)
   })
 
-  it('upserts both the project and the interaction (re-runs converge, never duplicate)', () => {
+  it('converge en re-ejecuciones, y la del ledger converge SIN un UPDATE que no puede hacer', () => {
+    // El proyecto sigue siendo un upsert: `public.projects` es una tabla normal.
     expect(raw).toMatch(/INSERT INTO public\.projects[\s\S]*?ON CONFLICT \(id\) DO UPDATE SET/)
-    expect(raw).toMatch(/INSERT INTO public\.stella_interactions[\s\S]*?ON CONFLICT \(id\) DO UPDATE SET/)
+
+    // El ledger NO. `trg_stella_interactions_append_only` (prepared stella_0002)
+    // es ENABLE ALWAYS y refusa todo UPDATE incluido el del owner, así que el
+    // `DO UPDATE` que esta línea exigía hacía fallar la SEGUNDA ejecución del
+    // guion — es decir, exigía justamente lo contrario de la convergencia que
+    // dice medir. Lo encontró la revisión adversarial A del tren 4.3c.
+    //
+    // La convergencia sigue siendo la propiedad: una fila sintética de contenido
+    // fijo que ya existe ES el estado final.
+    expect(raw).toMatch(/INSERT INTO public\.stella_interactions[\s\S]*?ON CONFLICT \(id\) DO NOTHING/)
+    expect(raw, 'el seed volvió a intentar un UPDATE sobre una tabla append-only').not.toMatch(
+      /INSERT INTO public\.stella_interactions[\s\S]*?ON CONFLICT \(id\) DO UPDATE/,
+    )
   })
 
   it('derives context_hash deterministically instead of hardcoding or randomizing it', () => {

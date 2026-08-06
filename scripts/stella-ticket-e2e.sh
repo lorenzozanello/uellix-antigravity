@@ -409,7 +409,7 @@ UELLIX_RUNTIME_DATABASE_URL="postgresql://uellix_app:${E2E_PASSWORD}@127.0.0.1:$
 UELLIX_TICKET_E2E_ADMIN_URL="postgresql://supabase_admin:${E2E_PASSWORD}@127.0.0.1:${PORT}/postgres" \
 UELLIX_TICKET_E2E=1 \
   env -u MSYS_NO_PATHCONV -u GEMINI_API_KEY \
-  pnpm exec vitest run --config vitest.e2e.config.ts --reporter=verbose
+  pnpm exec vitest run --config vitest.e2e.config.ts tests/e2e/stella-ticket-journey.e2e.test.ts --reporter=verbose
 RESULT=$?
 set -e
 

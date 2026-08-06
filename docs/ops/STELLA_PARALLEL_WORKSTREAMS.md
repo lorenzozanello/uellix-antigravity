@@ -821,3 +821,58 @@ y la alineación del evaluador de release.
 `local-runtime-ready` → **`false`**. **Staging y hosted siguen bloqueados.**
 Banderas en **`false`**. `INT-GR-001`, `INT-GR-003`, `INT-PR-001`, `R1` y
 `R6-INT` siguen pendientes.
+
+---
+
+## Tren 4.3c — EVIDENCIA MULTICATEGORÍA (INTEGRACIÓN, 2026-08-06)
+
+Detalle completo en
+[`docs/ops/contracts/CONTRACT_LEDGER.md`](contracts/CONTRACT_LEDGER.md),
+sección «Tren 4.3c».
+
+**Qué cierra.** El cierre de R6a/R6b dejó declarado un hueco: la evidencia de
+runtime existía sólo para `grounded_query`, y las cinco acciones hermanas estaban
+cubiertas por pruebas con adaptador simulado (registrado como **R6d**, MAJOR).
+Ahora existe para las **siete** categorías —`grounded_query`, `advisor`,
+`validator`, `composer`, `proxy_reviewer`, `evidence_reviewer`,
+`audit_assistant`— contra una base PostgreSQL desechable con la cadena
+`0013`…`0018` aplicada, conducida por las **server actions reales**.
+
+**Qué se sustituye, y sólo eso:** sesión, contexto de identidad (por una
+implementación que llama al `withDatabaseIdentityContext` REAL), banderas,
+límite por hora, y el **proveedor** — el único ejecutor inyectado, con
+`parseResponse` delegando en el esquema Zod del producto. Ni el driver, ni el
+adaptador SQL, ni el ledger, ni los permisos, ni el scope.
+
+**Lo que se midió.** Dieciocho casos: contención por la última unidad entre
+categorías (con el proveedor de la perdedora **nunca invocado**), reserva viva
+de un actor vista por otro (R1b), pool compartido entre proyectos de una
+organización —agotar en uno rechaza al otro—, aislamiento entre organizaciones,
+reintento sin cargo, operación nueva con cargo, entrega concurrente con una sola
+respuesta utilizable, abort sin cargo, expiración sin cron, transición de
+periodo sin doble conteo, cinco escrituras directas rechazadas (incluido el
+owner y `COPY`), cinco cruces de categoría, tres cruces de scope, y bandera
+apagada sin ticket ni evento. Tras **cada** escenario:
+`ΔConsumed + LiveReserved <= hueco`.
+
+**Ledger.** Segunda conexión, columna a columna, con el mapeo explícito
+ticket → ejecución → categoría esperada → proyecto esperado → fila. Una fila por
+ticket completado; claves distintas por operación; contexto privado ausente.
+
+**Observabilidad.** Capturada de lo que `emitTicketEvent` escribe, no fabricada,
+y auditada contra allowlist.
+
+**Gate.** `runtime-reserved-quota-verified` es una función pura de veintiún
+campos, todos obligatorios, con control negativo por campo en dos suites, y con
+un único productor de evidencia — el E2E. El modelo de referencia no lo
+alimenta.
+
+**Revisión adversarial:** A (Fable) y B (Sonnet), sólo lectura. **0 BLOCKER,
+0 MAJOR.** Cinco MINOR, cuatro corregidos: dos eran gates que afirmaban más de
+lo que medían (`crossProjectSharedPool` y `teardownVerified`), uno un seed que
+no podía re-ejecutarse sobre una tabla append-only, y uno un comentario que
+reclamaba una indistinguibilidad falsa.
+
+**Gates:** `runtime-reserved-quota-verified` → **true**. `local-runtime-ready` →
+**true**. **Staging y hosted siguen bloqueados.** Banderas en **`false`**.
+`INT-GR-001`, `INT-GR-003` e `INT-PR-001` siguen pendientes.
