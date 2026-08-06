@@ -924,3 +924,116 @@ reportaba éxito dejando funciones vivas hacía el rollback de `grounding_0002`
   cuatro funciones igualmente **y** que `grounding_0002_rollback` vuelve a
   completarse, retirando el rol y el esquema. Antes de la reparación esa
   segunda parte era imposible: el rol seguía poseyendo tres funciones.
+
+---
+
+## Tren 4.1 — tickets de operación gobernados (2026-08-05)
+
+**Cierra INT-INT-001**, el único bloqueante de `local-runtime-ready` que quedaba
+abierto tras el tren 4. Respuesta completa:
+[`INT-INT-001_operation_ticket_protocol.md`](../contracts/INT-INT-001_operation_ticket_protocol.md).
+
+| Contrato | Estado | Unidad |
+|---|---|---|
+| **INT-INT-001** — clave de idempotencia sin fuente canónica | cerrado | `stella_0014` |
+
+**Estado de aplicación: DISEÑO. No aplicado a ninguna base. Ninguna bandera
+habilitada. Ningún server action lo llama** — cablearlo es la reconciliación de
+INTEGRACIÓN, explícitamente fuera del alcance de este tren.
+
+### El bloqueo, reproducido antes de cerrarlo
+
+`consume_stella_quota` exige una `idempotency_key` y ninguna fuente derivable
+del request traza la distinción que hace falta. El §7 del arnés lo **ejecuta**
+contra la función real, en vez de argumentarlo:
+
+| Candidata | Ejecutado | Lectura |
+|---|---|---|
+| `randomUUID()` por invocación | `consumed`, `consumed` → 2 filas | el reintento **cobra dos veces** |
+| digest de (usuario, proyecto, consulta) | `consumed`, `replayed` → 1 fila | la segunda pregunta legítima es **gratis** |
+
+Un arnés que sólo instalara el paquete certificaría que la solución se aplica,
+no que había un problema.
+
+### Lo que cambia, en una frase
+
+**`stella_0014_operation_tickets.sql`** — emite una identidad **opaca de
+servidor** soldada a actor, organización, proyecto, categoría y vigencia; fija
+el digest de la consulta **una sola vez**; **reserva** la unidad al atar y la
+**cobra al completar** a través de `consume_stella_quota`, bajo una clave
+derivada de un `charge_nonce` que ninguna función devuelve.
+
+### Tres decisiones que conviene conocer
+
+**No es un segundo ledger.** Una unidad de cuota sigue siendo una fila de
+`stella_interactions`, y el rol de ticket **no tiene ningún privilegio de
+escritura sobre ella**: su único camino al ledger es *llamar* a la función de
+`stella_0013`. Que «la única forma de cobrar es la ruta gobernada» sea un hecho
+sobre privilegios, y no una afirmación sobre un cuerpo de función, es lo que
+impide que una edición futura lo deshaga.
+
+**La tabla no podía ser `stella_interactions`.** Un ticket tiene ciclo de vida y
+`trg_stella_interactions_append_only` rechaza `UPDATE` y `DELETE` ahí para todo
+rol incluido el dueño. Una máquina de estados no cabe en una tabla donde ningún
+estado puede cambiar.
+
+**Esquema propio, y no por orden: por defecto medido.** `stella_0013` afirma
+sobre **todo** `uellix_stella` que cada función es propiedad de
+`uellix_cap_stella_quota`. Con las seis nuevas ahí, `stella_0013` **aborta en su
+segunda aplicación** — la cadena forward deja de ser idempotente, y el primer
+`apply` de ambos paquetes sigue pasando, así que el fallo es invisible salvo
+para un arnés que aplique dos veces. Observado en el pase 2, no revisado.
+`uellix_stella_ops` aplica el argumento que el propio `stella_0013` escribió
+para no compartir `uellix_capability`.
+
+### Reservar y luego cobrar
+
+Los invariantes que deben alcanzar al **dueño** viven en CHECK y en triggers
+`ENABLE ALWAYS`, no en RLS — se sostiene la «Decisión FORCE RLS» del tren 3, con
+un argumento más: con FORCE, el propio rollback contaría 0 tickets completados
+sobre una tabla poblada y **se dejaría desinstalar justo cuando no debe**.
+
+Una reserva huérfana no puede matar de hambre a nadie: `expires_at > now()`
+forma parte del predicado de vivacidad dentro de `bind`, así que un ticket
+abandonado deja de reservar al expirar **llame o no llame alguien** a
+`expire_operation_tickets`. En este proyecto no hay `pg_cron` y el paquete no
+finge que lo haya.
+
+### Lo que queda abierto
+
+**El ledger puede refusar al completar.** Si una acción Stella hermana cobra
+entre `bind` y `complete`, `consume_stella_quota` puede devolver
+`quota_exceeded` sobre trabajo ya ejecutado. El paquete **lo reporta y no lo
+tapa**: el ticket queda `bound` y abortable, y nunca se cobran más unidades de
+las vendidas. Si ese trabajo debe regalarse o la cuota debe excederse en uno es
+una decisión de facturación, no de base de datos.
+
+### Evidencia ejecutada
+
+* `scripts/stella-ticket-dry-run.sh` — contenedor desechable, `--network none`,
+  sin volumen, destruido al salir. Baseline `0/0/0/0/0/0/0/0`, forward
+  `2/2/1/6/1/3/2/1`, **rollback == baseline**, re-apply == forward.
+  15 secciones: reproducción del bloqueo, protocolo invocado (reintento,
+  consulta nueva con el mismo texto, fallo, aborto, cuota agotada), 13 ataques
+  de aislamiento, 13 ataques de OWNER incluido
+  `session_replication_role = replica`, y **seis** pruebas de concurrencia con
+  dos sesiones reales: dos tickets por la última unidad, el mismo ticket
+  completado dos veces, `complete` contra `abort`, reintento tras completar,
+  caída simulada a mitad de la reserva, y expiración durante la operación.
+* `tests/stella-ticket-persistence-mutation.test.ts` — 39 mutaciones, todas
+  rechazadas **por su gate propietaria**; los gates sin ejercitar están escritos
+  por nombre en el propio fichero.
+
+### Dos defectos que el arnés encontró y la revisión no
+
+**`stella_0013` deja de ser re-aplicable si se comparte su esquema.** Descrito
+arriba. Se reparó moviendo los objetos nuevos, **sin tocar el paquete
+histórico**.
+
+**El detector de `DROP FUNCTION` condicional tenía un punto ciego.** El lector
+heredado del tren 4 reconoce `IF to_regclass(...) THEN` pero no
+`IF tbl_oid IS NOT NULL THEN` — que es exactamente como este rollback escribiría
+el anidamiento, porque guarda el oid en una local para reutilizarlo. Un mutante
+que **sobrevivió** lo hizo visible; el lector ahora sigue la variable hasta su
+asignación. INT-CAP-004 (1) volvía a ser reintroducible sin que ninguna gate lo
+notara.
