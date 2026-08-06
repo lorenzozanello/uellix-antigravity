@@ -54,6 +54,14 @@ const SYNTHETIC_MARKER = 'SEED-SYNTHETIC-G2-REHEARSAL — no real data, no real 
 // advisor context to derive it from.
 const SYNTHETIC_CONTEXT_HASH = createHash('sha256').update(SYNTHETIC_MARKER).digest('hex')
 
+/**
+ * TRAIN 4.3 — the operation identity `stella_interactions_governed_identity_check`
+ * requires. Obviously synthetic on sight, and 64 hex characters so it satisfies
+ * the column's shape. See the INSERT below for why it is deliberately not a
+ * plausible charge key.
+ */
+const SYNTHETIC_IDEMPOTENCY_KEY = '0'.repeat(48) + 'deadbeef' + '0'.repeat(8)
+
 const SYNTHETIC_RESPONSE_JSON = {
   summary: SYNTHETIC_MARKER,
   requiresHumanReview: true,
@@ -78,6 +86,55 @@ async function main() {
   const sql = client.sql
 
   try {
+    // -----------------------------------------------------------------------
+    // TRAIN 4.3 — THE SEED MAY NOT WEAR A RUNTIME IDENTITY (FASE 11)
+    // -----------------------------------------------------------------------
+    // `db/prepared/stella_0017_governed_stella_consumption.sql` §1 revokes
+    // INSERT on `public.stella_interactions` from every runtime principal —
+    // `uellix_writer` (the real holder; `uellix_app` inherits from it),
+    // `uellix_app`, `authenticated`, `anon`, `service_role`, `authenticator`
+    // and PUBLIC. The ledger's only writers are the table OWNER and
+    // `uellix_cap_stella_quota`, and the second only in order to BE the
+    // governed conversion function.
+    //
+    // A seed that wrote through a runtime role would therefore be one of two
+    // things, and both are bad: on a database WITH stella_0017 it would fail
+    // confusingly, and on a database WITHOUT it, it would be a working,
+    // committed, runtime-equivalent bypass — a demonstration that the direct
+    // path still exists, kept alive in the repository by a fixture script.
+    //
+    // So the refusal is EXPLICIT and comes first, before any statement that
+    // could write. It is checked on `session_user` and `current_user` both:
+    // the first is who connected, the second is who is acting after any
+    // `SET ROLE`, and a script that checked only one could be redirected by
+    // the other.
+    const [identity] = await sql<{ session_user: string; current_user: string }[]>`
+      SELECT session_user::text AS session_user, current_user::text AS current_user
+    `
+    const RUNTIME_IDENTITIES = [
+      'uellix_app',
+      'uellix_writer',
+      'uellix_reader',
+      'uellix_auditor',
+      'authenticated',
+      'anon',
+      'service_role',
+      'authenticator',
+    ]
+    const wearing = [identity?.session_user, identity?.current_user].filter(
+      (role): role is string => typeof role === 'string' && RUNTIME_IDENTITIES.includes(role),
+    )
+    if (wearing.length > 0) {
+      console.error(
+        '[seed-stella-local] REFUSED: this script writes fixtures into public.stella_interactions ' +
+          'and is running under a RUNTIME identity. Runtime principals hold no write privilege on ' +
+          'the ledger (prepared stella_0017 §1), and a seed that had one would be a committed ' +
+          'bypass of the governed consumption path. Re-run as the migrator/owner identity.',
+      )
+      console.error(`[seed-stella-local] refused identity: ${wearing.join(', ')}`)
+      process.exit(1)
+    }
+
     console.log('Seeding Stella rehearsal fixtures (1 project + 1 interaction)...')
 
     // Precondition: base seed already ran. Fail loudly, do not create a
@@ -120,11 +177,24 @@ async function main() {
         status = EXCLUDED.status
     `
 
+    // TRAIN 4.3. `stella_interactions_governed_identity_check` (prepared
+    // stella_0017 §2) requires an operation identity on every row. It is
+    // `NOT VALID`, so it binds the OWNER too and `session_replication_role`
+    // does not silence it — the fixture therefore carries one.
+    //
+    // The value is DELIBERATELY NOT a plausible charge key. A real one is
+    // sha256('stella/ticket/charge/v1' || LF || ticket_id || LF || nonce),
+    // derived inside the completion verb from a nonce no function returns. This
+    // is a fixed, obviously-synthetic 64-hex literal in the same recognizable
+    // pattern as the ids above, so a row seeded by this script can never be
+    // mistaken — by an auditor or by a query — for a unit some reviewer was
+    // actually charged for.
     await sql`
       INSERT INTO public.stella_interactions (
         id, organization_id, project_id, created_by,
         stella_role, pipeline_step, context_hash, response_json,
-        model_used, tokens_used, risk_level, risk_flags
+        model_used, tokens_used, risk_level, risk_flags,
+        idempotency_key
       )
       VALUES (
         ${SYNTHETIC_INTERACTION_ID},
@@ -138,7 +208,8 @@ async function main() {
         'seed-synthetic',
         0,
         'low',
-        '{}'
+        '{}',
+        ${SYNTHETIC_IDEMPOTENCY_KEY}
       )
       ON CONFLICT (id) DO UPDATE SET
         context_hash = EXCLUDED.context_hash,

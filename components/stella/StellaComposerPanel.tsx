@@ -14,7 +14,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { getStellaComposer } from '@/app/actions/stella/composer'
+import { getStellaComposer, issueStellaComposerTicket } from '@/app/actions/stella/composer'
+import { useStellaOperation, type StellaOperationAttempt } from './use-stella-operation'
 import type { ComposerOutput } from '@/lib/stella/schemas/composer-output'
 import { StellaErrorNotice } from './StellaErrorNotice'
 
@@ -73,17 +74,51 @@ export function StellaComposerPanel({
     else if (panelState.status === 'error') errorRef.current?.focus()
   }, [panelState.status])
 
+  // TRAIN 4.3 — two affordances, two functions. See
+  // components/stella/use-stella-operation.ts.
+  const operation = useStellaOperation(
+    () => issueStellaComposerTicket(projectId),
+    (ticket) => getStellaComposer(projectId, reportId, sectionId, sectionType, ticket),
+  )
+
+  function applyAttempt(attempt: StellaOperationAttempt<Awaited<ReturnType<typeof getStellaComposer>>>) {
+    if (attempt.kind === 'disabled') {
+      setPanelState({ status: 'disabled' })
+      return
+    }
+    if (attempt.kind === 'issue_error') {
+      setPanelState({ status: 'error', code: attempt.code, message: attempt.message })
+      return
+    }
+    if (attempt.kind === 'no_operation') {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+      return
+    }
+    const result = attempt.result
+    if (result.ok) {
+      setPanelState({ status: 'success', data: result.data })
+    } else if (result.error === 'DISABLED') {
+      setPanelState({ status: 'disabled' })
+    } else {
+      setPanelState({ status: 'error', code: result.error, message: result.message })
+    }
+  }
+
+  /** A NEW draft. Mints a ticket, so the ledger charges a new unit. */
   async function handleCompose() {
     setPanelState({ status: 'loading' })
     try {
-      const result = await getStellaComposer(projectId, reportId, sectionId, sectionType)
-      if (result.ok) {
-        setPanelState({ status: 'success', data: result.data })
-      } else if (result.error === 'DISABLED') {
-        setPanelState({ status: 'disabled' })
-      } else {
-        setPanelState({ status: 'error', code: result.error, message: result.message })
-      }
+      applyAttempt(await operation.start())
+    } catch {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+    }
+  }
+
+  /** A RETRY of the current draft. Reuses the ticket; charges nothing. */
+  async function handleRetry() {
+    setPanelState({ status: 'loading' })
+    try {
+      applyAttempt(await operation.retry())
     } catch {
       setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
     }
@@ -197,7 +232,7 @@ export function StellaComposerPanel({
             <StellaErrorNotice
               code={panelState.code}
               message={panelState.message}
-              onRetry={handleCompose}
+              onRetry={handleRetry}
               footnote="El contenido de tu sección no se ve afectado."
             />
           </div>

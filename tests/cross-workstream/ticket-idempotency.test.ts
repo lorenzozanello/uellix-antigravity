@@ -226,7 +226,11 @@ describe('RUNTIME -> RELEASE: observabilidad', () => {
         .slice()
         .sort(),
     )
-    expect(TICKET_LIFECYCLE_EVENT_NAMES).toHaveLength(10)
+    // TRAIN 4.3 added the SIX reservation events (FASE 12). The count is asserted
+    // rather than relaxed to a `toBeGreaterThan`: the equality of the two name
+    // sets is what stops one side gaining an event the other never validates,
+    // and a floor would let exactly that drift through.
+    expect(TICKET_LIFECYCLE_EVENT_NAMES).toHaveLength(16)
     for (const name of TICKET_LIFECYCLE_EVENT_NAMES) {
       expect(STELLA_OBSERVABILITY_EVENT_NAMES).toContain(name)
     }

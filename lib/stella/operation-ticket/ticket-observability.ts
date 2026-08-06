@@ -66,6 +66,28 @@ export const TICKET_LIFECYCLE_EVENT_NAMES = [
   'quota_consumed',
   'quota_reuse_detected',
   'replay_rejected',
+  // ---------------------------------------------------------------------
+  // TRAIN 4.3 — the six reservation events (FASE 12).
+  // ---------------------------------------------------------------------
+  // RELEASE added these names to `STELLA_OBSERVABILITY_EVENT_NAMES` in the same
+  // train; `tests/stella-ticket-observability-cross.test.ts` proves the two sets
+  // are EQUAL, so a name added on one side and not the other fails a test rather
+  // than producing an event nobody validates.
+  //
+  // WHY THEY ARE NOT JUST THE `grounded_query_*` FOUR RENAMED. Those four are
+  // scoped to one capability by their names, and Train 4.3's whole subject is
+  // that SIX capabilities share one pool. An operator asking "what is holding
+  // this organization's headroom right now?" needs events that do not have to be
+  // enumerated per capability first. The grounded four are KEPT — removing them
+  // would break every dashboard and every assertion built on Train 4.1 — and the
+  // grounded path emits both, which is a duplication in the log stream and not
+  // in the ledger.
+  'quota_reservation_created',
+  'quota_reservation_released',
+  'quota_reservation_expired',
+  'quota_reservation_converted',
+  'quota_capacity_rejected',
+  'quota_cross_operation_contention',
 ] as const
 
 export type TicketLifecycleEventName = (typeof TICKET_LIFECYCLE_EVENT_NAMES)[number]
@@ -89,6 +111,26 @@ export const TICKET_EVENT_ALLOWED_FIELDS: Record<TicketLifecycleEventName, reado
   quota_consumed: ['ticketId', 'chargeId'],
   quota_reuse_detected: ['ticketId', 'chargeId'],
   replay_rejected: ['ticketId', 'reasonCode'],
+  // TRAIN 4.3. `reservationId` IS the ticket id — the reservation is a state of
+  // the ticket row, not a second object with an identity of its own — and it is
+  // carried under RELEASE's field name rather than under `ticketId` so the two
+  // sides validate byte-identically.
+  //
+  // NO `category` FIELD ANYWHERE BELOW, and that is a deliberate refusal rather
+  // than an oversight. Which capability an organization is spending its quota on
+  // is a usage profile, and the events already carry `organizationId` and
+  // `projectId` — putting the capability next to them would make the log stream
+  // a per-tenant behavioural record. `ticketId` correlates a lifecycle end to
+  // end, and the ledger (which is access-controlled) is where capability
+  // attribution belongs.
+  quota_reservation_created: ['reservationId'],
+  quota_reservation_released: ['reservationId'],
+  quota_reservation_expired: ['reservationId'],
+  quota_reservation_converted: ['reservationId', 'chargeId'],
+  // No `reservationId`: a rejection happens when NO reservation was minted.
+  // Reporting one would be reporting an object that does not exist.
+  quota_capacity_rejected: ['reasonCode'],
+  quota_cross_operation_contention: ['reservationId', 'reasonCode'],
 }
 
 /** RELEASE's `MAX_EVENT_FIELD_VALUE_LENGTH`, restated; the cross test proves equality. */

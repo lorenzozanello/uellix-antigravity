@@ -78,19 +78,32 @@ import { sql } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { isCanonicalQueryHash } from '@/lib/stella/operation-ticket/canonical-query-hash'
+import {
+  GROUNDED_QUERY_CATEGORY,
+  isStellaTicketCategory,
+  type StellaTicketCategory,
+} from '@/lib/stella/operation-ticket/categories'
 
 /* -------------------------------------------------------------------------- */
 /* Vocabulary — mirrored from the package, never widened                      */
 /* -------------------------------------------------------------------------- */
 
 /**
- * The governed capability this integration issues tickets for. `stella_0014`'s
- * `operation_tickets_category_check` admits seven; this line uses exactly one,
- * and naming it as a constant rather than a parameter means no caller can
- * choose a category — which is one of the things FASE 5 forbids the client
- * from supplying.
+ * The grounded-query capability, re-exported under its historical name.
+ *
+ * TRAIN 4.3. Until this train the constant WAS the category: `issueOperationTicket`
+ * interpolated it directly and took no category argument, which is how "the
+ * client cannot choose a category" was held. Six more categories now use this
+ * adapter, so the property has to be held somewhere a parameter exists —
+ * `resolveIssuableCategory` in `lib/stella/operation-ticket/categories.ts`, and
+ * the fact that every ISSUANCE surface names its category as a module constant
+ * of its own action rather than reading one out of a request.
+ *
+ * The constant is kept (rather than every call site switching to the new name)
+ * because `tests/cross-workstream/runtime-grounded-query.test.ts` pins the
+ * grounded path by this symbol.
  */
-export const GROUNDED_QUERY_TICKET_CATEGORY = 'grounded_query' as const
+export const GROUNDED_QUERY_TICKET_CATEGORY = GROUNDED_QUERY_CATEGORY
 
 /**
  * The four abort reasons `operation_tickets_abort_reason_check` admits. A
@@ -124,6 +137,18 @@ const TICKET_ERROR_CODES = {
    * failure gets, for the tenancy-oracle reason `U0102` states in SQL.
    */
   PROJECT_MISMATCH: 'U0110',
+  /**
+   * R1 (prepared stella_0016). The conversion was asked to charge a reservation
+   * that is not live — not `bound`, expired, or welded to a different scope or
+   * category than the one being charged.
+   *
+   * It is raised by `settle_reserved_quota`, which re-reads the ticket row
+   * itself rather than trusting the verb that called it. That independence is
+   * the point: the conversion is granted to `uellix_cap_stella_ticket` and to
+   * nothing else, so it is the last thing standing between a ticket and the
+   * append-only ledger.
+   */
+  RESERVATION_NOT_LIVE: 'U0111',
 } as const
 
 /**
@@ -147,6 +172,29 @@ export type OperationTicketRejection =
   | 'query_mismatch'
   | 'expired'
   | 'settled'
+  /**
+   * TRAIN 4.3. The ticket exists, belongs to this organization, this actor and
+   * this project — and was issued for a DIFFERENT capability than the surface
+   * presenting it.
+   *
+   * NOT A SQLSTATE, and the asymmetry is worth stating rather than hiding.
+   * `complete_operation_ticket` reads the category off the TICKET ROW under the
+   * row lock and passes it to the conversion, so a cross-category presentation
+   * cannot produce a charge under a category the ticket does not hold — the
+   * database is already safe. What it WOULD produce is an internally
+   * inconsistent ledger row: `stella_role = 'advisor'` next to a
+   * `response_json` the validator generated, with nothing in the trail saying
+   * which one ran.
+   *
+   * That is an ATTRIBUTION defect of exactly the shape R2-INT reports for the
+   * project, and it is closed the same way: by comparing, before the work runs,
+   * a value the server derived against the value welded onto the ticket at
+   * issue. The comparison happens in Node because no published function accepts
+   * an expected category, and adding one would mean editing a CAPABILITIES
+   * package from the integration line. Recorded as a residual: a database-side
+   * `p_expected_category` would make this structural instead of layered.
+   */
+  | 'category_mismatch'
   | 'unavailable'
 
 /* -------------------------------------------------------------------------- */
@@ -249,6 +297,18 @@ function classifyTicketError(error: unknown): OperationTicketRejection {
       return 'expired'
     case TICKET_ERROR_CODES.SETTLED:
       return 'settled'
+    case TICKET_ERROR_CODES.RESERVATION_NOT_LIVE:
+      // TRAIN 4.3. `settle_reserved_quota` re-reads the ticket row INDEPENDENTLY
+      // of the verb that called it and refuses unless the reservation is still
+      // `bound`, unexpired, and welded to the organization, project and category
+      // it is being asked to charge (prepared stella_0016 §5, stella_0017 §3).
+      //
+      // Reaching it through `complete_operation_ticket` means the reservation
+      // lapsed between that verb's own expiry check and the conversion — a
+      // window of microseconds, but a real one. Reported as `expired` because
+      // that is what it is, and because the caller's obligation is identical to
+      // an expiry: do not present the answer, do not retry this ticket.
+      return 'expired'
     case TICKET_ERROR_CODES.PROJECT_MISMATCH:
       // Collapsed into `out_of_scope` ON PURPOSE, and not because the union is
       // inconvenient to widen. Every scope failure reaches the reviewer as one
@@ -317,14 +377,30 @@ function readOutcomeRow(rows: unknown): { outcome: string; used: number | null; 
 export async function issueOperationTicket(
   organizationId: string,
   projectId: string,
+  category: StellaTicketCategory,
 ): Promise<IssueTicketResult> {
+  // TRAIN 4.3. REQUIRED, and refused in Node when it is not one of the seven
+  // `operation_tickets_category_check` admits.
+  //
+  // The check is NOT what stops a client choosing its own category — an
+  // allowlist would happily accept `'composer'` from a request body. What stops
+  // that is upstream: every issuance surface names its category as a module
+  // constant, and the one surface that legitimately has three
+  // (`issueStellaReviewerTicket`) runs the inbound value through
+  // `resolveIssuableCategory` against the set of roles whose flag is ON. This
+  // is the last fail-closed guard, so a category that reached here by some path
+  // nobody anticipated is refused before it becomes a `U0106` to classify.
+  if (!isStellaTicketCategory(category)) {
+    return { kind: 'rejected', reason: 'ungoverned' }
+  }
+
   try {
     const rows = await withOrganizationDatabaseContext(() =>
       db.execute(sql`
         SELECT uellix_stella_ops.issue_operation_ticket(
           ${organizationId}::uuid,
           ${projectId}::uuid,
-          ${GROUNDED_QUERY_TICKET_CATEGORY}::varchar(50)
+          ${category}::varchar(50)
         ) AS ticket_id
       `),
     )
@@ -453,6 +529,136 @@ export async function completeOperationTicket(
       // refused a charge for work that already ran. One name for both, because
       // the caller's obligation is identical: abort with `quota_refused` and
       // refuse to present the answer.
+      case 'quota_exceeded':
+      case 'no_quota':
+        return { kind: 'quota_refused', used: row.used, quota: row.quota }
+      default:
+        return { kind: 'rejected', reason: 'unavailable' }
+    }
+  } catch (error) {
+    return { kind: 'rejected', reason: classifyTicketError(error) }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 3b. complete (sibling) — settle, charge AND file the interaction row       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The audit payload the five sibling Stella actions used to write themselves.
+ *
+ * Every field here was, until Train 4.3, a column in a `db.insert(stellaInteractions)`
+ * call inside a server action. They are the same values; what changed is who
+ * writes them. `uellix_app` now holds NO write privilege on
+ * `public.stella_interactions` (prepared stella_0017 §1), so this object is
+ * ARGUMENTS TO A GOVERNED FUNCTION rather than a row the runtime composes.
+ *
+ * FOUR COLUMNS ARE ABSENT ON PURPOSE, and their absence is the security
+ * property rather than an omission:
+ *
+ *   organization_id   read off the ticket row, under the row lock
+ *   project_id        idem — and re-proved against `expectedProjectId` first
+ *   created_by        `auth.uid()`, inside the function; there is no parameter
+ *   stella_role       the ticket's own `category`, welded at issue
+ *   context_hash      the digest the ticket was BOUND to, fixed write-once
+ *   idempotency_key   derived from a nonce no function returns
+ *
+ * A caller therefore cannot move the charge to another organization, another
+ * project, another actor, another capability or another identity — not by
+ * lying, and not by being wrong. What it CAN supply is what only it knows: what
+ * the model was asked to do, which model answered, how much it cost, and what
+ * it said.
+ *
+ * `riskLevel` and `riskFlags` have no parameter in prepared stella_0017 and are
+ * therefore NOT filed by this path. Declared, not silently dropped: see
+ * docs/ops/contracts/CONTRACT_LEDGER.md — the validator and reviewer rows lose
+ * two derived columns whose values remain fully recoverable from
+ * `response_json`, and closing that gap means a new package argument rather
+ * than a runtime workaround.
+ */
+export interface StellaInteractionPayload {
+  /** `stella_interactions.pipeline_step`. Defaults to the category in SQL when null. */
+  readonly pipelineStep: string | null
+  /** `stella_interactions.model_used` — as reported by the adapter that answered. */
+  readonly modelUsed: string | null
+  /** `stella_interactions.tokens_used`. Refused by SQL (`U0100`) when negative. */
+  readonly tokensUsed: number | null
+  /** `stella_interactions.response_json` — the parsed, schema-validated output. */
+  readonly responseJson: unknown
+}
+
+/**
+ * Settle a SIBLING ticket: charge exactly one unit AND file the interaction row
+ * that unit pays for, in ONE transaction.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A SECOND FUNCTION AND NOT A FOURTH ARGUMENT ON THE FIRST
+ * ---------------------------------------------------------------------------
+ * It mirrors the package. `stella_0017` publishes a seven-argument OVERLOAD of
+ * `complete_operation_ticket` next to the three-argument one rather than
+ * replacing it, because a grounded query has no `stella_interactions`
+ * representation to file and would have to pass four NULLs to say so. Two
+ * shapes, two wrappers, and a reader comparing this file against the package is
+ * comparing two lists in the same order.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE RESULT MEANS
+ * ---------------------------------------------------------------------------
+ * `completed` — the unit is charged and the row is filed. Only now may the
+ * caller return the answer.
+ * `replayed` — a delivery of this ticket already completed. The ledger holds
+ * exactly one row; nothing was charged again, and the row was NOT overwritten
+ * with this delivery's payload (an append-only trail is not edited).
+ * `quota_refused` — UNREACHABLE against the healthy stella_0016 chain, and kept
+ * anyway. The conversion evaluates no limit, so a refusal here could only come
+ * from a database where `settle_reserved_quota` still charges through the
+ * limit-checking path — i.e. an installation missing stella_0016. Fail-closed
+ * beats fail-silent: the caller aborts and withholds the answer.
+ */
+export async function completeStellaInteractionTicket(
+  ticketId: string,
+  expectedProjectId: string,
+  operationHash: string,
+  payload: StellaInteractionPayload,
+): Promise<CompleteTicketResult> {
+  if (!isCanonicalQueryHash(operationHash) || !isCanonicalQueryHash(ticketId)) {
+    return { kind: 'rejected', reason: 'malformed' }
+  }
+  if (!isProjectId(expectedProjectId)) return unboundProject()
+  // Refused in Node rather than sent to come back as `U0100`. A negative token
+  // count is not a transport accident — it is an adapter reporting something
+  // impossible — and the abort path the caller takes on a rejection is the
+  // right response to it.
+  if (payload.tokensUsed !== null && !Number.isInteger(payload.tokensUsed)) {
+    return { kind: 'rejected', reason: 'malformed' }
+  }
+  if (payload.tokensUsed !== null && payload.tokensUsed < 0) {
+    return { kind: 'rejected', reason: 'malformed' }
+  }
+
+  try {
+    const rows = await withOrganizationDatabaseContext(() =>
+      db.execute(sql`
+        SELECT outcome, used, quota
+        FROM uellix_stella_ops.complete_operation_ticket(
+          ${ticketId}::char(64),
+          ${expectedProjectId}::uuid,
+          ${operationHash}::char(64),
+          ${payload.pipelineStep}::varchar(100),
+          ${payload.modelUsed}::varchar(100),
+          ${payload.tokensUsed}::integer,
+          ${JSON.stringify(payload.responseJson ?? null)}::jsonb
+        )
+      `),
+    )
+    const row = readOutcomeRow(rows)
+    if (!row) return { kind: 'rejected', reason: 'unavailable' }
+
+    switch (row.outcome) {
+      case 'completed':
+        return { kind: 'completed', used: row.used, quota: row.quota }
+      case 'replayed':
+        return { kind: 'replayed' }
       case 'quota_exceeded':
       case 'no_quota':
         return { kind: 'quota_refused', used: row.used, quota: row.quota }

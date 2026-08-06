@@ -4,6 +4,14 @@
 
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+/**
+ * The ticket issuer, mocked to the happy path. `vi.hoisted` because vitest
+ * hoists `vi.mock` factories above the const declarations they close over.
+ */
+const mockIssueTicket = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ status: 'issued', ticket: 'a'.repeat(64) }),
+)
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
 
 // ---------------------------------------------------------------------------
@@ -12,6 +20,12 @@ import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
 const mockGetStellaValidator = vi.fn()
 vi.mock('@/app/actions/stella/validator', () => ({
   getStellaValidator: (...args: unknown[]) => mockGetStellaValidator(...args),
+  // TRAIN 4.3. The panel now MINTS an operation ticket before it runs, and
+  // presents the SAME ticket on a retry — see components/stella/use-stella-operation.ts.
+  // The issuer is mocked to the happy path so the tests below stay about the
+  // panel's rendering, focus and error taxonomy; the ticket lifecycle itself is
+  // proved in the action suites and in the cross-workstream battery.
+  issueStellaValidatorTicket: (...args: unknown[]) => mockIssueTicket(...args),
 }))
 
 // Mock Button component to avoid @base-ui/react jsdom compatibility issues
@@ -178,7 +192,7 @@ describe('StellaValidatorPanel', () => {
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-abc', 'Calculation')
+        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-abc', 'Calculation', 'a'.repeat(64))
       })
     })
 
@@ -201,7 +215,7 @@ describe('StellaValidatorPanel', () => {
       fireEvent.click(screen.getByText(/revisar con stella/i))
 
       await waitFor(() => {
-        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-1', 'Calculation')
+        expect(mockGetStellaValidator).toHaveBeenCalledWith('proj-1', 'Calculation', 'a'.repeat(64))
       })
     })
 

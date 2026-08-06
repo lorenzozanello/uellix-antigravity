@@ -31,7 +31,8 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getStellaContextualAdvisor } from '@/app/actions/stella/advisor'
+import { getStellaContextualAdvisor, issueStellaAdvisorTicket } from '@/app/actions/stella/advisor'
+import { useStellaOperation, type StellaOperationAttempt } from './use-stella-operation'
 import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import { StellaErrorNotice } from './StellaErrorNotice'
@@ -182,21 +183,72 @@ export function StellaContextualAdvisorPanel({
     setSuggestionUi((prev) => ({ ...prev, [id]: { ...(prev[id] ?? INITIAL_SUGGESTION_UI), ...patch } }))
   }
 
+  // TRAIN 4.3 — two affordances, two functions. See
+  // components/stella/use-stella-operation.ts.
+  const operation = useStellaOperation(
+    () => issueStellaAdvisorTicket(projectId),
+    (ticket) => getStellaContextualAdvisor(projectId, step, ticket),
+  )
+
+  function applyAttempt(
+    attempt: StellaOperationAttempt<Awaited<ReturnType<typeof getStellaContextualAdvisor>>>,
+  ) {
+    if (attempt.kind === 'disabled') {
+      // U5: inert informative state, never unmount post-click.
+      setPanelState({ status: 'disabled' })
+      return
+    }
+    if (attempt.kind === 'issue_error') {
+      setPanelState({ status: 'error', code: attempt.code, message: attempt.message })
+      return
+    }
+    if (attempt.kind === 'no_operation') {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+      return
+    }
+    const result = attempt.result
+    if (result.ok) {
+      setPanelState({ status: 'success', data: result.data })
+    } else if (result.error === 'DISABLED') {
+      setPanelState({ status: 'disabled' })
+    } else {
+      setPanelState({ status: 'error', code: result.error, message: result.message })
+    }
+  }
+
+  /**
+   * A NEW request. Mints a ticket, so the ledger charges a new unit — and
+   * clears the per-suggestion UI, the apply history and any pending undo,
+   * because those belong to the PREVIOUS operation's suggestions.
+   */
   async function handleAskStella() {
     setPanelState({ status: 'loading' })
     setSuggestionUi({})
     setHistory([])
     setPendingUndoId(null)
     try {
-      const result = await getStellaContextualAdvisor(projectId, step)
-      if (result.ok) {
-        setPanelState({ status: 'success', data: result.data })
-      } else if (result.error === 'DISABLED') {
-        // U5: inert informative state, never unmount post-click.
-        setPanelState({ status: 'disabled' })
-      } else {
-        setPanelState({ status: 'error', code: result.error, message: result.message })
-      }
+      applyAttempt(await operation.start())
+    } catch {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+    }
+  }
+
+  /**
+   * A RETRY of the current request. Reuses the ticket; charges nothing.
+   *
+   * The suggestion UI is reset for the same reason it is on a new request — a
+   * re-delivery returns the same suggestion ids, and stale per-suggestion
+   * state would attach to them — but the APPLY HISTORY is deliberately NOT
+   * cleared: a suggestion the reviewer already applied to the form was applied,
+   * and a failed re-delivery of the operation that produced it does not undo
+   * that.
+   */
+  async function handleRetry() {
+    setPanelState({ status: 'loading' })
+    setSuggestionUi({})
+    setPendingUndoId(null)
+    try {
+      applyAttempt(await operation.retry())
     } catch {
       setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
     }
@@ -789,7 +841,7 @@ export function StellaContextualAdvisorPanel({
             <StellaErrorNotice
               code={panelState.code}
               message={panelState.message}
-              onRetry={handleAskStella}
+              onRetry={handleRetry}
             />
           </div>
         )}

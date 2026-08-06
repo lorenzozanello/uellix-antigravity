@@ -8,6 +8,14 @@
 
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+/**
+ * The ticket issuer, mocked to the happy path. `vi.hoisted` because vitest
+ * hoists `vi.mock` factories above the const declarations they close over.
+ */
+const mockIssueTicket = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ status: 'issued', ticket: 'a'.repeat(64) }),
+)
 import type { AdvisorContextualOutput } from '@/lib/stella/schemas/advisor-contextual-output'
 
 // ---------------------------------------------------------------------------
@@ -18,6 +26,12 @@ const mockGetStellaAdvisor = vi.fn()
 vi.mock('@/app/actions/stella/advisor', () => ({
   getStellaContextualAdvisor: (...args: unknown[]) => mockGetStellaContextualAdvisor(...args),
   getStellaAdvisor: (...args: unknown[]) => mockGetStellaAdvisor(...args),
+  // TRAIN 4.3. The panel now MINTS an operation ticket before it runs, and
+  // presents the SAME ticket on a retry — see components/stella/use-stella-operation.ts.
+  // The issuer is mocked to the happy path so the tests below stay about the
+  // panel's rendering, focus and error taxonomy; the ticket lifecycle itself is
+  // proved in the action suites and in the cross-workstream battery.
+  issueStellaAdvisorTicket: (...args: unknown[]) => mockIssueTicket(...args),
 }))
 
 // Stella availability read server-side by the page (READ-ONLY module mocked
@@ -160,7 +174,7 @@ describe('NarrativePage × StellaContextualAdvisorPanel (integration-style)', ()
     fireEvent.click(screen.getByText(/consultar a stella/i))
 
     await waitFor(() => {
-      expect(mockGetStellaContextualAdvisor).toHaveBeenCalledWith('proj-1', 'narrative')
+      expect(mockGetStellaContextualAdvisor).toHaveBeenCalledWith('proj-1', 'narrative', 'a'.repeat(64))
       expect(screen.queryByTestId('stella-contextual-result')).not.toBeNull()
     })
   })

@@ -169,10 +169,16 @@ describe('CAPABILITIES -> RUNTIME: the four new signatures are the four the adap
 
 describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refused before anything is published', () => {
   it('the registry names the canonical chain and exactly the signatures stella_0015 drops', () => {
+    // TRAIN 4.3 extended the chain by two. The list is asserted in FULL rather
+    // than with a `toContain`, and deliberately: the registry's whole purpose is
+    // to state a TOTAL order, and a partial assertion would pass on a chain
+    // missing a link.
     expect(STELLA_TICKET_PACKAGE_CHAIN).toEqual([
       'stella_0013_grounded_query_quota',
       'stella_0014_operation_tickets',
       'stella_0015_project_bound_operation_tickets',
+      'stella_0016_reserved_quota_semantics',
+      'stella_0017_governed_stella_consumption',
     ])
     // The guard's idea of "unsafe" must be the package's own. Both lists are
     // to_regprocedure spellings; a drift here would make the guard protect a
@@ -203,14 +209,29 @@ describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refu
     expect(packageOrderRefusal(rule!, false)).toBeNull()
   })
 
-  it('no other prepared script carries a rule, so the guard costs zero round trips elsewhere', () => {
-    for (const other of ['stella_0013_grounded_query_quota', 'stella_0015_project_bound_operation_tickets', 'grounding_0004_runtime_attestation']) {
+  it('every superseded package carries exactly the rules its successors justify, and no other script carries any', () => {
+    // TRAIN 4.3. Three packages are now superseded, and two of them by TWO
+    // successors each — `stella_0015` is superseded by both `stella_0016` (which
+    // replaces its bind/complete bodies IN PLACE) and `stella_0017` (which adds
+    // a seventh function its §4 (5) assertion forbids). Both rules are needed:
+    // a database can hold 0016 without 0017, and re-applying 0015 over either is
+    // a different regression with a different explanation.
+    expect(supersessionsFor('db/prepared/stella_0014_operation_tickets.sql')).toHaveLength(1)
+    expect(supersessionsFor('stella_0015_project_bound_operation_tickets.sql')).toHaveLength(2)
+    expect(supersessionsFor('stella_0016_reserved_quota_semantics.sql')).toHaveLength(1)
+
+    // The HEAD of the chain is superseded by nothing — there is nothing after it
+    // to protect against.
+    expect(supersessionsFor('stella_0017_governed_stella_consumption.sql')).toHaveLength(0)
+    // And a package of another campaign carries no rule at all, so the guard
+    // costs zero round trips there.
+    for (const other of ['stella_0013_grounded_query_quota', 'grounding_0004_runtime_attestation']) {
       expect(supersessionsFor(`${other}.sql`)).toHaveLength(0)
     }
     // Exact-match, never prefix: a hypothetical stella_0014b must not silently
     // inherit stella_0014's rule.
     expect(supersessionsFor('stella_0014b_something.sql')).toHaveLength(0)
-    expect(PREPARED_PACKAGE_SUPERSESSIONS).toHaveLength(1)
+    expect(PREPARED_PACKAGE_SUPERSESSIONS).toHaveLength(4)
   })
 
   it('the probe asks the CATALOG, not a version table, and is a fixed literal', () => {

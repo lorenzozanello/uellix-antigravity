@@ -139,6 +139,7 @@ import {
   type TicketEventScope,
 } from '@/lib/stella/operation-ticket/ticket-observability'
 import {
+  GROUNDED_QUERY_TICKET_CATEGORY,
   abortOperationTicket,
   bindOperationTicket,
   completeOperationTicket,
@@ -149,6 +150,7 @@ import {
   type CompleteTicketResult,
   type OperationTicketAbortReason,
   type OperationTicketInspection,
+  type OperationTicketRejection,
 } from '@/db/stella/operation-tickets'
 
 /* -------------------------------------------------------------------------- */
@@ -923,7 +925,14 @@ async function releaseTicket(
  * "not yours" and "never existed" are deliberately indistinguishable.
  */
 function groundedTicketRejection(
-  reason: 'malformed' | 'out_of_scope' | 'ungoverned' | 'query_mismatch' | 'expired' | 'settled' | 'unavailable',
+  // TRAIN 4.3 added `category_mismatch` to the union. It is UNREACHABLE from
+  // this path — the grounded action does not run the driver's category check,
+  // because `bind`/`complete` here settle a `grounded_query` ticket through the
+  // three-argument verb and a ticket of any other category would already have
+  // failed the digest or the project comparison. Spelled out rather than
+  // narrowed away with a cast: the exhaustive union is what makes a NEW
+  // rejection reason a compile error here instead of a silent `default`.
+  reason: OperationTicketRejection,
 ): [StellaPanelErrorCode, string] {
   switch (reason) {
     case 'unavailable':
@@ -1093,7 +1102,15 @@ async function issueStellaGroundedQueryTicket(
   // 7. ISSUE. The project is re-verified against the organization INSIDE the
   //    SQL function (a trigger, plus RLS), so no read is duplicated here to
   //    do it again in a weaker place.
-  const issued = await issueOperationTicket(organizationId, boundProjectId)
+  // TRAIN 4.3: the category is now a PARAMETER of the adapter, because six more
+  // categories share it. It is still not something a caller can name — it is
+  // this module's own constant, passed at the one call site that mints a
+  // grounded ticket.
+  const issued = await issueOperationTicket(
+    organizationId,
+    boundProjectId,
+    GROUNDED_QUERY_TICKET_CATEGORY,
+  )
   if (issued.kind === 'rejected') {
     if (issued.reason === 'out_of_scope') {
       return {

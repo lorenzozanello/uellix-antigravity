@@ -10,7 +10,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { getStellaValidator } from '@/app/actions/stella/validator'
+import { getStellaValidator, issueStellaValidatorTicket } from '@/app/actions/stella/validator'
+import { useStellaOperation, type StellaOperationAttempt } from './use-stella-operation'
 import type { ValidatorOutput } from '@/lib/stella/schemas/validator-output'
 import { StellaErrorNotice } from './StellaErrorNotice'
 
@@ -58,17 +59,52 @@ export function StellaValidatorPanel({
     else if (panelState.status === 'error') errorRef.current?.focus()
   }, [panelState.status])
 
+  // TRAIN 4.3 — two affordances, two functions. See
+  // components/stella/use-stella-operation.ts for why the client, and only the
+  // client, can tell a new submit from a retry.
+  const operation = useStellaOperation(
+    () => issueStellaValidatorTicket(projectId),
+    (ticket) => getStellaValidator(projectId, step, ticket),
+  )
+
+  function applyAttempt(attempt: StellaOperationAttempt<Awaited<ReturnType<typeof getStellaValidator>>>) {
+    if (attempt.kind === 'disabled') {
+      setPanelState({ status: 'disabled' })
+      return
+    }
+    if (attempt.kind === 'issue_error') {
+      setPanelState({ status: 'error', code: attempt.code, message: attempt.message })
+      return
+    }
+    if (attempt.kind === 'no_operation') {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+      return
+    }
+    const result = attempt.result
+    if (result.ok) {
+      setPanelState({ status: 'success', data: result.data })
+    } else if (result.error === 'DISABLED') {
+      setPanelState({ status: 'disabled' })
+    } else {
+      setPanelState({ status: 'error', code: result.error, message: result.message })
+    }
+  }
+
+  /** A NEW review. Mints a ticket, so the ledger charges a new unit. */
   async function handleReviewWithStella() {
     setPanelState({ status: 'loading' })
     try {
-      const result = await getStellaValidator(projectId, step)
-      if (result.ok) {
-        setPanelState({ status: 'success', data: result.data })
-      } else if (result.error === 'DISABLED') {
-        setPanelState({ status: 'disabled' })
-      } else {
-        setPanelState({ status: 'error', code: result.error, message: result.message })
-      }
+      applyAttempt(await operation.start())
+    } catch {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+    }
+  }
+
+  /** A RETRY of the current review. Reuses the ticket; charges nothing. */
+  async function handleRetry() {
+    setPanelState({ status: 'loading' })
+    try {
+      applyAttempt(await operation.retry())
     } catch {
       setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
     }
@@ -214,7 +250,7 @@ export function StellaValidatorPanel({
             <StellaErrorNotice
               code={panelState.code}
               message={panelState.message}
-              onRetry={handleReviewWithStella}
+              onRetry={handleRetry}
               footnote="Los datos de tu cálculo no se ven afectados."
             />
           </div>

@@ -71,7 +71,10 @@ vi.mock('@/lib/stella/rate-limit', () => ({
 
 const mockCheckStellaQuota = vi.fn()
 vi.mock('@/lib/stella/quota', () => ({
-  checkStellaQuota: (...args: unknown[]) => mockCheckStellaQuota(...args),
+  // TRAIN 4.3: `checkStellaQuota` is GONE from lib/stella/quota.ts. The action
+  // no longer authorizes against an unlocked count; `bind` is the only quota
+  // check and it runs under the per-organization advisory lock. The mock name
+  // survives only so the fixture below can assert it is never reached.
   nextQuotaResetIso: () => '2026-08-01T00:00:00.000Z',
   formatQuotaResetDate: () => '1 de agosto de 2026',
 }))
@@ -99,6 +102,60 @@ const mockReportStellaFailure = vi.fn()
 vi.mock('@/lib/stella/observability', () => ({
   reportStellaFailure: (...args: unknown[]) => mockReportStellaFailure(...args),
 }))
+
+
+// ---------------------------------------------------------------------------
+// TRAIN 4.3 — the governed ticket adapter, mocked at the DATABASE boundary.
+// ---------------------------------------------------------------------------
+// Deliberately NOT `runGovernedStellaOperation`. Mocking the driver would make
+// every assertion below vacuous about the property this train exists to
+// establish: that bind happens BEFORE the provider is called, complete BEFORE
+// the answer is returned, and abort on every other exit. The driver therefore
+// runs FOR REAL here and only the five SQL round trips are doubles.
+const mockBindOperationTicket = vi.fn()
+const mockCompleteStellaInteractionTicket = vi.fn()
+const mockAbortOperationTicket = vi.fn()
+const mockInspectOperationTicket = vi.fn()
+const mockIssueOperationTicket = vi.fn()
+vi.mock('@/db/stella/operation-tickets', () => ({
+  bindOperationTicket: (...args: unknown[]) => mockBindOperationTicket(...args),
+  completeStellaInteractionTicket: (...args: unknown[]) => mockCompleteStellaInteractionTicket(...args),
+  abortOperationTicket: (...args: unknown[]) => mockAbortOperationTicket(...args),
+  inspectOperationTicket: (...args: unknown[]) => mockInspectOperationTicket(...args),
+  issueOperationTicket: (...args: unknown[]) => mockIssueOperationTicket(...args),
+}))
+
+/** 64 lowercase hex — the shape every ticket verb enforces in SQL. */
+const TICKET = 'a'.repeat(64)
+
+/**
+ * The category the mocked ticket carries. The reviewer action is the one
+ * surface that acts as three capabilities, so its tests have to be able to
+ * present a ticket of a DIFFERENT category than the run — which is the
+ * cross-category attack `runGovernedStellaOperation` refuses.
+ */
+const mockTicketCategory = 'proxy_reviewer'
+
+/**
+ * The happy-path ticket lifecycle: a live reservation, a matching category, a
+ * settlement that charges exactly one unit.
+ *
+ * `beforeEach` installs it, so a test that says nothing about tickets exercises
+ * the ordinary governed path; a test about quota, retry or a cross-category
+ * presentation overrides exactly the one verb it is about.
+ */
+function installGovernedTicketHappyPath() {
+  mockBindOperationTicket.mockResolvedValue({ kind: 'bound', used: 0, quota: 50 })
+  mockInspectOperationTicket.mockResolvedValue({
+    status: 'bound',
+    category: mockTicketCategory,
+    expiresAt: '2026-08-06T00:15:00.000Z',
+    hasQueryHash: true,
+  })
+  mockCompleteStellaInteractionTicket.mockResolvedValue({ kind: 'completed', used: 1, quota: 50 })
+  mockAbortOperationTicket.mockResolvedValue({ kind: 'aborted' })
+  mockIssueOperationTicket.mockResolvedValue({ kind: 'issued', ticketId: TICKET })
+}
 
 // ---------------------------------------------------------------------------
 // Import the action AFTER mocks are in place
@@ -151,7 +208,7 @@ const RATE_LIMIT_OK: RateLimitResult = {
 function setupSuccessfulCall() {
   mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
-  mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 2, quota: 50 })
+  installGovernedTicketHappyPath()
   mockBuildReviewerContext.mockResolvedValue(MOCK_CONTEXT)
   mockAdapterGenerate.mockResolvedValue({
     role: 'proxy_reviewer',
@@ -177,7 +234,7 @@ describe('getStellaReviewer server action', () => {
     mockStellaState.canUseStella = true
     mockInsertValues.mockResolvedValue([])
     mockDbInsert.mockReturnValue({ values: mockInsertValues })
-    mockCheckStellaQuota.mockResolvedValue({ allowed: true, used: 0, quota: 50 })
+    installGovernedTicketHappyPath()
     mockLogAuditAction.mockResolvedValue(undefined)
   })
 
@@ -185,7 +242,7 @@ describe('getStellaReviewer server action', () => {
     it('logs STELLA_INVOKED with the reviewer role and its pipeline step, metadata only', async () => {
       setupSuccessfulCall()
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(true)
       const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
@@ -194,7 +251,9 @@ describe('getStellaReviewer server action', () => {
       expect(invoked.actorUserId).toBe('user-1')
       expect(invoked.entityId).toBe('proj-1')
       expect(invoked.afterJson.stellaRole).toBe('proxy_reviewer')
-      expect(invoked.afterJson.tokensUsed).toBe(42)
+      // TRAIN 4.3: `tokensUsed` moved to the ledger row the governed completion
+      // verb files; duplicating it here would be two places for one number.
+      expect(mockCompleteStellaInteractionTicket.mock.calls[0][3].tokensUsed).toBe(42)
       expect(typeof invoked.afterJson.pipelineStep).toBe('string')
       // WS3c U1 (RK-08): the flag defaults to false with empty categories.
       expect(invoked.afterJson.sensitivePopulations).toBe(false)
@@ -213,7 +272,7 @@ describe('getStellaReviewer server action', () => {
         sensitivePopulations: { detected: true, categories: ['refugees_displaced'] },
       })
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(true)
       const invoked = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.invoked')
@@ -228,7 +287,7 @@ describe('getStellaReviewer server action', () => {
         membership: { ...MOCK_ORG_CONTEXT.membership, role: 'viewer' },
       })
 
-      await getStellaReviewer('proj-1', 'evidence_reviewer')
+      await getStellaReviewer('proj-1', 'evidence_reviewer', TICKET)
 
       const denied = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.denied')
       expect(denied.afterJson).toEqual({ stellaRole: 'evidence_reviewer', reason: 'ROLE_DENIED', membershipRole: 'viewer' })
@@ -237,10 +296,10 @@ describe('getStellaReviewer server action', () => {
     it('denial result is unchanged when the audit write throws (fire-and-forget)', async () => {
       const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       setupSuccessfulCall()
-      mockCheckStellaQuota.mockResolvedValue({ allowed: false, used: 50, quota: 50, reason: 'quota_exceeded' })
+      mockBindOperationTicket.mockResolvedValue({ kind: 'quota_exceeded', used: 50, quota: 50 })
       mockLogAuditAction.mockRejectedValue(new Error('audit db down'))
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('QUOTA_EXCEEDED')
@@ -250,15 +309,15 @@ describe('getStellaReviewer server action', () => {
 
     it('reports AUDIT_ERROR to observability with the reviewer role when the insert fails', async () => {
       setupSuccessfulCall()
-      mockInsertValues.mockRejectedValue(new Error('DB down'))
+      mockCompleteStellaInteractionTicket.mockResolvedValue({ kind: 'rejected', reason: 'unavailable' })
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(false)
-      if (!result.ok) expect(result.error).toBe('AUDIT_ERROR')
-      expect(mockReportStellaFailure).toHaveBeenCalledWith(
-        'proxy_reviewer', 'AUDIT_ERROR', expect.anything(), expect.objectContaining({ projectId: 'proj-1' }),
-      )
+      if (!result.ok) expect(result.error).toBe('UNKNOWN_ERROR')
+      // TRAIN 4.3: a settlement rejection is the ledger declining, not an
+      // application fault. Nothing is filed to Sentry.
+      expect(mockReportStellaFailure).not.toHaveBeenCalled()
     })
   })
 
@@ -266,7 +325,7 @@ describe('getStellaReviewer server action', () => {
     it('returns DISABLED when the per-role flag is false', async () => {
       mockStellaConfig.isProxyReviewerEnabled = false
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('DISABLED')
@@ -281,11 +340,11 @@ describe('getStellaReviewer server action', () => {
         membership: { ...MOCK_ORG_CONTEXT.membership, role },
       })
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')
-      expect(mockCheckStellaQuota).not.toHaveBeenCalled()
+      expect(mockBindOperationTicket).not.toHaveBeenCalled()
       expect(mockCheckStellaRateLimit).not.toHaveBeenCalled()
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
     })
@@ -297,7 +356,7 @@ describe('getStellaReviewer server action', () => {
         membership: { ...MOCK_ORG_CONTEXT.membership, role },
       })
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(true)
     })
@@ -307,14 +366,21 @@ describe('getStellaReviewer server action', () => {
     it('returns ok:true with the parsed reviewer output and audits it', async () => {
       setupSuccessfulCall()
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(true)
       if (result.ok) expect(result.data.requires_human_review).toBe(true)
-      expect(mockDbInsert).toHaveBeenCalledTimes(1)
-      const insertPayload = mockInsertValues.mock.calls[0][0]
-      expect(insertPayload.stellaRole).toBe('proxy_reviewer')
-      expect(insertPayload.organizationId).toBe('org-1')
+      expect(mockCompleteStellaInteractionTicket).toHaveBeenCalledTimes(1)
+      // TRAIN 4.3. The category and the organization are read off the TICKET
+      // ROW inside SQL and have no parameter here — which is why the payload
+      // does not carry them and why a caller cannot move the charge.
+      const [ticketId, projectId, digest, payload] =
+        mockCompleteStellaInteractionTicket.mock.calls[0]
+      expect(ticketId).toBe(TICKET)
+      expect(projectId).toBe('proj-1')
+      expect(digest).toMatch(/^[0-9a-f]{64}$/)
+      expect(payload).not.toHaveProperty('stellaRole')
+      expect(payload).not.toHaveProperty('organizationId')
     })
   })
 
@@ -324,7 +390,7 @@ describe('getStellaReviewer server action', () => {
       const { StellaPayloadTooLargeError } = await import('@/lib/stella/security/payload-limits')
       mockAdapterGenerate.mockRejectedValue(new StellaPayloadTooLargeError(150000, 120000))
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('PAYLOAD_TOO_LARGE')
@@ -335,7 +401,7 @@ describe('getStellaReviewer server action', () => {
     it('returns UNAUTHORIZED when requireOrganizationAccess throws', async () => {
       mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
 
-      const result = await getStellaReviewer('proj-1', 'proxy_reviewer')
+      const result = await getStellaReviewer('proj-1', 'proxy_reviewer', TICKET)
 
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error).toBe('UNAUTHORIZED')

@@ -978,3 +978,82 @@ banderas siguen en `false`, staging sigue bloqueado y hosted sigue bloqueado.
 |---|---|---|---|
 | R2a | Reaplicar `stella_0014` fuera de orden republica las firmas ciegas | MAJOR | **Cerrado en los dos runners**, no en el paquete — ningún SQL puede impedir que otro se ejecute después. Queda descubierto el `psql` manual fuera de ambos runners: misma autoridad que podría borrar `U0110` directamente, no alcanzable por un inquilino. El §18 del E2E **mide** la exposición (4 firmas resucitadas sin guarda, 0 con ella) en vez de negarla |
 | R2d | La cota de `bind`→`complete` sigue siendo de 15 minutos y `expire_operation_tickets` no recibe proyecto | MINOR | Deliberado (R2b de CAPABILITIES). No nombra tickets, no revela estado, no libera reservas vivas y no cobra |
+
+---
+
+## Tren 4.3 — cuota reservada gobernada en runtime (R1 / R6-INT)
+
+**Estado: PARCIAL.** El código de runtime está migrado, tipado, lintado,
+construido y cubierto por la batería unitaria completa. **La evidencia contra
+base de datos real NO se ejecutó en esta sesión**, así que ni `R1` ni `R6-INT`
+pasan a `ACCEPTED` y `reserved-quota-runtime-verified` sigue en **`false`**.
+Lo que falta está enumerado al final, sin adornos.
+
+### Lo que sí cambió, y por qué
+
+`db/prepared/stella_0016` publica la aritmética canónica
+`Limit − Consumed − LiveReserved` y `db/prepared/stella_0017` retira la escritura
+directa sobre `public.stella_interactions` de **todo** principal de runtime. Las
+cinco acciones hermanas hacían exactamente lo que esos dos paquetes prohíben:
+
+```
+checkStellaQuota(org)      // conteo SIN cerrojo y ciego a reservas
+...llamada al proveedor...
+INSERT directo en stella_interactions   // escritura NO gobernada
+```
+
+Ahora las seis categorías (`advisor`, `validator`, `composer`, `proxy_reviewer`,
+`evidence_reviewer`, `audit_assistant`) recorren **un solo** protocolo,
+`lib/stella/operation-ticket/governed-operation.ts`: emitir ticket → reservar en
+`bind` bajo el cerrojo consultivo → ejecutar **fuera** de esa transacción →
+convertir en `complete` (que además archiva la fila del ledger) → abortar en
+cualquier otra salida. `checkStellaQuota` **no existe**; lo que queda en
+`lib/stella/quota.ts` es `readStellaCapacity`, informativo, consciente de
+reservas y explícitamente incapaz de autorizar nada.
+
+### Cambios de semántica DECLARADOS, no absorbidos en silencio
+
+| # | Qué cambió | Por qué | Dónde vive ahora |
+|---|---|---|---|
+| 1 | `stella_interactions.context_hash` deja de ser la huella del CONTEXTO y pasa a ser el **digest de la PETICIÓN** fijado en `bind` | Lo impone `stella_0017`: el verbo de cierre archiva el digest al que el ticket quedó atado, y nada que envíe el llamante puede moverlo. Un digest del contexto no serviría de todos modos — depende de datos vivos del proyecto, así que un reintento legítimo treinta segundos después chocaría con `U0107` | La huella del contexto se registra en la entrada de `audit_logs` (`contextHash`), que también es append-only |
+| 2 | `risk_level` y `risk_flags` dejan de archivarse en el ledger para validator y reviewer | `stella_0017` no publica parámetros para esas dos columnas, y editar un paquete de CAPABILITIES desde la línea de integración no es una opción | Se registran en `audit_logs`. Siguen siendo derivables de `response_json`. Cerrarlo requiere **un argumento nuevo del paquete**, no un rodeo de runtime |
+| 3 | El límite por hora se consume en la **emisión**, no en la ejecución | Emitir no reserva nada, así que sin límite ahí no era autolimitante; y un reintento no debe volver a gastar el presupuesto de una operación ya contada | `lib/stella/operation-ticket/issue-governed-ticket.ts` |
+| 4 | `AUDIT_ERROR` deja de ser alcanzable en las cinco acciones | «Cobrado pero sin auditar» ya no es representable: la fila y el cargo ocurren en la MISMA transacción. Un fallo de liquidación retiene la respuesta bajo `UNKNOWN_ERROR` porque el cargo es **desconocido** | Se conserva en la unión de códigos por compatibilidad de clientes ya compilados |
+| 5 | Las cinco acciones ganan `ALREADY_COMPLETED_RESULT_UNAVAILABLE` | Mismo código operacional que ya usaba `grounded-query`. **No** es reintentable: reintentar acuñaría un ticket nuevo y cobraría una segunda unidad | `components/stella/error-messages.ts` ya lo renderizaba |
+
+### Riesgos residuales nuevos
+
+| # | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| R6a | La comparación de categoría entre el ticket y la superficie se hace en **Node** (`inspect` antes de `bind`), no en SQL | MINOR | La base ya es segura — `complete_operation_ticket` lee la categoría de la FILA, así que una presentación cruzada no puede producir un cargo con categoría falsa. Lo que evita la comprobación de Node es una fila **internamente inconsistente** (`stella_role` de una categoría junto al `response_json` de otra) en una tabla append-only. Un `p_expected_category` en el paquete lo haría estructural |
+| R6b | `uellix_stella.consume_stella_capacity` está concedida a `uellix_app` y **cobra sin reservar** | MINOR | Ninguna ruta de runtime la invoca tras esta migración. Es gobernada (archiva `idempotency_key`), así que no reabre R6-INT; pero es una superficie de cobro sin ticket disponible para el runtime, y merece una prueba cruzada que fije que sigue sin llamantes |
+| R6c | La comprobación de categoría mantiene la reserva durante un viaje de ida y vuelta extra en la ruta de ataque | MINOR | Deliberado: dejar hablar primero a `bind` es lo que evita reportar una caída de base de datos como `UNAUTHORIZED`. Se libera de inmediato y cobra cero |
+
+### Evidencia ejecutada en esta sesión
+
+| Gate | Resultado |
+|---|---|
+| `pnpm test:unit` (`env -u GEMINI_API_KEY`) | **5132 pasan, 0 fallan, 125 saltados** (208 ficheros) |
+| Suites de acciones Stella (`app/actions/stella/__tests__/**`) | **217/217** |
+| `tests/cross-workstream/**` | **189/189** |
+| `pnpm typecheck` | **0 errores** |
+| `pnpm lint` | **0 errores**, 45 avisos preexistentes |
+| `pnpm build` | **correcto** |
+
+### Evidencia que NO se ejecutó — y por tanto lo que NO se declara
+
+Ni un solo gate contra base de datos real corrió en esta sesión. En concreto:
+las baterías de mutación de `stella_0016`/`stella_0017`, `K-01…K-111`, los siete
+dry-runs (`baseline-verify`, `capability`, `grounding`, Train 4, ticket 0014,
+project-binding 0015, reserved quota 0016, governed consumption 0017), el E2E
+multicategoría de la FASE 13 con sus quince casos obligatorios, la inspección de
+filas reales de `stella_interactions`, y las dos revisiones adversariales.
+
+Tampoco se actualizaron `scripts/stella-ticket-e2e.sh` (sigue sin aplicar ni
+verificar `stella_0017`), `docs/ops/workstreams/CAPABILITIES.md`,
+`docs/ops/workstreams/RELEASE.md` ni `docs/ops/STELLA_PARALLEL_WORKSTREAMS.md`.
+
+En consecuencia: **`R1` y `R6-INT` siguen abiertos**,
+`reserved-quota-runtime-verified` sigue `false`, `local-runtime-ready` sigue
+`false`, staging sigue bloqueado, hosted sigue bloqueado, las banderas siguen en
+`false` e `INT-GR-001`, `INT-GR-003` e `INT-PR-001` siguen pendientes.
