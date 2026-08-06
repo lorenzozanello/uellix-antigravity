@@ -319,6 +319,21 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // DESIGN ONLY.
       'stella_0016_reserved_quota_semantics.sql',
       'stella_0016_rollback.sql',
+      // 0017 closes R6-INT and, with it, the residual of R1 — which composing
+      // the two turned into something worse than either. `uellix_writer` holds
+      // a standing INSERT on `public.stella_interactions` and `uellix_app`
+      // INHERITS it (zero entries of its own in relacl, measured), so the five
+      // sibling actions charge the ledger with an unlocked read followed by an
+      // unlocked write. On top of 0016 — whose conversion evaluates no limit,
+      // deliberately — a live reservation plus one direct INSERT sells two
+      // units against a cap of one. This package REMOVES the direct write from
+      // every runtime principal, states the guarantee again as a NOT VALID
+      // CHECK that binds the owner too, and generalises the ticket protocol so
+      // the five sibling categories complete through a payload-carrying
+      // conversion instead. It creates no role, no schema, no table and no
+      // policy. DESIGN ONLY.
+      'stella_0017_governed_stella_consumption.sql',
+      'stella_0017_rollback.sql',
     ])
   })
 

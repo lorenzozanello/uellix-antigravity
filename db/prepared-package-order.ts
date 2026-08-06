@@ -90,6 +90,7 @@ export const STELLA_TICKET_PACKAGE_CHAIN = [
   'stella_0014_operation_tickets',
   'stella_0015_project_bound_operation_tickets',
   'stella_0016_reserved_quota_semantics',
+  'stella_0017_governed_stella_consumption',
 ] as const
 
 /**
@@ -164,6 +165,50 @@ export const PROJECT_BLIND_SIGNATURES_PRESENT_PROBE =
 const STELLA_0016_INSTALLED_PROBE =
   "SELECT to_regprocedure('uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character)') IS NOT NULL AS installed"
 
+/**
+ * The two objects `stella_0017` publishes, and what each one is for.
+ *
+ * Written as data for the same reason the lists above are: the guard and the
+ * package must not be able to drift into disagreeing about what "governed
+ * consumption" means. Re-applying `stella_0015` or `stella_0016` over
+ * `stella_0017` does not restore a vulnerable FUNCTION — both would abort on
+ * their own `count(*) = 6` assertion over `uellix_stella_ops`, which is
+ * fail-closed. What the registry buys is that the operator gets a refusal that
+ * names the reason instead of an assertion failure that names a number.
+ */
+export const GOVERNED_CONSUMPTION_OBJECTS = [
+  {
+    signature:
+      'uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)',
+    purpose: 'the completion verb for the five sibling Stella categories',
+  },
+  {
+    signature:
+      'uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character, character varying, character, character varying, integer, jsonb)',
+    purpose: 'the payload-carrying conversion the sibling verb charges through',
+  },
+] as const
+
+/**
+ * TRUE when the sibling completion verb exists — i.e. `stella_0017` is
+ * installed here.
+ *
+ * Written over the FUNCTION no earlier package can produce rather than over the
+ * absence of something, and the direction matters for the same reason it did for
+ * R2a and for R1: absence proves nothing (a database with no quota campaign at
+ * all has no seven-argument `complete_operation_ticket` either), while the
+ * presence of a completion verb that carries an interaction payload can only
+ * come from `stella_0017`.
+ *
+ * NOT written over the REVOKE that `stella_0017` §1 performs, and the choice is
+ * deliberate: "uellix_writer holds no INSERT on stella_interactions" is also
+ * true of a database where somebody revoked it by hand, and a probe that cannot
+ * tell a package apart from an operator is a probe that refuses the wrong
+ * things.
+ */
+const STELLA_0017_INSTALLED_PROBE =
+  "SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL AS installed"
+
 export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersession[] = [
   {
     packageName: 'stella_0014_operation_tickets',
@@ -194,6 +239,34 @@ export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersessio
       'signatures changes, so no later check notices. Apply the chain in order ' +
       '(stella_0013 -> stella_0014 -> stella_0015 -> stella_0016); to genuinely revert, run ' +
       'stella_0016_rollback.sql first.',
+  },
+  {
+    packageName: 'stella_0015_project_bound_operation_tickets',
+    supersededBy: 'stella_0017_governed_stella_consumption',
+    probe: STELLA_0017_INSTALLED_PROBE,
+    wouldRepublish: RESERVATION_AWARE_TICKET_BODIES.map((b) => b.signature),
+    why:
+      'stella_0017 publishes a SEVENTH function in uellix_stella_ops — the sibling completion ' +
+      'verb — and stella_0015 §4 (5) asserts that schema holds exactly six. Re-applying it ' +
+      'aborts on that assertion, which is fail-closed but says nothing about why; and if the ' +
+      'assertion were ever relaxed it would also republish a bind/complete pair whose ' +
+      'arithmetic counts charged rows only. Apply the chain in order (stella_0013 -> ' +
+      'stella_0014 -> stella_0015 -> stella_0016 -> stella_0017); to genuinely revert, run ' +
+      'stella_0017_rollback.sql then stella_0016_rollback.sql first.',
+  },
+  {
+    packageName: 'stella_0016_reserved_quota_semantics',
+    supersededBy: 'stella_0017_governed_stella_consumption',
+    probe: STELLA_0017_INSTALLED_PROBE,
+    wouldRepublish: GOVERNED_CONSUMPTION_OBJECTS.map((o) => o.signature),
+    why:
+      'stella_0016 §7 (2b) asserts uellix_stella_ops holds exactly six functions, and ' +
+      'stella_0017 adds a seventh, so re-applying it aborts. It would also republish the ' +
+      'five-argument settle_reserved_quota as a SELF-CONTAINED body while the ten-argument ' +
+      'one it currently delegates to still exists — two INSERTs into the ledger from one ' +
+      'schema, and two places for the idempotency semantics to drift. Apply the chain in ' +
+      'order; to genuinely revert, run stella_0017_rollback.sql first — it restores exactly ' +
+      'that body and drops the ten-argument function in the same transaction.',
   },
 ]
 
