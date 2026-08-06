@@ -2013,3 +2013,178 @@ como exitosa una respuesta no cobrada.
 (atribución cross-proyecto, MAJOR), R3-INT, R4-INT, R5-INT, R6-INT, R7-INT — los
 siete detallados en
 [`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+# Tren 4.2 — `STELLA_RELEASE_PROJECT_BOUND_TICKET_GATE_TRAIN_4_2`
+
+**HEAD base:** `b6a11cd430a3a53c8dbbf4a5d2e80abf14564308` (`chore(integration):
+close Stella grounded-query idempotency`). Árbol limpio al abrir y al cerrar.
+No se tocó `db/**`, `app/actions/**`, `components/**`, `lib/grounding/**`,
+`tests/e2e/**` ni ningún otro directorio fuera de `tests/eval/stella-release/**`,
+`scripts/eval-project-binding-offline.ts` y este documento. Ningún push.
+
+**Alcance.** Cierra la mitad "contrato de evaluación" de
+[R2-INT](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4)
+(MAJOR, abierto desde el tren 4.1): *"`bind`/`complete` no reciben el
+proyecto contra el que se ejecuta, así que el cargo se archiva bajo el
+proyecto del TICKET mientras el trabajo lee la evidencia del proyecto de la
+ACCIÓN."* Esta línea NO cambia `bind_operation_ticket`/`complete_operation_ticket`
+(exige un paquete nuevo de CAPABILITIES, tren 5) ni toca
+`tests/e2e/stella-ticket-journey.e2e.test.ts`, que ya **fija como real** la
+atribución incorrecta de hoy en su caso *"un ticket de OTRO proyecto de la
+misma organización y actor... (R2-INT, riesgo abierto)"*. Lo que esta línea
+construye es lo que ese futuro cambio de firma deberá satisfacer, con la
+misma disciplina "criterio antes que implementación" que
+`ticket-protocol.ts` ya documenta para el resto del contrato de tickets.
+
+## Verbos *ForExecution — Fase 1, aditivo puro
+
+`ticket-protocol.ts` gana un tercer identificador de proyecto, independiente
+de `TicketScope.projectId`: `executionProjectId`, el proyecto contra el que
+la llamante afirma que la operación se ejecuta. Cinco verbos nuevos en
+`OperationTicketReferenceProtocol` — `bindForExecution`, `completeForExecution`,
+`abortForExecution`, `retryForExecution`, `inspectForExecution` — exigen que
+`executionProjectId === ticket.scope.projectId` antes de delegar,
+inalterados, en el verbo heredado correspondiente. Ningún verbo de Train 4.1
+(`issue`/`bind`/`complete`/`abort`/`retry`/`expire`/`inspect`) cambió de
+firma ni de comportamiento — los `*ForExecution` son envoltorios aditivos,
+nunca una reescritura, y esa delegación es precisamente lo que
+`nc-legacy-signature-bypasses-project-gate` explota para demostrar que los
+verbos heredados, invocados directamente, no tienen forma de rechazar nada.
+
+`ChargeRecord` gana `projectId`. Bajo todo verbo heredado sigue siendo
+siempre `ticket.scope.projectId` — la única atribución posible sin un
+parámetro de ejecución — y es exactamente el comportamiento que
+`tests/e2e/stella-ticket-journey.e2e.test.ts` mide hoy como real.
+`TicketExecutionProjectMismatchError` es el nuevo tipo de error, distinto de
+`TicketScopeViolationError`: éste es sobre QUIÉN presenta el ticket; aquél es
+sobre CONTRA QUÉ PROYECTO se ejecutó el trabajo, independientemente de quién
+lo presentó.
+
+## Oráculo extendido — Fase 3
+
+`idempotency-oracle.ts` gana `expectedChargeProjectId`, opcional, en
+`QuotaOracleExpectation`. Comprueba simultáneamente `ticket.project_id ==
+execution.project_id == charge.project_id` — nunca sólo `organization_id`,
+nunca sólo un conteo de cargos, nunca un código HTTP. El caso
+`charge-stored-under-correct-project` (Fase 2, caso 10) prueba explícitamente
+que un oráculo que sólo mira `organization_id` **no detecta** una desviación
+de proyecto dentro de la misma organización, mientras que el oráculo
+extendido sí.
+
+## Matriz de project-binding — 10 casos
+
+| # | `caseId` | Qué prueba |
+|---|---|---|
+| 1 | `ticket-and-execution-same-project-charges-once` | Camino feliz: mismo proyecto en ticket, ejecución y cargo. |
+| 2 | `execution-cross-project-same-organization-rejected` | Ejecución contra un proyecto hermano de la MISMA organización: rechazado, cero cargo — el eje exacto de R2-INT. |
+| 3 | `execution-cross-organization-rejected` | Ejecución contra un proyecto de OTRA organización: rechazado, cero cargo. |
+| 4 | `bind-and-complete-different-project-mismatch-rejected` | `bind` correcto, `complete` contra otro proyecto: rechazado, ticket sigue "reserved". |
+| 5 | `bind-and-abort-different-project-mismatch-rejected` | `bind` correcto, `abort` contra otro proyecto: rechazado, la reserva no se libera. |
+| 6 | `inspect-from-foreign-project-rejected` | `inspect` contra otro proyecto: lanza, no filtra estado del ticket. |
+| 7 | `retry-after-complete-from-foreign-project-rejected` | `retry` tras completar, contra otro proyecto: `{rejected, execution_project_mismatch}`. |
+| 8 | `same-query-text-new-project-charges-independently` | Mismo texto de consulta, dos proyectos distintos: cobran independientemente, cada uno bien atribuido. |
+| 9 | `concurrent-cross-project-attempts-charge-correct-project-once` | Dos tickets de dos proyectos por la última unidad: exactamente un cargo, atribuido al proyecto que ganó. |
+| 10 | `charge-stored-under-correct-project` | El oráculo extendido prueba la igualdad de tres vías; un oráculo sólo-organización no ve una desviación de proyecto. |
+
+## Controles negativos — 9 corridos, 0 no detectados
+
+| Mutación deliberada | `controlId` | Dónde |
+|---|---|---|
+| `bindForExecution` ignora `executionProjectId` | `nc-bind-ignores-execution-project` | harness, caso 2 |
+| Firma heredada (`bind`/`complete` sin parámetro) sigue ejecutable sin control | `nc-legacy-signature-bypasses-project-gate` | harness, caso 2 |
+| Llamante deriva `executionProjectId` del propio ticket, no de la solicitud | `nc-caller-derives-execution-project-from-ticket-not-request` | harness, caso 2 |
+| `completeForExecution` ignora `executionProjectId` | `nc-complete-ignores-execution-project` | harness, caso 4 |
+| `abortForExecution` ignora `executionProjectId` | `nc-abort-ignores-execution-project` | harness, caso 5 |
+| `inspectForExecution` ignora `executionProjectId` | `nc-inspect-ignores-execution-project` | harness, caso 6 |
+| Cargo desviado a proyecto hermano de la MISMA organización pese a que el check pasó | `nc-charge-project-drifts-same-organization` | harness, caso 10 |
+| Oráculo que sólo revisa `organization_id` no ve la desviación anterior | `nc-oracle-checking-only-organization-insufficient` | harness, caso 10 |
+| `local-runtime-ready` no absorbe `project-binding-harness-ready` | control #9, `project-binding-release-gate.test.ts` | gate test, verificación estática de imports |
+
+Los primeros ocho corren por el mismo evaluador que su caso bueno
+(`withControls`, el mecanismo de `negative-controls.ts` ya usado por
+`idempotency-harness.ts`). El noveno es estructural — no una mutación del
+protocolo sino una comprobación estática de que `local-release-gate.ts` no
+importa ni referencia este módulo ni `idempotency-release-gate.ts`, en
+ninguna dirección.
+
+## Gate de release — 2 identificadores estables
+
+| Gate | Lee |
+|---|---|
+| `project-bound-ticket-attribution` | Los 10 casos, los 8 controles negativos del harness, cero tautológicos, observabilidad segura — 100% offline. |
+| `runtime-project-attribution-verified` | Informe externo opcional, fail-closed; exige 7 pruebas (bind/complete/abort/inspect rechazan, cargo bien atribuido, cero cargo en el ataque, firma heredada NO invocable). Ausente en esta rama. |
+
+`project-binding-harness-ready` (booleano derivado del primer gate) es el
+único que puede ser `true` en esta rama. **No existe ninguna ruta de código,
+en ningún archivo tocado por esta línea, que haga a `local-runtime-ready`
+depender de este gate** — verificado estáticamente en
+`project-binding-release-gate.test.ts`.
+
+## Observabilidad — Fase 5
+
+No se tocó `observability-contract.ts`: `projectId` ya es un campo común de
+todo evento, y `reasonCode` ya acepta cualquier código corto y opaco en
+`replay_rejected`. `PROJECT_MISMATCH_REASON_CODE = 'execution_project_mismatch'`
+prueba que un rechazo por desatribución de proyecto es representable con el
+contrato EXISTENTE — reutilizado, no duplicado — y que ese evento nunca
+admite `query`, hash de consulta, nonce del ticket, evidencia, respuesta ni
+secretos, exactamente igual que cualquier otro evento del sistema.
+
+## E2E local de tickets — Fase 6, `TicketProtocolJourneyReport`
+
+Dos campos nuevos, aditivos: `executionProjectAttributionEnforced` (debe ser
+`true`) y `legacyTicketSignatureInvocable` (debe ser `false` — el único
+booleano invertido del informe). `crossProjectAttackRejected` (tren 4.1)
+sigue significando "un ticket PRESENTADO con scope ajeno se rechaza"; estos
+dos son la afirmación distinta que R2-INT exige: que la ejecución en sí,
+bajo el scope CORRECTO del ticket, no pueda derivar hacia otro proyecto. Sin
+informe — cada invocación en esta rama — ambos fallan cerrado.
+
+## Gate — Fase 6
+
+```
+project-binding-harness-ready=true
+local-runtime-ready=false
+```
+
+`local-runtime-ready` no se toca: sigue exactamente donde lo dejó el tren
+4.1, bloqueado por R2-INT entre otros criterios, y esta línea no declara lo
+contrario en ningún archivo.
+
+## Pruebas ejecutadas
+
+| Comando | Resultado |
+|---|---|
+| `pnpm exec tsc --noEmit` | limpio, 0 errores |
+| `pnpm exec eslint tests/eval/stella-release/ticket-protocol.ts tests/eval/stella-release/idempotency-oracle.ts tests/eval/stella-release/project-binding-matrix.ts tests/eval/stella-release/project-binding-harness.ts tests/eval/stella-release/project-binding-harness.test.ts tests/eval/stella-release/project-binding-release-gate.ts tests/eval/stella-release/project-binding-release-gate.test.ts tests/eval/stella-release/e2e/ticket-protocol-journey-report.ts tests/eval/stella-release/e2e/ticket-protocol-journey-report.test.ts scripts/eval-project-binding-offline.ts` | 0 errores, 0 warnings |
+| `pnpm exec vitest run tests/eval/stella-release` | todos los archivos de `tests/eval/stella-release` en verde, incluidos los pre-existentes (sin regresión) |
+| `pnpm exec tsx scripts/eval-project-binding-offline.ts` | `10/10 cases`, `8` controles negativos, **0** no detectados, `project-binding-harness-ready=true`, `local-runtime-ready=false`, `EXIT 0` |
+| `pnpm exec tsx scripts/eval-project-binding-offline.ts` (segunda corrida) | **byte-idéntica** a la primera (JSON estructurado comparado línea a línea) |
+
+No se ejecutó `test:unit` completo ni `build` (fuera del alcance de Fase 7).
+
+## Riesgos abiertos de esta línea
+
+- **R2-INT sigue abierto** — sólo su mitad de contrato de evaluación se
+  cierra aquí. La firma real de `bind_operation_ticket`/
+  `complete_operation_ticket` no cambió; `tests/e2e/stella-ticket-journey.e2e.test.ts`
+  sigue fijando la atribución incorrecta de hoy como comportamiento medido.
+- **La firma heredada sigue siendo el único camino real.** Nada en este
+  worktree impide que un futuro cambio añada los verbos `*ForExecution` como
+  wrapper SQL sin retirar las funciones antiguas — el control
+  `nc-legacy-signature-bypasses-project-gate` seguirá detectando ese estado
+  como vulnerable hasta que se demuestre lo contrario con un informe real.
+- **`server action usa proyecto del ticket en vez del derivado` es un riesgo
+  estructuralmente indetectable offline.** `nc-caller-derives-execution-project-from-ticket-not-request`
+  documenta que el protocolo no tiene forma de distinguir un
+  `executionProjectId` genuinamente derivado de la evidencia real de uno que
+  el llamante simplemente vuelve a leer del propio ticket. Sólo un runtime
+  real, con una acción de servidor real, puede cerrar esto.
+
+## Estado de entrega a integración
+
+`db/**`, `app/actions/**`, `components/**`, `lib/grounding/**` y
+`tests/e2e/**` sin tocar. Cero llamadas a proveedor. Cero stack persistente.
+Cero acceso remoto. Ningún push. `local-runtime-ready` sin cambios.
+
+`STELLA_RELEASE_TRAIN_4_2_READY_FOR_INTEGRATION`

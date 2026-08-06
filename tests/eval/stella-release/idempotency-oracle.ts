@@ -25,6 +25,19 @@ export interface QuotaOracleExpectation {
    *  charge to have used — proving the EFFECTIVE key, not merely that some
    *  key was used. */
   readonly expectedIdempotencyKey?: string
+  /**
+   * Train 4.2 (STELLA_RELEASE_PROJECT_BOUND_TICKET_GATE_TRAIN_4_2) — when a
+   * charge IS expected, the project the oracle requires it to be ATTRIBUTED
+   * to. Deliberately a SEPARATE, opt-in field rather than folded into
+   * `expectedIdempotencyKey`'s check: a caller that only ever checks
+   * organizationId + a charge count can pass while a charge silently drifts
+   * to a sibling project of the SAME organization — the exact insufficiency
+   * `nc-oracle-checking-only-organization-insufficient` in
+   * project-binding-harness.ts exists to demonstrate. Omitting this field
+   * (as every Train-4.1 case still does) means "this scenario does not
+   * assert project attribution" — never "attribution is assumed correct".
+   */
+  readonly expectedChargeProjectId?: string
 }
 
 /**
@@ -59,10 +72,17 @@ export function evaluateQuotaOracle(
       violations.push(
         `ticket ${expectation.chargeableTicketId} has ${forTicket.length} charge row(s) in the ledger, expected exactly 1`,
       )
-    } else if (expectation.expectedIdempotencyKey && forTicket[0]!.idempotencyKey !== expectation.expectedIdempotencyKey) {
-      violations.push(
-        `the charge for ticket ${expectation.chargeableTicketId} used idempotency key "${forTicket[0]!.idempotencyKey}", expected "${expectation.expectedIdempotencyKey}" — the EFFECTIVE key charged does not match the ticket's own server-derived key`,
-      )
+    } else {
+      if (expectation.expectedIdempotencyKey && forTicket[0]!.idempotencyKey !== expectation.expectedIdempotencyKey) {
+        violations.push(
+          `the charge for ticket ${expectation.chargeableTicketId} used idempotency key "${forTicket[0]!.idempotencyKey}", expected "${expectation.expectedIdempotencyKey}" — the EFFECTIVE key charged does not match the ticket's own server-derived key`,
+        )
+      }
+      if (expectation.expectedChargeProjectId && forTicket[0]!.projectId !== expectation.expectedChargeProjectId) {
+        violations.push(
+          `the charge for ticket ${expectation.chargeableTicketId} was attributed to project "${forTicket[0]!.projectId}", expected "${expectation.expectedChargeProjectId}" — charge.project_id must equal the project the execution actually ran against, not merely a project that shares the charge's organization`,
+        )
+      }
     }
   } else if (expectation.additionalCharges === 0) {
     // A "definitively zero charge" scenario must show zero NEW rows for the

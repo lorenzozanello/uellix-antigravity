@@ -116,6 +116,23 @@ export class TicketNotReservedError extends TicketProtocolError {
 export class TicketQueryMismatchError extends TicketProtocolError {
   constructor(ticketId: string) { super('TicketQueryMismatchError', `ticket ${ticketId} is bound to a different query`) }
 }
+/**
+ * RELEASE line — Train 4.2 (STELLA_RELEASE_PROJECT_BOUND_TICKET_GATE_TRAIN_4_2).
+ * Thrown by the `*ForExecution` verbs below when a caller asserts an
+ * `executionProjectId` that differs from the ticket's OWN `scope.projectId`.
+ * This is a DIFFERENT failure than `TicketScopeViolationError`: scope
+ * violations are about who is PRESENTING the ticket (org/project/actor of the
+ * caller); this is about which project the WORK actually executed against,
+ * independent of who presented the ticket — the exact distinction R2-INT
+ * names (docs/ops/contracts/CONTRACT_LEDGER.md#r2-int) as unenforced today,
+ * because `bind_operation_ticket`/`complete_operation_ticket` have no
+ * parameter through which to receive it at all.
+ */
+export class TicketExecutionProjectMismatchError extends TicketProtocolError {
+  constructor(ticketId: string) {
+    super('TicketExecutionProjectMismatchError', `ticket ${ticketId} is bound to a different project than the one this operation executed against`)
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /* The abstract protocol — Fase 1                                             */
@@ -173,6 +190,16 @@ export interface ChargeRecord {
   readonly chargeId: string
   readonly ticketId: string
   readonly organizationId: string
+  /**
+   * Train 4.2 — the project this charge is ATTRIBUTED to. Under every verb
+   * that predates Train 4.2 (`complete`, `retry`, `simulateConcurrentAttempts`)
+   * this is always `ticket.scope.projectId`, because those verbs have no
+   * other project to attribute to — the same structural limitation R2-INT
+   * names in the real `complete_operation_ticket` signature. The
+   * `*ForExecution` verbs are what let this value be PROVEN equal to an
+   * independently-asserted execution project, rather than merely assumed.
+   */
+  readonly projectId: string
   readonly idempotencyKey: string
 }
 
@@ -231,6 +258,36 @@ export interface OperationTicketReferenceProtocol extends OperationTicketProtoco
    */
   issueTrustingClientIdempotencyKey(scope: TicketScope, now: number, clientSuppliedKey: string): OperationTicket
   issueTrustingClientScope(sessionScope: TicketScope, now: number, requestedScope: TicketScope): OperationTicket
+
+  /**
+   * Train 4.2 (STELLA_RELEASE_PROJECT_BOUND_TICKET_GATE_TRAIN_4_2) — the
+   * PROJECT-BOUND verbs. Additive siblings of bind/complete/abort/inspect/
+   * retry: every one of the five verbs above remains exactly as Train 4.1
+   * left it, because that is precisely what R2-INT reports as true of the
+   * REAL `bind_operation_ticket`/`complete_operation_ticket` today — they
+   * have no parameter for the project the work executes against, so they
+   * cannot enforce it (see `nc-legacy-signature-bypasses-project-gate` in
+   * project-binding-harness.ts, which proves this by calling them directly).
+   *
+   * Each `*ForExecution` verb takes one additional argument,
+   * `executionProjectId` — the project the caller asserts the work is
+   * ACTUALLY executing against, independent of the ticket's own
+   * `scope.projectId`. The healthy model requires the two to be equal and
+   * throws `TicketExecutionProjectMismatchError` otherwise, BEFORE any
+   * charge, mutation, or read is allowed through to the corresponding
+   * legacy verb. This is the abstract shape R2-INT's fix must have; nothing
+   * here is SQL or a server-action signature.
+   */
+  bindForExecution(ticketId: string, scope: TicketScope, executionProjectId: string, queryFingerprint: string, now: number): OperationTicket
+  completeForExecution(ticketId: string, scope: TicketScope, executionProjectId: string, now: number): OperationOutcome
+  abortForExecution(ticketId: string, scope: TicketScope, executionProjectId: string, now: number): OperationTicket
+  /** Never throws for query/retry-style callers the way `retry` doesn't —
+   *  a mismatch resolves to `{kind:'rejected', reason:'execution_project_mismatch'}`. */
+  retryForExecution(ticketId: string, scope: TicketScope, executionProjectId: string, queryFingerprint: string, now: number): OperationOutcome
+  /** Read-only, like `inspect` — but THROWS on a foreign executionProjectId
+   *  rather than silently returning ticket state to a caller asserting the
+   *  wrong project, matching Fase 2 case 6's "inspect A desde B" requirement. */
+  inspectForExecution(ticketId: string, executionProjectId: string): OperationTicket | null
 }
 
 /* -------------------------------------------------------------------------- */
@@ -271,6 +328,18 @@ export type TicketProtocolDefect =
   | 'concurrent-double-charge'
   | 'client-supplied-idempotency-key-honoured'
   | 'client-supplied-scope-honoured'
+  // Train 4.2 — one per `*ForExecution` verb, each isolating exactly that
+  // verb's execution-project check (Fase 4: "bind/complete/abort/inspect sin
+  // expected project"), plus one storage-layer defect that misattributes a
+  // charge EVEN THOUGH the check itself passed (Fase 4: "cargo correcto en
+  // organización pero proyecto incorrecto") — a different failure mode than
+  // "the check was skipped", proving the oracle inspects the STORED
+  // attribution and not merely whether an exception was thrown.
+  | 'bind-ignores-execution-project'
+  | 'complete-ignores-execution-project'
+  | 'abort-ignores-execution-project'
+  | 'inspect-ignores-execution-project'
+  | 'charge-attributed-to-wrong-project-same-org'
 
 export interface ReferenceProtocolConfig {
   /** organizationId -> monthly quota. Missing entries mean "not provisioned"
@@ -373,7 +442,20 @@ export function createReferenceTicketProtocol(config: ReferenceProtocolConfig): 
 
     attemptCounter += 1
     const chargeId = deriveChargeId(ticket.ticketId, attemptCounter)
-    const record: ChargeRecord = { chargeId, ticketId: ticket.ticketId, organizationId: ticket.scope.organizationId, idempotencyKey: effectiveKey }
+    // Every verb that reaches chargeOnce — including the *ForExecution verbs,
+    // which delegate here only AFTER their own execution-project check has
+    // already passed — attributes the charge to the ticket's OWN project.
+    // That is correct precisely because, by the time any verb gets here, an
+    // executionProjectId (if one was asserted at all) has already been proven
+    // equal to it. The one exception is the `charge-attributed-to-wrong-
+    // project-same-org` defect: it deliberately drifts the STORED value away
+    // from that already-verified project, to prove the oracle inspects the
+    // charge's own projectId rather than merely trusting that the check ran.
+    const projectId =
+      defect === 'charge-attributed-to-wrong-project-same-org'
+        ? `${ticket.scope.projectId}::drifted-sibling-project`
+        : ticket.scope.projectId
+    const record: ChargeRecord = { chargeId, ticketId: ticket.ticketId, organizationId: ticket.scope.organizationId, projectId, idempotencyKey: effectiveKey }
     chargesByKey.set(chargeMapKey, record)
     chargeLog.push(record)
 
@@ -545,7 +627,7 @@ export function createReferenceTicketProtocol(config: ReferenceProtocolConfig): 
         attemptCounter += 1
         const chargeId = deriveChargeId(ticket.ticketId, attemptCounter)
         const record: ChargeRecord = {
-          chargeId, ticketId: ticket.ticketId, organizationId: ticket.scope.organizationId, idempotencyKey: keyFor(ticket),
+          chargeId, ticketId: ticket.ticketId, organizationId: ticket.scope.organizationId, projectId: ticket.scope.projectId, idempotencyKey: keyFor(ticket),
         }
         chargeLog.push(record)
         chargesByKey.set(`${ticket.scope.organizationId}::${record.idempotencyKey}`, record)
@@ -565,6 +647,57 @@ export function createReferenceTicketProtocol(config: ReferenceProtocolConfig): 
     issueTrustingClientScope(sessionScope, now, requestedScope) {
       if (defect !== 'client-supplied-scope-honoured') return protocol.issue(sessionScope, now)
       return protocol.issue(requestedScope, now)
+    },
+
+    /**
+     * Train 4.2. Each `*ForExecution` verb below does exactly two things:
+     * (1) require the ticket to exist, (2) check executionProjectId against
+     * the ticket's OWN scope.projectId — UNLESS the matching `*-ignores-
+     * execution-project` defect is set, in which case it skips straight to
+     * (3) delegating to the pre-existing legacy verb, completely unchanged.
+     * That delegation is deliberate: it is what proves these are additive
+     * wrappers, not a rewrite — the legacy verb's own scope/expiry/status
+     * logic still runs exactly as Train 4.1 left it.
+     */
+    bindForExecution(ticketId, scope, executionProjectId, queryFingerprint, now) {
+      const ticket = requireTicket(ticketId)
+      if (defect !== 'bind-ignores-execution-project' && executionProjectId !== ticket.scope.projectId) {
+        throw new TicketExecutionProjectMismatchError(ticketId)
+      }
+      return protocol.bind(ticketId, scope, queryFingerprint, now)
+    },
+
+    completeForExecution(ticketId, scope, executionProjectId, now) {
+      const ticket = requireTicket(ticketId)
+      if (defect !== 'complete-ignores-execution-project' && executionProjectId !== ticket.scope.projectId) {
+        throw new TicketExecutionProjectMismatchError(ticketId)
+      }
+      return protocol.complete(ticketId, scope, now)
+    },
+
+    abortForExecution(ticketId, scope, executionProjectId, now) {
+      const ticket = requireTicket(ticketId)
+      if (defect !== 'abort-ignores-execution-project' && executionProjectId !== ticket.scope.projectId) {
+        throw new TicketExecutionProjectMismatchError(ticketId)
+      }
+      return protocol.abort(ticketId, scope, now)
+    },
+
+    retryForExecution(ticketId, scope, executionProjectId, queryFingerprint, now) {
+      const ticket = tickets.get(ticketId)
+      if (ticket && executionProjectId !== ticket.scope.projectId) {
+        return { kind: 'rejected', ticketId, chargeId: null, reason: 'execution_project_mismatch' }
+      }
+      return protocol.retry(ticketId, scope, queryFingerprint, now)
+    },
+
+    inspectForExecution(ticketId, executionProjectId) {
+      const ticket = tickets.get(ticketId)
+      if (!ticket) return null
+      if (defect !== 'inspect-ignores-execution-project' && executionProjectId !== ticket.scope.projectId) {
+        throw new TicketExecutionProjectMismatchError(ticketId)
+      }
+      return ticket
     },
   }
 

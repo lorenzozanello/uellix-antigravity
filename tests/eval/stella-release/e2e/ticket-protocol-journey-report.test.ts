@@ -23,6 +23,8 @@ const CLEAN_REPORT: TicketProtocolJourneyReport = {
   concurrencyProducedExactlyOneCharge: true,
   providerCallCount: 0,
   observabilityEventSource: 'runtime-emitted',
+  executionProjectAttributionEnforced: true,
+  legacyTicketSignatureInvocable: false,
 }
 
 describe('evaluateTicketProtocolJourneyReadiness — the honest default on this branch', () => {
@@ -79,6 +81,30 @@ describe('evaluateTicketProtocolJourneyReadiness — fails closed on a synthetic
 
   it('rejects a concurrency stage that did not produce exactly one charge', () => {
     const result = evaluateTicketProtocolJourneyReadiness({ ...CLEAN_REPORT, concurrencyProducedExactlyOneCharge: false })
+    expect(result.ticketProtocolJourneyReady).toBe(false)
+  })
+})
+
+describe('evaluateTicketProtocolJourneyReadiness — Train 4.2, R2-INT (project attribution)', () => {
+  it('rejects a report where execution-project attribution is not enforced', () => {
+    const result = evaluateTicketProtocolJourneyReadiness({ ...CLEAN_REPORT, executionProjectAttributionEnforced: false })
+    expect(result.ticketProtocolJourneyReady).toBe(false)
+    expect(result.missingForTicketProtocolJourney.join(' ')).toMatch(/R2-INT/)
+    expect(result.missingForTicketProtocolJourney.join(' ')).toMatch(/train 5/)
+  })
+
+  it('rejects a report where the legacy (project-blind) signature is still invocable — the inverse boolean', () => {
+    const result = evaluateTicketProtocolJourneyReadiness({ ...CLEAN_REPORT, legacyTicketSignatureInvocable: true })
+    expect(result.ticketProtocolJourneyReady).toBe(false)
+    expect(result.missingForTicketProtocolJourney.join(' ')).toMatch(/legacyTicketSignatureInvocable is true/)
+  })
+
+  it('crossProjectAttackRejected and executionProjectAttributionEnforced are independent — a report cannot satisfy one to imply the other', () => {
+    // crossProjectAttackRejected true (a ticket PRESENTED cross-project is
+    // rejected) says nothing about a ticket whose OWN scope is presented
+    // correctly but whose execution runs against a different project — the
+    // two fields must both be required, neither implies the other.
+    const result = evaluateTicketProtocolJourneyReadiness({ ...CLEAN_REPORT, crossProjectAttackRejected: true, executionProjectAttributionEnforced: false })
     expect(result.ticketProtocolJourneyReady).toBe(false)
   })
 })

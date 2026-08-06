@@ -69,6 +69,33 @@ export interface TicketProtocolJourneyReport {
    *  'runtime-emitted' vs 'harness-constructed' distinction
    *  LocalRuntimeHarnessReport already draws for the grounding journey. */
   readonly observabilityEventSource: 'runtime-emitted' | 'harness-constructed'
+  /**
+   * Train 4.2 (STELLA_RELEASE_PROJECT_BOUND_TICKET_GATE_TRAIN_4_2) — R2-INT.
+   * `crossProjectAttackRejected` above proves a ticket PRESENTED with a
+   * foreign scope is rejected; it says nothing about a ticket presented with
+   * its OWN correct scope whose underlying operation executes against a
+   * DIFFERENT project — which is exactly what
+   * `tests/e2e/stella-ticket-journey.e2e.test.ts`'s "un ticket de OTRO
+   * proyecto de la misma organización y actor" case measures as TRUE
+   * (misattributed) against the real database today. This field is that
+   * DISTINCT claim: that `bind_operation_ticket`/`complete_operation_ticket`
+   * were called with a real execution-project parameter and rejected a
+   * mismatch — which requires a SQL signature this train does not write
+   * (CAPABILITIES train 5). False on every invocation on this branch.
+   */
+  readonly executionProjectAttributionEnforced: boolean
+  /**
+   * Train 4.2. MUST be false for `ticketProtocolJourneyReady` — the inverse
+   * of every other boolean here. True means the legacy, project-blind
+   * `bind_operation_ticket`/`complete_operation_ticket` signatures are STILL
+   * callable and still bypass any project check entirely, exactly as
+   * `nc-legacy-signature-bypasses-project-gate`
+   * (tests/eval/stella-release/project-binding-harness.ts) proves is true of
+   * today's real signatures. A future journey that adds a project-aware
+   * signature ALONGSIDE the old one, without removing the old one, must
+   * still report this as true — and must still fail readiness.
+   */
+  readonly legacyTicketSignatureInvocable: boolean
 }
 
 export interface TicketProtocolJourneyReadiness {
@@ -116,6 +143,12 @@ export function evaluateTicketProtocolJourneyReadiness(
   if (report.providerCallCount !== 0) missing.push(`providerCallCount is ${report.providerCallCount} — this journey must make zero calls to any provider`)
   if (report.observabilityEventSource !== 'runtime-emitted') {
     missing.push(`observabilityEventSource is '${report.observabilityEventSource}' — events must be emitted BY the runtime, not constructed by the harness, for this journey to certify the flow's telemetry`)
+  }
+  if (!report.executionProjectAttributionEnforced) {
+    missing.push('executionProjectAttributionEnforced is false — R2-INT (docs/ops/contracts/CONTRACT_LEDGER.md#r2-int): bind_operation_ticket/complete_operation_ticket must reject a real execution project that differs from the ticket\'s own, which requires a SQL signature this train does not write (CAPABILITIES train 5)')
+  }
+  if (report.legacyTicketSignatureInvocable) {
+    missing.push('legacyTicketSignatureInvocable is true — the legacy, project-blind bind_operation_ticket/complete_operation_ticket signatures must be proven NOT callable, not merely supplemented by a new one')
   }
 
   return { ticketProtocolJourneyReady: missing.length === 0, missingForTicketProtocolJourney: missing }
