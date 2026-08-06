@@ -608,7 +608,17 @@ describe('getStellaValidator server action', () => {
       setupSuccessfulCall()
       await getStellaValidator('proj-1', 'calculation', TICKET)
       expect(mockBindOperationTicket).toHaveBeenCalledTimes(1)
-      expect(mockBindOperationTicket).toHaveBeenCalledWith(TICKET, 'proj-1', expect.stringMatching(/^[0-9a-f]{64}$/))
+      // TRAIN 4.3 — CIERRE (R6a, prepared stella_0018). The FOURTH argument is
+      // the surface's own category, and it is asserted as a literal rather than
+      // with a matcher: what has to be true is that THIS action names
+      // `validator` and nothing else. A matcher over the vocabulary would pass
+      // on an action that named a sibling's capability, which is the defect.
+      expect(mockBindOperationTicket).toHaveBeenCalledWith(
+        TICKET,
+        'proj-1',
+        expect.stringMatching(/^[0-9a-f]{64}$/),
+        'validator',
+      )
     })
 
     it('refuses BEFORE the provider is called and holds no reservation to release', async () => {

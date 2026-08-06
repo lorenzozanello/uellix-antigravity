@@ -409,6 +409,55 @@ Cierra el residual de **R1** y **R6-INT**
 > e inspeccionarse pero ya no completarse — ni cobrarse por fuera del protocolo.
 > **Ningún cargo se borra.**
 
+### Train 4.3 — cierre: ligadura de categoría y retirada del consumo sin ticket (`stella_0018`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra **R6a** y **R6b**, los dos residuales que el cierre de evidencia del tren
+4.3 **midió** sobre una base con la cadena `0013`…`0017` instalada.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0018_category_bound_operation_tickets.sql` | `stella_0018_rollback.sql` | **ninguno todavía**; exige `stella_0013`, `stella_0014`, `stella_0015`, `stella_0016` y `stella_0017` **ya aplicados** (precondiciones duras en §0) | **R6a + R6b.** **No crea rol, esquema, tabla ni policy.** (1) `bind_operation_ticket(char(64), uuid, char(64), varchar(50))` — el bind que **reimpone la capacidad esperada en SQL**, antes del lock consultivo y antes de leer capacidad; `U0112` cuando la superficie no es aquella para la que se emitió el ticket. **Octava** función en `uellix_stella_ops`, concedida a `uellix_app`. (2) La firma de **tres** argumentos pasa a **delegar** en ella con `NULL` (sin expectativa) y se le **REVOCA** `EXECUTE` a `uellix_app`: sobrevive la firma, no la ruta. (3) `REVOKE EXECUTE ON uellix_stella.consume_stella_capacity(...) FROM uellix_app` — el consumo **sin ticket**, con categoría y clave de idempotencia elegidas por el llamante, deja de ser alcanzable desde el runtime | **DISEÑO — no aplicado** |
+
+> **Los dos defectos se MIDIERON, no se dedujeron.** Con `0013`…`0017`
+> instalados y como `uellix_app`: (a) un ticket emitido para `advisor`, ligado y
+> completado por la **ruta grounded** (verbo de tres argumentos) produce una fila
+> con `stella_role = 'advisor'` y `pipeline_step = 'advisor'` para una consulta
+> fundamentada — atribución falsa en una tabla **append-only**; (b)
+> `consume_stella_capacity(org, project, 'composer', <64 hex a elección>)`
+> devuelve `consumed` con **cero** tickets emitidos.
+
+> **Por qué en `bind` y no en `complete`.** `complete` corre **después** de la
+> llamada al proveedor: negarse ahí es negarse sobre trabajo ya hecho, que es la
+> forma exacta de R1 que esta campaña gastó dos paquetes en quitar. `bind` es el
+> único punto en el que negarse es gratis.
+
+> **Por qué el `REVOKE` y no sólo la búsqueda de llamantes.** `consume_stella_capacity`
+> no tiene ningún llamante en `app/**`, `lib/**`, `scripts/**` ni `db/**` — las
+> cinco acciones hermanas migraron al protocolo de tickets, que es estrictamente
+> más fuerte. Pero mientras `uellix_app` conserve `EXECUTE`, la ruta existe y una
+> acción futura la alcanza sin que ninguna prueba lo note. La función **no se
+> DROPea**: `stella_0016_rollback` espera encontrarla y borrar una función
+> publicada desde un paquete posterior es la edición destructiva que esta línea
+> rechaza. Conserva su dueño, así que sigue siendo alcanzable desde otro
+> `SECURITY DEFINER` de `uellix_cap_stella_quota` — encapsulada, no alcanzable.
+
+> **REAPLICAR `stella_0015`, `stella_0016` O `stella_0017` DESPUÉS DE
+> `stella_0018` ESTÁ BLOQUEADO.** Los tres afirman un conteo sobre
+> `uellix_stella_ops` (seis, seis y siete) y este paquete lo lleva a **ocho**, así
+> que los tres **abortan solos**. Además `stella_0016` §7 (3) afirma que
+> `uellix_app` **puede** ejecutar `consume_stella_capacity` — exactamente el grant
+> que este paquete retira—, así que su aborto es **por diseño**. Las tres
+> supersesiones están declaradas en
+> [`db/prepared-package-order.ts`](../prepared-package-order.ts).
+
+> **Orden de rollback: `stella_0018` antes que `stella_0017`.** El rollback
+> restaura el cuerpo autocontenido de `stella_0016` §6a en la firma de tres
+> argumentos **antes** de DROPear la de cuatro, porque el delegador la referencia.
+> Declarado sin adornos: **el rollback reabre R6a y R6b.** Existe porque un
+> paquete que no se puede retirar es un paquete que nadie puede aplicar con
+> seguridad, no porque retirarlo sea seguro.
+
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad

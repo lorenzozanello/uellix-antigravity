@@ -18,7 +18,7 @@
 // no reimplementation of U0110, and no fixture standing in for a charge.
 
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { readSourceText, toLf, bothLineEndings } from '@/tests/helpers/source-text'
 import {
@@ -169,17 +169,79 @@ describe('CAPABILITIES -> RUNTIME: the four new signatures are the four the adap
 
 describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refused before anything is published', () => {
   it('the registry names the canonical chain and exactly the signatures stella_0015 drops', () => {
-    // TRAIN 4.3 extended the chain by two. The list is asserted in FULL rather
-    // than with a `toContain`, and deliberately: the registry's whole purpose is
-    // to state a TOTAL order, and a partial assertion would pass on a chain
-    // missing a link.
-    expect(STELLA_TICKET_PACKAGE_CHAIN).toEqual([
-      'stella_0013_grounded_query_quota',
-      'stella_0014_operation_tickets',
-      'stella_0015_project_bound_operation_tickets',
-      'stella_0016_reserved_quota_semantics',
-      'stella_0017_governed_stella_consumption',
-    ])
+    // TRAIN 4.3 — CIERRE. What is asserted is the PROPERTY, not the length.
+    //
+    // The previous version of this test pinned the chain to a five-element
+    // literal. That assertion broke the day a sixth package was added — which
+    // sounds like the test working, except that the only way to satisfy it was
+    // to retype the new list, and a list retyped to make a test pass asserts
+    // nothing about order. What the registry actually has to guarantee is
+    // PRECEDENCE: every link comes after the one it depends on, the head is
+    // `stella_0013`, and no link is superseded by a package that precedes it.
+    expect(STELLA_TICKET_PACKAGE_CHAIN[0]).toBe('stella_0013_grounded_query_quota')
+    expect(STELLA_TICKET_PACKAGE_CHAIN.length).toBeGreaterThanOrEqual(5)
+
+    // Derived, never typed: the chain must be strictly increasing in the
+    // package number its own file name carries. That is the ordering an
+    // operator reads off `ls db/prepared/`, so a registry that disagreed with
+    // it would be a registry nobody could follow.
+    const ordinal = (pkg: string): number => {
+      const match = /^stella_(\d{4})_/.exec(pkg)
+      expect(match, `${pkg} is not a numbered stella package`).not.toBeNull()
+      return Number(match![1])
+    }
+    const ordinals = STELLA_TICKET_PACKAGE_CHAIN.map(ordinal)
+    for (let i = 1; i < ordinals.length; i += 1) {
+      expect(ordinals[i]!, `${STELLA_TICKET_PACKAGE_CHAIN[i]} does not follow its predecessor`)
+        .toBeGreaterThan(ordinals[i - 1]!)
+    }
+
+    // Every file the chain names exists, and carries a rollback. A chain that
+    // named a package nobody wrote would state an order over nothing.
+    for (const pkg of STELLA_TICKET_PACKAGE_CHAIN) {
+      expect(existsSync(`db/prepared/${pkg}.sql`), `db/prepared/${pkg}.sql is missing`).toBe(true)
+      const ordinalOf = String(ordinal(pkg)).padStart(4, '0')
+      expect(
+        existsSync(`db/prepared/stella_${ordinalOf}_rollback.sql`),
+        `stella_${ordinalOf}_rollback.sql is missing`,
+      ).toBe(true)
+    }
+
+    // PRECEDENCE, over the supersession registry itself: a FORWARD rule may only
+    // be superseded by a package that comes LATER in the chain. A rule pointing
+    // backwards would refuse the forward application of a package that is
+    // supposed to be applicable.
+    //
+    // ROLLBACK rules are judged differently and deliberately: a rollback is not
+    // a link of the chain, so there is no index to compare. What has to be true
+    // of one is that it is superseded by a package of the chain — the closure it
+    // would undo — and that it is actually a rollback rather than a forward
+    // package somebody forgot to list.
+    for (const rule of PREPARED_PACKAGE_SUPERSESSIONS) {
+      const to = (STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).indexOf(rule.supersededBy)
+      expect(to, `${rule.supersededBy} is not in the canonical chain`).toBeGreaterThanOrEqual(0)
+
+      const from = (STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).indexOf(rule.packageName)
+      if (from >= 0) {
+        expect(to, `${rule.supersededBy} does not come after ${rule.packageName}`).toBeGreaterThan(from)
+      } else {
+        expect(
+          rule.packageName.endsWith('_rollback'),
+          `${rule.packageName} is neither a link of the chain nor a rollback`,
+        ).toBe(true)
+        expect(
+          existsSync(`db/prepared/${rule.packageName}.sql`),
+          `db/prepared/${rule.packageName}.sql is missing`,
+        ).toBe(true)
+      }
+    }
+
+    // The LAST link is superseded by nothing — there is nothing after it to
+    // protect against — and the assertion is derived from the chain, so a
+    // package added without its rule fails here rather than leaving a silent
+    // gap in the guard.
+    const last = STELLA_TICKET_PACKAGE_CHAIN[STELLA_TICKET_PACKAGE_CHAIN.length - 1]!
+    expect(supersessionsFor(`${last}.sql`)).toHaveLength(0)
     // The guard's idea of "unsafe" must be the package's own. Both lists are
     // to_regprocedure spellings; a drift here would make the guard protect a
     // signature nobody publishes while missing the one that matters.
@@ -210,19 +272,62 @@ describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refu
   })
 
   it('every superseded package carries exactly the rules its successors justify, and no other script carries any', () => {
-    // TRAIN 4.3. Three packages are now superseded, and two of them by TWO
-    // successors each — `stella_0015` is superseded by both `stella_0016` (which
-    // replaces its bind/complete bodies IN PLACE) and `stella_0017` (which adds
-    // a seventh function its §4 (5) assertion forbids). Both rules are needed:
-    // a database can hold 0016 without 0017, and re-applying 0015 over either is
-    // a different regression with a different explanation.
-    expect(supersessionsFor('db/prepared/stella_0014_operation_tickets.sql')).toHaveLength(1)
-    expect(supersessionsFor('stella_0015_project_bound_operation_tickets.sql')).toHaveLength(2)
-    expect(supersessionsFor('stella_0016_reserved_quota_semantics.sql')).toHaveLength(1)
+    // TRAIN 4.3 — CIERRE. DERIVED, not counted.
+    //
+    // The previous version pinned three literal counts (1, 2, 1) and a total of
+    // 4. Every one of them had to be retyped when `stella_0018` arrived, which
+    // is the shape of an assertion that tracks a number instead of a property.
+    //
+    // The property: a package carries ONE rule per LATER package that supersedes
+    // it. So the count for a package is derivable — it is however many rules
+    // name it — and what has to be asserted is that each rule is DISTINCT in its
+    // superseder, carries what it would republish, and belongs to the chain.
+    for (const pkg of STELLA_TICKET_PACKAGE_CHAIN) {
+      const rules = supersessionsFor(`${pkg}.sql`)
+      const supersederNames = rules.map((r) => r.supersededBy)
+      expect(new Set(supersederNames).size, `${pkg} carries two rules for the same successor`)
+        .toBe(rules.length)
+      for (const rule of rules) {
+        expect(rule.packageName, 'supersessionsFor returned a rule for another package').toBe(pkg)
+        expect(
+          rule.wouldRepublish.length,
+          `${pkg} -> ${rule.supersededBy} names nothing it would republish`,
+        ).toBeGreaterThan(0)
+        expect(rule.why.length, `${pkg} -> ${rule.supersededBy} carries no explanation`)
+          .toBeGreaterThan(80)
+      }
+    }
 
-    // The HEAD of the chain is superseded by nothing — there is nothing after it
-    // to protect against.
-    expect(supersessionsFor('stella_0017_governed_stella_consumption.sql')).toHaveLength(0)
+    // Every rule in the registry names a script that EXISTS. A rule for a file
+    // nobody can apply is a refusal nobody will ever read.
+    //
+    // Not "belongs to the chain": adversarial review A found that
+    // `stella_0005c_rollback` re-GRANTs INSERT on the ledger to `authenticated`
+    // and `service_role`, which is exactly the privilege stella_0017 §1
+    // withdraws — so the registry has to be able to refuse a ROLLBACK too, and
+    // an assertion demanding chain membership would have forbidden the entry
+    // that closes it.
+    for (const rule of PREPARED_PACKAGE_SUPERSESSIONS) {
+      expect(
+        existsSync(`db/prepared/${rule.packageName}.sql`),
+        `${rule.packageName} carries a rule but no such prepared script exists`,
+      ).toBe(true)
+    }
+
+    // The rollback rules, specifically: at least one, and each must name what it
+    // would republish in the vocabulary of PRIVILEGES rather than signatures —
+    // what a rollback undoes here is a grant, and a refusal that named a
+    // function would send the operator looking for the wrong thing.
+    const rollbackRules = PREPARED_PACKAGE_SUPERSESSIONS.filter((r) =>
+      r.packageName.endsWith('_rollback'),
+    )
+    expect(rollbackRules.length, 'no rollback is registered as able to undo a closure').toBeGreaterThan(0)
+    for (const rule of rollbackRules) {
+      expect(
+        rule.wouldRepublish.some((w) => /GRANT|REVOKE/.test(w)),
+        `${rule.packageName} does not name the privilege it would restore`,
+      ).toBe(true)
+    }
     // And a package of another campaign carries no rule at all, so the guard
     // costs zero round trips there.
     for (const other of ['stella_0013_grounded_query_quota', 'grounding_0004_runtime_attestation']) {
@@ -231,7 +336,16 @@ describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refu
     // Exact-match, never prefix: a hypothetical stella_0014b must not silently
     // inherit stella_0014's rule.
     expect(supersessionsFor('stella_0014b_something.sql')).toHaveLength(0)
-    expect(PREPARED_PACKAGE_SUPERSESSIONS).toHaveLength(4)
+    // NOT a fixed total. `supersessionsFor` PARTITIONS the registry: the sum of
+    // the per-package counts is the whole of it, and nothing is lost. That
+    // identity says something a literal cannot, and it stays true for every
+    // future package.
+    const named = new Set(PREPARED_PACKAGE_SUPERSESSIONS.map((r) => r.packageName))
+    const partitioned = [...named].reduce(
+      (total, pkg) => total + supersessionsFor(`${pkg}.sql`).length,
+      0,
+    )
+    expect(partitioned).toBe(PREPARED_PACKAGE_SUPERSESSIONS.length)
   })
 
   it('the probe asks the CATALOG, not a version table, and is a fixed literal', () => {

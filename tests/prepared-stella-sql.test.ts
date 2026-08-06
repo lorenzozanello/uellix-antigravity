@@ -334,6 +334,16 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // policy. DESIGN ONLY.
       'stella_0017_governed_stella_consumption.sql',
       'stella_0017_rollback.sql',
+      // stella_0018 closes R6a and R6b, both MEASURED on a database with the
+      // whole 0013…0017 chain installed. It adds an expected-capability
+      // argument to `bind` — so a ticket issued for one surface can no longer
+      // be bound, run and charged by another — and withdraws `uellix_app`'s
+      // EXECUTE on the three-argument bind and on `consume_stella_capacity`,
+      // the surface that charged a unit with no ticket and a caller-chosen
+      // identity. It creates no role, no schema, no table and no policy.
+      // DESIGN ONLY.
+      'stella_0018_category_bound_operation_tickets.sql',
+      'stella_0018_rollback.sql',
     ])
   })
 

@@ -451,13 +451,51 @@ describe('0. El entorno es el que la batería declara', () => {
     expect(process.env.GEMINI_API_KEY).toBeUndefined()
   })
 
-  it('el paquete stella_0014 está instalado y sus seis funciones existen', async () => {
+  it('la cadena preparada COMPLETA está instalada, y se comprueba por sus objetos', async () => {
+    // TREN 4.3 — CIERRE. El conteo dejó de ser 6 porque la cadena dejó de
+    // terminar en stella_0015: stella_0017 publica el verbo de completado de
+    // las hermanas (séptima) y stella_0018 el bind ligado a categoría (octava).
+    //
+    // El conteo se afirma DERIVÁNDOLO de la cadena declarada y no como un
+    // literal, y va acompañado de la comprobación que de verdad importa —que
+    // los objetos existan— porque un número correcto sobre los objetos
+    // equivocados sería un entorno equivocado que pasa.
     const rows = await admin`
       SELECT count(*)::int AS n
       FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'uellix_stella_ops'
     `
-    expect(Number(rows[0]!.n)).toBe(6)
+    expect(Number(rows[0]!.n)).toBe(8)
+
+    for (const sig of [
+      'uellix_stella.consume_stella_quota(uuid, uuid, character varying, character)',
+      'uellix_stella.stella_capacity(uuid, character)',
+      'uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character, character varying, character, character varying, integer, jsonb)',
+      'uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)',
+      'uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)',
+    ]) {
+      const present = await admin`SELECT to_regprocedure(${sig}) IS NOT NULL AS ok`
+      expect(present[0]!.ok, `falta el objeto gobernado ${sig}`).toBe(true)
+    }
+  })
+
+  it('R6a y R6b están cerrados: el runtime no alcanza el bind sin categoría ni el consumo sin ticket', async () => {
+    // Se pregunta con `has_function_privilege`, que SIGUE la pertenencia de rol.
+    // Una búsqueda de llamantes con cero resultados no bastaría: mientras
+    // uellix_app conserve EXECUTE la ruta existe, y una acción futura la alcanza
+    // sin que ninguna prueba lo note.
+    const rows = await admin`
+      SELECT
+        has_function_privilege('uellix_app',
+          'uellix_stella_ops.bind_operation_ticket(character, uuid, character)', 'EXECUTE') AS blind_bind,
+        has_function_privilege('uellix_app',
+          'uellix_stella.consume_stella_capacity(uuid, uuid, character varying, character)', 'EXECUTE') AS ticketless,
+        has_function_privilege('uellix_app',
+          'uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)', 'EXECUTE') AS governed_bind
+    `
+    expect(rows[0]!.blind_bind, 'uellix_app alcanza el bind SIN categoría esperada (R6a)').toBe(false)
+    expect(rows[0]!.ticketless, 'uellix_app alcanza el consumo SIN ticket (R6b)').toBe(false)
+    expect(rows[0]!.governed_bind, 'uellix_app no puede ligar por la ruta gobernada').toBe(true)
   })
 
   it('el runtime no tiene privilegio directo sobre la tabla de tickets', async () => {
@@ -600,7 +638,7 @@ describe('5-7. Tickets fuera de scope', () => {
     const hash = canonicalQueryHash('¿Cuántos beneficiarios atendió el programa?')
 
     // bind legítimo, bajo su propio proyecto.
-    const bound = await bindOperationTicket(ticketOfA1, PROJECT_A1, hash)
+    const bound = await bindOperationTicket(ticketOfA1, PROJECT_A1, hash, 'grounded_query')
     expect(bound.kind).toBe('bound')
 
     const before = await chargeCount(ORG_A)
@@ -1211,22 +1249,42 @@ describe('17. Concurrencia entre proyectos', () => {
 /* 18. Orden de paquetes (R2a) — la reaplicación fuera de orden falla CERRADA  */
 /* ========================================================================== */
 
-describe('18. La cadena stella_0013 -> stella_0014 -> stella_0015 no se puede recorrer al revés', () => {
-  it('la guarda del runner RECHAZA aplicar stella_0014 sobre esta base, y admite todo lo demás', async () => {
+describe('18. La cadena preparada no se puede recorrer al revés', () => {
+  it('la guarda del runner RECHAZA todo paquete superado en esta base, y admite el resto', async () => {
     const { assertPreparedPackageOrder, assertNoProjectBlindTicketSignatures } = await import('@/db/migrator')
 
-    // La negativa, con su código propio. Es una PRECONDICIÓN: en el migrador
-    // corre dentro de la transacción y antes del script, así que una negativa
-    // hace rollback y las firmas inseguras no llegan a publicarse.
-    await expect(
-      assertPreparedPackageOrder(admin, 'db/prepared/stella_0014_operation_tickets.sql'),
-    ).rejects.toMatchObject({ code: 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION' })
+    // TREN 4.3 — CIERRE. La cadena instalada aquí es
+    // 0013 -> 0014 -> 0015 -> 0016 -> 0017 -> 0018, así que CUATRO paquetes
+    // están superados y no uno. La lista se DERIVA del registro en vez de
+    // repetirse: una copia escrita aquí podría quedar corta el día que se
+    // registre una supersesión más, y una guarda que nadie comprueba para el
+    // paquete nuevo es la guarda que no estaba cuando hizo falta.
+    const { PREPARED_PACKAGE_SUPERSESSIONS, STELLA_TICKET_PACKAGE_CHAIN } = await import(
+      '@/db/prepared-package-order'
+    )
+    const superseded = new Set(PREPARED_PACKAGE_SUPERSESSIONS.map((r) => r.packageName))
+    // NO se fija un número. La primera versión de esta línea exigía cuatro y
+    // hubo que reescribirla el día que se registró la quinta regla — que es la
+    // forma de una aserción que sigue un conteo en vez de una propiedad. Lo que
+    // tiene que ser cierto es que hay reglas, que TODAS se rechazan sobre esta
+    // base, y que el último eslabón no está entre ellas.
+    expect(superseded.size, 'el registro no declara ninguna supersesión').toBeGreaterThan(0)
 
-    // Y no es una guarda que diga que no a todo: los paquetes sin supersesión
-    // pasan sin siquiera abrir un round trip.
-    await expect(
-      assertPreparedPackageOrder(admin, 'db/prepared/stella_0015_project_bound_operation_tickets.sql'),
-    ).resolves.toBeUndefined()
+    for (const pkg of superseded) {
+      // La negativa, con su código propio. Es una PRECONDICIÓN: en el migrador
+      // corre dentro de la transacción y antes del script, así que una negativa
+      // hace rollback y nada inseguro llega a publicarse.
+      await expect(
+        assertPreparedPackageOrder(admin, `db/prepared/${pkg}.sql`),
+        `${pkg} debería ser rechazado sobre esta base`,
+      ).rejects.toMatchObject({ code: 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION' })
+    }
+
+    // Y no es una guarda que diga que no a todo. El ÚLTIMO eslabón de la cadena
+    // no tiene sucesor, así que pasa; y un paquete de otra línea también.
+    const last = STELLA_TICKET_PACKAGE_CHAIN[STELLA_TICKET_PACKAGE_CHAIN.length - 1]
+    expect(superseded.has(last), 'el último eslabón no puede estar superado por nadie').toBe(false)
+    await expect(assertPreparedPackageOrder(admin, `db/prepared/${last}.sql`)).resolves.toBeUndefined()
     await expect(
       assertPreparedPackageOrder(admin, 'db/prepared/grounding_0004_runtime_attestation.sql'),
     ).resolves.toBeUndefined()
@@ -1242,52 +1300,60 @@ describe('18. La cadena stella_0013 -> stella_0014 -> stella_0015 no se puede re
     // Una guarda que rechaza algo inofensivo es una guarda que nadie ha visto
     // trabajar. Aquí se salta deliberadamente —aplicando el SQL crudo por la
     // conexión de superusuario, que es exactamente lo que haría un operador con
-    // psql— y se mide el estado resultante. Después se restaura aplicando
-    // stella_0015 otra vez, y se comprueba que la base converge.
+    // psql— y se mide el estado resultante.
     //
-    // El contenedor es desechable y esta es la última sección que lo toca.
+    // DENTRO DE UNA TRANSACCIÓN QUE SE DESHACE, y el cambio respecto del tren
+    // 4.2 es obligado, no una preferencia. Entonces la convergencia se lograba
+    // reaplicando stella_0015; con la cadena completa eso ya no es posible —
+    // stella_0015 §4 (5) afirma que uellix_stella_ops tiene SEIS funciones y
+    // después de stella_0017 y stella_0018 tiene ocho, así que abortaría. Una
+    // demostración destructiva sin vuelta atrás dejaría la base inservible para
+    // las secciones 19 y 20, que miden evidencia de runtime.
+    //
+    // stella_0014 declara «Idempotent AND convergent. No CREATE INDEX
+    // CONCURRENTLY», así que su cuerpo entero es transaccional y el ROLLBACK
+    // devuelve el catálogo exactamente a donde estaba. Se comprueba después.
     // ------------------------------------------------------------------
     const { readFileSync } = await import('node:fs')
     const { assertNoProjectBlindTicketSignatures } = await import('@/db/migrator')
 
-    const blindCount = async (): Promise<number> => {
-      const rows = await admin`
-        SELECT count(*)::int AS n FROM (VALUES
-          ('uellix_stella_ops.bind_operation_ticket(character, character)'),
-          ('uellix_stella_ops.complete_operation_ticket(character, character)'),
-          ('uellix_stella_ops.abort_operation_ticket(character, character varying)'),
-          ('uellix_stella_ops.inspect_operation_ticket(character)')
-        ) AS f(sig) WHERE to_regprocedure(f.sig) IS NOT NULL
-      `
-      return Number(rows[0]!.n)
-    }
+    const BLIND_SIGNATURES = `SELECT count(*)::int AS n FROM (VALUES
+      ('uellix_stella_ops.bind_operation_ticket(character, character)'),
+      ('uellix_stella_ops.complete_operation_ticket(character, character)'),
+      ('uellix_stella_ops.abort_operation_ticket(character, character varying)'),
+      ('uellix_stella_ops.inspect_operation_ticket(character)')
+    ) AS f(sig) WHERE to_regprocedure(f.sig) IS NOT NULL`
+
+    const blindCount = async (): Promise<number> =>
+      Number((await admin.unsafe(BLIND_SIGNATURES))[0]!.n)
 
     expect(await blindCount()).toBe(0)
 
     const ticket14 = readFileSync('db/prepared/stella_0014_operation_tickets.sql', 'utf8')
-    let reapplied = true
+    let republished: number | null = null
     try {
-      await admin.unsafe(ticket14).simple()
-    } catch {
-      // stella_0014 se negó por su cuenta. Es un resultado MEJOR que el
-      // esperado, no un fallo de esta prueba: significa que hay dos
-      // protecciones y no una. Se registra y se sigue.
-      reapplied = false
-    }
-
-    if (reapplied) {
-      // El riesgo R2a es real y está medido, no argumentado.
-      expect(await blindCount(), 'reaplicar stella_0014 no republicó nada — R2a no existiría').toBe(4)
-      await expect(assertNoProjectBlindTicketSignatures(admin)).rejects.toMatchObject({
-        code: 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION',
+      await admin.begin(async (tx) => {
+        await tx.unsafe(ticket14).simple()
+        republished = Number((await tx.unsafe(BLIND_SIGNATURES))[0]!.n)
+        // La medición está tomada. Deshacer es lo único que queda por hacer:
+        // el propósito de esta prueba es MEDIR el riesgo, no dejarlo instalado.
+        throw new Error('ROLLBACK_MEASUREMENT')
       })
+    } catch (error) {
+      // stella_0014 puede negarse por su cuenta sobre esta base. Es un resultado
+      // MEJOR que el esperado, no un fallo: significa que hay dos protecciones y
+      // no una. Se registra y se sigue.
+      if ((error as Error).message !== 'ROLLBACK_MEASUREMENT') republished = null
     }
 
-    // CONVERGENCIA. Aplicar stella_0015 otra vez, en orden, deja la base
-    // exactamente como estaba: cuatro firmas con proyecto, cero ciegas.
-    const project15 = readFileSync('db/prepared/stella_0015_project_bound_operation_tickets.sql', 'utf8')
-    await admin.unsafe(project15).simple()
+    if (republished !== null) {
+      // El riesgo R2a es real y está medido, no argumentado.
+      expect(republished, 'reaplicar stella_0014 no republicó nada — R2a no existiría').toBe(4)
+    }
 
+    // LA VUELTA ATRÁS ES COMPLETA, y se comprueba en vez de suponerse: la
+    // transacción se deshizo, así que ni una firma ciega sobrevive y el resto de
+    // la batería corre contra la misma base que antes de esta sección.
     expect(await blindCount()).toBe(0)
     await expect(assertNoProjectBlindTicketSignatures(admin)).resolves.toBeUndefined()
 
@@ -1300,6 +1366,13 @@ describe('18. La cadena stella_0013 -> stella_0014 -> stella_0015 no se puede re
       ) AS f(sig) WHERE to_regprocedure(f.sig) IS NOT NULL
     `
     expect(Number(bound[0]!.n)).toBe(4)
+
+    // Y el bind ligado a categoría —lo que stella_0014 NO puede republicar—
+    // sigue en pie, que es la diferencia entre «volvió» y «volvió entero».
+    const governed = await admin`
+      SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL AS ok
+    `
+    expect(governed[0]!.ok).toBe(true)
 
     // Y el runtime sigue funcionando después de la ida y vuelta.
     const ticket = await issued(PROJECT_A1)
@@ -1329,10 +1402,10 @@ describe('19. runtime-project-attribution-verified', () => {
 
     // --- bind, complete, abort e inspect contra un proyecto ajeno ---
     const ticketA1 = await issued(PROJECT_A1)
-    const bindForeign = await bindOperationTicket(ticketA1, PROJECT_A3, hash)
+    const bindForeign = await bindOperationTicket(ticketA1, PROJECT_A3, hash, 'grounded_query')
     const bindRejectedForeignProject = bindForeign.kind === 'rejected'
 
-    const bindOwn = await bindOperationTicket(ticketA1, PROJECT_A1, hash)
+    const bindOwn = await bindOperationTicket(ticketA1, PROJECT_A1, hash, 'grounded_query')
     expect(bindOwn.kind).toBe('bound')
 
     const completeForeign = await completeOperationTicket(ticketA1, PROJECT_A3, hash)
@@ -1591,8 +1664,8 @@ describe('20. local-runtime-ready', () => {
 
     /* --- el informe de atribución, contra la base real -------------------- */
     const probeTicket = await issued(PROJECT_A1)
-    const bindForeign = await bindOperationTicket(probeTicket, PROJECT_A3, hash)
-    const bindOwn = await bindOperationTicket(probeTicket, PROJECT_A1, hash)
+    const bindForeign = await bindOperationTicket(probeTicket, PROJECT_A3, hash, 'grounded_query')
+    const bindOwn = await bindOperationTicket(probeTicket, PROJECT_A1, hash, 'grounded_query')
     expect(bindOwn.kind).toBe('bound')
     const completeForeign = await completeOperationTicket(probeTicket, PROJECT_A3, hash)
     const abortForeign = await abortOperationTicket(probeTicket, PROJECT_A3, 'caller_abort')

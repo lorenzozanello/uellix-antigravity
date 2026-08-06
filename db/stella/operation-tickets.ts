@@ -149,6 +149,18 @@ const TICKET_ERROR_CODES = {
    * append-only ledger.
    */
   RESERVATION_NOT_LIVE: 'U0111',
+  /**
+   * R6a (prepared stella_0018). The ticket exists, belongs to this
+   * organization, this actor and this project — and was issued for a DIFFERENT
+   * capability than the surface presenting it.
+   *
+   * Raised by `bind_operation_ticket`, BEFORE the advisory lock and before any
+   * capacity is read, so a cross-category presentation reserves nothing, runs
+   * nothing and charges nothing. It is the structural half of the property
+   * `category_mismatch` below describes: until stella_0018 the comparison
+   * existed only in Node, and only on the five sibling surfaces.
+   */
+  CATEGORY_MISMATCH: 'U0112',
 } as const
 
 /**
@@ -189,10 +201,20 @@ export type OperationTicketRejection =
    * That is an ATTRIBUTION defect of exactly the shape R2-INT reports for the
    * project, and it is closed the same way: by comparing, before the work runs,
    * a value the server derived against the value welded onto the ticket at
-   * issue. The comparison happens in Node because no published function accepts
-   * an expected category, and adding one would mean editing a CAPABILITIES
-   * package from the integration line. Recorded as a residual: a database-side
-   * `p_expected_category` would make this structural instead of layered.
+   * issue.
+   *
+   * TRAIN 4.3 CLOSEOUT. The residual this comment used to record — "a
+   * database-side `p_expected_category` would make this structural instead of
+   * layered" — is CLOSED by prepared stella_0018. The comparison now happens in
+   * SQL, at `bind`, above the advisory lock and above every capacity read, and
+   * the argument is mandatory. The Node comparison in
+   * `runGovernedStellaOperation` survives as a second, independent statement of
+   * the same property; it is no longer the only one.
+   *
+   * The claim in the paragraph above — "the database is already safe" — was
+   * true only of the five sibling surfaces. The grounded action ran no
+   * comparison at all, and the closeout MEASURED an `advisor` ticket binding,
+   * running a grounded query and being charged as `advisor`.
    */
   | 'category_mismatch'
   | 'unavailable'
@@ -309,6 +331,16 @@ function classifyTicketError(error: unknown): OperationTicketRejection {
       // that is what it is, and because the caller's obligation is identical to
       // an expiry: do not present the answer, do not retry this ticket.
       return 'expired'
+    case TICKET_ERROR_CODES.CATEGORY_MISMATCH:
+      // R6a. NOT collapsed into `out_of_scope`, and the asymmetry with
+      // `PROJECT_MISMATCH` below is deliberate. A cross-project presentation is
+      // a tenancy question and the product answer must not let a caller probe
+      // it. A cross-CATEGORY presentation is a statement about the SURFACE the
+      // caller reached, which it already knows — it chose it — so naming the
+      // reason reveals nothing it did not supply. Keeping it distinct is what
+      // lets the driver emit `category_mismatch` observability and the harness
+      // assert the refusal happened at bind rather than anywhere later.
+      return 'category_mismatch'
     case TICKET_ERROR_CODES.PROJECT_MISMATCH:
       // Collapsed into `out_of_scope` ON PURPOSE, and not because the union is
       // inconvenient to widen. Every scope failure reaches the reviewer as one
@@ -434,6 +466,7 @@ export async function bindOperationTicket(
   ticketId: string,
   expectedProjectId: string,
   queryHash: string,
+  expectedCategory: StellaTicketCategory,
 ): Promise<BindTicketResult> {
   // Refused in Node so a malformed digest never becomes a database round trip
   // that comes back as U0100 and has to be classified.
@@ -441,6 +474,20 @@ export async function bindOperationTicket(
     return { kind: 'rejected', reason: 'malformed' }
   }
   if (!isProjectId(expectedProjectId)) return unboundProject()
+  // R6a. REQUIRED since stella_0018, and refused here for the edges TypeScript
+  // does not police — a value that crossed a JSON boundary, an `as never` cast,
+  // a test double passing `undefined`. `ungoverned` rather than `malformed`: a
+  // surface that cannot name its own capability has not come through a governed
+  // issuance path.
+  //
+  // NEVER defaulted to the ticket's own category. That substitution is the
+  // defect R6a reports, written as a convenience: the ticket's category is what
+  // the comparison is AGAINST, so using it as the expected value makes every
+  // comparison trivially true — the same trap `unboundProject` names for the
+  // project.
+  if (!isStellaTicketCategory(expectedCategory)) {
+    return { kind: 'rejected', reason: 'ungoverned' }
+  }
 
   try {
     const rows = await withOrganizationDatabaseContext(() =>
@@ -449,7 +496,8 @@ export async function bindOperationTicket(
         FROM uellix_stella_ops.bind_operation_ticket(
           ${ticketId}::char(64),
           ${expectedProjectId}::uuid,
-          ${queryHash}::char(64)
+          ${queryHash}::char(64),
+          ${expectedCategory}::varchar(50)
         )
       `),
     )

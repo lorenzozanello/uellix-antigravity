@@ -229,7 +229,14 @@ export async function runGovernedStellaOperation<T, F>(
   //    without seeing a live reservation at all, so keeping both would mean two
   //    numbers that can disagree — and the losing one is the one the reviewer
   //    was shown.
-  const bound = await bindOperationTicket(ticket, projectId, operationHash)
+  //
+  //    AND THIS IS ALSO THE CATEGORY CHECK, since prepared stella_0018. The
+  //    surface's own constant travels with the call and SQL compares it against
+  //    the value welded onto the ticket at issue, BEFORE the advisory lock and
+  //    before any capacity is read. A cross-category presentation therefore
+  //    reserves nothing — where the Node comparison below, which is older,
+  //    could only release a reservation it had already taken.
+  const bound = await bindOperationTicket(ticket, projectId, operationHash, category)
 
   if (bound.kind === 'already_completed') {
     emitTicketEvent('grounded_query_retried', events, { ticketId: ticket, attempt: 2 })
@@ -246,6 +253,10 @@ export async function runGovernedStellaOperation<T, F>(
   }
 
   if (bound.kind === 'rejected') {
+    // `category_mismatch` arrives here since stella_0018 — refused by SQL at
+    // bind, with nothing reserved and nothing to release. The event is emitted
+    // with the same reason code the Node comparison below emits, so an operator
+    // reading the stream cannot tell which layer refused and does not have to.
     emitTicketEvent('replay_rejected', events, { ticketId: ticket, reasonCode: bound.reason })
     return { kind: 'rejected', reason: bound.reason }
   }

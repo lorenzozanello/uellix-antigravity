@@ -1057,3 +1057,140 @@ En consecuencia: **`R1` y `R6-INT` siguen abiertos**,
 `reserved-quota-runtime-verified` sigue `false`, `local-runtime-ready` sigue
 `false`, staging sigue bloqueado, hosted sigue bloqueado, las banderas siguen en
 `false` e `INT-GR-001`, `INT-GR-003` e `INT-PR-001` siguen pendientes.
+
+---
+
+## Tren 4.3 — CIERRE DE EVIDENCIA (R6a / R6b) — `stella_0018`
+
+**Fecha:** 2026-08-06. **Rama:** `codex/stella-integration`.
+
+**Resultado: PARCIAL.** Dos riesgos residuales que el tren 4.3 registró como
+**MINOR** se midieron contra una base real y resultaron ser **MAJOR** y
+**BLOCKER**. Están cerrados con un paquete correctivo aditivo, `stella_0018`, y
+la evidencia de ese cierre **sí** se ejecutó. La evidencia que el cierre completo
+exige —el E2E multicategoría, la inspección de filas del ledger por segunda
+conexión, la validación de observabilidad de runtime y la batería completa de
+dry-runs— **no** se ejecutó, así que `reserved-quota-runtime-verified` sigue en
+**`false`** y `local-runtime-ready` sigue en **`false`**.
+
+### Lo que se midió, y por qué la clasificación anterior era optimista
+
+Contra un PostgreSQL desechable (`--network none`, cero volúmenes, baseline
+restaurado, cadena `0013`→`0017` aplicada), como `uellix_app`, con el actor de
+sesión fijado a un miembro de la organización:
+
+| # | Secuencia medida | Resultado |
+|---|---|---|
+| R6a | `issue(org, proj, 'advisor')` → `bind(t, proj, <digest grounded>)` → `complete(t, proj, <digest grounded>)` | `completed`. Una fila con `stella_role = 'advisor'` y `pipeline_step = 'advisor'` para una **consulta fundamentada** |
+| R6b (i) | `consume_stella_capacity(org, proj, 'composer', <64 hex a elección>)` | `consumed`. **Cero** tickets emitidos |
+| R6b (ii) | `consume_stella_quota(org, proj, 'composer', <64 hex a elección>)` | `consumed`. **Cero** tickets emitidos, y **sin término de reservas** en su aritmética |
+
+**R6a era MAJOR, no MINOR.** El registro anterior decía «la base ya es segura —
+`complete_operation_ticket` lee la categoría de la FILA, así que una presentación
+cruzada no puede producir un cargo con categoría falsa». Es cierto y no es el
+punto: precisamente porque la lee de la fila, **no hay desajuste que detectar** y
+la conversión no se niega. El cargo entero —rol, paso, unidad— queda atribuido a
+la capacidad del ticket mientras el trabajo ejecutado fue el de otra, en una
+tabla append-only donde esa atribución no se puede corregir. La ruta explotable
+no era hipotética: `app/actions/stella/grounded-query.ts` no hacía comprobación
+de categoría alguna, y su propio comentario afirmaba —falsamente— que un ticket
+de otra categoría «ya habría fallado el digest o la comparación de proyecto». El
+digest es el que **esa** acción liga; el proyecto es el mismo.
+
+**R6b era BLOCKER, y por la función equivocada.** El registro nombraba
+`consume_stella_capacity` —la envoltura de `stella_0016`, que nunca tuvo
+llamante— y concluía «es gobernada (archiva `idempotency_key`), así que no
+reabre R6-INT». La clave de idempotencia la elige el llamante, así que el CHECK
+`stella_interactions_governed_identity_check` (`NOT NULL`, `NOT VALID`) se
+satisface con 64 caracteres hex cualesquiera y no sostiene la afirmación por sí
+solo. Y debajo de la envoltura está `uellix_stella.consume_stella_quota`, que
+`stella_0013` §7 concede a `uellix_app`, que **ningún** paquete de la cadena
+`0014`→`0017` retira, y que cuenta **sólo filas cobradas** — de modo que es un
+cargo sin ticket que además es ciego a una reserva viva, y compone con una
+conversión que no evalúa límite en el sobreconsumo que `stella_0017` §0 midió
+(`Consumed = 2` contra `Limit = 1`). Lo encontró la **revisión adversarial A**.
+
+### El cierre — `stella_0018_category_bound_operation_tickets.sql`
+
+Aditivo. No edita ningún paquete publicado, no DROPea nada, no crea rol, esquema,
+tabla ni policy.
+
+| § | Qué hace |
+|---|---|
+| 1 | `bind_operation_ticket(char(64), uuid, char(64), varchar(50))` — el bind que **reimpone la capacidad esperada en SQL**, con `U0112`, **antes** del lock consultivo, **antes** de toda lectura de capacidad y **antes** del corto-circuito de re-bind idempotente. El argumento es **obligatorio**: `NULL` se rechaza con `U0100` |
+| 2 | La firma de **tres** argumentos pasa a **RAISE `U0106` incondicionalmente**. No delega con `NULL` — eso sería el bind sin comprobación con el nombre del gobernado. Sobrevive la firma, no la ruta |
+| 3 | `GRANT EXECUTE` de la firma de cuatro a `uellix_app`; `REVOKE` de la de tres |
+| 4 | `REVOKE EXECUTE` a `uellix_app` sobre `consume_stella_capacity` **y** sobre `consume_stella_quota`. Ninguna se DROPea: conservan su dueño (`uellix_cap_stella_quota`), así que siguen alcanzables desde otro `SECURITY DEFINER` de ese rol — encapsuladas, no alcanzables |
+| 5 | Auto-verificación: lee el **cuerpo publicado** con `pg_get_functiondef` (no sólo firmas y grants), impone el orden de las cláusulas, y pregunta `has_function_privilege` **sobre `pg_roles`** —que sigue la pertenencia de rol— por las tres superficies y ocho principales de runtime, `authenticator` incluido |
+
+**Orden.** Lleva `uellix_stella_ops` a **ocho** funciones, así que `stella_0015`,
+`stella_0016` y `stella_0017` ya no pueden reaplicarse — los tres abortan solos,
+y las tres supersesiones están registradas en `db/prepared-package-order.ts`.
+`stella_0016` §7 (3) afirma que `uellix_app` **puede** ejecutar
+`consume_stella_capacity`: su aborto es **por diseño**, no una regresión.
+
+**Una cuarta supersesión, y no es de la cadena.** `stella_0005c_rollback.sql`
+concede `INSERT` sobre `public.stella_interactions` a `authenticated` y
+`service_role` — exactamente lo que `stella_0017` §1 retira, y el propio
+`stella_0017` nombra ese archivo como la vía de regreso. El registro no lo cubría
+y el runner lo habría aplicado sin objetar. Lo encontró la **revisión
+adversarial A**.
+
+### Evidencia EJECUTADA en esta sesión
+
+| Gate | Resultado |
+|---|---|
+| `scripts/stella-category-binding-dry-run.sh` (PostgreSQL desechable, `--network none`, 0 volúmenes) | **Todas las aserciones pasan.** Control negativo (R6a `completed`, R6b `consumed` ×2) → cierre (`U0112`, `42501` ×3, `U0100`, `U0106`) → idempotencia → orden → rollback → reapply → teardown |
+| `scripts/stella-ticket-e2e.sh` (PostgreSQL desechable, loopback `127.0.0.1:56322`, 0 volúmenes) con la cadena **`0013`…`0018`** | **37/37.** Incluye `0 escritores de runtime` (`has_table_privilege`, que sigue la pertenencia de rol), CHECK de identidad presente, RLS activo, y `0 rutas de runtime` hacia el bind sin categoría y hacia las dos superficies de consumo sin ticket |
+| `scripts/stella-governed-consumption-dry-run.sh` (dry-run de `stella_0017`, PostgreSQL desechable, `--network none`) | **`STELLA_GOVERNED_CONSUMPTION_DRY_RUN_OK`** — 150 aserciones, 0 fallos. Incluye la reproducción del sobreconsumo sobre `0013`…`0016`, las siete categorías por la ruta gobernada, ataques en vivo, concurrencia con dos conexiones, transición de periodo, rollback sobre base liquidada y retorno exacto al baseline. Contenedor eliminado |
+| `tests/stella-category-binding-mutation.test.ts` (**K-112…K-126**, catálogo nuevo) | **28/28.** Cada mutante muere por **su propio** gate; ninguno por `unparsed` |
+| `pnpm test:unit` (`env -u GEMINI_API_KEY`) | **5162 pasan, 0 fallan, 125 saltados** (208 ficheros). Incluye **K-01…K-111** |
+| `pnpm typecheck` | **0 errores** |
+| `pnpm lint` | **0 errores**, 45 avisos preexistentes |
+| `pnpm build` | **correcto** |
+| Revisión adversarial A (Fable, sólo lectura) | **1 BLOCKER, 2 MAJOR, 3 MINOR** — todos confirmados y corregidos |
+| Revisión adversarial B (Sonnet, sólo lectura) | **0 BLOCKER, 0 MAJOR, 2 MINOR** — ambos son huecos de cobertura, registrados abajo |
+
+### Evidencia que NO se ejecutó — y por tanto lo que NO se declara
+
+- El **E2E multicategoría** con los dieciocho casos obligatorios sobre
+  `grounded_query` + `advisor` + `validator` + `composer` + una categoría
+  reviewer. `tests/e2e/stella-ticket-journey.e2e.test.ts` conduce el runtime real
+  contra una base real, pero **sólo por la ruta grounded**: las cinco acciones
+  hermanas están cubiertas por pruebas con adaptador simulado. Lo señaló también
+  la revisión adversarial B.
+- La **inspección de filas reales** de `stella_interactions` por una segunda
+  conexión, columna a columna, para cada categoría completada.
+- La **validación de observabilidad de runtime** sobre el conjunto completo de
+  eventos.
+- Los **dry-runs** de `baseline-verify`, `capability`, `grounding`, Train 4,
+  ticket `0014`, project-binding `0015` y reserved quota `0016`.
+- La alineación del **evaluador de release** (`tests/eval/stella-release/**`), que
+  sigue describiendo R6-INT como abierto y no tiene gate para el tren 4.3. Es
+  fail-closed —sólo acepta un informe de evidencia externo que nadie produce hoy—
+  así que **sub-declara** en vez de sobre-declarar.
+
+### Estado de los contratos tras esta sesión
+
+| Contrato / gate | Estado |
+|---|---|
+| `R6a` | **CERRADO** en SQL, con evidencia ejecutada (`stella_0018` §1–§3) |
+| `R6b` | **CERRADO** en SQL, con evidencia ejecutada (`stella_0018` §4), sobre **ambas** superficies |
+| `R6c` | Ya no aplica: la comprobación de categoría ocurre en `bind`, así que la ruta de ataque no llega a reservar nada |
+| `R1` | **ABIERTO.** El E2E multicategoría que lo mediría entre categorías hermanas no se ejecutó |
+| `R6-INT` | **ABIERTO.** La escritura directa está cerrada y medida, pero la propiedad que el contrato pide —`Consumed + LiveReserved <= Limit` bajo concurrencia, múltiples actores, proyectos y categorías— no se midió con el runtime real |
+| `reserved-quota-runtime-verified` | **`false`** |
+| `local-runtime-ready` | **`false`** |
+| staging | **bloqueado** |
+| hosted | **bloqueado** |
+| feature flags | **`false`** (no existe `.env.local` en este worktree; todas caen a `false` por defecto) |
+| `INT-GR-001`, `INT-GR-003`, `INT-PR-001` | **pendientes** |
+
+### Riesgos residuales tras el cierre
+
+| # | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| R6d | Las cinco acciones hermanas no tienen cobertura E2E contra base real; su ruta de ticket está probada con adaptador simulado más la auto-verificación del paquete | MAJOR | Abierto. Es exactamente el trabajo que `reserved-quota-runtime-verified` exige |
+| R6e | `tests/eval/stella-release/reserved-quota-release-gate.ts` describe R6-INT como abierto y no conoce el tren 4.3 | MINOR | Abierto. Fail-closed: sub-declara, no sobre-declara |
+| R6f | `uellix_owner` puede filar una fila con cualquier clave de 64 hex — el CHECK sólo exige `NOT NULL` | MINOR | Aceptado por diseño. `uellix_owner` es `NOLOGIN` y sólo se alcanza por `SET ROLE` desde el migrador |
+| R6g | `scripts/stella-train4-dry-run.sh` afirma que `uellix_app` **puede** llamar a `consume_stella_quota` | MINOR | Correcto **para ese guion**: aplica la cadena hasta `stella_0014`, no `stella_0018`, y mide el estado pre-ticket a propósito |

@@ -221,7 +221,14 @@ function executionProject(projectId: ExecutionProjectId): ExecutionProject {
   return {
     projectId,
     scope: (organizationId) => ({ organizationId, projectId }),
-    bindTicket: (ticketId, queryHash) => bindOperationTicket(ticketId, projectId, queryHash),
+    // R6a (prepared stella_0018). The category travels with the bind, and it is
+    // this module's own constant — the same one §7's issuance passes. Until that
+    // package, `bind` took no expected category and this action performed no
+    // comparison of its own, so an ADVISOR ticket presented here bound, ran a
+    // grounded query and was charged as `advisor` in an append-only row. SQL
+    // refuses it now, before anything is reserved.
+    bindTicket: (ticketId, queryHash) =>
+      bindOperationTicket(ticketId, projectId, queryHash, GROUNDED_QUERY_TICKET_CATEGORY),
     completeTicket: (ticketId, queryHash) => completeOperationTicket(ticketId, projectId, queryHash),
     abortTicket: (ticketId, reason) => abortOperationTicket(ticketId, projectId, reason),
     inspectTicket: (ticketId) => inspectOperationTicket(ticketId, projectId),
@@ -925,13 +932,20 @@ async function releaseTicket(
  * "not yours" and "never existed" are deliberately indistinguishable.
  */
 function groundedTicketRejection(
-  // TRAIN 4.3 added `category_mismatch` to the union. It is UNREACHABLE from
-  // this path — the grounded action does not run the driver's category check,
-  // because `bind`/`complete` here settle a `grounded_query` ticket through the
-  // three-argument verb and a ticket of any other category would already have
-  // failed the digest or the project comparison. Spelled out rather than
-  // narrowed away with a cast: the exhaustive union is what makes a NEW
-  // rejection reason a compile error here instead of a silent `default`.
+  // TRAIN 4.3 added `category_mismatch` to the union, and the note that used to
+  // sit here said it was UNREACHABLE from this path. IT WAS WRONG, and the
+  // closeout measured it: `bind` took no expected category, this action ran no
+  // comparison, and an `advisor` ticket presented here bound, ran a grounded
+  // query and was charged as `advisor` in an append-only row. The claim that a
+  // foreign ticket "would already have failed the digest or the project
+  // comparison" was false — the digest is the one THIS action binds, and the
+  // project is the same one.
+  //
+  // Since prepared stella_0018 the category travels with the bind and SQL raises
+  // U0112 before anything is reserved, so this reason is REACHABLE and named
+  // explicitly below. Left in the exhaustive union for the original reason: a
+  // NEW rejection reason must be a compile error here rather than a silent
+  // `default`.
   reason: OperationTicketRejection,
 ): [StellaPanelErrorCode, string] {
   switch (reason) {
@@ -939,6 +953,13 @@ function groundedTicketRejection(
       // The database, not the caller. A retry may well clear it, but the code
       // is non-retryable because a missing prepared package is not transient.
       return ['UNKNOWN_ERROR', 'La consulta no pudo completarse.']
+    case 'category_mismatch':
+      // Named rather than left to `default`, so removing the category argument
+      // from the bind call makes this branch dead code a reader can see. The
+      // SENTENCE is the same one every scope failure gets: the caller chose the
+      // surface, so it learns nothing from the distinction, and collapsing it
+      // keeps the product boundary a single statement.
+      return ['UNAUTHORIZED', 'Esta operación ya no es válida. Volvé a hacer la consulta.']
     default:
       return ['UNAUTHORIZED', 'Esta operación ya no es válida. Volvé a hacer la consulta.']
   }

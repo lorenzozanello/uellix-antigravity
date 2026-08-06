@@ -78,6 +78,20 @@ BASE_DIR="db/baseline"
 # `stella_0013` → `stella_0014` → `stella_0015`— está declarada como dato en
 # `db/prepared-package-order.ts`, y la §4d de abajo comprueba el estado final
 # contra esa misma lista en vez de contra una copia escrita aquí.
+#
+# TREN 4.3 — CIERRE. La cadena ya no se detiene en `stella_0015`. Los tres
+# paquetes que siguen NO son opcionales para esta batería y ninguno se aplica
+# «best-effort»:
+#
+#   stella_0016  la aritmética reservada — sin ella `bind` no cuenta reservas y
+#                los casos de contención entre categorías medirían el defecto en
+#                vez del arreglo.
+#   stella_0017  el cierre de la escritura directa — sin ella las cinco acciones
+#                hermanas todavía podrían filar el ledger con `db.insert`, y el
+#                caso «INSERT directo rechazado» pasaría por accidente.
+#   stella_0018  la ligadura de categoría y la retirada del consumo sin ticket —
+#                sin ella un ticket de una capacidad liga y cobra por la ruta de
+#                otra (R6a) y `uellix_app` puede cobrar sin ticket (R6b).
 FORWARD=(
   grounding_0002_document_versions
   grounding_0003_evidence_chunks
@@ -85,6 +99,9 @@ FORWARD=(
   grounding_0004_runtime_attestation
   stella_0014_operation_tickets
   stella_0015_project_bound_operation_tickets
+  stella_0016_reserved_quota_semantics
+  stella_0017_governed_stella_consumption
+  stella_0018_category_bound_operation_tickets
 )
 
 cleanup() {
@@ -198,15 +215,28 @@ say "4. Paquetes preparados, en orden de dependencia"
 # La regla es la MISMA que la del registro TypeScript, y no una copia que pueda
 # derivar: `tests/cross-workstream/project-binding.test.ts` compara este guion
 # contra `db/prepared-package-order.ts` y falla si dejan de coincidir.
+#
+# TREN 4.3. La regla dejó de ser una sola. `db/prepared-package-order.ts`
+# registra SEIS supersesiones, y este guion las comprueba TODAS con la misma
+# sonda que el registro declara — no con una copia abreviada. Cada entrada es
+# «paquete : sonda del sucesor», y la sonda es literal, nunca compuesta.
 package_order_guard() {
-  local pkg="$1"
-  if [ "$pkg" = "stella_0014_operation_tickets" ]; then
-    local installed
-    installed=$(Q "SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character)') IS NOT NULL")
+  local pkg="$1" installed probe superseder
+  while IFS='|' read -r rule_pkg superseder probe; do
+    [ "$rule_pkg" = "$pkg" ] || continue
+    installed=$(Q "$probe")
     if [ "$installed" = "t" ]; then
-      fail "DB_MIGRATOR_PACKAGE_ORDER_VIOLATION: stella_0014_operation_tickets.sql no puede aplicarse sobre una base que ya tiene stella_0015_project_bound_operation_tickets.sql — republicaría las cuatro firmas sin proyecto de ejecución (R2a)"
+      fail "DB_MIGRATOR_PACKAGE_ORDER_VIOLATION: $pkg.sql no puede aplicarse sobre una base que ya tiene $superseder.sql — ver db/prepared-package-order.ts"
     fi
-  fi
+  done <<'RULES'
+stella_0014_operation_tickets|stella_0015_project_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character)') IS NOT NULL
+stella_0015_project_bound_operation_tickets|stella_0016_reserved_quota_semantics|SELECT to_regprocedure('uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character)') IS NOT NULL
+stella_0015_project_bound_operation_tickets|stella_0017_governed_stella_consumption|SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL
+stella_0016_reserved_quota_semantics|stella_0017_governed_stella_consumption|SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL
+stella_0015_project_bound_operation_tickets|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL
+stella_0016_reserved_quota_semantics|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL
+stella_0017_governed_stella_consumption|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL
+RULES
 }
 
 for f in "${FORWARD[@]}"; do
@@ -221,8 +251,24 @@ done
 # gobernadas existen y la tabla de tickets también. Si esto falla, cualquier
 # resultado posterior sería sobre una base que no tiene el protocolo.
 FNS=$(Q "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='uellix_stella_ops'")
-[ "$FNS" = "6" ] || fail "se esperaban 6 funciones gobernadas en uellix_stella_ops, hay $FNS"
-echo "  ok   6 funciones gobernadas presentes"
+[ "$FNS" = "8" ] || fail "se esperaban 8 funciones gobernadas en uellix_stella_ops, hay $FNS — ¿stella_0017 o stella_0018 no aplicaron?"
+echo "  ok   8 funciones gobernadas presentes"
+
+# 4a-bis. LA CADENA COMPLETA, COMPROBADA POR SUS OBJETOS Y NO POR EL HECHO DE
+#         QUE EL ARCHIVO SE EJECUTÓ. Un paquete que se aplicó y cuya
+#         verificación pasó igual podría no haber publicado lo que dice; se
+#         pregunta al catálogo.
+for sig in \
+  'uellix_stella.consume_stella_quota(uuid, uuid, character varying, character)' \
+  'uellix_stella.stella_capacity(uuid, character)' \
+  'uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character, character varying, character, character varying, integer, jsonb)' \
+  'uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)' \
+  'uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)'
+do
+  [ "$(Q "SELECT to_regprocedure('$sig') IS NOT NULL")" = "t" ] \
+    || fail "falta el objeto gobernado $sig — la cadena preparada está incompleta"
+done
+echo "  ok   los cinco objetos de la cadena 0013…0018 existen"
 
 # 4b. El append-only del ledger viene del baseline, y se COMPRUEBA en vez de
 #     suponerse: la batería cuenta cargos como deltas precisamente porque las
@@ -276,6 +322,57 @@ PUB=$(Q "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamesp
   WHERE n.nspname='uellix_stella_ops' AND a.grantee = 0")
 [ "$PUB" = "0" ] || fail "PUBLIC tiene EXECUTE sobre $PUB función(es) de uellix_stella_ops"
 echo "  ok   4 firmas con proyecto, 0 ciegas, 0 DEFAULT, 0 EXECUTE para PUBLIC"
+
+# 4e. R6-INT — NINGÚN PRINCIPAL DE RUNTIME ESCRIBE EL LEDGER.
+#
+#     Se pregunta con `has_table_privilege`, que SIGUE la pertenencia de rol,
+#     y no leyendo `relacl`, que no la sigue: el defecto que stella_0017 cierra
+#     es precisamente que `uellix_app` no tiene ninguna entrada propia y escribe
+#     igual, por herencia de `uellix_writer`. Un guion que leyera `relacl`
+#     informaría «cerrado» sobre una base abierta.
+WRITERS=$(Q "SELECT count(DISTINCT r.rolname) FROM pg_roles r CROSS JOIN (VALUES ('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE')) AS p(priv)
+  WHERE NOT r.rolsuper AND r.rolname <> 'uellix_owner' AND r.rolname <> 'uellix_cap_stella_quota'
+    AND r.rolname NOT LIKE 'pg\\_%'
+    AND has_table_privilege(r.oid, to_regclass('public.stella_interactions'), p.priv)")
+[ "$WRITERS" = "0" ] || fail "$WRITERS principal(es) de runtime todavía pueden escribir stella_interactions — stella_0017 §1 no cerró"
+
+# La segunda barrera, que no depende de ningún GRANT: sin identidad gobernada no
+# hay fila, ni siquiera para el OWNER y ni siquiera bajo replica.
+[ "$(Q "SELECT count(*) FROM pg_constraint WHERE conname='stella_interactions_governed_identity_check' AND conrelid='public.stella_interactions'::regclass")" = "1" ] \
+  || fail "falta stella_interactions_governed_identity_check — una fila sin identidad gobernada podría existir"
+
+# COPY FROM cae con el privilegio INSERT, y además PostgreSQL lo rechaza sobre
+# una relación con RLS activo. Se afirma la segunda barrera para que no se
+# pierda en silencio si alguien devolviera la primera.
+[ "$(Q "SELECT relrowsecurity FROM pg_class WHERE oid='public.stella_interactions'::regclass")" = "t" ] \
+  || fail "RLS está desactivado sobre stella_interactions — COPY FROM dejaría de estar bloqueado por la relación"
+echo "  ok   0 escritores de runtime, CHECK de identidad presente, RLS activo"
+
+# 4f. R6a / R6b — LAS DOS RUTAS QUE stella_0018 RETIRA DEL RUNTIME.
+#
+#     No basta con que no haya llamantes en el código: mientras `uellix_app`
+#     conserve EXECUTE, la ruta existe y una acción futura la alcanza sin que
+#     ninguna prueba lo note.
+#     Y son TRES superficies, no dos. `consume_stella_capacity` es la envoltura
+#     de stella_0016 y nunca tuvo llamante; `consume_stella_quota` es la que esa
+#     envoltura LLAMA, está concedida a uellix_app por stella_0013 §7, ningún
+#     paquete de la cadena 0014→0017 la retira, y cuenta SÓLO filas cobradas —
+#     así que es un cobro sin ticket que además es ciego a una reserva viva.
+for pair in \
+  "uellix_stella_ops.bind_operation_ticket(character, uuid, character)|el bind SIN categoría esperada (R6a)" \
+  "uellix_stella.consume_stella_capacity(uuid, uuid, character varying, character)|el consumo SIN ticket (R6b)" \
+  "uellix_stella.consume_stella_quota(uuid, uuid, character varying, character)|el cargo SIN ticket ni reserva (R6b)"
+do
+  sig="${pair%%|*}"; label="${pair##*|}"
+  UNSAFE=$(Q "SELECT string_agg(r.rolname, ', ' ORDER BY r.rolname) FROM pg_roles r
+    WHERE r.rolname IN ('uellix_app','authenticated','anon','service_role','uellix_writer','uellix_reader','uellix_auditor','authenticator')
+      AND has_function_privilege(r.oid, to_regprocedure('$sig'), 'EXECUTE')")
+  [ -z "$UNSAFE" ] || fail "$UNSAFE puede ejecutar $label — stella_0018 no cerró esa superficie"
+done
+# ...y la ruta que el runtime SÍ necesita, o no se puede ligar nada.
+[ "$(Q "SELECT has_function_privilege('uellix_app','uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)','EXECUTE')")" = "t" ] \
+  || fail "uellix_app no puede ejecutar el bind ligado a categoría — ninguna operación podría reservar"
+echo "  ok   0 rutas de runtime hacia el bind sin categoría y hacia el consumo sin ticket"
 
 # 4c. Credenciales para las DOS conexiones de la batería.
 #

@@ -91,6 +91,7 @@ export const STELLA_TICKET_PACKAGE_CHAIN = [
   'stella_0015_project_bound_operation_tickets',
   'stella_0016_reserved_quota_semantics',
   'stella_0017_governed_stella_consumption',
+  'stella_0018_category_bound_operation_tickets',
 ] as const
 
 /**
@@ -209,6 +210,43 @@ export const GOVERNED_CONSUMPTION_OBJECTS = [
 const STELLA_0017_INSTALLED_PROBE =
   "SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL AS installed"
 
+/**
+ * The two objects `stella_0018` publishes, and what each one is for.
+ *
+ * R6a and R6b were MEASURED on a database with the whole 0013→0017 chain
+ * installed, not inferred: an `advisor` ticket bound and completed through the
+ * grounded path produced a `stella_role = 'advisor'` charge for a grounded
+ * query, and `uellix_app` charged a unit through BOTH `consume_stella_capacity`
+ * and `consume_stella_quota` with no ticket and an idempotency key of its own
+ * choosing. The first is closed by a mandatory argument on a new signature, the
+ * second by two withdrawn grants.
+ */
+export const CATEGORY_BOUND_TICKET_OBJECTS = [
+  {
+    signature:
+      'uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)',
+    purpose: 'the bind verb that re-imposes the expected capability in SQL, before anything is reserved (R6a)',
+  },
+  {
+    signature: 'uellix_stella_ops.bind_operation_ticket(character, uuid, character)',
+    purpose:
+      'the unchecked three-argument bind, which now RAISES U0106 unconditionally and is no longer executable by uellix_app — a signature that still binds is a route, whatever its grant says',
+  },
+] as const
+
+/**
+ * TRUE when the category-bound bind exists — i.e. `stella_0018` is installed.
+ *
+ * Written over the FUNCTION no earlier package can produce. Deliberately NOT
+ * written over the two REVOKEs `stella_0018` performs, for the reason
+ * `STELLA_0017_INSTALLED_PROBE` states: "uellix_app cannot execute
+ * consume_stella_capacity" is also true of a database where an operator revoked
+ * it by hand, and a probe that cannot tell a package from an operator refuses
+ * the wrong things.
+ */
+const STELLA_0018_INSTALLED_PROBE =
+  "SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL AS installed"
+
 export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersession[] = [
   {
     packageName: 'stella_0014_operation_tickets',
@@ -267,6 +305,76 @@ export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersessio
       'schema, and two places for the idempotency semantics to drift. Apply the chain in ' +
       'order; to genuinely revert, run stella_0017_rollback.sql first — it restores exactly ' +
       'that body and drops the ten-argument function in the same transaction.',
+  },
+  {
+    packageName: 'stella_0015_project_bound_operation_tickets',
+    supersededBy: 'stella_0018_category_bound_operation_tickets',
+    probe: STELLA_0018_INSTALLED_PROBE,
+    wouldRepublish: CATEGORY_BOUND_TICKET_OBJECTS.map((o) => o.signature),
+    why:
+      'stella_0018 publishes an EIGHTH function in uellix_stella_ops — the bind verb that ' +
+      'takes an expected capability — and stella_0015 §4 (5) asserts that schema holds exactly ' +
+      'six. Re-applying it aborts on that assertion, and if the assertion were ever relaxed it ' +
+      'would republish a three-argument bind as a SELF-CONTAINED body that grants EXECUTE to ' +
+      'uellix_app — restoring R6a, under which a ticket issued for one capability can be bound ' +
+      'and charged by another and the append-only row that results cannot be corrected. Apply ' +
+      'the chain in order; to genuinely revert, run stella_0018_rollback.sql first.',
+  },
+  {
+    packageName: 'stella_0016_reserved_quota_semantics',
+    supersededBy: 'stella_0018_category_bound_operation_tickets',
+    probe: STELLA_0018_INSTALLED_PROBE,
+    wouldRepublish: CATEGORY_BOUND_TICKET_OBJECTS.map((o) => o.signature),
+    why:
+      'stella_0016 §7 (2b) asserts uellix_stella_ops holds exactly six functions, and ' +
+      'stella_0018 makes it eight, so re-applying it aborts. Its §7 (3) additionally asserts ' +
+      'that uellix_app CAN execute consume_stella_capacity — the grant stella_0018 §4 withdraws ' +
+      'to close R6b — so the abort is by design and not a regression. Re-application would also ' +
+      'republish the three-argument bind as a self-contained body and GRANT it to uellix_app, ' +
+      'reopening R6a. Apply the chain in order; to genuinely revert, run ' +
+      'stella_0018_rollback.sql then stella_0017_rollback.sql first.',
+  },
+  {
+    packageName: 'stella_0017_governed_stella_consumption',
+    supersededBy: 'stella_0018_category_bound_operation_tickets',
+    probe: STELLA_0018_INSTALLED_PROBE,
+    wouldRepublish: CATEGORY_BOUND_TICKET_OBJECTS.map((o) => o.signature),
+    why:
+      'stella_0017 §5 asserts uellix_stella_ops holds exactly seven functions, and stella_0018 ' +
+      'adds an eighth, so re-applying it aborts. It publishes nothing that would reopen R6a or ' +
+      'R6b on its own — the refusal exists so the operator reads a reason instead of an ' +
+      'assertion that names a number. Apply the chain in order; to genuinely revert, run ' +
+      'stella_0018_rollback.sql first.',
+  },
+  {
+    // NOT a link of the ticket chain, and the only rule in this registry whose
+    // `packageName` is a ROLLBACK. Found by adversarial review A: stella_0017 §1
+    // names this file as the way the ledger's INSERT comes back, and stella_0018
+    // §0 concedes that the NOT VALID CHECK is satisfied by any 64 hex characters
+    // — so the grant surface IS the compensating control, and a runner that
+    // would re-grant it without objecting is a runner that undoes the closure it
+    // was written to protect.
+    //
+    // The probe is the CHECK rather than a function, because what this rollback
+    // would undo is a privilege and not a signature — and the CHECK is the one
+    // object of the governed-consumption closure that no earlier package
+    // publishes.
+    packageName: 'stella_0005c_rollback',
+    supersededBy: 'stella_0017_governed_stella_consumption',
+    probe:
+      "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'stella_interactions_governed_identity_check' AND conrelid = 'public.stella_interactions'::regclass) AS installed",
+    wouldRepublish: [
+      'GRANT INSERT ON public.stella_interactions TO authenticated',
+      'GRANT INSERT ON public.stella_interactions TO service_role',
+    ],
+    why:
+      'stella_0005c_rollback GRANTs INSERT on public.stella_interactions back to authenticated and ' +
+      'service_role. stella_0017 §1 revoked exactly that from every runtime principal, and its own ' +
+      'header names this file as the way the privilege returns. Applying it over stella_0017 ' +
+      'restores a direct write to the append-only ledger by two principals a client session can ' +
+      'wear — and the governed-identity CHECK does not stop it, because any 64 hex characters ' +
+      'satisfy it. If the runtime cutover genuinely has to be reverted, run stella_0017_rollback.sql ' +
+      'first so the closure is withdrawn deliberately rather than as a side effect.',
   },
 ]
 

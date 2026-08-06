@@ -771,3 +771,53 @@ ella el reductor devuelve, verbatim, las mismas dos razones que antes del 4.2.
 
 **Staging y hosted siguen bloqueados.** Banderas en `false`. `INT-GR-001`,
 `INT-GR-003`, `INT-PR-001` y `R1` siguen pendientes.
+
+---
+
+## Tren 4.3 — CIERRE DE EVIDENCIA (INTEGRACIÓN, 2026-08-06)
+
+**Resultado: PARCIAL.** Detalle completo en
+[`docs/ops/contracts/CONTRACT_LEDGER.md`](contracts/CONTRACT_LEDGER.md),
+sección «Tren 4.3 — CIERRE DE EVIDENCIA».
+
+**R6a y R6b se midieron y resultaron peores de lo registrado.** Ambos estaban
+anotados como MINOR con el argumento de que «la base ya es segura» y de que «no
+hay llamantes». Contra un PostgreSQL desechable con la cadena `0013`→`0017`
+aplicada, como `uellix_app`:
+
+- un ticket de `advisor` presentado a la ruta **grounded** liga, ejecuta y
+  **cobra** como `advisor` una consulta fundamentada (fila append-only con
+  atribución falsa) — **MAJOR**;
+- `consume_stella_capacity` cobra sin ticket con identidad elegida por el
+  llamante, y debajo `consume_stella_quota` —concedida a `uellix_app` por
+  `stella_0013` §7 y que ningún paquete de la cadena retira— hace lo mismo **y
+  cuenta sólo filas cobradas**, así que es además ciega a una reserva viva —
+  **BLOCKER**.
+
+**Cierre:** `db/prepared/stella_0018_category_bound_operation_tickets.sql`
+(aditivo) + su rollback. El bind toma una capacidad esperada **obligatoria**,
+reimpuesta en SQL con `U0112` antes del lock consultivo y de toda lectura de
+capacidad; la firma de tres argumentos pasa a rechazar con `U0106`; y
+`uellix_app` pierde `EXECUTE` sobre las dos superficies de consumo sin ticket.
+`uellix_stella_ops` pasa a **ocho** funciones, con tres supersesiones nuevas
+registradas — más una cuarta, `stella_0005c_rollback`, que reconcedía `INSERT`
+sobre el ledger a `authenticated` y `service_role` y que el registro no cubría.
+
+**Evidencia ejecutada:** dry-run correctivo (control negativo → cierre → orden →
+rollback → reapply → teardown, todas las aserciones pasan), E2E de ticket con la
+cadena `0013`…`0018` (**37/37**), catálogo de mutación nuevo **K-112…K-126**
+(**28/28**, cada mutante muere por su propio gate), `pnpm test:unit` (**5162**
+pasan, incluye **K-01…K-111**), `typecheck`, `lint` y `build`. Dos revisiones
+adversariales de sólo lectura: A (Fable) encontró el BLOCKER y dos MAJOR, todos
+corregidos; B (Sonnet) no encontró ninguno.
+
+**Lo que NO se ejecutó, y por tanto no se declara:** el E2E multicategoría con
+los dieciocho casos obligatorios sobre las seis categorías, la inspección de
+filas reales del ledger por segunda conexión, la validación de observabilidad de
+runtime, los dry-runs de baseline/capability/grounding/Train 4/`0014`/`0015`/`0016`,
+y la alineación del evaluador de release.
+
+**Gates:** `reserved-quota-runtime-verified` → **`false`**.
+`local-runtime-ready` → **`false`**. **Staging y hosted siguen bloqueados.**
+Banderas en **`false`**. `INT-GR-001`, `INT-GR-003`, `INT-PR-001`, `R1` y
+`R6-INT` siguen pendientes.
