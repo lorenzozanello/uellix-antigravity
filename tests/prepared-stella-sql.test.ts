@@ -304,6 +304,21 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // skips the check. It creates no table, no role and no policy. DESIGN ONLY.
       'stella_0015_project_bound_operation_tickets.sql',
       'stella_0015_rollback.sql',
+      // 0016 closes R1, the capacity residual 0014 declared and 0015 left open:
+      // `consume_stella_quota` counts CHARGED ROWS ONLY, so a sibling Stella
+      // action takes the unit a live grounded reservation is holding and the
+      // completion of that reservation is then refused — the executed work is
+      // given away. Reproducing it surfaced a second cause: bind's reservation
+      // count ran under an actor-scoped SELECT policy, so each actor saw only
+      // its own reservations and two members of one organization each reserved
+      // the same last unit. This package publishes ONE availability arithmetic
+      // (Limit − Consumed − Reserved), a ticketless consumption surface for the
+      // five sibling actions, and a CONVERSION that charges without evaluating
+      // the limit — because the unit was committed at bind — granted to the
+      // ticket definer alone. It creates no role, no schema and no table.
+      // DESIGN ONLY.
+      'stella_0016_reserved_quota_semantics.sql',
+      'stella_0016_rollback.sql',
     ])
   })
 
