@@ -210,6 +210,64 @@ y [`CAP-TRAIN4-002`](../../docs/ops/contracts/CAP-TRAIN4-002_grounding_scope_att
 > estrecha mientras se afirma un rollback limpio haría que la siguiente
 > comparación aplicar/revertir se leyera como convergente sin serlo.
 
+### Train 4.1 — tickets de operación gobernados (`stella_0014`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.
+Ningún server action lo llama todavía** — cablearlo es la reconciliación de
+INTEGRACIÓN. Cierra **INT-INT-001**
+(`docs/ops/contracts/CONTRACT_LEDGER.md#int-int-001`, respuesta en
+[`INT-INT-001`](../../docs/ops/contracts/INT-INT-001_operation_ticket_protocol.md)).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0014_operation_tickets.sql` | `stella_0014_rollback.sql` | **ninguno todavía**; exige `stella_0013` **ya aplicado** (precondición dura en §0: cobra *a través de* `consume_stella_quota` y no tiene INSERT sobre el ledger) | **INT-INT-001.** Rol `uellix_cap_stella_ticket` (NOLOGIN, cero miembros, **sin ningún privilegio de escritura sobre `stella_interactions`**); tabla `uellix_stella.operation_tickets` con **8** CHECK y **cero** columnas capaces de guardar un payload; índice parcial `ix_operation_tickets_live_reservation`; `public.uellix_check_operation_ticket_transition()` + **2** triggers `ENABLE ALWAYS`; RLS con **3** policies (select/insert/update, **sin** policy de DELETE); **6** funciones SECURITY DEFINER — `issue`, `bind`, `complete`, `abort`, `inspect`, `expire` | **DISEÑO — no aplicado** |
+
+> **Por qué una tabla nueva y no `stella_interactions`.** La estructura canónica
+> se reutiliza donde puede: una unidad de cuota sigue siendo **una fila de
+> `stella_interactions`**, contada por `checkStellaQuota` y escrita por
+> `consume_stella_quota` y por nada más. Este paquete **no** añade un segundo
+> ledger y **no** tiene INSERT sobre el primero. Lo que no puede reutilizar es
+> la fila: un ticket tiene ciclo de vida, y
+> `trg_stella_interactions_append_only` rechaza `UPDATE` y `DELETE` sobre esa
+> tabla para **todo** rol incluido el dueño. Una máquina de estados no cabe en
+> una tabla donde ningún estado puede cambiar.
+
+> **La clave de idempotencia deja de ser elegible por el llamante.** Se deriva
+> dentro de `complete_operation_ticket` a partir del ticket **y de un
+> `charge_nonce` que ninguna función devuelve y ningún rol de runtime puede
+> leer** — `uellix_app`, `authenticated`, `anon` y `service_role` no tienen
+> **ningún** privilegio directo sobre la tabla, y §7 (8) lo afirma como
+> postcondición. Sin el nonce, quien tiene el ticket no puede calcular la clave
+> ni cobrar fuera del protocolo.
+
+> **Reservar y luego cobrar, nunca al revés.** `bind` fija el digest de la
+> consulta **una sola vez** y reserva la unidad bajo el **mismo** lock de
+> advisory que usa `stella_0013` (`stella/quota/<org>`), contando filas cobradas
+> **más** otras reservas vivas. La operación se ejecuta **fuera** de esa
+> transacción: la reserva es un **estado de fila**, no un lock abierto. Una
+> operación que falla se `abort`a y no cobró nada, porque el cobro todavía no
+> había ocurrido.
+
+> **Una reserva huérfana no puede matar de hambre a una organización, y no hay
+> cron.** `expires_at > now()` forma parte del **predicado de vivacidad** dentro
+> de `bind`, así que un ticket abandonado deja de reservar en el instante en que
+> expira, llame o no llame alguien a `expire_operation_tickets`. Esa función
+> existe para higiene y observabilidad; la garantía **no** depende de ella. En
+> este proyecto no hay `pg_cron` y el paquete no finge que lo haya.
+
+> **El rollback de `stella_0014` puede NEGARSE, y es correcto.** Un ticket
+> `completed` es el único registro de **qué** operación pagó una fila cobrada
+> del ledger append-only. Soltar la tabla dejaría esos cargos sin atribución y
+> su clave de idempotencia irrecuperable — de modo que un reintento posterior
+> recibiría un ticket **nuevo** y se cobraría **por segunda vez**. Desinstalar
+> el protocolo reintroduciría el defecto que el protocolo cierra.
+
+> **Orden de rollback: `stella_0014` antes que `stella_0013`.** El rollback de
+> `0013` suelta el esquema `uellix_stella` en cuanto no le quedan funciones, y
+> este paquete pone seis ahí. Invertido, `0013` toma su rama «sigue teniendo N
+> funciones de otro paquete» y deja esquema y rol en pie: una negativa segura,
+> pero no el estado final que se pretendía.
+
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad

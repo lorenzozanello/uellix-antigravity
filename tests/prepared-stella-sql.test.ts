@@ -283,6 +283,16 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // transaction under a per-organization advisory lock. DESIGN ONLY.
       'stella_0013_grounded_query_quota.sql',
       'stella_0013_rollback.sql',
+      // 0014 closes INT-INT-001: consume_stella_quota requires an idempotency
+      // key and no request-derived value can supply one that distinguishes a
+      // RETRY (same key, charged once) from a NEW question with identical text
+      // (new key, charged again). It issues that identity as an opaque
+      // server-minted ticket welded to actor/organization/project/category with
+      // an expiry, fixes the query digest onto it exactly once, reserves the
+      // unit at bind and charges it at complete THROUGH stella_0013's function —
+      // under a key derived from a nonce the caller never sees. DESIGN ONLY.
+      'stella_0014_operation_tickets.sql',
+      'stella_0014_rollback.sql',
     ])
   })
 
