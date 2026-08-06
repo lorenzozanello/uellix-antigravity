@@ -1303,3 +1303,129 @@ ella el reductor devuelve, verbatim, las mismas dos razones que antes del 4.2.
 
 **Staging y hosted siguen bloqueados.** Banderas en `false`. `INT-GR-001`,
 `INT-GR-003`, `INT-PR-001` y `R1` siguen pendientes.
+
+
+---
+
+## Tren 4.3 — semántica de cuota reservada (2026-08-06)
+
+**Cierra R1**, el residual MAJOR que INT-INT-001 declaró y el tren 4.2 dejó
+abierto. Respuesta completa:
+[`R1_reserved_quota_semantics.md`](../contracts/R1_reserved_quota_semantics.md).
+
+| Contrato | Estado | Unidad |
+|---|---|---|
+| **R1** — una acción hermana cobra entre `bind` y `complete` | cerrado en base | `stella_0016` |
+
+**Estado de aplicación: DISEÑO. No aplicado a ninguna base. Ninguna bandera
+habilitada. Ningún server action llama a nada de esto** — cablearlo es la
+reconciliación de INTEGRACIÓN, explícitamente fuera del alcance de este tren.
+
+### El defecto, reproducido antes de cerrarlo — y el segundo que apareció al reproducirlo
+
+El §5b del arnés lo **ejecuta** con la cadena `0013→0015` instalada y
+`stella_0016` todavía no, con la cuota restante en 1:
+
+```
+bind(ticket)          -> bound            -- el ticket RESERVA la única unidad
+hermana: count ledger -> used=0 < quota=1 -- la reserva es INVISIBLE
+hermana: db.insert    -> cobrada          -- la unidad se vende
+complete(ticket)      -> quota_exceeded   -- el trabajo grounded se regala
+```
+
+**Dos causas, no una.** La primera es la que el ledger nombra:
+`consume_stella_quota` cuenta **sólo filas cobradas**, así que `complete` vuelve
+a competir por la unidad que su propio `bind` apartó, y las cinco hermanas ni
+llegan a esa función —escriben el ledger con `db.insert` a través del grant de
+`uellix_writer` (R6-INT).
+
+La segunda **no estaba en el ledger** y salió al reproducir la primera: el
+`SELECT count(*)` de reservas dentro de `bind` corría como
+`uellix_cap_stella_ticket`, un rol sin `BYPASSRLS`, bajo la policy
+`operation_tickets_definer_select` cuyo predicado es `actor_id = auth.uid()`.
+**Cada actor contaba sólo sus propias reservas.** El §5c lo ejecuta: dos
+miembros de una organización con una sola unidad restante reservan los dos. El
+tren 4.2 midió «dos tickets por la última unidad» con **un** actor, y por eso
+leyó verde.
+
+### La semántica que instala
+
+```
+Consumed(org, period)  = filas de stella_interactions del periodo
+Reserved(org)          = tickets `bound` cuyo expires_at sigue en el futuro
+Available              = Limit - Consumed - Reserved
+```
+
+Tres verbos, **una** aritmética: `uellix_stella.stella_capacity` la calcula;
+`consume_stella_capacity` es la superficie para consumidores **sin ticket**; y
+`settle_reserved_quota` **convierte** una reserva viva en cargo **sin evaluar el
+límite**, porque esa unidad lleva comprometida desde el `bind`. `bind` y
+`complete` se republican **en el sitio** —mismas firmas— así que
+`uellix_stella_ops` sigue teniendo exactamente 6 funciones y `stella_0015` no
+pierde su idempotencia.
+
+**El grant ES la propiedad de seguridad.** `settle_reserved_quota` cobra sin
+comprobar el tope, y está concedida a `uellix_cap_stella_ticket` y a nadie más —
+ni `uellix_app`, ni `PUBLIC`. Además reprueba la reserva por su cuenta:
+`bound`, no expirada, y soldada a la organización, el proyecto y la categoría que
+se le pide cobrar. `U0111` si alguna falla.
+
+**La pertenencia al periodo es un hecho registrado, no una inferencia.**
+`period_month` es una columna `GENERATED ALWAYS` derivada de `bound_at` — nadie
+la escribe, y no hizo falta un tercer trigger, que habría movido la aserción
+«2 triggers» de `stella_0014`. `Reserved` deliberadamente **no** filtra por
+periodo: una reserva tomada antes del cierre convierte después, y el periodo en
+el que aterriza el cargo tiene que haberla contado ya.
+
+### Lo único que sí mueve, y la guarda
+
+La aritmética necesita ver el conjunto **entero** de reservas de la
+organización, así que se añade una **cuarta** policy sobre `operation_tickets`,
+ligada a la organización y **no** al actor. `stella_0014 §7` afirma
+`count(*) = 3` policies, de modo que **`stella_0014` deja de ser reaplicable**;
+está registrado en `db/prepared-package-order.ts`, junto con la regla nueva que
+impide reaplicar **`stella_0015` sobre `stella_0016`** — R2a en la otra
+dirección, y peor de ver, porque las firmas no cambian y ninguna comprobación de
+firma lo notaría. El §14 del arnés **mide** que reaplicarlo de verdad
+reintroduce R1.
+
+La policy va emparejada con un grant de `SELECT` **por columna** de siete
+nombres. `charge_nonce` y `query_hash` **no** están, así que «cuenta reservas» y
+«puede computar la clave de idempotencia» siguen siendo dos frases distintas,
+impuestas por el sistema de privilegios.
+
+### Con qué se probó
+
+`scripts/stella-reserved-quota-dry-run.sh` — PostgreSQL desechable
+(`--network none`, sin volumen, destruido al salir), dos etapas, dos
+organizaciones, tres proyectos, tres actores. Reproducción de R1 y R1b; cierre
+de ambos; abort; expiración lógica sin cron; **cambio de periodo**; ocho duelos
+de **concurrencia real** con dos conexiones (la espera medida es la evidencia de
+serialización, y `pg_stat_database.deadlocks = 0`); ataques en vivo; rollback
+sobre una base **liquidada** (9 cargos y 10 tickets intactos) y sobre una
+**limpia** (retorno EXACTO al baseline); reaplicación. Salida:
+`STELLA_RESERVED_QUOTA_DRY_RUN_OK`.
+
+`tests/stella-reserved-quota-mutation.test.ts` — **32 mutantes** (`K-54` …
+`K-85`), cada uno muerto por **su** gate propietaria.
+
+### Lo que NO cambió
+
+Banderas en `false`. `staging-blocked` y `hosted-blocked` siguen en `true`.
+`consume_stella_quota` **no se tocó** — este paquete decide CUÁNDO se cobra,
+nunca CÓMO. `app/actions/**`, `components/**` y `lib/grounding/**` intactos.
+Cero acceso remoto, cero push, cero uso del stack persistente.
+
+### Lo que queda
+
+**R1 no está cerrado sólo porque el `complete` grounded funcione.** La superficie
+para los cinco consumidores sin ticket existe y **nadie la llama todavía**: la
+solicitud de integración, con la tabla de consumidores y el cambio exacto por
+acción, está en el §7 de la respuesta. Y dos aserciones de
+`tests/cross-workstream/project-binding.test.ts` —fichero de INTEGRACIÓN, no
+modificado por esta línea— afirman que el registro de supersesiones tiene
+**exactamente una** regla; añadir la segunda las contradice por construcción.
+
+**Riesgos abiertos**: R1a (las hermanas no han migrado), R1b (sin fuente
+canónica de clave de idempotencia para ellas), R1c, R1d, R1e, más `INT-GR-001`,
+`INT-GR-003`, `INT-PR-001` y los residuales del 4.2.

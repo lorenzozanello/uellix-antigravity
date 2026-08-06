@@ -89,6 +89,22 @@ export const STELLA_TICKET_PACKAGE_CHAIN = [
   'stella_0013_grounded_query_quota',
   'stella_0014_operation_tickets',
   'stella_0015_project_bound_operation_tickets',
+  'stella_0016_reserved_quota_semantics',
+] as const
+
+/**
+ * The two signatures `stella_0016` republishes IN PLACE, and the call each body
+ * must contain afterwards.
+ *
+ * Written as data for the same reason the lists above are: the guard and the
+ * package must not be able to drift into disagreeing about what "reservation
+ * aware" means. `stella_0015` republishing either of these restores a `bind`
+ * whose reservation count runs under an actor-scoped policy and a `complete`
+ * that charges through `consume_stella_quota` — which is R1.
+ */
+export const RESERVATION_AWARE_TICKET_BODIES = [
+  { signature: 'uellix_stella_ops.bind_operation_ticket(character, uuid, character)', mustCall: 'uellix_stella.stella_capacity' },
+  { signature: 'uellix_stella_ops.complete_operation_ticket(character, uuid, character)', mustCall: 'uellix_stella.settle_reserved_quota' },
 ] as const
 
 /**
@@ -135,6 +151,19 @@ export const PROJECT_BLIND_SIGNATURES_PRESENT_PROBE =
   PROJECT_BLIND_TICKET_SIGNATURES.map((s) => `to_regprocedure('${s}') IS NOT NULL`).join(' OR ') +
   ') AS present'
 
+/**
+ * TRUE when the reservation-aware conversion exists — i.e. `stella_0016` is
+ * installed here.
+ *
+ * Written over the FUNCTION `stella_0015` cannot produce rather than over the
+ * absence of something, and the direction matters for the same reason it did
+ * for R2a: absence proves nothing (a database with no quota campaign at all has
+ * no `settle_reserved_quota` either), while the presence of a function that
+ * charges without evaluating a limit can only come from `stella_0016`.
+ */
+const STELLA_0016_INSTALLED_PROBE =
+  "SELECT to_regprocedure('uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character)') IS NOT NULL AS installed"
+
 export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersession[] = [
   {
     packageName: 'stella_0014_operation_tickets',
@@ -149,6 +178,22 @@ export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersessio
       'would grant EXECUTE on them to uellix_app — reopening the attribution defect next ' +
       'to its own fix. Apply the chain in order (stella_0013 -> stella_0014 -> stella_0015); ' +
       'to genuinely revert, run stella_0015_rollback.sql first.',
+  },
+  {
+    packageName: 'stella_0015_project_bound_operation_tickets',
+    supersededBy: 'stella_0016_reserved_quota_semantics',
+    probe: STELLA_0016_INSTALLED_PROBE,
+    wouldRepublish: RESERVATION_AWARE_TICKET_BODIES.map((b) => b.signature),
+    why:
+      'stella_0015 publishes bind/complete with an arithmetic that counts CHARGED ROWS ONLY, ' +
+      'and whose reservation count runs under an actor-scoped SELECT policy so it sees only the ' +
+      "caller's own tickets. stella_0016 replaced both bodies IN PLACE — same names, same " +
+      'signatures — so re-applying stella_0015 over it silently restores R1: a sibling Stella ' +
+      'action can charge the unit a live grounded reservation is holding, and the completion of ' +
+      'that reservation is then refused, giving the executed work away. Nothing about the ' +
+      'signatures changes, so no later check notices. Apply the chain in order ' +
+      '(stella_0013 -> stella_0014 -> stella_0015 -> stella_0016); to genuinely revert, run ' +
+      'stella_0016_rollback.sql first.',
   },
 ]
 

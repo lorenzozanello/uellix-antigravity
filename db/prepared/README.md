@@ -305,6 +305,52 @@ Cierra **R2-INT** (`docs/ops/contracts/CONTRACT_LEDGER.md#r2-int`, respuesta en
 > publicar las firmas sin proyecto. Una postcondición lo afirma: si una edición
 > futura «restaurara» alguna, el rollback aborta.
 
+### Train 4.3 — semántica de cuota reservada (`stella_0016`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra **R1** (`docs/ops/contracts/CONTRACT_LEDGER.md#r1`, respuesta en
+[`R1`](../../docs/ops/contracts/R1_reserved_quota_semantics.md)).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0016_reserved_quota_semantics.sql` | `stella_0016_rollback.sql` | **ninguno todavía**; exige `stella_0013`, `stella_0014` y `stella_0015` **ya aplicados** (precondiciones duras en §0, incluida la ausencia de las firmas sin proyecto) | **R1.** **No crea rol, esquema ni tabla.** Tres funciones nuevas en `uellix_stella` (propiedad de `uellix_cap_stella_quota`): `stella_capacity(uuid, char(64))` — la aritmética canónica `Limit − Consumed − Reserved`; `consume_stella_capacity(uuid, uuid, varchar(50), char(64))` — la superficie para consumidores **sin ticket**, concedida a `uellix_app`; y `settle_reserved_quota(uuid, uuid, varchar(50), char(64), char(64))` — la **conversión**, que cobra **sin evaluar el límite** y está concedida **sólo** a `uellix_cap_stella_ticket`. Republica **en el sitio** `bind` y `complete` (mismas firmas). Columna `operation_tickets.period_month` **`GENERATED ALWAYS`** desde `bound_at`; **cuarta** policy `operation_tickets_capacity_select` — organización, **no** actor; grant de SELECT **por columna** que excluye `charge_nonce` y `query_hash`. SQLSTATE nuevo **`U0111`** («la reserva no está viva») | **DISEÑO — no aplicado** |
+
+> **La cadena canónica es `stella_0013` → `stella_0014` → `stella_0015` →
+> `stella_0016`.** `stella_0016` §0 se niega si las firmas de tres argumentos no
+> están **y** se niega si alguna firma sin proyecto sobrevive: republica dos
+> cuerpos, y un `CREATE OR REPLACE` sobre una firma inexistente la **acuña** en
+> vez de reemplazarla.
+
+> **REAPLICAR `stella_0015` DESPUÉS DE `stella_0016` ESTÁ BLOQUEADO POR EL
+> RUNNER.** Es R2a en la otra dirección y es peor de ver: `stella_0015` es
+> idempotente y las firmas **no cambian**, así que reejecutarlo republica `bind`
+> y `complete` con la aritmética que cuenta **sólo filas cobradas** sin que
+> ninguna comprobación de firma lo note. La supersesión está declarada en
+> [`db/prepared-package-order.ts`](../prepared-package-order.ts) y la premisa
+> —que reaplicarlo de verdad reintroduce el defecto— se **mide** en el §14 de
+> `scripts/stella-reserved-quota-dry-run.sh`.
+
+> **`stella_0014` deja de ser reaplicable, y es deliberado.** Su §7 afirma
+> exactamente **3** policies sobre `operation_tickets`, y este paquete añade la
+> cuarta. La alternativa era ampliar la aserción de un paquete publicado para
+> hacer sitio a uno posterior — el intercambio que el tren 4.2 rechazó. La
+> supersesión `stella_0014 → stella_0015` ya vigente lo cubre: `stella_0016`
+> exige `stella_0015`, así que la sonda de aquella regla es verdadera aquí
+> también.
+
+> **Orden de rollback: `stella_0016` antes que `stella_0015` antes que
+> `stella_0014` antes que `stella_0013`.** Lo impone el propio SQL: las tres
+> funciones nuevas son propiedad de `uellix_cap_stella_quota`, así que el
+> `DROP ROLE` del rollback de `stella_0013` **falla** mientras existan.
+
+> **El rollback de `stella_0016` deja una superficie CERRADA, no degradada.**
+> **DROPea** `bind` y `complete` en vez de revertirlos —R1 es la *ausencia* de
+> aritmética consciente de reservas, así que «restaurar la versión anterior» y
+> «republicar la vulnerabilidad» son la misma frase— y deja `issue`, `abort`,
+> `inspect` y `expire`, ninguna de las cuales cobra. **Ningún cargo se borra.**
+> Consecuencia declarada: para volver a aplicar `stella_0016` hay que reaplicar
+> `stella_0015` primero, y `stella_0016` §0 lo exige en vez de sugerirlo.
+
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad
