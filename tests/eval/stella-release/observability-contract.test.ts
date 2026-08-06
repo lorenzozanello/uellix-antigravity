@@ -42,7 +42,19 @@ describe('event name coverage — the 8 journey events Fase 4 requires', () => {
     // TRAIN 4.1: this asserts the original 13 are still exactly 13 — a subset
     // check, not the full-array length (see the next describe block for the
     // 10 ticket-lifecycle events added on top, additively).
-    expect(STELLA_OBSERVABILITY_EVENT_NAMES.filter((n) => !n.startsWith('operation_ticket_') && !n.startsWith('grounded_query_') && !n.startsWith('quota_consumed') && !n.startsWith('quota_reuse_detected') && !n.startsWith('replay_rejected')).length).toBe(13)
+    expect(
+      STELLA_OBSERVABILITY_EVENT_NAMES.filter(
+        (n) =>
+          !n.startsWith('operation_ticket_') &&
+          !n.startsWith('grounded_query_') &&
+          !n.startsWith('quota_consumed') &&
+          !n.startsWith('quota_reuse_detected') &&
+          !n.startsWith('replay_rejected') &&
+          !n.startsWith('quota_reservation_') &&
+          !n.startsWith('quota_capacity_rejected') &&
+          !n.startsWith('quota_cross_operation_contention'),
+      ).length,
+    ).toBe(13)
   })
 })
 
@@ -65,9 +77,10 @@ describe('event name coverage — Train 4.1: the 10 operation-ticket lifecycle e
     )
   })
 
-  it('has exactly 23 events total, no duplicates — additive, none of the original 13 renamed or removed', () => {
-    expect(new Set(STELLA_OBSERVABILITY_EVENT_NAMES).size).toBe(23)
-    expect(STELLA_OBSERVABILITY_EVENT_NAMES.length).toBe(23)
+  it('has exactly 23 events among the original 13 plus these 10, no duplicates — additive, none of the original 13 renamed or removed', () => {
+    const withoutTrain43 = STELLA_OBSERVABILITY_EVENT_NAMES.filter((n) => !n.startsWith('quota_reservation_') && n !== 'quota_capacity_rejected' && n !== 'quota_cross_operation_contention')
+    expect(new Set(withoutTrain43).size).toBe(23)
+    expect(withoutTrain43.length).toBe(23)
   })
 
   it('accepts a minimal, well-formed event of every one of the 10 new names', () => {
@@ -98,6 +111,63 @@ describe('event name coverage — Train 4.1: the 10 operation-ticket lifecycle e
       ticketId: 'ticket-1', query: '¿Cuál es el ahorro de horas de acarreo del proyecto Río Verde?',
     })
     expect(result.ok).toBe(false)
+  })
+})
+
+describe('event name coverage — Train 4.3: the 6 reserved-quota lifecycle events', () => {
+  it('declares created/released/expired/converted for the reservation itself', () => {
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES).toEqual(expect.arrayContaining([
+      'quota_reservation_created', 'quota_reservation_released', 'quota_reservation_expired', 'quota_reservation_converted',
+    ]))
+  })
+
+  it('declares quota_capacity_rejected and quota_cross_operation_contention', () => {
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES).toEqual(
+      expect.arrayContaining(['quota_capacity_rejected', 'quota_cross_operation_contention']),
+    )
+  })
+
+  it('has exactly 29 events total, no duplicates — additive, none of the prior 23 renamed or removed', () => {
+    expect(new Set(STELLA_OBSERVABILITY_EVENT_NAMES).size).toBe(29)
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES.length).toBe(29)
+  })
+
+  it('accepts a minimal, well-formed event of every one of the 6 new names', () => {
+    const base = { timestamp: '2026-08-06T00:00:00.000Z', organizationId: 'org-1', requestId: 'req-1' }
+    const perEventFields: Record<string, Record<string, unknown>> = {
+      quota_reservation_created: { reservationId: 'reservation-1' },
+      quota_reservation_released: { reservationId: 'reservation-1' },
+      quota_reservation_expired: { reservationId: 'reservation-1' },
+      quota_reservation_converted: { reservationId: 'reservation-1', chargeId: 'charge-1' },
+      quota_capacity_rejected: { reasonCode: 'quota_exceeded' },
+      quota_cross_operation_contention: { reservationId: 'reservation-1', reasonCode: 'sibling_consumed_between_bind_and_complete' },
+    }
+    for (const [eventName, fields] of Object.entries(perEventFields)) {
+      const result = validateObservabilityEvent({ eventName, ...base, ...fields })
+      expect(result.violations, `${eventName}: ${result.violations.join(' | ')}`).toEqual([])
+      expect(result.ok).toBe(true)
+    }
+  })
+
+  it('rejects a query text field on quota_cross_operation_contention even though reservationId/reasonCode are allowed', () => {
+    const result = validateObservabilityEvent({
+      eventName: 'quota_cross_operation_contention',
+      timestamp: '2026-08-06T00:00:00.000Z', organizationId: 'org-1', requestId: 'req-1',
+      reservationId: 'reservation-1', reasonCode: 'sibling_consumed_between_bind_and_complete',
+      query: '¿Cuántos árboles se plantaron en el proyecto Río Verde?',
+    })
+    expect(result.ok).toBe(false)
+  })
+
+  it('never names which sibling category won a contention — no category field is on quota_cross_operation_contention\'s allowlist', () => {
+    const result = validateObservabilityEvent({
+      eventName: 'quota_cross_operation_contention',
+      timestamp: '2026-08-06T00:00:00.000Z', organizationId: 'org-1', requestId: 'req-1',
+      reservationId: 'reservation-1', reasonCode: 'sibling_consumed_between_bind_and_complete',
+      category: 'advisor',
+    })
+    expect(result.ok).toBe(false)
+    expect(result.violations.join(' ')).toMatch(/not on the allowlist/)
   })
 })
 
