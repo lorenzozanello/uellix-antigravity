@@ -50,6 +50,24 @@ export const STELLA_OBSERVABILITY_EVENT_NAMES = [
   'retry.attempted',
   'quota.rejected',
   'permission.rejected',
+  // ---------------------------------------------------------------------
+  // Train 4.1 (STELLA_RELEASE_IDEMPOTENCY_GATE_TRAIN_4_1) — the operation-
+  // ticket protocol's own lifecycle (tests/eval/stella-release/ticket-protocol.ts).
+  // Additive only: the 13 events above are untouched, and every rule below
+  // this point (allowlist, forbidden names, length cap, secret detector)
+  // applies to these 10 exactly as it already applies to the first 13 — no
+  // second contract, no relaxed path.
+  // ---------------------------------------------------------------------
+  'operation_ticket_issued',
+  'operation_ticket_bound',
+  'operation_ticket_expired',
+  'grounded_query_reserved',
+  'grounded_query_completed',
+  'grounded_query_aborted',
+  'grounded_query_retried',
+  'quota_consumed',
+  'quota_reuse_detected',
+  'replay_rejected',
 ] as const
 
 export type StellaObservabilityEventName = (typeof STELLA_OBSERVABILITY_EVENT_NAMES)[number]
@@ -79,6 +97,22 @@ const EVENT_SPECIFIC_ALLOWED_FIELDS: Record<StellaObservabilityEventName, readon
   'retry.attempted': ['attempt', 'errorCode'],
   'quota.rejected': ['limit', 'windowHours'],
   'permission.rejected': ['requiredRole'],
+  // Train 4.1. `ticketId` and `chargeId` are opaque, server-minted
+  // identifiers — same status as `interactionId` in COMMON_ALLOWED_FIELDS,
+  // never the query text or anything derived from it. `reasonCode` on
+  // `replay_rejected` is one of the stable codes ticket-protocol.ts's
+  // `OperationOutcome.reason` returns (e.g. "query_mismatch",
+  // "scope_mismatch", "ticket_aborted") — never a sentence.
+  operation_ticket_issued: ['ticketId'],
+  operation_ticket_bound: ['ticketId'],
+  operation_ticket_expired: ['ticketId'],
+  grounded_query_reserved: ['ticketId'],
+  grounded_query_completed: ['ticketId', 'chargeId'],
+  grounded_query_aborted: ['ticketId'],
+  grounded_query_retried: ['ticketId', 'attempt'],
+  quota_consumed: ['ticketId', 'chargeId'],
+  quota_reuse_detected: ['ticketId', 'chargeId'],
+  replay_rejected: ['ticketId', 'reasonCode'],
 }
 
 /** Field names that must NEVER appear on any event, whatever the allowlist
