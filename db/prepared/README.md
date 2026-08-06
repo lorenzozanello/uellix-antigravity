@@ -130,6 +130,35 @@ rollback.)
    salvaguardas de la ADR). **No es un parse de Postgres** — la validación real
    contra una base es parte del checklist G2.
 
+### Train 5B — bootstrap de Supabase gestionado (`stella_hosted_0001`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra el bloqueador B1 del Train 5A: los diez paquetes de la cadena hosted
+abortaban sin `rolsuper`, y Supabase gestionado no expone superusuario.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0001_managed_role_bootstrap.sql` | `stella_hosted_0001_rollback.sql` | **G11/G12 propuestos** (`docs/ops/staging/STELLA_STAGING_GATE_PLAN.md`) | Los **5** roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`) sin ningún atributo peligroso; esquema `uellix_bootstrap`; `assert_hosted_capabilities(text)` (la precondición que sustituye a la guarda `rolsuper`); `hosted_capability_report()` (sólo lectura); tabla `staging_sentinel` (**fila no insertada** — la escribe el aprovisionamiento); `public.uellix_auth_uid()`, el shim `SECURITY DEFINER` que expone el actor de sesión a los roles de capacidad sin `USAGE ON SCHEMA auth` (RR-09) | **DISEÑO — no aplicado** |
+
+> **NO sustituye a `stella_0004`, y se niega donde `stella_0004` es aplicable.**
+> Su §0 (E2) aborta si `current_user` ES superusuario: instalar en silencio el
+> modelo más débil sobre una base capaz de sostener el fuerte sería una
+> degradación que nadie eligió.
+
+> **Lo que es más débil, dicho antes que el código.** RR-02: un CREATEROLE no
+> superusuario recibe `ADMIN OPTION` automática sobre cada rol que crea, así que
+> `postgres` puede volverse `uellix_owner` con una sentencia. La separación es
+> aquí un **obstáculo auditable**, no una barrera. El paquete lo emite como
+> `RAISE NOTICE` y el centinela lo registra en `owner_separation`.
+
+> **Los nueve paquetes de la cadena NO se editan.** Sus variantes hosted se
+> **generan** (`pnpm hosted:generate`) a `db/prepared/hosted/*.hosted.sql` por
+> cuatro reglas enumeradas, con el SHA-256 del fuente y el conteo exacto de cada
+> regla fijados en `db/hosted/hosted-package-manifest.ts`. Editar un canónico sin
+> regenerar da `HOSTED_SOURCE_SHA_MISMATCH`; aflojar una regla sin tocar el
+> canónico da `HOSTED_REWRITE_COUNT_MISMATCH`. Detalle en
+> `docs/ops/staging/STELLA_MANAGED_SUPABASE_COMPATIBILITY.md`.
+
 ## Inventario
 
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
