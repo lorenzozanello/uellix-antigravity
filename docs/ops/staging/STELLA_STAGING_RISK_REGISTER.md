@@ -60,13 +60,18 @@
 
 ### 2.1 BLOCKER
 
+> **ACTUALIZACIÓN Train 5B (2026-08-06).** **B1 y B5 quedan CERRADOS por diseño,
+> pendientes de verificación hosted.** B2, B3 y B4 siguen abiertos y cualquiera
+> de ellos basta para impedir el inicio de la aplicación real.
+
 | # | Riesgo | Estado medido | Evidencia | Qué lo cierra |
 |---|---|---|---|---|
-| **B1** | **Paquetes incompatibles con la plataforma hosted** | **PRESENTE** | Los **10** paquetes abortan sin `rolsuper`; Supabase gestionado no tiene superusuario (`DATABASE_ROLE_MODEL.md` §5.0: *«no arranca»*). Además `stella_0004` exige PG ≥ 17 y `GRANT USAGE ON SCHEMA auth`, imposible como `postgres` (RR-09) | Elegir plataforma con superusuario **o** reescribir la cadena como variante hosted con su propia revisión adversarial |
+| **B1** | **Paquetes incompatibles con la plataforma hosted** | **CERRADO POR DISEÑO · pendiente de verificación hosted** | Train 5B: `stella_hosted_0001_managed_role_bootstrap.sql` + 9 artefactos derivados con guarda de capacidades en lugar de `rolsuper`. Los canónicos no se editaron. 156 pruebas hosted verdes, incluida una mutación que confirma que las aserciones muerden | Ya no exige elegir plataforma. **Queda por medir en hosted:** RR-09 (E5b del bootstrap), PostgreSQL ≥ 17 del proyecto y RR-03 — CHECKPOINT A / gate G12 |
 | **B2** | **Staging no aislado** | **PRESENTE** | Cero de seis señales de entorno hosted en el árbol. Ningún project ref, dominio, deployment target, base ni secreto de staging | Aprovisionar el entorno y versionar ≥ 2 señales independientes |
 | **B3** | **Clave de proveedor sin rotación de ámbito staging** | **PRESENTE** | Rotación de 2026-07-10 evidenciada **para Vercel/producción**. Sin procedimiento de clave de staging, sin gestor de secretos de staging, sin prueba de invalidez de la anterior | Procedimiento escrito + ejecución + evidencia (sin exponer valores) |
 | **B4** | **Credenciales ambiguas** | **PRESENTE** | `.env.example` declara `DATABASE_URL`, que `resolve-capability-database-url.ts:107-121` **ignora con aviso**, y **omite** `UELLIX_RUNTIME_DATABASE_URL`, `UELLIX_MIGRATOR_DATABASE_URL`, `UELLIX_AUDITOR_DATABASE_URL` y `UELLIX_APP_ENV`. Un `UELLIX_APP_ENV` ausente o con errata resuelve a **`production`** | Sincronizar `.env.example` (INTEGRATION-OWNED) |
-| **B5** | **Rol migrator insuficiente / inexistente en hosted** | **PRESENTE** | `uellix_migrator` lo crea `stella_0004`, que no arranca en hosted. Y `db/migrator.ts:234` pide capacidad `local_migration`, que **sólo acepta loopback/contenedor**: ninguna herramienta del repo puede aplicar a hosted | Consecuencia de B1 |
+| **B5** | **Rol migrator insuficiente / inexistente en hosted** | **CERRADO POR DISEÑO** | `uellix_migrator` lo crea ahora el bootstrap hosted, con `SET TRUE, INHERIT FALSE` sobre `uellix_owner` y una postcondición que lo afirma. `db/migrator.ts` sigue pidiendo `local_migration` **a propósito** —ampliarlo habría destruido el límite— y la superficie hosted es `db/hosted/hosted-migrator.ts`, un planificador puro que no abre conexión | Ejecutar el plan es una unidad posterior, deliberadamente no cableada |
+| **B6** | **RR-02 — el instalador retiene ADMIN OPTION sobre los roles que crea** | **PRESENTE, NO CERRABLE** | PostgreSQL 16+ auto-concede `ADMIN OPTION` a un CREATEROLE no superusuario. `postgres` puede `GRANT uellix_owner TO postgres WITH SET TRUE` en cualquier momento | Nada, en Supabase gestionado. Se acepta explícitamente: la separación es un **obstáculo auditable**, no una barrera. El bootstrap lo emite como NOTICE y el centinela lo registra en `owner_separation` |
 
 ### 2.2 MAJOR
 
@@ -109,11 +114,11 @@ Se declaran explícitamente para que la ausencia sea una afirmación y no un olv
 
 ## 3. Conteo
 
-| Severidad | Cantidad |
-|---|---|
-| BLOCKER | **5** (B1-B5) |
-| MAJOR | **10** (M1-M10) |
-| MINOR | **6** (m1-m6) |
+| Severidad | Cantidad | Tras Train 5B |
+|---|---|---|
+| BLOCKER | **6** (B1-B6) | **3 abiertos** (B2 staging no aislado, B3 clave sin rotar, B4 credenciales ambiguas) · 2 cerrados por diseño (B1, B5) · 1 aceptado como no cerrable (B6/RR-02) |
+| MAJOR | **10** (M1-M10) | M1 **mitigado** (el planificador hosted evalúa las supersesiones antes de emitir el plan); el resto sin cambios |
+| MINOR | **6** (m1-m6) | sin cambios |
 
 > **M10 lo aportó la revisión adversarial de la Fase 12** (revisor Sonnet,
 > sólo lectura), que además refutó una afirmación absoluta de la primera
@@ -123,7 +128,8 @@ Se declaran explícitamente para que la ausencia sea una afirmación y no un olv
 > no cambia: la señal encontrada es de **producción**, y la Fase 4 exige dos
 > señales independientes de **staging**.
 
-**Cualquiera de los cinco BLOCKER es suficiente para impedir el inicio de la
-aplicación real.** El de mayor profundidad es **B1**: no se resuelve con
-configuración, permisos ni un runbook mejor, sino eligiendo plataforma o
-reescribiendo la cadena.
+**Cualquiera de los tres BLOCKER abiertos es suficiente para impedir el inicio de
+la aplicación real.** El de mayor profundidad ya no es B1 sino **B2**: no existe
+el proyecto de staging, y sin él no hay adónde conectarse ni siquiera para la
+inspección de sólo lectura. Los pasos concretos están en
+[`STELLA_STAGING_PROVISIONING_REQUIREMENTS.md`](STELLA_STAGING_PROVISIONING_REQUIREMENTS.md).

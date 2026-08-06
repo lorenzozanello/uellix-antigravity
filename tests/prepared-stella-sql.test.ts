@@ -344,6 +344,13 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // DESIGN ONLY.
       'stella_0018_category_bound_operation_tickets.sql',
       'stella_0018_rollback.sql',
+      // TRAIN 5B. The managed-Supabase counterpart of stella_0004: same five
+      // roles, no superuser anywhere, an auth shim in place of a grant that
+      // `postgres` cannot issue (RR-09). It is a `stella_*` script and is swept
+      // by every cross-cutting invariant below — including the one that refuses
+      // dynamic EXECUTE, which caught its first draft's `format()` loop.
+      'stella_hosted_0001_managed_role_bootstrap.sql',
+      'stella_hosted_0001_rollback.sql',
     ])
   })
 

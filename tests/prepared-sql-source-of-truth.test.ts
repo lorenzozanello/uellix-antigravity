@@ -160,7 +160,16 @@ describe('ADR 21 safeguard 4 — db/prepared/README.md is an accurate registry',
       // The optional trailing letter carries follow-up units that harden an
       // already-published script without renumbering it (stella_0002b), so the
       // evidence produced for the original keeps referring to the same name.
-      const match = /^([a-z]+_\d+[a-z]?)_.+\.sql$/.exec(file)
+      //
+      // TRAIN 5B widened <family> from one word to several. `stella_hosted_0001`
+      // is a family, not a variant of `stella_0001`: it starts its own sequence
+      // because it targets a different privilege model, and folding it into the
+      // stella numbering would have implied an ordering between packages that
+      // are never applied to the same database. The widening is deliberately
+      // narrow — still lowercase words joined by underscores, still one numeric
+      // segment, still an optional trailing letter — so a typo like
+      // `stella__0001_x.sql` remains unmatched and still fails here.
+      const match = /^([a-z]+(?:_[a-z]+)*_\d+[a-z]?)_.+\.sql$/.exec(file)
       expect(match, `unexpected prepared script name: ${file}`).not.toBeNull()
       const rollback = `${match![1]}_rollback.sql`
       expect(existsSync(path.join(PREPARED_DIR, rollback)), `missing ${rollback}`).toBe(true)

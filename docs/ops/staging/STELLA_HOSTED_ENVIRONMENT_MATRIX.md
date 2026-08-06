@@ -167,15 +167,23 @@ humano (`db/prepared/README.md` regla 2, `G2_PACKAGE.md` §Aplicación).
 Clasificación exigida: **confirmada localmente · requiere verificación hosted ·
 no disponible · opcional · bloqueante**.
 
+> **ACTUALIZACIÓN Train 5B.** Las filas marcadas antes como bloqueantes por
+> superusuario se resuelven por la ruta hosted
+> ([`STELLA_MANAGED_SUPABASE_COMPATIBILITY.md`](STELLA_MANAGED_SUPABASE_COMPATIBILITY.md)).
+> La clasificación **no** se rebaja a «confirmada»: pasa a **requiere
+> verificación hosted**, que es lo único que la evidencia offline sostiene.
+
 | Dependencia | Uso real | Clasificación |
 |---|---|---|
-| **Superusuario (`rolsuper`)** | Guarda `IF NOT (SELECT rolsuper …)` en los **10** paquetes de la cadena | **NO DISPONIBLE en Supabase gestionado · BLOQUEANTE** (`DATABASE_ROLE_MODEL.md` §5.0) |
+| **Superusuario (`rolsuper`)** | Guarda `IF NOT (SELECT rolsuper …)` en los 10 paquetes **canónicos** | **RESUELTO en la ruta hosted · ya no bloqueante.** Los artefactos de `db/prepared/hosted/` sustituyen la guarda por `uellix_bootstrap.assert_hosted_capabilities()`, que comprueba capacidades concretas. Los canónicos no se editan y siguen exigiendo superusuario, que es lo correcto para el stack local |
+| **CREATEROLE del instalador** | El bootstrap crea 5 roles | **Requiere verificación hosted** — `postgres` lo tiene en gestionado. El bootstrap aborta nombrándolo si falta |
+| **`ADMIN OPTION` residual (RR-02)** | Consecuencia de crear roles sin ser superusuario | **NO CERRABLE.** Documentado, emitido como `RAISE NOTICE` y registrado en el centinela |
 | **PostgreSQL ≥ 17** | `stella_0004:120` aborta si `server_version_num < 170000` (manejo de `MAINTAIN`) | **Requiere verificación hosted · bloqueante si el proyecto es PG15/16** |
 | **PostgreSQL ≥ 13** | `gen_random_uuid()` como builtin de `pg_catalog`; `stella_0014:160` aborta si `to_regprocedure` no lo resuelve | Confirmada localmente; trivialmente satisfecha en hosted |
 | **`pg_catalog.sha256`** | derivación de `chunk_id`, digests, nonces | Confirmada localmente. **No requiere pgcrypto** — los propios scripts lo documentan (`stella_0013:515`, `grounding_0003:924`) |
 | **pgcrypto** | ninguno | **No requerida** (dependencia deliberadamente evitada para no referenciar el esquema `extensions` desde funciones con `search_path` vacío) |
 | **pgvector** | Sólo `grounding_0001`, **superseded, NO APLICAR**. `grounding_0003` es pgvector-free por diseño | **Opcional** — la decisión G5 P3 sigue abierta y la cadena vigente no la fuerza |
-| **`auth.uid()`** | 12 usos en `stella_0013`, 17 en `stella_0014`, presente en 8 de los 10 paquetes | **Requiere verificación hosted · bloqueante vía RR-09**: los `SECURITY DEFINER` propiedad de `uellix_owner` exigen `USAGE ON SCHEMA auth`, y `postgres` no puede concederlo en hosted (`auth` es de `supabase_auth_admin`). Sin ese grant **toda la RLS del producto** falla con `permission denied for schema auth` |
+| **`auth.uid()`** | 12 usos en `stella_0013`, 17 en `stella_0014`, presente en 8 de los 10 paquetes | **MITIGADO por diseño · requiere verificación hosted.** La ruta hosted enruta cada llamada ejecutable por `public.uellix_auth_uid()`, un shim `SECURITY DEFINER` propiedad del rol que **ya** gobierna identidad, y no transfiere el ownership de los helpers RLS del baseline — que es lo que habría roto toda la RLS. Lo que queda por medir en hosted (E5b del bootstrap): que ese rol pueda efectivamente resolver `auth.uid()`. Si no puede, el bootstrap **se niega** con `STELLA_TRAIN_5B_BLOCKED_AUTH_SCHEMA` |
 | **`auth.jwt()`** | sin uso directo en la cadena | No aplica |
 | **Roles `uellix_*`** | `uellix_owner`, `_migrator`, `_app`, `_writer`, `_auditor` + 4 roles de capacidad (`uellix_cap_grounding`, `_cap_stella_quota`, `_cap_stella_ticket`, `_cap_stripe`) | **Bloqueante**: los crea `stella_0004`, que no arranca en hosted |
 | **Propietarios (ownership)** | 38 tablas + 8 funciones de `public` → `uellix_owner` | Requiere verificación hosted; el owner actual debe ser miembro del nuevo owner (posible como `postgres`), pero depende de `stella_0004` |
@@ -193,13 +201,19 @@ no disponible · opcional · bloqueante**.
 
 ### 4.1 Conclusión de la fase
 
-`STELLA_TRAIN_5A_BLOCKED_HOSTED_COMPATIBILITY`.
+**Train 5A: `STELLA_TRAIN_5A_BLOCKED_HOSTED_COMPATIBILITY`.** La cadena asumía un
+PostgreSQL 17 con superusuario y con capacidad de conceder `USAGE ON SCHEMA
+auth`; Supabase gestionado no ofrece ninguna de las dos.
+`DATABASE_ROLE_MODEL.md` §5.0 ya había declarado que una variante remota sería
+«un script distinto, con otro modelo de confianza y su propia revisión».
 
-La cadena preparada asume un PostgreSQL 17 **con superusuario** y con capacidad
-de conceder `USAGE ON SCHEMA auth`. Supabase gestionado no ofrece ninguna de las
-dos. No es un ajuste de runbook: `DATABASE_ROLE_MODEL.md` §5.0 ya declaró que
-una variante remota **sería un script distinto, con otro modelo de confianza y
-su propia revisión**.
+**Train 5B: ese script existe** — `stella_hosted_0001_managed_role_bootstrap.sql`
+más nueve artefactos derivados. El bloqueador de compatibilidad se levanta; lo
+que queda son verificaciones hosted, no incompatibilidades de diseño.
+
+**Sigue sin cerrarse, y no puede cerrarse offline:** RR-09 (si el dueño de los
+helpers alcanza `auth.uid()` en un proyecto real), PostgreSQL ≥ 17 del proyecto,
+y RR-03. Los tres son CHECKPOINT A / gate G12.
 
 **Ninguna consulta se ejecutó contra ninguna base hosted para producir esta
 matriz.** Todo lo anterior sale del SQL preparado y de la documentación

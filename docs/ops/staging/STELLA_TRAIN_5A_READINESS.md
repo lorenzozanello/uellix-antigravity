@@ -10,6 +10,15 @@
 > - **Fecha:** 2026-08-06
 > - **Resultado previo:** `STELLA_TRAIN_5_WORKTREES_READY_FOR_HOSTED_STAGING`
 
+> **ACTUALIZACIÓN — Train 5B (2026-08-06).** El bloqueador **B1** de este informe
+> («paquetes incompatibles con la plataforma hosted») **ya no es estructural**:
+> existe una ruta hosted completa, documentada en
+> [`STELLA_MANAGED_SUPABASE_COMPATIBILITY.md`](STELLA_MANAGED_SUPABASE_COMPATIBILITY.md).
+> **B2** (staging no aislado) y **B3** (rotación de clave) siguen abiertos y
+> siguen siendo suficientes por sí solos: el resultado de esta auditoría **no
+> cambia**. Lo que cambia es que dejó de haber un bloqueador que exigía elegir
+> otra plataforma o reescribir la cadena — ver §10.
+
 **Resultado de esta auditoría: `STELLA_TRAIN_5A_BLOCKED_STAGING_ISOLATION`.**
 
 Tres bloqueadores independientes, cada uno suficiente por sí solo para impedir
@@ -222,24 +231,29 @@ Validarla en staging rompería la re-aplicabilidad del paquete.
 
 ## 8. Qué haría falta para levantar el bloqueo
 
+> **Reescrito tras Train 5B.** El punto 1 original decía «decidir la plataforma»
+> y ofrecía tres salidas, de las que la tercera —reescribir la cadena como
+> variante hosted— era «un tren de trabajo completo». **Ese tren se ejecutó:**
+> Train 5B, 2026-08-06. La decisión arquitectónica fue Supabase gestionado
+> independiente, y la ruta existe. El punto 1 ya no es una decisión pendiente.
+
 En este orden, y ninguno es trabajo de agente:
 
-1. **Decidir la plataforma de staging.** La cadena preparada **no es aplicable a
-   Supabase gestionado** tal como está escrita. Las tres salidas reales son:
-   (a) PostgreSQL gestionado con superusuario (no Supabase) para staging;
-   (b) PostgreSQL autoalojado/contenedor persistente de staging;
-   (c) reescribir la cadena entera como variante hosted, con otro modelo de
-   confianza y su propia revisión adversarial — lo que
-   `DATABASE_ROLE_MODEL.md` §5.0 llama «un script distinto».
-   La opción (c) es un tren de trabajo completo, no un ajuste.
-2. **Aprovisionar el entorno** y dejar en el repo, versionadas, al menos dos
-   señales independientes de aislamiento respecto de producción (§3).
+1. ~~Decidir la plataforma de staging~~ → **HECHO** (Train 5B): proyecto Supabase
+   gestionado independiente. La cadena se aplica por artefactos derivados
+   (`db/prepared/hosted/`) sobre un bootstrap sin superusuario. Ver
+   [`STELLA_MANAGED_SUPABASE_COMPATIBILITY.md`](STELLA_MANAGED_SUPABASE_COMPATIBILITY.md).
+2. **Aprovisionar el entorno** siguiendo
+   [`STELLA_STAGING_PROVISIONING_REQUIREMENTS.md`](STELLA_STAGING_PROVISIONING_REQUIREMENTS.md),
+   incluida la fila de centinela y el llenado del veto de producción. Esto es lo
+   que cierra **B2**.
 3. **Sincronizar `.env.example`** con las cuatro variables `UELLIX_*` reales
    (§4) y dejar `NEXT_PUBLIC_SITE_URL` marcada como obligatoria por entorno
    (M10). Es INTEGRATION-OWNED (`STELLA_PARALLEL_WORKSTREAMS.md` §7).
 4. **Documentar la rotación de proveedor con ámbito staging**, incluida la
-   prueba de invalidez de la clave anterior (§2).
-5. Recién entonces: CHECKPOINT A del plan de migración.
+   prueba de invalidez de la clave anterior (§2). Cierra **B3**.
+5. Recién entonces: CHECKPOINT A del plan de migración / gate **G12**, que es
+   además donde RR-09 deja de ser una hipótesis y pasa a medirse.
 
 ## 9. Fase 12 — Revisión adversarial de sólo lectura
 

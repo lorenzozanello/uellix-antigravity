@@ -179,6 +179,27 @@ intercambio que el tren 4.2 rechazó al crear `stella_0002b` en vez de editar
 
 ---
 
+## 3b. Gates LOCALES de Train 5B (implementados y verdes)
+
+`tests/eval/stella-release/hosted-release-gate.ts`. Los siete son puramente
+**RO**: leen el repositorio, no contactan nada. Ninguno puede declarar staging
+aplicado, hosted listo ni proveedor listo — los tres campos están **hardcodeados
+`false`**, con el mismo precedente que `stagingBlocked`/`hostedBlocked` en
+`local-release-gate.ts`.
+
+| Gate | Qué mide | Control negativo que lo mata |
+|---|---|---|
+| `hosted-capability-preflight-ready` | el bootstrap sonda las 10 capacidades concretas por nombre | renombrar `rolcreaterole` |
+| `managed-role-bootstrap-ready` | 5 roles sin atributo peligroso; `service_role` nunca como grantee; **se niega si hay superusuario** | inyectar `BYPASSRLS`, un `GRANT … TO service_role`, un `CREATE ROLE … CREATEROLE`, o quitar la refusal de superusuario |
+| `hosted-package-manifest-ready` | los 10 artefactos regeneran byte a byte desde su fuente fijada | marcar un artefacto como divergente |
+| `hosted-package-order-ready` | el planificador hosted usa las **mismas 8** reglas de supersesión | bajar el conteo a 7 |
+| `staging-target-identity-ready` | host de producción y centinela ausente son rechazos con código propio | desactivar cualquiera de los dos |
+| `hosted-migrator-dry-run-ready` | un dry-run planifica los 10 pasos y **no permite escrituras** | permitir escrituras, o 9 pasos |
+| `r6h-audit-ready` | el `stella_0017` generado conserva el CHECK `NOT VALID` y su aborto ante VALIDATED; ningún artefacto emite `VALIDATE CONSTRAINT` | desactivar cualquiera de los dos |
+
+Además, la suite comprueba que el constructor de evidencia **no es un sello de
+goma**: lee el bootstrap real y ejecuta un dry-run real.
+
 ## 4. Orden y dependencias
 
 ```

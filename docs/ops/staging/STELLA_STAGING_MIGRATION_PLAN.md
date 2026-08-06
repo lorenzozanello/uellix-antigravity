@@ -4,12 +4,16 @@
 > HEAD `2de1050`. **Ningún paquete fue ejecutado. Ninguna consulta se ejecutó
 > contra ninguna base.** Este documento es un plan, no un registro.
 >
-> **Precondición global no satisfecha:** los diez paquetes exigen superusuario y
-> Supabase gestionado no lo ofrece —
-> [`STELLA_HOSTED_ENVIRONMENT_MATRIX.md`](STELLA_HOSTED_ENVIRONMENT_MATRIX.md) §4.
-> El plan se entrega completo porque la instrucción lo pide, y porque sigue
-> siendo válido contra un PostgreSQL 17 con superusuario. **No es ejecutable
-> contra Supabase gestionado.**
+> **ACTUALIZADO POR TRAIN 5B (2026-08-06).** El aviso original decía que este
+> plan «no es ejecutable contra Supabase gestionado» porque los diez paquetes
+> exigían superusuario. **Ya lo es**, por una vía distinta: los artefactos
+> derivados de `db/prepared/hosted/` sobre el bootstrap
+> `stella_hosted_0001_managed_role_bootstrap.sql`. Ver
+> [`STELLA_MANAGED_SUPABASE_COMPATIBILITY.md`](STELLA_MANAGED_SUPABASE_COMPATIBILITY.md).
+>
+> Lo que sigue vigente sin cambios: la cadena canónica de §1, el orden, los
+> rollbacks, el contrato R6h de §3 y los seis checkpoints de §4. Lo que cambia es
+> **qué archivo se envía** y **con qué identidad**, resumido en §1.6.
 
 ---
 
@@ -91,6 +95,28 @@ grounding_0004 → grounding_0003 → grounding_0002
 No es preferencia de runbook: las funciones nuevas son propiedad de roles de
 capacidad, así que el `DROP ROLE` de un rollback anterior **falla** mientras
 existan, y su transacción entera aborta sin destruir nada.
+
+### 1.5b La cadena HOSTED (Train 5B) — qué se envía realmente
+
+```
+stella_hosted_0001_managed_role_bootstrap   ← sustituye a stella_0004 en hosted
+   ├── grounding_0002 → grounding_0003 → grounding_0004   [unidad indivisible]
+   └── stella_0013 → 0014 → 0015 → 0016 → 0017 → 0018
+```
+
+- **Archivos enviados:** `db/prepared/hosted/<paquete>.hosted.sql`, generados y
+  versionados. `pnpm hosted:verify` los regenera y compara byte a byte.
+- **Identidad de aplicación:** el rol administrativo del proyecto (`postgres`),
+  que **no** es superusuario. `stella_0004` queda fuera de la cadena hosted por
+  decisión, no por omisión: el planificador lo rechaza con
+  `HOSTED_PACKAGE_NOT_IN_CHAIN`.
+- **Precondición de sesión:** `SET uellix.bootstrap_environment = 'staging'`,
+  sin default, comparación exacta.
+- **Precondición en base:** la fila de `uellix_bootstrap.staging_sentinel`. La
+  comprueba también `assert_hosted_capabilities()`, **dentro de la transacción**,
+  para que un `psql` a mano no pueda saltársela.
+- **Primera provisión = las diez.** El planificador rechaza un plan que incluya
+  el bootstrap y se quede corto.
 
 ### 1.5 `grounding_0001` — NO APLICAR
 
@@ -339,10 +365,17 @@ de Lorenzo; ningún agente avanza de uno al siguiente.
 
 ## 5. Lo que este plan NO resuelve
 
-1. La cadena **no es aplicable a Supabase gestionado**. Los checkpoints B-F
-   presuponen una plataforma que hoy no está elegida.
-2. Los guards de orden **no corren por la vía `psql`**, que es la única vía
-   hosted prevista.
+1. ~~La cadena no es aplicable a Supabase gestionado~~ → **resuelto por Train 5B**
+   (§1.5b). Lo que queda no es incompatibilidad sino verificación: RR-09,
+   PostgreSQL ≥ 17 del proyecto y RR-03, todos CHECKPOINT A.
+2. Los guards de orden **siguen sin correr por la vía `psql`** — pero el
+   planificador hosted (`db/hosted/hosted-migrator.ts`) los evalúa contra el
+   **mismo** registro antes de emitir el plan, y `assert_hosted_capabilities()`
+   reimpone el centinela dentro de la transacción. Mitigado, no cerrado: un
+   operador que ejecute los `.hosted.sql` a mano sin pasar por el planificador
+   sigue sin las sondas de supersesión.
 3. El teardown del CHECKPOINT D es incompleto por construcción (append-only).
 4. `INT-GR-001`, `INT-GR-003` e `INT-PR-001` siguen pendientes — ver
    [`STELLA_STAGING_RISK_REGISTER.md`](STELLA_STAGING_RISK_REGISTER.md) §2.
+5. **RR-02 no es cerrable** en Supabase gestionado: la separación owner/runtime
+   es un obstáculo auditable, no una barrera.

@@ -11,8 +11,8 @@
 // Nada aquí escribe en `tests/eval/**` ni en `tests/e2e/**`.
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { readSourceText } from './helpers/source-text'
 import {
   evaluateMulticategoryGateContract,
   MULTICATEGORY_GATE_FILES,
@@ -31,9 +31,25 @@ import { MULTICATEGORY_EVIDENCE_KEYS } from './eval/stella-release/multicategory
 
 const ROOT = process.cwd()
 
+/**
+ * DEFECTO PREEXISTENTE, encontrado por el tren 5B y corregido aquí.
+ *
+ * Estas fuentes se leían con `readFileSync` crudo. `.gitattributes` no fija
+ * final de línea para `.ts`, así que con `core.autocrlf=true` un checkout en
+ * Windows las materializa en CRLF — y entonces las siete mutaciones que anclan
+ * texto MULTILÍNEA (K-127, K-129…K-133, K-136) no encuentran su anclaje. El
+ * fallo se presenta como «la mutación no cambió el archivo: el anclaje está
+ * obsoleto», que apunta al sitio equivocado: el anclaje está bien, el archivo
+ * llegó con otros bytes.
+ *
+ * Es exactamente la clase que `tests/helpers/source-text.ts` se escribió para
+ * cerrar en el tren 4.2 — el helper existía y esta suite no lo usaba. Ninguna
+ * aserción se debilita: `readSourceText` normaliza CRLF y CR sueltos a LF y no
+ * toca ningún archivo en disco.
+ */
 function baseline(): Sources {
   const out: Record<string, string> = {}
-  for (const f of MULTICATEGORY_GATE_FILES) out[f] = readFileSync(path.join(ROOT, f), 'utf8')
+  for (const f of MULTICATEGORY_GATE_FILES) out[f] = readSourceText(f, ROOT)
   return out
 }
 
@@ -46,10 +62,7 @@ const BASE = baseline()
  * que no está en ella, y un gate añadido sin mutación es exactamente lo que
  * este fichero existe para hacer visible.
  */
-const GATES_SOURCE = readFileSync(
-  path.join(ROOT, 'tests', 'helpers', 'multicategory-gate-gates.ts'),
-  'utf8',
-)
+const GATES_SOURCE = readSourceText(path.join('tests', 'helpers', 'multicategory-gate-gates.ts'), ROOT)
 const ALL_GATE_NAMES: ReadonlySet<string> = new Set(
   [...GATES_SOURCE.matchAll(/\badd\(\s*'([a-z0-9-]+)'/g)].map((m) => m[1]!),
 )
