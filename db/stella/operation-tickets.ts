@@ -1,6 +1,24 @@
 // db/stella/operation-tickets.ts
 // INTEGRATION — Train 4.1, INT-INT-001 §7 (2). The adapter for
-// `db/prepared/stella_0014_operation_tickets.sql`.
+// `db/prepared/stella_0014_operation_tickets.sql`, and — since Train 4.2 —
+// for `db/prepared/stella_0015_project_bound_operation_tickets.sql`.
+//
+// ---------------------------------------------------------------------------
+// TRAIN 4.2 — R2-INT: THE EXECUTION PROJECT
+// ---------------------------------------------------------------------------
+// `bind`, `complete`, `abort` and `inspect` now take the project the caller is
+// executing against, and the database compares it against the one welded onto
+// the ticket at issue. The four SQL signatures that took no project have been
+// DROPPED, so there is no executable path left that skips the comparison.
+//
+// The TypeScript parameter is optional and the behaviour is not: a call that
+// omits it is refused here, before any round trip (see `unboundProject`). That
+// asymmetry is deliberate and temporary — this workstream does not own
+// `app/actions/stella/grounded-query.ts`, and a required parameter would be a
+// compile error there rather than a decision INTEGRATION gets to make. The
+// governed path therefore fails CLOSED until the action threads its
+// server-resolved project id through, which is the whole of the remaining
+// reconciliation.
 //
 // ---------------------------------------------------------------------------
 // WHAT THIS MODULE IS ALLOWED TO KNOW, AND WHAT IT IS NOT
@@ -83,7 +101,34 @@ const TICKET_ERROR_CODES = {
   QUERY_MISMATCH: 'U0107',
   EXPIRED: 'U0108',
   SETTLED: 'U0109',
+  /**
+   * R2-INT (prepared stella_0015). The ticket belongs to a DIFFERENT PROJECT
+   * than the one the governed surface says it is executing against.
+   *
+   * DISTINCT AT THE DATABASE BOUNDARY, COLLAPSED AT THE PRODUCT ONE, and both
+   * halves are deliberate. The package keeps its own SQLSTATE so an operator
+   * reading a log can tell a cross-project presentation from a cross-tenant
+   * one, from an expired ticket and from a wiring bug — six causes that need
+   * six different responses. `classifyTicketError` then maps it to
+   * `out_of_scope`, which is the same product sentence every other scope
+   * failure gets, for the tenancy-oracle reason `U0102` states in SQL.
+   */
+  PROJECT_MISMATCH: 'U0110',
 } as const
+
+/**
+ * The shape of a project id, checked in Node so a malformed value never becomes
+ * a database round trip that comes back as U0100 and has to be classified.
+ *
+ * Deliberately a SHAPE check and nothing more. This module cannot verify that
+ * the project is one the caller may execute against — that is exactly what the
+ * database re-imposes, against the value welded onto the ticket at issue, which
+ * is the only copy no request can influence.
+ */
+function isProjectId(value: unknown): value is string {
+  return typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+}
 
 export type OperationTicketRejection =
   | 'malformed'
@@ -194,6 +239,14 @@ function classifyTicketError(error: unknown): OperationTicketRejection {
       return 'expired'
     case TICKET_ERROR_CODES.SETTLED:
       return 'settled'
+    case TICKET_ERROR_CODES.PROJECT_MISMATCH:
+      // Collapsed into `out_of_scope` ON PURPOSE, and not because the union is
+      // inconvenient to widen. Every scope failure reaches the reviewer as one
+      // sentence, so a caller cannot probe the difference between "another
+      // organization", "another actor", "another project" and "no such ticket".
+      // The distinction survives where it is useful — the SQLSTATE is in the
+      // database log, and stella_0015 raises it for nothing else.
+      return 'out_of_scope'
     default:
       // A connection failure, a package that is not applied, a permission
       // error. Deliberately NOT collapsed into any of the above: "the database
@@ -201,6 +254,30 @@ function classifyTicketError(error: unknown): OperationTicketRejection {
       // and the caller charges/aborts differently on each.
       return 'unavailable'
   }
+}
+
+/**
+ * The refusal for a call that supplies no execution project — FAIL CLOSED.
+ *
+ * The parameter is OPTIONAL in TypeScript and required in fact, and the gap is
+ * where R2-INT currently lives. Making it required would be a compile error in
+ * `app/actions/stella/grounded-query.ts`, which this workstream does not own;
+ * defaulting it to the ticket's own project would be the defect itself, written
+ * as a convenience. So the type stays permissive, the behaviour does not, and
+ * the call is refused in Node before it can become a round trip.
+ *
+ * `out_of_scope` rather than `malformed`: a call that cannot name the project it
+ * is executing against has not come through a governed surface, which is a
+ * scope failure and not a typo. It reaches the reviewer as the same UNAUTHORIZED
+ * sentence every other scope failure does.
+ *
+ * INTEGRATION closes this by threading the server-resolved project id — the
+ * same bound argument `issueOperationTicket` already receives — through bind,
+ * complete and abort. Until it does, the governed path refuses rather than
+ * charging the wrong project.
+ */
+function unboundProject(): { readonly kind: 'rejected'; readonly reason: OperationTicketRejection } {
+  return { kind: 'rejected', reason: 'out_of_scope' }
 }
 
 /** Rows come back as `unknown`; read the three columns by name, never by index. */
@@ -267,12 +344,17 @@ export async function issueOperationTicket(
  * caller that treated both as "proceed" would re-execute a paid operation and
  * could return an answer different from the one the charge paid for.
  */
-export async function bindOperationTicket(ticketId: string, queryHash: string): Promise<BindTicketResult> {
+export async function bindOperationTicket(
+  ticketId: string,
+  queryHash: string,
+  expectedProjectId?: string,
+): Promise<BindTicketResult> {
   // Refused in Node so a malformed digest never becomes a database round trip
   // that comes back as U0100 and has to be classified.
   if (!isCanonicalQueryHash(queryHash) || !isCanonicalQueryHash(ticketId)) {
     return { kind: 'rejected', reason: 'malformed' }
   }
+  if (!isProjectId(expectedProjectId)) return unboundProject()
 
   try {
     const rows = await withOrganizationDatabaseContext(() =>
@@ -280,6 +362,7 @@ export async function bindOperationTicket(ticketId: string, queryHash: string): 
         SELECT outcome, used, quota
         FROM uellix_stella_ops.bind_operation_ticket(
           ${ticketId}::char(64),
+          ${expectedProjectId}::uuid,
           ${queryHash}::char(64)
         )
       `),
@@ -330,10 +413,12 @@ export async function bindOperationTicket(ticketId: string, queryHash: string): 
 export async function completeOperationTicket(
   ticketId: string,
   queryHash: string,
+  expectedProjectId?: string,
 ): Promise<CompleteTicketResult> {
   if (!isCanonicalQueryHash(queryHash) || !isCanonicalQueryHash(ticketId)) {
     return { kind: 'rejected', reason: 'malformed' }
   }
+  if (!isProjectId(expectedProjectId)) return unboundProject()
 
   try {
     const rows = await withOrganizationDatabaseContext(() =>
@@ -341,6 +426,7 @@ export async function completeOperationTicket(
         SELECT outcome, used, quota
         FROM uellix_stella_ops.complete_operation_ticket(
           ${ticketId}::char(64),
+          ${expectedProjectId}::uuid,
           ${queryHash}::char(64)
         )
       `),
@@ -375,16 +461,19 @@ export async function completeOperationTicket(
 export async function abortOperationTicket(
   ticketId: string,
   reason: OperationTicketAbortReason,
+  expectedProjectId?: string,
 ): Promise<AbortTicketResult> {
   if (!isCanonicalQueryHash(ticketId)) {
     return { kind: 'rejected', reason: 'malformed' }
   }
+  if (!isProjectId(expectedProjectId)) return unboundProject()
 
   try {
     const rows = await withOrganizationDatabaseContext(() =>
       db.execute(sql`
         SELECT uellix_stella_ops.abort_operation_ticket(
           ${ticketId}::char(64),
+          ${expectedProjectId}::uuid,
           ${reason}::varchar(40)
         ) AS outcome
       `),
@@ -409,14 +498,25 @@ export async function abortOperationTicket(
  * and knowing WHICH question it was bound to is not something any caller of
  * this adapter needs.
  */
-export async function inspectOperationTicket(ticketId: string): Promise<OperationTicketInspection | null> {
+export async function inspectOperationTicket(
+  ticketId: string,
+  expectedProjectId?: string,
+): Promise<OperationTicketInspection | null> {
   if (!isCanonicalQueryHash(ticketId)) return null
+  // `null` and not a rejection: this function's contract is already "the state,
+  // or nothing". A caller with no execution project gets the same answer as a
+  // caller asking about a ticket it may not read, which is the answer it should
+  // have got in either case.
+  if (!isProjectId(expectedProjectId)) return null
 
   try {
     const rows = await withOrganizationDatabaseContext(() =>
       db.execute(sql`
         SELECT status, category, expires_at, has_query_hash
-        FROM uellix_stella_ops.inspect_operation_ticket(${ticketId}::char(64))
+        FROM uellix_stella_ops.inspect_operation_ticket(
+          ${ticketId}::char(64),
+          ${expectedProjectId}::uuid
+        )
       `),
     )
     const row = Array.isArray(rows) ? (rows[0] as Record<string, unknown> | undefined) : undefined

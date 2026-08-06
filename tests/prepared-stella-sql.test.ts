@@ -293,6 +293,17 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // under a key derived from a nonce the caller never sees. DESIGN ONLY.
       'stella_0014_operation_tickets.sql',
       'stella_0014_rollback.sql',
+      // 0015 closes R2-INT, the attribution residual 0014 left open: a ticket is
+      // welded to a project at issue, but bind/complete/abort/inspect never
+      // RECEIVE one, so the database has nothing to compare and the charge is
+      // filed under the project of the TICKET while the work read its evidence
+      // under the project of the ACTION. Adding the argument changes the
+      // signature, which CREATE OR REPLACE refuses (42P13) — so this package
+      // revokes the four unbound signatures, publishes project-bound ones that
+      // raise U0110 on a mismatch, and DROPS the old ones so no executable path
+      // skips the check. It creates no table, no role and no policy. DESIGN ONLY.
+      'stella_0015_project_bound_operation_tickets.sql',
+      'stella_0015_rollback.sql',
     ])
   })
 

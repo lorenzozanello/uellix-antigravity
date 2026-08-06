@@ -1088,3 +1088,159 @@ como exitosa una respuesta no cobrada.
 (atribución cross-proyecto, MAJOR), R3-INT, R4-INT, R5-INT, R6-INT, R7-INT — los
 siete detallados en
 [`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).
+
+
+
+---
+
+## Tren 4.2 — tickets ligados al proyecto de ejecución (2026-08-05)
+
+**Cierra R2-INT**, el residual MAJOR que quedó abierto al cerrar INT-INT-001 y
+el criterio que mantiene `local-runtime-ready` en `false`. Respuesta completa:
+[`R2-INT_project_bound_operation_tickets.md`](../contracts/R2-INT_project_bound_operation_tickets.md).
+
+| Contrato | Estado | Unidad |
+|---|---|---|
+| **R2-INT** — atribución cross-proyecto del cargo | cerrado en base | `stella_0015` |
+
+**Estado de aplicación: DISEÑO. No aplicado a ninguna base. Ninguna bandera
+habilitada. Ningún server action pasa todavía el argumento nuevo** — cablearlo
+es la reconciliación de INTEGRACIÓN, explícitamente fuera del alcance de este
+tren.
+
+### El defecto, reproducido antes de cerrarlo
+
+Un ticket queda soldado a organización, proyecto y actor al emitirse. Tres de
+esas cuatro ataduras se reimponen en cada llamada posterior; el **proyecto no**,
+porque `bind` y `complete` no reciben ninguno. La base no tiene con qué
+comparar, así que `complete` cobra bajo el proyecto del **TICKET** mientras el
+trabajo leyó su evidencia bajo el proyecto de la **ACCIÓN**.
+
+El §5b del arnés lo **ejecuta** con `stella_0014` instalado y `stella_0015`
+todavía no — el arnés se aplica en dos etapas justamente para poder medirlo:
+
+| Medido | Valor |
+|---|---|
+| `bind` y `complete` bajo el proyecto A2 con un ticket de A1 | `bound`, `completed` |
+| cargo archivado en el proyecto del **ticket** (A1) | `true` |
+| cargo archivado en el proyecto del **trabajo** (A2) | `false` |
+| funciones de bind/complete/abort/inspect con argumento de proyecto | **0** |
+
+Una unidad, la organización correcta, el proyecto equivocado. No es un escape de
+cuota —el tope es organizacional y se cobra exactamente una unidad— sino de
+atribución y auditoría, y en un producto cuya salida entera es una cifra SROI
+auditable una unidad mal atribuida es peor que una no cobrada.
+
+### Lo que cambia, en una frase
+
+**`stella_0015_project_bound_operation_tickets.sql`** — `bind`, `complete`,
+`abort` e `inspect` reciben un `p_expected_project_id` **sin `DEFAULT`**, lo
+comparan contra el proyecto que el ticket lleva soldado desde su emisión, y
+levantan **`U0110`** cuando difieren; las cuatro firmas que no tomaban proyecto
+quedan **revocadas y eliminadas**, así que no sobrevive ninguna ruta ejecutable
+que se salte la comprobación.
+
+### Cuatro decisiones que conviene conocer
+
+**Un paquete nuevo, no una edición.** Añadir un argumento cambia la firma y
+`CREATE OR REPLACE` lo prohíbe (`42P13`). Editar `stella_0014` en sitio habría
+producido un paquete que falla en toda base que ya tenga la forma antigua — que
+es justamente la población que importa.
+
+**`complete` revalida por su cuenta.** `bind` y `complete` corren en
+transacciones distintas, porque el protocolo lo exige: la reserva es un estado
+de fila y no un lock sostenido. «Bind ya lo comprobó» es una afirmación sobre un
+request que ya terminó — y es el cobro, no la reserva, el que aterriza en un
+ledger append-only bajo un `project_id` que nunca podrá corregirse.
+
+**El proyecto se juzga en cuanto la fila aparece**: después de `NOT FOUND`, para
+que «no existe» y «no es tuyo» sigan siendo la misma frase; y antes de la
+vigencia, del digest y del estado, para que un ticket de otro proyecto no sea
+distinguible como expirado, atado o liquidado. En `complete`, además, **antes
+del cortocircuito de `replayed`**: contestar «esto ya pasó y ya se cobró» a otra
+superficie es informarle de una operación que no es suya.
+
+**`U0110` es distinguible en la base y se colapsa en el producto.** Seis causas
+—otra organización, otro actor, ticket inexistente, expirado, otra consulta,
+otro proyecto— necesitan seis respuestas distintas para un operador. Sólo puede
+observarlo el propio actor del ticket, porque se levanta después de que RLS
+encontró la fila, así que no es un oráculo de existencia. El adaptador lo mapea
+a `out_of_scope`, la misma frase `UNAUTHORIZED` que recibe cualquier otro fallo
+de scope.
+
+### El rollback se NIEGA a restaurar
+
+`stella_0015_rollback.sql` retira las cuatro firmas nuevas y **no recrea las
+antiguas**. R2-INT no es un cuerpo que una versión nueva arregló: es la ausencia
+de un argumento, así que «restaurar la versión anterior» y «republicar la
+vulnerabilidad» son la misma frase. Lo que queda —`issue` y `expire`, ninguna de
+las cuales cobra— es una superficie **cerrada**, no una degradada, y una
+postcondición aborta el rollback si una edición futura reintroduce alguna firma
+sin proyecto.
+
+El orden inverso lo impone el SQL: las cuatro funciones nuevas son propiedad de
+`uellix_cap_stella_ticket`, así que el `DROP ROLE` del rollback de `stella_0014`
+falla mientras existan y su transacción entera aborta sin destruir nada.
+
+### Evidencia ejecutada
+
+* `scripts/stella-ticket-dry-run.sh` — contenedor desechable, `--network none`,
+  sin volumen, destruido al salir. Baseline `0/0/0/0/0/0/0/0/0`, etapa 1
+  `2/2/1/6/1/3/2/1/0`, forward `2/2/1/6/1/3/2/1/4`, **rollback == baseline**,
+  re-apply == forward. La novena componente del vector es de este tren: sin ella
+  no distinguiría «0014 aplicado» de «0014 + 0015 aplicados», porque las dos
+  publican seis funciones.
+  16 secciones: reproducción de R2-INT sobre `stella_0014` solo, cadena completa
+  aplicada dos veces, **20 aserciones cross-proyecto** (mismatch en `bind`,
+  `complete`, `abort`, `inspect` y en el reintento post-cobro; proyecto de otra
+  organización; proyecto ausente; cero cargo ante mismatch; la reserva sobrevive
+  a un `abort` ajeno; dos proyectos con el mismo texto cobran uno cada uno; la
+  cuota sigue contándose sobre la organización; actor ajeno, ticket inventado y
+  organización ajena siguen dando `U0102` y no `U0110`), **siete** pruebas de
+  concurrencia —las seis del tren 4.1 más un `complete` concurrente bajo otro
+  proyecto, que espera al lock de fila y es rechazado con cero cargo—, negativa
+  del rollback de `stella_0014` por el motivo correcto, orden inverso impuesto,
+  rollback de `stella_0015` con reaplicación idéntica, y retorno exacto al
+  baseline.
+* `tests/stella-project-ticket-mutation.test.ts` — **14 mutaciones**
+  (K-40…K-53), todas rechazadas **por su gate propietaria**: el argumento
+  retirado de cada uno de los cuatro verbos, la comparación retirada de `bind` y
+  de `complete` por separado, un `DEFAULT` en el argumento, la firma antigua sin
+  eliminar, el `EXECUTE` antiguo sin revocar, el error de mismatch lavado en
+  `U0102`, el cargo archivado bajo un proyecto elegido por una consulta, la
+  comprobación movida por encima de `NOT FOUND`, el rollback restaurando la
+  firma vulnerable y el rollback dejando una función nueva viva. Los gates sin
+  ejercitar están escritos por nombre en el propio fichero.
+
+### Dos cosas que el arnés encontró y la revisión no
+
+**Una gate verde por accidente.** `ticket-project-check-order` comparaba
+posiciones de `v_hash`, `v_expires` y `v_status` dentro del cuerpo — y las tres
+se DECLARAN al principio, antes de todo, así que la gate se disparaba sobre su
+propio baseline en tres de los cuatro verbos. Anclarla en el `IF` que
+**realiza** cada comprobación es la diferencia entre medir el orden y medir el
+bloque `DECLARE`.
+
+**Una aserción demasiado ancha.** «El proyecto no tiene `DEFAULT`» escrita sobre
+todo el esquema fallaba por `expire_operation_tickets(p_max integer DEFAULT
+1000)` — un tamaño de lote, de `stella_0014`, que no decide a quién se cobra.
+Acotarla a los cuatro verbos la devuelve a la propiedad que dice medir.
+
+### Lo que queda abierto
+
+**El cableado.** Ningún server action pasa el proyecto todavía, y hasta que lo
+haga la ruta gobernada **falla cerrada**: el adaptador declara el parámetro
+opcional en TypeScript y lo exige de hecho, rechazando en Node antes del viaje a
+la base. No se hizo obligatorio en el tipo porque sería un error de compilación
+en un módulo que este tren no posee, y ponerle por defecto el proyecto del
+ticket sería el defecto mismo escrito como comodidad.
+
+**Reaplicar `stella_0014` solo, después de `stella_0015`, republica las firmas
+sin proyecto** (R2a). Es la misma clase de precondición de orden que
+`stella_0014` ya tiene con `stella_0013`, y no es reparable desde `stella_0015`:
+ningún paquete puede impedir que otro se ejecute después. La cadena completa
+aplicada en orden converge, medido en los dos pases del §5c.
+
+**R3-INT sigue sin tocar** — reordenar vigencia y estado terminal dentro de
+`bind` es un cambio distinto, y mezclarlo con una firma nueva habría hecho que
+un solo paquete moviera dos propiedades a la vez.
