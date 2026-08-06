@@ -39,7 +39,65 @@ describe('event name coverage — the 8 journey events Fase 4 requires', () => {
 
   it('has exactly 13 events, no duplicates', () => {
     expect(new Set(STELLA_OBSERVABILITY_EVENT_NAMES).size).toBe(STELLA_OBSERVABILITY_EVENT_NAMES.length)
-    expect(STELLA_OBSERVABILITY_EVENT_NAMES.length).toBe(13)
+    // TRAIN 4.1: this asserts the original 13 are still exactly 13 — a subset
+    // check, not the full-array length (see the next describe block for the
+    // 10 ticket-lifecycle events added on top, additively).
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES.filter((n) => !n.startsWith('operation_ticket_') && !n.startsWith('grounded_query_') && !n.startsWith('quota_consumed') && !n.startsWith('quota_reuse_detected') && !n.startsWith('replay_rejected')).length).toBe(13)
+  })
+})
+
+describe('event name coverage — Train 4.1: the 10 operation-ticket lifecycle events', () => {
+  it('declares issued/bound/expired for the ticket itself', () => {
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES).toEqual(
+      expect.arrayContaining(['operation_ticket_issued', 'operation_ticket_bound', 'operation_ticket_expired']),
+    )
+  })
+
+  it('declares reserved/completed/aborted/retried for the grounded-query operation the ticket guards', () => {
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES).toEqual(expect.arrayContaining([
+      'grounded_query_reserved', 'grounded_query_completed', 'grounded_query_aborted', 'grounded_query_retried',
+    ]))
+  })
+
+  it('declares quota_consumed, quota_reuse_detected and replay_rejected', () => {
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES).toEqual(
+      expect.arrayContaining(['quota_consumed', 'quota_reuse_detected', 'replay_rejected']),
+    )
+  })
+
+  it('has exactly 23 events total, no duplicates — additive, none of the original 13 renamed or removed', () => {
+    expect(new Set(STELLA_OBSERVABILITY_EVENT_NAMES).size).toBe(23)
+    expect(STELLA_OBSERVABILITY_EVENT_NAMES.length).toBe(23)
+  })
+
+  it('accepts a minimal, well-formed event of every one of the 10 new names', () => {
+    const base = { timestamp: '2026-08-05T00:00:00.000Z', organizationId: 'org-1', requestId: 'req-1' }
+    const perEventFields: Record<string, Record<string, unknown>> = {
+      operation_ticket_issued: { ticketId: 'ticket-1' },
+      operation_ticket_bound: { ticketId: 'ticket-1' },
+      operation_ticket_expired: { ticketId: 'ticket-1' },
+      grounded_query_reserved: { ticketId: 'ticket-1' },
+      grounded_query_completed: { ticketId: 'ticket-1', chargeId: 'charge-1' },
+      grounded_query_aborted: { ticketId: 'ticket-1' },
+      grounded_query_retried: { ticketId: 'ticket-1', attempt: 2 },
+      quota_consumed: { ticketId: 'ticket-1', chargeId: 'charge-1' },
+      quota_reuse_detected: { ticketId: 'ticket-1', chargeId: 'charge-1' },
+      replay_rejected: { ticketId: 'ticket-1', reasonCode: 'query_mismatch' },
+    }
+    for (const [eventName, fields] of Object.entries(perEventFields)) {
+      const result = validateObservabilityEvent({ eventName, ...base, ...fields })
+      expect(result.violations, `${eventName}: ${result.violations.join(' | ')}`).toEqual([])
+      expect(result.ok).toBe(true)
+    }
+  })
+
+  it('rejects a query text field on grounded_query_completed even though ticketId is allowed', () => {
+    const result = validateObservabilityEvent({
+      eventName: 'grounded_query_completed',
+      timestamp: '2026-08-05T00:00:00.000Z', organizationId: 'org-1', requestId: 'req-1',
+      ticketId: 'ticket-1', query: '¿Cuál es el ahorro de horas de acarreo del proyecto Río Verde?',
+    })
+    expect(result.ok).toBe(false)
   })
 })
 
