@@ -1303,3 +1303,319 @@ ella el reductor devuelve, verbatim, las mismas dos razones que antes del 4.2.
 
 **Staging y hosted siguen bloqueados.** Banderas en `false`. `INT-GR-001`,
 `INT-GR-003`, `INT-PR-001` y `R1` siguen pendientes.
+
+
+---
+
+## Tren 4.3 — semántica de cuota reservada (2026-08-06)
+
+**Cierra R1**, el residual MAJOR que INT-INT-001 declaró y el tren 4.2 dejó
+abierto. Respuesta completa:
+[`R1_reserved_quota_semantics.md`](../contracts/R1_reserved_quota_semantics.md).
+
+| Contrato | Estado | Unidad |
+|---|---|---|
+| **R1** — una acción hermana cobra entre `bind` y `complete` | cerrado en base | `stella_0016` |
+
+**Estado de aplicación: DISEÑO. No aplicado a ninguna base. Ninguna bandera
+habilitada. Ningún server action llama a nada de esto** — cablearlo es la
+reconciliación de INTEGRACIÓN, explícitamente fuera del alcance de este tren.
+
+### El defecto, reproducido antes de cerrarlo — y el segundo que apareció al reproducirlo
+
+El §5b del arnés lo **ejecuta** con la cadena `0013→0015` instalada y
+`stella_0016` todavía no, con la cuota restante en 1:
+
+```
+bind(ticket)          -> bound            -- el ticket RESERVA la única unidad
+hermana: count ledger -> used=0 < quota=1 -- la reserva es INVISIBLE
+hermana: db.insert    -> cobrada          -- la unidad se vende
+complete(ticket)      -> quota_exceeded   -- el trabajo grounded se regala
+```
+
+**Dos causas, no una.** La primera es la que el ledger nombra:
+`consume_stella_quota` cuenta **sólo filas cobradas**, así que `complete` vuelve
+a competir por la unidad que su propio `bind` apartó, y las cinco hermanas ni
+llegan a esa función —escriben el ledger con `db.insert` a través del grant de
+`uellix_writer` (R6-INT).
+
+La segunda **no estaba en el ledger** y salió al reproducir la primera: el
+`SELECT count(*)` de reservas dentro de `bind` corría como
+`uellix_cap_stella_ticket`, un rol sin `BYPASSRLS`, bajo la policy
+`operation_tickets_definer_select` cuyo predicado es `actor_id = auth.uid()`.
+**Cada actor contaba sólo sus propias reservas.** El §5c lo ejecuta: dos
+miembros de una organización con una sola unidad restante reservan los dos. El
+tren 4.2 midió «dos tickets por la última unidad» con **un** actor, y por eso
+leyó verde.
+
+### La semántica que instala
+
+```
+Consumed(org, period)  = filas de stella_interactions del periodo
+Reserved(org)          = tickets `bound` cuyo expires_at sigue en el futuro
+Available              = Limit - Consumed - Reserved
+```
+
+Tres verbos, **una** aritmética: `uellix_stella.stella_capacity` la calcula;
+`consume_stella_capacity` es la superficie para consumidores **sin ticket**; y
+`settle_reserved_quota` **convierte** una reserva viva en cargo **sin evaluar el
+límite**, porque esa unidad lleva comprometida desde el `bind`. `bind` y
+`complete` se republican **en el sitio** —mismas firmas— así que
+`uellix_stella_ops` sigue teniendo exactamente 6 funciones y `stella_0015` no
+pierde su idempotencia.
+
+**El grant ES la propiedad de seguridad.** `settle_reserved_quota` cobra sin
+comprobar el tope, y está concedida a `uellix_cap_stella_ticket` y a nadie más —
+ni `uellix_app`, ni `PUBLIC`. Además reprueba la reserva por su cuenta:
+`bound`, no expirada, y soldada a la organización, el proyecto y la categoría que
+se le pide cobrar. `U0111` si alguna falla.
+
+**La pertenencia al periodo es un hecho registrado, no una inferencia.**
+`period_month` es una columna `GENERATED ALWAYS` derivada de `bound_at` — nadie
+la escribe, y no hizo falta un tercer trigger, que habría movido la aserción
+«2 triggers» de `stella_0014`. `Reserved` deliberadamente **no** filtra por
+periodo: una reserva tomada antes del cierre convierte después, y el periodo en
+el que aterriza el cargo tiene que haberla contado ya.
+
+### Lo único que sí mueve, y la guarda
+
+La aritmética necesita ver el conjunto **entero** de reservas de la
+organización, así que se añade una **cuarta** policy sobre `operation_tickets`,
+ligada a la organización y **no** al actor. `stella_0014 §7` afirma
+`count(*) = 3` policies, de modo que **`stella_0014` deja de ser reaplicable**;
+está registrado en `db/prepared-package-order.ts`, junto con la regla nueva que
+impide reaplicar **`stella_0015` sobre `stella_0016`** — R2a en la otra
+dirección, y peor de ver, porque las firmas no cambian y ninguna comprobación de
+firma lo notaría. El §14 del arnés **mide** que reaplicarlo de verdad
+reintroduce R1.
+
+La policy va emparejada con un grant de `SELECT` **por columna** de siete
+nombres. `charge_nonce` y `query_hash` **no** están, así que «cuenta reservas» y
+«puede computar la clave de idempotencia» siguen siendo dos frases distintas,
+impuestas por el sistema de privilegios.
+
+### Con qué se probó
+
+`scripts/stella-reserved-quota-dry-run.sh` — PostgreSQL desechable
+(`--network none`, sin volumen, destruido al salir), dos etapas, dos
+organizaciones, tres proyectos, tres actores. Reproducción de R1 y R1b; cierre
+de ambos; abort; expiración lógica sin cron; **cambio de periodo**; ocho duelos
+de **concurrencia real** con dos conexiones (la espera medida es la evidencia de
+serialización, y `pg_stat_database.deadlocks = 0`); ataques en vivo; rollback
+sobre una base **liquidada** (9 cargos y 10 tickets intactos) y sobre una
+**limpia** (retorno EXACTO al baseline); reaplicación. Salida:
+`STELLA_RESERVED_QUOTA_DRY_RUN_OK`.
+
+`tests/stella-reserved-quota-mutation.test.ts` — **32 mutantes** (`K-54` …
+`K-85`), cada uno muerto por **su** gate propietaria.
+
+### Lo que NO cambió
+
+Banderas en `false`. `staging-blocked` y `hosted-blocked` siguen en `true`.
+`consume_stella_quota` **no se tocó** — este paquete decide CUÁNDO se cobra,
+nunca CÓMO. `app/actions/**`, `components/**` y `lib/grounding/**` intactos.
+Cero acceso remoto, cero push, cero uso del stack persistente.
+
+### Lo que queda
+
+**R1 no está cerrado sólo porque el `complete` grounded funcione.** La superficie
+para los cinco consumidores sin ticket existe y **nadie la llama todavía**: la
+solicitud de integración, con la tabla de consumidores y el cambio exacto por
+acción, está en el §7 de la respuesta. Y dos aserciones de
+`tests/cross-workstream/project-binding.test.ts` —fichero de INTEGRACIÓN, no
+modificado por esta línea— afirman que el registro de supersesiones tiene
+**exactamente una** regla; añadir la segunda las contradice por construcción.
+
+**Riesgos abiertos**: R1a (las hermanas no han migrado), R1b (sin fuente
+canónica de clave de idempotencia para ellas), R1c, R1d, R1e, más `INT-GR-001`,
+`INT-GR-003`, `INT-PR-001` y los residuales del 4.2.
+
+---
+
+## Tren 4.3b — consumo Stella gobernado (2026-08-06)
+
+**Cierra R6-INT** y con él el residual de **R1**: los dos huecos que impedían
+aceptar aquel cierre. Respuesta completa:
+[`R1-B_governed_stella_consumption.md`](../contracts/R1-B_governed_stella_consumption.md).
+
+| Contrato | Estado | Unidad |
+|---|---|---|
+| **R6-INT** — las cinco hermanas escriben `stella_interactions` con `db.insert` | cerrado en base | `stella_0017` |
+| **R1 (residual)** — identidad de operación gobernada para las hermanas | cerrado en base | `stella_0017` |
+
+**Estado de aplicación: DISEÑO. No aplicado a ninguna base. Ninguna bandera
+habilitada. Ningún server action llama a nada de esto** — cablearlo es la
+reconciliación de INTEGRACIÓN, explícitamente fuera del alcance de este tren.
+
+### `stella_0016` no dejó R1 abierto: lo convirtió en un sobreconsumo
+
+El §6 del arnés lo **ejecuta** con la cadena `0013→0016` instalada y la cuota en 1:
+
+```
+bind(ticket)          -> bound        -- el ticket RESERVA la única unidad
+checkStellaQuota      -> used = 0     -- la reserva es INVISIBLE para la hermana
+db.insert             -> cobrado      -- se vende la unidad 1 de 1
+complete(ticket)      -> completed    -- la conversión NO evalúa el límite
+------------------------------------------------------------------
+Consumed = 2   contra   Limit = 1
+```
+
+Bajo `stella_0015` la misma secuencia terminaba en `quota_exceeded` y el trabajo
+se regalaba — malo, pero el tope aguantaba. Con la conversión de `stella_0016`
+instalada **no aguanta**. Las dos decisiones de aquel paquete son correctas; lo
+que no lo era es la superficie de escritura sobre la que operan. Una aritmética
+exacta sobre una tabla que cualquiera puede escribir es aritmética sobre un
+número que otro cambia.
+
+### El privilegio que había que retirar no es el del nombre obvio
+
+Medido sobre un baseline restaurado, no leído de un `GRANT`:
+
+```
+entradas de uellix_app en stella_interactions.relacl ......... 0
+has_table_privilege('uellix_app', …, 'INSERT') ............... true
+```
+
+`uellix_app` **no tiene nada** en esa tabla. Todo su `INSERT` viene de
+`GRANT uellix_writer TO uellix_app WITH INHERIT TRUE`. Un `REVOKE … FROM
+uellix_app` habría sido un no-op **silencioso**, y una verificación escrita sobre
+`relacl` habría certificado la tabla como limpia mientras el privilegio heredado
+seguía en pie. Por eso el §5 del paquete pregunta con `has_table_privilege`
+—que sigue la pertenencia de rol— y **exhaustivamente sobre `pg_roles`**, no
+sobre una lista de nombres que un rol nuevo puede esquivar.
+
+### La clausura, en dos mitades que no se sustituyen
+
+`REVOKE INSERT, UPDATE, DELETE, TRUNCATE` sobre `public.stella_interactions` para
+`uellix_writer`, `uellix_app`, `uellix_reader`, `uellix_auditor`,
+`authenticated`, `anon`, `service_role`, `authenticator` y `PUBLIC` — cada uno
+como literal fijo, guardado por existencia. `COPY` cae con el mismo privilegio
+(medido: `42501`), y RLS —que además hace que PostgreSQL rechace `COPY … FROM`—
+sigue encendida, afirmado para que esa segunda barrera no se pierda en silencio.
+
+Pero un privilegio se vuelve a conceder: por un restore de baseline, o por
+`stella_0005c_rollback.sql`, que concede `INSERT` a `authenticated` y
+`service_role` **por nombre**. Así que la garantía se enuncia también donde
+ningún grant llega:
+
+```sql
+stella_interactions_governed_identity_check:
+    CHECK (idempotency_key IS NOT NULL) NOT VALID
+```
+
+`NOT VALID` es **preciso, no laxo**: cada fila anterior se archivó por la ruta
+directa y no lleva clave, así que validar contra la historia fallaría sobre
+exactamente las filas que el CHECK existe para impedir. Se aplica en cada
+`INSERT` desde el momento en que se añade — incluido el **owner**, cosa que RLS no
+hace, y bajo `session_replication_role = replica`, cosa que un trigger no hace.
+Medido: `23514` en los dos casos.
+
+### El ticket ya era multi-categoría; lo que faltaba era la carga
+
+Inventariado antes de diseñar: `operation_tickets_category_check` nombra las
+**siete** categorías, `issue_operation_ticket` valida contra el mismo array, la
+categoría se suelda al emitir, el trigger rechaza un `UPDATE` que la cambie para
+todos los roles y `settle_reserved_quota` ya rehúsa (`U0111`) si no coincide.
+**No hacía falta un segundo sistema.**
+
+Lo único que el recorrido grounded nunca tuvo que llevar es la fila de
+auditoría: `response_json` es `NOT NULL`, `model_used` es `NOT NULL` y
+`tokens_used` lo lee `lib/admin/stella-services.ts`. Una ruta gobernada que
+archivara el literal fijo para una hermana habría cerrado R6-INT **destruyendo el
+rastro** que cinco acciones vivas producen — y eso es una decisión de producto,
+no de base de datos.
+
+Dos objetos, ninguna tabla, rol, esquema ni policy:
+
+- `uellix_stella.settle_reserved_quota(…10 args)` — la conversión, ahora llevando
+  la fila que archiva. Es la **única** implementación.
+- `uellix_stella_ops.complete_operation_ticket(…7 args)` — el verbo de cierre
+  hermano. Mismo nombre, mismos tres primeros argumentos, mismo `U0110`, misma
+  semántica de replay. Archiva como `context_hash` **el digest al que el ticket
+  se ligó en el `bind`** — fijado una sola vez en servidor, en vez de uno que
+  llega con la solicitud.
+
+La firma de cinco argumentos **se republica en el sitio como delegador** con
+carga `NULL`, y eso no es elegancia: `STELLA_0016_INSTALLED_PROBE` está escrita
+sobre ella, y DROPearla habría desarmado en silencio la guarda que impide
+reaplicar `stella_0015` sobre `stella_0016` — o sea, habría reintroducido R1 por
+la puerta de atrás. La mutación **K-103** mata esa versión. Carga `NULL` reproduce
+la fila de `stella_0016` **byte a byte**, medido columna a columna.
+
+### Lo que sí mueve, y la guarda
+
+Una **séptima** función en `uellix_stella_ops`. `stella_0015 §4 (5)` y
+`stella_0016 §7 (2b)` afirman `count(*) = 6`, así que los dos **dejan de ser
+reaplicables** — abortan solos, que es fail-closed. Las dos supersesiones están
+declaradas en [`db/prepared-package-order.ts`](../../../db/prepared-package-order.ts)
+para que un fallo de aserción que nombra un número sea una negativa que nombra el
+motivo. `stella_0013` **sigue siendo reaplicable**, medido.
+
+### El rollback se NIEGA a restaurar
+
+No vuelve a conceder `INSERT` y no retira el CHECK. La escritura directa no es
+una función que este paquete reemplazó: es el defecto que cerró, y sobre
+`stella_0016` compone en un sobreconsumo medido. El estado final es **cerrado, no
+degradado**: el recorrido grounded queda exactamente como lo dejó `stella_0016`;
+las hermanas pueden emitirse, reservarse, abortarse e inspeccionarse pero ya no
+completarse — ni cobrarse por fuera del protocolo. Ningún cargo se borra. Y se
+**niega** en el §1 sobre una base donde `stella_0016` ya se revirtió, porque
+republicaría un cuerpo que llama a una función que ya no existe.
+
+Medido al final de la cadena completa de rollbacks: el CHECK **sí** desaparece
+—no porque este rollback lo quite, sino porque el de `stella_0013` DROPea la
+columna que restringe— y los REVOKE **no**. La base termina con **cero**
+principales de runtime capaces de escribir el ledger, frente a **tres** en el
+baseline. Sobre ella `stella_0017` se niega a aplicarse solo: hay que reaplicar la
+cadena desde `stella_0013`.
+
+### Con qué se probó
+
+`scripts/stella-governed-consumption-dry-run.sh` — PostgreSQL desechable
+(`--network none`, sin volumen, destruido en el trap de salida), dos etapas, dos
+organizaciones, tres proyectos, tres actores, las **siete** categorías.
+Reproducción del sobreconsumo por el nombre **y** por el privilegio heredado;
+cierre; recorrido hermano completo con carga real; paridad byte a byte de la fila
+grounded; reintento frente a operación nueva con el **mismo contenido**;
+semántica de reserva entre hermanas y con el consumidor sin ticket; expiración
+lógica sin cron; **cruce de periodo**; quince ataques en vivo; **cinco duelos de
+concurrencia real** con dos conexiones (`pg_stat_database.deadlocks = 0`);
+rollback sobre una base **liquidada** (10 cargos y 9 tickets intactos) y sobre una
+**limpia**; reaplicación idéntica ×3; orden impuesto en los dos extremos. Salida:
+`STELLA_GOVERNED_CONSUMPTION_DRY_RUN_OK`.
+
+`tests/stella-governed-consumption-mutation.test.ts` — **26 mutantes**
+(`K-86` … `K-111`), cada uno muerto por **su** gate propietaria, ninguno por
+`unparsed`.
+
+### Lo que NO cambió
+
+`consume_stella_quota`, `stella_capacity`, `consume_stella_capacity`,
+`bind_operation_ticket`, `complete_operation_ticket(char, uuid, char)`,
+`abort_operation_ticket`, `inspect_operation_ticket`, `issue_operation_ticket` y
+`expire_operation_tickets` están intactos. Banderas en `false`. `app/actions/**`,
+`components/**` y `lib/grounding/**` sin tocar. Cero acceso remoto, cero push,
+cero uso del stack persistente.
+
+### Lo que queda
+
+**Aplicar el paquete rompe las cinco acciones hermanas** hasta que se migren, por
+privilegio y por constraint. Eso es la clausura, no un efecto colateral: R6-INT
+es la frase que dice que pueden escribir. La solicitud de integración, con la
+tabla de consumidores y el cambio exacto por acción, está en el §7 de la
+respuesta. `db/stella/operation-tickets.ts` necesita el adaptador de la nueva
+aridad y esta línea **no lo ha tocado** — el brief prohíbe modificar los server
+actions todavía, y cambiar el adaptador sin ellos rompe `tsc`.
+
+`checkStellaQuota` sigue contando sólo filas cobradas: debe pasar a
+`stella_capacity` o la UI seguirá mostrando disponibilidad que una reserva viva ya
+se llevó. `scripts/seed-stella-local.ts` archiva sin clave y dejará de funcionar;
+es de RELEASE.
+
+Dos aserciones de `tests/cross-workstream/project-binding.test.ts` —fichero de
+INTEGRACIÓN, no modificado por esta línea— **ya fallaban antes de este tren**
+(`stella_0016` llevó la cadena a cuatro elementos y añadió la primera regla sobre
+`stella_0015`); este tren las ensancha a cinco y dos.
+
+**Riesgos abiertos**: R6a…R6g de la respuesta, más R3-INT, R4-INT, R5-INT,
+R7-INT, `INT-GR-001`, `INT-GR-003` e `INT-PR-001`.

@@ -305,6 +305,110 @@ Cierra **R2-INT** (`docs/ops/contracts/CONTRACT_LEDGER.md#r2-int`, respuesta en
 > publicar las firmas sin proyecto. Una postcondición lo afirma: si una edición
 > futura «restaurara» alguna, el rollback aborta.
 
+### Train 4.3 — semántica de cuota reservada (`stella_0016`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra **R1** (`docs/ops/contracts/CONTRACT_LEDGER.md#r1`, respuesta en
+[`R1`](../../docs/ops/contracts/R1_reserved_quota_semantics.md)).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0016_reserved_quota_semantics.sql` | `stella_0016_rollback.sql` | **ninguno todavía**; exige `stella_0013`, `stella_0014` y `stella_0015` **ya aplicados** (precondiciones duras en §0, incluida la ausencia de las firmas sin proyecto) | **R1.** **No crea rol, esquema ni tabla.** Tres funciones nuevas en `uellix_stella` (propiedad de `uellix_cap_stella_quota`): `stella_capacity(uuid, char(64))` — la aritmética canónica `Limit − Consumed − Reserved`; `consume_stella_capacity(uuid, uuid, varchar(50), char(64))` — la superficie para consumidores **sin ticket**, concedida a `uellix_app`; y `settle_reserved_quota(uuid, uuid, varchar(50), char(64), char(64))` — la **conversión**, que cobra **sin evaluar el límite** y está concedida **sólo** a `uellix_cap_stella_ticket`. Republica **en el sitio** `bind` y `complete` (mismas firmas). Columna `operation_tickets.period_month` **`GENERATED ALWAYS`** desde `bound_at`; **cuarta** policy `operation_tickets_capacity_select` — organización, **no** actor; grant de SELECT **por columna** que excluye `charge_nonce` y `query_hash`. SQLSTATE nuevo **`U0111`** («la reserva no está viva») | **DISEÑO — no aplicado** |
+
+> **La cadena canónica es `stella_0013` → `stella_0014` → `stella_0015` →
+> `stella_0016`.** `stella_0016` §0 se niega si las firmas de tres argumentos no
+> están **y** se niega si alguna firma sin proyecto sobrevive: republica dos
+> cuerpos, y un `CREATE OR REPLACE` sobre una firma inexistente la **acuña** en
+> vez de reemplazarla.
+
+> **REAPLICAR `stella_0015` DESPUÉS DE `stella_0016` ESTÁ BLOQUEADO POR EL
+> RUNNER.** Es R2a en la otra dirección y es peor de ver: `stella_0015` es
+> idempotente y las firmas **no cambian**, así que reejecutarlo republica `bind`
+> y `complete` con la aritmética que cuenta **sólo filas cobradas** sin que
+> ninguna comprobación de firma lo note. La supersesión está declarada en
+> [`db/prepared-package-order.ts`](../prepared-package-order.ts) y la premisa
+> —que reaplicarlo de verdad reintroduce el defecto— se **mide** en el §14 de
+> `scripts/stella-reserved-quota-dry-run.sh`.
+
+> **`stella_0014` deja de ser reaplicable, y es deliberado.** Su §7 afirma
+> exactamente **3** policies sobre `operation_tickets`, y este paquete añade la
+> cuarta. La alternativa era ampliar la aserción de un paquete publicado para
+> hacer sitio a uno posterior — el intercambio que el tren 4.2 rechazó. La
+> supersesión `stella_0014 → stella_0015` ya vigente lo cubre: `stella_0016`
+> exige `stella_0015`, así que la sonda de aquella regla es verdadera aquí
+> también.
+
+> **Orden de rollback: `stella_0016` antes que `stella_0015` antes que
+> `stella_0014` antes que `stella_0013`.** Lo impone el propio SQL: las tres
+> funciones nuevas son propiedad de `uellix_cap_stella_quota`, así que el
+> `DROP ROLE` del rollback de `stella_0013` **falla** mientras existan.
+
+> **El rollback de `stella_0016` deja una superficie CERRADA, no degradada.**
+> **DROPea** `bind` y `complete` en vez de revertirlos —R1 es la *ausencia* de
+> aritmética consciente de reservas, así que «restaurar la versión anterior» y
+> «republicar la vulnerabilidad» son la misma frase— y deja `issue`, `abort`,
+> `inspect` y `expire`, ninguna de las cuales cobra. **Ningún cargo se borra.**
+> Consecuencia declarada: para volver a aplicar `stella_0016` hay que reaplicar
+> `stella_0015` primero, y `stella_0016` §0 lo exige en vez de sugerirlo.
+
+### Train 4.3b — consumo Stella gobernado (`stella_0017`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra el residual de **R1** y **R6-INT**
+(`docs/ops/contracts/CONTRACT_LEDGER.md#r6-int`, respuesta en
+[`R1-B`](../../docs/ops/contracts/R1-B_governed_stella_consumption.md)).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0017_governed_stella_consumption.sql` | `stella_0017_rollback.sql` | **ninguno todavía**; exige `stella_0013`, `stella_0014`, `stella_0015` y `stella_0016` **ya aplicados** (precondiciones duras en §0, incluida la ausencia de las firmas sin proyecto) | **R6-INT.** **No crea rol, esquema, tabla ni policy.** (1) `REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.stella_interactions` de `uellix_writer` —el titular real: `uellix_app` no tiene **ninguna** entrada propia en `relacl` y escribe por herencia— y de `uellix_app`, `uellix_reader`, `uellix_auditor`, `authenticated`, `anon`, `service_role`, `authenticator` y `PUBLIC`. (2) CHECK `stella_interactions_governed_identity_check` (`idempotency_key IS NOT NULL`, **`NOT VALID`**): ata al **owner** y no lo silencia `session_replication_role`. (3) `settle_reserved_quota(uuid, uuid, varchar(50), char(64), char(64), varchar(100), char(64), varchar(100), integer, jsonb)` — la conversión que **lleva la fila de auditoría**; la firma de cinco argumentos pasa a **delegar** en ella (mismo nombre, misma firma, mismo grant). (4) `complete_operation_ticket(char(64), uuid, char(64), varchar(100), varchar(100), integer, jsonb)` — el verbo de cierre para las **cinco categorías hermanas**, concedido a `uellix_app`. **Séptima** función en `uellix_stella_ops` | **DISEÑO — no aplicado** |
+
+> **La cadena canónica es `stella_0013` → `stella_0014` → `stella_0015` →
+> `stella_0016` → `stella_0017`.** El §0 de `stella_0017` se niega si falta
+> cualquiera de los cuatro y si sobrevive alguna firma sin proyecto.
+
+> **El privilegio que había que retirar no es el del nombre obvio.** Medido
+> sobre un baseline restaurado: `uellix_app` tiene **0** entradas en
+> `stella_interactions.relacl` y `has_table_privilege('uellix_app', …, 'INSERT')`
+> es **`true`**. Todo su `INSERT` viene de
+> `GRANT uellix_writer TO uellix_app WITH INHERIT TRUE`. Un `REVOKE … FROM
+> uellix_app` habría sido un no-op silencioso, y una verificación escrita sobre
+> `relacl` habría reportado la tabla limpia. Por eso el §5 pregunta con
+> `has_table_privilege` —que **sigue la pertenencia de rol**— y de forma
+> **exhaustiva sobre `pg_roles`**, no sobre una lista de nombres.
+
+> **`COPY` cae con el mismo privilegio**, y además PostgreSQL rechaza
+> `COPY … FROM` sobre una relación con RLS activo. El §5 afirma que RLS sigue
+> encendido para que esa segunda barrera no se pierda en silencio.
+
+> **REAPLICAR `stella_0015` O `stella_0016` DESPUÉS DE `stella_0017` ESTÁ
+> BLOQUEADO.** Los dos afirman `count(*) = 6` sobre `uellix_stella_ops` y este
+> paquete publica la séptima función, así que los dos **abortan solos** — que es
+> fail-closed. Las supersesiones declaradas en
+> [`db/prepared-package-order.ts`](../prepared-package-order.ts) convierten un
+> fallo de aserción que nombra un número en una negativa que nombra el motivo.
+
+> **La firma de cinco argumentos de `settle_reserved_quota` NO se DROPea**, y es
+> deliberado: `STELLA_0016_INSTALLED_PROBE` está escrita sobre ella, y borrarla
+> habría desarmado en silencio la guarda que impide reaplicar `stella_0015`
+> sobre `stella_0016`. Pasa a ser un **delegador**, así que este esquema sigue
+> teniendo **un** `INSERT` al ledger, alcanzado por dos aridades.
+
+> **Orden de rollback: `stella_0017` antes que `stella_0016` antes que
+> `stella_0015` antes que `stella_0014` antes que `stella_0013`.** Lo impone el
+> propio SQL en los dos extremos: el §1 del rollback de `stella_0017` **se niega**
+> si `stella_capacity` ya no existe (restauraría un cuerpo que la llama), y la
+> conversión de diez argumentos es propiedad de `uellix_cap_stella_quota`, así
+> que dejarla atrás hace fallar el `DROP ROLE` del rollback de `stella_0013`.
+
+> **El rollback de `stella_0017` NO restaura la escritura directa y NO retira el
+> CHECK.** La escritura directa no es una función que este paquete reemplazó: es
+> el defecto que cerró, y sobre `stella_0016` compone en un sobreconsumo medido
+> (`Consumed = 2` contra `Limit = 1`). El estado final es **cerrado, no
+> degradado**: el recorrido grounded queda exactamente como lo dejó
+> `stella_0016`, y las categorías hermanas pueden emitirse, reservarse, abortarse
+> e inspeccionarse pero ya no completarse — ni cobrarse por fuera del protocolo.
+> **Ningún cargo se borra.**
+
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad
