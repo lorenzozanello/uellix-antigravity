@@ -34,7 +34,12 @@ import { StellaErrorNotice } from './StellaErrorNotice'
 import { decisionStatusFromAction } from './grounding-model'
 import type { StellaDecisionStatus } from './grounding-model'
 import type { GroundedAnswerView, GroundedCitationView } from './grounding-adapter'
-import type { AnswerStrategyDescriptor, StellaGroundedQueryRunner } from './grounded-query'
+import type {
+  AnswerStrategyDescriptor,
+  StellaGroundedQueryRunner,
+  StellaOperationTicket,
+  StellaOperationTicketIssuer,
+} from './grounded-query'
 import type { SuggestionDecisionRecord, SuggestionDecisionAction } from './decision-types'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { StellaPanelErrorCode } from './error-messages'
@@ -68,6 +73,17 @@ export interface StellaGroundedQueryPanelProps {
    * fallback — see docs/ops/contracts/PRODUCT-002.
    */
   runQuery: StellaGroundedQueryRunner
+  /**
+   * Mints the operation ticket for a NEW question (INT-INT-001).
+   *
+   * Called by `handleSubmit` and NOT by `handleRetry` — that asymmetry IS the
+   * retry/new-question distinction, and it is structural rather than
+   * heuristic. The panel never inspects the query text to decide, never
+   * compares elapsed time, and never generates an identity of its own: a
+   * retry reuses the ticket it already holds, a new question asks for a new
+   * one. Nothing else in this component decides whether a unit is charged.
+   */
+  issueTicket: StellaOperationTicketIssuer
   /** Server-passed availability (from lib/stella/config on the page). When false the panel never calls runQuery. */
   enabled?: boolean
   title?: string
@@ -81,6 +97,7 @@ export interface StellaGroundedQueryPanelProps {
 export function StellaGroundedQueryPanel({
   step,
   runQuery,
+  issueTicket,
   enabled = true,
   title,
   className,
@@ -90,6 +107,20 @@ export function StellaGroundedQueryPanel({
 }: StellaGroundedQueryPanelProps) {
   const [queryDraft, setQueryDraft] = useState('')
   const [lastQuery, setLastQuery] = useState('')
+  /**
+   * The ticket of the operation currently on screen.
+   *
+   * A `useRef`, not `useState`, and the distinction matters. This value is
+   * read inside `handleRetry` to decide whether a unit gets charged, and a
+   * state update is asynchronous: a retry fired before React had committed a
+   * re-render would read a STALE ticket — the previous question's — and
+   * either charge twice or bind the wrong operation. A ref is written and
+   * read synchronously, so "the ticket in hand" is never a render behind.
+   *
+   * It is never rendered and never logged; it is a credential, not display
+   * state, which is the other reason it does not belong in `useState`.
+   */
+  const currentTicket = useRef<StellaOperationTicket | null>(null)
   const [panelState, setPanelState] = useState<PanelState>({ status: 'idle' })
   const [decisionStatus, setDecisionStatus] = useState<StellaDecisionStatus>('user_approval_required')
   const [decisionMode, setDecisionMode] = useState<DecisionMode>('none')
@@ -113,11 +144,19 @@ export function StellaGroundedQueryPanel({
     setHasDecision(false)
   }
 
-  async function runAndHandle(query: string) {
+  /**
+   * Run `query` under `ticket`.
+   *
+   * The ticket is passed as a SECOND ARGUMENT, never folded into the request:
+   * `{ query }` stays exactly `{ query }`, so the object the client fully
+   * composes has nowhere to carry the value that decides whether a unit is
+   * charged.
+   */
+  async function runAndHandle(query: string, ticket: StellaOperationTicket) {
     setPanelState({ status: 'loading' })
     resetDecisionState()
     try {
-      const result = await runQuery({ query })
+      const result = await runQuery({ query }, ticket)
       if (result.status === 'ok') {
         setPanelState({
           status: 'ok',
@@ -135,16 +174,54 @@ export function StellaGroundedQueryPanel({
     }
   }
 
+  /**
+   * A NEW QUESTION. Mints a new ticket, so the ledger charges a new unit —
+   * including when the text is identical to the previous question, which is a
+   * legitimate thing for a reviewer to do after uploading new evidence.
+   */
   async function handleSubmit() {
     const query = queryDraft.trim()
     if (query.length === 0 || isLoading || isInertDisabled) return
+
+    setPanelState({ status: 'loading' })
+    let issued
+    try {
+      issued = await issueTicket()
+    } catch {
+      setPanelState({ status: 'error', code: 'UNKNOWN_ERROR', message: '' })
+      return
+    }
+
+    if (issued.status === 'disabled') {
+      setPanelState({ status: 'disabled' })
+      return
+    }
+    if (issued.status === 'error') {
+      setPanelState({ status: 'error', code: issued.code, message: issued.message })
+      return
+    }
+
+    // Recorded BEFORE the run, and synchronously. If the request dies in
+    // flight, `handleRetry` must still find the ticket that was reserved for
+    // it — otherwise the retry would mint a second one and pay twice for a
+    // question the ledger may already have charged.
+    currentTicket.current = issued.ticket
     setLastQuery(query)
-    await runAndHandle(query)
+    await runAndHandle(query, issued.ticket)
   }
 
+  /**
+   * A RETRY OF THE CURRENT OPERATION. Reuses the ticket and the query, so the
+   * server binds the same operation, sees the same digest, and charges zero
+   * additional units — `complete_operation_ticket` answers `replayed`.
+   *
+   * No new ticket is minted here. That single omission is the whole
+   * retry-versus-new-question distinction.
+   */
   async function handleRetry() {
-    if (lastQuery.length === 0) return
-    await runAndHandle(lastQuery)
+    const ticket = currentTicket.current
+    if (lastQuery.length === 0 || ticket === null) return
+    await runAndHandle(lastQuery, ticket)
   }
 
   function emitDecision(answerId: string, action: SuggestionDecisionAction, extra: Partial<SuggestionDecisionRecord> = {}) {

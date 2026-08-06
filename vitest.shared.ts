@@ -28,3 +28,16 @@ export const BASE_EXCLUDE = [
  * remote target). Run them with `pnpm db:test:integration:local`.
  */
 export const INTEGRATION_GLOB = "tests/integration/**"
+
+/**
+ * The disposable-database end-to-end battery (Train 4.1, INT-INT-001).
+ *
+ * Excluded from the default suite for the same reason as the integration glob,
+ * and one more that is specific to it: `tests/e2e/**` requires a live
+ * PostgreSQL with `stella_0014` applied, which only
+ * `scripts/stella-ticket-e2e.sh` builds. Collected here it would not merely
+ * fail — it would fail against whatever `UELLIX_RUNTIME_DATABASE_URL` happens
+ * to be set to in the developer's shell, which is exactly the accident the
+ * database-safety guards exist to prevent.
+ */
+export const E2E_GLOB = "tests/e2e/**"

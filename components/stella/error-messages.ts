@@ -17,6 +17,38 @@ export type StellaPanelErrorCode =
   | 'PARSE_ERROR'
   | 'TIMEOUT'
   | 'AUDIT_ERROR'
+  /**
+   * INT-INT-001 / Train 4.1 FASE 11 — the operation completed and was CHARGED,
+   * but its result cannot be handed back on this delivery.
+   *
+   * A THIRTEENTH MEMBER OF THIS TAXONOMY, NOT A THIRTEENTH TAXONOMY. The train
+   * dispatch is explicit that the post-complete retry needs "un código
+   * operacional específico dentro de la taxonomía existente"; this is that
+   * code, and it is the only one added.
+   *
+   * WHY IT CANNOT BE ANY EXISTING CODE
+   * ----------------------------------
+   * The state it names is: the reviewer's question ran, one quota unit was
+   * consumed for it, and the network dropped the response — so a retry arrives
+   * for a ticket the ledger has already settled. `complete_operation_ticket`
+   * answers `replayed`, which is correct and charges nothing, but the ANSWER
+   * itself was never persisted and cannot be reconstructed without re-running
+   * generation, which could produce different text than the charge paid for.
+   *
+   *   `GEMINI_ERROR`  — names a service this flow never calls, and invites a
+   *                     retry. Both halves are false here.
+   *   `UNKNOWN_ERROR` — claims Stella is unavailable. It was available; it
+   *                     answered. A reviewer told "temporarily unavailable"
+   *                     reasonably asks again, which mints a NEW ticket and
+   *                     charges a SECOND unit for a question already paid for.
+   *   `AUDIT_ERROR`   — says the answer was DISCARDED because it could not be
+   *                     recorded. The opposite: it was recorded (charged), and
+   *                     what was lost was the delivery.
+   *
+   * `retryable: false` is the half of the presentation that protects the
+   * quota. See `stellaErrorPresentation` below for the wording.
+   */
+  | 'ALREADY_COMPLETED_RESULT_UNAVAILABLE'
   | 'UNKNOWN_ERROR'
 
 export type StellaErrorTone = 'info' | 'warning' | 'error'
@@ -45,6 +77,7 @@ const KNOWN_CODES: ReadonlySet<string> = new Set([
   'PARSE_ERROR',
   'TIMEOUT',
   'AUDIT_ERROR',
+  'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
   'UNKNOWN_ERROR',
 ])
 
@@ -189,6 +222,24 @@ export function stellaErrorPresentation(code: string, message: string): StellaEr
           'La respuesta se descartó porque no se pudo registrar la interacción para auditoría. Intentá de nuevo.',
         retryable: false,
         tone: 'error',
+      }
+    case 'ALREADY_COMPLETED_RESULT_UNAVAILABLE':
+      return {
+        code,
+        title: 'La consulta ya se procesó',
+        // Says three things, and each one is load-bearing:
+        //   1. it ran — so the reviewer does not think Stella was down;
+        //   2. it was counted — so the quota reading is not a surprise;
+        //   3. asking again COSTS a unit — so repeating is an informed choice.
+        // It does not blame a provider and it does not claim the answer was
+        // saved somewhere retrievable, because neither is true.
+        description:
+          'Esta consulta ya se ejecutó y se contabilizó en tu cuota, pero la respuesta no pudo entregarse y no se conserva. Volver a preguntar consumirá otra consulta.',
+        // NOT retryable. A "Reintentar" button here would re-issue a ticket
+        // and charge a second unit for a question already paid for — which is
+        // the exact double-charge the ticket protocol exists to prevent.
+        retryable: false,
+        tone: 'warning',
       }
     case 'UNKNOWN_ERROR':
     default:

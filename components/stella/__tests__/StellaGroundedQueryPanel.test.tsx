@@ -53,14 +53,36 @@ function okResult(
   }
 }
 
+/**
+ * Train 4.1 — the ticket issuer every render needs.
+ *
+ * A fresh mock per call so each test can count issuance independently. The
+ * default mints a NEW, distinct ticket every time it is invoked, which is what
+ * the real server surface does: `handleSubmit` asks for one per question,
+ * `handleRetry` asks for none. A test that wanted to prove "the retry did not
+ * mint a second ticket" therefore only has to count calls.
+ */
+let issuedTicketCounter = 0
+function makeIssuer() {
+  return vi.fn(async () => {
+    issuedTicketCounter += 1
+    return { status: 'issued' as const, ticket: String(issuedTicketCounter).padStart(64, '0') }
+  })
+}
+
 describe('StellaGroundedQueryPanel — grounded states', () => {
   it('renders a grounded answer end to end from a real runQuery call', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
 
     await ask()
 
-    expect(runQuery).toHaveBeenCalledWith({ query: '¿Cuántos beneficiarios reporta el informe?' })
+    expect(runQuery).toHaveBeenCalledWith(
+      { query: '¿Cuántos beneficiarios reporta el informe?' },
+      // The ticket travels as a SECOND argument — the request object stays
+      // exactly `{ query }`, with nowhere to carry a credential.
+      expect.stringMatching(/^[0-9]{64}$/),
+    )
     expect(await screen.findByTestId('stella-grounded-answer-panel')).toHaveAttribute(
       'data-status',
       'grounded',
@@ -70,7 +92,7 @@ describe('StellaGroundedQueryPanel — grounded states', () => {
 
   it('renders a partially grounded answer', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(partiallyGroundedAnswerView()))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     expect(await screen.findByTestId('stella-grounded-answer-panel')).toHaveAttribute(
       'data-status',
@@ -80,14 +102,14 @@ describe('StellaGroundedQueryPanel — grounded states', () => {
 
   it('renders an attributed contradiction', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(contradictedAnswerView()))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     expect(await screen.findByTestId('stella-contradiction-contra-1')).toBeInTheDocument()
   })
 
   it('renders an abstention with no evidence at all', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(abstainedAnswerView()))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     expect(await screen.findByTestId('stella-grounded-answer-abstention')).toHaveAttribute(
       'data-abstention-code',
@@ -97,7 +119,7 @@ describe('StellaGroundedQueryPanel — grounded states', () => {
 
   it('renders a citation whose passage is unavailable instead of inventing one', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(unresolvedAnswerView()))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     expect(await screen.findByTestId('stella-grounded-answer-unresolved')).toHaveTextContent(
       'Una cita no pudo mostrar su pasaje',
@@ -109,7 +131,7 @@ describe('StellaGroundedQueryPanel — grounded states', () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn(
       () => new Promise<StellaGroundedQueryResult>((res) => { resolve = res }),
     )
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     expect(screen.getByTestId('stella-grounded-query-loading')).toBeInTheDocument()
     resolve(okResult())
@@ -122,7 +144,7 @@ describe('StellaGroundedQueryPanel — availability, permission, quota, provider
     const runQuery: StellaGroundedQueryRunner = vi
       .fn()
       .mockResolvedValue({ status: 'error', code: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso.' })
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     const notice = await screen.findByTestId('stella-error-notice')
     expect(notice).toHaveAttribute('data-error-code', 'UNAUTHORIZED')
@@ -133,7 +155,7 @@ describe('StellaGroundedQueryPanel — availability, permission, quota, provider
     const runQuery: StellaGroundedQueryRunner = vi
       .fn()
       .mockResolvedValue({ status: 'error', code: 'QUOTA_EXCEEDED', message: 'Cuota de 100 agotada.' })
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     const notice = await screen.findByTestId('stella-error-notice')
     expect(notice).toHaveAttribute('data-error-code', 'QUOTA_EXCEEDED')
@@ -144,7 +166,7 @@ describe('StellaGroundedQueryPanel — availability, permission, quota, provider
     const runQuery: StellaGroundedQueryRunner = vi
       .fn()
       .mockResolvedValue({ status: 'error', code: 'GEMINI_ERROR', message: '' })
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     const notice = await screen.findByTestId('stella-error-notice')
     expect(notice).toHaveAttribute('data-error-code', 'GEMINI_ERROR')
@@ -155,7 +177,7 @@ describe('StellaGroundedQueryPanel — availability, permission, quota, provider
     const runQuery: StellaGroundedQueryRunner = vi
       .fn()
       .mockResolvedValue({ status: 'error', code: 'DISABLED', message: '' })
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     expect(await screen.findByTestId('stella-grounded-query-disabled')).toBeInTheDocument()
     expect(screen.queryByTestId('stella-error-notice')).not.toBeInTheDocument()
@@ -163,7 +185,7 @@ describe('StellaGroundedQueryPanel — availability, permission, quota, provider
 
   it('never calls runQuery when the feature flag is off (enabled=false)', () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn()
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} enabled={false} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} enabled={false} />)
     expect(screen.getByTestId('stella-grounded-query-disabled')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Preguntar a Stella/ })).toBeDisabled()
     fireEvent.change(screen.getByRole('textbox', { name: 'Pregunta para Stella' }), {
@@ -180,7 +202,8 @@ describe('StellaGroundedQueryPanel — retry', () => {
       .fn()
       .mockResolvedValueOnce({ status: 'error', code: 'TIMEOUT', message: '' })
       .mockResolvedValueOnce(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    const issueTicket = makeIssuer()
+    render(<StellaGroundedQueryPanel issueTicket={issueTicket} step="evidence" runQuery={runQuery} />)
 
     await ask('primera pregunta')
     await screen.findByTestId('stella-error-notice')
@@ -193,7 +216,43 @@ describe('StellaGroundedQueryPanel — retry', () => {
 
     await screen.findByTestId('stella-grounded-answer-panel')
     expect(runQuery).toHaveBeenCalledTimes(2)
-    expect(runQuery).toHaveBeenNthCalledWith(2, { query: 'primera pregunta' })
+
+    const first = (runQuery as ReturnType<typeof vi.fn>).mock.calls[0]!
+    const second = (runQuery as ReturnType<typeof vi.fn>).mock.calls[1]!
+
+    // The QUERY is the one that was submitted, not the edited draft.
+    expect(second[0]).toEqual({ query: 'primera pregunta' })
+
+    // INT-INT-001 — the two halves of the retry, asserted rather than assumed:
+    //   * the TICKET is the SAME object identity as the first attempt, so the
+    //     server binds one operation and charges one unit;
+    //   * the issuer was called EXACTLY ONCE, so the retry minted nothing. A
+    //     panel that re-issued here would double-charge every retry, and would
+    //     still pass the query assertion above.
+    expect(second[1]).toBe(first[1])
+    expect(issueTicket).toHaveBeenCalledTimes(1)
+  })
+
+  it('a NEW question mints a NEW ticket — the same text asked twice is two operations', async () => {
+    const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
+    const issueTicket = makeIssuer()
+    render(<StellaGroundedQueryPanel issueTicket={issueTicket} step="evidence" runQuery={runQuery} />)
+
+    await ask('la misma pregunta')
+    await screen.findByTestId('stella-grounded-answer-panel')
+    await ask('la misma pregunta')
+    await waitFor(() => expect(runQuery).toHaveBeenCalledTimes(2))
+
+    const calls = (runQuery as ReturnType<typeof vi.fn>).mock.calls
+    // Identical text...
+    expect(calls[0]![0]).toEqual(calls[1]![0])
+    // ...and DIFFERENT tickets. This is the right-hand side of the contract:
+    // a reviewer legitimately re-asking after uploading new evidence is a new
+    // operation and must be charged as one. A protocol that keyed on the query
+    // text would make the second question free, and would pass every test
+    // above this one.
+    expect(calls[1]![1]).not.toBe(calls[0]![1])
+    expect(issueTicket).toHaveBeenCalledTimes(2)
   })
 })
 
@@ -202,7 +261,7 @@ describe('StellaGroundedQueryPanel — navigation', () => {
     const onNavigateCitation = vi.fn()
     const answer = groundedAnswerView()
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(answer))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} onNavigateCitation={onNavigateCitation} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} onNavigateCitation={onNavigateCitation} />)
     await ask()
     await screen.findByTestId('stella-grounded-answer-panel')
 
@@ -215,7 +274,7 @@ describe('StellaGroundedQueryPanel — human decision workflow', () => {
   function setup(step: Parameters<typeof StellaGroundedQueryPanel>[0]['step'] = 'evidence') {
     const onDecision = vi.fn<(record: SuggestionDecisionRecord) => void>()
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(groundedAnswerView(), 'answer-42'))
-    render(<StellaGroundedQueryPanel step={step} runQuery={runQuery} onDecision={onDecision} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step={step} runQuery={runQuery} onDecision={onDecision} />)
     return { onDecision, runQuery }
   }
 
@@ -302,7 +361,7 @@ describe('StellaGroundedQueryPanel — human decision workflow', () => {
 
   it('does nothing when onDecision is not supplied', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     await screen.findByTestId('stella-grounded-answer-decision')
     expect(() => fireEvent.click(screen.getByRole('button', { name: 'Aceptar' }))).not.toThrow()
@@ -314,7 +373,7 @@ describe('StellaGroundedQueryPanel — what a claim shows', () => {
     const answer = groundedAnswerView()
     const citation = answer.claims[0]!.citations[0]!
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(answer))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
 
     const claim = await screen.findByTestId(`stella-grounded-claim-${answer.claims[0]!.key}`)
@@ -336,7 +395,7 @@ describe('StellaGroundedQueryPanel — what a claim shows', () => {
   it('distinguishes evidence, inference, recommendation and absence of evidence', async () => {
     const answer = allClaimKindsAnswerView()
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(answer))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     await screen.findByTestId('stella-grounded-answer-panel')
 
@@ -360,7 +419,7 @@ describe('StellaGroundedQueryPanel — what a claim shows', () => {
   it('keeps the human decision outside the claims: a decision is not a fifth kind of claim', async () => {
     const answer = allClaimKindsAnswerView()
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult(answer))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
     await screen.findByTestId('stella-grounded-answer-panel')
 
@@ -380,7 +439,7 @@ describe('StellaGroundedQueryPanel — no decision is emitted while the backend 
     const onDecision = vi.fn()
     const runQuery: StellaGroundedQueryRunner = vi.fn()
     render(
-      <StellaGroundedQueryPanel step="evidence" runQuery={runQuery} enabled={false} onDecision={onDecision} />,
+      <StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} enabled={false} onDecision={onDecision} />,
     )
     expect(screen.queryByTestId('stella-grounded-query-decision-actions')).not.toBeInTheDocument()
     expect(onDecision).not.toHaveBeenCalled()
@@ -391,7 +450,7 @@ describe('StellaGroundedQueryPanel — no decision is emitted while the backend 
     const runQuery: StellaGroundedQueryRunner = vi
       .fn()
       .mockResolvedValue({ status: 'error', code: 'DISABLED', message: '' })
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} onDecision={onDecision} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} onDecision={onDecision} />)
     await ask()
     await screen.findByTestId('stella-grounded-query-disabled')
     expect(screen.queryByTestId('stella-grounded-query-decision-actions')).not.toBeInTheDocument()
@@ -404,7 +463,7 @@ describe('StellaGroundedQueryPanel — no decision is emitted while the backend 
       .fn()
       .mockResolvedValueOnce(okResult(groundedAnswerView(), 'answer-7'))
       .mockResolvedValueOnce({ status: 'error', code: 'GEMINI_ERROR', message: '' })
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} onDecision={onDecision} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} onDecision={onDecision} />)
 
     await ask()
     await screen.findByTestId('stella-grounded-answer-decision')
@@ -433,7 +492,7 @@ describe('StellaGroundedQueryPanel — zero scope logic, zero retrieval in the U
 
   it('sends the query and nothing else: scope never travels from the client', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask('una pregunta')
 
     // Not `toHaveBeenCalledWith`: that would pass for a request carrying an
@@ -484,7 +543,7 @@ describe('StellaGroundedQueryPanel — zero scope logic, zero retrieval in the U
 describe('StellaGroundedQueryPanel — accessibility', () => {
   it('is a labelled landmark region with live regions for loading/result and errors', () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     expect(screen.getByRole('region', { name: 'Preguntar a Stella' })).toBeInTheDocument()
     expect(screen.getByTestId('stella-grounded-query-live-polite')).toHaveAttribute('aria-live', 'polite')
     expect(screen.getByTestId('stella-grounded-query-live-assertive')).toHaveAttribute('aria-live', 'assertive')
@@ -492,7 +551,7 @@ describe('StellaGroundedQueryPanel — accessibility', () => {
 
   it('adapts the panel heading level and passes level+1 down to the grounded answer panel', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} headingLevel={2} title="Título" />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} headingLevel={2} title="Título" />)
     expect(screen.getByRole('heading', { level: 2, name: 'Título' })).toBeInTheDocument()
     await ask()
     await screen.findByTestId('stella-grounded-answer-panel')
@@ -521,7 +580,7 @@ describe('StellaGroundedQueryPanel — a decision with no sink says so', () => {
   })
 
   async function askAndAccept(onDecision?: (record: SuggestionDecisionRecord) => void) {
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runOk} onDecision={onDecision} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runOk} onDecision={onDecision} />)
     await ask()
     await screen.findByTestId('stella-grounded-answer-panel')
     fireEvent.click(screen.getByRole('button', { name: 'Aceptar' }))
@@ -564,7 +623,7 @@ describe('StellaGroundedQueryPanel — a decision with no sink says so', () => {
 describe('StellaGroundedQueryPanel — extractive disclosure (R9)', () => {
   it('says the answer was quoted, not written, and that it needs review', async () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
 
     const note = await screen.findByTestId('stella-grounded-query-extractive-disclosure')
@@ -578,7 +637,7 @@ describe('StellaGroundedQueryPanel — extractive disclosure (R9)', () => {
     const runQuery: StellaGroundedQueryRunner = vi
       .fn()
       .mockResolvedValue(okResult(groundedAnswerView(), 'answer-gen', 'generative'))
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
 
     await screen.findByTestId('stella-grounded-answer-panel')
@@ -591,7 +650,7 @@ describe('StellaGroundedQueryPanel — extractive disclosure (R9)', () => {
     // for a screen reader — a caveat read AFTER the text it qualifies arrives
     // too late.
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
 
     const note = await screen.findByTestId('stella-grounded-query-extractive-disclosure')
@@ -604,7 +663,7 @@ describe('StellaGroundedQueryPanel — extractive disclosure (R9)', () => {
     // The disclosure is about what the reader must do, not about which build
     // produced it. `provenance.generatorId` stays in the result for support.
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
-    render(<StellaGroundedQueryPanel step="evidence" runQuery={runQuery} />)
+    render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
     await ask()
 
     const note = await screen.findByTestId('stella-grounded-query-extractive-disclosure')

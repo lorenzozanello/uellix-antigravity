@@ -108,7 +108,82 @@ export type StellaGroundedQueryResult = StellaGroundedQuerySuccess | StellaGroun
  */
 export type StellaGroundedQueryRunner = (
   request: StellaGroundedQueryRequest,
+  ticket: StellaOperationTicket,
 ) => Promise<StellaGroundedQueryResult>
+
+/* -------------------------------------------------------------------------- */
+/* Train 4.1 — the operation ticket (INT-INT-001)                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * An opaque, server-issued operation ticket.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY IT IS A SECOND ARGUMENT AND NOT A FIELD OF THE REQUEST
+ * ---------------------------------------------------------------------------
+ * `StellaGroundedQueryRequest` stays exactly `{ query }`. That is not
+ * cosmetic. The request is the FUNCTIONAL payload — what the reviewer asked —
+ * and the ticket is a CREDENTIAL. Folding a credential into the payload would
+ * mean the one object a client fully composes now carries the value that
+ * decides whether a unit is charged, and "the client cannot smuggle a ticket
+ * inside the query" would become a claim about a parser instead of a fact
+ * about a type. As two parameters, the query has nowhere to put a ticket and
+ * the ticket has nowhere to put a query.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE CLIENT MAY HOLD IT AT ALL
+ * ---------------------------------------------------------------------------
+ * Because only the client knows whether the next call is a NEW QUESTION or a
+ * RETRY OF THE CURRENT ONE, and that distinction cannot be recovered on the
+ * server from anything the request carries. Identical text is a legitimate new
+ * question; elapsed time is not identity; a fresh uuid per invocation
+ * double-charges every retry. The panel already draws the distinction
+ * structurally — `handleSubmit` versus `handleRetry` are two different
+ * functions reached by two different affordances — so the ticket rides that
+ * existing seam rather than a new heuristic.
+ *
+ * Holding it is safe because it is not trusted. The server re-validates it in
+ * SQL on every presentation: `bind_operation_ticket` and
+ * `complete_operation_ticket` re-derive the actor from `auth.uid()`, and RLS
+ * plus a trigger re-check organization and project. A borrowed or invented
+ * ticket finds nothing, and finds nothing in a way indistinguishable from an
+ * id that never existed. The ticket is an OPERATION identity; it is not, and
+ * never substitutes for, authentication.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT IT CARRIES
+ * ---------------------------------------------------------------------------
+ * 64 lowercase hex characters and nothing else. Not the charge nonce (no
+ * server function returns it), not the stored query digest, not an
+ * organization, project or actor id, and nothing from which any of those can
+ * be derived. It is opaque by construction, not by convention: `stella_0014`
+ * mints it as a digest of two independent uuid4 draws, so it is not a uuid a
+ * consumer could try to parse or re-derive.
+ */
+export type StellaOperationTicket = string
+
+/**
+ * What the server surface that MINTS tickets returns.
+ *
+ * `disabled` is a first-class member rather than an error because a false
+ * feature flag must cost zero database work and emit zero telemetry — see the
+ * issuing action. It is distinct from `unavailable`, which means the flag was
+ * on and the mint genuinely failed.
+ */
+export type StellaOperationTicketIssueResult =
+  | { readonly status: 'issued'; readonly ticket: StellaOperationTicket }
+  | { readonly status: 'disabled' }
+  | { readonly status: 'error'; readonly code: StellaPanelErrorCode; readonly message: string }
+
+/**
+ * The server surface that issues one ticket.
+ *
+ * TAKES NO ARGUMENTS, and that is the point. Organization, project, actor,
+ * category, TTL and nonce are all derived server-side; there is no parameter
+ * for any of them, so "the client cannot choose its own scope" is a property
+ * of this signature rather than of a validation the server remembers to run.
+ */
+export type StellaOperationTicketIssuer = () => Promise<StellaOperationTicketIssueResult>
 
 export function isStellaGroundedQuerySuccess(
   result: StellaGroundedQueryResult,

@@ -1037,3 +1037,54 @@ el anidamiento, porque guarda el oid en una local para reutilizarlo. Un mutante
 que **sobrevivió** lo hizo visible; el lector ahora sigue la variable hasta su
 asignación. INT-CAP-004 (1) volvía a ser reintroducible sin que ninguna gate lo
 notara.
+
+
+---
+
+## Tren 4.1 — INT-INT-001 CERRADO (integración, 2026-08-05)
+
+**`runtime-quota-charged` pasa a `true`** por evidencia ejecutada, no por
+diseño: la causa única que lo bloqueaba —la clave de idempotencia sin fuente
+canónica— está cerrada.
+
+**`local-runtime-ready` NO se flipa en este tren, y la distinción importa.**
+El gate de cuota exigido por INT-INT-001 está satisfecho y medido, pero la
+lista de criterios del E2E incluye «ticket cross-project: rechazo, cero cargo»
+y ese criterio **no se cumple**: `bind_operation_ticket` y
+`complete_operation_ticket` no reciben el proyecto contra el que se ejecuta la
+consulta, así que la base no puede compararlo con el del ticket. Es R2-INT.
+Declarar `local-runtime-ready=true` afirmaría una propiedad que la propia
+batería mide como falsa.
+
+**Qué se cableó.** `db/prepared/stella_0014_operation_tickets.sql` aplicado a
+una base desechable; `app/actions/stella/grounded-query.ts` reestructurado a
+`issue → bind → ejecutar → complete | abort`; canonicalización en
+`lib/stella/operation-ticket/canonical-query-hash.ts`; emisor real de los diez
+eventos en `lib/stella/operation-ticket/ticket-observability.ts`; adaptador en
+`db/stella/operation-tickets.ts`; el ticket viaja como **segundo argumento** del
+runner y el payload funcional sigue siendo `{ query }`.
+
+**Con qué se probó.** `scripts/stella-ticket-e2e.sh` — PostgreSQL desechable
+(sin volúmenes, publicado sólo en loopback, destruido al salir), baseline +
+`grounding_0002/0003/0004` + `stella_0013` + `stella_0014`, server action real,
+adapters reales, generador extractivo local, **cero proveedor**
+(`env -u GEMINI_API_KEY`, reafirmado dentro del proceso). 22 escenarios, todos
+verdes. Cada cargo se mide como **delta de filas de `stella_interactions`**
+leído por una conexión distinta de la del runtime.
+
+**El gate.** `runtime-quota-charged` ya no acepta un informe de dos campos:
+exige nueve pruebas medidas (primer cargo, reintento sin cargo, ticket nuevo con
+cargo, abort sin cargo, cross-scope sin cargo, concurrencia, semántica explícita
+del reintento post-cobro, observabilidad runtime limpia, teardown sin residuos),
+y un control negativo comprueba que **retirar cualquiera de las nueve** lo hace
+fallar.
+
+**Lo que NO cambió.** Banderas en `false` en el repositorio. `staging-blocked` y
+`hosted-blocked` siguen en `true`. `consume_stella_quota` no se tocó. La
+política R1 sigue siendo la conservadora: nunca exceder cuota, nunca mostrar
+como exitosa una respuesta no cobrada.
+
+**Riesgos abiertos**: R1 (armonización entre acciones hermanas), R2-INT
+(atribución cross-proyecto, MAJOR), R3-INT, R4-INT, R5-INT, R6-INT, R7-INT — los
+siete detallados en
+[`CONTRACT_LEDGER.md`](../contracts/CONTRACT_LEDGER.md#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4).

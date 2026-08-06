@@ -8,6 +8,37 @@ import { evaluateIdempotencyReleaseGates, computeIdempotencyReleaseGateReport } 
 
 const RUN = runIdempotencyEvalHarness()
 
+/**
+ * A runtime report with all nine Train 4.1 proofs satisfied.
+ *
+ * SYNTHETIC, and used only to show the gate is SATISFIABLE — that it is a
+ * check rather than a permanent refusal. It is deliberately not evidence of
+ * anything: the real report is built from measured ledger deltas by
+ * `tests/e2e/stella-ticket-journey.e2e.test.ts`, which runs the real server
+ * action against a real database. Nothing here may be read as a claim that a
+ * runtime charged.
+ */
+const FULL_RUNTIME_REPORT = {
+  claimedCharged: true,
+  chargesObservedForTicket: 1,
+  firstExecutionDelta: 1,
+  retryDelta: 0,
+  newOperationSameTextDelta: 1,
+  abortDelta: 0,
+  crossScopeDelta: 0,
+  concurrencyLastUnitCharges: 1,
+  postCompleteRetryCode: 'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
+  runtimeEventsEmitted: [
+    'operation_ticket_issued',
+    'operation_ticket_bound',
+    'grounded_query_reserved',
+    'grounded_query_completed',
+    'quota_consumed',
+  ],
+  observabilityViolations: 0,
+  residualResources: 0,
+} as const
+
 describe('evaluateIdempotencyReleaseGates — the 9 named gates', () => {
   const gates = evaluateIdempotencyReleaseGates(RUN)
 
@@ -27,10 +58,14 @@ describe('evaluateIdempotencyReleaseGates — the 9 named gates', () => {
     expect(failing.map((g) => `${g.id}: ${g.detail}`)).toEqual([])
   })
 
-  it('runtime-quota-charged is FALSE with no report — this branch calls no real function', () => {
+  it('runtime-quota-charged is FALSE with no report — an unmeasured runtime is never assumed to charge', () => {
     const runtimeGate = gates.find((g) => g.id === 'runtime-quota-charged')!
     expect(runtimeGate.passed).toBe(false)
-    expect(runtimeGate.detail).toMatch(/INT-INT-001/)
+    // Train 4.1: the detail no longer names INT-INT-001 as the blocker,
+    // because that contract is closed. What it names now is the EVIDENCE that
+    // is missing — which is the thing a reader has to go produce.
+    expect(runtimeGate.detail).toMatch(/no runtime charge report provided/)
+    expect(runtimeGate.detail).toMatch(/stella-ticket-e2e\.sh/)
   })
 
   it('every gate carries a non-trivial detail, never a bare boolean', () => {
@@ -53,10 +88,20 @@ describe('runtime-quota-charged — fail-closed on a claim its own evidence cont
     expect(runtimeGate.detail).toMatch(/contradicted by its own evidence/)
   })
 
-  it('would pass ONLY when the claim and the observed count agree on a real charge — proving the gate is not permanently unsatisfiable by construction', () => {
+  it('a coherent claim is NOT enough on its own — Train 4.1 also demands the nine measured deltas', () => {
+    // The pre-4.1 report shape. It is coherent (claim agrees with count) and
+    // it is still refused, because agreeing with yourself about one number
+    // says nothing about retries, aborts, scope or concurrency.
     const gates = evaluateIdempotencyReleaseGates(RUN, { claimedCharged: true, chargesObservedForTicket: 1 })
     const runtimeGate = gates.find((g) => g.id === 'runtime-quota-charged')!
-    expect(runtimeGate.passed).toBe(true)
+    expect(runtimeGate.passed).toBe(false)
+    expect(runtimeGate.detail).toMatch(/required proofs did not hold/)
+  })
+
+  it('passes ONLY with all nine proofs — proving the gate is not unsatisfiable by construction', () => {
+    const gates = evaluateIdempotencyReleaseGates(RUN, FULL_RUNTIME_REPORT)
+    const runtimeGate = gates.find((g) => g.id === 'runtime-quota-charged')!
+    expect(runtimeGate.passed, runtimeGate.detail).toBe(true)
   })
 })
 
@@ -67,19 +112,21 @@ describe('computeIdempotencyReleaseGateReport — idempotency-harness-ready vs l
     expect(report.missingForIdempotencyHarness).toEqual([])
   })
 
-  it('missingForOperationTicketRuntime is always non-empty on this branch — runtime-quota-charged cannot be satisfied without a real package', () => {
-    const report = computeIdempotencyReleaseGateReport(RUN)
-    expect(report.missingForOperationTicketRuntime.length).toBeGreaterThan(0)
-    expect(report.missingForOperationTicketRuntime.join(' ')).toMatch(/INT-INT-001/)
+  it('missingForOperationTicketRuntime is non-empty WITHOUT runtime evidence, and empty WITH it', () => {
+    const without = computeIdempotencyReleaseGateReport(RUN)
+    expect(without.missingForOperationTicketRuntime.length).toBeGreaterThan(0)
+
+    // Train 4.1: the three entries that used to be unconditional are now
+    // conditional on the runtime gate. A permanently non-empty list is
+    // indistinguishable from a list nobody maintains.
+    const withEvidence = computeIdempotencyReleaseGateReport(RUN, FULL_RUNTIME_REPORT)
+    expect(withEvidence.missingForOperationTicketRuntime).toEqual([])
   })
 
-  it('idempotencyHarnessReady stays TRUE even when a (real) runtime report is supplied and satisfies runtime-quota-charged — it never depends on that gate', () => {
-    const report = computeIdempotencyReleaseGateReport(RUN, { claimedCharged: true, chargesObservedForTicket: 1 })
-    expect(report.idempotencyHarnessReady).toBe(true)
-    // The runtime gate itself is satisfied, but this module never claims
-    // local-runtime-ready on that basis alone — see local-release-gate.ts,
-    // which this module does not modify.
-    expect(report.missingForOperationTicketRuntime.filter((r) => r.includes('no db/prepared')).length).toBe(1)
+  it('idempotencyHarnessReady stays TRUE whether or not a runtime report is supplied — it never depends on that gate', () => {
+    const withEvidence = computeIdempotencyReleaseGateReport(RUN, FULL_RUNTIME_REPORT)
+    expect(withEvidence.idempotencyHarnessReady).toBe(true)
+    expect(computeIdempotencyReleaseGateReport(RUN).idempotencyHarnessReady).toBe(true)
   })
 
   it('idempotencyHarnessReady goes FALSE when a synthetic bad run breaks a case a specific gate reads', () => {

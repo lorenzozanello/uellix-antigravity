@@ -68,6 +68,37 @@ vi.mock('@/lib/stella/rate-limit', () => ({
 }))
 
 /**
+ * The operation-ticket adapter, doubled.
+ *
+ * Doubled at the ADAPTER rather than at the driver on purpose. The ticket
+ * protocol's real behaviour is proven where it can be proven for real — against
+ * a live disposable PostgreSQL, in `scripts/stella-ticket-e2e.sh`, with the
+ * actual `stella_0014` package installed. Re-simulating `bind`/`complete`
+ * inside a SQL-string matcher here would be a second, weaker model of the same
+ * thing, and the assertions in this file would then be checking the model.
+ *
+ * What this file DOES check is the seam: that the runtime calls bind before it
+ * works and complete after it, that it aborts on every failure path, and that
+ * nothing reaches the client until the ledger has accounted for a unit.
+ */
+const mockIssueTicket = vi.fn()
+const mockBindTicket = vi.fn()
+const mockCompleteTicket = vi.fn()
+const mockAbortTicket = vi.fn()
+vi.mock('@/db/stella/operation-tickets', () => ({
+  issueOperationTicket: (...args: unknown[]) => mockIssueTicket(...args),
+  bindOperationTicket: (...args: unknown[]) => mockBindTicket(...args),
+  completeOperationTicket: (...args: unknown[]) => mockCompleteTicket(...args),
+  abortOperationTicket: (...args: unknown[]) => mockAbortTicket(...args),
+  inspectOperationTicket: vi.fn(),
+  expireOperationTickets: vi.fn(),
+  GROUNDED_QUERY_TICKET_CATEGORY: 'grounded_query',
+}))
+
+/** A syntactically valid ticket — 64 lowercase hex, the shape SQL enforces. */
+const TICKET_A = 'a'.repeat(64)
+
+/**
  * The driver double. It records EVERY statement, which is how the assertions
  * below can say "no SQL was emitted" and "the scope in the SQL is the session's",
  * rather than trusting the action's return value.
@@ -119,13 +150,26 @@ function renderSql(query: unknown): string {
 // Only ONE endpoint is exported, deliberately: every export of a `'use server'`
 // module is an independently invocable server action, so the two-argument form
 // is module-private and the tests drive the same surface a client can reach.
-import { runStellaGroundedQueryForProject } from '@/app/actions/stella/grounded-query'
+import {
+  issueStellaGroundedQueryTicketForProject,
+  runStellaGroundedQueryForProject,
+} from '@/app/actions/stella/grounded-query'
 
 /** The bound form, spelled once. */
 const runStellaGroundedQuery = (
   request: { query: string },
-  options: { boundProjectId: string },
-) => runStellaGroundedQueryForProject(options.boundProjectId, request)
+  options: { boundProjectId: string; ticket?: string },
+) =>
+  runStellaGroundedQueryForProject(
+    options.boundProjectId,
+    request,
+    // Train 4.1: the ticket is a SEPARATE argument, never a field of the
+    // request. A syntactically valid but never-issued digest is the right
+    // default for these tests — the ones that reach `bind` are asserting that
+    // an unissued ticket is refused, and the ones that stop earlier (flag,
+    // auth, scope) never present it at all.
+    options.ticket ?? 'f'.repeat(64),
+  )
 import { createPersistedGroundingChunkRepository } from '@/db/grounding/grounding-chunk-repository'
 import { buildChunkQuery } from '@/lib/grounding/retrieve/repository'
 
@@ -167,6 +211,12 @@ beforeEach(() => {
   mockRequireOrganizationAccess.mockResolvedValue(organizationContext())
   mockCheckQuota.mockResolvedValue({ allowed: true, quota: 100, used: 1, reason: null })
   mockRateLimit.mockResolvedValue({ allowed: true })
+  // Healthy default: the reservation is taken, and the settlement charges one
+  // unit. Individual tests override to exercise refusal and failure.
+  mockIssueTicket.mockResolvedValue({ kind: 'issued', ticketId: TICKET_A })
+  mockBindTicket.mockResolvedValue({ kind: 'bound', used: 1, quota: 100 })
+  mockCompleteTicket.mockResolvedValue({ kind: 'completed', used: 2, quota: 100 })
+  mockAbortTicket.mockResolvedValue({ kind: 'aborted' })
   // Project belongs; one evidence item.
   mockSelectChain
     .mockReturnValueOnce(selectReturning([{ id: PROJECT_1 }]))
@@ -215,8 +265,10 @@ describe('RUNTIME: the client payload carries the query and nothing else', () =>
 
   it('the bindable form seals projectId on the server: the runner signature has no scope parameter', async () => {
     const runner = runStellaGroundedQueryForProject.bind(null, PROJECT_1)
-    expect(runner.length).toBe(1)
-    const result = await runner({ query: 'x' })
+    // Two parameters: the functional request, and the operation ticket. Still
+    // no parameter for a scope — which is what this test pins.
+    expect(runner.length).toBe(2)
+    const result = await runner({ query: 'x' }, 'f'.repeat(64))
     expect(result.status === 'ok' || result.status === 'error').toBe(true)
   })
 })
@@ -269,17 +321,31 @@ describe('RUNTIME: permission and quota gates run before any chunk is read', () 
   })
 
   it('an exhausted quota returns QUOTA_EXCEEDED with the SERVER message intact, and reads no chunk', async () => {
-    mockCheckQuota.mockResolvedValue({ allowed: false, quota: 50, used: 50, reason: 'quota_exceeded' })
+    // Train 4.1: the monthly quota is decided by `bind`, under the same
+    // per-organization advisory lock the charge takes — not by a separate,
+    // unlocked pre-read whose answer could be overtaken before the charge.
+    mockBindTicket.mockResolvedValue({ kind: 'quota_exceeded', used: 50, quota: 50 })
     const result = await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1 })
     expect(result).toMatchObject({ status: 'error', code: 'QUOTA_EXCEEDED' })
     expect((result as { message: string }).message).toContain('50')
     expect(emittedSql.join('\n')).not.toContain('chunks_in_scope')
+    // Refused BEFORE the work ran — nothing settled, nothing charged.
+    expect(mockCompleteTicket).not.toHaveBeenCalled()
+    // And the ticket is left alone: aborting here would release a reservation
+    // that was never taken, burning a ticket the caller could still use once
+    // headroom frees up.
+    expect(mockAbortTicket).not.toHaveBeenCalled()
   })
 
-  it('an exhausted per-hour limit returns RATE_LIMITED, and reads no chunk', async () => {
+  it('an exhausted per-hour limit returns RATE_LIMITED at ISSUANCE, and reads no chunk', async () => {
+    // Train 4.1 — the hourly limit moved from execution to issuance, so it
+    // counts OPERATIONS rather than deliveries: minting is bounded, and a
+    // retry of an already-counted operation does not spend the budget twice.
+    // Asserted on the surface that now owns it.
     mockRateLimit.mockResolvedValue({ allowed: false })
-    const result = await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1 })
-    expect(result).toMatchObject({ status: 'error', code: 'RATE_LIMITED' })
+    const issue = await issueStellaGroundedQueryTicketForProject(PROJECT_1)
+    expect(issue).toMatchObject({ status: 'error', code: 'RATE_LIMITED' })
+    expect(mockIssueTicket).not.toHaveBeenCalled()
     expect(emittedSql.join('\n')).not.toContain('chunks_in_scope')
   })
 

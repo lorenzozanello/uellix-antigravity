@@ -78,7 +78,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
-import { checkStellaQuota, nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
+import { nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { db } from '@/db/client'
@@ -105,8 +105,21 @@ import { adaptGroundedAnswer, presentationInputFromRetrieval } from '@/component
 import type {
   StellaGroundedQueryRequest,
   StellaGroundedQueryResult,
+  StellaOperationTicketIssueResult,
 } from '@/components/stella/grounded-query'
 import type { StellaPanelErrorCode } from '@/components/stella/error-messages'
+import { canonicalQueryHash } from '@/lib/stella/operation-ticket/canonical-query-hash'
+import {
+  emitTicketEvent,
+  type TicketEventScope,
+} from '@/lib/stella/operation-ticket/ticket-observability'
+import {
+  abortOperationTicket,
+  bindOperationTicket,
+  completeOperationTicket,
+  issueOperationTicket,
+  type OperationTicketAbortReason,
+} from '@/db/stella/operation-tickets'
 
 /* -------------------------------------------------------------------------- */
 /* The single classification mapping (R8)                                     */
@@ -172,11 +185,41 @@ const CLASSIFICATION_IS_ANSWERABLE: Record<GroundingOrchestrationClassification,
 const MAX_EVIDENCE_ITEMS_PER_QUERY = 25
 
 /**
- * QUOTA IS ENFORCED HERE AND STILL NOT CHARGED — AND THE REASON CHANGED IN
- * TRAIN 4. READ THIS BEFORE "JUST CALLING THE FUNCTION".
+ * QUOTA IS NOW CHARGED — TRAIN 4.1 CLOSED INT-INT-001. READ THIS BEFORE
+ * CHANGING THE ORDER OF ANYTHING BELOW.
  *
  * ---------------------------------------------------------------------------
- * WHAT IS NO LONGER THE PROBLEM
+ * WHAT WAS THE PROBLEM, AND WHAT ANSWERED IT
+ * ---------------------------------------------------------------------------
+ * `consume_stella_quota` requires an `idempotency_key`, and until Train 4.1
+ * nothing this action could reach drew the right distinction:
+ *
+ *     a RETRY of one question  ->  same key   (charge once)
+ *     a NEW question           ->  new key    (charge again)
+ *
+ * A `randomUUID()` per invocation re-charges every retry. A digest of
+ * (user, project, query) makes a reviewer's second, legitimate question free.
+ * A timestamp bucket is the same collapse with an arbitrary window. A value in
+ * the payload is a client-chosen discount. So nothing was charged, and the
+ * shortfall was recorded as INT-INT-001.
+ *
+ * `db/prepared/stella_0014_operation_tickets.sql` answers it by making the
+ * identity SOMETHING THE SERVER ISSUES BEFORE THE OPERATION RUNS — which is
+ * exactly what a digest of the request can never be. The key charged is
+ *
+ *     sha256('stella/ticket/charge/v1' || LF || ticket_id || LF || charge_nonce)
+ *
+ * derived INSIDE `complete_operation_ticket`, from a nonce generated at issue
+ * that no function returns and no runtime principal can read. The caller
+ * cannot compute it, cannot pre-charge under it, and cannot choose it.
+ *
+ * The remaining half — knowing whether THIS call is a retry or a new
+ * question — is not something the server can recover from the request, so it
+ * is carried explicitly: the client presents the SAME ticket to retry and asks
+ * for a NEW one to ask again. See `StellaOperationTicket`.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT WAS ALREADY NOT THE PROBLEM
  * ---------------------------------------------------------------------------
  * INT-CAP-001 is closed. `db/prepared/stella_0013_grounded_query_quota.sql`
  * widens `stella_interactions_stella_role_check` to admit `grounded_query` and
@@ -189,58 +232,46 @@ const MAX_EVIDENCE_ITEMS_PER_QUERY = 25
  * the first to COMMIT and gets `quota_exceeded`.
  *
  * ---------------------------------------------------------------------------
- * WHAT IS THE PROBLEM — INT-INT-001, THE IDEMPOTENCY KEY HAS NO SOURCE
+ * WHY THERE IS NO LONGER A SEPARATE `checkStellaQuota` READ BEFORE THE WORK
  * ---------------------------------------------------------------------------
- * `consume_stella_quota` REQUIRES an `idempotency_key`, and the requirement is
- * right: `uq_stella_interactions_idempotency` is what turns "do not charge a
- * retry twice" into a property of the DATA rather than of who called. But a
- * key is only worth the distinction it draws, and it must draw exactly one:
+ * There used to be one, and it was the right thing while nothing could charge:
+ * an unlocked count is better than no enforcement at all. It is now strictly
+ * worse than what replaced it. `bind_operation_ticket` performs the SAME count
+ * plus the live reservations, under the SAME per-organization advisory lock
+ * that `consume_stella_quota` takes — so its answer cannot be overtaken
+ * between the check and the charge, which an unlocked pre-read's answer always
+ * could. Keeping both would mean two different numbers could disagree, and the
+ * losing one would be the one the reviewer was shown.
  *
- *     a RETRY of one question  ->  same key   (charge once)
- *     a NEW question           ->  new key    (charge again)
- *
- * Everything this action can reach fails one side of that:
- *
- *   * `randomUUID()` per invocation — the client cannot influence it, and a
- *     retry gets a fresh key. Charges twice. Fails the left side.
- *   * a digest of (user, project, query) — stable across a retry, and equally
- *     stable across a reviewer legitimately asking the same question twice
- *     after uploading new evidence. The second one is free. Fails the right
- *     side, and is named as prohibited in the Train 4 dispatch.
- *   * a timestamp bucket — the same collapse, with an arbitrary window, and
- *     unsigned so it protects nothing.
- *   * a value in the payload — `StellaGroundedQueryRequest` is `{ query }`
- *     and must stay `{ query }`; a client-chosen key is a client-chosen
- *     discount.
- *   * a bound server-action argument — the one mechanism here that IS
- *     unforgeable (Next.js seals it server-side and it travels encrypted).
- *     But it is bound at RENDER, and one render serves many questions, so a
- *     bound token is constant exactly where it needs to vary. Re-binding per
- *     question would require a server round trip whose response the client
- *     then chooses to use or ignore — which returns the choice to the client.
- *
- * Searched for and NOT FOUND in this application: any canonical `requestId`,
- * `correlationId` or `invocationId` (no middleware, no request-scoped id —
- * `headers()` is used only for a rate-limit IP); any general-purpose signing
- * secret (only `STRIPE_*`, another domain's credential); any table of issued
- * operation tickets. `lib/capabilities/contracts.ts` CAP-05 defines the
- * `replayed` vocabulary but is `enabled: false` and mints no keys.
+ * The rate limit stays ahead of `bind`: it is cheap, it is per-hour rather
+ * than per-month, and it protects the database from a caller who would
+ * otherwise mint tickets in a loop.
  *
  * ---------------------------------------------------------------------------
- * WHY NOTHING IS CHARGED RATHER THAN SOMETHING BEING CHARGED
+ * WHERE THE TRANSACTION BOUNDARIES ARE, AND WHY
  * ---------------------------------------------------------------------------
- * Calling the function with a per-invocation uuid would look like the gap was
- * closed, pass a naive reading of the ledger, and double-charge every retry —
- * a worse state than the honest one, because the failure would be invisible
- * and would land on the customer's bill. So the call is NOT made, the quota is
- * still ENFORCED (the read below refuses an exhausted organization), and the
- * shortfall is recorded as contract request INT-INT-001.
+ * `bind` and `complete` each run in their OWN short transaction. Generation
+ * happens BETWEEN them, in neither. That is required, not stylistic: `bind`
+ * takes the ticket row's `FOR UPDATE` lock and the organization's advisory
+ * lock, and both are released only at COMMIT. Wrapping the journey in one
+ * transaction would hold an organization-wide mutex across retrieval,
+ * generation and citation validation — serialising every other reviewer in the
+ * organization behind one question.
  *
- * This is what blocks `local-runtime-ready`. The feature flag must not be
- * turned on while an enforced quota cannot be charged.
+ * With the transaction closed, the reservation survives as a ROW STATE
+ * (`status='bound'` with a live `expires_at`), which is what INT-INT-001 §4
+ * means by "la reserva es un ESTADO DE FILA". Retrieval does open a
+ * transaction of its own — `chunks_in_scope_attested` is SECURITY DEFINER and
+ * needs the session claims — but it holds no ticket row and no advisory lock.
  */
-const QUOTA_LEDGER_NOT_CHARGED =
-  'consume_stella_quota requires an idempotency key with no canonical server-side source (INT-INT-001); quota is enforced but not consumed'
+// Square brackets, not parentheses, and that is not a style choice.
+// `tests/cross-workstream/train4-attested-runtime.test.ts` asserts this module
+// never INVOKES `uellix_stella.consume_stella_quota` directly — it matches the
+// schema-qualified name followed by an open paren, precisely so that prose
+// naming the function is not mistaken for a call to it. An audit label written
+// with parentheses would trip that check while invoking nothing.
+const QUOTA_LEDGER_CHARGED_BY_TICKET =
+  'charged via uellix_stella_ops.complete_operation_ticket -> uellix_stella.consume_stella_quota [INT-INT-001 closed, prepared stella_0014]'
 
 export interface StellaGroundedQueryOptions {
   /**
@@ -250,6 +281,15 @@ export interface StellaGroundedQueryOptions {
    * the session's organization below regardless.
    */
   boundProjectId: string
+  /**
+   * The operation ticket, minted by `issueStellaGroundedQueryTicketForProject`.
+   *
+   * Carried by the client and NEVER trusted on that account: every use of it
+   * below goes through `bind`/`complete`/`abort`, each of which re-derives the
+   * actor from `auth.uid()` and re-checks organization and project in SQL. A
+   * forged or borrowed value finds nothing.
+   */
+  ticket: string
 }
 
 /**
@@ -345,33 +385,115 @@ async function runStellaGroundedQuery(
     return failure('UNAUTHORIZED', 'El proyecto solicitado no es válido para esta sesión.')
   }
 
-  // 7. QUOTA, then the per-hour rate limit. Both before any chunk is read.
-  //    ENFORCED here; NOT charged — see QUOTA_LEDGER_NOT_CHARGED (INT-INT-001).
-  const quota = await withOrganizationDatabaseContext(() => checkStellaQuota(scope.organizationId)).catch(
-    () => null,
-  )
-  if (quota === null) {
-    return failure('UNKNOWN_ERROR', 'No se pudo verificar la cuota de Stella.')
+  // 7. NO RATE LIMIT HERE — IT MOVED TO ISSUANCE, AND THAT IS THE POINT.
+  //
+  //    The per-hour limit now runs in `issueStellaGroundedQueryTicket`, one
+  //    step earlier in the operation's life. Two things follow, and both are
+  //    improvements rather than side effects:
+  //
+  //      * MINTING IS BOUNDED. Issuance reserves nothing, so it was not
+  //        self-limiting: an authenticated member could previously mint
+  //        unbounded rows into `operation_tickets`, which nothing reclaims
+  //        (there is no pg_cron and `expire_operation_tickets` is called by no
+  //        runtime path). Raised as MAJOR by adversarial review A.
+  //      * A RETRY NO LONGER SPENDS THE LIMIT. It is the same operation,
+  //        already counted when its ticket was minted. Charging the hourly
+  //        budget again for re-delivering one answer would penalise exactly
+  //        the callers the protocol exists to protect.
+  //
+  //    Every path into this function requires a ticket, and every ticket was
+  //    rate-limited when it was issued — so this is a narrowing of what the
+  //    limit is spent on, never a removal of it.
+  //
+  //    The MONTHLY quota is likewise not read here: `bind` counts it under the
+  //    same advisory lock the charge takes, and an unlocked pre-read could
+  //    only ever disagree with it.
+
+  // ---------------------------------------------------------------------
+  // 8. CANONICAL QUERY DIGEST — computed in Node, per INT-INT-001 §5. The
+  //    TEXT never crosses the database boundary; only these 64 hex chars do.
+  // ---------------------------------------------------------------------
+  const queryHash = canonicalQueryHash(queryText)
+
+  // Telemetry correlation only. Minted per INVOCATION, so a retry carries a
+  // NEW one while reusing the SAME ticket — the opposite of an identity. It
+  // never reaches the database and never reaches `consume_stella_quota`.
+  const events: TicketEventScope = {
+    organizationId: scope.organizationId,
+    projectId,
+    requestId: randomUUID(),
   }
-  if (!quota.allowed) {
-    // Verbatim to screen — `stellaErrorPresentation` passes QUOTA_EXCEEDED
-    // through untouched because it carries quota, usage and reset date.
+
+  // ---------------------------------------------------------------------
+  // 9. BIND — fix the digest write-once and RESERVE one unit, under the
+  //    per-organization advisory lock. The transaction closes here; from this
+  //    point the reservation is a row state, not a held lock.
+  // ---------------------------------------------------------------------
+  const bound = await bindOperationTicket(options.ticket, queryHash)
+
+  if (bound.kind === 'already_completed') {
+    // ---------------------------------------------------------------
+    // THE POST-COMPLETE RETRY (FASE 11). This ticket already ran and was
+    // already charged; the reviewer never saw the answer because the
+    // response was lost in transit.
+    //
+    // The three things NOT done here are the point:
+    //   * the work is NOT re-run. Re-running would be free of charge (the
+    //     ledger would answer `replayed`), but it could produce DIFFERENT
+    //     text than the unit already paid for, and nothing would record
+    //     that the reviewer was shown a second answer for one charge.
+    //   * no answer is INVENTED, reconstructed or approximated.
+    //   * nothing is charged again.
+    //
+    // Option C of the dispatch: a specific operational state that neither
+    // charges nor pretends to have succeeded. Options A (persist a minimal
+    // result) and B (deterministic reconstruction from stable provenance)
+    // are both defensible, and neither exists canonically in this
+    // application today — there is no answer store, and `answerId` is
+    // minted per run rather than derived — so claiming either would be
+    // claiming a capability that is not there.
+    // ---------------------------------------------------------------
+    emitTicketEvent('grounded_query_retried', events, { ticketId: options.ticket, attempt: 2 })
+    emitTicketEvent('quota_reuse_detected', events, { ticketId: options.ticket })
+    void auditGroundedQuery(ctx, projectId, {
+      outcome: 'already_completed_result_unavailable',
+      quotaLedger: QUOTA_LEDGER_CHARGED_BY_TICKET,
+    })
+    return failure(
+      'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
+      'Esta consulta ya se ejecutó y se contabilizó en tu cuota, pero la respuesta no pudo entregarse y no se conserva.',
+    )
+  }
+
+  if (bound.kind === 'quota_exceeded' || bound.kind === 'no_quota') {
+    // REFUSED BEFORE THE WORK RAN — the only point at which refusing is free.
+    // The ticket stays `issued`; nothing was reserved and nothing charged.
+    emitTicketEvent('replay_rejected', events, { ticketId: options.ticket, reasonCode: bound.kind })
     const message =
-      quota.reason === 'no_quota'
+      bound.kind === 'no_quota'
         ? 'Tu organización no tiene un plan de Stella asignado. Contactá a Uellix para habilitarlo.'
-        : `Alcanzaste el límite mensual de ${quota.quota} consultas a Stella (usadas: ${quota.used}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
+        : `Alcanzaste el límite mensual de ${bound.quota ?? 0} consultas a Stella (usadas: ${bound.used ?? 0}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`
     return failure('QUOTA_EXCEEDED', message)
   }
 
-  const rate = await consumeStellaRateLimit(scope.organizationId).catch(() => null)
-  if (rate === null) {
-    return failure('RATE_LIMIT_UNAVAILABLE', 'No se pudo verificar el límite de uso de Stella.')
-  }
-  if (!rate.allowed) {
-    return failure('RATE_LIMITED', 'Alcanzaste el límite de consultas por hora. Intentá de nuevo más tarde.')
+  if (bound.kind === 'rejected') {
+    // A forged, borrowed, expired, cross-scope or already-settled ticket, or a
+    // digest that does not match the one this ticket was bound to. All of them
+    // are reported to the reviewer identically — telling them apart on screen
+    // would be an oracle — but they are told apart in the event, by a stable
+    // code and never by a sentence.
+    emitTicketEvent('replay_rejected', events, { ticketId: options.ticket, reasonCode: bound.reason })
+    return failure(...groundedTicketRejection(bound.reason))
   }
 
-  // 8. AUTHORIZED EVIDENCE SET — named explicitly, because the governed SQL
+  emitTicketEvent('operation_ticket_bound', events, { ticketId: options.ticket })
+  emitTicketEvent('grounded_query_reserved', events, { ticketId: options.ticket })
+
+  // From here on the ticket HOLDS A RESERVATION. Every exit path below either
+  // completes it (charging exactly one unit) or aborts it (charging nothing).
+  // There is no path that returns while leaving it silently bound.
+
+  // 10. AUTHORIZED EVIDENCE SET — named explicitly, because the governed SQL
   //    surface cannot enumerate "anything within scope" (see the repository).
   const evidenceIds = await withOrganizationDatabaseContext(() =>
     db
@@ -395,11 +517,14 @@ async function runStellaGroundedQuery(
   ).catch(() => null)
 
   if (evidenceIds === null) {
+    await releaseTicket(options.ticket, 'execution_failed', events)
     return failure('UNKNOWN_ERROR', 'No se pudo leer la evidencia del proyecto.')
   }
   if (evidenceIds.length === 0) {
     // A real, reportable state — not an error. There is nothing to ground an
-    // answer in, and saying so is more useful than a generic failure.
+    // answer in, and saying so is more useful than a generic failure. The
+    // reservation is released: an unanswerable question must not hold a unit.
+    await releaseTicket(options.ticket, 'no_result', events)
     return failure('UNSUPPORTED_STEP', 'Este proyecto no tiene evidencia cargada para fundamentar una respuesta.')
   }
 
@@ -441,6 +566,9 @@ async function runStellaGroundedQuery(
     // A scope or repository-contract break is a BOUNDARY BREAK, not an
     // operational hiccup: it is logged by name and reported as an internal
     // error, never as "try again", and never with its own message.
+    // THE WORK FAILED AFTER THE RESERVATION. Release it: a failed operation
+    // must not hold a unit, and must not be charged for one.
+    await releaseTicket(options.ticket, 'execution_failed', events)
     if (
       error instanceof GroundingScopeViolationError ||
       error instanceof RepositoryContractViolationError ||
@@ -453,26 +581,208 @@ async function runStellaGroundedQuery(
     return failure('UNKNOWN_ERROR', 'La consulta no pudo completarse.')
   }
 
-  // 10. ADAPT — exactly once, through the ONE authorized producer of the
+  // 12. ADAPT — exactly once, through the ONE authorized producer of the
   //     presentation model. Citation validation already happened inside the
   //     journey, against the chunks retrieval actually returned.
-  const result = toProductResult(run)
-
-  // 11. AUDIT (sanitized observability). Metadata only — ids, codes and counts, never the query text,
-  //     never a claim, never a passage. Fire-and-forget: an audit_logs failure
-  //     must not change what the reviewer sees, which is the same rule
-  //     app/actions/stella/advisor.ts states for its own trail.
+  // GUARDED, because the ticket is reserved and this code is between the
+  // reservation and the settlement.
   //
-  //     This is the half of the compliance record that IS writable today. The
-  //     other half — the `stella_interactions` row that would CONSUME quota —
-  //     is blocked on INT-INT-001; see QUOTA_LEDGER_NOT_CHARGED.
+  // `toProductResult` calls `adaptGroundedAnswer`, which walks retrieval
+  // output. It is not expected to throw — but "not expected to throw" is not a
+  // property this function can rely on, and an exception escaping here would
+  // leave the ticket `bound`: neither completed nor aborted, holding a unit of
+  // the organization's headroom until its 15-minute window lapses.
+  //
+  // The SQL-side liveness predicate makes that self-healing rather than
+  // permanent, and a later retry with the same ticket still resolves
+  // correctly, so this is a robustness gap and not a double-charge. It is
+  // closed anyway: the comment above claims every exit either completes or
+  // aborts, and a claim with one uncovered path is worse than no claim.
+  //
+  // Raised as MINOR by adversarial review B, Train 4.1.
+  let result: StellaGroundedQueryResult
+  try {
+    result = toProductResult(run)
+  } catch (error) {
+    await releaseTicket(options.ticket, 'execution_failed', events)
+    console.error('[stella-grounding] presentation mapping failed:', error instanceof Error ? error.name : 'unknown')
+    return failure('UNKNOWN_ERROR', 'La consulta no pudo completarse.')
+  }
+
+  if (result.status === 'error') {
+    // `provider_unavailable` — nothing was read, or generation could not run.
+    // There is no answer, so there is nothing to charge for.
+    await releaseTicket(options.ticket, 'no_result', events)
+    void auditGroundedQuery(ctx, projectId, {
+      outcome: result.code,
+      generator: run.provenance.generatorId,
+      quotaLedger: 'not charged — aborted before completion',
+    })
+    return result
+  }
+
+  // ---------------------------------------------------------------------
+  // 13. COMPLETE AND CHARGE. The answer exists but is NOT yet returnable:
+  //     nothing is handed back until the ledger says a unit was accounted
+  //     for. This ordering is the reason a failed charge cannot leave a
+  //     usable answer behind.
+  // ---------------------------------------------------------------------
+  const settled = await completeOperationTicket(options.ticket, queryHash)
+
+  if (settled.kind === 'quota_refused') {
+    // R1, DECLARED AND NOT PAPERED OVER. A sibling Stella action charged the
+    // ledger between this operation's `bind` and its `complete`, so the unit
+    // this ticket reserved was spent elsewhere and the charge is refused on
+    // work that has already run.
+    //
+    // The conservative policy Train 4.1 keeps: NEVER exceed the quota, and
+    // never show an uncharged answer as successful. The computed answer is
+    // DISCARDED. Whether the work should instead be given away, or the cap
+    // overrun by one, is a billing decision — recorded as R1 for Train 5,
+    // and deliberately not taken here or in `consume_stella_quota`.
+    await releaseTicket(options.ticket, 'quota_refused', events)
+    void auditGroundedQuery(ctx, projectId, {
+      outcome: 'quota_refused_after_execution',
+      generator: run.provenance.generatorId,
+      quotaLedger: 'not charged — ledger refused after execution (R1)',
+    })
+    return failure(
+      'QUOTA_EXCEEDED',
+      `Alcanzaste el límite mensual de ${settled.quota ?? 0} consultas a Stella (usadas: ${settled.used ?? 0}). Se renueva el ${formatQuotaResetDate(nextQuotaResetIso())}.`,
+    )
+  }
+
+  if (settled.kind === 'rejected') {
+    // The settlement itself failed — a dropped connection, a package that is
+    // not applied, an expired reservation. We do NOT know whether the charge
+    // landed, so the answer is withheld: presenting it would be presenting an
+    // answer that may never have been accounted for.
+    //
+    // The abort attempt is safe in BOTH worlds. If the charge did land, the
+    // ticket is `completed` and SQL refuses to abort it (`U0109`) — so a
+    // successful charge can never be undone by this line. If it did not, the
+    // reservation is released. Its result is ignored for exactly that reason.
+    await releaseTicket(options.ticket, 'execution_failed', events)
+    void auditGroundedQuery(ctx, projectId, {
+      outcome: 'settlement_failed',
+      generator: run.provenance.generatorId,
+      quotaLedger: 'unknown — settlement rejected, answer withheld',
+    })
+    return failure('UNKNOWN_ERROR', 'La consulta no pudo completarse.')
+  }
+
+  if (settled.kind === 'replayed') {
+    // ---------------------------------------------------------------
+    // THE CONCURRENT FORM OF THE POST-COMPLETE RETRY. Raised as MAJOR by
+    // adversarial review A, Train 4.1.
+    //
+    // `bind` catches the SEQUENTIAL retry: it sees `completed` and this
+    // function returns the explicit state without re-running anything. It
+    // cannot catch the CONCURRENT one. Two deliveries of the same ticket that
+    // overlap both bind while the ticket is still `bound`, both are told
+    // "proceed", both run the whole journey, and only at `complete` does the
+    // loser learn that someone else already settled it.
+    //
+    // Returning `result` here would hand back a SECOND answer — independently
+    // retrieved, independently generated, with its own `answerId` — for ONE
+    // charged unit. The ledger would be right and the metering would be a
+    // fiction: the quota measures answers delivered, and two would have been.
+    //
+    // So the loser gets the same disposition as the sequential retry. Its
+    // computed answer is discarded rather than delivered, and the caller is
+    // told, truthfully, that the operation was already accounted for. The
+    // charge is untouched — `replayed` means the ledger already holds exactly
+    // one row for this ticket.
+    // ---------------------------------------------------------------
+    emitTicketEvent('grounded_query_retried', events, { ticketId: options.ticket, attempt: 2 })
+    emitTicketEvent('quota_reuse_detected', events, { ticketId: options.ticket })
+    void auditGroundedQuery(ctx, projectId, {
+      outcome: 'already_completed_result_unavailable',
+      generator: run.provenance.generatorId,
+      quotaLedger: QUOTA_LEDGER_CHARGED_BY_TICKET,
+      settlement: 'replayed_concurrent',
+    })
+    return failure(
+      'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
+      'Esta consulta ya se ejecutó y se contabilizó en tu cuota, pero la respuesta no pudo entregarse y no se conserva.',
+    )
+  }
+
+  // 14. OBSERVABILITY — from the REAL runtime, after the real charge. Only
+  //     `completed` reaches here now: this delivery is the one that charged,
+  //     so it is the one entitled to hand back an answer.
+  emitTicketEvent('grounded_query_completed', events, { ticketId: options.ticket })
+  emitTicketEvent('quota_consumed', events, { ticketId: options.ticket })
+
+  // 15. AUDIT (sanitized). Metadata only — ids, codes and counts, never the
+  //     query text, never a claim, never a passage. Fire-and-forget: an
+  //     audit_logs failure must not change what the reviewer sees, the same
+  //     rule app/actions/stella/advisor.ts states for its own trail.
   void auditGroundedQuery(ctx, projectId, {
-    outcome: result.status === 'ok' ? run.classification : result.code,
+    outcome: run.classification,
     generator: run.provenance.generatorId,
-    quotaLedger: QUOTA_LEDGER_NOT_CHARGED,
+    quotaLedger: QUOTA_LEDGER_CHARGED_BY_TICKET,
+    settlement: settled.kind,
   })
 
   return result
+}
+
+/**
+ * Release a reservation and say so.
+ *
+ * AWAITED, not fire-and-forget. Everything else in this module that writes for
+ * the record (the audit trail) is deliberately not awaited, because the
+ * reviewer's answer must not depend on it. This one is different: until the
+ * abort lands, the ticket still counts against the organization's headroom in
+ * every concurrent `bind`. Returning first and releasing later would let a
+ * failed question keep blocking a successful one.
+ *
+ * Never throws, and its result is not inspected. An abort that fails because
+ * the ticket is already `completed` (`U0109`) is not an error to handle — it
+ * is the protocol refusing to un-charge a settled operation, which is exactly
+ * what it should do.
+ */
+async function releaseTicket(
+  ticketId: string,
+  reason: OperationTicketAbortReason,
+  events: TicketEventScope,
+): Promise<void> {
+  // Named `released`, not `outcome`: `outcome.kind` is GROUNDING's own
+  // `GroundedOutcomeKind` vocabulary, which R8 forbids this boundary from
+  // reading, and a cross-workstream test pins that by name. Two unrelated
+  // things called `outcome` in one module is how a vocabulary leak starts
+  // looking like a variable name.
+  const released = await abortOperationTicket(ticketId, reason)
+  if (released.kind === 'aborted') {
+    emitTicketEvent('grounded_query_aborted', events, { ticketId })
+  } else if (released.kind === 'expired') {
+    emitTicketEvent('operation_ticket_expired', events, { ticketId })
+  } else {
+    emitTicketEvent('replay_rejected', events, { ticketId, reasonCode: released.reason })
+  }
+}
+
+/**
+ * One rejection reason -> one product presentation.
+ *
+ * Every scope failure collapses to the SAME `UNAUTHORIZED` sentence the
+ * project check already uses. Telling a caller that its ticket belongs to
+ * another organization, or that it merely expired, would let it probe the
+ * difference — the same tenancy-oracle reasoning `U0102` states in SQL, where
+ * "not yours" and "never existed" are deliberately indistinguishable.
+ */
+function groundedTicketRejection(
+  reason: 'malformed' | 'out_of_scope' | 'ungoverned' | 'query_mismatch' | 'expired' | 'settled' | 'unavailable',
+): [StellaPanelErrorCode, string] {
+  switch (reason) {
+    case 'unavailable':
+      // The database, not the caller. A retry may well clear it, but the code
+      // is non-retryable because a missing prepared package is not transient.
+      return ['UNKNOWN_ERROR', 'La consulta no pudo completarse.']
+    default:
+      return ['UNAUTHORIZED', 'Esta operación ya no es válida. Volvé a hacer la consulta.']
+  }
 }
 
 /**
@@ -530,8 +840,141 @@ async function auditGroundedQuery(
 export async function runStellaGroundedQueryForProject(
   projectId: string,
   request: StellaGroundedQueryRequest,
+  ticket: string,
 ): Promise<StellaGroundedQueryResult> {
-  return runStellaGroundedQuery(request, { boundProjectId: projectId })
+  return runStellaGroundedQuery(request, { boundProjectId: projectId, ticket })
+}
+
+/* -------------------------------------------------------------------------- */
+/* Ticket issuance — the governed server surface (FASE 5)                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Mint one operation ticket for one grounded-query operation.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE CLIENT CANNOT SEND
+ * ---------------------------------------------------------------------------
+ * `organizationId`, `projectId`, `actorId`, `category`, TTL, nonce,
+ * idempotency key. The signature has ONE parameter and Next.js binds it
+ * server-side, so none of those has anywhere to arrive from:
+ *
+ *   organization  <- `requireOrganizationAccess()`, the session
+ *   project       <- the BOUND argument, re-verified against the session's org
+ *   actor         <- `auth.uid()`, inside the SQL function — no parameter
+ *   category      <- a module constant (`grounded_query`)
+ *   TTL           <- `stella_0014`, bounded to 15 minutes by a CHECK
+ *   nonce         <- `stella_0014`, and never returned by any function
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE CLIENT RECEIVES
+ * ---------------------------------------------------------------------------
+ * 64 hex characters, and nothing else. Not the nonce, not the stored digest,
+ * not an internal id, not a scope. The opaque identifier needed to continue,
+ * and no more — FASE 5's requirement stated as the return type.
+ *
+ * ---------------------------------------------------------------------------
+ * THE ORDER, AND WHAT `disabled` COSTS
+ * ---------------------------------------------------------------------------
+ *   1 flag -> 2 auth -> 3 organization -> 4 project -> 5 permission ->
+ *   6 rate limit -> 7 issue
+ *
+ * With the flag false this returns at step 1: zero authentication, zero
+ * database work, zero ticket, zero observability. That is the same posture
+ * `runStellaGroundedQuery` takes and the reason both are safe to ship dark.
+ */
+async function issueStellaGroundedQueryTicket(
+  projectId: string,
+): Promise<StellaOperationTicketIssueResult> {
+  // 1. FLAG — before authentication, before any read, before any event.
+  if (!stellaConfig.isEnabled || !stellaConfig.isGroundedQueryEnabled || !stellaState.canUseStella) {
+    return { status: 'disabled' }
+  }
+
+  // 2. AUTHENTICATE.
+  let ctx: Awaited<ReturnType<typeof requireOrganizationAccess>>
+  try {
+    ctx = await requireOrganizationAccess()
+  } catch {
+    return { status: 'error', code: 'UNAUTHORIZED', message: 'Se requiere autenticación.' }
+  }
+
+  // 3/4. SCOPE — derived, never received.
+  const organizationId = ctx.organization.id
+  const boundProjectId = typeof projectId === 'string' ? projectId.trim() : ''
+  if (boundProjectId === '') {
+    return {
+      status: 'error',
+      code: 'UNAUTHORIZED',
+      message: 'El proyecto solicitado no es válido para esta sesión.',
+    }
+  }
+
+  // 5. PERMISSION — the same set-inclusion gate every Stella action uses, and
+  //    the last check that costs no I/O.
+  if (!canUseStella(ctx.membership.role)) {
+    return { status: 'error', code: 'UNAUTHORIZED', message: 'Tu rol no tiene permiso para usar Stella.' }
+  }
+
+  // 6. RATE LIMIT — per hour, per organization, and HERE rather than at
+  //    execution. One question mints one ticket, so this counts operations
+  //    rather than deliveries; a retry of an operation already counted does
+  //    not spend the budget a second time. It also bounds minting, which
+  //    reserves nothing and is therefore not self-limiting.
+  const rate = await consumeStellaRateLimit(organizationId).catch(() => null)
+  if (rate === null) {
+    return {
+      status: 'error',
+      code: 'RATE_LIMIT_UNAVAILABLE',
+      message: 'No se pudo verificar el límite de uso de Stella.',
+    }
+  }
+  if (!rate.allowed) {
+    return {
+      status: 'error',
+      code: 'RATE_LIMITED',
+      message: 'Alcanzaste el límite de consultas por hora. Intentá de nuevo más tarde.',
+    }
+  }
+
+  // 7. ISSUE. The project is re-verified against the organization INSIDE the
+  //    SQL function (a trigger, plus RLS), so no read is duplicated here to
+  //    do it again in a weaker place.
+  const issued = await issueOperationTicket(organizationId, boundProjectId)
+  if (issued.kind === 'rejected') {
+    if (issued.reason === 'out_of_scope') {
+      return {
+        status: 'error',
+        code: 'UNAUTHORIZED',
+        message: 'El proyecto solicitado no es válido para esta sesión.',
+      }
+    }
+    return { status: 'error', code: 'UNKNOWN_ERROR', message: 'No se pudo iniciar la consulta.' }
+  }
+
+  emitTicketEvent(
+    'operation_ticket_issued',
+    { organizationId, projectId: boundProjectId, requestId: randomUUID() },
+    { ticketId: issued.ticketId },
+  )
+
+  return { status: 'issued', ticket: issued.ticketId }
+}
+
+/**
+ * The BINDABLE form of issuance, for the mount site:
+ *
+ *   const issueTicket = issueStellaGroundedQueryTicketForProject.bind(null, projectId)
+ *
+ * Same reasoning as `runStellaGroundedQueryForProject`: `bind` prepends, the
+ * bound value is sealed server-side, and the action re-verifies it regardless
+ * because every export of a `'use server'` module is an independently
+ * invocable endpoint.
+ */
+export async function issueStellaGroundedQueryTicketForProject(
+  projectId: string,
+): Promise<StellaOperationTicketIssueResult> {
+  return issueStellaGroundedQueryTicket(projectId)
 }
 
 /* -------------------------------------------------------------------------- */

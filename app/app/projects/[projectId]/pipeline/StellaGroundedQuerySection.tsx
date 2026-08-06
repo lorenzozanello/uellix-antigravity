@@ -37,7 +37,10 @@
 
 import { StellaGroundedQueryPanel } from '@/components/stella'
 import { stellaConfig, stellaState } from '@/lib/stella/config'
-import { runStellaGroundedQueryForProject } from '@/app/actions/stella/grounded-query'
+import {
+  issueStellaGroundedQueryTicketForProject,
+  runStellaGroundedQueryForProject,
+} from '@/app/actions/stella/grounded-query'
 import type { AdvisorPipelineStep } from '@/lib/stella/advisor/steps'
 import type { GroundedCitationView } from '@/components/stella/grounding-adapter'
 
@@ -68,10 +71,21 @@ export function StellaGroundedQuerySection({
 
   const runQuery = runStellaGroundedQueryForProject.bind(null, projectId)
 
+  // INT-INT-001. The SECOND bound action: the panel cannot mint an operation
+  // identity itself (that is the whole point — a client-chosen identity is a
+  // client-chosen discount), so issuance is a governed server surface bound
+  // to the same server-resolved project id.
+  //
+  // Both are bound to `projectId` and both re-verify it against the session's
+  // organization server-side, so the two actions cannot be made to disagree
+  // about which project the operation belongs to.
+  const issueTicket = issueStellaGroundedQueryTicketForProject.bind(null, projectId)
+
   return (
     <StellaGroundedQueryPanel
       step={step}
       runQuery={runQuery}
+      issueTicket={issueTicket}
       enabled={enabled}
       title={title ?? 'Preguntar a Stella (respuesta fundamentada)'}
       onNavigateCitation={onNavigateCitation}

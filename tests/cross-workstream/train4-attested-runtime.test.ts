@@ -317,19 +317,31 @@ describe('RUNTIME -> PRODUCT — the server action selects, never falls back', (
     expect(action).not.toMatch(/\?\?\s*createExtractiveAnswerProvider/)
   })
 
-  it('does not call consume_stella_quota — and says why, by contract id', () => {
-    // INT-INT-001. Asserted as an ABSENCE with a named reason so that the day
-    // someone wires it, this test forces them to state the idempotency source.
+  it('charges through the GOVERNED ticket path, and never calls consume_stella_quota directly', () => {
+    // INT-INT-001, now CLOSED (Train 4.1). This test used to assert the
+    // absence of any charge, with the reason named so that whoever wired it
+    // would be forced to state the idempotency source. That source now exists,
+    // so the assertion inverts — but only halfway, and the surviving half is
+    // the one that was always the real property:
     //
-    // Matched as a CALL — schema-qualified with an open paren — not as the
-    // bare name, which appears many times in this file's own prose explaining
-    // precisely why the call is not made. "Is it mentioned?" and "is it
-    // invoked?" are different questions and only the second one matters here.
+    //   the action must NOT call `uellix_stella.consume_stella_quota` itself.
+    //
+    // A direct call would need an idempotency key chosen HERE, which is
+    // exactly the thing with no trustworthy source. The key is derived inside
+    // `complete_operation_ticket` from a nonce no function returns, so the
+    // only correct way to charge is to not be the one charging.
     const raw = read(SERVER_ACTION)
     expect(raw).not.toMatch(/uellix_stella\.consume_stella_quota\s*\(/)
     expect(raw).not.toMatch(/SELECT[\s\S]{0,80}consume_stella_quota/)
+    // The contract is still named, so the trail from code to decision survives.
     expect(raw).toMatch(/INT-INT-001/)
-    expect(raw).toMatch(/QUOTA_LEDGER_NOT_CHARGED/)
+    // And the charge now happens, through the ticket.
+    expect(raw).toMatch(/completeOperationTicket\s*\(/)
+    expect(raw).toMatch(/bindOperationTicket\s*\(/)
+    expect(raw).toMatch(/abortOperationTicket|releaseTicket/)
+    // The old marker is gone: a constant saying "not charged" while the action
+    // charges would be the most misleading line in the file.
+    expect(raw).not.toMatch(/QUOTA_LEDGER_NOT_CHARGED/)
   })
 
   it('checks the feature flag before authenticating, and before any database work', () => {

@@ -171,6 +171,11 @@ describe('grounded query — the step prop is inert', () => {
 
     // The negative that matters most: it never enters the request.
     expect(panel).not.toMatch(/runQuery\([^)]*\bstep\b/)
-    expect(panel).toMatch(/runQuery\(\{\s*query[^}]*\}\)/)
+    // Train 4.1 — `runQuery({ query }, ticket)`. The REQUEST object still
+    // carries `query` and nothing else; the ticket is a SECOND ARGUMENT, so
+    // this assertion continues to say what it always said (the step never
+    // reaches the payload) while allowing the credential that now travels
+    // beside it.
+    expect(panel).toMatch(/runQuery\(\{\s*query\s*\}\s*,\s*ticket\s*\)/)
   })
 })

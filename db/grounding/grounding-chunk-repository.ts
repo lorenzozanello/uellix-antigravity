@@ -235,7 +235,27 @@ export function createPersistedGroundingChunkRepository(
 async function resolveVersions(scope: GroundingScope, query: ChunkQuery): Promise<ResolvedVersion[]> {
   const evidenceIds = [...query.evidenceIds]
   const versionIds = [...query.versionIds]
+  // The version predicate is OMITTED when no version is named, never
+  // neutralised by a false-valued OR.
+  //
+  // It used to be written as "(<restrictVersions> = false OR v.version_id =
+  // ANY(<versionIds>::bpchar[]))", which looks like it short-circuits and does
+  // not: SQL is not JavaScript, and both arms of an OR are PARSED whatever the
+  // left one evaluates to. Drizzle renders an empty array as nothing at all,
+  // so the unrestricted case — which is EVERY runtime call, because
+  // runStellaGroundedQuery names evidence items and never versions — emitted
+  // "ANY(()::bpchar[])" and died with a syntax error before the planner saw
+  // the predicate at all.
+  //
+  // Found by tests/e2e/stella-ticket-journey.e2e.test.ts, the first battery to
+  // run this adapter against a real PostgreSQL. Every earlier test doubled the
+  // driver, so the query string was asserted on and never parsed.
   const restrictVersions = versionIds.length > 0
+
+  // Nothing to look up. Returned here rather than left to the query, because
+  // drizzle renders an empty array as an empty parenthesised list and "IN ()"
+  // is a syntax error, not an empty result.
+  if (evidenceIds.length === 0) return []
 
   try {
     // `source_label` is NOT a column of evidence_document_versions — that table
@@ -265,8 +285,8 @@ async function resolveVersions(scope: GroundingScope, query: ChunkQuery): Promis
        AND e.project_id      = v.project_id
       WHERE v.organization_id = ${scope.organizationId}::uuid
         AND v.project_id      = ${scope.projectId}::uuid
-        AND v.evidence_id     = ANY(${evidenceIds}::uuid[])
-        AND (${restrictVersions} = false OR v.version_id = ANY(${versionIds}::bpchar[]))
+        AND v.evidence_id     IN ${evidenceIds}
+        ${restrictVersions ? sql`AND v.version_id IN ${versionIds}` : sql``}
       ORDER BY v.evidence_id, v.ordinal DESC NULLS LAST
     `)) as unknown as readonly Record<string, unknown>[]
 

@@ -1259,3 +1259,35 @@ atestar falla en vez de pasar una comprobación vacua.
 `versionId` es el único campo de la atestación que no se lee de la fila, y se
 documenta por qué: la fila devuelve el `uuid` de la versión, no el `char(64)`
 del contrato. Se concluye del cruce (1), no se copia de la petición.
+
+---
+
+## Tren 4.1 — dos defectos BLOQUEANTES del adaptador persistido, hallados al ejecutarlo (integración, 2026-08-05)
+
+`db/grounding/grounding-chunk-repository.ts` **nunca había leído un chunk
+contra una base real**. Sus pruebas doblaban el driver, así que la consulta SQL
+se afirmaba como cadena y jamás se parseaba. El E2E del tren 4.1
+(`scripts/stella-ticket-e2e.sh`) fue la primera batería que la ejecutó, y falló
+en `resolveVersions` por dos razones independientes, ambas en la misma
+sentencia:
+
+**1. El predicado de versión, neutralizado en vez de omitido.** Estaba escrito
+como `(<restrictVersions> = false OR v.version_id = ANY(<versionIds>::bpchar[]))`.
+Eso *parece* cortocircuitar y no lo hace: SQL no es JavaScript y ambos brazos
+del `OR` se **parsean** sea cual sea el izquierdo. Drizzle renderiza un array
+vacío como *nada*, así que el caso sin restricción —que es **toda** llamada del
+runtime, porque `runStellaGroundedQuery` nombra evidencias y nunca versiones—
+emitía `ANY(()::bpchar[])` y moría con error de sintaxis antes de que el
+planificador viera el predicado.
+
+**2. `= ANY(<array>::uuid[])` sobre un array de Drizzle.** Drizzle expande un
+array a una lista de parámetros entre paréntesis, así que `($3)::uuid[]`
+intentaba castear un **escalar** a array: `malformed array literal`.
+
+**Corregido**: el predicado de versión se **omite** cuando no se nombra
+ninguna, ambos usan `IN <array>` (la forma que Drizzle sí expande), y un
+conjunto de evidencias vacío retorna temprano en vez de generar `IN ()`.
+
+**La lección, no el parche.** Ninguna prueba anterior podía haberlo detectado:
+todas afirmaban sobre el texto de la consulta. Una sentencia SQL sólo está
+probada cuando un PostgreSQL la ha parseado.

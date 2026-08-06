@@ -35,7 +35,7 @@ falta una capa de adaptación antes de poder consumirlo. No es `aceptado`
 | INT-CAP-002 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4, `grounding_0004` 2b) | 2026-08-05 | [`evidence_chunks` concede SELECT directo a `authenticated`](#int-cap-002--evidence_chunks-concede-select-directo-a-authenticated) |
 | INT-CAP-003 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4, `grounding_0004` 1a/1b) | 2026-08-05 | [`content_hash` nunca se verifica contra `content`](#int-cap-003--content_hash-nunca-se-verifica-contra-content) |
 | INT-CAP-004 | INTEGRACION | CAPABILITIES | `aceptado` (tren 4: 1c + rollback reparado) | 2026-08-05 | [Rollback incompleto y forja de `chunk_id` por el owner](#int-cap-004--rollback-incompleto-y-forja-de-chunk_id-por-el-owner) |
-| INT-INT-001 | INTEGRACION | INTEGRACION | `solicitado` (BLOQUEANTE) | 2026-08-05 | [Clave de idempotencia sin fuente canonica](#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4) |
+| INT-INT-001 | INTEGRACION | INTEGRACION | `aceptado` | 2026-08-05 | [Clave de idempotencia sin fuente canonica](#int-int-001--clave-de-idempotencia-sin-fuente-canonica-tren-4) |
 | INT-GR-004 | INTEGRACION | GROUNDING | `aceptado` (tren 4: SQL + adaptador atestado) | 2026-08-05 | [`chunks_in_scope` deberia devolver el scope de la fila](#int-gr-004--chunks_in_scope-debería-devolver-el-scope-de-la-fila) |
 
 ## Resolución del tren 1 (integración, 2026-08-04)
@@ -729,7 +729,16 @@ lo comprueba contando filas.
 ### INT-INT-001 — Clave de idempotencia sin fuente canonica (tren 4)
 
 **Solicitante:** INTEGRACIÓN · **Propietaria:** INTEGRACIÓN ·
-**Estado:** `solicitado`, **bloqueante de `local-runtime-ready`**.
+**Estado:** **`aceptado`** (tren 4.1, 2026-08-05). Ya **no** bloquea
+`runtime-quota-charged`, que pasa con las nueve pruebas medidas.
+`local-runtime-ready` sigue en **`false`** por **R2-INT**, un criterio distinto
+y de otra línea — no por esta solicitud.
+
+> **CERRADO POR EVIDENCIA EJECUTADA, no por diseño.** Lo que sigue debajo es el
+> planteamiento original del problema y se conserva íntegro, porque el
+> razonamiento sobre por qué ninguna fuente alcanzable servía es lo que
+> justifica la forma de la solución. La respuesta está al final, en
+> «§Cierre (tren 4.1)».
 
 `uellix_stella.consume_stella_quota` exige `idempotency_key`, y la exigencia es
 correcta: `uq_stella_interactions_idempotency` convierte «no cobrar dos veces
@@ -776,3 +785,77 @@ integración:
    que reutilizar un ticket consiga trabajo gratis;
 3. un secreto de firma dedicado que permita un token opaco por consulta cuya
    integridad sea demostrable.
+
+#### Cierre (tren 4.1) — qué lo resolvió, y con qué prueba
+
+**El paquete.** `db/prepared/stella_0014_operation_tickets.sql` (CAPABILITIES)
+crea el esquema `uellix_stella_ops`, la tabla `operation_tickets`, el rol
+`uellix_cap_stella_ticket` (NOLOGIN, cero miembros), seis funciones SECURITY
+DEFINER, 8 CHECK, 3 policies y 2 triggers `ENABLE ALWAYS`. Contrato completo en
+[`INT-INT-001_operation_ticket_protocol.md`](INT-INT-001_operation_ticket_protocol.md).
+
+**La identidad.** La clave que cobra es
+`sha256('stella/ticket/charge/v1' || ticket_id || charge_nonce)`, derivada
+**dentro** de `complete_operation_ticket` a partir de un nonce que se genera en
+`issue` y que **ninguna función devuelve**. El llamante no puede calcularla,
+elegirla ni pre-cobrar bajo ella. Eso resuelve el lado que ninguna fuente
+alcanzable resolvía: la identidad se **emite antes** de que la operación corra,
+que es justo lo que un digest del request nunca puede ser.
+
+**La otra mitad, la que ninguna base puede contestar.** Saber si una llamada es
+un reintento o una consulta nueva no se recupera del request. Se transporta
+explícitamente: el panel pide ticket nuevo en `handleSubmit` y reutiliza el que
+tiene en `handleRetry` (`components/stella/StellaGroundedQueryPanel.tsx`). El
+ticket viaja como **segundo argumento** del runner, nunca dentro de `{ query }`.
+
+**La canonicalización** vive en Node (`lib/stella/operation-ticket/canonical-query-hash.ts`):
+NFC → trim → colapso de blanco → `sha256('stella/query/v1' || LF || canonical)`,
+sin plegado de mayúsculas. El texto de la consulta **nunca** cruza la frontera
+de la base.
+
+**Evidencia ejecutada** — `scripts/stella-ticket-e2e.sh`, contenedor PostgreSQL
+desechable, baseline + 5 paquetes preparados, server action REAL, adapters
+REALES, generador extractivo local, cero proveedor:
+
+| Escenario | Medido |
+|---|---|
+| Primera consulta | ticket emitido → `bound` → respuesta → `completed`, **+1 unidad** |
+| Reintento (mismo ticket, misma consulta) | **+0 unidades**, `ALREADY_COMPLETED_RESULT_UNAVAILABLE` |
+| Misma pregunta, ticket nuevo | **+1 unidad** — sin descuento por repetir |
+| Mismo ticket, otra consulta | rechazado (`U0107`), **+0** |
+| Cross-organización / cross-actor / ticket inventado | rechazados, **+0** |
+| Fallo antes y después de la reserva | `abort`, **+0**, y la unidad vuelve a estar disponible |
+| Ticket expirado | rechazado, **+0** |
+| Dos tickets por la última unidad | exactamente **1** completa |
+| Dos ejecuciones concurrentes del mismo ticket | **1** cargo y **1 sola respuesta entregada** |
+| Bandera false | cero BD, cero ticket, cero eventos |
+
+Cada cargo se cuenta como **delta de filas de `public.stella_interactions`**
+leído por una conexión distinta a la del runtime — nunca por el valor de
+retorno de la acción.
+
+**Semántica del reintento posterior al cobro (FASE 11).** Opción C: se añade el
+código operacional `ALREADY_COMPLETED_RESULT_UNAVAILABLE` **dentro** de la
+taxonomía existente (que pasa de 12 a 13 códigos). No cobra, no reejecuta, no
+inventa una respuesta y no aparenta éxito; `retryable: false`, porque un botón
+«Reintentar» ahí emitiría un ticket nuevo y cobraría una segunda unidad. Cubre
+tanto la forma secuencial (detectada en `bind`) como la **concurrente**
+(detectada en `complete`, cuando devuelve `replayed`).
+
+**Política R1 — sin cambios y pendiente para el tren 5.** Si una acción Stella
+hermana cobra el ledger entre `bind` y `complete`, la respuesta calculada se
+**descarta**, el ticket se aborta con `quota_refused` y se devuelve
+`QUOTA_EXCEEDED`. Nunca se excede la cuota y nunca se muestra como exitosa una
+respuesta no cobrada. `consume_stella_quota` **no** se modificó.
+
+#### Riesgos residuales abiertos tras el cierre
+
+| # | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| R1 | Acción hermana cobra entre `bind` y `complete` | MAJOR | Declarado, no tapado. Decisión de facturación pendiente (tren 5) |
+| R2-INT | **Atribución cross-proyecto.** `bind`/`complete` no reciben el proyecto contra el que se ejecuta, así que el cargo se archiva bajo el proyecto del TICKET mientras el trabajo lee la evidencia del proyecto de la ACCIÓN | MAJOR | **Abierto.** Alcanzable por un miembro autenticado de la organización (cada export de un módulo `'use server'` es un endpoint invocable por separado). **No es escape de cuota** —es de organización y se cobra exactamente una unidad— sino de atribución/auditoría. Cerrarlo exige cambiar la firma de `bind_operation_ticket`/`complete_operation_ticket`, un paquete ya publicado de CAPABILITIES → tren 5. Fijado por prueba en `tests/e2e/stella-ticket-journey.e2e.test.ts` |
+| R3-INT | Reintento posterior al cobro que llega **>15 min** tarde recibe `U0108` (expirado) en vez de la divulgación `ALREADY_COMPLETED_RESULT_UNAVAILABLE`: `bind` comprueba expiración antes que el estado terminal | MINOR | Abierto. Regresión de veracidad sobre una operación que sí se cobró. Requiere reordenar dos comprobaciones dentro de `bind` → tren 5 |
+| R4-INT | `public.uellix_check_operation_ticket_transition()` conserva EXECUTE para PUBLIC y la verificación §7 del paquete no la alcanza (su barrido se limita a `uellix_stella_ops`) | MINOR | Abierto, higiene. No explotable: es una función de trigger en plpgsql (la invocación directa da `feature_not_supported`) y el rol de runtime no puede crear en `public` |
+| R5-INT | El rollback cuenta tickets `completed` con un `SELECT` sin lock antes de hacer `DROP TABLE` (TOCTOU estrecho) | MINOR | Abierto. Se cierra con `LOCK TABLE … IN ACCESS EXCLUSIVE MODE` antes del conteo → tren 5 |
+| R6-INT | El sobreconsumo de cuota entre acciones Stella hermanas sigue siendo posible: las otras cinco escriben `stella_interactions` con `db.insert` sin lock tras una lectura sin lock | MAJOR | **Preexistente**, fuera del alcance de `stella_0014`. Es lo que hace alcanzable a R1 en producción |
+| R7-INT | «El nonce no se devuelve» se sostiene por **inspección**, no por una aserción de máquina sobre `pg_get_function_result` | MINOR | Abierto. Añadirla sería editar un paquete publicado de CAPABILITIES → tren 5 |

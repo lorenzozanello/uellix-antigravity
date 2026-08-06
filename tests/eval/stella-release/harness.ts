@@ -848,12 +848,18 @@ const EXPECTED_RETRYABLE: Record<StellaPanelErrorCode, boolean> = {
   PARSE_ERROR: true,
   TIMEOUT: true,
   AUDIT_ERROR: false,
+  // Train 4.1 (INT-INT-001, FASE 11). MUST be false, and this is the one
+  // entry in the table where `false` is a quota guarantee rather than a UX
+  // preference: the operation already ran and already consumed a unit, so a
+  // "Reintentar" affordance here would mint a NEW ticket and charge a SECOND
+  // unit for a question that was already paid for.
+  ALREADY_COMPLETED_RESULT_UNAVAILABLE: false,
   UNKNOWN_ERROR: false,
 }
 
 function checkRetryableCodeSetPinned(): ReleaseCaseResult {
   const checkId = 'retryable-code-set-pinned'
-  const fixtureId = 'EXPECTED_RETRYABLE (12 StellaPanelErrorCode)'
+  const fixtureId = 'EXPECTED_RETRYABLE (13 StellaPanelErrorCode)'
   const mismatches: string[] = []
   for (const [code, expected] of Object.entries(EXPECTED_RETRYABLE) as [StellaPanelErrorCode, boolean][]) {
     const actual = stellaErrorPresentation(code, `synthetic message for ${code}`).retryable
@@ -887,7 +893,7 @@ function checkRetryableCodeSetPinned(): ReleaseCaseResult {
   if (mismatches.length > 0) return withNegativeControls({ checkId, fixtureId, ok: false, outcome: 'system-error', detail: mismatches.join(' | ') }, controls)
   const retryableCount = Object.values(EXPECTED_RETRYABLE).filter(Boolean).length
   return withNegativeControls(
-    { checkId, fixtureId, ok: true, outcome: 'pass', detail: `all 12 codes match expected retry semantics (${retryableCount} retryable, ${12 - retryableCount} not)` },
+    { checkId, fixtureId, ok: true, outcome: 'pass', detail: `all ${Object.keys(EXPECTED_RETRYABLE).length} codes match expected retry semantics (${retryableCount} retryable, ${Object.keys(EXPECTED_RETRYABLE).length - retryableCount} not)` },
     controls,
   )
 }
