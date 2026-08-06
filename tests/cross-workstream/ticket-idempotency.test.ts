@@ -14,7 +14,7 @@
 // pruebas fijan, y es barato y determinista.
 
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readSourceText } from '@/tests/helpers/source-text'
 import { createHash } from 'node:crypto'
 
 import {
@@ -37,12 +37,18 @@ import {
 } from '@/tests/eval/stella-release/observability-contract'
 import { stellaErrorPresentation } from '@/components/stella/error-messages'
 
-const TICKET_SQL = readFileSync('db/prepared/stella_0014_operation_tickets.sql', 'utf8')
-const CONTRACT_MD = readFileSync('docs/ops/contracts/INT-INT-001_operation_ticket_protocol.md', 'utf8')
-const ACTION_TS = readFileSync('app/actions/stella/grounded-query.ts', 'utf8')
-const PANEL_TSX = readFileSync('components/stella/StellaGroundedQueryPanel.tsx', 'utf8')
-const PRODUCT_CONTRACT_TS = readFileSync('components/stella/grounded-query.ts', 'utf8')
-const ADAPTER_TS = readFileSync('db/stella/operation-tickets.ts', 'utf8')
+// FASE 9 (Train 4.2). `readSourceText`, never a bare `readFileSync`: several
+// assertions below anchor on two and three CONSECUTIVE LINES, and `.ts`/`.tsx`
+// are not pinned to LF by `.gitattributes` — so under `core.autocrlf=true` the
+// same checkout materializes them either way. Normalizing at the READER is the
+// only place that fixes every anchor at once; normalizing the FILES would be
+// editing production bytes to suit a test.
+const TICKET_SQL = readSourceText('db/prepared/stella_0014_operation_tickets.sql')
+const CONTRACT_MD = readSourceText('docs/ops/contracts/INT-INT-001_operation_ticket_protocol.md')
+const ACTION_TS = readSourceText('app/actions/stella/grounded-query.ts')
+const PANEL_TSX = readSourceText('components/stella/StellaGroundedQueryPanel.tsx')
+const PRODUCT_CONTRACT_TS = readSourceText('components/stella/grounded-query.ts')
+const ADAPTER_TS = readSourceText('db/stella/operation-tickets.ts')
 
 /** Source with comments stripped — assertions of the form "this must NOT appear"
  *  otherwise punish documentation that names what it deliberately avoids. */

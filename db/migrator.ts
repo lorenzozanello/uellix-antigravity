@@ -31,6 +31,12 @@ import { MIGRATOR_DATABASE_ROLE, OWNER_DATABASE_ROLE } from './safety/database-r
 import { resolveMigratorDatabaseUrl } from './safety/resolve-capability-database-url'
 import { LOCAL_DB_PORT } from './safety/local-stack'
 import type { EnvironmentSource } from './safety/database-target'
+import {
+  PROJECT_BLIND_SIGNATURES_PRESENT_PROBE,
+  PROJECT_BLIND_TICKET_SIGNATURES,
+  packageOrderRefusal,
+  supersessionsFor,
+} from './prepared-package-order'
 
 export type MigratorErrorCode =
   | 'DB_MIGRATOR_WRONG_SESSION_ROLE'
@@ -38,6 +44,13 @@ export type MigratorErrorCode =
   | 'DB_MIGRATOR_SET_ROLE_FAILED'
   | 'DB_MIGRATOR_SCRIPT_FAILED'
   | 'DB_MIGRATOR_POSTCONDITION_FAILED'
+  /**
+   * TRAIN 4.2, R2a. The script is being applied to a database that already has
+   * a package which SUPERSEDES it, and applying it would republish a surface
+   * the successor exists to remove. Raised as a PRECONDITION, before the script
+   * runs, so nothing unsafe is ever published — see db/prepared-package-order.ts.
+   */
+  | 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION'
 
 export class MigratorError extends Error {
   readonly name = 'MigratorError'
@@ -229,6 +242,48 @@ export function createMigratorClient(env: EnvironmentSource = process.env): Data
 /* Applying a prepared script                                                 */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * TRAIN 4.2, R2a. Refuse to apply a prepared script over a package that
+ * supersedes it.
+ *
+ * Runs the registry's fixed probe — a literal from `db/prepared-package-order.ts`,
+ * never composed here and never carrying a value from the file being applied —
+ * and throws when the successor is present. Scripts with no registered
+ * supersession (every package but one, today) reach zero round trips.
+ *
+ * Exported so `scripts/` and the E2E battery can ask the same question of a
+ * database without applying anything.
+ */
+export async function assertPreparedPackageOrder(sql: postgres.Sql, filePath: string): Promise<void> {
+  for (const rule of supersessionsFor(filePath)) {
+    const rows = await sql.unsafe(rule.probe)
+    const installed = (rows as unknown as Array<{ installed?: unknown }>)[0]?.installed === true
+    const refusal = packageOrderRefusal(rule, installed)
+    if (refusal !== null) {
+      throw new MigratorError('DB_MIGRATOR_PACKAGE_ORDER_VIOLATION', refusal)
+    }
+  }
+}
+
+/**
+ * The machine-checkable other half: no project-blind ticket signature exists.
+ *
+ * A guard proves that a REFUSAL happened; this proves the STATE the refusal was
+ * protecting. Both are needed — a run that never attempted the reapply would
+ * satisfy the first vacuously.
+ */
+export async function assertNoProjectBlindTicketSignatures(sql: postgres.Sql): Promise<void> {
+  const rows = await sql.unsafe(PROJECT_BLIND_SIGNATURES_PRESENT_PROBE)
+  if ((rows as unknown as Array<{ present?: unknown }>)[0]?.present === true) {
+    throw new MigratorError(
+      'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION',
+      'this database publishes at least one project-blind operation-ticket signature ' +
+        `(${PROJECT_BLIND_TICKET_SIGNATURES.join(', ')}). stella_0015 drops all four; their ` +
+        'presence means a superseded package was applied after it.',
+    )
+  }
+}
+
 export interface ApplyPreparedScriptResult {
   readonly file: string
   readonly sha256: string
@@ -289,6 +344,16 @@ export async function applyPreparedScript(
     await client.sql.begin(async (tx) => {
       await tx.unsafe(`SET LOCAL ROLE ${OWNER_DATABASE_ROLE}`)
       await assertOwnerRoleActive(tx as unknown as postgres.Sql)
+
+      // TRAIN 4.2, R2a — THE PACKAGE-ORDER PRECONDITION.
+      //
+      // Inside the transaction and BEFORE the script runs, so a refusal rolls
+      // back and the superseded surface is never published — not even for the
+      // duration of a transaction another session could not have seen anyway.
+      // A postcondition would be strictly worse: it would have to drop
+      // functions it did not write, and it would already have committed on any
+      // path that skipped it.
+      await assertPreparedPackageOrder(tx as unknown as postgres.Sql, filePath)
 
       try {
         // Simple protocol: the file is many statements, and PostgreSQL treats

@@ -268,6 +268,43 @@ INTEGRACIÓN. Cierra **INT-INT-001**
 > funciones de otro paquete» y deja esquema y rol en pie: una negativa segura,
 > pero no el estado final que se pretendía.
 
+### Train 4.2 — tickets ligados al proyecto de ejecución (`stella_0015`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+Cierra **R2-INT** (`docs/ops/contracts/CONTRACT_LEDGER.md#r2-int`, respuesta en
+[`R2-INT`](../../docs/ops/contracts/R2-INT_project_bound_operation_tickets.md)).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0015_project_bound_operation_tickets.sql` | `stella_0015_rollback.sql` | **ninguno todavía**; exige `stella_0014` **ya aplicado** (precondición dura en §0) y `stella_0013` para el cobro | **R2-INT.** **No crea rol, tabla, trigger ni policy**: reemplaza **cuatro** de las seis funciones de `stella_0014` por firmas que reciben `p_expected_project_id uuid` **sin DEFAULT** — `bind(ticket, project, hash)`, `complete(ticket, project, hash)`, `abort(ticket, project, reason)`, `inspect(ticket, project)` — y **DROPea** las cuatro firmas antiguas que no recibían proyecto. SQLSTATE nuevo **`U0110`** («el ticket pertenece a otro proyecto»), levantado en cuanto la fila aparece: **antes** de vigencia, digest, estado y del cortocircuito `replayed`. `issue` y `expire` sin cambios. Postcondición propia: exactamente **6** funciones en `uellix_stella_ops`, todas `SECURITY DEFINER` con `search_path=''`, propiedad de `uellix_cap_stella_ticket`, **cero** `EXECUTE` para `PUBLIC` | **DISEÑO — no aplicado** |
+
+> **La cadena canónica es `stella_0013` → `stella_0014` → `stella_0015`**, y el
+> orden **no** es una preferencia de runbook: `stella_0015` §0 se niega si la
+> tabla de tickets, el rol o `consume_stella_quota` no están.
+
+> **REAPLICAR `stella_0014` DESPUÉS DE `stella_0015` ESTÁ BLOQUEADO POR EL
+> RUNNER (R2a).** `stella_0014` es idempotente, así que volver a ejecutarlo solo
+> **republicaría** las cuatro firmas sin proyecto —`SECURITY DEFINER`, con
+> `EXECUTE` para `uellix_app`— junto al arreglo que las quitó. Ningún paquete
+> SQL puede impedir que otro se ejecute después, así que la guarda vive donde sí
+> puede: [`db/prepared-package-order.ts`](../prepared-package-order.ts) declara
+> la supersesión y `applyPreparedScript` (`db/migrator.ts`) ejecuta la sonda
+> **dentro de la transacción y antes del script**, de modo que la negativa hace
+> rollback y las firmas inseguras no llegan a publicarse ni un instante.
+> `pnpm db:prepared:apply:local stella_0014_operation_tickets.sql` sobre una base
+> con `stella_0015` falla con `DB_MIGRATOR_PACKAGE_ORDER_VIOLATION`.
+
+> **Orden de rollback: `stella_0015` antes que `stella_0014` antes que
+> `stella_0013`.** Lo impone el propio SQL y no un runbook: las cuatro funciones
+> nuevas son propiedad de `uellix_cap_stella_ticket`, así que el `DROP ROLE` del
+> rollback de `stella_0014` **falla** mientras existan y su transacción entera
+> aborta sin destruir nada.
+
+> **El rollback de `stella_0015` deja una superficie CERRADA, no degradada.**
+> Restaura `issue` y `expire` —ninguna de las dos cobra— y **no** vuelve a
+> publicar las firmas sin proyecto. Una postcondición lo afirma: si una edición
+> futura «restaurara» alguna, el rollback aborta.
+
 ### Campaña de capacidades públicas (`stella_0006` … `stella_0012`)
 
 **Estado: DISEÑO. Ninguno aplicado a ningún stack. Ninguna capacidad

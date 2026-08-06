@@ -26,6 +26,13 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { OrganizationContext } from '@/lib/auth/session'
+// FASE 9 (Train 4.2). Every structural assertion below reads its source through
+// this reader, which normalizes CRLF -> LF. One of them — "a compliance trail
+// IS written" — slices a function body at `'\n}\n'`, and under CRLF that
+// `indexOf` returns -1, so `slice(start, -1)` silently handed the assertion
+// almost the whole file instead of the function it was pointed at. A test that
+// judges the wrong bytes is worse than one that fails.
+import { readSourceText } from '@/tests/helpers/source-text'
 
 /* -------------------------------------------------------------------------- */
 /* Doubles — hoisted                                                          */
@@ -85,12 +92,17 @@ const mockIssueTicket = vi.fn()
 const mockBindTicket = vi.fn()
 const mockCompleteTicket = vi.fn()
 const mockAbortTicket = vi.fn()
+// TRAIN 4.2. `inspect` stopped being a verb nothing calls: the post-complete
+// retry now READS the settled ticket's state under the execution project
+// instead of inferring it from what `bind` returned. Recorded rather than
+// stubbed anonymously, because section 10 asserts WHICH project it was given.
+const mockInspectTicket = vi.fn()
 vi.mock('@/db/stella/operation-tickets', () => ({
   issueOperationTicket: (...args: unknown[]) => mockIssueTicket(...args),
   bindOperationTicket: (...args: unknown[]) => mockBindTicket(...args),
   completeOperationTicket: (...args: unknown[]) => mockCompleteTicket(...args),
   abortOperationTicket: (...args: unknown[]) => mockAbortTicket(...args),
-  inspectOperationTicket: vi.fn(),
+  inspectOperationTicket: (...args: unknown[]) => mockInspectTicket(...args),
   expireOperationTickets: vi.fn(),
   GROUNDED_QUERY_TICKET_CATEGORY: 'grounded_query',
 }))
@@ -217,6 +229,12 @@ beforeEach(() => {
   mockBindTicket.mockResolvedValue({ kind: 'bound', used: 1, quota: 100 })
   mockCompleteTicket.mockResolvedValue({ kind: 'completed', used: 2, quota: 100 })
   mockAbortTicket.mockResolvedValue({ kind: 'aborted' })
+  mockInspectTicket.mockResolvedValue({
+    status: 'completed',
+    category: 'grounded_query',
+    expiresAt: '2026-08-06T00:00:00.000Z',
+    hasQueryHash: true,
+  })
   // Project belongs; one evidence item.
   mockSelectChain
     .mockReturnValueOnce(selectReturning([{ id: PROJECT_1 }]))
@@ -230,9 +248,7 @@ beforeEach(() => {
 
 describe('RUNTIME: the client payload carries the query and nothing else', () => {
   it('StellaGroundedQueryRequest has exactly one property in the published contract', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('components/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('components/stella/grounded-query.ts')
     // Bounded by the interface's OWN closing brace, not by whatever
     // declaration happens to follow it. Train 4 added
     // `AnswerStrategyDescriptor` between the two anchors this used to slice
@@ -379,9 +395,7 @@ describe('RUNTIME: the repository adapter reads the governed surface, scoped, an
   })
 
   it('there is no broad SELECT over evidence_chunks anywhere in the adapter', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('db/grounding/grounding-chunk-repository.ts', 'utf8'),
-    )
+    const source = readSourceText('db/grounding/grounding-chunk-repository.ts')
     expect(source).not.toMatch(/FROM\s+public\.evidence_chunks/i)
     expect(source).toMatch(/uellix_grounding\.chunks_in_scope/)
     // No elevated identity, ever — asserted over CODE, not prose. The module
@@ -455,9 +469,7 @@ describe('RUNTIME: provider unavailability is a claim about the system, never ab
     // So the old test's expectation — "the seam completes and reports a
     // provider failure" — now describes a REGRESSION rather than the contract,
     // and keeping it would have pinned the placeholder in place.
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     expect(source).not.toMatch(/absentAnswerDraftProvider/)
     expect(source).toMatch(/generator: createExtractiveAnswerProvider\(\)/)
   })
@@ -467,9 +479,7 @@ describe('RUNTIME: provider unavailability is a claim about the system, never ab
     // an extractive answer produced BECAUSE a database was down would present
     // a system fault as an evidence finding. There must be no `catch` and no
     // `??` that arrives at the generator.
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     expect(source).not.toMatch(/catch[\s\S]{0,200}createExtractiveAnswerProvider/)
     expect(source).not.toMatch(/\?\?\s*createExtractiveAnswerProvider/)
   })
@@ -496,9 +506,7 @@ describe('RUNTIME: provider unavailability is a claim about the system, never ab
     // The claim that did NOT change: provider unavailability is still a
     // separate outcome and is still reachable — it is what a THROWN repository
     // failure maps to, not what an empty result maps to.
-    const actionSource = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const actionSource = readSourceText('app/actions/stella/grounded-query.ts')
     expect(actionSource).toMatch(/provider_unavailable: false/)
   })
 
@@ -520,9 +528,7 @@ describe('RUNTIME: provider unavailability is a claim about the system, never ab
 
 describe('RUNTIME: R8 — exactly one classification vocabulary crosses the boundary', () => {
   it('the server action reads GroundingOrchestrationClassification and never GroundedOutcomeKind', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     expect(source).toMatch(/GroundingOrchestrationClassification/)
     // Reading BOTH would be the start of a third vocabulary. Asserted over
     // CODE: the mapping's own comment explains why the other vocabulary is
@@ -532,9 +538,7 @@ describe('RUNTIME: R8 — exactly one classification vocabulary crosses the boun
   })
 
   it('there is exactly ONE mapping table, and it is exhaustive over the classification union', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     const tables = source.match(/Record<GroundingOrchestrationClassification,/g) ?? []
     expect(tables).toHaveLength(1)
     // `Record<Union, …>` is exhaustive by construction — tsc rejects a missing
@@ -548,9 +552,7 @@ describe('RUNTIME: R8 — exactly one classification vocabulary crosses the boun
   })
 
   it('Product never learns either grounding vocabulary: the result union is status + code', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('components/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('components/stella/grounded-query.ts')
     expect(source).not.toMatch(/GroundingOrchestrationClassification|GroundedOutcomeKind/)
   })
 })
@@ -571,7 +573,7 @@ describe('RUNTIME: R8 — exactly one classification vocabulary crosses the boun
 // against the DDL itself, which is the only thing that knows the truth.
 
 describe('RUNTIME: every column the adapter reads exists in the shipped DDL', () => {
-  const readFile = (p: string) => import('node:fs').then((fs) => fs.readFileSync(p, 'utf8'))
+  const readFile = (p: string) => readSourceText(p)
 
   /** Column names of one CREATE TABLE body in a prepared package. */
   async function columnsOf(sqlPath: string, table: string): Promise<Set<string>> {
@@ -661,9 +663,7 @@ describe('RUNTIME: a repository contract violation is a boundary break, not an o
   })
 
   it('no code path can turn a contract violation into a successful answer', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     const block = source.slice(source.indexOf('} catch (error) {', source.indexOf('orchestrateGroundedResponse')))
     expect(block).toMatch(/GroundingRepositoryContractError/)
     expect(block).toMatch(/return failure\('UNKNOWN_ERROR'/)
@@ -687,33 +687,27 @@ describe('RUNTIME: a repository contract violation is a boundary break, not an o
 
 describe('RUNTIME: the quota ledger gap is stated and gated, not hidden', () => {
   it('grounded_query is genuinely absent from the stella_interactions role CHECK', async () => {
-    const schema = await import('node:fs').then((fs) => fs.readFileSync('db/schema.ts', 'utf8'))
+    const schema = readSourceText('db/schema.ts')
     const check = /stella_interactions_stella_role_check[\s\S]*?\n/.exec(schema)?.[0] ?? ''
     expect(check).toMatch(/'advisor'/)
     expect(check).not.toMatch(/grounded_query/)
   })
 
   it('the action does NOT misfile a grounded query under another role to make the quota tick', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     expect(codeLines(source)).not.toMatch(/stellaInteractions/)
     // And it names the reason rather than leaving the omission to be guessed.
     expect(source).toMatch(/INT-CAP-001/)
   })
 
   it('the release gate refuses local-runtime-ready while the quota is enforced but not consumed', async () => {
-    const gate = await import('node:fs').then((fs) =>
-      fs.readFileSync('tests/eval/stella-release/local-release-gate.ts', 'utf8'),
-    )
+    const gate = readSourceText('tests/eval/stella-release/local-release-gate.ts')
     expect(gate).toMatch(/quota is enforced but not consumed/)
     expect(gate).toMatch(/INT-CAP-001/)
   })
 
   it('a compliance trail IS written, metadata only — never the query text', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('app/actions/stella/grounded-query.ts', 'utf8'),
-    )
+    const source = readSourceText('app/actions/stella/grounded-query.ts')
     const start = source.indexOf('async function auditGroundedQuery')
     // The function body only — a slice running past its closing brace would
     // read the next declaration's prose and assert on the wrong text.
@@ -722,5 +716,160 @@ describe('RUNTIME: the quota ledger gap is stated and gated, not hidden', () => 
     // The audit payload must not carry the question or any passage.
     expect(audit).not.toMatch(/queryText/)
     expect(audit).not.toMatch(/\banswer\b/)
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* 10. R2-INT — the execution project reaches all four ticket verbs           */
+/* -------------------------------------------------------------------------- */
+//
+// TRAIN 4.2. These are BEHAVIOURAL, not structural: the adapter is doubled, so
+// what is measured is the ARGUMENTS the runtime actually passed, in the
+// positions it passed them. A structural test over the source could be
+// satisfied by a call that names the right variable in the wrong slot; a
+// recorded call cannot.
+//
+// The invariant under test:
+//
+//     ticket.project_id = derivedProjectId = Grounding scope.projectId
+//                                          = charge.project_id
+//
+// The last equality is SQL's to keep (`complete_operation_ticket` charges under
+// the ticket's own column, having proven it equal to the argument), and it is
+// measured for real in tests/e2e/stella-ticket-journey.e2e.test.ts against a
+// live database. What this suite proves is every equality to its left.
+
+/** Argument slot 2 — where the execution project sits in all four verbs. */
+const PROJECT_SLOT = 1
+
+describe('RUNTIME: R2-INT — one derived project, delivered to every governed verb', () => {
+  it('bind receives the SERVER-BOUND project in the SQL argument position, not the ticket and not the payload', async () => {
+    await runStellaGroundedQuery({ query: 'beneficiarios' }, { boundProjectId: PROJECT_1, ticket: TICKET_A })
+
+    expect(mockBindTicket).toHaveBeenCalledTimes(1)
+    const args = mockBindTicket.mock.calls[0]!
+    expect(args[0]).toBe(TICKET_A)
+    // Slot 2, mirroring uellix_stella_ops.bind_operation_ticket(ticket, project,
+    // hash). Asserted by POSITION because a transposition of two `string`
+    // parameters is invisible to tsc and would send the digest where the
+    // project belongs — which SQL would reject as U0100, i.e. as a malformed
+    // input rather than as the wiring bug it is.
+    expect(args[PROJECT_SLOT]).toBe(PROJECT_1)
+    expect(args[2]).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('complete receives the SAME project bind did — it does not inherit the verdict and does not re-derive', async () => {
+    await runStellaGroundedQuery({ query: 'beneficiarios' }, { boundProjectId: PROJECT_1, ticket: TICKET_A })
+
+    expect(mockCompleteTicket).toHaveBeenCalledTimes(1)
+    const bind = mockBindTicket.mock.calls[0]!
+    const complete = mockCompleteTicket.mock.calls[0]!
+    expect(complete[PROJECT_SLOT]).toBe(PROJECT_1)
+    // The equality itself, stated as one assertion rather than two checks that
+    // happen to agree. bind and complete run in DIFFERENT database
+    // transactions; this value is the only thing that ties them together.
+    expect(complete[PROJECT_SLOT]).toBe(bind[PROJECT_SLOT])
+  })
+
+  it('abort receives it too, so one surface cannot release another project reservation', async () => {
+    // A failure AFTER the reservation. A project with no evidence is the
+    // cheapest way to reach the release path without faking an exception.
+    mockSelectChain.mockReset()
+    mockSelectChain
+      .mockReturnValueOnce(selectReturning([{ id: PROJECT_1 }]))
+      .mockReturnValueOnce(selectReturning([]))
+
+    await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1, ticket: TICKET_A })
+
+    expect(mockAbortTicket).toHaveBeenCalledTimes(1)
+    const args = mockAbortTicket.mock.calls[0]!
+    expect(args[0]).toBe(TICKET_A)
+    expect(args[PROJECT_SLOT]).toBe(PROJECT_1)
+    expect(args[2]).toBe('no_result')
+  })
+
+  it('inspect receives it on the post-complete retry — the one path that reads a settled ticket', async () => {
+    mockBindTicket.mockResolvedValue({ kind: 'already_completed' })
+
+    const result = await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1, ticket: TICKET_A })
+
+    expect(result).toMatchObject({ status: 'error', code: 'ALREADY_COMPLETED_RESULT_UNAVAILABLE' })
+    expect(mockInspectTicket).toHaveBeenCalledTimes(1)
+    const args = mockInspectTicket.mock.calls[0]!
+    expect(args[0]).toBe(TICKET_A)
+    expect(args[PROJECT_SLOT]).toBe(PROJECT_1)
+    // And nothing was re-run or re-charged for it.
+    expect(mockCompleteTicket).not.toHaveBeenCalled()
+    expect(emittedSql.join('\n')).not.toContain('chunks_in_scope')
+  })
+
+  it('the project the REPOSITORY reads under is the same one bind was given — no ticket/work divergence', async () => {
+    await runStellaGroundedQuery({ query: 'beneficiarios' }, { boundProjectId: PROJECT_1, ticket: TICKET_A })
+
+    // Measured on the SQL the driver actually received, not on a value the
+    // action returned about itself.
+    expect(emittedSql.filter((s) => s.includes(PROJECT_1)).length).toBeGreaterThan(0)
+    // And no statement anywhere in the journey named the OTHER project.
+    expect(emittedSql.join('\n')).not.toContain(PROJECT_2)
+    expect(mockBindTicket.mock.calls[0]![PROJECT_SLOT]).toBe(PROJECT_1)
+  })
+
+  it('a project-mismatched ticket (U0110 -> out_of_scope) stops before any usable answer and charges nothing', async () => {
+    // What the adapter returns for U0110: the SQLSTATE stays distinct in the
+    // database log and collapses to `out_of_scope` here, so a caller cannot
+    // probe which kind of scope failure it hit.
+    mockBindTicket.mockResolvedValue({ kind: 'rejected', reason: 'out_of_scope' })
+
+    const result = await runStellaGroundedQuery({ query: 'x' }, { boundProjectId: PROJECT_1, ticket: TICKET_A })
+
+    expect(result).toMatchObject({ status: 'error', code: 'UNAUTHORIZED' })
+    // NOT a provider error. `GEMINI_ERROR` names a service this path never
+    // calls AND renders as retryable, so a scope refusal shown that way is a
+    // misattribution the reviewer cannot see through.
+    expect((result as { code: string }).code).not.toBe('GEMINI_ERROR')
+    // Zero work, zero settlement, and no reservation to release.
+    expect(emittedSql.join('\n')).not.toContain('chunks_in_scope')
+    expect(mockCompleteTicket).not.toHaveBeenCalled()
+    expect(mockAbortTicket).not.toHaveBeenCalled()
+  })
+
+  it('the four verbs are reached through ONE factory, so no call site can name a different project', () => {
+    const source = codeLines(readSourceText('app/actions/stella/grounded-query.ts'))
+    // Exactly one call to each adapter verb in the whole module. A second call
+    // site is how two projects drift apart again, so the COUNT is the
+    // assertion — not merely that the right identifier appears somewhere.
+    for (const verb of [
+      'bindOperationTicket',
+      'completeOperationTicket',
+      'abortOperationTicket',
+      'inspectOperationTicket',
+    ]) {
+      const calls = source.match(new RegExp(`${verb}\\s*\\(`, 'g')) ?? []
+      expect(calls, `${verb} must be invoked exactly once, inside executionProject`).toHaveLength(1)
+    }
+    const open = source.indexOf('function executionProject(')
+    expect(open, 'executionProject is gone — the factory IS the invariant').toBeGreaterThan(-1)
+    const factory = source.slice(open, source.indexOf('\n}', open))
+    for (const verb of [
+      'bindOperationTicket',
+      'completeOperationTicket',
+      'abortOperationTicket',
+      'inspectOperationTicket',
+    ]) {
+      expect(factory, `${verb} is invoked outside executionProject`).toContain(verb)
+    }
+  })
+
+  it('the project is never recovered from the ticket, from the payload, or from a component', () => {
+    const source = codeLines(readSourceText('app/actions/stella/grounded-query.ts'))
+    // The three substitutions R2-INT is about, asserted over comment-stripped
+    // source so the module may keep explaining what it refuses to do.
+    expect(source).not.toMatch(/ticket\.project_id|ticket\.projectId/)
+    expect(source).not.toMatch(/request\.projectId|request\?\.projectId/)
+    expect(source).not.toMatch(/options\.projectId/)
+    // Exactly ONE cast mints an ExecutionProjectId. A second one is a second
+    // way for an unvetted string to become an execution project.
+    const casts = source.match(/as ExecutionProjectId/g) ?? []
+    expect(casts).toHaveLength(1)
   })
 })

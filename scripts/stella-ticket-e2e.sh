@@ -70,12 +70,21 @@ BASE_DIR="db/baseline"
 # baseline ya reorganizó los privilegios que aquel paquete espera encontrar
 # intactos. Aplicar un paquete ya incorporado no es más seguridad; es una
 # segunda fuente de verdad sobre el mismo hecho.
+#
+# TREN 4.2. `stella_0015` va AL FINAL y el orden es una dependencia dura, no un
+# gusto: su §0 se niega si la tabla de tickets, el rol o `consume_stella_quota`
+# no están, y REEMPLAZA cuatro de las seis funciones de `stella_0014` dejando
+# caer las firmas que no recibían proyecto. La cadena canónica —
+# `stella_0013` → `stella_0014` → `stella_0015`— está declarada como dato en
+# `db/prepared-package-order.ts`, y la §4d de abajo comprueba el estado final
+# contra esa misma lista en vez de contra una copia escrita aquí.
 FORWARD=(
   grounding_0002_document_versions
   grounding_0003_evidence_chunks
   stella_0013_grounded_query_quota
   grounding_0004_runtime_attestation
   stella_0014_operation_tickets
+  stella_0015_project_bound_operation_tickets
 )
 
 cleanup() {
@@ -173,8 +182,36 @@ echo "  ok   baseline restaurado"
 # --------------------------------------------------------------------------
 say "4. Paquetes preparados, en orden de dependencia"
 # --------------------------------------------------------------------------
+# R2a — LA GUARDA DE ORDEN, EN EL CAMINO QUE DE VERDAD APLICA ESTOS PAQUETES.
+#
+# `db/prepared-package-order.ts` la impone en `applyPreparedScript`, que es el
+# camino de `pnpm db:prepared:apply:local`. Ese camino NO puede aplicar
+# `stella_0014` ni `stella_0015`: hace `SET LOCAL ROLE uellix_owner` y los dos
+# paquetes exigen `rolsuper` en su §0. Lo señaló la revisión adversarial A y es
+# exacto — la guarda estaba puesta donde no pasa el tren.
+#
+# La ruta real es `psql` como superusuario, que es lo que hace este guion y lo
+# que dicen las cabeceras de los propios paquetes. Así que la precondición
+# también vive AQUÍ, como una función de shell, y falla ANTES de aplicar el
+# archivo: nada inseguro llega a publicarse.
+#
+# La regla es la MISMA que la del registro TypeScript, y no una copia que pueda
+# derivar: `tests/cross-workstream/project-binding.test.ts` compara este guion
+# contra `db/prepared-package-order.ts` y falla si dejan de coincidir.
+package_order_guard() {
+  local pkg="$1"
+  if [ "$pkg" = "stella_0014_operation_tickets" ]; then
+    local installed
+    installed=$(Q "SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character)') IS NOT NULL")
+    if [ "$installed" = "t" ]; then
+      fail "DB_MIGRATOR_PACKAGE_ORDER_VIOLATION: stella_0014_operation_tickets.sql no puede aplicarse sobre una base que ya tiene stella_0015_project_bound_operation_tickets.sql — republicaría las cuatro firmas sin proyecto de ejecución (R2a)"
+    fi
+  fi
+}
+
 for f in "${FORWARD[@]}"; do
   [ -f "db/prepared/$f.sql" ] || fail "falta db/prepared/$f.sql"
+  package_order_guard "$f"
   docker cp "$(hp "db/prepared/$f.sql")" "$BOX:/$f.sql" >/dev/null
   "${PSQL[@]}" -q -f "/$f.sql" >/dev/null || fail "$f no aplicó"
   echo "  ok   $f"
@@ -194,6 +231,51 @@ echo "  ok   6 funciones gobernadas presentes"
 APPEND_ONLY=$(Q "SELECT count(*) FROM pg_trigger WHERE tgname = 'trg_stella_interactions_append_only' AND NOT tgisinternal")
 [ "$APPEND_ONLY" = "1" ] || fail "el ledger no es append-only en esta base (trigger encontrado: $APPEND_ONLY)"
 echo "  ok   ledger append-only confirmado"
+
+# 4d. R2-INT. Las CUATRO firmas ligadas al proyecto existen y las CUATRO ciegas
+#     no. Se comprueba aquí, antes de que corra una sola prueba, porque toda la
+#     batería de abajo mide atribución: contra una base con las firmas antiguas
+#     invocables los casos cross-project «pasarían» describiendo el defecto en
+#     vez del arreglo.
+BOUND=$(Q "SELECT count(*) FROM (VALUES
+  ('uellix_stella_ops.bind_operation_ticket(character, uuid, character)'),
+  ('uellix_stella_ops.complete_operation_ticket(character, uuid, character)'),
+  ('uellix_stella_ops.abort_operation_ticket(character, uuid, character varying)'),
+  ('uellix_stella_ops.inspect_operation_ticket(character, uuid)')
+) AS f(sig) WHERE to_regprocedure(f.sig) IS NOT NULL")
+[ "$BOUND" = "4" ] || fail "se esperaban 4 firmas con proyecto de ejecución, hay $BOUND — ¿stella_0015 no aplicó?"
+
+BLIND=$(Q "SELECT count(*) FROM (VALUES
+  ('uellix_stella_ops.bind_operation_ticket(character, character)'),
+  ('uellix_stella_ops.complete_operation_ticket(character, character)'),
+  ('uellix_stella_ops.abort_operation_ticket(character, character varying)'),
+  ('uellix_stella_ops.inspect_operation_ticket(character)')
+) AS f(sig) WHERE to_regprocedure(f.sig) IS NOT NULL")
+[ "$BLIND" = "0" ] || fail "$BLIND firma(s) sin proyecto de ejecución siguen siendo invocables"
+
+# Y ningún DEFAULT EN LOS CUATRO VERBOS LIGADOS AL PROYECTO: un argumento con
+# DEFAULT es un argumento que el llamante puede omitir, y la garantía tiene que
+# ser que la FIRMA rechace la llamada.
+#
+# Acotado a esos cuatro y no al esquema entero, que es lo que la primera versión
+# de esta línea hacía y por lo que falló: `expire_operation_tickets` sí declara
+# un DEFAULT (su cota de barrido), no nombra ningún ticket, no revela estado, no
+# libera reservas vivas y no cobra — stella_0014 §2f. Exigirle lo mismo que a
+# `bind` habría sido una aserción que sólo se puede satisfacer cambiando un
+# paquete publicado por una razón que no existe. Es la misma cota que la propia
+# verificación de stella_0015 (§4, 3b) se impone.
+DEFAULTS=$(Q "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='uellix_stella_ops'
+    AND p.proname IN ('bind_operation_ticket','complete_operation_ticket',
+                      'abort_operation_ticket','inspect_operation_ticket')
+    AND p.pronargdefaults > 0")
+[ "$DEFAULTS" = "0" ] || fail "$DEFAULTS función(es) declaran DEFAULT: el proyecto de ejecución puede omitirse"
+
+PUB=$(Q "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+  WHERE n.nspname='uellix_stella_ops' AND a.grantee = 0")
+[ "$PUB" = "0" ] || fail "PUBLIC tiene EXECUTE sobre $PUB función(es) de uellix_stella_ops"
+echo "  ok   4 firmas con proyecto, 0 ciegas, 0 DEFAULT, 0 EXECUTE para PUBLIC"
 
 # 4c. Credenciales para las DOS conexiones de la batería.
 #

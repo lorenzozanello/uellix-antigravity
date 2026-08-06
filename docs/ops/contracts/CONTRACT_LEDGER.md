@@ -853,9 +853,128 @@ respuesta no cobrada. `consume_stella_quota` **no** se modificó.
 | # | Riesgo | Severidad | Estado |
 |---|---|---|---|
 | R1 | Acción hermana cobra entre `bind` y `complete` | MAJOR | Declarado, no tapado. Decisión de facturación pendiente (tren 5) |
-| R2-INT | **Atribución cross-proyecto.** `bind`/`complete` no reciben el proyecto contra el que se ejecuta, así que el cargo se archiva bajo el proyecto del TICKET mientras el trabajo lee la evidencia del proyecto de la ACCIÓN | MAJOR | **Abierto.** Alcanzable por un miembro autenticado de la organización (cada export de un módulo `'use server'` es un endpoint invocable por separado). **No es escape de cuota** —es de organización y se cobra exactamente una unidad— sino de atribución/auditoría. Cerrarlo exige cambiar la firma de `bind_operation_ticket`/`complete_operation_ticket`, un paquete ya publicado de CAPABILITIES → tren 5. Fijado por prueba en `tests/e2e/stella-ticket-journey.e2e.test.ts` |
+| R2-INT | **Atribución cross-proyecto.** `bind`/`complete` no reciben el proyecto contra el que se ejecuta, así que el cargo se archiva bajo el proyecto del TICKET mientras el trabajo lee la evidencia del proyecto de la ACCIÓN | MAJOR | **ACCEPTED — cerrado en el tren 4.2.** `db/prepared/stella_0015_project_bound_operation_tickets.sql` da a `bind`/`complete`/`abort`/`inspect` un `p_expected_project_id uuid` **sin DEFAULT**, levanta `U0110` en cuanto la fila aparece y **DROPea** las cuatro firmas antiguas; el server action entrega a los cuatro verbos el **mismo** proyecto que derivó y que entrega al repositorio de Grounding. Verificado contra base real: ver §R2-INT abajo |
 | R3-INT | Reintento posterior al cobro que llega **>15 min** tarde recibe `U0108` (expirado) en vez de la divulgación `ALREADY_COMPLETED_RESULT_UNAVAILABLE`: `bind` comprueba expiración antes que el estado terminal | MINOR | Abierto. Regresión de veracidad sobre una operación que sí se cobró. Requiere reordenar dos comprobaciones dentro de `bind` → tren 5 |
 | R4-INT | `public.uellix_check_operation_ticket_transition()` conserva EXECUTE para PUBLIC y la verificación §7 del paquete no la alcanza (su barrido se limita a `uellix_stella_ops`) | MINOR | Abierto, higiene. No explotable: es una función de trigger en plpgsql (la invocación directa da `feature_not_supported`) y el rol de runtime no puede crear en `public` |
 | R5-INT | El rollback cuenta tickets `completed` con un `SELECT` sin lock antes de hacer `DROP TABLE` (TOCTOU estrecho) | MINOR | Abierto. Se cierra con `LOCK TABLE … IN ACCESS EXCLUSIVE MODE` antes del conteo → tren 5 |
 | R6-INT | El sobreconsumo de cuota entre acciones Stella hermanas sigue siendo posible: las otras cinco escriben `stella_interactions` con `db.insert` sin lock tras una lectura sin lock | MAJOR | **Preexistente**, fuera del alcance de `stella_0014`. Es lo que hace alcanzable a R1 en producción |
 | R7-INT | «El nonce no se devuelve» se sostiene por **inspección**, no por una aserción de máquina sobre `pg_get_function_result` | MINOR | Abierto. Añadirla sería editar un paquete publicado de CAPABILITIES → tren 5 |
+
+---
+
+## R2-INT — `ACCEPTED` (integración, tren 4.2)
+
+**`STELLA_TRAIN_4_2_PROJECT_BINDING_INTEGRATION`.** Cierra el único residual
+MAJOR que INT-INT-001 dejó abierto: el proyecto al que se **atribuye el cargo**
+y el proyecto bajo el que **se lee la evidencia** podían ser distintos.
+
+### La invariante, y dónde se sostiene cada eslabón
+
+```
+ticket.project_id  =  projectId derivado por el server action
+                   =  projectId usado por el repositorio de Grounding
+                   =  project_id de la fila de stella_interactions
+```
+
+| Eslabón | Quién lo impone | Cómo se comprueba |
+|---|---|---|
+| ticket ↔ ejecución | `stella_0015` — `p_expected_project_id uuid` **sin DEFAULT** en los cuatro verbos, `U0110` si difiere | E2E §5-7, §19 contra base real |
+| derivación ↔ los cuatro verbos | `ExecutionProject` en `app/actions/stella/grounded-query.ts`: los cuatro verbos se alcanzan por una factoría que ya lleva el proyecto y **ninguno recibe un proyecto como argumento** | `tests/cross-workstream/runtime-grounded-query.test.ts` §10, sobre los argumentos REALES registrados |
+| derivación ↔ Grounding | `project.scope(organizationId)` es el único constructor del `GroundingScope`, y `createPersistedGroundingChunkRepository` se llama una sola vez | `tests/cross-workstream/project-binding.test.ts` §3 |
+| ejecución ↔ cargo | `complete_operation_ticket` cobra bajo `v_project` —la columna leída bajo el row lock— **después** de probarla igual al argumento | E2E §16: la fila real se lee de vuelta por una segunda conexión |
+
+### Qué cambió en el runtime
+
+- **`db/stella/operation-tickets.ts`** — el proyecto pasa de `expectedProjectId?`
+  (opcional en el tipo, obligatorio de hecho) a **obligatorio y en la posición
+  del SQL** (segunda). Omitirlo dejó de ser un rechazo en runtime y pasó a ser
+  un error de `tsc`: es la contraparte TypeScript del `DROP` de §3 del paquete.
+- **`app/actions/stella/grounded-query.ts`** — una sola derivación
+  (`deriveExecutionProject`, sobre el argumento enlazado por el servidor) y un
+  tipo local **branded** `ExecutionProjectId` que nada fuera del módulo puede
+  producir. `bind`, `complete`, `abort`, `inspect` y el scope de retrieval se
+  alcanzan por `ExecutionProject`, cuyos cinco miembros **no toman proyecto**.
+  El payload funcional sigue siendo exactamente `{ query }` y el ticket sigue
+  siendo un parámetro aparte.
+- **`inspect` dejó de ser un verbo que nadie llama**: el reintento post-cobro
+  **lee** el estado del ticket bajo el proyecto de ejecución en vez de
+  inferirlo de lo que devolvió `bind`. Un ticket de otro proyecto es
+  `unreadable`, no un error.
+
+### R2a — orden de paquetes, cerrado operativamente
+
+CAPABILITIES lo dejó **abierto** y con razón: ningún paquete SQL puede impedir
+que otro se ejecute después. Reaplicar `stella_0014` **solo**, sobre una base
+que ya tiene `stella_0015`, republica las cuatro firmas sin proyecto —
+`SECURITY DEFINER`, con `EXECUTE` para `uellix_app` — junto al arreglo que las
+quitó.
+
+**Medido, no argumentado.** El §18 del E2E se salta la guarda a propósito,
+aplicando el SQL crudo por la conexión de superusuario, y cuenta **4** firmas
+ciegas resucitadas. Después aplica `stella_0015` otra vez y la base converge a
+**0**.
+
+La guarda vive donde sí puede vivir: en los **runners**, y en los **dos**.
+[`db/prepared-package-order.ts`](../../../db/prepared-package-order.ts) declara la
+supersesión como dato —cadena canónica `stella_0013` → `stella_0014` →
+`stella_0015`, sonda sobre `to_regprocedure`, firmas que se republicarían—; a
+partir de ahí:
+
+| Camino de aplicación | Dónde se impone | Cobertura |
+|---|---|---|
+| `pnpm db:prepared:apply:local` / `:verify:local` | `applyPreparedScript` (`db/migrator.ts`), **dentro de la transacción y antes del script**; error `DB_MIGRATOR_PACKAGE_ORDER_VIOLATION` | Todo paquete con supersesión registrada |
+| `psql` como superusuario (el camino real de estos dos paquetes) | `package_order_guard()` en `scripts/stella-ticket-e2e.sh`, **antes de copiar y ejecutar el archivo** | `stella_0014` sobre una base con `stella_0015` |
+
+**Por qué hacían falta los dos, y por qué el primero solo no bastaba.** Lo
+levantó la **revisión adversarial A** y es exacto: `applyPreparedScript` hace
+`SET LOCAL ROLE uellix_owner`, mientras que el §0 de `stella_0014` y el de
+`stella_0015` exigen `rolsuper`. Ese runner, por tanto, **no puede aplicar
+ninguno de los dos**, y una guarda correcta puesta ahí era una guarda puesta
+donde el tren no pasa. La versión anterior de esta sección decía «cerrado por el
+runner» y afirmaba más de lo que el mecanismo entregaba.
+`tests/cross-workstream/project-binding.test.ts` compara ahora el guion contra
+el registro TypeScript, así que los dos no pueden derivar hacia reglas
+distintas.
+
+Es una **precondición** en ambos casos y no una postcondición a propósito: una
+postcondición tendría que borrar funciones que no escribió, y ya habría hecho
+COMMIT en cualquier camino que la saltara.
+
+**Lo que sigue descubierto, dicho sin adornos.** Un operador que ejecute
+`psql -1 -f db/prepared/stella_0014_operation_tickets.sql` a mano, fuera de los
+dos runners, se salta ambas guardas. Es la misma autoridad que podría borrar la
+comprobación `U0110` directamente —superusuario— y no es alcanzable por ningún
+inquilino. `assertNoProjectBlindTicketSignatures` (`db/migrator.ts`) está
+exportada precisamente para que cualquier runbook pueda comprobar el estado
+después, y el §4d de `scripts/stella-ticket-e2e.sh` lo comprueba antes de
+ejecutar una sola prueba.
+
+### R2c — cerrado de paso
+
+`db/prepared/README.md` no mencionaba `stella_0015` ni el orden de rollback de
+tres eslabones. CAPABILITIES lo declaró «confunde pero no puede producir un
+resultado equivocado»; la medición dice otra cosa —
+`tests/prepared-sql-source-of-truth.test.ts` exige que el registro liste todo
+`.sql` no-rollback, así que **rompía `pnpm test:unit`**. Registrado y corregido.
+
+### Evidencia ejecutada
+
+| Gate | Resultado |
+|---|---|
+| `scripts/stella-ticket-e2e.sh` (contenedor desechable, 6 paquetes, server action real) | **36/36** |
+| `tests/cross-workstream/**` | **188/188** |
+| `runtime-project-attribution-verified` | **true**, con las 7 pruebas contra base real y los 7 controles negativos matando |
+| `local-runtime-ready` | **true**, y sólo con la evidencia de runtime — sin ella sigue `false` con sus razones |
+
+### Lo que R2-INT **no** cierra
+
+`R1`, `R3-INT`, `R4-INT`, `R5-INT`, `R6-INT` y `R7-INT` siguen exactamente como
+estaban. `INT-GR-001`, `INT-GR-003` e `INT-PR-001` siguen pendientes. Las
+banderas siguen en `false`, staging sigue bloqueado y hosted sigue bloqueado.
+
+### Riesgos residuales nuevos
+
+| # | Riesgo | Severidad | Estado |
+|---|---|---|---|
+| R2a | Reaplicar `stella_0014` fuera de orden republica las firmas ciegas | MAJOR | **Cerrado en los dos runners**, no en el paquete — ningún SQL puede impedir que otro se ejecute después. Queda descubierto el `psql` manual fuera de ambos runners: misma autoridad que podría borrar `U0110` directamente, no alcanzable por un inquilino. El §18 del E2E **mide** la exposición (4 firmas resucitadas sin guarda, 0 con ella) en vez de negarla |
+| R2d | La cota de `bind`→`complete` sigue siendo de 15 minutos y `expire_operation_tickets` no recibe proyecto | MINOR | Deliberado (R2b de CAPABILITIES). No nombra tickets, no revela estado, no libera reservas vivas y no cobra |

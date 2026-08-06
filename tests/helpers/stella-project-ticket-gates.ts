@@ -77,7 +77,29 @@ function code(sql: string): string {
   return sql.replace(/--[^\n]*/g, '')
 }
 
-export function evaluateProjectTicketGates(sources: Sources): Violation[] {
+export function evaluateProjectTicketGates(input: Sources): Violation[] {
+  // FASE 9 (INTEGRATION, Train 4.2). LINE ENDINGS ARE NORMALIZED HERE, ONCE,
+  // BEFORE ANY ANCHOR IS SOUGHT.
+  //
+  // Almost every gate below is a multi-line anchor: `code()` strips `--`
+  // comments up to the next `\n`, `parseFunctions` frames a body between `AS $$`
+  // and its terminator, and several assertions match a signature spread over
+  // four lines. `.gitattributes` pins `db/prepared/**` to LF, so today's
+  // checkout feeds this LF — but this function is also called with SYNTHETIC
+  // sources (the mutation suite builds them in memory, and FASE 9's own
+  // CRLF/LF pair feeds it both materializations on purpose), and a reader whose
+  // verdict depends on which line ending it was handed is a reader whose green
+  // means nothing.
+  //
+  // Normalizing the INPUT rather than the FILES is the whole point: nothing on
+  // disk is rewritten to make a gate pass.
+  const sources: Sources = Object.fromEntries(
+    Object.entries(input).map(([name, text]) => [
+      name,
+      typeof text === 'string' ? text.replace(/\r\n/g, '\n').replace(/\r/g, '\n') : text,
+    ]),
+  )
+
   const v: Violation[] = []
   const add = (gate: string, detail: string) => {
     v.push({ gate, detail })

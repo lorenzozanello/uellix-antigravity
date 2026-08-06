@@ -264,6 +264,142 @@ export function runtimeEntrypointMountReasons(root: string): string[] {
       ]
 }
 
+/* -------------------------------------------------------------------------- */
+/* TRAIN 4.2 — the runtime evidence that can lift `local-runtime-ready`        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What a REAL run against a disposable database observed.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS EXISTS AND WHY IT IS OPTIONAL
+ * ---------------------------------------------------------------------------
+ * Two entries of `missingForLocalRuntime` were UNCONDITIONAL strings — "the
+ * grounding packages are applied to NO database" and "the quota is enforced but
+ * not consumed". Both were true and both were unfalsifiable from here: this
+ * module opens no connection, so it could never observe them stop being true.
+ * An item that can never be satisfied is not evidence that is missing; it is a
+ * level that has been retired without saying so.
+ *
+ * They are now CONDITIONAL on evidence that only
+ * `tests/e2e/stella-ticket-journey.e2e.test.ts` — driven by
+ * `scripts/stella-ticket-e2e.sh` — can produce. Absent the report (every
+ * offline invocation, including every CI run of `pnpm test:stella:release-eval`)
+ * the reduction is EXACTLY what it was before, string for string. The gate
+ * therefore did not get weaker; it acquired a way to be satisfied that requires
+ * a live database, a real charge and a read-back of the row.
+ *
+ * ---------------------------------------------------------------------------
+ * FAIL-CLOSED, FIELD BY FIELD
+ * ---------------------------------------------------------------------------
+ * Every field is a claim the battery could take a shortcut on, so each is
+ * checked independently rather than folded into one boolean the caller supplies.
+ * `projectAttributionGatePassed` is the RELEASE-owned reducer's own verdict
+ * (`runtime-project-attribution-verified`), passed through rather than
+ * recomputed — two implementations of one gate is how they come to disagree.
+ */
+export interface LocalRuntimeEvidence {
+  /** Prepared packages actually applied to the disposable database this run. */
+  readonly packagesApplied: readonly string[]
+  /** `runtime-quota-charged` (idempotency-release-gate.ts) passed on this run. */
+  readonly runtimeQuotaChargedGatePassed: boolean
+  /** `runtime-project-attribution-verified` (project-binding-release-gate.ts). */
+  readonly projectAttributionGatePassed: boolean
+  /** Ledger rows this run wrote, read back through a second connection. */
+  readonly chargeRowsObserved: number
+  /** Every observed charge row carried the project the execution ran under. */
+  readonly everyChargeAttributedToItsExecutionProject: boolean
+  /** No cross-project or cross-organization execution produced a charge row. */
+  readonly zeroCrossProjectCharges: boolean
+  /** Last-unit and same-ticket races produced at most one charge, under the
+   *  winner's project. */
+  readonly concurrencyAttributionHeld: boolean
+  /** The package-order guard refused an out-of-order re-apply, and no
+   *  project-blind ticket signature exists afterwards. */
+  readonly packageOrderGuardHeld: boolean
+  /** Runtime-emitted events, validated by the REAL observability contract. */
+  readonly observabilityViolations: number
+  /** Calls to any external model provider. Must be 0. */
+  readonly providerCalls: number
+  /** Resources the run left behind: containers, volumes, databases. Must be 0. */
+  readonly residualResources: number
+}
+
+/** The forward packages a local runtime run must have applied. */
+const REQUIRED_RUNTIME_PACKAGES: readonly string[] = [
+  'grounding_0002',
+  'grounding_0003',
+  'grounding_0004',
+  'stella_0013',
+  'stella_0014',
+  'stella_0015',
+]
+
+/**
+ * Reduces the evidence to the list of things still missing. Empty iff the run
+ * proved everything `local-runtime-ready` claims.
+ *
+ * Absent evidence returns the SAME two permanent items the module listed
+ * before Train 4.2, verbatim, so the offline reduction is unchanged.
+ */
+function missingFromRuntimeEvidence(evidence: LocalRuntimeEvidence | null | undefined): string[] {
+  if (!evidence) {
+    return [
+      `${GROUNDING_PERSISTENCE_PACKAGES.join(' + ')} exist as PREPARED SQL and have been applied to NO database — until they are, every grounded query returns provider_unavailable. Applying them is a gate this harness cannot run and does not simulate`,
+      // INT-CAP-001 is closed (stella_0013 installs consume_stella_quota) and
+      // INT-INT-001 replaced it, then closed too (stella_0014's ticket protocol
+      // supplies the server-issued idempotency key). What keeps this line here
+      // with no report is narrower and honest: THIS invocation opened no
+      // database, so it observed no charge.
+      'quota is enforced but not consumed: consume_stella_quota requires an idempotency key with no canonical server-side source (contract INT-INT-001), so a live grounded query would read the org\'s monthly quota and never charge it — no runtime evidence was supplied to this reduction',
+    ]
+  }
+
+  const missing: string[] = []
+  for (const pkg of REQUIRED_RUNTIME_PACKAGES) {
+    if (!evidence.packagesApplied.some((applied) => applied.startsWith(pkg))) {
+      missing.push(`required prepared package '${pkg}' was not applied in the runtime evidence run`)
+    }
+  }
+  if (!evidence.runtimeQuotaChargedGatePassed) {
+    missing.push('runtime-quota-charged did not pass on the evidence run')
+  }
+  if (!evidence.projectAttributionGatePassed) {
+    missing.push(
+      'runtime-project-attribution-verified did not pass on the evidence run (R2-INT) — bind/complete/abort/inspect must each reject a foreign execution project, the charge must be attributed to it, and the project-blind signatures must not be invocable',
+    )
+  }
+  if (evidence.chargeRowsObserved <= 0) {
+    missing.push(
+      `chargeRowsObserved is ${evidence.chargeRowsObserved} — a run that charged nothing cannot show that the quota is consumed, and every cross-project assertion would pass vacuously against it`,
+    )
+  }
+  if (!evidence.everyChargeAttributedToItsExecutionProject) {
+    missing.push('at least one charge row was attributed to a project other than the one its execution ran under')
+  }
+  if (!evidence.zeroCrossProjectCharges) {
+    missing.push('a cross-project or cross-organization execution produced a charge row')
+  }
+  if (!evidence.concurrencyAttributionHeld) {
+    missing.push('a concurrent race produced more than one charge, or attributed one to the losing project')
+  }
+  if (!evidence.packageOrderGuardHeld) {
+    missing.push(
+      'the package-order guard did not refuse an out-of-order re-apply, or a project-blind ticket signature survived it (R2a, db/prepared-package-order.ts)',
+    )
+  }
+  if (evidence.observabilityViolations !== 0) {
+    missing.push(`${evidence.observabilityViolations} runtime event(s) violated the observability contract`)
+  }
+  if (evidence.providerCalls !== 0) {
+    missing.push(`providerCalls is ${evidence.providerCalls} — the local runtime journey must call no provider`)
+  }
+  if (evidence.residualResources !== 0) {
+    missing.push(`${evidence.residualResources} resource(s) survived teardown`)
+  }
+  return missing
+}
+
 export interface LocalReleaseGateReport {
   gates: LocalReleaseGateResult[]
   libraryReady: boolean
@@ -354,6 +490,14 @@ export function computeLocalReleaseGateReport(
   secondRunForDeterminism: ReleaseEvalRun,
   root: string = process.cwd(),
   harnessReport?: LocalRuntimeHarnessReport | null,
+  /**
+   * TRAIN 4.2 (optional). The ONLY way `localRuntimeReady` can become true.
+   * This function performs no I/O to obtain it; only a real invocation of
+   * `scripts/stella-ticket-e2e.sh` — a disposable container, the six prepared
+   * packages, the real server action and a read-back of the ledger — can
+   * construct one. Omitted (the default) reduces to exactly the pre-4.2 report.
+   */
+  runtimeEvidence?: LocalRuntimeEvidence | null,
 ): LocalReleaseGateReport {
   const gates = evaluateLocalReleaseGates(run, secondRunForDeterminism, root)
   const byId = new Map(gates.map((g) => [g.id, g]))
@@ -380,30 +524,21 @@ export function computeLocalReleaseGateReport(
     ...GROUNDING_PERSISTENCE_PACKAGES.filter((rel) => !existsSync(path.join(root, rel))).map(
       (rel) => `${rel} not found — the grounded-query repository adapter reads the surface this package creates`,
     ),
-    // Not conditional, and not verifiable from here: this harness opens no
-    // database, so it can never observe that a package was applied. Stated as
-    // permanently-missing evidence rather than silently assumed satisfied.
-    `${GROUNDING_PERSISTENCE_PACKAGES.join(' + ')} exist as PREPARED SQL and have been applied to NO database — until they are, every grounded query returns provider_unavailable. Applying them is a gate this harness cannot run and does not simulate`,
     // TRAIN 4: the generator gap is CLOSED. app/actions/stella/grounded-query.ts
     // now names createExtractiveAnswerProvider() explicitly, a real local
     // component that answers by quoting retrieved passages. It is not a
     // provider round trip and does not claim to be — G1 stays open for that —
     // but "no generator exists" stopped being true, so the line is gone rather
     // than kept for symmetry.
-    // TRAIN 4: still open, for a DIFFERENT reason, and the difference matters.
     //
-    // INT-CAP-001 is closed — stella_0013 widens the role CHECK and installs
-    // uellix_stella.consume_stella_quota, verified against a live disposable
-    // database. What blocks the charge now is INT-INT-001: that function
-    // REQUIRES an idempotency key, and this application has no canonical
-    // server-side source for one (no request id, no signing secret, no ticket
-    // table; a bound server-action argument is fixed per render, not per
-    // question). Every key the action could derive either charges a retry
-    // twice or silently deduplicates a legitimately repeated question.
-    //
-    // So the call is deliberately NOT made. Listed here so the flag cannot be
-    // turned on while an enforced quota has no way to be charged.
-    `quota is enforced but not consumed: consume_stella_quota requires an idempotency key with no canonical server-side source (contract INT-INT-001), so a live grounded query would read the org's monthly quota and never charge it`,
+    // TRAIN 4.2: the two entries that used to sit here as UNCONDITIONAL strings
+    // — the unapplied grounding packages and the uncharged quota — moved into
+    // `missingFromRuntimeEvidence`. With no evidence they are reproduced
+    // VERBATIM, so an offline reduction is byte-identical to the pre-4.2 one;
+    // with a real disposable-database run behind them they can finally be
+    // satisfied, which is the difference between "evidence that is missing" and
+    // "a level that was quietly retired".
+    ...missingFromRuntimeEvidence(runtimeEvidence),
   ]
 
   const localRuntimeReady = integrationReady && missingForLocalRuntime.length === 0

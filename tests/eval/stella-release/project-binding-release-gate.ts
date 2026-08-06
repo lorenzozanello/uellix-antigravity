@@ -8,14 +8,25 @@
 //
 // `project-bound-ticket-attribution` is computable purely offline, from the
 // reference-model harness — it is the ONE stable identifier Fase 6 requires.
-// `runtime-project-attribution-verified` never can be, on this branch: it
-// asks whether a REAL runtime actually rejects a mismatched execution
-// project through `bind_operation_ticket`/`complete_operation_ticket`, which
-// requires those functions to receive a new parameter — a SQL signature
-// change this train is explicitly prohibited from making (see
-// docs/ops/workstreams/RELEASE.md §Prohibiciones). Its reducer accepts an
+// `runtime-project-attribution-verified` asks whether a REAL runtime actually
+// rejects a mismatched execution project through
+// `bind_operation_ticket`/`complete_operation_ticket`. Its reducer accepts an
 // OPTIONAL report and is fail-closed by construction, matching
 // evaluateRuntimeQuotaCharged's own discipline in idempotency-release-gate.ts.
+//
+// WHEN THIS WAS WRITTEN (RELEASE, train 4.2) the header said this gate "never
+// can be satisfied on this branch", because the SQL signature it depends on
+// did not exist and this line was prohibited from writing one. INTEGRATION's
+// train 4.2 made exactly that change —
+// db/prepared/stella_0015_project_bound_operation_tickets.sql — so the
+// statement is no longer true and is corrected rather than left standing: a
+// stale "unsatisfiable" in a gate's own header teaches the next reader to stop
+// looking for the evidence. The report is produced by
+// tests/e2e/stella-ticket-journey.e2e.test.ts §19/§20, driven by
+// scripts/stella-ticket-e2e.sh against a disposable PostgreSQL.
+//
+// What did NOT change: this module opens no database and simulates nothing.
+// Every OFFLINE invocation still fails this gate, and that is correct.
 //
 // FASE 6, VERBATIM: `local-runtime-ready` (local-release-gate.ts) is NOT
 // touched by this module, in either direction — this train does not import,
@@ -73,7 +84,7 @@ function evaluateRuntimeProjectAttributionVerified(
       id: 'runtime-project-attribution-verified',
       passed: false,
       detail:
-        'no runtime project-attribution report provided — this gate can only pass once bind_operation_ticket/complete_operation_ticket accept and enforce a real execution-project parameter against a real database, and the legacy (project-blind) signatures are proven not invocable (CAPABILITIES train 5, docs/ops/contracts/CONTRACT_LEDGER.md#r2-int)',
+        'no runtime project-attribution report provided — this reduction opened no database, so it observed nothing. The report is produced by tests/e2e/stella-ticket-journey.e2e.test.ts §19, driven by scripts/stella-ticket-e2e.sh against a disposable PostgreSQL with db/prepared/stella_0015_project_bound_operation_tickets.sql applied (docs/ops/contracts/CONTRACT_LEDGER.md#r2-int)',
     }
   }
 
@@ -161,8 +172,13 @@ export function computeProjectBindingGateReport(
     ? []
     : [
         runtimeGate.detail,
-        "bind_operation_ticket/complete_operation_ticket must be given a new p_project_id parameter and compare it against the ticket's own project — a signature change to a package already published by CAPABILITIES, tracked for train 5 (docs/ops/contracts/CONTRACT_LEDGER.md#r2-int)",
-        'tests/e2e/stella-ticket-journey.e2e.test.ts\'s "un ticket de OTRO proyecto de la misma organización y actor" case currently PINS today\'s misattribution as expected, measured behaviour and must be rewritten to assert rejection once the signature changes — this train does not touch that file',
+        // TRAIN 4.2, INTEGRATION. These two lines said the SQL signature change
+        // was outstanding and that the E2E still pinned the misattribution as
+        // expected behaviour. Both stopped being true when stella_0015 was
+        // applied and the E2E case was rewritten to assert rejection, so they
+        // are replaced rather than kept: a "missing evidence" list that names
+        // work already done teaches an operator to stop reading it.
+        'run scripts/stella-ticket-e2e.sh — the disposable-database battery is the only thing that can produce this report; every offline invocation of this reducer necessarily fails this gate (docs/ops/contracts/CONTRACT_LEDGER.md#r2-int)',
       ]
 
   return { gates, projectBindingHarnessReady, missingForProjectBindingHarness, missingForProjectBindingRuntime }

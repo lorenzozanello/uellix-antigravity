@@ -1244,3 +1244,62 @@ aplicada en orden converge, medido en los dos pases del §5c.
 **R3-INT sigue sin tocar** — reordenar vigencia y estado terminal dentro de
 `bind` es un cambio distinto, y mezclarlo con una firma nueva habría hecho que
 un solo paquete moviera dos propiedades a la vez.
+
+---
+
+## Integración — tren 4.2 (`STELLA_TRAIN_4_2_PROJECT_BINDING_INTEGRATION`)
+
+**Fusionadas** `codex/stella-capabilities` (`6db4cbd`) y `codex/stella-release`
+(`d4f8395`) sobre `b6a11cd`, con dos merges `--no-ff` y **un** commit de
+reconciliación. `codex/stella-grounding` y `codex/stella-product` quedaron en
+`b6a11cd`: ninguna entregó commits en este tren y ninguna se fusionó.
+
+### Qué se aceptó
+
+**R2-INT → `ACCEPTED`.** La invariante que cierra:
+
+```
+ticket.project_id = projectId derivado por el server action
+                  = projectId usado por el repositorio de Grounding
+                  = project_id de la fila de stella_interactions
+```
+
+Detalle completo en
+[`CONTRACT_LEDGER.md#r2-int--accepted-integración-tren-42`](../contracts/CONTRACT_LEDGER.md).
+
+### Qué cambió fuera de las dos ramas
+
+| Ruta | Cambio |
+|---|---|
+| `db/stella/operation-tickets.ts` | el proyecto pasa de opcional-en-el-tipo a **obligatorio y en la posición del SQL**; omitirlo es un error de `tsc` |
+| `app/actions/stella/grounded-query.ts` | una sola derivación + tipo *branded* `ExecutionProjectId`; los cuatro verbos y el scope de retrieval se alcanzan por `ExecutionProject`, cuyos miembros **no toman proyecto** |
+| `db/prepared-package-order.ts` (nuevo) | registro declarativo de supersesiones — la respuesta operativa a **R2a** |
+| `db/migrator.ts` | `assertPreparedPackageOrder` como **precondición dentro de la transacción**, antes del script; `DB_MIGRATOR_PACKAGE_ORDER_VIOLATION` |
+| `db/prepared/README.md` | registra `stella_0015`, la cadena canónica y el orden inverso de rollback — cierra **R2c**, que rompía `pnpm test:unit` |
+| `tests/helpers/source-text.ts` (nuevo) | lector único que normaliza `CRLF → LF` antes de buscar anclas multilínea |
+| `tests/eval/stella-release/local-release-gate.ts` | `LocalRuntimeEvidence`: las dos entradas **incondicionales** de `missingForLocalRuntime` pasan a ser satisfacibles **sólo** por una ejecución real contra base desechable |
+| `tests/e2e/stella-ticket-journey.e2e.test.ts` | tercer proyecto con evidencia propia; casos de atribución positiva; orden de paquetes; los dos gates de runtime |
+| `scripts/stella-ticket-e2e.sh` | `stella_0015` en la cadena y §4d: 4 firmas con proyecto, 0 ciegas, 0 DEFAULT, 0 `EXECUTE` para `PUBLIC` |
+
+### CRLF — tres casos, medidos y cerrados
+
+No deducidos: se volcó a CRLF **todo** archivo LF del árbol y se volvió a correr
+la suite. Fueron a rojo exactamente tres casos, en dos archivos
+(`ticket-idempotency.test.ts` ×2, `runtime-grounded-query.test.ts` ×1). El
+tercero es el que importa: cortaba el cuerpo de una función en `'\n}\n'`, y bajo
+CRLF ese `indexOf` devuelve `-1`, así que `slice(start, -1)` entregaba casi todo
+el archivo y la aserción juzgaba bytes a los que nadie la había apuntado.
+
+Corregido en el **lector**, nunca en los archivos de producción. Se demuestra
+que las gates muerden bajo LF, bajo CRLF, con `p_expected_project_id` eliminado
+y con una firma antigua reintroducida.
+
+### Gates
+
+`runtime-project-attribution-verified` → **true**, con siete pruebas contra base
+real y siete controles negativos matando.
+`local-runtime-ready` → **true**, y **sólo** con la evidencia de runtime: sin
+ella el reductor devuelve, verbatim, las mismas dos razones que antes del 4.2.
+
+**Staging y hosted siguen bloqueados.** Banderas en `false`. `INT-GR-001`,
+`INT-GR-003`, `INT-PR-001` y `R1` siguen pendientes.

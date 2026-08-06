@@ -11,14 +11,24 @@
 // the ticket at issue. The four SQL signatures that took no project have been
 // DROPPED, so there is no executable path left that skips the comparison.
 //
-// The TypeScript parameter is optional and the behaviour is not: a call that
-// omits it is refused here, before any round trip (see `unboundProject`). That
-// asymmetry is deliberate and temporary — this workstream does not own
-// `app/actions/stella/grounded-query.ts`, and a required parameter would be a
-// compile error there rather than a decision INTEGRATION gets to make. The
-// governed path therefore fails CLOSED until the action threads its
-// server-resolved project id through, which is the whole of the remaining
-// reconciliation.
+// CAPABILITIES delivered the parameter OPTIONAL in TypeScript and required in
+// fact — a call that omitted it was refused in Node before any round trip. That
+// asymmetry was correct for a line that does not own
+// `app/actions/stella/grounded-query.ts`, and INTEGRATION has now closed it:
+// the parameter is REQUIRED, in the SQL's own position (second, between the
+// ticket and the query digest). Two consequences, and both are the point:
+//
+//   * omitting it is a COMPILE error, not a runtime refusal. The old
+//     two-argument call shape is not "discouraged", it does not typecheck —
+//     which is the TypeScript counterpart of stella_0015 §3 DROPping the four
+//     unbound SQL signatures rather than leaving them revoked.
+//   * the argument order MIRRORS the function it calls, so a reader comparing
+//     this file against the package is comparing two lists in the same order
+//     and a transposition is visible rather than inferable.
+//
+// The shape check survives as a fail-closed guard for the untyped edges (a
+// `any` cast, a JSON boundary, a test double): a value that is not a UUID is
+// refused here rather than sent to be classified as U0100.
 //
 // ---------------------------------------------------------------------------
 // WHAT THIS MODULE IS ALLOWED TO KNOW, AND WHAT IT IS NOT
@@ -257,24 +267,24 @@ function classifyTicketError(error: unknown): OperationTicketRejection {
 }
 
 /**
- * The refusal for a call that supplies no execution project — FAIL CLOSED.
+ * The refusal for a call whose execution project is not a project id at all —
+ * FAIL CLOSED.
  *
- * The parameter is OPTIONAL in TypeScript and required in fact, and the gap is
- * where R2-INT currently lives. Making it required would be a compile error in
- * `app/actions/stella/grounded-query.ts`, which this workstream does not own;
- * defaulting it to the ticket's own project would be the defect itself, written
- * as a convenience. So the type stays permissive, the behaviour does not, and
- * the call is refused in Node before it can become a round trip.
+ * The parameter is REQUIRED since Train 4.2, so within typed code this branch is
+ * unreachable and that is the intent: it exists for the edges TypeScript does
+ * not police — a value that crossed a JSON boundary, a `as never` cast, a test
+ * double that passes `undefined`. Refused here rather than sent to the database
+ * to come back as U0100 and be classified.
  *
- * `out_of_scope` rather than `malformed`: a call that cannot name the project it
- * is executing against has not come through a governed surface, which is a
+ * `out_of_scope` rather than `malformed`: a caller that cannot name the project
+ * it is executing against has not come through a governed surface, which is a
  * scope failure and not a typo. It reaches the reviewer as the same UNAUTHORIZED
  * sentence every other scope failure does.
  *
- * INTEGRATION closes this by threading the server-resolved project id — the
- * same bound argument `issueOperationTicket` already receives — through bind,
- * complete and abort. Until it does, the governed path refuses rather than
- * charging the wrong project.
+ * NEVER defaulted to the ticket's own project. That substitution is the defect
+ * R2-INT reports, written as a convenience: the ticket's project is what the
+ * comparison is AGAINST, so using it as the expected value makes every
+ * comparison trivially true.
  */
 function unboundProject(): { readonly kind: 'rejected'; readonly reason: OperationTicketRejection } {
   return { kind: 'rejected', reason: 'out_of_scope' }
@@ -346,8 +356,8 @@ export async function issueOperationTicket(
  */
 export async function bindOperationTicket(
   ticketId: string,
+  expectedProjectId: string,
   queryHash: string,
-  expectedProjectId?: string,
 ): Promise<BindTicketResult> {
   // Refused in Node so a malformed digest never becomes a database round trip
   // that comes back as U0100 and has to be classified.
@@ -412,8 +422,8 @@ export async function bindOperationTicket(
  */
 export async function completeOperationTicket(
   ticketId: string,
+  expectedProjectId: string,
   queryHash: string,
-  expectedProjectId?: string,
 ): Promise<CompleteTicketResult> {
   if (!isCanonicalQueryHash(queryHash) || !isCanonicalQueryHash(ticketId)) {
     return { kind: 'rejected', reason: 'malformed' }
@@ -458,10 +468,19 @@ export async function completeOperationTicket(
 /* 4. abort — release the reservation                                         */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Release the reservation of a ticket of THIS execution project.
+ *
+ * The project argument is not symmetry with bind/complete: without it one
+ * project's surface could discard the reservation another project's in-flight
+ * operation is holding. Nothing is charged either way, so it is not a billing
+ * defect — it is a denial of service, and the victim discovers it as a `settled`
+ * refusal on a `complete` whose work has already run.
+ */
 export async function abortOperationTicket(
   ticketId: string,
+  expectedProjectId: string,
   reason: OperationTicketAbortReason,
-  expectedProjectId?: string,
 ): Promise<AbortTicketResult> {
   if (!isCanonicalQueryHash(ticketId)) {
     return { kind: 'rejected', reason: 'malformed' }
@@ -500,7 +519,7 @@ export async function abortOperationTicket(
  */
 export async function inspectOperationTicket(
   ticketId: string,
-  expectedProjectId?: string,
+  expectedProjectId: string,
 ): Promise<OperationTicketInspection | null> {
   if (!isCanonicalQueryHash(ticketId)) return null
   // `null` and not a rejection: this function's contract is already "the state,

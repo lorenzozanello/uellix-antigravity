@@ -15,11 +15,12 @@ const RUN = runProjectBindingEvalHarness()
  *
  * SYNTHETIC, and used only to show the gate is SATISFIABLE — that it is a
  * check rather than a permanent refusal. Not evidence of anything: a real
- * report would be built from a real disposable-database run against a
- * `bind_operation_ticket`/`complete_operation_ticket` that HAS a
- * p_project_id parameter, which does not exist in this worktree (CAPABILITIES
- * train 5). Nothing here may be read as a claim that a runtime rejects
- * anything.
+ * report would be built from a real disposable-database run — which, since
+ * Train 4.2, EXISTS: tests/e2e/stella-ticket-journey.e2e.test.ts §19 builds one
+ * against a live PostgreSQL with stella_0015 applied. Nothing HERE may be read
+ * as a claim that a runtime rejects anything: this object is a literal, and the
+ * distinction between a literal and a measurement is the whole reason the
+ * runtime gate takes an external report instead of computing one.
  */
 const FULL_RUNTIME_REPORT = {
   bindRejectedForeignProject: true,
@@ -49,7 +50,10 @@ describe('evaluateProjectBindingGates — the 2 named gates', () => {
     const runtimeGate = gates.find((g) => g.id === 'runtime-project-attribution-verified')!
     expect(runtimeGate.passed).toBe(false)
     expect(runtimeGate.detail).toMatch(/no runtime project-attribution report provided/)
-    expect(runtimeGate.detail).toMatch(/train 5/)
+    // TRAIN 4.2: the detail no longer defers to a future train — stella_0015 is
+    // applied and the E2E asserts rejection. It now names the ONE thing that
+    // can produce the report, which is the fact that survived.
+    expect(runtimeGate.detail).toMatch(/scripts\/stella-ticket-e2e\.sh/)
   })
 
   it('every gate carries a non-trivial detail, never a bare boolean', () => {
@@ -95,7 +99,12 @@ describe('computeProjectBindingGateReport — projectBindingHarnessReady vs loca
   it('missingForProjectBindingRuntime is non-empty without runtime evidence, and empty with it', () => {
     const without = computeProjectBindingGateReport(RUN)
     expect(without.missingForProjectBindingRuntime.length).toBeGreaterThan(0)
-    expect(without.missingForProjectBindingRuntime.join(' ')).toMatch(/train 5/)
+    // TRAIN 4.2. The anchor moved from `/train 5/` to the SCRIPT that produces
+    // the report, because the work this list used to be waiting on is done:
+    // stella_0015 is applied and the E2E case asserts rejection. What remains
+    // true — and is what this reducer must keep saying — is that an OFFLINE
+    // invocation observed nothing and therefore proves nothing.
+    expect(without.missingForProjectBindingRuntime.join(' ')).toMatch(/scripts\/stella-ticket-e2e\.sh/)
     expect(without.missingForProjectBindingRuntime.join(' ')).toMatch(/stella-ticket-journey\.e2e\.test\.ts/)
 
     const withEvidence = computeProjectBindingGateReport(RUN, FULL_RUNTIME_REPORT)
@@ -121,14 +130,60 @@ const ROOT = path.join(__dirname, '..', '..', '..')
 const readEval = (...segments: string[]) => readFileSync(path.join(__dirname, ...segments), 'utf8')
 
 describe('control #9 — project-binding-harness-ready must never substitute for local-runtime-ready', () => {
-  it('local-release-gate.ts does not import, reference, or fold in this module', () => {
+  // -------------------------------------------------------------------------
+  // RESTATED BY INTEGRATION, TRAIN 4.2 — the PROPERTY is unchanged and the
+  // MEASUREMENT is now able to tell apart the two things it was conflating.
+  //
+  // As written on the RELEASE branch these two controls banned the STRING
+  // `project-binding` and the string `idempotency-release-gate` from appearing
+  // anywhere in local-release-gate.ts. That was a sound proxy while
+  // `localRuntimeReady` could depend on nothing outside its own fixtures.
+  //
+  // It stopped being one the moment integration gave that level a way to be
+  // satisfied by REAL evidence: `LocalRuntimeEvidence` carries, among ten other
+  // measurements, the verdict of `runtime-project-attribution-verified` — a
+  // gate that requires a live database, a real charge and a read-back of the
+  // row. Naming that gate in a comment now trips a control aimed at something
+  // else entirely.
+  //
+  // The danger the control exists to prevent is precise: `localRuntimeReady`
+  // must not be liftable by an OFFLINE harness certifying itself. So the
+  // assertions below are rewritten to forbid exactly that — an IMPORT of either
+  // sibling module, or a read of either module's offline readiness boolean —
+  // and a fourth is added that pins the positive property: no runtime evidence,
+  // no local-runtime-ready. A textual ban would have been satisfied by a
+  // module that imported nothing and hardcoded `localRuntimeReady = true`.
+  // -------------------------------------------------------------------------
+  it('local-release-gate.ts does not IMPORT this module, and never reads its offline readiness boolean', () => {
     const source = readEval('local-release-gate.ts')
-    expect(source).not.toMatch(/project-binding/)
+    expect(source).not.toMatch(/from ['"]\.\/project-binding-release-gate['"]/)
+    expect(source).not.toMatch(/from ['"]\.\/project-binding-harness['"]/)
+    expect(source).not.toMatch(/projectBindingHarnessReady/)
+    expect(source).not.toMatch(/runProjectBindingEvalHarness/)
   })
 
-  it('local-release-gate.ts does not import, reference, or fold in idempotency-release-gate.ts either — the same discipline Train 4.1 already established, re-proven here so a future edit cannot special-case ONE sibling gate into localRuntimeReady while leaving this one out', () => {
+  it('local-release-gate.ts does not import idempotency-release-gate.ts either, nor read idempotencyHarnessReady — the same discipline Train 4.1 established, so a future edit cannot special-case ONE sibling gate into localRuntimeReady while leaving this one out', () => {
     const source = readEval('local-release-gate.ts')
-    expect(source).not.toMatch(/idempotency-release-gate|idempotency-harness/)
+    expect(source).not.toMatch(/from ['"]\.\/idempotency-release-gate['"]/)
+    expect(source).not.toMatch(/from ['"]\.\/idempotency-harness['"]/)
+    expect(source).not.toMatch(/idempotencyHarnessReady/)
+    expect(source).not.toMatch(/runIdempotencyEvalHarness/)
+  })
+
+  it('localRuntimeReady is UNREACHABLE without runtime evidence — the positive half of the same property', () => {
+    // The offline harness gates can all be green and this level still false.
+    // Asserted over the reduction's own shape rather than by running it: the
+    // two entries that used to be permanent strings are now produced by
+    // `missingFromRuntimeEvidence`, whose no-report branch returns them
+    // verbatim.
+    const source = readEval('local-release-gate.ts')
+    expect(source).toMatch(/function missingFromRuntimeEvidence\(/)
+    expect(source).toMatch(/if \(!evidence\) \{\s*\n\s*return \[/)
+    expect(source).toMatch(/localRuntimeReady = integrationReady && missingForLocalRuntime\.length === 0/)
+    // And the evidence itself cannot be a single caller-supplied boolean.
+    expect(source).toMatch(/interface LocalRuntimeEvidence/)
+    expect(source).toMatch(/packageOrderGuardHeld/)
+    expect(source).toMatch(/everyChargeAttributedToItsExecutionProject/)
   })
 
   it('this module does not import local-release-gate.ts either — the independence is not accidental in either direction', () => {

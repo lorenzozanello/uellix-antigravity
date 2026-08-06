@@ -56,6 +56,31 @@
 // so an `organizationId` in the JSON has no reader.
 //
 // ---------------------------------------------------------------------------
+// R2-INT (TRAIN 4.2) — ONE PROJECT, FIVE CONSUMERS
+// ---------------------------------------------------------------------------
+// The project the work executes against is derived exactly once, at step 4, and
+// every later use of a project is that same value:
+//
+//     ticket.project_id = derivedProjectId = Grounding scope.projectId
+//                                          = charge.project_id
+//
+// Three substitutions are specifically NOT made, and each was a real way to get
+// this wrong:
+//
+//   * the project is never read off the TICKET. `ticket.project_id` is what the
+//     comparison is against; using it as the expected value makes every
+//     comparison trivially true, which is the defect R2-INT reports.
+//   * the project never comes from the PAYLOAD. `StellaGroundedQueryRequest`
+//     still has exactly one field.
+//   * `complete` does not inherit `bind`'s verdict. They run in different
+//     transactions and only `complete` charges.
+//
+// `ExecutionProject` (below) is how this is held by the compiler rather than by
+// review: the four ticket verbs and the retrieval scope are reached only through
+// an object that already carries the derived project, and none of them takes a
+// project argument at all.
+//
+// ---------------------------------------------------------------------------
 // THERE IS NO FIXTURE PATH
 // ---------------------------------------------------------------------------
 // No mock repository, no seeded corpus, no sample answer.
@@ -117,9 +142,89 @@ import {
   abortOperationTicket,
   bindOperationTicket,
   completeOperationTicket,
+  inspectOperationTicket,
   issueOperationTicket,
+  type AbortTicketResult,
+  type BindTicketResult,
+  type CompleteTicketResult,
   type OperationTicketAbortReason,
+  type OperationTicketInspection,
 } from '@/db/stella/operation-tickets'
+
+/* -------------------------------------------------------------------------- */
+/* R2-INT — THE EXECUTION PROJECT, AS A TYPE                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A project id that this module DERIVED on the server and is executing against.
+ *
+ * Branded, and the brand is the whole mechanism: `string` is assignable to
+ * `string`, so a plain type alias would let a project read off the ticket, off
+ * the payload, or off a component prop reach `bindTicket` unnoticed. Nothing
+ * outside this module can produce an `ExecutionProjectId` — `deriveExecutionProject`
+ * is the only cast, it is not exported, and it takes the SERVER-BOUND argument.
+ *
+ * R2-INT is the defect this closes, and it is an ATTRIBUTION defect rather than
+ * a quota escape: before Train 4.2 the ticket's project and the project the work
+ * actually read evidence under could differ, and the charge landed under the
+ * ticket's. The invariant now is one value with five consumers:
+ *
+ *     ticket.project_id  =  derivedProjectId  =  Grounding scope.projectId
+ *                        =  charge.project_id
+ */
+declare const EXECUTION_PROJECT_BRAND: unique symbol
+type ExecutionProjectId = string & { readonly [EXECUTION_PROJECT_BRAND]: 'server-derived' }
+
+/**
+ * The ONE place a string becomes an execution project.
+ *
+ * Takes the SERVER-BOUND argument — a route param already resolved under an
+ * authenticated session and sealed into the action reference by
+ * `Function.prototype.bind` — never a field of `request`. It trims and
+ * shape-checks; it does not authorize. Authorization is a database read and
+ * happens later, against the session's organization (step 6).
+ */
+function deriveExecutionProject(boundProjectId: string): ExecutionProjectId | null {
+  const trimmed = typeof boundProjectId === 'string' ? boundProjectId.trim() : ''
+  return trimmed === '' ? null : (trimmed as ExecutionProjectId)
+}
+
+/**
+ * THE ASSERTION FASE 5 ASKS FOR, WRITTEN AS A TYPE RATHER THAN A COMMENT.
+ *
+ * Every governed use of the execution project goes through one of these five
+ * members, and NONE of them takes a project: the value is captured once, from
+ * `deriveExecutionProject`, and applied by the factory. A call site cannot pass
+ * a different project to `complete` than it passed to `bind` because a call site
+ * cannot pass a project at all.
+ *
+ * That is strictly stronger than threading a `projectId` argument through five
+ * call sites and trusting review to notice when the sixth passes
+ * `ticket.project_id` instead. `tests/cross-workstream/runtime-grounded-query.test.ts`
+ * pins it structurally: this module must contain exactly ONE call to each of the
+ * four adapter verbs, and all four inside this factory.
+ */
+interface ExecutionProject {
+  /** The derived id itself, for the audit trail and the event scope. */
+  readonly projectId: ExecutionProjectId
+  /** The retrieval scope. Same value the ticket verbs below re-impose in SQL. */
+  scope(organizationId: string): GroundingScope
+  bindTicket(ticketId: string, queryHash: string): Promise<BindTicketResult>
+  completeTicket(ticketId: string, queryHash: string): Promise<CompleteTicketResult>
+  abortTicket(ticketId: string, reason: OperationTicketAbortReason): Promise<AbortTicketResult>
+  inspectTicket(ticketId: string): Promise<OperationTicketInspection | null>
+}
+
+function executionProject(projectId: ExecutionProjectId): ExecutionProject {
+  return {
+    projectId,
+    scope: (organizationId) => ({ organizationId, projectId }),
+    bindTicket: (ticketId, queryHash) => bindOperationTicket(ticketId, projectId, queryHash),
+    completeTicket: (ticketId, queryHash) => completeOperationTicket(ticketId, projectId, queryHash),
+    abortTicket: (ticketId, reason) => abortOperationTicket(ticketId, projectId, reason),
+    inspectTicket: (ticketId) => inspectOperationTicket(ticketId, projectId),
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /* The single classification mapping (R8)                                     */
@@ -271,7 +376,7 @@ const MAX_EVIDENCE_ITEMS_PER_QUERY = 25
 // naming the function is not mistaken for a call to it. An audit label written
 // with parentheses would trip that check while invoking nothing.
 const QUOTA_LEDGER_CHARGED_BY_TICKET =
-  'charged via uellix_stella_ops.complete_operation_ticket -> uellix_stella.consume_stella_quota [INT-INT-001 closed, prepared stella_0014]'
+  'charged via uellix_stella_ops.complete_operation_ticket -> uellix_stella.consume_stella_quota [INT-INT-001 closed, prepared stella_0014; project-bound and attributed to the execution project, prepared stella_0015 / R2-INT]'
 
 export interface StellaGroundedQueryOptions {
   /**
@@ -345,12 +450,19 @@ async function runStellaGroundedQuery(
   //    query below uses.
   //
   //    Still no row has been read: this is a trim and a shape check.
-  const projectId = typeof options.boundProjectId === 'string' ? options.boundProjectId.trim() : ''
-  if (projectId === '') {
+  //
+  //    R2-INT (Train 4.2). This is the ONE derivation, and everything downstream
+  //    that names a project names THIS value: the retrieval scope, the four
+  //    ticket verbs, the event scope and the audit row. `executionProject` is
+  //    what makes that structural rather than a convention — see its doc.
+  const execution = deriveExecutionProject(options.boundProjectId)
+  if (execution === null) {
     return failure('UNAUTHORIZED', 'El proyecto solicitado no es válido para esta sesión.')
   }
+  const project = executionProject(execution)
+  const projectId = project.projectId
 
-  const scope: GroundingScope = { organizationId, projectId }
+  const scope: GroundingScope = project.scope(organizationId)
   try {
     assertValidScope(scope)
   } catch {
@@ -429,7 +541,13 @@ async function runStellaGroundedQuery(
   //    per-organization advisory lock. The transaction closes here; from this
   //    point the reservation is a row state, not a held lock.
   // ---------------------------------------------------------------------
-  const bound = await bindOperationTicket(options.ticket, queryHash)
+  //
+  //    R2-INT: `bindTicket` applies the derived execution project, and SQL
+  //    compares it against the one welded onto the ticket at issue. A ticket of
+  //    another project raises U0110 and never reserves — so a cross-project
+  //    presentation stops HERE, before a single chunk of the wrong project's
+  //    evidence is read, and therefore before there is anything to charge for.
+  const bound = await project.bindTicket(options.ticket, queryHash)
 
   if (bound.kind === 'already_completed') {
     // ---------------------------------------------------------------
@@ -453,11 +571,29 @@ async function runStellaGroundedQuery(
     // minted per run rather than derived — so claiming either would be
     // claiming a capability that is not there.
     // ---------------------------------------------------------------
+    //
+    // THE POST-COMPLETE RETRY IS WHERE `inspect` BELONGS, and it is the only
+    // path that calls it. R2-INT gave the verb a reason to exist here: the
+    // audit row for a retry used to record a state INFERRED from what `bind`
+    // returned, and it now records the state READ from the ticket under the
+    // execution project. A ticket of another project cannot be read at all
+    // (U0110 -> `null`), so this call cannot become a lifecycle oracle for a
+    // ticket the caller is not entitled to see.
+    //
+    // Its failure changes nothing — the disposition below is already decided by
+    // `bind`. It is a read FOR THE RECORD, not a second gate, and writing it as
+    // a gate would make a settled operation's reporting depend on a round trip
+    // that has nothing left to decide.
+    const settledState = await project.inspectTicket(options.ticket)
     emitTicketEvent('grounded_query_retried', events, { ticketId: options.ticket, attempt: 2 })
     emitTicketEvent('quota_reuse_detected', events, { ticketId: options.ticket })
     void auditGroundedQuery(ctx, projectId, {
       outcome: 'already_completed_result_unavailable',
       quotaLedger: QUOTA_LEDGER_CHARGED_BY_TICKET,
+      // The ticket's own status, under THIS project. `unreadable` is not an
+      // error state — it is what a ticket of another project looks like from
+      // here, and recording it by that name keeps the two apart in the trail.
+      ticketState: settledState === null ? 'unreadable' : settledState.status,
     })
     return failure(
       'ALREADY_COMPLETED_RESULT_UNAVAILABLE',
@@ -517,14 +653,14 @@ async function runStellaGroundedQuery(
   ).catch(() => null)
 
   if (evidenceIds === null) {
-    await releaseTicket(options.ticket, 'execution_failed', events)
+    await releaseTicket(project, options.ticket, 'execution_failed', events)
     return failure('UNKNOWN_ERROR', 'No se pudo leer la evidencia del proyecto.')
   }
   if (evidenceIds.length === 0) {
     // A real, reportable state — not an error. There is nothing to ground an
     // answer in, and saying so is more useful than a generic failure. The
     // reservation is released: an unanswerable question must not hold a unit.
-    await releaseTicket(options.ticket, 'no_result', events)
+    await releaseTicket(project, options.ticket, 'no_result', events)
     return failure('UNSUPPORTED_STEP', 'Este proyecto no tiene evidencia cargada para fundamentar una respuesta.')
   }
 
@@ -568,7 +704,7 @@ async function runStellaGroundedQuery(
     // error, never as "try again", and never with its own message.
     // THE WORK FAILED AFTER THE RESERVATION. Release it: a failed operation
     // must not hold a unit, and must not be charged for one.
-    await releaseTicket(options.ticket, 'execution_failed', events)
+    await releaseTicket(project, options.ticket, 'execution_failed', events)
     if (
       error instanceof GroundingScopeViolationError ||
       error instanceof RepositoryContractViolationError ||
@@ -604,7 +740,7 @@ async function runStellaGroundedQuery(
   try {
     result = toProductResult(run)
   } catch (error) {
-    await releaseTicket(options.ticket, 'execution_failed', events)
+    await releaseTicket(project, options.ticket, 'execution_failed', events)
     console.error('[stella-grounding] presentation mapping failed:', error instanceof Error ? error.name : 'unknown')
     return failure('UNKNOWN_ERROR', 'La consulta no pudo completarse.')
   }
@@ -612,7 +748,7 @@ async function runStellaGroundedQuery(
   if (result.status === 'error') {
     // `provider_unavailable` — nothing was read, or generation could not run.
     // There is no answer, so there is nothing to charge for.
-    await releaseTicket(options.ticket, 'no_result', events)
+    await releaseTicket(project, options.ticket, 'no_result', events)
     void auditGroundedQuery(ctx, projectId, {
       outcome: result.code,
       generator: run.provenance.generatorId,
@@ -627,7 +763,14 @@ async function runStellaGroundedQuery(
   //     for. This ordering is the reason a failed charge cannot leave a
   //     usable answer behind.
   // ---------------------------------------------------------------------
-  const settled = await completeOperationTicket(options.ticket, queryHash)
+  //
+  //     R2-INT: `complete` re-proves the project INDEPENDENTLY of `bind`. The
+  //     two ran in different transactions, so "bind already checked it" is a
+  //     claim about a request that has since ended — and `complete` is the call
+  //     that charges, so it is the only one that can make the charge land under
+  //     the right project. The ledger row is append-only; a `project_id` written
+  //     wrong there can never be corrected.
+  const settled = await project.completeTicket(options.ticket, queryHash)
 
   if (settled.kind === 'quota_refused') {
     // R1, DECLARED AND NOT PAPERED OVER. A sibling Stella action charged the
@@ -640,7 +783,7 @@ async function runStellaGroundedQuery(
     // DISCARDED. Whether the work should instead be given away, or the cap
     // overrun by one, is a billing decision — recorded as R1 for Train 5,
     // and deliberately not taken here or in `consume_stella_quota`.
-    await releaseTicket(options.ticket, 'quota_refused', events)
+    await releaseTicket(project, options.ticket, 'quota_refused', events)
     void auditGroundedQuery(ctx, projectId, {
       outcome: 'quota_refused_after_execution',
       generator: run.provenance.generatorId,
@@ -662,7 +805,7 @@ async function runStellaGroundedQuery(
     // ticket is `completed` and SQL refuses to abort it (`U0109`) — so a
     // successful charge can never be undone by this line. If it did not, the
     // reservation is released. Its result is ignored for exactly that reason.
-    await releaseTicket(options.ticket, 'execution_failed', events)
+    await releaseTicket(project, options.ticket, 'execution_failed', events)
     void auditGroundedQuery(ctx, projectId, {
       outcome: 'settlement_failed',
       generator: run.provenance.generatorId,
@@ -744,6 +887,13 @@ async function runStellaGroundedQuery(
  * what it should do.
  */
 async function releaseTicket(
+  // R2-INT: the execution project is a PARAMETER rather than something this
+  // helper recovers, and specifically it is never read off the ticket. An abort
+  // that took the ticket's own project would release any project's reservation,
+  // which is the denial of service `abort_operation_ticket`'s own U0110 exists
+  // to refuse. Taking the whole `ExecutionProject` — not a bare string — means
+  // the value cannot be reconstructed here from anything else.
+  project: ExecutionProject,
   ticketId: string,
   reason: OperationTicketAbortReason,
   events: TicketEventScope,
@@ -753,7 +903,7 @@ async function releaseTicket(
   // reading, and a cross-workstream test pins that by name. Two unrelated
   // things called `outcome` in one module is how a vocabulary leak starts
   // looking like a variable name.
-  const released = await abortOperationTicket(ticketId, reason)
+  const released = await project.abortTicket(ticketId, reason)
   if (released.kind === 'aborted') {
     emitTicketEvent('grounded_query_aborted', events, { ticketId })
   } else if (released.kind === 'expired') {
@@ -899,10 +1049,13 @@ async function issueStellaGroundedQueryTicket(
     return { status: 'error', code: 'UNAUTHORIZED', message: 'Se requiere autenticación.' }
   }
 
-  // 3/4. SCOPE — derived, never received.
+  // 3/4. SCOPE — derived, never received. The SAME derivation the execution
+  //      path uses (`deriveExecutionProject`), so the project welded onto the
+  //      ticket at issue and the project the execution asserts later are
+  //      produced by one function rather than by two trims that could drift.
   const organizationId = ctx.organization.id
-  const boundProjectId = typeof projectId === 'string' ? projectId.trim() : ''
-  if (boundProjectId === '') {
+  const boundProjectId = deriveExecutionProject(projectId)
+  if (boundProjectId === null) {
     return {
       status: 'error',
       code: 'UNAUTHORIZED',

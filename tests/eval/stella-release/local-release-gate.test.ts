@@ -11,6 +11,7 @@ import {
   runtimeEntrypointMountReasons,
 } from './local-release-gate'
 import type { LocalRuntimeHarnessReport } from './harness-report'
+import type { LocalRuntimeEvidence } from './local-release-gate'
 
 const CLEAN_RUN_1 = runReleaseEvalHarness()
 const CLEAN_RUN_2 = runReleaseEvalHarness()
@@ -280,5 +281,97 @@ describe('computeLocalReleaseGateReport — TRAIN 4 localRuntimeHarnessReady', (
     const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2, process.cwd(), broken)
     expect(report.localRuntimeHarnessReady).toBe(false)
     expect(report.missingForLocalRuntimeHarness.some((item) => item.includes('providerCallCount is 1'))).toBe(true)
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* TRAIN 4.2 — LocalRuntimeEvidence, field by field                           */
+/* -------------------------------------------------------------------------- */
+//
+// The negative controls for the ONE thing that can lift `local-runtime-ready`.
+//
+// ADVERSARIAL REVIEW B (Train 4.2) raised the gap these close as MAJOR: the
+// E2E's `everyChargeAttributedToItsExecutionProject` was computed by a
+// near-tautological predicate, and NOTHING pinned the reducer's dependence on
+// it — so a future edit could weaken that field and leave it "silently
+// vouching for nothing". The E2E's computation was rewritten to compare each
+// charge row against the project ITS OWN execution ran under, across more than
+// one project; these tests are the other half, and they belong here because
+// this is the module that decides what the field is worth.
+//
+// Every one of the eleven fields is mutated independently. A field the reducer
+// ignores is a field a run can lie about for free.
+
+const GOOD_RUNTIME_EVIDENCE: LocalRuntimeEvidence = {
+  packagesApplied: [
+    'grounding_0002_document_versions',
+    'grounding_0003_evidence_chunks',
+    'grounding_0004_runtime_attestation',
+    'stella_0013_grounded_query_quota',
+    'stella_0014_operation_tickets',
+    'stella_0015_project_bound_operation_tickets',
+  ],
+  runtimeQuotaChargedGatePassed: true,
+  projectAttributionGatePassed: true,
+  chargeRowsObserved: 3,
+  everyChargeAttributedToItsExecutionProject: true,
+  zeroCrossProjectCharges: true,
+  concurrencyAttributionHeld: true,
+  packageOrderGuardHeld: true,
+  observabilityViolations: 0,
+  providerCalls: 0,
+  residualResources: 0,
+}
+
+describe('computeLocalReleaseGateReport — TRAIN 4.2 runtime evidence', () => {
+  it('with clean runtime evidence the level is READY, and says nothing is missing', () => {
+    const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2, process.cwd(), null, GOOD_RUNTIME_EVIDENCE)
+    expect(report.missingForLocalRuntime, 'never a bare false').toEqual([])
+    expect(report.localRuntimeReady).toBe(true)
+  })
+
+  it('is reachable ONLY that way — the same call without evidence stays false, with the same two reasons as before Train 4.2', () => {
+    const offline = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2)
+    expect(offline.localRuntimeReady).toBe(false)
+    const joined = offline.missingForLocalRuntime.join(' ')
+    expect(joined).toMatch(/applied to NO database/)
+    expect(joined).toMatch(/quota is enforced but not consumed/)
+  })
+
+  it('staging and hosted stay blocked no matter how clean the runtime evidence is', () => {
+    const report = computeLocalReleaseGateReport(CLEAN_RUN_1, CLEAN_RUN_2, process.cwd(), null, GOOD_RUNTIME_EVIDENCE)
+    expect(report.stagingBlocked).toBe(true)
+    expect(report.hostedBlocked).toBe(true)
+    expect(report.missingForStaging.length).toBeGreaterThan(0)
+    expect(report.missingForHosted.length).toBeGreaterThan(0)
+  })
+
+  it('every field is load-bearing: mutating any one of them alone blocks the level', () => {
+    const mutations: Array<[string, Partial<LocalRuntimeEvidence>, RegExp]> = [
+      ['a required package was not applied', { packagesApplied: ['grounding_0002', 'stella_0013'] }, /stella_0015/],
+      ['runtime-quota-charged did not pass', { runtimeQuotaChargedGatePassed: false }, /runtime-quota-charged/],
+      ['project attribution did not pass', { projectAttributionGatePassed: false }, /runtime-project-attribution-verified/],
+      ['the run charged nothing at all', { chargeRowsObserved: 0 }, /chargeRowsObserved is 0/],
+      // THE FIELD ADVERSARIAL REVIEW B FOUND VOUCHING FOR NOTHING.
+      ['a charge landed under another project', { everyChargeAttributedToItsExecutionProject: false }, /other than the one its execution ran under/],
+      ['a cross-project execution charged', { zeroCrossProjectCharges: false }, /cross-project or cross-organization/],
+      ['a race charged twice or charged the loser', { concurrencyAttributionHeld: false }, /concurrent race/],
+      ['the package-order guard did not hold', { packageOrderGuardHeld: false }, /package-order guard/],
+      ['an event violated the observability contract', { observabilityViolations: 2 }, /2 runtime event/],
+      ['a provider was called', { providerCalls: 1 }, /providerCalls is 1/],
+      ['teardown left something behind', { residualResources: 1 }, /survived teardown/],
+    ]
+
+    for (const [label, mutation, reason] of mutations) {
+      const report = computeLocalReleaseGateReport(
+        CLEAN_RUN_1,
+        CLEAN_RUN_2,
+        process.cwd(),
+        null,
+        { ...GOOD_RUNTIME_EVIDENCE, ...mutation },
+      )
+      expect(report.localRuntimeReady, `the level was granted to a run where ${label}`).toBe(false)
+      expect(report.missingForLocalRuntime.join(' '), `no reason named for: ${label}`).toMatch(reason)
+    }
   })
 })
