@@ -237,7 +237,7 @@ comodidad.
 - [`scripts/stella-ticket-dry-run.sh`](../../../scripts/stella-ticket-dry-run.sh) —
   contenedor desechable, `--network none`, sin volumen, destruido al salir. 16
   secciones en **dos etapas**: reproducción de R2-INT sobre `stella_0014` solo,
-  cierre sobre la cadena completa, 21 aserciones cross-proyecto, siete pruebas
+  cierre sobre la cadena completa, 20 aserciones cross-proyecto, siete pruebas
   de concurrencia con dos sesiones reales, negativa del rollback, orden inverso
   impuesto, retorno exacto al baseline y reaplicación idéntica.
 - [`tests/helpers/stella-project-ticket-gates.ts`](../../../tests/helpers/stella-project-ticket-gates.ts) —

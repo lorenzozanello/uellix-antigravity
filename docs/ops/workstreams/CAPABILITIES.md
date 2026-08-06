@@ -1191,7 +1191,7 @@ falla mientras existan y su transacción entera aborta sin destruir nada.
   no distinguiría «0014 aplicado» de «0014 + 0015 aplicados», porque las dos
   publican seis funciones.
   16 secciones: reproducción de R2-INT sobre `stella_0014` solo, cadena completa
-  aplicada dos veces, **21 aserciones cross-proyecto** (mismatch en `bind`,
+  aplicada dos veces, **20 aserciones cross-proyecto** (mismatch en `bind`,
   `complete`, `abort`, `inspect` y en el reintento post-cobro; proyecto de otra
   organización; proyecto ausente; cero cargo ante mismatch; la reserva sobrevive
   a un `abort` ajeno; dos proyectos con el mismo texto cobran uno cada uno; la
