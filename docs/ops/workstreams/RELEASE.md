@@ -2247,3 +2247,329 @@ ella el reductor devuelve, verbatim, las mismas dos razones que antes del 4.2.
 
 **Staging y hosted siguen bloqueados.** Banderas en `false`. `INT-GR-001`,
 `INT-GR-003`, `INT-PR-001` y `R1` siguen pendientes.
+
+---
+
+# Tren 4.3 — `STELLA_RELEASE_RESERVED_QUOTA_GATE_TRAIN_4_3`
+
+**HEAD base:** `12a8d52` (`chore(integration): bind Stella runtime tickets to
+project`). Árbol limpio al abrir y al cerrar. No se tocó `db/**`,
+`app/actions/**`, `components/**`, `lib/grounding/**`, `package.json`,
+workflows ni config de vitest. Esta línea no implementa SQL ni server
+actions. Sin push, sin acceso a remoto, sin llamadas a proveedor, sin stack
+persistente.
+
+**Alcance.** Construir el evaluador independiente de
+[R1](../contracts/CONTRACT_LEDGER.md) (MAJOR, «acción hermana cobra el
+ledger entre `bind` y `complete`», declarado y no tapado desde el tren 4.1,
+decisión de facturación pendiente para el tren 5) y de
+[R6-INT](../contracts/CONTRACT_LEDGER.md) (MAJOR, preexistente: las otras
+cinco acciones Stella hermanas escriben `stella_interactions` con
+`db.insert` sin lock tras una lectura sin lock, lo que hace alcanzable a
+R1) — el eje exacto que ninguna línea anterior evaluó: si una reserva
+`grounded_query` y el consumo directo de una acción hermana comparten una
+única capacidad sin oversell.
+
+## Fase 1 — inventario
+
+Confirmado por inspección directa, no asumido:
+
+- Branch `codex/stella-release`, HEAD inicial `12a8d52e187dc30b517c1c065eb921b108296a94`, árbol limpio.
+- **R1** vive en `docs/ops/contracts/CONTRACT_LEDGER.md`, sección «Riesgos
+  residuales abiertos tras el cierre» de INT-INT-001: política declarada
+  «nunca se excede la cuota y nunca se muestra como exitosa una respuesta no
+  cobrada», sin cambios desde el tren 4.1.
+- **`stella_0013_grounded_query_quota.sql`** (leído, no tocado): UN pool
+  mensual por organización (`organizations.stella_monthly_quota`),
+  compartido por **siete** categorías gobernadas (`v_governed`:
+  `advisor`, `validator`, `composer`, `proxy_reviewer`, `evidence_reviewer`,
+  `audit_assistant`, `grounded_query`). `consume_stella_quota` toma
+  `pg_advisory_xact_lock('stella/quota/'||organization_id)` **antes** de
+  contar — pero ese lock sólo serializa `grounded_query` contra sí mismo.
+- **`stella_0014`/`stella_0015`** (leídos, no tocados): el protocolo de
+  tickets (`issue → bind → complete | abort`, `*ForExecution`) y la
+  atribución de proyecto ya cerrados en los trenes 4.1/4.2.
+- **`lib/stella/quota.ts`** (`checkStellaQuota`, leído): lectura-sin-lock,
+  cuenta `stella_interactions` del mes UTC actual — el camino que las seis
+  acciones hermanas usan.
+- **Acciones Stella hermanas** (`app/actions/stella/advisor.ts` —dos
+  llamadas—, `composer.ts`, `validator.ts`, `reviewer.ts` —tres roles—),
+  leídas SÓLO para confirmar el patrón: `checkStellaQuota` seguido de
+  `db.insert(stellaInteractions)`, sin lock, sin conocimiento de
+  `operation_tickets`. Ninguno de estos archivos fue modificado.
+- **Evaluador de tickets** (`ticket-protocol.ts`, tren 4.1) y **evaluador de
+  project-binding** (tren 4.2), leídos como plantilla estructural — ninguno
+  modificado: `bind()` de `ticket-protocol.ts` deliberadamente NO comprueba
+  cuota (Train 4.1 lo fijó así, y cada caso de `idempotency-matrix.ts`
+  depende de ese comportamiento). Este tren necesita la propiedad opuesta
+  (una reserva SÍ ocupa capacidad), así que construye su **propio** modelo
+  en vez de reutilizar `bind`/`complete` — ver la cabecera de
+  `reserved-quota-protocol.ts`.
+- **Consumidores de cuota inventariados:** 1 reservable (`grounded_query`,
+  vía ticket) + 6 directos (las seis categorías hermanas). **Reservas:**
+  sólo `grounded_query`, vía `issue`/`bind` del protocolo de tickets — las
+  seis hermanas no reservan, consumen. **Cargos:** una fila de
+  `stella_interactions` por unidad, para las siete categorías por igual.
+  **Periodos:** mes calendario UTC (`date_trunc('month', now())`, cortado en
+  `consume_stella_quota`; equivalente en `checkStellaQuota` vía
+  `startOfCurrentUtcMonth()`). **Límites:** `organizations.stella_monthly_quota`,
+  un entero o `NULL` (ilimitado), UNO por organización, nunca por categoría.
+  **Eventos de observabilidad:** 23 ya declarados (13 del tren 3 + 10 del
+  tren 4.1) en `observability-contract.ts`, extendidos por este tren (Fase 6).
+
+## Fase 2 — modelo abstracto
+
+[`tests/eval/stella-release/reserved-quota-protocol.ts`](../../../tests/eval/stella-release/reserved-quota-protocol.ts).
+Interfaz `ReservedQuotaProtocol`, siete verbos, ninguno con nombre SQL:
+`reserveGroundedOperation`, `consumeSiblingOperation`,
+`completeGroundedReservation`, `abortReservation`, `expireReservation`,
+`retry`, `inspectCapacity`. `createReferenceReservedQuotaProtocol()` es un
+modelo determinista en memoria — misma disciplina «criterio antes que
+implementación» que `ticket-protocol.ts` ya documentó para el protocolo de
+tickets.
+
+**Por qué un modelo independiente y no una extensión de `ticket-protocol.ts`:**
+ver la cabecera del archivo. En resumen: `bind()` de Train 4.1 no comprueba
+capacidad por diseño, y cambiar eso invalidaría los 20 casos de
+`idempotency-matrix.ts` que ya prueban lo contrario. Este archivo es su
+propio modelo, con su propia disciplina de determinismo (`now: number`
+explícito, contadores monótonos inyectables, nunca `randomUUID()`).
+
+**El oráculo comprueba `Consumed + LiveReserved <= Limit` en cada
+transición**, no sólo en el estado final — `evaluateCapacityInvariant` se
+llama sobre cada snapshot intermedio de un escenario
+(`evaluateCapacityInvariantAcrossTransitions`), nunca sólo antes/después.
+
+`completeGroundedReservation` implementa la **segunda línea de defensa** que
+la política R1 exige: re-deriva disponibilidad contra el ledger COMBINADO
+verdadero (no la vista que el lado hermano pudo haber usado) y, si un
+hermano ya gastó la unidad que la reserva sostenía, devuelve
+`quota_refused` con `discardedComputedResponse: true` — nunca cobra de más.
+Esto hace que `quota_refused` sea alcanzable de forma honesta (caso 7, más
+abajo) sin que el ledger llegue nunca a sobrevenderse.
+
+## Fase 3 — matriz (15 casos)
+
+[`tests/eval/stella-release/reserved-quota-matrix.ts`](../../../tests/eval/stella-release/reserved-quota-matrix.ts),
+`RESERVED_QUOTA_MATRIX_VERSION = '1.0.0'`, validada por
+`validateReservedQuotaMatrix` (falla cerrado ante `caseId` duplicado/faltante,
+categoría faltante, o un conteo distinto de 15).
+
+| # | `caseId` | Qué prueba |
+|---|---|---|
+| 1 | `grounded-reserves-last-unit` | Con una unidad restante, `reserveGroundedOperation()` la ocupa: `liveReserved=1`, `available=0` — la reserva CUENTA como capacidad. |
+| 2 | `sibling-rejected-after-grounded-reserves-last-unit` | Un hermano que intenta consumir contra una reserva viva de la última unidad es rechazado — `quota_exceeded`, cero cargo. |
+| 3 | `grounded-completes-without-recontending` | La reserva anterior completa — `charged` — sin volver a competir: consumed +1, liveReserved -1 en la misma transición. |
+| 4 | `explicit-abort-releases-then-sibling-consumes` | Un abort explícito libera la unidad inmediatamente; un hermano posterior consume. |
+| 5 | `expiration-releases-then-sibling-consumes` | Una reserva viva nunca completada expira por TTL; un hermano posterior consume. |
+| 6 | `sibling-consumes-first-then-grounded-reserve-rejected` | Un hermano consume la última unidad PRIMERO; una reserva grounded posterior es rechazada. |
+| 7 | `grounded-complete-vs-sibling-concurrent` | Race simulada (misma ventana síncrona) entre un hermano y la finalización de una reserva ya viva: el hermano pierde, la reserva cobra. Además, con el gate del hermano deliberadamente comprometido (`sibling-ignores-reservations`), la segunda línea de defensa de `completeGroundedReservation` sigue devolviendo `quota_refused` — R1, alcanzable y seguro. |
+| 8 | `two-grounded-reservations-for-last-unit` | Dos reservas grounded distintas compiten, vía el simulador concurrente, por la última unidad: exactamente una gana. |
+| 9 | `two-siblings-for-last-unit` | Dos hermanos (categorías distintas) compiten por la última unidad: exactamente uno gana. |
+| 10 | `retry-grounded-does-not-reserve-or-charge-again` | `retry()` sobre una reserva ya completada reporta `replayed` con el `chargeId` original; nunca acuña una reserva nueva. |
+| 11 | `grounded-failure-and-abort-charges-nothing` | Fallo de orquestación tras la reserva + abort explícito: cero cargo definitivo; una reserva completada no puede abortarse después. |
+| 12 | `reservation-crossing-period-boundary` | Una reserva abierta en un periodo y completada tras cruzar al siguiente cobra correctamente, atribuida al periodo activo en el momento del cargo, sin agotar el presupuesto del periodo nuevo. |
+| 13 | `independent-category-shares-single-pool` | Dos categorías DIFERENTES agotan el MISMO pool compartido — `stella_0013` §6 no permite límites independientes por categoría; «si el contrato lo permite» se resuelve en que no. |
+| 14 | `reservation-scoped-to-other-project-rejected` | Una reserva presentada con un proyecto hermano de la MISMA organización es rechazada en complete/abort. |
+| 15 | `reservation-scoped-to-other-organization-rejected` | Igual, para una organización distinta por completo. |
+
+Distingue explícitamente `quota_exceeded`, `reservation_held`, `completed`
+(`charged`), `aborted`, `expired`, `replayed` y `scope mismatch` — la unión
+de los tipos `ReservationAttemptKind`/`SiblingConsumptionKind`/
+`GroundedCompletionKind` y los cuatro tipos de error estructural lanzados
+(`ReservationNotFoundError`, `ReservationScopeViolationError`,
+`ReservationAlreadyCompletedError`, `ReservationAbortedError`,
+`ReservationExpiredError`).
+
+## Fase 4 — oráculo de interferencia
+
+[`tests/eval/stella-release/reserved-quota-oracle.ts`](../../../tests/eval/stella-release/reserved-quota-oracle.ts).
+`evaluateCapacityInvariant`/`evaluateCapacityInvariantAcrossTransitions`
+comprueban el invariante en cada transición — límite, cargos, reservas
+vivas, reservas expiradas, operaciones completadas, proyecto, organización,
+categoría (vía `origin`) y periodo quedan todos disponibles en
+`inspectTransition()`, y el ganador en concurrencia vía
+`evaluateExactlyOneWinner()`.
+
+Las cuatro pruebas positivas de la Fase 4, cada una su propia función:
+`evaluateReservationConvertsToCharge` (complete convierte reserva en
+cargo), `evaluateNoSimultaneousReservationAndCharge` (no quedan
+simultáneamente reserva y cargo — escaneado sobre TODAS las reservas
+vistas, no sólo la del caso bajo prueba), `evaluateUnitNotRedisputed` (la
+unidad no se disputa de nuevo — comparado antes/después de un replay) y
+`evaluateChargeAttribution` (la atribución del cargo sigue correcta —
+organización, proyecto y origen, las tres, no sólo una).
+
+## Fase 5 — controles negativos
+
+12 mutaciones deliberadas del protocolo (`ReservedQuotaDefect`, una por
+propiedad, nunca dos a la vez), reutilizando `runNegativeControl`/
+`controlExpectsViolations`/`undetectedControls`/`describeUndetected` de
+`negative-controls.ts` — el mismo evaluador de mutaciones que
+`idempotency-harness.ts`/`project-binding-harness.ts`, nunca una segunda
+implementación divergente. Mínimo un control por caso donde aplica; los
+casos 13/14/15 (cross-project/cross-organization/categoría) se sostienen
+sin control dedicado porque el rechazo se prueba por comparación directa de
+tipos de error, mismo criterio que `execution-cross-organization-rejected`
+en `project-binding-harness.ts`.
+
+| Mutación pedida | `controlId` |
+|---|---|
+| sibling ignora reservas | `nc-sibling-ignores-reservations` |
+| complete vuelve a comprobar disponibilidad y pierde su unidad | `nc-complete-recheck-loses-reservation` |
+| complete deja reserva viva | `nc-complete-leaves-reservation-live` |
+| abort no libera | `nc-abort-does-not-release` (+ variante tras fallo) |
+| expire sigue contando | `nc-expire-still-counts` |
+| reserva no cuenta en capacidad | `nc-reservation-not-counted` |
+| locks independientes | `nc-independent-locks` (+ variante «bind ciego a cargo previo de hermano») |
+| dos ganadores | `nc-concurrent-double-charge-two-grounded` / `-two-siblings` |
+| periodo ignorado | `nc-period-ignored` |
+| categoría ignorada | `nc-category-partitioned-independently` |
+| retry reserva de nuevo | `nc-retry-reissues-reservation` |
+| resultado utilizable sin cargo | `nc-result-usable-without-charge` (control a nivel de sitio de llamada, no del protocolo — `detected: true` significa «riesgo residual confirmado», no «ataque interceptado», mismo precedente que `nc-caller-derives-execution-project-from-ticket-not-request` en `project-binding-harness.ts`) |
+| local-runtime-ready ignora R1 | control estático en `reserved-quota-release-gate.test.ts` — ver Fase 7 |
+
+**Hallazgo del propio proceso de escritura, reportado por transparencia:**
+el primer intento de esta línea adjuntó `nc-concurrent-double-charge`
+también al caso 7 (grounded vs. hermano concurrente). El harness lo marcó
+`TAUTOLOGICAL` — correctamente: una reserva que ya existe ANTES de que se
+abra la ventana de carrera no puede perder esa unidad ante un hermano bajo
+`concurrent-double-charge`, porque `liveReserved` ya está comprometido antes
+de que cualquier lectura de la carrera ocurra. El control se retiró del
+caso 7 (queda cubierto en los casos 8/9, donde SÍ hay dos contendientes sin
+resolución previa) — el propio mecanismo `withNegativeControls` detectó su
+propia falta de cobertura antes de que este documento se escribiera.
+
+**No hay checks tautológicos en la corrida de referencia** — ver la salida
+citada en Pruebas ejecutadas.
+
+## Fase 6 — observabilidad
+
+`observability-contract.ts` gana 6 nombres de evento sobre los 23 ya
+existentes (29 en total, ninguno de los 23 renombrado ni retirado):
+`quota_reservation_created`, `quota_reservation_released`,
+`quota_reservation_expired`, `quota_reservation_converted`,
+`quota_capacity_rejected`, `quota_cross_operation_contention`. Cada uno con
+su propia allowlist (`reservationId`, `chargeId`, `reasonCode` — todos
+opacos) sobre el mismo mecanismo de las tres guardas ya existentes: lista
+permanente de nombres prohibidos, tope de 200 caracteres, detector de
+secretos compartido. `quota_cross_operation_contention` es el evento propio
+de R1: distingue el resultado SEGURO (descartar y rechazar) de un rechazo
+de capacidad ordinario, sin nombrar nunca qué categoría hermana ganó la
+disputa — no hay campo `category` en su allowlist. No se emite `query`,
+hash de consulta, nonce de ticket, evidencia, respuesta ni secretos —
+probado explícitamente contra el mismo `validateObservabilityEvent`.
+
+## Fase 7 — gates
+
+[`tests/eval/stella-release/reserved-quota-release-gate.ts`](../../../tests/eval/stella-release/reserved-quota-release-gate.ts).
+Nueve identificadores estables: los ocho pedidos por el despacho más
+`reserved-quota-contract`, el mismo rol estructural que
+`operation-ticket-contract` cumple en `idempotency-release-gate.ts` y
+`project-bound-ticket-attribution` en `project-binding-release-gate.ts`
+(cero tautológicos, cero controles no detectados, observabilidad y bandera
+seguras — una sola vez, no repetido en cada gate semántico).
+
+| Gate | Lee |
+|---|---|
+| `reserved-quota-contract` | Los 15 casos, controles negativos, observabilidad, bandera — 100% offline. |
+| `reservation-counts-as-capacity` | Caso 1. |
+| `sibling-respects-reservations` | Casos 2 y 6. |
+| `reserved-completion-guaranteed` | Casos 3, 7 y 10. |
+| `abort-releases-capacity` | Casos 4 y 11. |
+| `expiration-releases-capacity` | Caso 5. |
+| `cross-operation-last-unit` | Casos 7, 8 y 9. |
+| `reservation-period-consistent` | Caso 12. |
+| `runtime-reserved-quota-verified` | Informe externo opcional, fail-closed; exige 8 pruebas medidas contra base real. Ausente en esta rama. |
+
+**En esta rama:**
+
+```
+reserved-quota-harness-ready=true
+local-runtime-ready=false
+```
+
+`local-runtime-ready` (definido en `local-release-gate.ts`) **no se toca**
+en ningún sentido — `reserved-quota-release-gate.ts` no lo importa, no lo
+referencia, y `local-release-gate.ts` no importa este módulo. Verificado
+estáticamente en `reserved-quota-release-gate.test.ts`, mismo control #9
+que `project-binding-release-gate.test.ts` ya estableció como precedente.
+`staging-blocked` y `hosted-blocked` sin cambios: siguen `true`.
+
+## Fase 8 — E2E preparado
+
+[`tests/eval/stella-release/e2e/reserved-quota-journey-report.ts`](../../../tests/eval/stella-release/e2e/reserved-quota-journey-report.ts).
+`ReservedQuotaJourneyReport` con los 15 puntos de la Fase 8 (base
+desechable, baseline, paquetes tren 4, paquete de reserva, organización, dos
+proyectos, dos actores, cuota de una unidad, ticket grounded, acción
+hermana, concurrencia, abort, expire, complete, ledger, teardown) y su
+reductor fail-closed `evaluateReservedQuotaJourneyReadiness`. **No hay
+paquete SQL que cierre R6-INT en este árbol** — llamar al reductor sin
+informe (todo llamado en esta rama) devuelve `false` nombrando R6-INT, R1 y
+el script pendiente (`scripts/stella-reserved-quota-e2e.sh`, todavía no
+escrito). No se simuló SQL ausente.
+
+## Fase 9 — pruebas ejecutadas
+
+Sólo focalizadas — sin `test:unit` completo, sin `build`, sin
+`test:integration`/`test:rls`. Sin red, sin BD, sin secretos reales.
+
+| Comando | Resultado |
+|---|---|
+| `pnpm exec tsc --noEmit` | limpio, 0 errores |
+| `pnpm exec eslint tests/eval/stella-release/reserved-quota-*.ts tests/eval/stella-release/reserved-quota-*.test.ts tests/eval/stella-release/e2e/reserved-quota-journey-report.ts tests/eval/stella-release/e2e/reserved-quota-journey-report.test.ts tests/eval/stella-release/observability-contract.ts tests/eval/stella-release/observability-contract.test.ts scripts/eval-reserved-quota-offline.ts` | 0 errores, 0 warnings |
+| `pnpm exec vitest run tests/eval/stella-release` | todos los archivos en verde, incluidos los preexistentes (sin regresión) |
+| `pnpm exec tsx scripts/eval-reserved-quota-offline.ts` | `15/15 cases`, negative controls todos detectando, `reserved-quota-harness-ready=true`, `local-runtime-ready=false`, `EXIT 0` |
+| `pnpm exec tsx scripts/eval-reserved-quota-offline.ts` (segunda corrida) | byte-idéntica a la primera — determinismo confirmado |
+
+**Nota de wiring** (igual que hicieron `eval-idempotency-offline.ts` y
+`eval-project-binding-offline.ts`): `scripts/eval-reserved-quota-offline.ts`
+sólo es invocable como `pnpm exec tsx …` — `package.json` es
+`INTEGRATION-OWNED`. Nombre sugerido:
+`test:stella:reserved-quota-eval`.
+
+## Riesgos abiertos de esta línea
+
+- **El modelo de referencia es un modelo, no un adaptador.** Ninguna prueba
+  aquí demuestra que una implementación SQL real de la reserva compartida
+  satisfaga esta interfaz — eso exige cerrar R6-INT y decidir la política de
+  facturación de R1, ambos explícitamente fuera del alcance de esta unidad
+  (tren 5).
+- **La concurrencia es simulada, no real** — misma limitación declarada por
+  `ticket-protocol.ts` desde el tren 4.1: un evaluador síncrono no puede
+  producir hilos reales; la propiedad que se prueba es «¿el modelo serializa
+  lecturas-antes-de-actuar contra escrituras?», no una carrera de hilos
+  genuina.
+- **`quota_refused` sólo es alcanzable de forma honesta bajo un escenario
+  específico** (caso 7, con el gate del hermano comprometido) — bajo el
+  modelo totalmente sano, un hermano nunca puede ganarle a una reserva ya
+  viva, así que la segunda línea de defensa de R1 nunca se ejercita en el
+  camino feliz puro. Esto es una propiedad DESEABLE del diseño (la primera
+  línea de defensa ya impide la disputa), no una limitación de cobertura —
+  documentado explícitamente para que no se lea como una laguna.
+- **`nc-result-usable-without-charge` documenta un riesgo que el protocolo
+  no puede cerrar desde dentro** — un llamante que ignore
+  `outcome.kind`/`discardedComputedResponse` puede mostrar una respuesta no
+  cobrada de todos modos. Cerrar esto es responsabilidad de
+  `app/actions/stella/grounded-query.ts` (tren 5), no de este evaluador.
+- **El contrato de observabilidad de reserva es eso: un contrato.** Ningún
+  módulo de `app/**` ni `lib/**` emite hoy un evento con nombre —
+  `evaluateReservedQuotaObservability` prueba que el validador acepta
+  eventos bien formados y rechaza texto de consulta, nunca que un runtime
+  real los emite limpios.
+- **`local-runtime-ready` sigue exactamente donde lo dejó el tren 4.2** —
+  esta unidad no lo movió ni un bit: sólo dejó preparado, con sus propios 9
+  identificadores y su propio reductor `reservedQuotaHarnessReady`, el
+  arnés que demostrará el día que otra línea cierre R6-INT y decida la
+  política de R1.
+
+## Estado de entrega a integración
+
+Ninguna ruta prohibida tocada: `db/**`, `app/actions/**`, `components/**`,
+`lib/grounding/**`, `package.json`, workflows y config de vitest permanecen
+sin cambios. Sin push, sin acceso a remoto, sin gates pesados, cero
+llamadas a proveedor, cero SQL ejecutado, cero server actions tocadas, cero
+stack persistente. Dos commits: `test(stella): evaluate reserved quota
+interference` y `docs(ops): define cross-operation quota gate`.
+
+`STELLA_RELEASE_TRAIN_4_3_READY_FOR_INTEGRATION`

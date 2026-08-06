@@ -68,6 +68,21 @@ export const STELLA_OBSERVABILITY_EVENT_NAMES = [
   'quota_consumed',
   'quota_reuse_detected',
   'replay_rejected',
+  // ---------------------------------------------------------------------
+  // Train 4.3 (STELLA_RELEASE_RESERVED_QUOTA_GATE_TRAIN_4_3) — the shared
+  // capacity contract between a grounded reservation and the six sibling
+  // categories (tests/eval/stella-release/reserved-quota-protocol.ts).
+  // Additive only: the 23 events above are untouched, and every rule below
+  // this point (allowlist, forbidden names, length cap, secret detector)
+  // applies to these 6 exactly as it already applies to the first 23 — no
+  // second contract, no relaxed path.
+  // ---------------------------------------------------------------------
+  'quota_reservation_created',
+  'quota_reservation_released',
+  'quota_reservation_expired',
+  'quota_reservation_converted',
+  'quota_capacity_rejected',
+  'quota_cross_operation_contention',
 ] as const
 
 export type StellaObservabilityEventName = (typeof STELLA_OBSERVABILITY_EVENT_NAMES)[number]
@@ -113,6 +128,21 @@ const EVENT_SPECIFIC_ALLOWED_FIELDS: Record<StellaObservabilityEventName, readon
   quota_consumed: ['ticketId', 'chargeId'],
   quota_reuse_detected: ['ticketId', 'chargeId'],
   replay_rejected: ['ticketId', 'reasonCode'],
+  // Train 4.3. `reservationId` and `chargeId` are opaque, server-minted
+  // identifiers, same status as `ticketId`/`chargeId` above — never the
+  // query text or anything derived from it. `reasonCode` on
+  // `quota_capacity_rejected`/`quota_cross_operation_contention` is one of
+  // the stable codes reserved-quota-protocol.ts's outcome types return
+  // (e.g. "quota_exceeded", "sibling_consumed_between_bind_and_complete") —
+  // never a sentence. `quota_cross_operation_contention` is R1's own event:
+  // it distinguishes the SAFE, discard-and-refuse outcome from an ordinary
+  // capacity rejection, without ever naming which sibling category won.
+  quota_reservation_created: ['reservationId'],
+  quota_reservation_released: ['reservationId'],
+  quota_reservation_expired: ['reservationId'],
+  quota_reservation_converted: ['reservationId', 'chargeId'],
+  quota_capacity_rejected: ['reasonCode'],
+  quota_cross_operation_contention: ['reservationId', 'reasonCode'],
 }
 
 /** Field names that must NEVER appear on any event, whatever the allowlist
