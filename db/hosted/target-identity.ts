@@ -143,20 +143,43 @@ export interface ProductionIdentifiers {
 
 export const KNOWN_PRODUCTION_IDENTIFIERS: ProductionIdentifiers = {
   hosts: ['uellix-antigravity.vercel.app', 'app.uellix.com', 'uellix.com'],
-  // STILL EMPTY, and Train 5C1 deliberately did not fill it.
+  // LOADED 2026-08-07, by the operator, from the Supabase dashboard.
   //
-  // The repository contains exactly one candidate — a ref that appears in two
-  // audit documents with two INCOMPATIBLE labels: `docs/AUDIT_2026-07-06.md`
-  // describes the credential pointing at it as giving "full production database"
-  // access, while `docs/audits/2026-07-15-uellix-p1a-integration-rls.md` calls
-  // the same host "el entorno de Staging remoto de Supabase". One repository,
-  // one ref, two answers.
+  // This list was empty for three trains and Train 5C1 initially refused to fill
+  // it, because the repository's one candidate carried two incompatible labels:
+  // `docs/AUDIT_2026-07-06.md` described the credential pointing at it as giving
+  // "full production database" access, while
+  // `docs/audits/2026-07-15-uellix-p1a-integration-rls.md` called the same host
+  // "el entorno de Staging remoto de Supabase". Guessing between them is exactly
+  // the mistake this list exists to prevent.
   //
-  // Guessing which is right is precisely the mistake this list exists to
-  // prevent, so the operator instructed that it stay empty until the production
-  // ref is identified independently. See RR-24.
-  projectRefs: [],
+  // The dashboard settled it: `ctaxtgujyyprgynmnvtq` is PRODUCTION. The July
+  // audit that called it staging was wrong and has been corrected in place
+  // rather than quietly left to mislead the next reader — see RR-24.
+  //
+  // NOT SECRET. A Supabase project ref is public in every URL the project
+  // serves; `redactForHostedLog` preserves it on purpose, because it is the
+  // single most useful thing an operator can see when diagnosing a wrong target.
+  //
+  // The staging project is `bvyzblhqymxruxdguaee`. It is deliberately absent
+  // from this list and a test asserts that it stays absent: putting the target
+  // in its own veto would refuse every provisioning forever, which is the
+  // failure mode "no lo confundas con staging" names.
+  projectRefs: ['ctaxtgujyyprgynmnvtq'],
 }
+
+/**
+ * The staging target, pinned so the two refs can be compared by a test.
+ *
+ * Recorded here rather than left to the invocation because Train 5C1 found the
+ * repository had NO record of it — `STELLA_HOSTED_ENVIRONMENT_MATRIX.md` noted
+ * the absence and blocker B2 counted it as one of the missing isolation
+ * signals. A ref nobody wrote down is a ref every operator retypes.
+ *
+ * It is NOT authority to connect: the three positive signals are still required
+ * per invocation, and this constant participates in none of them.
+ */
+export const KNOWN_STAGING_PROJECT_REF = 'bvyzblhqymxruxdguaee'
 
 /**
  * Whether the production veto is actually loaded.

@@ -181,14 +181,16 @@ describe('Phase 2 — the production denylist', () => {
     expect(productionDenylistStatus({ hosts: [], projectRefs: ['ABCDEFGHIJKLMNOPQRST'] }).loaded).toBe(false)
   })
 
-  it('SHIPS EMPTY, and that is Train 5C1\'s recorded decision, not an oversight', () => {
-    // The repository's one candidate ref is labelled production in
+  it('IS NOW LOADED — P5 closed 2026-08-07 — and the staging ref is not in it', () => {
+    // For three trains this asserted the list was EMPTY, because the
+    // repository's one candidate was labelled production in
     // docs/AUDIT_2026-07-06.md and staging in
     // docs/audits/2026-07-15-uellix-p1a-integration-rls.md. The operator
-    // instructed that it stay empty until production is identified
-    // independently. See RR-24.
-    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).toEqual([])
-    expect(productionDenylistStatus().loaded).toBe(false)
+    // resolved it from the Supabase dashboard: the July audit was wrong. RR-24.
+    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).toEqual(['ctaxtgujyyprgynmnvtq'])
+    expect(productionDenylistStatus().loaded).toBe(true)
+    // And the thing that must never happen: the target in its own veto.
+    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).not.toContain('bvyzblhqymxruxdguaee')
   })
 })
 
@@ -345,15 +347,25 @@ describe('the live verdict for Uellix Staging as of Train 5C1', () => {
 
     expect(live.applyAuthorized).toBe(false)
     const blocking = live.blocking.join(' | ')
+
+    // Four attestations are still absent — the operator has not yet run the
+    // three §2.7 probes or inventoried the flags — plus zero-production-data,
+    // which depends on A0's statement about the target.
     expect(blocking).toContain('checkpoint-a0-pass')
-    expect(blocking).toContain('production-denylist-loaded')
     expect(blocking).toContain('target-identity-corroborated')
     expect(blocking).toContain('class-c-probes-affirmative')
     expect(blocking).toContain('feature-flags-false')
+    expect(blocking).toContain('zero-production-data')
 
-    // …while everything the repository CAN establish on its own is satisfied.
+    // P5 IS CLOSED: the denylist no longer blocks.
+    expect(blocking).not.toContain('production-denylist-loaded')
+    expect(
+      live.criteria.find((c) => c.id === 'production-denylist-loaded')?.satisfied,
+    ).toBe(true)
+
+    // …and everything the repository CAN establish on its own is satisfied.
     const repositoryOnly = live.criteria.filter((c) =>
-      ['manifest-hashes-and-order', 'no-class-d-units', 'no-service-role-widening', 'postconditions-ready', 'recovery-plan-conservative'].includes(c.id),
+      ['production-denylist-loaded', 'manifest-hashes-and-order', 'no-class-d-units', 'no-service-role-widening', 'postconditions-ready', 'recovery-plan-conservative'].includes(c.id),
     )
     expect(repositoryOnly.every((c) => c.satisfied), JSON.stringify(repositoryOnly, null, 2)).toBe(true)
   })

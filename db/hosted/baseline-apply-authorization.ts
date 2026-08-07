@@ -158,7 +158,7 @@ function attested<T>(
   what: string,
   a: OperatorAttestation<T> | null,
 ): AuthorizationVerdict | null {
-  if (!a) return no(id, `${what} has not been measured. Not measured is not satisfied.`)
+  if (!a) return no(id, `${what} — NOT MEASURED. Not measured is not satisfied.`)
   if (!a.query.trim()) return no(id, `${what} records no query. "I checked" is not evidence.`)
   if (!a.measuredBy.trim()) return no(id, `${what} records no provenance: nobody is named as having measured it.`)
   return null

@@ -283,12 +283,24 @@ mutación. Un criterio que lee una constante es decorativo por construcción.
 > `PHASE_BASELINE`. Los cuatro campos `baselineApplied`, `stagingApplied`,
 > `hostedReady` y `providerReady` siguen **hardcodeados `false`**.
 
-**Estado a 2026-08-07: NO AUTORIZADO.** Cinco criterios refutan, y un test
-ejecutable lo fija: `production-denylist-loaded` (RR-24), y los cuatro que
-dependen de atestaciones que aún no existen — `checkpoint-a0-pass`,
-`target-identity-corroborated`, `class-c-probes-affirmative` y
-`feature-flags-false`. Los seis que el repositorio puede establecer por su cuenta
-están satisfechos.
+**Estado a 2026-08-07: NO AUTORIZADO.** Un test ejecutable lo fija.
+
+`production-denylist-loaded` **pasó a satisfecho** al cerrarse P5: la denylist
+lleva el ref productivo `ctaxtgujyyprgynmnvtq` y el de staging
+`bvyzblhqymxruxdguaee` está deliberadamente fuera de ella.
+
+Siguen refutando cinco, y los cinco por la misma razón — **atestaciones que aún
+no existen**, porque las tres sondas §2.7 las ejecuta el operador a mano:
+
+| Criterio | Qué falta |
+|---|---|
+| `checkpoint-a0-pass` | A0 pasó, pero no está registrado como atestación con consulta y procedencia |
+| `target-identity-corroborated` | el ref de staging está fijado en código; falta la atestación de la invocación |
+| `class-c-probes-affirmative` | las tres sondas, con su SQL literal |
+| `feature-flags-false` | inventario de los nueve flags del entorno que apunta al objetivo |
+| `zero-production-data` | depende de que A0 esté atestado |
+
+Los seis que el repositorio puede establecer por su cuenta están satisfechos.
 
 ## 4. Orden y dependencias
 

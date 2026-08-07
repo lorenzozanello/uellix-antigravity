@@ -8,6 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   KNOWN_PRODUCTION_IDENTIFIERS,
+  KNOWN_STAGING_PROJECT_REF,
+  productionDenylistStatus,
   projectRefFromHost,
   redactForHostedLog,
   verifyStagingTarget,
@@ -145,13 +147,73 @@ describe('verifyStagingTarget — explicit production rejection', () => {
     if (!verdict.ok) expect(verdict.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
   })
 
-  it('ships with an EMPTY projectRefs list, and that is a provisioning requirement, not an oversight', () => {
-    // The production Supabase project ref is not in the repository — Train 5A
-    // searched for it and found nothing. An empty list removes a VETO; it never
-    // removes a gate, because the three positive signals are required anyway.
-    // This test exists so that filling the list is a deliberate act with a
-    // failing test behind it, rather than something nobody notices is missing.
-    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).toEqual([])
+  // TRAIN 5C1 — P5 CLOSED. This test asserted the list was EMPTY for three
+  // trains, deliberately, so that filling it would be an act with a failing test
+  // behind it rather than something nobody noticed. The operator filled it from
+  // the Supabase dashboard on 2026-08-07 and the assertion inverts.
+  it('carries the production project ref, and it is well formed', () => {
+    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).toEqual(['ctaxtgujyyprgynmnvtq'])
+    for (const ref of KNOWN_PRODUCTION_IDENTIFIERS.projectRefs) {
+      expect(ref, 'a malformed entry never matches and is an absent veto').toMatch(/^[a-z]{20}$/)
+    }
+  })
+
+  it('does NOT carry the staging ref, and the two are different projects', () => {
+    // Putting the target in its own veto would refuse every provisioning
+    // forever. This is the assertion that catches a paste of the wrong ref into
+    // the right list — the concrete form of "no lo confundas con staging".
+    expect(KNOWN_STAGING_PROJECT_REF).toBe('bvyzblhqymxruxdguaee')
+    expect(KNOWN_STAGING_PROJECT_REF).toMatch(/^[a-z]{20}$/)
+    expect(KNOWN_STAGING_PROJECT_REF).not.toBe(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0])
+    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).not.toContain(KNOWN_STAGING_PROJECT_REF)
+  })
+
+  it('REFUSES the real production ref, with every other signal agreeing', () => {
+    const prod = KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0]
+    const verdict = verifyStagingTarget({
+      declaredEnvironment: 'staging',
+      declaredProjectRef: prod,
+      connectionHost: `db.${prod}.supabase.co`,
+      sentinel: { environment: 'staging', projectRef: prod },
+    })
+    expect(verdict.ok).toBe(false)
+    if (!verdict.ok) expect(verdict.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
+  })
+
+  it('ACCEPTS the real staging ref on all three positive signals', () => {
+    const verdict = verifyStagingTarget({
+      declaredEnvironment: 'staging',
+      declaredProjectRef: KNOWN_STAGING_PROJECT_REF,
+      connectionHost: `db.${KNOWN_STAGING_PROJECT_REF}.supabase.co`,
+      sentinel: { environment: 'staging', projectRef: KNOWN_STAGING_PROJECT_REF },
+    })
+    expect(verdict.ok, verdict.ok ? '' : `${verdict.code}: ${verdict.message}`).toBe(true)
+    if (verdict.ok) {
+      expect(verdict.projectRef).toBe(KNOWN_STAGING_PROJECT_REF)
+      expect(verdict.signals).toEqual([
+        'declared-environment',
+        'host-derived-project-ref',
+        'in-database-sentinel',
+      ])
+      expect(verdict.sentinelDeferred).toBe(false)
+    }
+  })
+
+  it('the veto now LOADS, so an apply is no longer refused for an empty denylist', () => {
+    expect(productionDenylistStatus().loaded).toBe(true)
+    expect(productionDenylistStatus().detail).toContain('1 production project ref')
+  })
+
+  it('still refuses the production ref if it arrives only through the SENTINEL', () => {
+    const prod = KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0]
+    const verdict = verifyStagingTarget({
+      declaredEnvironment: 'staging',
+      declaredProjectRef: KNOWN_STAGING_PROJECT_REF,
+      connectionHost: `db.${KNOWN_STAGING_PROJECT_REF}.supabase.co`,
+      sentinel: { environment: 'staging', projectRef: prod },
+    })
+    expect(verdict.ok).toBe(false)
+    if (!verdict.ok) expect(verdict.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
   })
 
   it('refuses a host on the known-production list', () => {

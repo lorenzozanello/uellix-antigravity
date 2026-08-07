@@ -89,7 +89,7 @@ el centinela apareciera antes que el paquete que lo hace posible.
 | **P2** | PostgreSQL 17+ (§1 P2) | del operador |
 | **P3** | Cero datos productivos: ni restauración, ni copia, ni «el esquema con unas filas» | del operador |
 | **P4** | Identidad **no secreta** registrada: el project ref de 20 letras (§1 P5) | del operador |
-| **P5** | Denylist de producción rellenada — `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs` en `db/hosted/target-identity.ts`, con el ref de **producción**, no el de staging (§6) | **BLOQUEADO — ver §2.8** |
+| **P5** | Denylist de producción rellenada — `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs` en `db/hosted/target-identity.ts`, con el ref de **producción**, no el de staging (§6) | **HECHO** — 2026-08-07, ver §2.8 |
 | **P6** | Los **nueve** flags `STELLA_*` en `false` en TODO entorno que apunte a esta base | del operador |
 
 `P6` lo comprueba también el runner: `planProvisioningPhase()` refuta con
@@ -233,32 +233,49 @@ misma asimetría local/hosted que ocultó el defecto de 0039, en un segundo siti
 > se aplique ninguna de las 50 — descubrirlo en la unidad 40 cuesta 39 unidades
 > comprometidas y una reprovisión.
 
-### 2.8 P5 — por qué la denylist sigue vacía (Train 5C1)
+### 2.8 P5 — CERRADO. Las dos identidades
 
-El repositorio contiene **un** project ref candidato, y lo etiqueta de dos formas
-incompatibles:
+Confirmadas manualmente por el operador desde el dashboard de Supabase,
+2026-08-07. **Ningún project ref es secreto**: es público en toda URL que el
+proyecto sirve, y `redactForHostedLog` lo conserva a propósito porque es lo más
+útil que un operador puede ver al diagnosticar un objetivo equivocado.
 
-| Documento | Cómo lo llama |
-|---|---|
-| `docs/AUDIT_2026-07-06.md` | la credencial que apunta ahí da acceso a la «**full production database**» |
-| `docs/audits/2026-07-15-uellix-p1a-integration-rls.md` | «el entorno de **Staging** remoto de Supabase», con 29 migraciones hasta `0028` |
+| Rol | Project ref | Dónde vive |
+|---|---|---|
+| **PRODUCCIÓN** | `ctaxtgujyyprgynmnvtq` | `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs` — **vetado antes que cualquier otra comprobación** |
+| **STAGING** | `bvyzblhqymxruxdguaee` | `KNOWN_STAGING_PROJECT_REF` — **jamás en la denylist**; un test lo afirma |
 
-Lo único que se puede afirmar con seguridad es que **no es el nuevo Uellix
-Staging**: el Checkpoint A0 confirmó un proyecto nuevo y vacío, y éste tiene 29
-migraciones aplicadas.
+**La contradicción documental que bloqueó P5, resuelta.** El repositorio
+etiquetaba `ctaxtgujyyprgynmnvtq` de dos formas incompatibles: producción en
+`docs/AUDIT_2026-07-06.md`, staging en
+`docs/audits/2026-07-15-uellix-p1a-integration-rls.md`. El dashboard dirimió: es
+**producción**, y el audit de julio estaba equivocado. Se le añadió una
+corrección en cabecera, dejando el texto original intacto debajo — borrarlo
+eliminaría la evidencia de que la etiqueta estuvo mal tres semanas, que es lo que
+el próximo lector necesita saber. Ver [RR-24](STELLA_STAGING_RISK_REGISTER.md).
 
-**Decisión del operador, 2026-08-07:** no clasificarlo, no añadirlo a la
-denylist, **no acceder a ese proyecto**, y registrar la contradicción como
-riesgo ([RR-24](STELLA_STAGING_RISK_REGISTER.md)) hasta identificar producción
-por una vía independiente.
+**Lo que la corrección cambia sobre un incidente pasado.** El `pnpm db:migrate`
+accidental del 15 de julio no se conectó a un staging: se conectó a
+**producción**. La verificación read-only de entonces sigue siendo válida y su
+conclusión también —no hubo modificación—; lo que cambia es la gravedad de lo que
+estuvo a punto de pasar, y es un argumento adicional para que el veto de refs no
+vuelva a estar vacío.
 
-Consecuencia operativa, y es la parte que importa: la denylist vacía ya **no es
-inerte**. `productionDenylistStatus()` la reporta como `loaded: false`, y el
-criterio `production-denylist-loaded` del gate de autorización **refuta la
-primera escritura hosted** mientras siga así. Un dry-run sigue funcionando, que
-es correcto: una lista vacía retira un veto, no un gate — pero autorizar una
-*escritura* mientras el veto que atraparía «esto es producción» nunca se ha
-cargado es la única situación en la que esa frase deja de tranquilizar.
+**Por qué llenar la lista importa mecánicamente.** El veto de *hosts* atrapa una
+conexión dirigida a un **dominio** de producción. No atrapa nada dirigido a la
+**base** de producción, porque un host de base Supabase es
+`db.<ref>.supabase.co` y el ref es la única parte que identifica el proyecto.
+Hasta 2026-08-07 el veto que importaba no existía.
+
+> **Y el gate lo exige de verdad.** `productionDenylistStatus()` reporta
+> `loaded: false` ante una lista vacía o malformada, y **ambos planificadores**
+> —`planProvisioningPhase` y `planHostedApply`— refutan `mode: 'apply'` en ese
+> caso (`PROVISIONING_PRODUCTION_DENYLIST_EMPTY` /
+> `HOSTED_PRODUCTION_DENYLIST_EMPTY`). Un dry-run no se ve afectado: una lista
+> vacía retira un veto, no un gate. La revisión adversarial encontró que antes de
+> esto el gate era **consultivo** —nada lo invocaba— y ambos planificadores
+> emitían `writesPermitted: true` con el veto sin cargar. Ver
+> [RR-26](STELLA_STAGING_RISK_REGISTER.md).
 
 ### 2.9 Tercera asimetría local/hosted: no hay registro de lo aplicado
 
