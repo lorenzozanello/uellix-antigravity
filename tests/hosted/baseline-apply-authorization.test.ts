@@ -252,10 +252,15 @@ describe('Phase 2 — the production denylist', () => {
 /* ========================================================================== */
 
 describe('the apply-authorization gate', () => {
-  it('authorises when every precondition holds', () => {
+  it('satisfies everything EXCEPT the journal, which is honestly unimplemented', () => {
+    // RR-25 is NOT closed. `journalInsertSql` exists and no generator calls it,
+    // so no artefact contains the append. The criterion demands those bytes and
+    // refuses — which is the correct state, and Phase 11 requires the apply gate
+    // to stay false while it holds. When a generator wires the append, this test
+    // will fail and its expectation becomes `[]`.
     const report = evaluateApplyAuthorization(satisfying())
-    expect(report.blocking).toEqual([])
-    expect(report.applyAuthorized).toBe(true)
+    expect(report.blocking.map((b) => b.split(':')[0])).toEqual(['hosted-baseline-journal-ready'])
+    expect(report.applyAuthorized).toBe(false)
   })
 
   it('covers every dependency Phase 10 and Train 5C2 Phase 14 named', () => {

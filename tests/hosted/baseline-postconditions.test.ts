@@ -67,6 +67,16 @@ function conforming(): BaselineObservation {
     rowCounts: Object.fromEntries(EXPECTED.tables.map((t) => [t, 0])),
     extensions: ['pgcrypto', 'uuid-ossp', 'pg_graphql', 'pg_stat_statements'],
     storageBuckets: ['uellix-evidence'],
+
+    storagePolicies: [
+
+      { schemaname: 'storage', tablename: 'objects', policyname: 'select_evidence', roles: '{authenticated}', cmd: 'SELECT', qual: "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))", withCheck: null },
+
+      { schemaname: 'storage', tablename: 'objects', policyname: 'insert_evidence', roles: '{authenticated}', cmd: 'INSERT', qual: null, withCheck: "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))" },
+
+      { schemaname: 'storage', tablename: 'objects', policyname: 'delete_evidence', roles: '{authenticated}', cmd: 'DELETE', qual: "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))", withCheck: null },
+
+    ],
     environmentSecretNames: ['UELLIX_RUNTIME_DATABASE_URL', 'NEXT_PUBLIC_SITE_URL'],
   }
 }
@@ -149,8 +159,8 @@ describe('NEGATIVE CONTROLS — every postcondition fails against its own mutati
     },
   )
 
-  it('covers all thirteen, so none can be added without one', () => {
-    expect(BASELINE_POSTCONDITIONS).toHaveLength(15)
+  it('covers all sixteen, so none can be added without a negative control', () => {
+    expect(BASELINE_POSTCONDITIONS).toHaveLength(16)
     for (const p of BASELINE_POSTCONDITIONS) {
       expect(p.negativeControl.description.length, p.id).toBeGreaterThan(10)
       expect(typeof p.negativeControl.mutate, p.id).toBe('function')

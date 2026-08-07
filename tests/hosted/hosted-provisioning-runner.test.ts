@@ -96,6 +96,10 @@ const BASELINE_DONE: TargetStateProbe = {
   stellaPackagesInstalled: {},
   businessRowCounts: emptyCounts(),
   privileges: PRIVILEGES_OK,
+  // Unit 41 needs BOTH halves. Its PART B runs through the managed channel, so
+  // an ABSENT state means unknown, and the runner deletes 41 from the installed
+  // set — which is what makes "PART A applied" stop reading as "unit 41 done".
+  storageUnitState: 'UNIT_41_COMPLETE',
 }
 
 // Every chain package probed EXPLICITLY. Train 5B's planner treats an absent

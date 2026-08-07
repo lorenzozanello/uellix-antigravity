@@ -199,6 +199,16 @@ function observe(container: string, database: string): BaselineObservation {
     // shim would be manufacturing the reassurance the postcondition exists to
     // withhold.
     storageBuckets: ['uellix-evidence'],
+
+    storagePolicies: [
+
+      { schemaname: 'storage', tablename: 'objects', policyname: 'select_evidence', roles: '{authenticated}', cmd: 'SELECT', qual: "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))", withCheck: null },
+
+      { schemaname: 'storage', tablename: 'objects', policyname: 'insert_evidence', roles: '{authenticated}', cmd: 'INSERT', qual: null, withCheck: "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))" },
+
+      { schemaname: 'storage', tablename: 'objects', policyname: 'delete_evidence', roles: '{authenticated}', cmd: 'DELETE', qual: "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))", withCheck: null },
+
+    ],
     // Same: B0-14 asks about a secret manager, which a disposable database does
     // not have. Declared empty, and listed among the rehearsal's shims.
     environmentSecretNames: [],

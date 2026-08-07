@@ -38,7 +38,9 @@
     "baseline:verify": "tsx scripts/baseline-manifest.ts verify",
     "baseline:report": "tsx scripts/baseline-manifest.ts report",
     "baseline:order": "tsx scripts/baseline-manifest.ts order",
-    "baseline:rehearsal:local": "tsx scripts/baseline-rehearsal-local.ts"
+    "baseline:rehearsal:local": "tsx scripts/baseline-rehearsal-local.ts",
+    "storage:generate": "tsx scripts/storage-artifacts.ts generate",
+    "storage:verify": "tsx scripts/storage-artifacts.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

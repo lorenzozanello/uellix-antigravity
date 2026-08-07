@@ -46,8 +46,11 @@ import {
   type BaselineUnit,
 } from './baseline-manifest'
 import { scanBaselineSql } from './baseline-scanner'
+import { JOURNAL_TABLE } from './baseline-journal'
+import { PSQL_ARTEFACT } from './storage-policy-artifact'
 import {
   BASELINE_POSTCONDITIONS,
+  EXPECTED_STORAGE_POLICY_SURFACE,
   deriveExpectedBaselineState,
   type BaselinePostcondition,
 } from './baseline-postconditions'
@@ -129,7 +132,14 @@ export interface ApplyAuthorizationInputs {
   readonly applyIdentity: OperatorAttestation<{
     readonly currentUser: string
     readonly sessionUser: string
-    readonly transactionReadOnly: boolean
+    /**
+     * THREE states, not two. The operator ran the probe but did not retain this
+     * value, and `UNCONFIRMED` is neither `true` (which would be an inference
+     * dressed as a measurement) nor `false` (which would assert a violation
+     * nobody observed). It blocks, and it blocks for a different reason than a
+     * measured `false` would.
+     */
+    readonly transactionReadOnly: boolean | 'UNCONFIRMED'
     /** MEMBER. Diagnostic. Never sufficient for anything. */
     readonly isMember: boolean
     /** USAGE / INHERIT. What the ownership check consults. */
@@ -377,6 +387,14 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       if (missing) return missing
       const v = inputs.applyIdentity!.value
 
+      if (v.transactionReadOnly === 'UNCONFIRMED') {
+        return no(
+          id,
+          'transaction_read_only was NOT RETAINED from the probe output. Not inferred to be "on": a probe ' +
+            'that cannot testify it was read-only is a probe whose read-only-ness is unknown, and unknown ' +
+            'is not satisfied. One line of re-measurement closes it — see §I of the probe document.',
+        )
+      }
       if (!v.transactionReadOnly) {
         return no(id, 'the probe did not run in a READ ONLY transaction, so it cannot testify that it changed nothing.')
       }
@@ -452,7 +470,14 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       if (v.canSetRole) {
         return no(id, 'Branch B selected while SET is true. Choosing the manual channel over an available in-band path needs a stated reason, not a default.')
       }
-      return yes(id, 'Branch B: SET is false, so the SET ROLE path does not exist and PART B moves to a governed managed channel')
+      // SET=false REFUTES Branch A by catalogue. Demanding a SET LOCAL ROLE
+      // demonstration after that would be asking the operator to attempt an
+      // operation the grant already forbids — a pointless attempt whose failure
+      // teaches nothing the catalogue has not already said.
+      if (inputs.setLocalRoleDemo !== null) {
+        return no(id, 'SET is false, so SET LOCAL ROLE must not be attempted. A demonstration here would be an attempt at an operation the grant refuses.')
+      }
+      return yes(id, `Branch B: MEMBER=${v.isMember}, USAGE=${v.inheritsPrivileges}, SET=${v.canSetRole} — no membership in any grade, so the SET ROLE path is refuted by catalogue and PART B moves to a governed managed channel`)
     },
     negativeControl: {
       // The exact confusion the operator's correction named.
@@ -581,15 +606,43 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
             'Without a provenance the anti-skip check of PHASE_STELLA_BOOTSTRAP reads a value somebody typed.',
         )
       }
-      if (p.kind === 'hosted-journal') {
-        const REQUIRED = ['package_id', 'phase', 'sha256', 'applied_at', 'status']
-        const absent = REQUIRED.filter((f) => !p.recordedFields.includes(f))
-        if (absent.length > 0) return no(id, `the journal does not record: ${absent.join(', ')}.`)
-        if (!p.writesAfterCommitOnly) {
-          return no(id, 'the journal is written before the unit commits, so a rolled-back unit would be recorded as applied — a ledger that lies in the one direction that matters.')
-        }
+      // A DESCRIPTOR IS NOT AN IMPLEMENTATION.
+      //
+      // Adversarial review: this criterion validated a hand-written object for
+      // internal shape-consistency and nothing else. `journalInsertSql` exists,
+      // is never called, and no generated artefact contains the append it
+      // describes — so a caller could assert a perfectly-shaped
+      // `{kind:'hosted-journal', writesAfterCommitOnly:true}` describing a
+      // mechanism that does not exist, and RR-25 would read as closed.
+      //
+      // The criterion now demands the BYTES. Until a generator appends the
+      // journal INSERT to the artefacts, this refuses — which is the honest
+      // state of RR-25 and exactly what Phase 11 requires while it is unresolved.
+      if (p.kind !== 'hosted-journal') {
+        return no(
+          id,
+          `provenance kind '${p.kind}' is declared but not validated by anything. Only 'hosted-journal' ` +
+            `has a checkable implementation, and a kind this criterion cannot inspect is a claim, not a ` +
+            `provenance.`,
+        )
       }
-      return yes(id, `provenance: ${p.kind} — ${p.detail}`)
+      const REQUIRED = ['package_id', 'phase', 'sha256', 'applied_at', 'status']
+      const absent = REQUIRED.filter((f) => !p.recordedFields.includes(f))
+      if (absent.length > 0) return no(id, `the journal does not record: ${absent.join(', ')}.`)
+      if (!p.writesAfterCommitOnly) {
+        return no(id, 'the journal row is not committed with the unit, so a rolled-back unit could be recorded as applied — a ledger that lies in the one direction that matters.')
+      }
+
+      const partASql = inputs.readBaselineSql(PSQL_ARTEFACT)
+      if (partASql === null || !partASql.includes(JOURNAL_TABLE)) {
+        return no(
+          id,
+          `the generated artefact ${PSQL_ARTEFACT} contains no INSERT INTO ${JOURNAL_TABLE}. The ` +
+            `provenance describes a journal append that no generator emits, so baselineUnitsInstalled ` +
+            `would still come from a list somebody typed — which is RR-25 unresolved, not resolved.`,
+        )
+      }
+      return yes(id, `provenance: ${p.kind}, and the generated artefact carries the append — ${p.detail}`)
     },
     negativeControl: {
       description: 'a journal written before commit must fail',
@@ -807,6 +860,15 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
         rowCounts: Object.fromEntries(expected.tables.map((t) => [t, 0])),
         extensions: ['pgcrypto'],
         storageBuckets: ['uellix-evidence'],
+        storagePolicies: EXPECTED_STORAGE_POLICY_SURFACE.map((p) => ({
+          schemaname: 'storage',
+          tablename: 'objects',
+          policyname: p.policyname,
+          roles: p.roles,
+          cmd: p.cmd,
+          qual: p.predicateKind === 'qual' ? `(bucket_id = '${p.bucket}') AND public.${p.helper}(name, auth.uid())` : null,
+          withCheck: p.predicateKind === 'with_check' ? `(bucket_id = '${p.bucket}') AND public.${p.helper}(name, auth.uid())` : null,
+        })),
         environmentSecretNames: [],
       }
       const postconditions = inputs.postconditions ?? BASELINE_POSTCONDITIONS

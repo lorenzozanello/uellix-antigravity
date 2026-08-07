@@ -50,6 +50,13 @@ import { scanBaselineSql, type BaselineScanFacts } from './baseline-scanner'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
 import {
+  PSQL_ARTEFACT,
+  STORAGE_UNIT_SOURCE,
+  buildStorageArtefacts,
+  isStorageUnitInstalled,
+  type StorageUnitState,
+} from './storage-policy-artifact'
+import {
   productionDenylistStatus,
   redactForHostedLog,
   verifyStagingTarget,
@@ -355,6 +362,14 @@ export interface TargetStateProbe {
   readonly businessRowCounts: Readonly<Record<string, number>> | null
   /** Required for PHASE_BASELINE. See `PrivilegeProbes`. */
   readonly privileges?: PrivilegeProbes
+  /**
+   * Unit 41 is the only unit that can be HALF applied, because PART B runs
+   * through a channel psql cannot reach. Derived from the catalogue by
+   * `deriveStorageUnitState`, never claimed.
+   *
+   * Absent = unknown = refused, like every other probe here.
+   */
+  readonly storageUnitState?: StorageUnitState
 }
 
 export interface ProvisioningRequest {
@@ -419,8 +434,27 @@ function refuse(code: ProvisioningFailureCode, message: string): ProvisioningPla
 }
 
 /** Ids of the baseline units the target still needs, in order. */
-export function missingBaselineUnits(installed: readonly string[]): readonly string[] {
+/** The one unit with two halves, applied through two different channels. */
+export const STORAGE_UNIT_ID = '20260716000001_storage_policies.sql'
+
+export function missingBaselineUnits(
+  installed: readonly string[],
+  storageUnitState?: StorageUnitState,
+): readonly string[] {
   const have = new Set(installed)
+  // UNIT 41 IS NOT INSTALLED UNTIL BOTH HALVES ARE.
+  //
+  // Its PART B — the three policies on storage.objects — is applied by a human
+  // through a managed channel, because the applying identity measured
+  // MEMBER=false / USAGE=false / SET=false against supabase_storage_admin. So
+  // psql applying PART A leaves a unit that LOOKS finished: a ledger row says
+  // 41 ran, and three policies gating every evidence read do not exist.
+  //
+  // An ABSENT state is not "complete". Same rule as installedProbes and the
+  // emptiness set: unmeasured is refused, never assumed.
+  if (storageUnitState === undefined || !isStorageUnitInstalled(storageUnitState)) {
+    have.delete(STORAGE_UNIT_ID)
+  }
   return BASELINE_ORDER.filter((id) => !have.has(id))
 }
 
@@ -553,7 +587,11 @@ function planBaselinePhase(request: ProvisioningRequest): ProvisioningPlan {
   const privileges = checkPrivileges(request.state.privileges)
   if (privileges) return privileges
 
-  const steps: ProvisioningStep[] = BASELINE_UNITS.map((unit) => baselineStep(unit))
+  // PART A hash derived HERE, from the same reader that verified the manifest, so
+  // the plan pins the artefact it is about to name rather than trusting the file.
+  const storageSource = request.readBaselineSql(STORAGE_UNIT_SOURCE)
+  const partAsha256 = storageSource === null ? undefined : buildStorageArtefacts(storageSource).psqlSha256
+  const steps: ProvisioningStep[] = BASELINE_UNITS.map((unit) => baselineStep(unit, partAsha256))
 
   return finish(request, identity.projectRef, 'PHASE_BASELINE', steps, [
     `sentinel DEFERRED; compensating control satisfied: target reports zero baseline units, no ` +
@@ -611,7 +649,26 @@ function checkPrivileges(probes: PrivilegeProbes | undefined): ProvisioningPlan 
   return null
 }
 
-function baselineStep(unit: BaselineUnit): ProvisioningStep {
+function baselineStep(unit: BaselineUnit, partAsha256?: string): ProvisioningStep {
+  // UNIT 41 IS PLANNED AS ITS PART A ARTEFACT, NOT AS THE CANONICAL FILE.
+  //
+  // Adversarial review caught this: the plan emitted `psql -f
+  // supabase/migrations/20260716000001_storage_policies.sql` for unit 41 — the
+  // whole file, PART B included — which this train's own measurement proves psql
+  // cannot apply. Every artefact in this programme was built and then not
+  // connected to the thing that uses it; this is that mistake, once more.
+  if (unit.id === STORAGE_UNIT_ID) {
+    return {
+      ordinal: unit.ordinal,
+      id: unit.id,
+      file: PSQL_ARTEFACT,
+      sha256: unit.sha256,
+      generatedSha256: partAsha256,
+      command:
+        `psql -1 -v ON_ERROR_STOP=1 -f ${PSQL_ARTEFACT}` +
+        `   # PART A ONLY. PART B (3 policies on storage.objects) goes through the managed channel.`,
+    }
+  }
   return {
     ordinal: unit.ordinal,
     id: unit.id,
@@ -632,7 +689,7 @@ function planBootstrapPhase(request: ProvisioningRequest): ProvisioningPlan {
   // moves the OWNER of public.stella_interactions, which 0012 creates, and the
   // grounding packages read public.current_user_org_ids(), which 0031 creates
   // and 0039 re-grants.
-  const missing = missingBaselineUnits(state.baselineUnitsInstalled)
+  const missing = missingBaselineUnits(state.baselineUnitsInstalled, state.storageUnitState)
   if (missing.length > 0) {
     return refuse(
       'PROVISIONING_BASELINE_INCOMPLETE',
@@ -744,7 +801,7 @@ function checkEmptiness(
 function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
   const state = request.state
 
-  const missing = missingBaselineUnits(state.baselineUnitsInstalled)
+  const missing = missingBaselineUnits(state.baselineUnitsInstalled, state.storageUnitState)
   if (missing.length > 0) {
     return refuse(
       'PROVISIONING_BASELINE_INCOMPLETE',

@@ -68,6 +68,13 @@ export interface BaselineObservation {
   /** `SELECT id FROM storage.buckets` */
   readonly storageBuckets: readonly string[]
   /**
+   * The FULL rows of pg_policies for storage.objects — not just names.
+   *
+   * PART B is applied by a human through a channel the runner cannot observe, so
+   * this is the only evidence that what ran was what the artefact says.
+   */
+  readonly storagePolicies: readonly ObservedStoragePolicy[]
+  /**
    * Secret NAMES — never values — configured for every deployment pointing at
    * this database. `null` means not inventoried, which B0-14 refuses.
    */
@@ -195,9 +202,14 @@ export const BASELINE_POSTCONDITIONS: readonly BaselinePostcondition[] = [
       if (!observed.schemas.includes('public')) {
         return { passed: false, detail: 'schema public is absent' }
       }
-      const uellix = observed.schemas.filter((s) => s.startsWith('uellix_'))
+      // `uellix_provisioning` is NAMED, not excused by a widened rule. It is the
+      // application journal (RR-25), created by unit ZERO because a unit cannot
+      // record itself in a table that does not exist. Every other uellix_*
+      // schema is still a finding — the negative control uses uellix_bootstrap.
+      const PERMITTED = new Set(['uellix_provisioning'])
+      const uellix = observed.schemas.filter((s) => s.startsWith('uellix_') && !PERMITTED.has(s))
       return uellix.length === 0
-        ? { passed: true, detail: 'public present; no uellix_* schema exists yet, as the baseline creates none' }
+        ? { passed: true, detail: 'public present; the only uellix_* schema is the declared provisioning journal, and no Stella schema exists' }
         : { passed: false, detail: `uellix schema(s) already present after the BASELINE phase: ${uellix.join(', ')}. Nothing in the fifty baseline units creates one; this database has had Stella run against it.` }
     },
     negativeControl: {
@@ -469,6 +481,35 @@ export const BASELINE_POSTCONDITIONS: readonly BaselinePostcondition[] = [
     },
   },
   {
+    id: 'B0-16-storage-policy-surface',
+    requirement:
+      'The three storage.objects policies exist AND say exactly what the canonical source says: role, ' +
+      'command, predicate slot, bucket filter and isolation helper.',
+    // THE ONE CHECKPOINT THAT COVERS A HUMAN STEP.
+    //
+    // Every other unit is applied by psql from a hash-pinned file. PART B is
+    // applied by a person through a managed channel this runner cannot observe,
+    // so B0-08 confirming three names exist would leave the entire question of
+    // WHAT THEY SAY unasked — and a policy with the right name and
+    // `USING (true)` is the failure that costs the most.
+    probeSql: `SELECT schemaname, tablename, policyname, roles::text, cmd, qual, with_check
+  FROM pg_policies
+  WHERE schemaname = 'storage' AND tablename = 'objects'
+  ORDER BY policyname;`,
+    check(observed) {
+      const verdict = verifyStoragePolicySurface(observed.storagePolicies)
+      return { passed: verdict.passed, detail: verdict.detail }
+    },
+    negativeControl: {
+      // Right names, widened predicate — the mutation a name-only check misses.
+      description: 'three policies with the right names and USING (true) must fail B0-16',
+      mutate: (o) => ({
+        ...o,
+        storagePolicies: o.storagePolicies.map((p) => ({ ...p, qual: 'true', withCheck: null })),
+      }),
+    },
+  },
+  {
     id: 'B0-11-zero-production-data',
     requirement: 'Every probed table holds zero rows. The baseline creates schema, not tenants.',
     // count(*), NOT n_live_tup.
@@ -602,6 +643,173 @@ ORDER BY 1;`,
     },
   },
 ]
+
+/**
+ * The FULL security surface of one storage policy, as pg_policies reports it.
+ *
+ * Not a name. Adversarial review of every earlier gate in this programme found
+ * the same shape of defect — a check that verifies an object EXISTS and never
+ * looks at what it says — and for PART B that would be the worst place to make
+ * it: the three policies are applied by a human through a channel the runner
+ * cannot observe, so this comparison is the only thing standing between "the
+ * operator ran the artefact" and "the operator ran something".
+ */
+export interface ObservedStoragePolicy {
+  readonly schemaname: string
+  readonly tablename: string
+  readonly policyname: string
+  /** As reported: e.g. `{authenticated}`. */
+  readonly roles: string
+  /** SELECT | INSERT | UPDATE | DELETE | ALL */
+  readonly cmd: string
+  readonly qual: string | null
+  readonly withCheck: string | null
+}
+
+/**
+ * The three policies PART B must leave behind, in full.
+ *
+ * Derived from the canonical source at review time and pinned here, so a change
+ * to the source that is not reflected in the artefact produces a mismatch rather
+ * than a quiet divergence.
+ */
+export const EXPECTED_STORAGE_POLICY_SURFACE: readonly {
+  readonly policyname: string
+  readonly cmd: string
+  readonly roles: string
+  readonly predicateKind: 'qual' | 'with_check'
+  readonly bucket: string
+  readonly helper: string
+  /** The WHOLE predicate, compared for equality after normalization. */
+  readonly predicate: string
+}[] = [
+  { policyname: 'select_evidence', cmd: 'SELECT', roles: '{authenticated}', predicateKind: 'qual', bucket: 'uellix-evidence', helper: 'can_read_evidence_object', predicate: "(bucket_id = 'uellix-evidence') AND public.can_read_evidence_object(name, auth.uid())" },
+  { policyname: 'insert_evidence', cmd: 'INSERT', roles: '{authenticated}', predicateKind: 'with_check', bucket: 'uellix-evidence', helper: 'can_write_evidence_object', predicate: "(bucket_id = 'uellix-evidence') AND public.can_write_evidence_object(name, auth.uid())" },
+  { policyname: 'delete_evidence', cmd: 'DELETE', roles: '{authenticated}', predicateKind: 'qual', bucket: 'uellix-evidence', helper: 'can_write_evidence_object', predicate: "(bucket_id = 'uellix-evidence') AND public.can_write_evidence_object(name, auth.uid())" },
+]
+
+/**
+ * Normalizes only what PostgreSQL itself rewrites, then compares for EQUALITY.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY EQUALITY AND NOT `includes`
+ * ---------------------------------------------------------------------------
+ * The first version of this checked that the predicate CONTAINED the bucket name
+ * and the helper name. Adversarial review broke it four ways, each executed
+ * against the real regexes:
+ *
+ *   1. `((<the correct predicate>) OR true)` — contains both substrings, passes,
+ *      and means `USING (true)`.
+ *   2. `bucket_id = 'not-uellix-evidence'` — the wrong bucket CONTAINS the right
+ *      bucket as a substring.
+ *   3. `public.bypass_can_read_evidence_object(...)` — a different function whose
+ *      name contains the expected one.
+ *   4. and the cast regex `::[a-z_ ]+` ate letters AND SPACES after `::`, so
+ *      `bucket_id::text or true = 'x'` normalized to `bucket_id= 'x'`, silently
+ *      deleting `or true`.
+ *
+ * A containment test cannot distinguish "says this" from "says this and more",
+ * and "and more" is where every widening lives. So: casts are stripped
+ * word-bounded, whitespace and parentheses are collapsed, and the result must
+ * MATCH — not contain.
+ */
+const normalizePredicate = (p: string | null): string =>
+  (p ?? '')
+    // Word-bounded, and only the casts PostgreSQL actually inserts here.
+    .replace(/::\s*(text|character varying|varchar|uuid|boolean|bool)\b/gi, '')
+    .replace(/[()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/"/g, '')
+    .trim()
+    .toLowerCase()
+
+export interface StorageSurfaceVerdict {
+  readonly passed: boolean
+  readonly detail: string
+}
+
+/**
+ * Compares the observed storage policies against the expected surface.
+ *
+ * Normalises only what PostgreSQL itself rewrites — whitespace, parentheses and
+ * `::text` casts — because those differ between what you write and what
+ * `pg_policies` reports. Everything semantic is compared: the role, the command,
+ * WHICH predicate slot carries the rule, the bucket, and the helper.
+ */
+export function verifyStoragePolicySurface(
+  observed: readonly ObservedStoragePolicy[],
+): StorageSurfaceVerdict {
+  const problems: string[] = []
+  const ours = observed.filter((p) => p.schemaname === 'storage' && p.tablename === 'objects')
+
+  for (const expected of EXPECTED_STORAGE_POLICY_SURFACE) {
+    const found = ours.find((p) => p.policyname === expected.policyname)
+    if (!found) {
+      problems.push(`${expected.policyname}: ABSENT. The managed channel step was skipped or failed.`)
+      continue
+    }
+    if (found.cmd.toUpperCase() !== expected.cmd) {
+      problems.push(`${expected.policyname}: cmd is ${found.cmd}, expected ${expected.cmd}. A policy on the wrong command guards nothing it was meant to.`)
+    }
+    if (found.roles.replace(/\s/g, '') !== expected.roles) {
+      problems.push(`${expected.policyname}: roles are ${found.roles}, expected ${expected.roles}. A widened role is the whole risk.`)
+    }
+    const predicate = normalizePredicate(
+      expected.predicateKind === 'qual' ? found.qual : found.withCheck,
+    )
+    if (!predicate) {
+      problems.push(`${expected.policyname}: its ${expected.predicateKind} is empty. An empty predicate is USING (true).`)
+      continue
+    }
+    // EQUALITY. Anything the predicate says beyond the canonical text is a
+    // widening, and `OR true` is the cheapest one there is.
+    const canonical = normalizePredicate(expected.predicate)
+    if (predicate !== canonical) {
+      problems.push(
+        `${expected.policyname}: its ${expected.predicateKind} does not MATCH the canonical predicate.\n` +
+          `      expected: ${canonical}\n` +
+          `      observed: ${predicate}\n` +
+          `      A containment test would accept this; equality does not. The bucket filter and ` +
+          `${expected.helper} carry the org/project isolation, and anything appended to them — an OR, a ` +
+          `second disjunct, a near-name — removes it.`,
+      )
+    }
+    // The other slot must stay empty: a SELECT policy that acquired a
+    // WITH CHECK, or an INSERT policy that acquired a USING, is not the policy
+    // the artefact describes.
+    const otherSlot = expected.predicateKind === 'qual' ? found.withCheck : found.qual
+    if (normalizePredicate(otherSlot)) {
+      problems.push(`${expected.policyname}: carries a predicate in both slots; the canonical policy has only ${expected.predicateKind}.`)
+    }
+  }
+
+  // ANY policy on storage.objects that we did not generate is a finding — not
+  // only ones whose name happens to end in `_evidence`.
+  //
+  // Adversarial review: the name filter made `CREATE POLICY "temp_debug" ON
+  // storage.objects FOR SELECT TO authenticated USING (true)` completely
+  // invisible. PERMISSIVE policies OR together, so one such policy opens every
+  // object in every bucket to every authenticated user while all three expected
+  // policies still verify perfectly.
+  //
+  // Supabase ships none of its own on this table, so "not ours" is the whole
+  // test. If the platform ever adds one, allowlist it here BY NAME and say why.
+  const expectedNames = new Set(EXPECTED_STORAGE_POLICY_SURFACE.map((p) => p.policyname))
+  for (const extra of ours.filter((p) => !expectedNames.has(p.policyname))) {
+    problems.push(
+      `${extra.policyname}: a policy on storage.objects that nothing in this repository generates ` +
+        `(cmd=${extra.cmd}, roles=${extra.roles}). PERMISSIVE policies OR together, so an extra one is a ` +
+        `widening no matter how correct the other three are.`,
+    )
+  }
+
+  return problems.length === 0
+    ? {
+        passed: true,
+        detail: `all ${EXPECTED_STORAGE_POLICY_SURFACE.length} storage policies match the canonical surface: role, command, predicate slot, bucket filter and isolation helper`,
+      }
+    : { passed: false, detail: problems.join(' | ') }
+}
 
 export interface PostconditionReport {
   readonly id: string
