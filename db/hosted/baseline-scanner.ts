@@ -153,6 +153,29 @@ export function stripSqlComments(sql: string): string {
 }
 
 /**
+ * Strips comments, single-quoted literals AND dollar-quoted bodies.
+ *
+ * The form every lexical test over this corpus actually needs. A test that only
+ * strips comments reads DATA as CODE, and this repository has now been bitten by
+ * that twice in the same programme:
+ *
+ *   - the unit-41 splitter routed a whole helper into the managed half because a
+ *     `RAISE WARNING 'outside storage.objects context'` mentioned the table;
+ *   - the journal wrapper's transaction-control guard refused three units
+ *     because `END;` CLOSES A PL/pgSQL BLOCK and, at top level, `END;` is a
+ *     synonym for COMMIT. Same characters, opposite meaning, decided entirely by
+ *     whether they sit inside a dollar-quoted body.
+ *
+ * So the stripping is shared rather than re-derived per caller — the second
+ * re-derivation is where the two versions diverge.
+ */
+export function stripSqlLiteralsAndBodies(sql: string): string {
+  return stripSqlComments(sql)
+    .replace(/\$([A-Za-z_][A-Za-z0-9_]*)?\$[\s\S]*?\$\1?\$/g, ' ')
+    .replace(/'(?:[^']|'')*'/g, ' ')
+}
+
+/**
  * Splits into statements, honouring `$$`-quoted bodies.
  *
  * A naive split on `;` tears every plpgsql function in half, and the halves then

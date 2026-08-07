@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest'
 import { BASELINE_ORDER, BASELINE_UNITS, verifyBaselineOrder } from '@/db/hosted/baseline-manifest'
 import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
 import { planHostedApply } from '@/db/hosted/hosted-migrator'
+import { wrapperPathFor } from '@/db/hosted/baseline-journal-wrapper'
 import {
   PROVISIONING_PHASES,
   deriveEmptinessProbes,
@@ -151,10 +152,13 @@ describe('the three phases, in sequence', () => {
     ])
   })
 
-  it('PHASE_BASELINE plans all 50 units in manifest order and permits no writes', () => {
+  it('PHASE_BASELINE plans unit ZERO then all 50 units in manifest order, and permits no writes', () => {
     const result = plan(planProvisioningPhase(request()))
-    expect(result.steps.map((s) => s.id)).toEqual([...BASELINE_ORDER])
-    expect(result.steps).toHaveLength(50)
+    // UNIT ZERO IS A STEP, NOT SETUP. The ledger table must exist before unit 1
+    // can INSERT its row, and a prerequisite nobody plans is one somebody skips.
+    expect(result.steps[0].id).toBe('000_journal_bootstrap')
+    expect(result.steps.slice(1).map((s) => s.id)).toEqual([...BASELINE_ORDER])
+    expect(result.steps).toHaveLength(51)
     expect(result.writesPermitted).toBe(false)
     expect(result.sequenceComplete).toBe(false)
     expect(result.nextAction).toMatch(/CHECKPOINT B0/)
@@ -162,11 +166,22 @@ describe('the three phases, in sequence', () => {
 
   it('every baseline step carries the pinned hash and a single-transaction command', () => {
     const result = plan(planProvisioningPhase(request()))
-    for (const step of result.steps) {
+    for (const step of result.steps.slice(1)) {
       const unit = BASELINE_UNITS.find((u) => u.id === step.id)
       expect(unit, step.id).toBeDefined()
       expect(step.sha256).toBe(unit!.sha256)
       expect(step.command).toContain('psql -1 -v ON_ERROR_STOP=1')
+    }
+  })
+
+  it('applies every unit through its journal wrapper, never the raw file — RR-25', () => {
+    // The defect this closes: the plan named `psql -f <migration>` and nothing
+    // wrote a ledger, so `baselineUnitsInstalled` was a list somebody typed.
+    const result = plan(planProvisioningPhase(request()))
+    for (const step of result.steps.slice(1)) {
+      const unit = BASELINE_UNITS.find((u) => u.id === step.id)!
+      expect(step.file, step.id).toBe(wrapperPathFor(unit))
+      expect(step.command, step.id).toContain('uellix_project_ref')
     }
   })
 
@@ -215,7 +230,7 @@ describe('the three phases, in sequence', () => {
       planProvisioningPhase(request({ production: { hosts: ['app.uellix.com'], projectRefs: [] } })),
     )
     expect(p.writesPermitted).toBe(false)
-    expect(p.steps).toHaveLength(50)
+    expect(p.steps).toHaveLength(51)
   })
 
   it('apply mode requires a confirmation minted for THIS project', () => {

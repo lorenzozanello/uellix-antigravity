@@ -353,7 +353,14 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    firstProvisioningPlannable: firstProvisioning.ok && firstProvisioning.steps.length === 50,
+    // 51, NOT 50: unit ZERO creates the journal table, and it is a planned step
+    // rather than setup because a prerequisite nobody plans is one somebody
+    // skips. The count is asserted rather than loosened to `>= 50` — a plan that
+    // silently grew or shrank is exactly what this evidence exists to notice.
+    firstProvisioningPlannable:
+      firstProvisioning.ok &&
+      firstProvisioning.steps.length === 51 &&
+      firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
 

@@ -64,11 +64,36 @@ export function splitPreservingText(sql: string): string[] {
   let openTag: string | null = null
   let inSingle = false
   let inLineComment = false
+  // BLOCK COMMENTS, THE THIRD PLACE A SEMICOLON HIDES.
+  //
+  // Adversarial review executed the first version against a source carrying
+  // `/* legacy note; keep for history */` and it produced THREE statements where
+  // there were two, cutting inside the comment at its internal `;`. The halves
+  // were `"/* legacy note;"` and `" keep for history */ DROP POLICY … "`, and
+  // the second one matched `storage.objects` while the FIRST — carrying an
+  // unterminated `/*` — landed in PART A, where it would silently swallow
+  // whatever followed it.
+  //
+  // Not exploitable against today's canonical source, which uses only `--`. That
+  // is exactly the shape of the two attacks this file already absorbed: a
+  // cosmetic edit, no reviewer objection, boundary moved.
+  let blockDepth = 0
   const TAG = /^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/
 
   for (let i = 0; i < normalized.length; i += 1) {
     if (inLineComment) {
       if (normalized[i] === '\n') inLineComment = false
+      continue
+    }
+    if (blockDepth > 0) {
+      // PostgreSQL nests block comments; so does this.
+      if (normalized.startsWith('/*', i)) {
+        blockDepth += 1
+        i += 1
+      } else if (normalized.startsWith('*/', i)) {
+        blockDepth -= 1
+        i += 1
+      }
       continue
     }
     if (openTag !== null) {
@@ -80,6 +105,11 @@ export function splitPreservingText(sql: string): string[] {
     }
     if (!inSingle && normalized.startsWith('--', i)) {
       inLineComment = true
+      i += 1
+      continue
+    }
+    if (!inSingle && normalized.startsWith('/*', i)) {
+      blockDepth = 1
       i += 1
       continue
     }
@@ -150,6 +180,17 @@ export interface StorageArtefacts {
   readonly managedSha256: string
   /** Digest over PART B's policy predicates. The security surface, pinned. */
   readonly managedSecuritySurfaceDigest: string
+  /**
+   * Digest over PART A's OWN surface — the two SECURITY DEFINER helpers and
+   * their grants.
+   *
+   * Separate from the managed digest on purpose. The journal row for unit 41
+   * describes PART A, and recording PART B's digest there would pin a surface
+   * that row's transaction did not create: a reader reconciling the ledger would
+   * see the policy digest beside an APPLIED row and conclude the policies exist.
+   * Each half is pinned by the digest of the half it is.
+   */
+  readonly psqlSecuritySurfaceDigest: string
   readonly statementCounts: {
     readonly total: number
     readonly partA: number
@@ -279,13 +320,26 @@ export function buildStorageArtefacts(source: string): StorageArtefacts {
   // The security surface of PART B alone — predicates and roles, not names.
   const partBFacts = scanBaselineSql(partB.join(''))
 
+  // HASH WHAT IS WRITTEN, NOT WHAT IT WAS BEFORE THE LAST EDIT.
+  //
+  // The first version returned `psqlSql.endsWith('\n') ? … : psqlSql + '\n'` as
+  // the artefact and `sha256OfSql(psqlSql)` — the PRE-newline string — as its
+  // hash. So the pinned hash never described the bytes on disk. Nothing noticed,
+  // because `storage:verify` compares text to text and psql applies a file, not
+  // a hash; the discrepancy only surfaced once the journal wrapper started
+  // checking its include against the hash it records. One `\n`, and the ledger
+  // would have attested a file that did not exist.
+  const psqlArtefact = psqlSql.endsWith('\n') ? psqlSql : `${psqlSql}\n`
+  const managedArtefact = managedSql.endsWith('\n') ? managedSql : `${managedSql}\n`
+
   return {
-    psqlSql: psqlSql.endsWith('\n') ? psqlSql : `${psqlSql}\n`,
-    managedSql: managedSql.endsWith('\n') ? managedSql : `${managedSql}\n`,
+    psqlSql: psqlArtefact,
+    managedSql: managedArtefact,
     sourceSha256: sha256OfSql(normalized),
-    psqlSha256: sha256OfSql(psqlSql),
-    managedSha256: sha256OfSql(managedSql),
+    psqlSha256: sha256OfSql(psqlArtefact),
+    managedSha256: sha256OfSql(managedArtefact),
     managedSecuritySurfaceDigest: partBFacts.securitySurfaceDigest,
+    psqlSecuritySurfaceDigest: partAFacts.securitySurfaceDigest,
     statementCounts: { total: statements.length, partA: partA.length, partB: partB.length },
   }
 }
@@ -303,14 +357,29 @@ export function buildStorageArtefacts(source: string): StorageArtefacts {
  * gate every evidence read do not exist.
  */
 export type StorageUnitState =
-  /** Nothing applied. */
-  | 'UNIT_41_NOT_APPLIED'
-  /** PART A applied by psql. PART B outstanding. NOT complete. */
+  /** Nothing applied. Neither half has run. */
+  | 'UNIT_41_NOT_STARTED'
+  /** PART A applied by psql. PART B outstanding, boundary not yet opened. */
   | 'UNIT_41_HELPERS_APPLIED'
-  /** PART A applied and PART B pending at the human boundary. */
+  /** PART A applied, the boundary is open, and PART B has not landed. */
   | 'UNIT_41_POLICIES_PENDING'
-  /** Both halves verified present. Only this counts as unit 41 installed. */
+  /**
+   * The three policy NAMES are present and the SURFACE has not been verified.
+   *
+   * This is the state the instruction insisted on and the one a two-state model
+   * cannot express: "PARTE B ejecutada ≠ UNIT_41_COMPLETE". A human ran
+   * something through a channel we cannot observe, and three rows now exist in
+   * pg_policies. What they SAY is a separate question, and until B0-16 answers
+   * it the honest word is UNVERIFIED — not COMPLETE, and not FAILED either.
+   */
+  | 'UNIT_41_POLICIES_APPLIED_UNVERIFIED'
+  /** Both halves present AND the surface verified equal to the artefact. */
   | 'UNIT_41_COMPLETE'
+  /**
+   * The observation contradicts itself or the contract. Never reachable by
+   * doing nothing — reaching FAILED requires evidence of something wrong.
+   */
+  | 'UNIT_41_FAILED'
 
 /** The three policies PART B must leave behind, by name. */
 export const EXPECTED_STORAGE_POLICIES: readonly string[] = [
@@ -319,24 +388,156 @@ export const EXPECTED_STORAGE_POLICIES: readonly string[] = [
   'delete_evidence',
 ]
 
+export interface StorageUnitObservation {
+  /** pg_proc: are both public.can_*_evidence_object helpers there? */
+  readonly helpersPresent: boolean
+  /** pg_policies, names only, on storage.objects. */
+  readonly policyNamesPresent: readonly string[]
+  /** A MANUAL_BOUNDARY_PENDING row exists for this project. */
+  readonly boundaryOpen: boolean
+  /**
+   * B0-16's verdict over the FULL surface, or `null` when it has not been run.
+   *
+   * `null` is not "fine". It is the difference between
+   * POLICIES_APPLIED_UNVERIFIED and COMPLETE, and it is the reason an operator
+   * saying "done" cannot move this machine to its terminal state.
+   */
+  readonly surfaceVerified: boolean | null
+}
+
 /**
  * Derives the state from OBSERVED facts, never from an operator's claim.
  *
- * `helpersPresent` comes from pg_proc, `policiesPresent` from pg_policies. Both
- * are things the database says about itself.
+ * Every input is something the database says about itself: `pg_proc` for the
+ * helpers, `pg_policies` for the names and the surface, the journal table for
+ * the boundary. There is deliberately no `operatorSaysDone` parameter — the
+ * transition to COMPLETE is a measurement, and adding a claim to the inputs is
+ * how a measurement quietly becomes a formality.
  */
-export function deriveStorageUnitState(observed: {
-  readonly helpersPresent: boolean
-  readonly policyNamesPresent: readonly string[]
-  /** Has the operator been handed the artefact and not yet run it? */
-  readonly boundaryOpen: boolean
-}): StorageUnitState {
-  const allPolicies = EXPECTED_STORAGE_POLICIES.every((p) => observed.policyNamesPresent.includes(p))
-  if (!observed.helpersPresent) return 'UNIT_41_NOT_APPLIED'
-  if (allPolicies) return 'UNIT_41_COMPLETE'
+export function deriveStorageUnitState(observed: StorageUnitObservation): StorageUnitState {
+  const present = EXPECTED_STORAGE_POLICIES.filter((p) => observed.policyNamesPresent.includes(p))
+  const all = present.length === EXPECTED_STORAGE_POLICIES.length
+  const some = present.length > 0
+
+  // POLICIES WITHOUT HELPERS IS NOT AN EARLIER STATE — IT IS A BROKEN ONE.
+  //
+  // All three predicates call public.can_*_evidence_object. A policy whose
+  // helper does not exist raises 42883 on every row it is evaluated against, so
+  // every evidence read fails closed. Reporting that as NOT_STARTED would
+  // describe a database in a state the contract says cannot exist.
+  if (!observed.helpersPresent) {
+    return some ? 'UNIT_41_FAILED' : 'UNIT_41_NOT_STARTED'
+  }
+
+  // A verified-FALSE surface is a measured contradiction, whatever else holds.
+  // It is the `USING (true)` case, the wrong-bucket case and the extra-policy
+  // case, and none of them is "pending".
+  if (observed.surfaceVerified === false) return 'UNIT_41_FAILED'
+
+  if (all) {
+    return observed.surfaceVerified === true ? 'UNIT_41_COMPLETE' : 'UNIT_41_POLICIES_APPLIED_UNVERIFIED'
+  }
+
+  // PARTIAL, AFTER THE BOUNDARY CLOSED. The operator created some policies and
+  // stopped — 2 of 3 is the attack this state exists for. While the boundary is
+  // still open it is work in progress; once it is closed a partial surface is a
+  // failure, because permissive policies OR together and a missing DELETE policy
+  // is not a smaller guard, it is a different one.
+  if (some) return observed.boundaryOpen ? 'UNIT_41_POLICIES_PENDING' : 'UNIT_41_FAILED'
+
   return observed.boundaryOpen ? 'UNIT_41_POLICIES_PENDING' : 'UNIT_41_HELPERS_APPLIED'
 }
+
+/* -------------------------------------------------------------------------- */
+/* The dependency DAG, written down because the intuition is wrong            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What actually depends on what, around unit 41.
+ *
+ * Every edge here was checked against the SQL rather than assumed, and two of
+ * them contradict the shape this programme originally planned:
+ *
+ *   - 0039 was believed to need "unit 41". It needs PART A. Its five
+ *     GRANT EXECUTE statements name the two public helpers and nothing in the
+ *     storage schema, so the human boundary does NOT have to fall before 0039
+ *     and the fifty-unit order is unchanged.
+ *   - the `uellix-evidence` bucket was believed to be an apply-time dependency.
+ *     `storage.buckets` appears ZERO times in unit 41 — the policies filter on
+ *     the bucket_id COLUMN. It is a RUNTIME prerequisite, and the probe that
+ *     sat in `checkPrivileges` was refusing all fifty units over it.
+ *
+ * Both are the same error in different costumes: treating "mentioned in the same
+ * file" as "required by".
+ */
+export const UNIT_41_DEPENDENCY_DAG: readonly {
+  readonly from: string
+  readonly to: string
+  readonly kind: 'apply-time' | 'runtime' | 'verification'
+  readonly why: string
+}[] = [
+  {
+    from: 'unit-41-part-a',
+    to: '0039_grant_rls_helper_execution.sql',
+    kind: 'apply-time',
+    why: '0039 GRANTs EXECUTE on public.can_read_evidence_object / can_write_evidence_object. Absent, 42883.',
+  },
+  {
+    from: 'unit-41-part-a',
+    to: 'unit-41-part-b',
+    kind: 'apply-time',
+    why: 'all three policy predicates call the helpers; a policy created first raises on every evaluation.',
+  },
+  {
+    from: 'unit-41-part-b',
+    to: 'checkpoint-b0-16',
+    kind: 'verification',
+    why: 'B0-16 is the only check covering a step performed through a channel the runner cannot observe.',
+  },
+  {
+    from: 'evidence-bucket',
+    to: 'evidence-runtime',
+    kind: 'runtime',
+    why: 'the policies compare bucket_id as a column value; nothing in the fifty units reads storage.buckets.',
+  },
+  {
+    from: 'evidence-bucket',
+    to: 'checkpoint-b0-15',
+    kind: 'verification',
+    why: 'B0-15 exists so a project provisioned exactly to plan cannot end with policies guarding nothing.',
+  },
+]
+
+/** Edges the DAG must NOT contain. A test asserts each is absent. */
+export const UNIT_41_NON_DEPENDENCIES: readonly { readonly from: string; readonly to: string; readonly why: string }[] = [
+  {
+    from: 'unit-41-part-b',
+    to: '0039_grant_rls_helper_execution.sql',
+    why: '0039 names no object in the storage schema, so the human boundary need not precede it.',
+  },
+  {
+    from: 'evidence-bucket',
+    to: 'unit-41-part-b',
+    why: 'CREATE POLICY does not validate that a bucket_id it compares against exists.',
+  },
+]
 
 /** Only one state counts as installed. Consumed by the runner and by B0. */
 export const isStorageUnitInstalled = (state: StorageUnitState): boolean =>
   state === 'UNIT_41_COMPLETE'
+
+/**
+ * The legal transitions, enumerated so a reviewer can see there is no edge into
+ * COMPLETE that does not pass through a verified surface.
+ *
+ * FAILED is reachable from every non-terminal state and leads nowhere: the
+ * recovery table, not this machine, decides what happens next.
+ */
+export const STORAGE_UNIT_TRANSITIONS: Readonly<Record<StorageUnitState, readonly StorageUnitState[]>> = {
+  UNIT_41_NOT_STARTED: ['UNIT_41_HELPERS_APPLIED', 'UNIT_41_FAILED'],
+  UNIT_41_HELPERS_APPLIED: ['UNIT_41_POLICIES_PENDING', 'UNIT_41_FAILED'],
+  UNIT_41_POLICIES_PENDING: ['UNIT_41_POLICIES_APPLIED_UNVERIFIED', 'UNIT_41_FAILED'],
+  UNIT_41_POLICIES_APPLIED_UNVERIFIED: ['UNIT_41_COMPLETE', 'UNIT_41_FAILED'],
+  UNIT_41_COMPLETE: [],
+  UNIT_41_FAILED: [],
+}

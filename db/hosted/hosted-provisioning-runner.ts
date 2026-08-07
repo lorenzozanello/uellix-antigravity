@@ -47,10 +47,14 @@ import {
   type BaselineUnit,
 } from './baseline-manifest'
 import { scanBaselineSql, type BaselineScanFacts } from './baseline-scanner'
+import {
+  JOURNAL_BOOTSTRAP_FILE,
+  applyCommandFor,
+  wrapperPathFor,
+} from './baseline-journal-wrapper'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
 import {
-  PSQL_ARTEFACT,
   STORAGE_UNIT_SOURCE,
   buildStorageArtefacts,
   isStorageUnitInstalled,
@@ -591,7 +595,19 @@ function planBaselinePhase(request: ProvisioningRequest): ProvisioningPlan {
   // the plan pins the artefact it is about to name rather than trusting the file.
   const storageSource = request.readBaselineSql(STORAGE_UNIT_SOURCE)
   const partAsha256 = storageSource === null ? undefined : buildStorageArtefacts(storageSource).psqlSha256
-  const steps: ProvisioningStep[] = BASELINE_UNITS.map((unit) => baselineStep(unit, partAsha256))
+  // UNIT ZERO FIRST. The ledger table has to exist before unit 1 can write its
+  // row, and it is emitted as a step rather than assumed as setup — a
+  // prerequisite nobody plans is a prerequisite somebody skips.
+  const steps: ProvisioningStep[] = [
+    {
+      ordinal: 0,
+      id: '000_journal_bootstrap',
+      file: JOURNAL_BOOTSTRAP_FILE,
+      sha256: 'generated',
+      command: applyCommandFor(JOURNAL_BOOTSTRAP_FILE),
+    },
+    ...BASELINE_UNITS.map((unit) => baselineStep(unit, partAsha256)),
+  ]
 
   return finish(request, identity.projectRef, 'PHASE_BASELINE', steps, [
     `sentinel DEFERRED; compensating control satisfied: target reports zero baseline units, no ` +
@@ -650,31 +666,34 @@ function checkPrivileges(probes: PrivilegeProbes | undefined): ProvisioningPlan 
 }
 
 function baselineStep(unit: BaselineUnit, partAsha256?: string): ProvisioningStep {
-  // UNIT 41 IS PLANNED AS ITS PART A ARTEFACT, NOT AS THE CANONICAL FILE.
+  // EVERY UNIT IS PLANNED AS ITS JOURNAL WRAPPER.
   //
-  // Adversarial review caught this: the plan emitted `psql -f
-  // supabase/migrations/20260716000001_storage_policies.sql` for unit 41 — the
-  // whole file, PART B included — which this train's own measurement proves psql
-  // cannot apply. Every artefact in this programme was built and then not
-  // connected to the thing that uses it; this is that mistake, once more.
-  if (unit.id === STORAGE_UNIT_ID) {
-    return {
-      ordinal: unit.ordinal,
-      id: unit.id,
-      file: PSQL_ARTEFACT,
-      sha256: unit.sha256,
-      generatedSha256: partAsha256,
-      command:
-        `psql -1 -v ON_ERROR_STOP=1 -f ${PSQL_ARTEFACT}` +
-        `   # PART A ONLY. PART B (3 policies on storage.objects) goes through the managed channel.`,
-    }
-  }
+  // Two defects converge here, and both were "an artefact was built and never
+  // connected to the thing that uses it":
+  //
+  //   1. the plan emitted `psql -f supabase/migrations/20260716000001_…sql` for
+  //      unit 41 — the whole file, PART B included — which the measurement
+  //      proves psql cannot apply. Closed by pointing unit 41 at PART A.
+  //
+  //   2. RR-25: nothing wrote a ledger, so `baselineUnitsInstalled` was a list
+  //      somebody typed. `journalInsertSql` existed and had no caller. Closed by
+  //      pointing EVERY unit at a wrapper that `\ir`-includes it and INSERTs its
+  //      row in the same `psql -1` transaction.
+  //
+  // The wrapper for unit 41 includes PART A, so both are the same edit.
+  const isStorage = unit.id === STORAGE_UNIT_ID
+  const wrapper = wrapperPathFor(unit)
   return {
     ordinal: unit.ordinal,
     id: unit.id,
-    file: unit.file,
+    file: wrapper,
     sha256: unit.sha256,
-    command: `psql -1 -v ON_ERROR_STOP=1 -f ${unit.file}`,
+    generatedSha256: isStorage ? partAsha256 : undefined,
+    command:
+      applyCommandFor(wrapper) +
+      (isStorage
+        ? '   # PART A ONLY. PART B (3 policies on storage.objects) is a human boundary.'
+        : ''),
   }
 }
 

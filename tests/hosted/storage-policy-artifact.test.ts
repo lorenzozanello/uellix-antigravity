@@ -21,6 +21,9 @@ import {
   deriveStorageUnitState,
   isStorageUnitInstalled,
   splitPreservingText,
+  STORAGE_UNIT_TRANSITIONS,
+  UNIT_41_DEPENDENCY_DAG,
+  UNIT_41_NON_DEPENDENCIES,
 } from '@/db/hosted/storage-policy-artifact'
 import {
   EXPECTED_STORAGE_POLICY_SURFACE,
@@ -152,33 +155,177 @@ describe('DRIFT — the checked-in artefacts are the derivation, not a copy', ()
   })
 })
 
+describe('the splitter survives block comments — reviewer B', () => {
+  // EXECUTED BY THE REVIEWER against the first version: a block comment holding
+  // a semicolon was cut in half, and the fragment carrying the unterminated
+  // `/*` landed in PART A, where it would swallow whatever followed it.
+  it('does not cut inside /* … ; … */', () => {
+    const sql = [
+      'CREATE FUNCTION public.f() RETURNS boolean AS $$ SELECT true $$ LANGUAGE sql;',
+      '',
+      '/* legacy note; keep for history */',
+      'DROP POLICY IF EXISTS "select_evidence" ON storage.objects;',
+    ].join('\n')
+    const statements = splitPreservingText(sql)
+    expect(statements).toHaveLength(2)
+    expect(statements.filter(belongsToManagedPart)).toHaveLength(1)
+    expect(statements.every((s) => (s.match(/\/\*/g) ?? []).length === (s.match(/\*\//g) ?? []).length)).toBe(true)
+  })
+
+  it('handles nested block comments the way PostgreSQL does', () => {
+    const sql = 'SELECT 1 /* outer /* inner; */ still outer; */ ;\nSELECT 2;'
+    expect(splitPreservingText(sql)).toHaveLength(2)
+  })
+
+  it('still treats a block comment mentioning storage.objects as a comment', () => {
+    const stmt =
+      '/* touches storage.objects one day */\nCREATE FUNCTION public.g() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql;'
+    expect(belongsToManagedPart(stmt)).toBe(false)
+  })
+})
+
+describe('the pinned hashes describe the bytes written', () => {
+  // The journal wrapper checks its include against `psqlSha256`, which surfaced
+  // that `psqlSha256` hashed the pre-newline string while the artefact written
+  // to disk carried a trailing newline. One character, and the ledger would have
+  // attested a file that did not exist.
+  it('psqlSha256 is the hash of psqlSql itself', () => {
+    const a = buildStorageArtefacts(SOURCE)
+    expect(sha256OfSql(a.psqlSql)).toBe(a.psqlSha256)
+    expect(sha256OfSql(a.managedSql)).toBe(a.managedSha256)
+  })
+
+  it('and matches what is on disk', () => {
+    const a = buildStorageArtefacts(SOURCE)
+    expect(sha256OfSql(read(PSQL_ARTEFACT))).toBe(a.psqlSha256)
+    expect(sha256OfSql(read(MANAGED_ARTEFACT))).toBe(a.managedSha256)
+  })
+
+  it('separates PART A and PART B security surface digests', () => {
+    const a = buildStorageArtefacts(SOURCE)
+    expect(a.psqlSecuritySurfaceDigest).not.toBe(a.managedSecuritySurfaceDigest)
+  })
+})
+
 describe('the unit 41 state machine', () => {
   const S = (over: Partial<Parameters<typeof deriveStorageUnitState>[0]> = {}) =>
-    deriveStorageUnitState({ helpersPresent: true, policyNamesPresent: [...EXPECTED_STORAGE_POLICIES], boundaryOpen: false, ...over })
+    deriveStorageUnitState({
+      helpersPresent: true,
+      policyNamesPresent: [...EXPECTED_STORAGE_POLICIES],
+      boundaryOpen: false,
+      surfaceVerified: true,
+      ...over,
+    })
 
-  it('is NOT_APPLIED before PART A', () => {
-    expect(S({ helpersPresent: false, policyNamesPresent: [] })).toBe('UNIT_41_NOT_APPLIED')
+  it('is NOT_STARTED before PART A', () => {
+    expect(S({ helpersPresent: false, policyNamesPresent: [], surfaceVerified: null })).toBe('UNIT_41_NOT_STARTED')
   })
 
   it('is HELPERS_APPLIED — not complete — with PART A alone', () => {
-    const state = S({ policyNamesPresent: [] })
+    const state = S({ policyNamesPresent: [], surfaceVerified: null })
     expect(state).toBe('UNIT_41_HELPERS_APPLIED')
     expect(isStorageUnitInstalled(state)).toBe(false)
   })
 
   it('is POLICIES_PENDING while the human boundary is open', () => {
-    expect(S({ policyNamesPresent: [], boundaryOpen: true })).toBe('UNIT_41_POLICIES_PENDING')
+    expect(S({ policyNamesPresent: [], boundaryOpen: true, surfaceVerified: null })).toBe('UNIT_41_POLICIES_PENDING')
   })
 
-  it('is not COMPLETE with two of three policies — a partial apply is not a smaller one', () => {
-    const state = S({ policyNamesPresent: ['select_evidence', 'insert_evidence'] })
-    expect(state).not.toBe('UNIT_41_COMPLETE')
+  // THE STATE THE INSTRUCTION INSISTED ON. "PARTE B ejecutada" is not
+  // "PARTE B correcta", and a machine without this state has to choose between
+  // calling an unverified surface COMPLETE or calling it FAILED. Both lie.
+  it('is POLICIES_APPLIED_UNVERIFIED when all three exist and B0-16 has not run', () => {
+    const state = S({ surfaceVerified: null })
+    expect(state).toBe('UNIT_41_POLICIES_APPLIED_UNVERIFIED')
     expect(isStorageUnitInstalled(state)).toBe(false)
   })
 
-  it('is COMPLETE only with helpers AND all three policies', () => {
-    expect(isStorageUnitInstalled(S())).toBe(true)
+  it('is FAILED when the surface was measured and did not match', () => {
+    expect(S({ surfaceVerified: false })).toBe('UNIT_41_FAILED')
+  })
+
+  it('is FAILED with 2 of 3 policies once the boundary has closed', () => {
+    const state = S({ policyNamesPresent: ['select_evidence', 'insert_evidence'], surfaceVerified: null })
+    expect(state).toBe('UNIT_41_FAILED')
+    expect(isStorageUnitInstalled(state)).toBe(false)
+  })
+
+  it('is still POLICIES_PENDING with 2 of 3 while the boundary is open', () => {
+    expect(
+      S({ policyNamesPresent: ['select_evidence', 'insert_evidence'], boundaryOpen: true, surfaceVerified: null }),
+    ).toBe('UNIT_41_POLICIES_PENDING')
+  })
+
+  // Policies whose predicates call helpers that do not exist raise 42883 on
+  // every row. That is not an earlier state; it is a broken one.
+  it('is FAILED when policies exist without the helpers they call', () => {
+    expect(S({ helpersPresent: false, surfaceVerified: null })).toBe('UNIT_41_FAILED')
+  })
+
+  it('is COMPLETE only with helpers AND all three policies AND a verified surface', () => {
     expect(S()).toBe('UNIT_41_COMPLETE')
+    expect(isStorageUnitInstalled(S())).toBe(true)
+  })
+
+  it('has no transition into COMPLETE that skips the verified surface', () => {
+    const into = Object.entries(STORAGE_UNIT_TRANSITIONS)
+      .filter(([, to]) => (to as readonly string[]).includes('UNIT_41_COMPLETE'))
+      .map(([from]) => from)
+    expect(into).toEqual(['UNIT_41_POLICIES_APPLIED_UNVERIFIED'])
+  })
+
+  it('cannot be driven to COMPLETE by an operator claim — there is no such input', () => {
+    // `deriveStorageUnitState` takes four measured facts and nothing else. If a
+    // "the operator says it is done" field ever appears, this fails.
+    expect(Object.keys({ helpersPresent: 0, policyNamesPresent: 0, boundaryOpen: 0, surfaceVerified: 0 })).toEqual([
+      'helpersPresent',
+      'policyNamesPresent',
+      'boundaryOpen',
+      'surfaceVerified',
+    ])
+    expect(S({ surfaceVerified: null })).not.toBe('UNIT_41_COMPLETE')
+  })
+})
+
+describe('the unit 41 dependency DAG', () => {
+  it('makes 0039 depend on PART A and not on PART B', () => {
+    const toGrant = UNIT_41_DEPENDENCY_DAG.filter((e) => e.to === '0039_grant_rls_helper_execution.sql')
+    expect(toGrant.map((e) => e.from)).toEqual(['unit-41-part-a'])
+  })
+
+  it('does not make the bucket an apply-time dependency of anything', () => {
+    const bucketEdges = UNIT_41_DEPENDENCY_DAG.filter((e) => e.from === 'evidence-bucket')
+    expect(bucketEdges.every((e) => e.kind !== 'apply-time')).toBe(true)
+  })
+
+  it('keeps PART B a dependency of CHECKPOINT B0 — the boundary is observable', () => {
+    expect(UNIT_41_DEPENDENCY_DAG.some((e) => e.from === 'unit-41-part-b' && e.to === 'checkpoint-b0-16')).toBe(true)
+  })
+
+  it('asserts the non-edges rather than merely omitting them', () => {
+    for (const absent of UNIT_41_NON_DEPENDENCIES) {
+      expect(
+        UNIT_41_DEPENDENCY_DAG.some((e) => e.from === absent.from && e.to === absent.to),
+        absent.why,
+      ).toBe(false)
+    }
+  })
+
+  it('is acyclic', () => {
+    const edges = UNIT_41_DEPENDENCY_DAG.map((e) => [e.from, e.to] as const)
+    const nodes = [...new Set(edges.flat())]
+    const seen = new Set<string>()
+    const stack = new Set<string>()
+    const visit = (n: string): boolean => {
+      if (stack.has(n)) return false
+      if (seen.has(n)) return true
+      stack.add(n)
+      for (const [f, t] of edges) if (f === n && !visit(t)) return false
+      stack.delete(n)
+      seen.add(n)
+      return true
+    }
+    expect(nodes.every(visit)).toBe(true)
   })
 })
 
