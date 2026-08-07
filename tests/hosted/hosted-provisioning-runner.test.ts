@@ -69,7 +69,10 @@ const PRIVILEGES_OK = {
   ownsStorageObjects: true,
   evidenceBucketExists: true,
   applyIdentityRecorded: true,
+  storageAdminMember: true,
+  storageAdminInherits: true,
   canSetRoleStorageAdmin: true,
+  setLocalRoleDemonstrated: true,
 } as const
 
 const VIRGIN: TargetStateProbe = {

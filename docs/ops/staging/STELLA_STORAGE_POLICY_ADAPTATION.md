@@ -78,27 +78,32 @@ documenta exactamente esa asimetría. Una sonda ejecutada en una identidad no di
 nada fiable sobre la otra — el mismo fallo «una consulta distinta responde a una
 pregunta distinta» que el gate de autorización ya refuta en las atestaciones.
 
-**Mide `USAGE`, no `MEMBER`.** La comprobación de propiedad de PostgreSQL respeta
-`INHERIT`, así que `USAGE = false` predice correctamente que un `CREATE POLICY`
-directo falla. No predice si `SET ROLE supabase_storage_admin` está disponible,
-que requiere `MEMBER`. Una pertenencia `NOINHERIT` da `USAGE = false` y
-`MEMBER = true`, y esos dos mundos piden adaptaciones distintas.
+**Mide `USAGE`, y `USAGE` no decide si `SET ROLE` está disponible.** La
+comprobación de propiedad de PostgreSQL respeta `INHERIT`, así que `USAGE=false`
+predice correctamente que un `CREATE POLICY` directo falla. No predice nada sobre
+`SET ROLE`.
+
+> ### ⚠️ CORREGIDO EN TRAIN 5C2
+>
+> Una redacción anterior de este párrafo decía que `SET ROLE` «requiere
+> `MEMBER`». **Es falso.** PostgreSQL 16 separó `MEMBER`, `USAGE` y `SET`, y el
+> privilegio que permite `SET ROLE` es **`SET`**. `MEMBER` sólo expresa
+> pertenencia: `GRANT r TO u WITH SET FALSE, INHERIT FALSE` da `MEMBER=true` sin
+> ninguna capacidad. El desarrollo correcto está en §6.1, y la sonda se corrigió
+> en `CLASS_C_PROBES`.
+>
+> Se deja la corrección visible en lugar de reescribir el párrafo en silencio, por
+> la misma razón que en el audit de julio: borrar el error borra la prueba de que
+> existió.
 
 > **El veredicto BLOCKED no cambia, y es conservador.** Según #41126 la identidad
 > de conexión directa es la **más** restringida de las dos, así que una medición
 > en el momento del apply sólo puede salir igual o peor. Lo que sigue sin saberse
 > es **cuál** de las dos adaptaciones corresponde.
 
-Dos sondas nuevas, ambas read-only, resuelven la ambigüedad — añadidas a
-`CLASS_C_PROBES`:
-
-```sql
--- 4. ¿Quién soy? Ejecutar EN LA IDENTIDAD QUE APLICARÁ EL BASELINE.
-SELECT current_user, session_user, version();
-
--- 5. ¿Está disponible SET ROLE? (MEMBER, no USAGE.)
-SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER');
-```
+El bloque canónico de sondas está en
+[`STELLA_APPLY_IDENTITY_PROBE.md`](STELLA_APPLY_IDENTITY_PROBE.md) y mide los
+tres privilegios por separado, más la operación `SET LOCAL ROLE`.
 
 ---
 
@@ -180,3 +185,90 @@ ahora con una medición real detrás en lugar de una ausencia.
 **Siguiente paso, y es sólo uno:** ejecutar las sondas 4 y 5 de §3 **en la
 identidad que aplicará el baseline** — no en el SQL Editor. Su respuesta decide
 entre las dos adaptaciones y no debe inferirse.
+
+---
+
+## 6. Train 5C2 — corrección de semántica, y lo que queda por medir
+
+### 6.1 `MEMBER` no responde la pregunta
+
+La sonda que Train 5C1 añadió preguntaba `pg_has_role(…, 'MEMBER')`. **Estaba
+mal.** PostgreSQL 16 dividió la pertenencia a un rol en tres privilegios
+independientes y 17 los mantiene separados:
+
+| Privilegio | Significa | No significa |
+|---|---|---|
+| `MEMBER` | perteneces al rol | nada sobre qué puedes hacer con él. `GRANT r TO u WITH SET FALSE, INHERIT FALSE` da esto y sólo esto |
+| `USAGE` | tienes sus privilegios **sin** `SET ROLE` | es lo que consulta la comprobación de propiedad — de ahí que `ownsStorageObjects=FALSE` prediga bien el fallo de un `CREATE POLICY` directo |
+| `SET` | **puedes ejecutar `SET ROLE`** | — |
+
+Sólo `SET` decide si la Rama A existe. Usar `MEMBER` en su lugar es el mismo
+error del marcador por subcadena que la revisión adversarial ya tumbó: un
+casi-sinónimo ocupando el sitio de la propiedad realmente exigida. Corregido en
+`CLASS_C_PROBES`, que ahora registra los tres por separado — la **combinación**
+es diagnóstica: `MEMBER=true` con `SET=false` es un `WITH SET FALSE`
+deliberado, y significa algo distinto de no ser miembro.
+
+### 6.2 Y el catálogo tampoco es la operación
+
+`SET=true` dice que el *grant* lo permite. Sólo ejecutar `SET LOCAL ROLE` dentro
+de una transacción READ ONLY demuestra que nada más lo rechaza. **La Rama A
+exige las dos**, y el gate `hosted-storage-set-role-ready` refuta si falta
+cualquiera — o si la demostración muestra que `session_user` también cambió, que
+sería una sesión escalada y no una transacción que asume un rol.
+
+### 6.3 Corrección sobre el bucket
+
+`storage.buckets` aparece **0 veces** en la unidad 41: las policies filtran por
+la *columna* `bucket_id`, no consultan la tabla. El bucket es por tanto
+prerrequisito **de runtime**, no de apply-time. Los dos prerrequisitos son
+independientes y pueden satisfacerse en cualquier orden.
+
+### 6.4 STORAGE_PREREQUISITE
+
+| Campo | Valor |
+|---|---|
+| Bucket | `uellix-evidence` |
+| Entorno | staging (`bvyzblhqymxruxdguaee`) |
+| Contenido inicial | **vacío**. No se copia nada de producción |
+| Público | **no** (`public = false`, como en `supabase/config.toml`) |
+| Mecanismo más auditable | **Dashboard → Storage → New bucket**, que deja registro en el proyecto y no requiere credencial en ninguna terminal |
+| Estado | **`evidenceBucketExists = false`**, sin corregir en esta unidad por instrucción |
+| Cierre | una segunda sonda real tras crearlo |
+
+### 6.5 Orden operativo — dependencias reales, no el ejemplo
+
+`0039` depende **sólo de la PARTE A** (las dos funciones `public.can_*`), no de
+las policies. Verificado: sus cinco `GRANT EXECUTE` no nombran `storage.objects`.
+Por eso la frontera de la PARTE B **no** tiene que caer antes de 0039, y el
+orden de las 50 unidades no cambia.
+
+```
+STORAGE_PREREQUISITE      bucket uellix-evidence, vacío, por Dashboard
+   ↓  (sonda: bucket = true)
+PHASE_BASELINE (psql)     unidades 1…50 en el orden del manifiesto
+                          la 41 aporta la PARTE A; 0039 sólo necesita eso
+   ↓
+── FRONTERA PARTE B ──    Rama A: en banda, bajo SET LOCAL ROLE
+                          Rama B: canal gestionado, artefacto verificado
+   ↓
+CHECKPOINT B0             B0-08 exige las 3 policies · B0-15 exige el bucket
+```
+
+Si la Rama A se demuestra, la frontera desaparece y la PARTE B corre dentro de
+la unidad 41. Ésa es la única diferencia estructural entre las dos ramas.
+
+### 6.6 RR-25 sigue abierto y sigue bloqueando
+
+El gate `hosted-baseline-journal-ready` exige una procedencia verificable para
+`baselineUnitsInstalled`. Con `journalProvenance = null` refuta, así que
+**aunque Storage quede adaptado, `hosted-baseline-apply-authorized` permanece
+`false`** — que es exactamente lo que la Fase 11 ordena.
+
+Las tres procedencias admitidas, y la única que el gate valida en detalle:
+
+| Tipo | Requisito |
+|---|---|
+| `hosted-journal` | registra `package_id`, `phase`, `sha256`, `applied_at`, `status`, y **se escribe sólo tras el commit** de la unidad. Un journal escrito antes registraría como aplicada una unidad que hizo rollback — una mentira en la única dirección que importa |
+| `catalog-derived` | derivación determinista desde el catálogo + hashes |
+| `equivalent-fail-closed` | mecanismo equivalente, declarado |

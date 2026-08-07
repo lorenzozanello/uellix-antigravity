@@ -251,7 +251,10 @@ export function buildHostedBaselineGateEvidence(
       ownsStorageObjects: true,
       evidenceBucketExists: true,
       applyIdentityRecorded: true,
+      storageAdminMember: true,
+      storageAdminInherits: true,
       canSetRoleStorageAdmin: true,
+      setLocalRoleDemonstrated: true,
     },
   }
   const stellaSources: Record<string, string> = {}

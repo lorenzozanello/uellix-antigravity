@@ -74,7 +74,10 @@ function satisfying(): ApplyAuthorizationInputs {
         ownsStorageObjects: true,
         evidenceBucketExists: true,
         applyIdentityRecorded: true,
+        storageAdminMember: true,
+        storageAdminInherits: true,
         canSetRoleStorageAdmin: true,
+        setLocalRoleDemonstrated: true,
       },
       // All FIVE §2.7 queries, quoted verbatim. The gate requires every canonical
       // string, so adding a probe to CLASS_C_PROBES correctly invalidates any
@@ -85,7 +88,10 @@ function satisfying(): ApplyAuthorizationInputs {
         "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass; " +
         "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence'); " +
         'SELECT current_user, session_user, version(); ' +
-        "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER');",
+        "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER'); " +
+        "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'USAGE'); " +
+        "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'SET'); " +
+        'SET LOCAL ROLE supabase_storage_admin;',
       measuredBy: 'operator, in the identity that will apply the baseline',
     },
     stagingIdentity: {
@@ -101,6 +107,45 @@ function satisfying(): ApplyAuthorizationInputs {
       value: {},
       query: 'secret manager inventory, names and values of the nine STELLA_* flags',
       measuredBy: 'operator',
+    },
+    /* ---- Train 5C2 ---- */
+    applyIdentity: {
+      value: {
+        currentUser: 'postgres',
+        sessionUser: 'postgres',
+        transactionReadOnly: true,
+        isMember: true,
+        inheritsPrivileges: false,
+        canSetRole: true,
+      },
+      query:
+        'SELECT current_user, session_user, version(), current_setting(\'transaction_read_only\'); ' +
+        "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER') AS is_member, " +
+        "pg_has_role(current_user, 'supabase_storage_admin', 'USAGE') AS inherits_privileges, " +
+        "pg_has_role(current_user, 'supabase_storage_admin', 'SET') AS can_set_role;",
+      measuredBy: 'operator, psql direct connection — the identity that will apply PHASE_BASELINE',
+    },
+    setLocalRoleDemo: {
+      value: {
+        executed: true,
+        currentUserAfter: 'supabase_storage_admin',
+        sessionUserAfter: 'postgres',
+        transactionReadOnlyAfter: true,
+      },
+      query: 'BEGIN READ ONLY; SET LOCAL ROLE supabase_storage_admin; SELECT current_user, session_user; RESET ROLE; ROLLBACK;',
+      measuredBy: 'operator, same connection',
+    },
+    storagePath: 'A-set-role',
+    evidenceBucket: {
+      value: { exists: true },
+      query: "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence');",
+      measuredBy: 'operator',
+    },
+    journalProvenance: {
+      kind: 'hosted-journal',
+      recordedFields: ['package_id', 'phase', 'sha256', 'applied_at', 'status'],
+      writesAfterCommitOnly: true,
+      detail: 'a hosted journal written only after each unit commits',
     },
   }
 }
@@ -213,17 +258,22 @@ describe('the apply-authorization gate', () => {
     expect(report.applyAuthorized).toBe(true)
   })
 
-  it('covers the eleven criteria the twelve Phase 10 dependencies collapse to', () => {
-    // Phase 10 named twelve dependencies. `hashes` and `order` are not separable
+  it('covers every dependency Phase 10 and Train 5C2 Phase 14 named', () => {
+    // Phase 10 named twelve dependencies; `hashes` and `order` are not separable
     // — verifyBaselineManifest checks both in one pass and a partial answer is
-    // meaningless — so they are one criterion, `manifest-hashes-and-order`.
-    // Adversarial review flagged the mismatch between the old title and the
-    // array; this records the reconciliation instead of hiding it.
+    // meaningless — so they are one criterion. Train 5C2 added six more.
     expect(APPLY_AUTHORIZATION_CRITERIA.map((c) => c.id)).toEqual([
       'checkpoint-a0-pass',
       'production-denylist-loaded',
       'target-identity-corroborated',
       'class-c-probes-affirmative',
+      // Train 5C2, Phase 14 — the six Storage / identity / journal gates.
+      'hosted-storage-apply-identity-probed',
+      'hosted-storage-set-role-ready',
+      'hosted-storage-policy-adaptation-ready',
+      'hosted-evidence-bucket-provisioning-ready',
+      'hosted-storage-policy-boundary-ready',
+      'hosted-baseline-journal-ready',
       'manifest-hashes-and-order',
       'no-class-d-units',
       'zero-production-data',
@@ -232,6 +282,65 @@ describe('the apply-authorization gate', () => {
       'postconditions-ready',
       'recovery-plan-conservative',
     ])
+  })
+
+  it('MEMBER is not SET, and USAGE is not SET — Branch A refuses both substitutions', () => {
+    const setRole = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'hosted-storage-set-role-ready')!
+    const base = satisfying()
+
+    // MEMBER=true, SET=false. The exact confusion the operator's PostgreSQL 17
+    // correction named: membership is not permission to assume.
+    const memberOnly = setRole.evaluate({
+      ...base,
+      storagePath: 'A-set-role',
+      applyIdentity: { ...base.applyIdentity!, value: { ...base.applyIdentity!.value, isMember: true, canSetRole: false } },
+    })
+    expect(memberOnly.satisfied).toBe(false)
+    expect(memberOnly.detail).toContain('MEMBER is true')
+
+    // USAGE=true, SET=false. Inheriting privileges is not permission to SET ROLE
+    // either — different privilege, different question.
+    expect(
+      setRole.evaluate({
+        ...base,
+        storagePath: 'A-set-role',
+        applyIdentity: {
+          ...base.applyIdentity!,
+          value: { ...base.applyIdentity!.value, inheritsPrivileges: true, canSetRole: false },
+        },
+      }).satisfied,
+    ).toBe(false)
+
+    // SET=true is still not enough on its own: the operation must be shown.
+    expect(
+      setRole.evaluate({ ...base, storagePath: 'A-set-role', setLocalRoleDemo: null }).satisfied,
+    ).toBe(false)
+  })
+
+  it('refuses a SET LOCAL ROLE demonstration in which the SESSION escalated', () => {
+    const setRole = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'hosted-storage-set-role-ready')!
+    const base = satisfying()
+    const escalated = setRole.evaluate({
+      ...base,
+      setLocalRoleDemo: {
+        ...base.setLocalRoleDemo!,
+        value: { ...base.setLocalRoleDemo!.value, sessionUserAfter: 'supabase_storage_admin' },
+      },
+    })
+    expect(escalated.satisfied).toBe(false)
+    expect(escalated.detail).toContain('session that escalated')
+  })
+
+  it('refuses Branch B when SET is available, so the manual channel is never a lazy default', () => {
+    const setRole = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'hosted-storage-set-role-ready')!
+    expect(setRole.evaluate({ ...satisfying(), storagePath: 'B-managed-channel' }).satisfied).toBe(false)
+  })
+
+  it('refuses any path at all before the identity has been probed', () => {
+    for (const path of ['A-set-role', 'B-managed-channel', null] as const) {
+      const r = evaluateApplyAuthorization({ ...satisfying(), storagePath: path, applyIdentity: null })
+      expect(r.applyAuthorized, String(path)).toBe(false)
+    }
   })
 
   it('NEGATIVE CONTROL: every criterion fails against its own mutation', () => {
@@ -351,6 +460,13 @@ describe('the live verdict for Uellix Staging as of Train 5C1', () => {
       classCProbes: null,
       stagingIdentity: null,
       featureFlags: null,
+      // Train 5C2: the apply identity has not been probed, the storage path has
+      // not been selected, the bucket does not exist and RR-25 is unresolved.
+      applyIdentity: null,
+      setLocalRoleDemo: null,
+      storagePath: null,
+      evidenceBucket: null,
+      journalProvenance: null,
     })
 
     expect(live.applyAuthorized).toBe(false)

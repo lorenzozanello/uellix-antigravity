@@ -120,6 +120,48 @@ export interface ApplyAuthorizationInputs {
   }> | null
   /** The nine flags, as configured for every deployment pointing at the target. */
   readonly featureFlags: OperatorAttestation<Readonly<Record<string, string | boolean | undefined>>> | null
+
+  /* ---- Train 5C2: Storage, apply identity, and the application journal ---- */
+  /**
+   * SONDA 1 of docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md, run in the
+   * identity that will apply PHASE_BASELINE — NOT the SQL Editor.
+   */
+  readonly applyIdentity: OperatorAttestation<{
+    readonly currentUser: string
+    readonly sessionUser: string
+    readonly transactionReadOnly: boolean
+    /** MEMBER. Diagnostic. Never sufficient for anything. */
+    readonly isMember: boolean
+    /** USAGE / INHERIT. What the ownership check consults. */
+    readonly inheritsPrivileges: boolean
+    /** SET. THE privilege that decides whether Branch A exists. */
+    readonly canSetRole: boolean
+  }> | null
+  /** SONDA 2 — the operation, not the catalogue. Only meaningful if canSetRole. */
+  readonly setLocalRoleDemo: OperatorAttestation<{
+    readonly executed: boolean
+    readonly currentUserAfter: string
+    readonly sessionUserAfter: string
+    readonly transactionReadOnlyAfter: boolean
+  }> | null
+  /** Which execution path the evidence selected. Never chosen before measuring. */
+  readonly storagePath: 'A-set-role' | 'B-managed-channel' | null
+  /** Re-probed existence of the uellix-evidence bucket. */
+  readonly evidenceBucket: OperatorAttestation<{ readonly exists: boolean }> | null
+  /**
+   * How `baselineUnitsInstalled` will be established during apply — RR-25.
+   *
+   * `null` means it would be operator-typed, which is the defect. See the
+   * criterion for the three permitted provenances.
+   */
+  readonly journalProvenance: {
+    readonly kind: 'hosted-journal' | 'catalog-derived' | 'equivalent-fail-closed'
+    /** For a journal: the columns it records. */
+    readonly recordedFields: readonly string[]
+    /** Written only after the unit's transaction commits. */
+    readonly writesAfterCommitOnly: boolean
+    readonly detail: string
+  } | null
 }
 
 export interface AuthorizationVerdict {
@@ -318,6 +360,246 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
             "SELECT has_table_privilege(current_user, 'public.users', 'SELECT'); " +
             "SELECT pg_has_role(current_user, 'postgres', 'USAGE'); " +
             'SELECT count(*) FROM storage.buckets;',
+        },
+      }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-storage-apply-identity-probed',
+    requirement:
+      'The MEMBER / USAGE / SET triple was measured in the identity that will APPLY the baseline, ' +
+      'inside a read-only transaction — not in the SQL Editor.',
+    evaluate(inputs) {
+      const id = 'hosted-storage-apply-identity-probed'
+      const missing = attested(id, 'the apply-identity probe', inputs.applyIdentity)
+      if (missing) return missing
+      const v = inputs.applyIdentity!.value
+
+      if (!v.transactionReadOnly) {
+        return no(id, 'the probe did not run in a READ ONLY transaction, so it cannot testify that it changed nothing.')
+      }
+      if (!v.currentUser.trim() || !v.sessionUser.trim()) {
+        return no(id, 'current_user / session_user were not recorded. A probe that does not say WHO asked answers a question nobody posed — which is the defect this criterion exists for.')
+      }
+      // The three §2.7 probes ran in the SQL Editor. If this probe reports the
+      // same identity, it is the same measurement wearing a new label.
+      for (const [k, marker] of [
+        ['MEMBER', "'supabase_storage_admin', 'MEMBER'"],
+        ['USAGE', "'supabase_storage_admin', 'USAGE'"],
+        ['SET', "'supabase_storage_admin', 'SET'"],
+      ] as const) {
+        if (!normalizeSql(inputs.applyIdentity!.query).includes(normalizeSql(marker))) {
+          return no(id, `the recorded query does not ask for ${k}. All three are required: PostgreSQL 16 split membership into MEMBER / USAGE / SET and they answer different questions.`)
+        }
+      }
+      return yes(id, `apply identity measured: current_user=${v.currentUser}, session_user=${v.sessionUser}, MEMBER=${v.isMember}, USAGE=${v.inheritsPrivileges}, SET=${v.canSetRole}`)
+    },
+    negativeControl: {
+      description: 'a probe run outside a READ ONLY transaction must fail',
+      mutate: (i) => ({
+        ...i,
+        applyIdentity: i.applyIdentity && {
+          ...i.applyIdentity,
+          value: { ...i.applyIdentity.value, transactionReadOnly: false },
+        },
+      }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-storage-set-role-ready',
+    requirement:
+      'Either SET was granted AND `SET LOCAL ROLE` was demonstrated (Branch A), or SET is false and a ' +
+      'managed channel was selected instead (Branch B). MEMBER never substitutes for SET.',
+    evaluate(inputs) {
+      const id = 'hosted-storage-set-role-ready'
+      const missing = attested(id, 'the apply-identity probe', inputs.applyIdentity)
+      if (missing) return missing
+      const v = inputs.applyIdentity!.value
+
+      if (inputs.storagePath === null) {
+        return no(id, 'no execution path selected. A path chosen before the evidence is a guess with a label.')
+      }
+
+      if (inputs.storagePath === 'A-set-role') {
+        if (!v.canSetRole) {
+          // The specific mistake this guards: MEMBER=true read as "SET ROLE works".
+          return no(
+            id,
+            `Branch A selected but SET is false${v.isMember ? ' (MEMBER is true, which is NOT the same privilege — a WITH SET FALSE grant yields exactly this)' : ''}. ` +
+              `PostgreSQL 16 split membership into MEMBER / USAGE / SET; only SET permits SET ROLE.`,
+          )
+        }
+        const demo = attested(id, 'the SET LOCAL ROLE demonstration', inputs.setLocalRoleDemo)
+        if (demo) return demo
+        const d = inputs.setLocalRoleDemo!.value
+        if (!d.executed) return no(id, 'SET LOCAL ROLE was not executed. The catalogue says the grant permits it; only the operation shows nothing else refuses.')
+        if (d.currentUserAfter !== 'supabase_storage_admin') {
+          return no(id, `current_user after SET LOCAL ROLE is ${d.currentUserAfter || '(unrecorded)'}, not supabase_storage_admin. The role was not actually assumed.`)
+        }
+        if (d.sessionUserAfter === 'supabase_storage_admin') {
+          return no(id, 'session_user also became supabase_storage_admin. That is a session that escalated, not a transaction that assumed a role — the distinction is the whole safety of Branch A.')
+        }
+        if (!d.transactionReadOnlyAfter) {
+          return no(id, 'the transaction was no longer READ ONLY after SET LOCAL ROLE. A demonstration that could have written is not a read-only demonstration.')
+        }
+        return yes(id, 'Branch A: SET granted and SET LOCAL ROLE demonstrated — current_user changed, session_user did not, transaction stayed read-only')
+      }
+
+      if (v.canSetRole) {
+        return no(id, 'Branch B selected while SET is true. Choosing the manual channel over an available in-band path needs a stated reason, not a default.')
+      }
+      return yes(id, 'Branch B: SET is false, so the SET ROLE path does not exist and PART B moves to a governed managed channel')
+    },
+    negativeControl: {
+      // The exact confusion the operator's correction named.
+      description: 'Branch A with MEMBER=true but SET=false must fail',
+      mutate: (i) => ({
+        ...i,
+        storagePath: 'A-set-role',
+        applyIdentity: i.applyIdentity && {
+          ...i.applyIdentity,
+          value: { ...i.applyIdentity.value, isMember: true, canSetRole: false },
+        },
+      }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-storage-policy-adaptation-ready',
+    requirement:
+      'Unit 41 splits deterministically into PART A (public helpers, psql-applicable) and PART B (the ' +
+      'storage.objects policies), from ONE canonical source, with the policy predicates unchanged.',
+    evaluate(inputs) {
+      const id = 'hosted-storage-policy-adaptation-ready'
+      const sql = inputs.readBaselineSql('supabase/migrations/20260716000001_storage_policies.sql')
+      if (sql === null) return no(id, 'the canonical unit 41 could not be read.')
+      const facts = scanBaselineSql(sql)
+
+      // Measured, not asserted: the split is only well-defined if the parts are
+      // what the adaptation claims they are.
+      if (facts.functionsCreated.length !== 2) {
+        return no(id, `PART A should create exactly the two public helpers; found ${facts.functionsCreated.length}.`)
+      }
+      if (facts.policiesCreated.length !== 3) {
+        return no(id, `PART B should create exactly three policies; found ${facts.policiesCreated.length}.`)
+      }
+      const onStorage = facts.policiesCreated.filter((p) => p.startsWith('storage.objects.'))
+      if (onStorage.length !== 3) {
+        return no(id, `all three policies must be on storage.objects; ${onStorage.length} are. A policy that moved schema changes which channel applies it.`)
+      }
+      if (facts.securitySurfaceDigest === undefined) {
+        return no(id, 'no security surface digest derived, so an edit to a policy predicate would be invisible.')
+      }
+      // The hazard Supabase refuses by design, and which we must never acquire.
+      if (/ALTER\s+TABLE\s+storage\.objects/i.test(sql)) {
+        return no(id, 'the unit now issues ALTER TABLE storage.objects. Supabase refuses it and it is unnecessary — RLS is already enabled on that table by the platform.')
+      }
+      return yes(id, `PART A = 2 public helpers, PART B = 3 policies on storage.objects, one canonical source, predicates pinned by securitySurfaceDigest ${facts.securitySurfaceDigest.slice(0, 12)}…, and no ALTER TABLE storage.objects anywhere`)
+    },
+    negativeControl: {
+      description: 'a unit 41 that acquires ALTER TABLE storage.objects must fail',
+      mutate: (i) => ({
+        ...i,
+        readBaselineSql: (f) =>
+          f === 'supabase/migrations/20260716000001_storage_policies.sql'
+            ? `${i.readBaselineSql(f) ?? ''}\nALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;\n`
+            : i.readBaselineSql(f),
+      }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-evidence-bucket-provisioning-ready',
+    requirement: "The 'uellix-evidence' bucket exists on the target, re-probed after creation.",
+    evaluate(inputs) {
+      const id = 'hosted-evidence-bucket-provisioning-ready'
+      const missing = attested(id, 'the evidence bucket probe', inputs.evidenceBucket)
+      if (missing) return missing
+      return inputs.evidenceBucket!.value.exists
+        ? yes(id, "the 'uellix-evidence' bucket exists, so the three storage policies guard something")
+        : no(id, "the 'uellix-evidence' bucket does not exist. supabase/config.toml creates it locally and NOTHING in the fifty units creates it hosted — the third instance of that asymmetry. All three policies gate on its bucket_id.")
+    },
+    negativeControl: {
+      description: 'a target without the bucket must fail',
+      mutate: (i) => ({
+        ...i,
+        evidenceBucket: i.evidenceBucket && { ...i.evidenceBucket, value: { exists: false } },
+      }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-storage-policy-boundary-ready',
+    requirement:
+      'If PART B runs through a managed channel, the boundary is explicit and the baseline cannot be ' +
+      'reported complete while PART B is outstanding.',
+    evaluate(inputs) {
+      const id = 'hosted-storage-policy-boundary-ready'
+      if (inputs.storagePath === null) {
+        return no(id, 'no execution path selected, so there is no boundary to place.')
+      }
+      if (inputs.storagePath === 'A-set-role') {
+        return yes(id, 'Branch A places no human boundary inside PHASE_BASELINE: PART B runs in-band under SET LOCAL ROLE')
+      }
+      // Branch B: the policies are verified by B0-08 regardless of channel. If
+      // that check ever stopped covering the storage schema, the manual step
+      // would become unobservable — which is the boundary failing silently.
+      const b008 = BASELINE_POSTCONDITIONS.find((p) => p.id === 'B0-08-policies')
+      if (!b008) return no(id, 'B0-08 is gone, so nothing verifies the policies whatever channel creates them.')
+      if (!/schemaname\s+in\s*\(\s*'public'\s*,\s*'storage'\s*\)/i.test(b008.probeSql)) {
+        return no(id, "B0-08's probe no longer covers schemaname 'storage'. With PART B moved to a manual channel, that probe is the ONLY thing that notices the step was skipped.")
+      }
+      return yes(id, 'Branch B: PART B is a declared human boundary, and B0-08 probes public AND storage, so a skipped manual step fails CHECKPOINT B0 rather than passing silently')
+    },
+    negativeControl: {
+      description: 'Branch B with no path selected must fail',
+      mutate: (i) => ({ ...i, storagePath: null }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-baseline-journal-ready',
+    requirement:
+      'RR-25: `baselineUnitsInstalled` has a verifiable provenance during apply. It may not be typed by ' +
+      'an operator.',
+    evaluate(inputs) {
+      const id = 'hosted-baseline-journal-ready'
+      const p = inputs.journalProvenance
+      if (!p) {
+        return no(
+          id,
+          'no provenance defined for baselineUnitsInstalled. The hosted plan applies with `psql -1 -f` and ' +
+            'writes no journal, while db:migrate:local uses drizzle and creates drizzle.__drizzle_migrations. ' +
+            'Without a provenance the anti-skip check of PHASE_STELLA_BOOTSTRAP reads a value somebody typed.',
+        )
+      }
+      if (p.kind === 'hosted-journal') {
+        const REQUIRED = ['package_id', 'phase', 'sha256', 'applied_at', 'status']
+        const absent = REQUIRED.filter((f) => !p.recordedFields.includes(f))
+        if (absent.length > 0) return no(id, `the journal does not record: ${absent.join(', ')}.`)
+        if (!p.writesAfterCommitOnly) {
+          return no(id, 'the journal is written before the unit commits, so a rolled-back unit would be recorded as applied — a ledger that lies in the one direction that matters.')
+        }
+      }
+      return yes(id, `provenance: ${p.kind} — ${p.detail}`)
+    },
+    negativeControl: {
+      description: 'a journal written before commit must fail',
+      mutate: (i) => ({
+        ...i,
+        journalProvenance: {
+          kind: 'hosted-journal',
+          recordedFields: ['package_id', 'phase', 'sha256', 'applied_at', 'status'],
+          writesAfterCommitOnly: false,
+          detail: 'written eagerly',
         },
       }),
     },

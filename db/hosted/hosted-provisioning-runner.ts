@@ -203,15 +203,33 @@ export interface PrivilegeProbes {
    */
   readonly applyIdentityRecorded: boolean | null
   /**
-   * Is `SET ROLE supabase_storage_admin` available? (`MEMBER`, not `USAGE`.)
+   * MEMBER — belongs to supabase_storage_admin. DIAGNOSTIC ONLY.
    *
-   * PostgreSQL's ownership check honours INHERIT, so `ownsStorageObjects`
-   * (USAGE) correctly predicts a direct CREATE POLICY failing while saying
-   * nothing about whether the role can be assumed. A NOINHERIT membership gives
-   * USAGE=false and MEMBER=true, and those two worlds need different
-   * adaptations.
+   * Deliberately not sufficient for anything. PostgreSQL 16 split membership
+   * into MEMBER / USAGE / SET, and `GRANT r TO u WITH SET FALSE, INHERIT FALSE`
+   * yields MEMBER=true with neither capability. Recorded because the
+   * combination is diagnostic: MEMBER=true with SET=false is a deliberate
+   * refusal, which means something different from no membership at all.
+   */
+  readonly storageAdminMember: boolean | null
+  /** USAGE — INHERIT. The privilege PostgreSQL's ownership check consults. */
+  readonly storageAdminInherits: boolean | null
+  /**
+   * SET — may `SET ROLE`. THE probe that decides whether Branch A exists.
+   *
+   * Never substitute MEMBER for this. Doing so is the same near-synonym
+   * mistake the apply gate already refuses in attestation queries.
    */
   readonly canSetRoleStorageAdmin: boolean | null
+  /**
+   * `SET LOCAL ROLE supabase_storage_admin` was actually executed and observed
+   * to change `current_user`, inside a READ ONLY transaction.
+   *
+   * The catalogue says the grant permits it; only the operation shows nothing
+   * else refuses. Branch A requires BOTH, and this is the one that is not a
+   * prediction.
+   */
+  readonly setLocalRoleDemonstrated: boolean | null
 }
 
 /**
@@ -271,10 +289,51 @@ export const CLASS_C_PROBES: readonly (readonly [keyof PrivilegeProbes, string, 
     'ALL — the probes must be run in the identity that will apply the baseline',
     'SELECT current_user, session_user, version()',
   ],
+  // ---------------------------------------------------------------------
+  // CORRECTED 2026-08-07. The previous spelling of this probe asked for
+  // 'MEMBER', and 'MEMBER' does not answer the question.
+  //
+  // PostgreSQL 16 split what used to be one notion of role membership into
+  // three independent privileges, and 17 keeps them distinct:
+  //
+  //   MEMBER  — you belong to the role. Says nothing about what you may do
+  //             with it. `GRANT r TO u WITH SET FALSE, INHERIT FALSE` gives
+  //             MEMBER and nothing else.
+  //   USAGE   — you hold the role's privileges WITHOUT SET ROLE (INHERIT).
+  //             This is what PostgreSQL's ownership check consults, which is
+  //             why `ownsStorageObjects` correctly predicts a direct
+  //             CREATE POLICY failing.
+  //   SET     — you may `SET ROLE` to it. THIS is the one that decides whether
+  //             the SET ROLE adaptation exists.
+  //
+  // Asking MEMBER and reading it as "SET ROLE will work" is exactly the
+  // substring-marker mistake in another costume: a near-synonym standing in for
+  // the property actually required. All three are recorded because the
+  // combination is diagnostic — MEMBER=true with SET=false is a deliberate
+  // `WITH SET FALSE` grant, and it means something different from no membership
+  // at all.
+  [
+    'storageAdminMember',
+    'diagnostic only — membership without any implied capability',
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER')",
+  ],
+  [
+    'storageAdminInherits',
+    'diagnostic only — INHERIT, the privilege the ownership check consults',
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')",
+  ],
   [
     'canSetRoleStorageAdmin',
-    "20260716000001_storage_policies.sql — decides whether SET ROLE is an available adaptation",
-    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER')",
+    '20260716000001_storage_policies.sql — THE probe that decides whether the SET ROLE path exists',
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'SET')",
+  ],
+  // And the catalogue answer is still not the operation. `SET` says the
+  // grant permits it; only executing `SET LOCAL ROLE` inside a READ ONLY
+  // transaction shows that nothing else refuses. Branch A requires both.
+  [
+    'setLocalRoleDemonstrated',
+    '20260716000001_storage_policies.sql — the OPERATION, not the catalogue',
+    'SET LOCAL ROLE supabase_storage_admin',
   ],
 ]
 
