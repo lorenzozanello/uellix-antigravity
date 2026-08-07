@@ -1,0 +1,59 @@
+{
+  "trainId": "STELLA_TRAIN_5C1",
+  "measuredOn": "2026-08-07",
+  "measuredBy": "operator, manually, Supabase SQL Editor, inside READ ONLY transactions",
+  "targetProjectRef": "bvyzblhqymxruxdguaee",
+  "targetRole": "staging",
+  "note": "Project refs are not secret. No credential, connection string or user data is recorded here. The agent did not connect: every value below was measured by a human and transcribed.",
+  "probes": [
+    {
+      "name": "canCreateTriggerOnAuthUsers",
+      "sql": "SELECT has_table_privilege(current_user, 'auth.users', 'TRIGGER');",
+      "observed": true,
+      "classification": "PASS",
+      "unit": "20260716000000_auth_trigger.sql",
+      "capability": "the applying role may create triggers on auth.users",
+      "catalogue": "has_table_privilege over pg_class/pg_attribute ACL on auth.users"
+    },
+    {
+      "name": "ownsStorageObjects",
+      "sql": "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass;",
+      "observed": false,
+      "classification": "BLOCKED",
+      "unit": "20260716000001_storage_policies.sql",
+      "capability": "the applying role does NOT hold the ownership of storage.objects that CREATE POLICY requires",
+      "catalogue": "pg_has_role(current_user, pg_class.relowner, 'USAGE') for storage.objects, owned by supabase_storage_admin",
+      "notBlockedBy": "The unit never issues ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY, which Supabase refuses and which is the cause of most reported failures. RLS is already enabled on that table by the platform. The blocker here is the CREATE POLICY ownership requirement itself.",
+      "explicitlyNot": "REQUIRES_REHEARSAL. The probe exists precisely so this is discovered before the first 40 units are applied, not after."
+    },
+    {
+      "name": "evidenceBucketExists",
+      "sql": "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence');",
+      "observed": false,
+      "classification": "MISSING",
+      "unit": "20260716000001_storage_policies.sql (all three of its policies gate on this bucket_id)",
+      "capability": "the uellix-evidence bucket does not exist on the target",
+      "catalogue": "storage.buckets",
+      "remediation": "DEFERRED BY OPERATOR INSTRUCTION. Not created in this train."
+    }
+  ],
+  "probeSpecDefectFound": {
+    "summary": "The three probes above are under-specified, and the FALSE on ownsStorageObjects is what exposed it.",
+    "one": "They do not record WHO asked. current_user is whoever ran the query; these ran in the Supabase SQL Editor, while the baseline will be applied by psql over a direct connection as a different role. supabase/supabase#41126 reports exactly that asymmetry — the same CREATE POLICY failing via a direct connection and succeeding in the SQL Editor.",
+    "two": "They measure USAGE, not MEMBER. PostgreSQL's ownership check honours INHERIT, so USAGE=false correctly predicts a direct CREATE POLICY failing; it says nothing about whether SET ROLE supabase_storage_admin is available, which needs MEMBER. A NOINHERIT membership yields USAGE=false and MEMBER=true, and those two worlds need different adaptations.",
+    "consequence": "The BLOCKED verdict STANDS and is conservative: per #41126 the direct-connection identity is the more restricted of the two, so an apply-time measurement can only be equal or worse. What is still unknown is WHICH adaptation is correct.",
+    "resolvedBy": "The two probes added to CLASS_C_PROBES: applyIdentityRecorded and canSetRoleStorageAdmin. Both read-only."
+  },
+  "pending": [
+    "SELECT current_user, session_user, version();",
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER');"
+  ],
+  "constraintsHonoured": [
+    "no DDL, no DML",
+    "no migration applied",
+    "no bucket created",
+    "no sentinel written",
+    "no Gemini configured",
+    "no access to the production project"
+  ]
+}

@@ -68,6 +68,8 @@ const PRIVILEGES_OK = {
   canCreateTriggerOnAuthUsers: true,
   ownsStorageObjects: true,
   evidenceBucketExists: true,
+  applyIdentityRecorded: true,
+  canSetRoleStorageAdmin: true,
 } as const
 
 const VIRGIN: TargetStateProbe = {

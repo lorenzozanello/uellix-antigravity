@@ -193,6 +193,25 @@ export interface PrivilegeProbes {
    * every upload would fail for a reason no postcondition looked for.
    */
   readonly evidenceBucketExists: boolean | null
+  /**
+   * Was the probe run in the identity that will APPLY the baseline?
+   *
+   * Not a privilege. A guard against the probe answering about a session
+   * nobody is going to use — see the note on CLASS_C_PROBES and
+   * supabase/supabase#41126, where the same CREATE POLICY fails over a direct
+   * connection and succeeds in the SQL Editor.
+   */
+  readonly applyIdentityRecorded: boolean | null
+  /**
+   * Is `SET ROLE supabase_storage_admin` available? (`MEMBER`, not `USAGE`.)
+   *
+   * PostgreSQL's ownership check honours INHERIT, so `ownsStorageObjects`
+   * (USAGE) correctly predicts a direct CREATE POLICY failing while saying
+   * nothing about whether the role can be assumed. A NOINHERIT membership gives
+   * USAGE=false and MEMBER=true, and those two worlds need different
+   * adaptations.
+   */
+  readonly canSetRoleStorageAdmin: boolean | null
 }
 
 /**
@@ -220,6 +239,42 @@ export const CLASS_C_PROBES: readonly (readonly [keyof PrivilegeProbes, string, 
     'evidenceBucketExists',
     "20260716000001_storage_policies.sql (its policies gate on bucket_id = 'uellix-evidence')",
     "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence')",
+  ],
+  // ---------------------------------------------------------------------
+  // ADDED 2026-08-07, because the first real run of these probes exposed a
+  // defect in the first three.
+  // ---------------------------------------------------------------------
+  // `ownsStorageObjects` came back FALSE, which is the answer that blocks unit
+  // 41. But the probe was under-specified in two ways that a FALSE cannot
+  // distinguish between:
+  //
+  //   1. IT DOES NOT SAY WHO ASKED. `current_user` is whoever ran the query.
+  //      The operator ran it in the Supabase SQL Editor; the baseline will be
+  //      applied by psql over a direct connection, as a different role.
+  //      supabase/supabase#41126 reports precisely this asymmetry — the same
+  //      CREATE POLICY failing via a direct connection and succeeding in the
+  //      SQL Editor. A probe run in one identity says nothing reliable about
+  //      the other, which is the same "different query answers a different
+  //      question" failure the apply gate already refuses.
+  //
+  //   2. IT MEASURES USAGE, NOT MEMBERSHIP. PostgreSQL's ownership check
+  //      honours INHERIT, so `pg_has_role(..., 'USAGE')` correctly predicts a
+  //      direct CREATE POLICY failing. It does NOT predict whether
+  //      `SET ROLE supabase_storage_admin` is available, which needs 'MEMBER'.
+  //      A NOINHERIT membership yields USAGE=false and MEMBER=true, and those
+  //      two worlds need different adaptations.
+  //
+  // Both are read-only. Neither changes the BLOCKED verdict on its own — they
+  // decide which adaptation is correct, and the previous three could not.
+  [
+    'applyIdentityRecorded',
+    'ALL — the probes must be run in the identity that will apply the baseline',
+    'SELECT current_user, session_user, version()',
+  ],
+  [
+    'canSetRoleStorageAdmin',
+    "20260716000001_storage_policies.sql — decides whether SET ROLE is an available adaptation",
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER')",
   ],
 ]
 

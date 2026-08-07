@@ -73,12 +73,20 @@ function satisfying(): ApplyAuthorizationInputs {
         canCreateTriggerOnAuthUsers: true,
         ownsStorageObjects: true,
         evidenceBucketExists: true,
+        applyIdentityRecorded: true,
+        canSetRoleStorageAdmin: true,
       },
+      // All FIVE §2.7 queries, quoted verbatim. The gate requires every canonical
+      // string, so adding a probe to CLASS_C_PROBES correctly invalidates any
+      // attestation that predates it — which is what happened when
+      // applyIdentityRecorded and canSetRoleStorageAdmin were added.
       query:
         "SELECT has_table_privilege(current_user, 'auth.users', 'TRIGGER'); " +
         "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass; " +
-        "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence');",
-      measuredBy: 'operator, Supabase SQL editor',
+        "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence'); " +
+        'SELECT current_user, session_user, version(); ' +
+        "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER');",
+      measuredBy: 'operator, in the identity that will apply the baseline',
     },
     stagingIdentity: {
       value: {

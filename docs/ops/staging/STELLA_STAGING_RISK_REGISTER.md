@@ -192,7 +192,10 @@ próxima refactorización reintroduce.
 | **Defecto** | `20260716000001_storage_policies.sql` estaba clasificada **B**. Crea tres `CREATE POLICY ON storage.objects`, y `CREATE POLICY` exige **ownership** de la tabla — un requisito **más estricto** que el privilegio `TRIGGER` por el que la unidad 40 sí era C. `db/baseline/stella_g2_schema.sql:5061` muestra `ALTER TABLE storage.objects OWNER TO supabase_storage_admin` |
 | **Consecuencia si falla** | Aborto en la unidad **41 de 50**, con 40 unidades ya comprometidas → `DESTROY_AND_REPROVISION`. Justo el descubrimiento a media cadena que la clasificación existe para evitar |
 | **Corrección** | Reclasificada a **C**; `PrivilegeProbes.ownsStorageObjects` es ahora obligatoria y `PHASE_BASELINE` se niega sin ella |
-| **Cierre** | Sólo medible en el proyecto real |
+| **MEDIDO 2026-08-07** | **`ownsStorageObjects = FALSE`.** La sonda se ejecutó contra Uellix Staging y confirmó la incompatibilidad **antes** de aplicar unidad alguna. Clasificación: **BLOCKED**, no `REQUIRES_REHEARSAL` — el catálogo respondió, no es una incógnita |
+| **Matiz que nos favorece** | La unidad **no** emite `ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY`, que es la causa de la mayoría de reportes y que Supabase rechaza por diseño. Nuestro bloqueo es el requisito de propiedad de `CREATE POLICY` en sí |
+| **Adaptación** | [`STELLA_STORAGE_POLICY_ADAPTATION.md`](STELLA_STORAGE_POLICY_ADAPTATION.md): variante hosted derivada que omite el bloque de `storage.objects`; las tres policies pasan a ser un paso de operador por Dashboard/SQL Editor, verificado por **B0-08** |
+| **Cierre** | Pendiente de las sondas 4 y 5 (identidad de apply y `MEMBER` sobre `supabase_storage_admin`), que deciden **cuál** adaptación aplica |
 
 #### RR-18 — El bucket `uellix-evidence` no lo crea nadie en hosted
 
@@ -203,6 +206,8 @@ próxima refactorización reintroduce.
 | **Consecuencia** | Un staging aprovisionado exactamente según el plan tendría policies de evidencia protegiendo un bucket inexistente; toda subida y toda lectura fallarían por un motivo que ninguna comprobación buscaba |
 | **Por qué importa el patrón** | Es **la misma asimetría local/hosted que ocultó el defecto de 0039**, en un segundo sitio. Que apareciera dos veces sugiere buscarla una tercera |
 | **Corrección** | `PrivilegeProbes.evidenceBucketExists` + postcondición **B0-15** |
+| **MEDIDO 2026-08-07** | **`evidenceBucketExists = FALSE`.** El bucket no existe en Uellix Staging. Clasificación: **MISSING** |
+| **Estado** | **ABIERTO, y sin corregir a propósito**: el operador difirió la creación del bucket a un paso posterior. B0-15 lo exigirá |
 
 #### RR-19 — Afirmaciones falsas de Train 5C0 sobre su propio trabajo
 
@@ -265,6 +270,17 @@ las pruebas:
 | **Por qué es de la misma clase** | Es la tercera vez que aparece el patrón: algo que el stack local hace implícitamente (`supabase start` aplica `supabase/migrations`, crea el bucket, y `db:migrate:local` escribe el journal) y que nadie hace en hosted. Que aparezca tres veces sugiere tratar «¿qué más hace el stack local por nosotros?» como pregunta permanente |
 | **Mitigación disponible** | CHECKPOINT B0 mide el **estado resultante** (tablas, funciones, policies, RLS), que es más fuerte que un journal: un journal dice qué se intentó, B0 dice qué hay. La ausencia de journal no bloquea el apply; bloquea poder *resumir* uno interrumpido — y para eso la estrategia ya es `DESTROY_AND_REPROVISION` |
 | **Estado** | **ABIERTO**, no bloqueante para el apply |
+
+#### RR-27 — La sonda de clase C medía el grado de pertenencia equivocado
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR**, corregido |
+| **Defecto** | `ownsStorageObjects` pregunta `pg_has_role(current_user, relowner, 'USAGE')`. Dos problemas que un `FALSE` no distingue: (1) no registra **quién** preguntó — se ejecutó en el SQL Editor, y el baseline lo aplicará `psql` como otro rol; (2) mide `USAGE`, no `MEMBER`, así que no dice si `SET ROLE supabase_storage_admin` está disponible. Una pertenencia `NOINHERIT` da `USAGE=false` y `MEMBER=true` |
+| **Cómo se encontró** | Por el propio resultado: la documentación oficial de Supabase presenta `create policy … on storage.objects` como la vía normal, y [supabase/supabase#41126](https://github.com/supabase/supabase/issues/41126) reporta la misma sentencia fallando por conexión directa y funcionando en el SQL Editor. Las dos cosas sólo son compatibles si la identidad importa |
+| **Impacto sobre el veredicto** | **Ninguno, y es conservador**: la identidad de conexión directa es la más restringida de las dos, así que medir en el apply sólo puede salir igual o peor. Lo que estaba sin resolver era **cuál** adaptación corresponde |
+| **Corrección** | Dos sondas nuevas en `CLASS_C_PROBES`, ambas read-only: `applyIdentityRecorded` (`SELECT current_user, session_user, version()`) y `canSetRoleStorageAdmin` (`pg_has_role(…, 'MEMBER')`) |
+| **Lección** | Es la misma familia que el chequeo de consulta por subcadena que la revisión adversarial tumbó: **una sonda que no fija su identidad responde a una pregunta que nadie hizo** |
 
 #### RR-26 — El gate de autorización no lo consumía nada
 
