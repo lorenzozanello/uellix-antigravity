@@ -32,6 +32,7 @@ import {
 import { generateHostedPackage } from './generate-hosted-package'
 import { packageOrderRefusal, supersessionsFor } from '../prepared-package-order'
 import {
+  productionDenylistStatus,
   redactForHostedLog,
   verifyStagingTarget,
   type HostedTargetInput,
@@ -51,6 +52,7 @@ export type HostedApplyFailureCode =
   | 'HOSTED_TICKET_CHAIN_INCOMPLETE'
   | 'HOSTED_SENTINEL_BOUNDARY_CROSSED'
   | 'HOSTED_BOOTSTRAP_ONLY_PLAN_INVALID'
+  | 'HOSTED_PRODUCTION_DENYLIST_EMPTY'
   | 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION'
   | string
 
@@ -392,6 +394,14 @@ export function planHostedApply(request: HostedApplyRequest): HostedApplyPlan {
   //     one imply the other is how "I only wanted to look" becomes a write.
   let writesPermitted = false
   if (request.mode === 'apply') {
+    // Same refusal as the phased runner, for the same reason: this planner is
+    // the OTHER path to `writesPermitted: true`, and a guard installed on one
+    // of two doors is a guard on neither. See the long note in
+    // hosted-provisioning-runner.ts's `finish()`.
+    const denylist = productionDenylistStatus(request.production)
+    if (!denylist.loaded) {
+      return fail('HOSTED_PRODUCTION_DENYLIST_EMPTY', `refused: ${denylist.detail}`)
+    }
     if (!request.applyConfirmation) {
       return fail(
         'HOSTED_APPLY_CONFIRMATION_REQUIRED',

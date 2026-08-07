@@ -1,0 +1,360 @@
+// tests/hosted/baseline-apply-authorization.test.ts
+// TRAIN 5C1 — Phase 2, Phase 10 and Phase 11.
+//
+// Two things are being tested and they pull in opposite directions, which is the
+// point: that the gate CAN say yes when everything holds, and that it says no
+// the moment any single thing does not. A gate that only ever refused would be
+// safe and useless; one that only ever passed would be the reason this whole
+// programme exists.
+//
+// The fixture below is a HYPOTHETICAL satisfying state. It is not a claim about
+// the real staging project — the real attestations are absent, which is exactly
+// why the live evaluation at the bottom of this file expects a refusal.
+
+import { readFileSync, readdirSync } from 'node:fs'
+import path from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+import {
+  APPLY_AUTHORIZATION_CRITERIA,
+  evaluateApplyAuthorization,
+  type ApplyAuthorizationInputs,
+} from '@/db/hosted/baseline-apply-authorization'
+import {
+  KNOWN_PRODUCTION_IDENTIFIERS,
+  productionDenylistStatus,
+  verifyStagingTarget,
+} from '@/db/hosted/target-identity'
+
+const ROOT = process.cwd()
+const STAGING_REF = 'sssssssssssssssssss' + 's'
+const PROD_REF = 'pppppppppppppppppppp'
+
+const readBaselineSql = (file: string): string | null => {
+  try {
+    return readFileSync(path.join(ROOT, file), 'utf8')
+  } catch {
+    return null
+  }
+}
+
+function discovered(): string[] {
+  const dirs: [string, (n: string) => boolean][] = [
+    ['db/migrations', (n) => /^\d{4}_.*\.sql$/.test(n)],
+    ['supabase/migrations', (n) => n.endsWith('.sql')],
+    ['db/policies', (n) => n.endsWith('.sql')],
+  ]
+  const out: string[] = []
+  for (const [dir, accept] of dirs) {
+    for (const name of readdirSync(path.join(ROOT, dir)).sort()) if (accept(name)) out.push(`${dir}/${name}`)
+  }
+  return out
+}
+
+/** Every precondition met — a state that does NOT currently exist. */
+function satisfying(): ApplyAuthorizationInputs {
+  return {
+    readBaselineSql,
+    discoveredBaselineFiles: discovered(),
+    production: { hosts: [...KNOWN_PRODUCTION_IDENTIFIERS.hosts], projectRefs: [PROD_REF] },
+    checkpointA0: {
+      value: {
+        result: 'PASS',
+        sessionWasReadOnly: true,
+        projectIsNew: true,
+        stellaSurfaceAbsent: true,
+        writesPerformed: 0,
+      },
+      query: 'BEGIN READ ONLY; SELECT current_setting(\'transaction_read_only\'); …',
+      measuredBy: 'operator, Supabase SQL editor',
+    },
+    classCProbes: {
+      value: {
+        canCreateTriggerOnAuthUsers: true,
+        ownsStorageObjects: true,
+        evidenceBucketExists: true,
+      },
+      query:
+        "SELECT has_table_privilege(current_user, 'auth.users', 'TRIGGER'); " +
+        "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass; " +
+        "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence');",
+      measuredBy: 'operator, Supabase SQL editor',
+    },
+    stagingIdentity: {
+      value: {
+        declaredEnvironment: 'staging',
+        projectRef: STAGING_REF,
+        connectionHost: `db.${STAGING_REF}.supabase.co`,
+      },
+      query: 'read from the Supabase dashboard',
+      measuredBy: 'operator',
+    },
+    featureFlags: {
+      value: {},
+      query: 'secret manager inventory, names and values of the nine STELLA_* flags',
+      measuredBy: 'operator',
+    },
+  }
+}
+
+/* ========================================================================== */
+/* PHASE 2 — the six denylist cases the train required                        */
+/* ========================================================================== */
+
+describe('Phase 2 — the production denylist', () => {
+  const target = (over: Partial<Parameters<typeof verifyStagingTarget>[0]> = {}) => ({
+    declaredEnvironment: 'staging',
+    declaredProjectRef: STAGING_REF,
+    connectionHost: `db.${STAGING_REF}.supabase.co`,
+    sentinel: { environment: 'staging', projectRef: STAGING_REF },
+    ...over,
+  })
+  const withProd = { hosts: [...KNOWN_PRODUCTION_IDENTIFIERS.hosts], projectRefs: [PROD_REF] }
+
+  it('1. accepts a staging ref that is not on the denylist', () => {
+    const verdict = verifyStagingTarget(target(), withProd)
+    expect(verdict.ok).toBe(true)
+    if (verdict.ok) expect(verdict.projectRef).toBe(STAGING_REF)
+  })
+
+  it('2. refuses a production ref, even with three forged agreeing signals', () => {
+    const verdict = verifyStagingTarget(
+      target({
+        declaredProjectRef: PROD_REF,
+        connectionHost: `db.${PROD_REF}.supabase.co`,
+        sentinel: { environment: 'staging', projectRef: PROD_REF },
+      }),
+      withProd,
+    )
+    expect(verdict.ok).toBe(false)
+    if (!verdict.ok) expect(verdict.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
+  })
+
+  it('3. refuses a production host', () => {
+    const verdict = verifyStagingTarget(target({ connectionHost: 'app.uellix.com' }), withProd)
+    expect(verdict.ok).toBe(false)
+    if (!verdict.ok) expect(verdict.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
+  })
+
+  it('4. refuses a SUBDOMAIN of a production domain', () => {
+    // `endsWith('.' + host)`, so a host nobody listed but that lives under a
+    // listed domain is still vetoed. This is the case a literal list misses.
+    const verdict = verifyStagingTarget(target({ connectionHost: 'db.uellix.com' }), withProd)
+    expect(verdict.ok).toBe(false)
+    if (!verdict.ok) expect(verdict.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
+  })
+
+  it('5. refuses environment "production", and every near-miss spelling of staging', () => {
+    for (const env of ['production', 'Staging', 'staging ', '', 'prod']) {
+      const verdict = verifyStagingTarget(target({ declaredEnvironment: env }), withProd)
+      expect(verdict.ok, env).toBe(false)
+      if (!verdict.ok) {
+        expect(verdict.code, env).toBe(
+          env === 'production' || env !== 'staging' ? 'HOSTED_TARGET_ENVIRONMENT_NOT_STAGING' : verdict.code,
+        )
+      }
+    }
+  })
+
+  it('6. an EMPTY denylist is refused — for authorising a write, not for a dry run', () => {
+    // The distinction is the design. An empty list removes a VETO, so a dry run
+    // against it still answers a well-posed question and must keep working. What
+    // must not happen is authorising the first hosted WRITE while the veto that
+    // would catch "this is production" has never been loaded.
+    expect(productionDenylistStatus({ hosts: ['app.uellix.com'], projectRefs: [] }).loaded).toBe(false)
+    expect(productionDenylistStatus({ hosts: [], projectRefs: [PROD_REF] }).loaded).toBe(true)
+
+    // A dry run is unaffected.
+    expect(verifyStagingTarget(target(), { hosts: [], projectRefs: [] }).ok).toBe(true)
+
+    // The apply gate is not.
+    const report = evaluateApplyAuthorization({
+      ...satisfying(),
+      production: { hosts: [...KNOWN_PRODUCTION_IDENTIFIERS.hosts], projectRefs: [] },
+    })
+    expect(report.applyAuthorized).toBe(false)
+    expect(report.blocking.join(' ')).toContain('production-denylist-loaded')
+  })
+
+  it('refuses a malformed denylist entry, which is an absent veto in a present one\'s clothes', () => {
+    expect(productionDenylistStatus({ hosts: [], projectRefs: ['too-short'] }).loaded).toBe(false)
+    expect(productionDenylistStatus({ hosts: [], projectRefs: ['ABCDEFGHIJKLMNOPQRST'] }).loaded).toBe(false)
+  })
+
+  it('SHIPS EMPTY, and that is Train 5C1\'s recorded decision, not an oversight', () => {
+    // The repository's one candidate ref is labelled production in
+    // docs/AUDIT_2026-07-06.md and staging in
+    // docs/audits/2026-07-15-uellix-p1a-integration-rls.md. The operator
+    // instructed that it stay empty until production is identified
+    // independently. See RR-24.
+    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).toEqual([])
+    expect(productionDenylistStatus().loaded).toBe(false)
+  })
+})
+
+/* ========================================================================== */
+/* PHASE 10 — the gate                                                        */
+/* ========================================================================== */
+
+describe('the apply-authorization gate', () => {
+  it('authorises when every precondition holds', () => {
+    const report = evaluateApplyAuthorization(satisfying())
+    expect(report.blocking).toEqual([])
+    expect(report.applyAuthorized).toBe(true)
+  })
+
+  it('covers the eleven criteria the twelve Phase 10 dependencies collapse to', () => {
+    // Phase 10 named twelve dependencies. `hashes` and `order` are not separable
+    // — verifyBaselineManifest checks both in one pass and a partial answer is
+    // meaningless — so they are one criterion, `manifest-hashes-and-order`.
+    // Adversarial review flagged the mismatch between the old title and the
+    // array; this records the reconciliation instead of hiding it.
+    expect(APPLY_AUTHORIZATION_CRITERIA.map((c) => c.id)).toEqual([
+      'checkpoint-a0-pass',
+      'production-denylist-loaded',
+      'target-identity-corroborated',
+      'class-c-probes-affirmative',
+      'manifest-hashes-and-order',
+      'no-class-d-units',
+      'zero-production-data',
+      'no-service-role-widening',
+      'feature-flags-false',
+      'postconditions-ready',
+      'recovery-plan-conservative',
+    ])
+  })
+
+  it('NEGATIVE CONTROL: every criterion fails against its own mutation', () => {
+    const failures: string[] = []
+    for (const criterion of APPLY_AUTHORIZATION_CRITERIA) {
+      const broken = criterion.negativeControl.mutate(satisfying())
+      if (criterion.evaluate(broken).satisfied) {
+        failures.push(`${criterion.id} (${criterion.negativeControl.description})`)
+      }
+    }
+    expect(failures, 'criteria that pass their own negative control do not read their input').toEqual([])
+  })
+
+  it('refuses every attestation that is simply ABSENT', () => {
+    for (const key of ['checkpointA0', 'classCProbes', 'stagingIdentity', 'featureFlags'] as const) {
+      const report = evaluateApplyAuthorization({ ...satisfying(), [key]: null })
+      expect(report.applyAuthorized, key).toBe(false)
+    }
+  })
+
+  it('refuses a class-C attestation whose query is not the one §2.7 specifies', () => {
+    const inputs = satisfying()
+    const report = evaluateApplyAuthorization({
+      ...inputs,
+      classCProbes: { ...inputs.classCProbes!, query: 'SELECT true; SELECT true; SELECT true;' },
+    })
+    expect(report.applyAuthorized).toBe(false)
+    expect(report.blocking.join(' ')).toContain('class-c-probes-affirmative')
+  })
+
+  it('refuses an A0 attestation with no provenance', () => {
+    const inputs = satisfying()
+    const report = evaluateApplyAuthorization({
+      ...inputs,
+      checkpointA0: { ...inputs.checkpointA0!, measuredBy: '' },
+    })
+    expect(report.applyAuthorized).toBe(false)
+  })
+
+  it('refuses a probe attestation that names the WRONG table and privilege', () => {
+    // The honest mistake, not the forgery: right function, wrong question.
+    // `SELECT has_table_privilege(current_user, 'public.users', 'SELECT')`
+    // contains the substring the old check looked for.
+    const inputs = satisfying()
+    const report = evaluateApplyAuthorization({
+      ...inputs,
+      classCProbes: {
+        ...inputs.classCProbes!,
+        query:
+          "SELECT has_table_privilege(current_user, 'public.users', 'SELECT'); " +
+          "SELECT pg_has_role(current_user, 'postgres', 'USAGE'); " +
+          'SELECT count(*) FROM storage.buckets;',
+      },
+    })
+    expect(report.applyAuthorized).toBe(false)
+    expect(report.blocking.join(' ')).toContain('class-c-probes-affirmative')
+  })
+
+  it('refuses a probe attestation that is only a comment containing the right words', () => {
+    const inputs = satisfying()
+    const report = evaluateApplyAuthorization({
+      ...inputs,
+      classCProbes: {
+        ...inputs.classCProbes!,
+        query: '-- has_table_privilege pg_has_role storage.buckets',
+      },
+    })
+    expect(report.applyAuthorized).toBe(false)
+  })
+
+  it('requires provenance on ALL FOUR attestations, not just A0', () => {
+    for (const key of ['checkpointA0', 'classCProbes', 'stagingIdentity', 'featureFlags'] as const) {
+      const inputs = satisfying()
+      const blanked = evaluateApplyAuthorization({
+        ...inputs,
+        [key]: { ...inputs[key]!, measuredBy: '' },
+      })
+      expect(blanked.applyAuthorized, `${key} with no provenance`).toBe(false)
+
+      const unqueried = evaluateApplyAuthorization({
+        ...inputs,
+        [key]: { ...inputs[key]!, query: '  ' },
+      })
+      expect(unqueried.applyAuthorized, `${key} with no query`).toBe(false)
+    }
+  })
+
+  it('never reports baselineApplied, stagingApplied, hostedReady or providerReady', () => {
+    for (const report of [
+      evaluateApplyAuthorization(satisfying()),
+      evaluateApplyAuthorization({ ...satisfying(), checkpointA0: null }),
+    ]) {
+      expect(report.baselineApplied).toBe(false)
+      expect(report.stagingApplied).toBe(false)
+      expect(report.hostedReady).toBe(false)
+      expect(report.providerReady).toBe(false)
+    }
+  })
+})
+
+/* ========================================================================== */
+/* THE ACTUAL STATE OF THE REPOSITORY, RIGHT NOW                              */
+/* ========================================================================== */
+
+describe('the live verdict for Uellix Staging as of Train 5C1', () => {
+  it('is NOT authorised, and names exactly what is missing', () => {
+    // No attestation exists: the operator has not yet supplied the staging
+    // project ref or run the three probes, and the production denylist is
+    // deliberately empty. This test is the executable form of the train's
+    // BLOCKED result, and it will start failing — correctly — the moment the
+    // real attestations are wired in.
+    const live = evaluateApplyAuthorization({
+      readBaselineSql,
+      discoveredBaselineFiles: discovered(),
+      production: KNOWN_PRODUCTION_IDENTIFIERS,
+      checkpointA0: null,
+      classCProbes: null,
+      stagingIdentity: null,
+      featureFlags: null,
+    })
+
+    expect(live.applyAuthorized).toBe(false)
+    const blocking = live.blocking.join(' | ')
+    expect(blocking).toContain('checkpoint-a0-pass')
+    expect(blocking).toContain('production-denylist-loaded')
+    expect(blocking).toContain('target-identity-corroborated')
+    expect(blocking).toContain('class-c-probes-affirmative')
+    expect(blocking).toContain('feature-flags-false')
+
+    // …while everything the repository CAN establish on its own is satisfied.
+    const repositoryOnly = live.criteria.filter((c) =>
+      ['manifest-hashes-and-order', 'no-class-d-units', 'no-service-role-widening', 'postconditions-ready', 'recovery-plan-conservative'].includes(c.id),
+    )
+    expect(repositoryOnly.every((c) => c.satisfied), JSON.stringify(repositoryOnly, null, 2)).toBe(true)
+  })
+})

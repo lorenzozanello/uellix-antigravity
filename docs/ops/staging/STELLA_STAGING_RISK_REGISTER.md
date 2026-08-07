@@ -242,6 +242,41 @@ las pruebas:
 | **Defecto** | `hosted-baseline-rehearsal-ready` pasaba con `readFileSync(script)`. En un CI sin Docker —que nunca ha corrido un ensayo— quedaba verde para siempre, y el nombre invita a leerlo como «el ensayo pasó» |
 | **Corrección** | Lee `artifacts/baseline-rehearsal/latest.json`, exige que su `manifestDigest` coincida con el manifiesto actual, que RUN A fallara en 0039, que RUN B aplicara las 50 y que B0 quedara limpia |
 
+#### RR-24 — El repositorio se contradice sobre qué proyecto es producción
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **BLOCKER** para P5 |
+| **Defecto** | El único project ref candidato del repositorio, `ctaxtgujyyprgynmnvtq`, aparece etiquetado de dos formas incompatibles: `docs/AUDIT_2026-07-06.md` describe la credencial que apunta a `db.<ref>.supabase.co` como acceso a la «**full production database**»; `docs/audits/2026-07-15-uellix-p1a-integration-rls.md` llama al mismo host «el entorno de **Staging** remoto de Supabase» y documenta 29 migraciones aplicadas hasta la `0028` |
+| **Por qué importa** | P5 exige el ref de **producción** en la denylist. Meter el equivocado es exactamente el fallo que la denylist existe para prevenir: si es un staging antiguo y se etiqueta como producción, se escribe una afirmación falsa dentro de un control de seguridad; si es producción y se omite, el veto sigue ausente |
+| **Lo que sí es seguro afirmar** | **No es el nuevo Uellix Staging.** El Checkpoint A0 confirmó un proyecto **nuevo y vacío**, sin `public.stella_interactions`; éste tiene 29 migraciones aplicadas |
+| **Decisión del operador (2026-08-07)** | No clasificarlo. No añadirlo a `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs`. **No acceder a ese proyecto.** Identificar producción de forma independiente antes de llenar la denylist |
+| **Estado** | **ABIERTO.** La denylist sigue vacía, ahora por decisión registrada y no por olvido, y `productionDenylistStatus()` lo reporta como `loaded: false` |
+| **Cierre** | El ref de producción, identificado por una vía distinta de estos dos documentos |
+
+#### RR-25 — Tercera asimetría local/hosted: no hay registro de lo aplicado
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR** |
+| **Defecto** | El plan hosted aplica cada unidad con `psql -1 -v ON_ERROR_STOP=1 -f`, que **no escribe ningún registro**. En local, `pnpm db:migrate:local` usa el migrador de drizzle, que crea y puebla `drizzle.__drizzle_migrations` — la auditoría de 2026-07-15 confirma esa tabla con 29 filas en el proyecto remoto de entonces |
+| **Consecuencia** | `TargetStateProbe.baselineUnitsInstalled` está documentado como «lo que registra el ledger del operador», y **ese ledger no lo crea nada** en la cadena hosted. Tras `PHASE_BASELINE`, la comprobación anti-salto de `PHASE_STELLA_BOOTSTRAP` (`missingBaselineUnits`) no tendría fuente autoritativa: sería un dato tecleado |
+| **Relación con hallazgos previos** | Agrava directamente lo que la revisión de 5C0 señaló sobre la sonda auto-declarada. Allí el argumento era «el planificador confía en su entrada»; aquí se añade que **no hay nada en el objetivo contra lo que contrastarla** |
+| **Por qué es de la misma clase** | Es la tercera vez que aparece el patrón: algo que el stack local hace implícitamente (`supabase start` aplica `supabase/migrations`, crea el bucket, y `db:migrate:local` escribe el journal) y que nadie hace en hosted. Que aparezca tres veces sugiere tratar «¿qué más hace el stack local por nosotros?» como pregunta permanente |
+| **Mitigación disponible** | CHECKPOINT B0 mide el **estado resultante** (tablas, funciones, policies, RLS), que es más fuerte que un journal: un journal dice qué se intentó, B0 dice qué hay. La ausencia de journal no bloquea el apply; bloquea poder *resumir* uno interrumpido — y para eso la estrategia ya es `DESTROY_AND_REPROVISION` |
+| **Estado** | **ABIERTO**, no bloqueante para el apply |
+
+#### RR-26 — El gate de autorización no lo consumía nada
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **BLOCKER**, cerrado en el mismo train |
+| **Defecto** | `db/hosted/target-identity.ts` afirmaba, por escrito: «el check vive donde vive el riesgo — `hosted-baseline-apply-authorized` lo consume y refuta». `evaluateApplyAuthorization` tenía **cero call sites** fuera de su propio test. Ni `planProvisioningPhase` ni `planHostedApply` importaban `productionDenylistStatus` |
+| **Ataque** | Llamar a `planProvisioningPhase({phase:'PHASE_BASELINE', mode:'apply', applyConfirmation:'hosted_apply:<ref>'})` con la denylist por defecto (vacía): devolvía `ok:true, writesPermitted:true` y los 50 comandos `psql`. La primera escritura hosted quedaba planificada y bendecida con el veto de refs nunca cargado, y nada obligaba a ejecutar el gate |
+| **Por qué es la misma clase que RR-19** | Una afirmación falsa de este train sobre su propio trabajo. La cuarta de la serie |
+| **Corrección** | `PROVISIONING_PRODUCTION_DENYLIST_EMPTY` y `HOSTED_PRODUCTION_DENYLIST_EMPTY`: **ambos** planificadores refutan `mode: 'apply'` con la denylist vacía. Un dry-run no se ve afectado, que es el reparto documentado. Dos tests lo fijan, uno por planificador |
+| **Consecuencia operativa** | Mientras P5 siga abierto, **ninguna escritura hosted puede planificarse siquiera**, en ninguno de los dos caminos. El bloqueo de RR-24 es ahora ejecutable, no documental |
+
 #### RR-23 — La duplicación de A2 no se vigilaba en tiempo de plan
 
 | Campo | Contenido |

@@ -50,6 +50,7 @@ import { scanBaselineSql, type BaselineScanFacts } from './baseline-scanner'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
 import {
+  productionDenylistStatus,
   redactForHostedLog,
   verifyStagingTarget,
   type HostedTargetInput,
@@ -83,6 +84,7 @@ export type ProvisioningFailureCode =
   | 'PROVISIONING_FEATURE_FLAG_ENABLED'
   | 'PROVISIONING_PRIVILEGE_PROBE_MISSING'
   | 'PROVISIONING_PRIVILEGE_UNAVAILABLE'
+  | 'PROVISIONING_PRODUCTION_DENYLIST_EMPTY'
   /** Anything the identity verifier or the package planner refused with. */
   | string
 
@@ -192,6 +194,34 @@ export interface PrivilegeProbes {
    */
   readonly evidenceBucketExists: boolean | null
 }
+
+/**
+ * The three §2.7 probes: the field, the unit that needs it, and the EXACT SQL.
+ *
+ * One source of truth for the queries, exported so the apply-authorization gate
+ * can require the attestation to quote them verbatim rather than merely contain
+ * a recognisable substring. Adversarial review showed why the weaker form was
+ * theatre: `SELECT has_table_privilege(current_user, 'public.users', 'SELECT')`
+ * contains the marker `has_table_privilege`, answers a completely different
+ * question, and would have passed.
+ */
+export const CLASS_C_PROBES: readonly (readonly [keyof PrivilegeProbes, string, string])[] = [
+  [
+    'canCreateTriggerOnAuthUsers',
+    '20260716000000_auth_trigger.sql',
+    "SELECT has_table_privilege(current_user, 'auth.users', 'TRIGGER')",
+  ],
+  [
+    'ownsStorageObjects',
+    '20260716000001_storage_policies.sql',
+    "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass",
+  ],
+  [
+    'evidenceBucketExists',
+    "20260716000001_storage_policies.sql (its policies gate on bucket_id = 'uellix-evidence')",
+    "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence')",
+  ],
+]
 
 /** A read-only picture of the target. The caller runs the queries; this never does. */
 export interface TargetStateProbe {
@@ -440,23 +470,9 @@ function checkPrivileges(probes: PrivilegeProbes | undefined): ProvisioningPlan 
     )
   }
 
-  const REQUIRED: readonly [keyof PrivilegeProbes, string, string][] = [
-    [
-      'canCreateTriggerOnAuthUsers',
-      '20260716000000_auth_trigger.sql',
-      "SELECT has_table_privilege(current_user, 'auth.users', 'TRIGGER')",
-    ],
-    [
-      'ownsStorageObjects',
-      '20260716000001_storage_policies.sql',
-      "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass",
-    ],
-    [
-      'evidenceBucketExists',
-      "20260716000001_storage_policies.sql (its policies gate on bucket_id = 'uellix-evidence')",
-      "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence')",
-    ],
-  ]
+  // The single source of truth for these lives at module scope so the
+  // apply-authorization gate can require an attestation to quote them verbatim.
+  const REQUIRED = CLASS_C_PROBES
 
   const unmeasured = REQUIRED.filter(([key]) => probes[key] === null || probes[key] === undefined)
   if (unmeasured.length > 0) {
@@ -724,6 +740,29 @@ function finish(
   const trail = [`phase ${phase}`, `mode ${request.mode}`, ...log]
 
   if (request.mode === 'apply') {
+    // THE PRODUCTION VETO MUST BE LOADED BEFORE ANY WRITE.
+    //
+    // Adversarial review of Train 5C1 found this missing and it was the whole
+    // ballgame: `db/hosted/target-identity.ts` claimed "the check lives where
+    // the risk does — hosted-baseline-apply-authorized consumes this and
+    // refuses", and `evaluateApplyAuthorization` had ZERO call sites outside its
+    // own test. The gate was advisory. This planner would mint
+    // `writesPermitted: true` for all fifty units while the ref veto had never
+    // been loaded, and nothing anywhere required anyone to run the gate first.
+    //
+    // Host matching is not a substitute. A Supabase database host is
+    // `db.<ref>.supabase.co`; the ref is the only part that identifies the
+    // project, so a host list catches a connection aimed at a production DOMAIN
+    // and catches nothing aimed at the production DATABASE.
+    //
+    // Dry runs are deliberately unaffected: an empty list removes a veto, not a
+    // gate, and refusing to even DESCRIBE a plan is what hid the sentinel
+    // circularity for a whole train.
+    const denylist = productionDenylistStatus(request.production)
+    if (!denylist.loaded) {
+      return refuse('PROVISIONING_PRODUCTION_DENYLIST_EMPTY', `refused: ${denylist.detail}`)
+    }
+
     const expected = `hosted_apply:${projectRef}`
     if (!request.applyConfirmation) {
       return refuse(

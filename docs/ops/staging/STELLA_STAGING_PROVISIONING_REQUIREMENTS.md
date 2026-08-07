@@ -89,7 +89,7 @@ el centinela apareciera antes que el paquete que lo hace posible.
 | **P2** | PostgreSQL 17+ (§1 P2) | del operador |
 | **P3** | Cero datos productivos: ni restauración, ni copia, ni «el esquema con unas filas» | del operador |
 | **P4** | Identidad **no secreta** registrada: el project ref de 20 letras (§1 P5) | del operador |
-| **P5** | Denylist de producción rellenada — `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs` en `db/hosted/target-identity.ts`, con el ref de **producción**, no el de staging (§6) | pendiente |
+| **P5** | Denylist de producción rellenada — `KNOWN_PRODUCTION_IDENTIFIERS.projectRefs` en `db/hosted/target-identity.ts`, con el ref de **producción**, no el de staging (§6) | **BLOQUEADO — ver §2.8** |
 | **P6** | Los **nueve** flags `STELLA_*` en `false` en TODO entorno que apunte a esta base | del operador |
 
 `P6` lo comprueba también el runner: `planProvisioningPhase()` refuta con
@@ -232,6 +232,47 @@ misma asimetría local/hosted que ocultó el defecto de 0039, en un segundo siti
 > que falta es un privilegio, la unidad necesita una adaptación **antes** de que
 > se aplique ninguna de las 50 — descubrirlo en la unidad 40 cuesta 39 unidades
 > comprometidas y una reprovisión.
+
+### 2.8 P5 — por qué la denylist sigue vacía (Train 5C1)
+
+El repositorio contiene **un** project ref candidato, y lo etiqueta de dos formas
+incompatibles:
+
+| Documento | Cómo lo llama |
+|---|---|
+| `docs/AUDIT_2026-07-06.md` | la credencial que apunta ahí da acceso a la «**full production database**» |
+| `docs/audits/2026-07-15-uellix-p1a-integration-rls.md` | «el entorno de **Staging** remoto de Supabase», con 29 migraciones hasta `0028` |
+
+Lo único que se puede afirmar con seguridad es que **no es el nuevo Uellix
+Staging**: el Checkpoint A0 confirmó un proyecto nuevo y vacío, y éste tiene 29
+migraciones aplicadas.
+
+**Decisión del operador, 2026-08-07:** no clasificarlo, no añadirlo a la
+denylist, **no acceder a ese proyecto**, y registrar la contradicción como
+riesgo ([RR-24](STELLA_STAGING_RISK_REGISTER.md)) hasta identificar producción
+por una vía independiente.
+
+Consecuencia operativa, y es la parte que importa: la denylist vacía ya **no es
+inerte**. `productionDenylistStatus()` la reporta como `loaded: false`, y el
+criterio `production-denylist-loaded` del gate de autorización **refuta la
+primera escritura hosted** mientras siga así. Un dry-run sigue funcionando, que
+es correcto: una lista vacía retira un veto, no un gate — pero autorizar una
+*escritura* mientras el veto que atraparía «esto es producción» nunca se ha
+cargado es la única situación en la que esa frase deja de tranquilizar.
+
+### 2.9 Tercera asimetría local/hosted: no hay registro de lo aplicado
+
+Las dos primeras fueron `supabase/migrations` aplicadas implícitamente por
+`config.toml` y el bucket `uellix-evidence`. La tercera: el plan hosted usa
+`psql -1 -f` por unidad y **no escribe ningún journal**, mientras que
+`pnpm db:migrate:local` usa el migrador de drizzle y sí crea
+`drizzle.__drizzle_migrations`.
+
+`TargetStateProbe.baselineUnitsInstalled` dice «lo que registra el ledger del
+operador» — y ese ledger no lo crea nadie. Ver
+[RR-25](STELLA_STAGING_RISK_REGISTER.md). No bloquea el apply: **CHECKPOINT B0
+mide el estado resultante**, que es más fuerte que un journal, porque un journal
+dice qué se intentó y B0 dice qué hay.
 
 ### 2.6 CADENA STELLA
 

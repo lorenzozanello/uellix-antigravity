@@ -184,8 +184,37 @@ describe('the three phases, in sequence', () => {
     expect(result.sequenceComplete).toBe(true)
   })
 
+  it('APPLY refuses while the production ref denylist is empty — the veto must be loaded first', () => {
+    // Adversarial review of Train 5C1: the apply-authorization gate consulted
+    // `productionDenylistStatus`, and NOTHING consulted the gate. Both planners
+    // minted writesPermitted: true with the ref veto never loaded. The check now
+    // lives on the write path, where the risk is.
+    const r = refusal(
+      planProvisioningPhase(
+        request({
+          mode: 'apply',
+          applyConfirmation: `hosted_apply:${REF}`,
+          production: { hosts: ['app.uellix.com'], projectRefs: [] },
+        }),
+      ),
+    )
+    expect(r.code).toBe('PROVISIONING_PRODUCTION_DENYLIST_EMPTY')
+  })
+
+  it('…but a DRY RUN with an empty denylist still works, because it removes a veto, not a gate', () => {
+    const p = plan(
+      planProvisioningPhase(request({ production: { hosts: ['app.uellix.com'], projectRefs: [] } })),
+    )
+    expect(p.writesPermitted).toBe(false)
+    expect(p.steps).toHaveLength(50)
+  })
+
   it('apply mode requires a confirmation minted for THIS project', () => {
-    const base = { phase: 'PHASE_BASELINE' as const, mode: 'apply' as const }
+    const base = {
+      phase: 'PHASE_BASELINE' as const,
+      mode: 'apply' as const,
+      production: { hosts: ['app.uellix.com'], projectRefs: ['pppppppppppppppppppp'] },
+    }
     expect(refusal(planProvisioningPhase(request(base))).code).toBe('HOSTED_APPLY_CONFIRMATION_REQUIRED')
     expect(
       refusal(planProvisioningPhase(request({ ...base, applyConfirmation: 'hosted_apply:zzzzzzzzzzzzzzzzzzzz' }))).code,

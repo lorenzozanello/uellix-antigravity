@@ -143,7 +143,68 @@ export interface ProductionIdentifiers {
 
 export const KNOWN_PRODUCTION_IDENTIFIERS: ProductionIdentifiers = {
   hosts: ['uellix-antigravity.vercel.app', 'app.uellix.com', 'uellix.com'],
+  // STILL EMPTY, and Train 5C1 deliberately did not fill it.
+  //
+  // The repository contains exactly one candidate — a ref that appears in two
+  // audit documents with two INCOMPATIBLE labels: `docs/AUDIT_2026-07-06.md`
+  // describes the credential pointing at it as giving "full production database"
+  // access, while `docs/audits/2026-07-15-uellix-p1a-integration-rls.md` calls
+  // the same host "el entorno de Staging remoto de Supabase". One repository,
+  // one ref, two answers.
+  //
+  // Guessing which is right is precisely the mistake this list exists to
+  // prevent, so the operator instructed that it stay empty until the production
+  // ref is identified independently. See RR-24.
   projectRefs: [],
+}
+
+/**
+ * Whether the production veto is actually loaded.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A SEPARATE PREDICATE AND NOT A REFUSAL INSIDE verifyStagingTarget
+ * ---------------------------------------------------------------------------
+ * An empty denylist removes a VETO. It does not remove a gate: the three
+ * positive signals stay required no matter what, so a dry run against an empty
+ * denylist is answering a well-posed question and should keep working. Folding
+ * the emptiness check into `verifyStagingTarget` would break every dry run and
+ * every test fixture to guard against a risk that only materialises on a WRITE.
+ *
+ * So the check lives where the risk does. `hosted-baseline-apply-authorized`
+ * consumes this and refuses: authorising the first hosted write while the veto
+ * that would catch "this is production" has never been loaded is the one
+ * situation where "removes a veto, not a gate" stops being reassuring.
+ */
+export function productionDenylistStatus(
+  production: ProductionIdentifiers = KNOWN_PRODUCTION_IDENTIFIERS,
+): { readonly loaded: boolean; readonly detail: string } {
+  const refs = production.projectRefs.length
+  const hosts = production.hosts.length
+
+  if (refs === 0) {
+    return {
+      loaded: false,
+      detail:
+        `the production project-ref veto is EMPTY (${hosts} host(s) listed, 0 refs). Host matching ` +
+        `catches a connection string aimed at a production DOMAIN; it catches nothing aimed at the ` +
+        `production DATABASE, because a Supabase database host is db.<ref>.supabase.co and the ref is ` +
+        `the only part that identifies the project. Until a ref is listed, the veto cannot fire on the ` +
+        `target that matters most.`,
+    }
+  }
+
+  const malformed = production.projectRefs.filter((r) => !PROJECT_REF.test(r))
+  if (malformed.length > 0) {
+    return {
+      loaded: false,
+      detail: `${malformed.length} entr(y|ies) in the production denylist are not 20-lowercase-letter project refs. A malformed entry never matches anything, so it is an absent veto wearing a present one's clothes.`,
+    }
+  }
+
+  return {
+    loaded: true,
+    detail: `${refs} production project ref(s) and ${hosts} production host(s) are vetoed before any other check`,
+  }
 }
 
 const PROJECT_REF = /^[a-z]{20}$/
@@ -163,10 +224,25 @@ export function projectRefFromHost(host: string): string | null {
   const normalized = host.trim().toLowerCase()
   if (!normalized.endsWith('.supabase.co')) return null
 
+  // EXACTLY `db.<ref>.supabase.co` or `<ref>.supabase.co`, with no extra labels.
+  //
+  // The first version ignored trailing labels, so `db.<ref>.anything.supabase.co`
+  // derived a ref and "corroborated" the declaration. No cross-project
+  // acceptance was reachable — everything under *.supabase.co is
+  // Supabase-controlled and a mismatching ref is refused downstream — but it
+  // degraded the independence of signal 2, which is the only thing signal 2 is
+  // for. Adversarial review, Train 5C1.
   const labels = normalized.slice(0, -'.supabase.co'.length).split('.')
-  const candidate = labels[0] === 'db' ? labels[1] : labels[0]
-  if (!candidate || !PROJECT_REF.test(candidate)) return null
-  return candidate
+  if (labels.length === 1) {
+    // `<ref>.supabase.co` — the REST/API host. Accepted because an operator
+    // reading the dashboard sees this form, and it names the project as
+    // unambiguously as the database host does.
+    return PROJECT_REF.test(labels[0]) ? labels[0] : null
+  }
+  if (labels.length === 2 && labels[0] === 'db') {
+    return PROJECT_REF.test(labels[1]) ? labels[1] : null
+  }
+  return null
 }
 
 const CONNECTION_STRING = /\b[a-z][a-z0-9+.-]*:\/\/\S*/gi

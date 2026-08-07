@@ -97,6 +97,11 @@ const applyRequest = (overrides: Partial<HostedApplyRequest> = {}): HostedApplyR
     sources: sources(['stella_hosted_0001_managed_role_bootstrap']),
     bootstrapOnly: true,
     emptinessAttested: true,
+    // TRAIN 5C1. Apply mode now refuses while the production project-ref veto is
+    // empty, so an apply-mode fixture has to load one. The refusal itself is
+    // tested separately below; here it would only mask the confirmation contract
+    // these three cases exist to pin.
+    production: { hosts: ['app.uellix.com'], projectRefs: ['pppppppppppppppppppp'] },
     target: {
       declaredEnvironment: 'staging',
       declaredProjectRef: REF,
@@ -130,6 +135,21 @@ describe('planHostedApply — apply mode requires its own explicit confirmation'
 
     expect(plan.ok).toBe(true)
     if (plan.ok) expect(plan.writesPermitted).toBe(true)
+  })
+
+  it('refuses APPLY while the production project-ref denylist is empty', () => {
+    // The default KNOWN_PRODUCTION_IDENTIFIERS ships with projectRefs: [], and
+    // this planner is one of two paths to writesPermitted: true. A guard on one
+    // of two doors is a guard on neither.
+    const plan = planHostedApply(
+      applyRequest({
+        mode: 'apply',
+        applyConfirmation: `hosted_apply:${REF}`,
+        production: { hosts: ['app.uellix.com'], projectRefs: [] },
+      }),
+    )
+    expect(plan.ok).toBe(false)
+    if (!plan.ok) expect(plan.code).toBe('HOSTED_PRODUCTION_DENYLIST_EMPTY')
   })
 
   it('refuses an apply that spans the bootstrap AND the chain, however well confirmed', () => {

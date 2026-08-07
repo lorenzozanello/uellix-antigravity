@@ -242,6 +242,54 @@ párrafo. Si alguien «arregla» un check devolviendo `true`, este gate cae.
 > regresión **de Train 4**. Citarlo como regresión del baseline sería validar una
 > forma de esquema que las 50 unidades no producen.
 
+## 3d. El gate de autorización de escritura — Train 5C1
+
+`db/hosted/baseline-apply-authorization.ts`. **Uno solo**, y es el que decide si
+la primera escritura hosted puede autorizarse:
+
+**`hosted-baseline-apply-authorized`**
+
+Once criterios, cada uno con control negativo **ejecutable**:
+
+| Criterio | Fuente | Control negativo |
+|---|---|---|
+| `checkpoint-a0-pass` | atestación con consulta y procedencia | un A0 con una sola escritura |
+| `production-denylist-loaded` | `productionDenylistStatus()` | lista de refs vacía |
+| `target-identity-corroborated` | atestación + `projectRefFromHost` | host que nombra otro proyecto |
+| `class-c-probes-affirmative` | atestación de §2.7 | `ownsStorageObjects: false` |
+| `manifest-hashes-and-order` | derivado del corpus | una unidad con un byte de deriva |
+| `no-class-d-units` | lista de unidades **inyectada** | una unidad clasificada clase D |
+| `zero-production-data` | derivado del corpus | una unidad que gana un `INSERT … VALUES` |
+| `no-service-role-widening` | derivado del corpus | una segunda unidad que concede a `service_role` |
+| `feature-flags-false` | atestación | un flag en `true` |
+| `postconditions-ready` | las 15 contra su propia mutación | corpus que deriva a nada |
+| `recovery-plan-conservative` | función de recuperación **inyectada** | tabla que responde `RETRY_UNIT` a todo |
+
+Dos notas que no son cosméticas.
+
+**Ausencia = refutación, en los cuatro campos atestados.** `null` significa «no
+medido», y no medido no es satisfecho. Es la misma regla que Train 5B aprendió
+con `installedProbes` fallando abierto y 5C0 volvió a aprender con un conjunto de
+vacuidad que sólo miraba las tablas que le pasaban.
+
+**Los dos criterios inyectables lo son por falsabilidad, no por
+configurabilidad.** `no-class-d-units` y `recovery-plan-conservative` razonaban
+sobre constantes de módulo, así que ninguna entrada podía hacerlos fallar: la
+primera pasada del barrido de controles negativos los encontró pasando su propia
+mutación. Un criterio que lee una constante es decorativo por construcción.
+
+> **Este gate no significa `baselineApplied`.** Significa que nada de lo
+> conocido se interpone, y que un humano —Lorenzo— puede ahora elegir ejecutar
+> `PHASE_BASELINE`. Los cuatro campos `baselineApplied`, `stagingApplied`,
+> `hostedReady` y `providerReady` siguen **hardcodeados `false`**.
+
+**Estado a 2026-08-07: NO AUTORIZADO.** Cinco criterios refutan, y un test
+ejecutable lo fija: `production-denylist-loaded` (RR-24), y los cuatro que
+dependen de atestaciones que aún no existen — `checkpoint-a0-pass`,
+`target-identity-corroborated`, `class-c-probes-affirmative` y
+`feature-flags-false`. Los seis que el repositorio puede establecer por su cuenta
+están satisfechos.
+
 ## 4. Orden y dependencias
 
 ```
