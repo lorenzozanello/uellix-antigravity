@@ -1,0 +1,15 @@
+{
+  "manifestDigest": "8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a",
+  "naiveFailedAt": "db/migrations/0039_grant_rls_helper_execution.sql",
+  "manifestApplied": 50,
+  "manifestFailedAt": null,
+  "postconditionsPassed": 15,
+  "postconditionsTotal": 15,
+  "shimmed": [
+    "schema auth (auth.users, auth.uid()) — owned by supabase_auth_admin on a real project",
+    "schema storage (storage.objects, storage.foldername()) — owned by supabase_storage_admin",
+    "B0-15 (uellix-evidence bucket) is ASSERTED, not measured: a disposable database has no Storage",
+    "B0-14 (no SUPABASE_SERVICE_ROLE_KEY) is ASSERTED, not measured: no secret manager here",
+    "ownership of auth.users and storage.objects is OURS here and is the platform's hosted — the two class-C probes cannot be exercised locally at all"
+  ]
+}

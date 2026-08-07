@@ -79,9 +79,36 @@ describe('planHostedApply — dry run', () => {
   })
 })
 
+// TRAIN 5C0 AMENDMENT TO THIS SUITE'S FIXTURE.
+//
+// The base `request()` above is the whole ten-package chain, and its comment
+// explains why: a plan containing the bootstrap was a first provisioning and had
+// to carry all ten. That is no longer an appliable shape. Train 5C0 established
+// that a human writes uellix_bootstrap.staging_sentinel BETWEEN the bootstrap
+// and the chain, so an apply that spans both crosses a boundary no confirmation
+// authorizes, and `planHostedApply` now refuses it with
+// HOSTED_SENTINEL_BOUNDARY_CROSSED before it ever reaches the apply gate.
+//
+// The confirmation contract itself is unchanged, so these tests keep testing it
+// — against the shape that an apply is now allowed to have.
+const applyRequest = (overrides: Partial<HostedApplyRequest> = {}): HostedApplyRequest =>
+  request({
+    packages: ['stella_hosted_0001_managed_role_bootstrap'],
+    sources: sources(['stella_hosted_0001_managed_role_bootstrap']),
+    bootstrapOnly: true,
+    emptinessAttested: true,
+    target: {
+      declaredEnvironment: 'staging',
+      declaredProjectRef: REF,
+      connectionHost: `db.${REF}.supabase.co`,
+      sentinel: null,
+    },
+    ...overrides,
+  })
+
 describe('planHostedApply — apply mode requires its own explicit confirmation', () => {
   it('refuses apply with no confirmation, even against a fully valid target', () => {
-    const plan = planHostedApply(request({ mode: 'apply' }))
+    const plan = planHostedApply(applyRequest({ mode: 'apply' }))
 
     expect(plan.ok).toBe(false)
     if (!plan.ok) expect(plan.code).toBe('HOSTED_APPLY_CONFIRMATION_REQUIRED')
@@ -89,7 +116,7 @@ describe('planHostedApply — apply mode requires its own explicit confirmation'
 
   it('refuses a confirmation minted for a different project', () => {
     const plan = planHostedApply(
-      request({ mode: 'apply', applyConfirmation: `hosted_apply:zyxwvutsrqponmlkjihg` }),
+      applyRequest({ mode: 'apply', applyConfirmation: `hosted_apply:zyxwvutsrqponmlkjihg` }),
     )
 
     expect(plan.ok).toBe(false)
@@ -97,10 +124,19 @@ describe('planHostedApply — apply mode requires its own explicit confirmation'
   })
 
   it('accepts the exact confirmation, and only then permits writes', () => {
-    const plan = planHostedApply(request({ mode: 'apply', applyConfirmation: `hosted_apply:${REF}` }))
+    const plan = planHostedApply(
+      applyRequest({ mode: 'apply', applyConfirmation: `hosted_apply:${REF}` }),
+    )
 
     expect(plan.ok).toBe(true)
     if (plan.ok) expect(plan.writesPermitted).toBe(true)
+  })
+
+  it('refuses an apply that spans the bootstrap AND the chain, however well confirmed', () => {
+    const plan = planHostedApply(request({ mode: 'apply', applyConfirmation: `hosted_apply:${REF}` }))
+
+    expect(plan.ok).toBe(false)
+    if (!plan.ok) expect(plan.code).toBe('HOSTED_SENTINEL_BOUNDARY_CROSSED')
   })
 
   it('a dry run IGNORES a valid confirmation — read-only means read-only', () => {
@@ -130,9 +166,22 @@ describe('planHostedApply — target identity is checked before anything else', 
     if (!plan.ok) expect(plan.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
   })
 
-  it('refuses a missing sentinel', () => {
+  // TRAIN 5C0. This test used to run the FULL chain with sentinel: null and
+  // assert a refusal. That assertion was the circularity, written down: the
+  // full chain includes the bootstrap, the bootstrap is what creates the
+  // sentinel's table, so the refusal it was pinning meant the first hosted
+  // provisioning could never be planned. It looked like a security property and
+  // was a deadlock.
+  //
+  // The property it MEANT to pin is real and is kept, exactly: a plan that does
+  // not create the sentinel's table has no excuse for the row being absent.
+  it('refuses a missing sentinel for any plan that is not creating the sentinel table', () => {
+    const chainOnly = HOSTED_CHAIN.filter((n) => n !== 'stella_hosted_0001_managed_role_bootstrap')
     const plan = planHostedApply(
       request({
+        packages: chainOnly,
+        sources: sources(chainOnly),
+        installedProbes: { stella_hosted_0001_managed_role_bootstrap: true },
         target: {
           declaredEnvironment: 'staging',
           declaredProjectRef: REF,
