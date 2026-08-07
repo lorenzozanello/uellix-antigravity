@@ -36,6 +36,7 @@ import {
   verifyStagingTarget,
   type HostedTargetInput,
   type ProductionIdentifiers,
+  type SentinelPolicy,
 } from './target-identity'
 
 export type HostedApplyFailureCode =
@@ -48,6 +49,8 @@ export type HostedApplyFailureCode =
   | 'HOSTED_APPLY_CONFIRMATION_MISMATCH'
   | 'HOSTED_GROUNDING_UNIT_INCOMPLETE'
   | 'HOSTED_TICKET_CHAIN_INCOMPLETE'
+  | 'HOSTED_SENTINEL_BOUNDARY_CROSSED'
+  | 'HOSTED_BOOTSTRAP_ONLY_PLAN_INVALID'
   | 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION'
   | string
 
@@ -65,6 +68,21 @@ export interface HostedApplyRequest {
   /** Canonical SQL by package name. */
   readonly sources: Readonly<Record<string, string>>
   readonly production?: ProductionIdentifiers
+  /**
+   * PHASE_STELLA_BOOTSTRAP: this plan applies the bootstrap and STOPS, so that a
+   * human can write the sentinel row before anything else runs.
+   *
+   * Set by `db/hosted/hosted-provisioning-runner.ts`, never by an operator
+   * directly. When set, the plan must be EXACTLY the bootstrap — the flag
+   * narrows what is permitted, it does not widen it.
+   */
+  readonly bootstrapOnly?: boolean
+  /**
+   * Set only by a caller that has MEASURED the target as empty. Required for an
+   * apply-mode `bootstrapOnly` plan, because that is the one path where a write
+   * happens with the sentinel deferred. See the refusal in `planHostedApply`.
+   */
+  readonly emptinessAttested?: boolean
 }
 
 export interface HostedApplyStep {
@@ -95,14 +113,95 @@ function fail(code: HostedApplyFailureCode, message: string): HostedApplyPlan {
 }
 
 export function planHostedApply(request: HostedApplyRequest): HostedApplyPlan {
-  // (1) IDENTITY FIRST, always. Every other check assumes we know which
-  //     database we are talking about; running them first would mean reporting
-  //     a package problem about a database we were never allowed to touch.
-  const identity = verifyStagingTarget(request.target, request.production)
+  const includesBootstrap = request.packages.includes('stella_hosted_0001_managed_role_bootstrap')
+
+  // (0) THE SENTINEL BOUNDARY, decided before identity because it decides which
+  //     identity question is even askable.
+  //
+  //     Train 5C0 found that Train 5B's planner could not plan a first
+  //     provisioning at all: it demanded the in-database sentinel from every
+  //     plan, and the bootstrap is the package that creates the sentinel's table.
+  //     The knot is real and it is not a coding slip — the requirements document
+  //     had the same contradiction between its §2 A5 and its §3.
+  //
+  //     The resolution has three parts, and the third is the one that keeps this
+  //     from being a hole:
+  //
+  //       a. A DRY RUN may always defer the sentinel. Planning is not writing,
+  //          and refusing to even describe the first provisioning is what made
+  //          the defect invisible for a whole train.
+  //       b. An APPLY that includes the bootstrap must be bootstrapOnly. You may
+  //          write the bootstrap without a sentinel; you may not write anything
+  //          ELSE without one.
+  //       c. Which means no single apply can cross the boundary. The human
+  //          INSERT sits between two invocations, where a human step belongs,
+  //          rather than being a precondition of the package that makes it
+  //          possible.
+  if (request.bootstrapOnly) {
+    const isExactlyBootstrap =
+      request.packages.length === 1 && includesBootstrap
+    if (!isExactlyBootstrap) {
+      return fail(
+        'HOSTED_BOOTSTRAP_ONLY_PLAN_INVALID',
+        `refused: a bootstrap-only plan must be exactly [stella_hosted_0001_managed_role_bootstrap], ` +
+          `got ${request.packages.length} package(s): ${request.packages.join(', ')}. The flag narrows ` +
+          `what may run before the sentinel exists; it is not a way to carry extra packages past it.`,
+      )
+    }
+    // THE WAIVER HAS A PRICE AND IT IS COLLECTED ON BOTH PATHS.
+    //
+    // Adversarial review A: "set by hosted-provisioning-runner.ts, never by an
+    // operator directly" was a comment, not a check. A direct call with
+    // `{bootstrapOnly: true, mode: 'apply'}` reached a two-signal APPLY of the
+    // role/ownership bootstrap against any database the production veto did not
+    // catch — and this module's own log said so out loud, that the compensating
+    // control "is enforced by hosted-provisioning-runner.ts, not here".
+    //
+    // This planner cannot MEASURE emptiness — it opens no connection, and that
+    // is deliberate. What it can do is refuse to proceed without the attestation
+    // that somebody did, which turns the comment into a required argument.
+    if (request.mode === 'apply' && request.emptinessAttested !== true) {
+      return fail(
+        'HOSTED_EMPTINESS_ATTESTATION_REQUIRED',
+        `refused: applying the bootstrap with the sentinel deferred requires emptinessAttested: true. ` +
+          `Two signals of identity are accepted here ONLY because a third fact stands in for the ` +
+          `sentinel — the target holds zero rows in every table the baseline creates — and this planner ` +
+          `cannot measure that itself. db/hosted/hosted-provisioning-runner.ts measures it and sets the ` +
+          `flag; a caller setting it by hand is asserting the same thing under the same responsibility.`,
+      )
+    }
+  } else if (includesBootstrap && request.mode === 'apply') {
+    return fail(
+      'HOSTED_SENTINEL_BOUNDARY_CROSSED',
+      `refused: this plan applies the bootstrap AND ${request.packages.length - 1} further package(s) ` +
+        `in one invocation. uellix_bootstrap.staging_sentinel does not exist until the bootstrap has ` +
+        `run, and it is written by a human reading the project ref off the dashboard — a bootstrap ` +
+        `that minted its own sentinel would be certifying itself. Apply the bootstrap alone ` +
+        `(bootstrapOnly), have the operator write the row, then apply the chain against a target that ` +
+        `can finally corroborate its own identity.`,
+    )
+  }
+
+  const sentinelPolicy: SentinelPolicy =
+    includesBootstrap && (request.mode === 'dry-run' || request.bootstrapOnly === true)
+      ? 'deferred-until-bootstrap'
+      : 'required'
+
+  // (1) IDENTITY, and every other check assumes we know which database we are
+  //     talking about; running them first would mean reporting a package problem
+  //     about a database we were never allowed to touch.
+  const identity = verifyStagingTarget(request.target, request.production, sentinelPolicy)
   if (!identity.ok) return fail(identity.code, identity.message)
 
   const log: string[] = [
     `target ${identity.projectRef} accepted on ${identity.signals.length} independent signals: ${identity.signals.join(', ')}`,
+    ...(identity.sentinelDeferred
+      ? [
+          'sentinel DEFERRED: its table does not exist before the bootstrap. The compensating control ' +
+            '(the target must be provably empty of Uellix rows) is enforced by hosted-provisioning-runner.ts, ' +
+            'not here — this planner never connects and cannot measure emptiness.',
+        ]
+      : []),
     `mode ${request.mode}`,
   ]
 
@@ -149,7 +248,7 @@ export function planHostedApply(request: HostedApplyRequest): HostedApplyPlan {
   //     The one legitimate exception is a FIRST provisioning: a plan that
   //     includes the bootstrap is applying to a database with no Stella surface
   //     at all, so "nothing is installed" is a fact, not an assumption.
-  const freshProvisioning = request.packages.includes('stella_hosted_0001_managed_role_bootstrap')
+  const freshProvisioning = includesBootstrap
   for (const name of request.packages) {
     for (const rule of supersessionsFor(name)) {
       const probe = request.installedProbes[rule.supersededBy]
@@ -195,7 +294,19 @@ export function planHostedApply(request: HostedApplyRequest): HostedApplyPlan {
   //      the environment is currently harmless, not a reason it is finished.
   //      Incremental applies (bootstrap already installed) are judged by the
   //      two unit rules below instead.
-  if (request.packages.includes('stella_hosted_0001_managed_role_bootstrap')) {
+  //
+  //      TRAIN 5C0 AMENDMENT. The rule as written was the other half of the
+  //      sentinel circularity: "all ten or none" and "a human writes the sentinel
+  //      between package one and package two" cannot both hold inside a single
+  //      invocation. The CONCERN is still right — a staging environment whose
+  //      flags name tables that do not exist is unfinished, not minimal — so the
+  //      obligation is not dropped, it MOVES: it becomes an obligation on the
+  //      phased SEQUENCE, enforced by hosted-provisioning-runner.ts, which will
+  //      not report a provisioning complete until the chain reaches stella_0018.
+  //
+  //      Here that means: a bootstrap-only plan is exempt from completeness,
+  //      because completeness is no longer this invocation's question to answer.
+  if (includesBootstrap && !request.bootstrapOnly) {
     const missing = HOSTED_CHAIN.filter((n) => !willBePresent(n))
     if (missing.length > 0) {
       return fail(
@@ -204,7 +315,9 @@ export function planHostedApply(request: HostedApplyRequest): HostedApplyPlan {
           : 'HOSTED_TICKET_CHAIN_INCOMPLETE',
         `refused: this plan applies the bootstrap, which means the target has no Stella surface yet, ` +
           `but it stops short of the full chain — missing: ${missing.join(', ')}. A first provisioning ` +
-          `applies all ten packages or none of them.`,
+          `applies all ten packages or none of them, EXCEPT via the phased runner, whose ` +
+          `PHASE_STELLA_BOOTSTRAP step is bootstrapOnly and whose PHASE_STELLA_CHAIN step then ` +
+          `completes the remaining nine.`,
       )
     }
   }

@@ -112,13 +112,162 @@ Se declaran explícitamente para que la ausencia sea una afirmación y no un olv
 
 ---
 
+## 2b. Riesgos que aportó Train 5C0 (2026-08-07)
+
+Los dos primeros son **defectos encontrados y cerrados por diseño en este mismo
+train**; se registran porque un defecto que nadie anota es un defecto que la
+próxima refactorización reintroduce.
+
+### CERRADOS POR DISEÑO
+
+| # | Riesgo | Evidencia | Cierre |
+|---|---|---|---|
+| **B7** | **La cadena baseline que el contrato especificaba no era ejecutable.** `0039_grant_rls_helper_execution.sql` hace `GRANT EXECUTE` sobre dos funciones que sólo crea `supabase/migrations/20260716000001_storage_policies.sql`, ausente de A1 y de A2. Aplicar «0000…0039» aborta con `42883` | Reproducido: `scripts/baseline-rehearsal-local.ts` RUN A falla en 0039 contra una base desechable | `db/hosted/baseline-manifest.ts` fija 50 unidades y el orden real; `pnpm baseline:verify` |
+| **B8** | **Centinela circular.** `verifyStagingTarget()` exigía la fila de `staging_sentinel` en **todo** plan, y `stella_hosted_0001` es el paquete que crea su tabla. Una primera provisión era imposible de planificar. El test de Train 5B que afirmaba `HOSTED_TARGET_SENTINEL_MISSING` sobre la cadena completa **codificaba el bloqueo como si fuera una propiedad de seguridad** | `tests/hosted/hosted-migrator.test.ts` (antes de este train) | `SentinelPolicy` + fases; el centinela pasa de precondición a frontera. Test de regresión: «REGRESSION: a first provisioning can now be PLANNED at all» |
+
+### ABIERTOS
+
+> **Los ocho riesgos siguientes los aportó la revisión adversarial de la Fase 15**
+> (revisor Fable y revisor Sonnet, ambos sólo lectura). Entre los dos
+> devolvieron 7 BLOCKER y 10 MAJOR; los confirmados se corrigieron en el mismo
+> train y se registran aquí porque un defecto que nadie anota es un defecto que
+> la próxima refactorización reintroduce. Cinco de ellos eran **afirmaciones
+> falsas de este train sobre su propio trabajo**, que es la clase de hallazgo
+> por la que existe la revisión.
+
+#### RR-12 — `CREATE TRIGGER ON auth.users` en gestionado, sin verificar
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR** |
+| **Defecto** | `supabase/migrations/20260716000000_auth_trigger.sql` crea dos triggers sobre `auth.users`. El esquema `auth` pertenece a `supabase_auth_admin`; si el rol `postgres` de un proyecto gestionado de 2026 aún puede crear triggers ahí es un hecho **sobre ese proyecto** |
+| **Por qué no se cierra offline** | Misma clase que RR-09. Localmente funciona, y funcionar localmente **no es evidencia**: el shim del ensayo crea el esquema `auth` nosotros mismos, de modo que somos sus dueños y toda pregunta de privilegio se responde trivialmente y mal |
+| **Clasificación** | La única unidad **clase C** de las 50 en `db/hosted/baseline-manifest.ts` |
+| **Mitigación** | El runner debe sondear el privilegio **antes** de la fase y negarse, en vez de descubrirlo a mitad de cadena. Si falla, la unidad 40 está en el tramo donde la recuperación es `DESTROY_AND_REPROVISION` |
+| **Cierre** | Sólo medible contra el proyecto de staging real, en CHECKPOINT B0 |
+
+#### RR-13 — La policy `anon INSERT` de 008 es inerte por ausencia, no por diseño
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR** |
+| **Defecto** | `db/policies/008_marketing_leads_rls.sql` crea `anon_insert_marketing_leads … TO anon WITH CHECK (true)`. Es una ampliación de permisos sobre papel |
+| **Por qué hoy no abre nada** | `marketing_leads` la crea `0035`, es decir **después** de la barrida de grants de `0033`, así que `anon` no tiene privilegio de tabla alguno sobre ella. RLS es la segunda puerta y no hay primera. **Verificado, no supuesto**: no existe ningún `GRANT` que nombre `marketing_leads` en las 50 unidades |
+| **Por qué sigue abierto** | Depende de una **ausencia**. Un `GRANT INSERT ON marketing_leads TO anon` futuro —o un `ALTER DEFAULT PRIVILEGES` que lo alcance— convierte la policy en una ruta de escritura pública no autenticada, en staging, sin que nada más cambie |
+| **Mitigación** | Postcondición **B0-10**: afirma que `anon` no tiene privilegio de tabla alguno en `public`, con control negativo que inyecta exactamente ese grant |
+| **Cierre** | Product decide si el formulario público de leads debe existir en staging. Si no, retirar la policy es más barato que vigilarla |
+
+#### RR-14 — `db/baseline/` no es el baseline
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MINOR**, con potencial de escalar |
+| **Defecto** | A1 dice «baseline» y existe un directorio llamado `db/baseline/`. No es lo mismo: contiene `stella_g2_schema.sql`, un `pg_dump` de una base Supabase con esquemas `auth`/`storage`/`realtime`/`graphql` que un proyecto gestionado provee por su cuenta |
+| **Riesgo** | Un operador que «aplique el baseline» leyendo el nombre del directorio restauraría un volcado sobre un proyecto nuevo, peleándose con la plataforma |
+| **Mitigación** | `BASELINE_DELIBERATE_EXCLUSIONS` lo enumera con su motivo, y un test afirma que ninguna unidad del manifiesto sale de `db/baseline/` |
+| **Cierre** | Renombrar el directorio. No se hizo aquí: la instrucción de este train prohíbe tocar `db/baseline/**` |
+
+#### RR-15 — `0033` concede `ALL PRIVILEGES` a `service_role`
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MINOR** mientras no se aprovisione la clave |
+| **Defecto** | `GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO service_role` más `ALTER DEFAULT PRIVILEGES … GRANT ALL ON TABLES TO postgres, service_role` |
+| **Compensación** | §4.4 prohíbe aprovisionar `SUPABASE_SERVICE_ROLE_KEY`; `stella_0017` revoca después la escritura del ledger a todo principal de runtime. Un privilegio como el que nadie puede autenticarse es un privilegio que nadie tiene |
+| **Por qué se registra igual** | Es un privilegio, no su ausencia. La compensación es una decisión de entorno que puede revertirse sin tocar SQL |
+
+#### RR-16 — `db/policies/008` no es idempotente
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MINOR** |
+| **Defecto** | Única unidad de las 50 cuyas `CREATE POLICY` no llevan `DROP POLICY IF EXISTS`. Una segunda aplicación levanta `42710 duplicate_object` |
+| **Mitigación** | `reapply: 'refuses-on-reapply'` en el manifiesto; el runner debe sondear y saltar, nunca reintentar a ciegas |
+
+#### RR-17 — `storage.objects` exige **propiedad**, no un privilegio
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR**, corregido en clasificación, **abierto** en verificación |
+| **Defecto** | `20260716000001_storage_policies.sql` estaba clasificada **B**. Crea tres `CREATE POLICY ON storage.objects`, y `CREATE POLICY` exige **ownership** de la tabla — un requisito **más estricto** que el privilegio `TRIGGER` por el que la unidad 40 sí era C. `db/baseline/stella_g2_schema.sql:5061` muestra `ALTER TABLE storage.objects OWNER TO supabase_storage_admin` |
+| **Consecuencia si falla** | Aborto en la unidad **41 de 50**, con 40 unidades ya comprometidas → `DESTROY_AND_REPROVISION`. Justo el descubrimiento a media cadena que la clasificación existe para evitar |
+| **Corrección** | Reclasificada a **C**; `PrivilegeProbes.ownsStorageObjects` es ahora obligatoria y `PHASE_BASELINE` se niega sin ella |
+| **Cierre** | Sólo medible en el proyecto real |
+
+#### RR-18 — El bucket `uellix-evidence` no lo crea nadie en hosted
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR** |
+| **Defecto** | `supabase/config.toml:132` declara `[storage.buckets.uellix-evidence]`, así que el stack local lo crea al arrancar. **Ninguna** de las 50 unidades lo crea, y las tres policies de `storage.objects` filtran por `bucket_id = 'uellix-evidence'`. `0031:424` ya decía que debía crearse a mano |
+| **Consecuencia** | Un staging aprovisionado exactamente según el plan tendría policies de evidencia protegiendo un bucket inexistente; toda subida y toda lectura fallarían por un motivo que ninguna comprobación buscaba |
+| **Por qué importa el patrón** | Es **la misma asimetría local/hosted que ocultó el defecto de 0039**, en un segundo sitio. Que apareciera dos veces sugiere buscarla una tercera |
+| **Corrección** | `PrivilegeProbes.evidenceBucketExists` + postcondición **B0-15** |
+
+#### RR-19 — Afirmaciones falsas de Train 5C0 sobre su propio trabajo
+
+Cinco, todas corregidas, todas encontradas por revisión adversarial y ninguna por
+las pruebas:
+
+| # | Afirmación | Realidad | Corrección |
+|---|---|---|---|
+| 1 | «`marketing_leads`: ningún rol tiene privilegio alguno sobre ella» | `0033` línea 13 hace `ALTER DEFAULT PRIVILEGES … GRANT ALL ON TABLES TO postgres, service_role`, y `marketing_leads` se crea después. `stella_g2_schema.sql:11091` muestra el grant materializado. La búsqueda léxica no podía encontrarlo: un default-privilege nunca nombra la tabla | Nota corregida; **B0-10** pasa a `aclexplode` |
+| 2 | «las postcondiciones afirman la ausencia de `SUPABASE_SERVICE_ROLE_KEY`» | Ninguna lo hacía. Las 13 eran consultas de catálogo | **B0-14** añadida, como atestación del operador y declarada como tal |
+| 3 | **B0-11** usaba `n_live_tup` | El propio ensayo de este train lo rechaza por escrito: una tabla sin `ANALYZE` reporta 0 tenga filas o no. Se le entregaba al operador la consulta que el ensayo desconfía | `count(*)`, y cobertura de **todas** las tablas |
+| 4 | **B0-10** usaba `information_schema.role_table_grants` | `db/audit/canonical_acl.sql` la **prohíbe** como criterio de gate, con motivo medido: no puede expresar `PUBLIC`, y lo que se concede a `PUBLIC` lo tiene `anon` | `aclexplode` + `COALESCE(acldefault(...))`, cubriendo `PUBLIC` |
+| 5 | «el runner debe sondear el privilegio de clase C» | Lo prometía la nota del manifiesto; nada lo implementaba | `PrivilegeProbes` + refutación antes de planificar |
+
+#### RR-20 — El escáner era ciego a la sustancia del control de acceso
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **BLOCKER**, cerrado |
+| **Defecto** | El manifiesto fijaba **conteos** de policies y de funciones `SECURITY DEFINER`, no su **contenido**. Cambiar `USING (id = auth.uid())` por `USING (true)`, o el cuerpo de `current_user_is_super_admin()` por `SELECT true`, no movía ni un conteo. Sólo cambiaba el SHA del archivo — que cambia con cualquier edición y que un revisor actualiza como trámite. Resultado: todo usuario autenticado sería super admin y el diff no tendría nada que objetar |
+| **Corrección** | `securitySurfaceDigest`: SHA-256 sobre todo predicado `USING`/`WITH CHECK`/`TO` y todo cuerpo de definer, fijado por unidad |
+
+#### RR-21 — Las sondas de vacuidad omitían las tablas del único DML
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **BLOCKER**, cerrado |
+| **Defecto** | `REQUIRED_EMPTINESS_PROBES` eran nueve nombres escritos a mano y omitían `funders`, `project_investments` y `financial_proxies` — exactamente las tres tablas donde escribe `0018`, el único DML del baseline — más ~24 tablas |
+| **Ataque** | Una restauración parcial de producción con las tablas de tenencia vacías y las financieras llenas pasaba el control compensatorio del centinela diferido |
+| **Corrección** | El conjunto se **deriva** del corpus: toda tabla que crean las 50 unidades |
+
+#### RR-22 — El gate del ensayo medía la existencia del archivo
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **MAJOR**, cerrado |
+| **Defecto** | `hosted-baseline-rehearsal-ready` pasaba con `readFileSync(script)`. En un CI sin Docker —que nunca ha corrido un ensayo— quedaba verde para siempre, y el nombre invita a leerlo como «el ensayo pasó» |
+| **Corrección** | Lee `artifacts/baseline-rehearsal/latest.json`, exige que su `manifestDigest` coincida con el manifiesto actual, que RUN A fallara en 0039, que RUN B aplicara las 50 y que B0 quedara limpia |
+
+#### RR-23 — La duplicación de A2 no se vigilaba en tiempo de plan
+
+| Campo | Contenido |
+|---|---|
+| **Severidad** | **BLOCKER**, cerrado |
+| **Defecto** | Corregir un fallo de RLS en `0031` y actualizar **sólo** su pin dejaba `001` intacto y con su propio hash correcto. `verifyBaselineManifest` —la función que **gobierna la escritura hosted**— no reportaba nada, y `001` (ordinal 43) corría después de `0031` (ordinal 32) revirtiendo la corrección al pasar. La igualdad estaba afirmada sólo en un test de Vitest que el gate no consulta |
+| **Corrección** | `verifyEquivalences()` dentro de `verifyBaselineManifest`: hash, conjunto de sentencias, digest de superficie de seguridad y dirección del orden |
+
+---
+
 ## 3. Conteo
 
-| Severidad | Cantidad | Tras Train 5B |
-|---|---|---|
-| BLOCKER | **6** (B1-B6) | **3 abiertos** (B2 staging no aislado, B3 clave sin rotar, B4 credenciales ambiguas) · 2 cerrados por diseño (B1, B5) · 1 aceptado como no cerrable (B6/RR-02) |
-| MAJOR | **10** (M1-M10) | M1 **mitigado** (el planificador hosted evalúa las supersesiones antes de emitir el plan); el resto sin cambios |
-| MINOR | **6** (m1-m6) | sin cambios |
+| Severidad | Cantidad | Tras Train 5B | Tras Train 5C0 |
+|---|---|---|---|
+| BLOCKER | **6** (B1-B6) | **3 abiertos** (B2 staging no aislado, B3 clave sin rotar, B4 credenciales ambiguas) · 2 cerrados por diseño (B1, B5) · 1 aceptado como no cerrable (B6/RR-02) | **+2 encontrados y cerrados por diseño** (B7 cadena baseline inejecutable, B8 centinela circular). **B2 pasa a parcialmente cerrado**: el proyecto de staging existe y CHECKPOINT A0 dio PASS; queda abierto el resto de §2.1 (P5 denylist) |
+| MAJOR | **10** (M1-M10) | M1 **mitigado** (el planificador hosted evalúa las supersesiones antes de emitir el plan) | **+4 abiertos**: RR-12 (`CREATE TRIGGER ON auth.users` sin verificar), RR-13 (`anon INSERT` de 008 inerte por ausencia), RR-17 (ownership de `storage.objects` sin verificar), RR-18 (bucket `uellix-evidence` sin crear en hosted) · **+2 cerrados**: RR-19 (5 afirmaciones falsas corregidas), RR-22 (gate del ensayo) |
+| MINOR | **6** (m1-m6) | sin cambios | **+3 abiertos**: RR-14 (`db/baseline/` no es el baseline), RR-15 (`0033` → `service_role`), RR-16 (008 no idempotente) |
+
+> **Los tres BLOCKER que la revisión adversarial cerró** —RR-20 (escáner ciego a
+> predicados y cuerpos), RR-21 (sondas de vacuidad sin las tablas del DML) y
+> RR-23 (duplicación de A2 sin vigilar en tiempo de plan)— tienen algo en común
+> que conviene no perder: **los tres eran huecos en instrumentos que este mismo
+> train construyó para detectar huecos**. El manifiesto medía conteos y no
+> contenido; el control compensatorio medía nueve tablas de treinta y tres; el
+> gate de la escritura no consultaba el test que probaba la equivalencia. Ninguna
+> prueba los encontró, porque todas medían lo que el instrumento sabía mirar.
 
 > **M10 lo aportó la revisión adversarial de la Fase 12** (revisor Sonnet,
 > sólo lectura), que además refutó una afirmación absoluta de la primera

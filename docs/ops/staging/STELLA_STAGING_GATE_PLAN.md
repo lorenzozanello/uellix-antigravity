@@ -200,9 +200,57 @@ aplicado, hosted listo ni proveedor listo — los tres campos están **hardcodea
 Además, la suite comprueba que el constructor de evidencia **no es un sello de
 goma**: lee el bootstrap real y ejecuta un dry-run real.
 
+## 3c. Gates LOCALES de Train 5C0 — el BASELINE (implementados y verdes)
+
+`tests/eval/stella-release/hosted-baseline-gate.ts`. Módulo **separado** de
+`hosted-release-gate.ts` a propósito: aquél cubre la cadena Stella, éste cubre
+las 50 unidades que deben aterrizar antes de que la cadena exista. Fundirlos
+produciría un verde que podría significar cualquiera de las dos mitades.
+
+Los seis son **RO**. Ninguno puede declarar `baselineApplied`, `stagingApplied`,
+`hostedReady` ni `providerReady`: los cuatro están **hardcodeados `false`**, y un
+test los comprueba incluso con todos los gates rotos.
+
+| Gate | Qué mide | Control negativo que lo mata |
+|---|---|---|
+| `hosted-baseline-manifest-ready` | 50 unidades, cada una con hash SHA-256 **y** un escaneo estructural esperado | editar un byte (`SHA_MISMATCH`); o editar y actualizar el pin introduciendo un `GRANT … TO service_role` (`SCAN_MISMATCH` además del hash) |
+| `hosted-baseline-order-ready` | orden determinista, **y el verificador fue observado refutando una mutación** | subir `db/policies/008` por encima de `0035`; subir `0039` por encima de la unidad que define sus funciones |
+| `hosted-baseline-managed-compatible` | cero superusuario / roles / ownership / extensiones en las 50; exactamente un *grantee* de `service_role`; exactamente una unidad con DML y **cero** filas literales | introducir `rolsuper`, un `ALTER ROLE`, un `INSERT … VALUES`, o una segunda unidad con `service_role` |
+| `hosted-baseline-rehearsal-ready` | un ensayo **ejecutado** contra este manifiesto exacto: `artifacts/baseline-rehearsal/latest.json` con `manifestDigest` coincidente, RUN A abortando en 0039, RUN B aplicando las 50, B0 limpia | editar el manifiesto sin re-ensayar (el digest deja de coincidir); un RUN A que **no** falle |
+| `hosted-baseline-postconditions-ready` | 15 postcondiciones, **cada una observada fallando su propio control negativo ejecutable**, y toda sonda de sólo lectura | hacer que un `check()` devuelva `passed: true` — pasaría su propia mutación y mataría el gate |
+| `hosted-baseline-recovery-ready` | un error a mitad de baseline responde `DESTROY_AND_REPROVISION`; sin `psql -1` responde `HALT_AND_ESCALATE`; el runner se niega a escribir el centinela | cambiar cualquiera de las tres respuestas |
+
+El punto no obvio es el quinto. Una postcondición que ignorase su entrada
+aprobaría **cualquier** observación, incluida su propia mutación — así que
+correr las trece contra su estado roto es lo que separa una comprobación de un
+párrafo. Si alguien «arregla» un check devolviendo `true`, este gate cae.
+
+> **Límite declarado del cuarto gate.** El ensayo local es una prueba de
+> **regresión** y una **reproducción del defecto**, jamás evidencia de
+> compatibilidad con Supabase gestionado. El stack local aplica
+> `supabase/migrations/**` al arrancar, que es exactamente lo que ocultó el
+> defecto de orden de 0039 durante un año. Y el shim del ensayo crea los esquemas
+> `auth` y `storage` **como objetos nuestros**, de modo que toda pregunta de
+> privilegio que el apply hosted enfrentará de verdad se responde ahí
+> trivialmente y mal. El propio ensayo imprime la lista de lo que shimea.
+>
+> **El E2E de Train 4 tampoco es evidencia del baseline.**
+> `scripts/stella-ticket-e2e.sh` restaura `db/baseline/**`, que es un `pg_dump`
+> de una base Supabase **anterior a la campaña de capacidades**, con esquemas,
+> propietarios y conteos distintos de los que producen las 50 unidades. Se
+> ejecutó en este train (37/37 y 25/25, con teardown limpio) y vale como
+> regresión **de Train 4**. Citarlo como regresión del baseline sería validar una
+> forma de esquema que las 50 unidades no producen.
+
 ## 4. Orden y dependencias
 
 ```
+[Train 5C0, local] baseline-manifest / order / managed / rehearsal /
+                   postconditions / recovery  ─── todos verdes, cero escrituras
+  └── G12 (RO hosted)  ═ CHECKPOINT A0, PASS manual del operador 2026-08-07
+        └── PHASE_BASELINE (50 unidades)  →  CHECKPOINT B0 (RO)
+              └── PHASE_STELLA_BOOTSTRAP  →  centinela humano  →  CHECKPOINT A1 (RO)
+                    └── G11 apply (cadena Stella)
 G12 (RO hosted)
   └── G11 rehearsal (base desechable)
         └── G2 (0002/0002b/0003)  ──┐

@@ -58,8 +58,69 @@ export interface HostedTargetInput {
 }
 
 export type TargetIdentityVerdict =
-  | { readonly ok: true; readonly projectRef: string; readonly signals: readonly string[] }
+  | {
+      readonly ok: true
+      readonly projectRef: string
+      readonly signals: readonly string[]
+      /**
+       * True when the third signal was WAIVED because the sentinel's table does
+       * not exist yet. The caller MUST supply a compensating control; see
+       * `SentinelPolicy` and `db/hosted/hosted-provisioning-runner.ts`.
+       */
+      readonly sentinelDeferred: boolean
+    }
   | { readonly ok: false; readonly code: TargetIdentityFailureCode; readonly message: string }
+
+/**
+ * Whether the in-database sentinel is required for THIS call.
+ *
+ * ---------------------------------------------------------------------------
+ * THE CIRCULARITY THIS RESOLVES
+ * ---------------------------------------------------------------------------
+ * Train 5B required all three signals unconditionally, and Train 5C0 found the
+ * consequence: `planHostedApply` verifies identity FIRST, for every plan,
+ * including the first-provisioning plan that applies
+ * `stella_hosted_0001_managed_role_bootstrap` — the package that CREATES
+ * `uellix_bootstrap.staging_sentinel`. On a new project that table does not
+ * exist, so the sentinel is necessarily null, so the plan is refused with
+ * HOSTED_TARGET_SENTINEL_MISSING. The bootstrap could never be planned at all.
+ *
+ * The documents recorded the same knot from the other side: §2 A5 demanded the
+ * sentinel "antes de aplicar nada" while §3 explained that the bootstrap is what
+ * creates its table.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY WAIVING IT IS NOT A WEAKENING, AND WHAT REPLACES IT
+ * ---------------------------------------------------------------------------
+ * The sentinel answers one question: "is this the database somebody deliberately
+ * provisioned as staging, or one whose connection string got pasted from the
+ * wrong tab?". Before the bootstrap runs there is a different answer to the same
+ * question that production can never give: the target is EMPTY. A production
+ * database has rows. It has organizations, users, projects, a Stella ledger with
+ * history. A database with zero rows in every business table is not production,
+ * and no amount of mispasting makes it so.
+ *
+ * So the waiver is narrow and it is paid for:
+ *
+ *   - it applies ONLY when the sentinel table does not exist. A sentinel that
+ *     EXISTS is checked exactly as before, under every policy — you cannot
+ *     downgrade an already-provisioned database by asking for the waiver;
+ *   - the production veto is unchanged and still runs first;
+ *   - signals 1 and 2 are unchanged and still both required;
+ *   - the caller must supply the emptiness evidence, and
+ *     `hosted-provisioning-runner.ts` refuses the phase without it.
+ *
+ * `'required'` remains the DEFAULT, so every existing call site — including the
+ * Train 5B gate that asserts a null sentinel is refused — keeps its behaviour.
+ */
+export type SentinelPolicy =
+  /** Three signals, no exception. The default, and the only policy for the chain. */
+  | 'required'
+  /**
+   * Two signals plus a compensating control, permitted only where the sentinel's
+   * own table cannot exist yet. Never valid for PHASE_STELLA_CHAIN.
+   */
+  | 'deferred-until-bootstrap'
 
 /**
  * Identifiers known to belong to PRODUCTION.
@@ -169,6 +230,8 @@ export function verifyStagingTarget(
    * editing this module, and so the veto is testable rather than asserted.
    */
   production: ProductionIdentifiers = KNOWN_PRODUCTION_IDENTIFIERS,
+  /** Defaults to the Train 5B behaviour. See `SentinelPolicy`. */
+  sentinelPolicy: SentinelPolicy = 'required',
 ): TargetIdentityVerdict {
   const host = input.connectionHost.trim().toLowerCase()
 
@@ -223,13 +286,26 @@ export function verifyStagingTarget(
   }
 
   // (3) What the database says about itself.
+  //
+  //     Absence is the ONLY thing the policy can excuse. Everything below this
+  //     branch runs unconditionally, because a sentinel that exists and disagrees
+  //     is not a missing signal — it is a contradicted one, and there is no
+  //     provisioning stage at which that becomes acceptable.
   if (input.sentinel === null) {
-    return refuse(
-      'HOSTED_TARGET_SENTINEL_MISSING',
-      `refused: uellix_bootstrap.staging_sentinel holds no row. A connection string can be pasted ` +
-        `from the wrong tab; a sentinel row in the wrong database cannot. Provision the target ` +
-        `first — see docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md.`,
-    )
+    if (sentinelPolicy === 'required') {
+      return refuse(
+        'HOSTED_TARGET_SENTINEL_MISSING',
+        `refused: uellix_bootstrap.staging_sentinel holds no row. A connection string can be pasted ` +
+          `from the wrong tab; a sentinel row in the wrong database cannot. Provision the target ` +
+          `first — see docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md.`,
+      )
+    }
+    return {
+      ok: true,
+      projectRef: input.declaredProjectRef,
+      signals: ['declared-environment', 'host-derived-project-ref'],
+      sentinelDeferred: true,
+    }
   }
 
   if (input.sentinel.environment !== 'staging') {
@@ -253,5 +329,6 @@ export function verifyStagingTarget(
     ok: true,
     projectRef: input.declaredProjectRef,
     signals: ['declared-environment', 'host-derived-project-ref', 'in-database-sentinel'],
+    sentinelDeferred: false,
   }
 }

@@ -21,9 +21,88 @@
 
 ### 1.0 Baseline mínimo requerido
 
-Antes de cualquier paquete preparado, la base debe tener la cadena Drizzle
-`0000 … 0039` (`db/migrations/`) y las políticas de `db/policies/`. Las
-precondiciones **duras** que los paquetes comprueban por sí mismos:
+> **CORREGIDO POR TRAIN 5C0 (2026-08-07).** La frase «la cadena Drizzle
+> `0000 … 0039` y las políticas de `db/policies/`» describía un conjunto, no una
+> secuencia, y el conjunto estaba **incompleto**. El baseline real son **50
+> unidades** en un orden que no es el de los números, fijado por hash en
+> `db/hosted/baseline-manifest.ts` y verificable con `pnpm baseline:verify`.
+
+#### 1.0.1 Las 50 unidades y su orden
+
+```
+  1 … 39   db/migrations/0000 … 0038          (39 unidades Drizzle)
+ 40        supabase/migrations/20260716000000_auth_trigger.sql
+ 41        supabase/migrations/20260716000001_storage_policies.sql
+ 42        db/migrations/0039_grant_rls_helper_execution.sql
+ 43 … 50   db/policies/001 … 008
+```
+
+**Por qué 0039 va al final y no en su número.** Hace `GRANT EXECUTE` sobre
+`public.can_read_evidence_object(text, uuid)` y
+`public.can_write_evidence_object(text, uuid)`, creadas **sólo** en la unidad 41.
+Aplicar «0000…0039» sin intercalar aborta ahí con `42883 undefined_function`.
+Reproducido de forma ejecutable en `scripts/baseline-rehearsal-local.ts`:
+
+```
+[rehearsal] RUN A: the naive order, 40 Drizzle units only
+[rehearsal]   failed at db/migrations/0039_grant_rls_helper_execution.sql after 39 unit(s)
+[rehearsal]   ERROR:  function public.can_read_evidence_object(text, uuid) does not exist
+[rehearsal] RUN B: the manifest order, 50 units
+[rehearsal]   applied 50/50
+[rehearsal] CHECKPOINT B0: 13/13 postconditions pass
+```
+
+**Y por qué las dos unidades de Supabase van después de 0033 y no antes.** 0033
+hace `REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon,
+authenticated`. Un helper creado antes de esa barrida pierde el grant que su
+propio archivo emite, y sólo 0039 se lo devuelve; creado después, el par
+`REVOKE`/`GRANT` de su archivo es el estado que sobrevive y 0039 es una
+re-afirmación en vez de una reparación.
+
+**Por qué nadie lo había visto.** `supabase/config.toml` declara
+`[db.migrations] enabled = true`: `supabase start` aplica las dos unidades de
+`supabase/migrations/` antes de que corra un solo archivo de Drizzle. Nunca
+corren solas en local. El ensayo de Train 5C0 construye deliberadamente una base
+que **no** ha recibido ese favor, y por eso el fallo aparece.
+
+#### 1.0.2 Clasificación de compatibilidad gestionada
+
+| Clase | Unidades | Significado |
+|---|---|---|
+| **A — compatible hosted** | 45 | corre tal cual |
+| **B — compatible dado Supabase** | 4 | corre tal cual, pero sólo porque existe un objeto que Supabase provee (`auth.uid()`, los roles `anon`/`authenticated`/`service_role`, `storage.objects`) |
+| **C — requiere adaptación** | 1 | `20260716000000_auth_trigger.sql` |
+| **D — no debe correr** | 0 | — |
+
+La única clase C es `CREATE TRIGGER ON auth.users`. El esquema `auth` pertenece
+a `supabase_auth_admin`, y si el rol `postgres` de un proyecto gestionado de 2026
+todavía puede crear triggers ahí es un hecho **sobre ese proyecto**, no sobre
+este repositorio — la misma clase de incógnita que RR-09. Localmente funciona, y
+eso no es evidencia. El runner debe sondear el privilegio antes de la fase, no
+descubrirlo a mitad de cadena.
+
+#### 1.0.3 Datos
+
+Una sola unidad tiene DML: `0018_redundant_firebird.sql`, cuatro sentencias,
+**cero** de ellas con lista `VALUES`. Todas derivan sus filas por `SELECT` sobre
+tablas de la misma base, de modo que sobre una base vacía afectan a cero filas.
+La cadena literal `'Financiador no especificado'` es el marcador que el backfill
+escribiría para inversiones preexistentes; sin inversiones, no se escribe nunca.
+
+#### 1.0.4 Re-aplicación
+
+`db/policies/008_marketing_leads_rls.sql` es la **única** unidad del baseline que
+se niega a una segunda aplicación: sus tres `CREATE POLICY` no llevan
+`DROP POLICY IF EXISTS`, y levantan `42710`. Las otras siete políticas suman 103
+`CREATE POLICY` todas guardadas, que es lo que hace inofensivo que `001…007`
+repitan contenido ya aplicado por `0031`/`0032` — `001` es **byte-idéntico** a
+`0031_rls_core.sql`.
+
+Las 28 de 40 unidades Drizzle con DDL sin guarda no «se niegan»: son
+*forward-only*. Es la razón de que un fallo a mitad de baseline se recupere con
+`DESTROY_AND_REPROVISION` y no re-ejecutando.
+
+#### 1.0.5 Precondiciones duras que los paquetes comprueban por sí mismos
 
 | Exigencia | Origen | Comprobado por |
 |---|---|---|
