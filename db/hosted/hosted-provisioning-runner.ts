@@ -348,6 +348,67 @@ export const CLASS_C_PROBES: readonly (readonly [keyof PrivilegeProbes, string, 
   ],
 ]
 
+/**
+ * WHAT A `false` FROM EACH PROBE ACTUALLY MEANS.
+ *
+ * ---------------------------------------------------------------------------
+ * THE CONTRADICTION THIS RESOLVES
+ * ---------------------------------------------------------------------------
+ * Every consumer of `CLASS_C_PROBES` treated all eight identically: any `false`
+ * refuses. That was right when the list had three entries and every one of them
+ * was a genuine apply-time requirement. It stopped being right the moment Train
+ * 5C2 concluded that `ownsStorageObjects` is false, will remain false, and that
+ * unit 41 therefore splits — because "refuse if false" then means REFUSE ALL
+ * FIFTY UNITS FOREVER, for a condition the adaptation was built to survive.
+ *
+ * Three of the eight even carry the words "diagnostic only" in their own unit
+ * column while being required to be true. The data said it; nothing read it.
+ *
+ * So the classification is explicit, and each value states what a `false` does:
+ *
+ *   apply-required       the psql channel genuinely cannot proceed. Refuse.
+ *   branch-selector      false SELECTS an adaptation rather than blocking one.
+ *                        It must then be cross-checked against the path chosen.
+ *   runtime-prerequisite needed before the feature works, not before the units
+ *                        apply. Has its own criterion and its own postcondition.
+ *   diagnostic           recorded because the COMBINATION is informative. Never
+ *                        sufficient, and never required, on its own.
+ *
+ * This is not a relaxation to reduce blockers: the apply gate still refuses, and
+ * `hosted-storage-management-channel-verified`, `hosted-evidence-bucket-
+ * provisioning-ready` and the rest are untouched. It removes a demand that the
+ * architecture has proven can never be met.
+ */
+export type ClassCRequirement =
+  | 'apply-required'
+  | 'branch-selector'
+  | 'runtime-prerequisite'
+  | 'diagnostic'
+
+export const CLASS_C_REQUIREMENT: Readonly<Record<keyof PrivilegeProbes, ClassCRequirement>> = {
+  // Unit 40 creates a trigger on auth.users through the psql channel. No
+  // adaptation exists for a `false` here, so a `false` really does stop it.
+  canCreateTriggerOnAuthUsers: 'apply-required',
+  // The probes must have been run in the applying identity, or they describe
+  // someone else's session.
+  applyIdentityRecorded: 'apply-required',
+  // FALSE IS THE MEASURED, PERMANENT STATE. `postgres` does not own
+  // storage.objects on managed Supabase and cannot be made to. It selects the
+  // managed-channel branch for PART B; it does not block PART A or the other 49.
+  ownsStorageObjects: 'branch-selector',
+  canSetRoleStorageAdmin: 'branch-selector',
+  // Under Branch B this MUST be false: attempting SET LOCAL ROLE when the grant
+  // forbids it is an operation the gate refuses elsewhere. Requiring it true
+  // contradicted `hosted-storage-set-role-ready` directly.
+  setLocalRoleDemonstrated: 'branch-selector',
+  // The policies compare bucket_id as a COLUMN; unit 41 never reads
+  // storage.buckets. B0-15 and `hosted-evidence-bucket-provisioning-ready` cover
+  // it. Blocking the fifty units on it was the asymmetry Train 5C2 removed.
+  evidenceBucketExists: 'runtime-prerequisite',
+  storageAdminMember: 'diagnostic',
+  storageAdminInherits: 'diagnostic',
+}
+
 /** A read-only picture of the target. The caller runs the queries; this never does. */
 export interface TargetStateProbe {
   /** Baseline unit ids already applied, as recorded by the operator's ledger. */
@@ -651,14 +712,34 @@ function checkPrivileges(probes: PrivilegeProbes | undefined): ProvisioningPlan 
     )
   }
 
-  const denied = REQUIRED.filter(([key]) => probes[key] === false)
+  // ONLY apply-required PROBES REFUSE THE PLAN.
+  //
+  // The previous rule refused on ANY false, which — after this train measured
+  // ownsStorageObjects=false and built the PART A / PART B split precisely to
+  // survive it — meant refusing all fifty units for a condition that will never
+  // change. See CLASS_C_REQUIREMENT for what each classification means.
+  const denied = REQUIRED.filter(
+    ([key]) => probes[key] === false && CLASS_C_REQUIREMENT[key] === 'apply-required',
+  )
   if (denied.length > 0) {
     return refuse(
       'PROVISIONING_PRIVILEGE_UNAVAILABLE',
       `refused: ${denied.map(([key, unit]) => `${key} is false, which ${unit} requires`).join('; ')}. ` +
-        `This is the RR-09 class of answer and it is only available on the project itself. If the ` +
-        `bucket is the missing piece, create it in the dashboard and re-probe; if a privilege is the ` +
-        `missing piece, the unit needs an adaptation before any of the fifty are applied.`,
+        `This is the RR-09 class of answer and it is only available on the project itself, and no ` +
+        `adaptation exists for it — the unit needs one before any of the fifty are applied.`,
+    )
+  }
+
+  // A branch-selector that came back false must have SELECTED something. If the
+  // plan still routed unit 41 whole through psql, this would be the check that
+  // caught it; `baselineStep` points at PART A, and `missingBaselineUnits`
+  // refuses to call unit 41 installed until pg_policies shows PART B.
+  if (probes.ownsStorageObjects === false && probes.canSetRoleStorageAdmin !== false) {
+    return refuse(
+      'PROVISIONING_PRIVILEGE_UNAVAILABLE',
+      `refused: ownsStorageObjects is false while canSetRoleStorageAdmin is ` +
+        `${String(probes.canSetRoleStorageAdmin)}. That combination selects the SET ROLE branch, and ` +
+        `nothing in this plan implements it. Measure again or state which branch applies.`,
     )
   }
 

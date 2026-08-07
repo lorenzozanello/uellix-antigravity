@@ -1,0 +1,12 @@
+{
+  "generatedBy": "pnpm probe:status:write — do not hand-edit; a report quotes this file",
+  "policyName": "uellix_tmp_capability_probe_20260807",
+  "recordArtefact": "artifacts/hosted-capability-probe.json",
+  "recordPresent": false,
+  "state": "CAPABILITY_PROBE_NOT_RUN",
+  "problems": [
+    "artifacts/hosted-capability-probe.json does not exist. The probe has not been run, which is not the same as the channel having failed and not the same as it having worked."
+  ],
+  "canonicalPoliciesProven": false,
+  "managementPlaneVerified": false
+}

@@ -42,7 +42,13 @@
     "storage:generate": "tsx scripts/storage-artifacts.ts generate",
     "storage:verify": "tsx scripts/storage-artifacts.ts verify",
     "journal:generate": "tsx scripts/journal-artifacts.ts generate",
-    "journal:verify": "tsx scripts/journal-artifacts.ts verify"
+    "journal:verify": "tsx scripts/journal-artifacts.ts verify",
+    "apply:status": "tsx scripts/apply-status.ts report",
+    "apply:status:write": "tsx scripts/apply-status.ts write",
+    "apply:status:verify": "tsx scripts/apply-status.ts verify",
+    "probe:status": "tsx scripts/capability-probe-status.ts report",
+    "probe:status:write": "tsx scripts/capability-probe-status.ts write",
+    "probe:status:verify": "tsx scripts/capability-probe-status.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

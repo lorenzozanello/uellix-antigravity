@@ -1,0 +1,38 @@
+{
+  "generatedBy": "pnpm apply:status:write — do not hand-edit; a report quotes this file",
+  "criterionCount": 18,
+  "satisfiedCount": 9,
+  "blockingCount": 9,
+  "blockingIds": [
+    "checkpoint-a0-pass",
+    "target-identity-corroborated",
+    "class-c-probes-affirmative",
+    "hosted-storage-apply-identity-probed",
+    "hosted-storage-set-role-ready",
+    "hosted-evidence-bucket-provisioning-ready",
+    "hosted-storage-management-channel-verified",
+    "zero-production-data",
+    "feature-flags-false"
+  ],
+  "applyAuthorized": false,
+  "baselineApplied": false,
+  "stagingApplied": false,
+  "hostedReady": false,
+  "providerReady": false,
+  "evidenceProblems": [],
+  "observed": {
+    "psql": {
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "transactionReadOnly": "UNCONFIRMED",
+      "isMember": false,
+      "inheritsPrivileges": false,
+      "canSetRole": false
+    },
+    "sqlEditor": {
+      "ownsStorageObjects": false,
+      "evidenceBucketExists": false,
+      "canCreateTriggerOnAuthUsers": true
+    }
+  }
+}

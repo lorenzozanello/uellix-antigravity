@@ -32,6 +32,19 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Every generated artefact regenerated and compared byte for byte. The unit
+      # suite already asserts most of this, but a check whose NAME says it is the
+      # enforcement mechanism should be the thing that runs — a reviewer looking
+      # for "where is this enforced" should not have to find it inside a test.
+      - name: Verify generated artefacts
+        run: |
+          pnpm baseline:verify
+          pnpm hosted:verify
+          pnpm storage:verify
+          pnpm journal:verify
+          pnpm apply:status:verify
+          pnpm probe:status:verify
+
       - name: Test
         run: pnpm test:unit
 

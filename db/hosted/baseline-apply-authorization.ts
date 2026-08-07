@@ -66,6 +66,7 @@ import {
 import { decideRecovery as realDecideRecovery } from './baseline-recovery'
 import {
   CLASS_C_PROBES,
+  CLASS_C_REQUIREMENT,
   STELLA_FEATURE_FLAGS,
   deriveEmptinessProbes,
   type PrivilegeProbes,
@@ -342,8 +343,24 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       // The canonical strings already existed in `CLASS_C_PROBES`. Requiring them
       // verbatim (whitespace-normalized, case-insensitive) costs nothing and
       // closes both.
+      // MEASURED FIRST. Absence is refusal, for every probe, whatever its class.
+      const unmeasured = CLASS_C_PROBES.filter(([k]) => a.value[k] === null || a.value[k] === undefined)
+      if (unmeasured.length > 0) {
+        return no(id, `not measured: ${unmeasured.map(([k]) => k).join(', ')}.`)
+      }
+
+      // The quote is required of every probe that was RUN. `setLocalRoleDemonstrated`
+      // is an OPERATION, not a read, and under Branch B it must not be attempted
+      // — `hosted-storage-set-role-ready` refuses a demonstration when SET is
+      // false. Demanding its query text while forbidding its execution is a
+      // contradiction between two criteria of the same gate, and it made this
+      // one unsatisfiable no matter what the operator measured.
+      const wasRun = ([k]: readonly [keyof PrivilegeProbes, string, string]): boolean =>
+        !(k === 'setLocalRoleDemonstrated' && a.value[k] === false)
       const recorded = normalizeSql(a.query)
-      const notQuoted = CLASS_C_PROBES.filter(([, , sql]) => !recorded.includes(normalizeSql(sql)))
+      const notQuoted = CLASS_C_PROBES.filter(wasRun).filter(
+        ([, , sql]) => !recorded.includes(normalizeSql(sql)),
+      )
       if (notQuoted.length > 0) {
         return no(
           id,
@@ -351,15 +368,49 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
             `Expected verbatim: ${notQuoted.map(([, , sql]) => `\`${sql}\``).join(' ; ')}. A different query answers a different question.`,
         )
       }
-      const unmeasured = CLASS_C_PROBES.filter(([k]) => a.value[k] === null || a.value[k] === undefined)
-      if (unmeasured.length > 0) {
-        return no(id, `not measured: ${unmeasured.map(([k]) => k).join(', ')}.`)
-      }
-      const denied = CLASS_C_PROBES.filter(([k]) => a.value[k] === false)
+
+      // ONLY apply-required PROBES MUST BE TRUE.
+      //
+      // The previous rule demanded `true` from all eight — including
+      // `ownsStorageObjects`, which this train MEASURED false and proved
+      // permanently false, and the three the list itself labels "diagnostic
+      // only". A criterion that can never pass is not a strict criterion; it is
+      // a criterion that has stopped carrying information, and the apply would
+      // have stayed refused for the wrong reason forever.
+      const denied = CLASS_C_PROBES.filter(
+        ([k]) => a.value[k] === false && CLASS_C_REQUIREMENT[k] === 'apply-required',
+      )
       if (denied.length > 0) {
         return no(id, `the platform denies: ${denied.map(([k]) => k).join(', ')}. The affected unit needs an adaptation before ANY of the fifty are applied.`)
       }
-      return yes(id, `all three class-C probes affirmative, each quoting its §2.7 query — attested by ${a.measuredBy}`)
+
+      // A branch-selector that is false must have selected the branch actually
+      // taken. This is what stops the relaxation above from becoming a hole:
+      // ownsStorageObjects=false no longer blocks, but it now REQUIRES the
+      // managed-channel path to have been chosen.
+      if (a.value.ownsStorageObjects === false && inputs.storagePath !== 'B-managed-channel') {
+        return no(
+          id,
+          `ownsStorageObjects is false and the selected storage path is ` +
+            `${inputs.storagePath ?? '(none)'}. A false here does not block the baseline — it SELECTS ` +
+            `the managed channel for PART B — but only if that is the path the plan takes.`,
+        )
+      }
+      if (a.value.canSetRoleStorageAdmin === false && a.value.setLocalRoleDemonstrated === true) {
+        return no(
+          id,
+          'SET is false and a SET LOCAL ROLE demonstration is recorded. The grant forbids the operation, ' +
+            'so a recorded demonstration is either a different operation or a fabricated one.',
+        )
+      }
+
+      const required = CLASS_C_PROBES.filter(([k]) => CLASS_C_REQUIREMENT[k] === 'apply-required')
+      return yes(
+        id,
+        `${required.length} apply-required class-C probe(s) affirmative and all ${CLASS_C_PROBES.length} ` +
+          `measured, each run quoting its §2.7 query; ownsStorageObjects=${a.value.ownsStorageObjects} ` +
+          `selects the ${inputs.storagePath} path — attested by ${a.measuredBy}`,
+      )
     },
     negativeControl: {
       // Mutates the QUERY, not the boolean. Adversarial review pointed out that

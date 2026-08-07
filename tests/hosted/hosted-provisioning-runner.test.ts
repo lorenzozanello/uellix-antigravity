@@ -15,6 +15,8 @@ import { BASELINE_ORDER, BASELINE_UNITS, verifyBaselineOrder } from '@/db/hosted
 import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
 import { planHostedApply } from '@/db/hosted/hosted-migrator'
 import { wrapperPathFor } from '@/db/hosted/baseline-journal-wrapper'
+import { BASELINE_POSTCONDITIONS } from '@/db/hosted/baseline-postconditions'
+import { APPLY_AUTHORIZATION_CRITERIA } from '@/db/hosted/baseline-apply-authorization'
 import {
   PROVISIONING_PHASES,
   deriveEmptinessProbes,
@@ -576,18 +578,73 @@ describe('ATTACK 14 — a class-C privilege the platform may not grant (adversar
     expect(r.message).toContain(key)
   })
 
-  it.each(['canCreateTriggerOnAuthUsers', 'ownsStorageObjects', 'evidenceBucketExists'] as const)(
-    'refuses when %s is FALSE — before planning a single step',
-    (key) => {
-      const r = refusal(
-        planProvisioningPhase(
-          request({ state: { ...VIRGIN, privileges: { ...PRIVILEGES_OK, [key]: false } } }),
-        ),
-      )
-      expect(r.code).toBe('PROVISIONING_PRIVILEGE_UNAVAILABLE')
-      expect(r.message).toContain(key)
-    },
-  )
+  // apply-required: no adaptation exists, so a false really does stop the plan.
+  it('refuses when canCreateTriggerOnAuthUsers is FALSE — before planning a single step', () => {
+    const r = refusal(
+      planProvisioningPhase(
+        request({
+          state: { ...VIRGIN, privileges: { ...PRIVILEGES_OK, canCreateTriggerOnAuthUsers: false } },
+        }),
+      ),
+    )
+    expect(r.code).toBe('PROVISIONING_PRIVILEGE_UNAVAILABLE')
+    expect(r.message).toContain('canCreateTriggerOnAuthUsers')
+  })
+
+  // branch-selector: ownsStorageObjects=false SELECTS the managed channel. It
+  // still refuses here, but for a different reason — the combination with
+  // canSetRoleStorageAdmin=true would select a SET ROLE branch nothing implements.
+  it('refuses ownsStorageObjects=false combined with a SET ROLE branch nothing implements', () => {
+    const r = refusal(
+      planProvisioningPhase(
+        request({ state: { ...VIRGIN, privileges: { ...PRIVILEGES_OK, ownsStorageObjects: false } } }),
+      ),
+    )
+    expect(r.code).toBe('PROVISIONING_PRIVILEGE_UNAVAILABLE')
+    expect(r.message).toContain('ownsStorageObjects')
+  })
+
+  // AND THE MEASURED COMBINATION PLANS. This is the whole point of the PART A /
+  // PART B split: on the real target ownsStorageObjects is false and will stay
+  // false, and the previous rule — refuse on ANY false — meant refusing all
+  // fifty units forever for a condition the adaptation was built to survive.
+  it('PLANS when ownsStorageObjects and canSetRoleStorageAdmin are both false — the measured state', () => {
+    const p = plan(
+      planProvisioningPhase(
+        request({
+          state: {
+            ...VIRGIN,
+            privileges: {
+              ...PRIVILEGES_OK,
+              ownsStorageObjects: false,
+              canSetRoleStorageAdmin: false,
+              storageAdminMember: false,
+              storageAdminInherits: false,
+              setLocalRoleDemonstrated: false,
+            },
+          },
+        }),
+      ),
+    )
+    expect(p.steps).toHaveLength(51)
+    expect(p.writesPermitted).toBe(false)
+  })
+
+  // runtime-prerequisite: the bucket is not an apply-time dependency — unit 41
+  // never reads storage.buckets, its policies compare bucket_id as a COLUMN. The
+  // protection did not disappear; it moved to where it belongs.
+  it('PLANS when evidenceBucketExists is FALSE, because B0-15 is what covers it', () => {
+    const p = plan(
+      planProvisioningPhase(
+        request({ state: { ...VIRGIN, privileges: { ...PRIVILEGES_OK, evidenceBucketExists: false } } }),
+      ),
+    )
+    expect(p.steps).toHaveLength(51)
+
+    // …and it is still caught, twice: by CHECKPOINT B0 and by the apply gate.
+    expect(BASELINE_POSTCONDITIONS.some((c) => c.id === 'B0-15-evidence-bucket-exists')).toBe(true)
+    expect(APPLY_AUTHORIZATION_CRITERIA.some((c) => c.id === 'hosted-evidence-bucket-provisioning-ready')).toBe(true)
+  })
 
   it('the two class-C units are exactly the ones the probes cover', () => {
     expect(BASELINE_UNITS.filter((u) => u.managed === 'C-requires-adaptation').map((u) => u.id)).toEqual([
