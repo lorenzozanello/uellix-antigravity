@@ -272,3 +272,49 @@ Las tres procedencias admitidas, y la única que el gate valida en detalle:
 | `hosted-journal` | registra `package_id`, `phase`, `sha256`, `applied_at`, `status`, y **se escribe sólo tras el commit** de la unidad. Un journal escrito antes registraría como aplicada una unidad que hizo rollback — una mentira en la única dirección que importa |
 | `catalog-derived` | derivación determinista desde el catálogo + hashes |
 | `equivalent-fail-closed` | mecanismo equivalente, declarado |
+
+---
+
+## 7. Train 5C2 — corrección final del canal
+
+> ### ⚠️ §2.3 Y §4.3 ESTÁN SUPERADOS
+>
+> Este documento dijo dos veces que las policies «deben crearse por un canal cuya
+> identidad sí posea la tabla: el Dashboard de Supabase (Storage → Policies) o el
+> SQL Editor».
+>
+> **Ambas mitades son falsas**, y se dejan visibles en vez de reescribirlas en
+> silencio, por la misma razón que la corrección de §3: borrar el error borra la
+> prueba de que existió.
+>
+> - **El SQL Editor no es privilegiado.** Medido el 2026-08-07:
+>   `current_user = postgres`, MEMBER/USAGE/SET = false contra
+>   `supabase_storage_admin`, y ese rol **no aparece** entre los SETtables.
+> - **El Dashboard tampoco es un management plane.** Supabase Studio compila el
+>   formulario de Storage Policies a `CREATE POLICY` en texto y lo envía por el
+>   mismo `executeSql` que usa el SQL Editor. Fuente primaria, dos archivos.
+>
+> La determinación completa, con las fuentes y sus grados de evidencia, está en
+> [STELLA_STORAGE_MANAGEMENT_CHANNEL.md](STELLA_STORAGE_MANAGEMENT_CHANNEL.md).
+
+### 7.1 Lo que sí quedó cerrado
+
+| Elemento | Estado |
+|---|---|
+| `PSQL_SET_ROLE_PATH` | **REJECTED** — refutado por catálogo, no «no probado» |
+| `SQL_EDITOR_SET_ROLE_PATH` | **REJECTED** — misma identidad, misma ausencia de pertenencia |
+| `SET_ROLE_PATH_VERIFIED` | `false` literal, sin setter, y `storageExecutionReadiness()` no admite parámetro que lo reintroduzca |
+| División de la unidad 41 | un origen canónico → PARTE A (psql) + PARTE B (canal gestionado), regeneradas y comparadas byte a byte |
+| Máquina de estados | seis estados; `UNIT_41_POLICIES_APPLIED_UNVERIFIED` es el que faltaba |
+| DAG | `0039` depende de PARTE A y **no** de PARTE B; el bucket no es dependencia de apply-time |
+| RR-25 | **implementado** — 51 wrappers, INSERT dentro de la transacción de la unidad |
+
+### 7.2 Lo que sigue abierto
+
+`MANAGEMENT_PLANE_PATH = UNRESOLVED_REQUIRES_HOSTED_EVIDENCE`. La refutación es
+una inferencia sobre código open source; el build desplegado es cerrado. Sólo un
+intento lo resuelve, y un intento es una escritura — por eso la frontera humana
+se redefine como **sonda por ejecución de una sola policy**.
+
+`applyAuthorized = false`. `baselineApplied = false`. `stagingApplied = false`.
+`evidenceBucketExists = false`.

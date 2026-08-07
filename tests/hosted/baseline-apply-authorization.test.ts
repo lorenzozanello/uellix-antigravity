@@ -252,21 +252,30 @@ describe('Phase 2 — the production denylist', () => {
 /* ========================================================================== */
 
 describe('the apply-authorization gate', () => {
-  it('satisfies everything EXCEPT the journal, which is honestly unimplemented', () => {
-    // RR-25 is NOT closed. `journalInsertSql` exists and no generator calls it,
-    // so no artefact contains the append. The criterion demands those bytes and
-    // refuses — which is the correct state, and Phase 11 requires the apply gate
-    // to stay false while it holds. When a generator wires the append, this test
-    // will fail and its expectation becomes `[]`.
+  it('satisfies everything EXCEPT the management channel, which no evidence closes', () => {
+    // RR-25 IS NOW CLOSED, and this expectation is the record of it: the
+    // previous train's blocking list was ['hosted-baseline-journal-ready'],
+    // because `journalInsertSql` had no caller and no artefact carried the
+    // append. Fifty-one generated wrappers now do, so that criterion passes and
+    // the list shrank by one.
+    //
+    // What remains blocking is not a gap in this repository. The Dashboard
+    // Storage Policies UI compiles its form into CREATE POLICY text and submits
+    // it through the same executeSql path as the SQL Editor — measured to be an
+    // unprivileged postgres — so no channel we have evidence for can apply
+    // PART B. Only a hosted attempt can settle it, and an attempt is a write.
     const report = evaluateApplyAuthorization(satisfying())
-    expect(report.blocking.map((b) => b.split(':')[0])).toEqual(['hosted-baseline-journal-ready'])
+    expect(report.blocking.map((b) => b.split(':')[0])).toEqual([
+      'hosted-storage-management-channel-verified',
+    ])
     expect(report.applyAuthorized).toBe(false)
   })
 
   it('covers every dependency Phase 10 and Train 5C2 Phase 14 named', () => {
     // Phase 10 named twelve dependencies; `hashes` and `order` are not separable
     // — verifyBaselineManifest checks both in one pass and a partial answer is
-    // meaningless — so they are one criterion. Train 5C2 added six more.
+    // meaningless — so they are one criterion. Train 5C2 added six, and the
+    // management-channel determination added a seventh.
     expect(APPLY_AUTHORIZATION_CRITERIA.map((c) => c.id)).toEqual([
       'checkpoint-a0-pass',
       'production-denylist-loaded',
@@ -279,6 +288,7 @@ describe('the apply-authorization gate', () => {
       'hosted-evidence-bucket-provisioning-ready',
       'hosted-storage-policy-boundary-ready',
       'hosted-baseline-journal-ready',
+      'hosted-storage-management-channel-verified',
       'manifest-hashes-and-order',
       'no-class-d-units',
       'zero-production-data',

@@ -47,7 +47,16 @@ import {
 } from './baseline-manifest'
 import { scanBaselineSql } from './baseline-scanner'
 import { JOURNAL_TABLE } from './baseline-journal'
-import { PSQL_ARTEFACT } from './storage-policy-artifact'
+import {
+  JOURNAL_BOOTSTRAP_FILE,
+  wrapperCarriesJournalAppend,
+  wrapperPathFor,
+} from './baseline-journal-wrapper'
+import {
+  MANAGEMENT_PLANE_EVIDENCE,
+  MANAGEMENT_PLANE_PATH,
+  storageExecutionReadiness,
+} from './managed-policy-channel'
 import {
   BASELINE_POSTCONDITIONS,
   EXPECTED_STORAGE_POLICY_SURFACE,
@@ -633,16 +642,38 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
         return no(id, 'the journal row is not committed with the unit, so a rolled-back unit could be recorded as applied — a ledger that lies in the one direction that matters.')
       }
 
-      const partASql = inputs.readBaselineSql(PSQL_ARTEFACT)
-      if (partASql === null || !partASql.includes(JOURNAL_TABLE)) {
+      // THE BYTES, FOR EVERY UNIT — not for one artefact.
+      //
+      // The previous version demanded the append in PART A alone. That was one
+      // fiftieth of the requirement: forty-nine units could apply unrecorded
+      // while the criterion passed, and `baselineUnitsInstalled` would still
+      // largely be a list somebody typed. RR-25 is about the WHOLE baseline.
+      const bootstrap = inputs.readBaselineSql(JOURNAL_BOOTSTRAP_FILE)
+      if (bootstrap === null || !bootstrap.includes(`CREATE TABLE IF NOT EXISTS ${JOURNAL_TABLE}`)) {
         return no(
           id,
-          `the generated artefact ${PSQL_ARTEFACT} contains no INSERT INTO ${JOURNAL_TABLE}. The ` +
-            `provenance describes a journal append that no generator emits, so baselineUnitsInstalled ` +
-            `would still come from a list somebody typed — which is RR-25 unresolved, not resolved.`,
+          `${JOURNAL_BOOTSTRAP_FILE} does not create ${JOURNAL_TABLE}. Unit 1 would INSERT into a table ` +
+            `that does not exist and roll back — the ledger's own bootstrap is a unit, and an absent one.`,
         )
       }
-      return yes(id, `provenance: ${p.kind}, and the generated artefact carries the append — ${p.detail}`)
+      const units = inputs.units ?? BASELINE_UNITS
+      const without = units.filter(
+        (u) => !wrapperCarriesJournalAppend(inputs.readBaselineSql(wrapperPathFor(u))),
+      )
+      if (without.length > 0) {
+        return no(
+          id,
+          `${without.length} of ${units.length} units have no wrapper carrying the journal append ` +
+            `(first: ${without[0].id}). A wrapper must \\ir-include its unit AND INSERT INTO ` +
+            `${JOURNAL_TABLE} with the supplied project ref, so psql -1 commits both or neither. ` +
+            `Anything less is a unit that can apply unrecorded.`,
+        )
+      }
+      return yes(
+        id,
+        `provenance: ${p.kind}; ${JOURNAL_BOOTSTRAP_FILE} creates the ledger and all ${units.length} ` +
+          `wrappers carry the append inside the unit's own transaction — ${p.detail}`,
+      )
     },
     negativeControl: {
       description: 'a journal written before commit must fail',
@@ -655,6 +686,54 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
           detail: 'written eagerly',
         },
       }),
+    },
+  },
+
+  /* ------------------------------------------------------------------ */
+  {
+    id: 'hosted-storage-management-channel-verified',
+    requirement:
+      'Storage closes on SET_ROLE_PATH_VERIFIED or MANAGED_BOUNDARY_VERIFIED. The first is pinned false ' +
+      'by measurement; the second requires hosted evidence, not a design.',
+    evaluate(inputs) {
+      const id = 'hosted-storage-management-channel-verified'
+
+      // Branch A is refuted by catalogue on BOTH identities that were measured.
+      // The constant cannot be flipped, and this restates why in the verdict so
+      // a reader of the report does not have to go find the measurement.
+      if (inputs.storagePath === 'A-set-role') {
+        return no(
+          id,
+          'Branch A is selected while SET_ROLE_PATH_VERIFIED is a pinned false: MEMBER / USAGE / SET ' +
+            'against supabase_storage_admin measured false on the psql identity AND on the SQL Editor ' +
+            'identity, and supabase_storage_admin is absent from the SETtable set. There is no reading ' +
+            'under which SET ROLE exists.',
+        )
+      }
+
+      if (MANAGEMENT_PLANE_PATH !== 'VERIFIED') {
+        const primary = MANAGEMENT_PLANE_EVIDENCE.filter((e) => e.grade === 'primary').length
+        return no(
+          id,
+          `the managed channel is ${MANAGEMENT_PLANE_PATH}. Determined from ${primary} primary sources: ` +
+            `the Dashboard Storage Policies UI compiles its form into CREATE POLICY text and submits it ` +
+            `through the same executeSql path as the SQL Editor, whose identity is the postgres that ` +
+            `cannot own storage.objects. So it is not a management plane. What is NOT settled is whether ` +
+            `the deployed platform routes that mutation as the open-source Studio does — closed source, ` +
+            `and only an attempt (a WRITE) can answer it. MANAGED_BOUNDARY_DESIGNED is not ` +
+            `MANAGED_BOUNDARY_VERIFIED.`,
+        )
+      }
+
+      const readiness = storageExecutionReadiness({
+        managedBoundaryVerified: false,
+        detail: 'no hosted execution of PART B has been observed',
+      })
+      return readiness.ready ? yes(id, readiness.detail) : no(id, readiness.reason)
+    },
+    negativeControl: {
+      description: 'selecting Branch A after SET was measured false must fail',
+      mutate: (i) => ({ ...i, storagePath: 'A-set-role' }),
     },
   },
 
