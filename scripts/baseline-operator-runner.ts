@@ -32,13 +32,18 @@ import { verifyBaselineManifest } from '../db/hosted/baseline-manifest'
 import { scanBaselineSql } from '../db/hosted/baseline-scanner'
 import { wrapperCarriesJournalAppend, wrapperPathFor, PROJECT_REF_VAR } from '../db/hosted/baseline-journal-wrapper'
 import type { JournalRow } from '../db/hosted/baseline-journal'
-import { SET_ROLE_PATH_VERIFIED } from '../db/hosted/managed-policy-channel'
+import {
+  STORAGE_BOUNDARY_ARTEFACT,
+  evaluateStorageBoundaryArtefact,
+  type StorageBoundaryArtefact,
+} from '../db/hosted/managed-policy-channel'
 import {
   CATALOGUE_TABLES_SQL,
   JOURNAL_SNAPSHOT_SQL,
   LEDGER_BOOTSTRAP_PROBE_SQL,
   OPERATOR_EXIT,
   PSQL_PROBE_FLAGS,
+  applyArgv,
   describeProbeOutput,
   parsePsqlJson,
   deriveNextUnit,
@@ -308,6 +313,21 @@ function main(): void {
 
   const created = tablesCreatedByUnit()
 
+  // THE STORAGE BOUNDARY EVIDENCE.
+  //
+  // Derived from the artefact `pnpm boundary:status:write` verifies, which holds
+  // what pg_proc and pg_policies said and what B0-16 concluded. Never a claim
+  // the operator types, never the journal. An absent artefact yields false with
+  // a stated reason, because unmeasured is not verified.
+  let boundaryArtefact: StorageBoundaryArtefact | null = null
+  try {
+    boundaryArtefact = JSON.parse(readFileSync(path.join(ROOT, STORAGE_BOUNDARY_ARTEFACT), 'utf8')) as StorageBoundaryArtefact
+  } catch {
+    boundaryArtefact = null
+  }
+  const storageEvidence = evaluateStorageBoundaryArtefact(boundaryArtefact)
+  say(`STORAGE BOUNDARY: ${storageEvidence.state} — managedBoundaryVerified=${storageEvidence.managedBoundaryVerified}`)
+
   // ---- the loop -----------------------------------------------------------
   for (;;) {
     const rows = journalRows()
@@ -317,6 +337,7 @@ function main(): void {
         expectedProjectRef: env.projectRef,
         observedTables: catalogueTables(),
         tablesCreatedByUnit: created,
+        storageBoundaryVerified: storageEvidence.managedBoundaryVerified,
       }),
     )
     state.lastCommittedUnit = position.lastCommittedUnit
@@ -329,7 +350,7 @@ function main(): void {
           expectedProjectRef: env.projectRef,
           observedTables: catalogueTables(),
           tablesCreatedByUnit: created,
-          storageBoundaryVerified: SET_ROLE_PATH_VERIFIED,
+          storageBoundaryVerified: storageEvidence.managedBoundaryVerified,
         }),
       )
       say('')
@@ -383,11 +404,11 @@ function applyAndVerify(unit: BaselineUnit, projectRef: string, dryRun: boolean)
 
   // ---- APPLY --------------------------------------------------------------
   say(`${tag} APPLY`)
-  const applied = spawnSync(
-    PSQL,
-    ['-1', '-v', 'ON_ERROR_STOP=1', '-v', `${PROJECT_REF_VAR}=${projectRef}`, '-f', wrapperPath],
-    { cwd: ROOT, encoding: 'utf8', env: process.env },
-  )
+  const applied = spawnSync(PSQL, [...applyArgv(wrapperPath, projectRef)], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: process.env,
+  })
   if (applied.status !== 0) {
     halt({
       ok: false,

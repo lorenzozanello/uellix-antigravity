@@ -36,7 +36,7 @@ import { BASELINE_UNITS, type BaselineUnit } from './baseline-manifest'
 import { reconcileJournal, type JournalRow, JOURNAL_TABLE } from './baseline-journal'
 import { scanBaselineSql } from './baseline-scanner'
 import { sha256OfSql } from './hosted-package-manifest'
-import { STORAGE_UNIT_ID } from './baseline-journal-wrapper'
+import { STORAGE_UNIT_ID, PROJECT_REF_VAR } from './baseline-journal-wrapper'
 import {
   KNOWN_PRODUCTION_IDENTIFIERS,
   KNOWN_STAGING_PROJECT_REF,
@@ -466,6 +466,14 @@ export function deriveNextUnit(input: {
   readonly expectedProjectRef: string
   readonly observedTables: readonly string[] | null
   readonly tablesCreatedByUnit: Readonly<Record<string, readonly string[]>>
+  /**
+   * Did the CATALOGUE show the three canonical policies on storage.objects?
+   *
+   * Derived by `evaluateStorageBoundaryArtefact` from pg_proc, pg_policies and
+   * B0-16 — never an operator claim, never the journal. Absent means unmeasured,
+   * and unmeasured is refused.
+   */
+  readonly storageBoundaryVerified?: boolean
 }): NextUnitVerdict | OperatorStop {
   const { installed, problems } = reconcileJournal({
     rows: input.rows,
@@ -504,6 +512,32 @@ export function deriveNextUnit(input: {
     return stop(
       'OPERATOR_JOURNAL_FUTURE_UNIT',
       `the journal is not a prefix of the manifest order. Recorded but out of order: ${ahead.join(', ') || '(none)'}; missing from the prefix: ${outOfOrder.join(', ')}. A partial baseline is not a smaller baseline.`,
+    )
+  }
+
+  // A JOURNAL ROW FOR UNIT 41 IS NOT A CROSSED BOUNDARY.
+  //
+  // Independent audit found the vector: fabricate an APPLIED row for the storage
+  // unit and a resume derives 042, with PART B never installed. The row is not
+  // even CLAIMING part B — the wrapper includes PART A alone and says so in its
+  // own header: "An APPLIED row here means the two public helpers exist —
+  // nothing more." The three policies live in a channel psql cannot join, so the
+  // only evidence that can cross this boundary is the catalogue.
+  //
+  // Placed AFTER the prefix check, so a journal that is both out of order and
+  // past the boundary reports the ordering fault, which is the more specific
+  // one. Units 001-040 are untouched: the guard reads the storage unit's own
+  // presence, not a blanket "are we near the end".
+  const storageRecorded = applied.has(STORAGE_UNIT_ID)
+  if (storageRecorded && input.storageBoundaryVerified !== true) {
+    return stop(
+      'OPERATOR_STORAGE_HUMAN_BOUNDARY',
+      `the journal records ${STORAGE_UNIT_ID}, but the canonical storage boundary is ` +
+        `${input.storageBoundaryVerified === undefined ? 'UNMEASURED' : 'NOT VERIFIED'}. That row attests ` +
+        `PART A — the two public.can_*_evidence_object helpers — and nothing else. Crossing to unit 42 ` +
+        `requires the three canonical policies observed on storage.objects with their exact surface (role, ` +
+        `command, predicate slot, bucket filter, isolation helper) and no extra policy beside them. Run the ` +
+        `PART B procedure and the B0-16 reconciliation; a journal row cannot substitute for the catalogue.`,
     )
   }
 
@@ -855,6 +889,36 @@ export const CATALOGUE_TABLES_SQL = readOnly(
  * goes to stderr where it cannot contaminate the payload.
  */
 export const PSQL_PROBE_FLAGS: readonly string[] = ['-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1']
+
+/**
+ * The flags that make an APPLY atomic. Both are load-bearing.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A CONSTANT AND NOT TWO STRINGS IN THE DRIVER
+ * ---------------------------------------------------------------------------
+ * Independent audit mutated `-1` and `ON_ERROR_STOP=1` out of the apply call and
+ * the entire suite still passed. The flags lived inline in the driver, which no
+ * test imports, so atomicity was correct by inspection of one commit and by
+ * nothing else. Every other invariant in this programme is pinned by something
+ * that FAILS; this one was pinned by a reviewer's memory.
+ *
+ *   -1                wraps the WHOLE invocation in one transaction, so the
+ *                     unit's DDL and its journal INSERT commit together or not
+ *                     at all. Without it the crash window the ledger exists to
+ *                     eliminate comes straight back.
+ *   ON_ERROR_STOP=1   without it psql runs past a failed statement and exits 0,
+ *                     so the runner reads a half-applied unit as a success.
+ *
+ * The wrappers also carry `\set ON_ERROR_STOP on` internally. That is defence in
+ * depth, not a reason to drop the flag: a wrapper is generated, and the flag is
+ * the guarantee that does not depend on the generator being right.
+ */
+export const PSQL_APPLY_FLAGS: readonly string[] = ['-1', '-v', 'ON_ERROR_STOP=1']
+
+/** The complete argv for applying one unit. One spelling, pinned by tests. */
+export function applyArgv(wrapperPath: string, projectRef: string): readonly string[] {
+  return [...PSQL_APPLY_FLAGS, '-v', `${PROJECT_REF_VAR}=${projectRef}`, '-f', wrapperPath]
+}
 
 export interface ParsedPayload<T> {
   readonly ok: true

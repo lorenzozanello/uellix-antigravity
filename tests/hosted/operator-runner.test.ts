@@ -18,6 +18,9 @@ import { describe, expect, it } from 'vitest'
 
 import { BASELINE_UNITS, baselineUnit } from '../../db/hosted/baseline-manifest'
 import { scanBaselineSql } from '../../db/hosted/baseline-scanner'
+import { wrapperCarriesJournalAppend, wrapperPathFor } from '../../db/hosted/baseline-journal-wrapper'
+import { evaluateStorageBoundaryArtefact } from '../../db/hosted/managed-policy-channel'
+import type { ObservedStoragePolicy } from '../../db/hosted/baseline-postconditions'
 import { sha256OfSql } from '../../db/hosted/hosted-package-manifest'
 import type { JournalRow } from '../../db/hosted/baseline-journal'
 import { KNOWN_STAGING_PROJECT_REF } from '../../db/hosted/target-identity'
@@ -25,6 +28,8 @@ import { SET_ROLE_PATH_VERIFIED } from '../../db/hosted/managed-policy-channel'
 import {
   CATALOGUE_TABLES_SQL,
   PROBE_KEY_EXPRESSIONS,
+  PSQL_APPLY_FLAGS,
+  applyArgv,
   keySegmentCount,
   PSQL_PROBE_FLAGS,
   parsePsqlJson,
@@ -356,9 +361,20 @@ describe('next unit derivation', () => {
     expect(codeOf(derive([rowFor(1)], 0))).toBe('OPERATOR_JOURNAL_UNRECONCILED')
   })
 
-  it('reports completion once all fifty are recorded', () => {
+  it('reports completion once all fifty are recorded AND the storage boundary is verified', () => {
+    // This test used to omit the boundary evidence and pass. That was the
+    // vulnerable behaviour independent audit found: fifty journal rows with
+    // PART B never installed read as a finished baseline. The evidence is now
+    // required, and the paired refusal lives in
+    // "storage boundary cannot be crossed by a journal row".
     const rows = BASELINE_UNITS.map((_, i) => rowFor(i + 1))
-    const v = derive(rows)
+    const v = deriveNextUnit({
+      rows,
+      expectedProjectRef: STAGING,
+      observedTables: observedFor(50),
+      tablesCreatedByUnit: tablesByUnit,
+      storageBoundaryVerified: true,
+    })
     expect(codeOf(v)).toBe('OK')
     if (v.ok) {
       expect(v.nextUnit).toBeNull()
@@ -744,6 +760,201 @@ describe('storage human boundary', () => {
     const storage = baselineUnit('20260716000001_storage_policies.sql')
     expect(storage.ordinal).toBe(41)
     expect(BASELINE_UNITS.some((u) => u.dependsOn.includes(storage.id))).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HARDENING 1 — the APPLY invocation contract
+//
+// Independent audit mutated `-1` and `ON_ERROR_STOP=1` out of the apply call and
+// all 911 tests still passed: the flags lived inline in the driver, which no
+// test imports. Atomicity was correct by inspection of one SHA and by nothing
+// else. A future regression has to be caught by a test, not by a reviewer
+// happening to read line 388 again.
+// ---------------------------------------------------------------------------
+
+describe('psql apply flags', () => {
+  it('wraps the whole invocation in ONE transaction', () => {
+    // Without -1 the unit's DDL and its journal INSERT commit separately, and a
+    // crash between them leaves a unit applied and unrecorded — the exact state
+    // the ledger exists to make impossible.
+    expect(PSQL_APPLY_FLAGS).toContain('-1')
+  })
+
+  it('stops on the first error', () => {
+    // Without ON_ERROR_STOP psql runs on past a failed statement and exits 0, so
+    // a half-applied unit reports success to the runner.
+    expect(PSQL_APPLY_FLAGS).toContain('ON_ERROR_STOP=1')
+    expect(PSQL_APPLY_FLAGS[PSQL_APPLY_FLAGS.indexOf('ON_ERROR_STOP=1') - 1]).toBe('-v')
+  })
+
+  it('never carries a probe flag that would suppress the apply output', () => {
+    expect(PSQL_APPLY_FLAGS).not.toContain('-t')
+    expect(PSQL_APPLY_FLAGS).not.toContain('-A')
+  })
+
+  it('builds the apply argv with the wrapper and the project ref, and nothing else', () => {
+    const argv = applyArgv('db/prepared/journal/001_0000_quick_husk.sql', STAGING)
+    expect(argv).toEqual(['-1', '-v', 'ON_ERROR_STOP=1', '-v', `uellix_project_ref=${STAGING}`, '-f', 'db/prepared/journal/001_0000_quick_husk.sql'])
+  })
+
+  it('keeps migration and journal row in the same transaction for every wrapper', () => {
+    // -1 is only half the guarantee. The other half is that the INSERT is INSIDE
+    // the file psql is given, which is what makes "both or neither" structural
+    // rather than a property of how the runner sequences two calls.
+    for (const unit of BASELINE_UNITS) {
+      const wrapper = readFileSync(path.join(process.cwd(), wrapperPathFor(unit)), 'utf8')
+      expect(wrapperCarriesJournalAppend(wrapper), unit.id).toBe(true)
+      expect(wrapper, unit.id).toContain('\\ir ')
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HARDENING 2 — a journal row for unit 41 is not a crossed boundary
+//
+// The audit's vector: fabricate an APPLIED row for the storage unit and a resume
+// derives 042 as next, with PART B never installed. The row means only that the
+// two PUBLIC helpers exist — the wrapper includes PART A alone and says so. The
+// three policies on storage.objects live in a channel psql cannot join, so the
+// only evidence that counts is the catalogue.
+// ---------------------------------------------------------------------------
+
+describe('storage boundary cannot be crossed by a journal row', () => {
+  const through = (n: number) => Array.from({ length: n }, (_, i) => rowFor(i + 1))
+
+  const deriveWith = (rows: readonly JournalRow[], storageBoundaryVerified: boolean, obs = rows.length) =>
+    deriveNextUnit({
+      rows,
+      expectedProjectRef: STAGING,
+      observedTables: observedFor(obs),
+      tablesCreatedByUnit: tablesByUnit,
+      storageBoundaryVerified,
+    })
+
+  it('stops at 041 with forty units recorded', () => {
+    const v = deriveWith(through(40), false)
+    expect(codeOf(v)).toBe('OK')
+    if (v.ok) expect(v.nextUnit?.ordinal).toBe(41)
+    if (v.ok && v.nextUnit) expect(storageBoundaryStop(v.nextUnit)?.code).toBe('OPERATOR_STORAGE_HUMAN_BOUNDARY')
+  })
+
+  it('REFUSES to derive 042 from a 41-row journal when PART B is not verified', () => {
+    // THE VECTOR. Before this, the row alone advanced the run.
+    expect(codeOf(deriveWith(through(41), false))).toBe('OPERATOR_STORAGE_HUMAN_BOUNDARY')
+  })
+
+  it('refuses when the boundary evidence was never measured at all', () => {
+    const v = deriveNextUnit({
+      rows: through(41),
+      expectedProjectRef: STAGING,
+      observedTables: observedFor(41),
+      tablesCreatedByUnit: tablesByUnit,
+    })
+    expect(codeOf(v)).toBe('OPERATOR_STORAGE_HUMAN_BOUNDARY')
+  })
+
+  it('derives 042 only once PART B is verified against the catalogue', () => {
+    const v = deriveWith(through(41), true)
+    expect(codeOf(v)).toBe('OK')
+    if (v.ok) {
+      expect(v.nextUnit?.ordinal).toBe(42)
+      expect(v.lastCommittedUnit).toBe('20260716000001_storage_policies.sql')
+    }
+  })
+
+  it('refuses a fabricated 042 row while the boundary is unverified', () => {
+    expect(codeOf(deriveWith(through(42), false))).toBe('OPERATOR_STORAGE_HUMAN_BOUNDARY')
+  })
+
+  it('does not gate units before the boundary on storage evidence', () => {
+    // The guard must not become a blanket refusal: 001–040 are unaffected.
+    const v = deriveWith(through(32), false)
+    expect(codeOf(v)).toBe('OK')
+    if (v.ok) expect(v.nextUnit?.ordinal).toBe(33)
+  })
+
+  it('refuses completion while the boundary is unverified, even with all fifty rows', () => {
+    expect(
+      codeOf(
+        evaluateCompletion({
+          rows: through(50),
+          expectedProjectRef: STAGING,
+          observedTables: observedFor(50),
+          tablesCreatedByUnit: tablesByUnit,
+          storageBoundaryVerified: false,
+        }),
+      ),
+    ).toBe('OPERATOR_STORAGE_HUMAN_BOUNDARY')
+  })
+})
+
+describe('PART B surface evidence feeding the boundary', () => {
+  const canonical: ObservedStoragePolicy[] = [
+    { schemaname: 'storage', tablename: 'objects', policyname: 'select_evidence', roles: '{authenticated}', cmd: 'SELECT', qual: "(bucket_id = 'uellix-evidence') AND public.can_read_evidence_object(name, auth.uid())", withCheck: null },
+    { schemaname: 'storage', tablename: 'objects', policyname: 'insert_evidence', roles: '{authenticated}', cmd: 'INSERT', qual: null, withCheck: "(bucket_id = 'uellix-evidence') AND public.can_write_evidence_object(name, auth.uid())" },
+    { schemaname: 'storage', tablename: 'objects', policyname: 'delete_evidence', roles: '{authenticated}', cmd: 'DELETE', qual: "(bucket_id = 'uellix-evidence') AND public.can_write_evidence_object(name, auth.uid())", withCheck: null },
+  ]
+
+  const boundary = (policies: readonly ObservedStoragePolicy[], journalled = true) =>
+    evaluateStorageBoundaryArtefact({
+      helpersPresent: true,
+      policies,
+      journal: { partAApplied: journalled, boundary: 'MANUAL_BOUNDARY_PENDING' },
+    })
+
+  it('verifies the boundary only on the full canonical surface', () => {
+    expect(boundary(canonical).managedBoundaryVerified).toBe(true)
+  })
+
+  it('refuses a partial PART B — two of three', () => {
+    expect(boundary(canonical.slice(0, 2)).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses the right policy name on the wrong table', () => {
+    const moved = canonical.map((p) => (p.policyname === 'select_evidence' ? { ...p, tablename: 'buckets' } : p))
+    expect(boundary(moved).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses the right policy name in the wrong schema', () => {
+    const moved = canonical.map((p) => (p.policyname === 'select_evidence' ? { ...p, schemaname: 'public' } : p))
+    expect(boundary(moved).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses a widened predicate that still contains the canonical text', () => {
+    const widened = canonical.map((p) =>
+      p.policyname === 'select_evidence' ? { ...p, qual: `((${p.qual}) OR true)` } : p,
+    )
+    expect(boundary(widened).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses a widened role', () => {
+    const widened = canonical.map((p) =>
+      p.policyname === 'select_evidence' ? { ...p, roles: '{authenticated,anon,service_role}' } : p,
+    )
+    expect(boundary(widened).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses an extra policy nothing in this repository generates', () => {
+    const extra = [...canonical, { schemaname: 'storage', tablename: 'objects', policyname: 'temp_debug', roles: '{authenticated}', cmd: 'SELECT', qual: 'true', withCheck: null }]
+    expect(boundary(extra).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses ambiguous evidence — policies present, surface never measured', () => {
+    const v = evaluateStorageBoundaryArtefact({
+      helpersPresent: true,
+      journal: { partAApplied: true, boundary: 'MANUAL_BOUNDARY_PENDING' },
+    })
+    expect(v.managedBoundaryVerified).toBe(false)
+    expect(v.surfaceVerified).toBeNull()
+  })
+
+  it('refuses an absent artefact — unmeasured is never verified', () => {
+    expect(evaluateStorageBoundaryArtefact(null).managedBoundaryVerified).toBe(false)
+  })
+
+  it('refuses a canonical surface whose PART A was never journalled', () => {
+    expect(boundary(canonical, false).managedBoundaryVerified).toBe(false)
   })
 })
 
