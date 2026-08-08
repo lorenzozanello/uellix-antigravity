@@ -268,35 +268,68 @@ export function deriveManagementPlaneVerdict(probeState: string | null): Channel
 export const SET_ROLE_PATH_VERIFIED = false as const
 
 export type StorageReadiness =
-  | { readonly ready: true; readonly via: 'MANAGED_BOUNDARY_VERIFIED'; readonly detail: string }
+  | { readonly ready: true; readonly via: string; readonly detail: string }
   | { readonly ready: false; readonly reason: string }
 
+const SET_ROLE_ARM_IS_DEAD =
+  'SET_ROLE_PATH_VERIFIED is false and cannot become true (MEMBER/USAGE/SET all measured false against ' +
+  'supabase_storage_admin, on the psql identity AND the SQL Editor identity). Recording queries or a ' +
+  'connection host in an artefact cannot change that: those are provenance for the SAME measurement, ' +
+  'not a different measurement.'
+
 /**
- * `SET_ROLE_PATH_VERIFIED || MANAGED_BOUNDARY_VERIFIED`, with the first disjunct
- * pinned false — so in practice the second is the only way Storage closes.
+ * THE PRE-BASELINE ARM: can SOME channel create a policy on storage.objects?
  *
- * `managedBoundaryVerified` is not a boolean an operator passes. It is the
- * output of `reconcileStorageBoundary`, which reads the catalogue.
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A SEPARATE FUNCTION FROM THE COMPLETION ONE
+ * ---------------------------------------------------------------------------
+ * One `storageExecutionReadiness` served both questions, and a criterion in the
+ * gate that AUTHORISES the baseline used it with the canonical-boundary arm —
+ * which needs the three policies, which need unit 41 PART A, which is a unit of
+ * that same baseline. Circular, and unopenable.
+ *
+ * The two questions have different answers at different times, so they are two
+ * functions. This one is answerable before a single unit runs, because the
+ * capability probe was built to depend on nothing: no helper, no bucket, no
+ * function, `USING (false)`.
  */
-export function storageExecutionReadiness(input: {
-  readonly managedBoundaryVerified: boolean
+export function storageStartReadiness(input: {
+  readonly capabilityDemonstrated: boolean
   readonly detail: string
 }): StorageReadiness {
-  if (SET_ROLE_PATH_VERIFIED) {
-    // Unreachable, and deliberately left in place: a reader checking whether the
-    // disjunction is really a disjunction can see both arms.
-    return { ready: true, via: 'MANAGED_BOUNDARY_VERIFIED', detail: 'unreachable' }
-  }
-  if (!input.managedBoundaryVerified) {
+  if (SET_ROLE_PATH_VERIFIED) return { ready: true, via: 'SET_ROLE_PATH_VERIFIED', detail: 'unreachable' }
+  if (!input.capabilityDemonstrated) {
     return {
       ready: false,
       reason:
-        `SET_ROLE_PATH_VERIFIED is false and cannot become true (MEMBER/USAGE/SET all measured false ` +
-        `against supabase_storage_admin, on both the psql identity and the SQL Editor identity), and ` +
-        `MANAGED_BOUNDARY_VERIFIED is false: ${input.detail}. A DESIGNED boundary is not a VERIFIED one.`,
+        `${SET_ROLE_ARM_IS_DEAD} And MANAGED_CHANNEL_CAPABILITY_DEMONSTRATED is false: ${input.detail}. ` +
+        `Until some channel is shown able to create a policy on storage.objects, PART B has no route and ` +
+        `the baseline would install a surface it cannot finish.`,
     }
   }
-  return { ready: true, via: 'MANAGED_BOUNDARY_VERIFIED', detail: input.detail }
+  return { ready: true, via: 'MANAGED_CHANNEL_CAPABILITY_DEMONSTRATED', detail: input.detail }
+}
+
+/**
+ * THE POST-PART-A ARM: are the three canonical policies actually installed?
+ *
+ * `canonicalBoundaryVerified` is not a boolean an operator passes. It is derived
+ * by `evaluateStorageBoundaryArtefact` from pg_proc, pg_policies and the journal.
+ * A demonstrated channel does not satisfy it: the capability probe created a
+ * temporary policy that granted nothing and removed it again.
+ */
+export function storageCanonicalBoundaryReadiness(input: {
+  readonly canonicalBoundaryVerified: boolean
+  readonly detail: string
+}): StorageReadiness {
+  if (SET_ROLE_PATH_VERIFIED) return { ready: true, via: 'SET_ROLE_PATH_VERIFIED', detail: 'unreachable' }
+  if (!input.canonicalBoundaryVerified) {
+    return {
+      ready: false,
+      reason: `${SET_ROLE_ARM_IS_DEAD} And MANAGED_CANONICAL_BOUNDARY_VERIFIED is false: ${input.detail}.`,
+    }
+  }
+  return { ready: true, via: 'MANAGED_CANONICAL_BOUNDARY_VERIFIED', detail: input.detail }
 }
 
 /* -------------------------------------------------------------------------- */

@@ -19,6 +19,7 @@ import {
 import {
   APPLY_IDENTITY_ARTEFACT,
   APPLY_STATUS_ARTEFACT,
+  CHECKPOINT_A0_ARTEFACT,
   SQL_EDITOR_ARTEFACT,
   loadMeasuredEvidence,
 } from '@/db/hosted/measured-evidence'
@@ -73,10 +74,25 @@ const blockingIds = (r: ReturnType<typeof live>) =>
   r.criteria.filter((c) => !c.satisfied).map((c) => c.id)
 
 describe('the psql read-only attestation is a REAL apply criterion', () => {
-  // THE AUDIT ANSWER. `hosted-storage-apply-identity-probed` refuses on
-  // UNCONFIRMED in its first branch, before it looks at anything else.
+  // THE AUDIT ANSWER, still asserted — but over an INJECTED UNCONFIRMED rather
+  // than the artefact's current value. The operator has since supplied `on`, and
+  // a test pinned to the file would now be measuring the evidence instead of the
+  // criterion.
   it('blocks while transaction_read_only is UNCONFIRMED', () => {
-    expect(blockingIds(live())).toContain('hosted-storage-apply-identity-probed')
+    const unconfirmed = (rel: string) => {
+      const value = readJson(rel)
+      if (rel !== APPLY_IDENTITY_ARTEFACT || value === null) return value
+      const v = value as { observed: Record<string, unknown> }
+      return { ...v, observed: { ...v.observed, transaction_read_only: 'UNCONFIRMED' } }
+    }
+    expect(blockingIds(live(unconfirmed))).toContain('hosted-storage-apply-identity-probed')
+  })
+
+  // …and with the value supplied, that criterion is satisfied on today's real
+  // artefacts. The pair is what makes the criterion falsifiable in both
+  // directions rather than merely strict.
+  it('is satisfied on the artefacts as they now stand', () => {
+    expect(blockingIds(live())).not.toContain('hosted-storage-apply-identity-probed')
   })
 
   it('means there is more than one blocker, not one', () => {
@@ -256,10 +272,38 @@ describe('the evidence is READ, not typed', () => {
     expect(evidence.inputs.classCProbes?.measuredBy ?? '').toBe('')
   })
 
-  it('does not invent CHECKPOINT A0, which no artefact records', () => {
+  // A0 WAS RUN AND PASSED; ONLY ITS RECORD WAS MISSING. The audit asked whether
+  // it needed re-execution — it did not — so the values are now ingested from
+  // the requirements document, which states each one explicitly. What is still
+  // absent is the query text, and that is what keeps the criterion refusing.
+  it('ingests CHECKPOINT A0 rather than inventing it, and still refuses without its query', () => {
     const evidence = loadMeasuredEvidence({ readJson, readBaselineSql: read, discoveredBaselineFiles: discovered() })
-    expect(evidence.inputs.checkpointA0).toBeNull()
+    expect(evidence.inputs.checkpointA0).not.toBeNull()
+    expect(evidence.inputs.checkpointA0!.value).toMatchObject({
+      result: 'PASS',
+      sessionWasReadOnly: true,
+      projectIsNew: true,
+      stellaSurfaceAbsent: true,
+      writesPerformed: 0,
+    })
+    expect(evidence.inputs.checkpointA0!.query).toBe('')
     expect(blockingIds(live())).toContain('checkpoint-a0-pass')
+  })
+
+  // NO DOUBLE STANDARD. `zero-production-data` read the same attestation and
+  // never demanded its provenance, so an A0 with no recorded query would have
+  // satisfied it while `checkpoint-a0-pass` refused the identical object.
+  it('holds zero-production-data to the same provenance standard as A0 itself', () => {
+    expect(blockingIds(live())).toContain('zero-production-data')
+  })
+
+  it('refuses to invent A0 when its artefact is absent', () => {
+    const evidence = loadMeasuredEvidence({
+      readJson: (rel) => (rel === CHECKPOINT_A0_ARTEFACT ? null : readJson(rel)),
+      readBaselineSql: read,
+      discoveredBaselineFiles: discovered(),
+    })
+    expect(evidence.inputs.checkpointA0).toBeNull()
   })
 
   it('never records a SET LOCAL ROLE demonstration that was correctly not attempted', () => {
@@ -321,8 +365,8 @@ describe('the report cannot diverge from the gate', () => {
     expect(live().applyAuthorized).toBe(false)
   })
 
-  it('lists the psql attestation among the blockers it publishes', () => {
-    expect(onDisk.blockingIds).toContain('hosted-storage-apply-identity-probed')
+  it('publishes more than one blocker, and each with its four parts', () => {
     expect(onDisk.blockingCount).toBeGreaterThanOrEqual(2)
+    expect(onDisk.blockingIds).toContain('checkpoint-a0-pass')
   })
 })

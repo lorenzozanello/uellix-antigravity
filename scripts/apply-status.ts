@@ -84,7 +84,8 @@ export function computeApplyStatus(): ApplyStatusArtefact {
     // `uellix-evidence` bucket refuse the application of fifty units that never
     // read storage.buckets. Each blocker carries its four parts separately so a
     // conclusion cannot outlive the measurement behind it.
-    baselineApplyGate: report.baselineApplyGate,
+    baselineStartGate: report.baselineStartGate,
+    baselineCompletionGate: report.baselineCompletionGate,
     stagingRuntimeGate: report.stagingRuntimeGate,
     applyAuthorized: false,
     baselineApplied: false,
@@ -103,7 +104,8 @@ const mode = process.argv[2] ?? 'report'
 if (mode === 'report') {
   const status = computeApplyStatus()
   for (const [label, gate] of [
-    ['BASELINE_APPLY_GATE', status.baselineApplyGate],
+    ['BASELINE_START_GATE', status.baselineStartGate],
+    ['BASELINE_COMPLETION_GATE', status.baselineCompletionGate],
     ['STAGING_RUNTIME_GATE', status.stagingRuntimeGate],
   ] as const) {
     console.log(`[${label}] ${gate.total} criteria · ${gate.satisfied} satisfied · ${gate.blocking.length} BLOCKING`)

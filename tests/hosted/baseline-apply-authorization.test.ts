@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   APPLY_AUTHORIZATION_CRITERIA,
+  GATE_ADMITS_PHASE,
   evaluateApplyAuthorization,
   type ApplyAuthorizationInputs,
 } from '@/db/hosted/baseline-apply-authorization'
@@ -144,6 +145,7 @@ function satisfying(): ApplyAuthorizationInputs {
     // and it is also the branch the real measurements select.
     storagePath: 'B-managed-channel',
     capabilityProbe: { state: 'CAPABILITY_PROBE_COMPLETE' as const },
+    capabilityDemonstrated: true,
     managedBoundaryVerified: true,
     evidenceBucket: {
       value: { exists: true },
@@ -307,7 +309,10 @@ describe('the apply-authorization gate', () => {
       'hosted-evidence-bucket-provisioning-ready',
       'hosted-storage-policy-boundary-ready',
       'hosted-baseline-journal-ready',
-      'hosted-storage-management-channel-verified',
+      'hosted-storage-channel-capability-demonstrated',
+      // The completion half of the split — post-PART-A, so it cannot be a
+      // precondition of starting the baseline.
+      'hosted-storage-canonical-boundary-verified',
       'manifest-hashes-and-order',
       'no-class-d-units',
       'zero-production-data',
@@ -521,6 +526,7 @@ describe('the live verdict for Uellix Staging as of Train 5C1', () => {
       storagePath: null,
       evidenceBucket: null,
       capabilityProbe: null,
+      capabilityDemonstrated: false,
       managedBoundaryVerified: false,
       journalProvenance: null,
     })
@@ -555,16 +561,52 @@ describe('the live verdict for Uellix Staging as of Train 5C1', () => {
 /* TRAIN 5C2 continuation — the gate SEMANTICS the operator asked me to audit  */
 /* ========================================================================== */
 
-describe('STORAGE_EXECUTION_PATH_READY is a disjunction, and only one arm can close it', () => {
+describe('the storage disjunction, split so it cannot be circular', () => {
   const channel = APPLY_AUTHORIZATION_CRITERIA.find(
-    (c) => c.id === 'hosted-storage-management-channel-verified',
+    (c) => c.id === 'hosted-storage-channel-capability-demonstrated',
   )!
+  const boundary = APPLY_AUTHORIZATION_CRITERIA.find(
+    (c) => c.id === 'hosted-storage-canonical-boundary-verified',
+  )!
+
+  // THE CIRCULARITY THE OPERATOR FOUND, ASSERTED AWAY.
+  //
+  //   baseline start → needed the canonical boundary
+  //                  → needed unit 41 PART A
+  //                  → needed baseline start.
+  it('puts the capability question BEFORE the baseline and the surface question AFTER', () => {
+    expect(channel.gate).toBe('baseline-start')
+    expect(channel.dependsOnPhase).toBe('pre-baseline')
+    expect(boundary.gate).toBe('baseline-completion')
+    expect(boundary.dependsOnPhase).toBe('post-part-a')
+  })
+
+  // THE STRUCTURAL GUARD, so the next one cannot be written either.
+  it('admits no baseline-start criterion whose evidence needs the baseline', () => {
+    for (const c of APPLY_AUTHORIZATION_CRITERIA) {
+      expect(
+        GATE_ADMITS_PHASE[c.gate].includes(c.dependsOnPhase),
+        `${c.id}: gate ${c.gate} cannot consume ${c.dependsOnPhase} evidence`,
+      ).toBe(true)
+    }
+  })
+
+  it('lets the start gate pass on a demonstrated channel with NO canonical policy installed', () => {
+    const v = channel.evaluate({ ...satisfying(), managedBoundaryVerified: false })
+    expect(v.satisfied, v.detail).toBe(true)
+  })
+
+  it('and the completion gate still refuses in that same state', () => {
+    const v = boundary.evaluate({ ...satisfying(), managedBoundaryVerified: false })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/demonstrated channel is not an installed surface/)
+  })
 
   // THE AUDIT. SET=false is permanent on this project. A criterion that required
   // SET_ROLE_PATH_VERIFIED to become true before the baseline could be
   // authorised would be demanding that a historical measurement change — which
   // is not strictness, it is a gate that has stopped carrying information.
-  it('is satisfied by the managed arm alone, with SET measured false', () => {
+  it('is satisfied by the capability arm alone, with SET measured false', () => {
     const base = satisfying()
     const v = channel.evaluate({
       ...base,
@@ -578,22 +620,33 @@ describe('STORAGE_EXECUTION_PATH_READY is a disjunction, and only one arm can cl
           canSetRole: false,
         },
       },
-      managedBoundaryVerified: true,
+      capabilityDemonstrated: true,
       capabilityProbe: { state: 'CAPABILITY_PROBE_COMPLETE' },
     })
     expect(v.satisfied, v.detail).toBe(true)
-    expect(v.detail).toMatch(/MANAGED_BOUNDARY_VERIFIED/)
+    expect(v.detail).toMatch(/MANAGED_CHANNEL_CAPABILITY_DEMONSTRATED/)
   })
 
-  it('blocks with SET false and the managed arm unverified', () => {
+  it('blocks with SET false and no channel demonstrated', () => {
     const v = channel.evaluate({
       ...satisfying(),
       storagePath: 'B-managed-channel',
-      managedBoundaryVerified: false,
+      capabilityDemonstrated: false,
       capabilityProbe: { state: 'CAPABILITY_PROBE_NOT_RUN' },
     })
     expect(v.satisfied).toBe(false)
     expect(v.detail).toMatch(/SET_ROLE_PATH_VERIFIED is false and cannot become true/)
+  })
+
+  // THE OPERATOR'S POINT: provenance is not a new measurement.
+  it('cannot be closed by adding queries or a connection host to the artefact', () => {
+    const v = channel.evaluate({
+      ...satisfying(),
+      storagePath: 'B-managed-channel',
+      capabilityDemonstrated: false,
+      capabilityProbe: { state: 'CAPABILITY_PROBE_NOT_RUN' },
+    })
+    expect(v.detail).toMatch(/Recording queries or a connection host in an artefact cannot change that/)
   })
 
   // The SET ROLE arm contributes nothing in EITHER direction — it is a pinned
@@ -604,7 +657,7 @@ describe('STORAGE_EXECUTION_PATH_READY is a disjunction, and only one arm can cl
       const v = channel.evaluate({
         ...base,
         storagePath: 'B-managed-channel',
-        managedBoundaryVerified: false,
+        capabilityDemonstrated: false,
         applyIdentity: { ...base.applyIdentity!, value: { ...base.applyIdentity!.value, canSetRole } },
       })
       expect(v.satisfied, `canSetRole=${canSetRole}`).toBe(false)
@@ -614,10 +667,10 @@ describe('STORAGE_EXECUTION_PATH_READY is a disjunction, and only one arm can cl
   // Capability is not correctness. A channel proven able to create SOME policy
   // has not created THESE policies, and the two must not share a flag.
   it('does not treat a successful capability probe as a verified boundary', () => {
-    const v = channel.evaluate({
+    const v = boundary.evaluate({
       ...satisfying(),
-      storagePath: 'B-managed-channel',
       capabilityProbe: { state: 'CAPABILITY_PROBE_COMPLETE' },
+      capabilityDemonstrated: true,
       managedBoundaryVerified: false,
     })
     expect(v.satisfied).toBe(false)
@@ -704,7 +757,7 @@ describe('the bucket blocks runtime, not the baseline', () => {
 
   it('an absent bucket does not refuse the baseline gate', () => {
     const report = evaluateApplyAuthorization(bucketAbsent())
-    expect(report.baselineApplyGate.blocking.map((b) => b.id)).toEqual([])
+    expect(report.baselineStartGate.blocking.map((b) => b.id)).toEqual([])
     expect(report.applyAuthorized).toBe(true)
   })
 
@@ -717,12 +770,13 @@ describe('the bucket blocks runtime, not the baseline', () => {
     expect(BASELINE_POSTCONDITIONS.some((p) => p.id === 'B0-15-evidence-bucket-exists')).toBe(true)
   })
 
-  it('partitions the criteria — both gates non-empty, none in both', () => {
-    const baseline = APPLY_AUTHORIZATION_CRITERIA.filter((c) => c.gate === 'baseline-apply')
-    const runtime = APPLY_AUTHORIZATION_CRITERIA.filter((c) => c.gate === 'staging-runtime')
-    expect(baseline.length + runtime.length).toBe(APPLY_AUTHORIZATION_CRITERIA.length)
-    expect(runtime.length).toBeGreaterThan(0)
-    expect(baseline.length).toBeGreaterThan(0)
+  it('partitions the criteria across three gates, none empty, none in two', () => {
+    const byGate = (g: string) => APPLY_AUTHORIZATION_CRITERIA.filter((c) => c.gate === g)
+    const start = byGate('baseline-start')
+    const completion = byGate('baseline-completion')
+    const runtime = byGate('staging-runtime')
+    expect(start.length + completion.length + runtime.length).toBe(APPLY_AUTHORIZATION_CRITERIA.length)
+    for (const g of [start, completion, runtime]) expect(g.length).toBeGreaterThan(0)
   })
 })
 
@@ -736,7 +790,7 @@ describe('every blocker carries its four parts separately', () => {
     })
 
   it('names id, observedEvidence, expectedProperty, reason and sourceArtifact', () => {
-    const all = [...report().baselineApplyGate.blocking, ...report().stagingRuntimeGate.blocking]
+    const all = [...report().baselineStartGate.blocking, ...report().stagingRuntimeGate.blocking]
     expect(all.length).toBeGreaterThan(0)
     for (const b of all) {
       expect(b.id, 'id').toBeTruthy()
@@ -751,7 +805,7 @@ describe('every blocker carries its four parts separately', () => {
   // them is how "SET=false" became "the SET ROLE path is refuted" and then
   // outlived the measurement that justified it.
   it('keeps the measurement distinct from the conclusion', () => {
-    const a0 = report().baselineApplyGate.blocking.find((b) => b.id === 'checkpoint-a0-pass')!
+    const a0 = report().baselineStartGate.blocking.find((b) => b.id === 'checkpoint-a0-pass')!
     expect(a0.observedEvidence).not.toBe(a0.reason)
     expect(a0.sourceArtifact).not.toBe(a0.expectedProperty)
   })

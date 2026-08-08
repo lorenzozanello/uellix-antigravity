@@ -22,7 +22,8 @@ import {
   evaluateStorageBoundaryArtefact,
   evaluateBoundaryPreconditions,
   reconcileStorageBoundary,
-  storageExecutionReadiness,
+  storageCanonicalBoundaryReadiness,
+  storageStartReadiness,
   type BoundaryPreconditions,
   type StorageBoundaryArtefact,
 } from '@/db/hosted/managed-policy-channel'
@@ -49,14 +50,30 @@ describe('the SQL channel is closed on both identities', () => {
   // true." A mutable flag would satisfy the words and lose the property.
   it('pins SET_ROLE_PATH_VERIFIED false with no way to set it', () => {
     expect(SET_ROLE_PATH_VERIFIED).toBe(false)
-    const readiness = storageExecutionReadiness({ managedBoundaryVerified: false, detail: 'nothing observed' })
+    const readiness = storageCanonicalBoundaryReadiness({ canonicalBoundaryVerified: false, detail: 'nothing observed' })
     expect(readiness.ready).toBe(false)
   })
 
-  it('closes Storage only through MANAGED_BOUNDARY_VERIFIED', () => {
-    const ok = storageExecutionReadiness({ managedBoundaryVerified: true, detail: 'catalogue verified' })
+  it('closes Storage only through MANAGED_CANONICAL_BOUNDARY_VERIFIED', () => {
+    const ok = storageCanonicalBoundaryReadiness({ canonicalBoundaryVerified: true, detail: 'catalogue verified' })
     expect(ok.ready).toBe(true)
-    if (ok.ready) expect(ok.via).toBe('MANAGED_BOUNDARY_VERIFIED')
+    if (ok.ready) expect(ok.via).toBe('MANAGED_CANONICAL_BOUNDARY_VERIFIED')
+  })
+
+  // THE PRE-BASELINE ARM, and the property the operator asked me to pin: adding
+  // provenance to an artefact is not a new measurement, so nothing about queries
+  // or a connection host can revive the SET ROLE arm.
+  it('opens the START arm on a demonstrated channel, and never on SET ROLE', () => {
+    const open = storageStartReadiness({ capabilityDemonstrated: true, detail: 'probe complete' })
+    expect(open.ready).toBe(true)
+    if (open.ready) expect(open.via).toBe('MANAGED_CHANNEL_CAPABILITY_DEMONSTRATED')
+
+    const shut = storageStartReadiness({ capabilityDemonstrated: false, detail: 'probe not run' })
+    expect(shut.ready).toBe(false)
+    if (!shut.ready) {
+      expect(shut.reason).toMatch(/SET_ROLE_PATH_VERIFIED is false and cannot become true/)
+      expect(shut.reason).toMatch(/Recording queries or a connection host in an artefact cannot change that/)
+    }
   })
 })
 
@@ -349,12 +366,12 @@ describe('MANAGED_BOUNDARY_VERIFIED has a path to true — the wire adversarial 
 
   it('and that closes STORAGE_EXECUTION_PATH_READY through the managed arm', () => {
     const v = evaluateStorageBoundaryArtefact(installed())
-    const readiness = storageExecutionReadiness({
-      managedBoundaryVerified: v.managedBoundaryVerified,
+    const readiness = storageCanonicalBoundaryReadiness({
+      canonicalBoundaryVerified: v.managedBoundaryVerified,
       detail: 'catalogue observed',
     })
     expect(readiness.ready).toBe(true)
-    if (readiness.ready) expect(readiness.via).toBe('MANAGED_BOUNDARY_VERIFIED')
+    if (readiness.ready) expect(readiness.via).toBe('MANAGED_CANONICAL_BOUNDARY_VERIFIED')
   })
 
   // ABSENT IS NOT VERIFIED, and this is today's real state.
@@ -410,7 +427,7 @@ describe('a demonstrated channel is not an installed surface', () => {
     })
     expect(reconciled.managedBoundaryVerified).toBe(false)
     expect(reconciled.state).toBe('UNIT_41_NOT_STARTED')
-    expect(storageExecutionReadiness({ managedBoundaryVerified: false, detail: 'probe complete' }).ready).toBe(
+    expect(storageCanonicalBoundaryReadiness({ canonicalBoundaryVerified: false, detail: 'probe complete' }).ready).toBe(
       false,
     )
   })

@@ -430,3 +430,78 @@ contra los artefactos reales, no contra un fixture.
 `storage.objects` volvió **exactamente** a la precondición: `policy_count = 0`.
 La máquina de estados de la unidad 41 sigue en **`UNIT_41_NOT_STARTED`**, y B0-16
 seguiría refutando cualquier resto de la sonda.
+
+
+---
+
+## 11. La dependencia circular que el operador encontró, y los tres gates
+
+`hosted-storage-management-channel-verified` vivía en el gate que **autoriza**
+`PHASE_BASELINE` y exigía `MANAGED_BOUNDARY_VERIFIED`, que necesita las tres
+policies canónicas, que llaman helpers que crea la PARTE A, que **es la unidad 41
+del baseline**:
+
+```
+baseline start → necesita canonical boundary
+               → necesita PARTE A
+               → necesita baseline start
+```
+
+Un gate que nadie podía abrir jamás. Lo construí yo, un commit después de
+felicitarme por quitar un «gate inerte» de la misma familia.
+
+### 11.1 Tres gates, y una invariante que lo hace irrepresentable
+
+| Gate | Pregunta | Evidencia admitida |
+|---|---|---|
+| `BASELINE_START_GATE` | ¿puede **empezar** el baseline? | sólo `pre-baseline` |
+| `BASELINE_COMPLETION_GATE` | ¿está **completo**? | también `during-baseline` y `post-part-a` |
+| `STAGING_RUNTIME_GATE` | ¿puede usarse el runtime de evidencia? | cualquiera |
+
+Cada criterio declara `dependsOnPhase`, y un test refuta cualquier criterio de
+`baseline-start` cuya evidencia sólo exista durante o después del baseline. La
+invariante se **comprueba**, no se recuerda.
+
+El criterio circular se partió en dos:
+
+- **`hosted-storage-channel-capability-demonstrated`** — `baseline-start`,
+  `pre-baseline`. `SET_ROLE_PATH_VERIFIED **OR** MANAGED_CHANNEL_CAPABILITY_DEMONSTRATED`.
+  **Satisfecho hoy** por la sonda: fue construida para no depender de nada, y por
+  eso es contestable antes de aplicar una sola unidad.
+- **`hosted-storage-canonical-boundary-verified`** — `baseline-completion`,
+  `post-part-a`. `MANAGED_CANONICAL_BOUNDARY_VERIFIED`. **Bloquea**, y debe.
+
+### 11.2 El brazo SET ROLE sigue muerto, y la provenance no lo revive
+
+`SET_ROLE_PATH_VERIFIED` es `false as const` sin setter. Registrar `queries` o
+`connectionHost` en un artefacto **no puede** cambiarlo: son *procedencia de la
+misma medición*, no una medición distinta. Un test lo fija con esas palabras.
+
+### 11.3 Veredicto vivo
+
+```
+BASELINE_START_GATE       17 criterios · 13 satisfechos ·  4 BLOQUEANDO
+  - checkpoint-a0-pass                          falta el TEXTO de la query de A0
+  - target-identity-corroborated                falta connectionHost
+  - zero-production-data                        depende de la procedencia de A0
+  - feature-flags-false                         inventario de los 9 flags
+
+BASELINE_COMPLETION_GATE   1 criterio  ·  0 satisfechos ·  1 BLOQUEANDO
+  - hosted-storage-canonical-boundary-verified  post-PARTE A, por diseño
+
+STAGING_RUNTIME_GATE       1 criterio  ·  0 satisfechos ·  1 BLOQUEANDO
+  - hosted-evidence-bucket-provisioning-ready   uellix-evidence no existe
+
+applyAuthorized = false   (deriva SÓLO del START gate)
+```
+
+### 11.4 Qué se ingirió y qué se auditó
+
+| Elemento | Resultado |
+|---|---|
+| Queries de las sondas ya ejecutadas | **REGISTRADAS** — cerraron 3 blockers |
+| `connectionHost` | **MISSING**, no inventado: derivarlo del ref sería corroborar algo consigo mismo |
+| CHECKPOINT A0 | **No necesita re-ejecución.** Pasó el 2026-08-07; faltaba el registro. Ingerido desde `STELLA_STAGING_PROVISIONING_REQUIREMENTS.md`, que enuncia los cuatro sub-valores explícitamente. Falta sólo el texto de la query |
+| `zero-production-data` | la mitad del corpus ya está derivada (0 `VALUES` literales). Sólo depende de que A0 esté **atestado**. Y se le exigía menos procedencia que a A0 sobre la misma atestación — corregido |
+| `feature-flags-false` | inventario real de los nueve flags. No derivable del repo. Se queda en START: aplicar esquema mientras un despliegue sirve Stella a medio migrar es un riesgo de arranque |
+| Bucket | **no** bloquea el arranque del baseline |

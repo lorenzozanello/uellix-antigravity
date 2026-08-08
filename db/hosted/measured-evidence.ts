@@ -53,6 +53,7 @@ import { KNOWN_PRODUCTION_IDENTIFIERS } from './target-identity'
 
 export const APPLY_IDENTITY_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-apply-identity.json'
 export const SQL_EDITOR_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-uellix-staging.json'
+export const CHECKPOINT_A0_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json'
 
 /** Where the computed live verdict is written, so a report can only quote it. */
 export const APPLY_STATUS_ARTEFACT = 'artifacts/hosted-apply-status.json'
@@ -156,6 +157,18 @@ export function loadMeasuredEvidence(input: {
   if (identity === null) problems.push({ file: APPLY_IDENTITY_ARTEFACT, detail: 'absent or unparseable' })
   if (editor === null) problems.push({ file: SQL_EDITOR_ARTEFACT, detail: 'absent or unparseable' })
 
+  const a0 = (input.readJson(CHECKPOINT_A0_ARTEFACT) ?? null) as {
+    readonly measuredBy?: string
+    readonly queries?: readonly string[]
+    readonly observed?: {
+      readonly result?: string
+      readonly sessionWasReadOnly?: boolean
+      readonly projectIsNew?: boolean
+      readonly stellaSurfaceAbsent?: boolean
+      readonly writesPerformed?: number
+    }
+  } | null
+
   const obs = identity?.observed
   // 'UNCONFIRMED' STAYS 'UNCONFIRMED'. The one transformation this loader must
   // never perform is normalising an unretained value into a boolean.
@@ -231,10 +244,26 @@ export function loadMeasuredEvidence(input: {
     discoveredBaselineFiles: input.discoveredBaselineFiles,
     production: KNOWN_PRODUCTION_IDENTIFIERS,
 
-    // NOT MEASURED, ANYWHERE IN THE REPOSITORY. CHECKPOINT A0 has no artefact,
-    // so it is null and it blocks. Supplying a plausible object here would be
-    // the fixture mistake all over again.
-    checkpointA0: null,
+    // A0 WAS RUN AND PASSED; ONLY ITS RECORD WAS MISSING. The audit question was
+    // whether it needed re-execution — it did not. Every value is transcribed
+    // from the requirements document, which states each one explicitly rather
+    // than leaving them to be inferred from the word PASS. The QUERY is still
+    // absent, so `attested()` refuses, which is the accurate remaining gap.
+    checkpointA0:
+      a0?.observed === undefined
+        ? null
+        : attest(
+            {
+              result: a0.observed.result === 'PASS' ? ('PASS' as const) : ('FAIL' as const),
+              sessionWasReadOnly: a0.observed.sessionWasReadOnly === true,
+              projectIsNew: a0.observed.projectIsNew === true,
+              stellaSurfaceAbsent: a0.observed.stellaSurfaceAbsent === true,
+              writesPerformed:
+                typeof a0.observed.writesPerformed === 'number' ? a0.observed.writesPerformed : 1,
+            },
+            (a0.queries ?? []).join(' '),
+            a0.measuredBy ?? '',
+          ),
 
     classCProbes:
       classC === null
@@ -254,7 +283,10 @@ export function loadMeasuredEvidence(input: {
     // answered "corroborated by its own host". The artefacts record no
     // connection host, so there is no second signal, so the criterion refuses.
     stagingIdentity:
-      projectRef === '' || identity?.connectionHost === undefined
+      // `=== undefined` alone let a JSON `null` through as an attested host, and
+      // the criterion then compared a ref against the string "null". Absent is
+      // absent however it is spelled.
+      projectRef === '' || typeof identity?.connectionHost !== 'string' || identity.connectionHost.trim() === ''
         ? null
         : attest(
             {
@@ -323,6 +355,9 @@ export function loadMeasuredEvidence(input: {
     // READ from the derived probe status, never set. `null` there is NOT_RUN,
     // which is neither a demonstrated channel nor a refuted one.
     capabilityProbe: probeState === null ? null : { state: probeState },
+    // MANAGED_CHANNEL_CAPABILITY_DEMONSTRATED, derived. Pre-baseline by
+    // construction: the probe depends on no helper, no bucket and no function.
+    capabilityDemonstrated: probeState === 'CAPABILITY_PROBE_COMPLETE',
     // READ from the derived boundary verdict, NEVER a literal.
     //
     // This was `false` hardcoded, and adversarial review showed what that meant:
@@ -378,8 +413,9 @@ export function loadMeasuredEvidence(input: {
  */
 export interface ApplyStatusArtefact {
   readonly generatedBy: string
-  /** The two gates, each with its own total and its own structured blockers. */
-  readonly baselineApplyGate: GateReport
+  /** The three gates, each with its own total and its own structured blockers. */
+  readonly baselineStartGate: GateReport
+  readonly baselineCompletionGate: GateReport
   readonly stagingRuntimeGate: GateReport
   readonly criterionCount: number
   readonly satisfiedCount: number

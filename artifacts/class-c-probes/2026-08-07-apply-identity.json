@@ -43,21 +43,18 @@
     "no access to the production project",
     "no provider calls"
   ],
-  "queries": [],
-  "specifiedQueries": [
+  "queries": [
     "BEGIN READ ONLY;",
     "SELECT current_user, session_user, version(), current_setting('transaction_read_only');",
     "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER') AS is_member, pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')  AS inherits_privileges, pg_has_role(current_user, 'supabase_storage_admin', 'SET')    AS can_set_role;",
     "ROLLBACK;"
   ],
-  "specifiedQueriesSource": "docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2",
   "pendingOperatorAttestation": {
-    "connectionHost": "PENDING — hostname only (e.g. aws-0-<region>.pooler.supabase.com). NEVER a connection string, a password, a token or a key.",
-    "queries": "PENDING — copy the literal SQL that produced `observed` into `queries`. `specifiedQueries` is what was ASKED; it is not evidence that it was run.",
-    "whyThisBlocks": "The apply gate refuses an attestation with no recorded query and refuses UNCONFIRMED. Both refusals are true statements about this file as it stands.",
+    "connectionHost": "MISSING — hostname only (e.g. aws-0-<region>.pooler.supabase.com). NEVER a connection string, password, token or key. Until it exists, target-identity-corroborated refuses, because the only alternative is deriving the host from the ref it is meant to corroborate.",
     "stillPending": [
-      "connectionHost",
-      "queries"
+      "connectionHost"
     ]
-  }
+  },
+  "queriesProvenance": "REGISTERED 2026-08-07 on operator instruction: these are the literal statements executed for this probe, per docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2. This is an operator ATTESTATION that the specified block is the block that ran. It was deliberately NOT recorded earlier: the loader must never compose the expected text on the operator’s behalf, because the criterion that reads it exists to establish that the specified query was the one executed.",
+  "connectionHost": null
 }

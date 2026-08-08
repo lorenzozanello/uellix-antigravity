@@ -323,20 +323,36 @@ export const CLASS_C_PROBES: readonly (readonly [keyof PrivilegeProbes, string, 
   // combination is diagnostic — MEMBER=true with SET=false is a deliberate
   // `WITH SET FALSE` grant, and it means something different from no membership
   // at all.
+  // THE MARKER IS THE CALL, NOT THE STATEMENT — and the reason is an internal
+  // disagreement this exposed rather than a relaxation.
+  //
+  // These three canonical strings were written as standalone `SELECT
+  // pg_has_role(...)` statements. The probe document the operator actually
+  // follows (STELLA_APPLY_IDENTITY_PROBE.md §2) specifies ONE three-column
+  // SELECT — the same measurement, a different spelling — so an attestation
+  // quoting the document could never match the module. Two places in this
+  // repository disagreed about what the operator should run, and the criterion
+  // was refusing the disagreement rather than the evidence.
+  //
+  // Dropping the leading `SELECT ` costs nothing the check was buying. The
+  // attack it defends against is a query with the WRONG ARGUMENTS — the
+  // documented case is `SELECT has_table_privilege(current_user,
+  // 'public.users', 'SELECT')` passing a `has_table_privilege` marker — and the
+  // full argument list is still required verbatim.
   [
     'storageAdminMember',
     'diagnostic only — membership without any implied capability',
-    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER')",
+    "pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER')",
   ],
   [
     'storageAdminInherits',
     'diagnostic only — INHERIT, the privilege the ownership check consults',
-    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')",
+    "pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')",
   ],
   [
     'canSetRoleStorageAdmin',
     '20260716000001_storage_policies.sql — THE probe that decides whether the SET ROLE path exists',
-    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'SET')",
+    "pg_has_role(current_user, 'supabase_storage_admin', 'SET')",
   ],
   // And the catalogue answer is still not the operation. `SET` says the
   // grant permits it; only executing `SET LOCAL ROLE` inside a READ ONLY

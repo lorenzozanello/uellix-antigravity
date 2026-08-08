@@ -1,0 +1,40 @@
+{
+  "trainId": "STELLA_TRAIN_5C0",
+  "checkpoint": "CHECKPOINT A0 (pre-bootstrap, read-only)",
+  "measuredOn": "2026-08-07",
+  "measuredBy": "operator, manually, against the new Supabase project Uellix Staging",
+  "targetProjectRef": "bvyzblhqymxruxdguaee",
+  "whatThisIs": "INGESTION, NOT RE-EXECUTION. A0 was run and PASSED on 2026-08-07; the audit question was whether it needed running again or only recording. It needed recording. Every value below is transcribed from docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md lines 16-22, which states each one explicitly — nothing is inferred from the word PASS.",
+  "source": "docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md §header, corroborated by STELLA_STAGING_GATE_PLAN.md §4 (\"G12 (RO hosted) = CHECKPOINT A0, PASS manual del operador 2026-08-07\")",
+  "observed": {
+    "result": "PASS",
+    "sessionWasReadOnly": true,
+    "projectIsNew": true,
+    "stellaSurfaceAbsent": true,
+    "writesPerformed": 0
+  },
+  "observedDetail": {
+    "sessionReadOnly": "sesión READ ONLY",
+    "postgresVersion": "versión PostgreSQL compatible",
+    "projectIsNew": "proyecto nuevo",
+    "authSchemaPresent": "auth presente",
+    "authUidPresent": "auth.uid() presente",
+    "publicSchemaPresent": "public presente",
+    "uellix_bootstrap": "AUSENTE",
+    "uellix_stella": "AUSENTE",
+    "public.stella_interactions": "AUSENTE",
+    "staging_sentinel": "AUSENTE",
+    "writes": "cero escrituras"
+  },
+  "queries": [],
+  "pendingOperatorAttestation": {
+    "queries": "MISSING — the literal SQL A0 executed. The requirements document records WHAT was confirmed and not WITH WHICH statements, and this file must not compose them: the criterion that reads `queries` exists to establish that the specified query was the one run. Supplying the text is the whole remaining ask; A0 itself does NOT need re-running.",
+    "stillPending": ["queries"]
+  },
+  "constraintsHonoured": [
+    "read-only session",
+    "zero writes",
+    "no secret value recorded",
+    "no access to the production project"
+  ]
+}
