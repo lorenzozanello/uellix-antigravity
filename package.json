@@ -39,6 +39,7 @@
     "baseline:report": "tsx scripts/baseline-manifest.ts report",
     "baseline:order": "tsx scripts/baseline-manifest.ts order",
     "baseline:rehearsal:local": "tsx scripts/baseline-rehearsal-local.ts",
+    "baseline:operator:run": "tsx scripts/baseline-operator-runner.ts",
     "storage:generate": "tsx scripts/storage-artifacts.ts generate",
     "storage:verify": "tsx scripts/storage-artifacts.ts verify",
     "journal:generate": "tsx scripts/journal-artifacts.ts generate",
