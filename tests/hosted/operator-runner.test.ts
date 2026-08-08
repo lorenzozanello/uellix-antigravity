@@ -1310,6 +1310,111 @@ describe('journal checkpoint (reporting only)', () => {
 })
 
 // ---------------------------------------------------------------------------
+// THE DEPARSE FIX
+//
+// PART B installed cleanly and B0-16 refused, on one difference:
+//
+//   expected  public.can_read_evidence_object(name, auth.uid())
+//   observed         can_read_evidence_object(name, auth.uid())
+//
+// MEASURED CAUSE (PostgreSQL 17, local, read-only + one disposable fixture):
+// pg_get_expr omits a function's schema when that schema is visible in the
+// SESSION's search_path. Staging's session has `public` in it. The same
+// deparser keeps `private.is_active_member` qualified — because `private` is
+// not in the path — and drops the qualifier the moment `SET LOCAL search_path
+// = 'private'` makes it visible. Casts are untouched either way, because
+// pg_catalog is implicitly first regardless.
+//
+// So the OBSERVATION was ambiguous, not the policy. The fix stabilises the
+// probe; the verifier is not touched.
+//
+// AND THE UNQUALIFIED FORM MUST KEEP FAILING. Accepting a bare
+// `can_read_evidence_object` would accept a function of that name in ANY schema
+// that happens to sit earlier in the path — which is the near-name attack this
+// surface check exists to stop. The probe now guarantees the qualified form, so
+// an unqualified one means the probe was not the one this contract describes.
+// ---------------------------------------------------------------------------
+
+describe('deparse: the probe pins the representation', () => {
+  it('forces schema-qualified function names by emptying the search_path', () => {
+    expect(STORAGE_POLICIES_PROBE_SQL).toContain("SET LOCAL search_path = ''")
+  })
+
+  it('sets it INSIDE the read-only transaction, so it cannot leak or grant', () => {
+    const begin = STORAGE_POLICIES_PROBE_SQL.indexOf('BEGIN READ ONLY;')
+    const setLocal = STORAGE_POLICIES_PROBE_SQL.indexOf("SET LOCAL search_path = ''")
+    const rollback = STORAGE_POLICIES_PROBE_SQL.indexOf('ROLLBACK;')
+    expect(begin).toBeGreaterThanOrEqual(0)
+    expect(setLocal).toBeGreaterThan(begin)
+    expect(rollback).toBeGreaterThan(setLocal)
+    // SET LOCAL is not a write, and the transaction stays read-only: measured
+    // against a live PostgreSQL 17, transaction_read_only remained `on`.
+    expect(STORAGE_POLICIES_PROBE_SQL).not.toMatch(/\b(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|GRANT|REVOKE)\b/i)
+  })
+
+  it('accepts the qualified predicate the fixed probe returns', () => {
+    // Exactly the bytes PostgreSQL emits under search_path = '' — measured, and
+    // including the `::text` cast it adds to the literal.
+    const asDeparsed: ObservedStoragePolicy[] = [
+      pol('select_evidence', 'SELECT', "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))", null),
+      pol('insert_evidence', 'INSERT', null, "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))"),
+      pol('delete_evidence', 'DELETE', "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))", null),
+    ]
+    expect(verifyStoragePolicySurface(asDeparsed).passed).toBe(true)
+  })
+
+  it('REFUSES the unqualified predicate — a bare name is not an identification', () => {
+    // The form staging returned before the fix. It must stay a refusal: an
+    // unqualified `can_read_evidence_object` is satisfied by a function of that
+    // name in any schema earlier in the path.
+    const unqualified: ObservedStoragePolicy[] = [
+      pol('select_evidence', 'SELECT', "((bucket_id = 'uellix-evidence'::text) AND can_read_evidence_object(name, auth.uid()))", null),
+      pol('insert_evidence', 'INSERT', null, "((bucket_id = 'uellix-evidence'::text) AND can_write_evidence_object(name, auth.uid()))"),
+      pol('delete_evidence', 'DELETE', "((bucket_id = 'uellix-evidence'::text) AND can_write_evidence_object(name, auth.uid()))", null),
+    ]
+    expect(verifyStoragePolicySurface(unqualified).passed).toBe(false)
+  })
+
+  it('keeps refusing every impostor the qualified form could be confused with', () => {
+    const Q = (fn: string) => `((bucket_id = 'uellix-evidence'::text) AND ${fn}(name, auth.uid()))`
+    for (const fn of [
+      'public.can_read_evidence_object_fake',
+      'evil.can_read_evidence_object',
+      'public.bypass_can_read_evidence_object',
+      'public.can_write_evidence_object', // write helper in the READ slot
+    ]) {
+      const surface: ObservedStoragePolicy[] = [
+        pol('select_evidence', 'SELECT', Q(fn), null),
+        pol('insert_evidence', 'INSERT', null, "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))"),
+        pol('delete_evidence', 'DELETE', "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))", null),
+      ]
+      expect(verifyStoragePolicySurface(surface).passed, fn).toBe(false)
+    }
+  })
+
+  it('refuses the read helper standing in for the write helper', () => {
+    const surface: ObservedStoragePolicy[] = [
+      pol('select_evidence', 'SELECT', "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))", null),
+      pol('insert_evidence', 'INSERT', null, "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))"),
+      pol('delete_evidence', 'DELETE', "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))", null),
+    ]
+    expect(verifyStoragePolicySurface(surface).passed).toBe(false)
+  })
+
+  it('refuses OR true and a wrong bucket even in the qualified form', () => {
+    const good = "((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))"
+    for (const q of [`(${good} OR true)`, good.replace('uellix-evidence', 'uellix-evidence-2')]) {
+      const surface: ObservedStoragePolicy[] = [
+        pol('select_evidence', 'SELECT', q, null),
+        pol('insert_evidence', 'INSERT', null, "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))"),
+        pol('delete_evidence', 'DELETE', "((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))", null),
+      ]
+      expect(verifyStoragePolicySurface(surface).passed, q).toBe(false)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
 // 3/7. Secrets never reach a log line
 // ---------------------------------------------------------------------------
 

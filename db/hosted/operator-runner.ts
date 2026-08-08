@@ -869,13 +869,47 @@ export const sqlIdentifier = (qualified: string): string =>
     .join('.')
 
 /**
- * Every probe is wrapped in a read-only transaction and rolled back.
+ * Every probe runs in a read-only transaction, with an EMPTY search_path, and
+ * rolls back.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY `SET LOCAL search_path = ''`
+ * ---------------------------------------------------------------------------
+ * PART B installed cleanly and B0-16 refused, on one difference:
+ *
+ *     expected  public.can_read_evidence_object(name, auth.uid())
+ *     observed         can_read_evidence_object(name, auth.uid())
+ *
+ * `pg_get_expr` — which is what `pg_policies.qual` runs through — omits a
+ * function's schema when that schema is visible in the SESSION's search_path,
+ * and staging's session has `public` in it. Measured on PostgreSQL 17: the same
+ * deparser KEEPS `private.is_active_member` qualified because `private` is not
+ * in the path, and DROPS the qualifier the instant `SET LOCAL search_path =
+ * 'private'` makes it visible. With an empty path it qualifies everything.
+ *
+ * So the OBSERVATION was ambiguous, not the policy. Stabilising the probe is
+ * the fix, and the verifier keeps strict equality untouched. Accepting the
+ * unqualified form instead would accept a function of that name in ANY schema
+ * sitting earlier in the path — precisely the near-name attack this surface
+ * check exists to stop.
+ *
+ * Three properties, measured rather than assumed:
+ *   - casts are unaffected (`'x'::text` either way) because pg_catalog is
+ *     implicitly searched first regardless of this setting;
+ *   - `auth.uid()` stays qualified, as it already was;
+ *   - `SET LOCAL` is not a write — `transaction_read_only` stays `on`, and
+ *     LOCAL confines it to the transaction that is about to roll back.
+ *
+ * Every probe here names its objects fully qualified already, so the empty path
+ * costs them nothing and buys determinism for all of them: no probe can quietly
+ * depend on the operator's session default.
  *
  * Belt and braces: the statements are SELECTs, and the transaction refuses
  * writes anyway. A probe that could write is a probe that could repair the very
  * discrepancy it exists to find.
  */
-export const readOnly = (sql: string): string => `BEGIN READ ONLY;\n${sql}\nROLLBACK;`
+export const readOnly = (sql: string): string =>
+  `BEGIN READ ONLY;\nSET LOCAL search_path = '';\n${sql}\nROLLBACK;`
 
 const jsonRows = (inner: string): string =>
   `SELECT coalesce(jsonb_agg(t), '[]'::jsonb)::text FROM (${inner}) t;`
