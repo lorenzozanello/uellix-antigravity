@@ -55,6 +55,7 @@ import {
 import {
   MANAGEMENT_PLANE_EVIDENCE,
   MANAGEMENT_PLANE_PATH,
+  deriveManagementPlaneVerdict,
   storageExecutionReadiness,
 } from './managed-policy-channel'
 import type { CapabilityProbeState } from './storage-capability-probe'
@@ -885,14 +886,14 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       }
 
       const primary = MANAGEMENT_PLANE_EVIDENCE.filter((e) => e.grade === 'primary').length
+      const hosted = deriveManagementPlaneVerdict(probeState)
       return no(
         id,
-        `${readiness.reason} Channel determination: ${MANAGEMENT_PLANE_PATH}, from ${primary} primary ` +
-          `sources — the Dashboard Storage Policies UI compiles its form into CREATE POLICY text and ` +
-          `submits it through the same executeSql path as the SQL Editor, whose identity is the postgres ` +
-          `that cannot own storage.objects. What is NOT settled is whether the deployed platform routes ` +
-          `that mutation as the open-source Studio does; only an attempt (a WRITE) answers it, and the ` +
-          `capability probe is ${probeState}.`,
+        `${readiness.reason} Channel determination from the repository alone: ${MANAGEMENT_PLANE_PATH}; ` +
+          `from hosted evidence: ${hosted} (capability probe ${probeState}), over ${primary} primary ` +
+          `sources. A ${hosted === 'VERIFIED' ? 'demonstrated channel is not an installed surface' : 'channel that cannot be demonstrated cannot install one'} — ` +
+          `MANAGED_BOUNDARY_VERIFIED measures the three canonical policies in pg_policies, and the ` +
+          `capability probe measured a temporary policy that granted nothing and was removed again.`,
       )
     },
     negativeControl: {

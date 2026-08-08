@@ -520,6 +520,66 @@ describe('the probe result is derived from an artefact, not asserted in prose', 
     expect(v.problems.join(' ')).toMatch(/DO NOT retry through service_role/)
   })
 
+  // THE FULL-ROW CLEANUP CHECK IS ONLY REAL IF THE `before` SIDE HAS REAL ROWS.
+  // Reconstructing `before` from names with blank fields and then blanking the
+  // `after` side to match silenced the field comparison exactly when there WERE
+  // pre-existing policies to protect.
+  it('catches a drop-and-recreate of a pre-existing policy when rows were captured', () => {
+    const platform: ObservedPolicyRow = {
+      schemaname: 'storage',
+      tablename: 'objects',
+      policyname: 'platform_policy',
+      permissive: 'PERMISSIVE',
+      roles: '{authenticated}',
+      cmd: 'SELECT',
+      qual: "bucket_id = 'x'",
+      withCheck: null,
+    }
+    const v = evaluateCapabilityProbeArtefact({
+      ...good(),
+      precondition: {
+        ...good().precondition,
+        existingPolicyCount: 1,
+        existingPolicyNames: ['platform_policy'],
+        existingPolicyRows: [platform],
+      },
+      afterCleanup: [{ ...platform, qual: 'true' }],
+    })
+    expect(v.state).toBe('BLOCKED_MANAGEMENT_CHANNEL_CLEANUP')
+    expect(v.problems.join(' ')).toMatch(/survived by NAME/)
+  })
+
+  it('says so when only names were captured, instead of claiming the stronger check ran', () => {
+    const v = evaluateCapabilityProbeArtefact({
+      ...good(),
+      precondition: {
+        ...good().precondition,
+        existingPolicyCount: 1,
+        existingPolicyNames: ['platform_policy'],
+      },
+      afterCleanup: [
+        {
+          schemaname: 'storage',
+          tablename: 'objects',
+          policyname: 'platform_policy',
+          permissive: 'PERMISSIVE',
+          roles: '{authenticated}',
+          cmd: 'SELECT',
+          qual: 'true',
+          withCheck: null,
+        },
+      ],
+    })
+    expect(v.state).toBe('CAPABILITY_PROBE_COMPLETE')
+    expect(v.problems.join(' ')).toMatch(/CLEANUP VERIFIED BY NAME ONLY/)
+  })
+
+  it('adds no such caveat when there was nothing pre-existing to protect', () => {
+    const v = evaluateCapabilityProbeArtefact(good())
+    expect(v.state).toBe('CAPABILITY_PROBE_COMPLETE')
+    expect(v.problems.join(' ')).not.toMatch(/NAME ONLY/)
+  })
+
   it('the recorded status file matches the derived verdict', () => {
     const onDisk = JSON.parse(
       readFileSync(path.join(process.cwd(), CAPABILITY_PROBE_STATUS_ARTEFACT), 'utf8'),

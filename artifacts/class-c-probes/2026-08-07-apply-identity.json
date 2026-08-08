@@ -7,12 +7,12 @@
   "observed": {
     "current_user": "postgres",
     "session_user": "postgres",
-    "transaction_read_only": "UNCONFIRMED",
+    "transaction_read_only": "on",
     "is_member": false,
     "inherits_privileges": false,
     "can_set_role": false
   },
-  "transactionReadOnlyNote": "The operator did not retain this value from the output. It is recorded as UNCONFIRMED — neither true (an inference dressed as a measurement) nor false (asserting a violation nobody observed). It blocks the apply gate, and for a different reason than a measured false would.",
+  "transactionReadOnlyNote": "RESOLVED 2026-08-07 (Train 5C2, capability-probe closure). The value was originally recorded UNCONFIRMED because the operator did not retain it from the probe output; it was neither inferred to be 'on' nor asserted to be false. The operator has now supplied it: transaction_read_only = on. The earlier UNCONFIRMED is left described rather than erased, because deleting it would delete the evidence that the gate refused an unretained value rather than guessing at it.",
   "setLocalRole": {
     "attempted": false,
     "reason": "can_set_role = false refutes the branch by catalogue. Attempting an operation the grant forbids would teach nothing the catalogue has not already said."
@@ -52,9 +52,12 @@
   ],
   "specifiedQueriesSource": "docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2",
   "pendingOperatorAttestation": {
-    "transaction_read_only": "PENDING — observed.transaction_read_only is 'UNCONFIRMED'. Supply the value the probe printed. Do NOT infer it.",
     "connectionHost": "PENDING — hostname only (e.g. aws-0-<region>.pooler.supabase.com). NEVER a connection string, a password, a token or a key.",
     "queries": "PENDING — copy the literal SQL that produced `observed` into `queries`. `specifiedQueries` is what was ASKED; it is not evidence that it was run.",
-    "whyThisBlocks": "The apply gate refuses an attestation with no recorded query and refuses UNCONFIRMED. Both refusals are true statements about this file as it stands."
+    "whyThisBlocks": "The apply gate refuses an attestation with no recorded query and refuses UNCONFIRMED. Both refusals are true statements about this file as it stands.",
+    "stillPending": [
+      "connectionHost",
+      "queries"
+    ]
   }
 }

@@ -55,7 +55,11 @@
 // hosted evidence that does not exist yet, and no amount of design converts one
 // into the other.
 
-import { EXPECTED_STORAGE_POLICY_SURFACE } from './baseline-postconditions'
+import {
+  EXPECTED_STORAGE_POLICY_SURFACE,
+  verifyStoragePolicySurface,
+  type ObservedStoragePolicy,
+} from './baseline-postconditions'
 import {
   EXPECTED_STORAGE_POLICIES,
   buildStorageArtefacts,
@@ -163,6 +167,24 @@ export const MANAGEMENT_PLANE_EVIDENCE: readonly ChannelEvidence[] = [
       'assumption this train had to remove, not because it establishes anything.',
   },
   {
+    id: 'hosted-capability-probe-2026-08-07',
+    grade: 'primary',
+    source: 'artifacts/hosted-capability-probe.json — operator, Uellix Staging, Dashboard → Storage → Policies',
+    finding:
+      'A PERMISSIVE / FOR SELECT / TO authenticated / USING (false) policy named ' +
+      'uellix_tmp_capability_probe_20260807 was CREATED on storage.objects through the Dashboard, ' +
+      'observed in pg_policies with exactly that surface, and then REMOVED through the same channel; ' +
+      'pg_policies returned to 0 rows for schemaname=storage AND tablename=objects.',
+    bearing:
+      'THE DECISIVE EVIDENCE, and the only kind that could be decisive: the Dashboard channel CAN create ' +
+      'a policy on storage.objects on this project. The open-source inference above predicted it could ' +
+      'not, so that inference did not describe the deployed build. WHY it succeeds is NOT established: no ' +
+      'CREATE POLICY was ever attempted through psql or the SQL Editor, so this is not a controlled ' +
+      'comparison and no claim is made about routing or identity — only about the outcome observed. It ' +
+      'settles the CHANNEL and nothing else: the three canonical policies were not attempted, call ' +
+      'helpers that do not exist yet, and remain uninstalled.',
+  },
+  {
     id: 'no-management-api-policy-endpoint',
     grade: 'official-doc',
     source: 'https://supabase.com/docs/reference/api/introduction (Management API reference)',
@@ -192,16 +214,47 @@ export const PSQL_SET_ROLE_PATH: ChannelVerdict = 'REJECTED'
 export const SQL_EDITOR_SET_ROLE_PATH: ChannelVerdict = 'REJECTED'
 
 /**
- * Dashboard → Storage → Policies.
+ * Dashboard → Storage → Policies, AS THE OPEN SOURCE ALONE COULD SETTLE IT.
  *
  * Source evidence says it is the SQL channel, which would make it REJECTED. But
  * the platform build is closed and the refutation is an inference over an
  * open-source repository, not a measurement of the deployed service. Calling it
- * REJECTED would claim a measurement we did not take; calling it CANDIDATE would
- * ignore two primary sources. UNRESOLVED is the accurate word, and it blocks
- * exactly as hard as REJECTED does.
+ * REJECTED would claim a measurement nobody took; calling it CANDIDATE would
+ * ignore two primary sources. UNRESOLVED is the accurate word for what the
+ * repository alone can conclude.
+ *
+ * IT IS DELIBERATELY NOT UPDATED WHEN THE PROBE RUNS. The hosted answer belongs
+ * to `deriveManagementPlaneVerdict`, which reads the probe artefact; leaving this
+ * constant as the source-only determination keeps the two visible side by side —
+ * and stops a future reader from mistaking a hand-edited conclusion for a
+ * measurement, which is the defect this programme has now found three times.
  */
 export const MANAGEMENT_PLANE_PATH: ChannelVerdict = 'UNRESOLVED_REQUIRES_HOSTED_EVIDENCE'
+
+/**
+ * The hosted answer, DERIVED from the capability probe rather than declared.
+ *
+ * The probe was the only thing that could settle this, because settling it needs
+ * a write and the deployed platform is closed. Now that a record exists, the
+ * verdict is a function of it:
+ *
+ *   COMPLETE      the channel created a policy on storage.objects and removed it
+ *                 again. VERIFIED — as a statement about the CHANNEL.
+ *   CREATE_FAILED the channel could not. REJECTED, and the escalation list in
+ *                 `interpretCapabilityOutcome` applies.
+ *   anything else no hosted answer yet.
+ *
+ * WHAT THIS DOES NOT SAY. `VERIFIED` here means the Dashboard can create SOME
+ * policy. It says nothing about the three canonical Uellix policies, which call
+ * helpers unit 41 PART A has not created and filter on a bucket that does not
+ * exist. That is `MANAGED_BOUNDARY_VERIFIED`, it is a different measurement over
+ * `pg_policies`, and nothing in this file may set it.
+ */
+export function deriveManagementPlaneVerdict(probeState: string | null): ChannelVerdict {
+  if (probeState === 'CAPABILITY_PROBE_COMPLETE') return 'VERIFIED'
+  if (probeState === 'CAPABILITY_PROBE_CREATE_FAILED') return 'REJECTED'
+  return 'UNRESOLVED_REQUIRES_HOSTED_EVIDENCE'
+}
 
 /**
  * FALSE, AND STRUCTURALLY UNABLE TO BECOME TRUE.
@@ -540,5 +593,100 @@ export function reconcileStorageBoundary(input: {
       verified && input.boundaryJournal !== 'MANUAL_BOUNDARY_VERIFIED' ? 'MANUAL_BOUNDARY_VERIFIED' : null,
     managedBoundaryVerified: verified,
     problems,
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* The artefact that lets `reconcileStorageBoundary` ever run                  */
+/* -------------------------------------------------------------------------- */
+
+/** Where the operator records the catalogue observation after PART B. */
+export const STORAGE_BOUNDARY_ARTEFACT = 'artifacts/hosted-storage-boundary.json'
+/** Where the derived verdict is written, so a report can only quote it. */
+export const STORAGE_BOUNDARY_STATUS_ARTEFACT = 'artifacts/hosted-storage-boundary-status.json'
+
+export interface StorageBoundaryArtefact {
+  /** pg_proc: both public.can_*_evidence_object present? */
+  readonly helpersPresent?: boolean
+  /** pg_policies rows on storage.objects, from the B0-16 probe. */
+  readonly policies?: readonly ObservedStoragePolicy[]
+  readonly journal?: {
+    /** An APPLIED row for unit 41 exists in uellix_provisioning.applied_units. */
+    readonly partAApplied?: boolean
+    readonly boundary?: BoundaryJournalStatus
+  }
+}
+
+/**
+ * THE MISSING WIRE, AND IT WAS THE THIRD TIME.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT ADVERSARIAL REVIEW FOUND
+ * ---------------------------------------------------------------------------
+ * `reconcileStorageBoundary` is documented as "the only path to
+ * MANUAL_BOUNDARY_VERIFIED". It had ZERO production callers. Meanwhile
+ * `loadMeasuredEvidence` set `managedBoundaryVerified: false` as a hardcoded
+ * literal — so after the operator applied PART A and installed all three
+ * canonical policies with a perfect surface, NOTHING would have recomputed it.
+ * The gate would have refused forever, for a reason no evidence could ever
+ * remove.
+ *
+ * That is precisely the defect this programme has now found three times:
+ * `journalInsertSql` with no caller, the capability-probe functions imported
+ * only by their own test, and now this. And it is the same defect I criticised
+ * one commit earlier when the management-channel criterion hardcoded the same
+ * literal — closed there, left open one module over.
+ *
+ * The fix is the pattern that already works for the capability probe: an
+ * artefact the operator fills, a pure evaluator over it, a status script, and a
+ * `:verify` that CI runs.
+ *
+ * ABSENT IS NOT VERIFIED. A missing artefact yields `false` with a stated reason,
+ * exactly like every other unmeasured fact in this programme.
+ */
+export function evaluateStorageBoundaryArtefact(artefact: StorageBoundaryArtefact | null): {
+  readonly state: StorageUnitState
+  readonly managedBoundaryVerified: boolean
+  readonly surfaceVerified: boolean | null
+  readonly problems: readonly string[]
+} {
+  if (artefact === null) {
+    return {
+      state: 'UNIT_41_NOT_STARTED',
+      managedBoundaryVerified: false,
+      surfaceVerified: null,
+      problems: [
+        `${STORAGE_BOUNDARY_ARTEFACT} does not exist. Unit 41 PART B has not been observed in the ` +
+          `catalogue, which is not the same as it having failed — and not the same as it having worked.`,
+      ],
+    }
+  }
+
+  const policies = artefact.policies ?? null
+  // NOT MEASURED stays null. `verifyStoragePolicySurface([])` would report three
+  // ABSENT policies, which is a different claim from "nobody looked".
+  const surfaceVerified = policies === null ? null : verifyStoragePolicySurface(policies).passed
+  const surfaceDetail = policies === null ? null : verifyStoragePolicySurface(policies).detail
+
+  const reconciled = reconcileStorageBoundary({
+    helpersPresent: artefact.helpersPresent === true,
+    policyNamesPresent: (policies ?? []).map((p) => p.policyname),
+    surfaceVerified,
+    boundaryJournal: artefact.journal?.boundary ?? 'ABSENT',
+    partAJournalled: artefact.journal?.partAApplied === true,
+  })
+
+  return {
+    state: reconciled.state,
+    managedBoundaryVerified: reconciled.managedBoundaryVerified,
+    surfaceVerified,
+    problems: [
+      ...reconciled.problems,
+      ...(policies === null
+        ? ['no pg_policies observation recorded, so B0-16 could not run over the surface.']
+        : surfaceVerified
+          ? []
+          : [`B0-16 surface check: ${surfaceDetail}`]),
+    ],
   }
 }

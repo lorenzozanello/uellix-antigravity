@@ -48,6 +48,7 @@ import {
   CAPABILITY_PROBE_STATUS_ARTEFACT,
   type CapabilityProbeState,
 } from './storage-capability-probe'
+import { STORAGE_BOUNDARY_STATUS_ARTEFACT } from './managed-policy-channel'
 import { KNOWN_PRODUCTION_IDENTIFIERS } from './target-identity'
 
 export const APPLY_IDENTITY_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-apply-identity.json'
@@ -158,15 +159,22 @@ export function loadMeasuredEvidence(input: {
   const obs = identity?.observed
   // 'UNCONFIRMED' STAYS 'UNCONFIRMED'. The one transformation this loader must
   // never perform is normalising an unretained value into a boolean.
-  const readOnly: boolean | 'UNCONFIRMED' | null =
-    obs?.transaction_read_only === undefined
-      ? null
-      : typeof obs.transaction_read_only === 'boolean'
-        ? obs.transaction_read_only
-        : obs.transaction_read_only.toUpperCase() === 'UNCONFIRMED'
-          ? 'UNCONFIRMED'
-          : obs.transaction_read_only.toLowerCase() === 'on' ||
-            obs.transaction_read_only.toLowerCase() === 'true'
+  //
+  // AND AN UNRECOGNISED STRING IS NOT A MEASURED `false`. The first version fell
+  // through to `=== 'on' || === 'true'`, so `"ON "` with a trailing space, or a
+  // typo, became a boolean false — published in `observed.psql` under a contract
+  // that says the block is verbatim, and reading as a measured read-only
+  // violation nobody observed. Trim first, then map only the values PostgreSQL
+  // actually emits; anything else is UNCONFIRMED, which blocks.
+  const rawReadOnly = obs?.transaction_read_only
+  const readOnly: boolean | 'UNCONFIRMED' | null = (() => {
+    if (rawReadOnly === undefined) return null
+    if (typeof rawReadOnly === 'boolean') return rawReadOnly
+    const v = rawReadOnly.trim().toLowerCase()
+    if (v === 'on' || v === 'true') return true
+    if (v === 'off' || v === 'false') return false
+    return 'UNCONFIRMED'
+  })()
 
   const projectRef = identity?.targetProjectRef ?? editor?.targetProjectRef ?? ''
   if (projectRef && KNOWN_PRODUCTION_IDENTIFIERS.projectRefs.includes(projectRef)) {
@@ -184,6 +192,12 @@ export function loadMeasuredEvidence(input: {
     | null
   const probeState =
     typeof probeStatus?.state === 'string' ? (probeStatus.state as CapabilityProbeState) : null
+
+  // The boundary's DERIVED verdict. Absence is refusal here as everywhere.
+  const boundaryStatus = input.readJson(STORAGE_BOUNDARY_STATUS_ARTEFACT) as
+    | { readonly managedBoundaryVerified?: unknown }
+    | null
+  const boundaryVerified = boundaryStatus?.managedBoundaryVerified === true
 
   const attest = <T>(value: T, query: string, measuredBy: string): OperatorAttestation<T> => ({
     value,
@@ -309,10 +323,19 @@ export function loadMeasuredEvidence(input: {
     // READ from the derived probe status, never set. `null` there is NOT_RUN,
     // which is neither a demonstrated channel nor a refuted one.
     capabilityProbe: probeState === null ? null : { state: probeState },
-    // The boundary is verified only when the CATALOGUE says the three canonical
-    // policies exist with the right surface. The capability probe cannot supply
-    // it: proving the channel can create a policy is not proving these policies.
-    managedBoundaryVerified: false,
+    // READ from the derived boundary verdict, NEVER a literal.
+    //
+    // This was `false` hardcoded, and adversarial review showed what that meant:
+    // after the operator applied PART A and installed all three canonical
+    // policies with a perfect surface, nothing would have recomputed it. The gate
+    // would have refused forever for a reason no evidence could remove — the
+    // exact "inert gate" defect closed one commit earlier in the criterion, left
+    // open here in the loader that feeds it.
+    //
+    // `artifacts/hosted-storage-boundary-status.json` derives it from pg_proc,
+    // pg_policies and the journal via `reconcileStorageBoundary`. Absent ⇒ false,
+    // with a stated reason.
+    managedBoundaryVerified: boundaryVerified,
 
     journalProvenance: {
       kind: 'hosted-journal',

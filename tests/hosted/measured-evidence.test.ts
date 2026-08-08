@@ -104,19 +104,36 @@ describe('the psql read-only attestation is a REAL apply criterion', () => {
       return { ...v, ...over, observed: { ...v.observed, ...observed } }
     }
 
+  // THE PROPERTY IS INJECTED, NOT INHERITED FROM THE ARTEFACT'S CURRENT VALUE.
+  //
+  // These two used to read `transaction_read_only` straight from the file, so
+  // they broke the moment the operator supplied it — proving they were pinned to
+  // a fact about the evidence rather than to the behaviour they claimed to test.
+  // The behaviour is: UNCONFIRMED blocks, and supplying it unblocks exactly one
+  // criterion. Both states are now driven explicitly.
   it('still blocks when the queries are recorded but the value is UNCONFIRMED', () => {
-    const after = blockingIds(live(withEvidence({ queries: IDENTITY_QUERIES })))
+    const after = blockingIds(
+      live(withEvidence({ queries: IDENTITY_QUERIES }, { transaction_read_only: 'UNCONFIRMED' })),
+    )
     expect(after).toContain('hosted-storage-apply-identity-probed')
   })
 
   it('stops blocking once BOTH the query and the value exist — and only that criterion moves', () => {
-    const before = blockingIds(live(withEvidence({ queries: IDENTITY_QUERIES })))
+    const before = blockingIds(
+      live(withEvidence({ queries: IDENTITY_QUERIES }, { transaction_read_only: 'UNCONFIRMED' })),
+    )
     const after = blockingIds(
       live(withEvidence({ queries: IDENTITY_QUERIES }, { transaction_read_only: 'on' })),
     )
     expect(before).toContain('hosted-storage-apply-identity-probed')
     expect(after).not.toContain('hosted-storage-apply-identity-probed')
     expect(after).toEqual(before.filter((id) => id !== 'hosted-storage-apply-identity-probed'))
+  })
+
+  // AND THE OPERATOR'S VALUE IS ACTUALLY IN THE FILE NOW.
+  it('reads the supplied transaction_read_only from the artefact', () => {
+    const evidence = loadMeasuredEvidence({ readJson, readBaselineSql: read, discoveredBaselineFiles: discovered() })
+    expect(evidence.observed.psql.transactionReadOnly).toBe(true)
   })
 
   it('still refuses the apply — one criterion satisfied is not authorisation', () => {
@@ -127,8 +144,19 @@ describe('the psql read-only attestation is a REAL apply criterion', () => {
 })
 
 describe('the evidence is READ, not typed', () => {
+  // The one transformation the loader must never perform, driven over an
+  // artefact that says UNCONFIRMED regardless of what the real file says today.
   it('preserves UNCONFIRMED rather than normalising it to a boolean', () => {
-    const evidence = loadMeasuredEvidence({ readJson, readBaselineSql: read, discoveredBaselineFiles: discovered() })
+    const evidence = loadMeasuredEvidence({
+      readJson: (rel) => {
+        const value = readJson(rel)
+        if (rel !== APPLY_IDENTITY_ARTEFACT || value === null) return value
+        const v = value as { observed: Record<string, unknown> }
+        return { ...v, observed: { ...v.observed, transaction_read_only: 'UNCONFIRMED' } }
+      },
+      readBaselineSql: read,
+      discoveredBaselineFiles: discovered(),
+    })
     expect(evidence.observed.psql.transactionReadOnly).toBe('UNCONFIRMED')
   })
 

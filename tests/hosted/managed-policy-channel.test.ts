@@ -18,10 +18,13 @@ import {
   SET_ROLE_PATH_VERIFIED,
   SQL_EDITOR_SET_ROLE_PATH,
   deriveManagedPolicySpec,
+  deriveManagementPlaneVerdict,
+  evaluateStorageBoundaryArtefact,
   evaluateBoundaryPreconditions,
   reconcileStorageBoundary,
   storageExecutionReadiness,
   type BoundaryPreconditions,
+  type StorageBoundaryArtefact,
 } from '@/db/hosted/managed-policy-channel'
 import {
   EXPECTED_STORAGE_POLICIES,
@@ -276,5 +279,139 @@ describe('reconciliation is the only path to MANUAL_BOUNDARY_VERIFIED', () => {
     const r = reconcileStorageBoundary({ ...base, boundaryJournal: 'MANUAL_BOUNDARY_VERIFIED' })
     expect(r.managedBoundaryVerified).toBe(true)
     expect(r.journalTransition).toBeNull()
+  })
+})
+
+/* ========================================================================== */
+/* The hosted answer, after the capability probe actually ran                 */
+/* ========================================================================== */
+
+describe('the channel verdict is derived from the probe, not declared', () => {
+  it.each([
+    ['CAPABILITY_PROBE_COMPLETE', 'VERIFIED'],
+    ['CAPABILITY_PROBE_CREATE_FAILED', 'REJECTED'],
+    ['CAPABILITY_PROBE_NOT_RUN', 'UNRESOLVED_REQUIRES_HOSTED_EVIDENCE'],
+    ['CAPABILITY_PROBE_SURFACE_MISMATCH', 'UNRESOLVED_REQUIRES_HOSTED_EVIDENCE'],
+    ['BLOCKED_MANAGEMENT_CHANNEL_CLEANUP', 'UNRESOLVED_REQUIRES_HOSTED_EVIDENCE'],
+  ])('maps %s to %s', (state, expected) => {
+    expect(deriveManagementPlaneVerdict(state)).toBe(expected)
+  })
+
+  it('treats an absent probe as unresolved, never as a pass', () => {
+    expect(deriveManagementPlaneVerdict(null)).toBe('UNRESOLVED_REQUIRES_HOSTED_EVIDENCE')
+  })
+
+  // THE SOURCE-ONLY DETERMINATION IS NOT HAND-EDITED WHEN THE PROBE SUCCEEDS.
+  // Keeping both visible is what stops a future reader from mistaking an edited
+  // conclusion for a measurement — the defect this programme has found three
+  // times, each time in a different costume.
+  it('leaves the repository-only determination untouched', () => {
+    expect(MANAGEMENT_PLANE_PATH).toBe('UNRESOLVED_REQUIRES_HOSTED_EVIDENCE')
+  })
+
+  it('records the hosted probe as primary evidence that settles the CHANNEL only', () => {
+    const hosted = MANAGEMENT_PLANE_EVIDENCE.find((e) => e.id === 'hosted-capability-probe-2026-08-07')
+    expect(hosted?.grade).toBe('primary')
+    expect(hosted?.bearing).toMatch(/settles\s+the CHANNEL and nothing else/)
+    expect(hosted?.bearing).toMatch(/remain uninstalled/)
+  })
+})
+
+describe('MANAGED_BOUNDARY_VERIFIED has a path to true — the wire adversarial review found missing', () => {
+  // THE DEFECT: `reconcileStorageBoundary` was documented as "the only path to
+  // MANUAL_BOUNDARY_VERIFIED" and had ZERO production callers, while the loader
+  // hardcoded `managedBoundaryVerified: false`. After the operator installed all
+  // three canonical policies correctly, nothing would have recomputed it — the
+  // gate would have refused forever, for a reason no evidence could remove.
+  const canonicalRows = () =>
+    EXPECTED_STORAGE_POLICY_SURFACE.map((p) => ({
+      schemaname: 'storage',
+      tablename: 'objects',
+      policyname: p.policyname,
+      roles: p.roles,
+      cmd: p.cmd,
+      qual: p.predicateKind === 'qual' ? p.predicate : null,
+      withCheck: p.predicateKind === 'with_check' ? p.predicate : null,
+    }))
+
+  const installed = (): StorageBoundaryArtefact => ({
+    helpersPresent: true,
+    policies: canonicalRows(),
+    journal: { partAApplied: true, boundary: 'MANUAL_BOUNDARY_PENDING' },
+  })
+
+  it('verifies the boundary when the catalogue shows the whole canonical surface', () => {
+    const v = evaluateStorageBoundaryArtefact(installed())
+    expect(v.state, v.problems.join(' | ')).toBe('UNIT_41_COMPLETE')
+    expect(v.managedBoundaryVerified).toBe(true)
+    expect(v.surfaceVerified).toBe(true)
+  })
+
+  it('and that closes STORAGE_EXECUTION_PATH_READY through the managed arm', () => {
+    const v = evaluateStorageBoundaryArtefact(installed())
+    const readiness = storageExecutionReadiness({
+      managedBoundaryVerified: v.managedBoundaryVerified,
+      detail: 'catalogue observed',
+    })
+    expect(readiness.ready).toBe(true)
+    if (readiness.ready) expect(readiness.via).toBe('MANAGED_BOUNDARY_VERIFIED')
+  })
+
+  // ABSENT IS NOT VERIFIED, and this is today's real state.
+  it('refuses when no catalogue observation exists', () => {
+    const v = evaluateStorageBoundaryArtefact(null)
+    expect(v.managedBoundaryVerified).toBe(false)
+    expect(v.state).toBe('UNIT_41_NOT_STARTED')
+    expect(v.problems.join(' ')).toMatch(/does not exist/)
+  })
+
+  it.each([
+    ['a widened predicate', () => ({ ...installed(), policies: canonicalRows().map((p, i) => (i === 0 ? { ...p, qual: 'true' } : p)) })],
+    ['a widened role', () => ({ ...installed(), policies: canonicalRows().map((p, i) => (i === 0 ? { ...p, roles: '{public}' } : p)) })],
+    ['two of three policies', () => ({ ...installed(), policies: canonicalRows().slice(0, 2) })],
+    ['an extra policy nobody generated', () => ({ ...installed(), policies: [...canonicalRows(), { schemaname: 'storage', tablename: 'objects', policyname: 'temp_debug', roles: '{authenticated}', cmd: 'SELECT', qual: 'true', withCheck: null }] })],
+    ['policies without their helpers', () => ({ ...installed(), helpersPresent: false })],
+    ['helpers with no journal row', () => ({ ...installed(), journal: { partAApplied: false, boundary: 'MANUAL_BOUNDARY_PENDING' as const } })],
+    ['no pg_policies observation at all', () => ({ ...installed(), policies: undefined })],
+  ])('refuses %s', (_label, build) => {
+    const v = evaluateStorageBoundaryArtefact(build())
+    expect(v.managedBoundaryVerified).toBe(false)
+  })
+
+  it('the derived status file is what the apply gate reads, and it says false today', () => {
+    const status = JSON.parse(
+      readFileSync(path.join(ROOT, 'artifacts/hosted-storage-boundary-status.json'), 'utf8'),
+    ) as { managedBoundaryVerified: boolean; unit41State: string }
+    expect(status.managedBoundaryVerified).toBe(false)
+    expect(status.unit41State).toBe('UNIT_41_NOT_STARTED')
+  })
+})
+
+describe('a demonstrated channel is not an installed surface', () => {
+  // The separation, asserted over the REAL artefacts rather than a fixture: the
+  // probe is COMPLETE on disk, and the boundary is still not verified, because
+  // the three canonical policies have never been attempted.
+  it('keeps MANAGED_BOUNDARY_VERIFIED false while pg_policies shows no canonical policy', () => {
+    const status = JSON.parse(
+      readFileSync(path.join(ROOT, 'artifacts/hosted-capability-probe-status.json'), 'utf8'),
+    ) as { state: string; canonicalPoliciesProven: boolean; managementPlaneVerified: boolean }
+
+    expect(status.state).toBe('CAPABILITY_PROBE_COMPLETE')
+    expect(deriveManagementPlaneVerdict(status.state)).toBe('VERIFIED')
+
+    // …and none of that closes Storage.
+    expect(status.canonicalPoliciesProven).toBe(false)
+    const reconciled = reconcileStorageBoundary({
+      helpersPresent: false,
+      policyNamesPresent: [],
+      surfaceVerified: null,
+      boundaryJournal: 'ABSENT',
+      partAJournalled: false,
+    })
+    expect(reconciled.managedBoundaryVerified).toBe(false)
+    expect(reconciled.state).toBe('UNIT_41_NOT_STARTED')
+    expect(storageExecutionReadiness({ managedBoundaryVerified: false, detail: 'probe complete' }).ready).toBe(
+      false,
+    )
   })
 })

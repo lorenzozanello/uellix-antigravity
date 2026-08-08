@@ -48,7 +48,10 @@
     "apply:status:verify": "tsx scripts/apply-status.ts verify",
     "probe:status": "tsx scripts/capability-probe-status.ts report",
     "probe:status:write": "tsx scripts/capability-probe-status.ts write",
-    "probe:status:verify": "tsx scripts/capability-probe-status.ts verify"
+    "probe:status:verify": "tsx scripts/capability-probe-status.ts verify",
+    "boundary:status": "tsx scripts/storage-boundary-status.ts report",
+    "boundary:status:write": "tsx scripts/storage-boundary-status.ts write",
+    "boundary:status:verify": "tsx scripts/storage-boundary-status.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

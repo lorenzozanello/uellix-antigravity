@@ -42,6 +42,7 @@ jobs:
           pnpm hosted:verify
           pnpm storage:verify
           pnpm journal:verify
+          pnpm boundary:status:verify
           pnpm apply:status:verify
           pnpm probe:status:verify
 

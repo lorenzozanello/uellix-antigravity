@@ -109,7 +109,20 @@ SELECT
      WHERE schemaname = 'storage' AND tablename = 'objects')        AS existing_policy_count,
   (SELECT count(*) FROM pg_policies
      WHERE schemaname = 'storage' AND tablename = 'objects'
-       AND policyname = '${CAPABILITY_PROBE_POLICY}')               AS probe_already_present;`
+       AND policyname = '${CAPABILITY_PROBE_POLICY}')               AS probe_already_present;
+
+-- AND THE INVENTORY ITSELF, not just its size.
+--
+-- Adversarial review: step 0 tells the operator to record "existing_policy_count
+-- AND the policy names", and the query above produces only the count. On a target
+-- with any pre-existing policy the operator could not satisfy the precondition by
+-- running what they were given — they would have had to improvise a query, in a
+-- module whose stated design is that the operator composes nothing. It returns
+-- WHOLE ROWS rather than names, because cleanup verification compares rows.
+SELECT schemaname, tablename, policyname, permissive, roles::text, cmd, qual, with_check
+  FROM pg_policies
+ WHERE schemaname = 'storage' AND tablename = 'objects'
+ ORDER BY policyname;`
 
 /**
  * The read-only postcondition. Every column the contract names, compared for
@@ -550,8 +563,10 @@ export function reconcileCapabilityRecord(input: {
  * human decides whether it is run at all.
  */
 export const CAPABILITY_PROBE_OPERATOR_STEPS: readonly string[] = [
-  '0. PRECONDITION — run CAPABILITY_PROBE_PRECONDITION_SQL inside `BEGIN READ ONLY; … ROLLBACK;`. ' +
-    'Record existing_policy_count AND the policy names; the cleanup check needs both.',
+  '0. PRECONDITION — run CAPABILITY_PROBE_PRECONDITION_SQL inside `BEGIN READ ONLY; … ROLLBACK;`. It is ' +
+    'TWO statements: record existing_policy_count from the first, and the WHOLE ROWS from the second ' +
+    'into `precondition.existingPolicyRows` (names alone let cleanup verification degrade to a name ' +
+    'comparison, which cannot see a drop-and-recreate with a changed predicate).',
   '1. Confirm the project selector shows the STAGING project. A capability probe is a write.',
   '2. Dashboard → Storage → Policies → the OBJECTS table → New policy → "For full customization".',
   `3. Policy name: ${CAPABILITY_PROBE_POLICY}`,
@@ -580,7 +595,17 @@ export const CAPABILITY_PROBE_ARTEFACT = 'artifacts/hosted-capability-probe.json
 export const CAPABILITY_PROBE_STATUS_ARTEFACT = 'artifacts/hosted-capability-probe-status.json'
 
 export interface CapabilityProbeArtefact {
-  readonly precondition?: Partial<CapabilityPrecondition>
+  readonly precondition?: Partial<CapabilityPrecondition> & {
+    /**
+     * The pre-probe policies as WHOLE ROWS, when the operator captured them.
+     *
+     * Names alone let cleanup verification degrade to a name comparison, which
+     * cannot see a drop-and-recreate with a changed predicate. Optional because
+     * the operator may only have recorded names — and when they did, the
+     * evaluation says so instead of quietly claiming the stronger check ran.
+     */
+    readonly existingPolicyRows?: readonly ObservedPolicyRow[]
+  }
   readonly record?: { readonly outcome?: string; readonly rawError?: string; readonly timestamp?: string; readonly projectRef?: string }
   /** pg_policies rows, from CAPABILITY_PROBE_POSTCONDITION_SQL, after CREATE. */
   readonly afterCreate?: readonly ObservedPolicyRow[]
@@ -682,27 +707,69 @@ export function evaluateCapabilityProbeArtefact(artefact: CapabilityProbeArtefac
         'policy is demonstrably gone.',
     ])
   }
-  const before = (artefact.precondition?.existingPolicyNames ?? []).map((policyname) => ({
-    schemaname: 'storage',
-    tablename: 'objects',
-    policyname,
-    // Only names were captured before the probe; the row comparison degrades to
-    // a name comparison for those, and says so rather than pretending otherwise.
+  // FULL ROWS WHEN THE OPERATOR CAPTURED THEM, NAMES WHEN THEY DID NOT — AND THE
+  // DIFFERENCE IS STATED RATHER THAN HIDDEN.
+  //
+  // `verifyCapabilityCleanup` compares whole rows precisely so a cleanup that
+  // dropped and recreated a pre-existing policy with a different predicate cannot
+  // pass on an identical name SET. That protection is only real if the BEFORE
+  // side holds real rows. The first version reconstructed `before` from names
+  // with blank fields and then blanked the `after` side to match — silencing the
+  // field comparison exactly when there WERE pre-existing policies to protect.
+  //
+  // So `existingPolicyRows` is preferred when present, and its absence is
+  // reported as a reduction in what cleanup was able to verify.
+  const beforeRows = artefact.precondition?.existingPolicyRows ?? null
+  const beforeNames = artefact.precondition?.existingPolicyNames ?? []
+  const degraded = beforeRows === null && beforeNames.length > 0
+  const blank = (p: ObservedPolicyRow): ObservedPolicyRow => ({
+    ...p,
     permissive: '',
     roles: '',
     cmd: '',
     qual: null,
     withCheck: null,
-  }))
+  })
+  const before: readonly ObservedPolicyRow[] =
+    beforeRows ??
+    beforeNames.map((policyname) =>
+      blank({
+        schemaname: 'storage',
+        tablename: 'objects',
+        policyname,
+        permissive: '',
+        roles: '',
+        cmd: '',
+        qual: null,
+        withCheck: null,
+      }),
+    )
   const cleaned = verifyCapabilityCleanup({
     before,
-    after: afterCleanup.map((p) => (before.length === 0 ? p : { ...p, permissive: '', roles: '', cmd: '', qual: null, withCheck: null })),
+    after: degraded ? afterCleanup.map(blank) : afterCleanup,
   })
   if (cleaned.outcome !== 'CAPABILITY_PROBE_CLEANED') {
     return out('BLOCKED_MANAGEMENT_CHANNEL_CLEANUP', cleaned.problems)
   }
 
-  return out('CAPABILITY_PROBE_COMPLETE', [interpretCapabilityOutcome(record).detail])
+  // The interpretation ends with "not complete until cleanup is verified", which
+  // is true in general and misleading HERE — cleanup has just been verified. The
+  // clause that must survive into this state is the other one: capability is not
+  // correctness. Saying so explicitly beats letting a reader carry the wrong half.
+  return out('CAPABILITY_PROBE_COMPLETE', [
+    interpretCapabilityOutcome(record).detail,
+    ...(degraded
+      ? [
+          `CLEANUP VERIFIED BY NAME ONLY: the precondition recorded ${beforeNames.length} pre-existing ` +
+            `policy name(s) but not their rows, so a cleanup that dropped and recreated one with a ` +
+            `different predicate would not have been caught. Record existingPolicyRows to close that.`,
+        ]
+      : []),
+    `CLEANUP VERIFIED: ${CAPABILITY_PROBE_POLICY} is absent from pg_policies and every policy recorded ` +
+      `before the probe is still present. The channel is demonstrated; the three canonical Uellix ` +
+      `policies remain NOT installed, and MANAGED_BOUNDARY_VERIFIED stays false until pg_policies shows ` +
+      `their surface.`,
+  ])
 }
 
 /** What must NEVER be attempted if the probe fails. Enumerated so it is testable. */

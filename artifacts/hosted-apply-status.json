@@ -41,7 +41,7 @@
       },
       {
         "id": "hosted-storage-apply-identity-probed",
-        "observedEvidence": "current_user=postgres, transaction_read_only=UNCONFIRMED, MEMBER=false, USAGE=false, SET=false",
+        "observedEvidence": "current_user=postgres, transaction_read_only=true, MEMBER=false, USAGE=false, SET=false",
         "expectedProperty": "The MEMBER / USAGE / SET triple was measured in the identity that will APPLY the baseline, inside a read-only transaction — not in the SQL Editor.",
         "reason": "the apply-identity probe records no query. \"I checked\" is not evidence.",
         "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
@@ -55,9 +55,9 @@
       },
       {
         "id": "hosted-storage-management-channel-verified",
-        "observedEvidence": "capabilityProbe=CAPABILITY_PROBE_NOT_RUN, managedBoundaryVerified=false, SET_ROLE_PATH_VERIFIED=false (pinned)",
+        "observedEvidence": "capabilityProbe=CAPABILITY_PROBE_COMPLETE, managedBoundaryVerified=false, SET_ROLE_PATH_VERIFIED=false (pinned)",
         "expectedProperty": "Storage closes on SET_ROLE_PATH_VERIFIED or MANAGED_BOUNDARY_VERIFIED. The first is pinned false by measurement; the second requires hosted evidence, not a design.",
-        "reason": "SET_ROLE_PATH_VERIFIED is false and cannot become true (MEMBER/USAGE/SET all measured false against supabase_storage_admin, on both the psql identity and the SQL Editor identity), and MANAGED_BOUNDARY_VERIFIED is false: capability probe: CAPABILITY_PROBE_NOT_RUN; managed boundary verified: false. A DESIGNED boundary is not a VERIFIED one. Channel determination: UNRESOLVED_REQUIRES_HOSTED_EVIDENCE, from 3 primary sources — the Dashboard Storage Policies UI compiles its form into CREATE POLICY text and submits it through the same executeSql path as the SQL Editor, whose identity is the postgres that cannot own storage.objects. What is NOT settled is whether the deployed platform routes that mutation as the open-source Studio does; only an attempt (a WRITE) answers it, and the capability probe is CAPABILITY_PROBE_NOT_RUN.",
+        "reason": "SET_ROLE_PATH_VERIFIED is false and cannot become true (MEMBER/USAGE/SET all measured false against supabase_storage_admin, on both the psql identity and the SQL Editor identity), and MANAGED_BOUNDARY_VERIFIED is false: capability probe: CAPABILITY_PROBE_COMPLETE; managed boundary verified: false. A DESIGNED boundary is not a VERIFIED one. Channel determination from the repository alone: UNRESOLVED_REQUIRES_HOSTED_EVIDENCE; from hosted evidence: VERIFIED (capability probe CAPABILITY_PROBE_COMPLETE), over 4 primary sources. A demonstrated channel is not an installed surface — MANAGED_BOUNDARY_VERIFIED measures the three canonical policies in pg_policies, and the capability probe measured a temporary policy that granted nothing and was removed again.",
         "sourceArtifact": "artifacts/hosted-capability-probe-status.json"
       },
       {
@@ -99,7 +99,7 @@
     "psql": {
       "currentUser": "postgres",
       "sessionUser": "postgres",
-      "transactionReadOnly": "UNCONFIRMED",
+      "transactionReadOnly": true,
       "isMember": false,
       "inheritsPrivileges": false,
       "canSetRole": false

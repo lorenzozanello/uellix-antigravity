@@ -52,6 +52,11 @@ export function computeProbeStatus() {
     policyName: CAPABILITY_PROBE_POLICY,
     recordArtefact: CAPABILITY_PROBE_ARTEFACT,
     recordPresent: raw !== null,
+    // SURFACED RATHER THAN SILENTLY ABSENT. The operator's report carried no
+    // timestamp and none was invented; the substantive evidence is the
+    // pg_policies observation, but an audit record whose time nobody wrote down
+    // should say so where a reader will see it.
+    timestampRecorded: (artefact?.record?.timestamp ?? '').trim() !== '',
     state: verdict.state,
     problems: verdict.problems,
     // NEVER true from this file, in any state. Capability is not correctness.

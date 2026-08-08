@@ -1,7 +1,12 @@
 # STELLA — ¿Existe un canal de management plane para policies sobre `storage.objects`?
 
-> Train 5C2. **Ninguna escritura hosted se ha realizado.** Ninguna conexión, ningún
-> DDL, ningún `SET ROLE`, ningún bucket. Este documento es una determinación.
+> Train 5C2. Este documento fue una **determinación desde fuentes**, y la sonda de
+> capacidad del 2026-08-07 la corrigió en su conclusión final — ver §3.
+>
+> Escrituras hosted realizadas: **una sola**, la policy temporal de la sonda de
+> capacidad, creada y eliminada, con `pg_policies` de vuelta a 0 filas. Ningún
+> `SET ROLE`, ningún `GRANT`, ningún bucket, ninguna policy canónica, ningún
+> baseline, ningún acceso a producción.
 
 ---
 
@@ -24,8 +29,13 @@ ejecuta en un contexto de *management plane* distinto de la sesión SQL, o no?
 
 | Identidad | `current_user` | `session_user` | `transaction_read_only` | MEMBER | USAGE | SET |
 |---|---|---|---|---|---|---|
-| psql (session pooler) | `postgres` | `postgres` | **UNCONFIRMED** | false | false | false |
+| psql (session pooler) | `postgres` | `postgres` | `on` ¹ | false | false | false |
 | SQL Editor | `postgres` | `postgres` | `on` | false | false | false |
+
+¹ Registrado inicialmente como **UNCONFIRMED** —el operador no retuvo el valor— y
+suministrado después. La refutación por `UNCONFIRMED` se conserva descrita en el
+artefacto: borrarla borraría la prueba de que el gate rechazó un valor no
+retenido en lugar de adivinarlo.
 
 Y en el SQL Editor, `pg_has_role(current_user, oid, 'SET')` devolvió catorce roles.
 **`supabase_storage_admin` no está entre ellos.**
@@ -108,22 +118,37 @@ ocupando el lugar de la respuesta exigida.
 ## 3. Veredicto
 
 ```
-SQL CHANNEL                     (psql · SQL Editor · Dashboard Storage Policies)
-   └─ REJECTED / no privilegiado
-SUPABASE MANAGEMENT-PLANE       (un canal realmente distinto)
-   └─ UNRESOLVED_REQUIRES_HOSTED_EVIDENCE
+SQL CHANNEL                     (psql · SQL Editor)
+   └─ REJECTED / no privilegiado            ← medido
+DASHBOARD STORAGE POLICIES
+   ├─ desde el repositorio solo:  UNRESOLVED_REQUIRES_HOSTED_EVIDENCE
+   └─ desde evidencia hosted:     VERIFIED  ← la sonda de capacidad, 2026-08-07
 ```
 
-**Por qué `UNRESOLVED` y no `REJECTED`.** La refutación anterior es una inferencia
-sobre un repositorio open source. El build desplegado de la plataforma es cerrado,
-y la posibilidad de que `/pg-meta/{ref}/query` enrute la mutación de policies de
-otro modo **no puede refutarse desde aquí**. Llamarlo `REJECTED` reclamaría una
-medición que no tomamos; llamarlo `CANDIDATE` ignoraría dos fuentes primarias.
-`UNRESOLVED` es la palabra exacta — y bloquea exactamente igual de fuerte.
+> ### ⚠️ ACTUALIZADO POR LA SONDA DE CAPACIDAD
+>
+> La sonda se ejecutó y **tuvo éxito**: el Dashboard creó una policy sobre
+> `storage.objects` y la eliminó de nuevo. La inferencia de §2 sobre el código
+> open source **no describía completamente el build desplegado**. Se deja escrita
+> tal cual, con su conclusión corregida aquí, porque borrarla borraría la prueba
+> de que la determinación se hizo con lo que había y se revisó cuando llegó
+> evidencia mejor.
+>
+> Esto verifica **el canal**. No verifica las tres policies canónicas: siguen sin
+> instalarse, y `MANAGED_BOUNDARY_VERIFIED` sigue en `false`.
 
-**`MANAGED_BOUNDARY_DESIGNED ≠ MANAGED_BOUNDARY_VERIFIED`.** Este documento y el
-código producen el primero. El segundo exige evidencia hosted que todavía no
-existe.
+**Por qué la fila «desde el repositorio solo» sigue diciendo `UNRESOLVED`.** Era —y
+sigue siendo— la palabra exacta para lo que el repositorio puede concluir por sí
+mismo: una inferencia sobre código open source, sobre un build desplegado que es
+cerrado. Esa fila no se edita cuando llega evidencia hosted; la evidencia hosted
+vive en la otra, derivada de `artifacts/hosted-capability-probe.json` por
+`deriveManagementPlaneVerdict`. Mantener las dos visibles es lo que impide que una
+conclusión editada a mano se lea como una medición.
+
+**`MANAGED_BOUNDARY_DESIGNED ≠ MANAGED_BOUNDARY_VERIFIED`, y la sonda no cambia
+eso.** La sonda verificó el **canal**. `MANAGED_BOUNDARY_VERIFIED` mide otra cosa:
+las tres policies canónicas presentes en `pg_policies` con su superficie exacta.
+Siguen sin instalarse, y ese flag sigue en `false`.
 
 ---
 
@@ -133,22 +158,45 @@ Como sólo un intento puede resolverlo, y un intento es una **escritura**, la
 frontera humana deja de ser «ejecuta estas tres policies» y pasa a ser:
 
 ```
-HUMAN_STORAGE_POLICY_BOUNDARY
+SONDA DE CAPACIDAD                              [EJECUTADA 2026-08-07: ÉXITO]
   precondiciones (todas medidas, ver §5)
         ↓
-  el operador crea UNA policy — select_evidence — por Dashboard → Storage → Policies
+  UNA policy TEMPORAL — uellix_tmp_capability_probe_20260807 —
+  que no concede nada, por Dashboard → Storage → Policies
         ↓
-  ┌── éxito ──→ el canal EXISTE. Continuar con insert_evidence y delete_evidence.
+  ┌── éxito ──→ el CANAL existe. → limpiar → verificar limpieza → PARAR.
+  │             NO continuar con las canónicas: necesitan la PARTE A.
   └── fallo  ──→ el canal NO existe. NO reintentar por otro rol. Escalar a
                  soporte Supabase con la evidencia de §1 y §2.
+
+        ⋯ (después: aplicar el baseline, que instala la PARTE A) ⋯
+
+HUMAN_STORAGE_POLICY_BOUNDARY                   [NO ABIERTA — precondición falla]
+  requiere partAState = UNIT_41_HELPERS_APPLIED
+        ↓
+  select_evidence · insert_evidence · delete_evidence
 ```
 
-Una policy y no tres, porque el objetivo del primer paso es *medir el canal*, no
-instalar la superficie. Si el canal no existe, tres intentos fallidos no informan
-más que uno y dejan tres estados parciales que reconciliar.
+> ### ⚠️ CORREGIDO — una versión anterior de este diagrama decía, en la rama de
+> éxito, «continuar con `insert_evidence` y `delete_evidence`».
+>
+> Eso venía del diseño previo, en el que la primera policy creada **era** la
+> canónica `select_evidence`. Con la sonda temporal esa frase pasó a instruir una
+> escritura que el propio programa prohíbe en este momento: las tres canónicas
+> llaman `public.can_*_evidence_object`, que la PARTE A todavía no ha creado, así
+> que cada evaluación levantaría `42883`. El paso 13 del guion del operador y
+> `evaluateBoundaryPreconditions` ya lo refutaban; el diagrama no.
+>
+> Se deja la corrección visible en lugar de reescribir el párrafo en silencio.
 
-El estado intermedio está modelado: `UNIT_41_POLICIES_PENDING` con 1 de 3 mientras
-la frontera está abierta, `UNIT_41_FAILED` con 1 de 3 una vez cerrada.
+Una policy y no tres, porque el objetivo de la sonda es *medir el canal*, no
+instalar la superficie. Si el canal no existiera, tres intentos fallidos no
+informarían más que uno y dejarían tres estados parciales que reconciliar.
+
+El estado parcial está modelado para cuando la frontera **sí** se abra:
+`UNIT_41_POLICIES_PENDING` con 1 de 3 mientras está abierta, `UNIT_41_FAILED` con
+1 de 3 una vez cerrada. Hoy la unidad 41 está en `UNIT_41_NOT_STARTED`: la sonda
+no creó ninguna de las tres.
 
 ### 4.1 El operador no redacta SQL
 
@@ -226,15 +274,15 @@ alguien escribe:
 | `stagingApplied` | `false` |
 | `evidenceBucketExists` | `false` (frontera independiente, sin tocar) |
 
-**Acción de operador requerida, en este orden:**
+**Acciones de operador — estado al 2026-08-07:**
 
-1. **Sonda psql read-only** (§19 de la instrucción), por la misma identidad Session
-   Pooler, para cerrar `transaction_read_only = UNCONFIRMED`:
-   ```
-   BEGIN READ ONLY;
-   SELECT current_setting('transaction_read_only');
-   ROLLBACK;
-   ```
-2. **Sonda por ejecución del canal**: una sola policy `select_evidence` por
-   Dashboard → Storage → Policies, con los campos que emite
-   `deriveManagedPolicySpec()`, y registrar si el canal la acepta o la rechaza.
+| # | Acción | Estado |
+|---|---|---|
+| 1 | Sonda psql read-only para cerrar `transaction_read_only` | ✅ **HECHA** — valor `on`, ingerido en el artefacto |
+| 2 | Sonda por ejecución del canal (policy temporal, crear + verificar + limpiar + verificar limpieza) | ✅ **HECHA** — `CAPABILITY_PROBE_COMPLETE` |
+| 3 | Registrar en `2026-08-07-apply-identity.json` las `queries` literales ejecutadas y el `connectionHost` (sólo hostname) | ⛔ **PENDIENTE** — el gate refuta una atestación sin query, y esa refutación es verdadera |
+| 4 | CHECKPOINT A0 e inventario de los nueve flags `STELLA_*` | ⛔ **PENDIENTE** |
+| 5 | Bucket `uellix-evidence` (`public=false`, vacío) | ⛔ **PENDIENTE** — bloquea `STAGING_RUNTIME_GATE`, no el baseline |
+
+Nada de lo anterior autoriza aplicar el baseline por sí solo: el veredicto vivo
+está en `artifacts/hosted-apply-status.json` y lo imprime `pnpm apply:status`.

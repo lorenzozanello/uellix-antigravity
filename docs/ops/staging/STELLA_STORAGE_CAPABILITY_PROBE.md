@@ -1,7 +1,9 @@
 # STELLA — Sonda de capacidad del canal gestionado sobre `storage.objects`
 
-> Train 5C2, continuación. **Ninguna escritura remota se ha realizado.** Este
-> documento prepara una frontera humana; no la autoriza ni la ejecuta.
+> Train 5C2, continuación. **La sonda de capacidad SE EJECUTÓ y quedó cerrada**
+> (crear + verificar + limpiar + verificar la limpieza). Ninguna otra escritura
+> hosted se ha realizado: ni policies canónicas, ni bucket, ni baseline, ni
+> sentinel, ni flags. Registro: `artifacts/hosted-capability-probe.json`.
 
 ---
 
@@ -374,3 +376,57 @@ sujeto a postcondición y cleanup.
 | El formulario puede no ofrecer selector RESTRICTIVE, con lo que el paso 8 no tendría nada que confirmar | la postcondición compara `pg_policies.permissive` por igualdad; el paso es defensa en profundidad, no la única |
 | La UI puede fallar por timeout **después** de que el servidor confirme el CREATE | `reconcileCapabilityRecord` refuta «record FAILED + policy presente» y prohíbe expresamente concluir `REJECTED` de ese registro |
 | Un cleanup que hiciera drop+recreate de una policy preexistente con otro predicado | el cleanup compara **filas completas**, no nombres |
+
+
+---
+
+## 10. La sonda se ejecutó — resultado y qué cierra exactamente
+
+Ejecutada por el operador sobre `bvyzblhqymxruxdguaee`, por
+Dashboard → Storage → Policies → OBJECTS.
+
+| Etapa | Observado |
+|---|---|
+| Precondición | `storage.objects` existe · RLS activo · **0 policies** · la sonda no estaba presente · sesión `postgres`/`postgres`, `transaction_read_only = on` |
+| CREATE | `uellix_tmp_capability_probe_20260807` creada |
+| Postcondición | `storage`/`objects`/`uellix_tmp_capability_probe_20260807`/`PERMISSIVE`/`{authenticated}`/`SELECT`/`qual = false`/`with_check = null` — igualdad exacta |
+| Cleanup | eliminada por el **mismo canal** |
+| Postcondición de cleanup | `pg_policies` → **0 filas** para `schemaname='storage' AND tablename='objects'` |
+
+Estado derivado: **`CAPABILITY_PROBE_COMPLETE`**
+(`artifacts/hosted-capability-probe-status.json`, generado por `pnpm probe:status`).
+
+### 10.1 Lo que esto cierra
+
+**El canal.** `deriveManagementPlaneVerdict('CAPABILITY_PROBE_COMPLETE')` →
+`VERIFIED`. La plataforma desplegada **sí** enruta la mutación de policies del
+Dashboard de forma distinta a la identidad que medimos, lo bastante como para que
+tenga éxito. La inferencia sobre el código open source no era la historia
+completa del build desplegado — y sólo un intento podía demostrarlo.
+
+`MANAGEMENT_PLANE_PATH` se deja **sin tocar** en
+`UNRESOLVED_REQUIRES_HOSTED_EVIDENCE`: es la determinación que el repositorio
+puede alcanzar por sí solo. Las dos conviven a propósito, para que nadie confunda
+una conclusión editada a mano con una medición.
+
+### 10.2 Lo que esto NO cierra
+
+**Las tres policies canónicas siguen sin instalarse.** La sonda creó una policy
+temporal que no concedía nada y se borró. Las canónicas llaman helpers que la
+PARTE A todavía no ha creado y filtran por un bucket que no existe.
+
+```
+capability demonstrated   ≠   canonical Uellix policies installed
+      (VERIFIED)                  (MANAGED_BOUNDARY_VERIFIED = false)
+```
+
+`canonicalPoliciesProven` es el literal `false` en **todos** los estados, y
+`hosted-storage-management-channel-verified` **sigue bloqueando** — mide
+`MANAGED_BOUNDARY_VERIFIED`, no la capacidad del canal. Un test lo comprueba
+contra los artefactos reales, no contra un fixture.
+
+### 10.3 Estado del target tras la sonda
+
+`storage.objects` volvió **exactamente** a la precondición: `policy_count = 0`.
+La máquina de estados de la unidad 41 sigue en **`UNIT_41_NOT_STARTED`**, y B0-16
+seguiría refutando cualquier resto de la sonda.
