@@ -22,6 +22,12 @@
   "authorized commit" that defaults to whatever is checked out authorizes
   nothing.
 
+.PARAMETER Diagnose
+  Run ONLY the read-only probes and print a sanitized description of what psql
+  actually returned: exit code, byte and line counts, the payload escaped so
+  control characters are read rather than applied, and stderr. It decides
+  nothing and cannot apply a unit on any path.
+
 .PARAMETER DryRun
   Verify identity, corpus, ledger and position, print the next unit, and stop
   before applying anything.
@@ -33,7 +39,8 @@
 param(
   [Parameter(Mandatory = $true)][string] $PsqlPath,
   [Parameter(Mandatory = $true)][string] $ExpectedHead,
-  [switch] $DryRun
+  [switch] $DryRun,
+  [switch] $Diagnose
 )
 
 $ErrorActionPreference = 'Stop'
@@ -81,7 +88,8 @@ try {
     '--psql', $PsqlPath,
     '--head', $ExpectedHead
   )
-  if ($DryRun) { $runnerArgs += '--dry-run' }
+  if ($DryRun)   { $runnerArgs += '--dry-run' }
+  if ($Diagnose) { $runnerArgs += '--diagnose' }
 
   & pnpm @runnerArgs
   exit $LASTEXITCODE

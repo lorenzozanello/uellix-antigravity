@@ -38,6 +38,9 @@ import {
   JOURNAL_SNAPSHOT_SQL,
   LEDGER_BOOTSTRAP_PROBE_SQL,
   OPERATOR_EXIT,
+  PSQL_PROBE_FLAGS,
+  describeProbeOutput,
+  parsePsqlJson,
   deriveNextUnit,
   evaluateCompletion,
   evaluateLedgerBootstrap,
@@ -117,35 +120,53 @@ const orHalt = <T,>(v: T | OperatorStop): T => {
 
 let PSQL = ''
 
+interface RawProbe {
+  readonly exitCode: number | null
+  readonly stdout: string
+  readonly stderr: string
+}
+
 /**
- * Runs a read-only probe and returns the parsed JSON.
+ * Spawns psql for one read-only probe and returns the raw streams.
  *
- * `-X` skips psqlrc, so an operator's personal settings cannot change what the
- * runner measures. `-A -t` produce one bare line. The SQL itself is wrapped in
- * BEGIN READ ONLY / ROLLBACK by the core.
+ * The flags come from the core so the invocation contract has ONE spelling and
+ * a test can pin it. The SQL is already wrapped in BEGIN READ ONLY / ROLLBACK.
  */
-function probe<T>(sql: string, label: string): T {
-  const r = spawnSync(PSQL, ['-X', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-c', sql], {
+function runProbe(sql: string): RawProbe {
+  const r = spawnSync(PSQL, [...PSQL_PROBE_FLAGS, '-c', sql], {
     encoding: 'utf8',
     env: process.env,
   })
-  if (r.error !== undefined || r.status !== 0) {
+  return { exitCode: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '' }
+}
+
+/** Runs a read-only probe and returns the parsed payload, or halts. */
+function probe<T>(sql: string, label: string): T {
+  const raw = runProbe(sql)
+  if (raw.exitCode !== 0) {
     halt({
       ok: false,
       code: 'OPERATOR_VERIFICATION_QUERY_FAILED',
-      message: `${label}: psql exited ${r.status ?? 'with a spawn error'}. ${(r.stderr ?? '').trim()}`,
+      message: `${label}: psql exited ${raw.exitCode ?? 'with a spawn error'}. ${raw.stderr.trim()}`,
     })
   }
-  const text = (r.stdout ?? '').trim()
-  try {
-    return JSON.parse(text) as T
-  } catch {
-    return halt({
-      ok: false,
-      code: 'OPERATOR_VERIFICATION_QUERY_FAILED',
-      message: `${label}: the probe returned something that is not JSON. An empty or ambiguous result is a refusal, not a pass.`,
-    })
+  const parsed = parsePsqlJson<T>(raw.stdout, label)
+  if (!parsed.ok) {
+    // The refusal stands. What changes is that the operator gets the bytes:
+    // "not JSON" without the payload is a message that costs a round-trip.
+    say('')
+    say('PROBE DIAGNOSTICS')
+    say(
+      describeProbeOutput({
+        stage: label,
+        exitCode: raw.exitCode,
+        stdout: raw.stdout,
+        stderr: raw.stderr,
+      }),
+    )
+    halt(parsed)
   }
+  return parsed.value
 }
 
 interface RemoteJournalRow {
@@ -236,6 +257,24 @@ function main(): void {
   say(`TARGET VERIFIED: staging ${env.projectRef} (corroborated by the pooler login role)`)
   say(`CORPUS VERIFIED: ${BASELINE_UNITS.length} units, order pinned, LF-normalized hashes match`)
   say(`PSQL:            ${path.basename(PSQL)} — ${execFileSync(PSQL, ['--version'], { encoding: 'utf8' }).trim()}`)
+
+  // ---- --diagnose: report the probes, decide nothing, apply nothing --------
+  if (args.diagnose) {
+    say('')
+    say('DIAGNOSE — read-only probes only. No unit can be applied on this path.')
+    for (const [stage, sql] of [
+      ['ledger bootstrap', LEDGER_BOOTSTRAP_PROBE_SQL],
+      ['journal snapshot', JOURNAL_SNAPSHOT_SQL],
+      ['catalogue tables', CATALOGUE_TABLES_SQL],
+    ] as const) {
+      const raw = runProbe(sql)
+      say('')
+      say(describeProbeOutput({ stage, exitCode: raw.exitCode, stdout: raw.stdout, stderr: raw.stderr }))
+      const parsed = parsePsqlJson<unknown>(raw.stdout, stage)
+      say(`parses:           ${parsed.ok ? 'YES' : `NO — ${parsed.code}`}`)
+    }
+    process.exit(OPERATOR_EXIT.OK)
+  }
 
   // ---- the ledger unit ZERO left ------------------------------------------
   const ledger = probe<

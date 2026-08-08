@@ -20,6 +20,9 @@ import { KNOWN_STAGING_PROJECT_REF } from '../../db/hosted/target-identity'
 import { SET_ROLE_PATH_VERIFIED } from '../../db/hosted/managed-policy-channel'
 import {
   CATALOGUE_TABLES_SQL,
+  PSQL_PROBE_FLAGS,
+  parsePsqlJson,
+  describeProbeOutput,
   OPERATOR_EXIT,
   exitCodeFor,
   parseOperatorArgs,
@@ -616,6 +619,18 @@ describe('read-only probes', () => {
     }
   })
 
+  it('aggregates with jsonb_agg, because json_agg splits the payload across lines', () => {
+    // Measured against PostgreSQL 17 via psql 17.10: `json_agg` renders three
+    // rows as `[{"a":1}, \r\n {"a":2}, \r\n {"a":3}]` — a multi-line payload the
+    // one-line contract correctly refuses. `jsonb_agg` renders the same rows on
+    // ONE line, and stays on one line at sixty. The single-row probes hid this;
+    // the catalogue probe, which returns one row per table, did not.
+    for (const sql of probes) {
+      expect(sql).not.toMatch(/\bjson_agg\b/)
+      expect(sql).toMatch(/\bjsonb_agg\b/)
+    }
+  })
+
   it('escapes a quote in an identifier rather than closing it', () => {
     expect(sqlIdentifier('public.we"ird')).toBe('"public"."we""ird"')
     expect(sqlLiteral("O'Brien")).toBe("'O''Brien'")
@@ -643,6 +658,13 @@ describe('argument parsing', () => {
       expect(v.psqlPath).toContain('psql.exe')
       expect(v.expectedHead).toBe(HEAD)
     }
+  })
+
+  it('accepts --diagnose, and it is off unless asked for', () => {
+    const off = parseOperatorArgs(ok)
+    expect(off.ok && off.diagnose).toBe(false)
+    const on = parseOperatorArgs([...ok, '--diagnose'])
+    expect(on.ok && on.diagnose).toBe(true)
   })
 
   it('refuses to fall back to a psql on PATH', () => {
@@ -682,6 +704,119 @@ describe('exit codes', () => {
       expect(exitCodeFor(code), code).toBe(OPERATOR_EXIT.INTERRUPTED)
       expect(exitCodeFor(code)).not.toBe(OPERATOR_EXIT.OK)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The psql invocation contract.
+//
+// The first dry run against staging died here, and the reason was not the
+// query, not the network and not the encoding. `psql -c` with a multi-statement
+// string prints a COMMAND STATUS TAG for each utility statement, so stdout was:
+//
+//     BEGIN\r\n[{...}]\r\nROLLBACK\r\n
+//
+// `-t` suppresses the column header and the "(1 row)" footer. It does NOT
+// suppress command status — that is `-q`. Measured against psql 17.10 on
+// Windows, which is the client the operator actually runs.
+// ---------------------------------------------------------------------------
+
+describe('psql probe flags', () => {
+  it('runs quiet, so utility statements do not print command status onto stdout', () => {
+    expect(PSQL_PROBE_FLAGS).toContain('-q')
+  })
+
+  it('keeps the flags that make the payload a single bare value', () => {
+    expect(PSQL_PROBE_FLAGS).toContain('-A')
+    expect(PSQL_PROBE_FLAGS).toContain('-t')
+  })
+
+  it('ignores the operator personal psqlrc', () => {
+    expect(PSQL_PROBE_FLAGS).toContain('-X')
+  })
+})
+
+describe('psql payload parsing', () => {
+  const parse = (stdout: string) => parsePsqlJson<unknown>(stdout, 'ledger bootstrap')
+
+  it('accepts exactly what psql -q -A -t emits on Windows, CRLF included', () => {
+    // These are measured bytes, not a guess: psql 17.10 against a local
+    // Postgres produced `[{"a":1}]\r\n` for the probe shape this runner uses.
+    const v = parse('[{"a":1}]\r\n')
+    expect(codeOf(v)).toBe('OK')
+    if (v.ok) expect(v.value).toEqual([{ a: 1 }])
+  })
+
+  it('accepts an empty result set', () => {
+    const v = parse('[]\r\n')
+    expect(codeOf(v)).toBe('OK')
+    if (v.ok) expect(v.value).toEqual([])
+  })
+
+  it('refuses the command-status output that broke the first dry run', () => {
+    // The regression. Blank-line tolerance must never grow into tag tolerance.
+    expect(codeOf(parse('BEGIN\r\n[{"a":1,"b":2}]\r\nROLLBACK\r\n'))).toBe(
+      'OPERATOR_VERIFICATION_QUERY_FAILED',
+    )
+  })
+
+  it('refuses two payloads rather than picking one', () => {
+    expect(codeOf(parse('[1]\r\n[2]\r\n'))).toBe('OPERATOR_VERIFICATION_QUERY_FAILED')
+  })
+
+  it('refuses empty stdout', () => {
+    expect(codeOf(parse(''))).toBe('OPERATOR_VERIFICATION_QUERY_FAILED')
+    expect(codeOf(parse('   \r\n  \r\n'))).toBe('OPERATOR_VERIFICATION_QUERY_FAILED')
+  })
+
+  it('refuses a line that is not JSON', () => {
+    expect(codeOf(parse('ERROR:  division by zero\r\n'))).toBe(
+      'OPERATOR_VERIFICATION_QUERY_FAILED',
+    )
+  })
+
+  it('never salvages a payload out of surrounding noise', () => {
+    // Scanning for the first `{` would "fix" this input. That is the fail-open
+    // the contract exists to forbid: unexpected text means an unknown state.
+    expect(codeOf(parse('some notice [{"a":1}] trailing\r\n'))).toBe(
+      'OPERATOR_VERIFICATION_QUERY_FAILED',
+    )
+  })
+
+  it('tolerates blank lines and a UTF-8 BOM, which carry no information', () => {
+    expect(codeOf(parse('\r\n[]\r\n\r\n'))).toBe('OK')
+    expect(codeOf(parse('﻿[]\r\n'))).toBe('OK')
+  })
+})
+
+describe('probe diagnostics', () => {
+  const report = (patch: Partial<Parameters<typeof describeProbeOutput>[0]> = {}) =>
+    describeProbeOutput({
+      stage: 'ledger bootstrap',
+      exitCode: 0,
+      stdout: 'BEGIN\r\n[{"a":1}]\r\nROLLBACK\r\n',
+      stderr: '',
+      ...patch,
+    })
+
+  it('reports the stage, the exit code and the shape of what arrived', () => {
+    const r = report()
+    expect(r).toContain('ledger bootstrap')
+    expect(r).toContain('exit code')
+    expect(r).toContain('3')
+  })
+
+  it('escapes the payload so control characters are visible rather than applied', () => {
+    expect(report()).toContain('\\r\\n')
+  })
+
+  it('redacts a secret that reached stderr', () => {
+    const r = report({ stderr: 'connection failed: postgresql://postgres:hunter2@h:5432/postgres' })
+    expect(r).not.toContain('hunter2')
+  })
+
+  it('redacts a password-shaped assignment anywhere in the captured output', () => {
+    expect(report({ stdout: 'PGPASSWORD=hunter2\r\n' })).not.toContain('hunter2')
   })
 })
 

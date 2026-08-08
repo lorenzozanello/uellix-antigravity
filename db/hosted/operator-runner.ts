@@ -145,6 +145,8 @@ export interface OperatorArgs {
   /** The commit the operator is authorizing this run against. */
   readonly expectedHead: string
   readonly dryRun: boolean
+  /** Read-only introspection of the probes. Cannot apply anything, ever. */
+  readonly diagnose: boolean
 }
 
 /**
@@ -160,6 +162,7 @@ export function parseOperatorArgs(argv: readonly string[]): OperatorArgs | Opera
   let psqlPath = ''
   let expectedHead = ''
   let dryRun = false
+  let diagnose = false
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i]
@@ -171,6 +174,8 @@ export function parseOperatorArgs(argv: readonly string[]): OperatorArgs | Opera
       i += 1
     } else if (flag === '--dry-run') {
       dryRun = true
+    } else if (flag === '--diagnose') {
+      diagnose = true
     } else {
       return stop('OPERATOR_ARGS_INVALID', `unrecognised argument ${JSON.stringify(flag ?? '')}.`)
     }
@@ -188,7 +193,7 @@ export function parseOperatorArgs(argv: readonly string[]): OperatorArgs | Opera
       '--head <40-character commit sha> is required, and must be the full sha of the authorized commit.',
     )
   }
-  return { ok: true, psqlPath: psqlPath.trim(), expectedHead, dryRun }
+  return { ok: true, psqlPath: psqlPath.trim(), expectedHead, dryRun, diagnose }
 }
 
 // ---------------------------------------------------------------------------
@@ -784,7 +789,7 @@ export const sqlIdentifier = (qualified: string): string =>
 export const readOnly = (sql: string): string => `BEGIN READ ONLY;\n${sql}\nROLLBACK;`
 
 const jsonRows = (inner: string): string =>
-  `SELECT coalesce(json_agg(t), '[]'::json)::text FROM (${inner}) t;`
+  `SELECT coalesce(jsonb_agg(t), '[]'::jsonb)::text FROM (${inner}) t;`
 
 export const LEDGER_BOOTSTRAP_PROBE_SQL = readOnly(
   jsonRows(`
@@ -823,6 +828,112 @@ export const CATALOGUE_TABLES_SQL = readOnly(
   `),
 )
 
+// ---------------------------------------------------------------------------
+// The psql INVOCATION CONTRACT — flags and payload, both owned here
+// ---------------------------------------------------------------------------
+
+/**
+ * The flags that make psql's stdout a single machine-readable value.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY `-q` IS LOAD-BEARING, AND HOW ITS ABSENCE WAS FOUND
+ * ---------------------------------------------------------------------------
+ * The first dry run against staging failed on the very first probe. The query
+ * was right, the connection was right, the encoding was right. What was wrong
+ * was an assumption about psql: `-c` with a multi-statement string makes psql
+ * print a COMMAND STATUS TAG for every utility statement, so stdout was
+ *
+ *     BEGIN\r\n[{…}]\r\nROLLBACK\r\n
+ *
+ * `-t` suppresses the column header and the `(1 row)` footer — that is the
+ * table renderer. Command status is a different code path, governed by QUIET.
+ * The original comment on this call said "-A -t produce one bare line", which
+ * was a plausible sentence about flags nobody had measured.
+ *
+ * Measured against psql 17.10 (the operator's client) driving a local Postgres:
+ * with `-q` the same probe emits `[{"a":1}]\r\n` and nothing else, and NOTICE
+ * goes to stderr where it cannot contaminate the payload.
+ */
+export const PSQL_PROBE_FLAGS: readonly string[] = ['-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1']
+
+export interface ParsedPayload<T> {
+  readonly ok: true
+  readonly value: T
+}
+
+/**
+ * Turns psql's stdout into a value, or refuses.
+ *
+ * The rule is EXACTLY ONE non-empty line, parsed whole. Blank lines and a BOM
+ * are dropped because they carry no information — that is decoding, not
+ * interpretation. Everything else is refused.
+ *
+ * What this deliberately does NOT do is hunt for a `{` and parse from there.
+ * That would "fix" `BEGIN\r\n[{…}]\r\nROLLBACK` by ignoring the two lines
+ * telling it the invocation was not what the runner thought it was, and it
+ * would go on ignoring them the day they say something that matters. Unexpected
+ * text means an unknown state, and an unknown state is a refusal.
+ */
+export function parsePsqlJson<T>(stdout: string, stage: string): ParsedPayload<T> | OperatorStop {
+  const lines = stdout
+    .replace(/^﻿/, '')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l !== '')
+
+  if (lines.length === 0) {
+    return stop(
+      'OPERATOR_VERIFICATION_QUERY_FAILED',
+      `${stage}: psql produced no output. An empty result is a refusal, not a pass.`,
+    )
+  }
+  if (lines.length > 1) {
+    return stop(
+      'OPERATOR_VERIFICATION_QUERY_FAILED',
+      `${stage}: psql produced ${lines.length} lines where the contract is exactly one payload. ` +
+        `The runner will not choose between them. First line: ${JSON.stringify(lines[0]!.slice(0, 80))}.`,
+    )
+  }
+  try {
+    return { ok: true, value: JSON.parse(lines[0]!) as T }
+  } catch {
+    return stop(
+      'OPERATOR_VERIFICATION_QUERY_FAILED',
+      `${stage}: the single line psql returned is not JSON: ${JSON.stringify(lines[0]!.slice(0, 120))}.`,
+    )
+  }
+}
+
+/**
+ * A sanitized description of what a probe actually returned.
+ *
+ * Used by `--diagnose`, and by nothing that decides anything: this reports, it
+ * never judges. The payload is JSON-escaped so `\r\n` is READ rather than
+ * applied — a diagnostic that prints raw control characters is a diagnostic
+ * that hides the exact bytes you opened it to see.
+ */
+export function describeProbeOutput(input: {
+  readonly stage: string
+  readonly exitCode: number | null
+  readonly stdout: string
+  readonly stderr: string
+}): string {
+  const lines = input.stdout.split(/\r?\n/)
+  const nonEmpty = lines.filter((l) => l.trim() !== '')
+  const shown = input.stdout.length > 600 ? `${input.stdout.slice(0, 600)}…[truncated]` : input.stdout
+
+  return redactOperatorLog(
+    [
+      `stage:            ${input.stage}`,
+      `psql exit code:   ${input.exitCode ?? '(spawn error)'}`,
+      `stdout chars:     ${input.stdout.length}`,
+      `stdout lines:     ${lines.length} (${nonEmpty.length} non-empty)`,
+      `stdout escaped:   ${JSON.stringify(shown)}`,
+      `stderr:           ${input.stderr.trim() === '' ? '(empty)' : JSON.stringify(input.stderr.trim().slice(0, 400))}`,
+    ].join('\n'),
+  )
+}
+
 export function postconditionProbeSql(expectation: StructuralExpectation): string {
   const rowCount =
     expectation.tables.length === 0
@@ -832,15 +943,15 @@ export function postconditionProbeSql(expectation: StructuralExpectation): strin
   return readOnly(
     jsonRows(`
       SELECT
-        (SELECT coalesce(json_agg('public.' || table_name), '[]'::json)
+        (SELECT coalesce(jsonb_agg('public.' || table_name), '[]'::jsonb)
            FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE') AS tables,
-        (SELECT coalesce(json_agg(n.nspname || '.' || p.proname), '[]'::json)
+        (SELECT coalesce(jsonb_agg(n.nspname || '.' || p.proname), '[]'::jsonb)
            FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','storage')) AS functions,
-        (SELECT coalesce(json_agg(tgname), '[]'::json) FROM pg_trigger WHERE NOT tgisinternal) AS triggers,
-        (SELECT coalesce(json_agg(n.nspname || '.' || c.relname), '[]'::json)
+        (SELECT coalesce(jsonb_agg(tgname), '[]'::jsonb) FROM pg_trigger WHERE NOT tgisinternal) AS triggers,
+        (SELECT coalesce(jsonb_agg(n.nspname || '.' || c.relname), '[]'::jsonb)
            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE c.relkind='r' AND c.relrowsecurity) AS rls_enabled_tables,
-        (SELECT coalesce(json_agg(policyname), '[]'::json) FROM pg_policies) AS policies,
+        (SELECT coalesce(jsonb_agg(policyname), '[]'::jsonb) FROM pg_policies) AS policies,
         (${rowCount})::bigint AS row_count
     `),
   )
