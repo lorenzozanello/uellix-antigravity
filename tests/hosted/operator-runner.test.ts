@@ -20,7 +20,11 @@ import { BASELINE_UNITS, baselineUnit } from '../../db/hosted/baseline-manifest'
 import { scanBaselineSql } from '../../db/hosted/baseline-scanner'
 import { wrapperCarriesJournalAppend, wrapperPathFor } from '../../db/hosted/baseline-journal-wrapper'
 import { evaluateStorageBoundaryArtefact } from '../../db/hosted/managed-policy-channel'
-import type { ObservedStoragePolicy } from '../../db/hosted/baseline-postconditions'
+import {
+  EXPECTED_STORAGE_POLICY_SURFACE,
+  verifyStoragePolicySurface,
+  type ObservedStoragePolicy,
+} from '../../db/hosted/baseline-postconditions'
 import { sha256OfSql } from '../../db/hosted/hosted-package-manifest'
 import type { JournalRow } from '../../db/hosted/baseline-journal'
 import { KNOWN_STAGING_PROJECT_REF } from '../../db/hosted/target-identity'
@@ -29,7 +33,12 @@ import {
   CATALOGUE_TABLES_SQL,
   PROBE_KEY_EXPRESSIONS,
   PSQL_APPLY_FLAGS,
+  STORAGE_HELPERS_PROBE_SQL,
+  STORAGE_POLICIES_PROBE_SQL,
+  STORAGE_RLS_PROBE_SQL,
   applyArgv,
+  reconcileStorageEvidence,
+  type StorageLiveEvidence,
   keySegmentCount,
   PSQL_PROBE_FLAGS,
   parsePsqlJson,
@@ -959,6 +968,276 @@ describe('PART B surface evidence feeding the boundary', () => {
 })
 
 // ---------------------------------------------------------------------------
+// B1 — LIVE CORROBORATION
+//
+// Independent audit demonstrated the vector by composition: a hand-written
+// `artifacts/hosted-storage-boundary.json` carrying the three canonical shapes
+// made the runner derive 042 with PART B never installed. The evaluator was
+// correct; its INPUT was a local file nobody had checked against the database.
+//
+// The previous round rejected the REMOTE journal as sufficient evidence. A
+// LOCAL file is weaker still. The artefact stays — it is the auditable record —
+// but authority moves to a live read-only measurement of the same target.
+// ---------------------------------------------------------------------------
+
+const SEL_PRED = "(bucket_id = 'uellix-evidence') AND public.can_read_evidence_object(name, auth.uid())"
+const WRITE_PRED = "(bucket_id = 'uellix-evidence') AND public.can_write_evidence_object(name, auth.uid())"
+
+const pol = (
+  policyname: string,
+  cmd: string,
+  qual: string | null,
+  withCheck: string | null,
+  patch: Partial<ObservedStoragePolicy> = {},
+): ObservedStoragePolicy => ({
+  schemaname: 'storage',
+  tablename: 'objects',
+  policyname,
+  roles: '{authenticated}',
+  cmd,
+  qual,
+  withCheck,
+  ...patch,
+})
+
+const CANONICAL_SURFACE: ObservedStoragePolicy[] = [
+  pol('select_evidence', 'SELECT', SEL_PRED, null),
+  pol('insert_evidence', 'INSERT', null, WRITE_PRED),
+  pol('delete_evidence', 'DELETE', WRITE_PRED, null),
+]
+
+const HELPERS = ['public.can_read_evidence_object', 'public.can_write_evidence_object']
+
+const live = (patch: Partial<StorageLiveEvidence> = {}): StorageLiveEvidence => ({
+  helpers: HELPERS,
+  policies: CANONICAL_SURFACE,
+  rlsEnabled: true,
+  bucketPresent: true,
+  ...patch,
+})
+
+const reconcile = (input: {
+  live?: StorageLiveEvidence | null
+  artefactPolicies?: readonly ObservedStoragePolicy[] | null
+  artefactHelpers?: boolean
+  artefactProjectRef?: string | null
+  partAJournalled?: boolean
+}) =>
+  reconcileStorageEvidence({
+    live: input.live === undefined ? live() : input.live,
+    artefact:
+      input.artefactPolicies === null
+        ? null
+        : {
+            helpersPresent: input.artefactHelpers ?? true,
+            policies: input.artefactPolicies ?? CANONICAL_SURFACE,
+            journal: { partAApplied: true, boundary: 'ABSENT' },
+          },
+    artefactProjectRef: input.artefactProjectRef === undefined ? STAGING : input.artefactProjectRef,
+    targetProjectRef: STAGING,
+    partAJournalled: input.partAJournalled ?? true,
+  })
+
+describe('B1 — the boundary needs a live measurement, not a file', () => {
+  it('case 9: artefact and live evidence agree on the canonical surface → VERIFIED', () => {
+    const v = reconcile({})
+    expect(v.verified, v.reasons.join(' | ')).toBe(true)
+  })
+
+  it('THE VECTOR: a fabricated canonical artefact with no live policies is refused', () => {
+    // Hand-write the JSON, measure the database, and the database wins.
+    expect(reconcile({ live: live({ policies: [] }) }).verified).toBe(false)
+  })
+
+  it('case 1: artefact canonical, remote policies absent → REFUSE', () => {
+    expect(reconcile({ live: live({ policies: [] }) }).verified).toBe(false)
+  })
+
+  it('case 2: artefact canonical, remote helpers absent → REFUSE', () => {
+    expect(reconcile({ live: live({ helpers: [] }) }).verified).toBe(false)
+  })
+
+  it('case 3: artefact canonical, remote 2/3 → REFUSE', () => {
+    expect(reconcile({ live: live({ policies: CANONICAL_SURFACE.slice(0, 2) }) }).verified).toBe(false)
+  })
+
+  it('case 4: artefact canonical, remote 3/3 plus a fourth policy → REFUSE', () => {
+    const extra = [...CANONICAL_SURFACE, pol('temp_debug', 'SELECT', 'true', null)]
+    expect(reconcile({ live: live({ policies: extra }) }).verified).toBe(false)
+  })
+
+  it('case 5: artefact canonical, remote role widened → REFUSE', () => {
+    const widened = CANONICAL_SURFACE.map((p) =>
+      p.policyname === 'select_evidence' ? { ...p, roles: '{authenticated,service_role}' } : p,
+    )
+    expect(reconcile({ live: live({ policies: widened }) }).verified).toBe(false)
+  })
+
+  it('case 6: artefact canonical, remote predicate differs → REFUSE', () => {
+    const widened = CANONICAL_SURFACE.map((p) =>
+      p.policyname === 'select_evidence' ? { ...p, qual: `((${SEL_PRED}) OR true)` } : p,
+    )
+    expect(reconcile({ live: live({ policies: widened }) }).verified).toBe(false)
+  })
+
+  it('case 7: a STALE artefact that disagrees with a canonical live surface → REFUSE', () => {
+    // Both sides are individually "fine": live is canonical, the artefact
+    // describes a real past state. They disagree, so nothing is verified.
+    const stale = [...CANONICAL_SURFACE, pol('update_evidence', 'UPDATE', WRITE_PRED, WRITE_PRED)]
+    expect(reconcile({ artefactPolicies: stale }).verified).toBe(false)
+  })
+
+  it('case 8: an artefact recorded against another project → REFUSE', () => {
+    expect(reconcile({ artefactProjectRef: 'aaaaaaaaaaaaaaaaaaaa' }).verified).toBe(false)
+    expect(reconcile({ artefactProjectRef: PROD }).verified).toBe(false)
+  })
+
+  it('refuses an artefact with no target binding at all', () => {
+    expect(reconcile({ artefactProjectRef: null }).verified).toBe(false)
+  })
+
+  it('refuses when the live measurement could not be taken', () => {
+    expect(reconcile({ live: null }).verified).toBe(false)
+  })
+
+  it('refuses when the artefact is absent, even with a canonical live surface', () => {
+    const v = reconcile({ artefactPolicies: null })
+    expect(v.verified).toBe(false)
+    // Names the missing record, so the operator knows the live surface was fine
+    // and what is absent is the durable observation of it.
+    expect(v.reasons.join(' ')).toContain('hosted-storage-boundary.json')
+  })
+
+  it('refuses when RLS on storage.objects is off or unmeasured', () => {
+    expect(reconcile({ live: live({ rlsEnabled: false }) }).verified).toBe(false)
+    expect(reconcile({ live: live({ rlsEnabled: null }) }).verified).toBe(false)
+  })
+
+  it('refuses when PART A is not journalled, however good the surface looks', () => {
+    expect(reconcile({ partAJournalled: false }).verified).toBe(false)
+  })
+})
+
+describe('B1 — the live probes', () => {
+  const probes = [STORAGE_POLICIES_PROBE_SQL, STORAGE_HELPERS_PROBE_SQL, STORAGE_RLS_PROBE_SQL]
+
+  it('reads only, in a read-only transaction that rolls back', () => {
+    for (const sql of probes) {
+      expect(sql.startsWith('BEGIN READ ONLY;')).toBe(true)
+      expect(sql.trimEnd().endsWith('ROLLBACK;')).toBe(true)
+      expect(sql).not.toMatch(/\b(INSERT|UPDATE|DELETE|TRUNCATE|CREATE|DROP|ALTER|GRANT|REVOKE)\b/i)
+    }
+  })
+
+  it('scopes the policy probe to storage.objects', () => {
+    expect(STORAGE_POLICIES_PROBE_SQL).toContain("schemaname = 'storage'")
+    expect(STORAGE_POLICIES_PROBE_SQL).toContain("tablename = 'objects'")
+  })
+
+  it('asks for every field the surface comparison needs', () => {
+    for (const field of ['schemaname', 'tablename', 'policyname', 'roles', 'cmd', 'qual', 'with_check']) {
+      expect(STORAGE_POLICIES_PROBE_SQL, field).toContain(field)
+    }
+  })
+
+  it('measures RLS and the evidence bucket from the catalogue', () => {
+    expect(STORAGE_RLS_PROBE_SQL).toContain('relrowsecurity')
+    expect(STORAGE_RLS_PROBE_SQL).toContain('uellix-evidence')
+  })
+
+  it('carries no psql meta-command that would escape the transaction', () => {
+    for (const sql of probes) expect(sql).not.toMatch(/(^|\n)\s*\\/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// C2 — the surface matrix, per policy
+//
+// Audit found the violations were exercised almost entirely against
+// select_evidence, and a mutation reducing the verifier's loop to 2 of 3
+// survived the whole suite. Every policy now carries its own row.
+// ---------------------------------------------------------------------------
+
+describe('C2 — surface violations, for each of the three policies', () => {
+  const surfaceOf = (policies: readonly ObservedStoragePolicy[]) =>
+    verifyStoragePolicySurface(policies).passed
+
+  const replace = (name: string, patch: Partial<ObservedStoragePolicy>) =>
+    CANONICAL_SURFACE.map((p) => (p.policyname === name ? { ...p, ...patch } : p))
+
+  it('accepts the canonical surface — the positive control', () => {
+    expect(surfaceOf(CANONICAL_SURFACE)).toBe(true)
+  })
+
+  for (const [name, ownSlot, ownPred, otherSlot] of [
+    ['select_evidence', 'qual', SEL_PRED, 'withCheck'],
+    ['insert_evidence', 'withCheck', WRITE_PRED, 'qual'],
+    ['delete_evidence', 'qual', WRITE_PRED, 'withCheck'],
+  ] as const) {
+    describe(name, () => {
+      it('refuses the wrong command', () => {
+        expect(surfaceOf(replace(name, { cmd: 'ALL' }))).toBe(false)
+      })
+      it('refuses a widened role', () => {
+        expect(surfaceOf(replace(name, { roles: '{authenticated,anon}' }))).toBe(false)
+        expect(surfaceOf(replace(name, { roles: '{public}' }))).toBe(false)
+        expect(surfaceOf(replace(name, { roles: '{authenticated,service_role}' }))).toBe(false)
+      })
+      it('refuses a weakened bucket predicate', () => {
+        expect(surfaceOf(replace(name, { [ownSlot]: ownPred.replace("'uellix-evidence'", "'uellix-evidence-2'") }))).toBe(false)
+        expect(surfaceOf(replace(name, { [ownSlot]: ownPred.replace(/\(bucket_id = '[^']+'\) AND /, '') }))).toBe(false)
+      })
+      it('refuses the wrong isolation helper', () => {
+        expect(surfaceOf(replace(name, { [ownSlot]: ownPred.replace('public.can_', 'public.bypass_can_') }))).toBe(false)
+      })
+      it('refuses OR true appended to its predicate', () => {
+        expect(surfaceOf(replace(name, { [ownSlot]: `((${ownPred}) OR true)` }))).toBe(false)
+      })
+      it('refuses an empty predicate in its own slot', () => {
+        expect(surfaceOf(replace(name, { [ownSlot]: null }))).toBe(false)
+      })
+      it('refuses a predicate appearing in the other slot', () => {
+        expect(surfaceOf(replace(name, { [otherSlot]: ownPred }))).toBe(false)
+      })
+      it('refuses its absence', () => {
+        expect(surfaceOf(CANONICAL_SURFACE.filter((p) => p.policyname !== name))).toBe(false)
+      })
+      it('refuses it living on the wrong table', () => {
+        expect(surfaceOf(replace(name, { tablename: 'buckets' }))).toBe(false)
+      })
+      it('refuses it living in the wrong schema', () => {
+        expect(surfaceOf(replace(name, { schemaname: 'public' }))).toBe(false)
+      })
+    })
+  }
+
+  it('refuses a fourth policy, permissive or restrictive-looking', () => {
+    expect(surfaceOf([...CANONICAL_SURFACE, pol('temp_debug', 'SELECT', 'true', null)])).toBe(false)
+    expect(surfaceOf([...CANONICAL_SURFACE, pol('deny_all', 'ALL', 'false', null)])).toBe(false)
+  })
+
+  it('refuses update_evidence, which PART B drops and never creates', () => {
+    expect(surfaceOf([...CANONICAL_SURFACE, pol('update_evidence', 'UPDATE', WRITE_PRED, WRITE_PRED)])).toBe(false)
+  })
+
+  it('FAILS IF THE VERIFIER STOPS ITERATING ALL THREE', () => {
+    // The mutation that survived: EXPECTED_STORAGE_POLICY_SURFACE.slice(0, 2).
+    // Checking 2-of-3 cases is not enough — a corrupted THIRD policy has to be
+    // caught by its own case, and the contract's length has to be pinned too.
+    expect(EXPECTED_STORAGE_POLICY_SURFACE).toHaveLength(3)
+    expect(EXPECTED_STORAGE_POLICY_SURFACE.map((p) => p.policyname)).toEqual([
+      'select_evidence',
+      'insert_evidence',
+      'delete_evidence',
+    ])
+    for (const expected of EXPECTED_STORAGE_POLICY_SURFACE) {
+      const slot = expected.predicateKind === 'qual' ? 'qual' : 'withCheck'
+      expect(surfaceOf(replace(expected.policyname, { [slot]: 'true' })), expected.policyname).toBe(false)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
 // 3/7. Secrets never reach a log line
 // ---------------------------------------------------------------------------
 
@@ -1148,6 +1427,16 @@ describe('psql probe flags', () => {
 
   it('ignores the operator personal psqlrc', () => {
     expect(PSQL_PROBE_FLAGS).toContain('-X')
+  })
+
+  it('stops on the first error, so a failed probe cannot exit 0', () => {
+    // C3. The flag was present and unpinned: mutating it to 0 passed the whole
+    // suite. A probe that runs past an error and exits 0 hands the parser a
+    // partial result, and "ambiguous is a refusal" only works if the exit code
+    // is honest first.
+    expect(PSQL_PROBE_FLAGS).toContain('ON_ERROR_STOP=1')
+    expect(PSQL_PROBE_FLAGS[PSQL_PROBE_FLAGS.indexOf('ON_ERROR_STOP=1') - 1]).toBe('-v')
+    expect(PSQL_PROBE_FLAGS).not.toContain('ON_ERROR_STOP=0')
   })
 })
 

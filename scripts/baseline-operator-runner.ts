@@ -30,21 +30,23 @@ import path from 'node:path'
 import { BASELINE_UNITS, type BaselineUnit } from '../db/hosted/baseline-manifest'
 import { verifyBaselineManifest } from '../db/hosted/baseline-manifest'
 import { scanBaselineSql } from '../db/hosted/baseline-scanner'
-import { wrapperCarriesJournalAppend, wrapperPathFor } from '../db/hosted/baseline-journal-wrapper'
+import { wrapperCarriesJournalAppend, wrapperPathFor, STORAGE_UNIT_ID } from '../db/hosted/baseline-journal-wrapper'
 import type { JournalRow } from '../db/hosted/baseline-journal'
-import {
-  STORAGE_BOUNDARY_ARTEFACT,
-  evaluateStorageBoundaryArtefact,
-  type StorageBoundaryArtefact,
-} from '../db/hosted/managed-policy-channel'
+import { STORAGE_BOUNDARY_ARTEFACT, type StorageBoundaryArtefact } from '../db/hosted/managed-policy-channel'
+import type { ObservedStoragePolicy } from '../db/hosted/baseline-postconditions'
 import {
   CATALOGUE_TABLES_SQL,
   JOURNAL_SNAPSHOT_SQL,
   LEDGER_BOOTSTRAP_PROBE_SQL,
   OPERATOR_EXIT,
   PSQL_PROBE_FLAGS,
+  STORAGE_HELPERS_PROBE_SQL,
+  STORAGE_POLICIES_PROBE_SQL,
+  STORAGE_RLS_PROBE_SQL,
   applyArgv,
   describeProbeOutput,
+  reconcileStorageEvidence,
+  type StorageLiveEvidence,
   parsePsqlJson,
   deriveNextUnit,
   evaluateCompletion,
@@ -313,20 +315,72 @@ function main(): void {
 
   const created = tablesCreatedByUnit()
 
-  // THE STORAGE BOUNDARY EVIDENCE.
+  // THE STORAGE BOUNDARY EVIDENCE — TWO WITNESSES.
   //
-  // Derived from the artefact `pnpm boundary:status:write` verifies, which holds
-  // what pg_proc and pg_policies said and what B0-16 concluded. Never a claim
-  // the operator types, never the journal. An absent artefact yields false with
-  // a stated reason, because unmeasured is not verified.
+  // Independent audit demonstrated that reading the artefact alone let a
+  // hand-written JSON derive 042 with PART B never installed. So the catalogue
+  // is measured LIVE, read-only, through this same connection, and the artefact
+  // is kept as the durable record that must agree with it.
+  //
+  // Measured only when the journal already records unit 41: before that the
+  // boundary is not in play and three extra round-trips per loop would buy
+  // nothing.
   let boundaryArtefact: StorageBoundaryArtefact | null = null
+  let artefactProjectRef: string | null = null
   try {
-    boundaryArtefact = JSON.parse(readFileSync(path.join(ROOT, STORAGE_BOUNDARY_ARTEFACT), 'utf8')) as StorageBoundaryArtefact
+    const raw = JSON.parse(readFileSync(path.join(ROOT, STORAGE_BOUNDARY_ARTEFACT), 'utf8')) as
+      StorageBoundaryArtefact & { projectRef?: string }
+    boundaryArtefact = raw
+    artefactProjectRef = typeof raw.projectRef === 'string' ? raw.projectRef : null
   } catch {
     boundaryArtefact = null
   }
-  const storageEvidence = evaluateStorageBoundaryArtefact(boundaryArtefact)
-  say(`STORAGE BOUNDARY: ${storageEvidence.state} — managedBoundaryVerified=${storageEvidence.managedBoundaryVerified}`)
+
+  /** Measures the storage catalogue live. Read-only, three probes, no writes. */
+  const measureStorage = (): StorageLiveEvidence | null => {
+    const policies = probe<
+      { schemaname: string; tablename: string; policyname: string; roles: string; cmd: string; qual: string | null; with_check: string | null }[]
+    >(STORAGE_POLICIES_PROBE_SQL, 'storage policies')
+    const helpers = probe<{ name: string; security_definer: boolean; proconfig: string }[]>(
+      STORAGE_HELPERS_PROBE_SQL,
+      'storage helpers',
+    )
+    const rls = probe<{ rls_enabled: boolean | null; evidence_bucket_count: number }[]>(
+      STORAGE_RLS_PROBE_SQL,
+      'storage rls + bucket',
+    )[0]
+    if (rls === undefined) return null
+    return {
+      helpers: helpers.map((h) => h.name),
+      policies: policies.map<ObservedStoragePolicy>((p) => ({
+        schemaname: p.schemaname,
+        tablename: p.tablename,
+        policyname: p.policyname,
+        roles: p.roles,
+        cmd: p.cmd,
+        qual: p.qual,
+        withCheck: p.with_check,
+      })),
+      rlsEnabled: rls.rls_enabled,
+      bucketPresent: Number(rls.evidence_bucket_count) > 0,
+    }
+  }
+
+  /** The boundary verdict, recomputed from the live catalogue every iteration. */
+  const storageVerified = (rows: readonly JournalRow[]): boolean => {
+    const partAJournalled = rows.some((r) => r.packageId === STORAGE_UNIT_ID && r.status === 'APPLIED')
+    if (!partAJournalled) return false
+    const verdict = reconcileStorageEvidence({
+      live: measureStorage(),
+      artefact: boundaryArtefact,
+      artefactProjectRef,
+      targetProjectRef: env.projectRef,
+      partAJournalled,
+    })
+    say(`STORAGE BOUNDARY: ${verdict.state} — verified=${verdict.verified}`)
+    for (const reason of verdict.reasons) say(`  - ${reason}`)
+    return verdict.verified
+  }
 
   // ---- the loop -----------------------------------------------------------
   for (;;) {
@@ -337,7 +391,7 @@ function main(): void {
         expectedProjectRef: env.projectRef,
         observedTables: catalogueTables(),
         tablesCreatedByUnit: created,
-        storageBoundaryVerified: storageEvidence.managedBoundaryVerified,
+        storageBoundaryVerified: storageVerified(rows),
       }),
     )
     state.lastCommittedUnit = position.lastCommittedUnit
@@ -350,7 +404,7 @@ function main(): void {
           expectedProjectRef: env.projectRef,
           observedTables: catalogueTables(),
           tablesCreatedByUnit: created,
-          storageBoundaryVerified: storageEvidence.managedBoundaryVerified,
+          storageBoundaryVerified: storageVerified(rows),
         }),
       )
       say('')

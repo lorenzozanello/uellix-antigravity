@@ -38,6 +38,12 @@ import { scanBaselineSql } from './baseline-scanner'
 import { sha256OfSql } from './hosted-package-manifest'
 import { STORAGE_UNIT_ID, PROJECT_REF_VAR } from './baseline-journal-wrapper'
 import {
+  STORAGE_BOUNDARY_ARTEFACT,
+  evaluateStorageBoundaryArtefact,
+  type StorageBoundaryArtefact,
+} from './managed-policy-channel'
+import type { ObservedStoragePolicy } from './baseline-postconditions'
+import {
   KNOWN_PRODUCTION_IDENTIFIERS,
   KNOWN_STAGING_PROJECT_REF,
   SESSION_POOLER_PORT,
@@ -1026,6 +1032,199 @@ export function keySegmentCount(expression: string): number {
     .split('||')
     .map((part) => part.trim())
     .filter((part) => part !== `'.'`).length
+}
+
+// ---------------------------------------------------------------------------
+// B1 — LIVE CORROBORATION OF THE STORAGE BOUNDARY
+//
+// Independent audit demonstrated the vector by composition: a hand-written
+// `artifacts/hosted-storage-boundary.json` carrying the three canonical shapes
+// made the runner derive 042 with PART B never installed. The evaluator was
+// right; its INPUT was a local file nobody had checked against the database.
+//
+// The round before rejected the REMOTE journal as sufficient evidence, on the
+// grounds that a row can be fabricated. A LOCAL FILE IS WEAKER THAN THAT — it
+// needs a text editor, not database write access. Replacing one with the other
+// and calling it a hardening was the defect.
+//
+// So authority moves to a live read-only measurement of the same target, taken
+// through the same connection the runner already uses for the journal. The
+// artefact is kept, because a decision with no durable record is a decision
+// nobody can audit later — but it is now the SECOND of two witnesses, and they
+// must agree.
+// ---------------------------------------------------------------------------
+
+/** pg_policies, scoped to the one table PART B touches. */
+export const STORAGE_POLICIES_PROBE_SQL = readOnly(
+  jsonRows(`
+    SELECT schemaname, tablename, policyname, roles::text AS roles, cmd,
+           qual, with_check
+    FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+    ORDER BY policyname
+  `),
+)
+
+/** The two PART A helpers, with the attributes that make them safe. */
+export const STORAGE_HELPERS_PROBE_SQL = readOnly(
+  jsonRows(`
+    SELECT (n.nspname || '.' || p.proname) AS name,
+           p.prosecdef AS security_definer,
+           coalesce(array_to_string(p.proconfig, ','), '') AS proconfig
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname IN ('can_read_evidence_object', 'can_write_evidence_object')
+    ORDER BY 1
+  `),
+)
+
+/** RLS on storage.objects, and whether the bucket the predicates gate on exists. */
+export const STORAGE_RLS_PROBE_SQL = readOnly(
+  jsonRows(`
+    SELECT
+      (SELECT c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'storage' AND c.relname = 'objects') AS rls_enabled,
+      (SELECT count(*) FROM storage.buckets WHERE id = 'uellix-evidence') AS evidence_bucket_count
+  `),
+)
+
+/** What the live probes measured. `null` anywhere means NOT MEASURED. */
+export interface StorageLiveEvidence {
+  readonly helpers: readonly string[]
+  readonly policies: readonly ObservedStoragePolicy[]
+  readonly rlsEnabled: boolean | null
+  readonly bucketPresent: boolean | null
+}
+
+export interface StorageEvidenceVerdict {
+  readonly verified: boolean
+  readonly state: string
+  readonly reasons: readonly string[]
+}
+
+/**
+ * A stable fingerprint of one policy, for comparing two witnesses.
+ *
+ * Whitespace is collapsed because the artefact is transcribed from a terminal
+ * and psql wraps; everything semantic is preserved verbatim. This is NOT the
+ * surface check — `verifyStoragePolicySurface` already ran over the live rows
+ * and compared them to the canonical text. This only asks "do the two witnesses
+ * describe the same database?", so it must not normalize away anything the
+ * surface check would have caught.
+ */
+const policyFingerprint = (p: ObservedStoragePolicy): string =>
+  [
+    p.schemaname,
+    p.tablename,
+    p.policyname,
+    p.cmd.toUpperCase(),
+    p.roles.replace(/\s/g, ''),
+    (p.qual ?? '').replace(/\s+/g, ' ').trim(),
+    (p.withCheck ?? '').replace(/\s+/g, ' ').trim(),
+  ].join('|')
+
+const HELPER_NAMES = ['public.can_read_evidence_object', 'public.can_write_evidence_object'] as const
+
+/**
+ * TWO WITNESSES, AND THEY MUST AGREE.
+ *
+ * A — the live catalogue, measured read-only through the connection whose
+ *     identity the pooler login role already corroborated.
+ * B — the local artefact, the durable record `boundary:status:verify` checks.
+ *
+ * Neither alone crosses the boundary. A fabricated artefact fails because the
+ * catalogue contradicts it. A stale artefact fails for the same reason even
+ * when the live surface is perfect — because "the operator recorded something
+ * that was true once" is not the same claim as "the operator looked at this".
+ * And an unmeasurable catalogue fails outright: unmeasured is never verified.
+ */
+export function reconcileStorageEvidence(input: {
+  readonly live: StorageLiveEvidence | null
+  readonly artefact: StorageBoundaryArtefact | null
+  /** The project ref the artefact declares it was recorded against. */
+  readonly artefactProjectRef: string | null
+  /** The ref the CONNECTION resolves to, already corroborated by the pooler role. */
+  readonly targetProjectRef: string
+  readonly partAJournalled: boolean
+}): StorageEvidenceVerdict {
+  const reasons: string[] = []
+
+  if (input.live === null) {
+    return {
+      verified: false,
+      state: 'UNIT_41_UNMEASURED',
+      reasons: [
+        'the live storage probes did not return a usable measurement. An unmeasurable catalogue is a ' +
+          'refusal — the artefact cannot stand in for it, which is the whole point of measuring.',
+      ],
+    }
+  }
+  const live = input.live
+
+  // TARGET BINDING FIRST. An artefact recorded against localhost or another
+  // project describes another database, however canonical its contents look.
+  if (input.artefactProjectRef === null || input.artefactProjectRef.trim() === '') {
+    reasons.push(
+      `${STORAGE_BOUNDARY_ARTEFACT} declares no projectRef. An unattributed observation could describe ` +
+        `any database, including the one it was copied from.`,
+    )
+  } else if (input.artefactProjectRef !== input.targetProjectRef) {
+    reasons.push(
+      `${STORAGE_BOUNDARY_ARTEFACT} was recorded against ${input.artefactProjectRef}; this connection ` +
+        `resolves to ${input.targetProjectRef}.`,
+    )
+  }
+
+  if (live.rlsEnabled !== true) {
+    reasons.push(
+      live.rlsEnabled === null
+        ? 'RLS on storage.objects was not measured. Policies on a table without RLS are decoration.'
+        : 'RLS is NOT enabled on storage.objects.',
+    )
+  }
+  for (const helper of HELPER_NAMES) {
+    if (!live.helpers.includes(helper)) reasons.push(`${helper} is absent from pg_proc on the target.`)
+  }
+
+  // THE LIVE SURFACE, judged by the same function B0-16 uses. Role, command,
+  // predicate slot, bucket filter, isolation helper, and no extra policy.
+  const liveVerdict = evaluateStorageBoundaryArtefact({
+    helpersPresent: HELPER_NAMES.every((h) => live.helpers.includes(h)),
+    policies: live.policies,
+    journal: { partAApplied: input.partAJournalled, boundary: 'ABSENT' },
+  })
+  if (!liveVerdict.managedBoundaryVerified) {
+    reasons.push(`live surface: ${liveVerdict.problems.join(' | ') || 'not verified'}`)
+  }
+
+  // THE SECOND WITNESS.
+  if (input.artefact === null) {
+    reasons.push(
+      `${STORAGE_BOUNDARY_ARTEFACT} does not exist. The live catalogue may be correct, but nothing ` +
+        `durable records that anyone observed it, and the boundary is an auditable event.`,
+    )
+  } else {
+    const recorded = (input.artefact.policies ?? null)
+    if (recorded === null) {
+      reasons.push(`${STORAGE_BOUNDARY_ARTEFACT} records no policies, so the two witnesses cannot be compared.`)
+    } else {
+      const a = [...recorded].map(policyFingerprint).sort()
+      const b = [...live.policies].map(policyFingerprint).sort()
+      if (a.length !== b.length || a.some((f, i) => f !== b[i])) {
+        reasons.push(
+          `the artefact and the live catalogue disagree. Recorded ${a.length} polic(ies), measured ` +
+            `${b.length}. A record that does not match what is there is stale, copied, or written by hand — ` +
+            `and none of those is an observation of this database.`,
+        )
+      }
+    }
+  }
+
+  return {
+    verified: reasons.length === 0,
+    state: reasons.length === 0 ? 'UNIT_41_COMPLETE' : liveVerdict.state,
+    reasons,
+  }
 }
 
 export function postconditionProbeSql(expectation: StructuralExpectation): string {
