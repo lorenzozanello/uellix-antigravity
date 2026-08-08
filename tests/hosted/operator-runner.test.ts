@@ -53,6 +53,7 @@ import {
   sqlIdentifier,
   sqlLiteral,
   deriveNextUnit,
+  journalCheckpoint,
   evaluateLedgerBootstrap,
   evaluateOperatorEnvironment,
   evaluateRepoState,
@@ -1234,6 +1235,77 @@ describe('C2 — surface violations, for each of the three policies', () => {
       const slot = expected.predicateKind === 'qual' ? 'qual' : 'withCheck'
       expect(surfaceOf(replace(expected.policyname, { [slot]: 'true' })), expected.policyname).toBe(false)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// THE HUMAN-BOUNDARY REPORT
+//
+// The first real run after PART A decided correctly — 042 stayed blocked — and
+// then reported `lastCommittedUnit = none, journalCount = 0` while the same
+// process had just measured the 041 row. The state fields were assigned AFTER
+// `deriveNextUnit`, so a refusal FROM that call printed the initial values.
+//
+// A report that contradicts the evidence teaches the operator to distrust the
+// report. The checkpoint is therefore computed from the rows BEFORE any decision
+// is taken, and the decision is untouched.
+// ---------------------------------------------------------------------------
+
+describe('journal checkpoint (reporting only)', () => {
+  const through = (n: number) => Array.from({ length: n }, (_, i) => rowFor(i + 1))
+
+  it('reports 41 units and the storage unit after PART A', () => {
+    const c = journalCheckpoint(through(41))
+    expect(c.journalCount).toBe(41)
+    expect(c.lastCommittedUnit).toBe('20260716000001_storage_policies.sql')
+    expect(c.storageRecorded).toBe(true)
+  })
+
+  it('reports 40 units and unit 040 before PART A', () => {
+    const c = journalCheckpoint(through(40))
+    expect(c.journalCount).toBe(40)
+    expect(c.lastCommittedUnit).toBe('20260716000000_auth_trigger.sql')
+    expect(c.storageRecorded).toBe(false)
+    expect(c.nextUnitId).toBe('20260716000001_storage_policies.sql')
+  })
+
+  it('reports nothing committed on an empty journal', () => {
+    const c = journalCheckpoint([])
+    expect(c.journalCount).toBe(0)
+    expect(c.lastCommittedUnit).toBeNull()
+    expect(c.nextUnitId).toBe('0000_quick_husk.sql')
+  })
+
+  it('counts only APPLIED rows', () => {
+    const rows = [...through(39), rowFor(40, { status: 'FAILED' })]
+    expect(journalCheckpoint(rows).journalCount).toBe(39)
+  })
+
+  it('reports the contiguous prefix, not the raw row count', () => {
+    // A journal holding 1,2 and 5 has three rows and a checkpoint of two. The
+    // decision refuses this state anyway; the report must not overstate it.
+    const c = journalCheckpoint([rowFor(1), rowFor(2), rowFor(5)])
+    expect(c.journalCount).toBe(2)
+    expect(c.lastCommittedUnit).toBe(BASELINE_UNITS[1]!.id)
+  })
+
+  it('ignores a row naming a unit the manifest does not have', () => {
+    const rows = [...through(40), rowFor(1, { packageId: 'not_a_unit.sql' })]
+    expect(journalCheckpoint(rows).journalCount).toBe(40)
+  })
+
+  it('does NOT change the decision it reports on', () => {
+    // The regression guard. Fixing the message must not move the boundary.
+    const v = deriveNextUnit({
+      rows: through(41),
+      expectedProjectRef: STAGING,
+      observedTables: observedFor(41),
+      tablesCreatedByUnit: tablesByUnit,
+      storageBoundaryVerified: false,
+    })
+    expect(codeOf(v)).toBe('OPERATOR_STORAGE_HUMAN_BOUNDARY')
+    // …and the checkpoint of that very state is still the honest 41.
+    expect(journalCheckpoint(through(41)).journalCount).toBe(41)
   })
 })
 

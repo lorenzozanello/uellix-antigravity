@@ -467,6 +467,55 @@ export interface NextUnitVerdict {
   readonly journalCount: number
 }
 
+export interface JournalCheckpoint {
+  /** Highest unit of the contiguous manifest prefix recorded APPLIED. */
+  readonly lastCommittedUnit: string | null
+  /** Length of that prefix. NOT the raw row count — see below. */
+  readonly journalCount: number
+  /** The unit that follows the prefix, or null when all fifty are recorded. */
+  readonly nextUnitId: string | null
+  readonly storageRecorded: boolean
+}
+
+/**
+ * WHERE THE RUN IS, FOR THE REPORT ONLY. THIS DECIDES NOTHING.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY IT EXISTS
+ * ---------------------------------------------------------------------------
+ * The first real run after PART A refused correctly — 042 stayed blocked — and
+ * then printed `lastCommittedUnit = none, journalCount = 0` while the same
+ * process had just measured the 041 row and said so two lines earlier. The
+ * driver assigned those fields from `deriveNextUnit`'s RESULT, so a refusal from
+ * that call left the initial values in place.
+ *
+ * A report that contradicts the evidence beside it teaches the operator to
+ * distrust the report, and the report is how a governed boundary explains
+ * itself. So the checkpoint is computed from the rows BEFORE any decision runs.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY IT IS NOT A SECOND SPELLING OF THE DECISION
+ * ---------------------------------------------------------------------------
+ * It deliberately does LESS than `deriveNextUnit`: no catalogue cross-check, no
+ * sha comparison, no project-ref check, no boundary. It answers one question —
+ * "how far does the contiguous chain go?" — and it reports the PREFIX rather
+ * than the row count, so a journal holding 1, 2 and 5 reports two rather than
+ * overstating three. Anything that could authorise an apply stays in
+ * `deriveNextUnit`, which is unchanged, and a test pins that the boundary still
+ * refuses in exactly the state this function describes.
+ */
+export function journalCheckpoint(rows: readonly JournalRow[]): JournalCheckpoint {
+  const applied = new Set(rows.filter((r) => r.status === 'APPLIED').map((r) => r.packageId))
+  let count = 0
+  while (count < BASELINE_UNITS.length && applied.has(BASELINE_UNITS[count]!.id)) count += 1
+  return {
+    lastCommittedUnit: count === 0 ? null : BASELINE_UNITS[count - 1]!.id,
+    journalCount: count,
+    nextUnitId: count >= BASELINE_UNITS.length ? null : BASELINE_UNITS[count]!.id,
+    storageRecorded: applied.has(STORAGE_UNIT_ID),
+  }
+}
+
 export function deriveNextUnit(input: {
   readonly rows: readonly JournalRow[]
   readonly expectedProjectRef: string

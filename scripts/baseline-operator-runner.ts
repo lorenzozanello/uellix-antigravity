@@ -49,6 +49,7 @@ import {
   type StorageLiveEvidence,
   parsePsqlJson,
   deriveNextUnit,
+  journalCheckpoint,
   evaluateCompletion,
   evaluateLedgerBootstrap,
   evaluateOperatorEnvironment,
@@ -385,6 +386,20 @@ function main(): void {
   // ---- the loop -----------------------------------------------------------
   for (;;) {
     const rows = journalRows()
+    // THE CHECKPOINT IS SET BEFORE ANY DECISION RUNS.
+    //
+    // `deriveNextUnit` can REFUSE, and `orHalt` exits inside it. Assigning these
+    // fields from its result meant every refusal from that call printed the
+    // initial `none / none / 0` — which is how the first run after PART A
+    // reported "journalCount = 0" two lines under its own measurement of the 041
+    // row. Reporting only; the decision below is unchanged.
+    const checkpoint = journalCheckpoint(rows)
+    state.lastCommittedUnit = checkpoint.lastCommittedUnit
+    state.journalCount = checkpoint.journalCount
+    // When the storage boundary is what blocks, the unit that is not COMPLETE is
+    // 041 itself — not whatever ordinal follows it in the manifest.
+    state.expectedOrFailedUnit = checkpoint.storageRecorded ? STORAGE_UNIT_ID : checkpoint.nextUnitId
+
     const position = orHalt(
       deriveNextUnit({
         rows,
