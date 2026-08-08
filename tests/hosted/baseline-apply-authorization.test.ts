@@ -24,6 +24,7 @@ import {
 import {
   KNOWN_PRODUCTION_IDENTIFIERS,
   productionDenylistStatus,
+  projectRefFromPoolerUser,
   verifyStagingTarget,
 } from '@/db/hosted/target-identity'
 import { BASELINE_POSTCONDITIONS } from '@/db/hosted/baseline-postconditions'
@@ -104,6 +105,8 @@ function satisfying(): ApplyAuthorizationInputs {
         declaredEnvironment: 'staging',
         projectRef: STAGING_REF,
         connectionHost: `db.${STAGING_REF}.supabase.co`,
+        // Direct connection: the host carries the ref, so no pooler role.
+        poolerUser: null,
       },
       query: 'read from the Supabase dashboard',
       measuredBy: 'operator',
@@ -810,5 +813,81 @@ describe('every blocker carries its four parts separately', () => {
     const a0 = report().baselineStartGate.blocking.find((b) => b.id === 'checkpoint-a0-pass')!
     expect(a0.observedEvidence).not.toBe(a0.reason)
     expect(a0.sourceArtifact).not.toBe(a0.expectedProperty)
+  })
+})
+
+describe('the Session Pooler names the project in its LOGIN ROLE, not its host', () => {
+  const corroboration = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'target-identity-corroborated')!
+  const viaPooler = (poolerUser: string | null) => {
+    const base = satisfying()
+    return corroboration.evaluate({
+      ...base,
+      stagingIdentity: {
+        ...base.stagingIdentity!,
+        value: {
+          ...base.stagingIdentity!.value,
+          connectionHost: 'aws-0-us-east-2.pooler.supabase.com',
+          poolerUser,
+        },
+      },
+    })
+  }
+
+  it('corroborates through the pooler login role when the host cannot', () => {
+    const v = viaPooler(`postgres.${STAGING_REF}`)
+    expect(v.satisfied, v.detail).toBe(true)
+    expect(v.detail).toMatch(/Session Pooler login role/)
+  })
+
+  it('still refuses a pooler host with no login role recorded', () => {
+    const v = viaPooler(null)
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/no login role was recorded/)
+  })
+
+  // The whole point of signal 2: it must be able to DISAGREE with the
+  // declaration. A login role naming another project is the mismatch branch.
+  it('refuses a login role naming a different project than the declaration', () => {
+    const v = viaPooler('postgres.zzzzzzzzzzzzzzzzzzzz')
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/One is wrong and this gate will not guess which/)
+  })
+
+  it('refuses the production ref even when it is the one that routed the connection', () => {
+    const base = satisfying()
+    const v = corroboration.evaluate({
+      ...base,
+      production: KNOWN_PRODUCTION_IDENTIFIERS,
+      stagingIdentity: {
+        ...base.stagingIdentity!,
+        value: {
+          declaredEnvironment: 'staging',
+          projectRef: 'ctaxtgujyyprgynmnvtq',
+          connectionHost: 'aws-0-us-east-2.pooler.supabase.com',
+          poolerUser: 'postgres.ctaxtgujyyprgynmnvtq',
+        },
+      },
+    })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/production denylist/)
+  })
+
+  // A USERNAME IS NOT A CREDENTIAL, AND A DSN IS NOT A USERNAME. If an operator
+  // pastes a full connection string, it must be refused rather than stored.
+  it.each([
+    'postgres.bvyzblhqymxruxdguaee:hunter2',
+    'postgresql://postgres.bvyzblhqymxruxdguaee@aws-0-us-east-2.pooler.supabase.com:5432/postgres',
+    'postgres.bvyzblhqymxruxdguaee@host',
+    'postgres bvyzblhqymxruxdguaee',
+  ])('refuses %s, which could carry a credential', (value) => {
+    expect(projectRefFromPoolerUser(value)).toBeNull()
+    expect(viaPooler(value).satisfied).toBe(false)
+  })
+
+  it('parses only the exact postgres.<ref> shape', () => {
+    expect(projectRefFromPoolerUser(`postgres.${STAGING_REF}`)).toBe(STAGING_REF)
+    expect(projectRefFromPoolerUser('postgres')).toBeNull()
+    expect(projectRefFromPoolerUser('postgres.short')).toBeNull()
+    expect(projectRefFromPoolerUser('')).toBeNull()
   })
 })

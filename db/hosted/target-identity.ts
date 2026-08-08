@@ -286,6 +286,37 @@ export function classifySupabaseHost(host: string): SupabaseHostKind {
   return 'unknown'
 }
 
+/**
+ * The project ref out of a Supabase Session Pooler USERNAME.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE USERNAME, AND WHY IT IS NOT A SECRET
+ * ---------------------------------------------------------------------------
+ * A pooler host is regional and shared — `aws-0-us-east-2.pooler.supabase.com`
+ * is presented by every project in the region — so it cannot corroborate a
+ * project ref. The pooler puts the ref in the LOGIN ROLE instead:
+ * `postgres.<ref>`. That is the value the connection is actually routed by, so
+ * as a second signal it is stronger than the host, not weaker.
+ *
+ * It is a USERNAME. It carries no password, no token and no key, and the ref
+ * inside it is public — it appears in every URL the project serves. Accepting it
+ * therefore adds no secret to this repository, and the guard below refuses
+ * anything shaped like a connection string or carrying credentials, so a
+ * well-meaning paste of a full DSN is rejected rather than stored.
+ *
+ * The DATABASE user is NOT this value. `current_user` after connecting through
+ * the pooler is plain `postgres`, which is why the apply-identity probe cannot
+ * supply it and the operator must.
+ */
+export function projectRefFromPoolerUser(user: string): string | null {
+  const normalized = (user ?? '').trim()
+  if (normalized === '') return null
+  // Refuse anything that could carry a credential rather than parse around it.
+  if (/[:@/\s]/.test(normalized)) return null
+  const match = /^postgres\.([a-z]{20})$/.exec(normalized.toLowerCase())
+  return match && PROJECT_REF.test(match[1]) ? match[1] : null
+}
+
 export function projectRefFromHost(host: string): string | null {
   if (!host) return null
   const normalized = host.trim().toLowerCase()

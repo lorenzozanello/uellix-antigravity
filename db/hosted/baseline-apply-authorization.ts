@@ -79,6 +79,7 @@ import {
   classifySupabaseHost,
   productionDenylistStatus,
   projectRefFromHost,
+  projectRefFromPoolerUser,
   type ProductionIdentifiers,
 } from './target-identity'
 
@@ -153,6 +154,17 @@ export interface ApplyAuthorizationInputs {
     readonly declaredEnvironment: string
     readonly projectRef: string
     readonly connectionHost: string
+    /**
+     * The Session Pooler LOGIN ROLE, `postgres.<ref>`, when the connection went
+     * through the pooler.
+     *
+     * A pooler host is regional and shared and names no project; the pooler puts
+     * the ref in the login role instead, and that is what actually routes the
+     * connection. Not a secret: no password, no token, and the ref inside it is
+     * public. `null` when the connection was direct, in which case the host
+     * carries the ref and corroborates on its own.
+     */
+    readonly poolerUser: string | null
   }> | null
   /** The nine flags, as configured for every deployment pointing at the target. */
   readonly featureFlags: OperatorAttestation<Readonly<Record<string, string | boolean | undefined>>> | null
@@ -423,7 +435,18 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       if (declaredEnvironment !== 'staging') {
         return no(id, `declared environment is not exactly 'staging'.`)
       }
-      const derived = projectRefFromHost(connectionHost)
+      // EITHER SIGNAL, BECAUSE EITHER ONE INDEPENDENTLY NAMES THE PROJECT.
+      //
+      // A direct connection puts the ref in the host; the pooler puts it in the
+      // login role. Both are independent of the DECLARATION, which is what
+      // signal 2 is for. Taking only the host would refuse the operator's real
+      // connection forever, and rewriting their pooler host into a
+      // `db.<ref>.supabase.co` they never used would be fabricating the
+      // corroboration outright.
+      const { poolerUser } = inputs.stagingIdentity!.value
+      const fromHost = projectRefFromHost(connectionHost)
+      const fromPooler = projectRefFromPoolerUser(poolerUser ?? '')
+      const derived = fromHost ?? fromPooler
       if (derived === null) {
         // NAME THE CASE. A pooler host is not a wrong answer — it is the host
         // the operator genuinely connects to, and it is structurally incapable
@@ -437,10 +460,10 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
           id,
           kind === 'pooler'
             ? `the connection host is a Supabase SESSION POOLER host (${connectionHost}), which is ` +
-                `regional and shared across projects — the ref lives in the pooler username, not the ` +
-                `host. It records WHERE the probe connected, not WHICH project, so it cannot be the ` +
-                `second independent signal. A ref-bearing host closes it: db.<ref>.supabase.co or ` +
-                `<ref>.supabase.co.`
+                `regional and shared across projects — the ref lives in the pooler LOGIN ROLE, not the ` +
+                `host${poolerUser === null ? ', and no login role was recorded' : `, and '${poolerUser}' does not parse as postgres.<ref>`}. ` +
+                `Supply the pooler login role (postgres.<ref>) — a username, not a credential — or a ` +
+                `ref-bearing host.`
             : 'no project ref can be derived from the host, so the connection cannot corroborate the ' +
                 'declaration. A ref-bearing Supabase host is required.',
         )
@@ -455,7 +478,11 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       if (inputs.production.projectRefs.includes(projectRef)) {
         return no(id, 'the project ref is on the production denylist.')
       }
-      return yes(id, `staging target ${projectRef} corroborated by its own host, and vetoed by nothing`)
+      return yes(
+        id,
+        `staging target ${projectRef} corroborated by ` +
+          `${fromHost !== null ? `its connection host` : `its Session Pooler login role`}, and vetoed by nothing`,
+      )
     },
     negativeControl: {
       description: 'a host naming a different project than the declaration must fail',

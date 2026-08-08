@@ -125,6 +125,7 @@ interface ApplyIdentityArtefact {
   readonly queries?: readonly string[]
   /** The host the psql session connected to. Also absent, also not invented. */
   readonly connectionHost?: string
+  readonly poolerUser?: string
   readonly declaredEnvironment?: string
   readonly observed?: {
     readonly current_user?: string
@@ -353,6 +354,10 @@ export function loadMeasuredEvidence(input: {
               declaredEnvironment: identity.declaredEnvironment ?? editor?.targetRole ?? '',
               projectRef,
               connectionHost: identity.connectionHost,
+              poolerUser:
+                typeof identity.poolerUser === 'string' && identity.poolerUser.trim() !== ''
+                  ? identity.poolerUser.trim()
+                  : null,
             },
             'connection host and declared environment as recorded in the probe artefact',
             identity.measuredBy ?? '',

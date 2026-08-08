@@ -296,7 +296,7 @@ describe('the evidence is READ, not typed', () => {
   // it needed re-execution — it did not — so the values are now ingested from
   // the requirements document, which states each one explicitly. What is still
   // absent is the query text, and that is what keeps the criterion refusing.
-  it('ingests CHECKPOINT A0 rather than inventing it, and still refuses without its query', () => {
+  it('ingests CHECKPOINT A0 from its artefact, and it is now satisfied', () => {
     const evidence = loadMeasuredEvidence({ readJson, readBaselineSql: read, discoveredBaselineFiles: discovered() })
     expect(evidence.inputs.checkpointA0).not.toBeNull()
     expect(evidence.inputs.checkpointA0!.value).toMatchObject({
@@ -305,16 +305,27 @@ describe('the evidence is READ, not typed', () => {
       projectIsNew: true,
       stellaSurfaceAbsent: true,
       writesPerformed: 0,
+      publicRelationCount: 0,
     })
-    expect(evidence.inputs.checkpointA0!.query).toBe('')
-    expect(blockingIds(live())).toContain('checkpoint-a0-pass')
+    expect(evidence.inputs.checkpointA0!.query).toBe(CHECKPOINT_A0_SQL)
+    expect(blockingIds(live())).not.toContain('checkpoint-a0-pass')
   })
 
-  // NO DOUBLE STANDARD. `zero-production-data` read the same attestation and
-  // never demanded its provenance, so an A0 with no recorded query would have
-  // satisfied it while `checkpoint-a0-pass` refused the identical object.
+  // NO DOUBLE STANDARD, driven by INJECTION rather than by the artefact's
+  // current state. `zero-production-data` used to read the A0 attestation
+  // without demanding its provenance, so an A0 with no recorded query would have
+  // satisfied it while `checkpoint-a0-pass` refused the identical object. Strip
+  // the query and BOTH must refuse — that is the property, and it survives the
+  // evidence changing underneath it.
   it('holds zero-production-data to the same provenance standard as A0 itself', () => {
-    expect(blockingIds(live())).toContain('zero-production-data')
+    const noQuery = (rel: string) => {
+      const value = readJson(rel)
+      if (rel !== CHECKPOINT_A0_ARTEFACT || value === null) return value
+      return { ...(value as object), queries: [] }
+    }
+    const ids = blockingIds(live(noQuery))
+    expect(ids).toContain('checkpoint-a0-pass')
+    expect(ids).toContain('zero-production-data')
   })
 
   it('refuses to invent A0 when its artefact is absent', () => {
@@ -385,9 +396,10 @@ describe('the report cannot diverge from the gate', () => {
     expect(live().applyAuthorized).toBe(false)
   })
 
-  it('publishes more than one blocker, and each with its four parts', () => {
-    expect(onDisk.blockingCount).toBeGreaterThanOrEqual(2)
-    expect(onDisk.blockingIds).toContain('checkpoint-a0-pass')
+  it('publishes the blockers the gate computes, and A0 is no longer among them', () => {
+    expect(onDisk.blockingIds).toEqual(blockingIds(live()))
+    expect(onDisk.blockingIds).not.toContain('checkpoint-a0-pass')
+    expect(onDisk.blockingIds).not.toContain('zero-production-data')
   })
 })
 
@@ -424,13 +436,16 @@ describe('the canonical CHECKPOINT A0 block, for the re-run the evidence needs',
     expect(CHECKPOINT_A0_SQL).toMatch(/nspname = 'public'/)
   })
 
-  it('is not recorded as the query A0 actually ran — that was never preserved', () => {
+  // THE RE-RUN HAPPENED, so the artefact now records the block VERBATIM. Pinning
+  // it byte-for-byte is what makes a later edit to the canonical query show up as
+  // a KNOWN STALE artefact instead of a silent mismatch between what the gate
+  // expects and what was actually executed.
+  it('records the canonical block byte-identically as the query that ran', () => {
     const a0 = JSON.parse(readFileSync(path.join(ROOT, CHECKPOINT_A0_ARTEFACT), 'utf8')) as {
       queries: string[]
-      literalQuerySearch: string
     }
-    expect(a0.queries).toEqual([])
-    expect(a0.literalQuerySearch).toMatch(/SEARCHED AND NOT FOUND/)
+    expect(a0.queries).toHaveLength(1)
+    expect(a0.queries[0]).toBe(CHECKPOINT_A0_SQL)
   })
 })
 

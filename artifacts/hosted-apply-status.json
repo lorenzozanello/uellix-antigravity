@@ -1,40 +1,24 @@
 {
   "generatedBy": "pnpm apply:status:write — do not hand-edit; a report quotes this file",
   "criterionCount": 19,
-  "satisfiedCount": 13,
-  "blockingCount": 6,
+  "satisfiedCount": 15,
+  "blockingCount": 4,
   "blockingIds": [
-    "checkpoint-a0-pass",
     "target-identity-corroborated",
     "hosted-evidence-bucket-provisioning-ready",
     "hosted-storage-canonical-boundary-verified",
-    "zero-production-data",
     "feature-flags-false"
   ],
   "baselineStartGate": {
     "total": 17,
-    "satisfied": 13,
+    "satisfied": 15,
     "blocking": [
-      {
-        "id": "checkpoint-a0-pass",
-        "observedEvidence": "A0 result=PASS, readOnly=true, writes=0",
-        "expectedProperty": "CHECKPOINT A0 ran read-only against the target and returned PASS, with zero writes.",
-        "reason": "CHECKPOINT A0 records no query. \"I checked\" is not evidence.",
-        "sourceArtifact": "operator attestation — CHECKPOINT A0 (no artefact on disk yet)"
-      },
       {
         "id": "target-identity-corroborated",
         "observedEvidence": "declared=staging, ref=bvyzblhqymxruxdguaee, host=aws-0-us-east-2.pooler.supabase.com",
         "expectedProperty": "The declared environment is staging, the host derives the SAME project ref, and neither is on the production denylist.",
-        "reason": "the connection host is a Supabase SESSION POOLER host (aws-0-us-east-2.pooler.supabase.com), which is regional and shared across projects — the ref lives in the pooler username, not the host. It records WHERE the probe connected, not WHICH project, so it cannot be the second independent signal. A ref-bearing host closes it: db.<ref>.supabase.co or <ref>.supabase.co.",
+        "reason": "the connection host is a Supabase SESSION POOLER host (aws-0-us-east-2.pooler.supabase.com), which is regional and shared across projects — the ref lives in the pooler LOGIN ROLE, not the host, and no login role was recorded. Supply the pooler login role (postgres.<ref>) — a username, not a credential — or a ref-bearing host.",
         "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
-      },
-      {
-        "id": "zero-production-data",
-        "observedEvidence": "A0 projectIsNew=true, stellaSurfaceAbsent=true",
-        "expectedProperty": "The corpus writes zero rows to an empty database, and A0 confirmed the target holds no Stella surface.",
-        "reason": "CHECKPOINT A0 records no query. \"I checked\" is not evidence.",
-        "sourceArtifact": "operator attestation — CHECKPOINT A0 emptiness probes"
       },
       {
         "id": "feature-flags-false",

@@ -50,13 +50,14 @@
     "ROLLBACK;"
   ],
   "pendingOperatorAttestation": {
-    "refBearingHost": "MISSING — a host that NAMES the project: db.bvyzblhqymxruxdguaee.supabase.co (direct) or bvyzblhqymxruxdguaee.supabase.co (REST). Hostname only. The pooler host is recorded but cannot corroborate.",
+    "poolerUser": "MISSING — the Session Pooler LOGIN ROLE used for the psql connection, expected shape postgres.bvyzblhqymxruxdguaee. Username ONLY. Do not send a password, a connection string or a URL: anything containing : @ / or whitespace is refused by projectRefFromPoolerUser rather than stored. A ref-bearing host (db.<ref>.supabase.co) would also close it, but that was not the connection used.",
     "stillPending": [
-      "refBearingHost"
+      "poolerUser"
     ]
   },
   "queriesProvenance": "REGISTERED 2026-08-07 on operator instruction: these are the literal statements executed for this probe, per docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2. This is an operator ATTESTATION that the specified block is the block that ran. It was deliberately NOT recorded earlier: the loader must never compose the expected text on the operator’s behalf, because the criterion that reads it exists to establish that the specified query was the one executed.",
   "connectionHost": "aws-0-us-east-2.pooler.supabase.com",
   "connectionHostProvenance": "Supplied by the operator 2026-08-07. HOSTNAME ONLY — no user, no password, no connection string, no token. This is the Supabase Session Pooler host, which is REGIONAL and shared across projects: the project ref lives in the pooler USERNAME (postgres.<ref>), not in the host. It therefore records WHERE the probe connected but cannot corroborate WHICH project — see connectionHostCorroborationNote.",
-  "connectionHostCorroborationNote": "target-identity-corroborated derives a project ref from the host and compares it with the declaration. A pooler host carries no ref by construction, so it cannot be the second independent signal. Accepting it would not be a small relaxation: every project in us-east-2 shares this exact hostname, so the check would corroborate nothing at all. A ref-bearing host (db.<ref>.supabase.co or <ref>.supabase.co) is what closes it."
+  "connectionHostCorroborationNote": "target-identity-corroborated needs a second signal INDEPENDENT of the declaration. A pooler host cannot be it: aws-0-us-east-2.pooler.supabase.com is regional and shared, so every project in us-east-2 presents it. The Session Pooler puts the ref in the LOGIN ROLE instead — postgres.<ref> — and that is what actually routes the connection, which makes it a stronger second signal than the host, not a weaker one. It is a USERNAME: no password, no token, and the ref inside it is public.",
+  "poolerUser": null
 }
