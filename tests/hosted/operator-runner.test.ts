@@ -11,15 +11,21 @@
 //
 // Nothing here touches a network, a database, or psql. The core is pure.
 
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { BASELINE_UNITS, baselineUnit } from '../../db/hosted/baseline-manifest'
+import { scanBaselineSql } from '../../db/hosted/baseline-scanner'
 import { sha256OfSql } from '../../db/hosted/hosted-package-manifest'
 import type { JournalRow } from '../../db/hosted/baseline-journal'
 import { KNOWN_STAGING_PROJECT_REF } from '../../db/hosted/target-identity'
 import { SET_ROLE_PATH_VERIFIED } from '../../db/hosted/managed-policy-channel'
 import {
   CATALOGUE_TABLES_SQL,
+  PROBE_KEY_EXPRESSIONS,
+  keySegmentCount,
   PSQL_PROBE_FLAGS,
   parsePsqlJson,
   describeProbeOutput,
@@ -511,6 +517,204 @@ describe('postcondition evaluation', () => {
       },
     )
     expect(codeOf(v)).toBe('OPERATOR_POSTCONDITION_FAILED')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// THE KEY-SHAPE CONTRACT
+//
+// Unit 032 (0031_rls_core.sql) applied and journalled correctly against staging,
+// then its postcondition declared all 69 policies absent. A read-only inspection
+// showed all 69 present. The two sides of the comparison were not disagreeing
+// about the database — they were speaking different languages:
+//
+//   expected  (scanBaselineSql):  public.users.users_select_own
+//   observed  (probe):            users_select_own
+//
+// Every Set.has() missed, so every policy was "missing". The tests could not see
+// it because the projection lived inside a SQL string that nothing read.
+// ---------------------------------------------------------------------------
+
+describe('comparison key shape', () => {
+  const sourceOf = (id: string): string =>
+    readFileSync(path.join(process.cwd(), baselineUnit(id).file), 'utf8')
+
+  /** Segments the scanner puts in a key, measured over the real corpus. */
+  const scannerSegments = (pick: (f: ReturnType<typeof scanBaselineSql>) => readonly string[]): number => {
+    const seen = new Set<number>()
+    for (const unit of BASELINE_UNITS) {
+      let sql: string
+      try {
+        sql = sourceOf(unit.id)
+      } catch {
+        continue
+      }
+      for (const key of pick(scanBaselineSql(sql))) seen.add(key.split('.').length)
+    }
+    expect(seen.size, 'the scanner must use ONE key shape per fact kind').toBeLessThanOrEqual(1)
+    return [...seen][0] ?? 0
+  }
+
+  it('projects policies with schema, table AND policy name', () => {
+    // THE REGRESSION. The scanner emits three segments; the probe emitted one.
+    expect(scannerSegments((f) => f.policiesCreated)).toBe(3)
+    expect(keySegmentCount(PROBE_KEY_EXPRESSIONS.policies)).toBe(3)
+  })
+
+  it('agrees on key shape for every other fact kind too', () => {
+    // Written as one sweep rather than four cases, because the defect was a
+    // CLASS: any projection that disagrees with the scanner silently reports a
+    // present object as absent.
+    for (const [kind, pick] of [
+      ['tables', (f: ReturnType<typeof scanBaselineSql>) => f.tablesCreated],
+      ['functions', (f: ReturnType<typeof scanBaselineSql>) => f.functionsCreated],
+      ['triggers', (f: ReturnType<typeof scanBaselineSql>) => f.triggersCreated],
+      ['rlsEnabledTables', (f: ReturnType<typeof scanBaselineSql>) => f.rlsEnabledTables],
+    ] as const) {
+      expect(
+        keySegmentCount(PROBE_KEY_EXPRESSIONS[kind]),
+        `${kind}: probe projection and scanner key must have the same shape`,
+      ).toBe(scannerSegments(pick))
+    }
+  })
+
+  it('counts segments without mistaking a separator for one', () => {
+    expect(keySegmentCount(`tgname`)).toBe(1)
+    expect(keySegmentCount(`'public.' || table_name`)).toBe(2)
+    expect(keySegmentCount(`a || '.' || b || '.' || c`)).toBe(3)
+  })
+})
+
+describe('the unit 032 false negative', () => {
+  const unit = baselineUnit('0031_rls_core.sql')
+  const source = readFileSync(path.join(process.cwd(), unit.file), 'utf8')
+  const expectation = unitStructuralExpectation(unit, source)
+
+  /** What staging really holds, in pg_policies' own columns. */
+  const REMOTE = [
+    ['public', 'users', 'users_select_own'],
+    ['public', 'users', 'users_insert_own'],
+    ['public', 'users', 'users_update_own'],
+    ['public', 'organizations', 'orgs_select_member_or_admin'],
+    ['public', 'organization_members', 'members_select_own_org'],
+    ['public', 'audit_logs', 'audit_logs_select_member_or_admin'],
+    ['public', 'evidence_items', 'evidence_items_select'],
+    ['public', 'projects', 'projects_select_member_or_admin'],
+    ['public', 'outcomes', 'outcomes_select'],
+    ['public', 'financial_proxies', 'financial_proxies_select'],
+  ] as const
+
+  const qualified = REMOTE.map(([s, t, p]) => `${s}.${t}.${p}`)
+  const bare = REMOTE.map(([, , p]) => p)
+
+  const evaluateAgainst = (policies: readonly string[]) =>
+    evaluateUnitPostconditions(
+      { ...expectation, tables: [], functions: [], rlsEnabledTables: [], policies: qualified },
+      {
+        tables: [],
+        functions: [],
+        triggers: [],
+        rlsEnabledTables: [],
+        policies,
+        rowCount: 0,
+      },
+    )
+
+  it('derives 69 three-segment policy keys from the real unit', () => {
+    expect(expectation.policies).toHaveLength(69)
+    expect(expectation.policies).toContain('public.users.users_select_own')
+  })
+
+  it('reports policies present when both sides use the qualified key', () => {
+    expect(codeOf(evaluateAgainst(qualified))).toBe('OK')
+  })
+
+  it('reproduces the incident: bare policy names read as every policy absent', () => {
+    const v = evaluateAgainst(bare)
+    expect(codeOf(v)).toBe('OPERATOR_POSTCONDITION_FAILED')
+    if (!v.ok) expect(v.message).toContain('public.users.users_select_own')
+  })
+
+  it('still fails when one expected policy is genuinely absent', () => {
+    expect(codeOf(evaluateAgainst(qualified.slice(1)))).toBe('OPERATOR_POSTCONDITION_FAILED')
+  })
+
+  it('refuses the same policy name on a different table', () => {
+    const moved = qualified.map((k) =>
+      k === 'public.users.users_select_own' ? 'public.projects.users_select_own' : k,
+    )
+    expect(codeOf(evaluateAgainst(moved))).toBe('OPERATOR_POSTCONDITION_FAILED')
+  })
+
+  it('refuses the right table carrying a different policy name', () => {
+    const renamed = qualified.map((k) =>
+      k === 'public.users.users_select_own' ? 'public.users.users_select_any' : k,
+    )
+    expect(codeOf(evaluateAgainst(renamed))).toBe('OPERATOR_POSTCONDITION_FAILED')
+  })
+
+  it('refuses the right table and name in the wrong schema', () => {
+    const reschemad = qualified.map((k) =>
+      k === 'public.users.users_select_own' ? 'auth.users.users_select_own' : k,
+    )
+    expect(codeOf(evaluateAgainst(reschemad))).toBe('OPERATOR_POSTCONDITION_FAILED')
+  })
+
+  it('never accepts a substring or prefix match', () => {
+    expect(codeOf(evaluateAgainst(qualified.map((k) => `${k}_extra`)))).toBe(
+      'OPERATOR_POSTCONDITION_FAILED',
+    )
+    expect(codeOf(evaluateAgainst(qualified.map((k) => k.replace('public.', ''))))).toBe(
+      'OPERATOR_POSTCONDITION_FAILED',
+    )
+  })
+
+  it('refuses an empty catalogue', () => {
+    expect(codeOf(evaluateAgainst([]))).toBe('OPERATOR_POSTCONDITION_FAILED')
+  })
+
+  it('enables RLS on 24 tables, keyed as schema.table', () => {
+    // The same sweep for the sibling check the incident put under suspicion.
+    expect(expectation.rlsEnabledTables).toHaveLength(24)
+    expect(expectation.rlsEnabledTables).toContain('public.users')
+    expect(expectation.rlsEnabledTables.every((k) => k.split('.').length === 2)).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 6. Resume from the state staging is actually in
+// ---------------------------------------------------------------------------
+
+describe('resume after unit 032', () => {
+  const rows = Array.from({ length: 32 }, (_, i) => rowFor(i + 1))
+  const position = derive(rows)
+
+  it('reconciles exactly 32 units', () => {
+    expect(codeOf(position)).toBe('OK')
+    if (position.ok) expect(position.journalCount).toBe(32)
+  })
+
+  it('names 0031_rls_core.sql as the last committed unit', () => {
+    if (position.ok) expect(position.lastCommittedUnit).toBe('0031_rls_core.sql')
+  })
+
+  it('does not re-run ordinal 032', () => {
+    if (position.ok) expect(position.nextUnit?.id).not.toBe('0031_rls_core.sql')
+  })
+
+  it('derives ordinal 033 — 0032_rls_specialized.sql — as the next unit', () => {
+    if (position.ok) {
+      expect(position.nextUnit?.ordinal).toBe(33)
+      expect(position.nextUnit?.id).toBe('0032_rls_specialized.sql')
+    }
+  })
+
+  it('refuses if that journal had a gap, a duplicate or a future unit', () => {
+    expect(codeOf(derive([...rows.slice(0, 30), rowFor(32)], 32))).toBe(
+      'OPERATOR_JOURNAL_FUTURE_UNIT',
+    )
+    expect(codeOf(derive([...rows, rowFor(32)], 32))).toBe('OPERATOR_JOURNAL_UNRECONCILED')
+    expect(codeOf(derive([...rows, rowFor(34)], 34))).toBe('OPERATOR_JOURNAL_FUTURE_UNIT')
   })
 })
 

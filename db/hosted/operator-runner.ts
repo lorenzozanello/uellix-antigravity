@@ -934,6 +934,36 @@ export function describeProbeOutput(input: {
   )
 }
 
+/**
+ * How each catalogue fact is projected into a COMPARISON KEY.
+ *
+ * These live as named constants rather than buried in the query because the two
+ * sides of the comparison have to agree on key SHAPE, and the only way a test
+ * can check that agreement is if the projection is a value it can read. The
+ * expectation side is produced by `scanBaselineSql`; the invariant a test pins
+ * is that each expression concatenates the same number of segments the scanner
+ * puts in the corresponding key.
+ */
+export const PROBE_KEY_EXPRESSIONS = {
+  tables: `'public.' || table_name`,
+  functions: `n.nspname || '.' || p.proname`,
+  triggers: `tgname`,
+  rlsEnabledTables: `n.nspname || '.' || c.relname`,
+  // THREE segments, because `scanBaselineSql` emits `schema.table.policy` and a
+  // bare `policyname` made all 69 of unit 032's policies read as absent while
+  // every one of them existed. A policy name is not unique across tables either,
+  // so the qualified key is also the only one that cannot match the wrong row.
+  policies: `schemaname || '.' || tablename || '.' || policyname`,
+} as const
+
+/** Segments a projection produces, ignoring the `'.'` separators. */
+export function keySegmentCount(expression: string): number {
+  return expression
+    .split('||')
+    .map((part) => part.trim())
+    .filter((part) => part !== `'.'`).length
+}
+
 export function postconditionProbeSql(expectation: StructuralExpectation): string {
   const rowCount =
     expectation.tables.length === 0
@@ -943,15 +973,15 @@ export function postconditionProbeSql(expectation: StructuralExpectation): strin
   return readOnly(
     jsonRows(`
       SELECT
-        (SELECT coalesce(jsonb_agg('public.' || table_name), '[]'::jsonb)
+        (SELECT coalesce(jsonb_agg(${PROBE_KEY_EXPRESSIONS.tables}), '[]'::jsonb)
            FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE') AS tables,
-        (SELECT coalesce(jsonb_agg(n.nspname || '.' || p.proname), '[]'::jsonb)
+        (SELECT coalesce(jsonb_agg(${PROBE_KEY_EXPRESSIONS.functions}), '[]'::jsonb)
            FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','storage')) AS functions,
-        (SELECT coalesce(jsonb_agg(tgname), '[]'::jsonb) FROM pg_trigger WHERE NOT tgisinternal) AS triggers,
-        (SELECT coalesce(jsonb_agg(n.nspname || '.' || c.relname), '[]'::jsonb)
+        (SELECT coalesce(jsonb_agg(${PROBE_KEY_EXPRESSIONS.triggers}), '[]'::jsonb) FROM pg_trigger WHERE NOT tgisinternal) AS triggers,
+        (SELECT coalesce(jsonb_agg(${PROBE_KEY_EXPRESSIONS.rlsEnabledTables}), '[]'::jsonb)
            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE c.relkind='r' AND c.relrowsecurity) AS rls_enabled_tables,
-        (SELECT coalesce(jsonb_agg(policyname), '[]'::jsonb) FROM pg_policies) AS policies,
+        (SELECT coalesce(jsonb_agg(${PROBE_KEY_EXPRESSIONS.policies}), '[]'::jsonb) FROM pg_policies) AS policies,
         (${rowCount})::bigint AS row_count
     `),
   )
