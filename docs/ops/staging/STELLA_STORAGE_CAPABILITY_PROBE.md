@@ -72,21 +72,64 @@ Ahora cada sonda declara qué significa un `false` (`CLASS_C_REQUIREMENT`):
 
 No es relajar para reducir blockers: los blockers **subieron de 7 a 9**.
 
+### 0.3 Y dos criterios más no podían pasar nunca
+
+La auditoría que pediste encontró otros dos, de la misma familia que §0.2:
+
+**`hosted-storage-management-channel-verified`** pasaba
+`managedBoundaryVerified: false` como literal. Era incapaz de cambiar de estado
+midiera lo que midiera nadie. Un gate que no puede moverse no es estricto: es
+inerte, y borra la diferencia entre «la evidencia todavía no está» y «ninguna
+evidencia bastaría». Ahora lee dos hechos distintos —el estado de la sonda de
+capacidad y la verificación de frontera— y la propiedad es explícita:
+
+```
+STORAGE_EXECUTION_PATH_READY = SET_ROLE_PATH_VERIFIED  OR  MANAGED_BOUNDARY_VERIFIED
+                                      │                            │
+                                      └─ pinned false              └─ la única que puede cerrarla
+```
+
+Con controles negativos ejecutables: `SET=false + MANAGED_BOUNDARY_VERIFIED=true`
+**satisface**; `SET=false + MANAGED_BOUNDARY_VERIFIED=false` **bloquea**; y el
+brazo SET ROLE no cierra la disyunción con `canSetRole` en `true` ni en `false`.
+
+**El bucket** (§4 de tu instrucción) ya no bloquea `BASELINE_APPLY_GATE`. La
+obligación no se movió —`uellix-evidence`, `public=false`, vacío, sigue siendo
+obligatorio antes del primer runtime de evidencia, y B0-15 sigue exigiéndolo—;
+sólo cambió **el momento** en que bloquea.
+
+### 0.4 El fixture describía un mundo imposible
+
+`satisfying()` seleccionaba `A-set-role`, que el `false` fijado hace inalcanzable.
+Un fixture llamado «satisfying» que no puede satisfacer el gate convierte en vacua
+toda afirmación de «lo demás está bien»: todas medían la misma refutación
+permanente. Ahora selecciona Branch B con la frontera verificada, que es el único
+estado satisfecho alcanzable y además la rama que las mediciones reales eligen.
+
 **Veredicto vivo, y es de donde debe citarse cualquier cifra:**
 
 ```
-18 criterios · 9 satisfechos · 9 BLOQUEANDO
-  - checkpoint-a0-pass
-  - target-identity-corroborated                ← el artefacto no registra el host
-  - class-c-probes-affirmative                  ← el artefacto no registra las queries
-  - hosted-storage-apply-identity-probed        ← ídem, y transaction_read_only UNCONFIRMED
-  - hosted-storage-set-role-ready
-  - hosted-evidence-bucket-provisioning-ready
-  - hosted-storage-management-channel-verified
-  - zero-production-data
-  - feature-flags-false
-applyAuthorized = false
+BASELINE_APPLY_GATE    17 criterios ·  9 satisfechos ·  8 BLOQUEANDO
+  - checkpoint-a0-pass                          A0 sin atestación
+  - target-identity-corroborated                el artefacto no registra connectionHost
+  - class-c-probes-affirmative                  PROBE_INVALID: el artefacto no registra las queries
+  - hosted-storage-apply-identity-probed        ídem, y transaction_read_only = UNCONFIRMED
+  - hosted-storage-set-role-ready               ídem
+  - hosted-storage-management-channel-verified  sonda de capacidad NOT_RUN
+  - zero-production-data                        depende de A0
+  - feature-flags-false                         inventario de flags no medido
+
+STAGING_RUNTIME_GATE    1 criterio ·  0 satisfechos ·  1 BLOQUEANDO
+  - hosted-evidence-bucket-provisioning-ready   uellix-evidence no existe
+
+applyAuthorized = false      (deriva SÓLO del baseline gate)
+baselineApplied = false      stagingApplied = false
 ```
+
+Cada blocker lleva sus cuatro partes separadas —`observedEvidence`,
+`expectedProperty`, `reason`, `sourceArtifact`— porque juntarlas es exactamente
+cómo «SET=false» se convirtió en «la ruta SET ROLE está refutada» y luego
+sobrevivió a la medición que lo justificaba. `pnpm apply:status` las imprime.
 
 ---
 
@@ -300,8 +343,9 @@ sujeto a postcondición y cleanup.
 | Sonda | **preparada, NO ejecutada** |
 | Escrituras remotas | 0 |
 | `MANAGEMENT_PLANE_PATH` | `UNRESOLVED_REQUIRES_HOSTED_EVIDENCE` |
-| `applyAuthorized` | `false` (9 bloqueando — ver §0) |
+| `applyAuthorized` | `false` — 8 bloqueando en BASELINE_APPLY_GATE (ver §0) |
 | `baselineApplied` | `false` |
+| `STAGING_RUNTIME_GATE` | 1 bloqueando (el bucket) |
 | `evidenceBucketExists` | `false` |
 
 **Acción de operador requerida, tres y en cualquier orden:**

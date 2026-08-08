@@ -37,9 +37,17 @@
 // Absence is refusal here as everywhere: a missing artefact, an unparseable one,
 // or a probe the artefact does not record yields `null`, and `null` blocks.
 
-import type { ApplyAuthorizationInputs, OperatorAttestation } from './baseline-apply-authorization'
+import type {
+  ApplyAuthorizationInputs,
+  GateReport,
+  OperatorAttestation,
+} from './baseline-apply-authorization'
 import type { PrivilegeProbes } from './hosted-provisioning-runner'
 import { JOURNAL_TABLE } from './baseline-journal'
+import {
+  CAPABILITY_PROBE_STATUS_ARTEFACT,
+  type CapabilityProbeState,
+} from './storage-capability-probe'
 import { KNOWN_PRODUCTION_IDENTIFIERS } from './target-identity'
 
 export const APPLY_IDENTITY_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-apply-identity.json'
@@ -168,6 +176,15 @@ export function loadMeasuredEvidence(input: {
     })
   }
 
+  // The capability probe's DERIVED state, read from its status artefact. The
+  // probe itself is a human action through a channel this code cannot observe;
+  // what it can do is refuse to invent the outcome.
+  const probeStatus = input.readJson(CAPABILITY_PROBE_STATUS_ARTEFACT) as
+    | { readonly state?: string }
+    | null
+  const probeState =
+    typeof probeStatus?.state === 'string' ? (probeStatus.state as CapabilityProbeState) : null
+
   const attest = <T>(value: T, query: string, measuredBy: string): OperatorAttestation<T> => ({
     value,
     query,
@@ -289,6 +306,14 @@ export function loadMeasuredEvidence(input: {
             editor.measuredBy ?? '',
           ),
 
+    // READ from the derived probe status, never set. `null` there is NOT_RUN,
+    // which is neither a demonstrated channel nor a refuted one.
+    capabilityProbe: probeState === null ? null : { state: probeState },
+    // The boundary is verified only when the CATALOGUE says the three canonical
+    // policies exist with the right surface. The capability probe cannot supply
+    // it: proving the channel can create a policy is not proving these policies.
+    managedBoundaryVerified: false,
+
     journalProvenance: {
       kind: 'hosted-journal',
       recordedFields: ['package_id', 'phase', 'sha256', 'applied_at', 'status'],
@@ -330,6 +355,9 @@ export function loadMeasuredEvidence(input: {
  */
 export interface ApplyStatusArtefact {
   readonly generatedBy: string
+  /** The two gates, each with its own total and its own structured blockers. */
+  readonly baselineApplyGate: GateReport
+  readonly stagingRuntimeGate: GateReport
   readonly criterionCount: number
   readonly satisfiedCount: number
   readonly blockingCount: number

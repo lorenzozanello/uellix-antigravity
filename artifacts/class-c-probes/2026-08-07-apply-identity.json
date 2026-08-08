@@ -42,5 +42,19 @@
     "no baseline applied, no bucket created, no sentinel written",
     "no access to the production project",
     "no provider calls"
-  ]
+  ],
+  "queries": [],
+  "specifiedQueries": [
+    "BEGIN READ ONLY;",
+    "SELECT current_user, session_user, version(), current_setting('transaction_read_only');",
+    "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER') AS is_member, pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')  AS inherits_privileges, pg_has_role(current_user, 'supabase_storage_admin', 'SET')    AS can_set_role;",
+    "ROLLBACK;"
+  ],
+  "specifiedQueriesSource": "docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2",
+  "pendingOperatorAttestation": {
+    "transaction_read_only": "PENDING — observed.transaction_read_only is 'UNCONFIRMED'. Supply the value the probe printed. Do NOT infer it.",
+    "connectionHost": "PENDING — hostname only (e.g. aws-0-<region>.pooler.supabase.com). NEVER a connection string, a password, a token or a key.",
+    "queries": "PENDING — copy the literal SQL that produced `observed` into `queries`. `specifiedQueries` is what was ASKED; it is not evidence that it was run.",
+    "whyThisBlocks": "The apply gate refuses an attestation with no recorded query and refuses UNCONFIRMED. Both refusals are true statements about this file as it stands."
+  }
 }

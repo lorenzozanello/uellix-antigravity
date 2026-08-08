@@ -14,6 +14,81 @@
     "zero-production-data",
     "feature-flags-false"
   ],
+  "baselineApplyGate": {
+    "total": 17,
+    "satisfied": 9,
+    "blocking": [
+      {
+        "id": "checkpoint-a0-pass",
+        "observedEvidence": "CHECKPOINT A0: no attestation on record",
+        "expectedProperty": "CHECKPOINT A0 ran read-only against the target and returned PASS, with zero writes.",
+        "reason": "CHECKPOINT A0 — NOT MEASURED. Not measured is not satisfied.",
+        "sourceArtifact": "operator attestation — CHECKPOINT A0 (no artefact on disk yet)"
+      },
+      {
+        "id": "target-identity-corroborated",
+        "observedEvidence": "staging identity: no attestation on record (the artefact records no connectionHost)",
+        "expectedProperty": "The declared environment is staging, the host derives the SAME project ref, and neither is on the production denylist.",
+        "reason": "the staging identity — NOT MEASURED. Not measured is not satisfied.",
+        "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
+      },
+      {
+        "id": "class-c-probes-affirmative",
+        "observedEvidence": "canCreateTriggerOnAuthUsers=true, ownsStorageObjects=false, evidenceBucketExists=false, applyIdentityRecorded=true, storageAdminMember=false, storageAdminInherits=false, canSetRoleStorageAdmin=false, setLocalRoleDemonstrated=false",
+        "expectedProperty": "All three §2.7 probes were run and returned true: auth.users TRIGGER privilege, storage.objects ownership, uellix-evidence bucket.",
+        "reason": "PROBE_INVALID — the attestation does not quote the §2.7 query for: applyIdentityRecorded, storageAdminMember, storageAdminInherits, canSetRoleStorageAdmin. Expected verbatim: `SELECT current_user, session_user, version()` ; `SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER')` ; `SELECT pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')` ; `SELECT pg_has_role(current_user, 'supabase_storage_admin', 'SET')`. A different query answers a different question.",
+        "sourceArtifact": "artifacts/class-c-probes/*.json"
+      },
+      {
+        "id": "hosted-storage-apply-identity-probed",
+        "observedEvidence": "current_user=postgres, transaction_read_only=UNCONFIRMED, MEMBER=false, USAGE=false, SET=false",
+        "expectedProperty": "The MEMBER / USAGE / SET triple was measured in the identity that will APPLY the baseline, inside a read-only transaction — not in the SQL Editor.",
+        "reason": "the apply-identity probe records no query. \"I checked\" is not evidence.",
+        "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
+      },
+      {
+        "id": "hosted-storage-set-role-ready",
+        "observedEvidence": "SET=false, storagePath=B-managed-channel, demo=not attempted",
+        "expectedProperty": "Either SET was granted AND `SET LOCAL ROLE` was demonstrated (Branch A), or SET is false and a managed channel was selected instead (Branch B). MEMBER never substitutes for SET.",
+        "reason": "the apply-identity probe records no query. \"I checked\" is not evidence.",
+        "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
+      },
+      {
+        "id": "hosted-storage-management-channel-verified",
+        "observedEvidence": "capabilityProbe=CAPABILITY_PROBE_NOT_RUN, managedBoundaryVerified=false, SET_ROLE_PATH_VERIFIED=false (pinned)",
+        "expectedProperty": "Storage closes on SET_ROLE_PATH_VERIFIED or MANAGED_BOUNDARY_VERIFIED. The first is pinned false by measurement; the second requires hosted evidence, not a design.",
+        "reason": "SET_ROLE_PATH_VERIFIED is false and cannot become true (MEMBER/USAGE/SET all measured false against supabase_storage_admin, on both the psql identity and the SQL Editor identity), and MANAGED_BOUNDARY_VERIFIED is false: capability probe: CAPABILITY_PROBE_NOT_RUN; managed boundary verified: false. A DESIGNED boundary is not a VERIFIED one. Channel determination: UNRESOLVED_REQUIRES_HOSTED_EVIDENCE, from 3 primary sources — the Dashboard Storage Policies UI compiles its form into CREATE POLICY text and submits it through the same executeSql path as the SQL Editor, whose identity is the postgres that cannot own storage.objects. What is NOT settled is whether the deployed platform routes that mutation as the open-source Studio does; only an attempt (a WRITE) answers it, and the capability probe is CAPABILITY_PROBE_NOT_RUN.",
+        "sourceArtifact": "artifacts/hosted-capability-probe-status.json"
+      },
+      {
+        "id": "zero-production-data",
+        "observedEvidence": "CHECKPOINT A0: no attestation on record, so emptiness rests on nothing",
+        "expectedProperty": "The corpus writes zero rows to an empty database, and A0 confirmed the target holds no Stella surface.",
+        "reason": "A0 did not confirm the target is free of Stella surface, so \"empty\" rests on nothing.",
+        "sourceArtifact": "operator attestation — CHECKPOINT A0 emptiness probes"
+      },
+      {
+        "id": "feature-flags-false",
+        "observedEvidence": "flag inventory: not measured",
+        "expectedProperty": "All nine STELLA_* flags are false in every environment pointing at the target.",
+        "reason": "the flag inventory — NOT MEASURED. Not measured is not satisfied.",
+        "sourceArtifact": "operator attestation — the nine STELLA_* flags"
+      }
+    ]
+  },
+  "stagingRuntimeGate": {
+    "total": 1,
+    "satisfied": 0,
+    "blocking": [
+      {
+        "id": "hosted-evidence-bucket-provisioning-ready",
+        "observedEvidence": "uellix-evidence exists=false",
+        "expectedProperty": "The 'uellix-evidence' bucket exists on the target, re-probed after creation.",
+        "reason": "the 'uellix-evidence' bucket does not exist. supabase/config.toml creates it locally and NOTHING in the fifty units creates it hosted — the third instance of that asymmetry. All three policies gate on its bucket_id.",
+        "sourceArtifact": "artifacts/class-c-probes/2026-08-07-uellix-staging.json"
+      }
+    ]
+  },
   "applyAuthorized": false,
   "baselineApplied": false,
   "stagingApplied": false,

@@ -25,6 +25,8 @@ import {
   productionDenylistStatus,
   verifyStagingTarget,
 } from '@/db/hosted/target-identity'
+import { BASELINE_POSTCONDITIONS } from '@/db/hosted/baseline-postconditions'
+import type { PrivilegeProbes } from '@/db/hosted/hosted-provisioning-runner'
 
 const ROOT = process.cwd()
 const STAGING_REF = 'sssssssssssssssssss' + 's'
@@ -114,9 +116,10 @@ function satisfying(): ApplyAuthorizationInputs {
         currentUser: 'postgres',
         sessionUser: 'postgres',
         transactionReadOnly: true,
-        isMember: true,
+        // Branch B, and the measured reality: no membership in any grade.
+        isMember: false,
         inheritsPrivileges: false,
-        canSetRole: true,
+        canSetRole: false,
       },
       query:
         'SELECT current_user, session_user, version(), current_setting(\'transaction_read_only\'); ' +
@@ -125,17 +128,23 @@ function satisfying(): ApplyAuthorizationInputs {
         "pg_has_role(current_user, 'supabase_storage_admin', 'SET') AS can_set_role;",
       measuredBy: 'operator, psql direct connection — the identity that will apply PHASE_BASELINE',
     },
-    setLocalRoleDemo: {
-      value: {
-        executed: true,
-        currentUserAfter: 'supabase_storage_admin',
-        sessionUserAfter: 'postgres',
-        transactionReadOnlyAfter: true,
-      },
-      query: 'BEGIN READ ONLY; SET LOCAL ROLE supabase_storage_admin; SELECT current_user, session_user; RESET ROLE; ROLLBACK;',
-      measuredBy: 'operator, same connection',
-    },
-    storagePath: 'A-set-role',
+    // Branch B forbids a demonstration: attempting an operation the grant
+    // already refuses teaches nothing the catalogue has not already said.
+    setLocalRoleDemo: null,
+    // BRANCH B, BECAUSE BRANCH A IS UNREACHABLE BY CONSTRUCTION.
+    //
+    // This fixture used to select 'A-set-role', and that made it describe a world
+    // that cannot exist: SET_ROLE_PATH_VERIFIED is a `false as const` with no
+    // setter, so the storage criterion refuses Branch A unconditionally. A
+    // fixture whose name is `satisfying()` and which can never satisfy the gate
+    // makes every "everything else is fine" assertion in this file vacuous —
+    // they would all be measuring the same permanent refusal.
+    //
+    // Branch B with the boundary verified is the only reachable satisfied state,
+    // and it is also the branch the real measurements select.
+    storagePath: 'B-managed-channel',
+    capabilityProbe: { state: 'CAPABILITY_PROBE_COMPLETE' as const },
+    managedBoundaryVerified: true,
     evidenceBucket: {
       value: { exists: true },
       query: "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence');",
@@ -252,23 +261,33 @@ describe('Phase 2 — the production denylist', () => {
 /* ========================================================================== */
 
 describe('the apply-authorization gate', () => {
-  it('satisfies everything EXCEPT the management channel, which no evidence closes', () => {
-    // RR-25 IS NOW CLOSED, and this expectation is the record of it: the
-    // previous train's blocking list was ['hosted-baseline-journal-ready'],
-    // because `journalInsertSql` had no caller and no artefact carried the
-    // append. Fifty-one generated wrappers now do, so that criterion passes and
-    // the list shrank by one.
+  it('CAN say yes — over a hypothetical state that is actually reachable', () => {
+    // WHAT THIS TEST IS AND IS NOT.
     //
-    // What remains blocking is not a gap in this repository. The Dashboard
-    // Storage Policies UI compiles its form into CREATE POLICY text and submits
-    // it through the same executeSql path as the SQL Editor — measured to be an
-    // unprivileged postgres — so no channel we have evidence for can apply
-    // PART B. Only a hosted attempt can settle it, and an attempt is a write.
+    // It proves the gate is not a machine that only ever refuses: given a world
+    // where every precondition genuinely holds, it says yes. It is NOT a
+    // statement about the staging project — `pnpm apply:status` answers that from
+    // the recorded artefacts, and it currently refuses on nine criteria.
+    //
+    // Two earlier versions of this expectation were wrong in the same way. The
+    // first quoted this fixture's blocking count as the project's status. The
+    // second described a fixture selecting Branch A, which the pinned
+    // SET_ROLE_PATH_VERIFIED makes unreachable — so "everything except one" was
+    // really "a permanent refusal plus everything else being untested".
     const report = evaluateApplyAuthorization(satisfying())
-    expect(report.blocking.map((b) => b.split(':')[0])).toEqual([
-      'hosted-storage-management-channel-verified',
-    ])
-    expect(report.applyAuthorized).toBe(false)
+    expect(report.blocking, JSON.stringify(report.blocking, null, 2)).toEqual([])
+    expect(report.applyAuthorized).toBe(true)
+    // …and the runtime gate is separate, and also satisfied in this world.
+    expect(report.stagingRuntimeGate.blocking).toEqual([])
+  })
+
+  it('is not authorised by the runtime gate — authorisation is the baseline gate alone', () => {
+    const report = evaluateApplyAuthorization({
+      ...satisfying(),
+      evidenceBucket: { value: { exists: false }, query: 'SELECT …', measuredBy: 'operator' },
+    })
+    expect(report.applyAuthorized).toBe(true)
+    expect(report.stagingRuntimeGate.blocking).toHaveLength(1)
   })
 
   it('covers every dependency Phase 10 and Train 5C2 Phase 14 named', () => {
@@ -335,11 +354,24 @@ describe('the apply-authorization gate', () => {
   it('refuses a SET LOCAL ROLE demonstration in which the SESSION escalated', () => {
     const setRole = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'hosted-storage-set-role-ready')!
     const base = satisfying()
+    // Branch A is stated explicitly: this test is ABOUT Branch A, and the
+    // fixture now selects B because A is unreachable in the gate as a whole.
     const escalated = setRole.evaluate({
       ...base,
+      storagePath: 'A-set-role',
+      applyIdentity: {
+        ...base.applyIdentity!,
+        value: { ...base.applyIdentity!.value, isMember: true, canSetRole: true },
+      },
       setLocalRoleDemo: {
-        ...base.setLocalRoleDemo!,
-        value: { ...base.setLocalRoleDemo!.value, sessionUserAfter: 'supabase_storage_admin' },
+        value: {
+          executed: true,
+          currentUserAfter: 'supabase_storage_admin',
+          sessionUserAfter: 'supabase_storage_admin',
+          transactionReadOnlyAfter: true,
+        },
+        query: 'BEGIN READ ONLY; SET LOCAL ROLE supabase_storage_admin; SELECT current_user, session_user; RESET ROLE; ROLLBACK;',
+        measuredBy: 'operator, same connection',
       },
     })
     expect(escalated.satisfied).toBe(false)
@@ -348,7 +380,14 @@ describe('the apply-authorization gate', () => {
 
   it('refuses Branch B when SET is available, so the manual channel is never a lazy default', () => {
     const setRole = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'hosted-storage-set-role-ready')!
-    expect(setRole.evaluate({ ...satisfying(), storagePath: 'B-managed-channel' }).satisfied).toBe(false)
+    const base = satisfying()
+    expect(
+      setRole.evaluate({
+        ...base,
+        storagePath: 'B-managed-channel',
+        applyIdentity: { ...base.applyIdentity!, value: { ...base.applyIdentity!.value, canSetRole: true } },
+      }).satisfied,
+    ).toBe(false)
   })
 
   it('refuses any path at all before the identity has been probed', () => {
@@ -481,6 +520,8 @@ describe('the live verdict for Uellix Staging as of Train 5C1', () => {
       setLocalRoleDemo: null,
       storagePath: null,
       evidenceBucket: null,
+      capabilityProbe: null,
+      managedBoundaryVerified: false,
       journalProvenance: null,
     })
 
@@ -507,5 +548,211 @@ describe('the live verdict for Uellix Staging as of Train 5C1', () => {
       ['production-denylist-loaded', 'manifest-hashes-and-order', 'no-class-d-units', 'no-service-role-widening', 'postconditions-ready', 'recovery-plan-conservative'].includes(c.id),
     )
     expect(repositoryOnly.every((c) => c.satisfied), JSON.stringify(repositoryOnly, null, 2)).toBe(true)
+  })
+})
+
+/* ========================================================================== */
+/* TRAIN 5C2 continuation — the gate SEMANTICS the operator asked me to audit  */
+/* ========================================================================== */
+
+describe('STORAGE_EXECUTION_PATH_READY is a disjunction, and only one arm can close it', () => {
+  const channel = APPLY_AUTHORIZATION_CRITERIA.find(
+    (c) => c.id === 'hosted-storage-management-channel-verified',
+  )!
+
+  // THE AUDIT. SET=false is permanent on this project. A criterion that required
+  // SET_ROLE_PATH_VERIFIED to become true before the baseline could be
+  // authorised would be demanding that a historical measurement change — which
+  // is not strictness, it is a gate that has stopped carrying information.
+  it('is satisfied by the managed arm alone, with SET measured false', () => {
+    const base = satisfying()
+    const v = channel.evaluate({
+      ...base,
+      storagePath: 'B-managed-channel',
+      applyIdentity: {
+        ...base.applyIdentity!,
+        value: {
+          ...base.applyIdentity!.value,
+          isMember: false,
+          inheritsPrivileges: false,
+          canSetRole: false,
+        },
+      },
+      managedBoundaryVerified: true,
+      capabilityProbe: { state: 'CAPABILITY_PROBE_COMPLETE' },
+    })
+    expect(v.satisfied, v.detail).toBe(true)
+    expect(v.detail).toMatch(/MANAGED_BOUNDARY_VERIFIED/)
+  })
+
+  it('blocks with SET false and the managed arm unverified', () => {
+    const v = channel.evaluate({
+      ...satisfying(),
+      storagePath: 'B-managed-channel',
+      managedBoundaryVerified: false,
+      capabilityProbe: { state: 'CAPABILITY_PROBE_NOT_RUN' },
+    })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/SET_ROLE_PATH_VERIFIED is false and cannot become true/)
+  })
+
+  // The SET ROLE arm contributes nothing in EITHER direction — it is a pinned
+  // false, so the disjunction is decided entirely by the managed arm.
+  it('never closes through the SET ROLE arm, whatever the probe said', () => {
+    for (const canSetRole of [true, false]) {
+      const base = satisfying()
+      const v = channel.evaluate({
+        ...base,
+        storagePath: 'B-managed-channel',
+        managedBoundaryVerified: false,
+        applyIdentity: { ...base.applyIdentity!, value: { ...base.applyIdentity!.value, canSetRole } },
+      })
+      expect(v.satisfied, `canSetRole=${canSetRole}`).toBe(false)
+    }
+  })
+
+  // Capability is not correctness. A channel proven able to create SOME policy
+  // has not created THESE policies, and the two must not share a flag.
+  it('does not treat a successful capability probe as a verified boundary', () => {
+    const v = channel.evaluate({
+      ...satisfying(),
+      storagePath: 'B-managed-channel',
+      capabilityProbe: { state: 'CAPABILITY_PROBE_COMPLETE' },
+      managedBoundaryVerified: false,
+    })
+    expect(v.satisfied).toBe(false)
+  })
+})
+
+describe('class-C semantics: a false is not automatically a failure', () => {
+  const classC = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'class-c-probes-affirmative')!
+  const withProbes = (
+    over: Partial<PrivilegeProbes>,
+    rest: Partial<ApplyAuthorizationInputs> = {},
+  ) => {
+    const base = satisfying()
+    return classC.evaluate({
+      ...base,
+      ...rest,
+      classCProbes: { ...base.classCProbes!, value: { ...base.classCProbes!.value, ...over } },
+    })
+  }
+
+  it('PROBE_MISSING — an unmeasured probe refuses', () => {
+    const v = withProbes({ canCreateTriggerOnAuthUsers: null })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/^PROBE_MISSING/)
+  })
+
+  it('PROBE_INVALID — a probe measured by a query nobody recorded refuses', () => {
+    const base = satisfying()
+    const v = classC.evaluate({ ...base, classCProbes: { ...base.classCProbes!, query: 'SELECT 1;' } })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/^PROBE_INVALID/)
+  })
+
+  it('PROBE_RESULT_UNSUPPORTED — an apply-required false has no adaptation behind it', () => {
+    const v = withProbes({ canCreateTriggerOnAuthUsers: false })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/^PROBE_RESULT_UNSUPPORTED/)
+  })
+
+  // THE ONE THE AUDIT DEMANDED. ownsStorageObjects=false is the MEASURED,
+  // permanent state, and it SELECTS the managed route rather than blocking one.
+  it('PROBE_RESULT_SUPPORTED_BY_SELECTED_PATH — ownsStorageObjects=false, managed path selected', () => {
+    const v = withProbes(
+      { ownsStorageObjects: false, canSetRoleStorageAdmin: false, setLocalRoleDemonstrated: false },
+      { storagePath: 'B-managed-channel' },
+    )
+    expect(v.satisfied, v.detail).toBe(true)
+    expect(v.detail).toMatch(/^PROBE_RESULT_SUPPORTED_BY_SELECTED_PATH/)
+  })
+
+  it('the same false with NO path selected is unsupported, not supported', () => {
+    const v = withProbes({ ownsStorageObjects: false }, { storagePath: null })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/^PROBE_RESULT_UNSUPPORTED/)
+  })
+
+  it('never demands that a historical measurement change to true', () => {
+    // The property, stated as a test: there IS an input where every probe this
+    // train measured false is still false and the criterion is satisfied.
+    const v = withProbes(
+      {
+        ownsStorageObjects: false,
+        storageAdminMember: false,
+        storageAdminInherits: false,
+        canSetRoleStorageAdmin: false,
+        setLocalRoleDemonstrated: false,
+        evidenceBucketExists: false,
+      },
+      { storagePath: 'B-managed-channel' },
+    )
+    expect(v.satisfied, v.detail).toBe(true)
+  })
+})
+
+describe('the bucket blocks runtime, not the baseline', () => {
+  const bucketAbsent = (): ApplyAuthorizationInputs => ({
+    ...satisfying(),
+    evidenceBucket: {
+      value: { exists: false },
+      query: "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence');",
+      measuredBy: 'operator',
+    },
+  })
+
+  it('an absent bucket does not refuse the baseline gate', () => {
+    const report = evaluateApplyAuthorization(bucketAbsent())
+    expect(report.baselineApplyGate.blocking.map((b) => b.id)).toEqual([])
+    expect(report.applyAuthorized).toBe(true)
+  })
+
+  // THE OBLIGATION DID NOT MOVE, ONLY THE MOMENT IT BLOCKS.
+  it('and still refuses the runtime gate, and B0-15 still exists', () => {
+    const report = evaluateApplyAuthorization(bucketAbsent())
+    expect(report.stagingRuntimeGate.blocking.map((b) => b.id)).toEqual([
+      'hosted-evidence-bucket-provisioning-ready',
+    ])
+    expect(BASELINE_POSTCONDITIONS.some((p) => p.id === 'B0-15-evidence-bucket-exists')).toBe(true)
+  })
+
+  it('partitions the criteria — both gates non-empty, none in both', () => {
+    const baseline = APPLY_AUTHORIZATION_CRITERIA.filter((c) => c.gate === 'baseline-apply')
+    const runtime = APPLY_AUTHORIZATION_CRITERIA.filter((c) => c.gate === 'staging-runtime')
+    expect(baseline.length + runtime.length).toBe(APPLY_AUTHORIZATION_CRITERIA.length)
+    expect(runtime.length).toBeGreaterThan(0)
+    expect(baseline.length).toBeGreaterThan(0)
+  })
+})
+
+describe('every blocker carries its four parts separately', () => {
+  const report = () =>
+    evaluateApplyAuthorization({
+      ...satisfying(),
+      checkpointA0: null,
+      applyIdentity: null,
+      evidenceBucket: null,
+    })
+
+  it('names id, observedEvidence, expectedProperty, reason and sourceArtifact', () => {
+    const all = [...report().baselineApplyGate.blocking, ...report().stagingRuntimeGate.blocking]
+    expect(all.length).toBeGreaterThan(0)
+    for (const b of all) {
+      expect(b.id, 'id').toBeTruthy()
+      expect(b.observedEvidence.length, `${b.id} observedEvidence`).toBeGreaterThan(10)
+      expect(b.expectedProperty.length, `${b.id} expectedProperty`).toBeGreaterThan(10)
+      expect(b.reason.length, `${b.id} reason`).toBeGreaterThan(10)
+      expect(b.sourceArtifact.length, `${b.id} sourceArtifact`).toBeGreaterThan(5)
+    }
+  })
+
+  // observedEvidence is the MEASUREMENT, reason is the CONCLUSION. Collapsing
+  // them is how "SET=false" became "the SET ROLE path is refuted" and then
+  // outlived the measurement that justified it.
+  it('keeps the measurement distinct from the conclusion', () => {
+    const a0 = report().baselineApplyGate.blocking.find((b) => b.id === 'checkpoint-a0-pass')!
+    expect(a0.observedEvidence).not.toBe(a0.reason)
+    expect(a0.sourceArtifact).not.toBe(a0.expectedProperty)
   })
 })

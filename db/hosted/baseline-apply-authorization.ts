@@ -57,6 +57,7 @@ import {
   MANAGEMENT_PLANE_PATH,
   storageExecutionReadiness,
 } from './managed-policy-channel'
+import type { CapabilityProbeState } from './storage-capability-probe'
 import {
   BASELINE_POSTCONDITIONS,
   EXPECTED_STORAGE_POLICY_SURFACE,
@@ -169,6 +170,24 @@ export interface ApplyAuthorizationInputs {
   /** Re-probed existence of the uellix-evidence bucket. */
   readonly evidenceBucket: OperatorAttestation<{ readonly exists: boolean }> | null
   /**
+   * The derived state of the Dashboard capability probe, from
+   * `artifacts/hosted-capability-probe-status.json`.
+   *
+   * NOT a boolean anybody sets. `null` means the artefact is absent, which is
+   * NOT_RUN — neither a demonstrated channel nor a refuted one.
+   */
+  readonly capabilityProbe: { readonly state: CapabilityProbeState } | null
+  /**
+   * The catalogue-measured outcome of the human boundary for unit 41 PART B.
+   *
+   * Distinct from the capability probe: the probe measures whether the CHANNEL
+   * can create any policy at all; this says the three canonical policies are
+   * present and their surface verified. Capability is not correctness, and a
+   * single flag covering both would erase the distinction the whole probe exists
+   * to preserve.
+   */
+  readonly managedBoundaryVerified: boolean
+  /**
    * How `baselineUnitsInstalled` will be established during apply — RR-25.
    *
    * `null` means it would be operator-typed, which is the defect. See the
@@ -190,10 +209,40 @@ export interface AuthorizationVerdict {
   readonly detail: string
 }
 
+/**
+ * WHICH GATE A CRITERION BELONGS TO.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS SPLIT EXISTS
+ * ---------------------------------------------------------------------------
+ * One list answered two different questions and therefore answered neither
+ * well. "May PHASE_BASELINE be run?" and "may evidence upload be used?" have
+ * different preconditions, and folding them together meant the `uellix-evidence`
+ * bucket — which unit 41 never reads, because its policies compare bucket_id as
+ * a COLUMN — was refusing the application of fifty units that do not need it.
+ *
+ * The obligation did not move: the bucket is still required, still `public=false`
+ * and still empty at creation. Only the MOMENT it blocks changed, from "before
+ * any DDL" to "before evidence runtime".
+ */
+export type GateName = 'baseline-apply' | 'staging-runtime'
+
 interface Criterion {
   readonly id: string
+  readonly gate: GateName
   readonly requirement: string
+  /** The artefact or derivation the evidence for this criterion comes from. */
+  readonly sourceArtifact: string
   evaluate: (inputs: ApplyAuthorizationInputs) => AuthorizationVerdict
+  /**
+   * A one-line summary of WHAT WAS SEEN, separate from why it was refused.
+   *
+   * The instruction asks a blocker to carry `observedEvidence` distinctly from
+   * `reason`, and the distinction earns its keep: "SET=false" and "the SET ROLE
+   * path is refuted" are the measurement and the conclusion, and conflating them
+   * is how a conclusion outlives the measurement that justified it.
+   */
+  observe?: (inputs: ApplyAuthorizationInputs) => string
   readonly negativeControl: {
     readonly description: string
     mutate: (satisfying: ApplyAuthorizationInputs) => ApplyAuthorizationInputs
@@ -230,6 +279,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'checkpoint-a0-pass',
+    gate: 'baseline-apply',
+    sourceArtifact: 'operator attestation — CHECKPOINT A0 (no artefact on disk yet)',
+    observe: (i) => (i.checkpointA0 === null ? 'CHECKPOINT A0: no attestation on record' : `A0 result=${i.checkpointA0.value.result}, readOnly=${i.checkpointA0.value.sessionWasReadOnly}, writes=${i.checkpointA0.value.writesPerformed}`),
     requirement:
       'CHECKPOINT A0 ran read-only against the target and returned PASS, with zero writes.',
     evaluate(inputs) {
@@ -264,6 +316,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'production-denylist-loaded',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/hosted/target-identity.ts — KNOWN_PRODUCTION_IDENTIFIERS',
+    observe: (i) => `denylist: ${i.production.projectRefs.length} project ref(s), ${i.production.hosts.length} host(s)`,
     requirement:
       'KNOWN_PRODUCTION_IDENTIFIERS.projectRefs contains at least one well-formed production ref.',
     evaluate(inputs) {
@@ -280,6 +335,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'target-identity-corroborated',
+    gate: 'baseline-apply',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-apply-identity.json',
+    observe: (i) => (i.stagingIdentity === null ? 'staging identity: no attestation on record (the artefact records no connectionHost)' : `declared=${i.stagingIdentity.value.declaredEnvironment}, ref=${i.stagingIdentity.value.projectRef}, host=${i.stagingIdentity.value.connectionHost}`),
     requirement:
       'The declared environment is staging, the host derives the SAME project ref, and neither is on the production denylist.',
     evaluate(inputs) {
@@ -321,6 +379,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'class-c-probes-affirmative',
+    gate: 'baseline-apply',
+    sourceArtifact: 'artifacts/class-c-probes/*.json',
+    observe: (i) => (i.classCProbes === null ? 'class-C probes: no attestation on record' : CLASS_C_PROBES.map(([k]) => `${k}=${String(i.classCProbes!.value[k])}`).join(', ')),
     requirement:
       'All three §2.7 probes were run and returned true: auth.users TRIGGER privilege, storage.objects ownership, uellix-evidence bucket.',
     evaluate(inputs) {
@@ -343,10 +404,22 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       // The canonical strings already existed in `CLASS_C_PROBES`. Requiring them
       // verbatim (whitespace-normalized, case-insensitive) costs nothing and
       // closes both.
-      // MEASURED FIRST. Absence is refusal, for every probe, whatever its class.
+      // THE FOUR OUTCOMES, NAMED. "All probes true" was never the property; it
+      // was a shorthand that stopped being true the moment a `false` became a
+      // legitimate, permanent measurement that SELECTS a route.
+      //
+      //   PROBE_MISSING                       not measured. Refuse.
+      //   PROBE_INVALID                       measured by a query that answers a
+      //                                       different question. Refuse.
+      //   PROBE_RESULT_UNSUPPORTED            a false with no adaptation behind
+      //                                       it, or one whose adaptation was not
+      //                                       selected. Refuse.
+      //   PROBE_RESULT_SUPPORTED_BY_SELECTED_PATH
+      //                                       a false the design accounts for AND
+      //                                       the plan routes around. Satisfied.
       const unmeasured = CLASS_C_PROBES.filter(([k]) => a.value[k] === null || a.value[k] === undefined)
       if (unmeasured.length > 0) {
-        return no(id, `not measured: ${unmeasured.map(([k]) => k).join(', ')}.`)
+        return no(id, `PROBE_MISSING — not measured: ${unmeasured.map(([k]) => k).join(', ')}.`)
       }
 
       // The quote is required of every probe that was RUN. `setLocalRoleDemonstrated`
@@ -364,7 +437,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       if (notQuoted.length > 0) {
         return no(
           id,
-          `the attestation does not quote the §2.7 query for: ${notQuoted.map(([k]) => k).join(', ')}. ` +
+          `PROBE_INVALID — the attestation does not quote the §2.7 query for: ${notQuoted.map(([k]) => k).join(', ')}. ` +
             `Expected verbatim: ${notQuoted.map(([, , sql]) => `\`${sql}\``).join(' ; ')}. A different query answers a different question.`,
         )
       }
@@ -381,7 +454,11 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
         ([k]) => a.value[k] === false && CLASS_C_REQUIREMENT[k] === 'apply-required',
       )
       if (denied.length > 0) {
-        return no(id, `the platform denies: ${denied.map(([k]) => k).join(', ')}. The affected unit needs an adaptation before ANY of the fifty are applied.`)
+        return no(
+          id,
+          `PROBE_RESULT_UNSUPPORTED — the platform denies: ${denied.map(([k]) => k).join(', ')}, and no ` +
+            `adaptation exists for it. The affected unit needs one before ANY of the fifty are applied.`,
+        )
       }
 
       // A branch-selector that is false must have selected the branch actually
@@ -391,25 +468,27 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       if (a.value.ownsStorageObjects === false && inputs.storagePath !== 'B-managed-channel') {
         return no(
           id,
-          `ownsStorageObjects is false and the selected storage path is ` +
+          `PROBE_RESULT_UNSUPPORTED — ownsStorageObjects is false and the selected storage path is ` +
             `${inputs.storagePath ?? '(none)'}. A false here does not block the baseline — it SELECTS ` +
-            `the managed channel for PART B — but only if that is the path the plan takes.`,
+            `the managed channel for PART B — but a selector whose selection nobody took is a ` +
+            `measurement with no route behind it.`,
         )
       }
       if (a.value.canSetRoleStorageAdmin === false && a.value.setLocalRoleDemonstrated === true) {
         return no(
           id,
-          'SET is false and a SET LOCAL ROLE demonstration is recorded. The grant forbids the operation, ' +
-            'so a recorded demonstration is either a different operation or a fabricated one.',
+          'PROBE_INVALID — SET is false and a SET LOCAL ROLE demonstration is recorded. The grant forbids ' +
+            'the operation, so a recorded demonstration is either a different operation or a fabricated one.',
         )
       }
 
       const required = CLASS_C_PROBES.filter(([k]) => CLASS_C_REQUIREMENT[k] === 'apply-required')
       return yes(
         id,
-        `${required.length} apply-required class-C probe(s) affirmative and all ${CLASS_C_PROBES.length} ` +
-          `measured, each run quoting its §2.7 query; ownsStorageObjects=${a.value.ownsStorageObjects} ` +
-          `selects the ${inputs.storagePath} path — attested by ${a.measuredBy}`,
+        `PROBE_RESULT_SUPPORTED_BY_SELECTED_PATH — ${required.length} apply-required probe(s) affirmative, ` +
+          `all ${CLASS_C_PROBES.length} measured, each run quoting its §2.7 query; ` +
+          `ownsStorageObjects=${a.value.ownsStorageObjects} selects the ${inputs.storagePath} path — ` +
+          `attested by ${a.measuredBy}`,
       )
     },
     negativeControl: {
@@ -438,6 +517,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-storage-apply-identity-probed',
+    gate: 'baseline-apply',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-apply-identity.json',
+    observe: (i) => (i.applyIdentity === null ? 'apply identity: no attestation on record (the artefact records no queries)' : `current_user=${i.applyIdentity.value.currentUser}, transaction_read_only=${String(i.applyIdentity.value.transactionReadOnly)}, MEMBER=${i.applyIdentity.value.isMember}, USAGE=${i.applyIdentity.value.inheritsPrivileges}, SET=${i.applyIdentity.value.canSetRole}`),
     requirement:
       'The MEMBER / USAGE / SET triple was measured in the identity that will APPLY the baseline, ' +
       'inside a read-only transaction — not in the SQL Editor.',
@@ -489,6 +571,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-storage-set-role-ready',
+    gate: 'baseline-apply',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-apply-identity.json',
+    observe: (i) => (i.applyIdentity === null ? `apply identity: no attestation on record; storagePath=${i.storagePath ?? '(none)'}` : `SET=${i.applyIdentity.value.canSetRole}, storagePath=${i.storagePath ?? '(none)'}, demo=${i.setLocalRoleDemo === null ? 'not attempted' : 'recorded'}`),
     requirement:
       'Either SET was granted AND `SET LOCAL ROLE` was demonstrated (Branch A), or SET is false and a ' +
       'managed channel was selected instead (Branch B). MEMBER never substitutes for SET.',
@@ -556,6 +641,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-storage-policy-adaptation-ready',
+    gate: 'baseline-apply',
+    sourceArtifact: 'supabase/migrations/20260716000001_storage_policies.sql',
     requirement:
       'Unit 41 splits deterministically into PART A (public helpers, psql-applicable) and PART B (the ' +
       'storage.objects policies), from ONE canonical source, with the policy predicates unchanged.',
@@ -601,6 +688,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-evidence-bucket-provisioning-ready',
+    gate: 'staging-runtime',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-uellix-staging.json',
+    observe: (i) => (i.evidenceBucket === null ? 'uellix-evidence bucket: not probed' : `uellix-evidence exists=${i.evidenceBucket.value.exists}`),
     requirement: "The 'uellix-evidence' bucket exists on the target, re-probed after creation.",
     evaluate(inputs) {
       const id = 'hosted-evidence-bucket-provisioning-ready'
@@ -622,6 +712,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-storage-policy-boundary-ready',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/hosted/baseline-postconditions.ts — B0-08',
     requirement:
       'If PART B runs through a managed channel, the boundary is explicit and the baseline cannot be ' +
       'reported complete while PART B is outstanding.',
@@ -652,6 +744,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-baseline-journal-ready',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/prepared/journal/** (51 generated wrappers)',
     requirement:
       'RR-25: `baselineUnitsInstalled` has a verifiable provenance during apply. It may not be typed by ' +
       'an operator.',
@@ -743,6 +837,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'hosted-storage-management-channel-verified',
+    gate: 'baseline-apply',
+    sourceArtifact: 'artifacts/hosted-capability-probe-status.json',
     requirement:
       'Storage closes on SET_ROLE_PATH_VERIFIED or MANAGED_BOUNDARY_VERIFIED. The first is pinned false ' +
       'by measurement; the second requires hosted evidence, not a design.',
@@ -762,35 +858,57 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
         )
       }
 
-      if (MANAGEMENT_PLANE_PATH !== 'VERIFIED') {
-        const primary = MANAGEMENT_PLANE_EVIDENCE.filter((e) => e.grade === 'primary').length
-        return no(
+      // THE DISJUNCTION, EVALUATED — NOT HARDCODED FALSE.
+      //
+      // The previous version passed `managedBoundaryVerified: false` as a
+      // literal, which made this criterion unable to pass whatever anybody
+      // measured. Reviewer B noted it was intentional; the operator's audit is
+      // right that it is the wrong shape. A gate that cannot change state is not
+      // strict, it is inert, and it hides the difference between "the evidence
+      // is not there yet" and "no evidence could ever suffice".
+      //
+      // It now reads the two facts it is about:
+      //   the capability probe state (can the channel create ANY policy?), and
+      //   the boundary verification (are the three canonical ones correct?).
+      const probeState = inputs.capabilityProbe?.state ?? 'CAPABILITY_PROBE_NOT_RUN'
+      const readiness = storageExecutionReadiness({
+        managedBoundaryVerified: inputs.managedBoundaryVerified,
+        detail:
+          `capability probe: ${probeState}; managed boundary verified: ${inputs.managedBoundaryVerified}`,
+      })
+      if (readiness.ready) {
+        return yes(
           id,
-          `the managed channel is ${MANAGEMENT_PLANE_PATH}. Determined from ${primary} primary sources: ` +
-            `the Dashboard Storage Policies UI compiles its form into CREATE POLICY text and submits it ` +
-            `through the same executeSql path as the SQL Editor, whose identity is the postgres that ` +
-            `cannot own storage.objects. So it is not a management plane. What is NOT settled is whether ` +
-            `the deployed platform routes that mutation as the open-source Studio does — closed source, ` +
-            `and only an attempt (a WRITE) can answer it. MANAGED_BOUNDARY_DESIGNED is not ` +
-            `MANAGED_BOUNDARY_VERIFIED.`,
+          `STORAGE_EXECUTION_PATH_READY via ${readiness.via} — ${readiness.detail}. The SET ROLE arm is a ` +
+            `pinned false and contributed nothing.`,
         )
       }
 
-      const readiness = storageExecutionReadiness({
-        managedBoundaryVerified: false,
-        detail: 'no hosted execution of PART B has been observed',
-      })
-      return readiness.ready ? yes(id, readiness.detail) : no(id, readiness.reason)
+      const primary = MANAGEMENT_PLANE_EVIDENCE.filter((e) => e.grade === 'primary').length
+      return no(
+        id,
+        `${readiness.reason} Channel determination: ${MANAGEMENT_PLANE_PATH}, from ${primary} primary ` +
+          `sources — the Dashboard Storage Policies UI compiles its form into CREATE POLICY text and ` +
+          `submits it through the same executeSql path as the SQL Editor, whose identity is the postgres ` +
+          `that cannot own storage.objects. What is NOT settled is whether the deployed platform routes ` +
+          `that mutation as the open-source Studio does; only an attempt (a WRITE) answers it, and the ` +
+          `capability probe is ${probeState}.`,
+      )
     },
     negativeControl: {
       description: 'selecting Branch A after SET was measured false must fail',
       mutate: (i) => ({ ...i, storagePath: 'A-set-role' }),
     },
+    observe: (i) =>
+      `capabilityProbe=${i.capabilityProbe?.state ?? 'CAPABILITY_PROBE_NOT_RUN'}, ` +
+      `managedBoundaryVerified=${i.managedBoundaryVerified}, SET_ROLE_PATH_VERIFIED=false (pinned)`,
   },
 
   /* ------------------------------------------------------------------ */
   {
     id: 'manifest-hashes-and-order',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/hosted/baseline-manifest.ts + the 50-unit corpus',
     requirement:
       'The 50-unit manifest verifies against the corpus: hashes, derived scan, equivalences, order and orphans.',
     evaluate(inputs) {
@@ -831,6 +949,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'no-class-d-units',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/hosted/baseline-manifest.ts',
     requirement: 'No unit is classified must-not-run-on-new-staging.',
     evaluate(inputs) {
       const id = 'no-class-d-units'
@@ -855,6 +975,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'zero-production-data',
+    gate: 'baseline-apply',
+    sourceArtifact: 'operator attestation — CHECKPOINT A0 emptiness probes',
+    observe: (i) => (i.checkpointA0 === null ? 'CHECKPOINT A0: no attestation on record, so emptiness rests on nothing' : `A0 projectIsNew=${i.checkpointA0.value.projectIsNew}, stellaSurfaceAbsent=${i.checkpointA0.value.stellaSurfaceAbsent}`),
     requirement:
       'The corpus writes zero rows to an empty database, and A0 confirmed the target holds no Stella surface.',
     evaluate(inputs) {
@@ -896,6 +1019,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'no-service-role-widening',
+    gate: 'baseline-apply',
+    sourceArtifact: 'the 50-unit corpus, scanned on every evaluation',
     requirement:
       'Exactly one unit names service_role as a grantee, and it is the known one (0033).',
     evaluate(inputs) {
@@ -925,6 +1050,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'feature-flags-false',
+    gate: 'baseline-apply',
+    sourceArtifact: 'operator attestation — the nine STELLA_* flags',
+    observe: (i) => (i.featureFlags === null ? 'flag inventory: not measured' : `${Object.keys(i.featureFlags.value).length} flag(s) inventoried`),
     requirement: 'All nine STELLA_* flags are false in every environment pointing at the target.',
     evaluate(inputs) {
       const id = 'feature-flags-false'
@@ -956,6 +1084,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'postconditions-ready',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/hosted/baseline-postconditions.ts',
     requirement:
       'Every CHECKPOINT B0 postcondition fails against its own executable negative control.',
     evaluate(inputs) {
@@ -1038,6 +1168,8 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
   /* ------------------------------------------------------------------ */
   {
     id: 'recovery-plan-conservative',
+    gate: 'baseline-apply',
+    sourceArtifact: 'db/hosted/baseline-recovery.ts',
     requirement:
       'A mid-baseline failure answers DESTROY_AND_REPROVISION, and a non-atomic apply halts.',
     evaluate(inputs) {
@@ -1097,6 +1229,10 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
 
 export interface ApplyAuthorizationReport {
   readonly criteria: readonly AuthorizationVerdict[]
+  /** "May PHASE_BASELINE be run?" — the fifty units and nothing else. */
+  readonly baselineApplyGate: GateReport
+  /** "May evidence runtime be used?" — the bucket, and what depends on it. */
+  readonly stagingRuntimeGate: GateReport
   /**
    * TRUE only when every criterion is satisfied. Even then it authorises a
    * HUMAN to run PHASE_BASELINE; it does not run anything and it is not consent.
@@ -1113,15 +1249,66 @@ export interface ApplyAuthorizationReport {
   readonly blocking: readonly string[]
 }
 
+/**
+ * One blocker, with its four parts kept apart.
+ *
+ * The separation is the point. `observedEvidence` is what the target said;
+ * `expectedProperty` is what the contract requires; `reason` is why the two do
+ * not meet; `sourceArtifact` is where a reader goes to check any of it. Collapse
+ * them into one string and a conclusion outlives the measurement behind it —
+ * which is precisely how "1 blocking" survived into a status report.
+ */
+export interface GateBlocker {
+  readonly id: string
+  readonly observedEvidence: string
+  readonly expectedProperty: string
+  readonly reason: string
+  readonly sourceArtifact: string
+}
+
+export interface GateReport {
+  readonly total: number
+  readonly satisfied: number
+  readonly blocking: readonly GateBlocker[]
+}
+
+function gateReport(gate: GateName, inputs: ApplyAuthorizationInputs): GateReport {
+  const criteria = APPLY_AUTHORIZATION_CRITERIA.filter((c) => c.gate === gate)
+  const blocking: GateBlocker[] = []
+  for (const criterion of criteria) {
+    const verdict = criterion.evaluate(inputs)
+    if (verdict.satisfied) continue
+    blocking.push({
+      id: criterion.id,
+      observedEvidence: criterion.observe?.(inputs) ?? '(not summarised — see reason)',
+      expectedProperty: criterion.requirement,
+      reason: verdict.detail,
+      sourceArtifact: criterion.sourceArtifact,
+    })
+  }
+  return { total: criteria.length, satisfied: criteria.length - blocking.length, blocking }
+}
+
 export function evaluateApplyAuthorization(
   inputs: ApplyAuthorizationInputs,
 ): ApplyAuthorizationReport {
   const criteria = APPLY_AUTHORIZATION_CRITERIA.map((c) => c.evaluate(inputs))
   const blocking = criteria.filter((c) => !c.satisfied)
+  const baselineApplyGate = gateReport('baseline-apply', inputs)
+  const stagingRuntimeGate = gateReport('staging-runtime', inputs)
 
   return {
     criteria,
-    applyAuthorized: blocking.length === 0,
+    baselineApplyGate,
+    stagingRuntimeGate,
+    // AUTHORISATION IS THE BASELINE GATE ALONE.
+    //
+    // The runtime gate governs a later question — may evidence upload be used —
+    // and folding it in here was what made an absent bucket refuse the
+    // application of fifty units that never read storage.buckets. The obligation
+    // is not weakened: `stagingRuntimeGate` still refuses, and B0-15 still
+    // refuses, and nothing marks the environment usable while it does.
+    applyAuthorized: baselineApplyGate.blocking.length === 0,
     baselineApplied: false,
     stagingApplied: false,
     hostedReady: false,

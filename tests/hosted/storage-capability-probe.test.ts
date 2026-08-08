@@ -569,3 +569,77 @@ describe('the operator steps are deterministic and stop before the canonical pol
     expect(steps).toMatch(/Never a key, a token or a connection string/)
   })
 })
+
+/* ========================================================================== */
+/* SECURITY MONOTONICITY, checked algebraically rather than asserted          */
+/* ========================================================================== */
+
+/**
+ * PostgreSQL's row-visibility rule for a command, modelled directly:
+ *
+ *   visible(row) = (OR over PERMISSIVE predicates) AND (AND over RESTRICTIVE)
+ *
+ * with the standing rule that a table with RLS enabled and no PERMISSIVE policy
+ * shows nothing — an empty disjunction is false.
+ *
+ * Modelling it is what turns "adding USING (false) cannot widen access" from a
+ * claim in a comment into something a machine re-checks. The earlier version of
+ * this file asserted the SQL text and the pg_policies surface, which proves the
+ * probe is what we think it is — not that what we think it is, is harmless.
+ */
+type ModelPolicy = { readonly permissive: boolean; readonly predicate: (row: number) => boolean }
+
+const visible = (policies: readonly ModelPolicy[], rows: readonly number[]): Set<number> => {
+  const permissive = policies.filter((p) => p.permissive)
+  const restrictive = policies.filter((p) => !p.permissive)
+  return new Set(
+    rows.filter(
+      (r) =>
+        permissive.some((p) => p.predicate(r)) && restrictive.every((p) => p.predicate(r)),
+    ),
+  )
+}
+
+describe('adding the probe cannot enlarge the authorised row set', () => {
+  const ROWS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  const PROBE: ModelPolicy = { permissive: true, predicate: () => false }
+
+  // Every subset of a small, deliberately varied policy library — including the
+  // empty set, which is the state storage.objects is in today.
+  const LIBRARY: ModelPolicy[] = [
+    { permissive: true, predicate: (r) => r % 2 === 0 },
+    { permissive: true, predicate: (r) => r > 6 },
+    { permissive: false, predicate: (r) => r !== 3 },
+    { permissive: false, predicate: (r) => r < 9 },
+  ]
+  const subsets = <T,>(xs: readonly T[]): T[][] =>
+    xs.reduce<T[][]>((acc, x) => [...acc, ...acc.map((s) => [...s, x])], [[]])
+
+  it('leaves the visible set EXACTLY unchanged, for every policy configuration', () => {
+    for (const base of subsets(LIBRARY)) {
+      const before = visible(base, ROWS)
+      const after = visible([...base, PROBE], ROWS)
+      expect([...after].sort(), JSON.stringify({ base: base.length })).toEqual([...before].sort())
+    }
+  })
+
+  it('in particular adds nothing to a table with RLS on and no policies', () => {
+    expect(visible([], ROWS).size).toBe(0)
+    expect(visible([PROBE], ROWS).size).toBe(0)
+  })
+
+  // THE COUNTEREXAMPLE THAT PROVES THE MODEL IS NOT VACUOUS. If the same
+  // predicate were RESTRICTIVE it would empty the table — so the model CAN
+  // detect a change, and the PERMISSIVE result above is a real property.
+  it('and the same predicate as RESTRICTIVE does remove access, wherever there was any', () => {
+    const restrictiveProbe: ModelPolicy = { permissive: false, predicate: () => false }
+    const withAccess = [LIBRARY[0]]
+    expect(visible(withAccess, ROWS).size).toBeGreaterThan(0)
+    expect(visible([...withAccess, restrictiveProbe], ROWS).size).toBe(0)
+  })
+
+  it('the probe as specified is the PERMISSIVE one', () => {
+    expect(CAPABILITY_PROBE_FIELDS.permissive).toBe('PERMISSIVE')
+    expect(CAPABILITY_PROBE_FIELDS.using).toBe('false')
+  })
+})

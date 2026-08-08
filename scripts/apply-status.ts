@@ -77,6 +77,15 @@ export function computeApplyStatus(): ApplyStatusArtefact {
     satisfiedCount: report.criteria.length - blocking.length,
     blockingCount: blocking.length,
     blockingIds: blocking.map((c) => c.id),
+    // TWO GATES, BECAUSE THEY ANSWER TWO QUESTIONS.
+    //
+    // "May PHASE_BASELINE be run?" and "may evidence runtime be used?" have
+    // different preconditions, and one list answering both is what made an absent
+    // `uellix-evidence` bucket refuse the application of fifty units that never
+    // read storage.buckets. Each blocker carries its four parts separately so a
+    // conclusion cannot outlive the measurement behind it.
+    baselineApplyGate: report.baselineApplyGate,
+    stagingRuntimeGate: report.stagingRuntimeGate,
     applyAuthorized: false,
     baselineApplied: false,
     stagingApplied: false,
@@ -93,8 +102,19 @@ const mode = process.argv[2] ?? 'report'
 
 if (mode === 'report') {
   const status = computeApplyStatus()
-  console.log(`[apply] ${status.criterionCount} criteria · ${status.satisfiedCount} satisfied · ${status.blockingCount} BLOCKING`)
-  for (const id of status.blockingIds) console.log(`[apply]   - ${id}`)
+  for (const [label, gate] of [
+    ['BASELINE_APPLY_GATE', status.baselineApplyGate],
+    ['STAGING_RUNTIME_GATE', status.stagingRuntimeGate],
+  ] as const) {
+    console.log(`[${label}] ${gate.total} criteria · ${gate.satisfied} satisfied · ${gate.blocking.length} BLOCKING`)
+    for (const b of gate.blocking) {
+      console.log(`  - ${b.id}`)
+      console.log(`      observed:  ${b.observedEvidence}`)
+      console.log(`      expected:  ${b.expectedProperty.slice(0, 110)}`)
+      console.log(`      reason:    ${b.reason.slice(0, 110)}`)
+      console.log(`      source:    ${b.sourceArtifact}`)
+    }
+  }
   console.log(`[apply] applyAuthorized=${status.applyAuthorized} baselineApplied=${status.baselineApplied}`)
 } else if (mode === 'write') {
   writeFileSync(path.join(ROOT, APPLY_STATUS_ARTEFACT), serialize(computeApplyStatus()), 'utf8')
