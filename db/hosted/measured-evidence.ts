@@ -54,6 +54,7 @@ import { KNOWN_PRODUCTION_IDENTIFIERS } from './target-identity'
 export const APPLY_IDENTITY_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-apply-identity.json'
 export const SQL_EDITOR_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-uellix-staging.json'
 export const CHECKPOINT_A0_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json'
+export const FEATURE_FLAGS_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-feature-flags.json'
 
 /** Where the computed live verdict is written, so a report can only quote it. */
 export const APPLY_STATUS_ARTEFACT = 'artifacts/hosted-apply-status.json'
@@ -225,6 +226,13 @@ export function loadMeasuredEvidence(input: {
     }
   } | null
 
+  const flags = (input.readJson(FEATURE_FLAGS_ARTEFACT) ?? null) as {
+    readonly measuredBy?: string
+    readonly query?: string
+    readonly environmentsPointingAtTarget?: unknown
+    readonly flags?: Readonly<Record<string, string | boolean | undefined>>
+  } | null
+
   const obs = identity?.observed
   // 'UNCONFIRMED' STAYS 'UNCONFIRMED'. The one transformation this loader must
   // never perform is normalising an unretained value into a boolean.
@@ -363,8 +371,23 @@ export function loadMeasuredEvidence(input: {
             identity.measuredBy ?? '',
           ),
 
-    // The nine STELLA_* flags have no recorded inventory for this project.
-    featureFlags: null,
+    // THE INVENTORY, READ. `environmentsPointingAtTarget` is passed through as
+    // `null` when the artefact does not enumerate it — an unmeasured scope list
+    // and an empty one must not share a verdict, and the criterion refuses the
+    // first while accepting the second as vacuously satisfied.
+    featureFlags:
+      flags === null
+        ? null
+        : attest(
+            {
+              environmentsPointingAtTarget: Array.isArray(flags.environmentsPointingAtTarget)
+                ? flags.environmentsPointingAtTarget
+                : null,
+              flags: flags.flags ?? {},
+            },
+            flags.query ?? '',
+            flags.measuredBy ?? '',
+          ),
 
     // EVERY FIELD MEASURED, OR THE WHOLE ATTESTATION IS ABSENT.
     //

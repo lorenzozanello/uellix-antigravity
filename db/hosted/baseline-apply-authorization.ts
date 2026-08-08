@@ -166,8 +166,31 @@ export interface ApplyAuthorizationInputs {
      */
     readonly poolerUser: string | null
   }> | null
-  /** The nine flags, as configured for every deployment pointing at the target. */
-  readonly featureFlags: OperatorAttestation<Readonly<Record<string, string | boolean | undefined>>> | null
+  /**
+   * The nine flags, AND the environments they were inventoried in.
+   *
+   * ---------------------------------------------------------------------------
+   * WHY THE ENVIRONMENT LIST IS PART OF THE EVIDENCE
+   * ---------------------------------------------------------------------------
+   * This used to be the flag map alone, and an EMPTY map satisfied the criterion
+   * with the verdict "all 9 flags false or unset". Three different states
+   * collapsed into one pass:
+   *
+   *   - inventoried, and the flags are absent  — legitimate
+   *   - inventoried nothing                    — no evidence at all
+   *   - there are no environments to inventory — vacuously fine
+   *
+   * The middle one is the fail-open, and nothing in the value could tell it from
+   * the other two. Naming the environments is what separates them: an empty list
+   * is a MEASUREMENT that there is nowhere for a flag to be true, and a missing
+   * list is somebody not having looked.
+   */
+  readonly featureFlags: OperatorAttestation<{
+    /** Deployment scopes whose Supabase target IS this project. */
+    readonly environmentsPointingAtTarget: readonly string[] | null
+    /** Flag values observed across those scopes. Empty when the list is empty. */
+    readonly flags: Readonly<Record<string, string | boolean | undefined>>
+  }> | null
 
   /* ---- Train 5C2: Storage, apply identity, and the application journal ---- */
   /**
@@ -1246,21 +1269,66 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
     sourceArtifact: 'operator attestation — the nine STELLA_* flags',
-    observe: (i) => (i.featureFlags === null ? 'flag inventory: not measured' : `${Object.keys(i.featureFlags.value).length} flag(s) inventoried`),
+    observe: (i) =>
+      i.featureFlags === null
+        ? 'flag inventory: not measured'
+        : `${i.featureFlags.value.environmentsPointingAtTarget?.length ?? 'un'}measured environment(s) ` +
+          `pointing at the target, ${Object.keys(i.featureFlags.value.flags).length} flag value(s) recorded`,
     requirement: 'All nine STELLA_* flags are false in every environment pointing at the target.',
     evaluate(inputs) {
       const id = 'feature-flags-false'
       const missing = attested(id, 'the flag inventory', inputs.featureFlags)
       if (missing) return missing
       const a = inputs.featureFlags!
+      const scopes = a.value.environmentsPointingAtTarget
+      if (scopes === null || !Array.isArray(scopes)) {
+        return no(
+          id,
+          'the environments pointing at the target were not enumerated. An empty flag map cannot be told ' +
+            'apart from nobody having looked, and the two must not share a verdict.',
+        )
+      }
+
+      // NO ENVIRONMENT POINTS AT THE TARGET.
+      //
+      // Then the universal quantification is vacuously true — and the vacuity is
+      // stated rather than hidden, because that is the only honest way to pass
+      // on nothing. It is also a real safety fact, not a technicality: with no
+      // deployment resolving to this project, no runtime can serve Stella
+      // against it, so there is no half-migrated database for a user to reach.
+      //
+      // It is a POINT-IN-TIME fact, and the criterion says so: an environment
+      // created later is a new fact that this attestation does not cover.
+      if (scopes.length === 0) {
+        const declared = Object.keys(a.value.flags).length
+        if (declared > 0) {
+          return no(
+            id,
+            `no environment points at the target, yet ${declared} flag value(s) are recorded. One of the ` +
+              `two observations is wrong and this gate will not guess which.`,
+          )
+        }
+        return yes(
+          id,
+          `no deployment environment points at this project, so none of the ${STELLA_FEATURE_FLAGS.length} ` +
+            `flags can be true against it — vacuously satisfied, and stated as such. Attested by ` +
+            `${a.measuredBy}. This is point-in-time: an environment created later is a fact this does not ` +
+            `cover, and CHECKPOINT B0 re-probes the flags after the baseline.`,
+        )
+      }
+
       const OFF = new Set(['false', '0', 'no', 'off', ''])
       const live = STELLA_FEATURE_FLAGS.filter((name) => {
-        const raw = a.value[name]
+        const raw = a.value.flags[name]
         if (raw === undefined || raw === null) return false
         return typeof raw === 'boolean' ? raw : !OFF.has(raw.trim().toLowerCase())
       })
       return live.length === 0
-        ? yes(id, `all ${STELLA_FEATURE_FLAGS.length} flags false or unset — attested by ${a.measuredBy}`)
+        ? yes(
+            id,
+            `all ${STELLA_FEATURE_FLAGS.length} flags false or unset across ${scopes.length} environment(s) ` +
+              `pointing at the target (${scopes.join(', ')}) — attested by ${a.measuredBy}`,
+          )
         : no(id, `not false: ${live.join(', ')}. Applying the chain is not enabling it, and it stays that way.`)
     },
     negativeControl: {
@@ -1269,7 +1337,10 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
         ...i,
         featureFlags: i.featureFlags && {
           ...i.featureFlags,
-          value: { ...i.featureFlags.value, STELLA_ENABLED: 'true' },
+          value: {
+            environmentsPointingAtTarget: ['preview'],
+            flags: { ...i.featureFlags.value.flags, STELLA_ENABLED: 'true' },
+          },
         },
       }),
     },

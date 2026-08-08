@@ -28,7 +28,10 @@ import {
   verifyStagingTarget,
 } from '@/db/hosted/target-identity'
 import { BASELINE_POSTCONDITIONS } from '@/db/hosted/baseline-postconditions'
-import type { PrivilegeProbes } from '@/db/hosted/hosted-provisioning-runner'
+import {
+  STELLA_FEATURE_FLAGS,
+  type PrivilegeProbes,
+} from '@/db/hosted/hosted-provisioning-runner'
 
 const ROOT = process.cwd()
 const STAGING_REF = 'sssssssssssssssssss' + 's'
@@ -112,7 +115,7 @@ function satisfying(): ApplyAuthorizationInputs {
       measuredBy: 'operator',
     },
     featureFlags: {
-      value: {},
+      value: { environmentsPointingAtTarget: ['preview'], flags: {} },
       query: 'secret manager inventory, names and values of the nine STELLA_* flags',
       measuredBy: 'operator',
     },
@@ -889,5 +892,64 @@ describe('the Session Pooler names the project in its LOGIN ROLE, not its host',
     expect(projectRefFromPoolerUser('postgres')).toBeNull()
     expect(projectRefFromPoolerUser('postgres.short')).toBeNull()
     expect(projectRefFromPoolerUser('')).toBeNull()
+  })
+})
+
+describe('feature-flags-false tells three states apart that used to share a verdict', () => {
+  const flags = APPLY_AUTHORIZATION_CRITERIA.find((c) => c.id === 'feature-flags-false')!
+  const withFlags = (value: {
+    environmentsPointingAtTarget: readonly string[] | null
+    flags: Record<string, string | boolean | undefined>
+  }) => {
+    const base = satisfying()
+    return flags.evaluate({ ...base, featureFlags: { ...base.featureFlags!, value } })
+  }
+
+  // THE FAIL-OPEN THAT WAS THERE: an empty map returned "all 9 flags false or
+  // unset", which is a claim about an inventory nobody had necessarily taken.
+  it('refuses when the environments were never enumerated', () => {
+    const v = withFlags({ environmentsPointingAtTarget: null, flags: {} })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/were not enumerated/)
+  })
+
+  // The operator's actual evidence: no Vercel scope resolves to this project.
+  it('is vacuously satisfied when NO environment points at the target, and says so', () => {
+    const v = withFlags({ environmentsPointingAtTarget: [], flags: {} })
+    expect(v.satisfied, v.detail).toBe(true)
+    expect(v.detail).toMatch(/vacuously satisfied, and stated as such/)
+    expect(v.detail).toMatch(/point-in-time/)
+  })
+
+  // Two observations that cannot both be true.
+  it('refuses zero environments alongside recorded flag values', () => {
+    const v = withFlags({ environmentsPointingAtTarget: [], flags: { STELLA_ENABLED: 'false' } })
+    expect(v.satisfied).toBe(false)
+    expect(v.detail).toMatch(/One of the two observations is wrong/)
+  })
+
+  it('checks every flag when environments DO point at the target', () => {
+    expect(withFlags({ environmentsPointingAtTarget: ['preview'], flags: {} }).satisfied).toBe(true)
+    const on = withFlags({ environmentsPointingAtTarget: ['preview'], flags: { STELLA_ENABLED: 'true' } })
+    expect(on.satisfied).toBe(false)
+    expect(on.detail).toMatch(/not false: STELLA_ENABLED/)
+  })
+
+  // The gate is deliberately stricter than lib/stella/config.ts, which compares
+  // `=== 'true'`. Anything it does not recognise as off counts as on, so a typo
+  // cannot read as disabled.
+  it.each(['TRUE', 'yes', 'maybe', '1'])('treats %s as enabled, unlike the runtime', (value) => {
+    const v = withFlags({ environmentsPointingAtTarget: ['preview'], flags: { STELLA_ENABLED: value } })
+    expect(v.satisfied, `${value} must count as on`).toBe(false)
+  })
+
+  it.each(['false', '0', 'no', 'off', ''])('accepts %s as disabled', (value) => {
+    expect(
+      withFlags({ environmentsPointingAtTarget: ['preview'], flags: { STELLA_ENABLED: value } }).satisfied,
+    ).toBe(true)
+  })
+
+  it('covers exactly the nine flags the runtime consumes', () => {
+    expect(STELLA_FEATURE_FLAGS).toHaveLength(9)
   })
 })
