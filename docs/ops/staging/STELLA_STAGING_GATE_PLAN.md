@@ -193,7 +193,7 @@ aplicado, hosted listo ni proveedor listo — los tres campos están **hardcodea
 | `managed-role-bootstrap-ready` | 5 roles sin atributo peligroso; `service_role` nunca como grantee; **se niega si hay superusuario** | inyectar `BYPASSRLS`, un `GRANT … TO service_role`, un `CREATE ROLE … CREATEROLE`, o quitar la refusal de superusuario |
 | `hosted-package-manifest-ready` | los 10 artefactos regeneran byte a byte desde su fuente fijada | marcar un artefacto como divergente |
 | `hosted-package-order-ready` | el planificador hosted usa las **mismas 8** reglas de supersesión | bajar el conteo a 7 |
-| `staging-target-identity-ready` | host de producción y centinela ausente son rechazos con código propio | desactivar cualquiera de los dos |
+| `staging-target-identity-ready` | host de producción y centinela ausente son rechazos con código propio; **un solo contrato de identidad para los dos modos de conexión** (directo y session pooler), con los catorce ataques de `tests/hosted/identity-contract.test.ts` | desactivar cualquiera de los dos, o aceptar el host del pooler sin su rol de login |
 | `hosted-migrator-dry-run-ready` | un dry-run planifica los 10 pasos y **no permite escrituras** | permitir escrituras, o 9 pasos |
 | `r6h-audit-ready` | el `stella_0017` generado conserva el CHECK `NOT VALID` y su aborto ante VALIDATED; ningún artefacto emite `VALIDATE CONSTRAINT` | desactivar cualquiera de los dos |
 
@@ -255,7 +255,7 @@ Once criterios, cada uno con control negativo **ejecutable**:
 |---|---|---|
 | `checkpoint-a0-pass` | atestación con consulta y procedencia | un A0 con una sola escritura |
 | `production-denylist-loaded` | `productionDenylistStatus()` | lista de refs vacía |
-| `target-identity-corroborated` | atestación + `projectRefFromHost` | host que nombra otro proyecto |
+| `target-identity-corroborated` | atestación + una segunda señal **independiente de la declaración**: `projectRefFromHost` por conexión directa, `projectRefFromPoolerUser` por session pooler | un host, o un rol de login, que nombra otro proyecto |
 | `class-c-probes-affirmative` | atestación de §2.7 | `ownsStorageObjects: false` |
 | `manifest-hashes-and-order` | derivado del corpus | una unidad con un byte de deriva |
 | `no-class-d-units` | lista de unidades **inyectada** | una unidad clasificada clase D |

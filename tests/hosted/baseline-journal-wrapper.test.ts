@@ -268,7 +268,33 @@ describe('the wrapper refuses an unattributed row', () => {
   it('gates the whole unit behind the project ref variable', () => {
     expect(w).toContain(`\\if :{?${PROJECT_REF_VAR}}`)
     expect(w).toContain('\\endif')
-    expect((w.match(/\\if /g) ?? []).length).toBe((w.match(/\\endif/g) ?? []).length)
+    // EXECUTABLE lines only. The header comments now discuss the `\if` semantics,
+    // and counting prose is the same substring mistake this file corrects
+    // elsewhere — it fired the moment a comment mentioned the directive.
+    const exec = w.split('\n').filter((l) => !l.trimStart().startsWith('--'))
+    const count = (p: RegExp) => exec.filter((l) => p.test(l)).length
+    expect(count(/^\\if /)).toBe(count(/^\\endif/))
+    expect(count(/^\\if /)).toBe(1)
+  })
+
+  // THE MINOR AUDIT FINDING. `\if :{?var}` tests whether the variable is DEFINED,
+  // and `-v ref="$UNSET"` defines it as the EMPTY STRING — so the refusal branch
+  // never fired and what actually stopped the unit was the ledger's CHECK, a
+  // third line of defence doing a first line's job.
+  it('refuses an empty or malformed ref BEFORE any unit SQL runs', () => {
+    const exec = w.split('\n').filter((l) => !l.trimStart().startsWith('--'))
+    const guardAt = exec.findIndex((l) => l.startsWith('SET LOCAL uellix.project_ref'))
+    const raiseAt = exec.findIndex((l) => /RAISE EXCEPTION 'REFUSED: .*absent, empty, whitespace/.test(l))
+    const includeAt = exec.findIndex((l) => l.startsWith('\\ir '))
+    expect(guardAt).toBeGreaterThanOrEqual(0)
+    expect(raiseAt).toBeGreaterThan(guardAt)
+    expect(includeAt, 'the guard must precede the unit').toBeGreaterThan(raiseAt)
+    expect(w).toMatch(/!~ '\^\[a-z\]\{20\}\$'/)
+  })
+
+  // DEFENCE IN DEPTH: the new guard does not replace the ledger CHECK.
+  it('keeps the ledger CHECK as the last line, not the only one', () => {
+    expect(journalBootstrapArtefact()).toMatch(/project_ref ~ '\^\[a-z\]\{20\}\$'/)
   })
 
   // REVIEWER B, verified against psql's own exec_command_quit(): `\quit` takes

@@ -88,7 +88,13 @@ export interface HostedBaselineGateEvidence {
   readonly firstProvisioningPlannable: boolean
 }
 
-const REF = 'abcdefghijklmnopqrst'
+// THE REAL STAGING REF, not a placeholder.
+//
+// `verifyStagingTarget` is now PINNED to KNOWN_STAGING_PROJECT_REF: a
+// syntactically valid ref for some OTHER project is refused, which is audit
+// requirement 14. A fixture using a made-up ref would exercise only the
+// refusal, so every positive path here would have stopped meaning anything.
+const REF = 'bvyzblhqymxruxdguaee'
 
 function discover(root: string): string[] {
   const dirs: [string, (n: string) => boolean][] = [

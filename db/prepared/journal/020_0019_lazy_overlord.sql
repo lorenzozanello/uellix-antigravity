@@ -29,6 +29,22 @@
 -- branch and never runs.
 \if :{?uellix_project_ref}
 
+-- SHAPE GUARD, BEFORE ANY UNIT SQL RUNS.
+--
+-- `\if :{?var}` tests whether the variable is DEFINED, not whether it holds
+-- anything. `-v ref="$UNSET_SHELL_VAR"` defines it as the EMPTY STRING, so
+-- the refusal branch below never fires and what actually stopped the unit was
+-- the ledger's CHECK constraint — a third line of defence doing a first line's
+-- job. Independent audit found it. The CHECK stays; this refuses earlier and
+-- says why, and it catches empty, whitespace and malformed alike.
+SET LOCAL uellix.project_ref = :'uellix_project_ref';
+DO $guard$
+BEGIN
+  IF coalesce(current_setting('uellix.project_ref', true), '') !~ '^[a-z]{20}$' THEN
+    RAISE EXCEPTION 'REFUSED: uellix_project_ref is absent, empty, whitespace or not a 20-lowercase-letter Supabase project ref. Nothing was applied.';
+  END IF;
+END $guard$;
+
 \ir ../../../db/migrations/0019_lazy_overlord.sql
 
 -- The journal row. INSIDE this transaction, by construction.

@@ -23,8 +23,8 @@ creado, el único rol de login administrativo disponible es `postgres`.
 
 | Campo | Valor |
 |---|---|
-| **Expected login role** | `postgres` |
-| **Connection mode** | conexión **directa** a `db.bvyzblhqymxruxdguaee.supabase.co:5432`, o **session pooler**. **NO** transaction pooler: el baseline usa `psql -1` y necesita transacciones de sesión completa |
+| **Expected login role** | `postgres` por conexión directa; `postgres.bvyzblhqymxruxdguaee` por session pooler — es el **mismo** rol, y el sufijo es cómo el pooler enruta (§1.2) |
+| **Connection mode** | conexión **directa** a `db.bvyzblhqymxruxdguaee.supabase.co:5432`, o **session pooler** (`aws-0-us-east-2.pooler.supabase.com:5432`). **NO** transaction pooler (`:6543`): el baseline usa `psql -1` y necesita transacciones de sesión completa |
 | **Cuándo existe** | desde la creación del proyecto; es el rol administrativo que Supabase provee |
 | **Por qué es el correcto** | es el único que existe y tiene `CREATE` sobre `public` antes del bootstrap. La separación de roles de Uellix comienza *después*, y ése es precisamente su diseño: `uellix_owner` es `NOLOGIN` y sólo se alcanza por `SET ROLE` desde `uellix_migrator`, ninguno de los cuales existe todavía |
 
@@ -38,6 +38,65 @@ Cada línea es una confusión concreta que invalidaría la medición:
 | **el transaction pooler** | `SET LOCAL ROLE` y `psql -1` necesitan afinidad de sesión. Medir ahí respondería sobre un modo de conexión que el apply no usará |
 | **`service_role`** | prohibido como migrator, y §4.4 prohíbe aprovisionar su clave |
 | **`uellix_migrator`** | no existe aún. Medir con él es imposible ahora y sería la identidad de las fases *posteriores*, no de ésta |
+
+### 1.2 Un contrato de identidad, dos mecanismos de derivación
+
+Este documento declaraba desde el principio que ambos modos de conexión son
+válidos. El código no. Una auditoría independiente lo midió:
+
+```
+planProvisioningPhase(host = aws-0-us-east-2.pooler.supabase.com)
+  → REFUSED  HOSTED_TARGET_HOST_NOT_SUPABASE
+planProvisioningPhase(host = db.bvyzblhqymxruxdguaee.supabase.co)
+  → PLAN OK, 51 steps
+```
+
+**La autorización apuntaba a una conexión que el planificador rechazaba.** El
+gate de apply corroboró el objetivo por el rol de login del pooler y dio PASS;
+`verifyStagingTarget` — la comprobación que usa el runner — rechazaba ese host
+de plano. Dos contratos de identidad dentro de una misma decisión. Fail-closed,
+y aun así inservible: *una autorización sobre la que nadie puede actuar no
+autoriza nada*.
+
+La corrección **no** es aceptar el host del pooler. Es reconocer que hay **un
+solo contrato** con **dos mecanismos de derivación**, porque el ref del proyecto
+vive en sitios distintos según el modo:
+
+| | Conexión directa | Session pooler |
+|---|---|---|
+| Host | `db.<ref>.supabase.co` — **nombra** el proyecto | `aws-0-<región>.pooler.supabase.com` — **regional y compartido**, no nombra a nadie |
+| De dónde sale el ref | del host | del **rol de login**, `postgres.<ref>` |
+| Puerto | 5432 | 5432 sesión · 6543 transacción → **rechazado** |
+| Si falta la fuente del ref | el host siempre está | **rechazo**, nunca aceptación por el hostname |
+
+Lo que **no** cambia entre los dos mecanismos, porque es el contrato y no el
+mecanismo:
+
+1. La **denylist de producción tiene precedencia absoluta**, y se aplica sobre
+   *todos* los refs candidatos a la vez — declarado, centinela, rol de login y
+   host — antes que cualquier otra comprobación. Un conjunto de campos
+   internamente perfecto no la sobrevive.
+2. El ref derivado debe coincidir **exactamente** con el proyecto fijado. Un ref
+   sintácticamente válido de *otro* proyecto se rechaza
+   (`HOSTED_TARGET_NOT_EXPECTED_PROJECT`).
+3. Si hay **más de una** fuente de identidad, **todas** deben coincidir. Una
+   contradicción es `HOSTED_TARGET_IDENTITY_CONTRADICTION`; nunca se elige una
+   fuente en silencio por encima de otra.
+4. Entrada ambigua, parcial o contradictoria se **rechaza**. Nunca se acepta por
+   región, por sufijo DNS ni por «parece un pooler».
+
+El rol de login se trata como **nombre de usuario y nada más**:
+`projectRefFromPoolerUser` rechaza cualquier valor con `:`, `@`, `/` o espacios
+en vez de parsear a su alrededor, de modo que un DSN pegado donde iba un usuario
+se rechaza en lugar de almacenarse.
+
+Dónde vive esto, y dónde se refuta:
+
+| | |
+|---|---|
+| Contrato | `db/hosted/target-identity.ts` — `deriveConnectionIdentity`, `verifyStagingTarget`, `projectRefFromPoolerUser` |
+| Los catorce ataques | `tests/hosted/identity-contract.test.ts` |
+| Que el plan de 51 pasos existe por ambos modos | `tests/hosted/hosted-provisioning-runner.test.ts`, §«ACTIONABILITY» |
 
 ---
 

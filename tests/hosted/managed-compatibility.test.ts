@@ -159,7 +159,9 @@ describe('Phase 11 — actor, org, project and category binding survive the rewr
 })
 
 describe('Phase 12 — attacks that must fail closed', () => {
-  const REF = 'abcdefghijklmnopqrst'
+  // The REAL staging ref: verifyStagingTarget is pinned, so a made-up ref is
+  // now refused before these attacks reach the code they are aimed at.
+  const REF = 'bvyzblhqymxruxdguaee'
   const sources: Record<string, string> = Object.fromEntries(
     HOSTED_CHAIN.map((n) => [
       n,

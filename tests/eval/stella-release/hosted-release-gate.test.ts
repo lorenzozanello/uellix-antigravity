@@ -181,6 +181,27 @@ describe('negative controls', () => {
     )
   })
 
+  // The pooler half of the contract, in BOTH directions. Failing only the first
+  // of these would let the gate be satisfied by a planner that refuses the
+  // pooler outright — which is exactly the state an audit found and refuted.
+  it('staging-target-identity-ready FAILS when the session pooler stops being plannable at all', () => {
+    expect(
+      gate('staging-target-identity-ready', { ...REAL, poolerAcceptedWithLoginRole: false }).passed,
+    ).toBe(false)
+  })
+
+  it('staging-target-identity-ready FAILS when a pooler host is accepted without its login role', () => {
+    expect(
+      gate('staging-target-identity-ready', { ...REAL, poolerRefusedWithoutLoginRole: false }).passed,
+    ).toBe(false)
+  })
+
+  it('staging-target-identity-ready FAILS when the transaction pooler stops being refused', () => {
+    expect(
+      gate('staging-target-identity-ready', { ...REAL, poolerTransactionPortRefused: false }).passed,
+    ).toBe(false)
+  })
+
   it('hosted-migrator-dry-run-ready FAILS when a dry run reports writes permitted', () => {
     expect(
       gate('hosted-migrator-dry-run-ready', { ...REAL, dryRunPermitsWrites: true }).passed,

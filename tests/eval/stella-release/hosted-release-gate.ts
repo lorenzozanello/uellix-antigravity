@@ -28,7 +28,7 @@ import {
 } from '@/db/hosted/hosted-package-manifest'
 import { planHostedApply } from '@/db/hosted/hosted-migrator'
 import { PREPARED_PACKAGE_SUPERSESSIONS } from '@/db/prepared-package-order'
-import { verifyStagingTarget } from '@/db/hosted/target-identity'
+import { TRANSACTION_POOLER_PORT, verifyStagingTarget } from '@/db/hosted/target-identity'
 
 export const HOSTED_GATE_IDS = [
   'hosted-capability-preflight-ready',
@@ -54,6 +54,9 @@ export interface HostedGateEvidence {
   readonly supersessionRuleCount: number
   readonly productionHostRefused: boolean
   readonly sentinelMissingRefused: boolean
+  readonly poolerAcceptedWithLoginRole: boolean
+  readonly poolerRefusedWithoutLoginRole: boolean
+  readonly poolerTransactionPortRefused: boolean
   readonly dryRunStepCount: number
   readonly dryRunPermitsWrites: boolean
   readonly r6hValidateConstraintAbsent: boolean
@@ -62,7 +65,13 @@ export interface HostedGateEvidence {
   readonly bootstrapRefusesSuperuser?: boolean
 }
 
-const REF = 'abcdefghijklmnopqrst'
+// THE REAL STAGING REF, not a placeholder.
+//
+// `verifyStagingTarget` is now PINNED to KNOWN_STAGING_PROJECT_REF: a
+// syntactically valid ref for some OTHER project is refused, which is audit
+// requirement 14. A fixture using a made-up ref would exercise only the
+// refusal, so every positive path here would have stopped meaning anything.
+const REF = 'bvyzblhqymxruxdguaee'
 
 /**
  * Collects the evidence by actually doing the work — regenerating every
@@ -113,6 +122,21 @@ export function buildHostedGateEvidence(root: string = process.cwd()): HostedGat
   const productionVerdict = verifyStagingTarget({ ...target, connectionHost: 'app.uellix.com' })
   const sentinelVerdict = verifyStagingTarget({ ...target, sentinel: null })
 
+  // ONE CONTRACT, TWO MECHANISMS. The session pooler host is REGIONAL and shared
+  // -- every project in the region presents it -- so the ref comes from the login
+  // role instead. Measured as a pair on purpose: an audit found the gate saying
+  // PASS while the planner refused this very host, and the wrong repair would
+  // have been to accept the hostname. Acceptance here means "accepted WITH the
+  // login role AND refused without it", never one of the two.
+  const pooler = { ...target, connectionHost: 'aws-0-us-east-2.pooler.supabase.com' }
+  const poolerVerdict = verifyStagingTarget({ ...pooler, poolerUser: `postgres.${REF}` })
+  const poolerBareVerdict = verifyStagingTarget(pooler)
+  const poolerTxVerdict = verifyStagingTarget({
+    ...pooler,
+    poolerUser: `postgres.${REF}`,
+    connectionPort: TRANSACTION_POOLER_PORT,
+  })
+
   // R6h: the generated stella_0017 must still add the CHECK as NOT VALID, and
   // nothing anywhere in the hosted chain may emit VALIDATE CONSTRAINT.
   const generated0017 = generateHostedPackage(
@@ -135,6 +159,11 @@ export function buildHostedGateEvidence(root: string = process.cwd()): HostedGat
     productionHostRefused: !productionVerdict.ok && productionVerdict.code === 'HOSTED_TARGET_IS_PRODUCTION',
     sentinelMissingRefused:
       !sentinelVerdict.ok && sentinelVerdict.code === 'HOSTED_TARGET_SENTINEL_MISSING',
+    poolerAcceptedWithLoginRole: poolerVerdict.ok,
+    poolerRefusedWithoutLoginRole:
+      !poolerBareVerdict.ok && poolerBareVerdict.code === 'HOSTED_TARGET_POOLER_USER_MISSING',
+    poolerTransactionPortRefused:
+      !poolerTxVerdict.ok && poolerTxVerdict.code === 'HOSTED_TARGET_POOLER_TRANSACTION_MODE',
     dryRunStepCount: dryRun.ok ? dryRun.steps.length : -1,
     dryRunPermitsWrites: dryRun.ok ? dryRun.writesPermitted : true,
     r6hValidateConstraintAbsent,
@@ -247,13 +276,18 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
   })
 
   /* 5 ---------------------------------------------------------------- */
+  const identityOk =
+    evidence.productionHostRefused &&
+    evidence.sentinelMissingRefused &&
+    evidence.poolerAcceptedWithLoginRole &&
+    evidence.poolerRefusedWithoutLoginRole &&
+    evidence.poolerTransactionPortRefused
   gates.push({
     id: 'staging-target-identity-ready',
-    passed: evidence.productionHostRefused && evidence.sentinelMissingRefused,
-    detail:
-      evidence.productionHostRefused && evidence.sentinelMissingRefused
-        ? 'a production host is refused with HOSTED_TARGET_IS_PRODUCTION before any other check, and a target without an in-database sentinel is refused with HOSTED_TARGET_SENTINEL_MISSING'
-        : `identity refusals incomplete: productionHostRefused=${evidence.productionHostRefused}, sentinelMissingRefused=${evidence.sentinelMissingRefused}`,
+    passed: identityOk,
+    detail: identityOk
+      ? 'a production host is refused with HOSTED_TARGET_IS_PRODUCTION before any other check; a target without an in-database sentinel is refused with HOSTED_TARGET_SENTINEL_MISSING; and ONE contract covers both connection modes -- the session pooler is accepted only WITH its postgres.<ref> login role, refused without it, and refused on the transaction port'
+      : `identity refusals incomplete: productionHostRefused=${evidence.productionHostRefused}, sentinelMissingRefused=${evidence.sentinelMissingRefused}, poolerAcceptedWithLoginRole=${evidence.poolerAcceptedWithLoginRole}, poolerRefusedWithoutLoginRole=${evidence.poolerRefusedWithoutLoginRole}, poolerTransactionPortRefused=${evidence.poolerTransactionPortRefused}`,
   })
 
   /* 6 ---------------------------------------------------------------- */

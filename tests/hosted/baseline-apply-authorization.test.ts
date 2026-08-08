@@ -34,7 +34,13 @@ import {
 } from '@/db/hosted/hosted-provisioning-runner'
 
 const ROOT = process.cwd()
-const STAGING_REF = 'sssssssssssssssssss' + 's'
+// THE REAL STAGING REF, not a placeholder.
+//
+// `verifyStagingTarget` is now PINNED to KNOWN_STAGING_PROJECT_REF: a
+// syntactically valid ref for some OTHER project is refused, which is audit
+// requirement 14. A fixture using a made-up ref would exercise only the
+// refusal, so every positive path here would have stopped meaning anything.
+const STAGING_REF = 'bvyzblhqymxruxdguaee'
 const PROD_REF = 'pppppppppppppppppppp'
 
 const readBaselineSql = (file: string): string | null => {

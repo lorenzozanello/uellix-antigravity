@@ -32,6 +32,12 @@
 /** A refusal code. Stable — the gates and the runbook cite these by name. */
 export type TargetIdentityFailureCode =
   | 'HOSTED_TARGET_IS_PRODUCTION'
+  | 'HOSTED_TARGET_POOLER_USER_MISSING'
+  | 'HOSTED_TARGET_POOLER_USER_INVALID'
+  | 'HOSTED_TARGET_POOLER_TRANSACTION_MODE'
+  | 'HOSTED_TARGET_POOLER_PORT_UNKNOWN'
+  | 'HOSTED_TARGET_IDENTITY_CONTRADICTION'
+  | 'HOSTED_TARGET_NOT_EXPECTED_PROJECT'
   | 'HOSTED_TARGET_ENVIRONMENT_NOT_STAGING'
   | 'HOSTED_TARGET_PROJECT_REF_INVALID'
   | 'HOSTED_TARGET_HOST_NOT_SUPABASE'
@@ -53,9 +59,36 @@ export interface HostedTargetInput {
   readonly declaredProjectRef: string
   /** Host component only — never the connection string. */
   readonly connectionHost: string
+  /**
+   * The Session Pooler LOGIN ROLE, `postgres.<ref>`, when the connection goes
+   * through the pooler. A USERNAME — never a password, never a DSN.
+   *
+   * REQUIRED for a pooler host and IGNORED-BUT-CROSS-CHECKED for a direct one:
+   * if both a ref-bearing host and a login role are present they must agree, and
+   * a contradiction is a refusal rather than a silent preference.
+   */
+  readonly poolerUser?: string | null
+  /**
+   * The port, when the caller knows it. Optional because a host alone is often
+   * all an operator records — but when it IS known it decides pooling MODE, and
+   * PHASE_BASELINE cannot run in transaction mode.
+   */
+  readonly connectionPort?: number | null
   /** The row read from uellix_bootstrap.staging_sentinel, or null if absent. */
   readonly sentinel: StagingSentinel | null
 }
+
+/**
+ * Supabase pooler ports. Session mode keeps one backend per client connection;
+ * transaction mode hands a backend back after every statement.
+ *
+ * `psql -1` wraps the whole invocation in ONE transaction and every wrapper
+ * additionally uses `\ir` and `SET LOCAL`, all of which need session affinity.
+ * Transaction mode would scatter them across backends, so it is refused rather
+ * than left to fail at unit 17 with a confusing error.
+ */
+export const SESSION_POOLER_PORT = 5432
+export const TRANSACTION_POOLER_PORT = 6543
 
 export type TargetIdentityVerdict =
   | {
@@ -317,6 +350,167 @@ export function projectRefFromPoolerUser(user: string): string | null {
   return match && PROJECT_REF.test(match[1]) ? match[1] : null
 }
 
+/**
+ * ONE IDENTITY CONTRACT, TWO DERIVATION MECHANISMS.
+ *
+ * ---------------------------------------------------------------------------
+ * THE DIVERGENCE THIS RESOLVES
+ * ---------------------------------------------------------------------------
+ * The apply gate corroborated the target through the Session Pooler login role
+ * and said PASS, while this module — the one the runner uses to plan
+ * PHASE_BASELINE — refused a pooler host outright. Independent audit proved it:
+ *
+ *     planProvisioningPhase(aws-0-us-east-2.pooler.supabase.com)
+ *       → REFUSED HOSTED_TARGET_HOST_NOT_SUPABASE
+ *     planProvisioningPhase(db.<ref>.supabase.co)
+ *       → PLAN OK, 51 steps
+ *
+ * Two identity contracts in one decision. The documented apply modes are direct
+ * OR session pooler, and every Class-C measurement was taken over the pooler, so
+ * the refusal fell on the connection the operator actually uses. Fail-closed, and
+ * still wrong: authorisation that cannot be acted on is not authorisation.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT "SUPPORTING THE POOLER" MUST NOT MEAN
+ * ---------------------------------------------------------------------------
+ * NOT "accept any host containing pooler.supabase.com". That hostname is
+ * regional and shared — every project in us-east-2 presents it — so accepting it
+ * on its own would corroborate nothing and quietly delete signal 2.
+ *
+ * A pooler connection is accepted only when the LOGIN ROLE names the project,
+ * because that is the value the pooler actually routes by. The mechanism differs;
+ * the contract does not: some source independent of the declaration must name the
+ * project, every source present must agree, and the denylist outranks all of it.
+ */
+export type ConnectionMechanism = 'direct-db' | 'rest' | 'session-pooler'
+
+export type ConnectionIdentityVerdict =
+  | {
+      readonly ok: true
+      readonly projectRef: string
+      readonly mechanism: ConnectionMechanism
+      /** Every independent source that named this project, for the log. */
+      readonly corroboratedBy: readonly string[]
+    }
+  | { readonly ok: false; readonly code: TargetIdentityFailureCode; readonly message: string }
+
+/**
+ * Derives the project ref the CONNECTION names, from whichever sources exist.
+ *
+ * Pure and total: it judges nothing about which project is wanted — that is the
+ * caller's pin — and it never prefers one source over another when they
+ * disagree, because a silent preference is how a contradiction becomes a pass.
+ */
+export function deriveConnectionIdentity(input: {
+  readonly connectionHost: string
+  readonly poolerUser?: string | null
+  readonly connectionPort?: number | null
+}): ConnectionIdentityVerdict {
+  const host = (input.connectionHost ?? '').trim().toLowerCase()
+  const kind = classifySupabaseHost(host)
+  const fromUser = projectRefFromPoolerUser(input.poolerUser ?? '')
+  const userSupplied = (input.poolerUser ?? '').trim() !== ''
+
+  if (kind === 'unknown') {
+    return {
+      ok: false,
+      code: 'HOSTED_TARGET_HOST_NOT_SUPABASE',
+      message:
+        `refused: '${host || '(none)'}' is not a recognised Supabase endpoint. Accepted forms are ` +
+        `db.<ref>.supabase.co, <ref>.supabase.co, or aws-<n>-<region>.pooler.supabase.com with a ` +
+        `postgres.<ref> login role. A DNS suffix alone is never enough.`,
+    }
+  }
+
+  if (kind === 'pooler') {
+    // MODE BEFORE IDENTITY: transaction mode cannot run the baseline at all, so
+    // saying "wrong project" about a connection that could never work either way
+    // would be the less useful of two true refusals.
+    if (typeof input.connectionPort === 'number') {
+      if (input.connectionPort === TRANSACTION_POOLER_PORT) {
+        return {
+          ok: false,
+          code: 'HOSTED_TARGET_POOLER_TRANSACTION_MODE',
+          message:
+            `refused: port ${input.connectionPort} is the Supabase TRANSACTION pooler. PHASE_BASELINE ` +
+            `applies every unit with psql -1 and each wrapper uses \\ir and SET LOCAL, all of which need ` +
+            `session affinity. Use the session pooler port ${SESSION_POOLER_PORT}.`,
+        }
+      }
+      if (input.connectionPort !== SESSION_POOLER_PORT) {
+        return {
+          ok: false,
+          code: 'HOSTED_TARGET_POOLER_PORT_UNKNOWN',
+          message:
+            `refused: port ${input.connectionPort} is neither the session pooler (${SESSION_POOLER_PORT}) ` +
+            `nor the transaction pooler (${TRANSACTION_POOLER_PORT}). An unrecognised port is an ` +
+            `unrecognised pooling mode, and mode decides whether the baseline can run at all.`,
+        }
+      }
+    }
+    if (!userSupplied) {
+      return {
+        ok: false,
+        code: 'HOSTED_TARGET_POOLER_USER_MISSING',
+        message:
+          `refused: '${host}' is a Supabase Session Pooler host, which is regional and shared — every ` +
+          `project in the region presents it, so it names no project. The pooler puts the ref in the ` +
+          `LOGIN ROLE; supply it as postgres.<ref>. A username, never a password or a connection string.`,
+      }
+    }
+    if (fromUser === null) {
+      return {
+        ok: false,
+        code: 'HOSTED_TARGET_POOLER_USER_INVALID',
+        message:
+          `refused: the pooler login role does not have the exact shape postgres.<ref> (20 lowercase ` +
+          `letters). Anything carrying ':', '@', '/' or whitespace is rejected rather than parsed ` +
+          `around, so a pasted DSN is refused instead of being mined for a ref.`,
+      }
+    }
+    return { ok: true, projectRef: fromUser, mechanism: 'session-pooler', corroboratedBy: ['pooler login role'] }
+  }
+
+  // Direct or REST: the host names the project.
+  const fromHost = projectRefFromHost(host)
+  if (fromHost === null) {
+    return {
+      ok: false,
+      code: 'HOSTED_TARGET_HOST_NOT_SUPABASE',
+      message: `refused: no Supabase project ref can be derived from '${host}'.`,
+    }
+  }
+  // CROSS-CORROBORATION. A login role alongside a ref-bearing host is a second
+  // source, and two sources that disagree are a contradiction — never a choice.
+  if (userSupplied) {
+    if (fromUser === null) {
+      return {
+        ok: false,
+        code: 'HOSTED_TARGET_POOLER_USER_INVALID',
+        message:
+          `refused: a login role was supplied alongside a direct host and it does not parse as ` +
+          `postgres.<ref>. An unreadable second source is not an absent one.`,
+      }
+    }
+    if (fromUser !== fromHost) {
+      return {
+        ok: false,
+        code: 'HOSTED_TARGET_IDENTITY_CONTRADICTION',
+        message:
+          `refused: the host names ${fromHost} and the login role names ${fromUser}. Two identity ` +
+          `sources disagree, and this runner will not silently prefer one.`,
+      }
+    }
+    return {
+      ok: true,
+      projectRef: fromHost,
+      mechanism: kind,
+      corroboratedBy: ['connection host', 'pooler login role'],
+    }
+  }
+  return { ok: true, projectRef: fromHost, mechanism: kind, corroboratedBy: ['connection host'] }
+}
+
 export function projectRefFromHost(host: string): string | null {
   if (!host) return null
   const normalized = host.trim().toLowerCase()
@@ -406,19 +600,36 @@ export function verifyStagingTarget(
   production: ProductionIdentifiers = KNOWN_PRODUCTION_IDENTIFIERS,
   /** Defaults to the Train 5B behaviour. See `SentinelPolicy`. */
   sentinelPolicy: SentinelPolicy = 'required',
+  /**
+   * The ONE project this runner may provision.
+   *
+   * Injectable for the same reason `production` is: a constant a test cannot
+   * vary is a constant nothing proves. Production callers take the default and
+   * therefore get the pin, which is what turns "some syntactically valid ref"
+   * into "the staging project" — audit requirement 14.
+   */
+  expectedProjectRef: string = KNOWN_STAGING_PROJECT_REF,
 ): TargetIdentityVerdict {
   const host = input.connectionHost.trim().toLowerCase()
 
-  // (0) THE VETO. First, and unconditional.
-  if (
-    production.hosts.some((h) => host === h || host.endsWith(`.${h}`)) ||
-    production.projectRefs.includes(input.declaredProjectRef) ||
-    (input.sentinel && production.projectRefs.includes(input.sentinel.projectRef))
-  ) {
+  // (0) THE VETO. First, unconditional, and over EVERY ref any source names.
+  //
+  // It used to look at the DECLARED ref and the sentinel only. A pooler login
+  // role naming production while the declaration said staging would have been
+  // caught downstream as a mismatch — a true refusal with the wrong reason, and
+  // the denylist is supposed to outrank everything rather than arrive second.
+  const poolerRef = projectRefFromPoolerUser(input.poolerUser ?? '')
+  const hostRef = projectRefFromHost(host)
+  const namedRefs = [input.declaredProjectRef, input.sentinel?.projectRef, poolerRef, hostRef].filter(
+    (r): r is string => typeof r === 'string' && r !== '',
+  )
+  const vetoed = namedRefs.filter((r) => production.projectRefs.includes(r))
+  if (production.hosts.some((h) => host === h || host.endsWith(`.${h}`)) || vetoed.length > 0) {
     return refuse(
       'HOSTED_TARGET_IS_PRODUCTION',
-      `refused: the target matches a known production identifier. No combination of declarations ` +
-        `or sentinel rows overrides this. host=${host || '(none)'}`,
+      `refused: the target matches a known production identifier${vetoed.length > 0 ? ` (${[...new Set(vetoed)].join(', ')})` : ''}. ` +
+        `No combination of declarations, hosts, login roles or sentinel rows overrides this. ` +
+        `host=${host || '(none)'}`,
     )
   }
 
@@ -440,22 +651,32 @@ export function verifyStagingTarget(
     )
   }
 
-  // (2) What the connection says.
-  const derived = projectRefFromHost(host)
-  if (derived === null) {
-    return refuse(
-      'HOSTED_TARGET_HOST_NOT_SUPABASE',
-      `refused: no Supabase project ref can be derived from the connection host, so the ` +
-        `connection cannot corroborate the declaration. A direct host (db.<ref>.supabase.co) is ` +
-        `required; the shared pooler does not name a project in its hostname.`,
-    )
-  }
+  // (2) What the connection says — direct host OR session pooler login role.
+  const connection = deriveConnectionIdentity({
+    connectionHost: host,
+    poolerUser: input.poolerUser,
+    connectionPort: input.connectionPort,
+  })
+  if (!connection.ok) return refuse(connection.code, connection.message)
+  const derived = connection.projectRef
 
   if (derived !== input.declaredProjectRef) {
     return refuse(
       'HOSTED_TARGET_PROJECT_REF_MISMATCH',
-      `refused: the connection host names project ${derived}, the operator declared ` +
-        `${input.declaredProjectRef}. One of the two is wrong and this runner will not guess which.`,
+      `refused: the connection names project ${derived} (via ${connection.corroboratedBy.join(' + ')}), ` +
+        `the operator declared ${input.declaredProjectRef}. One of the two is wrong and this runner ` +
+        `will not guess which.`,
+    )
+  }
+
+  // (2b) THE PIN. Everything above proves the sources AGREE; this proves they
+  // agree on the RIGHT project. Without it a perfectly self-consistent identity
+  // for some other Supabase project would provision it.
+  if (derived !== expectedProjectRef) {
+    return refuse(
+      'HOSTED_TARGET_NOT_EXPECTED_PROJECT',
+      `refused: every signal agrees on ${derived}, and this runner provisions ${expectedProjectRef}. ` +
+        `A consistent identity for the wrong project is still the wrong project.`,
     )
   }
 

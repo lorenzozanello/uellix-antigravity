@@ -27,7 +27,13 @@ import {
 } from '@/db/hosted/hosted-provisioning-runner'
 
 const ROOT = process.cwd()
-const REF = 'abcdefghijklmnopqrst'
+// THE REAL STAGING REF, not a placeholder.
+//
+// `verifyStagingTarget` is now PINNED to KNOWN_STAGING_PROJECT_REF: a
+// syntactically valid ref for some OTHER project is refused, which is audit
+// requirement 14. A fixture using a made-up ref would exercise only the
+// refusal, so every positive path here would have stopped meaning anything.
+const REF = 'bvyzblhqymxruxdguaee'
 
 const readBaselineSql = (file: string): string | null => {
   try {
@@ -862,5 +868,64 @@ describe('phase sequencing', () => {
     expect(done.sequenceComplete).toBe(true)
     expect(done.steps).toEqual([])
     expect(done.nextAction).toBeNull()
+  })
+})
+
+/* ========================================================================== */
+/* ACTIONABILITY — the audit blocker, closed                                  */
+/* ========================================================================== */
+
+describe('PHASE_BASELINE is plannable over the connection the operator actually uses', () => {
+  const POOLER = 'aws-0-us-east-2.pooler.supabase.com'
+  const viaPooler = (over: Record<string, unknown> = {}) =>
+    request({ target: { ...target, connectionHost: POOLER, poolerUser: `postgres.${REF}`, ...over } })
+
+  // THE BLOCKER AN INDEPENDENT AUDIT FOUND. The apply gate corroborated the
+  // target through the pooler login role and said PASS, while this runner
+  // refused the pooler host outright — so the authorisation pointed at a
+  // connection the planner would not accept. Fail-closed, and still useless: an
+  // authorisation nobody can act on authorises nothing.
+  it('plans the same 51 steps over the Session Pooler as over a direct host', () => {
+    const p = plan(planProvisioningPhase(viaPooler()))
+    expect(p.steps).toHaveLength(51)
+    expect(p.steps[0].id).toBe('000_journal_bootstrap')
+    expect(p.writesPermitted).toBe(false)
+    // Neither mechanism is privileged: same plan, same order, either way in.
+    expect(p.steps.map((s) => s.id)).toEqual(plan(planProvisioningPhase(request())).steps.map((s) => s.id))
+  })
+
+  // …and the acceptance is NOT "the hostname ends in pooler.supabase.com". That
+  // host is regional and shared; on its own it corroborates nothing.
+  it('refuses the same pooler host without a login role', () => {
+    expect(refusal(planProvisioningPhase(viaPooler({ poolerUser: null }))).code).toBe(
+      'HOSTED_TARGET_POOLER_USER_MISSING',
+    )
+  })
+
+  it('refuses a pooler identity resolving to production', () => {
+    const r = refusal(
+      planProvisioningPhase(
+        viaPooler({ declaredProjectRef: 'ctaxtgujyyprgynmnvtq', poolerUser: 'postgres.ctaxtgujyyprgynmnvtq' }),
+      ),
+    )
+    expect(r.code).toBe('HOSTED_TARGET_IS_PRODUCTION')
+  })
+
+  it('refuses a pooler identity resolving to any other project', () => {
+    const r = refusal(
+      planProvisioningPhase(
+        viaPooler({ declaredProjectRef: 'zzzzzzzzzzzzzzzzzzzz', poolerUser: 'postgres.zzzzzzzzzzzzzzzzzzzz' }),
+      ),
+    )
+    expect(r.code).toBe('HOSTED_TARGET_NOT_EXPECTED_PROJECT')
+  })
+
+  // The transaction pooler cannot hold `psql -1`, and every unit is applied as
+  // one transaction. Accepting port 6543 would plan 51 steps that silently lose
+  // their atomicity.
+  it('refuses the transaction-mode pooler port', () => {
+    expect(refusal(planProvisioningPhase(viaPooler({ connectionPort: 6543 }))).code).toBe(
+      'HOSTED_TARGET_POOLER_TRANSACTION_MODE',
+    )
   })
 })
