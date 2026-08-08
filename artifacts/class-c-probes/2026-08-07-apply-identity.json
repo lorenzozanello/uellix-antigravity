@@ -50,11 +50,13 @@
     "ROLLBACK;"
   ],
   "pendingOperatorAttestation": {
-    "connectionHost": "MISSING — hostname only (e.g. aws-0-<region>.pooler.supabase.com). NEVER a connection string, password, token or key. Until it exists, target-identity-corroborated refuses, because the only alternative is deriving the host from the ref it is meant to corroborate.",
+    "refBearingHost": "MISSING — a host that NAMES the project: db.bvyzblhqymxruxdguaee.supabase.co (direct) or bvyzblhqymxruxdguaee.supabase.co (REST). Hostname only. The pooler host is recorded but cannot corroborate.",
     "stillPending": [
-      "connectionHost"
+      "refBearingHost"
     ]
   },
   "queriesProvenance": "REGISTERED 2026-08-07 on operator instruction: these are the literal statements executed for this probe, per docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2. This is an operator ATTESTATION that the specified block is the block that ran. It was deliberately NOT recorded earlier: the loader must never compose the expected text on the operator’s behalf, because the criterion that reads it exists to establish that the specified query was the one executed.",
-  "connectionHost": null
+  "connectionHost": "aws-0-us-east-2.pooler.supabase.com",
+  "connectionHostProvenance": "Supplied by the operator 2026-08-07. HOSTNAME ONLY — no user, no password, no connection string, no token. This is the Supabase Session Pooler host, which is REGIONAL and shared across projects: the project ref lives in the pooler USERNAME (postgres.<ref>), not in the host. It therefore records WHERE the probe connected but cannot corroborate WHICH project — see connectionHostCorroborationNote.",
+  "connectionHostCorroborationNote": "target-identity-corroborated derives a project ref from the host and compares it with the declaration. A pooler host carries no ref by construction, so it cannot be the second independent signal. Accepting it would not be a small relaxation: every project in us-east-2 shares this exact hostname, so the check would corroborate nothing at all. A ref-bearing host (db.<ref>.supabase.co or <ref>.supabase.co) is what closes it."
 }

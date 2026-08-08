@@ -24,9 +24,9 @@
       },
       {
         "id": "target-identity-corroborated",
-        "observedEvidence": "staging identity: no attestation on record (the artefact records no connectionHost)",
+        "observedEvidence": "declared=staging, ref=bvyzblhqymxruxdguaee, host=aws-0-us-east-2.pooler.supabase.com",
         "expectedProperty": "The declared environment is staging, the host derives the SAME project ref, and neither is on the production denylist.",
-        "reason": "the staging identity — NOT MEASURED. Not measured is not satisfied.",
+        "reason": "the connection host is a Supabase SESSION POOLER host (aws-0-us-east-2.pooler.supabase.com), which is regional and shared across projects — the ref lives in the pooler username, not the host. It records WHERE the probe connected, not WHICH project, so it cannot be the second independent signal. A ref-bearing host closes it: db.<ref>.supabase.co or <ref>.supabase.co.",
         "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
       },
       {

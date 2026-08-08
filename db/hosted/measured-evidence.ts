@@ -58,6 +58,60 @@ export const CHECKPOINT_A0_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-check
 /** Where the computed live verdict is written, so a report can only quote it. */
 export const APPLY_STATUS_ARTEFACT = 'artifacts/hosted-apply-status.json'
 
+/**
+ * CHECKPOINT A0, as ONE read-only block, for the re-run the evidence now needs.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS EXISTS RATHER THAN A RECONSTRUCTION
+ * ---------------------------------------------------------------------------
+ * A0 ran and PASSED on 2026-08-07 and its RESULTS are recorded — but its literal
+ * SQL was never preserved anywhere: not in the requirements document, not in the
+ * gate plan, not in an artefact, not in git history (searched). The gate refuses
+ * an attestation with no query, and writing a plausible query into `queries[]`
+ * would be manufacturing the provenance the criterion exists to demand.
+ *
+ * So this is not a reconstruction of what ran. It is the CURRENT canonical A0,
+ * to be executed again — which is strictly better than a recovered string: a
+ * fresh run produces evidence that is reproducible, and it closes the one thing
+ * the historical record could never have carried.
+ *
+ * IT ALSO MEASURES SOMETHING THE 2026-08-07 RUN DID NOT. `public_relation_count`
+ * is the evidence that distinguishes a NEW project from a RESTORED one. The old
+ * A0 confirmed four named objects were absent, and four absent names is a claim
+ * a dump of a different product satisfies while holding every row it ever had.
+ */
+export const CHECKPOINT_A0_SQL = `-- CHECKPOINT A0 — READ ONLY. Nothing here writes.
+-- Run against the STAGING project, in the identity that will apply the baseline.
+BEGIN READ ONLY;
+
+SELECT
+  current_setting('transaction_read_only')                    AS transaction_read_only,
+  current_user,
+  session_user,
+  version()                                                   AS postgres_version,
+  current_setting('server_version_num')::int >= 150000        AS postgres_compatible,
+
+  -- Schemas the corpus assumes exist.
+  to_regnamespace('auth')   IS NOT NULL                       AS auth_schema_present,
+  to_regnamespace('public') IS NOT NULL                       AS public_schema_present,
+  to_regprocedure('auth.uid()') IS NOT NULL                   AS auth_uid_present,
+
+  -- The Stella / Uellix surface must be ABSENT on a new project.
+  to_regnamespace('uellix_bootstrap') IS NULL                 AS uellix_bootstrap_absent,
+  to_regnamespace('uellix_stella')    IS NULL                 AS uellix_stella_absent,
+  to_regnamespace('uellix_provisioning') IS NULL              AS uellix_provisioning_absent,
+  to_regclass('public.stella_interactions') IS NULL           AS stella_interactions_absent,
+  to_regclass('uellix_bootstrap.staging_sentinel') IS NULL    AS staging_sentinel_absent,
+
+  -- THE ONE THE 2026-08-07 RUN DID NOT TAKE, and the only thing here that can
+  -- tell a new project from a restored dump: four absent names cannot.
+  (SELECT count(*) FROM pg_class c
+     JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r','p','v','m','f'))                 AS public_relation_count;
+
+ROLLBACK;`
+
 export type EvidenceProblem = { readonly file: string; readonly detail: string }
 
 interface ApplyIdentityArtefact {
@@ -166,6 +220,7 @@ export function loadMeasuredEvidence(input: {
       readonly projectIsNew?: boolean
       readonly stellaSurfaceAbsent?: boolean
       readonly writesPerformed?: number
+      readonly publicRelationCount?: number
     }
   } | null
 
@@ -260,6 +315,11 @@ export function loadMeasuredEvidence(input: {
               stellaSurfaceAbsent: a0.observed.stellaSurfaceAbsent === true,
               writesPerformed:
                 typeof a0.observed.writesPerformed === 'number' ? a0.observed.writesPerformed : 1,
+              // `?? null`, never `?? 0`. An uncounted schema is not an empty one.
+              publicRelationCount:
+                typeof a0.observed.publicRelationCount === 'number'
+                  ? a0.observed.publicRelationCount
+                  : null,
             },
             (a0.queries ?? []).join(' '),
             a0.measuredBy ?? '',

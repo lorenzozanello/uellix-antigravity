@@ -242,6 +242,50 @@ const PROJECT_REF = /^[a-z]{20}$/
  * the declaration", and the caller refuses rather than falling back to trusting
  * the operator.
  */
+/**
+ * What KIND of Supabase host this is — which decides whether it can name a
+ * project at all.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY A POOLER HOST IS ITS OWN CASE
+ * ---------------------------------------------------------------------------
+ * The operator connects through the Session Pooler, whose host is
+ * `aws-0-<region>.pooler.supabase.com`. That host is REGIONAL AND SHARED: every
+ * project in the region presents the same one, and the project ref lives in the
+ * pooler USERNAME (`postgres.<ref>`) instead.
+ *
+ * `projectRefFromHost` correctly returns null for it — but the refusal that
+ * followed said "no project ref can be derived, a direct db.<ref>.supabase.co
+ * host is required", which reads as though the operator supplied something
+ * wrong. They did not: they supplied the host they actually connect to, and it
+ * is structurally incapable of corroborating a ref. Naming the case is the
+ * difference between "your evidence is invalid" and "this evidence answers a
+ * different question".
+ *
+ * Classifying it changes no verdict. A pooler host still cannot corroborate,
+ * and accepting one would corroborate nothing — every project in us-east-2
+ * shares it.
+ */
+export type SupabaseHostKind =
+  /** `db.<ref>.supabase.co` — names the project. */
+  | 'direct-db'
+  /** `<ref>.supabase.co` — the REST/API host. Also names the project. */
+  | 'rest'
+  /** `aws-0-<region>.pooler.supabase.com` — regional, shared, ref-free. */
+  | 'pooler'
+  /** Not a recognised Supabase host. */
+  | 'unknown'
+
+export function classifySupabaseHost(host: string): SupabaseHostKind {
+  const normalized = (host ?? '').trim().toLowerCase()
+  if (/^aws-\d+-[a-z0-9-]+\.pooler\.supabase\.com$/.test(normalized)) return 'pooler'
+  if (!normalized.endsWith('.supabase.co')) return 'unknown'
+  const labels = normalized.slice(0, -'.supabase.co'.length).split('.')
+  if (labels.length === 1 && PROJECT_REF.test(labels[0])) return 'rest'
+  if (labels.length === 2 && labels[0] === 'db' && PROJECT_REF.test(labels[1])) return 'direct-db'
+  return 'unknown'
+}
+
 export function projectRefFromHost(host: string): string | null {
   if (!host) return null
   const normalized = host.trim().toLowerCase()

@@ -76,6 +76,7 @@ import {
 } from './hosted-provisioning-runner'
 import {
   KNOWN_PRODUCTION_IDENTIFIERS,
+  classifySupabaseHost,
   productionDenylistStatus,
   projectRefFromHost,
   type ProductionIdentifiers,
@@ -125,6 +126,25 @@ export interface ApplyAuthorizationInputs {
     readonly projectIsNew: boolean
     readonly stellaSurfaceAbsent: boolean
     readonly writesPerformed: number
+    /**
+     * Relations in schema `public` on the target, observed read-only.
+     *
+     * THE DIFFERENCE BETWEEN TWO CLAIMS THAT WERE BEING CONFLATED:
+     *
+     *   A. "the baseline migrations contain no production data"
+     *      — static, derived from the corpus on every evaluation.
+     *   B. "the target project currently holds no production data"
+     *      — a fact about the DATABASE, and nothing static can establish it.
+     *
+     * `stellaSurfaceAbsent` was standing in for B, and it is four named objects
+     * being absent. A restored dump of a DIFFERENT product, or a partial Uellix
+     * dump that happens to miss those four names, satisfies it while the project
+     * is full of rows. Counting the relations in `public` is what actually
+     * distinguishes a new project from a restored one.
+     *
+     * `null` = not measured = refused, as everywhere.
+     */
+    readonly publicRelationCount: number | null
   }> | null
   /** The three class-C probes of §2.7. */
   readonly classCProbes: OperatorAttestation<PrivilegeProbes> | null
@@ -405,7 +425,25 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       }
       const derived = projectRefFromHost(connectionHost)
       if (derived === null) {
-        return no(id, 'no project ref can be derived from the host, so the connection cannot corroborate the declaration. A direct db.<ref>.supabase.co host is required.')
+        // NAME THE CASE. A pooler host is not a wrong answer — it is the host
+        // the operator genuinely connects to, and it is structurally incapable
+        // of naming a project: `aws-0-<region>.pooler.supabase.com` is regional
+        // and shared, and the ref lives in the pooler USERNAME instead.
+        // Accepting one would not be a small relaxation; every project in the
+        // region presents that same hostname, so signal 2 would corroborate
+        // nothing at all.
+        const kind = classifySupabaseHost(connectionHost)
+        return no(
+          id,
+          kind === 'pooler'
+            ? `the connection host is a Supabase SESSION POOLER host (${connectionHost}), which is ` +
+                `regional and shared across projects — the ref lives in the pooler username, not the ` +
+                `host. It records WHERE the probe connected, not WHICH project, so it cannot be the ` +
+                `second independent signal. A ref-bearing host closes it: db.<ref>.supabase.co or ` +
+                `<ref>.supabase.co.`
+            : 'no project ref can be derived from the host, so the connection cannot corroborate the ' +
+                'declaration. A ref-bearing Supabase host is required.',
+        )
       }
       if (derived !== projectRef) {
         return no(id, `the host names ${derived}, the declaration names ${projectRef}. One is wrong and this gate will not guess which.`)
@@ -1104,6 +1142,29 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
       const a = inputs.checkpointA0!
       if (!a.value.stellaSurfaceAbsent) {
         return no(id, 'A0 did not confirm the target is free of Stella surface, so "empty" rests on nothing.')
+      }
+      // AND THE TARGET OBSERVATION, because the static half cannot supply it.
+      //
+      // Everything above this line is about the CORPUS: it proves the baseline
+      // would not seed data. It says nothing about what the project already
+      // holds, and this criterion is named for the project. `stellaSurfaceAbsent`
+      // was carrying that weight and cannot: it is four named objects being
+      // absent, which a restored dump of another product satisfies trivially.
+      if (a.value.publicRelationCount === null) {
+        return no(
+          id,
+          'A0 did not count the relations in schema `public`, so "the target holds no production data" ' +
+            'rests on four named objects being absent — which a restored dump of a different product ' +
+            'satisfies while holding every row it ever had. Unmeasured is refused.',
+        )
+      }
+      if (a.value.publicRelationCount !== 0) {
+        return no(
+          id,
+          `schema public holds ${a.value.publicRelationCount} relation(s) before a single unit has been ` +
+            `applied. A new staging project has none; a restored dump has many. This is the check that ` +
+            `tells them apart.`,
+        )
       }
       const probed = deriveEmptinessProbes(inputs.readBaselineSql).length
       return yes(id, `${dmlUnits} unit carries DML, 0 statements draw from a literal VALUES list, and the ${probed}-table emptiness set is derived from the corpus rather than hand-listed`)

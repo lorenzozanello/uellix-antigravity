@@ -67,6 +67,8 @@ function satisfying(): ApplyAuthorizationInputs {
         projectIsNew: true,
         stellaSurfaceAbsent: true,
         writesPerformed: 0,
+        // A new project: schema public holds nothing before the baseline runs.
+        publicRelationCount: 0,
       },
       query: 'BEGIN READ ONLY; SELECT current_setting(\'transaction_read_only\'); …',
       measuredBy: 'operator, Supabase SQL editor',

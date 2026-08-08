@@ -4,14 +4,15 @@
   "measuredOn": "2026-08-07",
   "measuredBy": "operator, manually, against the new Supabase project Uellix Staging",
   "targetProjectRef": "bvyzblhqymxruxdguaee",
-  "whatThisIs": "INGESTION, NOT RE-EXECUTION. A0 was run and PASSED on 2026-08-07; the audit question was whether it needed running again or only recording. It needed recording. Every value below is transcribed from docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md lines 16-22, which states each one explicitly — nothing is inferred from the word PASS.",
+  "whatThisIs": "INGESTION OF THE 2026-08-07 RUN, plus the finding that it is not sufficient. A0 ran and PASSED; the values below are transcribed from docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md lines 16-22, which states each one explicitly — nothing is inferred from the word PASS. Two things that run could not supply have since been identified: its literal SQL was never preserved anywhere, and it never counted the relations in schema public. Both are closed by ONE re-run of CHECKPOINT_A0_SQL.",
   "source": "docs/ops/staging/STELLA_STAGING_PROVISIONING_REQUIREMENTS.md §header, corroborated by STELLA_STAGING_GATE_PLAN.md §4 (\"G12 (RO hosted) = CHECKPOINT A0, PASS manual del operador 2026-08-07\")",
   "observed": {
     "result": "PASS",
     "sessionWasReadOnly": true,
     "projectIsNew": true,
     "stellaSurfaceAbsent": true,
-    "writesPerformed": 0
+    "writesPerformed": 0,
+    "publicRelationCount": null
   },
   "observedDetail": {
     "sessionReadOnly": "sesión READ ONLY",
@@ -28,13 +29,19 @@
   },
   "queries": [],
   "pendingOperatorAttestation": {
-    "queries": "MISSING — the literal SQL A0 executed. The requirements document records WHAT was confirmed and not WITH WHICH statements, and this file must not compose them: the criterion that reads `queries` exists to establish that the specified query was the one run. Supplying the text is the whole remaining ask; A0 itself does NOT need re-running.",
-    "stillPending": ["queries"]
+    "reRunRequired": "YES, and it is the smaller ask. Execute CHECKPOINT_A0_SQL (db/hosted/measured-evidence.ts, one READ ONLY block) and record its output plus the literal SQL into queries[]. A fresh run yields reproducible evidence, which a recovered string never could.",
+    "publicRelationCount": "MISSING — the 2026-08-07 run did not take it. It is the only observation that distinguishes a NEW project from a RESTORED dump; four absent names do not. zero-production-data refuses without it.",
+    "queries": "MISSING — supplied by the re-run above.",
+    "stillPending": [
+      "queries",
+      "publicRelationCount"
+    ]
   },
   "constraintsHonoured": [
     "read-only session",
     "zero writes",
     "no secret value recorded",
     "no access to the production project"
-  ]
+  ],
+  "literalQuerySearch": "SEARCHED AND NOT FOUND, 2026-08-07: the SQL A0 actually executed is not preserved in docs/ops/**, artifacts/**, or git history. It was therefore NOT reconstructed — writing a plausible query into queries[] would manufacture the very provenance the criterion exists to demand."
 }

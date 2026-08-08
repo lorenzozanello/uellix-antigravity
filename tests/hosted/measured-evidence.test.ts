@@ -20,6 +20,7 @@ import {
   APPLY_IDENTITY_ARTEFACT,
   APPLY_STATUS_ARTEFACT,
   CHECKPOINT_A0_ARTEFACT,
+  CHECKPOINT_A0_SQL,
   SQL_EDITOR_ARTEFACT,
   loadMeasuredEvidence,
 } from '@/db/hosted/measured-evidence'
@@ -253,8 +254,27 @@ describe('the evidence is READ, not typed', () => {
   // renaming the project in both artefacts still read as "corroborated".
   it('does not manufacture the corroborating host from the ref it corroborates', () => {
     const evidence = loadMeasuredEvidence({ readJson, readBaselineSql: read, discoveredBaselineFiles: discovered() })
-    expect(evidence.inputs.stagingIdentity).toBeNull()
-    expect(blockingIds(live())).toContain('target-identity-corroborated')
+    const identity = evidence.inputs.stagingIdentity
+    // The host is now RECORDED — the operator supplied it — and it is the real
+    // Session Pooler host, not `db.${projectRef}.supabase.co` composed from the
+    // very ref it is supposed to corroborate.
+    expect(identity).not.toBeNull()
+    expect(identity!.value.connectionHost).toBe('aws-0-us-east-2.pooler.supabase.com')
+    expect(identity!.value.connectionHost).not.toContain(identity!.value.projectRef)
+  })
+
+  // A POOLER HOST CANNOT CORROBORATE, AND SAYS SO PRECISELY.
+  //
+  // `aws-0-<region>.pooler.supabase.com` is regional and shared: the ref lives
+  // in the pooler username. Accepting it would not be a small relaxation —
+  // every project in the region presents that exact hostname, so the second
+  // signal would corroborate nothing at all.
+  it('refuses a pooler host as the second signal, and names why', () => {
+    const report = live()
+    const blocker = report.baselineStartGate.blocking.find((b) => b.id === 'target-identity-corroborated')
+    expect(blocker, 'target-identity-corroborated must still block').toBeDefined()
+    expect(blocker!.reason).toMatch(/SESSION POOLER host/)
+    expect(blocker!.reason).toMatch(/regional and shared/)
   })
 
   it('does not substitute a provenance the artefact does not record', () => {
@@ -368,5 +388,78 @@ describe('the report cannot diverge from the gate', () => {
   it('publishes more than one blocker, and each with its four parts', () => {
     expect(onDisk.blockingCount).toBeGreaterThanOrEqual(2)
     expect(onDisk.blockingIds).toContain('checkpoint-a0-pass')
+  })
+})
+
+describe('the canonical CHECKPOINT A0 block, for the re-run the evidence needs', () => {
+  it('reads only — nothing in it writes', () => {
+    const upper = CHECKPOINT_A0_SQL.toUpperCase()
+    for (const forbidden of ['INSERT ', 'UPDATE ', 'DELETE ', 'CREATE ', 'DROP ', 'ALTER ', 'GRANT ']) {
+      expect(upper, forbidden).not.toContain(forbidden)
+    }
+    expect(CHECKPOINT_A0_SQL).toContain('BEGIN READ ONLY;')
+    expect(CHECKPOINT_A0_SQL).toContain('ROLLBACK;')
+  })
+
+  it('covers every fact the A0 contract names', () => {
+    for (const marker of [
+      "current_setting('transaction_read_only')",
+      'version()',
+      "to_regnamespace('auth')",
+      "to_regnamespace('public')",
+      "to_regprocedure('auth.uid()')",
+      "to_regnamespace('uellix_bootstrap')",
+      "to_regnamespace('uellix_stella')",
+      "to_regclass('public.stella_interactions')",
+      'staging_sentinel',
+    ]) {
+      expect(CHECKPOINT_A0_SQL, marker).toContain(marker)
+    }
+  })
+
+  // THE ONE THE HISTORICAL RUN DID NOT TAKE. Four absent names cannot tell a new
+  // project from a restored dump of a different product.
+  it('adds the relation count that distinguishes a new project from a restored one', () => {
+    expect(CHECKPOINT_A0_SQL).toContain('public_relation_count')
+    expect(CHECKPOINT_A0_SQL).toMatch(/nspname = 'public'/)
+  })
+
+  it('is not recorded as the query A0 actually ran — that was never preserved', () => {
+    const a0 = JSON.parse(readFileSync(path.join(ROOT, CHECKPOINT_A0_ARTEFACT), 'utf8')) as {
+      queries: string[]
+      literalQuerySearch: string
+    }
+    expect(a0.queries).toEqual([])
+    expect(a0.literalQuerySearch).toMatch(/SEARCHED AND NOT FOUND/)
+  })
+})
+
+describe('zero-production-data separates the corpus claim from the target claim', () => {
+  const withA0 = (over: Record<string, unknown>) => (rel: string) => {
+    const value = readJson(rel)
+    if (rel !== CHECKPOINT_A0_ARTEFACT || value === null) return value
+    const v = value as { observed: Record<string, unknown> }
+    return { ...v, queries: ['SELECT 1;'], observed: { ...v.observed, ...over } }
+  }
+
+  it('refuses while the relation count is unmeasured, even with A0 otherwise attested', () => {
+    const b = live(withA0({ publicRelationCount: null })).baselineStartGate.blocking.find(
+      (x) => x.id === 'zero-production-data',
+    )
+    expect(b, 'must still block').toBeDefined()
+    expect(b!.reason).toMatch(/did not count the relations in schema `public`/)
+  })
+
+  it('refuses a target whose public schema already holds relations', () => {
+    const b = live(withA0({ publicRelationCount: 42 })).baselineStartGate.blocking.find(
+      (x) => x.id === 'zero-production-data',
+    )
+    expect(b, 'must block on a restored dump').toBeDefined()
+    expect(b!.reason).toMatch(/holds 42 relation\(s\)/)
+  })
+
+  it('passes only with the corpus clean AND the target observed empty', () => {
+    const ids = live(withA0({ publicRelationCount: 0 })).baselineStartGate.blocking.map((x) => x.id)
+    expect(ids).not.toContain('zero-production-data')
   })
 })
