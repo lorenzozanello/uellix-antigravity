@@ -1,25 +1,16 @@
 {
   "generatedBy": "pnpm apply:status:write — do not hand-edit; a report quotes this file",
   "criterionCount": 19,
-  "satisfiedCount": 16,
-  "blockingCount": 3,
+  "satisfiedCount": 17,
+  "blockingCount": 2,
   "blockingIds": [
-    "target-identity-corroborated",
     "hosted-evidence-bucket-provisioning-ready",
     "hosted-storage-canonical-boundary-verified"
   ],
   "baselineStartGate": {
     "total": 17,
-    "satisfied": 16,
-    "blocking": [
-      {
-        "id": "target-identity-corroborated",
-        "observedEvidence": "declared=staging, ref=bvyzblhqymxruxdguaee, host=aws-0-us-east-2.pooler.supabase.com",
-        "expectedProperty": "The declared environment is staging, the host derives the SAME project ref, and neither is on the production denylist.",
-        "reason": "the connection host is a Supabase SESSION POOLER host (aws-0-us-east-2.pooler.supabase.com), which is regional and shared across projects — the ref lives in the pooler LOGIN ROLE, not the host, and no login role was recorded. Supply the pooler login role (postgres.<ref>) — a username, not a credential — or a ref-bearing host.",
-        "sourceArtifact": "artifacts/class-c-probes/2026-08-07-apply-identity.json"
-      }
-    ]
+    "satisfied": 17,
+    "blocking": []
   },
   "baselineCompletionGate": {
     "total": 1,
@@ -47,7 +38,7 @@
       }
     ]
   },
-  "applyAuthorized": false,
+  "applyAuthorized": true,
   "baselineApplied": false,
   "stagingApplied": false,
   "hostedReady": false,

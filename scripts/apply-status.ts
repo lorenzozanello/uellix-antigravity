@@ -87,7 +87,11 @@ export function computeApplyStatus(): ApplyStatusArtefact {
     baselineStartGate: report.baselineStartGate,
     baselineCompletionGate: report.baselineCompletionGate,
     stagingRuntimeGate: report.stagingRuntimeGate,
-    applyAuthorized: false,
+    // THE GATE'S OWN VERDICT, not a constant. `baselineApplied` and the three
+    // below stay false because nothing here applies anything; authorisation is
+    // the one value that must be allowed to move, or the artefact would publish
+    // a number the gate does not compute.
+    applyAuthorized: report.applyAuthorized,
     baselineApplied: false,
     stagingApplied: false,
     hostedReady: false,

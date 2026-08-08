@@ -17,6 +17,11 @@ import {
   evaluateApplyAuthorization,
 } from '@/db/hosted/baseline-apply-authorization'
 import {
+  KNOWN_PRODUCTION_IDENTIFIERS,
+  KNOWN_STAGING_PROJECT_REF,
+  projectRefFromPoolerUser,
+} from '@/db/hosted/target-identity'
+import {
   APPLY_IDENTITY_ARTEFACT,
   APPLY_STATUS_ARTEFACT,
   CHECKPOINT_A0_ARTEFACT,
@@ -153,10 +158,14 @@ describe('the psql read-only attestation is a REAL apply criterion', () => {
     expect(evidence.observed.psql.transactionReadOnly).toBe(true)
   })
 
-  it('still refuses the apply — one criterion satisfied is not authorisation', () => {
-    expect(
-      live(withEvidence({ queries: IDENTITY_QUERIES }, { transaction_read_only: 'on' })).applyAuthorized,
-    ).toBe(false)
+  // ONE CRITERION SATISFIED IS NOT AUTHORISATION — driven by removing a
+  // DIFFERENT piece of evidence, because the start gate is now satisfied and a
+  // test pinned to that would be measuring the artefacts, not the rule.
+  it('still refuses the apply when any other attestation is missing', () => {
+    const noA0 = (rel: string) => (rel === CHECKPOINT_A0_ARTEFACT ? null : readJson(rel))
+    const report = live(noA0)
+    expect(blockingIds(report)).toContain('checkpoint-a0-pass')
+    expect(report.applyAuthorized).toBe(false)
   })
 })
 
@@ -269,12 +278,27 @@ describe('the evidence is READ, not typed', () => {
   // in the pooler username. Accepting it would not be a small relaxation —
   // every project in the region presents that exact hostname, so the second
   // signal would corroborate nothing at all.
-  it('refuses a pooler host as the second signal, and names why', () => {
-    const report = live()
-    const blocker = report.baselineStartGate.blocking.find((b) => b.id === 'target-identity-corroborated')
-    expect(blocker, 'target-identity-corroborated must still block').toBeDefined()
+  it('refuses a pooler host as the second signal when no login role is recorded', () => {
+    const noRole = (rel: string) => {
+      const value = readJson(rel)
+      if (rel !== APPLY_IDENTITY_ARTEFACT || value === null) return value
+      const v = { ...(value as Record<string, unknown>) }
+      delete v.poolerUser
+      return v
+    }
+    const blocker = live(noRole).baselineStartGate.blocking.find(
+      (b) => b.id === 'target-identity-corroborated',
+    )
+    expect(blocker, 'without the login role it must block').toBeDefined()
     expect(blocker!.reason).toMatch(/SESSION POOLER host/)
     expect(blocker!.reason).toMatch(/regional and shared/)
+  })
+
+  // …and WITH the login role it corroborates, through the role rather than the host.
+  it('corroborates through the login role once it is recorded', () => {
+    const c = live().criteria.find((x) => x.id === 'target-identity-corroborated')!
+    expect(c.satisfied, c.detail).toBe(true)
+    expect(c.detail).toMatch(/Session Pooler login role/)
   })
 
   it('does not substitute a provenance the artefact does not record', () => {
@@ -370,6 +394,8 @@ describe('the report cannot diverge from the gate', () => {
     blockingCount: number
     blockingIds: string[]
     applyAuthorized: boolean
+    baselineApplied: boolean
+    stagingApplied: boolean
     observed: unknown
   }
 
@@ -391,9 +417,17 @@ describe('the report cannot diverge from the gate', () => {
     expect(onDisk.observed).toEqual(JSON.parse(JSON.stringify(evidence.observed)))
   })
 
-  it('says applyAuthorized=false and cannot say otherwise', () => {
-    expect(onDisk.applyAuthorized).toBe(false)
-    expect(live().applyAuthorized).toBe(false)
+  // THIS TEST USED TO ASSERT THE DEFECT. It said applyAuthorized "cannot say
+  // otherwise" — which was true only because the script published a constant.
+  // The invariant that actually matters is that the file and the gate agree,
+  // whatever the gate computes.
+  it('publishes exactly what the gate computes, in either direction', () => {
+    expect(onDisk.applyAuthorized).toBe(live().applyAuthorized)
+  })
+
+  it('and authorisation never implies the baseline was applied', () => {
+    expect(onDisk.baselineApplied).toBe(false)
+    expect(onDisk.stagingApplied).toBe(false)
   })
 
   it('publishes the blockers the gate computes, and A0 is no longer among them', () => {
@@ -476,5 +510,65 @@ describe('zero-production-data separates the corpus claim from the target claim'
   it('passes only with the corpus clean AND the target observed empty', () => {
     const ids = live(withA0({ publicRelationCount: 0 })).baselineStartGate.blocking.map((x) => x.id)
     expect(ids).not.toContain('zero-production-data')
+  })
+})
+
+describe('the published verdict is the gate verdict, including when it says yes', () => {
+  const onDisk = JSON.parse(readFileSync(path.join(ROOT, APPLY_STATUS_ARTEFACT), 'utf8')) as {
+    applyAuthorized: boolean
+    baselineApplied: boolean
+    stagingApplied: boolean
+    hostedReady: boolean
+    providerReady: boolean
+    baselineStartGate: { total: number; satisfied: number; blocking: unknown[] }
+  }
+
+  // THE DEFECT THIS PINS. `applyAuthorized` was the literal type `false` and the
+  // script published it as a constant. That was honest while the answer could
+  // only be false, and became a lie the moment the start gate could be
+  // satisfied: the artefact would keep saying `false` while the gate computed
+  // `true`, and a report quoting it would contradict the thing it quotes.
+  it('publishes the computed authorisation, not a constant', () => {
+    expect(onDisk.applyAuthorized).toBe(live().applyAuthorized)
+  })
+
+  // …and the four that describe events which have not happened stay pinned.
+  it('still pins the four words that describe things nothing here does', () => {
+    expect(onDisk.baselineApplied).toBe(false)
+    expect(onDisk.stagingApplied).toBe(false)
+    expect(onDisk.hostedReady).toBe(false)
+    expect(onDisk.providerReady).toBe(false)
+  })
+
+  it('derives authorisation from the START gate alone', () => {
+    const report = live()
+    expect(report.applyAuthorized).toBe(report.baselineStartGate.blocking.length === 0)
+    // …and the completion gate is NOT satisfied, so authorisation is plainly not
+    // a claim that the baseline is done.
+    expect(report.baselineCompletionGate.blocking.length).toBeGreaterThan(0)
+  })
+})
+
+describe('the Session Pooler login role corroborates the target', () => {
+  it('derives exactly the staging ref, and it is not on the production denylist', () => {
+    expect(projectRefFromPoolerUser('postgres.bvyzblhqymxruxdguaee')).toBe(KNOWN_STAGING_PROJECT_REF)
+    expect(KNOWN_PRODUCTION_IDENTIFIERS.projectRefs).not.toContain(KNOWN_STAGING_PROJECT_REF)
+  })
+
+  it('is recorded as a username and nothing else', () => {
+    const artefact = JSON.parse(readFileSync(path.join(ROOT, APPLY_IDENTITY_ARTEFACT), 'utf8')) as Record<
+      string,
+      unknown
+    >
+    expect(artefact.poolerUser).toBe('postgres.bvyzblhqymxruxdguaee')
+    // No credential ever enters this file: nothing shaped like a DSN, a JWT or a key.
+    const serialized = JSON.stringify(artefact)
+    expect(serialized).not.toMatch(/postgres(?:ql)?:\/\//)
+    expect(serialized).not.toMatch(/eyJ[A-Za-z0-9_-]{10,}\./)
+    expect(serialized).not.toMatch(/\bsb[ps]_[A-Za-z0-9_-]{8,}/)
+  })
+
+  it('closes target-identity-corroborated', () => {
+    expect(blockingIds(live())).not.toContain('target-identity-corroborated')
   })
 })

@@ -49,15 +49,11 @@
     "SELECT pg_has_role(current_user, 'supabase_storage_admin', 'MEMBER') AS is_member, pg_has_role(current_user, 'supabase_storage_admin', 'USAGE')  AS inherits_privileges, pg_has_role(current_user, 'supabase_storage_admin', 'SET')    AS can_set_role;",
     "ROLLBACK;"
   ],
-  "pendingOperatorAttestation": {
-    "poolerUser": "MISSING — the Session Pooler LOGIN ROLE used for the psql connection, expected shape postgres.bvyzblhqymxruxdguaee. Username ONLY. Do not send a password, a connection string or a URL: anything containing : @ / or whitespace is refused by projectRefFromPoolerUser rather than stored. A ref-bearing host (db.<ref>.supabase.co) would also close it, but that was not the connection used.",
-    "stillPending": [
-      "poolerUser"
-    ]
-  },
   "queriesProvenance": "REGISTERED 2026-08-07 on operator instruction: these are the literal statements executed for this probe, per docs/ops/staging/STELLA_APPLY_IDENTITY_PROBE.md §2. This is an operator ATTESTATION that the specified block is the block that ran. It was deliberately NOT recorded earlier: the loader must never compose the expected text on the operator’s behalf, because the criterion that reads it exists to establish that the specified query was the one executed.",
   "connectionHost": "aws-0-us-east-2.pooler.supabase.com",
   "connectionHostProvenance": "Supplied by the operator 2026-08-07. HOSTNAME ONLY — no user, no password, no connection string, no token. This is the Supabase Session Pooler host, which is REGIONAL and shared across projects: the project ref lives in the pooler USERNAME (postgres.<ref>), not in the host. It therefore records WHERE the probe connected but cannot corroborate WHICH project — see connectionHostCorroborationNote.",
   "connectionHostCorroborationNote": "target-identity-corroborated needs a second signal INDEPENDENT of the declaration. A pooler host cannot be it: aws-0-us-east-2.pooler.supabase.com is regional and shared, so every project in us-east-2 presents it. The Session Pooler puts the ref in the LOGIN ROLE instead — postgres.<ref> — and that is what actually routes the connection, which makes it a stronger second signal than the host, not a weaker one. It is a USERNAME: no password, no token, and the ref inside it is public.",
-  "poolerUser": null
+  "poolerUser": "postgres.bvyzblhqymxruxdguaee",
+  "poolerUserProvenance": "Supplied by the operator 2026-08-07. LOGIN ROLE ONLY — a username. No password, no connection string, no host embedded, no token, no key. The ref inside it is public: it appears in every URL the project serves. projectRefFromPoolerUser refuses any value containing : @ / or whitespace rather than parsing around it, so a pasted DSN is rejected instead of stored.",
+  "poolerUserBearing": "THE SECOND INDEPENDENT SIGNAL. The pooler host aws-0-us-east-2.pooler.supabase.com is regional and shared — every project in us-east-2 presents it — so it names no project. The Session Pooler puts the ref in the LOGIN ROLE instead, and that is what actually routes the connection, which makes it a stronger corroboration than the host rather than a weaker one. It is independent of the DECLARATION, which is the only property signal 2 needs."
 }

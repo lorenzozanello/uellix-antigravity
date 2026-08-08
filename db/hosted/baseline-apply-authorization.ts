@@ -388,7 +388,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'checkpoint-a0-pass',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'operator attestation — CHECKPOINT A0 (no artefact on disk yet)',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json',
     observe: (i) => (i.checkpointA0 === null ? 'CHECKPOINT A0: no attestation on record' : `A0 result=${i.checkpointA0.value.result}, readOnly=${i.checkpointA0.value.sessionWasReadOnly}, writes=${i.checkpointA0.value.writesPerformed}`),
     requirement:
       'CHECKPOINT A0 ran read-only against the target and returned PASS, with zero writes.',
@@ -1159,7 +1159,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'zero-production-data',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'operator attestation — CHECKPOINT A0 emptiness probes',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json + the 50-unit corpus',
     observe: (i) => (i.checkpointA0 === null ? 'CHECKPOINT A0: no attestation on record, so emptiness rests on nothing' : `A0 projectIsNew=${i.checkpointA0.value.projectIsNew}, stellaSurfaceAbsent=${i.checkpointA0.value.stellaSurfaceAbsent}`),
     requirement:
       'The corpus writes zero rows to an empty database, and A0 confirmed the target holds no Stella surface.',
@@ -1268,7 +1268,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'feature-flags-false',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'operator attestation — the nine STELLA_* flags',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-feature-flags.json',
     observe: (i) =>
       i.featureFlags === null
         ? 'flag inventory: not measured'

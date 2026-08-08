@@ -509,7 +509,20 @@ export interface ApplyStatusArtefact {
   readonly satisfiedCount: number
   readonly blockingCount: number
   readonly blockingIds: readonly string[]
-  readonly applyAuthorized: false
+  /**
+   * COMPUTED, not pinned.
+   *
+   * This was the literal type `false`, which was honest while the answer could
+   * only ever be false and became a lie the moment the start gate could be
+   * satisfied: the published artefact would have kept saying `false` while the
+   * gate computed `true`, and a report quoting it would have contradicted the
+   * thing it claims to quote — the exact divergence this file exists to prevent.
+   *
+   * The four below stay pinned `false` because they describe events that have
+   * not happened. Authorisation is a VERDICT, and a verdict has to be able to
+   * change or it is not one.
+   */
+  readonly applyAuthorized: boolean
   readonly baselineApplied: false
   readonly stagingApplied: false
   readonly hostedReady: false
