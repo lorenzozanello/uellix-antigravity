@@ -30,7 +30,7 @@ import path from 'node:path'
 import { BASELINE_UNITS, type BaselineUnit } from '../db/hosted/baseline-manifest'
 import { verifyBaselineManifest } from '../db/hosted/baseline-manifest'
 import { scanBaselineSql } from '../db/hosted/baseline-scanner'
-import { wrapperCarriesJournalAppend, wrapperPathFor, PROJECT_REF_VAR } from '../db/hosted/baseline-journal-wrapper'
+import { wrapperCarriesJournalAppend, wrapperPathFor } from '../db/hosted/baseline-journal-wrapper'
 import type { JournalRow } from '../db/hosted/baseline-journal'
 import {
   STORAGE_BOUNDARY_ARTEFACT,
