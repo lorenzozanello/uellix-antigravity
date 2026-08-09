@@ -101,8 +101,19 @@ describe('the psql read-only attestation is a REAL apply criterion', () => {
     expect(blockingIds(live())).not.toContain('hosted-storage-apply-identity-probed')
   })
 
-  it('means there is more than one blocker, not one', () => {
-    expect(blockingIds(live()).length).toBeGreaterThanOrEqual(2)
+  it('leaves the blockers the gate actually computes, and names them', () => {
+    // UPDATED 2026-08-08. This asserted `length >= 2` while two criteria were
+    // blocking — the identity attestation was satisfied, and the point was that
+    // satisfying it did not empty the list. Unit 41's canonical boundary has
+    // since been verified against the real catalogue, so one of those two is
+    // legitimately gone.
+    //
+    // Replacing the COUNT with the exact remaining id is stronger, not laxer: a
+    // count of one could be satisfied by any criterion at all, including this
+    // one regressing while another silently passed. The named blocker cannot.
+    expect(blockingIds(live())).toEqual(['hosted-evidence-bucket-provisioning-ready'])
+    // …and the criterion this describe block is about is still not among them.
+    expect(blockingIds(live())).not.toContain('hosted-storage-apply-identity-probed')
   })
 
   // TWO THINGS ARE MISSING, AND THE TEST DRIVES BOTH.
@@ -543,9 +554,22 @@ describe('the published verdict is the gate verdict, including when it says yes'
   it('derives authorisation from the START gate alone', () => {
     const report = live()
     expect(report.applyAuthorized).toBe(report.baselineStartGate.blocking.length === 0)
-    // …and the completion gate is NOT satisfied, so authorisation is plainly not
-    // a claim that the baseline is done.
-    expect(report.baselineCompletionGate.blocking.length).toBeGreaterThan(0)
+
+    // UPDATED 2026-08-08. The second half used to read
+    // `baselineCompletionGate.blocking.length > 0`, which proved "authorisation
+    // is not a claim the baseline is done" by pointing at a completion gate that
+    // happened to be blocked. Unit 41's boundary is now verified, so that gate
+    // is satisfied — and the property it was standing in for still holds, so it
+    // is asserted directly instead of through a number that moved:
+    //
+    //   applyAuthorized says the baseline may START.
+    //   baselineApplied says whether it HAS been applied, and it is false.
+    //
+    // A later gate is still blocking too, which is the honest shape of "green to
+    // begin, not green to finish".
+    expect(report.applyAuthorized).toBe(true)
+    expect(report.baselineApplied).toBe(false)
+    expect(report.stagingRuntimeGate.blocking.length).toBeGreaterThan(0)
   })
 })
 

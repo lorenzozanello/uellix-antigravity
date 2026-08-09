@@ -31,7 +31,10 @@ import {
   EXPECTED_STORAGE_POLICIES,
   STORAGE_UNIT_SOURCE,
 } from '@/db/hosted/storage-policy-artifact'
-import { EXPECTED_STORAGE_POLICY_SURFACE } from '@/db/hosted/baseline-postconditions'
+import {
+  EXPECTED_STORAGE_POLICY_SURFACE,
+  verifyStoragePolicySurface,
+} from '@/db/hosted/baseline-postconditions'
 
 const ROOT = process.cwd()
 const SOURCE = readFileSync(path.join(ROOT, STORAGE_UNIT_SOURCE), 'utf8').replace(/\r\n?/g, '\n')
@@ -395,12 +398,39 @@ describe('MANAGED_BOUNDARY_VERIFIED has a path to true — the wire adversarial 
     expect(v.managedBoundaryVerified).toBe(false)
   })
 
-  it('the derived status file is what the apply gate reads, and it says false today', () => {
+  it('the derived status file is what the apply gate reads, and it now derives from a real record', () => {
+    // UPDATED 2026-08-08, because the evidence changed and not the contract.
+    // This assertion used to read "and it says false today": PART B had never
+    // been installed, so the wire could only be shown to exist, not to carry
+    // anything. PART B is now installed on staging and the operator recorded the
+    // catalogue, so the same wire is asserted end to end — which is a STRONGER
+    // check than the one it replaces, not a weaker one.
+    //
+    // What is deliberately NOT asserted here is that the boundary may be
+    // crossed. That needs the LIVE measurement to agree with this record, and it
+    // lives in reconcileStorageEvidence. This file only proves the derived
+    // status is the verdict over the recorded catalogue.
     const status = JSON.parse(
       readFileSync(path.join(ROOT, 'artifacts/hosted-storage-boundary-status.json'), 'utf8'),
-    ) as { managedBoundaryVerified: boolean; unit41State: string }
-    expect(status.managedBoundaryVerified).toBe(false)
-    expect(status.unit41State).toBe('UNIT_41_NOT_STARTED')
+    ) as { managedBoundaryVerified: boolean; unit41State: string; recordPresent: boolean; problems: string[] }
+    const record = JSON.parse(
+      readFileSync(path.join(ROOT, 'artifacts/hosted-storage-boundary.json'), 'utf8'),
+    ) as StorageBoundaryArtefact
+
+    expect(status.recordPresent).toBe(true)
+    expect(status.unit41State).toBe('UNIT_41_COMPLETE')
+    expect(status.managedBoundaryVerified).toBe(true)
+    expect(status.problems).toEqual([])
+
+    // DERIVED, never asserted: recomputing over the record on disk must produce
+    // exactly the status on disk. A hand-edited status file fails here.
+    const recomputed = evaluateStorageBoundaryArtefact(record)
+    expect(recomputed.managedBoundaryVerified).toBe(status.managedBoundaryVerified)
+    expect(recomputed.state).toBe(status.unit41State)
+
+    // And the record it derives from is the canonical surface, not three rows
+    // that merely carry the right names.
+    expect(verifyStoragePolicySurface(record.policies ?? []).passed).toBe(true)
   })
 })
 

@@ -1,11 +1,10 @@
 {
   "generatedBy": "pnpm apply:status:write — do not hand-edit; a report quotes this file",
   "criterionCount": 19,
-  "satisfiedCount": 17,
-  "blockingCount": 2,
+  "satisfiedCount": 18,
+  "blockingCount": 1,
   "blockingIds": [
-    "hosted-evidence-bucket-provisioning-ready",
-    "hosted-storage-canonical-boundary-verified"
+    "hosted-evidence-bucket-provisioning-ready"
   ],
   "baselineStartGate": {
     "total": 17,
@@ -14,16 +13,8 @@
   },
   "baselineCompletionGate": {
     "total": 1,
-    "satisfied": 0,
-    "blocking": [
-      {
-        "id": "hosted-storage-canonical-boundary-verified",
-        "observedEvidence": "managedBoundaryVerified=false, unit41 state from artifacts/hosted-storage-boundary-status.json",
-        "expectedProperty": "AFTER unit 41 PART A is committed, the three canonical policies exist on storage.objects with their exact surface. This is what \"the baseline is complete\" means for Storage, and it cannot be a precondition of starting the baseline.",
-        "reason": "SET_ROLE_PATH_VERIFIED is false and cannot become true (MEMBER/USAGE/SET all measured false against supabase_storage_admin, on the psql identity AND the SQL Editor identity). Recording queries or a connection host in an artefact cannot change that: those are provenance for the SAME measurement, not a different measurement. And MANAGED_CANONICAL_BOUNDARY_VERIFIED is false: canonical boundary verified: false. A demonstrated channel is not an installed surface: the capability probe created a temporary policy that granted nothing and removed it again. This criterion reads pg_policies for select_evidence / insert_evidence / delete_evidence, and B0-16 compares their whole surface.",
-        "sourceArtifact": "artifacts/hosted-storage-boundary-status.json"
-      }
-    ]
+    "satisfied": 1,
+    "blocking": []
   },
   "stagingRuntimeGate": {
     "total": 1,
