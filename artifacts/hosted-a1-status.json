@@ -1,0 +1,89 @@
+{
+  "generatedBy": "pnpm a1:status:write — do not hand-edit; this file is derived from the corroboration",
+  "checkpoint": "CHECKPOINT A1",
+  "corroborationArtefact": "artifacts/hosted-a1-corroboration.json",
+  "corroborationPresent": true,
+  "signals": [
+    {
+      "id": "SIGNAL_1_CONNECTION",
+      "pointer": "/connection/poolerUser",
+      "origin": "operator/client",
+      "projectRef": "bvyzblhqymxruxdguaee"
+    },
+    {
+      "id": "SIGNAL_2_DECLARATION",
+      "pointer": "/declaredProjectRef",
+      "origin": "explicit parameter",
+      "projectRef": "bvyzblhqymxruxdguaee"
+    },
+    {
+      "id": "SIGNAL_3_DATABASE",
+      "pointer": "/observation/sentinelObservation/projectRef",
+      "origin": "PostgreSQL, read from the sentinel ROW",
+      "projectRef": "bvyzblhqymxruxdguaee"
+    }
+  ],
+  "targetVerification": {
+    "ok": true,
+    "code": null,
+    "message": null,
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "signals": [
+      "declared-environment",
+      "host-derived-project-ref",
+      "in-database-sentinel"
+    ],
+    "sentinelDeferred": false
+  },
+  "sentinelVerification": {
+    "id": true,
+    "rowCount": 1,
+    "projectRef": "bvyzblhqymxruxdguaee",
+    "environment": "staging",
+    "rr02Present": true,
+    "tablePresent": true,
+    "provisionedAt": "2026-08-09T15:15:43.514121+00:00",
+    "ownerSeparation": "auditable-obstacle: RR-02 applies, postgres retains ADMIN OPTION over uellix_owner",
+    "bootstrapVersion": "stella_hosted_0001"
+  },
+  "packageCount": 9,
+  "packageStates": {
+    "grounding_0002_document_versions": "ABSENT",
+    "grounding_0003_evidence_chunks": "ABSENT",
+    "grounding_0004_runtime_attestation": "ABSENT",
+    "stella_0013_grounded_query_quota": "ABSENT",
+    "stella_0014_operation_tickets": "ABSENT",
+    "stella_0015_project_bound_operation_tickets": "ABSENT",
+    "stella_0016_reserved_quota_semantics": "ABSENT",
+    "stella_0017_governed_stella_consumption": "ABSENT",
+    "stella_0018_category_bound_operation_tickets": "ABSENT"
+  },
+  "partialPackages": [],
+  "flags": {
+    "evaluated": 9,
+    "enabled": []
+  },
+  "chainPlan": {
+    "ok": true,
+    "code": null,
+    "message": null,
+    "stepCount": 9,
+    "steps": [
+      "grounding_0002_document_versions",
+      "grounding_0003_evidence_chunks",
+      "grounding_0004_runtime_attestation",
+      "stella_0013_grounded_query_quota",
+      "stella_0014_operation_tickets",
+      "stella_0015_project_bound_operation_tickets",
+      "stella_0016_reserved_quota_semantics",
+      "stella_0017_governed_stella_consumption",
+      "stella_0018_category_bound_operation_tickets"
+    ],
+    "writesPermitted": false,
+    "sequenceComplete": true,
+    "nextAction": "CHECKPOINT C — verify every package postcondition; the flags stay false"
+  },
+  "blockers": [],
+  "warnings": [],
+  "checkpointPassed": true
+}
