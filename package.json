@@ -71,7 +71,10 @@
     "a1:observation:verify": "tsx scripts/a1-observation-sql.ts verify",
     "a1:status": "tsx scripts/a1-status.ts report",
     "a1:status:write": "tsx scripts/a1-status.ts write",
-    "a1:status:verify": "tsx scripts/a1-status.ts verify"
+    "a1:status:verify": "tsx scripts/a1-status.ts verify",
+    "chain:status": "tsx scripts/chain-status.ts report",
+    "chain:status:write": "tsx scripts/chain-status.ts write",
+    "chain:status:verify": "tsx scripts/chain-status.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
