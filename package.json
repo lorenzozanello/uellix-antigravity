@@ -57,7 +57,9 @@
     "b0:observation:verify": "tsx scripts/b0-observation-sql.ts verify",
     "b0:status": "tsx scripts/b0-status.ts report",
     "b0:status:write": "tsx scripts/b0-status.ts write",
-    "b0:status:verify": "tsx scripts/b0-status.ts verify"
+    "b0:status:verify": "tsx scripts/b0-status.ts verify",
+    "classc:observation:generate": "tsx scripts/class-c-observation-sql.ts generate",
+    "classc:observation:verify": "tsx scripts/class-c-observation-sql.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
