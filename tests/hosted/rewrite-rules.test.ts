@@ -16,12 +16,13 @@ import {
 const RULE_IDS = HOSTED_REWRITE_RULES.map((r) => r.id)
 
 describe('HOSTED_REWRITE_RULES — the set itself', () => {
-  it('is exactly the four enumerated rules, in a fixed order', () => {
+  it('is exactly the five enumerated rules, in a fixed order', () => {
     expect(RULE_IDS).toEqual([
       'superuser-precondition',
       'auth-schema-grant',
       'auth-uid-precondition',
       'auth-uid-call',
+      'capability-role-attributes',
     ])
   })
 
@@ -149,6 +150,95 @@ describe('auth-uid-call', () => {
     const { counts } = rewriteForManagedSupabase('x', line)
 
     expect(counts['auth-uid-call']).toBe(0)
+  })
+})
+
+describe('capability-role-attributes', () => {
+  // The statement, exactly as the three capability packages write it.
+  const CANONICAL = [
+    'ALTER ROLE uellix_cap_grounding',
+    '  NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;',
+  ].join('\n')
+
+  const executableLines = (sql: string): string =>
+    sql
+      .split('\n')
+      .filter((l) => !l.trimStart().startsWith('--'))
+      .join('\n')
+
+  it('fires once, and leaves no privileged keyword in anything executable', () => {
+    const { sql, counts } = rewriteForManagedSupabase('grounding_0002_document_versions', CANONICAL)
+
+    expect(counts['capability-role-attributes']).toBe(1)
+    // The prose keeps naming them — that is the record of what was replaced and
+    // why — so only the statements are checked.
+    for (const attribute of ['NOSUPERUSER', 'NOCREATEDB', 'NOREPLICATION', 'NOBYPASSRLS']) {
+      expect(executableLines(sql), attribute).not.toContain(attribute)
+    }
+  })
+
+  it('still SETS the three a CREATEROLE installer may set', () => {
+    const { sql } = rewriteForManagedSupabase('grounding_0002_document_versions', CANONICAL)
+
+    expect(sql).toContain('ALTER ROLE uellix_cap_grounding NOLOGIN NOCREATEROLE NOINHERIT;')
+  })
+
+  it('ASSERTS the four it may not, and asserts them BEFORE the alter', () => {
+    const { sql } = rewriteForManagedSupabase('grounding_0002_document_versions', CANONICAL)
+
+    for (const column of ['rolsuper', 'rolcreatedb', 'rolreplication', 'rolbypassrls']) {
+      expect(sql, column).toContain(`r.${column}`)
+    }
+    expect(sql).toContain('grounding_0002_document_versions aborted')
+    // ORDER IS THE POINT. On a widened role the ALTER would itself be refused,
+    // with a permission error naming nothing the operator can act on.
+    expect(sql.indexOf('v_widened')).toBeLessThan(
+      sql.indexOf('ALTER ROLE uellix_cap_grounding NOLOGIN'),
+    )
+  })
+
+  it('carries the role name through — it never rewrites one package as another', () => {
+    const { sql } = rewriteForManagedSupabase(
+      'stella_0014_operation_tickets',
+      CANONICAL.replace(/uellix_cap_grounding/g, 'uellix_cap_stella_ticket'),
+    )
+
+    expect(sql).toContain("rolname = 'uellix_cap_stella_ticket'")
+    expect(sql).not.toContain('uellix_cap_grounding')
+  })
+
+  it('is a no-op on already-rewritten SQL — the second pass must find nothing', () => {
+    const once = rewriteForManagedSupabase('grounding_0002_document_versions', CANONICAL)
+    const twice = rewriteForManagedSupabase('grounding_0002_document_versions', once.sql)
+
+    expect(twice.counts['capability-role-attributes']).toBe(0)
+    expect(twice.sql).toBe(once.sql)
+  })
+
+  it('MUTATION: a DIFFERENT ALTER ROLE is not eaten — the anchor is the whole statement', () => {
+    // Were the pattern loosened to `ALTER ROLE`, this would be silently replaced
+    // and the package would lose a statement nobody reviewed. Same reasoning as
+    // the superuser guard's exact-shape anchor.
+    const { counts, sql } = rewriteForManagedSupabase(
+      'grounding_0002_document_versions',
+      'ALTER ROLE uellix_cap_grounding CONNECTION LIMIT 0;',
+    )
+
+    expect(counts['capability-role-attributes']).toBe(0)
+    expect(sql).toBe('ALTER ROLE uellix_cap_grounding CONNECTION LIMIT 0;')
+  })
+
+  it('MUTATION: a second capability role changes the count, and the manifest pins it', () => {
+    // A new capability package added without re-reading this rule fires it twice;
+    // the generator compares against the pinned count and throws rather than
+    // shipping. This is the mechanism, exercised.
+    const twice = `${CANONICAL}\n\n${CANONICAL.replace(/uellix_cap_grounding/g, 'uellix_cap_other')}`
+
+    expect(
+      rewriteForManagedSupabase('grounding_0002_document_versions', twice).counts[
+        'capability-role-attributes'
+      ],
+    ).toBe(2)
   })
 })
 

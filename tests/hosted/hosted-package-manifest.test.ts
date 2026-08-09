@@ -192,7 +192,16 @@ describe('generateHostedPackage — what the artefact must and must not contain'
         .split('\n')
         .filter((l) => l.includes('rolsuper')).length
 
-      expect(survivorsAfter).toBe(survivorsBefore)
+      // `capability-role-attributes` ADDS one. The canonical statement SET
+      // NOSUPERUSER; managed Supabase refuses that statement outright, so the
+      // hosted variant asserts `r.rolsuper` instead — one new line per firing.
+      //
+      // Stated as an EXACT sum rather than relaxed to `>=`. A rule that dropped
+      // one canonical assertion and added two of its own would satisfy `>=` and
+      // is precisely the trade this test exists to refuse.
+      const introduced = entry.expectedRewrites['capability-role-attributes'] ?? 0
+
+      expect(survivorsAfter).toBe(survivorsBefore + introduced)
     },
   )
 

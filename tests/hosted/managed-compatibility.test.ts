@@ -78,11 +78,21 @@ describe('Phase 11 — no hosted artefact depends on rolsuper', () => {
     for (const artefact of DERIVED) {
       for (const line of executableLines(artefact.sql)) {
         if (!line.includes('rolsuper')) continue
-        // Two shapes are legitimate: asserting a capability role holds none of
-        // the dangerous attributes, and excluding superusers from an exhaustive
-        // privilege sweep (a superuser always has every privilege).
+        // Three shapes are legitimate: asserting a capability role holds none of
+        // the dangerous attributes, excluding superusers from an exhaustive
+        // privilege sweep (a superuser always has every privilege), and — added
+        // with `capability-role-attributes` — the generated widened-attribute
+        // assertion that REPLACED an `ALTER ROLE ... NOSUPERUSER` managed
+        // Supabase refuses to run. That third one is still a postcondition about
+        // a role we create; it just refuses instead of setting, because the
+        // applying identity cannot set it. Matched on its exact emitted form so
+        // this stays an enumeration of reviewed shapes rather than a keyword
+        // allowance.
         expect(
-          line.includes('rolcanlogin OR rolsuper OR rolbypassrls') || line.includes('NOT r.rolsuper'),
+          line.includes('rolcanlogin OR rolsuper OR rolbypassrls') ||
+            line.includes('NOT r.rolsuper') ||
+            line.includes("('SUPERUSER', r.rolsuper)"),
+          line,
         ).toBe(true)
       }
     }

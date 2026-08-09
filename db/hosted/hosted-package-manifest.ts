@@ -82,6 +82,7 @@ const NO_REWRITES = {
   'auth-schema-grant': 0,
   'auth-uid-precondition': 0,
   'auth-uid-call': 0,
+  'capability-role-attributes': 0,
 } as const
 
 export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
@@ -145,7 +146,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     name: 'grounding_0002_document_versions',
     sourceFile: 'grounding_0002_document_versions.sql',
     sourceSha256: '92a2b3bca658b7a2a5fda925b099e74cec758d202edcb77f3d16438df2c05f09',
-    expectedRewrites: { ...NO_REWRITES, 'superuser-precondition': 1 },
+    expectedRewrites: { ...NO_REWRITES, 'superuser-precondition': 1, 'capability-role-attributes': 1 },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap'],
     expectedObjects: [
       'role uellix_cap_grounding',
@@ -226,6 +227,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'superuser-precondition': 1,
       'auth-schema-grant': 1,
       'auth-uid-precondition': 1,
+      'capability-role-attributes': 1,
       'auth-uid-call': 2,
     },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap'],
@@ -258,6 +260,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'superuser-precondition': 1,
       'auth-schema-grant': 1,
       'auth-uid-precondition': 1,
+      'capability-role-attributes': 1,
       'auth-uid-call': 10,
     },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap', 'stella_0013_grounded_query_quota'],
@@ -291,6 +294,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'superuser-precondition': 1,
       'auth-schema-grant': 0,
       'auth-uid-precondition': 1,
+      'capability-role-attributes': 0,
       'auth-uid-call': 4,
     },
     dependsOn: [
@@ -322,6 +326,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'superuser-precondition': 1,
       'auth-schema-grant': 0,
       'auth-uid-precondition': 1,
+      'capability-role-attributes': 0,
       'auth-uid-call': 5,
     },
     dependsOn: [
@@ -358,6 +363,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'superuser-precondition': 1,
       'auth-schema-grant': 0,
       'auth-uid-precondition': 1,
+      'capability-role-attributes': 0,
       'auth-uid-call': 2,
     },
     dependsOn: [
@@ -392,6 +398,7 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'superuser-precondition': 1,
       'auth-schema-grant': 0,
       'auth-uid-precondition': 0,
+      'capability-role-attributes': 0,
       'auth-uid-call': 1,
     },
     dependsOn: [

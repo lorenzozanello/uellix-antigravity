@@ -17,6 +17,7 @@
 --   auth-schema-grant: 1
 --   auth-uid-precondition: 1
 --   auth-uid-call: 2
+--   capability-role-attributes: 1
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -153,8 +154,39 @@ BEGIN
 END $$;
 
 -- Stated unconditionally so a re-run converges even if someone widened them.
-ALTER ROLE uellix_cap_stella_quota
-  NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+-- HOSTED VARIANT (generated — do not edit by hand).
+-- The canonical statement set seven attributes in one ALTER ROLE. On managed Supabase
+-- that statement is unexecutable: naming SUPERUSER, CREATEDB, REPLICATION or BYPASSRLS —
+-- even negated — requires the caller to hold the attribute, and the applying identity
+-- holds none of the four. Measured in staging: SQLSTATE 42501.
+--
+-- ASSERTION FIRST, deliberately. If the role HAS been widened, the ALTER below would
+-- itself be refused with a permission error naming nothing useful; this way the operator
+-- is told which attribute is the problem instead.
+DO $$
+DECLARE
+  v_widened text[];
+BEGIN
+  SELECT array_agg(a.attribute ORDER BY a.attribute) INTO v_widened
+  FROM pg_catalog.pg_roles r
+  CROSS JOIN LATERAL (VALUES
+      ('SUPERUSER', r.rolsuper),
+      ('CREATEDB', r.rolcreatedb),
+      ('REPLICATION', r.rolreplication),
+      ('BYPASSRLS', r.rolbypassrls)
+  ) AS a(attribute, held)
+  WHERE r.rolname = 'uellix_cap_stella_quota' AND a.held;
+
+  IF v_widened IS NOT NULL THEN
+    RAISE EXCEPTION
+      'stella_0013_grounded_query_quota aborted: role uellix_cap_stella_quota holds %, which this package requires it NOT to hold. This identity cannot revoke those attributes — PostgreSQL requires the caller to hold an attribute to change it — so continuing would leave a capability role wider than the package claims. Have a superuser revoke them, or drop the role and re-run.',
+      array_to_string(v_widened, ', ');
+  END IF;
+END $$;
+
+-- The three a CREATEROLE installer may set are still SET, so a re-run still converges
+-- on them even if someone widened them.
+ALTER ROLE uellix_cap_stella_quota NOLOGIN NOCREATEROLE NOINHERIT;
 
 -- A schema of its own, not `uellix_capability`: the five public-capability
 -- packages drop that schema in their rollbacks as soon as it is empty, so

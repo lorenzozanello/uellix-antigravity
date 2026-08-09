@@ -214,6 +214,93 @@ const authUidCall: HostedRewriteRule = {
   },
 }
 
+/* -------------------------------------------------------------------------- */
+/* Rule 5 — capability-role-attributes                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The exact shape, uniform across the three packages that mint a capability
+ * role. Anchored on the whole two-line statement rather than on `ALTER ROLE`,
+ * for the reason rule 1 anchors on the whole guard: a loose match would eat a
+ * DIFFERENT role alteration that a future package adds for a different reason,
+ * and the rewrite would then be removing something nobody reviewed.
+ */
+const CAPABILITY_ROLE_ATTRIBUTES =
+  /^ALTER ROLE (\w+)\n[ \t]*NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;$/gm
+
+/** Attributes PostgreSQL lets a CREATEROLE installer set. Measured, not assumed. */
+const SETTABLE_BY_CREATEROLE = 'NOLOGIN NOCREATEROLE NOINHERIT'
+
+/** The rest, with the pg_roles column that reports each. */
+const ASSERTED_ONLY: readonly (readonly [attribute: string, column: string])[] = [
+  ['SUPERUSER', 'rolsuper'],
+  ['CREATEDB', 'rolcreatedb'],
+  ['REPLICATION', 'rolreplication'],
+  ['BYPASSRLS', 'rolbypassrls'],
+]
+
+const capabilityRoleAttributes: HostedRewriteRule = {
+  id: 'capability-role-attributes',
+  why:
+    'MEASURED IN STAGING, on the first real application of grounding_0002: `ALTER ROLE <cap> ' +
+    'NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS` fails with ' +
+    'SQLSTATE 42501, "permission denied to alter role". PostgreSQL gates the attribute KEYWORDS, ' +
+    'not the target: naming SUPERUSER at all — even as NOSUPERUSER, even against a role created ' +
+    'one statement earlier that plainly is not one — requires the caller to BE a superuser, and ' +
+    'from PostgreSQL 16 the same holds for CREATEDB, REPLICATION and BYPASSRLS against an ' +
+    'installer that does not itself hold them. Managed Supabase never grants any of the four. ' +
+    'So the statement is split: the three attributes a CREATEROLE installer may set are still SET, ' +
+    'and the four it may not are ASSERTED against pg_catalog.pg_roles instead. The end state the ' +
+    'package guarantees is unchanged — the role provably holds none of the seven — and the ' +
+    'substitution is strictly narrower rather than weaker: the original SET a widened role back, ' +
+    'this REFUSES to continue over one. That is the honest behaviour here, because an installer ' +
+    'without the attribute could not have fixed it either, and a package that appeared to normalise ' +
+    'something it cannot touch would be reporting a guarantee it does not provide. A freshly ' +
+    'created role holds all four false, so a clean install never reaches the refusal.',
+  apply(packageName, sql) {
+    let count = 0
+    const out = sql.replace(CAPABILITY_ROLE_ATTRIBUTES, (_m, role: string) => {
+      count += 1
+      const checks = ASSERTED_ONLY.map(
+        ([attribute, column]) => `      ('${attribute}', r.${column})`,
+      ).join(',\n')
+      return [
+        `-- HOSTED VARIANT (generated — do not edit by hand).`,
+        `-- The canonical statement set seven attributes in one ALTER ROLE. On managed Supabase`,
+        `-- that statement is unexecutable: naming SUPERUSER, CREATEDB, REPLICATION or BYPASSRLS —`,
+        `-- even negated — requires the caller to hold the attribute, and the applying identity`,
+        `-- holds none of the four. Measured in staging: SQLSTATE 42501.`,
+        `--`,
+        `-- ASSERTION FIRST, deliberately. If the role HAS been widened, the ALTER below would`,
+        `-- itself be refused with a permission error naming nothing useful; this way the operator`,
+        `-- is told which attribute is the problem instead.`,
+        `DO $$`,
+        `DECLARE`,
+        `  v_widened text[];`,
+        `BEGIN`,
+        `  SELECT array_agg(a.attribute ORDER BY a.attribute) INTO v_widened`,
+        `  FROM pg_catalog.pg_roles r`,
+        `  CROSS JOIN LATERAL (VALUES`,
+        checks,
+        `  ) AS a(attribute, held)`,
+        `  WHERE r.rolname = '${role}' AND a.held;`,
+        ``,
+        `  IF v_widened IS NOT NULL THEN`,
+        `    RAISE EXCEPTION`,
+        `      '${packageName} aborted: role ${role} holds %, which this package requires it NOT to hold. This identity cannot revoke those attributes — PostgreSQL requires the caller to hold an attribute to change it — so continuing would leave a capability role wider than the package claims. Have a superuser revoke them, or drop the role and re-run.',`,
+        `      array_to_string(v_widened, ', ');`,
+        `  END IF;`,
+        `END $$;`,
+        ``,
+        `-- The three a CREATEROLE installer may set are still SET, so a re-run still converges`,
+        `-- on them even if someone widened them.`,
+        `ALTER ROLE ${role} ${SETTABLE_BY_CREATEROLE};`,
+      ].join('\n')
+    })
+    return { sql: out, count }
+  },
+}
+
 /**
  * The rules, in application order.
  *
@@ -222,12 +309,17 @@ const authUidCall: HostedRewriteRule = {
  * `to_regprocedure` literal before rule 4's quote exclusion would have had to
  * carry it alone. Reordering them changes the counts, and the manifest pins the
  * counts, so a reorder cannot pass unnoticed.
+ *
+ * Rule 5 is last and independent of the others: it matches a statement none of
+ * them touches, and it emits no `auth.uid()` and no superuser guard, so it
+ * cannot feed or starve an earlier rule whichever way round they run.
  */
 export const HOSTED_REWRITE_RULES: readonly HostedRewriteRule[] = [
   superuserPrecondition,
   authSchemaGrant,
   authUidPrecondition,
   authUidCall,
+  capabilityRoleAttributes,
 ]
 
 export interface HostedRewriteResult {

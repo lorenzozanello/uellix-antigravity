@@ -17,6 +17,7 @@
 --   auth-schema-grant: 0
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
+--   capability-role-attributes: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
