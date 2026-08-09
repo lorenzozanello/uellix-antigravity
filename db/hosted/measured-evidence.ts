@@ -49,10 +49,97 @@ import {
   type CapabilityProbeState,
 } from './storage-capability-probe'
 import { STORAGE_BOUNDARY_STATUS_ARTEFACT } from './managed-policy-channel'
-import { KNOWN_PRODUCTION_IDENTIFIERS } from './target-identity'
+import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from './target-identity'
 
 export const APPLY_IDENTITY_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-apply-identity.json'
-export const SQL_EDITOR_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-uellix-staging.json'
+/**
+ * THE CLASS-C EVIDENCE LEDGER, AND WHY IT IS A PINNED LIST.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THIS REPLACES
+ * ---------------------------------------------------------------------------
+ * `SQL_EDITOR_ARTEFACT` was a single hardcoded dated filename. That was honest
+ * while there was one measurement, and became a trap the moment the world moved:
+ * the 2026-08-07 probe recorded `evidenceBucketExists: false` with
+ * `remediation: DEFERRED BY OPERATOR INSTRUCTION`, and after the bucket was
+ * created the gate kept reading the old answer. The artefact was not wrong — it
+ * is a dated record of what was true that day — the SELECTION was.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY NOT "THE MOST RECENT FILE"
+ * ---------------------------------------------------------------------------
+ * Because then any file dropped into `artifacts/class-c-probes/` becomes the
+ * authority, and evidence that governs a gate must not be appointable by
+ * whoever can write to a directory. Adding an entry here is a CODE CHANGE, so it
+ * arrives through review with the measurement that justifies it.
+ *
+ * The LAST entry is current; earlier ones are superseded and kept, because
+ * deleting them would delete the proof that the determination was made with what
+ * was available and revised when better evidence arrived.
+ */
+export interface ClassCEvidenceEntry {
+  readonly path: string
+  /** ISO date the operator measured it. Documentation; never the selector. */
+  readonly measuredOn: string
+  /** The project this measurement describes. Checked against the target. */
+  readonly projectRef: string
+  readonly note: string
+}
+
+export const CLASS_C_SQL_EDITOR_EVIDENCE: readonly ClassCEvidenceEntry[] = [
+  {
+    path: 'artifacts/class-c-probes/2026-08-07-uellix-staging.json',
+    measuredOn: '2026-08-07',
+    projectRef: 'bvyzblhqymxruxdguaee',
+    note:
+      'Train 5C1 pre-baseline probe. SUPERSEDED: it records evidenceBucketExists=false, deferred by ' +
+      'operator instruction. The bucket was created on 2026-08-08. Kept as the dated record of what ' +
+      'was true before the baseline ran.',
+  },
+]
+
+export type ClassCResolution =
+  | { readonly ok: true; readonly entry: ClassCEvidenceEntry }
+  | { readonly ok: false; readonly code: 'CLASS_C_EMPTY' | 'CLASS_C_PRODUCTION_REF' | 'CLASS_C_WRONG_TARGET'; readonly detail: string }
+
+/**
+ * Picks the authoritative Class-C artefact, or refuses.
+ *
+ * Production is vetoed BEFORE the target match, so a production artefact is
+ * refused by the check that names production rather than by one that happens to
+ * reject it today for another reason.
+ */
+export function resolveClassCEvidence(
+  targetProjectRef: string = KNOWN_STAGING_PROJECT_REF,
+  ledger: readonly ClassCEvidenceEntry[] = CLASS_C_SQL_EDITOR_EVIDENCE,
+  production = KNOWN_PRODUCTION_IDENTIFIERS,
+): ClassCResolution {
+  const entry = ledger[ledger.length - 1]
+  if (entry === undefined) {
+    return { ok: false, code: 'CLASS_C_EMPTY', detail: 'no Class-C evidence is declared. Unmeasured is refused.' }
+  }
+  if (production.projectRefs.includes(entry.projectRef)) {
+    return {
+      ok: false,
+      code: 'CLASS_C_PRODUCTION_REF',
+      detail: `${entry.path} describes ${entry.projectRef}, a KNOWN PRODUCTION project.`,
+    }
+  }
+  if (entry.projectRef !== targetProjectRef) {
+    return {
+      ok: false,
+      code: 'CLASS_C_WRONG_TARGET',
+      detail: `${entry.path} describes ${entry.projectRef}; the target is ${targetProjectRef}. An observation of another database is not weaker evidence about this one — it is evidence about something else.`,
+    }
+  }
+  return { ok: true, entry }
+}
+
+/** Backwards-compatible alias: the CURRENT artefact path, resolved not hardcoded. */
+export const SQL_EDITOR_ARTEFACT: string = (() => {
+  const r = resolveClassCEvidence()
+  return r.ok ? r.entry.path : CLASS_C_SQL_EDITOR_EVIDENCE[CLASS_C_SQL_EDITOR_EVIDENCE.length - 1]?.path ?? ''
+})()
 export const CHECKPOINT_A0_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json'
 export const FEATURE_FLAGS_ARTEFACT = 'artifacts/class-c-probes/2026-08-07-feature-flags.json'
 
