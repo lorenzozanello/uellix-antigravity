@@ -1,0 +1,138 @@
+{
+    "note": "Project refs are not secret. No credential, connection string or user data is recorded here. Every value below was measured by this query.",
+    "roles": [
+        {
+            "name": "uellix_app",
+            "isSuper": false,
+            "canLogin": true,
+            "createDb": false,
+            "bypassRls": false,
+            "createRole": false,
+            "replication": false
+        },
+        {
+            "name": "uellix_auditor",
+            "isSuper": false,
+            "canLogin": true,
+            "createDb": false,
+            "bypassRls": false,
+            "createRole": false,
+            "replication": false
+        },
+        {
+            "name": "uellix_migrator",
+            "isSuper": false,
+            "canLogin": true,
+            "createDb": false,
+            "bypassRls": false,
+            "createRole": false,
+            "replication": false
+        },
+        {
+            "name": "uellix_owner",
+            "isSuper": false,
+            "canLogin": false,
+            "createDb": false,
+            "bypassRls": false,
+            "createRole": false,
+            "replication": false
+        },
+        {
+            "name": "uellix_writer",
+            "isSuper": false,
+            "canLogin": false,
+            "createDb": false,
+            "bypassRls": false,
+            "createRole": false,
+            "replication": false
+        }
+    ],
+    "functions": [
+        {
+            "owner": "postgres",
+            "config": [
+                "search_path=\"\""
+            ],
+            "signature": "public.uellix_auth_uid()",
+            "executeGrantees": [
+                "postgres",
+                "uellix_app"
+            ],
+            "securityDefiner": true
+        },
+        {
+            "owner": "postgres",
+            "config": [
+                "search_path=\"\""
+            ],
+            "signature": "uellix_bootstrap.assert_hosted_capabilities(text)",
+            "executeGrantees": [
+                "postgres",
+                "uellix_migrator"
+            ],
+            "securityDefiner": false
+        },
+        {
+            "owner": "postgres",
+            "config": [
+                "search_path=\"\""
+            ],
+            "signature": "uellix_bootstrap.hosted_capability_report()",
+            "executeGrantees": [
+                "postgres",
+                "uellix_auditor",
+                "uellix_migrator"
+            ],
+            "securityDefiner": false
+        }
+    ],
+    "measuredBy": "operator, psql session pooler, inside a READ ONLY transaction, from db/prepared/stella-bootstrap/observation.sql",
+    "ledgerOwner": "uellix_owner",
+    "memberships": [
+        {
+            "role": "uellix_owner",
+            "member": "uellix_migrator",
+            "setOption": true,
+            "inheritOption": false
+        },
+        {
+            "role": "uellix_writer",
+            "member": "uellix_app",
+            "setOption": false,
+            "inheritOption": true
+        }
+    ],
+    "appReachesOwner": false,
+    "sentinelRowCount": 1,
+    "targetProjectRef": "bvyzblhqymxruxdguaee",
+    "appReachesMigrator": false,
+    "schemaPublicGrants": [
+        {
+            "usage": true,
+            "create": false,
+            "grantee": "uellix_app"
+        },
+        {
+            "usage": true,
+            "create": false,
+            "grantee": "uellix_auditor"
+        },
+        {
+            "usage": true,
+            "create": false,
+            "grantee": "uellix_migrator"
+        },
+        {
+            "usage": true,
+            "create": true,
+            "grantee": "uellix_owner"
+        },
+        {
+            "usage": true,
+            "create": false,
+            "grantee": "uellix_writer"
+        }
+    ],
+    "bootstrapSchemaOwner": "uellix_owner",
+    "sentinelTablePresent": true
+}
