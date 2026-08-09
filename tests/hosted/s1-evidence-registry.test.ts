@@ -302,8 +302,17 @@ describe('the committed PRE evidence at 90c2dff', () => {
     expect(s.verdict).toBe('PASS')
   })
 
-  it('does not yet have a POST artefact, and that is the correct state before S3', () => {
-    expect(existsSync(path.join(ROOT, POST_OBSERVATION))).toBe(false)
+  it('now coexists with the POST artefact, each still answering its own question', () => {
+    // Written when S3 had not run, asserting the POST artefact was absent. S3
+    // landed at 59133a5 and the assertion became false — not a regression, a
+    // stale claim about a world that moved. What is permanently true is that
+    // both exist and neither replaced the other.
+    expect(existsSync(path.join(ROOT, PRE_OBSERVATION))).toBe(true)
+    expect(existsSync(path.join(ROOT, POST_OBSERVATION))).toBe(true)
+    const pre = JSON.parse(readFileSync(path.join(ROOT, PRE_OBSERVATION), 'utf8')) as S1Observation
+    const post = JSON.parse(readFileSync(path.join(ROOT, POST_OBSERVATION), 'utf8')) as S1Observation
+    expect(pre.sentinelRowCount).toBe(0)
+    expect(post.sentinelRowCount).toBe(1)
   })
 })
 
