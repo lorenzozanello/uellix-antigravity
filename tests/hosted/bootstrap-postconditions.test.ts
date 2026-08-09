@@ -31,12 +31,14 @@ import {
   buildSentinelInsertSql,
   evaluateBootstrapPostconditions,
   parseS1Observation,
+  type S1EvidencePhase,
   type S1Observation,
 } from '@/db/hosted/bootstrap-postconditions'
 import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 
 const PROD = KNOWN_PRODUCTION_IDENTIFIERS.projectRefs[0]!
 const ROOT = path.resolve(import.meta.dirname, '..', '..')
+const PRE_PATH = 'artifacts/hosted-s1-observation.json'
 
 /** The state a correct S1 leaves behind. Every negative control mutates ONE field. */
 function healthy(): S1Observation {
@@ -74,11 +76,13 @@ function healthy(): S1Observation {
   }
 }
 
-const run = (patch: Partial<S1Observation> = {}, sentinelExpected: 'absent' | 'present' = 'absent') =>
-  evaluateBootstrapPostconditions({ ...healthy(), ...patch }, { sentinelExpected })
+// The phase, not an expectation: `evaluateBootstrapPostconditions` derives the
+// sentinel expectation from it, so phase=pre + sentinel=present cannot be asked.
+const run = (patch: Partial<S1Observation> = {}, phase: S1EvidencePhase = 'pre-sentinel') =>
+  evaluateBootstrapPostconditions({ ...healthy(), ...patch }, phase)
 
-const failedIds = (patch: Partial<S1Observation>, s: 'absent' | 'present' = 'absent'): string[] =>
-  run(patch, s).checks.filter((c) => !c.passed).map((c) => c.id)
+const failedIds = (patch: Partial<S1Observation>, p: S1EvidencePhase = 'pre-sentinel'): string[] =>
+  run(patch, p).checks.filter((c) => !c.passed).map((c) => c.id)
 
 describe('the S1 postcondition contract', () => {
   it('passes on the state a correct S1 leaves behind', () => {
@@ -225,20 +229,20 @@ describe('negative controls — one mutated field each', () => {
 
 describe('the sentinel is the ONE thing that differs between S1 and A1', () => {
   it('S1 REFUSES a sentinel row — a bootstrap that mints its own is certifying itself', () => {
-    expect(failedIds({ sentinelRowCount: 1 }, 'absent')).toContain('S1-13')
+    expect(failedIds({ sentinelRowCount: 1 }, 'pre-sentinel')).toContain('S1-13')
   })
 
   it('A1 REFUSES the absence of one — the chain has no other in-database identity', () => {
-    expect(failedIds({ sentinelRowCount: 0 }, 'present')).toContain('S1-13')
+    expect(failedIds({ sentinelRowCount: 0 }, 'post-sentinel')).toContain('S1-13')
   })
 
   it('A1 refuses a second row, which the CHECK should already have stopped', () => {
-    expect(failedIds({ sentinelRowCount: 2 }, 'present')).toContain('S1-13')
+    expect(failedIds({ sentinelRowCount: 2 }, 'post-sentinel')).toContain('S1-13')
   })
 
   it('nothing else changes between the two verdicts', () => {
-    const s1 = run({}, 'absent')
-    const a1 = run({ sentinelRowCount: 1 }, 'present')
+    const s1 = run({}, 'pre-sentinel')
+    const a1 = run({ sentinelRowCount: 1 }, 'post-sentinel')
     expect(s1.passed).toBe(true)
     expect(a1.passed).toBe(true)
     expect(s1.checks.map((c) => c.id)).toEqual(a1.checks.map((c) => c.id))
@@ -249,18 +253,18 @@ describe('parsing the observation fails closed', () => {
   const raw = () => JSON.stringify(healthy())
 
   it('accepts the artefact it was built for', () => {
-    const r = parseS1Observation(raw(), KNOWN_STAGING_PROJECT_REF)
+    const r = parseS1Observation(raw(), KNOWN_STAGING_PROJECT_REF, PRE_PATH)
     expect(r.ok).toBe(true)
   })
 
   it('refuses an absent artefact — unmeasured is not satisfied', () => {
-    const r = parseS1Observation(null, KNOWN_STAGING_PROJECT_REF)
+    const r = parseS1Observation(null, KNOWN_STAGING_PROJECT_REF, PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_ABSENT')
   })
 
   it('refuses malformed JSON rather than guessing', () => {
-    const r = parseS1Observation('{not json', KNOWN_STAGING_PROJECT_REF)
+    const r = parseS1Observation('{not json', KNOWN_STAGING_PROJECT_REF, PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_MALFORMED')
   })
@@ -268,26 +272,26 @@ describe('parsing the observation fails closed', () => {
   it('refuses an observation that does not say WHICH database it describes', () => {
     const o = healthy() as unknown as Record<string, unknown>
     delete o.targetProjectRef
-    const r = parseS1Observation(JSON.stringify(o), KNOWN_STAGING_PROJECT_REF)
+    const r = parseS1Observation(JSON.stringify(o), KNOWN_STAGING_PROJECT_REF, PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_PROJECT_REF_MISSING')
   })
 
   it('VETOES a production ref by the check that names production', () => {
-    const r = parseS1Observation(JSON.stringify({ ...healthy(), targetProjectRef: PROD }), PROD)
+    const r = parseS1Observation(JSON.stringify({ ...healthy(), targetProjectRef: PROD }), PROD, PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_PRODUCTION_REF')
   })
 
   it('refuses an observation of a DIFFERENT project than the one asked about', () => {
-    const r = parseS1Observation(raw(), 'aaaaaaaaaaaaaaaaaaaa')
+    const r = parseS1Observation(raw(), 'aaaaaaaaaaaaaaaaaaaa', PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_PROJECT_REF_MISMATCH')
   })
 
   it('refuses an artefact carrying anything secret-shaped', () => {
     const o = { ...healthy(), ledgerOwner: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' }
-    const r = parseS1Observation(JSON.stringify(o), KNOWN_STAGING_PROJECT_REF)
+    const r = parseS1Observation(JSON.stringify(o), KNOWN_STAGING_PROJECT_REF, PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_CARRIES_SECRET')
   })
@@ -295,7 +299,7 @@ describe('parsing the observation fails closed', () => {
   it('refuses an observation missing a field the verdict rests on', () => {
     const o = healthy() as unknown as Record<string, unknown>
     delete o.functions
-    const r = parseS1Observation(JSON.stringify(o), KNOWN_STAGING_PROJECT_REF)
+    const r = parseS1Observation(JSON.stringify(o), KNOWN_STAGING_PROJECT_REF, PRE_PATH)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('S1_OBSERVATION_INCOMPLETE')
   })

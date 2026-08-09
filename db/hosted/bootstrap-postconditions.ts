@@ -30,10 +30,218 @@
 
 import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from './target-identity'
 
-/** Where the operator records the read-only observation. Versioned, committed. */
-export const S1_OBSERVATION_ARTEFACT = 'artifacts/hosted-s1-observation.json'
-/** Where the derived verdict is written, so a report can only quote it. */
-export const S1_STATUS_ARTEFACT = 'artifacts/hosted-s1-status.json'
+// ---------------------------------------------------------------------------
+// THE EVIDENCE REGISTRY — two historical facts, not two versions of one
+// ---------------------------------------------------------------------------
+//
+// The first version of this module had ONE observation path and ONE status
+// path. The post-S2 measurement would have been written over the pre-S2 one,
+// destroying the only proof that the bootstrap did not mint its own sentinel,
+// and the diff would have read as a routine update of two files.
+//
+// `CLASS_C_SQL_EDITOR_EVIDENCE` already had the right shape — a ledger declared
+// in code, whose own test says "never the newest file on disk". One thing here
+// differs DELIBERATELY. Class-C resolves `ledger[ledger.length - 1]`, because a
+// newer measurement supersedes an older one. These two never supersede each
+// other: `pre-sentinel` proves the table was left empty, `post-sentinel` proves
+// the operator filled it, and both stay true forever. So the selector is the
+// declared PHASE, and recency is not a signal at all — not by date, not by
+// position in the array, not by anything on disk. This module never reads the
+// filesystem; a test asserts it cannot.
+
+export type S1EvidencePhase = 'pre-sentinel' | 'post-sentinel'
+
+export interface S1EvidenceEntry {
+  /** The selector. The ONLY selector. */
+  readonly phase: S1EvidencePhase
+  /** Where the operator records the read-only observation. */
+  readonly path: string
+  /** Where the derived verdict is written, so a report can only quote it. */
+  readonly statusPath: string
+  /** ISO date the operator measured it. Documentation; never the selector. */
+  readonly measuredOn: string
+  /** The project this measurement describes. Checked against the target. */
+  readonly projectRef: string
+  readonly note: string
+}
+
+export const S1_EVIDENCE_REGISTRY: readonly S1EvidenceEntry[] = [
+  {
+    phase: 'pre-sentinel',
+    path: 'artifacts/hosted-s1-observation.json',
+    statusPath: 'artifacts/hosted-s1-status.json',
+    measuredOn: '2026-08-09',
+    projectRef: KNOWN_STAGING_PROJECT_REF,
+    note:
+      'Measured after S1 and BEFORE the human sentinel INSERT. Records ' +
+      'sentinelRowCount=0, which is the only evidence that stella_hosted_0001 ' +
+      'left the row for a person rather than certifying itself. NOT superseded ' +
+      'by the post-sentinel measurement and never will be: the two answer ' +
+      'different questions, and this one can only be taken once, before S2.',
+  },
+  {
+    phase: 'post-sentinel',
+    path: 'artifacts/hosted-s1-observation-post-sentinel.json',
+    statusPath: 'artifacts/hosted-s1-status-post-sentinel.json',
+    measuredOn: '2026-08-09',
+    projectRef: KNOWN_STAGING_PROJECT_REF,
+    note:
+      'S3. Measured after the operator wrote the sentinel row. Its job is to ' +
+      'show exactly one row AND that the other twelve postconditions are ' +
+      'byte-for-byte what the pre-sentinel measurement recorded — S2 was one ' +
+      'INSERT, and anything else that moved would mean it did more than that.',
+  },
+]
+
+/**
+ * The phase decides the expectation. It is not an argument anywhere, so
+ * `phase=pre-sentinel` with `sentinelExpected=present` is unrepresentable
+ * rather than merely discouraged.
+ */
+export const SENTINEL_EXPECTATION: Readonly<Record<S1EvidencePhase, SentinelExpectation>> = {
+  'pre-sentinel': 'absent',
+  'post-sentinel': 'present',
+}
+
+/**
+ * The label a status artefact carries, and it is NOT the phase slug.
+ *
+ * `artifacts/hosted-s1-status.json` was committed at 90c2dff carrying
+ * `"phase": "S1 (PHASE_STELLA_BOOTSTRAP)"`. Recording the slug instead would
+ * have changed those bytes, and the instruction is explicit: the committed
+ * evidence is not re-serialized to make new plumbing fit. So the label stays
+ * what it was and the slug lives here, in the map, where the registry can use
+ * it as a selector without touching history.
+ *
+ * The two labels differ, which is what makes a cross-wired status detectable:
+ * a pre-sentinel verdict copied into the post-sentinel slot fails `:verify`
+ * because the recomputation carries the other label and the other expectation.
+ */
+export const PHASE_LABEL: Readonly<Record<S1EvidencePhase, string>> = {
+  'pre-sentinel': 'S1 (PHASE_STELLA_BOOTSTRAP)',
+  'post-sentinel': 'CHECKPOINT A1',
+}
+
+export type S1EvidenceRefusalCode =
+  | 'S1_REGISTRY_EMPTY'
+  | 'S1_PHASE_NOT_DECLARED'
+  | 'S1_PHASE_DUPLICATED'
+  | 'S1_PATH_COLLISION'
+  | 'S1_STATUS_PATH_COLLISION'
+  | 'S1_ENTRY_PROJECT_REF_MISSING'
+  | 'S1_ENTRY_PROJECT_REF_MALFORMED'
+  | 'S1_PRODUCTION_REF'
+  | 'S1_WRONG_TARGET'
+
+export type S1EvidenceResolution =
+  | {
+      readonly ok: true
+      readonly entry: S1EvidenceEntry
+      readonly sentinelExpected: SentinelExpectation
+    }
+  | { readonly ok: false; readonly code: S1EvidenceRefusalCode; readonly detail: string }
+
+/** A Supabase project ref: exactly twenty lowercase letters. */
+const PROJECT_REF_SHAPE = /^[a-z]{20}$/
+
+/**
+ * Picks the artefact for a phase, or refuses.
+ *
+ * Integrity of the WHOLE registry is checked before any entry is used, because
+ * a duplicated phase or a shared path is a defect in the map itself and would
+ * otherwise be discovered only by whichever lookup happened to hit it.
+ * Production is vetoed before the target match, so a production artefact is
+ * refused as production rather than as "the wrong project".
+ */
+export function resolveS1Evidence(
+  phase: S1EvidencePhase,
+  registry: readonly S1EvidenceEntry[] = S1_EVIDENCE_REGISTRY,
+  targetProjectRef: string = KNOWN_STAGING_PROJECT_REF,
+  production = KNOWN_PRODUCTION_IDENTIFIERS,
+): S1EvidenceResolution {
+  if (registry.length === 0) {
+    return {
+      ok: false,
+      code: 'S1_REGISTRY_EMPTY',
+      detail: 'no S1 evidence is declared. Unmeasured is not satisfied, and undeclared is not measured.',
+    }
+  }
+
+  for (const candidate of registry) {
+    const samePhase = registry.filter((e) => e.phase === candidate.phase)
+    if (samePhase.length > 1) {
+      return {
+        ok: false,
+        code: 'S1_PHASE_DUPLICATED',
+        detail: `phase ${candidate.phase} is declared ${samePhase.length} times. Two answers to one question is the divergence this registry exists to prevent.`,
+      }
+    }
+  }
+
+  for (const a of registry) {
+    for (const b of registry) {
+      if (a === b) continue
+      if (a.path === b.path) {
+        return {
+          ok: false,
+          code: 'S1_PATH_COLLISION',
+          detail: `${a.phase} and ${b.phase} both record to ${a.path}. That shared path IS the defect this registry was written to close: the second measurement would overwrite the first.`,
+        }
+      }
+      if (a.statusPath === b.statusPath) {
+        return {
+          ok: false,
+          code: 'S1_STATUS_PATH_COLLISION',
+          detail: `${a.phase} and ${b.phase} both write their verdict to ${a.statusPath}.`,
+        }
+      }
+    }
+  }
+
+  const entry = registry.find((e) => e.phase === phase)
+  if (entry === undefined) {
+    return {
+      ok: false,
+      code: 'S1_PHASE_NOT_DECLARED',
+      detail: `no entry declares phase ${phase}. Declared: ${list(registry.map((e) => e.phase))}.`,
+    }
+  }
+
+  if (entry.projectRef === '') {
+    return {
+      ok: false,
+      code: 'S1_ENTRY_PROJECT_REF_MISSING',
+      detail: `the ${phase} entry does not say which project it describes.`,
+    }
+  }
+  if (!PROJECT_REF_SHAPE.test(entry.projectRef)) {
+    return {
+      ok: false,
+      code: 'S1_ENTRY_PROJECT_REF_MALFORMED',
+      detail: `${entry.projectRef} is not a Supabase project ref (20 lowercase letters).`,
+    }
+  }
+  if (
+    production.projectRefs.includes(entry.projectRef) ||
+    production.projectRefs.includes(targetProjectRef)
+  ) {
+    return {
+      ok: false,
+      code: 'S1_PRODUCTION_REF',
+      detail: `${entry.projectRef} is a PRODUCTION project ref. This phase never runs there.`,
+    }
+  }
+  if (entry.projectRef !== targetProjectRef) {
+    return {
+      ok: false,
+      code: 'S1_WRONG_TARGET',
+      detail: `the ${phase} entry describes ${entry.projectRef}, the question was asked about ${targetProjectRef}.`,
+    }
+  }
+
+  return { ok: true, entry, sentinelExpected: SENTINEL_EXPECTATION[phase] }
+}
+
 /** The read-only SQL that produces the observation. Generated, byte-verified. */
 export const S1_OBSERVATION_SQL = 'db/prepared/stella-bootstrap/observation.sql'
 /** The ONE write of this phase, and the one a human must issue. Generated. */
@@ -378,22 +586,35 @@ export const BOOTSTRAP_POSTCONDITIONS: readonly BootstrapCheck[] = [
 
 export interface BootstrapVerdict {
   readonly passed: boolean
+  /** Recorded on the verdict so a status artefact cannot hide which one it is. */
+  readonly phase: S1EvidencePhase
   readonly sentinelExpected: SentinelExpectation
   readonly checks: readonly { readonly id: string; readonly title: string; readonly passed: boolean; readonly detail: string }[]
 }
 
+/**
+ * Takes a PHASE, never an expectation.
+ *
+ * The expectation used to be an option, which meant a caller could ask for the
+ * pre-sentinel phase while expecting a row — the exact cross-wiring that would
+ * make a post-S2 measurement pass as pre-S2 evidence. Deriving it from the
+ * phase puts the semantics in one place and makes the illegal combination
+ * impossible to write rather than merely wrong.
+ */
 export function evaluateBootstrapPostconditions(
   observation: S1Observation,
-  options: { readonly sentinelExpected: SentinelExpectation },
+  phase: S1EvidencePhase,
 ): BootstrapVerdict {
+  const sentinelExpected = SENTINEL_EXPECTATION[phase]
   const checks = BOOTSTRAP_POSTCONDITIONS.map((c) => ({
     id: c.id,
     title: c.title,
-    ...c.evaluate(observation, options.sentinelExpected),
+    ...c.evaluate(observation, sentinelExpected),
   }))
   return {
     passed: checks.every((c) => c.passed),
-    sentinelExpected: options.sentinelExpected,
+    phase,
+    sentinelExpected,
     checks,
   }
 }
@@ -455,12 +676,22 @@ function carriesSecret(value: unknown): string | null {
   return null
 }
 
-export function parseS1Observation(raw: string | null, targetProjectRef: string): S1ParseResult {
+/**
+ * `sourcePath` is required, not defaulted. The refusal message names the file
+ * the operator must produce, and the whole point of the registry is that there
+ * is more than one — a hardcoded path here is how S3 would end up being told
+ * to overwrite the pre-sentinel evidence.
+ */
+export function parseS1Observation(
+  raw: string | null,
+  targetProjectRef: string,
+  sourcePath: string,
+): S1ParseResult {
   if (raw === null || raw.trim() === '') {
     return {
       ok: false,
       code: 'S1_OBSERVATION_ABSENT',
-      detail: `${S1_OBSERVATION_ARTEFACT} is absent. Unmeasured is not satisfied: run ${S1_OBSERVATION_SQL} against the target and record its output.`,
+      detail: `${sourcePath} is absent. Unmeasured is not satisfied: run ${S1_OBSERVATION_SQL} against the target and record its output THERE — not over another phase's artefact.`,
     }
   }
   let parsed: unknown
