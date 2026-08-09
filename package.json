@@ -59,7 +59,14 @@
     "b0:status:write": "tsx scripts/b0-status.ts write",
     "b0:status:verify": "tsx scripts/b0-status.ts verify",
     "classc:observation:generate": "tsx scripts/class-c-observation-sql.ts generate",
-    "classc:observation:verify": "tsx scripts/class-c-observation-sql.ts verify"
+    "classc:observation:verify": "tsx scripts/class-c-observation-sql.ts verify",
+    "s1:observation:generate": "tsx scripts/s1-observation-sql.ts generate",
+    "s1:observation:verify": "tsx scripts/s1-observation-sql.ts verify",
+    "s1:status": "tsx scripts/s1-status.ts report",
+    "s1:status:write": "tsx scripts/s1-status.ts write",
+    "s1:status:verify": "tsx scripts/s1-status.ts verify",
+    "s2:sentinel:generate": "tsx scripts/s1-observation-sql.ts generate --sentinel",
+    "s2:sentinel:verify": "tsx scripts/s1-observation-sql.ts verify --sentinel"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
