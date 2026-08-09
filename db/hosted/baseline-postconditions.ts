@@ -28,7 +28,8 @@
 //      survive that, because a check that ignores its input passes its own
 //      negative control.
 
-import { BASELINE_UNITS } from './baseline-manifest'
+import { BASELINE_ORDER, BASELINE_UNITS } from './baseline-manifest'
+import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from './target-identity'
 import { scanBaselineSql } from './baseline-scanner'
 
 /**
@@ -79,6 +80,30 @@ export interface BaselineObservation {
    * this database. `null` means not inventoried, which B0-14 refuses.
    */
   readonly environmentSecretNames: readonly string[] | null
+  /**
+   * `grantee:PRIVILEGE:function`, e.g. `authenticated:EXECUTE:public.can_read_evidence_object`.
+   *
+   * From the EFFECTIVE ACL — `coalesce(proacl, acldefault('f', proowner))` — and
+   * that coalesce is the whole point. A function whose `proacl` is NULL has never
+   * been REVOKEd, so PostgreSQL grants EXECUTE to PUBLIC by default; reading the
+   * raw column would return no rows and be indistinguishable from "nobody holds
+   * it". That is the exact shape of false negative this programme already paid
+   * for twice.
+   */
+  readonly functionGrants: readonly string[]
+  /**
+   * The provisioning journal, as rows. `null` means NOT MEASURED, which B0-18
+   * refuses: the runner proved each row as it wrote it, and B0 is where the SET
+   * is proved — the thing no single-unit check ever looks at.
+   */
+  readonly journal: {
+    /** One `package_id` per row, in application (id) order. */
+    readonly packages: readonly string[]
+    /** DISTINCT values, so a single stray row still shows up. */
+    readonly environments: readonly string[]
+    readonly projectRefs: readonly string[]
+    readonly statuses: readonly string[]
+  } | null
 }
 
 export interface PostconditionResult {
@@ -188,6 +213,15 @@ const CRITICAL_CONSTRAINTS: readonly (readonly [string, string])[] = [
   ['project_investments_in_kind_notes_check', 'an in-kind contribution without valuation notes is unauditable'],
   ['organizations_slug_unique', 'tenancy depends on the slug being unique'],
   ['users_email_unique', 'the login path does INSERT ... ON CONFLICT on it'],
+]
+
+/** The five functions unit 042 restores EXECUTE on, after 0033 revoked everything. */
+export const UNIT_042_GRANTED_FUNCTIONS: readonly string[] = [
+  'public.current_user_is_super_admin',
+  'public.current_user_org_ids',
+  'public.current_user_role_in_org',
+  'public.can_read_evidence_object',
+  'public.can_write_evidence_object',
 ]
 
 export const BASELINE_POSTCONDITIONS: readonly BaselinePostcondition[] = [
@@ -640,6 +674,116 @@ ORDER BY 1;`,
       // gap this rewrite closes, so exercising it is the point.
       description: 'an unrecognised extension such as `http` must fail B0-13',
       mutate: (o) => ({ ...o, extensions: [...o.extensions, 'http'] }),
+    },
+  },
+  {
+    id: 'B0-17-function-execute-grants',
+    requirement:
+      'The five functions unit 042 grants on are EXECUTE-able by authenticated, and NO function in public ' +
+      'is EXECUTE-able by anon or PUBLIC. The per-unit runner could not check this — the scanner does not ' +
+      'model grants, so 042 reported POSTCONDITIONS NOT APPLICABLE. This is where its effect is proved.',
+    // EFFECTIVE ACL. `coalesce(proacl, acldefault('f', proowner))` materialises
+    // the implicit PUBLIC EXECUTE a NULL proacl means, so a REVOKE that never
+    // ran cannot read as "no privilege" — measured on PostgreSQL 17.
+    probeSql: `SELECT CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END||':'||a.privilege_type||':'||n.nspname||'.'||p.proname
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+  WHERE n.nspname = 'public' AND a.privilege_type = 'EXECUTE'
+  ORDER BY 1;`,
+    check(observed) {
+      const missing = UNIT_042_GRANTED_FUNCTIONS.filter(
+        (fn) => !observed.functionGrants.includes(`authenticated:EXECUTE:${fn}`),
+      )
+      const exposed = observed.functionGrants.filter(
+        (g) => g.startsWith('PUBLIC:EXECUTE:public.') || g.startsWith('anon:EXECUTE:public.'),
+      )
+      if (missing.length > 0) {
+        return {
+          passed: false,
+          detail: `authenticated cannot EXECUTE ${missing.length} of the ${UNIT_042_GRANTED_FUNCTIONS.length} functions unit 042 grants on: ${missing.join(', ')}. Every RLS policy calling one raises instead of returning false.`,
+        }
+      }
+      if (exposed.length > 0) {
+        return {
+          passed: false,
+          detail: `${exposed.length} function(s) in public are EXECUTE-able by anon or PUBLIC: ${exposed.slice(0, 4).join(', ')}. 0033 revokes execution from everyone; 042 restores it for authenticated ONLY.`,
+        }
+      }
+      return {
+        passed: true,
+        detail: `all ${UNIT_042_GRANTED_FUNCTIONS.length} functions unit 042 grants on are EXECUTE-able by authenticated, and none in public is EXECUTE-able by anon or PUBLIC`,
+      }
+    },
+    negativeControl: {
+      description: 'PUBLIC holds EXECUTE on a function in public',
+      mutate: (o) => ({
+        ...o,
+        functionGrants: [...o.functionGrants, 'PUBLIC:EXECUTE:public.current_user_is_super_admin'],
+      }),
+    },
+  },
+  {
+    id: 'B0-18-journal-complete',
+    requirement:
+      'The provisioning journal holds exactly the fifty baseline units, once each, in order, all APPLIED, ' +
+      'all environment=staging and all against this project ref. The runner proved each row as it wrote ' +
+      'it; this proves the SET, which no single-unit check ever looks at.',
+    probeSql: `SELECT id, package_id, environment, project_ref, status FROM uellix_provisioning.applied_units ORDER BY id;`,
+    check(observed) {
+      const j = observed.journal
+      if (j === null) {
+        return {
+          passed: false,
+          detail: 'the journal was not measured. Unmeasured is refused: an unread ledger is not an empty one.',
+        }
+      }
+      const problems: string[] = []
+      if (j.packages.length !== BASELINE_ORDER.length) {
+        problems.push(`${j.packages.length} rows, expected ${BASELINE_ORDER.length}`)
+      }
+      const seen = new Set(j.packages)
+      if (seen.size !== j.packages.length) problems.push('at least one unit is recorded more than once')
+      const unknown = j.packages.filter((p) => !BASELINE_ORDER.includes(p))
+      if (unknown.length > 0) problems.push(`unknown package(s): ${unknown.slice(0, 3).join(', ')}`)
+      const absent = BASELINE_ORDER.filter((id) => !seen.has(id))
+      if (absent.length > 0) problems.push(`${absent.length} unit(s) absent, starting with ${absent[0]}`)
+      // ORDER, not merely membership: all fifty in the wrong sequence describes
+      // a database where dependencies ran backwards.
+      const outOfOrder = j.packages.findIndex((p, i) => p !== BASELINE_ORDER[i])
+      if (absent.length === 0 && unknown.length === 0 && outOfOrder !== -1) {
+        problems.push(`row ${outOfOrder + 1} is ${j.packages[outOfOrder]}, the order says ${BASELINE_ORDER[outOfOrder]}`)
+      }
+      const last = j.packages[j.packages.length - 1]
+      if (last !== undefined && last !== BASELINE_ORDER[BASELINE_ORDER.length - 1]) {
+        problems.push(`the last package is ${last}, expected ${BASELINE_ORDER[BASELINE_ORDER.length - 1]}`)
+      }
+      if (j.environments.length !== 1 || j.environments[0] !== 'staging') {
+        problems.push(`environments are ${JSON.stringify(j.environments)}`)
+      }
+      if (j.statuses.length !== 1 || j.statuses[0] !== 'APPLIED') {
+        problems.push(`statuses are ${JSON.stringify(j.statuses)}`)
+      }
+      const production = j.projectRefs.filter((r) => KNOWN_PRODUCTION_IDENTIFIERS.projectRefs.includes(r))
+      if (production.length > 0) {
+        problems.push(`A ROW NAMES PRODUCTION (${production.join(', ')}). No other passing check outvotes this one.`)
+      }
+      if (j.projectRefs.length !== 1 || j.projectRefs[0] !== KNOWN_STAGING_PROJECT_REF) {
+        problems.push(`project refs are ${JSON.stringify(j.projectRefs)}, expected only ${KNOWN_STAGING_PROJECT_REF}`)
+      }
+      return problems.length === 0
+        ? {
+            passed: true,
+            detail: `all ${BASELINE_ORDER.length} units recorded once each, in order, APPLIED, staging, ${KNOWN_STAGING_PROJECT_REF}`,
+          }
+        : { passed: false, detail: problems.join('; ') }
+    },
+    negativeControl: {
+      description: 'one unit is missing from the journal',
+      mutate: (o) => ({
+        ...o,
+        journal: o.journal === null ? null : { ...o.journal, packages: o.journal.packages.slice(0, -1) },
+      }),
     },
   },
 ]

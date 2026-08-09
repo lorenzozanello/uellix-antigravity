@@ -52,7 +52,12 @@
     "probe:status:verify": "tsx scripts/capability-probe-status.ts verify",
     "boundary:status": "tsx scripts/storage-boundary-status.ts report",
     "boundary:status:write": "tsx scripts/storage-boundary-status.ts write",
-    "boundary:status:verify": "tsx scripts/storage-boundary-status.ts verify"
+    "boundary:status:verify": "tsx scripts/storage-boundary-status.ts verify",
+    "b0:observation:generate": "tsx scripts/b0-observation-sql.ts generate",
+    "b0:observation:verify": "tsx scripts/b0-observation-sql.ts verify",
+    "b0:status": "tsx scripts/b0-status.ts report",
+    "b0:status:write": "tsx scripts/b0-status.ts write",
+    "b0:status:verify": "tsx scripts/b0-status.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

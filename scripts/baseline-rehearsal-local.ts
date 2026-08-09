@@ -37,10 +37,12 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import {
+  BASELINE_ORDER,
   BASELINE_UNITS,
   REHEARSAL_ARTEFACT,
   baselineManifestDigest,
 } from '../db/hosted/baseline-manifest'
+import { KNOWN_STAGING_PROJECT_REF } from '../db/hosted/target-identity'
 import {
   deriveExpectedBaselineState,
   evaluateBaselinePostconditions,
@@ -212,6 +214,26 @@ function observe(container: string, database: string): BaselineObservation {
     // Same: B0-14 asks about a secret manager, which a disposable database does
     // not have. Declared empty, and listed among the rehearsal's shims.
     environmentSecretNames: [],
+
+    // B0-17 IS measurable here, so it is measured. Effective ACL, so a function
+    // that was never REVOKEd reports the implicit PUBLIC EXECUTE it really has.
+    functionGrants: q(
+      `SELECT CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END||':'||a.privilege_type||':'||n.nspname||'.'||p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a WHERE n.nspname='public' AND a.privilege_type='EXECUTE' ORDER BY 1`,
+    ),
+
+    // B0-18 is NOT measurable here, and the same rule as B0-15 applies: the
+    // journal is written by the hosted wrapper chain, and this rehearsal applies
+    // the corpus through drizzle against a disposable database that has no
+    // uellix_provisioning schema at all. Declared as the conforming shape and
+    // listed among the shims, because a rehearsal that answered a HOSTED
+    // question from a local shim would manufacture the reassurance the
+    // postcondition exists to withhold.
+    journal: {
+      packages: [...BASELINE_ORDER],
+      environments: ['staging'],
+      projectRefs: [KNOWN_STAGING_PROJECT_REF],
+      statuses: ['APPLIED'],
+    },
   }
 }
 

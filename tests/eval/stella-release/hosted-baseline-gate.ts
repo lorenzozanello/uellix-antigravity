@@ -38,8 +38,10 @@ import { scanBaselineSql } from '@/db/hosted/baseline-scanner'
 import {
   BASELINE_POSTCONDITIONS,
   deriveExpectedBaselineState,
+  UNIT_042_GRANTED_FUNCTIONS,
 } from '@/db/hosted/baseline-postconditions'
 import { decideRecovery } from '@/db/hosted/baseline-recovery'
+import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 import { planProvisioningPhase, type TargetStateProbe } from '@/db/hosted/hosted-provisioning-runner'
 import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
 
@@ -207,6 +209,16 @@ export function buildHostedBaselineGateEvidence(
 
     ],
     environmentSecretNames: [],
+    // B0-17 / B0-18 arrived with the hosted CHECKPOINT B0 wiring. This fixture
+    // exists to prove every postcondition CAN fail, so it has to describe a
+    // conforming database for the new two as well.
+    functionGrants: UNIT_042_GRANTED_FUNCTIONS.map((fn) => `authenticated:EXECUTE:${fn}`),
+    journal: {
+      packages: [...BASELINE_ORDER],
+      environments: ['staging'],
+      projectRefs: [KNOWN_STAGING_PROJECT_REF],
+      statuses: ['APPLIED'],
+    },
   }
 
   const survivors: string[] = []

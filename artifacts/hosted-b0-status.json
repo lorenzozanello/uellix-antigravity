@@ -1,0 +1,15 @@
+{
+  "generatedBy": "pnpm b0:status:write — do not hand-edit; this file is derived from the observation",
+  "observationArtefact": "artifacts/hosted-b0-observation.json",
+  "observationPresent": false,
+  "projectRef": null,
+  "checkCount": 18,
+  "passedCount": 0,
+  "checkpointPassed": false,
+  "failing": [
+    {
+      "id": "B0_OBSERVATION_ABSENT",
+      "detail": "artifacts/hosted-b0-observation.json does not exist. CHECKPOINT B0 has not been observed, which is not the same as it having failed — and not the same as it having passed."
+    }
+  ]
+}

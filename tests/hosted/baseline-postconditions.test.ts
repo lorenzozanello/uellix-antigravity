@@ -12,6 +12,8 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
+import { BASELINE_ORDER } from '@/db/hosted/baseline-manifest'
+import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 import {
   BASELINE_POSTCONDITIONS,
   deriveExpectedBaselineState,
@@ -78,6 +80,25 @@ function conforming(): BaselineObservation {
 
     ],
     environmentSecretNames: ['UELLIX_RUNTIME_DATABASE_URL', 'NEXT_PUBLIC_SITE_URL'],
+
+    // B0-17. Effective ACL, so a NULL proacl — a REVOKE that never ran — reads
+    // as the implicit PUBLIC EXECUTE it really is rather than as "no grants".
+    functionGrants: [
+      'authenticated:EXECUTE:public.current_user_is_super_admin',
+      'authenticated:EXECUTE:public.current_user_org_ids',
+      'authenticated:EXECUTE:public.current_user_role_in_org',
+      'authenticated:EXECUTE:public.can_read_evidence_object',
+      'authenticated:EXECUTE:public.can_write_evidence_object',
+      'postgres:EXECUTE:public.current_user_is_super_admin',
+    ],
+
+    // B0-18. One row per unit, in application order.
+    journal: {
+      packages: [...BASELINE_ORDER],
+      environments: ['staging'],
+      projectRefs: [KNOWN_STAGING_PROJECT_REF],
+      statuses: ['APPLIED'],
+    },
   }
 }
 
@@ -159,8 +180,14 @@ describe('NEGATIVE CONTROLS — every postcondition fails against its own mutati
     },
   )
 
-  it('covers all sixteen, so none can be added without a negative control', () => {
-    expect(BASELINE_POSTCONDITIONS).toHaveLength(16)
+  it('covers all eighteen, so none can be added without a negative control', () => {
+    // UPDATED 2026-08-08: B0-17 (the 042 function EXECUTE grants) and B0-18 (the
+    // 50/50 journal) were added when CHECKPOINT B0 was wired to hosted. The
+    // count is pinned so a check can never arrive without its own mutation.
+    expect(BASELINE_POSTCONDITIONS).toHaveLength(18)
+    expect(BASELINE_POSTCONDITIONS.map((p) => p.id)).toEqual(
+      expect.arrayContaining(['B0-17-function-execute-grants', 'B0-18-journal-complete']),
+    )
     for (const p of BASELINE_POSTCONDITIONS) {
       expect(p.negativeControl.description.length, p.id).toBeGreaterThan(10)
       expect(typeof p.negativeControl.mutate, p.id).toBe('function')

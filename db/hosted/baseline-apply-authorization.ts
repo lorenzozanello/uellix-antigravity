@@ -44,6 +44,7 @@ import {
   verifyBaselineManifest,
   verifyBaselineOrder,
   type BaselineUnit,
+  BASELINE_ORDER,
 } from './baseline-manifest'
 import { scanBaselineSql } from './baseline-scanner'
 import { JOURNAL_TABLE } from './baseline-journal'
@@ -62,6 +63,7 @@ import {
 import type { CapabilityProbeState } from './storage-capability-probe'
 import {
   BASELINE_POSTCONDITIONS,
+  UNIT_042_GRANTED_FUNCTIONS,
   EXPECTED_STORAGE_POLICY_SURFACE,
   deriveExpectedBaselineState,
   type BaselinePostcondition,
@@ -76,6 +78,7 @@ import {
 } from './hosted-provisioning-runner'
 import {
   KNOWN_PRODUCTION_IDENTIFIERS,
+  KNOWN_STAGING_PROJECT_REF,
   classifySupabaseHost,
   productionDenylistStatus,
   projectRefFromHost,
@@ -1396,6 +1399,16 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
           withCheck: p.predicateKind === 'with_check' ? `(bucket_id = '${p.bucket}') AND public.${p.helper}(name, auth.uid())` : null,
         })),
         environmentSecretNames: [],
+        // B0-17 / B0-18 arrived with the hosted CHECKPOINT B0 wiring. This
+        // fixture exists to prove every postcondition can FAIL, so it must
+        // describe a conforming database for the new two as well.
+        functionGrants: UNIT_042_GRANTED_FUNCTIONS.map((fn) => `authenticated:EXECUTE:${fn}`),
+        journal: {
+          packages: [...BASELINE_ORDER],
+          environments: ['staging'],
+          projectRefs: [KNOWN_STAGING_PROJECT_REF],
+          statuses: ['APPLIED'],
+        },
       }
       const postconditions = inputs.postconditions ?? BASELINE_POSTCONDITIONS
       const survivors = postconditions.filter(
