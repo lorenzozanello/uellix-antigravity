@@ -66,7 +66,12 @@
     "s1:status:write": "tsx scripts/s1-status.ts write",
     "s1:status:verify": "tsx scripts/s1-status.ts verify",
     "s2:sentinel:generate": "tsx scripts/s1-observation-sql.ts generate --sentinel",
-    "s2:sentinel:verify": "tsx scripts/s1-observation-sql.ts verify --sentinel"
+    "s2:sentinel:verify": "tsx scripts/s1-observation-sql.ts verify --sentinel",
+    "a1:observation:generate": "tsx scripts/a1-observation-sql.ts generate",
+    "a1:observation:verify": "tsx scripts/a1-observation-sql.ts verify",
+    "a1:status": "tsx scripts/a1-status.ts report",
+    "a1:status:write": "tsx scripts/a1-status.ts write",
+    "a1:status:verify": "tsx scripts/a1-status.ts verify"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

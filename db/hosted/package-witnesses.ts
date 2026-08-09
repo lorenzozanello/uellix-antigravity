@@ -126,7 +126,19 @@ export const PACKAGE_WITNESSES: Readonly<Record<string, PackageWitnesses>> = {
       { kind: 'schema', identifier: 'uellix_stella_ops' },
       { kind: 'role', identifier: 'uellix_cap_stella_ticket' },
       { kind: 'regclass', identifier: 'uellix_stella_ops.operation_tickets' },
-      fn('uellix_stella_ops.expire_operation_tickets()'),
+      // `(integer)`, NOT `()`. stella_0014 L1221 creates it as
+      // `expire_operation_tickets(p_max integer DEFAULT 1000)`, and a DEFAULT
+      // does not remove the parameter — `oid::regprocedure::text` renders the
+      // FULL signature, so the catalogue spells this `(integer)` and never `()`.
+      //
+      // MEASURED, not reasoned about: the first version of this entry said `()`,
+      // which is a witness that can never be present. A correctly installed T5
+      // would have reported three positives of four — PARTIAL_OR_INCONSISTENT —
+      // and A1 refuses on partial, so the chain would have been unplannable
+      // forever for a reason no offline test could see. Every fixture used the
+      // registry's own spelling on both sides of the comparison; only anchoring
+      // the signature to the line that creates it exposes this class of defect.
+      fn('uellix_stella_ops.expire_operation_tickets(integer)'),
     ],
     requiredAbsentWhenInstalled: [],
     discriminates:
@@ -218,8 +230,19 @@ const key = (w: Witness): string => `${w.kind}:${w.identifier}`
  * `requiredAbsentWhenInstalled` would call a virgin database "installed",
  * because the old signatures are missing there too.
  */
-export function classifyPackage(packageId: string, observed: ObservedWitnesses): ClassificationResult {
-  const entry = PACKAGE_WITNESSES[packageId]
+export function classifyPackage(
+  packageId: string,
+  observed: ObservedWitnesses,
+  /**
+   * Injectable for the reason `verifyStagingTarget` takes its denylist as a
+   * parameter: a rule a test cannot vary is a rule nothing proves. The mutation
+   * suite substitutes a corrupted registry here — a package with its successor's
+   * witnesses, a signature stripped of its arity, a required absence deleted —
+   * and asserts that the anchoring gates catch each one.
+   */
+  registry: Readonly<Record<string, PackageWitnesses>> = PACKAGE_WITNESSES,
+): ClassificationResult {
+  const entry = registry[packageId]
   if (entry === undefined) {
     return {
       ok: false,
@@ -267,10 +290,14 @@ export type ClassifyAllResult =
   | { readonly ok: true; readonly classifications: readonly PackageClassification[] }
   | { readonly ok: false; readonly code: WitnessRefusalCode; readonly detail: string }
 
-export function classifyAllPackages(observed: ObservedWitnesses): ClassifyAllResult {
-  const declared = Object.keys(PACKAGE_WITNESSES)
-  const missingFromRegistry = WITNESSED_PACKAGES.filter((p) => !declared.includes(p))
-  const extra = declared.filter((p) => !WITNESSED_PACKAGES.includes(p))
+export function classifyAllPackages(
+  observed: ObservedWitnesses,
+  registry: Readonly<Record<string, PackageWitnesses>> = PACKAGE_WITNESSES,
+  packageIds: readonly string[] = WITNESSED_PACKAGES,
+): ClassifyAllResult {
+  const declared = Object.keys(registry)
+  const missingFromRegistry = packageIds.filter((p) => !declared.includes(p))
+  const extra = declared.filter((p) => !packageIds.includes(p))
   if (missingFromRegistry.length > 0 || extra.length > 0) {
     return {
       ok: false,
@@ -280,8 +307,8 @@ export function classifyAllPackages(observed: ObservedWitnesses): ClassifyAllRes
   }
 
   const out: PackageClassification[] = []
-  for (const p of WITNESSED_PACKAGES) {
-    const r = classifyPackage(p, observed)
+  for (const p of packageIds) {
+    const r = classifyPackage(p, observed, registry)
     if (!r.ok) return r
     out.push(r.classification)
   }
@@ -327,10 +354,13 @@ export function toStellaPackagesInstalled(
 }
 
 /** Every witness the probe must resolve, deduplicated. */
-export function allWitnesses(): readonly Witness[] {
+export function allWitnesses(
+  registry: Readonly<Record<string, PackageWitnesses>> = PACKAGE_WITNESSES,
+  packageIds: readonly string[] = WITNESSED_PACKAGES,
+): readonly Witness[] {
   const seen = new Map<string, Witness>()
-  for (const p of WITNESSED_PACKAGES) {
-    const e = PACKAGE_WITNESSES[p]
+  for (const p of packageIds) {
+    const e = registry[p]
     if (e === undefined) continue
     for (const w of [...e.requiredPresentWhenInstalled, ...e.requiredAbsentWhenInstalled]) {
       seen.set(key(w), w)
