@@ -1,0 +1,47 @@
+{
+    "note": "Project refs are not secret. No credential, connection string or user data is recorded here. Every value below was measured by the query recorded beside it.",
+    "probes": [
+        {
+            "sql": "SELECT has_table_privilege(current_user, 'auth.users', 'TRIGGER')",
+            "name": "canCreateTriggerOnAuthUsers",
+            "unit": "20260716000000_auth_trigger.sql",
+            "observed": true
+        },
+        {
+            "sql": "SELECT pg_has_role(current_user, relowner, 'USAGE') FROM pg_class WHERE oid = 'storage.objects'::regclass",
+            "name": "ownsStorageObjects",
+            "unit": "20260716000001_storage_policies.sql",
+            "observed": false
+        },
+        {
+            "sql": "SELECT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'uellix-evidence')",
+            "name": "evidenceBucketExists",
+            "unit": "20260716000001_storage_policies.sql (its policies gate on bucket_id = 'uellix-evidence')",
+            "observed": true
+        }
+    ],
+    "measuredBy": "operator, psql session pooler, inside a READ ONLY transaction, from db/prepared/class-c/observation.sql",
+    "targetRole": "staging",
+    "bucketDetail": [
+        {
+            "id": "uellix-evidence",
+            "name": "uellix-evidence",
+            "public": false,
+            "file_size_limit": 26214400,
+            "allowed_mime_types": [
+                "application/pdf",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "image/gif",
+                "text/plain",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ]
+        }
+    ],
+    "bucketsTotal": 1,
+    "targetProjectRef": "bvyzblhqymxruxdguaee"
+}

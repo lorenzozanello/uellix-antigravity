@@ -96,6 +96,24 @@ export const CLASS_C_SQL_EDITOR_EVIDENCE: readonly ClassCEvidenceEntry[] = [
       'operator instruction. The bucket was created on 2026-08-08. Kept as the dated record of what ' +
       'was true before the baseline ran.',
   },
+  {
+    path: 'artifacts/class-c-probes/2026-08-09-uellix-staging.json',
+    measuredOn: '2026-08-09',
+    projectRef: 'bvyzblhqymxruxdguaee',
+    note:
+      'CURRENT. Post-baseline re-measurement, taken from the versioned probe at ' +
+      'db/prepared/class-c/observation.sql so every recorded query is the canonical §2.7 string by ' +
+      'construction rather than by transcription. Records evidenceBucketExists=true — the bucket was ' +
+      'created between the two measurements, which is the whole reason a second entry exists.\n' +
+      '\n' +
+      'MEASURED BY psql THROUGH THE SESSION POOLER, not the SQL Editor, and that is a deliberate ' +
+      'improvement rather than an inconsistency. The 2026-08-07 artefact records its own defect: those ' +
+      'probes ran in the SQL Editor while the baseline would be applied by psql over a direct ' +
+      'connection, and supabase/supabase#41126 documents the two identities differing. The baseline has ' +
+      'since been applied through psql, so this measurement describes the identity that actually did ' +
+      'the work. ownsStorageObjects is false on both, which is the measurement that SELECTED the ' +
+      'managed channel for unit 41 PART B.',
+  },
 ]
 
 export type ClassCResolution =
