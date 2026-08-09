@@ -125,6 +125,33 @@ describe('negative controls', () => {
     expect(gate('managed-role-bootstrap-ready', evidence).passed).toBe(true)
   })
 
+  it('managed-role-bootstrap-ready tolerates a comment QUOTING a GRANT ... TO service_role', () => {
+    // S1-DEFECT-002 documents the mechanism that caused it: managed Supabase
+    // carries `ALTER DEFAULT PRIVILEGES ... GRANT EXECUTE ON FUNCTIONS TO anon,
+    // authenticated, service_role`. Writing that sentence down is how the next
+    // reader avoids re-diagnosing PUBLIC for an afternoon — and it made this
+    // gate refuse the package, because the rule matched the whole file instead
+    // of its statements. The gate's own comment already claimed prose was safe.
+    const evidence = {
+      ...REAL,
+      bootstrapSql:
+        `${REAL.bootstrapSql}\n` +
+        '-- Supabase carries ALTER DEFAULT PRIVILEGES ... GRANT EXECUTE ON FUNCTIONS\n' +
+        '-- TO anon, authenticated, service_role, which is why the REVOKEs name them.\n',
+    }
+    expect(gate('managed-role-bootstrap-ready', evidence).passed).toBe(true)
+  })
+
+  it('managed-role-bootstrap-ready still FAILS on a real GRANT ... TO service_role', () => {
+    // The positive control for the test above. Tolerating prose must not cost
+    // the rule its teeth.
+    const evidence = {
+      ...REAL,
+      bootstrapSql: `${REAL.bootstrapSql}\nGRANT EXECUTE ON FUNCTION public.uellix_auth_uid() TO service_role;\n`,
+    }
+    expect(gate('managed-role-bootstrap-ready', evidence).passed).toBe(false)
+  })
+
   it('managed-role-bootstrap-ready FAILS if a CREATE ROLE statement grants CREATEROLE', () => {
     const evidence = {
       ...REAL,

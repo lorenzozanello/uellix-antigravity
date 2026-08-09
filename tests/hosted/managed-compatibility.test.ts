@@ -433,6 +433,152 @@ describe('S1-DEFECT-001 — the rollback still drops the roles it created', () =
   })
 })
 
+// ---------------------------------------------------------------------------
+// S1-DEFECT-002 — ALTER DEFAULT PRIVILEGES writes the ACL, and it does not
+// write it to PUBLIC.
+//
+// The S1 retry reached §6 and stopped at check (5) with `anon, authenticated,
+// service_role can execute a bootstrap function`. `public` is absent from that
+// list, which is the whole diagnosis: `REVOKE ALL ... FROM PUBLIC` worked, and
+// the exposure came from somewhere else.
+//
+// Measured, by creating the package's functions under a reproduction of the
+// managed default-privilege configuration:
+//
+//   public.uellix_auth_uid()  ->  {postgres=X, anon=X, authenticated=X,
+//                                  service_role=X, uellix_app=X}
+//   uellix_bootstrap.assert_hosted_capabilities(text) -> {postgres=X, migrator=X}
+//   uellix_bootstrap.hosted_capability_report()       -> {postgres=X, migrator=X,
+//                                                          auditor=X}
+//
+// `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT EXECUTE ON
+// FUNCTIONS TO anon, authenticated, service_role` materializes DIRECT ACL
+// entries at CREATE time. They are not PUBLIC, so revoking PUBLIC leaves them
+// standing; and they are per-schema, so only the function living in `public`
+// inherited them.
+//
+// Two further gaps the same measurement exposed: check (5) never looked at
+// `hosted_capability_report()` at all, and it asked about four hardcoded names,
+// so a principal nobody thought of — `dashboard_user`, or whatever Supabase
+// adds next — would have passed it.
+// ---------------------------------------------------------------------------
+
+describe('S1-DEFECT-002 — no principal outside the contract can execute a bootstrap function', () => {
+  const STATEMENTS = BOOTSTRAP.split('\n')
+    .filter((line) => !/^\s*--/.test(line))
+    .join('\n')
+
+  const FUNCTIONS = [
+    'public.uellix_auth_uid()',
+    'uellix_bootstrap.assert_hosted_capabilities(text)',
+    'uellix_bootstrap.hosted_capability_report()',
+  ]
+
+  /**
+   * Check (5) and (5b), comments stripped.
+   *
+   * The prose explains what the old form did — it names
+   * `has_function_privilege()` and `uellix_writer` while explaining why neither
+   * belongs — so an assertion read against the raw slice answers a question
+   * about the rationale rather than about the code. Same trap as
+   * S1-DEFECT-001's FROM PUBLIC test, same fix: ask about statements.
+   */
+  const statementsIn = (s: string): string =>
+    s.split('\n').filter((line) => !/^\s*--/.test(line)).join('\n')
+
+  const CHECK5 = statementsIn(
+    BOOTSTRAP.slice(BOOTSTRAP.indexOf('-- (5)'), BOOTSTRAP.indexOf('-- (6)')),
+  )
+
+  /**
+   * The EXECUTE sweep alone, without the (5b) owner assertion.
+   *
+   * Found by mutation: narrowing the sweep from "every function in
+   * uellix_bootstrap" back to a hardcoded pair of names survived, because the
+   * test looked for `uellix_bootstrap` across (5) AND (5b) — and (5b) names the
+   * schema too. The assertion was satisfied by the wrong half of the code.
+   */
+  const SWEEP = statementsIn(
+    BOOTSTRAP.slice(BOOTSTRAP.indexOf('-- (5)'), BOOTSTRAP.indexOf('-- (5b)')),
+  )
+
+  it.each(FUNCTIONS)('revokes %s from the three Supabase roles, not only PUBLIC', (fn) => {
+    const escaped = fn.replace(/[.()]/g, (c) => '\\' + c)
+    expect(STATEMENTS).toMatch(
+      new RegExp(`REVOKE ALL ON FUNCTION ${escaped} FROM PUBLIC, anon, authenticated, service_role;`),
+    )
+  })
+
+  it('verifies over the ACTUAL ACL, not a hardcoded list of four names', () => {
+    // The old check asked has_function_privilege() about exactly
+    // 'public','anon','service_role','authenticated'. Correct about those four
+    // and blind to every other principal. Reading the ACL inverts it: anything
+    // not on the allowlist is a finding, including a role invented later.
+    // Scoped to check (5) itself: `aclexplode` already appears in check (8)
+    // from S1-DEFECT-001, so asserting it anywhere in the file would pass
+    // against the unfixed package and prove nothing.
+    expect(CHECK5).toContain('aclexplode')
+    expect(CHECK5).not.toMatch(/has_function_privilege/)
+  })
+
+  it('treats a NULL proacl as PUBLIC EXECUTE, which is what PostgreSQL means by it', () => {
+    // A function whose proacl is NULL has the DEFAULT ACL, and for functions
+    // that default includes EXECUTE for PUBLIC. Exploding a NULL yields zero
+    // rows, so a verifier that forgets this reads "wide open" as "nobody".
+    expect(BOOTSTRAP).toMatch(/acldefault\('f',\s*\w+\.proowner\)/)
+    expect(BOOTSTRAP).toMatch(/coalesce\(\w+\.proacl,\s*acldefault/)
+  })
+
+  it('covers hosted_capability_report(), which the old check never looked at', () => {
+    expect(SWEEP.length).toBeGreaterThan(0)
+    expect(SWEEP).toMatch(/pg_proc/)
+    // THE PROPERTY: the sweep selects BY SCHEMA. A list of function names is
+    // a list somebody must remember to extend, and the defect this replaces
+    // was precisely a function nobody remembered to add.
+    expect(SWEEP).toContain("n.nspname = 'uellix_bootstrap'")
+    for (const enumerated of ['assert_hosted_capabilities', 'hosted_capability_report']) {
+      expect(SWEEP, `naming ${enumerated} would make this an enumeration again`).not.toContain(
+        enumerated,
+      )
+    }
+    // `uellix_auth_uid` IS named, and deliberately: schema public holds
+    // thousands of functions this package has no opinion about.
+    expect(SWEEP).toContain('uellix_auth_uid')
+  })
+
+  it('allows EXECUTE to exactly migrator, app and auditor — and nobody else', () => {
+    for (const allowed of ['uellix_migrator', 'uellix_app', 'uellix_auditor']) {
+      expect(CHECK5, `${allowed} holds EXECUTE by contract`).toContain(allowed)
+    }
+    expect(CHECK5, 'uellix_writer holds no EXECUTE by contract').not.toContain('uellix_writer')
+  })
+
+  it.each(['anon', 'authenticated', 'service_role'])(
+    'never puts %s on the allowlist — the allowlist is what makes this fail closed',
+    (role) => {
+      // The old check named these three as principals to look FOR. Inverting
+      // the question means they must not appear in the new one at all: a name
+      // on the allowlist is a name that passes.
+      expect(CHECK5).not.toContain(role)
+    },
+  )
+
+  it('anchors the owner exemption by asserting who the owner is', () => {
+    // The sweep exempts the function owner, because an owner always holds
+    // EXECUTE. That exemption is only safe if the owner is known: if a function
+    // were owned by anon, exempting the owner would exempt anon.
+    expect(BOOTSTRAP).toMatch(/FAILED verification:[^']*not owned by the installer/)
+  })
+
+  it('never GRANTs EXECUTE to PUBLIC, anon, authenticated or service_role', () => {
+    expect(STATEMENTS).not.toMatch(/GRANT[^;]*ON FUNCTION[^;]*TO[^;]*\b(PUBLIC|anon|authenticated|service_role)\b/i)
+  })
+
+  it('records the mechanism, so the next reader does not re-diagnose PUBLIC', () => {
+    expect(BOOTSTRAP).toContain('ALTER DEFAULT PRIVILEGES')
+  })
+})
+
 describe('Phase 12 — R6h may not be validated prematurely', () => {
   it('no artefact emits VALIDATE CONSTRAINT', () => {
     for (const artefact of ARTEFACTS) {

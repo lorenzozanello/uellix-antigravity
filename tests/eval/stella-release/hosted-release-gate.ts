@@ -225,8 +225,27 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
   // BYPASSRLS many times — explaining why it refuses them — and a word-level
   // check would flag the explanation as the violation. So the pattern requires
   // a role-mutating verb on the same statement.
+  //
+  // The scoping is done ONCE, here, by dropping comment lines — the same
+  // `executableLines` discipline tests/hosted/managed-compatibility.test.ts
+  // already applies. Statement-shaped regexes alone were not enough: the rule
+  // below matches `GRANT ... TO ... service_role`, which has no semicolon to
+  // bound it and so matched that exact sentence written inside a comment.
+  //
+  // Found when S1-DEFECT-002 documented the mechanism that caused it — managed
+  // Supabase carries `ALTER DEFAULT PRIVILEGES ... GRANT EXECUTE ON FUNCTIONS
+  // TO anon, authenticated, service_role` — and this gate refused the package
+  // for explaining itself. The contract on the line below already said prose
+  // was safe; it just was not implemented. This narrows what the rule READS,
+  // never what it REFUSES: a real GRANT statement still fails, and the positive
+  // control in the test file pins that.
+  const bootstrapStatements = evidence.bootstrapSql
+    .split('\n')
+    .filter((line) => !/^\s*--/.test(line))
+    .join('\n')
+
   const ROLE_STATEMENT = /\b(CREATE|ALTER)\s+ROLE\b[^;]*/gi
-  for (const statement of evidence.bootstrapSql.match(ROLE_STATEMENT) ?? []) {
+  for (const statement of bootstrapStatements.match(ROLE_STATEMENT) ?? []) {
     if (/(?<!NO)BYPASSRLS/.test(statement)) bootstrapProblems.push('grants BYPASSRLS')
     if (/(?<!NO)SUPERUSER/.test(statement)) bootstrapProblems.push('grants SUPERUSER')
     if (/(?<!NO)CREATEROLE/.test(statement)) bootstrapProblems.push('grants CREATEROLE')
@@ -234,7 +253,7 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
 
   // `service_role` as a GRANTEE. `TO ... service_role` is the shape that matters;
   // naming it in a comment that says it is deliberately excluded is not a use.
-  if (/\bGRANT\b[^;]*\bTO\b[^;]*\bservice_role\b/i.test(evidence.bootstrapSql)) {
+  if (/\bGRANT\b[^;]*\bTO\b[^;]*\bservice_role\b/i.test(bootstrapStatements)) {
     bootstrapProblems.push('uses service_role as a grantee')
   }
   if (

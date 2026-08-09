@@ -93,7 +93,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     // rewrite counts stay NO_REWRITES because nothing about the rewrite rules
     // changed — the added statements are native-hosted SQL, which is the whole
     // reason this package is `native-hosted` and not derived.
-    sourceSha256: '109792a88726e483c86c33e669a1e4d5ce123c5c736b631b8b71387976c7e675',
+    // Re-pinned again for S1-DEFECT-002: the three REVOKEs now name anon,
+    // authenticated and service_role, and §6 check (5) reads the ACL instead of
+    // asking about four hardcoded principals.
+    sourceSha256: '2b2df1abf1ba19411ba55b6a3a4a62653bfe784bc79977d3f24e6a6dc531d602',
     expectedRewrites: NO_REWRITES,
     dependsOn: [],
     expectedObjects: [
@@ -115,7 +118,11 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     expectedGrants: [
       'EXECUTE ON uellix_bootstrap.assert_hosted_capabilities(text) TO uellix_migrator',
       'EXECUTE ON public.uellix_auth_uid() TO uellix_app',
-      'no EXECUTE for PUBLIC on either function',
+      // S1-DEFECT-002. Stated over all THREE functions, and over the principals
+      // that must NOT hold EXECUTE, because managed Supabase grants them by
+      // default privilege at CREATE time rather than by any statement here.
+      'no EXECUTE for PUBLIC, anon, authenticated or service_role on any of the three functions',
+      'EXECUTE on uellix_bootstrap.hosted_capability_report() TO uellix_migrator, uellix_auditor',
       // S1-DEFECT-001. Persistent, and declared here so it is reviewed as a
       // contract rather than found as a surprise: PostgreSQL checks CREATE on
       // the namespace against the NEW OWNER, and five chain packages create

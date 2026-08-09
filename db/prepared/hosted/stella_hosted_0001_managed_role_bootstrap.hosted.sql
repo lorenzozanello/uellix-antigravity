@@ -433,7 +433,23 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$ SELECT auth.uid() $$;
 
-REVOKE ALL ON FUNCTION public.uellix_auth_uid() FROM PUBLIC;
+-- S1-DEFECT-002, and the reason the three role names are written out rather
+-- than left to `FROM PUBLIC`.
+--
+-- Managed Supabase carries `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN
+-- SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated,
+-- service_role`. That writes DIRECT acl entries the moment this CREATE runs —
+-- entries that are NOT PUBLIC, so revoking PUBLIC leaves every one of them
+-- standing. Measured: with the managed configuration reproduced, this
+-- function's acl came out
+-- {postgres=X, anon=X, authenticated=X, service_role=X}, and §6 check (5)
+-- refused the package with `public` conspicuously absent from its list.
+--
+-- Default privileges are PER SCHEMA, which is why only this function — the one
+-- that lives in `public` — inherited them. The two `uellix_bootstrap` functions
+-- came out clean. They are revoked anyway, because "clean today because no
+-- default ACL exists for that schema today" is not a property worth relying on.
+REVOKE ALL ON FUNCTION public.uellix_auth_uid() FROM PUBLIC, anon, authenticated, service_role;
 
 COMMENT ON FUNCTION public.uellix_auth_uid() IS
   'Train 5B (stella_hosted_0001): the session actor, for capability roles that cannot hold USAGE on schema auth because postgres holds it without GRANT OPTION (RR-09). Body is exactly `SELECT auth.uid()` — one derivation in the database, reached through a doorway. Reads no table, so its definer privileges confer no data access.';
@@ -557,7 +573,7 @@ BEGIN
   END IF;
 END $$;
 
-REVOKE ALL ON FUNCTION uellix_bootstrap.assert_hosted_capabilities(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION uellix_bootstrap.assert_hosted_capabilities(text) FROM PUBLIC, anon, authenticated, service_role;
 
 COMMENT ON FUNCTION uellix_bootstrap.assert_hosted_capabilities(text) IS
   'Train 5B: the capability precondition every derived hosted package calls in place of a rolsuper check. SECURITY INVOKER — the question is what the CALLER can do.';
@@ -615,7 +631,7 @@ AS $$
          'uellix_app'
 $$;
 
-REVOKE ALL ON FUNCTION uellix_bootstrap.hosted_capability_report() FROM PUBLIC;
+REVOKE ALL ON FUNCTION uellix_bootstrap.hosted_capability_report() FROM PUBLIC, anon, authenticated, service_role;
 
 -- ============================================================
 -- 5c. Grants — the narrowest set that makes the chain applicable
@@ -724,14 +740,60 @@ BEGIN
     RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: public.uellix_auth_uid() must be SECURITY DEFINER with an empty search_path.';
   END IF;
 
-  -- (5) NEITHER FUNCTION IS EXECUTABLE BY PUBLIC, anon or service_role.
-  SELECT string_agg(t.who, ', ' ORDER BY t.who) INTO v_problem
-  FROM (VALUES ('public'),('anon'),('service_role'),('authenticated')) AS t(who)
-  WHERE has_function_privilege(t.who, 'public.uellix_auth_uid()', 'EXECUTE')
-     OR has_function_privilege(t.who, 'uellix_bootstrap.assert_hosted_capabilities(text)', 'EXECUTE');
+  -- (5) NO PRINCIPAL OUTSIDE THE CONTRACT CAN EXECUTE A BOOTSTRAP FUNCTION.
+  --
+  -- S1-DEFECT-002. The previous form asked has_function_privilege() about four
+  -- hardcoded names, and about two of the three functions this package creates.
+  -- It was correct about what it asked and blind to everything else: it never
+  -- looked at hosted_capability_report() at all, and a principal nobody had
+  -- thought of — `dashboard_user`, or whatever Supabase adds next — would have
+  -- walked past it.
+  --
+  -- Reading the ACL inverts the question. Instead of naming the principals that
+  -- must not appear, it names the three that may, and every other EXECUTE
+  -- holder on the bootstrap surface is a finding. The sweep is over the SCHEMA,
+  -- so a fourth function added later is covered on the day it is written rather
+  -- than on the day someone remembers to extend a list.
+  --
+  -- `coalesce(proacl, acldefault('f', proowner))` is not padding. A function
+  -- whose proacl is NULL carries the DEFAULT acl, and for functions that
+  -- default grants EXECUTE to PUBLIC. Exploding a NULL yields zero rows, so a
+  -- verifier without the coalesce reads the widest possible state as "nobody
+  -- holds anything" — the one mistake that would make this check worse than
+  -- useless.
+  --
+  -- The owner is exempt because an owner always holds EXECUTE. That exemption
+  -- is only safe if the owner is known, which is what (5b) fixes.
+  SELECT string_agg(f.finding, '; ' ORDER BY f.finding) INTO v_problem
+  FROM (
+    SELECT DISTINCT n.nspname || '.' || p.proname || ' -> ' ||
+             CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END AS finding
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    CROSS JOIN LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) AS a
+    WHERE a.privilege_type = 'EXECUTE'
+      AND (n.nspname = 'uellix_bootstrap'
+           OR (n.nspname = 'public' AND p.proname = 'uellix_auth_uid'))
+      AND a.grantee IS DISTINCT FROM p.proowner
+      AND (a.grantee = 0
+           OR a.grantee::regrole::text NOT IN ('uellix_migrator', 'uellix_app', 'uellix_auditor'))
+  ) f;
 
   IF v_problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: % can execute a bootstrap function. Only uellix_migrator and uellix_app were meant to.', v_problem;
+    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: % — only uellix_migrator, uellix_app and uellix_auditor may execute a bootstrap function. On managed Supabase, ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS writes DIRECT acl entries at CREATE time, and a REVOKE of PUBLIC does not touch them.', v_problem;
+  END IF;
+
+  -- (5b) THE OWNER EXEMPTION ABOVE IS ONLY SAFE IF THE OWNER IS KNOWN. A
+  --      function owned by anon would have had its grantee exempted as "the
+  --      owner" and never examined.
+  SELECT string_agg(n.nspname || '.' || p.proname, ', ' ORDER BY n.nspname || '.' || p.proname)
+    INTO v_problem
+  FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE (n.nspname = 'uellix_bootstrap' OR (n.nspname = 'public' AND p.proname = 'uellix_auth_uid'))
+    AND pg_get_userbyid(p.proowner) <> current_user;
+
+  IF v_problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: function(s) % are not owned by the installer (%). The EXECUTE sweep in (5) exempts the owner, so an unexpected owner would be an unexamined principal.', v_problem, current_user;
   END IF;
 
   -- (6) The sentinel table exists and is EMPTY. Provisioning writes the row, not
