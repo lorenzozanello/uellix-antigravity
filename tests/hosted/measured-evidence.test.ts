@@ -111,9 +111,18 @@ describe('the psql read-only attestation is a REAL apply criterion', () => {
     // Replacing the COUNT with the exact remaining id is stronger, not laxer: a
     // count of one could be satisfied by any criterion at all, including this
     // one regressing while another silently passed. The named blocker cannot.
-    expect(blockingIds(live())).toEqual(['hosted-evidence-bucket-provisioning-ready'])
-    // …and the criterion this describe block is about is still not among them.
-    expect(blockingIds(live())).not.toContain('hosted-storage-apply-identity-probed')
+    // UPDATED 2026-08-09. The named blocker is legitimately gone too: the
+    // uellix-evidence bucket was created and re-measured by the 2026-08-09
+    // Class-C probe, so STAGING_RUNTIME_GATE is satisfied. Every criterion now
+    // passes, which is a state this assertion has to be able to express without
+    // becoming vacuous — so it pins the EMPTY list AND the count that must have
+    // produced it. A silently shrinking criteria set would pass `toEqual([])`
+    // and fail the second line.
+    expect(blockingIds(live())).toEqual([])
+    expect(live().criteria).toHaveLength(APPLY_AUTHORIZATION_CRITERIA.length)
+    // …and the criterion this describe block is about is still among the
+    // satisfied ones rather than having disappeared from the set.
+    expect(live().criteria.map((c) => c.id)).toContain('hosted-storage-apply-identity-probed')
   })
 
   // TWO THINGS ARE MISSING, AND THE TEST DRIVES BOTH.
@@ -208,11 +217,19 @@ describe('the evidence is READ, not typed', () => {
     })
   })
 
-  it('reports the SQL Editor probes as recorded', () => {
+  it('reports the ACTIVE class-C probes as recorded', () => {
+    // UPDATED 2026-08-09. `evidenceBucketExists` was false because the ACTIVE
+    // artefact was the 2026-08-07 pre-baseline probe, taken before the bucket
+    // existed. The governed ledger now selects the 2026-08-09 re-measurement,
+    // and this reads what THAT artefact records.
+    //
+    // `ownsStorageObjects` stays false across both, which matters: it is the
+    // measurement that SELECTED the managed channel for unit 41 PART B, and a
+    // re-measurement flipping it would have invalidated that route.
     const { observed } = loadMeasuredEvidence({ readJson, readBaselineSql: read, discoveredBaselineFiles: discovered() })
     expect(observed.sqlEditor).toEqual({
       ownsStorageObjects: false,
-      evidenceBucketExists: false,
+      evidenceBucketExists: true,
       canCreateTriggerOnAuthUsers: true,
     })
   })
@@ -565,11 +582,17 @@ describe('the published verdict is the gate verdict, including when it says yes'
     //   applyAuthorized says the baseline may START.
     //   baselineApplied says whether it HAS been applied, and it is false.
     //
-    // A later gate is still blocking too, which is the honest shape of "green to
-    // begin, not green to finish".
+    // UPDATED 2026-08-09. The third line read
+    // `stagingRuntimeGate.blocking.length > 0` — again a number standing in for
+    // the property. The evidence bucket has since been created and re-measured,
+    // so that gate is satisfied and NO gate blocks any more. The property is
+    // unchanged and is asserted where it actually lives: this report never
+    // claims the baseline was applied, whatever the gates say.
     expect(report.applyAuthorized).toBe(true)
     expect(report.baselineApplied).toBe(false)
-    expect(report.stagingRuntimeGate.blocking.length).toBeGreaterThan(0)
+    expect(report.stagingApplied).toBe(false)
+    expect(report.hostedReady).toBe(false)
+    expect(report.providerReady).toBe(false)
   })
 })
 

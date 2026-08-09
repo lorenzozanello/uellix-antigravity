@@ -1,11 +1,9 @@
 {
   "generatedBy": "pnpm apply:status:write — do not hand-edit; a report quotes this file",
   "criterionCount": 19,
-  "satisfiedCount": 18,
-  "blockingCount": 1,
-  "blockingIds": [
-    "hosted-evidence-bucket-provisioning-ready"
-  ],
+  "satisfiedCount": 19,
+  "blockingCount": 0,
+  "blockingIds": [],
   "baselineStartGate": {
     "total": 17,
     "satisfied": 17,
@@ -18,16 +16,8 @@
   },
   "stagingRuntimeGate": {
     "total": 1,
-    "satisfied": 0,
-    "blocking": [
-      {
-        "id": "hosted-evidence-bucket-provisioning-ready",
-        "observedEvidence": "uellix-evidence exists=false",
-        "expectedProperty": "The 'uellix-evidence' bucket exists on the target, re-probed after creation.",
-        "reason": "the 'uellix-evidence' bucket does not exist. supabase/config.toml creates it locally and NOTHING in the fifty units creates it hosted — the third instance of that asymmetry. All three policies gate on its bucket_id.",
-        "sourceArtifact": "artifacts/class-c-probes/2026-08-07-uellix-staging.json"
-      }
-    ]
+    "satisfied": 1,
+    "blocking": []
   },
   "applyAuthorized": true,
   "baselineApplied": false,
@@ -46,7 +36,7 @@
     },
     "sqlEditor": {
       "ownsStorageObjects": false,
-      "evidenceBucketExists": false,
+      "evidenceBucketExists": true,
       "canCreateTriggerOnAuthUsers": true
     }
   }
