@@ -261,7 +261,11 @@ describe('the bootstrap ROLLBACK is pinned too', () => {
   // Adversarial review A, MINOR: the manifest anchored every forward package and
   // nothing anchored the rollback — the one file that drops five roles and the
   // shim could drift in silence while its forward could not.
-  const ROLLBACK_SHA = 'ec5a026dd225af0bfdd1988a8a9b7918e029974f5f9ea1129407e16ab762b4ae'
+  // Re-pinned for S1-DEFECT-001. The forward package now grants the five roles
+  // on schema public, and PostgreSQL refuses to DROP a role that still holds a
+  // schema privilege — so the rollback had to learn to REVOKE before it drops,
+  // or it would have become inapplicable exactly when it was needed.
+  const ROLLBACK_SHA = 'f5a86826fa72f6a488ae6ef0ee9c464a3f1bba2b053e97eb55405ae2c4aedc65'
 
   it('has a SHA that a reviewer signed off — a drift here is a drift in the destructive half', () => {
     const actual = sha256OfSql(readCanonical('stella_hosted_0001_rollback.sql'))

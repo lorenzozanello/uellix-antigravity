@@ -275,6 +275,62 @@ BEGIN
 END $$;
 
 -- ------------------------------------------------------------
+-- 2b-bis. Schema public — the privileges §2c depends on
+-- ------------------------------------------------------------
+-- S1-DEFECT-001, found by the first real apply against managed staging, which
+-- stopped at the ownership transfer in §2c with `permission denied for schema
+-- public` AFTER the RR-02 grant above had succeeded.
+--
+-- The message names the executor and describes the NEW OWNER. PostgreSQL's
+-- ATExecChangeOwner skips every permission check when the executor is a
+-- superuser; when it is not, it makes three, and the third is ACL_CREATE on the
+-- table's namespace checked against `newOwnerId`. Measured on PostgreSQL 17.6:
+-- with the installer holding CREATE on public and SET on the owner, the
+-- transfer still fails while uellix_owner holds no CREATE on public, and
+-- succeeds with one variable moved.
+--
+-- `stella_0004` lines 418-421 grant exactly this. The hosted variant narrowed
+-- that package's 38-table transfer to one table and dropped its
+-- schema-privilege block along with it. Nothing could have caught that here:
+-- locally the installer IS a superuser, so the check never runs, and this
+-- suite is textual and never starts a Postgres.
+--
+-- THE GRANT IS PERSISTENT, AND THAT IS THE POINT — a grant/transfer/revoke
+-- window would clear §2c and move the identical failure into the chain. Five
+-- packages open `SET ROLE uellix_owner` and then create a NEW table in public:
+-- grounding_0002 (evidence_document_versions), grounding_0003 (evidence_chunks),
+-- stella_0007 (report_public_disclosures, capability_verification_hits),
+-- stella_0008 (stripe_webhook_events), stella_0010
+-- (capability_bootstrap_attempts). Measured: `CREATE TABLE public.x` as a role
+-- without CREATE on public fails with this same error.
+--
+-- WHAT IS DELIBERATELY NOT DONE. `stella_0004` line 425 also issues
+-- `REVOKE CREATE ON SCHEMA public FROM PUBLIC`. Here that would alter an ACL
+-- this package did not create, on the baseline surface §5c promises to leave
+-- exactly as it found it. It stays out, and §6 reports rather than repairs.
+GRANT USAGE  ON SCHEMA public TO uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
+GRANT CREATE ON SCHEMA public TO uellix_owner;
+
+-- CREATE for the owner ALONE. The migrator reaches structure by SET ROLE and
+-- needs nothing of its own; the runtime must never create structure at all.
+-- Written as a REVOKE rather than trusted to be absent, because a grant this
+-- package did not make would otherwise survive unread.
+REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
+
+-- THE GRANT ABOVE CAN SILENTLY DO NOTHING. Measured on PostgreSQL 17.6: issued
+-- by a role that holds CREATE on public but neither owns it nor has GRANT
+-- OPTION on it, `GRANT CREATE ON SCHEMA public TO x` emits
+-- `WARNING: no privileges were granted for "public"` and reports success. The
+-- apply would then reach §2c and fail with the same opaque message that
+-- produced this defect. So the grant is verified here, not assumed.
+DO $$
+BEGIN
+  IF NOT has_schema_privilege('uellix_owner', 'public', 'CREATE') THEN
+    RAISE EXCEPTION 'stella_hosted_0001 aborted: uellix_owner still lacks CREATE on schema public after the GRANT above. A GRANT the issuer cannot make is only a WARNING, and this is the check that catches it: % neither owns schema public nor holds GRANT OPTION on it. Run, as the owner of schema public: GRANT CREATE ON SCHEMA public TO uellix_owner; then re-run this package.', current_user;
+  END IF;
+END $$;
+
+-- ------------------------------------------------------------
 -- 2c. The ledger must be owned by uellix_owner
 -- ------------------------------------------------------------
 -- Also found by adversarial review A, and also a mid-provisioning stop.
@@ -683,6 +739,29 @@ BEGIN
   --     certifying itself.
   IF to_regclass('uellix_bootstrap.staging_sentinel') IS NULL THEN
     RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: the staging sentinel table is absent.';
+  END IF;
+
+  -- (7) THE OWNER CAN HOLD AND CREATE OBJECTS IN public (S1-DEFECT-001).
+  --     Asserted at the end as well as before §2c, because the first apply
+  --     proved that a package can pass every guard it has and still stop on a
+  --     privilege nobody stated.
+  IF NOT has_schema_privilege('uellix_owner', 'public', 'CREATE') THEN
+    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: uellix_owner lacks CREATE on schema public. The §2c ledger transfer needs it, and grounding_0002, grounding_0003, stella_0007, stella_0008 and stella_0010 each create a table in public inside a SET ROLE uellix_owner window.';
+  END IF;
+
+  -- (8) AND NO OTHER ROLE THIS PACKAGE CREATED DOES. Read over the ACL rather
+  --     than over effective privilege on purpose: if PUBLIC holds CREATE on
+  --     schema public, that is a baseline property this package neither made
+  --     nor repairs, and reporting it as this package's doing would be a false
+  --     accusation. What is asserted is what this package is answerable for.
+  SELECT string_agg(a.grantee::regrole::text, ', ' ORDER BY a.grantee::regrole::text) INTO v_problem
+  FROM pg_namespace n, aclexplode(n.nspacl) a
+  WHERE n.nspname = 'public'
+    AND a.privilege_type = 'CREATE'
+    AND a.grantee::regrole::text IN ('uellix_migrator','uellix_app','uellix_writer','uellix_auditor');
+
+  IF v_problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: role(s) % hold CREATE on schema public. Only uellix_owner may create structure there; the migrator reaches it by SET ROLE and the runtime must never reach it at all.', v_problem;
   END IF;
 
   RAISE NOTICE 'stella_hosted_0001: verification passed — 5 roles with no dangerous attribute, runtime cannot reach owner, migrator reaches it only by SET, auth shim delegates and reads no relation, no bootstrap function reachable by PUBLIC/anon/service_role/authenticated, sentinel table present and awaiting its provisioning row.';

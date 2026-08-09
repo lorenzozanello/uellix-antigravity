@@ -276,6 +276,163 @@ describe('Phase 12 — attacks that must fail closed', () => {
   })
 })
 
+// ---------------------------------------------------------------------------
+// S1-DEFECT-001 — the schema-privilege block stella_0004 has and the hosted
+// variant dropped.
+//
+// The first real apply of stella_hosted_0001 against managed staging failed at
+// `ALTER TABLE public.stella_interactions OWNER TO uellix_owner` with
+// `permission denied for schema public`. The error names the executor's problem
+// but describes the NEW OWNER's: PostgreSQL's ATExecChangeOwner skips every
+// permission check when the executor is a superuser, and when it is not, checks
+// ACL_CREATE on the table's namespace against `newOwnerId`. Measured on
+// PostgreSQL 17.6 — with the installer holding CREATE on public and SET on the
+// owner, the statement still fails while the owner holds no CREATE, and
+// succeeds the moment it does, one variable moved.
+//
+// Locally this never showed: `stella_0004` lines 418-421 grant exactly this,
+// and the offline suite is textual and never runs Postgres.
+//
+// THE PRIVILEGE IS PERSISTENT ON PURPOSE. Five chain packages open
+// `SET ROLE uellix_owner` and then CREATE a new table in `public`
+// (grounding_0002, grounding_0003, stella_0007, stella_0008, stella_0010), so a
+// grant/transfer/revoke window would move the failure from S1 into the chain.
+// ---------------------------------------------------------------------------
+
+describe('S1-DEFECT-001 — uellix_owner can own and create in schema public', () => {
+  const upToTransfer = BOOTSTRAP.slice(
+    0,
+    BOOTSTRAP.indexOf('ALTER TABLE public.stella_interactions OWNER TO uellix_owner'),
+  )
+
+  /**
+   * The package with every comment line removed.
+   *
+   * A test that asks "does this package NEVER issue statement X" cannot read
+   * the raw text: this package explains at length WHY it does not revoke
+   * CREATE from PUBLIC, and quoting the statement in that explanation made the
+   * assertion fire on its own rationale. Stripping comments makes the question
+   * answerable exactly as asked — what the package EXECUTES — instead of
+   * loosening it to something weaker that a real regression could slip past.
+   */
+  const STATEMENTS = BOOTSTRAP.split('\n')
+    .filter((line) => !/^\s*--/.test(line))
+    .join('\n')
+
+  /**
+   * The grant as a STATEMENT — a whole line of its own — not as text.
+   *
+   * Found by mutation: deleting the statement outright left both of the tests
+   * below green, because §2b-bis's refusal message quotes the remedy verbatim
+   * ("Run, as the owner of schema public: GRANT CREATE ON SCHEMA public TO
+   * uellix_owner;"). `toContain` cannot tell a statement from a string inside a
+   * RAISE, and the one mutation that reproduces the actual production defect
+   * was the one that slipped through.
+   */
+  const GRANT_STATEMENT = /^GRANT CREATE ON SCHEMA public TO uellix_owner;\s*$/m
+
+  it('grants CREATE on schema public to uellix_owner', () => {
+    expect(BOOTSTRAP).toMatch(GRANT_STATEMENT)
+  })
+
+  it('grants it BEFORE the ownership transfer that needs it', () => {
+    // Order is the whole property. The same statement after the transfer is a
+    // grant nobody used and an apply that still fails.
+    expect(BOOTSTRAP).toContain('ALTER TABLE public.stella_interactions OWNER TO uellix_owner')
+    expect(upToTransfer).toMatch(GRANT_STATEMENT)
+  })
+
+  it('VERIFIES the grant took, because a GRANT the issuer cannot make is only a WARNING', () => {
+    // Measured: as a role holding CREATE on public but not owning it,
+    // `GRANT CREATE ON SCHEMA public TO x` emits
+    // `WARNING: no privileges were granted` and returns success. Without this
+    // assertion the apply would proceed and fail three statements later with
+    // the same opaque `permission denied for schema public`.
+    expect(upToTransfer).toContain("has_schema_privilege('uellix_owner', 'public', 'CREATE')")
+    expect(BOOTSTRAP).toMatch(/GRANT is only a WARNING|no privileges were granted/)
+  })
+
+  it('grants USAGE to all five roles, so the runtime can reach the schema at all', () => {
+    expect(upToTransfer).toMatch(
+      /GRANT USAGE\s+ON SCHEMA public TO uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;/,
+    )
+  })
+
+  it('withholds CREATE from every role that is not the owner', () => {
+    expect(upToTransfer).toContain(
+      'REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor;',
+    )
+  })
+
+  it('does NOT revoke CREATE on public FROM PUBLIC — that is baseline surface', () => {
+    // stella_0004 line 425 does this locally. Here it would change an ACL this
+    // package did not create and does not own the decision for, and §5c
+    // promises the baseline keeps exactly the surface it had.
+    expect(STATEMENTS).not.toMatch(/REVOKE\s+CREATE\s+ON\s+SCHEMA\s+public\s+FROM\s+PUBLIC/i)
+    // ...and the reason is written down, so the omission reads as a decision.
+    expect(BOOTSTRAP).toContain('baseline surface §5c promises')
+  })
+
+  it('states WHY the privilege is persistent, naming every package that needs it', () => {
+    // A privilege with no recorded reason is the one a later reviewer removes.
+    // Anchored to the slice BEFORE the transfer: the first version of this test
+    // asserted the names appeared anywhere in the file and passed against the
+    // unfixed package, because `grounding_0002` is already cited at line 655
+    // about an unrelated defect. A test that passes before the fix proves
+    // nothing.
+    for (const pkg of [
+      'grounding_0002',
+      'grounding_0003',
+      'stella_0007',
+      'stella_0008',
+      'stella_0010',
+    ]) {
+      expect(upToTransfer, `${pkg} creates a table in public as uellix_owner`).toContain(pkg)
+    }
+  })
+
+  it('asserts the end state in section 6, in the transaction that built it', () => {
+    // Anchored to the wording only check (7) uses. The first version matched
+    // `/FAILED verification:[^']*CREATE on schema public/`, which check (8)'s
+    // message ("role(s) % hold CREATE on schema public") also satisfies — so
+    // deleting check (7) entirely left this green. Mutation found it.
+    expect(BOOTSTRAP).toContain(
+      'FAILED verification: uellix_owner lacks CREATE on schema public',
+    )
+  })
+
+  it('leaves the owner as the only new role holding CREATE, asserted not assumed', () => {
+    expect(BOOTSTRAP).toMatch(/FAILED verification: role\(s\) % hold CREATE on schema public/)
+  })
+})
+
+describe('S1-DEFECT-001 — the rollback still drops the roles it created', () => {
+  it('revokes the schema privileges before DROP ROLE', () => {
+    // Measured on PostgreSQL 17.6: DROP ROLE fails with
+    // `role "x" cannot be dropped because some objects depend on it /
+    //  DETAIL: privileges for schema public` while any such grant survives.
+    // Adding the grant without this makes the rollback inapplicable, which
+    // would only be discovered while trying to undo a half-built staging.
+    const dropIndex = ROLLBACK.indexOf('DROP ROLE IF EXISTS uellix_app;')
+    expect(dropIndex).toBeGreaterThan(-1)
+    expect(ROLLBACK.slice(0, dropIndex)).toContain('REVOKE ALL ON SCHEMA public FROM')
+  })
+
+  it('names every role the package granted on, so none blocks its own DROP', () => {
+    const dropIndex = ROLLBACK.indexOf('DROP ROLE IF EXISTS uellix_app;')
+    const before = ROLLBACK.slice(0, dropIndex)
+    for (const role of ['uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor']) {
+      expect(before, `${role} must be revoked before it is dropped`).toMatch(
+        new RegExp(`REVOKE ALL ON SCHEMA public FROM[^;]*${role}`),
+      )
+    }
+  })
+
+  it('records why the REVOKE is load-bearing rather than tidiness', () => {
+    expect(ROLLBACK).toMatch(/cannot be dropped|privileges for schema public/)
+  })
+})
+
 describe('Phase 12 — R6h may not be validated prematurely', () => {
   it('no artefact emits VALIDATE CONSTRAINT', () => {
     for (const artefact of ARTEFACTS) {

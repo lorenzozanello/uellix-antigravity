@@ -108,6 +108,27 @@ BEGIN
   END IF;
 END $$;
 
+-- Schema privileges next, and this is load-bearing rather than tidiness.
+-- PostgreSQL refuses to drop a role that still holds one: measured on
+-- PostgreSQL 17.6, `DROP ROLE uellix_owner` fails with `role "uellix_owner"
+-- cannot be dropped because some objects depend on it / DETAIL: privileges for
+-- schema public`. stella_hosted_0001 §2b-bis grants USAGE to all five and
+-- CREATE to the owner, so without this the rollback becomes inapplicable — and
+-- that would only be discovered while trying to undo a half-built staging,
+-- which is the worst moment to learn it.
+--
+-- The grants on schema uellix_bootstrap, its sentinel and the auth shim need no
+-- counterpart: those objects were dropped above, and an ACL does not outlive
+-- the object it describes.
+DO $$
+BEGIN
+  IF to_regrole('uellix_owner')    IS NOT NULL THEN REVOKE ALL ON SCHEMA public FROM uellix_owner;    END IF;
+  IF to_regrole('uellix_migrator') IS NOT NULL THEN REVOKE ALL ON SCHEMA public FROM uellix_migrator; END IF;
+  IF to_regrole('uellix_app')      IS NOT NULL THEN REVOKE ALL ON SCHEMA public FROM uellix_app;      END IF;
+  IF to_regrole('uellix_writer')   IS NOT NULL THEN REVOKE ALL ON SCHEMA public FROM uellix_writer;   END IF;
+  IF to_regrole('uellix_auditor')  IS NOT NULL THEN REVOKE ALL ON SCHEMA public FROM uellix_auditor;  END IF;
+END $$;
+
 DROP ROLE IF EXISTS uellix_app;
 DROP ROLE IF EXISTS uellix_writer;
 DROP ROLE IF EXISTS uellix_auditor;

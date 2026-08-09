@@ -88,7 +88,12 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
   {
     name: 'stella_hosted_0001_managed_role_bootstrap',
     sourceFile: 'stella_hosted_0001_managed_role_bootstrap.sql',
-    sourceSha256: '9c93695967910ef012cd0d171d7f9adf70159c818d60c05549d9b16acaa2fea2',
+    // Re-pinned for S1-DEFECT-001: the package now grants uellix_owner CREATE
+    // on schema public before it transfers the ledger's ownership to it. The
+    // rewrite counts stay NO_REWRITES because nothing about the rewrite rules
+    // changed — the added statements are native-hosted SQL, which is the whole
+    // reason this package is `native-hosted` and not derived.
+    sourceSha256: '109792a88726e483c86c33e669a1e4d5ce123c5c736b631b8b71387976c7e675',
     expectedRewrites: NO_REWRITES,
     dependsOn: [],
     expectedObjects: [
@@ -103,11 +108,21 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'role uellix_writer',
       'role uellix_auditor',
     ],
-    expectedOwners: ['uellix_owner owns schema uellix_bootstrap'],
+    expectedOwners: [
+      'uellix_owner owns schema uellix_bootstrap',
+      'uellix_owner owns public.stella_interactions',
+    ],
     expectedGrants: [
       'EXECUTE ON uellix_bootstrap.assert_hosted_capabilities(text) TO uellix_migrator',
       'EXECUTE ON public.uellix_auth_uid() TO uellix_app',
       'no EXECUTE for PUBLIC on either function',
+      // S1-DEFECT-001. Persistent, and declared here so it is reviewed as a
+      // contract rather than found as a surprise: PostgreSQL checks CREATE on
+      // the namespace against the NEW OWNER, and five chain packages create
+      // tables in public inside a SET ROLE uellix_owner window.
+      'USAGE ON SCHEMA public TO uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor',
+      'CREATE ON SCHEMA public TO uellix_owner, and to no other role this package creates',
+      'nothing revoked from PUBLIC on schema public — that ACL is baseline surface',
     ],
     rollbackPolicy:
       'stella_hosted_0001_rollback.sql drops the bootstrap schema, the shim and the five roles, and ' +
