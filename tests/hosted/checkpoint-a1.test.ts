@@ -812,49 +812,84 @@ describe('the status is derived, and an edited one fails verification', () => {
 
   /*
    * ONE round trip through the real script, because everything above tests the
-   * functions and nothing above tests that the CLI calls them. It costs several
-   * seconds of subprocess start-up, which is the price of the gate not being
-   * advisory.
+   * functions and nothing above tests that the CLI calls them.
+   *
+   * ---------------------------------------------------------------------------
+   * WHY THIS TEST ASKS PERMISSION BEFORE IT WRITES ANYTHING
+   * ---------------------------------------------------------------------------
+   * The first version did not, and it was a near-miss with teeth. It asserted
+   * the two artefacts were absent, wrote fixtures over their real paths, and
+   * deleted both in a `finally`. That was correct exactly once — on a repository
+   * where CHECKPOINT A1 had not been measured. The moment the operator recorded
+   * the real corroboration and it was committed, `pnpm test` DELETED THE
+   * COMMITTED EVIDENCE and failed on the assertion instead of the deletion.
+   * Recoverable from git, and it should never have been reachable: the whole
+   * reason `S1_EVIDENCE_REGISTRY` exists is that a measurement which can only be
+   * taken once must not share a path with anything a process writes casually.
+   *
+   * So the destructive path is now GUARDED rather than commented against. With
+   * real evidence present the test asserts the stronger property anyway — that
+   * the COMMITTED status is what the contract computes over the COMMITTED
+   * corroboration, through the CLI — and touches nothing.
    */
-  it(
+  const corroborationPath = path.join(ROOT, A1_CORROBORATION_ARTEFACT)
+  const statusPath = path.join(ROOT, A1_STATUS_ARTEFACT)
+
+  const runScript = (mode: string): { code: number; out: string } => {
+    try {
+      return {
+        code: 0,
+        out: execFileSync(process.execPath, [TSX_CLI, 'scripts/a1-status.ts', mode], {
+          cwd: ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }),
+      }
+    } catch (error) {
+      const e = error as { status?: number; stdout?: string; stderr?: string }
+      return { code: e.status ?? 1, out: `${e.stdout ?? ''}${e.stderr ?? ''}` }
+    }
+  }
+
+  const measured = existsSync(corroborationPath)
+
+  it.runIf(measured)(
+    'the recorded verdict is what the CLI computes over the recorded corroboration',
+    { timeout: 180_000 },
+    () => {
+      // READ ONLY. Nothing below writes or removes a file.
+      expect(runScript('verify').code).toBe(0)
+
+      const onDisk = readFileSync(statusPath, 'utf8').replace(/\r\n?/g, '\n')
+      expect(onDisk).toBe(serializeA1Status(status(readFileSync(corroborationPath, 'utf8'))))
+
+      const recorded = JSON.parse(onDisk) as Record<string, unknown>
+      expect(recorded.checkpointPassed).toBe(true)
+      expect(recorded.packageCount).toBe(9)
+      expect(recorded.partialPackages).toEqual([])
+      expect(recorded.blockers).toEqual([])
+    },
+  )
+
+  it.runIf(!measured)(
     'the script writes what the contract computes, refuses without one, and fails on a tampered file',
     { timeout: 180_000 },
     () => {
-      const corroborationPath = path.join(ROOT, A1_CORROBORATION_ARTEFACT)
-      const statusPath = path.join(ROOT, A1_STATUS_ARTEFACT)
-
-      const run = (mode: string): { code: number; out: string } => {
-        try {
-          return {
-            code: 0,
-            out: execFileSync(process.execPath, [TSX_CLI, 'scripts/a1-status.ts', mode], {
-              cwd: ROOT,
-              encoding: 'utf8',
-              stdio: ['ignore', 'pipe', 'pipe'],
-            }),
-          }
-        } catch (error) {
-          const e = error as { status?: number; stdout?: string; stderr?: string }
-          return { code: e.status ?? 1, out: `${e.stdout ?? ''}${e.stderr ?? ''}` }
-        }
-      }
-
       try {
-        // NEITHER ARTEFACT EXISTS YET, and this test must leave it that way.
         expect(existsSync(corroborationPath)).toBe(false)
         expect(existsSync(statusPath)).toBe(false)
 
-        const refused = run('write')
+        const refused = runScript('write')
         expect(refused.code).toBe(1)
         expect(refused.out).toContain('REFUSED')
         expect(existsSync(statusPath)).toBe(false)
 
         writeFileSync(corroborationPath, `${corroboration()}\n`, 'utf8')
-        expect(run('write').code).toBe(0)
+        expect(runScript('write').code).toBe(0)
         expect(readFileSync(statusPath, 'utf8').replace(/\r\n?/g, '\n')).toBe(
           serializeA1Status(status(`${corroboration()}\n`)),
         )
-        expect(run('verify').code).toBe(0)
+        expect(runScript('verify').code).toBe(0)
 
         const written = JSON.parse(readFileSync(statusPath, 'utf8')) as Record<string, unknown>
         writeFileSync(
@@ -862,19 +897,24 @@ describe('the status is derived, and an edited one fails verification', () => {
           `${JSON.stringify({ ...written, blockers: ['nothing to see here'] }, null, 2)}\n`,
           'utf8',
         )
-        const tampered = run('verify')
+        const tampered = runScript('verify')
         expect(tampered.code).toBe(1)
         expect(tampered.out).toContain('DIVERGED')
       } finally {
-        // BOTH ARE REAL MEASUREMENTS OF THE REAL TARGET WHEN THEY EXIST. A
-        // fixture left behind would be read as one — the exact confusion the S1
-        // evidence registry was written to prevent.
+        // Only ever removes files this branch created — it does not run at all
+        // when a real corroboration is present.
         rmSync(corroborationPath, { force: true })
         rmSync(statusPath, { force: true })
       }
-
-      expect(existsSync(corroborationPath)).toBe(false)
-      expect(existsSync(statusPath)).toBe(false)
     },
   )
+
+  it('no test in this file may write over a real measurement', () => {
+    // THE GUARD ITSELF, asserted. A future edit that drops `runIf` and writes
+    // unconditionally has to delete this line to get green, which is a thing a
+    // reviewer can see.
+    if (!measured) return
+    expect(readFileSync(corroborationPath, 'utf8').length).toBeGreaterThan(0)
+    expect(runScript('verify').code).toBe(0)
+  })
 })
