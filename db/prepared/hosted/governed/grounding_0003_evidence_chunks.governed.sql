@@ -5,7 +5,7 @@
 --
 -- Package: T2
 -- Derived from: db/prepared/hosted/grounding_0003_evidence_chunks.hosted.sql
--- Source SHA-256 (LF-normalized): 1c80a87774a67c8c5e1da230be1207e6ac7332da0512e0cf7e4c7aa378461c84
+-- Source SHA-256 (LF-normalized): 7505586f6c3759cae85455e641ded5934413bafc8574db273ec90b5edadde6c9
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
 --   capability-role-attributes: 0
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -229,7 +231,6 @@ BEGIN
   END IF;
 END $$;
 -- authority: canonical role context — this statement must be created by uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 CREATE TABLE IF NOT EXISTS public.evidence_chunks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -397,9 +398,7 @@ CREATE TABLE IF NOT EXISTS public.evidence_chunks (
     ON DELETE CASCADE
 );
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: open W06.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 2. Constraint reconciliation — convergent, by DEFINITION
@@ -833,10 +832,8 @@ ALTER TABLE public.evidence_chunks ENABLE ALWAYS TRIGGER trg_evidence_chunks_can
 COMMENT ON TABLE public.evidence_chunks IS
   'Anchored, provenance-carrying grounding index over evidence documents (GR-001, prepared grounding_0003; supersedes grounding_0001). Derived and regenerable from the sealed file plus lib/grounding; the file remains the source of truth. Rows are never UPDATEd. Managed outside the drizzle chain — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W06.S1
 -- authority: open W07.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 8. Governed write and read paths (superuser window)
@@ -1210,7 +1207,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W07.S1
 -- authority: open W08.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_grounding TO uellix_owner WITH INHERIT FALSE, SET TRUE;
@@ -1420,12 +1416,13 @@ BEGIN
   END IF;
 
   -- (9) The capability role still has zero members.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_grounding';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'grounding_0003 FAILED verification: uellix_cap_grounding has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   grounding_0003 FAILED verification: uellix_cap_grounding has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('grounding_0003_evidence_chunks', 'uellix_cap_grounding');
 
   RAISE NOTICE 'grounding_0003: verification passed — 23 columns with the six GR-001 provenance columns NOT NULL, superseded UNIQUE absent, deduplication index unique and predicated, RLS on with 4 policies and no UPDATE policy, 3 triggers (2 immutability + 1 canonical-acyclicity) all ENABLE ALWAYS, 2 composite FOREIGN KEYs (version-scope, canonical) both ON DELETE CASCADE, no write privilege outside uellix_cap_grounding, all functions SECURITY DEFINER with empty search_path, capability role with 0 members.';
 END $$;

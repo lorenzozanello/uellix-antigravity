@@ -209,11 +209,40 @@ BEGIN
     ALTER ROLE uellix_owner WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
   END IF;
 
+  -- E-02, measured on PostgreSQL 17.6. CREATEROLE, and it is the ONE attribute
+  -- in this block that is not narrowing.
+  --
+  -- uellix_migrator is the principal every temporary elevation the governed
+  -- chain emits names — `GRANT <role> TO uellix_migrator; SET ROLE <role>` —
+  -- so the chain can only be applied BY it. Six of the nine packages create a
+  -- capability role, and `assert_hosted_capabilities` (C1) requires CREATEROLE
+  -- for exactly that reason. Created NOCREATEROLE, this role fails its own
+  -- chain's first statement, and `postgres` — which does hold CREATEROLE —
+  -- fails at the first capability window because the grant named somebody
+  -- else. That was E-02: no session could apply the chain.
+  --
+  -- `postgres` cannot be the named installer instead. It is a PROVIDER role,
+  -- and the authority model refuses any membership statement that names one
+  -- (AUTHORITY_UNKNOWN_ROLE) — the chain's temporary rows are told apart from
+  -- the provider's by grantor (lab M2/M3a), and naming a provider principal
+  -- would destroy that distinction.
+  --
+  -- WHAT THIS COSTS, stated rather than discovered later. On PostgreSQL 16+
+  -- CREATEROLE is no longer the near-superuser it was: a CREATEROLE role may
+  -- only administer roles it created, cannot grant itself SUPERUSER, and — with
+  -- createrole_self_grant empty, which §0 does not check and the prechain
+  -- observation measures — does not even receive SET on what it creates
+  -- (measured: pg_has_role(migrator, cap, 'SET') = false immediately after
+  -- CREATE ROLE). It buys exactly the ability to create the three capability
+  -- roles, which is the thing the chain does and nothing else.
+  --
+  -- Measured, this image: a NOSUPERUSER CREATEROLE role CAN set this attribute
+  -- on a role it administers, so no superuser is needed to apply it.
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_migrator') THEN
-    CREATE ROLE uellix_migrator WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
+    CREATE ROLE uellix_migrator WITH LOGIN NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
     RAISE NOTICE 'stella_hosted_0001: created role uellix_migrator';
   ELSE
-    ALTER ROLE uellix_migrator WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
+    ALTER ROLE uellix_migrator WITH NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_app') THEN
@@ -517,7 +546,7 @@ BEGIN
 
   -- (C1) CREATEROLE. Six of the nine packages create a capability role.
   IF NOT (SELECT rolcreaterole FROM pg_catalog.pg_roles WHERE rolname = current_user) THEN
-    v_missing := v_missing || 'CREATEROLE';
+    v_missing := array_append(v_missing, 'CREATEROLE');
   END IF;
 
   -- (C2) The right to BECOME uellix_owner. Every package opens an owner window
@@ -531,30 +560,53 @@ BEGIN
   --      pg_has_role rather than a pg_auth_members row: membership can be
   --      transitive, and a direct-row check would refuse a legitimate chain.
   IF NOT pg_catalog.pg_has_role(current_user, 'uellix_owner', 'SET') THEN
-    v_missing := v_missing || 'the right to SET ROLE uellix_owner';
+    v_missing := array_append(v_missing, 'the right to SET ROLE uellix_owner');
   END IF;
 
   -- (C3) The auth shim. Without it the rewritten bodies resolve nothing, and
   --      "nothing" reads as "no session", which denies silently.
   IF pg_catalog.to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
-    v_missing := v_missing || 'public.uellix_auth_uid()';
+    v_missing := array_append(v_missing, 'public.uellix_auth_uid()');
   END IF;
 
   -- (C4) CREATE on public and on the two Stella schemas when they exist. The
   --      schemas are created by the packages themselves, so their absence is
   --      not a failure — only a present schema we cannot write to is.
-  IF NOT pg_catalog.has_schema_privilege(current_user, 'public', 'CREATE') THEN
-    v_missing := v_missing || 'CREATE ON SCHEMA public';
+  --
+  --      E-02. Asserted over uellix_owner, NOT over current_user, and that is a
+  --      correction rather than a loosening. Nothing in the chain creates an
+  --      object in public as the installer: the three canonical owner contexts
+  --      run `CREATE TABLE` inside a `SET ROLE uellix_owner` window precisely
+  --      so that the owner ends up owning them, and PostgreSQL checks CREATE on
+  --      the containing namespace against the role EXECUTING the statement
+  --      (S1-DEFECT-001). Checking current_user was right while the installer
+  --      was assumed to be the baseline owner; with uellix_migrator as the
+  --      installer it demands a privilege the chain never uses, and granting it
+  --      to satisfy the check would widen the installer for nothing.
+  --      §6 check (7) asserts the same fact about the same role.
+  IF NOT pg_catalog.has_schema_privilege('uellix_owner', 'public', 'CREATE') THEN
+    v_missing := array_append(v_missing, 'CREATE ON SCHEMA public for uellix_owner');
   END IF;
 
   IF pg_catalog.to_regnamespace('uellix_stella') IS NOT NULL
-     AND NOT pg_catalog.has_schema_privilege(current_user, 'uellix_stella', 'CREATE') THEN
-    v_missing := v_missing || 'CREATE ON SCHEMA uellix_stella';
+     AND NOT pg_catalog.has_schema_privilege('uellix_owner', 'uellix_stella', 'CREATE') THEN
+    v_missing := array_append(v_missing, 'CREATE ON SCHEMA uellix_stella for uellix_owner');
   END IF;
 
   IF pg_catalog.to_regnamespace('uellix_grounding') IS NOT NULL
-     AND NOT pg_catalog.has_schema_privilege(current_user, 'uellix_grounding', 'CREATE') THEN
-    v_missing := v_missing || 'CREATE ON SCHEMA uellix_grounding';
+     AND NOT pg_catalog.has_schema_privilege('uellix_owner', 'uellix_grounding', 'CREATE') THEN
+    v_missing := array_append(v_missing, 'CREATE ON SCHEMA uellix_grounding for uellix_owner');
+  END IF;
+
+  -- (C6) CREATE on the DATABASE. Six packages open with
+  --      `CREATE SCHEMA <x> AUTHORIZATION uellix_owner`, which is an
+  --      installer-only statement — the schema is authorized TO the owner but
+  --      created BY the installer, and PostgreSQL checks CREATE on the DATABASE
+  --      for that, not on any schema. Measured, PG 17.6: uellix_migrator
+  --      without it fails T1 at `permission denied for database postgres`,
+  --      three hundred lines after this assertion would have caught it.
+  IF NOT pg_catalog.has_database_privilege(current_user, current_database(), 'CREATE') THEN
+    v_missing := array_append(v_missing, 'CREATE ON DATABASE ' || current_database());
   END IF;
 
   -- (C5) THE ONE THAT IS NOT A CAPABILITY. A package must never be applied to a
@@ -564,7 +616,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM uellix_bootstrap.staging_sentinel WHERE environment = 'staging'
   ) THEN
-    v_missing := v_missing || 'uellix_bootstrap.staging_sentinel row declaring environment=staging';
+    v_missing := array_append(v_missing, 'uellix_bootstrap.staging_sentinel row declaring environment=staging');
   END IF;
 
   IF array_length(v_missing, 1) IS NOT NULL THEN
@@ -647,6 +699,18 @@ GRANT SELECT  ON uellix_bootstrap.staging_sentinel TO uellix_migrator, uellix_ap
 -- policies on tables it queries directly evaluate the actor as uellix_app.
 GRANT EXECUTE ON FUNCTION public.uellix_auth_uid() TO uellix_app;
 
+-- AND to the installer, WITH GRANT OPTION, because the chain re-grants it.
+--
+-- E-02. Rewrite rule `auth-schema-grant` replaces each package's
+-- `GRANT EXECUTE ON FUNCTION auth.uid() TO <capability>` with the same grant
+-- over this shim, and that statement is INSTALLER-class — it sits outside every
+-- classification window. A grantor must hold the grant option, and the shim is
+-- owned by whoever applied this package, not by the installer. MEASURED, PG
+-- 17.6: without this, T4 stops at `permission denied for function
+-- uellix_auth_uid`. It never appeared while the installer was assumed to be the
+-- baseline owner, which owns the shim and therefore needs no grant at all.
+GRANT EXECUTE ON FUNCTION public.uellix_auth_uid() TO uellix_migrator WITH GRANT OPTION;
+
 -- DELIBERATELY NOT GRANTED, and each omission is a decision:
 --   * nothing to `service_role` — the instruction forbids using it, and
 --     stella_0017 revokes the ledger from it;
@@ -656,7 +720,281 @@ GRANT EXECUTE ON FUNCTION public.uellix_auth_uid() TO uellix_app;
 --   * no EXECUTE for PUBLIC on either function;
 --   * uellix_owner receives no grant here: it OWNS the schema, which is not the
 --     same thing and does not need restating.
+-- ============================================================
+-- 5d. The PRECHAIN AUTHORITY CONTRACT (E-01)
+-- ============================================================
+-- WHAT THIS CLOSES, AND HOW IT WAS FOUND
+--
+-- The governed chain runs twelve statements as `uellix_owner` against objects
+-- it does not create. On a LOCAL database that works because
+-- `stella_0004_role_separation.sql` transfers all 38 tables and 8 functions to
+-- uellix_owner (lines 456-502). Here that transfer is deliberately NARROW —
+-- section 2c moves the ledger and nothing else — because moving the RLS HELPER
+-- FUNCTIONS to a role that cannot receive USAGE on schema auth would break
+-- every policy in the product (RR-09). Section 2c said so and was right; what
+-- it missed is that six OTHER objects need a PRIVILEGE rather than ownership,
+-- and nothing granted it.
+--
+-- The PG 17.6 engine certification found this one statement at a time:
+--
+--   T1 line 278  permission denied for function current_user_org_ids
+--                -> GRANT needs the executor to OWN the object or hold the
+--                   privilege WITH GRANT OPTION. Holding it is not enough.
+--   T1 line 398  permission denied for table organizations
+--                -> a FOREIGN KEY needs REFERENCES on its TARGET, and the
+--                   statement that fails never names the target as a privilege.
+--   T1 line 682  permission denied for function uellix_forbid_mutation
+--                -> CREATE TRIGGER needs EXECUTE on the function it calls.
+--
+-- Three privileges, three object classes, none of them mentioned in the
+-- statement that failed. So the set below is DERIVED, not observed: see
+-- db/hosted/authority/certification/prechain-requirements.ts, which walks the
+-- authority plan and reports every object a non-installer executor touches that
+-- the chain does not itself create. Eight objects, twelve statements. One of
+-- the eight — the ledger — is already satisfied by section 2c.
+--
+-- ------------------------------------------------------------
+-- WHY THIS MEASURES BEFORE IT GRANTS
+-- ------------------------------------------------------------
+-- The baseline owner is `postgres` on a project provisioned the way
+-- STELLA_APPLY_IDENTITY_PROBE.md describes, and that is what the grants below
+-- assume. But it is an ASSUMPTION about somebody else's database, so it is
+-- checked rather than trusted: an object already owned by uellix_owner needs
+-- nothing, an object owned by the installer gets exactly the privileges the
+-- chain re-grants, and an object owned by any third role REFUSES with its name
+-- and its owner. A bootstrap that guessed here would move the failure to the
+-- middle of T1, which is where it was already found once.
+--
+-- NARROW ON PURPOSE. `GRANT ALL` on six baseline tables would satisfy every
+-- statement above and would also hand uellix_owner TRUNCATE on the ledger.
+-- The privileges below are exactly the ones the chain re-grants, and REFERENCES
+-- exactly where a foreign key points.
+DO $$
+DECLARE
+  v_wrong text;
+BEGIN
+  -- The SHAPE this package can act on, asserted before it acts. Every object
+  -- below must be owned by the installer: that is what a project provisioned
+  -- the way STELLA_APPLY_IDENTITY_PROBE.md describes looks like, and it is
+  -- what makes the literal GRANTs beneath this block issuable at all.
+  --
+  -- Anything else REFUSES here, naming the object and its owner, rather than
+  -- failing three hundred lines into T1 — which is where E-01 was found.
+  SELECT string_agg(t.object || ' (owned by ' || t.owner || ')', ', ' ORDER BY t.object)
+    INTO v_wrong
+  FROM (
+    SELECT 'public.current_user_org_ids()'::text AS object, pg_get_userbyid(p.proowner) AS owner FROM pg_proc p WHERE p.oid = to_regprocedure('public.current_user_org_ids()')
+    UNION ALL
+    SELECT 'public.current_user_is_super_admin()'::text AS object, pg_get_userbyid(p.proowner) AS owner FROM pg_proc p WHERE p.oid = to_regprocedure('public.current_user_is_super_admin()')
+    UNION ALL
+    SELECT 'public.uellix_forbid_mutation()'::text AS object, pg_get_userbyid(p.proowner) AS owner FROM pg_proc p WHERE p.oid = to_regprocedure('public.uellix_forbid_mutation()')
+    UNION ALL
+    SELECT 'public.organizations'::text AS object, pg_get_userbyid(c.relowner) AS owner FROM pg_class c WHERE c.oid = to_regclass('public.organizations')
+    UNION ALL
+    SELECT 'public.projects'::text AS object, pg_get_userbyid(c.relowner) AS owner FROM pg_class c WHERE c.oid = to_regclass('public.projects')
+    UNION ALL
+    SELECT 'public.evidence_items'::text AS object, pg_get_userbyid(c.relowner) AS owner FROM pg_class c WHERE c.oid = to_regclass('public.evidence_items')
+    UNION ALL
+    SELECT 'public.users'::text AS object, pg_get_userbyid(c.relowner) AS owner FROM pg_class c WHERE c.oid = to_regclass('public.users')
+  ) AS t
+  WHERE t.owner <> current_user;
+
+  IF v_wrong IS NOT NULL THEN
+    RAISE EXCEPTION
+      'stella_hosted_0001 aborted: the prechain authority contract cannot be established '
+      'for: %. The governed chain runs twelve statements against these objects as '
+      'uellix_owner, and this package can only grant on what the installer (%) owns. '
+      'Resolve the ownership of each and re-run.',
+      v_wrong, current_user;
+  END IF;
+END $$;
+
+-- LITERAL, one statement per object, for the reason section 2 states about the
+-- five CREATE ROLEs: a `FOR ... LOOP` with `EXECUTE format(...)` would be
+-- shorter and `tests/prepared-stella-sql.test.ts` refuses it, because nothing
+-- dynamic is EXECUTEd in a prepared package. A static contract can read the
+-- lines below; it cannot read a loop.
+--
+-- WITH GRANT OPTION on everything the chain RE-GRANTS. Holding a privilege is
+-- not the same as being able to pass it on, and that distinction is exactly
+-- what PostgreSQL 17.6 refused at T1 line 278. REFERENCES is needed by
+-- uellix_owner itself and never passed on; the option is harmless there.
+GRANT EXECUTE ON FUNCTION public.current_user_org_ids() TO uellix_owner WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION public.current_user_is_super_admin() TO uellix_owner WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION public.uellix_forbid_mutation() TO uellix_owner WITH GRANT OPTION;
+GRANT SELECT, REFERENCES ON TABLE public.organizations TO uellix_owner WITH GRANT OPTION;
+GRANT SELECT, REFERENCES ON TABLE public.projects TO uellix_owner WITH GRANT OPTION;
+GRANT SELECT, REFERENCES ON TABLE public.evidence_items TO uellix_owner WITH GRANT OPTION;
+GRANT REFERENCES ON TABLE public.users TO uellix_owner WITH GRANT OPTION;
+
+-- And the INSTALLER's own SELECT on the tables — not to read data, but so its
+-- preconditions can SEE what they check. MEASURED, PG 17.6:
+-- information_schema.columns is FILTERED BY PRIVILEGE, so a column is
+-- invisible to a role holding none on its table. stella_0013 asks whether
+-- public.organizations.stella_monthly_quota exists and is told ABSENT — a
+-- false negative indistinguishable from a missing migration. Locally the
+-- applier is a superuser and sees everything, which is why no amount of local
+-- testing produces this. It widens nothing: uellix_migrator can already read
+-- any of these by announcing itself as uellix_owner.
+GRANT SELECT ON TABLE public.organizations TO uellix_migrator;
+GRANT SELECT ON TABLE public.projects TO uellix_migrator;
+GRANT SELECT ON TABLE public.evidence_items TO uellix_migrator;
+GRANT SELECT ON TABLE public.users TO uellix_migrator;
+
+-- The ledger is the eighth object of the contract and the one section 2c has
+-- already handed to uellix_owner, so ownership covers everything the chain
+-- needs. The installer's SELECT still has to be issued, and this session no
+-- longer owns the table — section 2b guarantees it can BECOME the role that
+-- does. Without it, T8's precondition reports idempotency_key ABSENT.
+SET ROLE uellix_owner;
+GRANT SELECT ON TABLE public.stella_interactions TO uellix_migrator;
+RESET ROLE;
+
+-- The installer's OWN prerequisite, and the only one that is not about an
+-- object: CREATE on the database, for the six `CREATE SCHEMA ... AUTHORIZATION
+-- uellix_owner` statements. Measured and then granted, never assumed — on a
+-- project where this session does not own the database the grant is refused by
+-- PostgreSQL, and a refusal here is worth far more than the same refusal three
+-- hundred lines into T1.
+DO $$
+BEGIN
+  IF NOT pg_catalog.has_database_privilege(current_user, current_database(), 'CREATE') THEN
+    RAISE EXCEPTION
+      'stella_hosted_0001 aborted: uellix_migrator needs CREATE on database %, and this session (%) '
+      'cannot grant it because it does not hold it either. Six chain packages open with CREATE '
+      'SCHEMA ... AUTHORIZATION uellix_owner, which PostgreSQL checks against the DATABASE.',
+      current_database(), current_user;
+  END IF;
+END $$;
+
+-- LITERAL, and naming the database rather than composing `current_database()`
+-- into an `EXECUTE format(...)`, for the reason section 2 gives about the five
+-- CREATE ROLEs. `postgres` is the database a managed Supabase project serves;
+-- an operator applying this anywhere else gets an actionable error naming this
+-- exact statement, which is what the composed form would have hidden.
+GRANT CREATE ON DATABASE postgres TO uellix_migrator;
+
+-- ------------------------------------------------------------
+-- 5e. The capability membership topology assertion (E-04)
+-- ------------------------------------------------------------
+-- WHAT REPLACED WHAT, AND WHY THE OLD TEST WAS WRONG RATHER THAN STRICT
+--
+-- Five chain packages verify that their capability role has ZERO members,
+-- because a member would make the write path reachable by SET ROLE from a real
+-- connection string. The PROPERTY is right. The TEST is unsatisfiable on
+-- managed Supabase: when a NOSUPERUSER CREATEROLE role creates another role,
+-- PostgreSQL 16+ grants it the membership automatically (RR-02), so the count
+-- is one before the package has done anything at all.
+--
+-- Measured, PostgreSQL 17.6, `createrole_self_grant` empty:
+--
+--   after CREATE ROLE cap, as uellix_migrator:
+--     cap <- uellix_migrator, grantor supabase_admin, admin=t inherit=f set=f
+--     pg_has_role('uellix_migrator','cap','SET') = FALSE
+--
+-- The row exists and confers NOTHING that the zero-member rule was protecting
+-- against: no SET, no INHERIT. So the count was measuring the wrong thing.
+--
+-- This function asserts the TOPOLOGY instead: exactly the rows expected, with
+-- exactly the options expected, and no SET reachability for any principal that
+-- must not have it. `count <= 1` was rejected as a replacement — it would admit
+-- a second row with SET TRUE as long as the automatic one were absent, which is
+-- precisely the attack the original rule existed to stop.
+CREATE OR REPLACE FUNCTION uellix_bootstrap.assert_capability_membership_topology(
+  p_package text,
+  p_capability text
+)
+RETURNS void
+LANGUAGE plpgsql
+STABLE
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+  v_unexpected text;
+  v_reachable  text;
+BEGIN
+  IF p_package IS NULL OR p_package = '' OR p_capability IS NULL OR p_capability = '' THEN
+    RAISE EXCEPTION 'assert_capability_membership_topology: the calling package must name itself and the capability role it is asserting.';
+  END IF;
+
+  -- (1) EVERY row that is not the one automatic grant PostgreSQL creates for
+  --     the role's creator. Options are compared exactly: a row with the right
+  --     shape and set_option TRUE is a different fact from the same row with
+  --     set_option FALSE, and only the second is harmless.
+  SELECT string_agg(
+           format('%s<-%s granted by %s (admin=%s inherit=%s set=%s)',
+                  r.rolname, m.rolname, g.rolname,
+                  am.admin_option, am.inherit_option, am.set_option),
+           ', ' ORDER BY m.rolname)
+    INTO v_unexpected
+  FROM pg_catalog.pg_auth_members am
+  JOIN pg_catalog.pg_roles r ON r.oid = am.roleid
+  JOIN pg_catalog.pg_roles m ON m.oid = am.member
+  JOIN pg_catalog.pg_roles g ON g.oid = am.grantor
+  WHERE r.rolname = p_capability
+    AND NOT (am.admin_option AND NOT am.inherit_option AND NOT am.set_option);
+
+  IF v_unexpected IS NOT NULL THEN
+    RAISE EXCEPTION
+      '% FAILED verification: % carries membership row(s) that confer more than administration: %. '
+      'The only row permitted is the one PostgreSQL creates automatically for the role''s creator '
+      '(RR-02), which carries ADMIN and neither INHERIT nor SET.',
+      p_package, p_capability, v_unexpected;
+  END IF;
+
+  -- (2) The property the row count was standing in for, asserted directly:
+  --     nobody may BECOME the capability role. `pg_has_role(..., 'SET')` is
+  --     transitive (lab M4), so this also closes the intermediate-role path a
+  --     direct row inspection cannot see.
+  SELECT string_agg(r.rolname, ', ' ORDER BY r.rolname) INTO v_reachable
+  FROM pg_catalog.pg_roles r
+  WHERE r.rolname <> p_capability
+    AND NOT r.rolsuper
+    AND pg_catalog.pg_has_role(r.rolname, p_capability, 'SET');
+
+  IF v_reachable IS NOT NULL THEN
+    RAISE EXCEPTION
+      '% FAILED verification: role(s) % can SET ROLE to %. A capability role reachable by SET from a '
+      'principal that can log in is a write path around every policy the package installed.',
+      p_package, v_reachable, p_capability;
+  END IF;
+
+  -- (3) And nobody may INHERIT it either, which would carry its privileges on
+  --     every statement rather than only when announced.
+  SELECT string_agg(r.rolname, ', ' ORDER BY r.rolname) INTO v_reachable
+  FROM pg_catalog.pg_roles r
+  WHERE r.rolname <> p_capability
+    AND NOT r.rolsuper
+    AND pg_catalog.pg_has_role(r.rolname, p_capability, 'USAGE');
+
+  IF v_reachable IS NOT NULL THEN
+    RAISE EXCEPTION
+      '% FAILED verification: role(s) % INHERIT %.', p_package, v_reachable, p_capability;
+  END IF;
+END $$;
+
+COMMENT ON FUNCTION uellix_bootstrap.assert_capability_membership_topology(text, text) IS
+  'Train 5B / Commit 5.1: replaces the unsatisfiable "zero members" postcondition. RR-02 makes a member unavoidable for a managed installer; this asserts the topology and the reachability that rule was actually protecting.';
+
+-- REVOKE BEFORE GRANT, and naming the three principals explicitly. Measured on
+-- managed Supabase (S1-DEFECT-002): `ALTER DEFAULT PRIVILEGES ... GRANT EXECUTE
+-- ON FUNCTIONS` writes DIRECT acl entries at CREATE time, so a function is born
+-- executable by anon / authenticated / service_role and a bare
+-- `REVOKE ... FROM PUBLIC` does not touch them. §6 check (3) caught exactly this
+-- omission on the first apply of this function.
+REVOKE ALL ON FUNCTION uellix_bootstrap.assert_capability_membership_topology(text, text)
+  FROM PUBLIC, anon, authenticated, service_role;
+
+GRANT EXECUTE ON FUNCTION uellix_bootstrap.assert_capability_membership_topology(text, text)
+  TO uellix_migrator;
+
+-- The handover is LAST in section 5 for a measured reason: everything above
+-- creates objects in uellix_bootstrap, and once the schema belongs to
+-- uellix_owner the installer can no longer CREATE in it — measured, PG 17.6:
+-- `permission denied for schema uellix_bootstrap`.
 ALTER SCHEMA uellix_bootstrap OWNER TO uellix_owner;
+
 
 -- ============================================================
 -- 6. Self-verification — assert the end state, in this transaction
@@ -669,13 +1007,25 @@ BEGIN
   -- (1) The five roles exist, and NONE of them is dangerous. Written over the
   --     attributes rather than over a list of names, so a role added later by
   --     hand with SUPERUSER would be caught by the same query.
+  --
+  --     E-02, and the ONE exemption, stated rather than removed. uellix_migrator
+  --     holds CREATEROLE: it is the principal every generated elevation names,
+  --     and six of the nine chain packages create a capability role, so a
+  --     NOCREATEROLE installer is refused at the first statement of T1 by the
+  --     capability assertion this very package installs. The exemption is
+  --     narrow on purpose — the migrator remains NOSUPERUSER, NOBYPASSRLS,
+  --     NOCREATEDB, NOREPLICATION, and the other four roles still may not hold
+  --     ANY of the five. On PostgreSQL 16+ CREATEROLE administers only the
+  --     roles its holder created and cannot confer SUPERUSER, so what it buys
+  --     here is exactly the three capability roles and nothing else.
   SELECT string_agg(rolname, ', ' ORDER BY rolname) INTO v_problem
   FROM pg_roles
   WHERE rolname IN ('uellix_owner','uellix_migrator','uellix_app','uellix_writer','uellix_auditor')
-    AND (rolsuper OR rolbypassrls OR rolcreaterole OR rolcreatedb OR rolreplication);
+    AND (rolsuper OR rolbypassrls OR rolcreatedb OR rolreplication
+         OR (rolcreaterole AND rolname <> 'uellix_migrator'));
 
   IF v_problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: role(s) % hold a dangerous attribute. No role this package creates may be SUPERUSER, BYPASSRLS, CREATEROLE, CREATEDB or REPLICATION.', v_problem;
+    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: role(s) % hold a dangerous attribute. No role this package creates may be SUPERUSER, BYPASSRLS, CREATEDB or REPLICATION, and only uellix_migrator may hold CREATEROLE.', v_problem;
   END IF;
 
   SELECT string_agg(r.name, ', ' ORDER BY r.name) INTO v_problem

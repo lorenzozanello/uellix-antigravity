@@ -5,7 +5,7 @@
 --
 -- Package: T3
 -- Derived from: db/prepared/hosted/grounding_0004_runtime_attestation.hosted.sql
--- Source SHA-256 (LF-normalized): 8b11be4819c886ffbe56cd54dad5174012d28eb691003ab2b9775eba72e96381
+-- Source SHA-256 (LF-normalized): 2442fef97a844cb695eb2f699729611b1d1d3b3365f5ced431ff72159f52d9a8
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
 --   capability-role-attributes: 0
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -174,7 +176,6 @@ BEGIN
   END IF;
 END $$;
 -- authority: open W10.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 DO $$
 DECLARE
@@ -362,10 +363,8 @@ REVOKE SELECT ON public.evidence_chunks FROM authenticated;
 COMMENT ON POLICY "evidence_chunks_select" ON public.evidence_chunks IS
   'INT-CAP-002 (prepared grounding_0004): ORGANIZATION isolation, not project isolation. This policy bounds rows to the caller''s organizations and nothing narrower; the project boundary on a retrieval read is imposed by uellix_grounding.chunks_in_scope_attested, whose project argument is checked against the row. grounding_0003 §6''s heading overstated this. `authenticated` is deliberately absent: the governed reader is the only chunk read path, so PostgREST cannot reach rows around the canonical_chunk_id filter. `uellix_cap_grounding` is deliberately present: without it the governed reader itself returned the empty set (Train 4 finding, §2a).';
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W10.S1
 -- authority: open W11.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 3. INT-GR-004 — the attested read path (superuser window)
@@ -450,7 +449,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W11.S1
 -- authority: open W12.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_grounding TO uellix_owner WITH INHERIT FALSE, SET TRUE;
@@ -633,12 +631,13 @@ BEGIN
   -- (6) The capability role still has zero members. Restated here because this
   --     package gives it a fourth function to own, and a membership granted
   --     between packages would pass every other assertion.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_grounding';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'grounding_0004 FAILED verification: uellix_cap_grounding has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   grounding_0004 FAILED verification: uellix_cap_grounding has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('grounding_0004_runtime_attestation', 'uellix_cap_grounding');
 
   RAISE NOTICE 'grounding_0004: verification passed — 3 validated integrity CHECKs (content_hash derivation, span bound, chunk_id derivation), attested reader present with 4 scope columns and owned by uellix_cap_grounding, authenticated holds nothing on evidence_chunks and is named by no policy, 4 policies unchanged, capability role with 0 members.';
 END $$;

@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
 --   capability-role-attributes: 1
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -1131,12 +1133,13 @@ BEGIN
 
   -- (8) The capability role has ZERO members. A member would make the ingestion
   --     write path reachable by SET ROLE from a real connection string.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_grounding';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'grounding_0002 FAILED verification: uellix_cap_grounding has % member(s). It must have none, or SET ROLE reaches the write path', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   grounding_0002 FAILED verification: uellix_cap_grounding has % member(s). It must have none, or SET ROLE reaches the write path
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('grounding_0002_document_versions', 'uellix_cap_grounding');
 
   -- (9) Both functions are SECURITY DEFINER with an EMPTY search_path, and
   --     EXECUTE is not held by PUBLIC.

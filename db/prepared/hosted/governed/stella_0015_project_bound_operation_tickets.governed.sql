@@ -5,7 +5,7 @@
 --
 -- Package: T6
 -- Derived from: db/prepared/hosted/stella_0015_project_bound_operation_tickets.hosted.sql
--- Source SHA-256 (LF-normalized): d1ca156d78eead4b391df6d4b6fae6c614bb871dc0b6893c11fd1a9feb0bfbef
+-- Source SHA-256 (LF-normalized): 376d4f6768e7edca479a13d86cec028370846aeacf2f0b3866de060726fe5668
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 4
 --   capability-role-attributes: 0
+--   capability-member-count: 0
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -171,7 +173,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0015 aborted: uellix_stella.consume_stella_quota is absent — apply db/prepared/stella_0013_grounded_query_quota.sql first.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0015 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument.';
   END IF;
 
@@ -222,7 +224,6 @@ RESET ROLE;
 REVOKE uellix_cap_stella_ticket FROM uellix_migrator;
 -- authority: close W29.S1
 -- authority: open W30.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 2. The project-bound protocol (superuser window)
@@ -662,7 +663,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W30.S1
 -- authority: open W31.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_stella_ticket TO uellix_owner WITH INHERIT FALSE, SET TRUE;

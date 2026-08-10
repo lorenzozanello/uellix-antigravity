@@ -5,7 +5,7 @@
 --
 -- Package: T8
 -- Derived from: db/prepared/hosted/stella_0017_governed_stella_consumption.hosted.sql
--- Source SHA-256 (LF-normalized): 968f05d175f855034c499bd7d380f514298eb1eed0c708b45dd9c726ec2e17c3
+-- Source SHA-256 (LF-normalized): fc2bea7f41fdab41a97f85970cb67d7b0c9a06f41e5b9e8d68a929a68f4eca00
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 2
 --   capability-role-attributes: 0
+--   capability-member-count: 0
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -304,7 +306,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0017 aborted: uellix_stella.stella_capacity is absent — apply db/prepared/stella_0016_reserved_quota_semantics.sql first. Every capacity decision in this campaign is that function''s; this package adds none of its own.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0017 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument.';
   END IF;
 
@@ -313,7 +315,6 @@ BEGIN
   END IF;
 END $$;
 -- authority: open W41.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 1. The direct write, removed (superuser window)
@@ -375,10 +376,8 @@ REVOKE UPDATE, DELETE, TRUNCATE ON public.stella_interactions FROM uellix_cap_st
 -- exactly the kind of change that tempts a grant.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.stella_interactions FROM uellix_cap_stella_ticket;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W41.S1
 -- authority: open W42.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- Convergent BY DEFINITION and stated as a literal, same shape as stella_0013 §3
 -- and for the same reason: a composed ALTER is a statement no gate can judge.
@@ -410,10 +409,8 @@ END $$;
 COMMENT ON CONSTRAINT stella_interactions_governed_identity_check ON public.stella_interactions IS
   'R6-INT (prepared stella_0017): every unit charged from here on carries a server-minted operation identity. NOT VALID on purpose — rows filed before this package existed were filed by the direct write path and have no key, and validating against history would fail on exactly the rows this constraint exists to stop being created. Enforced on every INSERT and UPDATE, for the table owner as well, and not silenceable by session_replication_role.';
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W42.S1
 -- authority: open W43.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 3. The conversion, carrying the row it files (superuser window)
@@ -589,14 +586,11 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W43.S1
 -- authority: open W44.S1 (CAPABILITY) as uellix_cap_stella_quota
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 GRANT CREATE ON SCHEMA uellix_stella TO uellix_cap_stella_quota;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 GRANT uellix_cap_stella_quota TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_cap_stella_quota;
 -- ------------------------------------------------------------
@@ -636,15 +630,12 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 REVOKE CREATE ON SCHEMA uellix_stella FROM uellix_cap_stella_quota;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 REVOKE uellix_cap_stella_quota FROM uellix_migrator;
 -- authority: close W44.S1
 -- authority: open W45.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 4. The sibling completion verb (superuser window)
@@ -797,7 +788,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W45.S1
 -- authority: open W46.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_stella_quota TO uellix_owner WITH INHERIT FALSE, SET TRUE;

@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 10
 --   capability-role-attributes: 1
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 1
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -171,7 +173,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0014 aborted: RLS helpers not found — apply db/migrations/0031_rls_core.sql first.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0014 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument, and without it there is no session to derive from.';
   END IF;
 
@@ -1556,12 +1558,13 @@ BEGIN
 
   -- (9) The capability role has ZERO members, so no LOGIN role reaches its
   --      privileges by SET ROLE.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_stella_ticket';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'stella_0014 FAILED verification: uellix_cap_stella_ticket has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   stella_0014 FAILED verification: uellix_cap_stella_ticket has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('stella_0014_operation_tickets', 'uellix_cap_stella_ticket');
 
   -- (10) The role attributes, restated as a postcondition rather than trusted
   --      from the ALTER above.
@@ -1574,7 +1577,7 @@ BEGIN
   END IF;
 
   -- (11) USAGE on schema auth confers auth.uid() and NOTHING ELSE.
-  IF has_table_privilege('uellix_cap_stella_ticket', 'auth.users', 'SELECT') THEN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'auth' AND c.relname = 'users' AND has_table_privilege('uellix_cap_stella_ticket', c.oid, 'SELECT')) THEN
     RAISE EXCEPTION 'stella_0014 FAILED verification: uellix_cap_stella_ticket can read auth.users. The USAGE on schema auth exists so that auth.uid() resolves, not to expose the identity store';
   END IF;
 

@@ -1,12 +1,12 @@
 # Certificación de motor PG 17.6 — cadena Stella gobernada
 
-**Commit 5.** Resultado: **FAIL**. La cadena gobernada `T1..T9` **no** es
-aplicable sobre PostgreSQL 17.6 con la topología de roles de Supabase
-gestionado, y el motor lo demostró en `T1`.
+**Commit 5.1.** Resultado: **PASS**. La cadena gobernada `T1..T9` se aplica
+completa sobre PostgreSQL 17.6 con la topología de roles de Supabase gestionado,
+bajo el contrato de instalador resuelto, sin residuo de autoridad y con las diez
+inyecciones de fallo revirtiendo por completo.
 
-Este documento registra qué se midió, con qué, y qué decisiones quedan abiertas.
-No propone remediaciones: cada hallazgo es una decisión de autoridad, no un
-parche.
+Commit 5 fue un **checkpoint diagnóstico**: `FAIL`, cadena 0/9, cuatro
+hallazgos. Este documento lo reemplaza y conserva su historia.
 
 Reproducir:
 
@@ -14,9 +14,7 @@ Reproducir:
 pnpm certify:pg176
 ```
 
-Artefactos: `artifacts/pg176-certification/latest.json` (certificación) y
-`artifacts/pg176-certification/diagnostic.json` (diagnóstico — **no** es
-evidencia de certificación).
+Artefacto: `artifacts/pg176-certification/latest.json`.
 
 ---
 
@@ -25,233 +23,225 @@ evidencia de certificación).
 | | |
 |---|---|
 | Imagen | `public.ecr.aws/supabase/postgres:17.6.1.143` |
-| `server_version` | `17.6` |
-| `server_version_num` | `170006` |
+| `server_version` / `_num` | `17.6` / `170006` |
 | `createrole_self_grant` | `''` (vacío) |
-| Instalador | `postgres` — `rolsuper = false`, `CREATEROLE`, `CREATEDB`, `BYPASSRLS` |
-| Red | `--network none` |
-| Montajes | ninguno; todo el SQL entra por `stdin` de `docker exec` |
-| Contenedores al terminar | 0 |
-| Imágenes snapshot al terminar | 0 |
+| Sesión que provisiona | `postgres` — `rolsuper = false`, `CREATEROLE` |
+| Sesión que aplica la cadena | **`uellix_migrator`**, por TCP a `127.0.0.1` |
+| Red / montajes / contenedores al final | `none` / ninguno / **0** |
 | Escrituras remotas | **0** |
 
-**Superficie fiel** (no simulada) — es lo que da valor a este entorno frente al
-ensayo local existente, que crea el esquema `auth` y por tanto lo posee:
+**Superficie fiel** (no simulada): esquema `auth` propiedad de `supabase_admin`;
+`auth.users` de `supabase_auth_admin`; `postgres` con `USAGE` sobre `auth` **sin**
+poder crear en él — la asimetría exacta de RR-09.
 
-- esquema `auth`, propiedad de `supabase_admin`;
-- `auth.users`, propiedad de `supabase_auth_admin`;
-- `auth.uid()`, provisto por la imagen;
-- `postgres` tiene `USAGE` sobre `auth` **sin** poder crear en él — la asimetría
-  exacta de RR-09;
-- `supabase_admin` es el único superusuario y **nunca** aplica un paquete.
+**Simulado y declarado**: `storage.objects` + `storage.foldername()` (los crea el
+*servicio* Storage, no la imagen); la fila del centinela de staging y la
+contraseña del migrador, ambas pasos de provisión humana que el arnés ejecuta
+explícitamente. La ausencia del centinela se **mide primero**: sin ella `T1` es
+rechazado.
 
-**Simulado** (declarado, no descubierto después):
+Hechos de clase C medidos en este motor: `postgres` no puede crear en `auth` ni
+en `storage`, **sí** tiene `TRIGGER` sobre `auth.users`, y no es superusuario.
 
-- `storage.objects` y `storage.foldername(text)` — los crea el **servicio**
-  Storage en un proyecto real, no la imagen. Aquí se crean para `postgres`, así
-  que toda pregunta de privilegio sobre ellos se responde trivial y
-  erróneamente. Ningún resultado sobre políticas de storage es evidencia.
-- El bucket `uellix-evidence` no existe. Ninguna medición depende de él.
-- Fila del centinela `uellix_bootstrap.staging_sentinel` — `stella_hosted_0001`
-  crea la tabla y deliberadamente **no** inserta la fila («un bootstrap que
-  acuñara su propio centinela sería un bootstrap que se certifica a sí mismo»).
-  El arnés hace de operador, y **primero mide la negativa**: sin la fila, `T1`
-  es rechazado.
-- Contraseña de `uellix_migrator` — el paquete lo crea `WITH LOGIN` sin
-  credencial, que pertenece al gestor de secretos del operador.
+## 2. E-01 — contrato de propiedad prechain
 
-## 2. Preparación
+```
+E01_ROOT_CAUSE = HOSTED_PRECHAIN_CONTRACT_DEFECT
+```
 
-| Fase | Resultado |
-|---|---|
-| Baseline (50 unidades del manifiesto) | **50/50 aplicadas** |
-| `stella_hosted_0001_managed_role_bootstrap` | **PASS** |
-| Centinela de staging | escrito, tras medir el rechazo previo |
-| PRECHAIN (9 paquetes por testigos de catálogo) | **CLEAN — 9/9 `ABSENT`** |
+`stella_0004` transfiere 38 tablas y 8 funciones a `uellix_owner`;
+`stella_hosted_0001` transfiere **una** —el ledger— y dice por qué: mover las
+helpers de RLS a un rol que no puede recibir `USAGE` sobre `auth` rompería todas
+las políticas (RR-09). Lo que faltaba es que otros seis objetos necesitan un
+**privilegio**, no propiedad, y nada lo concedía.
 
-Hechos de clase C medidos en este motor, no inferidos del manifiesto:
+El conjunto se **deriva** del mismo plan que usa el generador
+(`db/hosted/authority/certification/prechain-requirements.ts`), no se transcribe:
 
-| Hecho | Valor |
-|---|---|
-| `postgres` puede `CREATE` en `auth` | **no** |
-| `postgres` puede `CREATE` en `storage` | **no** |
-| `postgres` tiene `TRIGGER` sobre `auth.users` | **sí** |
-| propietario de `auth.users` | `supabase_auth_admin` |
-| propietario del esquema `auth` | `supabase_admin` |
-| `postgres` es superusuario | **no** |
+```
+PRECHAIN_OWNER_REQUIREMENTS = 8 objetos / 12 sentencias
+```
 
-`CREATE TRIGGER` exige el privilegio `TRIGGER` sobre la tabla, no su propiedad:
-por eso la unidad 40 (clase C) aplica aquí pese a que `auth.users` no es
-nuestra.
-
-## 3. Los hallazgos
-
-### E-01 — `uellix_owner` no posee lo que la cadena asume que posee (BLOQUEANTE)
-
-La cadena concede privilegios sobre objetos de `public` **desde ventanas de
-propietario**, es decir ejecutando como `uellix_owner`. En local funciona porque
-`stella_0004_role_separation.sql` transfiere las 38 tablas y 8 funciones a
-`uellix_owner` (líneas 456-502). En hosted **no puede**: `stella_hosted_0001`
-hace una transferencia **estrecha** — sólo `public.stella_interactions` — y
-explica por qué: mover las funciones auxiliares de RLS a un rol que no puede
-recibir `USAGE` sobre el esquema `auth` rompería todas las políticas del
-producto (RR-09).
-
-Medido, en tres rondas, cada una un privilegio distinto sobre una clase de
-objeto distinta, y ninguno mencionado en la sentencia que falla:
-
-| Línea de `T1` | Error | Privilegio que falta |
+| objeto | necesita | primer dependiente |
 |---|---|---|
-| 278 | `permission denied for function current_user_org_ids` | `EXECUTE ... WITH GRANT OPTION` |
-| 398 | `permission denied for table organizations` | `REFERENCES` (una FK lo exige sobre el **destino**) |
-| 682 | `permission denied for function public.uellix_forbid_mutation` | `EXECUTE` (función de trigger) |
+| `public.current_user_org_ids()` | `EXECUTE` **WITH GRANT OPTION** | T1[10] |
+| `public.current_user_is_super_admin()` | `EXECUTE` **WITH GRANT OPTION** | T1[11] |
+| `public.evidence_items` | `REFERENCES` + `SELECT` WGO | T1[12] |
+| `public.organizations` | `REFERENCES` + `SELECT` WGO | T1[14] |
+| `public.projects` | `REFERENCES` + `SELECT` WGO | T1[14] |
+| `public.uellix_forbid_mutation()` | `EXECUTE` | T1[37] |
+| `public.stella_interactions` | `OWNERSHIP` *(ya en §2c)* | T4[15] |
+| `public.users` | `REFERENCES` | T5[20] |
 
-Objetos implicados: `public.current_user_org_ids()`,
-`public.current_user_is_super_admin()`, `public.uellix_auth_uid()`,
-`public.organizations`, `public.projects`, `public.evidence_items`,
-`public.uellix_forbid_mutation()`.
+Tres privilegios distintos sobre tres clases de objeto, **ninguno nombrado en la
+sentencia que falla** — por eso se derivan en vez de enumerarse.
 
-No es un defecto de una sentencia: es la distancia entre dos modelos de
-propiedad, y cerrarla es una decisión sobre RR-09.
+**Remediación** — `stella_hosted_0001` §5d: asserta que los siete son del
+instalador (y **refusa** nombrando objeto y dueño si no), luego concede en
+sentencias **literales**. Sin `EXECUTE format(...)`: `tests/prepared-stella-sql.test.ts`
+lo prohíbe en un paquete preparado, y un contrato estático puede leer literales
+pero no un bucle.
 
-### E-02 — la cadena gobernada no tiene instalador válido (BLOQUEANTE)
+### Evidencia de staging usada
 
-Se probaron **las dos** identidades posibles, sobre el mismo estado. Fallan en
-sentencias distintas por razones opuestas:
+`artifacts/hosted-s1-observation-post-sentinel.json` (proyecto real, sólo
+lectura) fija: `uellix_migrator` **NOCREATEROLE**, `ledgerOwner = uellix_owner`,
+`public.uellix_auth_uid()` propiedad de `postgres`, y la topología de
+pertenencias. `STELLA_APPLY_IDENTITY_PROBE.md` fija que la identidad de aplicación
+es `postgres`.
 
-| Identidad | Falla en | Motivo |
-|---|---|---|
-| `postgres` | `T1` línea 278 | tiene `CREATEROLE`, así que `assert_hosted_capabilities` pasa; la cadena avanza hasta E-01 y, superado E-01, hasta la línea 1000: `permission denied to set role "uellix_cap_grounding"` — la concesión nombró a `uellix_migrator` y la sesión no lo es |
-| `uellix_migrator` | `T1` línea 216 | **es** el rol que nombran todas las elevaciones (`GOVERNED_INSTALLER`), pero `stella_hosted_0001` lo crea `NOCREATEROLE`, y `assert_hosted_capabilities` (C1) exige `CREATEROLE` porque cada paquete crea su rol de capacidad |
+Lo que la evidencia **no** contiene son los dueños de los siete objetos. Por eso
+la remediación **mide antes de conceder y refusa un tercer dueño** en vez de
+suponer. Sonda de una sola pasada, pendiente antes de autorizar staging:
 
-`GOVERNED_INSTALLER` del generador y el contrato de capacidades del bootstrap
-discrepan sobre quién es el instalador. Ninguna sesión satisface ambos.
-
-Existe un camino — `postgres` puede ampliarse a sí mismo (`GRANT
-uellix_migrator TO postgres WITH INHERIT TRUE, SET TRUE`), que es exactamente
-RR-02 — pero **que la remediación esté disponible no es un argumento de que sea
-correcta**: vuelve a unir las dos identidades que el modelo separó a propósito.
-
-### E-03 — todo rechazo de `assert_hosted_capabilities` se enmascara (MEDIO)
-
-`db/prepared/stella_hosted_0001_managed_role_bootstrap.sql` línea 512 declara
-`v_missing text[]` y las líneas 520-567 hacen `v_missing := v_missing ||
-'literal'`. Con un literal de tipo desconocido PostgreSQL resuelve `anyarray ||
-anyarray` antes que `anyarray || anyelement`, y el resultado es:
-
-```
-ERROR: malformed array literal: "CREATEROLE"
-DETAIL: Array value must start with "{" or dimension information.
+```bash
+psql "$UELLIX_STAGING_URL" -X -q -A -t -v ON_ERROR_STOP=1 -v uellix_project_ref=<ref> -f db/prepared/prechain/observation.sql
 ```
 
-El operador nunca ve qué capacidad falta. Medido dos veces en esta sesión: una
-con el centinela ausente y otra con `CREATEROLE` ausente. **La rama feliz no
-está afectada**; sólo el diagnóstico. Cierre sugerido: `|| 'literal'::text`.
-
-### E-04 — la postcondición «cero miembros» es insatisfacible en gestionado (BLOQUEANTE)
-
-Con E-01 y E-02 parcheados en el entorno, `T1` llega a su propia verificación
-final y la falla:
-
 ```
-grounding_0002 FAILED verification: uellix_cap_grounding has 1 member(s).
-It must have none, or SET ROLE reaches the write path
+STAGING_PRECHAIN_OWNER_REALITY = PARTIAL_FROM_EXISTING_EVIDENCE
+  (contrato correcto bajo cualquier resultado; la sonda sólo dice qué rama toma)
 ```
 
-Causa medida: cuando un rol **no superusuario** con `CREATEROLE` crea otro rol,
-PostgreSQL 16+ le auto-concede la pertenencia `WITH ADMIN OPTION` (RR-02). Con
-`createrole_self_grant = ''` esa fila lleva `inherit_option = f` y
-`set_option = f`.
-
-Es decir: **la propiedad de seguridad que la postcondición protege se cumple**
-—nadie alcanza el rol por `SET ROLE`— pero **la prueba que usa (contar
-miembros) no**. La postcondición mide lo que no debía medir.
-
-## 4. Lo que sí quedó certificado
-
-| Sección | Resultado |
-|---|---|
-| Identidad del motor (17.6 / 170006 / `createrole_self_grant` vacío) | PASS |
-| Baseline 50/50 + bootstrap | PASS |
-| PRECHAIN limpio, 9/9 `ABSENT` | PASS |
-| Entrada gobernada: 9 rutas explícitas, 9 digests fijados, sin glob ni resolución por basename | ENFORCED |
-| Rechazo por digest movido (§21) | `CERT_DIGEST_MISMATCH`, antes de tocar el servidor |
-| Rechazo de los bytes **no gobernados** `.hosted.sql` (§22) | `CERT_DIGEST_MISMATCH` |
-| Rechazo de una **ruta** fuera de `db/prepared/hosted/governed/` (§22) | `CERT_PATH_NOT_GOVERNED` |
-| Rechazo de un paquete desconocido (sin fallback) | `CERT_UNKNOWN_PACKAGE` |
-| Atomicidad de paquete, puntos alcanzables (F9, F10) | PASS — rollback total |
-| Contrato forward-only sobre estado atestiguado | ENFORCED |
-| Contenedores / imágenes / redes al terminar | 0 / 0 / 0 |
-
-### Inyecciones de fallo
-
-Ocho de los diez puntos son **posteriores** al primer bloqueante, así que en la
-corrida de certificación no se alcanzan. Se reportan `NOT_REACHED` en lugar de
-contarse como aprobados: un paquete que falla por otra razón no es evidencia
-sobre el punto que se quería probar.
-
-| | Certificación | Diagnóstico (E-01 + E-02 parcheados) |
-|---|---|---|
-| F1 tras abrir la pertenencia temporal | NOT_REACHED | **alcanzado**, rollback total |
-| F2 tras `SET ROLE uellix_owner` | NOT_REACHED | **alcanzado**, rollback total |
-| F3 tras el `GRANT CREATE ON SCHEMA` temporal | NOT_REACHED | **alcanzado**, rollback total |
-| F4 tras el primer `ALTER FUNCTION ... OWNER TO` | NOT_REACHED | **alcanzado**, rollback total |
-| F5 a mitad de segmento de capacidad | NOT_REACHED | **alcanzado**, rollback total |
-| F6 tras `RESET ROLE`, **antes** de revocar la pertenencia | NOT_REACHED | **alcanzado**, rollback total |
-| F7 dentro de la alternancia W47 | SKIPPED (la cadena nunca llegó a T7) | SKIPPED |
-| F8 dentro de W46.S1 antes del segundo traspaso | SKIPPED | SKIPPED |
-| F9 tras la reescritura gestionada `ALTER ROLE` | **alcanzado**, rollback total | **alcanzado**, rollback total |
-| F10 tras DDL canónico ordinario | **alcanzado**, rollback total | **alcanzado**, rollback total |
-
-«Rollback total» significa, medido en el catálogo después de cada fallo: 0
-pertenencias temporales sobrevivientes, 0 `CREATE` de esquema residual,
-propiedad de funciones idéntica al estado previo, filas de pertenencia del
-proveedor intactas, y el paquete de vuelta al estado que tenía antes.
-
-F6 es el punto estrecho que un aplicado **no** transaccional filtraría: la
-pertenencia sigue abierta y los traspasos ya están hechos.
-
-## 5. Lo que no se pudo medir
-
-- Los 27 `ALTER FUNCTION ... OWNER TO` en el motor: la cadena nunca los ejecutó
-  hasta commit.
-- Limpieza de las 11 pertenencias de traspaso al cierre de paquete.
-- Residual de `CREATE` temporal tras `T9`.
-- Topología de roles persistente tras `T9`.
-- Los tres propietarios canónicos de F-01.
-- SD Gate v2 y el inventario RLS/políticas tras la cadena.
-- Recuperación de salida ambigua contra un paquete realmente instalado.
-
-Todo ello queda pendiente de una corrida posterior a la remediación.
-
-## 6. Backlog de endurecimiento diferido
-
-De la revisión independiente del Commit 4, clasificados HARDENING y **no**
-implementados aquí por instrucción explícita. La certificación no reveló que
-ninguno sea funcionalmente necesario:
-
-- **F-C4-03**, **F-C4-04**, **F-C4-05**, **F-C4-06**, **F-C4-07**.
-
-Cerrados en código en este commit: **F-C4-01** y **F-C4-02**
-(`db/hosted/authority/generated-output-validator.ts`), con mutaciones que fallan
-sin el arreglo en `tests/hosted/authority/generated-output-binding.test.ts`.
-
-Nuevo, hallado por el motor y **no** cerrado aquí: **E-03**.
-
-## 7. Estado
+## 3. E-02 — el contrato de instalador
 
 ```
-PG176_ENGINE                  = FAIL
-GOVERNED_T1_T9_ENGINE         = INCOMPLETE (0/9)
-GOVERNED_ARTIFACT_RUNNER      = ENFORCED
-UNGOVERNED_ARTIFACT_EXECUTION = REFUSED
-PINNED_GOVERNED_INPUT         = ENFORCED
-PACKAGE_FAILURE_ATOMICITY     = PASS (en los puntos alcanzables)
-FORWARD_ONLY_ENGINE_CONTRACT  = ENFORCED
-SAFE_TO_WRITE_STAGING         = false
-T1_RETRY_AUTHORIZED           = false
+E02_HOSTED_INSTALLER = uellix_migrator
+E02_LOCAL_EMULATION  = el mismo rol, LOGIN por 127.0.0.1 dentro de --network none
 ```
 
-El siguiente commit es de **remediación**, no de certificación. E-01, E-02 y
-E-04 son decisiones de autoridad; hasta que se tomen, volver a certificar
-medirá lo mismo.
+| principal | LOGIN | CREATEROLE | SET→owner | identidad de sesión | miembro temporal | lo nombra el SQL generado |
+|---|---|---|---|---|---|---|
+| `postgres` | sí | sí | sí | ya no | **prohibido** (rol de proveedor) | no |
+| `uellix_migrator` | sí | **sí** (nuevo) | sí (SET=t, INHERIT=f) | **sí** | sí | **sí** |
+| `uellix_owner` | no | no | — | no | sólo destino de traspaso | sí |
+
+El registro de roles siempre dijo que el instalador «Holds CREATEROLE»; el
+bootstrap lo creaba `NOCREATEROLE`. **El bootstrap era la deriva.** `postgres` no
+puede ocupar su lugar: nombrar un rol de proveedor en una sentencia de pertenencia
+es `AUTHORITY_UNKNOWN_ROLE` por diseño.
+
+**Medido y probado en cada corrida**: `postgres` es **RECHAZADO**,
+`uellix_migrator` **aplica**. Un contrato con una identidad permitida sólo es un
+contrato si la otra sigue fallando.
+
+Cinco prerequisitos más del instalador, cada uno hallado por el motor:
+
+| # | qué faltaba | dónde falló | remediación |
+|---|---|---|---|
+| 1 | `CREATEROLE` | T1, primera sentencia | §2 crea el rol con él |
+| 2 | `CREATE ON DATABASE` | T1[268] `CREATE SCHEMA` | §5d, literal |
+| 3 | `USAGE` en los esquemas de la cadena | T3, precondición | generador, fuera de toda ventana |
+| 4 | `SELECT` para que `information_schema` **le muestre** columnas | T4/T8, precondición | §5d |
+| 5 | `EXECUTE ... WITH GRANT OPTION` sobre el shim | T4[237] | §5c |
+
+El nº 4 es el más traicionero: `information_schema.columns` **filtra por
+privilegio**, así que a un instalador sin ninguno la columna le consta *ausente* —
+un falso negativo idéntico a una migración faltante.
+
+### La ventana de propietario ya no concede pertenencia
+
+Evidencia de motor que contradice directamente a Commit 4, y por tanto autorizada:
+
+```
+ERROR: permission denied to grant role "uellix_owner"
+DETAIL: Only roles with the ADMIN option on role "uellix_owner" may grant this role.
+```
+
+Hacerla ejecutable exigiría dar al instalador **ADMIN sobre `uellix_owner` de
+forma permanente** —poder entregar el propietario a cualquiera, entre paquetes y
+después del último— para abrir una ventana que §2b ya abre de forma persistente.
+Ahora `ownerWindowPrimitive` emite `SET ROLE` / `RESET ROLE` y nada más. Lo que
+garantiza que sea seguro se comprueba donde hay base de datos: el gate refusa
+antes de `T1` si `pg_has_role(installer, uellix_owner, 'SET')` es falso.
+
+## 4. E-04 — topología, no conteo
+
+```
+E04_MEMBERSHIP_PRECONDITION = TOPOLOGY_BASED
+```
+
+Medido en 17.6 con `createrole_self_grant` vacío: crear un rol deja
+`cap ← instalador`, **grantor = superusuario de bootstrap**, `admin=t inherit=f
+set=f`, y `pg_has_role(installer, cap, 'SET') = FALSE`. La propiedad protegida se
+cumple; el conteo que la probaba no puede.
+
+`uellix_bootstrap.assert_capability_membership_topology()` (§5e), invocada por la
+regla de reescritura `capability-member-count` en los cinco paquetes que lo
+afirmaban, comprueba: **exactamente** la fila automática y ninguna otra, opciones
+exactas, y —vía `pg_has_role`, que es transitivo (lab M4)— que **ningún** principal
+no-superusuario alcanza la capacidad por `SET` ni por `INHERIT`. `count <= 1` fue
+rechazado explícitamente: admitiría una segunda fila con `SET TRUE`.
+
+## 5. E-03 — cerrado
+
+`v_missing || 'literal'` resolvía `anyarray || anyarray` y enmascaraba **todo**
+rechazo de capacidades como `malformed array literal`. Siete sitios ahora usan
+`array_append`. Verificado en el motor: el rechazo por centinela ausente ahora
+imprime su mensaje real.
+
+## 6. Resultados de motor
+
+```
+PRECHAIN_AUTHORITY_GATE       PASS — 8 contratos de objeto, 0 rechazos, antes de T1
+PRECHAIN                      CLEAN — 9/9 ABSENT
+GOVERNED_T1_T9_ENGINE         9_OF_9_PASS
+OWNER_TRANSFERS_ENGINE        27_OF_27_CORRECT
+CANONICAL_OWNER_CONTEXT_ENGINE 3_OF_3_CORRECT
+TRANSFER_MEMBERSHIP_CLEANUP   11_OF_11 (0 residuo tras cada paquete)
+TEMP_SCHEMA_CREATE_RESIDUAL   ZERO
+PERSISTENT_ROLE_TOPOLOGY      EXPECTED
+SD_GATE_ENGINE_V2             PASS — 27 SECURITY DEFINER, 0 sin search_path vacío, 0 con EXECUTE a PUBLIC
+RLS_POLICY_ENGINE             PASS — 164 políticas, 11 triggers, sin duplicados
+PACKAGE_FAILURE_ATOMICITY     PASS_10_OF_10 — las diez ALCANZADAS
+FORWARD_ONLY_ENGINE_CONTRACT  ENFORCED
+PINNED_GOVERNED_INPUT         ENFORCED
+UNGOVERNED_ARTIFACT_EXECUTION REFUSED
+```
+
+Los tres propietarios F-01 —`public.evidence_document_versions`,
+`public.evidence_chunks`, `uellix_stella_ops.operation_tickets`— son
+`uellix_owner`.
+
+Topología persistente tras T9, exacta: las tres filas de capacidad
+`cap ← uellix_migrator` (grantor `supabase_admin`, `admin=t inherit=f set=f`),
+`uellix_owner ← uellix_migrator` (`set=t inherit=f`, §2b) y
+`uellix_writer ← uellix_app` (`inherit=t set=f`). Ningún camino runtime→capacidad.
+
+Las cuatro protecciones del runner gobernado siguen firmes: digest movido,
+bytes no gobernados, ruta fuera de `/governed/`, paquete desconocido — todas
+`REFUSED` **antes** de ejecutar SQL.
+
+## 7. Bytes y plan
+
+```
+HOSTED_GOVERNED_BYTES = CHANGED (deliberado)
+GOVERNED_PLAN_DIGEST  = 19a0ff5a962806f72a3285ea0542653ae9451fa1cd7a05ed7cc74470514634bf  (SIN CAMBIO)
+51 ventanas / 59 segmentos / 11 traspasos / 27 funciones / 3 contextos de propietario  (SIN CAMBIO)
+```
+
+Los bytes se mueven por cuatro razones, todas registradas: dos reglas de
+reescritura nuevas (`capability-member-count`, `auth-users-privilege-probe`), una
+corregida (`auth-uid-precondition`, que en hosted era *inpreguntable*), y la
+ventana de propietario que dejó de conceder pertenencia. **El plan de autoridad
+no se movió** — ninguna ventana recuperada cambió de anclas, tamaño ni secuencia
+de digests.
+
+Por eso la reachability del instalador se emite en el **generador** y no como
+regla de reescritura: junto al `GRANT USAGE ... TO uellix_app` habría caído
+*dentro* de una ventana recuperada, alterando su conteo estructural — evidencia
+que cuatro casos documentan uno a uno.
+
+## 8. Pendiente
+
+- Sonda de propiedad real de staging (§2), antes de autorizar `T1`.
+- La derivación cubre las sentencias con ejecutor **no-instalador**; los cinco
+  prerequisitos del instalador (§3) están en el bootstrap y en el gate, pero no
+  se derivan aún. Extenderla es el siguiente endurecimiento natural.
+- `F-C4-03..07`, endurecimiento diferido de Commit 4. La certificación no reveló
+  que ninguno sea funcionalmente necesario.
+
+```
+SAFE_TO_WRITE_STAGING = false
+T1_RETRY_AUTHORIZED   = false
+```

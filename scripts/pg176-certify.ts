@@ -46,10 +46,9 @@ import {
   EXPECTED_SERVER_VERSION_NUM,
   CANDIDATE_INSTALLERS,
   CHAIN_INSTALLER_PASSWORD,
+  CHAIN_INSTALLER_ROLE,
   LAB_FAITHFUL_SURFACE,
   MIGRATOR_LOGIN_SQL,
-  E01_DIAGNOSTIC_PATCH_SQL,
-  E01_OBJECTS,
   LAB_SHIMS,
   STAGING_SENTINEL_SQL,
   STORAGE_SHIM_SQL,
@@ -73,8 +72,17 @@ import {
   SESSION_STATE_PROBE_SQL,
   TABLE_GRANT_PROBE_SQL,
   TRIGGER_PROBE_SQL,
+  prechainObservationSql,
   witnessProbeSql,
 } from '../db/hosted/authority/certification/engine-probes'
+import {
+  validateHostedPrechainAuthorityContract,
+  type PrechainObservation,
+} from '../db/hosted/authority/certification/prechain-authority-gate'
+import {
+  collapseByObject,
+  derivePrechainRequirements,
+} from '../db/hosted/authority/certification/prechain-requirements'
 import {
   FAILURE_INJECTIONS,
   injectFailure,
@@ -112,17 +120,34 @@ const ONLY = argv.find((a) => a.startsWith('--only='))?.slice('--only='.length) 
  * verdict. It exists to answer one question a failed certification cannot:
  * whether E-01 is the first blocker or the only one.
  */
-const DIAGNOSTIC = argv.includes('--diagnostic')
+/**
+ * RETIRED in Commit 5.1, kept as a flag that refuses.
+ *
+ * The E-01/E-02 patch existed to answer "is E-01 the first blocker or the only
+ * one" while the bootstrap could not establish the contract itself. It now can
+ * (§5d/§5e), so a run that patched the environment would be measuring a
+ * database nobody will provision — which is the one thing this harness must
+ * never quietly do.
+ */
+const DIAGNOSTIC = false
+if (argv.includes('--diagnostic')) {
+  throw new Error(
+    '--diagnostic was retired in Commit 5.1: E-01 and E-02 are established by ' +
+      'stella_hosted_0001 §5d/§5e and are gated before T1. There is nothing left for it to patch.',
+  )
+}
 /**
  * Which identity applies the chain packages.
  *
- * There is no defensible default — see CANDIDATE_INSTALLERS — so the
- * certification MEASURES both and the flag exists only to drive one of them at
- * a time. `postgres` is the one that gets furthest, which is why it is what an
- * unflagged run uses.
+ * COMMIT 5.1 resolved this: HOSTED_INSTALLER is `uellix_migrator`, the principal
+ * every generated elevation names and the one the role registry always
+ * specified. `postgres` remains a candidate only so the probe can keep
+ * measuring that it is REFUSED — a contract with one permitted identity is only
+ * a contract if the other one still fails.
  */
 const INSTALLER =
-  argv.find((a) => a.startsWith('--installer='))?.slice('--installer='.length) ?? 'postgres'
+  argv.find((a) => a.startsWith('--installer='))?.slice('--installer='.length) ??
+  CHAIN_INSTALLER_ROLE
 
 /* -------------------------------------------------------------------------- */
 /* Docker                                                                      */
@@ -419,13 +444,63 @@ function stateOf(state: CatalogState, packageId: string): string {
  */
 function membershipDelta(state: CatalogState, baseline: readonly string[]): string[] {
   const before = new Set(baseline)
-  return state.memberships.filter((row) => !before.has(row))
+  return state.memberships.filter((row) => !before.has(row) && !isExpectedAutomaticRow(row))
 }
 
-/** Schema CREATE grants that were not held before the chain ran. */
-function schemaCreateDelta(state: CatalogState, baseline: readonly string[]): string[] {
+/**
+ * The row PostgreSQL creates by itself, which is not a leak and must not be
+ * counted as one.
+ *
+ * MEASURED (17.6, createrole_self_grant empty): when the installer creates a
+ * capability role, the server grants it membership WITH ADMIN OPTION and
+ * nothing else, and records the BOOTSTRAP SUPERUSER as the grantor rather than
+ * the creating role. `pg_has_role(installer, capability, 'SET')` stays FALSE.
+ * That is RR-02, it is unavoidable, and it is exactly the topology E-04 pins —
+ * so the residual probe recognises it instead of reporting three leaks per
+ * chain and training a reviewer to ignore the number.
+ *
+ * The recognition is EXACT. admin=t, inherit=f, set=f, member = the installer.
+ * The same row with set=t is a different fact and is still a leak.
+ */
+function isExpectedAutomaticRow(row: string): boolean {
+  const [role, member, , admin, inherit, set] = row.split('|')
+  return (
+    role.startsWith('uellix_cap_') &&
+    member === CHAIN_INSTALLER_ROLE &&
+    admin === 't' &&
+    inherit === 'f' &&
+    set === 'f'
+  )
+}
+
+/**
+ * Schema CREATE grants that were not held before the chain ran, EXCLUDING the
+ * schema's own owner.
+ *
+ * A schema's owner holds CREATE on it inherently — `acldefault('n', owner)`
+ * contains it, and no statement granted it. Counting that would report every
+ * schema the chain creates as a residual temporary grant, which is the opposite
+ * of what section 13 asks.
+ */
+function schemaCreateDelta(
+  state: CatalogState,
+  baseline: readonly string[],
+  ownerOf: ReadonlyMap<string, string>,
+): string[] {
   const before = new Set(baseline)
-  return state.schemaCreateResidual.filter((row) => !before.has(row))
+  return state.schemaCreateResidual.filter((row) => {
+    if (before.has(row)) return false
+    const [schema, grantee] = row.split('|')
+    return ownerOf.get(schema) !== grantee
+  })
+}
+
+/** `schema -> owner`, from the ACL probe. */
+function schemaOwners(state: CatalogState): Map<string, string> {
+  return new Map(state.schemaAcls.map((row) => {
+    const [schema, owner] = row.split('|')
+    return [schema, owner] as const
+  }))
 }
 
 /* -------------------------------------------------------------------------- */
@@ -515,14 +590,6 @@ function provision(container: string): ProvisionOutcome {
     sentinelWritten = sentinel.status === 0
     if (!sentinelWritten) bootstrapError = `sentinel: ${sentinel.stderr.trim()}`
 
-    if (DIAGNOSTIC) {
-      const patch = applySql(container, E01_DIAGNOSTIC_PATCH_SQL)
-      if (patch.status !== 0) throw new Error(`E-01 diagnostic patch failed: ${patch.stderr.trim()}`)
-      console.log(
-        `[cert] DIAGNOSTIC: E-01 patch applied to ${E01_OBJECTS.length} objects — this run is NOT ` +
-          `certification evidence`,
-      )
-    }
   }
 
   return {
@@ -555,10 +622,17 @@ interface PackageResult {
   readonly sessionStateAfter: readonly string[]
 }
 
+/**
+ * The provider's own membership rows.
+ *
+ * Told apart by GRANTOR (lab M2), and with the RR-02 automatic rows excluded:
+ * those carry the bootstrap superuser as grantor and would otherwise read as
+ * the provider's topology drifting every time the chain creates a role.
+ */
 const providerRows = (state: CatalogState): string[] =>
   state.memberships.filter((row) => {
     const [, , grantor] = row.split('|')
-    return grantor !== 'postgres'
+    return grantor !== 'postgres' && grantor !== CHAIN_INSTALLER_ROLE && !isExpectedAutomaticRow(row)
   })
 
 function applyChain(
@@ -592,7 +666,7 @@ function applyChain(
       error: result.status === 0 ? null : diagnosticLines(result.stderr),
       stateAfter: after,
       temporaryMembershipsAfter: membershipDelta(state, membershipBaseline),
-      schemaCreateResidualAfter: schemaCreateDelta(state, schemaCreateBaseline),
+      schemaCreateResidualAfter: schemaCreateDelta(state, schemaCreateBaseline, schemaOwners(state)),
       providerMembershipsUnchanged:
         JSON.stringify(providerRows(state)) === JSON.stringify(providerBaseline),
       sessionStateAfter: state.sessionState,
@@ -685,7 +759,7 @@ function runInjection(
       // Against the state the container was in BEFORE the doomed apply, which
       // is the only baseline that answers "did this apply leave anything".
       temporaryMembershipsAfter: membershipDelta(after, before.memberships),
-      schemaCreateResidualAfter: schemaCreateDelta(after, before.schemaCreateResidual),
+      schemaCreateResidualAfter: schemaCreateDelta(after, before.schemaCreateResidual, schemaOwners(after)),
       ownershipRestored: ownersBefore === ownersAfter,
       providerMembershipsUnchanged:
         JSON.stringify(providerRows(after)) === JSON.stringify(providerRows(before)),
@@ -776,8 +850,7 @@ function refusalExercises(): RefusalExercise[] {
 
 function main(): number {
   const report: Record<string, unknown> = {
-    mode: DIAGNOSTIC ? 'DIAGNOSTIC (E-01 patched — NOT certification evidence)' : 'CERTIFICATION',
-    e01Objects: E01_OBJECTS,
+    mode: 'CERTIFICATION',
     image: CERTIFICATION_IMAGE,
     shims: LAB_SHIMS,
     faithfulSurface: LAB_FAITHFUL_SURFACE,
@@ -822,10 +895,15 @@ function main(): number {
   )
   for (const f of provisioned.baselineFailures) console.log(`[cert]   FAILED ${f.unit}: ${f.error}`)
   if (provisioned.bootstrapError) console.log(`[cert]   bootstrap: ${provisioned.bootstrapError}`)
-  console.log(
-    `[cert]   sentinel written=${provisioned.sentinelWritten}; T1 without it: ` +
-      `${provisioned.sentinelRefusalBeforeWrite === null ? 'APPLIED (the sentinel gates nothing!)' : 'REFUSED'}`,
-  )
+  // Only meaningful when the bootstrap committed: with no bootstrap there is no
+  // sentinel table to be absent from, and reporting "APPLIED" for a probe that
+  // never ran would be the harness inventing a result.
+  if (provisioned.bootstrapApplied) {
+    console.log(
+      `[cert]   sentinel written=${provisioned.sentinelWritten}; T1 without it: ` +
+        `${provisioned.sentinelRefusalBeforeWrite === null ? 'APPLIED (the sentinel gates nothing!)' : 'REFUSED'}`,
+    )
+  }
   if (provisioned.sentinelRefusalBeforeWrite !== null) {
     console.log(`[cert]     ${provisioned.sentinelRefusalBeforeWrite}`)
   }
@@ -857,20 +935,57 @@ function main(): number {
     return 1
   }
 
-  /* E-02. Which identity can apply a governed package at all? Both are tried,
-   * on the SAME state, and the first refusal of each is recorded verbatim. The
-   * probe runs before the snapshot is taken, so a failed attempt leaves nothing
-   * behind — every one of them rolls back under the apply contract, which the
-   * observation after the loop confirms. */
+  /* THE PRECHAIN AUTHORITY GATE (Commit 5.1).
+   *
+   * Before a single governed statement runs. E-01, E-02 and E-04 were each
+   * found from inside T1, one statement at a time, after everything before them
+   * had already executed in the transaction. This asks the whole question up
+   * front, from the catalog, against a contract DERIVED from the same plan the
+   * generator uses — so a package that starts depending on a new baseline object
+   * is gated without anybody editing a list. */
+  const contracts = collapseByObject(derivePrechainRequirements(ROOT))
+  const prechainObservation = JSON.parse(
+    query(primary, prechainObservationSql(
+      contracts.map((c) => ({ object: c.object, objectType: c.objectType, privileges: c.privilegeNames })),
+    ))[0][0],
+  ) as PrechainObservation
+  const gateRefusals = validateHostedPrechainAuthorityContract(prechainObservation, contracts)
+  report.prechainAuthorityGate = {
+    contracts,
+    observation: prechainObservation,
+    refusals: gateRefusals,
+    verdict: gateRefusals.length === 0 ? 'PASS' : 'FAIL',
+  }
+  console.log(
+    `[cert] PRECHAIN_AUTHORITY_GATE ${gateRefusals.length === 0 ? 'PASS' : 'FAIL'} — ` +
+      `${contracts.length} object contract(s), ${gateRefusals.length} refusal(s)`,
+  )
+  for (const refusal of gateRefusals) console.log(`[cert]   ${refusal.code}: ${refusal.detail}`)
+  if (gateRefusals.length > 0) {
+    report.verdict = 'PRECHAIN_AUTHORITY_GATE_FAILED'
+    writeReport(report)
+    return 1
+  }
+
+  const bootstrapSnapshot = snapshotContainer(primary, 'bootstrap')
+
+  /* E-02, measured on a DISPOSABLE copy so the primary stays PRECHAIN-clean.
+   * A contract naming one permitted identity is only a contract if the other
+   * one still fails, so both are tried and both results are recorded. */
   const installerProbe = CANDIDATE_INSTALLERS.map((installer) => {
-    const t1 = resolveGovernedInput('T1', ROOT)
-    const attempt = applyPackageSql(primary, t1.sql, installer)
-    const after = observe(primary)
-    return {
-      installer,
-      applied: attempt.status === 0,
-      firstRefusal: attempt.status === 0 ? null : diagnosticLines(attempt.stderr, 3),
-      leftT1: stateOf(after, 'T1'),
+    const probeContainer = startContainer(`installer-${installer.replace(/_/g, '-')}`, bootstrapSnapshot)
+    try {
+      const t1 = resolveGovernedInput('T1', ROOT)
+      const attempt = applyPackageSql(probeContainer, t1.sql, installer)
+      const after = observe(probeContainer)
+      return {
+        installer,
+        applied: attempt.status === 0,
+        firstRefusal: attempt.status === 0 ? null : diagnosticLines(attempt.stderr, 3),
+        leftT1: stateOf(after, 'T1'),
+      }
+    } finally {
+      if (!KEEP) destroyContainer(`installer-${installer.replace(/_/g, '-')}`)
     }
   })
   report.installerProbe = installerProbe
@@ -878,8 +993,6 @@ function main(): number {
     console.log(`[cert] installer ${probe.installer}: applied=${probe.applied} T1=${probe.leftT1}`)
     if (probe.firstRefusal) console.log(`[cert]     ${probe.firstRefusal}`)
   }
-
-  const bootstrapSnapshot = snapshotContainer(primary, 'bootstrap')
 
   if (ONLY === 'provision') {
     writeReport(report)

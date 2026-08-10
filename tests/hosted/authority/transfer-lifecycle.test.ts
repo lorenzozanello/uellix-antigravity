@@ -264,9 +264,17 @@ describe('a segment gets the topology its own class implies', () => {
   })
 
   it('keeps an owner segment on the persistent membership alone', () => {
+    // COMMIT 5.1 made this literal. The owner window used to emit its own
+    // temporary grant and this test asserted the resulting graph matched the
+    // expectation anyway; the window now emits NO membership at all, so the
+    // graph it contributes is empty and the persistent row is the whole of it.
     const phases = topology('OWNER', 'uellix_owner', null)
-    const edges = membershipEdges([...ownerWindowPrimitive(INSTALLER).open])
+    const edges = membershipEdges([
+      ...ownerWindowPrimitive(INSTALLER).open,
+      'GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;',
+    ])
 
+    expect(membershipEdges([...ownerWindowPrimitive(INSTALLER).open])).toEqual([])
     expect(() => assertReachabilityMatchesExpectation(edges, phases[1])).not.toThrow()
   })
 })

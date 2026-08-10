@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 1
 --   capability-role-attributes: 0
+--   capability-member-count: 0
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no

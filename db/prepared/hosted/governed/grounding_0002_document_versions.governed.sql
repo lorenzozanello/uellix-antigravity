@@ -5,7 +5,7 @@
 --
 -- Package: T1
 -- Derived from: db/prepared/hosted/grounding_0002_document_versions.hosted.sql
--- Source SHA-256 (LF-normalized): 2a099839b6749916f9054d3ca336ee4f5042bc0ec2d1b7db97f6f9bc7b6acfe0
+-- Source SHA-256 (LF-normalized): 4e3f9abeef08b64cf9cf5c54b5d5c71dfc9c99f939fe660e89b64e12d41e820e
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
 --   capability-role-attributes: 1
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -265,8 +267,11 @@ ALTER ROLE uellix_cap_grounding NOLOGIN NOCREATEROLE NOINHERIT;
 -- sharing it would couple this package's rollback order to a campaign it has no
 -- dependency on.
 CREATE SCHEMA IF NOT EXISTS uellix_grounding AUTHORIZATION uellix_owner;
+-- authority: installer reachability — uellix_migrator must resolve names in uellix_grounding
+SET ROLE uellix_owner;
+GRANT USAGE ON SCHEMA uellix_grounding TO uellix_migrator;
+RESET ROLE;
 -- authority: open W01.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 REVOKE ALL ON SCHEMA uellix_grounding FROM PUBLIC;
 GRANT USAGE ON SCHEMA uellix_grounding TO uellix_app;
@@ -290,10 +295,8 @@ GRANT EXECUTE ON FUNCTION public.current_user_is_super_admin() TO uellix_cap_gro
 -- an evidence item, only read the two columns that place it.
 GRANT SELECT ON public.evidence_items TO uellix_cap_grounding;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W01.S1
 -- authority: canonical role context — this statement must be created by uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- char(64), not varchar/text: every hash here is a lowercase-hex SHA-256 of
 -- fixed width (lib/grounding/contracts/core.ts, CONTENT_HASH_HEX_LENGTH). A
@@ -397,9 +400,7 @@ CREATE TABLE IF NOT EXISTS public.evidence_document_versions (
             raw_content_hash, normalized_content_hash, normalization_version, chunker_version)
 );
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: open W02.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 3. Constraint reconciliation — convergent, by DEFINITION
@@ -741,10 +742,8 @@ ALTER TABLE public.evidence_document_versions ENABLE ALWAYS TRIGGER trg_evidence
 COMMENT ON TABLE public.evidence_document_versions IS
   'Append-only chain of custody for evidence document versions (GR-002, prepared grounding_0002). Not a derived index: a row is never modified or deleted. Managed outside the drizzle chain — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W02.S1
 -- authority: open W03.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 8. Governed write path (superuser window)
@@ -978,7 +977,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W03.S1
 -- authority: open W04.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_grounding TO uellix_owner WITH INHERIT FALSE, SET TRUE;
@@ -1148,12 +1146,13 @@ BEGIN
 
   -- (8) The capability role has ZERO members. A member would make the ingestion
   --     write path reachable by SET ROLE from a real connection string.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_grounding';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'grounding_0002 FAILED verification: uellix_cap_grounding has % member(s). It must have none, or SET ROLE reaches the write path', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   grounding_0002 FAILED verification: uellix_cap_grounding has % member(s). It must have none, or SET ROLE reaches the write path
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('grounding_0002_document_versions', 'uellix_cap_grounding');
 
   -- (9) Both functions are SECURITY DEFINER with an EMPTY search_path, and
   --     EXECUTE is not held by PUBLIC.

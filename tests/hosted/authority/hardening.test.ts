@@ -20,7 +20,11 @@ import {
 } from '@/db/hosted/authority/execution-disposition'
 import { assertNoSessionRoleGrantee } from '@/db/hosted/authority/membership-tripwire'
 import { parseMembershipStatement } from '@/db/hosted/authority/membership'
-import { assertCleanupComplete, ownerWindowPrimitive } from '@/db/hosted/authority/primitives'
+import {
+  assertCleanupComplete,
+  capabilityWindowPrimitive,
+  ownerWindowPrimitive,
+} from '@/db/hosted/authority/primitives'
 import {
   formatObjectIdentity,
   parseStatementIdentity,
@@ -352,28 +356,41 @@ describe('F-04: a session principal supplied as an EXECUTE expression', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('F-05: temporary elevation is granted only to the installer', () => {
+  // COMMIT 5.1 re-points these at the CAPABILITY window. The owner window no
+  // longer grants a membership at all — PG 17.6 refuses the grant unless the
+  // installer holds ADMIN on uellix_owner, and the persistent membership from
+  // stella_hosted_0001 §2b makes it unnecessary — so it no longer reaches the
+  // guard. The guard itself is unchanged and still governs every primitive that
+  // DOES grant: the capability window and the transfer.
+  const capabilityWindowFor = (member: string) =>
+    capabilityWindowPrimitive({
+      installer: member as never,
+      capabilityRole: 'uellix_cap_grounding',
+      schema: 'uellix_grounding',
+      needsTemporarySchemaCreate: false,
+    })
+
   it.each(['uellix_app', 'uellix_writer', 'uellix_auditor'])(
     'refuses %s as the member, at run time and not only in the type',
     (role) => {
-      expect(() => ownerWindowPrimitive(role as never)).toThrow(
-        /AUTHORITY_TEMP_MEMBER_NOT_INSTALLER/,
-      )
+      expect(() => capabilityWindowFor(role)).toThrow(/AUTHORITY_TEMP_MEMBER_NOT_INSTALLER/)
     },
   )
 
   it('refuses a capability role as the member', () => {
-    expect(() => ownerWindowPrimitive('uellix_cap_grounding' as never)).toThrow(
+    expect(() => capabilityWindowFor('uellix_cap_stella_quota')).toThrow(
       /AUTHORITY_TEMP_MEMBER_NOT_INSTALLER/,
     )
   })
 
   it('refuses the owner as its own member', () => {
-    expect(() => ownerWindowPrimitive('uellix_owner' as never)).toThrow(
+    expect(() => capabilityWindowFor('uellix_owner')).toThrow(
       /AUTHORITY_TEMP_MEMBER_NOT_INSTALLER/,
     )
   })
 
   it('accepts the installer', () => {
+    expect(() => capabilityWindowFor('uellix_migrator')).not.toThrow()
     expect(() => ownerWindowPrimitive('uellix_migrator')).not.toThrow()
   })
 })

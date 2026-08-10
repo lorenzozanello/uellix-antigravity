@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 2
 --   capability-role-attributes: 0
+--   capability-member-count: 0
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -286,7 +288,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0017 aborted: uellix_stella.stella_capacity is absent — apply db/prepared/stella_0016_reserved_quota_semantics.sql first. Every capacity decision in this campaign is that function''s; this package adds none of its own.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0017 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument.';
   END IF;
 

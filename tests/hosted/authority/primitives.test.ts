@@ -203,15 +203,24 @@ describe('AuthorityStateMachine (M6: RESET ROLE is not a stack)', () => {
 describe('ownerWindowPrimitive', () => {
   const primitive = ownerWindowPrimitive('uellix_migrator')
 
-  it('grants membership scoped to a named grantor, so cleanup can be scoped too (M3a)', () => {
-    expect(primitive.open.join('\n')).toContain(
-      'GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;',
-    )
+  it('grants NO membership: it uses the persistent one the bootstrap establishes', () => {
+    // COMMIT 5.1, measured on PG 17.6. This used to emit
+    // `GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE`, and
+    // the engine refuses it: "Only roles with the ADMIN option on role
+    // uellix_owner may grant this role." Making it executable would mean giving
+    // the installer ADMIN on uellix_owner permanently — the power to hand the
+    // owner to anybody, held between packages and after the last one — in order
+    // to open a window stella_hosted_0001 §2b has already opened persistently.
+    expect(primitive.open).toEqual(['SET ROLE uellix_owner;'])
+    expect(primitive.open.join('\n')).not.toContain('GRANT')
   })
 
-  it('closes with RESET ROLE and a revoke, in that order', () => {
-    expect(primitive.close[0]).toBe('RESET ROLE;')
-    expect(primitive.close.join('\n')).toContain('REVOKE uellix_owner FROM uellix_migrator')
+  it('closes with RESET ROLE and nothing else', () => {
+    // Nothing was borrowed, so there is nothing to give back. What makes that
+    // safe is checked where a database exists:
+    // `validateHostedPrechainAuthorityContract` refuses before T1 unless
+    // pg_has_role(installer, uellix_owner, 'SET') is true.
+    expect(primitive.close).toEqual(['RESET ROLE;'])
   })
 
   it('emits nothing a membership tripwire would refuse', () => {
@@ -455,8 +464,12 @@ describe('assertNoTransitiveElevation (M4: SET reachability is transitive)', () 
     // length of one segment. The blanket invariant refuses that, which is
     // exactly why transfers are checked against an EXPECTED graph instead. This
     // assertion keeps the two models from quietly merging back together.
+    // COMMIT 5.1: the owner window contributes no edge any more, so the
+    // transitive path is now the PERSISTENT membership stella_hosted_0001 §2b
+    // establishes, plus the transfer's own temporary one. Written out rather
+    // than composed from the primitive, because that primitive stopped granting.
     const edges = membershipEdges([
-      ...ownerWindowPrimitive('uellix_migrator').open,
+      'GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;',
       ...ownerTransferPrimitive({
         installer: 'uellix_migrator',
         fromOwner: 'uellix_owner',

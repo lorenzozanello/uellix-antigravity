@@ -83,6 +83,8 @@ const NO_REWRITES = {
   'auth-uid-precondition': 0,
   'auth-uid-call': 0,
   'capability-role-attributes': 0,
+  'capability-member-count': 0,
+  'auth-users-privilege-probe': 0,
 } as const
 
 export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
@@ -97,7 +99,20 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     // Re-pinned again for S1-DEFECT-002: the three REVOKEs now name anon,
     // authenticated and service_role, and §6 check (5) reads the ACL instead of
     // asking about four hardcoded principals.
-    sourceSha256: '2b2df1abf1ba19411ba55b6a3a4a62653bfe784bc79977d3f24e6a6dc531d602',
+    // Re-pinned a third time for COMMIT 5.1, the three engine blockers:
+    //   E-01 §5d establishes the prechain authority contract the governed chain
+    //        needs before T1 — eight objects, derived rather than listed, and
+    //        measured before it grants so a third owner refuses instead of
+    //        failing halfway through T1.
+    //   E-02 uellix_migrator is created CREATEROLE. It is the principal every
+    //        generated elevation names, and six packages create a role.
+    //   E-03 array_append instead of `v_missing || 'literal'`, which resolved as
+    //        anyarray||anyarray and masked every capability refusal as
+    //        `malformed array literal`.
+    //   E-04 §5e installs assert_capability_membership_topology, which the new
+    //        `capability-member-count` rewrite rule calls in five packages.
+    // The rewrite counts stay NO_REWRITES: all of it is native-hosted SQL.
+    sourceSha256: '74b4a879de0e4d47d2263218c9ca257041fddbde53068731b4a4e1367e6e0aa6',
     expectedRewrites: NO_REWRITES,
     dependsOn: [],
     expectedObjects: [
@@ -146,7 +161,14 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     name: 'grounding_0002_document_versions',
     sourceFile: 'grounding_0002_document_versions.sql',
     sourceSha256: '92a2b3bca658b7a2a5fda925b099e74cec758d202edcb77f3d16438df2c05f09',
-    expectedRewrites: { ...NO_REWRITES, 'superuser-precondition': 1, 'capability-role-attributes': 1 },
+    expectedRewrites: {
+      ...NO_REWRITES,
+      'superuser-precondition': 1,
+      'capability-role-attributes': 1,
+      // E-04. grounding_0002 §7(8) is the first of the five zero-member
+      // postconditions the topology assertion replaces.
+      'capability-member-count': 1,
+    },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap'],
     expectedObjects: [
       'role uellix_cap_grounding',
@@ -174,7 +196,12 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     name: 'grounding_0003_evidence_chunks',
     sourceFile: 'grounding_0003_evidence_chunks.sql',
     sourceSha256: '99980b34b9d4560127085f1be5b67e7a49792e197fa654e9cefe825e89817bd8',
-    expectedRewrites: { ...NO_REWRITES, 'superuser-precondition': 1 },
+    expectedRewrites: {
+      ...NO_REWRITES,
+      'superuser-precondition': 1,
+      // E-04, the zero-member postcondition this package restates.
+      'capability-member-count': 1,
+    },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap', 'grounding_0002_document_versions'],
     expectedObjects: [
       'table public.evidence_chunks (23 columns)',
@@ -199,7 +226,12 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     name: 'grounding_0004_runtime_attestation',
     sourceFile: 'grounding_0004_runtime_attestation.sql',
     sourceSha256: 'e89828da67f142d40140b6a2c6328da013c69b54968168c0474c54db857de5c6',
-    expectedRewrites: { ...NO_REWRITES, 'superuser-precondition': 1 },
+    expectedRewrites: {
+      ...NO_REWRITES,
+      'superuser-precondition': 1,
+      // E-04, the zero-member postcondition this package restates.
+      'capability-member-count': 1,
+    },
     dependsOn: [
       'stella_hosted_0001_managed_role_bootstrap',
       'grounding_0002_document_versions',
@@ -229,6 +261,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'auth-uid-precondition': 1,
       'capability-role-attributes': 1,
       'auth-uid-call': 2,
+      // E-04. stella_0013 §8(?) restates it for uellix_cap_stella_quota.
+      'capability-member-count': 1,
+      // E-02. The negative auth.users assertion, re-resolved by OID.
+      'auth-users-privilege-probe': 1,
     },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap'],
     expectedObjects: [
@@ -262,6 +298,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'auth-uid-precondition': 1,
       'capability-role-attributes': 1,
       'auth-uid-call': 10,
+      // E-04. stella_0014 restates it for uellix_cap_stella_ticket.
+      'capability-member-count': 1,
+      // E-02. The negative auth.users assertion, re-resolved by OID.
+      'auth-users-privilege-probe': 1,
     },
     dependsOn: ['stella_hosted_0001_managed_role_bootstrap', 'stella_0013_grounded_query_quota'],
     expectedObjects: [
@@ -296,6 +336,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'auth-uid-precondition': 1,
       'capability-role-attributes': 0,
       'auth-uid-call': 4,
+      // E-04. This package states no zero-member postcondition of its own.
+      'capability-member-count': 0,
+      // E-02. The negative auth.users assertion, re-resolved by OID.
+      'auth-users-privilege-probe': 0,
     },
     dependsOn: [
       'stella_hosted_0001_managed_role_bootstrap',
@@ -328,6 +372,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'auth-uid-precondition': 1,
       'capability-role-attributes': 0,
       'auth-uid-call': 5,
+      // E-04. This package states no zero-member postcondition of its own.
+      'capability-member-count': 0,
+      // E-02. The negative auth.users assertion, re-resolved by OID.
+      'auth-users-privilege-probe': 0,
     },
     dependsOn: [
       'stella_hosted_0001_managed_role_bootstrap',
@@ -365,6 +413,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'auth-uid-precondition': 1,
       'capability-role-attributes': 0,
       'auth-uid-call': 2,
+      // E-04. This package states no zero-member postcondition of its own.
+      'capability-member-count': 0,
+      // E-02. The negative auth.users assertion, re-resolved by OID.
+      'auth-users-privilege-probe': 0,
     },
     dependsOn: [
       'stella_hosted_0001_managed_role_bootstrap',
@@ -400,6 +452,10 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'auth-uid-precondition': 0,
       'capability-role-attributes': 0,
       'auth-uid-call': 1,
+      // E-04. This package states no zero-member postcondition of its own.
+      'capability-member-count': 0,
+      // E-02. The negative auth.users assertion, re-resolved by OID.
+      'auth-users-privilege-probe': 0,
     },
     dependsOn: [
       'stella_hosted_0001_managed_role_bootstrap',

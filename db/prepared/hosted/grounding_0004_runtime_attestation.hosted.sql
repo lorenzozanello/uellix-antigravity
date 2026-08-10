@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
 --   capability-role-attributes: 0
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -608,12 +610,13 @@ BEGIN
   -- (6) The capability role still has zero members. Restated here because this
   --     package gives it a fourth function to own, and a membership granted
   --     between packages would pass every other assertion.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_grounding';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'grounding_0004 FAILED verification: uellix_cap_grounding has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   grounding_0004 FAILED verification: uellix_cap_grounding has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('grounding_0004_runtime_attestation', 'uellix_cap_grounding');
 
   RAISE NOTICE 'grounding_0004: verification passed — 3 validated integrity CHECKs (content_hash derivation, span bound, chunk_id derivation), attested reader present with 4 scope columns and owned by uellix_cap_grounding, authenticated holds nothing on evidence_chunks and is named by no policy, 4 policies unchanged, capability role with 0 members.';
 END $$;

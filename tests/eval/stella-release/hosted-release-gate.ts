@@ -248,7 +248,24 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
   for (const statement of bootstrapStatements.match(ROLE_STATEMENT) ?? []) {
     if (/(?<!NO)BYPASSRLS/.test(statement)) bootstrapProblems.push('grants BYPASSRLS')
     if (/(?<!NO)SUPERUSER/.test(statement)) bootstrapProblems.push('grants SUPERUSER')
-    if (/(?<!NO)CREATEROLE/.test(statement)) bootstrapProblems.push('grants CREATEROLE')
+    // CREATEROLE: forbidden for every role the bootstrap creates EXCEPT the
+    // installer, and the exemption is narrow enough to name.
+    //
+    // E-02, measured on PG 17.6. uellix_migrator is the principal every
+    // generated elevation names — `GRANT <role> TO uellix_migrator; SET ROLE
+    // <role>` — so the chain can only be applied AS it, and six of the nine
+    // packages create a capability role. Created NOCREATEROLE it is refused at
+    // the FIRST statement of T1 by the capability assertion the bootstrap
+    // itself installs. `postgres` cannot take its place: naming a provider role
+    // in a membership statement is an AUTHORITY_UNKNOWN_ROLE refusal by design.
+    //
+    // On PostgreSQL 16+ CREATEROLE administers only the roles its holder
+    // created and cannot confer SUPERUSER, so the exemption buys exactly the
+    // three capability roles. Every other role, and every other attribute on
+    // this one, is still refused — including SUPERUSER and BYPASSRLS above.
+    if (/(?<!NO)CREATEROLE/.test(statement) && !/\buellix_migrator\b/.test(statement)) {
+      bootstrapProblems.push('grants CREATEROLE')
+    }
   }
 
   // `service_role` as a GRANTEE. `TO ... service_role` is the shape that matters;

@@ -5,7 +5,7 @@
 --
 -- Package: T7
 -- Derived from: db/prepared/hosted/stella_0016_reserved_quota_semantics.hosted.sql
--- Source SHA-256 (LF-normalized): c69c13ff69d5f0edd4dd7cd95c8e07cc5c44ac92fb02d3f7c99dc6395dac7ca7
+-- Source SHA-256 (LF-normalized): 8824d8464a5e5baf972fa77b622a32758bdca393fd4fa0f560a2416efa4f3d0d
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 5
 --   capability-role-attributes: 0
+--   capability-member-count: 0
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -268,7 +270,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0016 aborted: an operation-ticket function that takes NO execution project still exists. R2-INT is reachable here; closing R1 on top of it would produce a database whose reservation accounting is exact and whose attribution is not.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0016 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument.';
   END IF;
 
@@ -282,7 +284,6 @@ BEGIN
   END IF;
 END $$;
 -- authority: open W33.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- GENERATED ALWAYS, and that is the whole argument: a reservation's period must
 -- be UNEQUIVOCAL, and a column nobody can write cannot disagree with the row it
@@ -305,10 +306,8 @@ ALTER TABLE uellix_stella_ops.operation_tickets
 COMMENT ON COLUMN uellix_stella_ops.operation_tickets.period_month IS
   'R1 (prepared stella_0016): the UTC month a reservation was taken in, DERIVED from bound_at and writable by nobody. NULL until bind. Recorded so that a reservation''s period is a fact rather than an inference — the availability arithmetic deliberately does NOT filter on it, because a live reservation is counted in whatever period the question is asked in.';
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W33.S1
 -- authority: open W34.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 2. The reservation set, readable for COUNTING and for nothing else
@@ -329,10 +328,8 @@ GRANT SELECT (ticket_id, organization_id, project_id, category, status, expires_
 -- creates nor drops that schema.
 GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_cap_stella_quota;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W34.S1
 -- authority: open W35.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- The FOURTH policy, and the one that closes cause (2). ORGANIZATION-scoped and
 -- deliberately NOT actor-scoped: an organization's capacity is a property of the
@@ -359,10 +356,8 @@ USING (
   OR public.current_user_is_super_admin()
 );
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W35.S1
 -- authority: open W36.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 3. The canonical availability surface (superuser window)
@@ -773,7 +768,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W36.S1
 -- authority: open W37.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_stella_quota TO uellix_owner WITH INHERIT FALSE, SET TRUE;
@@ -824,11 +818,9 @@ RESET ROLE;
 REVOKE uellix_cap_stella_quota FROM uellix_migrator;
 -- authority: close W38.S1
 -- authority: open W38.S2 (CAPABILITY) as uellix_cap_stella_ticket
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 GRANT CREATE ON SCHEMA uellix_stella_ops TO uellix_cap_stella_ticket;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 GRANT uellix_cap_stella_ticket TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_cap_stella_ticket;
 -- ============================================================
@@ -1085,11 +1077,9 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 REVOKE CREATE ON SCHEMA uellix_stella_ops FROM uellix_cap_stella_ticket;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 REVOKE uellix_cap_stella_ticket FROM uellix_migrator;
 -- authority: close W38.S2
 -- authority: open W39.S1 (OWNER_TRANSFER) as uellix_owner

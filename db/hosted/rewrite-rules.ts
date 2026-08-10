@@ -122,15 +122,23 @@ const authUidPrecondition: HostedRewriteRule = {
   id: 'auth-uid-precondition',
   why:
     'The rewritten bodies resolve the actor through public.uellix_auth_uid(), so the precondition ' +
-    'has to observe THAT function rather than only the one it delegates to. The replacement is a ' +
-    'CONJUNCTION, not a substitution: both must exist. That makes the hosted precondition strictly ' +
-    'stronger than the original — a database with auth.uid() but no bootstrap now refuses, where ' +
-    'before it would have proceeded and failed later, at runtime, inside a definer.',
+    'has to observe THAT function rather than the one it delegates to. It USED to emit a ' +
+    'CONJUNCTION — both must exist — on the argument that this was strictly stronger. COMMIT 5.1 ' +
+    'measured that on managed Supabase it is not stronger, it is UNASKABLE: `to_regprocedure' +
+    "('auth.uid()')` needs USAGE on schema auth to resolve the name, schema auth belongs to " +
+    'supabase_admin, and RR-09 is precisely that `postgres` holds that USAGE WITHOUT GRANT OPTION ' +
+    'and cannot pass it to the installer. PG 17.6 answers `permission denied for schema auth`, from ' +
+    "stella_0013's own precondition. The conjunction only ever worked because the installer was " +
+    'assumed to be the baseline owner. ' +
+    'The fact it asserted is NOT lost: stella_hosted_0001 §0 (E5, E5b, E5c) checks that auth.uid() ' +
+    'exists AND that the shim owner and the installer can reach it — once, at bootstrap, by a ' +
+    'principal that can ask the question. Re-asking it per package from a principal that cannot is ' +
+    'not a stronger check, it is a guaranteed refusal.',
   apply(_packageName, sql) {
     let count = 0
     const out = sql.replace(AUTH_UID_PRECONDITION, () => {
       count += 1
-      return "to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL"
+      return "to_regprocedure('public.uellix_auth_uid()') IS NULL"
     })
     return { sql: out, count }
   },
@@ -301,6 +309,100 @@ const capabilityRoleAttributes: HostedRewriteRule = {
   },
 }
 
+/* -------------------------------------------------------------------------- */
+/* Rule 7 — auth-users-privilege-probe (E-02)                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The NEGATIVE assertion that a capability role cannot read the identity store.
+ *
+ * Exactly two occurrences, one in stella_0013 and one in stella_0014, textually
+ * identical but for the role. Anchored on the whole call so that a future
+ * privilege probe against a different table cannot be caught by it.
+ */
+const AUTH_USERS_PRIVILEGE = /has_table_privilege\('(\w+)', 'auth\.users', 'SELECT'\)/g
+
+const authUsersPrivilegeProbe: HostedRewriteRule = {
+  id: 'auth-users-privilege-probe',
+  why:
+    'The ASSERTION is kept exactly — a capability role must not be able to read auth.users — and ' +
+    'only the way it resolves the table changes. `has_table_privilege(role, \'auth.users\', ...)` ' +
+    'resolves the name through schema auth, and PostgreSQL requires USAGE on a schema to look up ' +
+    'anything in it. Schema auth belongs to supabase_auth_admin and RR-09 is that `postgres` holds ' +
+    'its USAGE WITHOUT GRANT OPTION, so the installer cannot be given it. MEASURED, PG 17.6: the ' +
+    "package's own §7 verification stops at `permission denied for schema auth` — a SAFETY check " +
+    'failing for lack of privilege, which is the worst way for one to fail because it looks like ' +
+    'the property being violated. The replacement reads pg_class and pg_namespace, which are not ' +
+    'privilege-gated, and asks the same question against the resulting OID. It also becomes ' +
+    'correctly FALSE where the old form would have errored: a database with no auth.users has no ' +
+    'identity store to expose.',
+  apply(_packageName, sql) {
+    let count = 0
+    const out = sql.replace(AUTH_USERS_PRIVILEGE, (_m, role: string) => {
+      count += 1
+      return (
+        `EXISTS (SELECT 1 FROM pg_catalog.pg_class c ` +
+        `JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace ` +
+        `WHERE n.nspname = 'auth' AND c.relname = 'users' ` +
+        `AND has_table_privilege('${role}', c.oid, 'SELECT'))`
+      )
+    })
+    return { sql: out, count }
+  },
+}
+
+/* -------------------------------------------------------------------------- */
+/* Rule 6 — capability-member-count (E-04)                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The zero-member postcondition, in the five packages that state it.
+ *
+ * Anchored on the whole three-part shape — the count query, the comparison and
+ * the RAISE — rather than on the words `pg_auth_members`. The chain reads that
+ * catalog elsewhere for other reasons, and a loose match would silently delete
+ * a check nobody reviewed. The capability role name and the message are
+ * captured so the replacement can name the same role and the original wording
+ * can be preserved as a comment.
+ */
+const CAPABILITY_MEMBER_COUNT =
+  /^([ \t]*)SELECT count\(\*\) INTO n FROM pg_auth_members m\n[ \t]*JOIN pg_roles r ON r\.oid = m\.roleid\n[ \t]*WHERE r\.rolname = '(\w+)';\n[ \t]*IF n <> 0 THEN\n[ \t]*RAISE EXCEPTION '((?:[^']|'')*)', n;\n[ \t]*END IF;$/gm
+
+const capabilityMemberCount: HostedRewriteRule = {
+  id: 'capability-member-count',
+  why:
+    'The postcondition requires the capability role to have ZERO members, and on managed Supabase ' +
+    'that is unsatisfiable rather than merely strict: when a NOSUPERUSER CREATEROLE role creates ' +
+    'another role, PostgreSQL 16+ grants it the membership automatically (RR-02), so the count is ' +
+    'one before the package has done anything. MEASURED on 17.6 with createrole_self_grant empty: ' +
+    'that automatic row carries ADMIN and neither INHERIT nor SET, and ' +
+    "pg_has_role(installer, capability, 'SET') is FALSE — so the property the rule protects (no " +
+    'principal may BECOME the capability role) holds while the test of it fails. The substitution ' +
+    'asserts the TOPOLOGY: exactly the automatic row and nothing else, no SET reachability and no ' +
+    'INHERIT reachability for any non-superuser principal. It is strictly STRONGER than a count — a ' +
+    'count of zero says nothing about transitive reachability through an intermediate role, which ' +
+    'lab M4 measured is real.',
+  apply(packageName, sql) {
+    let count = 0
+    const out = sql.replace(
+      CAPABILITY_MEMBER_COUNT,
+      (_m, indent: string, capability: string, message: string) => {
+        count += 1
+        return (
+          `${indent}-- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).\n` +
+          `${indent}-- The zero-member count below was replaced by a topology assertion installed by\n` +
+          `${indent}-- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member\n` +
+          `${indent}-- unavoidable for a managed installer; the assertion checks what the count was\n` +
+          `${indent}-- standing in for. Original message, preserved verbatim:\n` +
+          `${indent}--   ${message.replace(/''/g, "'")}\n` +
+          `${indent}PERFORM uellix_bootstrap.assert_capability_membership_topology('${packageName}', '${capability}');`
+        )
+      },
+    )
+    return { sql: out, count }
+  },
+}
+
 /**
  * The rules, in application order.
  *
@@ -320,6 +422,8 @@ export const HOSTED_REWRITE_RULES: readonly HostedRewriteRule[] = [
   authUidPrecondition,
   authUidCall,
   capabilityRoleAttributes,
+  capabilityMemberCount,
+  authUsersPrivilegeProbe,
 ]
 
 export interface HostedRewriteResult {

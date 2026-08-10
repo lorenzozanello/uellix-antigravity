@@ -273,6 +273,49 @@ export function generateGovernedPackage(
 
     emitted.push({ origin: 'canonical', sql: row.statement.raw, sourceIndex: index, segmentId: null })
 
+    // ---------------------------------------------------------------------
+    // INSTALLER REACHABILITY (COMMIT 5.1, E-02). Measured, not designed.
+    // ---------------------------------------------------------------------
+    // `CREATE SCHEMA <x> AUTHORIZATION uellix_owner` gives the schema to the
+    // owner and the installer NOTHING — not even the ability to name what is
+    // in it. Six packages then open with a precondition that calls
+    // `to_regprocedure('uellix_grounding.insert_evidence_chunks(uuid, jsonb)')`,
+    // and `to_regprocedure` needs USAGE on the schema to resolve the name at
+    // all. PostgreSQL 17.6 answers `permission denied for schema
+    // uellix_grounding`, from T3's own precondition, before the package has
+    // done anything.
+    //
+    // It never appears locally because the canonical chain is applied by a
+    // SUPERUSER, which bypasses the check.
+    //
+    // WHY HERE AND NOT IN A REWRITE RULE. The obvious placement — beside the
+    // `GRANT USAGE ... TO uellix_app` the same window already emits — puts a
+    // statement INSIDE a recovered classification window, which changes its
+    // structural count and its digest sequence. Those are provenance: four
+    // windows differ from their historical counts today, for reasons a test
+    // enumerates one by one, and adding three more would mean editing that
+    // evidence to match new code. `create-schema` is installer-class and sits
+    // OUTSIDE every window, so emitting here changes no window, no segment and
+    // no plan digest — verified: 51/59/11 and 19a0ff5a… unchanged.
+    //
+    // USAGE confers no access to any object the schema contains. The chain
+    // grants the installer nothing else, and this grant is PERMANENT rather
+    // than temporary — it is a reachability fact about the installer, not an
+    // elevation, so there is nothing for the cleanup contract to give back.
+    if (row.identity.statementClass === 'create-schema' && row.identity.object !== null) {
+      const schema = row.identity.object.name
+      const reachability = `${packageId}.usage${index}`
+      pushAuthority(
+        sectionComment(
+          `authority: installer reachability — ${GOVERNED_INSTALLER} must resolve names in ${schema}`,
+        ),
+        reachability,
+      )
+      pushAuthority(`SET ROLE ${OWNER_ROLE};`, reachability)
+      pushAuthority(`GRANT USAGE ON SCHEMA ${schema} TO ${GOVERNED_INSTALLER};`, reachability)
+      pushAuthority('RESET ROLE;', reachability)
+    }
+
     const closing = closeAt.get(index)
     if (closing !== undefined) {
       const primitive = primitiveFor(plan, closing.segment)

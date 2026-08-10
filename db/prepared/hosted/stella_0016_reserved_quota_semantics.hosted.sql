@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 5
 --   capability-role-attributes: 0
+--   capability-member-count: 0
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -250,7 +252,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0016 aborted: an operation-ticket function that takes NO execution project still exists. R2-INT is reachable here; closing R1 on top of it would produce a database whose reservation accounting is exact and whose attribution is not.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0016 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument.';
   END IF;
 

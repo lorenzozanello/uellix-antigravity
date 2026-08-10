@@ -133,6 +133,19 @@ function isRecognisedAuthorityStatement(step: RoleWalkStep): boolean {
   ) {
     return true
   }
+  // COMMIT 5.1. The installer's PERMANENT USAGE on a schema the chain creates,
+  // so that its own preconditions can resolve names there. Recognised
+  // narrowly — USAGE only, on a schema, to the installer and nobody else —
+  // because the point of this function is that an unmodelled authority
+  // statement refuses rather than passes.
+  if (
+    statementClass === 'grant-privilege' &&
+    step.identity.object?.objectClass === 'schema' &&
+    step.identity.operands[0].split('+').every((p) => p === 'USAGE') &&
+    step.identity.operands[1].split('+').every((g) => g === GOVERNED_INSTALLER)
+  ) {
+    return true
+  }
   return false
 }
 

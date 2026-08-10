@@ -204,17 +204,47 @@ function revokeMembership(role: HostedRoleIdentifier, member: HostedRoleIdentifi
   return `REVOKE ${role} FROM ${member};`
 }
 
-/** Opens and closes an owner window for `installer`. */
+/**
+ * Opens and closes an owner window for `installer`.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THERE IS NO TEMPORARY MEMBERSHIP HERE (COMMIT 5.1, MEASURED)
+ * ---------------------------------------------------------------------------
+ * This primitive used to emit `GRANT uellix_owner TO <installer> WITH INHERIT
+ * FALSE, SET TRUE` before the elevation and revoke it after. PostgreSQL 17.6
+ * refuses that grant outright:
+ *
+ *   ERROR: permission denied to grant role "uellix_owner"
+ *   DETAIL: Only roles with the ADMIN option on role "uellix_owner" may grant
+ *           this role.
+ *
+ * and the only way to make it execute would be to hand the installer ADMIN
+ * OPTION on uellix_owner permanently — which is a strictly LARGER power than
+ * the window needed. An installer with ADMIN can grant uellix_owner to anyone,
+ * for good, and it would hold that between packages, between chains and after
+ * the last one.
+ *
+ * The grant was also redundant. `stella_hosted_0001` §2b establishes the
+ * persistent membership `uellix_owner <- uellix_migrator WITH INHERIT FALSE,
+ * SET TRUE` and §6 asserts it; that IS the elevation path, and the window only
+ * ever needed to USE it. So the window now does exactly that: announce the
+ * role, act, stand down.
+ *
+ * WHAT REPLACES THE GUARANTEE THE GRANT APPEARED TO GIVE. Nothing here can
+ * check a database, so the precondition is checked where a database is
+ * available: `validateHostedPrechainAuthorityContract` refuses before T1 if
+ * `pg_has_role(installer, uellix_owner, 'SET')` is false — measured, not
+ * assumed, and refused early rather than at whichever window happened to run
+ * first. INHERIT FALSE remains true of the persistent row, so the installer
+ * still carries none of the owner's privileges except while it says so.
+ */
 export function ownerWindowPrimitive(installer: HostedRoleIdentifier): AuthorityPrimitive {
   hostedRole(installer)
   assertElevatable('uellix_owner')
 
   return {
-    open: [grantMembership('uellix_owner', installer), 'SET ROLE uellix_owner;'],
-    // RESET ROLE first: while the session is still elevated, the revoke would be
-    // issued by uellix_owner rather than by the installer, and M3a means it
-    // would then remove a different row from the one the grant created.
-    close: ['RESET ROLE;', revokeMembership('uellix_owner', installer)],
+    open: ['SET ROLE uellix_owner;'],
+    close: ['RESET ROLE;'],
   }
 }
 

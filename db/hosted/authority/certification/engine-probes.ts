@@ -225,6 +225,104 @@ export const SESSION_STATE_PROBE_SQL = `
 SET search_path = '';
 SELECT current_user AS current_user, session_user AS session_user, current_setting('role') AS role_setting;`
 
+/* -------------------------------------------------------------------------- */
+/* The prechain authority observation (COMMIT 5.1)                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Everything `validateHostedPrechainAuthorityContract` consumes, as ONE row of
+ * JSON.
+ *
+ * One row rather than eight result sets because the gate has to reason across
+ * them — "uellix_owner holds SELECT on organizations" and "uellix_owner OWNS
+ * organizations" are the same answer arriving two different ways, and a gate
+ * that received them in separate round trips could see a database that changed
+ * in between.
+ *
+ * `has_table_privilege(role, oid, 'SELECT WITH GRANT OPTION')` is the exact
+ * question the engine refused on at T1 line 278: the plain privilege was held
+ * and the grant option was not.
+ */
+export function prechainObservationSql(
+  objects: readonly { object: string; objectType: 'table' | 'function'; privileges: readonly string[] }[],
+): string {
+  const lit = (s: string): string => `'${s.replace(/'/g, "''")}'`
+
+  const objectArms = objects.map((o) => {
+    // Keyed off the DERIVED type, never off a '()' suffix. `public.current_user_org_ids`
+    // arrives from a GRANT identity with no argument list and would be resolved as a
+    // TABLE by a suffix test — which is how the gate first reported two functions
+    // ABSENT on a database that had them.
+    const isFunction = o.objectType === 'function'
+    const resolvable = isFunction && !o.object.endsWith('()') ? `${o.object}()` : o.object
+    const resolve = isFunction
+      ? `pg_catalog.to_regprocedure(${lit(resolvable)})`
+      : `pg_catalog.to_regclass(${lit(resolvable)})`
+    const ownerExpr = isFunction
+      ? `(SELECT pg_catalog.pg_get_userbyid(p.proowner) FROM pg_catalog.pg_proc p WHERE p.oid = ${resolve})`
+      : `(SELECT pg_catalog.pg_get_userbyid(c.relowner) FROM pg_catalog.pg_class c WHERE c.oid = ${resolve})`
+    const priv = (name: string, withOption: boolean): string => {
+      const spec = withOption ? `${name} WITH GRANT OPTION` : name
+      return isFunction
+        ? `(${resolve} IS NOT NULL AND pg_catalog.has_function_privilege('uellix_owner', ${resolve}, ${lit(spec)}))`
+        : `(${resolve} IS NOT NULL AND pg_catalog.has_table_privilege('uellix_owner', ${resolve}, ${lit(spec)}))`
+    }
+    const held = o.privileges.map((n) => `${lit(n)}, ${priv(n, false)}`).join(', ')
+    const withOpt = o.privileges.map((n) => `${lit(n)}, ${priv(n, true)}`).join(', ')
+    return `jsonb_build_object(
+        'object', ${lit(o.object)},
+        'present', (${resolve} IS NOT NULL),
+        'owner', ${ownerExpr},
+        'held', jsonb_build_object(${held}),
+        'heldWithGrantOption', jsonb_build_object(${withOpt}))`
+  })
+
+  const capabilityArms = ['uellix_cap_grounding', 'uellix_cap_stella_quota', 'uellix_cap_stella_ticket']
+    .map(
+      (cap) => `${lit(cap)}, COALESCE((
+        SELECT jsonb_agg(r.rolname ORDER BY r.rolname)
+        FROM pg_catalog.pg_roles r
+        WHERE r.rolname <> ${lit(cap)}
+          AND NOT r.rolsuper
+          AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles c WHERE c.rolname = ${lit(cap)})
+          AND pg_catalog.pg_has_role(r.rolname, ${lit(cap)}, 'SET')), '[]'::jsonb)`,
+    )
+    .join(', ')
+
+  const schemaArms = ['public', 'uellix_grounding', 'uellix_stella', 'uellix_stella_ops']
+    .map(
+      (s) => `${lit(s)}, COALESCE((
+        SELECT pg_catalog.has_schema_privilege('uellix_owner', n.oid, 'CREATE')
+        FROM pg_catalog.pg_namespace n WHERE n.nspname = ${lit(s)}), true)`,
+    )
+    .join(', ')
+
+  return `SET search_path = '';
+SELECT jsonb_build_object(
+  'roles', COALESCE((
+    SELECT jsonb_agg(jsonb_build_object(
+             'name', r.rolname, 'canLogin', r.rolcanlogin,
+             'createRole', r.rolcreaterole, 'isSuper', r.rolsuper) ORDER BY r.rolname)
+    FROM pg_catalog.pg_roles r WHERE r.rolname LIKE 'uellix\\_%'), '[]'::jsonb),
+  'memberships', COALESCE((
+    SELECT jsonb_agg(jsonb_build_object(
+             'role', r.rolname, 'member', m.rolname, 'grantor', g.rolname,
+             'adminOption', am.admin_option, 'inheritOption', am.inherit_option,
+             'setOption', am.set_option) ORDER BY r.rolname, m.rolname)
+    FROM pg_catalog.pg_auth_members am
+    JOIN pg_catalog.pg_roles r ON r.oid = am.roleid
+    JOIN pg_catalog.pg_roles m ON m.oid = am.member
+    JOIN pg_catalog.pg_roles g ON g.oid = am.grantor
+    WHERE r.rolname LIKE 'uellix\\_%' OR m.rolname LIKE 'uellix\\_%'), '[]'::jsonb),
+  'objects', jsonb_build_array(${objectArms.join(',\n      ')}),
+  'schemaCreate', jsonb_build_object(${schemaArms}),
+  'installerCanSetOwner', COALESCE((
+    SELECT pg_catalog.pg_has_role('uellix_migrator', 'uellix_owner', 'SET')
+    FROM pg_catalog.pg_roles WHERE rolname = 'uellix_migrator'), false),
+  'capabilityReachableBy', jsonb_build_object(${capabilityArms})
+)::text;`
+}
+
 export const ENGINE_IDENTITY_PROBE_SQL = `
 SET search_path = '';
 SELECT current_setting('server_version')          AS server_version,

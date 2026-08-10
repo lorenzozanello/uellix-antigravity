@@ -16,13 +16,21 @@ import {
 const RULE_IDS = HOSTED_REWRITE_RULES.map((r) => r.id)
 
 describe('HOSTED_REWRITE_RULES — the set itself', () => {
-  it('is exactly the five enumerated rules, in a fixed order', () => {
+  it('is exactly the seven enumerated rules, in a fixed order', () => {
+    // COMMIT 5.1 added the last two, both from engine measurement:
+    //   capability-member-count      the zero-member postcondition is
+    //                                unsatisfiable under RR-02 (E-04)
+    //   auth-users-privilege-probe   the negative auth.users assertion cannot
+    //                                resolve the name without USAGE on schema
+    //                                auth, which RR-09 makes ungrantable (E-02)
     expect(RULE_IDS).toEqual([
       'superuser-precondition',
       'auth-schema-grant',
       'auth-uid-precondition',
       'auth-uid-call',
       'capability-role-attributes',
+      'capability-member-count',
+      'auth-users-privilege-probe',
     ])
   })
 
@@ -243,14 +251,24 @@ describe('capability-role-attributes', () => {
 })
 
 describe('auth-uid-precondition', () => {
-  it('STRENGTHENS the precondition — it requires the shim AND the underlying function', () => {
+  it('asks about the SHIM, because the installer cannot ask about auth.uid() at all', () => {
+    // COMMIT 5.1 replaced a conjunction with a substitution, and the reason is
+    // measured rather than stylistic. The conjunction's second half —
+    // `to_regprocedure('auth.uid()')` — resolves a name in schema auth, which
+    // needs USAGE on that schema; schema auth belongs to supabase_auth_admin
+    // and RR-09 is exactly that `postgres` holds its USAGE without grant
+    // option. On PG 17.6 the package stopped at `permission denied for schema
+    // auth`, from its own precondition. It only ever worked because the
+    // installer was assumed to be the baseline owner.
+    //
+    // The fact is not lost: stella_hosted_0001 §0 E5/E5b/E5c assert that
+    // auth.uid() exists and is reachable, once, by a principal that can ask.
     const source = "  IF to_regprocedure('auth.uid()') IS NULL THEN"
     const { sql, counts } = rewriteForManagedSupabase('x', source)
 
     expect(counts['auth-uid-precondition']).toBe(1)
     expect(sql).toContain("to_regprocedure('public.uellix_auth_uid()') IS NULL")
-    expect(sql).toContain("to_regprocedure('auth.uid()') IS NULL")
-    expect(sql).toContain(' OR ')
+    expect(sql).not.toContain("to_regprocedure('auth.uid()')")
   })
 })
 

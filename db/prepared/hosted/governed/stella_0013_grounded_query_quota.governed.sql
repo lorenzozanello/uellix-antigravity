@@ -5,7 +5,7 @@
 --
 -- Package: T4
 -- Derived from: db/prepared/hosted/stella_0013_grounded_query_quota.hosted.sql
--- Source SHA-256 (LF-normalized): 770cba965bd336ebd3ebbceaaa590cdc3cc155cabb67c13c186718b491c9767c
+-- Source SHA-256 (LF-normalized): 1b275f5fd57f58b71e0b804fb730e0b1a1ed7b5d694084b3d9c1ddda69329d3c
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 2
 --   capability-role-attributes: 1
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 1
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -139,7 +141,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0013 aborted: RLS helpers not found — apply db/migrations/0031_rls_core.sql first.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0013 aborted: auth.uid() not found. The governed function derives created_by from the session rather than from an argument, and without it there is no session to derive from.';
   END IF;
 
@@ -207,8 +209,11 @@ ALTER ROLE uellix_cap_stella_quota NOLOGIN NOCREATEROLE NOINHERIT;
 -- sharing it would couple this rollback's order to a campaign it does not
 -- depend on. Same argument grounding_0002 §1 makes for uellix_grounding.
 CREATE SCHEMA IF NOT EXISTS uellix_stella AUTHORIZATION uellix_owner;
+-- authority: installer reachability — uellix_migrator must resolve names in uellix_stella
+SET ROLE uellix_owner;
+GRANT USAGE ON SCHEMA uellix_stella TO uellix_migrator;
+RESET ROLE;
 -- authority: open W14.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 REVOKE ALL ON SCHEMA uellix_stella FROM PUBLIC;
 GRANT USAGE ON SCHEMA uellix_stella TO uellix_app;
@@ -220,7 +225,6 @@ GRANT USAGE ON SCHEMA uellix_stella TO uellix_cap_stella_quota;
 GRANT EXECUTE ON FUNCTION public.current_user_org_ids()        TO uellix_cap_stella_quota;
 GRANT EXECUTE ON FUNCTION public.current_user_is_super_admin() TO uellix_cap_stella_quota;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W14.S1
 -- USAGE on schema auth so `auth.uid()` RESOLVES — nothing more. The same
 -- narrow grant stella_0004 §"auth" makes for uellix_owner, and §9 below
@@ -233,7 +237,6 @@ REVOKE uellix_owner FROM uellix_migrator;
 -- actor and confers nothing else. auth.users stays unreachable, asserted below.
 GRANT EXECUTE ON FUNCTION public.uellix_auth_uid() TO uellix_cap_stella_quota;
 -- authority: open W15.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- The three business tables the definer reads, SELECT and only SELECT.
 --
@@ -253,10 +256,8 @@ GRANT SELECT ON public.projects      TO uellix_cap_stella_quota;
 GRANT SELECT, INSERT ON public.stella_interactions TO uellix_cap_stella_quota;
 REVOKE UPDATE, DELETE, TRUNCATE ON public.stella_interactions FROM uellix_cap_stella_quota;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W15.S1
 -- authority: open W16.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- NULLABLE, because the five sibling Stella actions write rows through the
 -- ordinary runtime path and have no key to supply. NOT NULL would make this
@@ -426,10 +427,8 @@ WITH CHECK (
   )
 );
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W16.S1
 -- authority: open W17.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 6. The governed consumption path (superuser window)
@@ -633,7 +632,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W17.S1
 -- authority: open W18.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_stella_quota TO uellix_owner WITH INHERIT FALSE, SET TRUE;
@@ -793,12 +791,13 @@ BEGIN
 
   -- (6) The capability role has ZERO members, so no LOGIN role reaches its
   --     privileges by SET ROLE.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_stella_quota';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'stella_0013 FAILED verification: uellix_cap_stella_quota has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   stella_0013 FAILED verification: uellix_cap_stella_quota has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('stella_0013_grounded_query_quota', 'uellix_cap_stella_quota');
 
   -- (7) The role attributes, restated as a postcondition rather than trusted
   --     from the ALTER above.
@@ -813,7 +812,7 @@ BEGIN
   -- (8) USAGE on schema auth confers auth.uid() and NOTHING ELSE. The same
   --     postcondition stella_0004 §9 makes, restated for this role because a
   --     grant it did not exist for is a grant nobody re-checked.
-  IF has_table_privilege('uellix_cap_stella_quota', 'auth.users', 'SELECT') THEN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'auth' AND c.relname = 'users' AND has_table_privilege('uellix_cap_stella_quota', c.oid, 'SELECT')) THEN
     RAISE EXCEPTION 'stella_0013 FAILED verification: uellix_cap_stella_quota can read auth.users. The USAGE on schema auth exists so that auth.uid() resolves, not to expose the identity store';
   END IF;
 

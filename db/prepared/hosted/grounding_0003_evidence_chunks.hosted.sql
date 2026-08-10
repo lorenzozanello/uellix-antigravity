@@ -18,6 +18,8 @@
 --   auth-uid-precondition: 0
 --   auth-uid-call: 0
 --   capability-role-attributes: 0
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 0
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -1407,12 +1409,13 @@ BEGIN
   END IF;
 
   -- (9) The capability role still has zero members.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_grounding';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'grounding_0003 FAILED verification: uellix_cap_grounding has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   grounding_0003 FAILED verification: uellix_cap_grounding has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('grounding_0003_evidence_chunks', 'uellix_cap_grounding');
 
   RAISE NOTICE 'grounding_0003: verification passed — 23 columns with the six GR-001 provenance columns NOT NULL, superseded UNIQUE absent, deduplication index unique and predicated, RLS on with 4 policies and no UPDATE policy, 3 triggers (2 immutability + 1 canonical-acyclicity) all ENABLE ALWAYS, 2 composite FOREIGN KEYs (version-scope, canonical) both ON DELETE CASCADE, no write privilege outside uellix_cap_grounding, all functions SECURITY DEFINER with empty search_path, capability role with 0 members.';
 END $$;

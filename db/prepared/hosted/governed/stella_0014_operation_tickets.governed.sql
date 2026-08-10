@@ -5,7 +5,7 @@
 --
 -- Package: T5
 -- Derived from: db/prepared/hosted/stella_0014_operation_tickets.hosted.sql
--- Source SHA-256 (LF-normalized): f69d724485229921325d91e7b021700f1d9bfc5aad4e91c07f15f3e876782b82
+-- Source SHA-256 (LF-normalized): d58e69b7d10b85f9beae3cd396af55f0981a82b414a08d0a3663d1b353dc156e
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -37,6 +37,8 @@
 --   auth-uid-precondition: 1
 --   auth-uid-call: 10
 --   capability-role-attributes: 1
+--   capability-member-count: 1
+--   auth-users-privilege-probe: 1
 --
 -- Nothing else was changed. No policy predicate, no ownership transfer, no
 -- REVOKE, no SECURITY DEFINER marker, no search_path, no CHECK and no
@@ -189,7 +191,7 @@ BEGIN
     RAISE EXCEPTION 'stella_0014 aborted: RLS helpers not found — apply db/migrations/0031_rls_core.sql first.';
   END IF;
 
-  IF to_regprocedure('public.uellix_auth_uid()') IS NULL OR to_regprocedure('auth.uid()') IS NULL THEN
+  IF to_regprocedure('public.uellix_auth_uid()') IS NULL THEN
     RAISE EXCEPTION 'stella_0014 aborted: auth.uid() not found. Every function here derives the actor from the session rather than from an argument, and without it there is no session to derive from.';
   END IF;
 
@@ -288,8 +290,11 @@ ALTER ROLE uellix_cap_stella_ticket NOLOGIN NOCREATEROLE NOINHERIT;
 -- sharing `uellix_capability`: one schema per package family, so no rollback's
 -- order is coupled to a campaign it does not depend on.
 CREATE SCHEMA IF NOT EXISTS uellix_stella_ops AUTHORIZATION uellix_owner;
+-- authority: installer reachability — uellix_migrator must resolve names in uellix_stella_ops
+SET ROLE uellix_owner;
+GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_migrator;
+RESET ROLE;
 -- authority: open W20.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 REVOKE ALL ON SCHEMA uellix_stella_ops FROM PUBLIC;
 GRANT USAGE ON SCHEMA uellix_stella_ops TO uellix_app;
@@ -303,7 +308,6 @@ GRANT USAGE ON SCHEMA uellix_stella TO uellix_cap_stella_ticket;
 GRANT EXECUTE ON FUNCTION public.current_user_org_ids()        TO uellix_cap_stella_ticket;
 GRANT EXECUTE ON FUNCTION public.current_user_is_super_admin() TO uellix_cap_stella_ticket;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W20.S1
 -- USAGE on schema auth so `auth.uid()` RESOLVES — nothing more. §7 asserts what
 -- it does NOT confer: this role cannot read auth.users.
@@ -313,7 +317,6 @@ REVOKE uellix_owner FROM uellix_migrator;
 -- actor and confers nothing else. auth.users stays unreachable, asserted below.
 GRANT EXECUTE ON FUNCTION public.uellix_auth_uid() TO uellix_cap_stella_ticket;
 -- authority: open W21.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- Reads, and only reads, on the three business tables the protocol consults:
 --   projects       — the project must belong to the organization being charged
@@ -328,7 +331,6 @@ GRANT SELECT ON public.organizations       TO uellix_cap_stella_ticket;
 GRANT SELECT ON public.stella_interactions TO uellix_cap_stella_ticket;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.stella_interactions FROM uellix_cap_stella_ticket;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W21.S1
 -- authority: open W22.S1 (CAPABILITY) as uellix_cap_stella_quota
 GRANT uellix_cap_stella_quota TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
@@ -340,7 +342,6 @@ RESET ROLE;
 REVOKE uellix_cap_stella_quota FROM uellix_migrator;
 -- authority: close W22.S1
 -- authority: canonical role context — this statement must be created by uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- OWNED BY uellix_owner, not by the capability role, and that is what makes the
 -- RLS policies in §5 bind the definer: a table owner is exempt from its own
@@ -397,9 +398,7 @@ CREATE TABLE IF NOT EXISTS uellix_stella_ops.operation_tickets (
   abort_reason    varchar(40)
 );
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: open W23.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 COMMENT ON TABLE uellix_stella_ops.operation_tickets IS
   'INT-INT-001 (prepared stella_0014): server-issued operation tickets. The identity `consume_stella_quota` requires and that no request-derived value can supply. One ticket is at most one charged unit. Holds NO query text, no prompt, no answer and no secret — only a digest, a closed-vocabulary reason code and a nonce. Managed outside the drizzle chain — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md.';
@@ -775,10 +774,8 @@ WITH CHECK (
   AND organization_id = ANY(public.current_user_org_ids())
 );
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W23.S1
 -- authority: open W24.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- ============================================================
 -- 6. The governed protocol (superuser window)
@@ -1332,7 +1329,6 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W24.S1
 -- authority: open W25.S1 (OWNER_TRANSFER) as uellix_owner
 GRANT uellix_cap_stella_ticket TO uellix_owner WITH INHERIT FALSE, SET TRUE;
@@ -1379,7 +1375,6 @@ RESET ROLE;
 REVOKE uellix_cap_stella_ticket FROM uellix_migrator;
 -- authority: close W26.S1
 -- authority: open W27.S1 (OWNER) as uellix_owner
-GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
 SET ROLE uellix_owner;
 -- The table itself is reachable by NOBODY but the definer. Not uellix_app, not
 -- authenticated, not anon, not service_role. Stated as an explicit REVOKE
@@ -1390,7 +1385,6 @@ REVOKE ALL ON TABLE uellix_stella_ops.operation_tickets FROM PUBLIC;
 GRANT SELECT, INSERT, UPDATE ON TABLE uellix_stella_ops.operation_tickets TO uellix_cap_stella_ticket;
 REVOKE DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLE uellix_stella_ops.operation_tickets FROM uellix_cap_stella_ticket;
 RESET ROLE;
-REVOKE uellix_owner FROM uellix_migrator;
 -- authority: close W27.S1
 -- authority: open W28.S1 (CAPABILITY) as uellix_cap_stella_ticket
 GRANT uellix_cap_stella_ticket TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
@@ -1585,12 +1579,13 @@ BEGIN
 
   -- (9) The capability role has ZERO members, so no LOGIN role reaches its
   --      privileges by SET ROLE.
-  SELECT count(*) INTO n FROM pg_auth_members m
-  JOIN pg_roles r ON r.oid = m.roleid
-  WHERE r.rolname = 'uellix_cap_stella_ticket';
-  IF n <> 0 THEN
-    RAISE EXCEPTION 'stella_0014 FAILED verification: uellix_cap_stella_ticket has % member(s)', n;
-  END IF;
+  -- HOSTED VARIANT (Train 5B / Commit 5.1, generated — do not edit by hand).
+  -- The zero-member count below was replaced by a topology assertion installed by
+  -- db/prepared/stella_hosted_0001_managed_role_bootstrap.sql. RR-02 makes a member
+  -- unavoidable for a managed installer; the assertion checks what the count was
+  -- standing in for. Original message, preserved verbatim:
+  --   stella_0014 FAILED verification: uellix_cap_stella_ticket has % member(s)
+  PERFORM uellix_bootstrap.assert_capability_membership_topology('stella_0014_operation_tickets', 'uellix_cap_stella_ticket');
 
   -- (10) The role attributes, restated as a postcondition rather than trusted
   --      from the ALTER above.
@@ -1603,7 +1598,7 @@ BEGIN
   END IF;
 
   -- (11) USAGE on schema auth confers auth.uid() and NOTHING ELSE.
-  IF has_table_privilege('uellix_cap_stella_ticket', 'auth.users', 'SELECT') THEN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'auth' AND c.relname = 'users' AND has_table_privilege('uellix_cap_stella_ticket', c.oid, 'SELECT')) THEN
     RAISE EXCEPTION 'stella_0014 FAILED verification: uellix_cap_stella_ticket can read auth.users. The USAGE on schema auth exists so that auth.uid() resolves, not to expose the identity store';
   END IF;
 
