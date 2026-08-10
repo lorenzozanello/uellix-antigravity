@@ -15,6 +15,20 @@
 -- second round trip would mean deciding one of them from a guess in between.
 --
 -- ---------------------------------------------------------------------------
+-- READ THE PRIVILEGE FIELDS AS WHAT THEY ARE
+-- ---------------------------------------------------------------------------
+-- Every `uellixOwnerHas*` field below is `has_*_privilege('uellix_owner', ...)`:
+-- it measures what THE ROLE uellix_owner holds, and says nothing about what the
+-- object's OWNER holds. They were first named `ownerHas*`, which reads as "the
+-- owner has" and made the first staging observation look absurd — a postgres-
+-- owned table reporting `ownerHasSelect: false`, as though a table's owner could
+-- not read it. The values were right and the name was not.
+--
+-- `owner` is a separate field and is the measured source of truth for ownership.
+-- An observation taken with the OLD names carries the same values under the old
+-- spelling; nothing about it needs reinterpreting.
+--
+-- ---------------------------------------------------------------------------
 -- WHAT THIS CANNOT DO
 -- ---------------------------------------------------------------------------
 -- It runs inside `BEGIN READ ONLY` and ends in ROLLBACK. There is no INSERT, no
@@ -102,15 +116,15 @@ SELECT jsonb_pretty(jsonb_build_object(
     SELECT COALESCE(jsonb_agg(jsonb_build_object(
              'relation', n.nspname || '.' || c.relname,
              'owner', pg_catalog.pg_get_userbyid(c.relowner),
-             'ownerHasSelect',
+             'uellixOwnerHasSelect',
                pg_catalog.has_table_privilege('uellix_owner', c.oid, 'SELECT'),
-             'ownerHasSelectWithGrant',
+             'uellixOwnerHasSelectWithGrant',
                pg_catalog.has_table_privilege('uellix_owner', c.oid, 'SELECT WITH GRANT OPTION'),
-             'ownerHasInsertWithGrant',
+             'uellixOwnerHasInsertWithGrant',
                pg_catalog.has_table_privilege('uellix_owner', c.oid, 'INSERT WITH GRANT OPTION'),
-             'ownerHasUpdateWithGrant',
+             'uellixOwnerHasUpdateWithGrant',
                pg_catalog.has_table_privilege('uellix_owner', c.oid, 'UPDATE WITH GRANT OPTION'),
-             'ownerHasReferences',
+             'uellixOwnerHasReferences',
                pg_catalog.has_table_privilege('uellix_owner', c.oid, 'REFERENCES')
            ) ORDER BY c.relname), '[]'::jsonb)
     FROM pg_catalog.pg_class c
@@ -127,9 +141,9 @@ SELECT jsonb_pretty(jsonb_build_object(
              'owner', pg_catalog.pg_get_userbyid(p.proowner),
              'securityDefiner', p.prosecdef,
              'config', COALESCE(array_to_string(p.proconfig, '|'), ''),
-             'ownerHasExecute',
+             'uellixOwnerHasExecute',
                pg_catalog.has_function_privilege('uellix_owner', p.oid, 'EXECUTE'),
-             'ownerHasExecuteWithGrant',
+             'uellixOwnerHasExecuteWithGrant',
                pg_catalog.has_function_privilege('uellix_owner', p.oid, 'EXECUTE WITH GRANT OPTION')
            ) ORDER BY p.oid::regprocedure::text), '[]'::jsonb)
     FROM pg_catalog.pg_proc p
@@ -144,8 +158,8 @@ SELECT jsonb_pretty(jsonb_build_object(
     SELECT COALESCE(jsonb_agg(jsonb_build_object(
              'schema', n.nspname,
              'owner', pg_catalog.pg_get_userbyid(n.nspowner),
-             'ownerHasCreate', pg_catalog.has_schema_privilege('uellix_owner', n.oid, 'CREATE'),
-             'ownerHasUsage', pg_catalog.has_schema_privilege('uellix_owner', n.oid, 'USAGE')
+             'uellixOwnerHasCreate', pg_catalog.has_schema_privilege('uellix_owner', n.oid, 'CREATE'),
+             'uellixOwnerHasUsage', pg_catalog.has_schema_privilege('uellix_owner', n.oid, 'USAGE')
            ) ORDER BY n.nspname), '[]'::jsonb)
     FROM pg_catalog.pg_namespace n
     WHERE n.nspname IN ('public','auth','storage','uellix_bootstrap',
