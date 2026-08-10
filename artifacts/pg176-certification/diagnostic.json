@@ -1,0 +1,1201 @@
+{
+  "mode": "DIAGNOSTIC (E-01 patched — NOT certification evidence)",
+  "e01Objects": [
+    "public.current_user_org_ids()      — GRANT EXECUTE, T1 line 278",
+    "public.current_user_is_super_admin() — GRANT EXECUTE, T1 line 279",
+    "public.organizations               — REFERENCES (foreign key), T1 line 398",
+    "public.projects                    — REFERENCES (foreign key), T1 line 398",
+    "public.evidence_items              — REFERENCES and GRANT SELECT/UPDATE",
+    "public.uellix_forbid_mutation()    — EXECUTE (trigger function), T1 line 682",
+    "public.uellix_auth_uid()           — GRANT EXECUTE, later packages"
+  ],
+  "image": "public.ecr.aws/supabase/postgres:17.6.1.143",
+  "shims": [
+    {
+      "object": "storage.objects",
+      "whyItIsAShim": "Created by the Storage SERVICE on a real project, not by the database image, and owned there by supabase_storage_admin. Here it is created for `postgres` so that unit 41 can create its three evidence policies at all. Every privilege question those policies would actually face on a managed project is therefore answered trivially and wrongly, and no result about them is evidence of anything."
+    },
+    {
+      "object": "storage.foldername(text)",
+      "whyItIsAShim": "Same origin, same caveat. Referenced by can_read_evidence_object / can_write_evidence_object, which unit 42 then grants EXECUTE on — so its ABSENCE would break a dependency that has nothing to do with Storage."
+    },
+    {
+      "object": "the uellix-evidence bucket",
+      "whyItIsAShim": "Not created at all. No probe in this run asks about it, and none of the reported results depends on it — stated here so that its absence is a declared gap rather than an unnoticed one."
+    }
+  ],
+  "faithfulSurface": [
+    "schema auth, owned by supabase_admin — NOT by the installer",
+    "auth.users, owned by supabase_auth_admin",
+    "auth.uid(), provided by the image",
+    "postgres: NOSUPERUSER, CREATEROLE, CREATEDB, BYPASSRLS — the managed installer identity",
+    "supabase_admin is the only superuser and is never used to apply a chain package",
+    "anon / authenticated / service_role / authenticator, as the image creates them",
+    "postgres holds USAGE on schema auth WITHOUT the ability to CREATE in it (RR-09's asymmetry)"
+  ],
+  "inputs": [
+    {
+      "packageId": "T1",
+      "path": "db/prepared/hosted/governed/grounding_0002_document_versions.governed.sql",
+      "digest": "e9d6752f57ed121572ed224b1aebd7d0e924c7ca80c6380aac8b2b05b719c5e8"
+    },
+    {
+      "packageId": "T2",
+      "path": "db/prepared/hosted/governed/grounding_0003_evidence_chunks.governed.sql",
+      "digest": "0a8833d33456d8e7a3dcc0dc932b39d788d5160bb5df3daeb1e2e667248d63be"
+    },
+    {
+      "packageId": "T3",
+      "path": "db/prepared/hosted/governed/grounding_0004_runtime_attestation.governed.sql",
+      "digest": "6b77ca64b7a255b14f73889055597d8e2b00f7af2b4e05712c730da3fce5f7e8"
+    },
+    {
+      "packageId": "T4",
+      "path": "db/prepared/hosted/governed/stella_0013_grounded_query_quota.governed.sql",
+      "digest": "3cb8497c8c969f479578b3c69f428be4a289934332eca2832f6b76c841156380"
+    },
+    {
+      "packageId": "T5",
+      "path": "db/prepared/hosted/governed/stella_0014_operation_tickets.governed.sql",
+      "digest": "268fa3df2697000b89d4c891c53579022fb141b9022f0ee5930dc51dd1516ab8"
+    },
+    {
+      "packageId": "T6",
+      "path": "db/prepared/hosted/governed/stella_0015_project_bound_operation_tickets.governed.sql",
+      "digest": "2d05a4ef4c33897fa44b97afbb41f7d4efa70b8234c76d1e5177b2d859a31a20"
+    },
+    {
+      "packageId": "T7",
+      "path": "db/prepared/hosted/governed/stella_0016_reserved_quota_semantics.governed.sql",
+      "digest": "72526faf61cc848e46e4a77cdc74d85939009fefb733bb5c19e3086db8c0cbb3"
+    },
+    {
+      "packageId": "T8",
+      "path": "db/prepared/hosted/governed/stella_0017_governed_stella_consumption.governed.sql",
+      "digest": "6decb9aee9b6552840a0eb3d47c24f5a99e6f830cabd0f116b2becf6b447ae4c"
+    },
+    {
+      "packageId": "T9",
+      "path": "db/prepared/hosted/governed/stella_0018_category_bound_operation_tickets.governed.sql",
+      "digest": "b3be34cdb6a027786bd5c870e442850d5a8160bafc185e0be449a23d12879fd6"
+    }
+  ],
+  "refusals": [
+    {
+      "id": "PIN",
+      "attempted": "apply a governed artefact whose bytes moved",
+      "refused": true,
+      "code": "CERT_DIGEST_MISMATCH",
+      "reachedServer": false
+    },
+    {
+      "id": "UNGOVERNED_BYTES",
+      "attempted": "feed T1 the ungoverned .hosted.sql bytes",
+      "refused": true,
+      "code": "CERT_DIGEST_MISMATCH",
+      "reachedServer": false
+    },
+    {
+      "id": "UNGOVERNED_PATH",
+      "attempted": "resolve a path outside db/prepared/hosted/governed/",
+      "refused": true,
+      "code": "CERT_PATH_NOT_GOVERNED",
+      "reachedServer": false
+    },
+    {
+      "id": "UNKNOWN_PACKAGE",
+      "attempted": "resolve a package the chain does not declare",
+      "refused": true,
+      "code": "CERT_UNKNOWN_PACKAGE",
+      "reachedServer": false
+    }
+  ],
+  "engine": {
+    "server_version": "17.6",
+    "server_version_num": "170006",
+    "createrole_self_grant": "",
+    "installer_is_superuser": "false",
+    "installer": "postgres"
+  },
+  "provisioning": {
+    "baselineApplied": 50,
+    "baselineTotal": 50,
+    "baselineFailures": [],
+    "bootstrapApplied": true,
+    "bootstrapError": null,
+    "measuredClassC": {
+      "postgres_can_create_in_auth": "false",
+      "postgres_can_create_in_storage": "false",
+      "postgres_has_trigger_on_auth_users": "true",
+      "auth_users_owner": "supabase_auth_admin",
+      "auth_schema_owner": "supabase_admin",
+      "postgres_is_superuser": "false"
+    },
+    "sentinelWritten": true,
+    "sentinelRefusalBeforeWrite": "psql:<stdin>:216: ERROR:  malformed array literal: \"uellix_bootstrap.staging_sentinel row declaring environment=staging\" / DETAIL:  Array value must start with \"{\" or dimension information."
+  },
+  "prechain": {
+    "packageStates": {
+      "grounding_0002_document_versions": "ABSENT",
+      "grounding_0003_evidence_chunks": "ABSENT",
+      "grounding_0004_runtime_attestation": "ABSENT",
+      "stella_0013_grounded_query_quota": "ABSENT",
+      "stella_0014_operation_tickets": "ABSENT",
+      "stella_0015_project_bound_operation_tickets": "ABSENT",
+      "stella_0016_reserved_quota_semantics": "ABSENT",
+      "stella_0017_governed_stella_consumption": "ABSENT",
+      "stella_0018_category_bound_operation_tickets": "ABSENT"
+    },
+    "memberships": [
+      "anon|authenticator|supabase_admin|f|f|t",
+      "anon|postgres|supabase_admin|t|t|t",
+      "authenticated|authenticator|supabase_admin|f|f|t",
+      "authenticated|postgres|supabase_admin|t|t|t",
+      "authenticator|postgres|supabase_admin|t|t|t",
+      "authenticator|supabase_storage_admin|supabase_admin|f|f|t",
+      "pg_create_subscription|postgres|supabase_admin|t|t|t",
+      "pg_monitor|postgres|supabase_admin|t|t|t",
+      "pg_read_all_data|postgres|supabase_admin|t|t|t",
+      "pg_signal_backend|postgres|supabase_admin|t|t|t",
+      "service_role|authenticator|supabase_admin|f|f|t",
+      "service_role|postgres|supabase_admin|t|t|t",
+      "supabase_privileged_role|postgres|supabase_admin|f|t|t",
+      "uellix_app|postgres|supabase_admin|t|f|f",
+      "uellix_auditor|postgres|supabase_admin|t|f|f",
+      "uellix_migrator|postgres|postgres|f|t|t",
+      "uellix_migrator|postgres|supabase_admin|t|f|f",
+      "uellix_owner|postgres|postgres|f|f|t",
+      "uellix_owner|postgres|supabase_admin|t|f|f",
+      "uellix_owner|uellix_migrator|postgres|f|f|t",
+      "uellix_writer|postgres|supabase_admin|t|f|f",
+      "uellix_writer|uellix_app|postgres|f|t|f"
+    ],
+    "schemaCreateResidual": [
+      "public|pg_database_owner",
+      "public|uellix_owner",
+      "uellix_bootstrap|uellix_owner"
+    ],
+    "relationOwners": [
+      {
+        "relation": "public.audit_logs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.evidence_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.financial_proxies",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.funders",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.fx_rates",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.impact_narratives",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.indicators",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.invitations",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.marketing_leads",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.methodology_review_matrix",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.methodology_review_matrix_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.organization_members",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.organizations",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcome_funder_allocations",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcome_proxy_assignments",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcome_taxonomy_mappings",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcomes",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.portfolios",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.project_investments",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.projects",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.proxy_sources",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.signup_allowlist",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_assignment_inputs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_calculation_line_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_calculation_runs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_filter_sets",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_report_sections",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_reports",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_run_review_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_run_reviews",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.stakeholder_groups",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.stella_interactions",
+        "kind": "r",
+        "owner": "uellix_owner",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.taxonomy_catalogs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.taxonomy_codes",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.theory_of_change_links",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.theory_of_change_nodes",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.users",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "uellix_bootstrap.staging_sentinel",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": false,
+        "rlsForced": false
+      }
+    ],
+    "roleAttributes": [
+      "anon|f|t|f|f|f|f",
+      "authenticated|f|t|f|f|f|f",
+      "authenticator|f|f|f|f|t|f",
+      "postgres|f|t|t|t|t|t",
+      "service_role|f|t|f|f|f|t",
+      "supabase_admin|t|t|t|t|t|t",
+      "supabase_auth_admin|f|f|t|f|t|f",
+      "supabase_storage_admin|f|f|t|f|t|f",
+      "uellix_app|f|t|f|f|t|f",
+      "uellix_auditor|f|t|f|f|t|f",
+      "uellix_migrator|f|t|f|f|t|f",
+      "uellix_owner|f|t|f|f|f|f",
+      "uellix_writer|f|t|f|f|f|f"
+    ]
+  },
+  "installerProbe": [
+    {
+      "installer": "postgres",
+      "applied": false,
+      "firstRefusal": "psql:<stdin>:1187: ERROR:  grounding_0002 FAILED verification: uellix_cap_grounding has 1 member(s). It must have none, or SET ROLE reaches the write path / CONTEXT:  PL/pgSQL function inline_code_block line 134 at RAISE",
+      "leftT1": "ABSENT"
+    },
+    {
+      "installer": "uellix_migrator",
+      "applied": false,
+      "firstRefusal": "psql:<stdin>:216: ERROR:  malformed array literal: \"CREATEROLE\" / DETAIL:  Array value must start with \"{\" or dimension information. / CONTEXT:  PL/pgSQL function uellix_bootstrap.assert_hosted_capabilities(text) line 11 at assignment",
+      "leftT1": "ABSENT"
+    }
+  ],
+  "chain": [
+    {
+      "packageId": "T1",
+      "sourcePath": "db/prepared/hosted/governed/grounding_0002_document_versions.governed.sql",
+      "digest": "e9d6752f57ed121572ed224b1aebd7d0e924c7ca80c6380aac8b2b05b719c5e8",
+      "stateBefore": "ABSENT",
+      "exitStatus": 3,
+      "error": "psql:<stdin>:1187: ERROR:  grounding_0002 FAILED verification: uellix_cap_grounding has 1 member(s). It must have none, or SET ROLE reaches the write path / CONTEXT:  PL/pgSQL function inline_code_block line 134 at RAISE",
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "providerMembershipsUnchanged": true,
+      "sessionStateAfter": [
+        "postgres|postgres|none"
+      ]
+    }
+  ],
+  "posture": {
+    "functionOwners": [
+      {
+        "signature": "public.can_read_evidence_object(text,uuid)",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,authenticated,service_role,uellix_owner"
+      },
+      {
+        "signature": "public.can_write_evidence_object(text,uuid)",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,authenticated,service_role,uellix_owner"
+      },
+      {
+        "signature": "public.current_user_is_super_admin()",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=public",
+        "executeGrantees": "postgres,service_role,authenticated,uellix_owner"
+      },
+      {
+        "signature": "public.current_user_org_ids()",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=public",
+        "executeGrantees": "postgres,service_role,authenticated,uellix_owner"
+      },
+      {
+        "signature": "public.current_user_role_in_org(uuid)",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=public",
+        "executeGrantees": "postgres,service_role,authenticated,uellix_owner"
+      },
+      {
+        "signature": "public.handle_new_user()",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,service_role,uellix_owner"
+      },
+      {
+        "signature": "public.handle_update_user()",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,service_role,uellix_owner"
+      },
+      {
+        "signature": "public.uellix_auth_uid()",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": true,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,uellix_app,uellix_owner"
+      },
+      {
+        "signature": "public.uellix_forbid_mutation()",
+        "schema": "public",
+        "owner": "postgres",
+        "securityDefiner": false,
+        "proconfig": "",
+        "executeGrantees": "postgres,service_role,uellix_owner"
+      },
+      {
+        "signature": "uellix_bootstrap.assert_hosted_capabilities(text)",
+        "schema": "uellix_bootstrap",
+        "owner": "postgres",
+        "securityDefiner": false,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,uellix_migrator"
+      },
+      {
+        "signature": "uellix_bootstrap.hosted_capability_report()",
+        "schema": "uellix_bootstrap",
+        "owner": "postgres",
+        "securityDefiner": false,
+        "proconfig": "search_path=\"\"",
+        "executeGrantees": "postgres,uellix_migrator,uellix_auditor"
+      }
+    ],
+    "relationOwners": [
+      {
+        "relation": "public.audit_logs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.evidence_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.financial_proxies",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.funders",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.fx_rates",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.impact_narratives",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.indicators",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.invitations",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.marketing_leads",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.methodology_review_matrix",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.methodology_review_matrix_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.organization_members",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.organizations",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcome_funder_allocations",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcome_proxy_assignments",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcome_taxonomy_mappings",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.outcomes",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.portfolios",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.project_investments",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.projects",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.proxy_sources",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.signup_allowlist",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_assignment_inputs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_calculation_line_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_calculation_runs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_filter_sets",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_report_sections",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_reports",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_run_review_items",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.sroi_run_reviews",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.stakeholder_groups",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.stella_interactions",
+        "kind": "r",
+        "owner": "uellix_owner",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.taxonomy_catalogs",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.taxonomy_codes",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.theory_of_change_links",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.theory_of_change_nodes",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "public.users",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": true,
+        "rlsForced": false
+      },
+      {
+        "relation": "uellix_bootstrap.staging_sentinel",
+        "kind": "r",
+        "owner": "postgres",
+        "rls": false,
+        "rlsForced": false
+      }
+    ],
+    "schemaAcls": [
+      "auth|supabase_admin|supabase_admin:USAGE,supabase_admin:CREATE,anon:USAGE,authenticated:USAGE,service_role:USAGE,supabase_auth_admin:USAGE,supabase_auth_admin:CREATE,dashboard_user:USAGE,dashboard_user:CREATE,postgres:USAGE",
+      "public|pg_database_owner|pg_database_owner:USAGE,pg_database_owner:CREATE,PUBLIC:USAGE,postgres:USAGE,anon:USAGE,authenticated:USAGE,service_role:USAGE,uellix_owner:USAGE,uellix_owner:CREATE,uellix_migrator:USAGE,uellix_app:USAGE,uellix_writer:USAGE,uellix_auditor:USAGE",
+      "storage|supabase_admin|supabase_admin:USAGE,supabase_admin:CREATE,postgres:USAGE,anon:USAGE,authenticated:USAGE,service_role:USAGE,supabase_storage_admin:USAGE,supabase_storage_admin:CREATE,dashboard_user:USAGE,dashboard_user:CREATE",
+      "uellix_bootstrap|uellix_owner|uellix_owner:USAGE,uellix_owner:CREATE,uellix_migrator:USAGE,uellix_app:USAGE,uellix_auditor:USAGE"
+    ],
+    "schemaCreateResidual": [
+      "public|pg_database_owner",
+      "public|uellix_owner",
+      "uellix_bootstrap|uellix_owner"
+    ],
+    "policies": [
+      "public.audit_logs|audit_logs_select_member_or_admin|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.evidence_items|evidence_items_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.evidence_items|evidence_items_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.evidence_items|evidence_items_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.financial_proxies|financial_proxies_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.financial_proxies|financial_proxies_select|PERMISSIVE|public|SELECT|(((auth.uid() IS NOT NULL) AND (organization_id IS NULL) AND ((review_status)::text = 'approved'::text)) OR (organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.financial_proxies|financial_proxies_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.funders|funders_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.funders|funders_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.funders|funders_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.fx_rates|fx_rates_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.fx_rates|fx_rates_select|PERMISSIVE|public|SELECT|(((auth.uid() IS NOT NULL) AND (organization_id IS NULL)) OR (organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.fx_rates|fx_rates_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.impact_narratives|impact_narratives_insert|PERMISSIVE|public|INSERT||((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.impact_narratives|impact_narratives_select|PERMISSIVE|public|SELECT|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (projects.organization_id = ANY (public.current_user_org_ids())))) OR public.current_user_is_super_admin())|",
+      "public.impact_narratives|impact_narratives_update|PERMISSIVE|public|UPDATE|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.indicators|indicators_insert|PERMISSIVE|public|INSERT||((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.indicators|indicators_select|PERMISSIVE|public|SELECT|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (projects.organization_id = ANY (public.current_user_org_ids())))) OR public.current_user_is_super_admin())|",
+      "public.indicators|indicators_update|PERMISSIVE|public|UPDATE|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.invitations|invitations_insert_admin|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())",
+      "public.invitations|invitations_select_member|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.invitations|invitations_update_admin|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())",
+      "public.marketing_leads|anon_insert_marketing_leads|PERMISSIVE|anon|INSERT||true",
+      "public.marketing_leads|authenticated_insert_marketing_leads|PERMISSIVE|authenticated|INSERT||true",
+      "public.marketing_leads|super_admins_read_marketing_leads|PERMISSIVE|authenticated|SELECT|public.current_user_is_super_admin()|",
+      "public.methodology_review_matrix|methodology_review_matrix_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.methodology_review_matrix|methodology_review_matrix_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.methodology_review_matrix|methodology_review_matrix_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.methodology_review_matrix_items|methodology_review_matrix_items_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.methodology_review_matrix_items|methodology_review_matrix_items_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.methodology_review_matrix_items|methodology_review_matrix_items_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.organization_members|members_delete_admin|PERMISSIVE|public|DELETE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())|",
+      "public.organization_members|members_insert_admin|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())",
+      "public.organization_members|members_select_own_org|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.organization_members|members_update_admin|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())",
+      "public.organizations|orgs_insert_super_admin|PERMISSIVE|public|INSERT||public.current_user_is_super_admin()",
+      "public.organizations|orgs_select_member_or_admin|PERMISSIVE|public|SELECT|((id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.organizations|orgs_update_admin_or_super|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text])) OR public.current_user_is_super_admin())",
+      "public.outcome_funder_allocations|outcome_funder_allocations_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.outcome_funder_allocations|outcome_funder_allocations_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.outcome_funder_allocations|outcome_funder_allocations_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.outcome_proxy_assignments|outcome_proxy_assignments_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.outcome_proxy_assignments|outcome_proxy_assignments_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.outcome_proxy_assignments|outcome_proxy_assignments_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.outcome_taxonomy_mappings|outcome_taxonomy_mappings_delete|PERMISSIVE|public|DELETE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|",
+      "public.outcome_taxonomy_mappings|outcome_taxonomy_mappings_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.outcome_taxonomy_mappings|outcome_taxonomy_mappings_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.outcome_taxonomy_mappings|outcome_taxonomy_mappings_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.outcomes|outcomes_insert|PERMISSIVE|public|INSERT||((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.outcomes|outcomes_select|PERMISSIVE|public|SELECT|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (projects.organization_id = ANY (public.current_user_org_ids())))) OR public.current_user_is_super_admin())|",
+      "public.outcomes|outcomes_update|PERMISSIVE|public|UPDATE|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.portfolios|portfolios_insert_allowed_roles|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.portfolios|portfolios_select_member_or_admin|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.portfolios|portfolios_update_allowed_roles|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.project_investments|project_investments_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.project_investments|project_investments_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.project_investments|project_investments_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.projects|projects_insert_allowed_roles|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.projects|projects_select_member_or_admin|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.projects|projects_update_allowed_roles|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.proxy_sources|proxy_sources_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.proxy_sources|proxy_sources_select|PERMISSIVE|public|SELECT|(((auth.uid() IS NOT NULL) AND (organization_id IS NULL) AND ((status)::text = 'active'::text)) OR (organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.proxy_sources|proxy_sources_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.signup_allowlist|signup_allowlist_delete_super_admin|PERMISSIVE|public|DELETE|public.current_user_is_super_admin()|",
+      "public.signup_allowlist|signup_allowlist_insert_super_admin|PERMISSIVE|public|INSERT||public.current_user_is_super_admin()",
+      "public.signup_allowlist|signup_allowlist_select_super_admin|PERMISSIVE|public|SELECT|public.current_user_is_super_admin()|",
+      "public.sroi_assignment_inputs|sroi_assignment_inputs_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_assignment_inputs|sroi_assignment_inputs_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_assignment_inputs|sroi_assignment_inputs_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_calculation_line_items|sroi_calculation_line_items_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_calculation_line_items|sroi_calculation_line_items_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_calculation_runs|sroi_calculation_runs_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_calculation_runs|sroi_calculation_runs_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_filter_sets|sroi_filter_sets_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_filter_sets|sroi_filter_sets_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_filter_sets|sroi_filter_sets_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_report_sections|sroi_report_sections_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_report_sections|sroi_report_sections_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_report_sections|sroi_report_sections_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_reports|sroi_reports_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_reports|sroi_reports_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_reports|sroi_reports_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_run_review_items|sroi_run_review_items_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_run_review_items|sroi_run_review_items_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_run_review_items|sroi_run_review_items_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_run_reviews|sroi_run_reviews_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.sroi_run_reviews|sroi_run_reviews_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.sroi_run_reviews|sroi_run_reviews_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'reviewer'::text])) OR public.current_user_is_super_admin())",
+      "public.stakeholder_groups|stakeholder_groups_insert|PERMISSIVE|public|INSERT||((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.stakeholder_groups|stakeholder_groups_select|PERMISSIVE|public|SELECT|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (projects.organization_id = ANY (public.current_user_org_ids())))) OR public.current_user_is_super_admin())|",
+      "public.stakeholder_groups|stakeholder_groups_update|PERMISSIVE|public|UPDATE|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())|((project_id IN ( SELECT projects.id",
+      "   FROM public.projects",
+      "  WHERE (public.current_user_role_in_org(projects.organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])))) OR public.current_user_is_super_admin())",
+      "public.stella_interactions|stella_interactions_select_member_or_admin|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.taxonomy_catalogs|taxonomy_catalogs_select|PERMISSIVE|public|SELECT|true|",
+      "public.taxonomy_codes|taxonomy_codes_select|PERMISSIVE|public|SELECT|true|",
+      "public.theory_of_change_links|theory_of_change_links_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.theory_of_change_links|theory_of_change_links_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.theory_of_change_links|theory_of_change_links_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.theory_of_change_nodes|theory_of_change_nodes_insert|PERMISSIVE|public|INSERT||((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.theory_of_change_nodes|theory_of_change_nodes_select|PERMISSIVE|public|SELECT|((organization_id = ANY (public.current_user_org_ids())) OR public.current_user_is_super_admin())|",
+      "public.theory_of_change_nodes|theory_of_change_nodes_update|PERMISSIVE|public|UPDATE|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())|((public.current_user_role_in_org(organization_id) = ANY (ARRAY['super_admin'::text, 'organization_admin'::text, 'impact_manager'::text, 'analyst'::text])) OR public.current_user_is_super_admin())",
+      "public.users|users_insert_own|PERMISSIVE|public|INSERT||(id = auth.uid())",
+      "public.users|users_select_own|PERMISSIVE|public|SELECT|((id = auth.uid()) OR public.current_user_is_super_admin())|",
+      "public.users|users_update_own|PERMISSIVE|public|UPDATE|(id = auth.uid())|(id = auth.uid())",
+      "storage.objects|delete_evidence|PERMISSIVE|authenticated|DELETE|((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))|",
+      "storage.objects|insert_evidence|PERMISSIVE|authenticated|INSERT||((bucket_id = 'uellix-evidence'::text) AND public.can_write_evidence_object(name, auth.uid()))",
+      "storage.objects|select_evidence|PERMISSIVE|authenticated|SELECT|((bucket_id = 'uellix-evidence'::text) AND public.can_read_evidence_object(name, auth.uid()))|"
+    ],
+    "tableGrants": [],
+    "roleAttributes": [
+      "anon|f|t|f|f|f|f",
+      "authenticated|f|t|f|f|f|f",
+      "authenticator|f|f|f|f|t|f",
+      "postgres|f|t|t|t|t|t",
+      "service_role|f|t|f|f|f|t",
+      "supabase_admin|t|t|t|t|t|t",
+      "supabase_auth_admin|f|f|t|f|t|f",
+      "supabase_storage_admin|f|f|t|f|t|f",
+      "uellix_app|f|t|f|f|t|f",
+      "uellix_auditor|f|t|f|f|t|f",
+      "uellix_migrator|f|t|f|f|t|f",
+      "uellix_owner|f|t|f|f|f|f",
+      "uellix_writer|f|t|f|f|f|f"
+    ],
+    "triggers": [
+      "public.audit_logs|trg_audit_logs_append_only|postgres",
+      "public.sroi_calculation_line_items|trg_sroi_line_items_append_only|postgres",
+      "public.sroi_calculation_runs|trg_sroi_runs_append_only|postgres"
+    ],
+    "memberships": [
+      "anon|authenticator|supabase_admin|f|f|t",
+      "anon|postgres|supabase_admin|t|t|t",
+      "authenticated|authenticator|supabase_admin|f|f|t",
+      "authenticated|postgres|supabase_admin|t|t|t",
+      "authenticator|postgres|supabase_admin|t|t|t",
+      "authenticator|supabase_storage_admin|supabase_admin|f|f|t",
+      "pg_create_subscription|postgres|supabase_admin|t|t|t",
+      "pg_monitor|postgres|supabase_admin|t|t|t",
+      "pg_read_all_data|postgres|supabase_admin|t|t|t",
+      "pg_signal_backend|postgres|supabase_admin|t|t|t",
+      "service_role|authenticator|supabase_admin|f|f|t",
+      "service_role|postgres|supabase_admin|t|t|t",
+      "supabase_privileged_role|postgres|supabase_admin|f|t|t",
+      "uellix_app|postgres|supabase_admin|t|f|f",
+      "uellix_auditor|postgres|supabase_admin|t|f|f",
+      "uellix_migrator|postgres|postgres|f|t|t",
+      "uellix_migrator|postgres|supabase_admin|t|f|f",
+      "uellix_owner|postgres|postgres|f|f|t",
+      "uellix_owner|postgres|supabase_admin|t|f|f",
+      "uellix_owner|uellix_migrator|postgres|f|f|t",
+      "uellix_writer|postgres|supabase_admin|t|f|f",
+      "uellix_writer|uellix_app|postgres|f|t|f"
+    ],
+    "sessionState": [
+      "postgres|postgres|none"
+    ]
+  },
+  "forwardOnly": {
+    "observedInstalled": [],
+    "policy": "forward-only",
+    "installedPackageAction": "refuse",
+    "note": "Every one of the nine is observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
+  },
+  "injections": [
+    {
+      "id": "F1",
+      "description": "dies immediately after the temporary transfer membership is opened",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F2",
+      "description": "dies after SET ROLE uellix_owner inside the transfer segment",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F3",
+      "description": "dies after the temporary GRANT CREATE ON SCHEMA",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F4",
+      "description": "dies after the FIRST ALTER FUNCTION ... OWNER TO, with the second unrun",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F5",
+      "description": "dies mid capability segment, between two REVOKEs the window governs",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F6",
+      "description": "dies after RESET ROLE but BEFORE the temporary membership is revoked",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F7",
+      "description": "dies inside the W47 alternation, after the ticket half of segment two",
+      "packageId": "T8",
+      "failed": false,
+      "sqlstateSeen": "SKIPPED_NO_PREREQUISITE_STATE",
+      "rolledBack": false,
+      "stateAfter": "UNKNOWN",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": false,
+      "providerMembershipsUnchanged": false,
+      "priorPackagesIntact": false
+    },
+    {
+      "id": "F8",
+      "description": "dies inside W46.S1, before the second transfer segment opens at all",
+      "packageId": "T8",
+      "failed": false,
+      "sqlstateSeen": "SKIPPED_NO_PREREQUISITE_STATE",
+      "rolledBack": false,
+      "stateAfter": "UNKNOWN",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": false,
+      "providerMembershipsUnchanged": false,
+      "priorPackagesIntact": false
+    },
+    {
+      "id": "F9",
+      "description": "dies immediately after the managed ALTER ROLE rewrite",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F10",
+      "description": "dies after an ordinary canonical DDL statement, no authority open",
+      "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    }
+  ],
+  "verdict": "DIAGNOSTIC_ONLY_NOT_CERTIFICATION"
+}

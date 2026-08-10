@@ -79,7 +79,9 @@
     "chain:attempt:plan": "tsx scripts/chain-attempt.ts plan",
     "chain:status": "tsx scripts/chain-status.ts report",
     "chain:status:write": "tsx scripts/chain-status.ts write",
-    "chain:status:verify": "tsx scripts/chain-status.ts verify"
+    "chain:status:verify": "tsx scripts/chain-status.ts verify",
+    "certify:pg176": "tsx scripts/pg176-certify.ts",
+    "certify:pg176:diagnostic": "tsx scripts/pg176-certify.ts --diagnostic"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

@@ -71,6 +71,15 @@ export const AUTHORITY_REFUSAL_CODES = [
   'AUTHORITY_EXECUTOR_OWNER_UNKNOWN',
   'AUTHORITY_PRIVILEGE_EVENT_UNSUPPORTED',
   'AUTHORITY_TEMP_MEMBER_NOT_INSTALLER',
+  // COMMIT 5, F-C4-01. The temporary `GRANT CREATE ON SCHEMA` was previously
+  // only recognised as a SHAPE — the words were present and in the right place.
+  // A grant naming another schema, or another grantee, satisfied that and opened
+  // CREATE somewhere nobody reviewed.
+  'AUTHORITY_TEMPORARY_CREATE_BINDING_MISMATCH',
+  'AUTHORITY_TRANSFER_SEGMENT_MULTIPLE_SCHEMAS',
+  // COMMIT 5, F-C4-02. An open temporary membership in a capability role that
+  // no segment of this package declares.
+  'AUTHORITY_UNDECLARED_CAPABILITY_MEMBERSHIP',
 ] as const
 
 export type AuthorityRefusalCode = (typeof AUTHORITY_REFUSAL_CODES)[number]

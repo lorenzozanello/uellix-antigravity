@@ -42,7 +42,7 @@ import { AUTHORITY_ROLE_REGISTRY } from './role-registry'
 import { INSTALLER_OWNER, OWNER_ROLE, isCapabilityRoleName } from './ownership-simulation'
 import { setReachabilityClosure } from './expected-reachability'
 import { INSTALLER_ONLY_CLASSES } from './window-plan'
-import { segmentRows, type AuthorityPlan } from './classification-manifest'
+import { segmentRows, type AuthorityPlan, type ExecutionSegment } from './classification-manifest'
 import { resolveExecutionDispositions } from './execution-disposition'
 import { GOVERNED_INSTALLER, type GeneratedGovernedPackage } from './governed-generator'
 import { AuthorityRefusal } from './window-contract'
@@ -143,6 +143,200 @@ function isSegmentBoundary(plan: AuthorityPlan, packageId: string, sourceIndex: 
     if (rows[rows.length - 1].statement.index === sourceIndex) return true
   }
   return false
+}
+
+/* -------------------------------------------------------------------------- */
+/* F-C4-01 — the temporary schema CREATE, bound to a schema and a grantee       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One temporary `GRANT`/`REVOKE ... CREATE ON SCHEMA`, read structurally.
+ *
+ * Deliberately NOT a substring test. The previous check asked whether the text
+ * `GRANT CREATE ON SCHEMA` appeared in case-G position, which is a question
+ * about the SHAPE of the lifecycle. `GRANT CREATE ON SCHEMA public TO
+ * uellix_app;` answers it yes.
+ */
+interface SchemaCreateEvent {
+  readonly kind: 'grant' | 'revoke'
+  readonly schema: string
+  readonly grantees: readonly string[]
+}
+
+function schemaCreateEvents(statements: readonly string[]): SchemaCreateEvent[] {
+  const events: SchemaCreateEvent[] = []
+  for (const sql of statements) {
+    if (parseMembershipStatement(sql) !== null) continue
+    const identity = parseStatementIdentity(sql)
+    const isGrant = identity.statementClass === 'grant-privilege'
+    const isRevoke = identity.statementClass === 'revoke-privilege'
+    if (!isGrant && !isRevoke) continue
+    if (identity.object?.objectClass !== 'schema') continue
+    const confersCreate = identity.operands[0]
+      .split('+')
+      .some((p) => p === 'CREATE' || p === 'ALL' || p === 'ALL PRIVILEGES')
+    if (!confersCreate) continue
+    events.push({
+      kind: isGrant ? 'grant' : 'revoke',
+      schema: identity.object.name,
+      grantees: identity.operands[1].split('+').filter((g) => g.length > 0),
+    })
+  }
+  return events
+}
+
+/**
+ * The ONE schema a transfer segment's canonical statements act in.
+ *
+ * `requiredTemporarySchemaCreate` is derived from the segment's FIRST statement
+ * alone (classification-manifest, `transferTarget`). That is correct for every
+ * transfer in the chain today and silently wrong for the first one that is not:
+ * a segment spanning two schemas would open CREATE on one of them and run the
+ * ALTERs for the other, and PostgreSQL would refuse the second half at apply
+ * time — after the first half had already committed its ownership change inside
+ * the same transaction. So the span is MEASURED here, over every row, and a
+ * segment that spans more than one schema is refused before a byte is applied.
+ */
+function transferSegmentSchema(
+  where: string,
+  plan: AuthorityPlan,
+  segment: ExecutionSegment,
+): string {
+  const schemas = new Set<string>()
+  for (const row of segmentRows(plan, segment)) {
+    const schema = row.identity.object?.schema
+    if (typeof schema !== 'string' || schema.length === 0) {
+      throw new AuthorityRefusal(
+        'AUTHORITY_TRANSFER_SEGMENT_MULTIPLE_SCHEMAS',
+        `${where}: ${segment.segmentId} transfers an object with no resolvable schema at source ` +
+          `statement ${row.statement.index}. A temporary CREATE grant names exactly one schema, and ` +
+          `there is no schema here to name.`,
+      )
+    }
+    schemas.add(schema)
+  }
+  if (schemas.size !== 1) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_TRANSFER_SEGMENT_MULTIPLE_SCHEMAS',
+      `${where}: ${segment.segmentId} transfers objects across ${schemas.size} schemas ` +
+        `(${[...schemas].sort().join(', ')}). The case-G lifecycle opens CREATE on ONE schema; the ` +
+        `statements for every other schema would then run without it, and PostgreSQL checks CREATE ` +
+        `on the containing schema against the INCOMING owner (S1-DEFECT-001).`,
+    )
+  }
+  const [schema] = [...schemas]
+  if (segment.requiredTemporarySchemaCreate !== schema) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_TEMPORARY_CREATE_BINDING_MISMATCH',
+      `${where}: ${segment.segmentId} acts in schema ${schema} but declares its temporary CREATE ` +
+        `against ${segment.requiredTemporarySchemaCreate ?? '(none)'}.`,
+    )
+  }
+  return schema
+}
+
+/**
+ * Binds the emitted temporary CREATE to the exact schema and the exact grantee.
+ *
+ * F-C4-01. Both halves are re-derived from the generated bytes: the grant and
+ * the revoke must name the schema the segment's OWN statements act in, and the
+ * only grantee either may name is the capability the segment transfers to.
+ */
+function assertTemporaryCreateBinding(
+  where: string,
+  segment: ExecutionSegment,
+  schema: string,
+  authoritySql: readonly string[],
+): void {
+  const target = segment.ownerDestination as string
+  const events = schemaCreateEvents(authoritySql)
+
+  if (events.length !== 2 || events[0].kind !== 'grant' || events[1].kind !== 'revoke') {
+    throw new AuthorityRefusal(
+      'AUTHORITY_TEMPORARY_CREATE_BINDING_MISMATCH',
+      `${where}: ${segment.segmentId} emits ${events.length} temporary schema-CREATE statement(s) ` +
+        `(${events.map((e) => `${e.kind} ${e.schema}`).join(', ') || 'none'}). The case-G lifecycle ` +
+        `emits exactly one grant followed by exactly one revoke.`,
+    )
+  }
+
+  for (const event of events) {
+    if (event.schema !== schema) {
+      throw new AuthorityRefusal(
+        'AUTHORITY_TEMPORARY_CREATE_BINDING_MISMATCH',
+        `${where}: ${segment.segmentId} ${event.kind}s CREATE on schema ${event.schema}, but its ` +
+          `canonical statements act in ${schema}. The transfers would then run without CREATE on ` +
+          `the schema that actually contains them, and CREATE would be opened — briefly, and ` +
+          `unreviewed — somewhere else.`,
+      )
+    }
+    if (event.grantees.length !== 1 || event.grantees[0] !== target) {
+      throw new AuthorityRefusal(
+        'AUTHORITY_TEMPORARY_CREATE_BINDING_MISMATCH',
+        `${where}: ${segment.segmentId} ${event.kind}s CREATE on ${schema} ` +
+          `${event.kind === 'grant' ? 'to' : 'from'} ${event.grantees.join(', ') || '(nobody)'}; the ` +
+          `only principal this segment may open it for is its transfer target ${target}.`,
+      )
+    }
+  }
+}
+
+/**
+ * The one elevation window, IN THE BYTES, that a transfer segment runs inside.
+ *
+ * Attribution has to come from the emitted text rather than from the generator's
+ * `segmentId` labels, otherwise a mislabelled statement would be checked against
+ * the segment it claims to belong to instead of the one it actually runs in.
+ * `SET ROLE` … `RESET ROLE` is the boundary, and it is exact: `walkRoles` has
+ * already refused any nesting, so the run between a matched pair is one window
+ * governing one segment.
+ *
+ * W46 is the case that makes this necessary. Its two transfer segments are
+ * adjacent — quota closes and ticket opens with nothing canonical between them —
+ * so a naive "walk backwards to the previous canonical statement" would sweep
+ * quota's close statements into ticket's open run.
+ */
+function elevationWindowOf(
+  where: string,
+  segment: ExecutionSegment,
+  steps: readonly RoleWalkStep[],
+  positionOfSource: ReadonlyMap<number, number>,
+  sourceIndexes: readonly number[],
+): RoleWalkStep[] {
+  const first = positionOfSource.get(sourceIndexes[0])
+  const last = positionOfSource.get(sourceIndexes[sourceIndexes.length - 1])
+  if (first === undefined || last === undefined) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_EXECUTION_CONTEXT_UNRESOLVED',
+      `${where}: ${segment.segmentId}: its canonical statements were not all matched in the output.`,
+    )
+  }
+
+  let open = -1
+  for (let k = first - 1; k >= 0; k -= 1) {
+    if (steps[k].identity.statementClass === 'reset-role') break
+    if (steps[k].identity.statementClass === 'set-role') {
+      open = k
+      break
+    }
+  }
+  let close = -1
+  for (let k = last + 1; k < steps.length; k += 1) {
+    if (steps[k].identity.statementClass === 'set-role') break
+    if (steps[k].identity.statementClass === 'reset-role') {
+      close = k
+      break
+    }
+  }
+  if (open === -1 || close === -1) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_EXECUTION_CONTEXT_UNRESOLVED',
+      `${where}: ${segment.segmentId} does not run inside a matched SET ROLE / RESET ROLE window in ` +
+        `the emitted bytes. Its ALTER ... OWNER TO statements would execute as the installer, which ` +
+        `PostgreSQL refuses with \`must be owner of function\` — or, worse, would not.`,
+    )
+  }
+  return steps.slice(open + 1, close)
 }
 
 /** The pinned case-G order, checked against the emitted text of one segment. */
@@ -250,7 +444,13 @@ export function validateGeneratedPackage(
       }
     })
 
-  const consumed: { sourceIndex: number; role: string; authorityBefore: number }[] = []
+  const consumed: {
+    sourceIndex: number
+    role: string
+    authorityBefore: number
+    /** Position in the byte walk, so a segment can be located in the OUTPUT. */
+    stepPosition: number
+  }[] = []
   /**
    * The steps the walk did NOT consume as canonical — i.e. the ones the
    * lifecycle inserted. The balance below is about TEMPORARY privileges, and a
@@ -263,7 +463,7 @@ export function validateGeneratedPackage(
   let cursor = 0
   let authorityBefore = 0
 
-  for (const step of steps) {
+  for (const [stepPosition, step] of steps.entries()) {
     const stepKey = statementIdentityKey(step.identity)
 
     if (cursor < expected.length && stepKey === expected[cursor].key) {
@@ -276,7 +476,7 @@ export function validateGeneratedPackage(
             `the emitted transitions alone, the same way PostgreSQL will derive it.`,
         )
       }
-      consumed.push({ sourceIndex: target.sourceIndex, role: step.role, authorityBefore })
+      consumed.push({ sourceIndex: target.sourceIndex, role: step.role, authorityBefore, stepPosition })
       authorityBefore = 0
       cursor += 1
       continue
@@ -391,7 +591,33 @@ export function validateGeneratedPackage(
   }
   checks.push('every temporary membership and every temporary schema CREATE is given back')
 
-  /* J / K — reachability, re-derived statement by statement ---------------- */
+  /* J / K — reachability, re-derived statement by statement ----------------
+   *
+   * F-C4-02. The concurrency check used to count only what the INSTALLER could
+   * reach, and the transfer lifecycle does not grant the installer anything: it
+   * grants `<target> TO uellix_owner`. So the one topology the check was named
+   * after — two capability lifecycles open at once — was invisible to it in the
+   * eleven segments where it can actually happen. What is counted now is every
+   * OPEN temporary membership edge whose ROLE is a capability, whoever the
+   * member is, and the permitted set is derived from the plan's own segments.
+   */
+  const permittedCapabilityEdges = new Map<string, string>()
+  for (const segment of plan.segments.filter((s) => s.packageId === packageId)) {
+    if (segment.authorityClass === 'OWNER_TRANSFER') {
+      // Measured (pg176-transfer-lab): the EXECUTING role must be able to SET
+      // ROLE to the incoming owner, and the executing role is uellix_owner.
+      permittedCapabilityEdges.set(
+        `${segment.ownerDestination}:${OWNER_ROLE}`,
+        `${segment.segmentId} (transfer target)`,
+      )
+    } else if (segment.authorityClass === 'CAPABILITY') {
+      permittedCapabilityEdges.set(
+        `${segment.executor}:${GOVERNED_INSTALLER}`,
+        `${segment.segmentId} (capability elevation)`,
+      )
+    }
+  }
+
   const edges: { role: string; member: string }[] = []
   for (const step of authoritySteps) {
     const membership = parseMembershipStatement(step.raw)
@@ -409,7 +635,6 @@ export function validateGeneratedPackage(
     }
 
     const closure = setReachabilityClosure(edges)
-    const installerReach = new Set<string>()
     for (const path of closure) {
       const [member, target] = path.split('->')
       if (!isCapabilityRoleName(target)) continue
@@ -419,15 +644,34 @@ export function validateGeneratedPackage(
           `${where}: after statement ${step.index}, runtime principal ${member} can reach ${target}.`,
         )
       }
-      if (member === GOVERNED_INSTALLER) installerReach.add(target)
     }
-    if (installerReach.size > 1) {
+
+    // MEMBER-AGNOSTIC, and over the DIRECT edges rather than the closure: this
+    // is about how many capability lifecycles are OPEN, and a lifecycle is open
+    // exactly while its own membership row stands. Counting closure paths would
+    // report one lifecycle twice as soon as any intermediate existed.
+    const openCapabilityEdges = edges.filter((e) => isCapabilityRoleName(e.role))
+    if (openCapabilityEdges.length > 1) {
       throw new AuthorityRefusal(
         'AUTHORITY_CONCURRENT_CAPABILITY_LIFECYCLES',
-        `${where}: after statement ${step.index} the installer can reach ` +
-          `${[...installerReach].sort().join(' and ')}. Two capability lifecycles open at once is ` +
-          `the W46 mutation: quota and ticket must be transferred one after the other.`,
+        `${where}: after statement ${step.index}, ${openCapabilityEdges.length} temporary capability ` +
+          `memberships stand at once: ` +
+          `${openCapabilityEdges.map((e) => `${e.role}->${e.member}`).sort().join(', ')}. This is the ` +
+          `W46 mutation: quota and ticket are transferred one after the other, and the first ` +
+          `lifecycle must be closed before the second opens. No phase of the current plan permits ` +
+          `two.`,
       )
+    }
+    for (const edge of openCapabilityEdges) {
+      const permitted = permittedCapabilityEdges.get(`${edge.role}:${edge.member}`)
+      if (permitted === undefined) {
+        throw new AuthorityRefusal(
+          'AUTHORITY_UNDECLARED_CAPABILITY_MEMBERSHIP',
+          `${where}: after statement ${step.index}, ${edge.member} holds temporary membership in ` +
+            `${edge.role}, and no segment of this package declares that edge. The declared ones are: ` +
+            `${[...permittedCapabilityEdges.entries()].map(([k, v]) => `${k} <- ${v}`).sort().join('; ') || 'none'}.`,
+        )
+      }
     }
   }
   if (edges.length > 0) {
@@ -471,6 +715,7 @@ export function validateGeneratedPackage(
   checks.push(`all ${packageSegments.length} execution segments are represented`)
 
   const transferSegments = packageSegments.filter((s) => s.authorityClass === 'OWNER_TRANSFER')
+  const positionOfSource = new Map(consumed.map((c) => [c.sourceIndex, c.stepPosition]))
   for (const segment of transferSegments) {
     for (const row of segmentRows(plan, segment)) {
       if (row.identity.statementClass !== 'owner-transfer') {
@@ -496,8 +741,31 @@ export function validateGeneratedPackage(
       }
     }
     assertCaseGShape(where, segment.segmentId, segment.ownerDestination as string, generated)
+
+    // F-C4-01. One schema across the whole segment, and the temporary CREATE
+    // bound to THAT schema and to the segment's own transfer target — both
+    // re-derived from the emitted bytes, inside the elevation window the bytes
+    // themselves delimit.
+    const schema = transferSegmentSchema(where, plan, segment)
+    const lifecycle = elevationWindowOf(
+      where,
+      segment,
+      steps,
+      positionOfSource,
+      segmentRows(plan, segment).map((r) => r.statement.index),
+    )
+    assertTemporaryCreateBinding(
+      where,
+      segment,
+      schema,
+      lifecycle.map((s) => s.raw),
+    )
   }
   checks.push(`all ${transferSegments.length} transfer segment(s) follow the case-G lifecycle`)
+  checks.push(
+    `all ${transferSegments.length} transfer segment(s) act in one schema, and open temporary ` +
+      `CREATE on exactly that schema for exactly their own target`,
+  )
 
   return { packageId, checks }
 }
