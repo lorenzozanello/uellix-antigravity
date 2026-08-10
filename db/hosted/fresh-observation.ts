@@ -286,6 +286,15 @@ export interface ChainAttemptRecord {
 
 export type AttemptStatus = 'UNKNOWN' | 'OPEN' | 'CONSUMED'
 
+/**
+ * The kind a CHAIN attempt declares, for records written from Commit 5.4 on.
+ *
+ * Absence is still accepted — see `parseChainAttemptLedger`. This constant
+ * exists so the chain side can name what it is rather than being defined only
+ * as "not the other one".
+ */
+export const CHAIN_ATTEMPT_KIND = 'hosted-chain'
+
 export function parseAttemptLedger(raw: string | null): readonly ChainAttemptRecord[] {
   if (raw === null) return []
   const out: ChainAttemptRecord[] = []
@@ -313,6 +322,27 @@ export function parseAttemptLedger(raw: string | null): readonly ChainAttemptRec
     })
   }
   return out
+}
+
+/**
+ * The CHAIN attempts in a ledger, and nothing else (F-PS-04).
+ *
+ * `parseRemediationAttemptLedger` has always dropped a record that does not
+ * declare the remediation kind; the reverse direction was open. A remediation
+ * record pasted into `artifacts/hosted-chain-attempts.jsonl` parsed as a
+ * perfectly good generic attempt and could therefore be the latest OPENED one —
+ * which is the entire freshness binding, decided by a record measuring a
+ * different question.
+ *
+ * A record with NO kind is accepted, deliberately: every chain attempt written
+ * before Commit 5.4 has none, and refusing them would retroactively empty the
+ * ledger whose whole value is that it is append-only. What is refused is a
+ * record that positively declares itself something else.
+ */
+export function parseChainAttemptLedger(raw: string | null): readonly ChainAttemptRecord[] {
+  return parseAttemptLedger(raw).filter(
+    (r) => r.kind === undefined || r.kind === CHAIN_ATTEMPT_KIND,
+  )
 }
 
 /**
@@ -517,7 +547,10 @@ export function evaluateFreshChainObservation(
     )
   }
 
-  const status = attemptStatus(parseAttemptLedger(inputs.attemptLedger), inputs.expectedAttemptId)
+  const status = attemptStatus(
+    parseChainAttemptLedger(inputs.attemptLedger),
+    inputs.expectedAttemptId,
+  )
   if (status !== 'OPEN') {
     return refuse(
       'CHAIN_OBSERVATION_ATTEMPT_NOT_OPEN',

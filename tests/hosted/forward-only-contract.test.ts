@@ -204,11 +204,19 @@ describe('EXACTLY_ONE_WRITE_PER_OBSERVATION — the locus, pinned rather than re
   })
 
   it('and the CLI is what writes it — so the contract documents that, not the gate', () => {
+    // COMMIT 5.4 moved the CONSUMED record's CONSTRUCTION into the operator
+    // module, and that is the point rather than an erosion: it is carried on
+    // the authorization value, so a refusal structurally has no ledger line to
+    // append and the CLI cannot record a write that was never authorised.
+    // What must not move is the WRITE — a pure gate that appended would be a
+    // gate whose invocation is a side effect.
     const cli = doc('scripts/chain-attempt.ts')
-    expect(cli).toContain("event: 'CONSUMED'")
     expect(cli).toContain('appendFileSync')
-    // The gate must NOT pretend to perform the transition itself.
+    expect(cli).toContain('consumedLedgerLine')
+    expect(doc('db/hosted/chain-operator.ts')).toContain("event: 'CONSUMED'")
+    // Neither gate may pretend to perform the transition itself.
     expect(doc('db/hosted/fresh-observation.ts')).not.toContain('appendFileSync')
+    expect(doc('db/hosted/chain-operator.ts')).not.toContain('appendFileSync')
   })
 })
 

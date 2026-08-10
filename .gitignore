@@ -51,3 +51,9 @@ next-env.d.ts
 # re-running last week's probe, which is the thing the freshness gate exists to
 # refuse. The ATTEMPT LEDGER beside it is the durable record and IS committed.
 artifacts/hosted-chain-pre-write-probe.sql
+# COMMIT 5.4. The same reasoning, for the two probes T1 additionally needs and
+# for the remediation's own witness probe. All three carry an attempt id as a
+# SQL literal and are rewritten by the next `open`.
+artifacts/hosted-chain-t1-remediation-probe.sql
+artifacts/hosted-chain-t1-prechain-probe.sql
+artifacts/hosted-remediation-witness-probe.sql
