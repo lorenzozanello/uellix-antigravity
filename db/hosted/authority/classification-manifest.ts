@@ -217,7 +217,18 @@ function segmentWindow(window: ResolvedClassificationWindow): ExecutionSegment[]
   let current: SimulatedStatement[] = []
   let currentKey: string | null = null
 
-  const executorOf = (row: SimulatedStatement): string => {
+  /**
+   * What SPLITS a window into segments — not necessarily who runs them.
+   *
+   * For a transfer the grouping key is the incoming owner, because each target
+   * needs its own privilege lifecycle. The role that actually EXECUTES the
+   * `ALTER ... OWNER TO` is uellix_owner in every case: measured, PG 17.6, the
+   * outgoing owner is the only identity that can hold both the ownership of the
+   * object and (temporarily) membership in the incoming owner. Conflating the
+   * two was a real defect, and it was the generated-output validator that
+   * caught it — the emitted SQL was right and the field describing it was not.
+   */
+  const groupKeyOf = (row: SimulatedStatement): string => {
     if (window.authorityClass === 'OWNER') return OWNER_ROLE
     if (window.authorityClass === 'OWNER_TRANSFER') return row.ownerDestination ?? OWNER_ROLE
     // CAPABILITY: the exact role that owns the object right now.
@@ -248,7 +259,10 @@ function segmentWindow(window: ResolvedClassificationWindow): ExecutionSegment[]
 
   const flush = (): void => {
     if (current.length === 0) return
-    const executor = currentKey as string
+    const groupKey = currentKey as string
+    // The executor is the role that runs the statements. For a transfer that is
+    // always the outgoing owner; the incoming owner is the DESTINATION.
+    const executor = window.authorityClass === 'OWNER_TRANSFER' ? OWNER_ROLE : groupKey
     const digests = current.map((r) => normalizedExecutableDigest(r.statement.raw))
     const isTransfer = window.authorityClass === 'OWNER_TRANSFER'
     const isCapability = window.authorityClass === 'CAPABILITY'
@@ -270,12 +284,12 @@ function segmentWindow(window: ResolvedClassificationWindow): ExecutionSegment[]
       packageId: window.packageId,
       authorityClass: window.authorityClass,
       executor,
-      ownerDestination: isTransfer ? executor : null,
+      ownerDestination: isTransfer ? groupKey : null,
       startStatementIdentity: statementIdentityKey(current[0].identity),
       endStatementIdentity: statementIdentityKey(current[current.length - 1].identity),
       statementCount: current.length,
       statementDigestSequence: digests,
-      requiredTemporaryMemberships: isTransfer ? [OWNER_ROLE, executor] : [executor],
+      requiredTemporaryMemberships: isTransfer ? [OWNER_ROLE, groupKey] : [executor],
       requiredTemporarySchemaCreate: isTransfer
         ? transferTarget
         : isCapability && createsInSchema !== undefined
@@ -288,10 +302,10 @@ function segmentWindow(window: ResolvedClassificationWindow): ExecutionSegment[]
   }
 
   for (const row of window.members) {
-    const executor = executorOf(row)
-    if (executor !== currentKey) {
+    const key = groupKeyOf(row)
+    if (key !== currentKey) {
       flush()
-      currentKey = executor
+      currentKey = key
     }
     current.push(row)
   }
@@ -574,8 +588,25 @@ export function assertExecutorMatchesOwnership(
   rows: readonly SimulatedStatement[],
 ): void {
   for (const row of rows) {
-    const derived =
-      segment.authorityClass === 'OWNER_TRANSFER' ? row.ownerDestination : row.ownerBefore
+    if (segment.authorityClass === 'OWNER_TRANSFER') {
+      if (segment.executor !== OWNER_ROLE) {
+        throw new AuthorityRefusal(
+          'AUTHORITY_EXECUTOR_ROLE_MISMATCH',
+          `${segment.segmentId} declares executor ${segment.executor}; an ownership transfer runs ` +
+            `as ${OWNER_ROLE} and transfers TO its destination.`,
+        )
+      }
+      if (row.ownerDestination !== segment.ownerDestination) {
+        throw new AuthorityRefusal(
+          'AUTHORITY_EXECUTOR_ROLE_MISMATCH',
+          `${segment.segmentId} declares destination ${segment.ownerDestination} but statement ` +
+            `${row.statement.index} transfers to ${row.ownerDestination}.`,
+        )
+      }
+      continue
+    }
+
+    const derived = row.ownerBefore
     if (segment.authorityClass === 'OWNER') {
       if (row.ownerBefore !== null && row.ownerBefore !== OWNER_ROLE) {
         throw new AuthorityRefusal(
