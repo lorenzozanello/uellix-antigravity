@@ -126,6 +126,15 @@ aplica **entera como unidad**.
 
 ### 1.2 Ficha por paquete
 
+> **La columna «Reapply» describe la clase CANÓNICA del paquete, no una
+> autorización hosted.** Dice si el SQL converge al reejecutarse — una propiedad
+> del artefacto. Sobre un objetivo hosted managed, un paquete cuyo estado medido
+> sea `INSTALLED` **no se vuelve a aplicar**, converja o no:
+> `HOSTED_CHAIN_CONTRACT = FORWARD_ONLY`, y el gate previo a la escritura lo
+> rechaza con `CHAIN_TARGET_ALREADY_INSTALLED`.
+>
+> Contrato: `STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md`.
+
 | Paquete | Precondiciones | Rol requerido | Objetos creados | Datos modificados | Aditivo | Rollback | Reapply | Guard de orden | Riesgo operativo |
 |---|---|---|---|---|---|---|---|---|---|
 | `stella_0004_role_separation` | **superusuario**, **PG ≥ 17**, baseline completo | superusuario (local: `supabase_admin`) | 5 roles; ownership de 38 tablas + 8 funciones → `uellix_owner`; 4 entradas globales de `pg_default_acl`; `USAGE ON SCHEMA auth` | ninguno (sólo privilegios) | no (transfiere ownership) | `stella_0004_rollback.sql` | sí | — | **BLOQUEANTE en hosted** (RR-09/RR-03/RR-02). Un fallo a mitad deja el producto sin RLS funcional |

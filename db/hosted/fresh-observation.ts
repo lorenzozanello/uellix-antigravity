@@ -82,6 +82,23 @@ import {
   type ProductionIdentifiers,
 } from './target-identity'
 
+/**
+ * The reapply policy this module ENACTS, named so documentation and code cannot
+ * drift apart without a test noticing.
+ *
+ * NOT a switch. Nothing reads it to decide anything — the refusal it describes
+ * is `CHAIN_TARGET_ALREADY_INSTALLED` in `authorizeChainWrite`, and that is the
+ * only implementation. A second source of truth is what this avoids: the
+ * constant exists so the governing runbook can be asserted against the behaviour
+ * rather than against someone's memory of it.
+ *
+ * See docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md.
+ */
+export const HOSTED_CHAIN_REAPPLY_POLICY = 'forward-only' as const
+
+/** What an INSTALLED package gets, in one word. Enacted, never consulted. */
+export const INSTALLED_PACKAGE_ACTION = 'refuse' as const
+
 /** The envelope's version. A document that does not name it is not this format. */
 export const PRE_WRITE_OBSERVATION_SCHEMA = 'uellix.hosted.chain.observation/1'
 

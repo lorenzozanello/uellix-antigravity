@@ -1,5 +1,14 @@
 # Local Staging — G2/G3 Rehearsal (worktree `codex/stella-g2-local-rehearsal`)
 
+> **Alcance — ensayo self-hosted.** Todo lo que este documento mide sobre
+> **idempotencia y segunda aplicación** (§ «2ª aplicación», huellas estructurales,
+> convergencia de los `DO` blocks) se midió en un stack Docker local con
+> superusuario disponible. Esa evidencia se conserva y no se reescribe.
+>
+> **No gobierna la cadena Stella hosted sobre Supabase managed**, donde un paquete
+> `INSTALLED` no se vuelve a aplicar. Véase
+> `docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md`.
+
 > Ensayo local, completamente offline y aislado, de los gates G2 y G3 antes de
 > tocar el único proyecto Supabase remoto de Uellix (que soporta despliegue y
 > pilotos — se trata como producción). No sustituye la ejecución real de G2/G3

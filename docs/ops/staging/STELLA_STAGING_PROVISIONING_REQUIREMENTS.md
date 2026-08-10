@@ -433,6 +433,12 @@ de una transacción — ni `CREATE INDEX CONCURRENTLY`, ni `VACUUM`, ni
 | Objetivo de producción | `HOSTED_TARGET_IS_PRODUCTION` |
 | Cualquier flag `STELLA_*` no-falso | `PROVISIONING_FEATURE_FLAG_ENABLED` |
 | Un apply que abarque bootstrap **y** cadena | `HOSTED_SENTINEL_BOUNDARY_CROSSED` |
+| Aplicar la cadena sin observación PRE_WRITE | `CHAIN_OBSERVATION_REQUIRED` |
+| Observación de un intento ya consumido o superado | `CHAIN_OBSERVATION_ATTEMPT_NOT_OPEN` |
+| Documento editado tras ensamblarse | `CHAIN_OBSERVATION_DIGEST_INVALID` |
+| Paquete medido `INSTALLED` | `CHAIN_TARGET_ALREADY_INSTALLED` |
+| Paquete medido `PARTIAL_OR_INCONSISTENT` | `CHAIN_OBSERVATION_PARTIAL_STATE` |
+| Apply directo por `planHostedApply` sin autorización | `HOSTED_CHAIN_WRITE_UNAUTHORIZED` |
 
 Los trece están cubiertos por la matriz de ataques de
 `tests/hosted/hosted-provisioning-runner.test.ts`.
@@ -465,8 +471,29 @@ decisión:
 | Resultado indeterminado | **`DESTROY_AND_REPROVISION`** |
 | Unidad aplicada **sin** `psql -1` | `HALT_AND_ESCALATE` |
 | Fallo del bootstrap | `DESTROY_AND_REPROVISION` |
-| Fallo en la cadena Stella | `ROLLBACK_SQL` — esos paquetes sí tienen rollback, y se niegan en vez de degradar |
+| Fallo en la cadena Stella | **Primero §7.5**: observación fresca. Sólo si mide `INSTALLED` y se decide revertir, `ROLLBACK_SQL` — esos paquetes sí tienen rollback y se niegan en vez de degradar. Si mide `ABSENT`, no hay nada que revertir |
 | El proyecto guarda algo irreemplazable | `HALT_AND_ESCALATE` |
+
+### 7.5 La cadena Stella — un write por medición
+
+La tabla de §7.4 decide por **unidad del baseline**. La cadena tiene además una
+regla propia, y es la que gobierna cualquier resultado ambiguo:
+
+> **Ningún reintento se decide por el exit code.** Tras un timeout, una conexión
+> perdida, un ACK ambiguo, una caída del proceso o un fallo al escribir la
+> evidencia, el operador **DEBE** abrir un intento nuevo y obtener una
+> observación read-only fresca **antes** de decidir nada. Reutilizar el `psql`
+> anterior es el camino por el que un paquete ya comprometido se aplica dos veces.
+
+Fresca dice `ABSENT` → el paquete puede reintentarse (su transacción revirtió).
+Fresca dice `INSTALLED` → **no se reaplica**; se reconstruye la evidencia POST y
+se avanza. Fresca dice `PARTIAL_OR_INCONSISTENT` → ni reintento ni paquete
+siguiente; recuperación humana.
+
+El flujo autorizado es `pnpm chain:attempt:open` → sonda → `pnpm
+chain:attempt:plan`, que autoriza **exactamente un paquete**. El contrato
+completo, con el ciclo de vida del intento y los casos F12-F15, está en
+`STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md` — documento normativo para todo esto.
 
 `DESTROY_AND_REPROVISION` es el **valor por defecto**, no el último recurso, y la
 inversión es deliberada. El instinto de tratar la destrucción como escalada está

@@ -526,6 +526,18 @@ inventario que no coincida aborta aunque el operador olvide ambas banderas.
 El script es **idempotente**: aplicarlo dos veces produce el mismo estado y la
 segunda pasada no emite ningún cambio.
 
+> **Alcance.** Esa idempotencia es una propiedad del **SQL canónico** y sigue
+> siendo cierta: el script converge. Lo que **no** es cierto es que ejecutarlo
+> dos veces esté autorizado sobre un objetivo hosted managed. Son dos cosas
+> distintas y conviene no leerlas como una:
+>
+> * **semántica canónica** — el SQL converge, medido y sin cambios;
+> * **contrato de ejecución hosted** — un paquete `INSTALLED` no se vuelve a
+>   aplicar, porque la topología de autoridad managed no le da al ejecutor la
+>   propiedad que una segunda pasada exige, y porque la política es forward-only.
+>
+> Véase `docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md`.
+
 ### 7.3 Rollback
 
 `db/prepared/stella_0004_rollback.sql` exige la autorización

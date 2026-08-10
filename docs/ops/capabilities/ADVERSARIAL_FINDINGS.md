@@ -3,6 +3,22 @@
 **Fecha:** 2026-08-03. **Estado:** todos los BLOCKER y MAJOR cerrados y
 verificados por ejecución. **Nada aplicado a ningún stack vivo.**
 
+> **Alcance de la evidencia de segunda aplicación (A-M6 = B-F10, D2).**
+>
+> Este documento registra que los cinco paquetes se aplicaron **dos veces** con
+> estado idéntico. Esa medición **se conserva y sigue siendo cierta**: se hizo en
+> el ciclo de vida canónico self-hosted, dentro de la ventana de superusuario,
+> en un contenedor desechable con PostgreSQL 17.6.
+>
+> **No es el contrato de la cadena Stella hosted sobre Supabase managed.** Allí un
+> paquete `INSTALLED` no se vuelve a aplicar — política forward-only, y además
+> `CREATE OR REPLACE` en segunda pasada exigiría una propiedad que el ejecutor
+> managed no tiene. Es el mismo mecanismo que este documento ya midió en A-M6,
+> observado desde el otro lado: allí se resolvió con la ventana de superusuario,
+> que en managed no existe.
+>
+> Contrato vigente: `docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md`.
+
 Tres fuentes independientes, en orden cronológico:
 
 | Fuente | Método | BLOCKER | MAJOR | MINOR | NIT |
