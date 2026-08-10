@@ -140,6 +140,31 @@ abortaban sin `rolsuper`, y Supabase gestionado no expone superusuario.
 |---|---|---|---|---|
 | `stella_hosted_0001_managed_role_bootstrap.sql` | `stella_hosted_0001_rollback.sql` | **G11/G12 propuestos** (`docs/ops/staging/STELLA_STAGING_GATE_PLAN.md`) | Los **5** roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`) sin ningún atributo peligroso; esquema `uellix_bootstrap`; `assert_hosted_capabilities(text)` (la precondición que sustituye a la guarda `rolsuper`); `hosted_capability_report()` (sólo lectura); tabla `staging_sentinel` (**fila no insertada** — la escribe el aprovisionamiento); `public.uellix_auth_uid()`, el shim `SECURITY DEFINER` que expone el actor de sesión a los roles de capacidad sin `USAGE ON SCHEMA auth` (RR-09) | **DISEÑO — no aplicado** |
 
+### Train 5B — remediación prechain forward-only (`stella_hosted_0002`)
+
+**Estado: DISEÑO. No aplicado a ninguna base.**
+`stella_hosted_0001` es **sólo de primera provisión**. Su §5 entrega
+`uellix_bootstrap` a `uellix_owner`, así que a partir de la segunda aplicación
+`postgres` ya no lo posee y **17 sentencias** del paquete la exigen: reproducido
+en PG 17.6 con `ERROR: must be owner of schema uellix_bootstrap`, en su primer
+`COMMENT ON SCHEMA`. **Su segunda pasada está PROHIBIDA.**
+
+Un proyecto ya bootstrapeado que necesite la autoridad prechain certificada en
+el Commit 5.1 usa este paquete, y sólo este.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0002_prechain_authority_reconciliation.sql` | **ninguno, a propósito** (`db/hosted/prechain-remediation.ts`) | `PRECHAIN_AUTHORITY_GATE` + testigo `INSTALLED` | `uellix_migrator` gana `CREATEROLE`, `CREATE ON DATABASE` y los `SELECT` de visibilidad; `uellix_owner` gana los 12 privilegios prechain E-01 con opción de concesión donde la cadena los re-concede; `uellix_bootstrap.assert_capability_membership_topology()` se crea y `assert_hosted_capabilities()` se reemplaza por el cuerpo certificado. **No crea ningún rol de capacidad y no transfiere ninguna propiedad.** | **DISEÑO — no aplicado** |
+
+> **Por qué no lleva rollback.** Deshacer una reconciliación de autoridad ya
+> confirmada significaría revocar privilegios de los que la cadena puede ya
+> depender y quitar `CREATEROLE` a un rol que puede ya haber creado roles de
+> capacidad — correcto sólo bajo suposiciones sobre lo que pasó desde entonces,
+> que es justo lo que el contrato forward-only prohíbe. La recuperación es:
+> un fallo previo al commit revierte (medido), un resultado ambiguo se clasifica
+> por observación fresca, `INSTALLED` nunca se reaplica, y una corrección es un
+> paquete forward-only **nuevo**.
+
 > **NO sustituye a `stella_0004`, y se niega donde `stella_0004` es aplicable.**
 > Su §0 (E2) aborta si `current_user` ES superusuario: instalar en silencio el
 > modelo más débil sobre una base capaz de sostener el fuerte sería una

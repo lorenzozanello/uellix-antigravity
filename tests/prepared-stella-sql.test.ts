@@ -351,6 +351,14 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // dynamic EXECUTE, which caught its first draft's `format()` loop.
       'stella_hosted_0001_managed_role_bootstrap.sql',
       'stella_hosted_0001_rollback.sql',
+      // COMMIT 5.2. The forward-only prechain remediation, and it has NO
+      // rollback file — the only forward script in this directory that does
+      // not. That is a decision with a reason, carried by
+      // db/hosted/prechain-remediation.ts and enforced by the registry test:
+      // undoing a committed authority reconciliation would mean revoking
+      // privileges the chain may already depend on, which is correct only
+      // under assumptions about what happened since.
+      'stella_hosted_0002_prechain_authority_reconciliation.sql',
     ])
   })
 

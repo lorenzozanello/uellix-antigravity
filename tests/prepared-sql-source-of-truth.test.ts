@@ -11,6 +11,8 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { PRECHAIN_REMEDIATION } from '@/db/hosted/prechain-remediation'
+
 const ROOT = process.cwd()
 const PREPARED_DIR = path.join(ROOT, 'db', 'prepared')
 const MIGRATIONS_DIR = path.join(ROOT, 'db', 'migrations')
@@ -169,6 +171,21 @@ describe('ADR 21 safeguard 4 — db/prepared/README.md is an accurate registry',
       // narrow — still lowercase words joined by underscores, still one numeric
       // segment, still an optional trailing letter — so a typo like
       // `stella__0001_x.sql` remains unmatched and still fails here.
+      // COMMIT 5.2. Exactly ONE exemption, and it is typed rather than
+      // spelled here: a FORWARD-ONLY package declares in
+      // db/hosted/prechain-remediation.ts why undoing it is not a thing a
+      // script can do. Writing the filename into this test instead would make
+      // the next exemption a one-line edit nobody has to justify.
+      if (file === `${PRECHAIN_REMEDIATION.id}.sql`) {
+        expect(PRECHAIN_REMEDIATION.kind).toBe('prechain-remediation')
+        expect(PRECHAIN_REMEDIATION.forwardOnlyNoRollbackReason.length).toBeGreaterThan(200)
+        expect(
+          existsSync(path.join(PREPARED_DIR, 'stella_hosted_0002_rollback.sql')),
+          'a forward-only remediation must NOT ship a rollback script',
+        ).toBe(false)
+        continue
+      }
+
       const match = /^([a-z]+(?:_[a-z]+)*_\d+[a-z]?)_.+\.sql$/.exec(file)
       expect(match, `unexpected prepared script name: ${file}`).not.toBeNull()
       const rollback = `${match![1]}_rollback.sql`
