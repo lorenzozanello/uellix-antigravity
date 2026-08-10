@@ -85,37 +85,78 @@ describe('the recovered classification windows', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('historical vs structural statement counts', () => {
-  // The recovered table counted only the DO blocks it had measured
-  // individually. This parser counts EVERY top-level executable statement
-  // between the anchors, which is the stronger definition the operator asked
-  // for: a DO block physically inside an owner window executes inside it, and a
-  // pin that skipped it would let its body change unnoticed.
+  // CORRECTION (Commit 3.1). Commit 3 attributed this delta to "ten DO blocks".
+  // That was FALSE and an independent review caught it. Re-measured here:
   //
-  // Four windows differ, by exactly the DO blocks they contain, and the four
-  // differences sum to the whole OWNER delta.
+  //   window   historical  structural  delta   DO inside   non-DO
+  //   W02          33          35        2         1          1
+  //   W06          35          40        5         2          3
+  //   W16           5           7        2         2          0
+  //   W23          21          22        1         1          0
+  //                                     ---       ---        ---
+  //                                      10         6          4
+  //
+  // The DO half is explained: the recovered partition counted only the DO
+  // blocks it had measured individually, and this parser counts every top-level
+  // executable statement between the anchors — the stronger definition, and the
+  // safer pin, because a DO block physically inside an owner window executes
+  // inside it and a count that skipped it would let its body change unnoticed.
+  //
+  // The remaining FOUR are not explained. They are inside W02 (one) and W06
+  // (three), their simulated ownerBefore is uellix_owner, and no class or
+  // property distinguishes them from the statements the historical count did
+  // include. A single integer per window admits many four-statement subsets, so
+  // identifying them here would be a guess dressed as a finding. The structural
+  // pins stand; the gap is recorded rather than papered over.
   const EXPECTED_MISMATCHES = [
-    { windowId: 'W02', historical: 33, structural: 35 },
-    { windowId: 'W06', historical: 35, structural: 40 },
-    { windowId: 'W16', historical: 5, structural: 7 },
-    { windowId: 'W23', historical: 21, structural: 22 },
+    { windowId: 'W02', historical: 33, structural: 35, doBlocks: 1 },
+    { windowId: 'W06', historical: 35, structural: 40, doBlocks: 2 },
+    { windowId: 'W16', historical: 5, structural: 7, doBlocks: 2 },
+    { windowId: 'W23', historical: 21, structural: 22, doBlocks: 1 },
   ]
 
-  it('differ in exactly the four windows that contain unnamed DO blocks', () => {
+  it('differ in exactly four windows, with exactly these counts', () => {
     const mismatches = plan.windows
       .filter((w) => w.historicalStatementCount !== w.structuralStatementCount)
       .map((w) => ({
         windowId: w.windowId,
         historical: w.historicalStatementCount,
         structural: w.structuralStatementCount,
+        doBlocks: w.members.filter((m) => m.identity.statementClass === 'do-block').length,
       }))
 
     expect(mismatches).toEqual(EXPECTED_MISMATCHES)
   })
 
-  it('accounts for the whole OWNER difference, statement for statement', () => {
+  it('accounts for the whole OWNER difference arithmetically', () => {
     const extra = EXPECTED_MISMATCHES.reduce((n, m) => n + (m.structural - m.historical), 0)
 
+    expect(extra).toBe(10)
     expect(partition.counts.owner).toBe(RECOVERED_TOTALS.ownerStatements + extra)
+  })
+
+  it('attributes six of the ten to DO blocks, and does not claim the other four', () => {
+    // The assertion that failed review was "delta = ten DO blocks". This is the
+    // measurement that would have contradicted it, so it is now permanent.
+    const doBlocks = EXPECTED_MISMATCHES.reduce((n, m) => n + m.doBlocks, 0)
+    const delta = EXPECTED_MISMATCHES.reduce((n, m) => n + (m.structural - m.historical), 0)
+
+    expect(doBlocks).toBe(6)
+    expect(delta - doBlocks).toBe(4)
+  })
+
+  it('locates the four unattributed statements in W02 and W06 and nowhere else', () => {
+    const unattributed = EXPECTED_MISMATCHES.map((m) => ({
+      windowId: m.windowId,
+      count: m.structural - m.historical - m.doBlocks,
+    }))
+
+    expect(unattributed).toEqual([
+      { windowId: 'W02', count: 1 },
+      { windowId: 'W06', count: 3 },
+      { windowId: 'W16', count: 0 },
+      { windowId: 'W23', count: 0 },
+    ])
   })
 })
 

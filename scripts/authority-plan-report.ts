@@ -14,6 +14,7 @@ import {
   partitionHostedStatements,
 } from '@/db/hosted/authority/classification-manifest'
 import { RECOVERED_TOTALS } from '@/db/hosted/authority/recovered-boundaries'
+import { validateResolvedAuthorityPlanForGeneration } from '@/db/hosted/authority/execution-disposition'
 
 const plan = buildAuthorityPlan()
 const partition = partitionHostedStatements(plan)
@@ -29,15 +30,31 @@ console.log(
 )
 
 console.log('\n=== HISTORICAL vs STRUCTURAL COUNT ===')
+console.log('  historical = the recovered A_FINAL authority-statement count')
+console.log('  structural = every top-level executable statement between the anchors (the pin)')
 const mismatches = plan.windows.filter(
   (w) => w.historicalStatementCount !== w.structuralStatementCount,
 )
 if (mismatches.length === 0) console.log('  all 51 agree')
+let deltaTotal = 0
+let doTotal = 0
 for (const w of mismatches) {
+  const doBlocks = w.members.filter((m) => m.identity.statementClass === 'do-block').length
+  const delta = w.structuralStatementCount - w.historicalStatementCount
+  deltaTotal += delta
+  doTotal += doBlocks
   console.log(
-    `  ${w.packageId}/${w.windowId} historical=${w.historicalStatementCount} structural=${w.structuralStatementCount}  (${w.describedAs.slice(0, 70)})`,
+    `  ${w.packageId}/${w.windowId} historical=${w.historicalStatementCount} ` +
+      `structural=${w.structuralStatementCount} delta=${delta} doBlocks=${doBlocks} ` +
+      `unattributed=${delta - doBlocks}`,
   )
 }
+console.log(
+  `  TOTAL delta=${deltaTotal}  explained by DO blocks=${doTotal}  UNATTRIBUTED=${deltaTotal - doTotal}`,
+)
+console.log('  CORRECTION: Commit 3 attributed this delta to "ten DO blocks". That was wrong.')
+console.log('  Six are DO blocks. Four — one in W02, three in W06 — have no distinguishing')
+console.log('  property and are recorded as unattributed rather than guessed at.')
 
 console.log('\n=== PARTITION (hosted) ===')
 const c = partition.counts
@@ -114,3 +131,33 @@ const trCreate = plan.segments.filter(
 )
 console.log(`  CAPABILITY execution segments needing temp CREATE: ${capCreate.length} (${capCreate.map((s) => s.segmentId).join(', ')})`)
 console.log(`  TRANSFER execution segments needing temp CREATE:   ${trCreate.length}`)
+
+/* -------------------------------------------------------------------------- */
+/* Execution disposition — the F-01 crosscheck                                 */
+/* -------------------------------------------------------------------------- */
+
+const gate = validateResolvedAuthorityPlanForGeneration(plan)
+
+console.log('\n=== PRE-GENERATION GATE ===')
+for (const check of gate.checks) console.log(`  PASS  ${check}`)
+
+console.log('\n=== EXECUTION DISPOSITION (no residual bucket) ===')
+const byKind = new Map<string, number>()
+for (const d of gate.dispositions) byKind.set(d.kind, (byKind.get(d.kind) ?? 0) + 1)
+for (const [kind, n] of [...byKind.entries()].sort()) console.log(`  ${kind}: ${n}`)
+console.log(`  TOTAL ${gate.dispositions.length}`)
+
+console.log('\n=== CANONICAL ROLE-CONTEXT OBLIGATIONS ===')
+for (const context of gate.canonicalRoleContexts) {
+  console.log(
+    `  ${context.packageId}[${context.statementIndex}] must run as ${context.requiredExecutor}` +
+      `\n      ${context.statementIdentity}` +
+      `\n      opened by ${context.spanOpenedBy}, digest ${context.digest.slice(0, 16)}…`,
+  )
+}
+console.log(`  CANONICAL_ROLE_CONTEXT_OBLIGATIONS = ${gate.canonicalRoleContexts.length}`)
+
+console.log('\n=== INSTALLER, with the positive reason each one qualifies ===')
+for (const d of gate.dispositions.filter((x) => x.kind === 'INSTALLER')) {
+  console.log(`  ${d.packageId}[${d.statementIndex}] ${d.statementIdentity}\n      ${d.reason}`)
+}

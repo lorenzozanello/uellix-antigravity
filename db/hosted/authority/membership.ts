@@ -46,6 +46,15 @@ export interface MembershipStatement {
   /** `null` when the statement does not say — it follows the member's rolinherit. */
   readonly inheritOption: boolean | null
   readonly adminOption: boolean
+  /**
+   * True for `REVOKE ADMIN OPTION FOR r FROM m` and `GRANT OPTION FOR`.
+   *
+   * These do NOT remove the membership — they narrow it. A cleanup checker that
+   * treated one as a release would report a window balanced while the member
+   * still held SET on the role, which is the whole thing the checker exists to
+   * catch.
+   */
+  readonly optionOnly: boolean
   /** True when any member is CURRENT_USER, SESSION_USER or CURRENT_ROLE. */
   readonly namesSessionRole: boolean
 }
@@ -111,6 +120,13 @@ export function parseMembershipStatement(sql: string): MembershipStatement | nul
     return null
   }
 
+  const code = lexSql(sql)
+    .filter((seg) => seg.kind === 'code')
+    .map((seg) => seg.text)
+    .join(' ')
+    .toUpperCase()
+  const optionOnly = /\b(ADMIN|GRANT)\s+OPTION\s+FOR\b/.test(code)
+
   const roles = identity.operands[0].split('+').filter((r) => r.length > 0)
   const members = identity.operands[1].split('+').filter((r) => r.length > 0)
   const options = readOptions(sql)
@@ -119,6 +135,7 @@ export function parseMembershipStatement(sql: string): MembershipStatement | nul
     kind: identity.statementClass === 'grant-membership' ? 'grant' : 'revoke',
     roles,
     members,
+    optionOnly,
     ...options,
     namesSessionRole: members.some((m) => SESSION_ROLE_SET.has(m.toUpperCase())),
   }

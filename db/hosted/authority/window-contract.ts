@@ -66,6 +66,11 @@ export const AUTHORITY_REFUSAL_CODES = [
   'AUTHORITY_EXECUTION_SEGMENT_MULTIPLE_ROLES',
   'AUTHORITY_DO_MULTIPLE_EXECUTORS',
   'AUTHORITY_CONCURRENT_CAPABILITY_LIFECYCLES',
+  'AUTHORITY_EXECUTION_CONTEXT_UNRESOLVED',
+  'AUTHORITY_ROLE_CONTEXT_AMBIGUOUS',
+  'AUTHORITY_EXECUTOR_OWNER_UNKNOWN',
+  'AUTHORITY_PRIVILEGE_EVENT_UNSUPPORTED',
+  'AUTHORITY_TEMP_MEMBER_NOT_INSTALLER',
 ] as const
 
 export type AuthorityRefusalCode = (typeof AUTHORITY_REFUSAL_CODES)[number]
@@ -101,8 +106,20 @@ export interface AuthorityWindow {
   /** `W01`.. — unique across the whole plan, not per package. */
   readonly windowId: string
   readonly authority: WindowAuthority
-  /** The capability role the window acts as. `null` for owner and transfer. */
-  readonly capabilityRole: string | null
+  /**
+   * DEPRECATED and deliberately unusable as an executor.
+   *
+   * A classification window can involve TWO capability roles (W38, W46, W47,
+   * W51), and PostgreSQL has one effective `current_role`. A scalar field here
+   * would have to name one of them, and any caller reading it would run the
+   * other role's statements under the wrong identity while the manifest
+   * recorded the result as correct.
+   *
+   * The exact executor lives on `ExecutionSegment.executor` and nowhere else.
+   * The field is kept only so an older pinned window still parses; it is typed
+   * `never` on purpose so that reading it does not compile.
+   */
+  readonly capabilityRole?: never
   /** The schema the window's objects live in, when it has exactly one. */
   readonly schema: string | null
   /** Whether the installer must be granted membership for the window's span. */

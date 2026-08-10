@@ -30,7 +30,7 @@
 // walks code bodies, finds `EXECUTE`, and analyses ONLY the string literals that
 // belong to it.
 
-import { lexSql, type SqlSegment } from './sql-statements'
+import { lexSql } from './sql-statements'
 import { parseMembershipStatement, SESSION_ROLE_KEYWORDS } from './membership'
 import { AuthorityRefusal } from './window-contract'
 
@@ -57,53 +57,102 @@ function isSessionRoleMembership(sql: string): boolean {
   return parseMembershipStatement(sql)?.namesSessionRole === true
 }
 
-/** Every string literal that is an operand of an `EXECUTE`, at any nesting depth. */
-function dynamicSqlLiterals(sql: string): string[] {
-  const found: string[] = []
+interface DynamicExecute {
+  /** Everything from `EXECUTE` to its terminator, verbatim. */
+  readonly expression: string
+  /** The string literals inside it, unescaped. */
+  readonly literals: readonly string[]
+  /** The code outside those literals, upper-cased. */
+  readonly code: string
+}
 
-  const walk = (segments: readonly SqlSegment[]): void => {
-    let executePending = false
+/**
+ * Every `EXECUTE` expression in `sql`, at any nesting depth.
+ *
+ * F-04. The first version collected only the string LITERALS of an EXECUTE,
+ * which caught `EXECUTE 'GRANT owner TO CURRENT_USER'` and missed both of the
+ * shapes that actually appear in the wild:
+ *
+ *   EXECUTE 'GRANT uellix_owner TO ' || current_user;
+ *   EXECUTE format('GRANT %I TO %I', 'uellix_owner', current_user);
+ *
+ * In both, the session principal never appears inside a literal — it is an
+ * EXPRESSION operand, evaluated at run time. So the expression as a whole is
+ * captured, and its code half is inspected separately from its literal half.
+ *
+ * The expression ends at the first terminator or at the next statement keyword,
+ * so a `RAISE` on the following line is not swept into it.
+ */
+function dynamicExecutes(sql: string): DynamicExecute[] {
+  const found: DynamicExecute[] = []
+
+  const walk = (text: string): void => {
+    const segments = lexSql(text)
+    let collecting: { literals: string[]; code: string[]; raw: string[] } | null = null
+
+    const flush = (): void => {
+      if (collecting === null) return
+      found.push({
+        expression: collecting.raw.join(''),
+        literals: collecting.literals,
+        code: collecting.code.join(' ').toUpperCase(),
+      })
+      collecting = null
+    }
 
     for (const segment of segments) {
-      switch (segment.kind) {
-        case 'line-comment':
-        case 'block-comment':
-          break
+      if (segment.kind === 'line-comment' || segment.kind === 'block-comment') continue
 
-        case 'code': {
-          // `EXECUTE` opens a dynamic-SQL expression; the next terminator closes
-          // it. `RAISE`, `PERFORM`, an assignment — anything else — closes it
-          // too, so a message following an EXECUTE on the next line is not
-          // swept up with it.
-          for (const token of segment.text.split(/([;\s(),])/)) {
-            const word = token.trim().toUpperCase()
-            if (word.length === 0) continue
-            if (word === 'EXECUTE') {
-              executePending = true
-            } else if (word === ';' || word === 'RAISE' || word === 'PERFORM' || word === 'RETURN') {
-              executePending = false
-            }
-          }
-          break
+      if (segment.kind === 'dollar-string') {
+        flush()
+        walk(segment.dollarBody ?? '')
+        continue
+      }
+
+      if (segment.kind === 'string') {
+        if (collecting !== null) {
+          collecting.literals.push(segment.text.slice(1, -1).replace(/''/g, "'"))
+          collecting.raw.push(segment.text)
         }
+        continue
+      }
 
-        case 'string':
-          if (executePending) {
-            found.push(segment.text.slice(1, -1).replace(/''/g, "'"))
+      if (segment.kind === 'quoted-identifier') {
+        if (collecting !== null) collecting.raw.push(segment.text)
+        continue
+      }
+
+      // code
+      let buffer = ''
+      for (const token of segment.text.split(/([;\s(),|])/)) {
+        const word = token.trim().toUpperCase()
+        if (word === 'EXECUTE') {
+          flush()
+          collecting = { literals: [], code: [], raw: [] }
+          buffer = ''
+          continue
+        }
+        if (word === ';' || word === 'RAISE' || word === 'PERFORM' || word === 'RETURN') {
+          if (collecting !== null) {
+            collecting.code.push(buffer)
+            collecting.raw.push(buffer)
           }
-          break
-
-        case 'dollar-string':
-          walk(lexSql(segment.dollarBody ?? ''))
-          break
-
-        case 'quoted-identifier':
-          break
+          flush()
+          buffer = ''
+          continue
+        }
+        buffer += token
+      }
+      if (collecting !== null && buffer.length > 0) {
+        collecting.code.push(buffer)
+        collecting.raw.push(buffer)
       }
     }
+
+    flush()
   }
 
-  walk(lexSql(sql))
+  walk(sql)
   return found
 }
 
@@ -131,9 +180,31 @@ export function assertNoSessionRoleGrantee(sql: string): void {
 
   if (isSessionRoleMembership(sql)) refuse('this statement', sql)
 
-  for (const literal of dynamicSqlLiterals(sql)) {
-    const completed = literal.replace(/%[IsL]/g, 'uellix_owner')
-    const terminated = completed.trim().endsWith(';') ? completed : `${completed};`
-    if (isSessionRoleMembership(terminated)) refuse('dynamic SQL inside this statement', literal)
+  for (const execute of dynamicExecutes(sql)) {
+    // (a) the whole membership statement sits in one literal.
+    for (const literal of execute.literals) {
+      const completed = literal.replace(/%[IsL]/g, 'uellix_owner')
+      const terminated = completed.trim().endsWith(';') ? completed : `${completed};`
+      if (isSessionRoleMembership(terminated)) refuse('dynamic SQL inside this statement', literal)
+    }
+
+    // (b) F-04: the principal is an EXPRESSION operand, so it never appears in
+    //     a literal at all. The discriminator is structural rather than lexical:
+    //     a session-role keyword in the CODE half of an EXECUTE, together with a
+    //     membership verb in its LITERAL half, can only be building a membership
+    //     statement whose grantee is decided at run time. Prose cannot reach
+    //     here — comments are dropped by the lexer, and a RAISE message is not
+    //     an operand of EXECUTE.
+    const namesSessionPrincipal = SESSION_ROLE_KEYWORDS.some((keyword) =>
+      new RegExp(`\\b${keyword}\\b`).test(execute.code),
+    )
+    if (!namesSessionPrincipal) continue
+
+    const buildsMembership = execute.literals.some((literal) =>
+      /\b(GRANT|REVOKE)\b/i.test(literal),
+    )
+    if (buildsMembership) {
+      refuse('dynamic membership construction inside this statement', execute.expression)
+    }
   }
 }

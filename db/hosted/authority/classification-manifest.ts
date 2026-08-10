@@ -27,7 +27,7 @@ import {
   simulateChainOwnership,
   type SimulatedStatement,
 } from './ownership-simulation'
-import { splitSqlStatements } from './sql-statements'
+import { normalizeExecutable, splitSqlStatements } from './sql-statements'
 import {
   formatObjectIdentity,
   normalizedExecutableDigest,
@@ -58,8 +58,14 @@ function matchesPredicate(row: SimulatedStatement, predicate: BoundaryPredicate)
   }
 
   if (predicate.contains !== undefined) {
+    // F-08C. Matched against NORMALIZED EXECUTABLE text, not raw source. A
+    // comment must never satisfy a boundary disambiguator: a reviewer adding
+    // `-- see pg_get_constraintdef` above the wrong DO block would otherwise
+    // make that block answer to another window's anchor, and the refusal that
+    // followed would name the wrong statement.
+    const executable = normalizeExecutable(row.statement.raw)
     for (const fragment of predicate.contains) {
-      if (!row.statement.raw.includes(fragment)) return false
+      if (!executable.includes(fragment)) return false
     }
   }
 
@@ -215,7 +221,19 @@ function segmentWindow(window: ResolvedClassificationWindow): ExecutionSegment[]
     if (window.authorityClass === 'OWNER') return OWNER_ROLE
     if (window.authorityClass === 'OWNER_TRANSFER') return row.ownerDestination ?? OWNER_ROLE
     // CAPABILITY: the exact role that owns the object right now.
-    if (row.ownerBefore === null) return OWNER_ROLE
+    //
+    // F-07. An unknown owner used to fall back to uellix_owner. That is the
+    // unsafe direction: it silently promotes an unclassifiable statement into
+    // the most privileged executor the plan has. Unknown now refuses.
+    if (row.ownerBefore === null) {
+      throw new AuthorityRefusal(
+        'AUTHORITY_EXECUTOR_OWNER_UNKNOWN',
+        `${window.packageId}/${window.windowId}: statement ${row.statement.index} sits in a ` +
+          `CAPABILITY window but the ownership simulation could not determine who owns its ` +
+          `target. There is no safe default here — falling back to uellix_owner would run it as ` +
+          `the most privileged role in the plan.`,
+      )
+    }
     if (row.ownerBefore.startsWith('MULTIPLE:')) {
       throw new AuthorityRefusal(
         'AUTHORITY_EXECUTION_SEGMENT_MULTIPLE_ROLES',
@@ -609,4 +627,9 @@ export function segmentRows(plan: AuthorityPlan, segment: ExecutionSegment): Sim
     offset += sibling.statementCount
   }
   return window.members.slice(offset, offset + segment.statementCount)
+}
+
+/** Test seam: exercises the segmentation refusals on a synthesised window. */
+export function segmentWindowForTest(window: ResolvedClassificationWindow): ExecutionSegment[] {
+  return segmentWindow(window)
 }

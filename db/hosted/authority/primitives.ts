@@ -118,7 +118,28 @@ export function primitivePhases(primitive: AuthorityPrimitive): string[] {
   return [...primitive.open, ...(primitive.body ?? []), ...primitive.close]
 }
 
+/**
+ * Refuses any member that is not the installer.
+ *
+ * F-05. The primitives took a `HostedRoleIdentifier`, which types cannot
+ * enforce at run time: a cast, a value read from JSON, or a plain JS caller
+ * could pass `uellix_app` and receive a primitive that grants a RUNTIME role
+ * temporary SET reachability into uellix_owner. The type said no; nothing said
+ * no when it mattered.
+ */
+function assertInstallerPrincipal(member: string, where: string): void {
+  const role = hostedRole(member)
+  if (role.kind !== 'installer') {
+    throw new AuthorityRefusal(
+      'AUTHORITY_TEMP_MEMBER_NOT_INSTALLER',
+      `${where}: temporary elevation may only be granted to the installer, never to \`${member}\` ` +
+        `(a ${role.kind} role). ${role.purpose}`,
+    )
+  }
+}
+
 function grantMembership(role: HostedRoleIdentifier, member: HostedRoleIdentifier): string {
+  assertInstallerPrincipal(member, `GRANT ${role} TO ${member}`)
   // INHERIT FALSE, SET TRUE is the exact shape the bootstrap already uses for
   // uellix_owner: the installer may BECOME the role but does not silently carry
   // its privileges the rest of the time. SET TRUE is spelled out because M1
@@ -236,39 +257,59 @@ export function ownerTransferPrimitive(options: OwnerTransferOptions): Authority
 /**
  * One acquisition or release of a temporary privilege, read structurally.
  *
- * `null` for a statement that is neither. There is no regex here and there must
- * never be one again: F2 was a regex that required `WITH`, and a bare
- * `GRANT cap TO owner;` — which the 17.6 lab measured to confer set_option
- * TRUE — walked straight past it.
+ * F-03. This used to return `null` for anything it did not recognise, and
+ * `assertCleanupComplete` skipped those. That is fail-OPEN in the one place
+ * that must not be: `GRANT cap_a, cap_b TO migrator;` and
+ * `GRANT ALL ON SCHEMA s TO cap;` both acquired real authority and both were
+ * invisible. Multi-pair forms are now MODELLED as their cross product (which is
+ * exactly what PostgreSQL does), and a genuinely unmodelled authority-changing
+ * form REFUSES.
+ *
+ * `{ kind: 'none' }` is reserved for statements that provably change no
+ * elevation: bookkeeping, DDL, and privilege grants that confer no CREATE.
  */
-function privilegeEvent(
-  sql: string,
-): { kind: 'acquire' | 'release'; token: string } | null {
+type PrivilegeEvent = { kind: 'acquire' | 'release'; tokens: string[] } | { kind: 'none' }
+
+function classifyPrivilegeEvent(sql: string, where: string): PrivilegeEvent {
   const membership = parseMembershipStatement(sql)
   if (membership !== null) {
-    const pairs = membership.roles.flatMap((role) =>
+    if (membership.optionOnly) {
+      throw new AuthorityRefusal(
+        'AUTHORITY_PRIVILEGE_EVENT_UNSUPPORTED',
+        `${where}: \`${sql.trim().slice(0, 120)}\` narrows a membership option without removing ` +
+          `the membership. Counting it as a release would report the window balanced while the ` +
+          `member still held SET on the role; ignoring it would hide an authority change. Neither ` +
+          `is acceptable, so it is refused.`,
+      )
+    }
+    const tokens = membership.roles.flatMap((role) =>
       membership.members.map((member) => `membership:${role}:${member}`),
     )
-    if (pairs.length !== 1) return null
-    return { kind: membership.kind === 'grant' ? 'acquire' : 'release', token: pairs[0] }
+    return { kind: membership.kind === 'grant' ? 'acquire' : 'release', tokens }
   }
 
-  let identity
-  try {
-    identity = parseStatementIdentity(sql)
-  } catch {
-    return null
-  }
+  // Not caught: an unmodelled statement form inside an authority primitive is a
+  // refusal, not something to step over.
+  const identity = parseStatementIdentity(sql)
   const isGrant = identity.statementClass === 'grant-privilege'
   const isRevoke = identity.statementClass === 'revoke-privilege'
-  if (!isGrant && !isRevoke) return null
-  if (identity.object?.objectClass !== 'schema') return null
-  if (!identity.operands[0].split('+').includes('CREATE')) return null
+  if (!isGrant && !isRevoke) return { kind: 'none' }
+  if (identity.object?.objectClass !== 'schema') return { kind: 'none' }
 
-  return {
-    kind: isGrant ? 'acquire' : 'release',
-    token: `schema-create:${identity.object.name}:${identity.operands[1]}`,
-  }
+  const privileges = identity.operands[0].split('+')
+  // `ALL` and `ALL PRIVILEGES` include CREATE. Reading only the literal word
+  // CREATE was the second half of F-03.
+  const confersCreate = privileges.some(
+    (p) => p === 'CREATE' || p === 'ALL' || p === 'ALL PRIVILEGES',
+  )
+  if (!confersCreate) return { kind: 'none' }
+
+  const schema = identity.object.name
+  const tokens = identity.operands[1]
+    .split('+')
+    .filter((g) => g.length > 0)
+    .map((grantee) => `schema-create:${schema}:${grantee}`)
+  return { kind: isGrant ? 'acquire' : 'release', tokens }
 }
 
 /**
@@ -299,10 +340,12 @@ export function assertCleanupComplete(where: string, primitive: AuthorityPrimiti
 
   const outstanding = new Set<string>()
   for (const statement of phases) {
-    const event = privilegeEvent(statement)
-    if (event === null) continue
-    if (event.kind === 'acquire') outstanding.add(event.token)
-    else outstanding.delete(event.token)
+    const event = classifyPrivilegeEvent(statement, where)
+    if (event.kind === 'none') continue
+    for (const token of event.tokens) {
+      if (event.kind === 'acquire') outstanding.add(token)
+      else outstanding.delete(token)
+    }
   }
 
   if (outstanding.size > 0) {

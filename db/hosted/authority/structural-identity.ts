@@ -667,11 +667,19 @@ export function parseStatementIdentity(statement: string): StatementIdentity {
     if (eatWords(c, 'SCHEMA')) {
       eatWords(c, 'IF', 'NOT', 'EXISTS')
       const parts = parseQualifiedName(c, sample)
-      return make('create-schema', {
-        objectClass: 'schema',
-        schema: null,
-        name: parts[parts.length - 1],
-      })
+      // F-06. `AUTHORITY ... AUTHORIZATION r` decides who OWNS the schema, and
+      // therefore who owns everything created in it afterwards. Two statements
+      // that differ only in that word produce two different databases, so they
+      // must not share one identity. The three real CREATE SCHEMA statements in
+      // the chain all name uellix_owner; this is the guard for the fourth.
+      const authorization = eatWords(c, 'AUTHORIZATION')
+        ? expectIdentifier(c, sample)
+        : null
+      return make(
+        'create-schema',
+        { objectClass: 'schema', schema: null, name: parts[parts.length - 1] },
+        authorization === null ? [] : [authorization],
+      )
     }
     if (eatWords(c, 'ROLE')) {
       return make('create-role', {

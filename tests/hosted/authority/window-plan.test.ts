@@ -83,7 +83,6 @@ describe('assertWindowTotals', () => {
     packageId: 'T1',
     windowId: id,
     authority,
-    capabilityRole: null,
     schema: null,
     needsTemporaryMembership: true,
     needsTemporarySchemaCreate: false,
