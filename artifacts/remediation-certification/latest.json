@@ -1,0 +1,2809 @@
+{
+  "mode": "REMEDIATION_CERTIFICATION",
+  "image": "public.ecr.aws/supabase/postgres:17.6.1.143",
+  "shims": [
+    {
+      "object": "storage.objects",
+      "whyItIsAShim": "Created by the Storage SERVICE on a real project, not by the database image, and owned there by supabase_storage_admin. Here it is created for `postgres` so that unit 41 can create its three evidence policies at all. Every privilege question those policies would actually face on a managed project is therefore answered trivially and wrongly, and no result about them is evidence of anything."
+    },
+    {
+      "object": "storage.foldername(text)",
+      "whyItIsAShim": "Same origin, same caveat. Referenced by can_read_evidence_object / can_write_evidence_object, which unit 42 then grants EXECUTE on — so its ABSENCE would break a dependency that has nothing to do with Storage."
+    },
+    {
+      "object": "the uellix-evidence bucket",
+      "whyItIsAShim": "Not created at all. No probe in this run asks about it, and none of the reported results depends on it — stated here so that its absence is a declared gap rather than an unnoticed one."
+    }
+  ],
+  "package": {
+    "id": "stella_hosted_0002_prechain_authority_reconciliation",
+    "sourceFile": "db/prepared/stella_hosted_0002_prechain_authority_reconciliation.sql",
+    "pinnedSha256": "8616f4332030242d57f32433e510e74ee78b709f0aff9579e9d8177517715286",
+    "pinVerified": true,
+    "certifiedBodyDigest": "eb58de4c8672f635963e19ce32dc57f316a064ffc40dd3b0eaac55c6fd930b3b"
+  },
+  "stagingShapeOpenDefects": [
+    {
+      "id": "E-02",
+      "fact": "uellix_migrator is NOCREATEROLE and holds no CREATE on the database"
+    },
+    {
+      "id": "E-01",
+      "fact": "uellix_owner holds none of the eight prechain object privileges"
+    },
+    {
+      "id": "E-04",
+      "fact": "uellix_bootstrap.assert_capability_membership_topology does not exist"
+    },
+    {
+      "id": "E-03",
+      "fact": "assert_hosted_capabilities carries the original body, not the certified one"
+    }
+  ],
+  "pinMutation": {
+    "refused": true,
+    "code": "REMEDIATION_PIN_MISMATCH",
+    "mutation": "one space inserted before the semicolon of the ALTER ROLE statement",
+    "fileOnDiskUnchanged": true,
+    "detail": "REMEDIATION_PIN_MISMATCH: db/prepared/stella_hosted_0002_prechain_authority_reconciliation.sql hashes to 970a883b872dfcb66619dcd4f9a487c14396f6a5b06fd377248fb014bb050525 and the registry pins 8616f433"
+  },
+  "oldBootstrapProhibition": {
+    "requestingOldBootstrap": "REMEDIATION_PACKAGE_NOT_PERMITTED",
+    "packageTheUnrequestedPlanSelects": "stella_hosted_0002_prechain_authority_reconciliation",
+    "secondPassPolicy": "PROHIBITED"
+  },
+  "engine": {
+    "server_version": "17.6",
+    "server_version_num": "170006",
+    "createrole_self_grant": ""
+  },
+  "provisioning": {
+    "bootstrapBlob": "79205b75b41eefe38221f4c4d02d5bbc60ce9bd2",
+    "bootstrapSha256": "2b2df1abf1ba19411ba55b6a3a4a62653bfe784bc79977d3f24e6a6dc531d602",
+    "baselineApplied": 50,
+    "baselineTotal": 50,
+    "baselineFailures": [],
+    "bootstrapApplied": true,
+    "bootstrapError": null,
+    "sentinelWritten": true
+  },
+  "stagingShapeSnapshot": "uellix-rem-cert-snapshot:staging-shape",
+  "sourceObservation": {
+    "attemptId": "att_677ee3564ca466bd97509b35c8574cd8",
+    "state": "ABSENT",
+    "present": [],
+    "missing": [
+      "installer holds CREATEROLE",
+      "installer holds CREATE on the database",
+      "uellix_owner holds the E-01 grants",
+      "installer holds the visibility grants",
+      "the capability topology assertion exists",
+      "assert_hosted_capabilities carries the certified body"
+    ],
+    "problems": [],
+    "observation": {
+      "installerHasCreateRole": false,
+      "installerCanSetOwner": true,
+      "installerCanCreateInDatabase": false,
+      "ownerHoldsE01Grants": false,
+      "installerHoldsVisibilityGrants": false,
+      "topologyAssertionPresent": false,
+      "capabilitiesBodyIsCertified": false,
+      "bootstrapSchemaAcl": [
+        "uellix_app",
+        "uellix_auditor",
+        "uellix_migrator",
+        "uellix_owner"
+      ],
+      "capabilityRolesPresent": []
+    }
+  },
+  "t1BeforeRemediation": {
+    "prechainGateRefusals": [
+      {
+        "code": "PRECHAIN_INSTALLER_CANNOT_CREATE_ROLE",
+        "detail": "uellix_migrator lacks CREATEROLE. Six of the nine packages create a capability role, and `assert_hosted_capabilities` (C1) refuses at the FIRST statement of T1. This is E-02: measured, the chain had no session that could apply it."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold EXECUTE on public.current_user_org_ids (owned by postgres), which T1[10] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold EXECUTE on public.current_user_is_super_admin (owned by postgres), which T1[11] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold REFERENCES on public.evidence_items (owned by postgres), which T1[12] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold SELECT on public.evidence_items (owned by postgres), which T1[12] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold REFERENCES on public.organizations (owned by postgres), which T1[14] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold SELECT on public.organizations (owned by postgres), which T1[14] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold REFERENCES on public.projects (owned by postgres), which T1[14] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold SELECT on public.projects (owned by postgres), which T1[14] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold EXECUTE on public.uellix_forbid_mutation() (owned by postgres), which T1[37] requires."
+      },
+      {
+        "code": "PRECHAIN_PRIVILEGE_MISSING",
+        "detail": "uellix_owner does not hold REFERENCES on public.users (owned by postgres), which T5[20] requires."
+      }
+    ],
+    "authorization": {
+      "ok": false,
+      "code": "REMEDIATION_ABSENT",
+      "detail": "the prechain remediation (stella_hosted_0002_prechain_authority_reconciliation) has not been applied. T1 grants privileges as uellix_owner on objects uellix_owner does not yet hold, and would fail inside its own transaction — which is where E-01 was found in the first place."
+    },
+    "engine": {
+      "applied": false,
+      "firstRefusal": "psql:<stdin>:218: ERROR:  malformed array literal: \"CREATEROLE\" / DETAIL:  Array value must start with \"{\" or dimension information. / CONTEXT:  PL/pgSQL function uellix_bootstrap.assert_hosted_capabilities(text) line 11 at assignment",
+      "t1StateAfter": "ABSENT"
+    }
+  },
+  "attemptLedger": {
+    "planned": {
+      "packageId": "stella_hosted_0002_prechain_authority_reconciliation",
+      "attemptId": "att_677ee3564ca466bd97509b35c8574cd8"
+    },
+    "secondPlanFromTheSameObservation": "REMEDIATION_ATTEMPT_NOT_OPEN",
+    "ledgerLines": 3
+  },
+  "apply": {
+    "exitStatus": 0,
+    "error": null,
+    "notices": []
+  },
+  "postApplyObservation": {
+    "attemptId": "att_89cea2acff9f2f1578dbf7d0ffddb694",
+    "state": "INSTALLED",
+    "present": [
+      "installer holds CREATEROLE",
+      "installer holds CREATE on the database",
+      "uellix_owner holds the E-01 grants",
+      "installer holds the visibility grants",
+      "the capability topology assertion exists",
+      "assert_hosted_capabilities carries the certified body"
+    ],
+    "missing": [],
+    "problems": [],
+    "observation": {
+      "installerHasCreateRole": true,
+      "installerCanSetOwner": true,
+      "installerCanCreateInDatabase": true,
+      "ownerHoldsE01Grants": true,
+      "installerHoldsVisibilityGrants": true,
+      "topologyAssertionPresent": true,
+      "capabilitiesBodyIsCertified": true,
+      "bootstrapSchemaAcl": [
+        "uellix_app",
+        "uellix_auditor",
+        "uellix_migrator",
+        "uellix_owner"
+      ],
+      "capabilityRolesPresent": []
+    }
+  },
+  "postRemediationPrechainGate": {
+    "contracts": 8,
+    "refusals": [],
+    "verdict": "PASS"
+  },
+  "t1Authorization": {
+    "ok": true
+  },
+  "t1DependencyMatrix": {
+    "rows": [
+      {
+        "given": "witness ABSENT",
+        "authorized": false,
+        "code": "REMEDIATION_ABSENT"
+      },
+      {
+        "given": "witness PARTIAL_OR_INCONSISTENT",
+        "authorized": false,
+        "code": "REMEDIATION_PARTIAL"
+      },
+      {
+        "given": "witness INSTALLED, prechain gate FAILS",
+        "authorized": false,
+        "code": "PRECHAIN_GATE_FAILED"
+      },
+      {
+        "given": "witness INSTALLED, prechain gate PASSES (measured)",
+        "authorized": true,
+        "code": null
+      }
+    ],
+    "appliesIssued": 0
+  },
+  "governedInputs": [
+    {
+      "packageId": "T1",
+      "path": "db/prepared/hosted/governed/grounding_0002_document_versions.governed.sql",
+      "digest": "7b6be068139be6ac731f85074046238915bf843f2995f66e1dba752261ecfa9d"
+    },
+    {
+      "packageId": "T2",
+      "path": "db/prepared/hosted/governed/grounding_0003_evidence_chunks.governed.sql",
+      "digest": "d2bd3b9d08a4d5243fdf64da6db3e2f018e1cd92fc68d564d7966eca262eddc8"
+    },
+    {
+      "packageId": "T3",
+      "path": "db/prepared/hosted/governed/grounding_0004_runtime_attestation.governed.sql",
+      "digest": "b662a1b3b92482ae449cad1bf072033fae2f82f2a73beb2253123d2f79efed14"
+    },
+    {
+      "packageId": "T4",
+      "path": "db/prepared/hosted/governed/stella_0013_grounded_query_quota.governed.sql",
+      "digest": "d6b04e271ffa0c81c5b650344925561f3374434175ebf187410ff67939877c92"
+    },
+    {
+      "packageId": "T5",
+      "path": "db/prepared/hosted/governed/stella_0014_operation_tickets.governed.sql",
+      "digest": "f8a26f29f92b1a74be18159e9ed7a6732ed06aff75f9711b169f88b424233cce"
+    },
+    {
+      "packageId": "T6",
+      "path": "db/prepared/hosted/governed/stella_0015_project_bound_operation_tickets.governed.sql",
+      "digest": "7fccb63373efc531b31413b954e32afd370a9c4ac38f3c9eea601d533f4be800"
+    },
+    {
+      "packageId": "T7",
+      "path": "db/prepared/hosted/governed/stella_0016_reserved_quota_semantics.governed.sql",
+      "digest": "beadf495b1358f5ed214ade13a87b77a5e5372fe216c0c9895545804f5e0657a"
+    },
+    {
+      "packageId": "T8",
+      "path": "db/prepared/hosted/governed/stella_0017_governed_stella_consumption.governed.sql",
+      "digest": "053f13ad6d1db7f5f051ab8df043c1d93f34caad11e47c163895eebfcc123c55"
+    },
+    {
+      "packageId": "T9",
+      "path": "db/prepared/hosted/governed/stella_0018_category_bound_operation_tickets.governed.sql",
+      "digest": "0b5c481f9cc261f3d184c33a621881f76fed7b29b8ed0c8bf0c8d76a679316ac"
+    }
+  ],
+  "chain": [
+    {
+      "packageId": "T1",
+      "path": "db/prepared/hosted/governed/grounding_0002_document_versions.governed.sql",
+      "digest": "7b6be068139be6ac731f85074046238915bf843f2995f66e1dba752261ecfa9d",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "ABSENT",
+        "grounding_0004_runtime_attestation": "ABSENT",
+        "stella_0013_grounded_query_quota": "ABSENT",
+        "stella_0014_operation_tickets": "ABSENT",
+        "stella_0015_project_bound_operation_tickets": "ABSENT",
+        "stella_0016_reserved_quota_semantics": "ABSENT",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T2",
+      "path": "db/prepared/hosted/governed/grounding_0003_evidence_chunks.governed.sql",
+      "digest": "d2bd3b9d08a4d5243fdf64da6db3e2f018e1cd92fc68d564d7966eca262eddc8",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "ABSENT",
+        "stella_0013_grounded_query_quota": "ABSENT",
+        "stella_0014_operation_tickets": "ABSENT",
+        "stella_0015_project_bound_operation_tickets": "ABSENT",
+        "stella_0016_reserved_quota_semantics": "ABSENT",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T3",
+      "path": "db/prepared/hosted/governed/grounding_0004_runtime_attestation.governed.sql",
+      "digest": "b662a1b3b92482ae449cad1bf072033fae2f82f2a73beb2253123d2f79efed14",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "ABSENT",
+        "stella_0014_operation_tickets": "ABSENT",
+        "stella_0015_project_bound_operation_tickets": "ABSENT",
+        "stella_0016_reserved_quota_semantics": "ABSENT",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T4",
+      "path": "db/prepared/hosted/governed/stella_0013_grounded_query_quota.governed.sql",
+      "digest": "d6b04e271ffa0c81c5b650344925561f3374434175ebf187410ff67939877c92",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "ABSENT",
+        "stella_0015_project_bound_operation_tickets": "ABSENT",
+        "stella_0016_reserved_quota_semantics": "ABSENT",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T5",
+      "path": "db/prepared/hosted/governed/stella_0014_operation_tickets.governed.sql",
+      "digest": "f8a26f29f92b1a74be18159e9ed7a6732ed06aff75f9711b169f88b424233cce",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "ABSENT",
+        "stella_0016_reserved_quota_semantics": "ABSENT",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T6",
+      "path": "db/prepared/hosted/governed/stella_0015_project_bound_operation_tickets.governed.sql",
+      "digest": "7fccb63373efc531b31413b954e32afd370a9c4ac38f3c9eea601d533f4be800",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "INSTALLED",
+        "stella_0016_reserved_quota_semantics": "ABSENT",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T7",
+      "path": "db/prepared/hosted/governed/stella_0016_reserved_quota_semantics.governed.sql",
+      "digest": "beadf495b1358f5ed214ade13a87b77a5e5372fe216c0c9895545804f5e0657a",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "INSTALLED",
+        "stella_0016_reserved_quota_semantics": "INSTALLED",
+        "stella_0017_governed_stella_consumption": "ABSENT",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T8",
+      "path": "db/prepared/hosted/governed/stella_0017_governed_stella_consumption.governed.sql",
+      "digest": "053f13ad6d1db7f5f051ab8df043c1d93f34caad11e47c163895eebfcc123c55",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "INSTALLED",
+        "stella_0016_reserved_quota_semantics": "INSTALLED",
+        "stella_0017_governed_stella_consumption": "INSTALLED",
+        "stella_0018_category_bound_operation_tickets": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T9",
+      "path": "db/prepared/hosted/governed/stella_0018_category_bound_operation_tickets.governed.sql",
+      "digest": "0b5c481f9cc261f3d184c33a621881f76fed7b29b8ed0c8bf0c8d76a679316ac",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "INSTALLED",
+        "stella_0016_reserved_quota_semantics": "INSTALLED",
+        "stella_0017_governed_stella_consumption": "INSTALLED",
+        "stella_0018_category_bound_operation_tickets": "INSTALLED"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    }
+  ],
+  "chainInstalled": 9,
+  "postconditions": {
+    "ownerTransfers": {
+      "total": 27,
+      "correct": 27,
+      "wrong": [],
+      "pass": true
+    },
+    "canonicalOwnerContexts": {
+      "total": 3,
+      "correct": 3,
+      "wrong": [],
+      "pass": true
+    },
+    "transferSegments": 11,
+    "transferMembershipCleanup": {
+      "segments": 11,
+      "packagesWithLeakedMembership": []
+    },
+    "schemaCreateResidual": {
+      "pass": true,
+      "residual": []
+    },
+    "persistentRoleTopology": {
+      "pass": true,
+      "measured": [
+        "uellix_app<-postgres (admin=true inherit=false set=false)",
+        "uellix_auditor<-postgres (admin=true inherit=false set=false)",
+        "uellix_cap_grounding<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_quota<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_ticket<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_migrator<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-postgres (admin=false inherit=false set=true)",
+        "uellix_owner<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-uellix_migrator (admin=false inherit=false set=true)",
+        "uellix_writer<-postgres (admin=true inherit=false set=false)",
+        "uellix_writer<-uellix_app (admin=false inherit=true set=false)"
+      ],
+      "prechain": [
+        "uellix_app<-postgres (admin=true inherit=false set=false)",
+        "uellix_auditor<-postgres (admin=true inherit=false set=false)",
+        "uellix_migrator<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-postgres (admin=false inherit=false set=true)",
+        "uellix_owner<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-uellix_migrator (admin=false inherit=false set=true)",
+        "uellix_writer<-postgres (admin=true inherit=false set=false)",
+        "uellix_writer<-uellix_app (admin=false inherit=true set=false)"
+      ],
+      "added": [
+        "uellix_cap_grounding<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_quota<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_ticket<-uellix_migrator (admin=true inherit=false set=false)"
+      ],
+      "unexpected": [],
+      "missing": [],
+      "removed": [],
+      "capabilityReachableBy": [],
+      "grantors": {
+        "uellix_owner<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_cap_grounding<-uellix_migrator (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_cap_stella_quota<-uellix_migrator (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_cap_stella_ticket<-uellix_migrator (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_app<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_writer<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_auditor<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_migrator<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_owner<-postgres (admin=false inherit=false set=true)": "postgres",
+        "uellix_owner<-uellix_migrator (admin=false inherit=false set=true)": "postgres",
+        "uellix_writer<-uellix_app (admin=false inherit=true set=false)": "postgres"
+      }
+    },
+    "securityDefinerGate": {
+      "pass": true,
+      "securityDefiner": 27,
+      "inChainScope": 19,
+      "withoutEmptySearchPath": [],
+      "withPublicExecute": [],
+      "outsideChainScope": [
+        "public.can_read_evidence_object(text,uuid) proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.can_write_evidence_object(text,uuid) proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.current_user_is_super_admin() proconfig=[\"search_path=public\"]  <- NOT an empty search_path (baseline object)",
+        "public.current_user_org_ids() proconfig=[\"search_path=public\"]  <- NOT an empty search_path (baseline object)",
+        "public.current_user_role_in_org(uuid) proconfig=[\"search_path=public\"]  <- NOT an empty search_path (baseline object)",
+        "public.handle_new_user() proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.handle_update_user() proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.uellix_auth_uid() proconfig=[\"search_path=\\\"\\\"\"]"
+      ]
+    },
+    "rlsPolicyEngine": {
+      "pass": true,
+      "policies": 118,
+      "triggers": 11,
+      "duplicates": [],
+      "policiesOnUnprotectedRelations": []
+    }
+  },
+  "finalPosture": {
+    "schema": "uellix.hosted.chain.posture/1",
+    "policies": [
+      {
+        "name": "projects_select_member_or_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.projects"
+      },
+      {
+        "name": "select_evidence",
+        "roles": [
+          "authenticated"
+        ],
+        "command": "SELECT",
+        "relation": "storage.objects"
+      },
+      {
+        "name": "insert_evidence",
+        "roles": [
+          "authenticated"
+        ],
+        "command": "INSERT",
+        "relation": "storage.objects"
+      },
+      {
+        "name": "delete_evidence",
+        "roles": [
+          "authenticated"
+        ],
+        "command": "DELETE",
+        "relation": "storage.objects"
+      },
+      {
+        "name": "users_select_own",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.users"
+      },
+      {
+        "name": "users_insert_own",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.users"
+      },
+      {
+        "name": "users_update_own",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.users"
+      },
+      {
+        "name": "orgs_select_member_or_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.organizations"
+      },
+      {
+        "name": "orgs_insert_super_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.organizations"
+      },
+      {
+        "name": "orgs_update_admin_or_super",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.organizations"
+      },
+      {
+        "name": "members_select_own_org",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.organization_members"
+      },
+      {
+        "name": "members_insert_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.organization_members"
+      },
+      {
+        "name": "members_update_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.organization_members"
+      },
+      {
+        "name": "members_delete_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "DELETE",
+        "relation": "public.organization_members"
+      },
+      {
+        "name": "invitations_select_member",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.invitations"
+      },
+      {
+        "name": "invitations_insert_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.invitations"
+      },
+      {
+        "name": "invitations_update_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.invitations"
+      },
+      {
+        "name": "audit_logs_select_member_or_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.audit_logs"
+      },
+      {
+        "name": "portfolios_select_member_or_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.portfolios"
+      },
+      {
+        "name": "portfolios_insert_allowed_roles",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.portfolios"
+      },
+      {
+        "name": "portfolios_update_allowed_roles",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.portfolios"
+      },
+      {
+        "name": "projects_insert_allowed_roles",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.projects"
+      },
+      {
+        "name": "projects_update_allowed_roles",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.projects"
+      },
+      {
+        "name": "impact_narratives_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.impact_narratives"
+      },
+      {
+        "name": "impact_narratives_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.impact_narratives"
+      },
+      {
+        "name": "outcomes_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.outcomes"
+      },
+      {
+        "name": "impact_narratives_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.impact_narratives"
+      },
+      {
+        "name": "stakeholder_groups_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.stakeholder_groups"
+      },
+      {
+        "name": "stakeholder_groups_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.stakeholder_groups"
+      },
+      {
+        "name": "stakeholder_groups_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.stakeholder_groups"
+      },
+      {
+        "name": "outcome_proxy_assignments_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.outcome_proxy_assignments"
+      },
+      {
+        "name": "outcomes_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.outcomes"
+      },
+      {
+        "name": "outcomes_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.outcomes"
+      },
+      {
+        "name": "indicators_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.indicators"
+      },
+      {
+        "name": "indicators_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.indicators"
+      },
+      {
+        "name": "sroi_run_review_items_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_run_review_items"
+      },
+      {
+        "name": "indicators_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.indicators"
+      },
+      {
+        "name": "evidence_items_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.evidence_items"
+      },
+      {
+        "name": "evidence_items_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.evidence_items"
+      },
+      {
+        "name": "evidence_items_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.evidence_items"
+      },
+      {
+        "name": "proxy_sources_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.proxy_sources"
+      },
+      {
+        "name": "proxy_sources_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.proxy_sources"
+      },
+      {
+        "name": "proxy_sources_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.proxy_sources"
+      },
+      {
+        "name": "financial_proxies_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.financial_proxies"
+      },
+      {
+        "name": "financial_proxies_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.financial_proxies"
+      },
+      {
+        "name": "financial_proxies_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.financial_proxies"
+      },
+      {
+        "name": "outcome_proxy_assignments_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.outcome_proxy_assignments"
+      },
+      {
+        "name": "outcome_proxy_assignments_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.outcome_proxy_assignments"
+      },
+      {
+        "name": "project_investments_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.project_investments"
+      },
+      {
+        "name": "project_investments_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.project_investments"
+      },
+      {
+        "name": "project_investments_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.project_investments"
+      },
+      {
+        "name": "sroi_assignment_inputs_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_assignment_inputs"
+      },
+      {
+        "name": "sroi_assignment_inputs_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_assignment_inputs"
+      },
+      {
+        "name": "sroi_assignment_inputs_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.sroi_assignment_inputs"
+      },
+      {
+        "name": "sroi_filter_sets_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_filter_sets"
+      },
+      {
+        "name": "sroi_filter_sets_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_filter_sets"
+      },
+      {
+        "name": "sroi_filter_sets_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.sroi_filter_sets"
+      },
+      {
+        "name": "sroi_calculation_runs_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_calculation_runs"
+      },
+      {
+        "name": "sroi_calculation_runs_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_calculation_runs"
+      },
+      {
+        "name": "sroi_calculation_line_items_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_calculation_line_items"
+      },
+      {
+        "name": "sroi_calculation_line_items_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_calculation_line_items"
+      },
+      {
+        "name": "sroi_run_reviews_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_run_reviews"
+      },
+      {
+        "name": "sroi_run_reviews_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_run_reviews"
+      },
+      {
+        "name": "sroi_run_reviews_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.sroi_run_reviews"
+      },
+      {
+        "name": "sroi_run_review_items_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_run_review_items"
+      },
+      {
+        "name": "sroi_run_review_items_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.sroi_run_review_items"
+      },
+      {
+        "name": "sroi_reports_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_reports"
+      },
+      {
+        "name": "sroi_reports_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_reports"
+      },
+      {
+        "name": "sroi_reports_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.sroi_reports"
+      },
+      {
+        "name": "sroi_report_sections_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.sroi_report_sections"
+      },
+      {
+        "name": "sroi_report_sections_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.sroi_report_sections"
+      },
+      {
+        "name": "sroi_report_sections_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.sroi_report_sections"
+      },
+      {
+        "name": "stella_interactions_select_member_or_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.stella_interactions"
+      },
+      {
+        "name": "signup_allowlist_select_super_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.signup_allowlist"
+      },
+      {
+        "name": "signup_allowlist_insert_super_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.signup_allowlist"
+      },
+      {
+        "name": "signup_allowlist_delete_super_admin",
+        "roles": [
+          "public"
+        ],
+        "command": "DELETE",
+        "relation": "public.signup_allowlist"
+      },
+      {
+        "name": "funders_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.funders"
+      },
+      {
+        "name": "funders_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.funders"
+      },
+      {
+        "name": "funders_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.funders"
+      },
+      {
+        "name": "fx_rates_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.fx_rates"
+      },
+      {
+        "name": "fx_rates_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.fx_rates"
+      },
+      {
+        "name": "fx_rates_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.fx_rates"
+      },
+      {
+        "name": "outcome_funder_allocations_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.outcome_funder_allocations"
+      },
+      {
+        "name": "outcome_funder_allocations_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.outcome_funder_allocations"
+      },
+      {
+        "name": "outcome_funder_allocations_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.outcome_funder_allocations"
+      },
+      {
+        "name": "theory_of_change_nodes_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.theory_of_change_nodes"
+      },
+      {
+        "name": "theory_of_change_nodes_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.theory_of_change_nodes"
+      },
+      {
+        "name": "theory_of_change_nodes_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.theory_of_change_nodes"
+      },
+      {
+        "name": "theory_of_change_links_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.theory_of_change_links"
+      },
+      {
+        "name": "theory_of_change_links_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.theory_of_change_links"
+      },
+      {
+        "name": "theory_of_change_links_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.theory_of_change_links"
+      },
+      {
+        "name": "methodology_review_matrix_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.methodology_review_matrix"
+      },
+      {
+        "name": "methodology_review_matrix_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.methodology_review_matrix"
+      },
+      {
+        "name": "methodology_review_matrix_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.methodology_review_matrix"
+      },
+      {
+        "name": "methodology_review_matrix_items_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.methodology_review_matrix_items"
+      },
+      {
+        "name": "methodology_review_matrix_items_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.methodology_review_matrix_items"
+      },
+      {
+        "name": "methodology_review_matrix_items_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.methodology_review_matrix_items"
+      },
+      {
+        "name": "taxonomy_catalogs_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.taxonomy_catalogs"
+      },
+      {
+        "name": "taxonomy_codes_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.taxonomy_codes"
+      },
+      {
+        "name": "outcome_taxonomy_mappings_select",
+        "roles": [
+          "public"
+        ],
+        "command": "SELECT",
+        "relation": "public.outcome_taxonomy_mappings"
+      },
+      {
+        "name": "outcome_taxonomy_mappings_insert",
+        "roles": [
+          "public"
+        ],
+        "command": "INSERT",
+        "relation": "public.outcome_taxonomy_mappings"
+      },
+      {
+        "name": "outcome_taxonomy_mappings_update",
+        "roles": [
+          "public"
+        ],
+        "command": "UPDATE",
+        "relation": "public.outcome_taxonomy_mappings"
+      },
+      {
+        "name": "outcome_taxonomy_mappings_delete",
+        "roles": [
+          "public"
+        ],
+        "command": "DELETE",
+        "relation": "public.outcome_taxonomy_mappings"
+      },
+      {
+        "name": "super_admins_read_marketing_leads",
+        "roles": [
+          "authenticated"
+        ],
+        "command": "SELECT",
+        "relation": "public.marketing_leads"
+      },
+      {
+        "name": "anon_insert_marketing_leads",
+        "roles": [
+          "anon"
+        ],
+        "command": "INSERT",
+        "relation": "public.marketing_leads"
+      },
+      {
+        "name": "authenticated_insert_marketing_leads",
+        "roles": [
+          "authenticated"
+        ],
+        "command": "INSERT",
+        "relation": "public.marketing_leads"
+      },
+      {
+        "name": "evidence_document_versions_definer_insert",
+        "roles": [
+          "uellix_cap_grounding"
+        ],
+        "command": "INSERT",
+        "relation": "public.evidence_document_versions"
+      },
+      {
+        "name": "evidence_document_versions_scope_consistency",
+        "roles": [
+          "authenticated",
+          "uellix_app",
+          "uellix_auditor",
+          "uellix_cap_grounding"
+        ],
+        "command": "ALL",
+        "relation": "public.evidence_document_versions"
+      },
+      {
+        "name": "evidence_chunks_definer_write",
+        "roles": [
+          "uellix_cap_grounding"
+        ],
+        "command": "INSERT",
+        "relation": "public.evidence_chunks"
+      },
+      {
+        "name": "evidence_chunks_definer_delete",
+        "roles": [
+          "uellix_cap_grounding"
+        ],
+        "command": "DELETE",
+        "relation": "public.evidence_chunks"
+      },
+      {
+        "name": "evidence_chunks_scope_consistency",
+        "roles": [
+          "authenticated",
+          "uellix_app",
+          "uellix_auditor",
+          "uellix_cap_grounding"
+        ],
+        "command": "ALL",
+        "relation": "public.evidence_chunks"
+      },
+      {
+        "name": "evidence_document_versions_select",
+        "roles": [
+          "authenticated",
+          "uellix_app",
+          "uellix_auditor",
+          "uellix_cap_grounding"
+        ],
+        "command": "SELECT",
+        "relation": "public.evidence_document_versions"
+      },
+      {
+        "name": "evidence_chunks_select",
+        "roles": [
+          "uellix_app",
+          "uellix_auditor",
+          "uellix_cap_grounding"
+        ],
+        "command": "SELECT",
+        "relation": "public.evidence_chunks"
+      },
+      {
+        "name": "stella_interactions_quota_definer_insert",
+        "roles": [
+          "uellix_cap_stella_quota"
+        ],
+        "command": "INSERT",
+        "relation": "public.stella_interactions"
+      },
+      {
+        "name": "operation_tickets_definer_select",
+        "roles": [
+          "uellix_cap_stella_ticket"
+        ],
+        "command": "SELECT",
+        "relation": "uellix_stella_ops.operation_tickets"
+      },
+      {
+        "name": "operation_tickets_definer_insert",
+        "roles": [
+          "uellix_cap_stella_ticket"
+        ],
+        "command": "INSERT",
+        "relation": "uellix_stella_ops.operation_tickets"
+      },
+      {
+        "name": "operation_tickets_definer_update",
+        "roles": [
+          "uellix_cap_stella_ticket"
+        ],
+        "command": "UPDATE",
+        "relation": "uellix_stella_ops.operation_tickets"
+      },
+      {
+        "name": "operation_tickets_capacity_select",
+        "roles": [
+          "uellix_cap_stella_quota"
+        ],
+        "command": "SELECT",
+        "relation": "uellix_stella_ops.operation_tickets"
+      }
+    ],
+    "triggers": [
+      {
+        "name": "trg_audit_logs_append_only",
+        "relation": "public.audit_logs",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_sroi_runs_append_only",
+        "relation": "public.sroi_calculation_runs",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_sroi_line_items_append_only",
+        "relation": "public.sroi_calculation_line_items",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_evidence_document_versions_append_only",
+        "relation": "public.evidence_document_versions",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_evidence_document_versions_no_truncate",
+        "relation": "public.evidence_document_versions",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_evidence_document_versions_scope_check",
+        "relation": "public.evidence_document_versions",
+        "functionOwner": "uellix_owner"
+      },
+      {
+        "name": "trg_evidence_chunks_no_update",
+        "relation": "public.evidence_chunks",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_evidence_chunks_no_truncate",
+        "relation": "public.evidence_chunks",
+        "functionOwner": "postgres"
+      },
+      {
+        "name": "trg_evidence_chunks_canonical_integrity",
+        "relation": "public.evidence_chunks",
+        "functionOwner": "uellix_owner"
+      },
+      {
+        "name": "trg_operation_tickets_transition",
+        "relation": "uellix_stella_ops.operation_tickets",
+        "functionOwner": "uellix_owner"
+      },
+      {
+        "name": "trg_operation_tickets_no_truncate",
+        "relation": "uellix_stella_ops.operation_tickets",
+        "functionOwner": "postgres"
+      }
+    ],
+    "functions": [
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [],
+        "signature": "public.uellix_forbid_mutation()",
+        "executeGrantees": [
+          "postgres",
+          "service_role",
+          "uellix_owner"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=public"
+        ],
+        "signature": "public.current_user_role_in_org(uuid)",
+        "executeGrantees": [
+          "authenticated",
+          "postgres",
+          "service_role"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=public"
+        ],
+        "signature": "public.current_user_org_ids()",
+        "executeGrantees": [
+          "authenticated",
+          "postgres",
+          "service_role",
+          "uellix_cap_grounding",
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket",
+          "uellix_owner"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=public"
+        ],
+        "signature": "public.current_user_is_super_admin()",
+        "executeGrantees": [
+          "authenticated",
+          "postgres",
+          "service_role",
+          "uellix_cap_grounding",
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket",
+          "uellix_owner"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "public.handle_new_user()",
+        "executeGrantees": [
+          "postgres",
+          "service_role"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "public.handle_update_user()",
+        "executeGrantees": [
+          "postgres",
+          "service_role"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "public",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "public.uellix_check_operation_ticket_transition()",
+        "executeGrantees": [
+          "PUBLIC",
+          "uellix_owner"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "public.can_read_evidence_object(text,uuid)",
+        "executeGrantees": [
+          "authenticated",
+          "postgres",
+          "service_role"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "public.can_write_evidence_object(text,uuid)",
+        "executeGrantees": [
+          "authenticated",
+          "postgres",
+          "service_role"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "public",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "public.uellix_auth_uid()",
+        "executeGrantees": [
+          "postgres",
+          "uellix_app",
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket",
+          "uellix_migrator"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_quota",
+        "schema": "uellix_stella",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella.stella_capacity(uuid,character)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "postgres",
+        "schema": "uellix_bootstrap",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_bootstrap.hosted_capability_report()",
+        "executeGrantees": [
+          "postgres",
+          "uellix_auditor",
+          "uellix_migrator"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "postgres",
+        "schema": "uellix_bootstrap",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_bootstrap.assert_hosted_capabilities(text)",
+        "executeGrantees": [
+          "postgres",
+          "uellix_migrator"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "uellix_bootstrap",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_bootstrap.assert_capability_membership_topology(text,text)",
+        "executeGrantees": [
+          "uellix_migrator",
+          "uellix_owner"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "public",
+        "proconfig": [],
+        "signature": "public.uellix_check_document_version_scope()",
+        "executeGrantees": [
+          "PUBLIC",
+          "uellix_owner"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "uellix_cap_stella_quota",
+        "schema": "uellix_stella",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella.settle_reserved_quota(uuid,uuid,character varying,character,character,character varying,character,character varying,integer,jsonb)",
+        "executeGrantees": [
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_quota",
+        "schema": "uellix_stella",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella.settle_reserved_quota(uuid,uuid,character varying,character,character)",
+        "executeGrantees": [
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_grounding",
+        "schema": "uellix_grounding",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_grounding.register_document_version(uuid,character,character,character,character varying,character varying,character varying,character varying)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_grounding"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.complete_operation_ticket(character,uuid,character,character varying,character varying,integer,jsonb)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_grounding",
+        "schema": "uellix_grounding",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_grounding.claim_active_document_version(uuid)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_grounding"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "public",
+        "proconfig": [],
+        "signature": "public.uellix_check_canonical_chunk()",
+        "executeGrantees": [
+          "PUBLIC",
+          "uellix_owner"
+        ],
+        "securityDefiner": false
+      },
+      {
+        "owner": "uellix_cap_grounding",
+        "schema": "uellix_grounding",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_grounding.insert_evidence_chunks(uuid,jsonb)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_grounding"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_grounding",
+        "schema": "uellix_grounding",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_grounding.finalize_document_ingestion(uuid,integer)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_grounding"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_grounding",
+        "schema": "uellix_grounding",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_grounding.chunks_in_scope(uuid,uuid,uuid)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_grounding"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_grounding",
+        "schema": "uellix_grounding",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_grounding.chunks_in_scope_attested(uuid,uuid,uuid)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_grounding"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_quota",
+        "schema": "uellix_stella",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella.consume_stella_quota(uuid,uuid,character varying,character)",
+        "executeGrantees": [
+          "uellix_cap_stella_quota",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.issue_operation_ticket(uuid,uuid,character varying)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.expire_operation_tickets(integer)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.abort_operation_ticket(character,uuid,character varying)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.complete_operation_ticket(character,uuid,character)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.bind_operation_ticket(character,uuid,character)",
+        "executeGrantees": [
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.inspect_operation_ticket(character,uuid)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_ticket",
+        "schema": "uellix_stella_ops",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella_ops.bind_operation_ticket(character,uuid,character,character varying)",
+        "executeGrantees": [
+          "uellix_app",
+          "uellix_cap_stella_ticket"
+        ],
+        "securityDefiner": true
+      },
+      {
+        "owner": "uellix_cap_stella_quota",
+        "schema": "uellix_stella",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "signature": "uellix_stella.consume_stella_capacity(uuid,uuid,character varying,character)",
+        "executeGrantees": [
+          "uellix_cap_stella_quota"
+        ],
+        "securityDefiner": true
+      }
+    ],
+    "relations": [
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "storage.objects",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.proxy_sources",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.financial_proxies",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.outcome_proxy_assignments",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.project_investments",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.signup_allowlist",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.organizations",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_calculation_line_items",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.funders",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.organization_members",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.invitations",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.audit_logs",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.fx_rates",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.outcome_funder_allocations",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.theory_of_change_nodes",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.theory_of_change_links",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.methodology_review_matrix",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.methodology_review_matrix_items",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.taxonomy_catalogs",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.outcome_taxonomy_mappings",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.users",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "uellix_owner",
+        "relation": "public.stella_interactions",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.portfolios",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.impact_narratives",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.stakeholder_groups",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.outcomes",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.indicators",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_assignment_inputs",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_filter_sets",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_calculation_runs",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_run_reviews",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_run_review_items",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_reports",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.sroi_report_sections",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.taxonomy_codes",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.marketing_leads",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.projects",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "uellix_bootstrap.staging_sentinel",
+        "rlsForced": false,
+        "rlsEnabled": false
+      },
+      {
+        "kind": "r",
+        "owner": "postgres",
+        "relation": "public.evidence_items",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "uellix_owner",
+        "relation": "public.evidence_chunks",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "uellix_owner",
+        "relation": "public.evidence_document_versions",
+        "rlsForced": false,
+        "rlsEnabled": true
+      },
+      {
+        "kind": "r",
+        "owner": "uellix_owner",
+        "relation": "uellix_stella_ops.operation_tickets",
+        "rlsForced": false,
+        "rlsEnabled": true
+      }
+    ],
+    "memberships": [
+      {
+        "role": "uellix_owner",
+        "member": "postgres",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_cap_grounding",
+        "member": "uellix_migrator",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_cap_stella_quota",
+        "member": "uellix_migrator",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_cap_stella_ticket",
+        "member": "uellix_migrator",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_app",
+        "member": "postgres",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_writer",
+        "member": "postgres",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_auditor",
+        "member": "postgres",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_migrator",
+        "member": "postgres",
+        "grantor": "supabase_admin",
+        "setOption": false,
+        "adminOption": true,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_owner",
+        "member": "postgres",
+        "grantor": "postgres",
+        "setOption": true,
+        "adminOption": false,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_owner",
+        "member": "uellix_migrator",
+        "grantor": "postgres",
+        "setOption": true,
+        "adminOption": false,
+        "inheritOption": false
+      },
+      {
+        "role": "uellix_writer",
+        "member": "uellix_app",
+        "grantor": "postgres",
+        "setOption": false,
+        "adminOption": false,
+        "inheritOption": true
+      }
+    ],
+    "roleAttributes": [
+      {
+        "name": "uellix_owner",
+        "super": false,
+        "inherit": true,
+        "canLogin": false,
+        "bypassRls": false,
+        "createRole": false
+      },
+      {
+        "name": "uellix_app",
+        "super": false,
+        "inherit": true,
+        "canLogin": true,
+        "bypassRls": false,
+        "createRole": false
+      },
+      {
+        "name": "uellix_writer",
+        "super": false,
+        "inherit": true,
+        "canLogin": false,
+        "bypassRls": false,
+        "createRole": false
+      },
+      {
+        "name": "uellix_auditor",
+        "super": false,
+        "inherit": true,
+        "canLogin": true,
+        "bypassRls": false,
+        "createRole": false
+      },
+      {
+        "name": "uellix_migrator",
+        "super": false,
+        "inherit": true,
+        "canLogin": true,
+        "bypassRls": false,
+        "createRole": true
+      },
+      {
+        "name": "uellix_cap_grounding",
+        "super": false,
+        "inherit": false,
+        "canLogin": false,
+        "bypassRls": false,
+        "createRole": false
+      },
+      {
+        "name": "uellix_cap_stella_quota",
+        "super": false,
+        "inherit": false,
+        "canLogin": false,
+        "bypassRls": false,
+        "createRole": false
+      },
+      {
+        "name": "uellix_cap_stella_ticket",
+        "super": false,
+        "inherit": false,
+        "canLogin": false,
+        "bypassRls": false,
+        "createRole": false
+      }
+    ],
+    "transferredOwners": {
+      "uellix_stella.stella_capacity(uuid,bpchar)": "uellix_cap_stella_quota",
+      "uellix_grounding.chunks_in_scope(uuid,uuid,uuid)": "uellix_cap_grounding",
+      "uellix_stella_ops.expire_operation_tickets(int4)": "uellix_cap_stella_ticket",
+      "uellix_stella_ops.inspect_operation_ticket(bpchar)": null,
+      "uellix_grounding.insert_evidence_chunks(uuid,jsonb)": "uellix_cap_grounding",
+      "uellix_grounding.claim_active_document_version(uuid)": "uellix_cap_grounding",
+      "uellix_stella_ops.bind_operation_ticket(bpchar,bpchar)": null,
+      "uellix_grounding.finalize_document_ingestion(uuid,int4)": "uellix_cap_grounding",
+      "uellix_stella_ops.inspect_operation_ticket(bpchar,uuid)": "uellix_cap_stella_ticket",
+      "uellix_stella_ops.abort_operation_ticket(bpchar,varchar)": null,
+      "uellix_grounding.chunks_in_scope_attested(uuid,uuid,uuid)": "uellix_cap_grounding",
+      "uellix_stella_ops.complete_operation_ticket(bpchar,bpchar)": null,
+      "uellix_stella_ops.bind_operation_ticket(bpchar,uuid,bpchar)": "uellix_cap_stella_ticket",
+      "uellix_stella_ops.issue_operation_ticket(uuid,uuid,varchar)": "uellix_cap_stella_ticket",
+      "uellix_stella.consume_stella_quota(uuid,uuid,varchar,bpchar)": "uellix_cap_stella_quota",
+      "uellix_stella_ops.abort_operation_ticket(bpchar,uuid,varchar)": "uellix_cap_stella_ticket",
+      "uellix_stella.consume_stella_capacity(uuid,uuid,varchar,bpchar)": "uellix_cap_stella_quota",
+      "uellix_stella_ops.complete_operation_ticket(bpchar,uuid,bpchar)": "uellix_cap_stella_ticket",
+      "uellix_stella_ops.bind_operation_ticket(bpchar,uuid,bpchar,varchar)": "uellix_cap_stella_ticket",
+      "uellix_stella.settle_reserved_quota(uuid,uuid,varchar,bpchar,bpchar)": "uellix_cap_stella_quota",
+      "uellix_stella_ops.complete_operation_ticket(bpchar,uuid,bpchar,varchar,varchar,int4,jsonb)": "uellix_cap_stella_ticket",
+      "uellix_grounding.register_document_version(uuid,bpchar,bpchar,bpchar,varchar,varchar,varchar,varchar)": "uellix_cap_grounding",
+      "uellix_stella.settle_reserved_quota(uuid,uuid,varchar,bpchar,bpchar,varchar,bpchar,varchar,int4,jsonb)": "uellix_cap_stella_quota"
+    },
+    "schemaCreateGrants": [
+      {
+        "owner": "uellix_owner",
+        "schema": "uellix_stella",
+        "grantee": "uellix_owner"
+      },
+      {
+        "owner": "pg_database_owner",
+        "schema": "public",
+        "grantee": "pg_database_owner"
+      },
+      {
+        "owner": "pg_database_owner",
+        "schema": "public",
+        "grantee": "uellix_owner"
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "uellix_bootstrap",
+        "grantee": "uellix_owner"
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "uellix_stella_ops",
+        "grantee": "uellix_owner"
+      },
+      {
+        "owner": "uellix_owner",
+        "schema": "uellix_grounding",
+        "grantee": "uellix_owner"
+      }
+    ],
+    "capabilityReachableBy": {
+      "uellix_cap_grounding": [],
+      "uellix_cap_stella_quota": [],
+      "uellix_cap_stella_ticket": []
+    },
+    "canonicalContextOwners": {
+      "public.evidence_chunks": "uellix_owner",
+      "public.evidence_document_versions": "uellix_owner",
+      "uellix_stella_ops.operation_tickets": "uellix_owner"
+    }
+  },
+  "rollback": [
+    {
+      "id": "R1",
+      "description": "dies after §0 accepts the source state, before ALTER ROLE",
+      "anchor": "END $$;",
+      "occurrence": 1,
+      "authorityStateAtInjection": "source state accepted; not one catalog row has been written yet",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:197: ERROR:  UELLIX_CERT_INJECTED_FAILURE R1 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R2",
+      "description": "dies immediately after the installer receives CREATEROLE",
+      "anchor": "ALTER ROLE uellix_migrator WITH CREATEROLE;",
+      "occurrence": 1,
+      "authorityStateAtInjection": "uellix_migrator holds CREATEROLE; nothing else has changed",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:207: ERROR:  UELLIX_CERT_INJECTED_FAILURE R2 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R3",
+      "description": "dies after the database-level CREATE prerequisite",
+      "anchor": "GRANT CREATE ON DATABASE postgres TO uellix_migrator;",
+      "occurrence": 1,
+      "authorityStateAtInjection": "uellix_migrator holds CREATEROLE and CREATE on the database; no object privilege issued",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:212: ERROR:  UELLIX_CERT_INJECTED_FAILURE R3 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R4",
+      "description": "dies after the FIRST E-01 grant, with the other six unissued",
+      "anchor": "GRANT EXECUTE ON FUNCTION public.current_user_org_ids() TO uellix_owner WITH GRANT OPTION;",
+      "occurrence": 1,
+      "authorityStateAtInjection": "uellix_owner holds EXECUTE WITH GRANT OPTION on one of eight prechain objects",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:223: ERROR:  UELLIX_CERT_INJECTED_FAILURE R4 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R5",
+      "description": "dies immediately after the owner phase opens",
+      "anchor": "SET ROLE uellix_owner;",
+      "occurrence": 1,
+      "authorityStateAtInjection": "the session is acting as uellix_owner; the postgres phase is complete",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:258: ERROR:  UELLIX_CERT_INJECTED_FAILURE R5 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R6",
+      "description": "dies with the borrowed schema privilege open",
+      "anchor": "GRANT USAGE, CREATE ON SCHEMA uellix_bootstrap TO postgres;",
+      "occurrence": 1,
+      "authorityStateAtInjection": "postgres holds an EXPLICIT USAGE, CREATE on schema uellix_bootstrap — the borrow window is open and the give-back is four statements away",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:390: ERROR:  UELLIX_CERT_INJECTED_FAILURE R6 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R7",
+      "description": "dies after assert_hosted_capabilities is replaced by the certified body",
+      "anchor": "END $$;",
+      "occurrence": 3,
+      "authorityStateAtInjection": "the capability contract in force is the CERTIFIED body; the borrowed privilege is still open",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:504: ERROR:  UELLIX_CERT_INJECTED_FAILURE R7 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R8",
+      "description": "dies re-elevated, one statement before the borrowed privilege is revoked",
+      "anchor": "SET ROLE uellix_owner;",
+      "occurrence": 2,
+      "authorityStateAtInjection": "elevated as uellix_owner for the give-back; every mutation this package makes is now in the transaction and the borrow is still open",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:524: ERROR:  UELLIX_CERT_INJECTED_FAILURE R8 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    },
+    {
+      "id": "R9",
+      "description": "dies after the borrowed privilege is returned, before self-verification",
+      "anchor": "RESET ROLE;",
+      "occurrence": 2,
+      "authorityStateAtInjection": "every mutation applied, the borrow returned, the session unelevated — the transaction is one DO block away from committing a correct remediation",
+      "reached": true,
+      "failed": true,
+      "error": "psql:<stdin>:526: ERROR:  UELLIX_CERT_INJECTED_FAILURE R9 / CONTEXT:  PL/pgSQL function inline_code_block line 1 at RAISE",
+      "witnessAfter": "ABSENT",
+      "differences": [],
+      "restored": true
+    }
+  ],
+  "ambiguousSuccess": {
+    "applyExitStatus": 0,
+    "committedButUnknownToTheOperator": true,
+    "priorAttempt": "att_ec7fec6b29b794a092b694471dafd979",
+    "priorAttemptStateBeforeApply": "ABSENT",
+    "freshWitnessAfter": "INSTALLED",
+    "plannerResult": "REMEDIATION_ALREADY_INSTALLED",
+    "prechainGateRefusals": 0,
+    "t1Eligible": true,
+    "recoveredWithoutReapply": true
+  },
+  "ambiguousFailure": {
+    "applyExitStatus": 3,
+    "injectedAt": "R8",
+    "priorAttempt": "att_646e3d8e04122c232e3b1645c1534e35",
+    "reuseOfPriorAttempt": "REMEDIATION_ATTEMPT_NOT_OPEN",
+    "freshWitnessAfter": "ABSENT",
+    "newAttempt": "att_2d32383686a3bfbc7ffbba0cfbc353a3",
+    "newAttemptAuthorized": true,
+    "newAttemptRequired": true
+  },
+  "partialRecovery": [
+    {
+      "id": "E01_PRIVILEGE_MISSING",
+      "mutation": "CREATEROLE achieved and one E-01 grant revoked — the target fact set is half present",
+      "witness": "PARTIAL_OR_INCONSISTENT",
+      "missing": [
+        "uellix_owner holds the E-01 grants"
+      ],
+      "problems": [],
+      "plannerResult": "REMEDIATION_PARTIAL_HUMAN_ONLY",
+      "t1Authorized": false,
+      "t1Code": "REMEDIATION_PARTIAL",
+      "humanOnly": true
+    },
+    {
+      "id": "BORROWED_SCHEMA_ACL_LEAKED",
+      "mutation": "every target fact present and the borrowed schema privilege left open to postgres",
+      "witness": "PARTIAL_OR_INCONSISTENT",
+      "missing": [],
+      "problems": [
+        "uellix_bootstrap carries an unexpected explicit grantee: postgres. The remediation borrows USAGE and CREATE for one statement and revokes them before commit; a surviving entry means the revoke did not run."
+      ],
+      "plannerResult": "REMEDIATION_PARTIAL_HUMAN_ONLY",
+      "t1Authorized": false,
+      "t1Code": "REMEDIATION_PARTIAL",
+      "humanOnly": true
+    }
+  ],
+  "ledger": {
+    "lines": [
+      "{\"attemptId\":\"att_e2ebd9c9c63804dc0ac0aa38230ff8a9\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:43:56.570Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_e2ebd9c9c63804dc0ac0aa38230ff8a9\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:43:56.571Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_677ee3564ca466bd97509b35c8574cd8\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:41.856Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_677ee3564ca466bd97509b35c8574cd8\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:45.632Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_89cea2acff9f2f1578dbf7d0ffddb694\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:45.993Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_89cea2acff9f2f1578dbf7d0ffddb694\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:46.279Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_186f07f8da229147683d6c63a4b7f2ac\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:57.034Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_186f07f8da229147683d6c63a4b7f2ac\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:57.463Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_55a8bcf4e175bcb4194fd68d390bb579\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:57.840Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_55a8bcf4e175bcb4194fd68d390bb579\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:58.332Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_eb32adea3346494957493efb5bf9dba3\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:59.713Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_eb32adea3346494957493efb5bf9dba3\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:00.144Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_ba9da3cf899a79b4a5309d673c7a52c3\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:00.450Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_ba9da3cf899a79b4a5309d673c7a52c3\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:00.984Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_a6b31ac51490f61befd62566eb7c715e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:02.382Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_a6b31ac51490f61befd62566eb7c715e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:02.789Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_a8594f0ca0f54b2ed8f073d4235057e5\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:03.072Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_a8594f0ca0f54b2ed8f073d4235057e5\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:03.593Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_59f10630939da109a2a84aae7ee7db73\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:05.018Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_59f10630939da109a2a84aae7ee7db73\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:05.454Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_721d5309f70b19926c2908fee9182f6d\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:05.801Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_721d5309f70b19926c2908fee9182f6d\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:06.435Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_ac349d9201d87a20a381508960fc8b86\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:07.940Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_ac349d9201d87a20a381508960fc8b86\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:08.340Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_a3a967f3383e68196072f8d294c5b87f\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:08.637Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_a3a967f3383e68196072f8d294c5b87f\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:09.140Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_e7a1b9cb94924fd2ce789c4447cd9167\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:10.563Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_e7a1b9cb94924fd2ce789c4447cd9167\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:10.956Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_dc56521a68bd219cfa6171d3866102de\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:11.314Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_dc56521a68bd219cfa6171d3866102de\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:11.839Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_35a3c2deef540feff3a22429a5a4eb27\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:13.276Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_35a3c2deef540feff3a22429a5a4eb27\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:13.668Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_fa6e09997e102703da3a22849ed78fdc\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:13.997Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_fa6e09997e102703da3a22849ed78fdc\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:14.540Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_4b946ac287718000a94694f97705d758\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:16.030Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_4b946ac287718000a94694f97705d758\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:16.524Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_1e887b77242e23876861028cce9a996f\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:16.887Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_1e887b77242e23876861028cce9a996f\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:17.420Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_55556c9f9763edbb4e58911b42552544\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:18.810Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_55556c9f9763edbb4e58911b42552544\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:19.232Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_b05e9f451256f6ccdc67f262c687956b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:19.596Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_b05e9f451256f6ccdc67f262c687956b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:20.085Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_ec7fec6b29b794a092b694471dafd979\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:21.514Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_ec7fec6b29b794a092b694471dafd979\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:21.873Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_8ad6129b4d512f76db7c73d4ddfb6b8e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:22.252Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_8ad6129b4d512f76db7c73d4ddfb6b8e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:22.515Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_646e3d8e04122c232e3b1645c1534e35\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:24.282Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_646e3d8e04122c232e3b1645c1534e35\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:24.635Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_2d32383686a3bfbc7ffbba0cfbc353a3\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:25.005Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_2d32383686a3bfbc7ffbba0cfbc353a3\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:25.267Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_248998ce87b59374bc40fa46ad9cff5b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:27.524Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_248998ce87b59374bc40fa46ad9cff5b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:27.784Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_30973b317c8eb656212771a11424289a\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:30.342Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_30973b317c8eb656212771a11424289a\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:30.585Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}"
+    ]
+  },
+  "verdicts": {
+    "REMEDIATION_WITNESS_TRANSPORT": "TYPED_AND_UNAMBIGUOUS",
+    "REMEDIATION_ATTEMPT_LEDGER": "ENFORCED",
+    "EXACT_STAGING_REMEDIATION": "PASS",
+    "POST_REMEDIATION_PRECHAIN_GATE": "PASS",
+    "T1_AUTHORIZATION_AFTER_REMEDIATION": "PASS",
+    "POST_REMEDIATION_GOVERNED_CHAIN": "9_OF_9_PASS",
+    "OWNER_TRANSFERS_ENGINE": "27_OF_27_CORRECT",
+    "CANONICAL_OWNER_CONTEXT_ENGINE": "3_OF_3_CORRECT",
+    "TRANSFER_MEMBERSHIP_CLEANUP": "11_OF_11",
+    "TEMP_SCHEMA_CREATE_RESIDUAL": "ZERO",
+    "PERSISTENT_ROLE_TOPOLOGY": "EXPECTED",
+    "SD_GATE_ENGINE_V2": "PASS",
+    "RLS_POLICY_ENGINE": "PASS",
+    "REMEDIATION_TRANSACTION_ROLLBACK": "PASS_9_OF_9",
+    "REMEDIATION_AMBIGUOUS_SUCCESS": "RECOVERED_WITHOUT_REAPPLY",
+    "REMEDIATION_AMBIGUOUS_FAILURE": "NEW_ATTEMPT_REQUIRED",
+    "REMEDIATION_PARTIAL_RECOVERY": "HUMAN_ONLY",
+    "OLD_BOOTSTRAP_SECOND_PASS": "PROHIBITED",
+    "REMEDIATION_PIN": "ENFORCED",
+    "T1_DEPENDENCY_MATRIX": "ONE_OF_FOUR_AUTHORISES"
+  },
+  "verdict": "COMPLETE"
+}

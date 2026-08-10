@@ -31,16 +31,29 @@
 // mismatch REFUSES. When the generator changes, these break loudly instead of
 // quietly relocating.
 
-export interface FailureInjection {
+/**
+ * The minimum an injection needs to be placed and attributed.
+ *
+ * Split out in Commit 5.3 so the prechain remediation's R1..R9 can use the SAME
+ * anchor discipline — exact line, counted occurrence, refuse on drift — without
+ * pretending to be a chain package with a `fromSnapshot`. One placement
+ * implementation, two catalogues of failure points; a second `injectFailure`
+ * would be a second place for the anchor rule to be almost right.
+ */
+export interface AnchoredInjection {
   readonly id: string
-  readonly description: string
+  /** What the injection is FOR, in a refusal a human has to act on. */
   readonly packageId: string
-  /** Which snapshot the instance starts from: after bootstrap, or after T7. */
-  readonly fromSnapshot: 'bootstrap' | 'T7'
   /** The exact trimmed text of the emitted line to inject AFTER. */
   readonly anchor: string
   /** 1-based. Several packages emit the same line more than once. */
   readonly occurrence: number
+}
+
+export interface FailureInjection extends AnchoredInjection {
+  readonly description: string
+  /** Which snapshot the instance starts from: after bootstrap, or after T7. */
+  readonly fromSnapshot: 'bootstrap' | 'T7'
   /** What the state at that point is, for the report. */
   readonly authorityStateAtInjection: string
 }
@@ -165,7 +178,7 @@ export class InjectionAnchorRefusal extends Error {
  * A raise inside a DO block happens at execution time, at exactly the point
  * chosen, with everything before it already applied inside the transaction.
  */
-export function injectFailure(sql: string, injection: FailureInjection): string {
+export function injectFailure(sql: string, injection: AnchoredInjection): string {
   const lines = sql.split('\n')
   const hits: number[] = []
   for (const [index, line] of lines.entries()) {

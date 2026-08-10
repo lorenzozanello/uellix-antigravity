@@ -82,6 +82,8 @@
     "chain:status:verify": "tsx scripts/chain-status.ts verify",
     "certify:pg176": "tsx scripts/pg176-certify.ts",
     "certify:pg176:diagnostic": "tsx scripts/pg176-certify.ts --diagnostic",
+    "remediation:verify": "tsx scripts/remediation-verify.ts",
+    "certify:remediation": "tsx scripts/remediation-certify.ts",
     "authority:repin": "tsx scripts/authority-repin.mts"
   },
   "dependencies": {

@@ -268,6 +268,20 @@ export interface ChainAttemptRecord {
   readonly at: string
   /** Present on CONSUMED: the one package the attempt authorised. */
   readonly packageId?: string
+  /**
+   * What KIND of write the attempt authorises. Absent on a chain attempt.
+   *
+   * COMMIT 5.3. The prechain remediation needed the freshness and
+   * single-consumption semantics this ledger already enacts, and needed NOT to
+   * be a chain package — it is a PREREQUISITE of T1, not a member of the
+   * sequence, and giving it a chain witness would have put it in
+   * `nextChainPackage`. Carrying an optional kind lets the two share the
+   * machinery while `db/hosted/remediation-attempt.ts` refuses to read a record
+   * that does not declare itself a remediation attempt. A parallel ledger
+   * implementation would have been a second place for the "one observation, one
+   * write" rule to be almost right.
+   */
+  readonly kind?: string
 }
 
 export type AttemptStatus = 'UNKNOWN' | 'OPEN' | 'CONSUMED'
@@ -295,6 +309,7 @@ export function parseAttemptLedger(raw: string | null): readonly ChainAttemptRec
       targetProjectRef: r.targetProjectRef,
       at: r.at,
       ...(typeof r.packageId === 'string' ? { packageId: r.packageId } : {}),
+      ...(typeof r.kind === 'string' ? { kind: r.kind } : {}),
     })
   }
   return out

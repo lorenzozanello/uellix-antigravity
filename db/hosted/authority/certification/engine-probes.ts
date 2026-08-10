@@ -78,6 +78,25 @@ export function witnessProbeSql(): string {
 }
 
 /**
+ * The same witnesses as ONE jsonb object, `witness -> present`.
+ *
+ * COMMIT 5.3. Identical question, typed transport: the tabular form above is
+ * read with a field separator and positional indexing, which is safe for these
+ * particular values and is not safe as a habit. Built from `planWitnessSql`
+ * exactly like its sibling, so the two cannot ask different questions.
+ */
+export function witnessDocumentSql(): string {
+  const planned = planWitnessSql()
+  if (!planned.ok) {
+    throw new Error(`witness probe unbuildable: ${planned.code}: ${planned.detail}`)
+  }
+  const arms = planned.packages.flatMap((p) =>
+    p.witnesses.map(([key, sql]) => `'${key.replace(/'/g, "''")}', (${sql})`),
+  )
+  return `SET search_path = '';\nSELECT jsonb_build_object(\n  ${arms.join(',\n  ')}\n)::text;`
+}
+
+/**
  * Every membership row involving a governed or provider principal.
  *
  * `admin_option`, `inherit_option` and `set_option` are all projected: a
