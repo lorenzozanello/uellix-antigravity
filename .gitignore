@@ -45,3 +45,9 @@ next-env.d.ts
 # local agent/editor configuration
 /.agents/
 /.claude/settings.local.json
+
+# The pre-write probe is minted per attempt and carries that attempt id as a
+# SQL literal. It is transient by construction: committing one would invite
+# re-running last week's probe, which is the thing the freshness gate exists to
+# refuse. The ATTEMPT LEDGER beside it is the durable record and IS committed.
+artifacts/hosted-chain-pre-write-probe.sql

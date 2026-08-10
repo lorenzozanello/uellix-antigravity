@@ -914,46 +914,58 @@ describe('what one applyConfirmation actually authorises', () => {
       stellaSources: sources,
     })
 
-  it('EVERY apply-mode plan demands the token again, at every state', () => {
+  // SUPERSEDED BY THE PRE-WRITE FRESHNESS GATE, and the four tests below used to
+  // record the opposite answer.
+  //
+  // They measured the runner as it was: one `hosted_apply:<ref>` token authorised
+  // a NINE-step plan built from a caller-supplied state map, with no per-step
+  // gate between T1 and T2. That measurement was correct, and it was the hole —
+  // adversarial finding RT-02. A committed-but-unacknowledged write left the map
+  // saying ABSENT, and the runner re-authorised the package.
+  //
+  // The token is unchanged and still target-bound. What changed is that it is no
+  // longer sufficient: the write path now demands a measurement taken for THIS
+  // attempt, and authorises exactly one package from it.
+
+  it('the token alone no longer reaches the apply gate — the measurement is checked FIRST', () => {
+    // Order matters here. Asking for the confirmation before asking whether the
+    // database was measured would teach an operator to reach for the token when
+    // what they are missing is the probe.
     for (let installed = 0; installed <= 8; installed++) {
       const r = ask(installed, 'apply')
       expect(r.ok, `state=${installed}`).toBe(false)
-      if (!r.ok) expect(r.code).toBe('HOSTED_APPLY_CONFIRMATION_REQUIRED')
+      if (!r.ok) expect(r.code).toBe('CHAIN_OBSERVATION_REQUIRED')
     }
   })
 
-  it('nothing about a confirmation survives the call that used it', () => {
-    const confirmed = ask(0, 'apply', TOKEN)
-    expect(confirmed.ok).toBe(true)
-    const next = ask(0, 'apply')
-    expect(next.ok).toBe(false)
+  it('a confirmed plan built from the state map alone is REFUSED at every state', () => {
+    for (let installed = 0; installed <= 8; installed++) {
+      const r = ask(installed, 'apply', TOKEN)
+      expect(r.ok, `state=${installed}`).toBe(false)
+      if (!r.ok) expect(r.code).toBe('CHAIN_OBSERVATION_REQUIRED')
+    }
   })
 
-  it('the token binds to the TARGET, not to the PLAN — the same string authorises any of them', () => {
-    // This is the part the hand-off phrasing hid. `hosted_apply:<projectRef>`
-    // carries nothing about which packages the plan contains, so a token minted
-    // while looking at a nine-step plan is byte-identical to one minted while
-    // looking at a one-step plan. The confirmation cannot express "I approved
-    // applying T1", only "I approved writing to this project".
-    const nine = ask(0, 'apply', TOKEN)
-    const eight = ask(1, 'apply', TOKEN)
-    expect(nine.ok && eight.ok).toBe(true)
-    if (!nine.ok || !eight.ok) return
-    expect(nine.steps).toHaveLength(9)
-    expect(eight.steps).toHaveLength(8)
-    // One token, both plans.
-    expect(nine.writesPermitted).toBe(true)
-    expect(eight.writesPermitted).toBe(true)
+  it('the token still binds to the TARGET rather than to the plan', () => {
+    // Unchanged and still worth pinning: `hosted_apply:<projectRef>` carries
+    // nothing about which packages a plan contains. It cannot express "I
+    // approved applying T1". What now supplies that specificity is the
+    // observation, which names exactly one package — so the token's weakness
+    // stopped being load-bearing rather than being fixed.
+    expect(TOKEN).toBe(`hosted_apply:${REF}`)
+    expect(TOKEN).not.toContain('grounding')
+    expect(TOKEN).not.toContain('stella_00')
   })
 
-  it('ONE confirmed plan permits writes over ALL its remaining steps', () => {
+  it('one measurement permits ONE write, not nine', () => {
+    // The property the four superseded tests denied. See
+    // tests/hosted/fresh-observation.test.ts for the full matrix; this asserts
+    // that the runner reached by THIS file's helpers behaves the same way.
     const r = ask(0, 'apply', TOKEN)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    // `writesPermitted` is a PLAN-level boolean. There is no per-step gate, so
-    // the runner does not force a human between T1 and T2.
-    expect(r.writesPermitted).toBe(true)
-    expect(r.steps).toHaveLength(9)
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.code).toBe('CHAIN_OBSERVATION_REQUIRED')
+    expect(r.message).toMatch(/PRE-WRITE observation/i)
   })
 
   it('so the per-write boundary is the EVIDENCE, and that one is executable', () => {

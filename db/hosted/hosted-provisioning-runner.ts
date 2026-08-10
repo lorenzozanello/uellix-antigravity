@@ -54,6 +54,7 @@ import {
 } from './baseline-journal-wrapper'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
+import { CHAIN_WRITE_ORDER, authorizeChainWrite } from './fresh-observation'
 import {
   STORAGE_UNIT_SOURCE,
   buildStorageArtefacts,
@@ -96,6 +97,9 @@ export type ProvisioningFailureCode =
   | 'PROVISIONING_PRIVILEGE_PROBE_MISSING'
   | 'PROVISIONING_PRIVILEGE_UNAVAILABLE'
   | 'PROVISIONING_PRODUCTION_DENYLIST_EMPTY'
+  /** The PRE-WRITE freshness gate. See `db/hosted/fresh-observation.ts`. */
+  | 'CHAIN_OBSERVATION_REQUIRED'
+  | 'CHAIN_OBSERVATION_TARGET_MISMATCH'
   /** Anything the identity verifier or the package planner refused with. */
   | string
 
@@ -481,6 +485,30 @@ export interface ProvisioningRequest {
    * that never mentioned the possibility.
    */
   readonly sentinelWriteRequested?: boolean
+  /**
+   * The PRE-WRITE observation, REQUIRED to apply PHASE_STELLA_CHAIN.
+   *
+   * Adversarial finding RT-02: `state.stellaPackagesInstalled` is supplied by
+   * the caller, and nothing here could tell a measurement taken thirty seconds
+   * ago from one taken before a write whose acknowledgement was lost. A plan
+   * built on the second re-applies a committed package.
+   *
+   * So the chain's WRITE path no longer reads `state` for package inventory at
+   * all. It reads this, and this is bound to an attempt whose probe the database
+   * itself echoed. Dry runs are untouched and keep using `state`, because a dry
+   * run cannot write and describing a hypothetical is the thing that surfaced
+   * the sentinel circularity in the first place.
+   */
+  readonly freshObservation?: {
+    /** The raw pre-write observation document. */
+    readonly raw: string | null
+    /** The attempt this invocation opened, before the probe ran. */
+    readonly attemptId: string
+    /** `artifacts/hosted-chain-attempts.jsonl`, or null when never opened. */
+    readonly attemptLedger: string | null
+    /** Optional: refuse unless the authorised package is this one. */
+    readonly requestedPackage?: string
+  }
 }
 
 export interface ProvisioningStep {
@@ -951,11 +979,68 @@ function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
   const identity = verifyStagingTarget(request.target, request.production, 'required')
   if (!identity.ok) return refuse(identity.code, identity.message)
 
-  const remaining = HOSTED_CHAIN.filter(
-    (name) =>
-      name !== 'stella_hosted_0001_managed_role_bootstrap' &&
-      state.stellaPackagesInstalled[name] !== true,
-  )
+  // THE FRESHNESS GATE. Before the package inventory, because the inventory is
+  // exactly what it replaces.
+  //
+  // In apply mode the caller-supplied `state.stellaPackagesInstalled` is not
+  // consulted at all: `authorizeChainWrite` re-derives every package state from
+  // witnesses the database echoed for THIS attempt, and authorises EXACTLY ONE
+  // write. A plan for nine packages from one measurement is the shape that let a
+  // committed-but-unacknowledged package be applied twice.
+  let remaining: readonly string[]
+  let freshLog: readonly string[] = []
+  /** Set only on the write path: the one package a measurement authorises. */
+  let authorizedPackage: string | null = null
+  let installedProbes: Readonly<Record<string, boolean>> = state.stellaPackagesInstalled
+  let chainWriteAuthorization: { attemptId: string; packageId: string } | undefined
+
+  if (request.mode === 'apply') {
+    if (request.freshObservation === undefined) {
+      return refuse(
+        'CHAIN_OBSERVATION_REQUIRED',
+        `refused: applying a chain package requires a PRE-WRITE observation bound to an open attempt. ` +
+          `The state this planner was handed describes whatever the caller last saw, and "I have no ` +
+          `evidence that it applied" is not a measurement that it did not. Open an attempt, run the ` +
+          `read-only probe it mints, and pass the document it produces.`,
+      )
+    }
+    const authorized = authorizeChainWrite({
+      raw: request.freshObservation.raw,
+      expectedAttemptId: request.freshObservation.attemptId,
+      attemptLedger: request.freshObservation.attemptLedger,
+      requestedPackage: request.freshObservation.requestedPackage,
+      production: request.production,
+    })
+    if (!authorized.ok) return refuse(authorized.code, authorized.detail)
+    if (authorized.projectRef !== identity.projectRef) {
+      return refuse(
+        'CHAIN_OBSERVATION_TARGET_MISMATCH',
+        `refused: the observation corroborates ${authorized.projectRef} and this request targets ` +
+          `${identity.projectRef}. A measurement of one database does not authorise a write to another.`,
+      )
+    }
+    // THE CAMPAIGN IS VALIDATED WHOLE; ONE STEP IS AUTHORISED.
+    //
+    // `planHostedApply` refuses a plan that would leave the grounding unit or
+    // the ticket chain half-reached, and that refusal is right — starting T1
+    // when T3 could not be reached is a decision, not an accident. But it is a
+    // statement about the CAMPAIGN, and applying one package per measurement is
+    // a statement about one psql invocation. Passing the full remaining set
+    // keeps every unit, order, supersession and source check exactly as it was;
+    // the steps are narrowed afterwards, so the plan describes the campaign and
+    // authorises a single write.
+    remaining = CHAIN_WRITE_ORDER.filter((n) => authorized.stellaPackagesInstalled[n] !== true)
+    authorizedPackage = authorized.packageId
+    installedProbes = authorized.stellaPackagesInstalled
+    chainWriteAuthorization = { attemptId: authorized.attemptId, packageId: authorized.packageId }
+    freshLog = authorized.log
+  } else {
+    remaining = HOSTED_CHAIN.filter(
+      (name) =>
+        name !== 'stella_hosted_0001_managed_role_bootstrap' &&
+        state.stellaPackagesInstalled[name] !== true,
+    )
+  }
 
   if (remaining.length === 0) {
     return {
@@ -975,20 +1060,42 @@ function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
     packages: remaining,
     mode: request.mode,
     applyConfirmation: request.applyConfirmation,
-    installedProbes: state.stellaPackagesInstalled,
+    installedProbes,
     sources: request.stellaSources,
     production: request.production,
+    chainWriteAuthorization,
   })
   if (!plan.ok) return refuse(plan.code, plan.message)
 
+  const authorizedSteps =
+    authorizedPackage === null
+      ? plan.steps
+      : plan.steps.filter((s) => s.package === authorizedPackage)
+
+  const lastPackage = 'stella_0018_category_bound_operation_tickets'
   return finish(
     request,
     identity.projectRef,
     'PHASE_STELLA_CHAIN',
-    plan.steps.map((s, i) => stellaStep(s, i + 1)),
-    [`sentinel PRESENT and corroborating: three independent signals`, ...plan.log],
-    'CHECKPOINT C — verify every package postcondition; the flags stay false',
-    remaining.includes('stella_0018_category_bound_operation_tickets'),
+    authorizedSteps.map((s, i) => stellaStep(s, i + 1)),
+    [
+      `sentinel PRESENT and corroborating: three independent signals`,
+      ...freshLog,
+      ...plan.log,
+      ...(authorizedPackage === null
+        ? []
+        : [
+            `campaign validated over ${remaining.length} remaining package(s); ` +
+              `${authorizedSteps.length} step authorised`,
+          ]),
+    ],
+    authorizedPackage === null
+      ? 'CHECKPOINT C — verify every package postcondition; the flags stay false'
+      : `apply ${authorizedPackage}, then OPEN A NEW ATTEMPT and re-measure before the next package. ` +
+        `If this write's outcome is unknown, do not retry it: measure first.`,
+    authorizedPackage === null
+      ? remaining.includes(lastPackage)
+      : authorizedPackage === lastPackage,
   )
 }
 

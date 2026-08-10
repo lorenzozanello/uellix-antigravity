@@ -72,6 +72,8 @@
     "a1:status": "tsx scripts/a1-status.ts report",
     "a1:status:write": "tsx scripts/a1-status.ts write",
     "a1:status:verify": "tsx scripts/a1-status.ts verify",
+    "chain:attempt:open": "tsx scripts/chain-attempt.ts open",
+    "chain:attempt:plan": "tsx scripts/chain-attempt.ts plan",
     "chain:status": "tsx scripts/chain-status.ts report",
     "chain:status:write": "tsx scripts/chain-status.ts write",
     "chain:status:verify": "tsx scripts/chain-status.ts verify"

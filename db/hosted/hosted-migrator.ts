@@ -53,6 +53,7 @@ export type HostedApplyFailureCode =
   | 'HOSTED_SENTINEL_BOUNDARY_CROSSED'
   | 'HOSTED_BOOTSTRAP_ONLY_PLAN_INVALID'
   | 'HOSTED_PRODUCTION_DENYLIST_EMPTY'
+  | 'HOSTED_CHAIN_WRITE_UNAUTHORIZED'
   | 'DB_MIGRATOR_PACKAGE_ORDER_VIOLATION'
   | string
 
@@ -85,6 +86,25 @@ export interface HostedApplyRequest {
    * happens with the sentinel deferred. See the refusal in `planHostedApply`.
    */
   readonly emptinessAttested?: boolean
+  /**
+   * Set ONLY by `planChainPhase`, after `authorizeChainWrite` accepted a
+   * PRE-WRITE observation bound to an open attempt.
+   *
+   * THE SECOND DOOR. `planProvisioningPhase` is not the only function that mints
+   * `writesPermitted: true` — this one does too, from a caller-supplied
+   * `installedProbes` map, and a guard installed on one of two doors is a guard
+   * on neither. That sentence is already in this file about the production
+   * denylist; adversarial finding RT-02 is the same shape one layer up.
+   *
+   * Today the only non-test caller is the phased runner. This makes that a rule
+   * rather than an accident: an apply-mode plan over chain packages without this
+   * is refused, so a future direct caller gets a refusal explaining what it must
+   * obtain instead of a plan it should never have been given.
+   */
+  readonly chainWriteAuthorization?: {
+    readonly attemptId: string
+    readonly packageId: string
+  }
 }
 
 export interface HostedApplyStep {
@@ -416,6 +436,33 @@ export function planHostedApply(request: HostedApplyRequest): HostedApplyPlan {
         `refused: the confirmation does not match this target. A token minted for one project does not ` +
           `confirm another.`,
       )
+    }
+    // THE FRESHNESS GATE, on this door too. Bootstrap-only plans are exempt: the
+    // bootstrap is not a chain package, it has no witnesses to measure yet, and
+    // its own compensating control is the measured emptiness above.
+    const chainPackages = request.packages.filter(
+      (n) => n !== 'stella_hosted_0001_managed_role_bootstrap',
+    )
+    if (chainPackages.length > 0) {
+      const authorization = request.chainWriteAuthorization
+      if (authorization === undefined) {
+        return fail(
+          'HOSTED_CHAIN_WRITE_UNAUTHORIZED',
+          `refused: applying ${chainPackages.length} chain package(s) requires a PRE-WRITE observation ` +
+            `bound to an open attempt. This planner takes its package inventory from the caller, so it ` +
+            `cannot tell a measurement taken now from one taken before a write whose acknowledgement was ` +
+            `lost — and a plan built on the second re-applies a committed package. Go through ` +
+            `planProvisioningPhase(PHASE_STELLA_CHAIN), which obtains one.`,
+        )
+      }
+      if (!chainPackages.includes(authorization.packageId)) {
+        return fail(
+          'HOSTED_CHAIN_WRITE_UNAUTHORIZED',
+          `refused: the observation authorised ${authorization.packageId} and this plan does not contain ` +
+            `it. An authorization is for one package, not for whatever plan carries it.`,
+        )
+      }
+      log.push(`chain write authorised by attempt ${authorization.attemptId} for ${authorization.packageId}`)
     }
     writesPermitted = true
     log.push('writes PERMITTED by explicit confirmation')
