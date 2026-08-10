@@ -1,0 +1,402 @@
+// db/hosted/authority/primitives.ts
+// COMMIT 3 — the authority primitives, and the cleanup contract they satisfy.
+//
+// Each primitive emits the statements that OPEN a window and the statements
+// that CLOSE it. Nothing here applies anything; a primitive is a value, so the
+// generator (Commit 4) and the verifier can both read it and neither can drift
+// from the other by acting.
+//
+// ---------------------------------------------------------------------------
+// EVERY RULE BELOW WAS MEASURED, NOT ASSUMED
+// ---------------------------------------------------------------------------
+// db/hosted/authority/lab/pg176-authority-lab.sql, PostgreSQL 17.6 (170006),
+// managed-Supabase image, network none, destroyed afterwards:
+//
+//   M1  Creating a role grants the creator ADMIN OPTION with set_option = FALSE.
+//       So membership with SET TRUE has to be granted explicitly, and this is
+//       exactly the Train 5A abort reproduced in four statements.
+//
+//   M2  A provider-granted membership and an installer-granted one COEXIST as
+//       two rows, distinguished by grantor.
+//
+//   M3a An unqualified REVOKE removes ONLY the issuing grantor's row. This is
+//       what makes cleanup safe: the installer can stand down without touching
+//       a membership the provider owns.
+//
+//   M3b `REVOKE ... GRANTED BY r` is refused unless the revoker holds r's
+//       privileges. An installer cannot reach a provider's row even by naming
+//       it — a safety property, not an obstacle.
+//
+//   M5  The installer CANNOT grant CREATE on a schema owned by uellix_owner:
+//       membership with INHERIT FALSE is not enough and PostgreSQL answers
+//       `permission denied for schema`. The temporary CREATE grant is therefore
+//       NESTED inside an owner window, not issued alongside one. An object
+//       created while CREATE was held survives the revoke, and a further
+//       creation afterwards is refused with 42501.
+//
+//   M6  `SET ROLE a; SET ROLE b; RESET ROLE` lands on the SESSION role, not on
+//       `a`. There is no stack. The state machine below refuses a nested
+//       elevation for that reason and no other.
+
+import { assertNoSessionRoleGrantee } from './membership-tripwire'
+import { parseMembershipStatement } from './membership'
+import { parseStatementIdentity } from './structural-identity'
+import { assertElevatable, hostedRole, type HostedRoleIdentifier } from './role-registry'
+import { AuthorityRefusal } from './window-contract'
+
+/* -------------------------------------------------------------------------- */
+/* The state machine                                                           */
+/* -------------------------------------------------------------------------- */
+
+export type AuthorityState = 'installer' | 'owner' | 'capability'
+
+/**
+ * Tracks which authority is in force, and refuses a nesting PostgreSQL cannot
+ * unwind.
+ *
+ * The refusal of owner → capability is not conservatism. Measured (M6): a second
+ * `SET ROLE` replaces the first, and `RESET ROLE` returns to the session role
+ * rather than to the previous one. A plan that nested elevations would emit a
+ * `RESET ROLE` believing it had returned to the owner window and would in fact
+ * be running the rest of that window as the installer — with the owner window's
+ * statements failing, or worse, succeeding for the wrong reason.
+ */
+export class AuthorityStateMachine {
+  #state: AuthorityState = 'installer'
+
+  get state(): AuthorityState {
+    return this.#state
+  }
+
+  enter(next: Exclude<AuthorityState, 'installer'>): void {
+    if (this.#state !== 'installer') {
+      throw new AuthorityRefusal(
+        'AUTHORITY_STATE_TRANSITION_INVALID',
+        `cannot enter a ${next} window while a ${this.#state} window is open. PostgreSQL does not ` +
+          `stack SET ROLE (lab M6): the inner RESET ROLE would return to the session role, not to ` +
+          `the ${this.#state} window, and the rest of that window would run unelevated. Close the ` +
+          `open window first.`,
+      )
+    }
+    this.#state = next
+  }
+
+  leave(): void {
+    if (this.#state === 'installer') {
+      throw new AuthorityRefusal(
+        'AUTHORITY_STATE_TRANSITION_INVALID',
+        `there is no open window to leave; the current authority is already the installer. An ` +
+          `unmatched close means the plan emitted a RESET ROLE it did not account for.`,
+      )
+    }
+    this.#state = 'installer'
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Primitives                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export interface AuthorityPrimitive {
+  /** Statements that put the required authority in force, in order. */
+  readonly open: readonly string[]
+  /**
+   * Statements emitted between open and close that are not the governed
+   * package statements themselves — generated bookkeeping.
+   *
+   * Present because Fable's review (F1) found the cleanup checker inspecting
+   * only `open`: a primitive that acquired a privilege anywhere else would have
+   * been balanced by inspection of a phase that never held it.
+   */
+  readonly body?: readonly string[]
+  /** Statements that take the authority away again, in order. */
+  readonly close: readonly string[]
+}
+
+/** Every phase, in execution order. The cleanup contract is over all of them. */
+export function primitivePhases(primitive: AuthorityPrimitive): string[] {
+  return [...primitive.open, ...(primitive.body ?? []), ...primitive.close]
+}
+
+function grantMembership(role: HostedRoleIdentifier, member: HostedRoleIdentifier): string {
+  // INHERIT FALSE, SET TRUE is the exact shape the bootstrap already uses for
+  // uellix_owner: the installer may BECOME the role but does not silently carry
+  // its privileges the rest of the time. SET TRUE is spelled out because M1
+  // measured that it is not granted by default to a role's creator.
+  return `GRANT ${role} TO ${member} WITH INHERIT FALSE, SET TRUE;`
+}
+
+function revokeMembership(role: HostedRoleIdentifier, member: HostedRoleIdentifier): string {
+  // Unqualified, and deliberately so. M3a measured that this removes only the
+  // issuing grantor's row, which is precisely the scope wanted: the installer's
+  // own temporary membership goes, and a provider-granted one (M2) survives.
+  // `GRANTED BY` would be narrower on paper and is refused in practice unless
+  // the revoker holds the grantor's privileges (M3b).
+  return `REVOKE ${role} FROM ${member};`
+}
+
+/** Opens and closes an owner window for `installer`. */
+export function ownerWindowPrimitive(installer: HostedRoleIdentifier): AuthorityPrimitive {
+  hostedRole(installer)
+  assertElevatable('uellix_owner')
+
+  return {
+    open: [grantMembership('uellix_owner', installer), 'SET ROLE uellix_owner;'],
+    // RESET ROLE first: while the session is still elevated, the revoke would be
+    // issued by uellix_owner rather than by the installer, and M3a means it
+    // would then remove a different row from the one the grant created.
+    close: ['RESET ROLE;', revokeMembership('uellix_owner', installer)],
+  }
+}
+
+export interface CapabilityWindowOptions {
+  readonly installer: HostedRoleIdentifier
+  readonly capabilityRole: HostedRoleIdentifier
+  /** The schema the window creates objects in. */
+  readonly schema: string
+  readonly needsTemporarySchemaCreate: boolean
+}
+
+/**
+ * Opens and closes a capability window.
+ *
+ * When the window creates objects, the capability role needs CREATE on the
+ * schema — and M5 measured that the installer cannot grant it, because the
+ * schema belongs to uellix_owner and membership with INHERIT FALSE does not
+ * carry the privilege. So the grant is made inside a SHORT owner window that
+ * opens and closes before the capability elevation begins. The revoke is made
+ * the same way, for the same reason.
+ */
+export function capabilityWindowPrimitive(options: CapabilityWindowOptions): AuthorityPrimitive {
+  const { installer, capabilityRole, schema, needsTemporarySchemaCreate } = options
+  hostedRole(installer)
+  assertElevatable(capabilityRole)
+
+  const open: string[] = []
+  const close: string[] = []
+
+  if (needsTemporarySchemaCreate) {
+    open.push(
+      ...ownerWindowPrimitive(installer).open,
+      `GRANT CREATE ON SCHEMA ${schema} TO ${capabilityRole};`,
+      ...ownerWindowPrimitive(installer).close,
+    )
+  }
+
+  open.push(grantMembership(capabilityRole, installer), `SET ROLE ${capabilityRole};`)
+  close.push('RESET ROLE;')
+
+  if (needsTemporarySchemaCreate) {
+    close.push(
+      ...ownerWindowPrimitive(installer).open,
+      `REVOKE CREATE ON SCHEMA ${schema} FROM ${capabilityRole};`,
+      ...ownerWindowPrimitive(installer).close,
+    )
+  }
+
+  close.push(revokeMembership(capabilityRole, installer))
+  return { open, close }
+}
+
+export interface OwnerTransferOptions {
+  readonly installer: HostedRoleIdentifier
+  readonly from: HostedRoleIdentifier
+  readonly to: HostedRoleIdentifier
+}
+
+/**
+ * Opens and closes an ownership-transfer window.
+ *
+ * `ALTER ... OWNER TO` needs membership in BOTH the outgoing and the incoming
+ * owner — and, since PostgreSQL 16, CREATE on the containing schema checked
+ * against the NEW owner. The chain learned the second half the hard way
+ * (S1-DEFECT-001), which is why the transfer is its own window kind rather than
+ * a statement that happens to sit inside an owner window.
+ */
+export function ownerTransferPrimitive(options: OwnerTransferOptions): AuthorityPrimitive {
+  const { installer, from, to } = options
+  hostedRole(installer)
+  assertElevatable(from)
+  assertElevatable(to)
+
+  return {
+    open: [grantMembership(from, installer), grantMembership(to, installer), `SET ROLE ${from};`],
+    close: [
+      'RESET ROLE;',
+      revokeMembership(to, installer),
+      revokeMembership(from, installer),
+    ],
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cleanup                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One acquisition or release of a temporary privilege, read structurally.
+ *
+ * `null` for a statement that is neither. There is no regex here and there must
+ * never be one again: F2 was a regex that required `WITH`, and a bare
+ * `GRANT cap TO owner;` — which the 17.6 lab measured to confer set_option
+ * TRUE — walked straight past it.
+ */
+function privilegeEvent(
+  sql: string,
+): { kind: 'acquire' | 'release'; token: string } | null {
+  const membership = parseMembershipStatement(sql)
+  if (membership !== null) {
+    const pairs = membership.roles.flatMap((role) =>
+      membership.members.map((member) => `membership:${role}:${member}`),
+    )
+    if (pairs.length !== 1) return null
+    return { kind: membership.kind === 'grant' ? 'acquire' : 'release', token: pairs[0] }
+  }
+
+  let identity
+  try {
+    identity = parseStatementIdentity(sql)
+  } catch {
+    return null
+  }
+  const isGrant = identity.statementClass === 'grant-privilege'
+  const isRevoke = identity.statementClass === 'revoke-privilege'
+  if (!isGrant && !isRevoke) return null
+  if (identity.object?.objectClass !== 'schema') return null
+  if (!identity.operands[0].split('+').includes('CREATE')) return null
+
+  return {
+    kind: isGrant ? 'acquire' : 'release',
+    token: `schema-create:${identity.object.name}:${identity.operands[1]}`,
+  }
+}
+
+/**
+ * Refuses a primitive that acquires authority it does not give back.
+ *
+ * TWO THINGS THIS GETS RIGHT THAT THE FIRST VERSION DID NOT:
+ *
+ *   F1. Every phase is inspected, in execution order, not only `open`. The
+ *       first version balanced acquisitions found in `open` against releases
+ *       found anywhere — so a primitive that acquired in `close` was reported
+ *       clean, because the check never looked for an acquisition there.
+ *
+ *   F2. Membership is read structurally. `GRANT cap TO owner;` with no `WITH`
+ *       clause confers set_option TRUE (measured, 17.6) and the previous regex
+ *       could not see it at all.
+ *
+ * Matching is on the exact (role, member) pair rather than on counts, because
+ * M3a makes a mismatched revoke a NO-OP that reports success: `REVOKE x FROM
+ * uellix_app` after `GRANT x TO uellix_migrator` removes nothing at all, and a
+ * count-based check would call the window balanced.
+ */
+export function assertCleanupComplete(where: string, primitive: AuthorityPrimitive): void {
+  const phases = primitivePhases(primitive)
+
+  for (const statement of phases) {
+    assertNoSessionRoleGrantee(statement)
+  }
+
+  const outstanding = new Set<string>()
+  for (const statement of phases) {
+    const event = privilegeEvent(statement)
+    if (event === null) continue
+    if (event.kind === 'acquire') outstanding.add(event.token)
+    else outstanding.delete(event.token)
+  }
+
+  if (outstanding.size > 0) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_CLEANUP_INCOMPLETE',
+      `${where} acquires authority it never gives back: ${[...outstanding].sort().join(', ')}. ` +
+        `Measured (M3a): a REVOKE naming a different member removes nothing and reports success, ` +
+        `so a close that does not match its open exactly leaves the installer permanently able to ` +
+        `become a role the window only needed for a moment.`,
+    )
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* RT-07 — transitive SET reachability                                         */
+/* -------------------------------------------------------------------------- */
+
+export interface MembershipEdge {
+  /** The role whose privileges become reachable. */
+  readonly role: string
+  /** The role that gains the ability to become it. */
+  readonly member: string
+}
+
+/**
+ * Extracts the membership edges a set of statements establishes.
+ *
+ * Only `WITH ... SET TRUE` grants create an edge, because only they make the
+ * role reachable by `SET ROLE`. An `INHERIT TRUE, SET FALSE` grant — the shape
+ * the bootstrap uses for `uellix_writer` → `uellix_app` — confers privileges
+ * without conferring the ability to BECOME the role, and is not an elevation
+ * path.
+ */
+export function membershipEdges(statements: readonly string[]): MembershipEdge[] {
+  const edges: MembershipEdge[] = []
+  for (const statement of statements) {
+    const membership = parseMembershipStatement(statement)
+    if (membership === null || membership.kind !== 'grant') continue
+    // MEASURED (17.6, F2 recheck): `set_option` defaults to TRUE, so a bare
+    // GRANT is an elevation path. The previous regex demanded `WITH ... SET
+    // TRUE` and therefore modelled the safe case and missed the default one.
+    if (!membership.setOption) continue
+    for (const role of membership.roles) {
+      for (const member of membership.members) edges.push({ role, member })
+    }
+  }
+  return edges
+}
+
+/**
+ * Refuses a membership graph in which a role can reach an elevatable role it
+ * was never granted directly.
+ *
+ * MEASURED (lab M4): SET reachability is TRANSITIVE. With
+ * `GRANT cap TO middle WITH SET TRUE` and `GRANT middle TO installer WITH SET
+ * TRUE`, `pg_has_role(installer, cap, 'SET')` flips from false to true, and back
+ * to false when the intermediate grant is revoked. So a window that grants
+ * membership in an innocuous intermediate role hands out every role that
+ * intermediate can become — and a review that read only the direct grants would
+ * have seen nothing.
+ *
+ * `expectedDirect` is the set of `role→member` edges the plan intends. Anything
+ * reachable but not intended is a refusal.
+ */
+export function assertNoTransitiveElevation(
+  where: string,
+  edges: readonly MembershipEdge[],
+): void {
+  const direct = new Map<string, Set<string>>()
+  for (const edge of edges) {
+    const set = direct.get(edge.member) ?? new Set<string>()
+    set.add(edge.role)
+    direct.set(edge.member, set)
+  }
+
+  for (const [member, directRoles] of direct) {
+    const reachable = new Set<string>()
+    const queue = [...directRoles]
+    while (queue.length > 0) {
+      const role = queue.pop() as string
+      if (reachable.has(role)) continue
+      reachable.add(role)
+      for (const next of direct.get(role) ?? []) queue.push(next)
+    }
+
+    for (const role of reachable) {
+      if (directRoles.has(role)) continue
+      throw new AuthorityRefusal(
+        'AUTHORITY_STATE_TRANSITION_INVALID',
+        `${where}: ${member} can reach ${role} transitively, through an intermediate it was ` +
+          `granted directly, but no statement grants ${role} to ${member}. Measured (lab M4): SET ` +
+          `reachability is transitive, so the intermediate grant confers this silently and a ` +
+          `review of the direct grants alone would not show it.`,
+      )
+    }
+  }
+}

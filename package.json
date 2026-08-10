@@ -35,6 +35,7 @@
     "test:stella:release-eval": "tsx scripts/eval-release-offline.ts",
     "hosted:generate": "tsx scripts/hosted-packages.ts generate",
     "hosted:verify": "tsx scripts/hosted-packages.ts verify",
+    "authority:report": "tsx scripts/authority-plan-report.ts",
     "baseline:verify": "tsx scripts/baseline-manifest.ts verify",
     "baseline:report": "tsx scripts/baseline-manifest.ts report",
     "baseline:order": "tsx scripts/baseline-manifest.ts order",
