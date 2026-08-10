@@ -29,32 +29,49 @@ console.log(
     `TOTAL=${plan.windows.length}/51`,
 )
 
-console.log('\n=== HISTORICAL vs STRUCTURAL COUNT ===')
-console.log('  historical = the recovered A_FINAL authority-statement count')
-console.log('  structural = every top-level executable statement between the anchors (the pin)')
+console.log('\n=== OWNER_AUTHORITY_STATEMENTS vs OWNER_WINDOW_EXECUTABLE_STATEMENTS ===')
+console.log('  OWNER_AUTHORITY_STATEMENTS         = 167  (recovered A_FINAL canon)')
+console.log('  OWNER_WINDOW_EXECUTABLE_STATEMENTS = 177  (every executable statement, THE PIN)')
+console.log('  These are two different quantities. Conflating them is what produced two')
+console.log('  wrong explanations already.')
 const mismatches = plan.windows.filter(
   (w) => w.historicalStatementCount !== w.structuralStatementCount,
 )
 if (mismatches.length === 0) console.log('  all 51 agree')
 let deltaTotal = 0
-let doTotal = 0
+let doInsideTotal = 0
+let doAnchorTotal = 0
 for (const w of mismatches) {
-  const doBlocks = w.members.filter((m) => m.identity.statementClass === 'do-block').length
+  const dos = w.members.filter((m) => m.identity.statementClass === 'do-block')
+  const first = w.members[0].statement.index
+  const last = w.members[w.members.length - 1].statement.index
+  const doAsAnchor = dos.filter(
+    (m) => m.statement.index === first || m.statement.index === last,
+  ).length
   const delta = w.structuralStatementCount - w.historicalStatementCount
   deltaTotal += delta
-  doTotal += doBlocks
+  doInsideTotal += dos.length
+  doAnchorTotal += doAsAnchor
   console.log(
     `  ${w.packageId}/${w.windowId} historical=${w.historicalStatementCount} ` +
-      `structural=${w.structuralStatementCount} delta=${delta} doBlocks=${doBlocks} ` +
-      `unattributed=${delta - doBlocks}`,
+      `structural=${w.structuralStatementCount} delta=${delta} ` +
+      `doInside=${dos.length} doAsAnchor=${doAsAnchor} doEligible=${dos.length - doAsAnchor}`,
   )
 }
-console.log(
-  `  TOTAL delta=${deltaTotal}  explained by DO blocks=${doTotal}  UNATTRIBUTED=${deltaTotal - doTotal}`,
-)
-console.log('  CORRECTION: Commit 3 attributed this delta to "ten DO blocks". That was wrong.')
-console.log('  Six are DO blocks. Four — one in W02, three in W06 — have no distinguishing')
-console.log('  property and are recorded as unattributed rather than guessed at.')
+const doEligible = doInsideTotal - doAnchorTotal
+console.log(`  TOTAL delta=${deltaTotal}  DO inside=${doInsideTotal}  DO that are anchors=${doAnchorTotal}`)
+console.log(`  => DO additions <= ${doEligible};  non-DO additions >= ${deltaTotal - doEligible}`)
+console.log('')
+console.log('  ATTRIBUTION HISTORY — two explanations have already been wrong:')
+console.log('    Commit 3   "delta = ten DO blocks"   FALSE.')
+console.log('    Commit 3.1 "six DO + four non-DO"    UNPROVEN; the anchor bound above')
+console.log('               shows the split cannot be that way round.')
+console.log('  NOT DETERMINED: the canon that produced the historical integers')
+console.log('  (rerun-canon.mjs / afinal-canon.mjs) is not in this repository. An exhaustive')
+console.log('  search over 27 statement properties and every union of up to three found ZERO')
+console.log('  rules reproducing (2,5,2,1) once anchors are excluded. Category C is')
+console.log('  eliminated: the canonical spans measure 35/40/7/22, identical to hosted.')
+console.log('  The ten statements are not named here because naming them would be a fit.')
 
 console.log('\n=== PARTITION (hosted) ===')
 const c = partition.counts

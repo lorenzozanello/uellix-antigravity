@@ -84,79 +84,102 @@ describe('the recovered classification windows', () => {
 /* The historical / structural count difference                                */
 /* -------------------------------------------------------------------------- */
 
-describe('historical vs structural statement counts', () => {
-  // CORRECTION (Commit 3.1). Commit 3 attributed this delta to "ten DO blocks".
-  // That was FALSE and an independent review caught it. Re-measured here:
+describe('OWNER_AUTHORITY_STATEMENTS 167 vs OWNER_WINDOW_EXECUTABLE_STATEMENTS 177', () => {
+  // TWO DIFFERENT QUANTITIES, and the whole confusion has been about conflating
+  // them:
   //
-  //   window   historical  structural  delta   DO inside   non-DO
-  //   W02          33          35        2         1          1
-  //   W06          35          40        5         2          3
-  //   W16           5           7        2         2          0
-  //   W23          21          22        1         1          0
-  //                                     ---       ---        ---
-  //                                      10         6          4
+  //   OWNER_AUTHORITY_STATEMENTS        167  what the recovered A_FINAL canon
+  //                                          counted as authority statements
+  //   OWNER_WINDOW_EXECUTABLE_STATEMENTS 177  every top-level executable
+  //                                          statement between the anchors —
+  //                                          the pin, and the stronger one
   //
-  // The DO half is explained: the recovered partition counted only the DO
-  // blocks it had measured individually, and this parser counts every top-level
-  // executable statement between the anchors — the stronger definition, and the
-  // safer pin, because a DO block physically inside an owner window executes
-  // inside it and a count that skipped it would let its body change unnoticed.
+  // THE ATTRIBUTION HISTORY, because two explanations have already been wrong:
   //
-  // The remaining FOUR are not explained. They are inside W02 (one) and W06
-  // (three), their simulated ownerBefore is uellix_owner, and no class or
-  // property distinguishes them from the statements the historical count did
-  // include. A single integer per window admits many four-statement subsets, so
-  // identifying them here would be a guess dressed as a finding. The structural
-  // pins stand; the gap is recorded rather than papered over.
-  const EXPECTED_MISMATCHES = [
-    { windowId: 'W02', historical: 33, structural: 35, doBlocks: 1 },
-    { windowId: 'W06', historical: 35, structural: 40, doBlocks: 2 },
-    { windowId: 'W16', historical: 5, structural: 7, doBlocks: 2 },
-    { windowId: 'W23', historical: 21, structural: 22, doBlocks: 1 },
+  //   Commit 3   claimed "delta = ten DO blocks".        FALSE.
+  //   Commit 3.1 claimed "six DO + four non-DO".         UNPROVEN, and the
+  //              bound below shows the split cannot be that way round.
+  //
+  // WHAT IS MEASURED (Commit 3.2):
+  //
+  //   window  historical  structural  delta  DO inside  DO that are anchors
+  //   W02         33          35        2        1              1
+  //   W06         35          40        5        2              1
+  //   W16          5           7        2        2              0
+  //   W23         21          22        1        1              0
+  //                                    ---      ---            ---
+  //                                     10        6              2
+  //
+  // A window's start and end anchors ARE the boundary, so the historical count
+  // necessarily includes them and they cannot be additions. Two of the six DO
+  // blocks are start anchors (W02's and W06's). Therefore:
+  //
+  //   DO additions     <= 4
+  //   non-DO additions >= 6
+  //
+  // WHAT IS NOT KNOWN, and why it is not guessed at: the canon that produced
+  // the historical integers (`rerun-canon.mjs` / `afinal-canon.mjs`) is not in
+  // this repository, and the integers reached it by transcription. An
+  // exhaustive search over 27 statement properties and every union of up to
+  // three of them found ZERO rules reproducing (2, 5, 2, 1) once anchors are
+  // excluded from candidacy. A single integer per window admits many subsets,
+  // so naming ten statements here would be a fit, not a finding.
+  const EXPECTED = [
+    { windowId: 'W02', historical: 33, structural: 35, doInside: 1, doAsAnchor: 1 },
+    { windowId: 'W06', historical: 35, structural: 40, doInside: 2, doAsAnchor: 1 },
+    { windowId: 'W16', historical: 5, structural: 7, doInside: 2, doAsAnchor: 0 },
+    { windowId: 'W23', historical: 21, structural: 22, doInside: 1, doAsAnchor: 0 },
   ]
 
-  it('differ in exactly four windows, with exactly these counts', () => {
-    const mismatches = plan.windows
+  const measured = () =>
+    plan.windows
       .filter((w) => w.historicalStatementCount !== w.structuralStatementCount)
-      .map((w) => ({
-        windowId: w.windowId,
-        historical: w.historicalStatementCount,
-        structural: w.structuralStatementCount,
-        doBlocks: w.members.filter((m) => m.identity.statementClass === 'do-block').length,
-      }))
+      .map((w) => {
+        const dos = w.members.filter((m) => m.identity.statementClass === 'do-block')
+        const first = w.members[0].statement.index
+        const last = w.members[w.members.length - 1].statement.index
+        return {
+          windowId: w.windowId,
+          historical: w.historicalStatementCount,
+          structural: w.structuralStatementCount,
+          doInside: dos.length,
+          doAsAnchor: dos.filter((m) => m.statement.index === first || m.statement.index === last)
+            .length,
+        }
+      })
 
-    expect(mismatches).toEqual(EXPECTED_MISMATCHES)
+  it('differs in exactly four windows, with exactly these counts', () => {
+    expect(measured()).toEqual(EXPECTED)
   })
 
-  it('accounts for the whole OWNER difference arithmetically', () => {
-    const extra = EXPECTED_MISMATCHES.reduce((n, m) => n + (m.structural - m.historical), 0)
+  it('accounts for the whole difference arithmetically', () => {
+    const delta = EXPECTED.reduce((n, m) => n + (m.structural - m.historical), 0)
 
-    expect(extra).toBe(10)
-    expect(partition.counts.owner).toBe(RECOVERED_TOTALS.ownerStatements + extra)
+    expect(delta).toBe(10)
+    expect(RECOVERED_TOTALS.ownerStatements).toBe(167)
+    expect(partition.counts.owner).toBe(177)
+    expect(partition.counts.owner).toBe(RECOVERED_TOTALS.ownerStatements + delta)
   })
 
-  it('attributes six of the ten to DO blocks, and does not claim the other four', () => {
-    // The assertion that failed review was "delta = ten DO blocks". This is the
-    // measurement that would have contradicted it, so it is now permanent.
-    const doBlocks = EXPECTED_MISMATCHES.reduce((n, m) => n + m.doBlocks, 0)
-    const delta = EXPECTED_MISMATCHES.reduce((n, m) => n + (m.structural - m.historical), 0)
+  it('bounds the DO share at four, because two of the six DO blocks are anchors', () => {
+    // This is the assertion that would have caught the Commit 3.1 narrative,
+    // so it is permanent. An anchor is the boundary; it cannot be an addition.
+    const rows = measured()
+    const doInside = rows.reduce((n, m) => n + m.doInside, 0)
+    const doAsAnchor = rows.reduce((n, m) => n + m.doAsAnchor, 0)
+    const delta = rows.reduce((n, m) => n + (m.structural - m.historical), 0)
 
-    expect(doBlocks).toBe(6)
-    expect(delta - doBlocks).toBe(4)
+    expect(doInside).toBe(6)
+    expect(doAsAnchor).toBe(2)
+    expect(doInside - doAsAnchor).toBe(4) // DO additions, upper bound
+    expect(delta - (doInside - doAsAnchor)).toBe(6) // non-DO additions, lower bound
   })
 
-  it('locates the four unattributed statements in W02 and W06 and nowhere else', () => {
-    const unattributed = EXPECTED_MISMATCHES.map((m) => ({
-      windowId: m.windowId,
-      count: m.structural - m.historical - m.doBlocks,
-    }))
-
-    expect(unattributed).toEqual([
-      { windowId: 'W02', count: 1 },
-      { windowId: 'W06', count: 3 },
-      { windowId: 'W16', count: 0 },
-      { windowId: 'W23', count: 0 },
-    ])
+  it('records that the historical spans are NOT a canonical/hosted artefact', () => {
+    // Category C, eliminated by measurement: resolving the same four boundaries
+    // against db/prepared/** gives spans of 35, 40, 7 and 22 — identical to the
+    // hosted ones. The delta is not something the RR-09 rewrite introduced.
+    expect(measured().map((m) => m.structural)).toEqual([35, 40, 7, 22])
   })
 })
 
