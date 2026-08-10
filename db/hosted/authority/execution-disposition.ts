@@ -29,10 +29,17 @@ import {
 } from './canonical-role-context'
 import {
   assertCleanupComplete,
-  assertNoTransitiveElevation,
+  capabilityWindowPrimitive,
   membershipEdges,
+  ownerTransferPrimitive,
   ownerWindowPrimitive,
+  type AuthorityPrimitive,
 } from './primitives'
+import {
+  assertReachabilityMatchesExpectation,
+  expectedReachabilityFor,
+} from './expected-reachability'
+import { AUTHORITY_ROLE_REGISTRY, type HostedRoleIdentifier } from './role-registry'
 import {
   INSTALLER_OWNER,
   isCapabilityRoleName,
@@ -343,12 +350,56 @@ export function validateResolvedAuthorityPlanForGeneration(
   const dispositions = resolveExecutionDispositions(plan)
   checks.push('every statement resolves to exactly one execution disposition')
 
-  // 8. The primitives the generator will emit clean up after themselves and
-  //    open no unintended elevation path.
-  const primitive = ownerWindowPrimitive('uellix_migrator')
-  assertCleanupComplete('pre-generation gate', primitive)
-  assertNoTransitiveElevation('pre-generation gate', membershipEdges([...primitive.open]))
-  checks.push('authority primitives are balanced and open no transitive elevation')
+  // 8. Every segment's primitive is balanced AND produces exactly the topology
+  //    its own class declares — not "no transitive path", which an ownership
+  //    transfer cannot satisfy and which the old check could only answer with a
+  //    blanket yes or no. Each phase is compared against an expected graph, so
+  //    an unknown edge refuses just as loudly as a forbidden one.
+  const installer: HostedRoleIdentifier = 'uellix_migrator'
+  const runtimePrincipals = AUTHORITY_ROLE_REGISTRY.filter((r) => r.kind === 'runtime').map(
+    (r) => r.id as string,
+  )
+
+  for (const segment of plan.segments) {
+    const primitive: AuthorityPrimitive =
+      segment.authorityClass === 'OWNER_TRANSFER'
+        ? ownerTransferPrimitive({
+            installer,
+            fromOwner: 'uellix_owner',
+            targetCapability: segment.ownerDestination as HostedRoleIdentifier,
+            schema: segment.requiredTemporarySchemaCreate ?? '',
+            segmentId: segment.segmentId,
+          })
+        : segment.authorityClass === 'CAPABILITY'
+          ? capabilityWindowPrimitive({
+              installer,
+              capabilityRole: segment.executor as HostedRoleIdentifier,
+              schema: segment.requiredTemporarySchemaCreate ?? '',
+              needsTemporarySchemaCreate: segment.requiredTemporarySchemaCreate !== null,
+            })
+          : ownerWindowPrimitive(installer)
+
+    assertCleanupComplete(segment.segmentId, primitive)
+
+    const phases = expectedReachabilityFor({
+      segmentId: segment.segmentId,
+      authorityClass: segment.authorityClass,
+      executor: segment.executor,
+      ownerDestination: segment.ownerDestination,
+      installer,
+      runtimePrincipals,
+    })
+
+    const persistent = membershipEdges([`GRANT uellix_owner TO ${installer} WITH SET TRUE;`])
+    const duringEdges = [...persistent, ...membershipEdges([...primitive.open])]
+
+    assertReachabilityMatchesExpectation(persistent, phases[0])
+    assertReachabilityMatchesExpectation(duringEdges, phases[1])
+    assertReachabilityMatchesExpectation(persistent, phases[2])
+  }
+  checks.push(
+    'every execution segment is balanced and matches its expected reachability graph in all three phases',
+  )
 
   // 9. Every executor named is a role the plan may act as.
   for (const disposition of dispositions) {

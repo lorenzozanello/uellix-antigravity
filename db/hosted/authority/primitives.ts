@@ -41,7 +41,12 @@
 import { assertNoSessionRoleGrantee } from './membership-tripwire'
 import { parseMembershipStatement } from './membership'
 import { parseStatementIdentity } from './structural-identity'
-import { assertElevatable, hostedRole, type HostedRoleIdentifier } from './role-registry'
+import {
+  assertElevatable,
+  hostedRole,
+  isCapabilityRole as isCapabilityRoleIdentifier,
+  type HostedRoleIdentifier,
+} from './role-registry'
 import { AuthorityRefusal } from './window-contract'
 
 /* -------------------------------------------------------------------------- */
@@ -127,19 +132,62 @@ export function primitivePhases(primitive: AuthorityPrimitive): string[] {
  * temporary SET reachability into uellix_owner. The type said no; nothing said
  * no when it mattered.
  */
-function assertInstallerPrincipal(member: string, where: string): void {
+/**
+ * Which principal a temporary membership may name, per lifecycle kind.
+ *
+ * `installer-elevation` covers owner and capability windows: the installer is
+ * the only principal that may be handed the ability to become another role.
+ *
+ * `transfer-target` covers ownership transfers, and it is NOT a loosening. It
+ * is a measured necessity: PostgreSQL requires the EXECUTING role to be able to
+ * SET ROLE to the incoming owner, and to hold the privileges of the outgoing
+ * one. The installer holds uellix_owner with INHERIT FALSE, so it can never be
+ * the owner; uellix_owner is a member of no capability role, so it can never
+ * reach the target. Measured, PG 17.6 (pg176-transfer-lab.sql):
+ *
+ *   SET ROLE owner; ALTER ... OWNER TO cap  ->  must be able to SET ROLE "cap"
+ *   installer (INHERIT FALSE) executes it   ->  must be owner of function
+ *
+ * So the membership goes to uellix_owner, for the length of one segment. What
+ * stays closed either way is the thing F-05 was about: a RUNTIME role may never
+ * be the member of a temporary elevation, and neither may a capability role.
+ */
+type TemporaryMembershipKind = 'installer-elevation' | 'transfer-target'
+
+function assertTemporaryMemberPermitted(
+  member: string,
+  kind: TemporaryMembershipKind,
+  where: string,
+): void {
   const role = hostedRole(member)
-  if (role.kind !== 'installer') {
+
+  if (kind === 'installer-elevation') {
+    if (role.kind !== 'installer') {
+      throw new AuthorityRefusal(
+        'AUTHORITY_TEMP_MEMBER_NOT_INSTALLER',
+        `${where}: temporary elevation may only be granted to the installer, never to ` +
+          `\`${member}\` (a ${role.kind} role). ${role.purpose}`,
+      )
+    }
+    return
+  }
+
+  if (role.kind !== 'owner') {
     throw new AuthorityRefusal(
       'AUTHORITY_TEMP_MEMBER_NOT_INSTALLER',
-      `${where}: temporary elevation may only be granted to the installer, never to \`${member}\` ` +
-        `(a ${role.kind} role). ${role.purpose}`,
+      `${where}: an ownership transfer grants the incoming owner's membership to the OUTGOING ` +
+        `owner and to nothing else. \`${member}\` is a ${role.kind} role. Handing this to a ` +
+        `runtime or capability principal would open a SET path the plan never accounts for.`,
     )
   }
 }
 
-function grantMembership(role: HostedRoleIdentifier, member: HostedRoleIdentifier): string {
-  assertInstallerPrincipal(member, `GRANT ${role} TO ${member}`)
+function grantMembership(
+  role: HostedRoleIdentifier,
+  member: HostedRoleIdentifier,
+  kind: TemporaryMembershipKind = 'installer-elevation',
+): string {
+  assertTemporaryMemberPermitted(member, kind, `GRANT ${role} TO ${member}`)
   // INHERIT FALSE, SET TRUE is the exact shape the bootstrap already uses for
   // uellix_owner: the installer may BECOME the role but does not silently carry
   // its privileges the rest of the time. SET TRUE is spelled out because M1
@@ -221,31 +269,74 @@ export function capabilityWindowPrimitive(options: CapabilityWindowOptions): Aut
 
 export interface OwnerTransferOptions {
   readonly installer: HostedRoleIdentifier
-  readonly from: HostedRoleIdentifier
-  readonly to: HostedRoleIdentifier
+  /** The outgoing owner. `uellix_owner` for every transfer in the chain. */
+  readonly fromOwner: HostedRoleIdentifier
+  /** EXACTLY ONE incoming owner. Never a list — see the segmentation model. */
+  readonly targetCapability: HostedRoleIdentifier
+  /** The schema the transferred objects live in. */
+  readonly schema: string
+  /** The execution segment this instance belongs to, for diagnostics. */
+  readonly segmentId: string
 }
 
 /**
- * Opens and closes an ownership-transfer window.
+ * Opens and closes ONE ownership-transfer execution segment.
  *
- * `ALTER ... OWNER TO` needs membership in BOTH the outgoing and the incoming
- * owner — and, since PostgreSQL 16, CREATE on the containing schema checked
- * against the NEW owner. The chain learned the second half the hard way
- * (S1-DEFECT-001), which is why the transfer is its own window kind rather than
- * a statement that happens to sit inside an owner window.
+ * THE SHAPE IS MEASURED, NOT DESIGNED. The first version of this primitive
+ * granted both roles to the INSTALLER and then `SET ROLE`d to the outgoing
+ * owner. It could not execute a single one of the chain's 27 transfers, and no
+ * test could have said so: the SQL it emitted was well-formed, and it was
+ * PostgreSQL that refused it. Two independent checks are involved:
+ *
+ *   "must be owner of function"       pg_proc_ownercheck -> has_privs_of_role,
+ *                                     which requires INHERIT, not membership
+ *   "must be able to SET ROLE <new>"  the EXECUTING role must be a member of
+ *                                     the incoming owner
+ *
+ * The installer holds uellix_owner with INHERIT FALSE on purpose, so it fails
+ * the first. uellix_owner is a member of no capability role, so it fails the
+ * second. The resolution measured in PG 17.6 gives the SECOND condition to the
+ * owner, temporarily, and leaves the first where it already was:
+ *
+ *   installer:  GRANT <target> TO uellix_owner WITH INHERIT FALSE, SET TRUE
+ *   installer:  SET ROLE uellix_owner
+ *   owner:      GRANT CREATE ON SCHEMA <schema> TO <target>
+ *   owner:      ALTER ... OWNER TO <target>          (the canonical statements)
+ *   owner:      REVOKE CREATE ON SCHEMA <schema> FROM <target>
+ *   installer:  RESET ROLE
+ *   installer:  REVOKE <target> FROM uellix_owner
+ *
+ * The order is a pin, not a preference. The schema CREATE must be granted from
+ * inside the owner phase because the installer cannot grant on a schema
+ * uellix_owner owns (lab M5), and it must be revoked before RESET ROLE for the
+ * same reason. Measured end state: zero temporary membership rows, no schema
+ * CREATE, the provider's own membership row untouched, and seven distinct
+ * mid-transfer failure points all rolling back to the original owner.
  */
 export function ownerTransferPrimitive(options: OwnerTransferOptions): AuthorityPrimitive {
-  const { installer, from, to } = options
+  const { installer, fromOwner, targetCapability, schema } = options
   hostedRole(installer)
-  assertElevatable(from)
-  assertElevatable(to)
+  assertElevatable(fromOwner)
+  assertElevatable(targetCapability)
+
+  if (!isCapabilityRoleIdentifier(targetCapability)) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_UNKNOWN_ROLE',
+      `${options.segmentId}: the incoming owner of a transfer must be a capability role, not ` +
+        `\`${targetCapability}\`.`,
+    )
+  }
 
   return {
-    open: [grantMembership(from, installer), grantMembership(to, installer), `SET ROLE ${from};`],
+    open: [
+      grantMembership(targetCapability, fromOwner, 'transfer-target'),
+      `SET ROLE ${fromOwner};`,
+      `GRANT CREATE ON SCHEMA ${schema} TO ${targetCapability};`,
+    ],
     close: [
+      `REVOKE CREATE ON SCHEMA ${schema} FROM ${targetCapability};`,
       'RESET ROLE;',
-      revokeMembership(to, installer),
-      revokeMembership(from, installer),
+      revokeMembership(targetCapability, fromOwner),
     ],
   }
 }

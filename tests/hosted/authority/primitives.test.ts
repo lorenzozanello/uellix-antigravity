@@ -273,16 +273,75 @@ describe('capabilityWindowPrimitive', () => {
 })
 
 describe('ownerTransferPrimitive', () => {
-  it('holds membership in BOTH the outgoing and the incoming owner', () => {
-    const primitive = ownerTransferPrimitive({
+  const transfer = () =>
+    ownerTransferPrimitive({
       installer: 'uellix_migrator',
-      from: 'uellix_owner',
-      to: 'uellix_cap_stella_quota',
+      fromOwner: 'uellix_owner',
+      targetCapability: 'uellix_cap_stella_quota',
+      schema: 'uellix_stella',
+      segmentId: 'W18.S1',
     })
-    const open = primitive.open.join('\n')
 
-    expect(open).toContain('GRANT uellix_owner TO uellix_migrator')
-    expect(open).toContain('GRANT uellix_cap_stella_quota TO uellix_migrator')
+  it('grants the INCOMING owner to the OUTGOING owner, never to the installer', () => {
+    // Measured, PG 17.6 (pg176-transfer-lab.sql). The installer cannot be the
+    // executing role — it holds uellix_owner with INHERIT FALSE, so PostgreSQL
+    // answers `must be owner of function`. And the owner cannot reach the
+    // target unless it is temporarily a member of it: `must be able to SET ROLE`.
+    const open = transfer().open.join('\n')
+
+    expect(open).toContain(
+      'GRANT uellix_cap_stella_quota TO uellix_owner WITH INHERIT FALSE, SET TRUE;',
+    )
+    expect(open).not.toContain('TO uellix_migrator')
+  })
+
+  it('pins the order: elevate, grant CREATE, transfer, revoke CREATE, stand down', () => {
+    // The order is a pin, not a preference. M5 measured that the installer
+    // cannot grant CREATE on a schema uellix_owner owns, so the grant has to
+    // come from inside the owner phase — and the revoke has to precede the
+    // RESET ROLE for the same reason.
+    const primitive = transfer()
+
+    expect(primitive.open).toEqual([
+      'GRANT uellix_cap_stella_quota TO uellix_owner WITH INHERIT FALSE, SET TRUE;',
+      'SET ROLE uellix_owner;',
+      'GRANT CREATE ON SCHEMA uellix_stella TO uellix_cap_stella_quota;',
+    ])
+    expect(primitive.close).toEqual([
+      'REVOKE CREATE ON SCHEMA uellix_stella FROM uellix_cap_stella_quota;',
+      'RESET ROLE;',
+      'REVOKE uellix_cap_stella_quota FROM uellix_owner;',
+    ])
+  })
+
+  it('gives back everything it took', () => {
+    expect(() => assertCleanupComplete('W18.S1', transfer())).not.toThrow()
+  })
+
+  it('refuses a runtime role as the incoming owner', () => {
+    expect(() =>
+      ownerTransferPrimitive({
+        installer: 'uellix_migrator',
+        fromOwner: 'uellix_owner',
+        targetCapability: 'uellix_app' as never,
+        schema: 'uellix_stella',
+        segmentId: 'X',
+      }),
+    ).toThrow(/AUTHORITY_UNKNOWN_ROLE|AUTHORITY_TEMP_MEMBER_NOT_INSTALLER/)
+  })
+
+  it('takes exactly one target — the type admits no array', () => {
+    const options = {
+      installer: 'uellix_migrator',
+      fromOwner: 'uellix_owner',
+      targetCapability: 'uellix_cap_stella_ticket',
+      schema: 'uellix_stella_ops',
+      segmentId: 'W46.S2',
+    } as const
+    const open = ownerTransferPrimitive(options).open.join('\n')
+
+    expect(open).toContain('uellix_cap_stella_ticket')
+    expect(open).not.toContain('uellix_cap_stella_quota')
   })
 })
 
@@ -386,14 +445,30 @@ describe('assertNoTransitiveElevation (M4: SET reachability is transitive)', () 
         schema: 'uellix_grounding',
         needsTemporarySchemaCreate: true,
       }).open,
-      ...ownerTransferPrimitive({
-        installer: 'uellix_migrator',
-        from: 'uellix_owner',
-        to: 'uellix_cap_stella_quota',
-      }).open,
     ]
 
     expect(() => assertNoTransitiveElevation('all primitives', membershipEdges(emitted))).not.toThrow()
+  })
+
+  it('is deliberately NOT the model used for a transfer segment', () => {
+    // A transfer opens installer -> uellix_owner -> target on purpose, for the
+    // length of one segment. The blanket invariant refuses that, which is
+    // exactly why transfers are checked against an EXPECTED graph instead. This
+    // assertion keeps the two models from quietly merging back together.
+    const edges = membershipEdges([
+      ...ownerWindowPrimitive('uellix_migrator').open,
+      ...ownerTransferPrimitive({
+        installer: 'uellix_migrator',
+        fromOwner: 'uellix_owner',
+        targetCapability: 'uellix_cap_stella_quota',
+        schema: 'uellix_stella',
+        segmentId: 'W18.S1',
+      }).open,
+    ])
+
+    expect(() => assertNoTransitiveElevation('blanket', edges)).toThrow(
+      /AUTHORITY_STATE_TRANSITION_INVALID/,
+    )
   })
 })
 
