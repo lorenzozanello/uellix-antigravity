@@ -302,13 +302,24 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
   })
 
   /* 4 ---------------------------------------------------------------- */
+  // NINE since M-8. The number is a TRIPWIRE, not a fact about the design — it
+  // exists so a rule that VANISHES is loud, because a vanished rule is a
+  // re-application nobody refuses. Raising it is therefore a deliberate act
+  // that names what was added, and the ninth is:
+  //
+  //   grounding_0002 -> grounding_0005. grounding_0002 is idempotent, so
+  //   re-applying it over the M-8 repair SUCCEEDS and silently republishes
+  //   claim_active_document_version with the row lock uellix_cap_grounding
+  //   cannot take. No signature changes, so nothing else in this chain — no
+  //   witness, no arity check, no postcondition — would notice.
+  const EXPECTED_SUPERSESSION_RULES = 9
   gates.push({
     id: 'hosted-package-order-ready',
-    passed: evidence.supersessionRuleCount === 8,
+    passed: evidence.supersessionRuleCount === EXPECTED_SUPERSESSION_RULES,
     detail:
-      evidence.supersessionRuleCount === 8
-        ? 'the hosted planner probes the SAME eight supersession rules db/migrator.ts uses — one registry, two runners, no hosted-only copy to drift'
-        : `expected 8 supersession rules, found ${evidence.supersessionRuleCount}. A rule that disappeared is a re-application nobody refuses.`,
+      evidence.supersessionRuleCount === EXPECTED_SUPERSESSION_RULES
+        ? `the hosted planner probes the SAME ${EXPECTED_SUPERSESSION_RULES} supersession rules db/migrator.ts uses — one registry, two runners, no hosted-only copy to drift`
+        : `expected ${EXPECTED_SUPERSESSION_RULES} supersession rules, found ${evidence.supersessionRuleCount}. A rule that disappeared is a re-application nobody refuses.`,
   })
 
   /* 5 ---------------------------------------------------------------- */

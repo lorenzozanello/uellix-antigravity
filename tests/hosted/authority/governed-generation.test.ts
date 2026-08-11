@@ -48,25 +48,41 @@ const revalidate = (generated: (typeof packages)[number]) => validateGeneratedPa
 /* -------------------------------------------------------------------------- */
 
 describe('the governed chain', () => {
-  it('is nine packages, published and matching a fresh regeneration', () => {
-    expect(packages).toHaveLength(9)
+  it('is ten packages, published and matching a fresh regeneration', () => {
+    // TEN since M-8. The tenth, grounding_0005, is the first chain package
+    // whose classification windows are AUTHORED rather than recovered — and it
+    // goes through every gate below unchanged, which is the property the split
+    // between recovered and authored boundaries was designed to preserve.
+    expect(packages).toHaveLength(10)
     expect(verifyGovernedChain()).toEqual([])
   })
 
-  it('consumes 51 windows, 59 segments and 11 transfer segments', () => {
-    expect(plan.windows).toHaveLength(51)
-    expect(plan.segments).toHaveLength(59)
+  it('consumes 53 windows, 61 segments and 11 transfer segments', () => {
+    // 51 recovered + 2 authored; 59 + 2. TRANSFERS DID NOT MOVE, and that is
+    // the load-bearing half of this line: grounding_0005 republishes a function
+    // the capability role ALREADY owns, and `CREATE OR REPLACE` preserves the
+    // owner — so a package that repairs a governed routine adds no ownership
+    // transfer at all. An eleventh transfer here would mean the repair had
+    // moved an object between owners, which is not something it is allowed to do.
+    expect(plan.windows).toHaveLength(53)
+    expect(plan.segments).toHaveLength(61)
     expect(plan.segments.filter((s) => s.authorityClass === 'OWNER_TRANSFER')).toHaveLength(11)
   })
 
   it('carries every canonical statement except the replaced bookkeeping', () => {
-    // 372 parsed statements, 16 of them the canonical SET ROLE / RESET ROLE the
+    // 378 parsed statements, 16 of them the canonical SET ROLE / RESET ROLE the
     // governed output replaces outright.
+    //
+    // 372 -> 378 is grounding_0005's six: two SET, its §0 precondition block,
+    // the CREATE OR REPLACE, the COMMENT and its §2 self-verification block.
+    // The SIXTEEN did not move: the forward package states no canonical SET
+    // ROLE bookkeeping of its own — it was written for a chain that already
+    // derives its authority — so there was nothing new to replace.
     const canonical = packages.reduce((n, p) => n + p.counts.generatedExecutable, 0)
     const input = packages.reduce((n, p) => n + p.counts.canonicalExecutable, 0)
 
-    expect(input).toBe(372)
-    expect(canonical).toBe(356)
+    expect(input).toBe(378)
+    expect(canonical).toBe(362)
     expect(input - canonical).toBe(16)
   })
 
@@ -78,14 +94,18 @@ describe('the governed chain', () => {
     expect(memberships).toBe(plan.segments.length + contexts)
   })
 
-  it('opens 14 temporary schema CREATE lifecycles: 11 transfers plus 3 capability segments', () => {
+  it('opens 15 temporary schema CREATE lifecycles: 11 transfers plus 4 capability segments', () => {
     const creates = packages.reduce((n, p) => n + p.counts.temporarySchemaCreateLifecycles, 0)
     const capabilityCreates = plan.segments.filter(
       (s) => s.authorityClass === 'CAPABILITY' && s.requiredTemporarySchemaCreate !== null,
     )
 
-    expect(capabilityCreates.map((s) => s.segmentId)).toEqual(['W38.S2', 'W44.S1', 'W49.S1'])
-    expect(creates).toBe(11 + 3)
+    // W52.S1 is M-8's, and the list is where the design decision shows: its
+    // sibling W53.S1 writes the COMMENT and is NOT here. One window per
+    // statement costs an extra open/close and keeps CREATE on uellix_grounding
+    // scoped to the single statement PostgreSQL will not run without it.
+    expect(capabilityCreates.map((s) => s.segmentId)).toEqual(['W38.S2', 'W44.S1', 'W49.S1', 'W52.S1'])
+    expect(creates).toBe(11 + 4)
   })
 
   it('transfers 27 functions, every one to the destination its segment declares', () => {
@@ -106,7 +126,7 @@ describe('the governed chain', () => {
   })
 
   it('pins the source, the plan and the output separately', () => {
-    expect(GOVERNED_PINS).toHaveLength(9)
+    expect(GOVERNED_PINS).toHaveLength(10)
     for (const generated of packages) {
       const pin = GOVERNED_PINS.find((p) => p.packageId === generated.packageId)!
       expect(pin.sourceDigest).toBe(generated.sourceDigest)

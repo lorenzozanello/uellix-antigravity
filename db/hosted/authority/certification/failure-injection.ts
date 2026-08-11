@@ -52,8 +52,17 @@ export interface AnchoredInjection {
 
 export interface FailureInjection extends AnchoredInjection {
   readonly description: string
-  /** Which snapshot the instance starts from: after bootstrap, or after T7. */
-  readonly fromSnapshot: 'bootstrap' | 'T7'
+  /**
+   * Which snapshot the instance starts from: after bootstrap, after T7, or
+   * after T9.
+   *
+   * `T9` arrived with M-8. Its package republishes a routine T1 created and T1
+   * transferred, so the state it needs is "the whole recovered chain applied" —
+   * and the point of running it from a snapshot rather than from bootstrap is
+   * that a rollback which restored the ROUTINE but not the nine packages around
+   * it would still read as clean against an empty database.
+   */
+  readonly fromSnapshot: 'bootstrap' | 'T7' | 'T9'
   /** What the state at that point is, for the report. */
   readonly authorityStateAtInjection: string
 }
@@ -159,6 +168,78 @@ export const FAILURE_INJECTIONS: readonly FailureInjection[] = [
     anchor: 'CREATE SCHEMA IF NOT EXISTS uellix_grounding AUTHORIZATION uellix_owner;',
     occurrence: 1,
     authorityStateAtInjection: 'installer, unelevated — the control case',
+  },
+
+  /* ------------------------------------------------------------------ M-8 --
+   * T10 republishes a routine IN PLACE. Its two windows open and close four
+   * distinct privileges, and each of the five points below is a state a
+   * reviewer might otherwise assume rolls back:
+   *
+   *   F11  a temporary GRANT CREATE on a schema the capability does not own
+   *   F12  a temporary membership, with CREATE already open
+   *   F13  the function body REPLACED, mid-window, both privileges open
+   *   F14  CREATE given back but the membership still open — the narrowest gap
+   *   F15  the second window, which needs the membership and NOT the CREATE
+   *
+   * F13 is the one that matters most and the one no earlier injection covers:
+   * every other package in this chain CREATES objects, so a rollback that
+   * worked was visible as an object disappearing. Here the object EXISTS both
+   * before and after; what must roll back is its BODY. An implementation that
+   * left the new body behind would pass every "the package is absent" check in
+   * this harness and would have silently applied half a repair.
+   */
+  {
+    id: 'F11',
+    description: 'dies after the temporary GRANT CREATE, before any membership is opened',
+    packageId: 'T10',
+    fromSnapshot: 'T9',
+    anchor: 'GRANT CREATE ON SCHEMA uellix_grounding TO uellix_cap_grounding;',
+    occurrence: 1,
+    authorityStateAtInjection:
+      'uellix_cap_grounding may CREATE in a schema it does not own; no membership open, nothing elevated',
+  },
+  {
+    id: 'F12',
+    description: 'dies after the temporary membership, with CREATE already open',
+    packageId: 'T10',
+    fromSnapshot: 'T9',
+    anchor: 'GRANT uellix_cap_grounding TO uellix_migrator WITH INHERIT FALSE, SET TRUE;',
+    occurrence: 1,
+    authorityStateAtInjection:
+      'both temporary privileges open at once — the widest the installer ever is in this package',
+  },
+  {
+    id: 'F13',
+    description: 'dies after the function BODY is replaced, mid capability window',
+    packageId: 'T10',
+    fromSnapshot: 'T9',
+    // The last line of the CREATE OR REPLACE. Anchoring on the closing `$$;`
+    // rather than on the opening line is what puts the failure AFTER the
+    // statement executed rather than before it.
+    anchor: '$$;',
+    occurrence: 1,
+    authorityStateAtInjection:
+      'elevated as uellix_cap_grounding, membership and CREATE both open, and claim_active_document_version now carries the advisory lock — the state whose rollback cannot be seen as an object disappearing',
+  },
+  {
+    id: 'F14',
+    description: 'dies after CREATE is given back but BEFORE the membership is revoked',
+    packageId: 'T10',
+    fromSnapshot: 'T9',
+    anchor: 'REVOKE CREATE ON SCHEMA uellix_grounding FROM uellix_cap_grounding;',
+    occurrence: 1,
+    authorityStateAtInjection:
+      'CREATE returned, membership STILL OPEN — the same narrow window F6 measures in T1, in a package that opens it twice',
+  },
+  {
+    id: 'F15',
+    description: 'dies inside the SECOND window, which holds a membership and no CREATE',
+    packageId: 'T10',
+    fromSnapshot: 'T9',
+    anchor: 'SET ROLE uellix_cap_grounding;',
+    occurrence: 2,
+    authorityStateAtInjection:
+      'elevated as uellix_cap_grounding for the COMMENT, with no schema CREATE open — the asymmetry the two-window split exists to produce',
   },
 ]
 

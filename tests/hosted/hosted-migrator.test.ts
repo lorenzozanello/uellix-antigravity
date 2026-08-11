@@ -295,11 +295,13 @@ describe('planHostedApply — source integrity', () => {
 })
 
 describe('planHostedApply — the whole chain', () => {
-  it('plans all ten packages in order when every source is present', () => {
+  it('plans every package in order when every source is present', () => {
     const plan = planHostedApply(request({ packages: [...HOSTED_CHAIN], sources: sources(HOSTED_CHAIN) }))
 
     expect(plan.ok).toBe(true)
-    if (plan.ok) expect(plan.steps).toHaveLength(10)
+    // Derived: HOSTED_CHAIN is bootstrap plus the governed chain, and M-8 made
+    // it eleven. A literal is one more thing to edit on every growth.
+    if (plan.ok) expect(plan.steps).toHaveLength(HOSTED_CHAIN.length)
   })
 
   it('refuses a chain that omits the grounding packages — Phase 5 treats them as a unit', () => {
@@ -344,7 +346,15 @@ describe('planHostedApply — the whole chain', () => {
     expect(plan.ok).toBe(true)
   })
 
-  it('allows a single grounding package only when the other two are already installed', () => {
+  it('allows a single grounding package only when the REST of the grounding surface is installed', () => {
+    // "The other two" became "the other three" when M-8 added grounding_0005,
+    // and the widening is correct rather than incidental. The rule protects the
+    // grounding SURFACE from being left partial, and a database where
+    // grounding_0005 is absent has claim_active_document_version taking a row
+    // lock its capability role cannot take — a surface that installs cleanly and
+    // is dead on the write side. Applying 0003 into that is not "the unit is
+    // complete", so the runner declining to call it complete is the rule
+    // working, not a count that drifted.
     const names = ['grounding_0003_evidence_chunks']
     const plan = planHostedApply(
       request({
@@ -354,10 +364,32 @@ describe('planHostedApply — the whole chain', () => {
           stella_hosted_0001_managed_role_bootstrap: true,
           grounding_0002_document_versions: true,
           grounding_0004_runtime_attestation: true,
+          grounding_0005_claim_advisory_lock: true,
         },
       }),
     )
 
     expect(plan.ok).toBe(true)
+  })
+
+  it('refuses that same single grounding package while M-8 is still open', () => {
+    // The negation, so the widening above is a measurement and not a fixture
+    // edit: the ONLY difference is grounding_0005's probe.
+    const names = ['grounding_0003_evidence_chunks']
+    const plan = planHostedApply(
+      request({
+        packages: names,
+        sources: sources(names),
+        installedProbes: {
+          stella_hosted_0001_managed_role_bootstrap: true,
+          grounding_0002_document_versions: true,
+          grounding_0004_runtime_attestation: true,
+          grounding_0005_claim_advisory_lock: false,
+        },
+      }),
+    )
+
+    expect(plan.ok).toBe(false)
+    if (!plan.ok) expect(plan.code).toBe('HOSTED_GROUNDING_UNIT_INCOMPLETE')
   })
 })

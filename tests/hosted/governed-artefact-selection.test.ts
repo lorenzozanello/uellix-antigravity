@@ -230,7 +230,12 @@ describe('the two derived families differ by exactly this defect class', () => {
       expect(hits.length, packageName).toBeGreaterThan(0)
       total += hits.length
     }
-    expect(total).toBe(54)
+    // 54 across the nine original packages, plus ONE for M-8's forward repair:
+    // its `CREATE OR REPLACE FUNCTION` in uellix_grounding is precisely the
+    // class this check counts — DDL an installer cannot run in a schema it does
+    // not own, which is why the governed derivation wraps it in a capability
+    // window and the middle artefact does not.
+    expect(total).toBe(55)
   })
 
   it('T1 fails first at the statement staging failed at', () => {

@@ -73,7 +73,15 @@ const CAP_GROUNDING = 'uellix_cap_grounding'
 const CAP_QUOTA = 'uellix_cap_stella_quota'
 const CAP_TICKET = 'uellix_cap_stella_ticket'
 
-/** Routine signatures, spelled once so a typo cannot differ between two windows. */
+/**
+ * Routine signatures, spelled once so a typo cannot differ between two windows.
+ *
+ * EXPORTED as `CHAIN_ROUTINE_SIGNATURES` (below) for the same reason it is a
+ * constant at all: `forward-boundaries.ts` anchors an AUTHORED window on
+ * `claim_active_document_version`, and a second spelling of that signature in a
+ * second file is a typo waiting for a package to be misclassified. Exporting it
+ * extends the property across the file boundary rather than duplicating it.
+ */
 const FN = {
   register: `function:${GROUNDING}.register_document_version(uuid,bpchar,bpchar,bpchar,varchar,varchar,varchar,varchar)`,
   claim: `function:${GROUNDING}.claim_active_document_version(uuid)`,
@@ -93,7 +101,10 @@ const FN = {
   inspect2: `function:${OPS}.inspect_operation_ticket(bpchar,uuid)`,
 } as const
 
-const createFn = (object: string): BoundaryPredicate => ({ statementClass: 'create-function', object })
+/** The routine signatures above, for authored windows in sibling modules. */
+export const CHAIN_ROUTINE_SIGNATURES = FN
+
+export const createFn = (object: string): BoundaryPredicate => ({ statementClass: 'create-function', object })
 const transferTo = (object: string, target: string): BoundaryPredicate => ({
   statementClass: 'owner-transfer',
   object,
@@ -104,7 +115,7 @@ const revokeFromPublic = (object: string): BoundaryPredicate => ({
   object,
   operands: ['PUBLIC'],
 })
-const commentOn = (object: string): BoundaryPredicate => ({ statementClass: 'comment', object })
+export const commentOn = (object: string): BoundaryPredicate => ({ statementClass: 'comment', object })
 
 export const RECOVERED_WINDOWS: readonly RecoveredWindow[] = [
   /* ---------------------------------------------------------------- T1 --- */

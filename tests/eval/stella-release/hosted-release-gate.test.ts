@@ -12,6 +12,7 @@ import {
   buildHostedGateEvidence,
   computeHostedGateReport,
 } from './hosted-release-gate'
+import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
 
 const REAL = buildHostedGateEvidence()
 
@@ -257,7 +258,12 @@ describe('the evidence builder is not a rubber stamp', () => {
   })
 
   it('actually ran a dry run — the step count comes from the planner', () => {
-    expect(REAL.dryRunStepCount).toBe(10)
+    // The BOOTSTRAP plus the governed chain. Derived, because the number is the
+    // planner's answer and not a fact about this test: M-8 made it eleven, and
+    // a literal here would have to be re-typed on every growth — which is how
+    // "the step count comes from the planner" quietly becomes "the step count
+    // comes from whatever somebody last wrote down".
+    expect(REAL.dryRunStepCount).toBe(HOSTED_CHAIN.length)
     expect(REAL.dryRunPermitsWrites).toBe(false)
   })
 })

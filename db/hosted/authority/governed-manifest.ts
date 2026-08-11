@@ -75,7 +75,7 @@ export function authorityPlanDigest(plan: AuthorityPlan): string {
  * rather than shipping an artefact whose authority plan describes a file that no
  * longer exists.
  */
-export const GOVERNED_PLAN_DIGEST = '19a0ff5a962806f72a3285ea0542653ae9451fa1cd7a05ed7cc74470514634bf'
+export const GOVERNED_PLAN_DIGEST = 'a889a72681e86b98683ad835ab70786edfb4f05f7e98fb219730c9bbb27e2748'
 
 export const GOVERNED_PINS: readonly GovernedPin[] = [
   {
@@ -131,6 +131,16 @@ export const GOVERNED_PINS: readonly GovernedPin[] = [
     sourceFile: 'stella_0018_category_bound_operation_tickets.sql',
     sourceDigest: '26157a0c248226b009d04524f91b646869235fd5718bad4a773040d67e6eb867',
     generatedDigest: '0b5c481f9cc261f3d184c33a621881f76fed7b29b8ed0c8bf0c8d76a679316ac',
+  },
+  {
+    // M-8. The tenth pin, and the first for a package whose classification
+    // windows are AUTHORED rather than recovered. Nothing about the pinning
+    // changes for that reason — the digests are over bytes either way — and
+    // that is deliberate: an authored window buys no weaker check anywhere.
+    packageId: 'T10',
+    sourceFile: 'grounding_0005_claim_advisory_lock.sql',
+    sourceDigest: 'd112386727dd36c7873362d0a5ddb2f44efa1e9e283b22bc3fe0b84f0fd09a03',
+    generatedDigest: 'c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34',
   },
 ]
 

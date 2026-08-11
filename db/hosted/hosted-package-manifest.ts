@@ -481,6 +481,68 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     reapplyPolicy: 'Idempotent. Nothing later exists to refuse it.',
     hostedCompatibility: 'derived-precondition-and-auth',
   },
+  {
+    // M-8. The tenth link, and the first one that publishes NOTHING: no role,
+    // no schema, no table, no policy, no trigger, no grant and no revoke. It
+    // republishes one function body at a signature grounding_0002 already
+    // created, because PostgreSQL requires UPDATE on a table to take a ROW LOCK
+    // on it and uellix_cap_grounding holds only SELECT — so
+    // claim_active_document_version answered 42501 to every call by the runtime
+    // principal, before reading a single version row.
+    //
+    // WHY IT IS LAST AND NOT BESIDE ITS FAMILY. The chain is an APPLICATION
+    // ORDER, not a taxonomy. T1..T9 are installed; a repair that renumbered
+    // itself into position 2 would describe a sequence nobody ran.
+    name: 'grounding_0005_claim_advisory_lock',
+    sourceFile: 'grounding_0005_claim_advisory_lock.sql',
+    // Re-pinned once, before the package was ever applied anywhere: PG 17.6
+    // certification refused it at §0.6 with "does not carry SET search_path =
+    // ''" over a function that plainly does. The server stores the empty value
+    // QUOTED (`search_path=""`), which grounding_0002 §9 had already measured
+    // and this package's precondition had assumed away. The check now accepts
+    // both spellings. Nothing about the repair changed.
+    sourceSha256: '62054fd1dda7e87184f98c013c6cb876fee03f592b4860e355e4de6be9064c58',
+    expectedRewrites: {
+      ...NO_REWRITES,
+      // Its §0 guard, in the same three-line shape the other nine use.
+      'superuser-precondition': 1,
+      // E-04. §2 (11) restates the zero-member postcondition, and this package
+      // has a sharper reason to than any of the five that already did: it OPENS
+      // a temporary membership in uellix_cap_grounding to republish the body.
+      'capability-member-count': 1,
+      // It creates no role, so there is no ALTER ROLE to split; it resolves no
+      // session actor, so there is no auth path to reroute.
+    },
+    dependsOn: ['stella_hosted_0001_managed_role_bootstrap', 'grounding_0002_document_versions'],
+    expectedObjects: [
+      'function uellix_grounding.claim_active_document_version(uuid) — the SAME signature, a different body',
+      'its body contains pg_advisory_xact_lock(hashtextextended(p_evidence_id::text, 0))',
+      'its body contains NO row lock on public.evidence_items',
+      'a COMMENT ON FUNCTION that describes the advisory lock instead of the row lock',
+    ],
+    expectedOwners: [
+      'uellix_cap_grounding still owns claim_active_document_version — CREATE OR REPLACE preserves the owner, and the package MEASURES that rather than re-stating it',
+    ],
+    expectedGrants: [
+      'NONE ISSUED, and that is the contract. CREATE OR REPLACE preserves the ACL, so the package grants nothing and revokes nothing',
+      'EXECUTE on claim_active_document_version still held by uellix_app and by no one else — verified through aclexplode, not re-granted',
+      'NO UPDATE on public.evidence_items for uellix_cap_grounding, asserted BEFORE and AFTER. The whole argument for an advisory lock is that it needs no privilege',
+    ],
+    rollbackPolicy:
+      'THERE IS NO grounding_0005_rollback.sql, and the absence is typed in ' +
+      'db/hosted/forward-only-packages.ts rather than left to a reader. What this package removes ' +
+      'is a defect: "restore the previous body" and "republish a lock no principal can take" are ' +
+      'the same sentence. The in-flight failure path is a different question and IS measured — the ' +
+      'certification injects a failure at every authority boundary this package opens. Genuine ' +
+      'reversal goes through the grounding unit\'s own rollbacks, 0004 -> 0003 -> 0002.',
+    reapplyPolicy:
+      'Idempotent and convergent: §0 accepts the already-repaired body explicitly instead of ' +
+      'refusing it. The OTHER direction is refused by the runner — db/prepared-package-order.ts ' +
+      'records that grounding_0002 may not be applied over this package, because grounding_0002 is ' +
+      'idempotent and would succeed while silently restoring the row lock. No signature changes, ' +
+      'so nothing later would notice.',
+    hostedCompatibility: 'derived-precondition-only',
+  },
 ]
 
 /** The forward chain, derived from the manifest so the two cannot disagree. */

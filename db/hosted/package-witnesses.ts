@@ -47,16 +47,55 @@
 
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 
-export type WitnessKind = 'role' | 'schema' | 'regclass' | 'regprocedure' | 'column' | 'constraint'
+export type WitnessKind =
+  | 'role'
+  | 'schema'
+  | 'regclass'
+  | 'regprocedure'
+  | 'column'
+  | 'constraint'
+  | 'routine-body'
 
 export interface Witness {
   readonly kind: WitnessKind
   /**
-   * What the probe resolves. For `regprocedure` this is a FULL signature —
-   * `schema.name(argtype, …)` — because arity is what separates the versions.
-   * For `column` and `constraint`, `qualified.table.name`.
+   * What the probe resolves. For `regprocedure` and `routine-body` this is a
+   * FULL signature — `schema.name(argtype, …)` — because arity is what
+   * separates the versions. For `column` and `constraint`,
+   * `qualified.table.name`.
    */
   readonly identifier: string
+  /**
+   * `routine-body` ONLY: a bare identifier the routine's DEFINITION must
+   * contain, once comments are stripped.
+   *
+   * ---------------------------------------------------------------------
+   * WHY A SEVENTH KIND EXISTS AT ALL
+   * ---------------------------------------------------------------------
+   * Every other witness answers "does this OBJECT exist", and that was enough
+   * while every superseding package introduced one. grounding_0005 introduces
+   * nothing: it replaces the BODY of a function grounding_0002 already created,
+   * at the same signature, with the same owner, the same ACL and the same
+   * return type. There is no object whose presence distinguishes "the repair
+   * ran" from "the repair did not", and a `regprocedure` witness on that
+   * signature would be refused by the anchoring gate for exactly the right
+   * reason — an EARLIER package creates it, so the witness would report the
+   * successor installed as soon as its predecessor was.
+   *
+   * So the discriminator is the body. That is weaker than a catalogue entry and
+   * is stated as weaker: it measures a fragment of a definition rather than the
+   * existence of a thing. It is also the only form in which the question is
+   * askable, and the repository already models it twice — `mustCall` in
+   * db/prepared-package-order.ts, and stella_0016's own §7 reading
+   * pg_get_functiondef of the function it just published.
+   *
+   * COMMENTS ARE STRIPPED BEFORE THE SEARCH. `pg_get_functiondef` returns the
+   * source verbatim, and grounding_0002's registrar explains its own train-2
+   * repair by naming the tokens involved. Searching raw text would find the
+   * fragment in a sentence describing it — F-08C, in a place where a false
+   * positive means a package is reported INSTALLED when it is not.
+   */
+  readonly bodyContains?: string
 }
 
 export interface PackageWitnesses {
@@ -192,6 +231,26 @@ export const PACKAGE_WITNESSES: Readonly<Record<string, PackageWitnesses>> = {
     discriminates:
       'the fourth argument p_expected_category. COEXISTENCE IS CORRECT HERE: stella_0018 L339 deliberately re-creates the three-argument bind so it raises U0106 unconditionally, so both signatures standing is the designed end state — not the inconsistency it would be for stella_0015.',
   },
+  grounding_0005_claim_advisory_lock: {
+    requiredPresentWhenInstalled: [
+      {
+        kind: 'routine-body',
+        identifier: 'uellix_grounding.claim_active_document_version(uuid)',
+        bodyContains: 'pg_advisory_xact_lock',
+      },
+    ],
+    requiredAbsentWhenInstalled: [],
+    discriminates:
+      'THE BODY, because there is nothing else. This package creates no role, schema, table, ' +
+      'column, constraint or new signature; it replaces claim_active_document_version in place, ' +
+      'preserving owner, ACL, SECURITY DEFINER, search_path and return type. Everything a ' +
+      'catalogue-shaped witness can see is IDENTICAL before and after — which is precisely why ' +
+      're-applying grounding_0002 over it is invisible to every other check in this registry, and ' +
+      'why db/prepared-package-order.ts had to refuse that re-application on the same evidence. ' +
+      'grounding_0002 creates this signature with a row lock and takes pg_advisory_xact_lock only ' +
+      'in its SIBLING register_document_version, so the fragment scoped to THIS routine cannot ' +
+      'fire before this package ran.',
+  },
 }
 
 /** The nine, derived from HOSTED_CHAIN so there is no parallel list of ids. */
@@ -221,7 +280,17 @@ export type ClassificationResult =
   | { readonly ok: true; readonly classification: PackageClassification }
   | { readonly ok: false; readonly code: WitnessRefusalCode; readonly detail: string }
 
-const key = (w: Witness): string => `${w.kind}:${w.identifier}`
+/**
+ * The key an observation is reported under.
+ *
+ * The `bodyContains` fragment is part of it, not a detail hidden behind the
+ * signature: two body witnesses on one routine are a legitimate thing to want
+ * (a package that must both ADD one call and be distinguishable from one that
+ * did not), and a key that collapsed them would silently answer the second with
+ * the first's measurement.
+ */
+const key = (w: Witness): string =>
+  w.kind === 'routine-body' ? `${w.kind}:${w.identifier}:${w.bodyContains}` : `${w.kind}:${w.identifier}`
 
 /**
  * Classifies ONE package.
@@ -296,8 +365,25 @@ export function classifyAllPackages(
   packageIds: readonly string[] = WITNESSED_PACKAGES,
 ): ClassifyAllResult {
   const declared = Object.keys(registry)
+
+  // TWO DIFFERENT QUESTIONS, and they were one until M-8.
+  //
+  //   missing   every package being CLASSIFIED must be in the registry, or the
+  //             classifier would be asked about something it cannot measure.
+  //   extra     every registry entry must name a package the CHAIN declares —
+  //             an entry for a package that does not exist witnesses nothing.
+  //
+  // `extra` is checked against the CHAIN and not against `packageIds`, because
+  // `packageIds` may legitimately be a historical prefix: an operator's
+  // corroboration measured the chain as it stood when the probe ran, and the
+  // chain has grown since. Comparing the registry against that prefix would
+  // report grounding_0005 as "unexpected" — an entry the chain plainly declares
+  // — and the honest reading of an older observation would be impossible.
+  //
+  // With the default `packageIds` (the whole chain) the two are identical, so
+  // nothing about the ordinary path is loosened.
   const missingFromRegistry = packageIds.filter((p) => !declared.includes(p))
-  const extra = declared.filter((p) => !packageIds.includes(p))
+  const extra = declared.filter((p) => !WITNESSED_PACKAGES.includes(p))
   if (missingFromRegistry.length > 0 || extra.length > 0) {
     return {
       ok: false,

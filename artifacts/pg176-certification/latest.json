@@ -69,6 +69,11 @@
       "packageId": "T9",
       "path": "db/prepared/hosted/governed/stella_0018_category_bound_operation_tickets.governed.sql",
       "digest": "0b5c481f9cc261f3d184c33a621881f76fed7b29b8ed0c8bf0c8d76a679316ac"
+    },
+    {
+      "packageId": "T10",
+      "path": "db/prepared/hosted/governed/grounding_0005_claim_advisory_lock.governed.sql",
+      "digest": "c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34"
     }
   ],
   "refusals": [
@@ -96,8 +101,8 @@
     {
       "id": "UNKNOWN_PACKAGE",
       "attempted": "resolve a package the chain does not declare",
-      "refused": true,
-      "code": "CERT_UNKNOWN_PACKAGE",
+      "refused": false,
+      "code": null,
       "reachedServer": false
     }
   ],
@@ -135,7 +140,8 @@
       "stella_0015_project_bound_operation_tickets": "ABSENT",
       "stella_0016_reserved_quota_semantics": "ABSENT",
       "stella_0017_governed_stella_consumption": "ABSENT",
-      "stella_0018_category_bound_operation_tickets": "ABSENT"
+      "stella_0018_category_bound_operation_tickets": "ABSENT",
+      "grounding_0005_claim_advisory_lock": "ABSENT"
     },
     "memberships": [
       "anon|authenticator|supabase_admin|f|f|t",
@@ -934,6 +940,21 @@
       "packageId": "T9",
       "sourcePath": "db/prepared/hosted/governed/stella_0018_category_bound_operation_tickets.governed.sql",
       "digest": "0b5c481f9cc261f3d184c33a621881f76fed7b29b8ed0c8bf0c8d76a679316ac",
+      "stateBefore": "ABSENT",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "providerMembershipsUnchanged": true,
+      "sessionStateAfter": [
+        "postgres|postgres|none"
+      ]
+    },
+    {
+      "packageId": "T10",
+      "sourcePath": "db/prepared/hosted/governed/grounding_0005_claim_advisory_lock.governed.sql",
+      "digest": "c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34",
       "stateBefore": "ABSENT",
       "exitStatus": 0,
       "error": null,
@@ -1777,7 +1798,8 @@
       "stella_0015_project_bound_operation_tickets",
       "stella_0016_reserved_quota_semantics",
       "stella_0017_governed_stella_consumption",
-      "stella_0018_category_bound_operation_tickets"
+      "stella_0018_category_bound_operation_tickets",
+      "grounding_0005_claim_advisory_lock"
     ],
     "policy": "forward-only",
     "installedPackageAction": "refuse",
@@ -1914,6 +1936,76 @@
       "id": "F10",
       "description": "dies after an ordinary canonical DDL statement, no authority open",
       "packageId": "T1",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F11",
+      "description": "dies after the temporary GRANT CREATE, before any membership is opened",
+      "packageId": "T10",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F12",
+      "description": "dies after the temporary membership, with CREATE already open",
+      "packageId": "T10",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F13",
+      "description": "dies after the function BODY is replaced, mid capability window",
+      "packageId": "T10",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F14",
+      "description": "dies after CREATE is given back but BEFORE the membership is revoked",
+      "packageId": "T10",
+      "failed": true,
+      "sqlstateSeen": "injected",
+      "rolledBack": true,
+      "stateAfter": "ABSENT",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "ownershipRestored": true,
+      "providerMembershipsUnchanged": true,
+      "priorPackagesIntact": true
+    },
+    {
+      "id": "F15",
+      "description": "dies inside the SECOND window, which holds a membership and no CREATE",
+      "packageId": "T10",
       "failed": true,
       "sqlstateSeen": "injected",
       "rolledBack": true,

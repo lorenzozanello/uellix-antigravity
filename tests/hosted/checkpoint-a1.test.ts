@@ -26,10 +26,15 @@ import {
   A1_CORROBORATION_ARTEFACT,
   A1_EXPECTED_PACKAGE_COUNT,
   A1_OBSERVATION_SQL,
+  A1_OBSERVED_CHAIN,
   A1_STATUS_ARTEFACT,
+  a1UncoveredPackages,
+  assertA1ObservedChainIsPrefix,
+  A1ObservedChainRefusal,
   buildA1CorroborationSql,
   collectSignals,
   computeA1Status,
+  computeRecordedA1Status,
   evaluateCheckpointA1,
   parseA1Corroboration,
   serializeA1Status,
@@ -73,8 +78,8 @@ const STELLA_SOURCES: Record<string, string> = Object.fromEntries(
   HOSTED_CHAIN.map((name) => [name, readFileSync(path.join(ROOT, 'db', 'prepared', `${name}.sql`), 'utf8')]),
 )
 
-const [T1, T2, T3, T4, T5, T6, T7, T8, T9] = WITNESSED_PACKAGES as unknown as [
-  string, string, string, string, string, string, string, string, string,
+const [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10] = WITNESSED_PACKAGES as unknown as [
+  string, string, string, string, string, string, string, string, string, string,
 ]
 
 const positives = (pkg: string): string[] =>
@@ -169,9 +174,14 @@ describe('the expected target: sentinel correct, three signals agreeing, nine pa
     expect(blockerText(v)).toBe('')
     expect(v.checkpointPassed).toBe(true)
     expect(v.packageCount).toBe(A1_EXPECTED_PACKAGE_COUNT)
-    expect(v.packageCount).toBe(9)
+    expect(v.packageCount).toBe(10)
     expect(v.chainPlan?.ok).toBe(true)
-    expect(v.chainPlan?.stepCount).toBe(9)
+    expect(v.chainPlan?.stepCount).toBe(10)
+    // The order is the APPLICATION order, transcribed rather than derived, so
+    // a reordering of the chain has to be re-read by a person here. T10 sits
+    // after the six Stella packages although it is a grounding one: M-8's
+    // repair was authored after the other nine were installed, and numbering it
+    // beside grounding_0002 would describe a sequence nobody ran.
     expect(v.chainPlan?.steps).toEqual([
       'grounding_0002_document_versions',
       'grounding_0003_evidence_chunks',
@@ -182,6 +192,7 @@ describe('the expected target: sentinel correct, three signals agreeing, nine pa
       'stella_0016_reserved_quota_semantics',
       'stella_0017_governed_stella_consumption',
       'stella_0018_category_bound_operation_tickets',
+      'grounding_0005_claim_advisory_lock',
     ])
     expect(v.chainPlan?.sequenceComplete).toBe(true)
     // A1 IS READ-ONLY. It says the chain may be PLANNED, never that it may run.
@@ -190,7 +201,7 @@ describe('the expected target: sentinel correct, three signals agreeing, nine pa
 
   it('records every package as ABSENT, measured — not assumed', () => {
     const v = evaluate(corroboration())
-    expect(Object.values(v.packageStates)).toEqual(Array(9).fill('ABSENT'))
+    expect(Object.values(v.packageStates)).toEqual(Array(WITNESSED_PACKAGES.length).fill('ABSENT'))
     expect(v.partialPackages).toEqual([])
   })
 
@@ -469,13 +480,13 @@ describe('the sentinel row, and exactly one of it', () => {
 /* THE NINE PACKAGES                                                           */
 /* -------------------------------------------------------------------------- */
 
-describe('exactly nine packages, each measured', () => {
-  it('refuses eight', () => {
-    const v = evaluate(corroboration({}, { packageObservations: packageObservations().slice(0, 8) }))
+describe('exactly the declared packages, each measured', () => {
+  it('refuses one short', () => {
+    const v = evaluate(corroboration({}, { packageObservations: packageObservations().slice(0, -1) }))
     expect(v.refusal?.code).toBe('A1_PACKAGE_COUNT')
   })
 
-  it('refuses ten', () => {
+  it('refuses one too many', () => {
     const v = evaluate(
       corroboration({}, { packageObservations: [...packageObservations(), { packageId: T1, witnesses: {} }] }),
     )
@@ -580,7 +591,7 @@ describe('the successor discrimination the whole registry exists for', () => {
     const v = evaluate(corroboration({}, { packageObservations: packageObservations(present) }))
     expect(v.packageStates[T7]).toBe('INSTALLED')
     expect(v.packageStates[T8]).toBe('ABSENT')
-    expect(v.chainPlan?.steps).toEqual([T8, T9])
+    expect(v.chainPlan?.steps).toEqual([T8, T9, T10])
   })
 
   it('T9 installed with the three-argument bind still standing is CORRECT — stella_0018 re-creates it', () => {
@@ -591,9 +602,16 @@ describe('the successor discrimination the whole registry exists for', () => {
       ...positives(T7),
       ...positives(T8),
       ...positives(T9),
+      // T10 is M-8's forward repair, and its witness is a routine BODY rather
+      // than an object: nothing about the catalogue distinguishes a repaired
+      // claim_active_document_version from the one grounding_0002 published.
+      // Including it here is what makes "every package installed" mean the
+      // repair too, instead of nine objects and an unmeasured tenth.
+      ...positives(T10),
     ]
     const v = evaluate(corroboration({}, { packageObservations: packageObservations(present) }))
     expect(v.packageStates[T9]).toBe('INSTALLED')
+    expect(v.packageStates[T10]).toBe('INSTALLED')
     expect(v.partialPackages).toEqual([])
     // Every package installed: the runner reports the sequence complete and plans
     // nothing, which is a PASS and not a refusal.
@@ -605,7 +623,7 @@ describe('the successor discrimination the whole registry exists for', () => {
   it('a successor already installed leaves the runner to decide, and it plans only the rest', () => {
     const present = [...BASE, ...positives(T5), ...positives(T6)]
     const v = evaluate(corroboration({}, { packageObservations: packageObservations(present) }))
-    expect(v.chainPlan?.steps).toEqual([T7, T8, T9])
+    expect(v.chainPlan?.steps).toEqual([T7, T8, T9, T10])
     expect(v.warnings.join(' ')).toContain('ALREADY INSTALLED')
   })
 })
@@ -780,8 +798,8 @@ describe('the status is derived, and an edited one fails verification', () => {
       'checkpointPassed',
     ])
     expect(s.checkpointPassed).toBe(true)
-    expect(s.packageCount).toBe(9)
-    expect((s.chainPlan as { stepCount: number }).stepCount).toBe(9)
+    expect(s.packageCount).toBe(WITNESSED_PACKAGES.length)
+    expect((s.chainPlan as { stepCount: number }).stepCount).toBe(WITNESSED_PACKAGES.length)
   })
 
   it('records checkpointPassed=false, with blockers, when the corroboration is absent', () => {
@@ -860,14 +878,54 @@ describe('the status is derived, and an edited one fails verification', () => {
       // READ ONLY. Nothing below writes or removes a file.
       expect(runScript('verify').code).toBe(0)
 
+      // Through `computeRecordedA1Status`, which is what the CLI calls. Using
+      // the plain `status()` helper here would evaluate the committed artefact
+      // against TODAY'S chain while `:verify` evaluated it against the chain it
+      // measured, and the difference would be reported as a drift in the file
+      // rather than as the two functions disagreeing.
       const onDisk = readFileSync(statusPath, 'utf8').replace(/\r\n?/g, '\n')
-      expect(onDisk).toBe(serializeA1Status(status(readFileSync(corroborationPath, 'utf8'))))
+      expect(onDisk).toBe(
+        serializeA1Status(
+          computeRecordedA1Status({
+            raw: readFileSync(corroborationPath, 'utf8'),
+            readBaselineSql: read,
+            stellaSources: STELLA_SOURCES,
+            storageUnitState: 'UNIT_41_COMPLETE',
+          }),
+        ),
+      )
 
       const recorded = JSON.parse(onDisk) as Record<string, unknown>
-      expect(recorded.checkpointPassed).toBe(true)
-      expect(recorded.packageCount).toBe(9)
+
+      // THE MEASUREMENT IS UNCHANGED AND THE VERDICT IS NOT, which is the whole
+      // point of keeping them in two files.
+      //
+      // The operator's probe observed NINE packages on 2026-08-11 and found
+      // every one ABSENT — a correct measurement of a nine-package chain, and it
+      // stays exactly as recorded. M-8 then added a tenth, and grounding_0005
+      // SUPERSEDES grounding_0002: the runner will not plan the application of a
+      // package whose successor's state nobody has probed, because re-applying
+      // grounding_0002 over an installed grounding_0005 republishes the row lock
+      // M-8 removed. So the derived verdict is now a refusal, and it names the
+      // package nobody looked for.
+      //
+      // The alternative — adding a tenth observation to the artefact so the old
+      // verdict held — would have been a fabricated measurement: an operator
+      // session, dated before grounding_0005 existed, reporting it absent.
+      expect(recorded.packageCount).toBe(A1_OBSERVED_CHAIN.length)
       expect(recorded.partialPackages).toEqual([])
-      expect(recorded.blockers).toEqual([])
+      expect(recorded.checkpointPassed).toBe(false)
+      expect((recorded.blockers as string[]).join(' ')).toContain('HOSTED_PROBE_MISSING')
+      expect((recorded.blockers as string[]).join(' ')).toContain('grounding_0005_claim_advisory_lock')
+      expect((recorded.warnings as string[]).join(' ')).toContain('did not exist when it was measured')
+
+      // And the STALENESS is a fact about coverage, not about the target: every
+      // package the probe DID measure is still recorded absent.
+      expect(
+        Object.entries(recorded.packageStates as Record<string, string>)
+          .filter(([p]) => A1_OBSERVED_CHAIN.includes(p))
+          .map(([, s]) => s),
+      ).toEqual(A1_OBSERVED_CHAIN.map(() => 'ABSENT'))
     },
   )
 
@@ -908,6 +966,32 @@ describe('the status is derived, and an edited one fails verification', () => {
       }
     },
   )
+
+  it('the observed chain is a PREFIX of the declared one, and refuses anything else', () => {
+    // The guard that keeps A1_OBSERVED_CHAIN from becoming a place to make a
+    // stale verdict look current. A prefix cannot skip a package, cannot
+    // reorder one, and cannot name one the chain never declared — so the only
+    // thing it can say is "the chain, as far as it went at the time".
+    expect(() => assertA1ObservedChainIsPrefix()).not.toThrow()
+    expect(a1UncoveredPackages()).toEqual(WITNESSED_PACKAGES.slice(A1_OBSERVED_CHAIN.length))
+
+    // A gap in the middle — the shape that would let a checkpoint claim to have
+    // cleared a sequence it never looked into the middle of.
+    expect(() =>
+      assertA1ObservedChainIsPrefix([WITNESSED_PACKAGES[0]!, WITNESSED_PACKAGES[2]!]),
+    ).toThrow(A1ObservedChainRefusal)
+
+    // A package the chain does not declare.
+    expect(() => assertA1ObservedChainIsPrefix(['grounding_9999_invented'])).toThrow(
+      A1ObservedChainRefusal,
+    )
+
+    // And longer than the chain, which cannot be an observation of it.
+    expect(() => assertA1ObservedChainIsPrefix([...WITNESSED_PACKAGES, 'one_more'])).toThrow(
+      A1ObservedChainRefusal,
+    )
+    expect(() => assertA1ObservedChainIsPrefix([])).toThrow(A1ObservedChainRefusal)
+  })
 
   it('no test in this file may write over a real measurement', () => {
     // THE GUARD ITSELF, asserted. A future edit that drops `runIf` and writes

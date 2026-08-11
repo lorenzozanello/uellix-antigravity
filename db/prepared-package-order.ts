@@ -95,6 +95,25 @@ export const STELLA_TICKET_PACKAGE_CHAIN = [
 ] as const
 
 /**
+ * The canonical forward chain of the GROUNDING campaign.
+ *
+ * A second chain, and stating it as data is what M-8 forced: the supersession
+ * registry now holds a rule about grounding packages, and "the superseding
+ * package must come later" needs an order to appeal to. Borrowing the ticket
+ * chain's order would have been meaningless — the two campaigns are applied to
+ * the same database but neither constrains the other's sequence.
+ *
+ * `grounding_0001` is deliberately absent: it was superseded by
+ * `grounding_0003` and never applied anywhere, so it is not a link of anything.
+ */
+export const GROUNDING_PACKAGE_CHAIN = [
+  'grounding_0002_document_versions',
+  'grounding_0003_evidence_chunks',
+  'grounding_0004_runtime_attestation',
+  'grounding_0005_claim_advisory_lock',
+] as const
+
+/**
  * The two signatures `stella_0016` republishes IN PLACE, and the call each body
  * must contain afterwards.
  *
@@ -247,6 +266,57 @@ export const CATEGORY_BOUND_TICKET_OBJECTS = [
 const STELLA_0018_INSTALLED_PROBE =
   "SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL AS installed"
 
+/**
+ * The signature `grounding_0005` republishes IN PLACE, and what must be true of
+ * its body afterwards.
+ *
+ * Same shape and same purpose as `RESERVATION_AWARE_TICKET_BODIES`: the guard
+ * and the package must not be able to drift into disagreeing about what
+ * "repaired" means. `grounding_0005` introduces NO new signature — it changes a
+ * BODY — so this is the only form in which the fact is statable.
+ */
+export const ADVISORY_LOCKED_CLAIM_BODY = {
+  signature: 'uellix_grounding.claim_active_document_version(uuid)',
+  mustCall: 'pg_advisory_xact_lock',
+  mustNotContain: 'FOR UPDATE',
+} as const
+
+/**
+ * TRUE when `claim_active_document_version` takes an advisory lock — i.e.
+ * `grounding_0005` is installed here.
+ *
+ * WHY THE PROBE READS A BODY AND NOT A CATALOGUE ENTRY. Every other probe in
+ * this file is written over a FUNCTION no earlier package can produce, because
+ * every other superseding package introduces one. `grounding_0005` introduces
+ * nothing: it replaces a body at a signature `grounding_0002` already created,
+ * which is exactly what makes re-applying `grounding_0002` over it invisible to
+ * a signature-shaped check. So the body IS the discriminator, and there is no
+ * weaker form of this question available.
+ *
+ * WHY THE COMMENTS ARE STRIPPED FIRST. `pg_get_functiondef` returns the source
+ * verbatim, and `grounding_0002`'s own body explains the train-2 repair by
+ * quoting the tokens involved. A probe over the raw text would answer "yes,
+ * advisory" for a function that still takes the row lock, purely because a
+ * comment above it discusses advisory locks — the F-08C failure, in the one
+ * place where a false positive means the runner ALLOWS the regression it exists
+ * to refuse.
+ *
+ * WHY `chr(10)` AND NOT `\n`. This exact string is transcribed into
+ * `scripts/stella-ticket-e2e.sh`, inside a shell heredoc, and
+ * `tests/cross-workstream/project-binding.test.ts` compares the two so they
+ * cannot drift. A backslash escape does not survive that round trip intact —
+ * measured, it arrived as a literal newline inside the SQL literal and changed
+ * what the regex matched. `chr(10)` carries no backslash at all, so the shell,
+ * this file and PostgreSQL all read the same characters.
+ */
+const GROUNDING_0005_INSTALLED_PROBE =
+  "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_proc p " +
+  "JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace " +
+  "WHERE n.nspname = 'uellix_grounding' " +
+  "AND p.proname = 'claim_active_document_version' " +
+  "AND position('pg_advisory_xact_lock' in " +
+  "regexp_replace(pg_catalog.pg_get_functiondef(p.oid), '--[^' || chr(10) || ']*', '', 'g')) > 0) AS installed"
+
 export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersession[] = [
   {
     packageName: 'stella_0014_operation_tickets',
@@ -375,6 +445,28 @@ export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersessio
       'wear — and the governed-identity CHECK does not stop it, because any 64 hex characters ' +
       'satisfy it. If the runtime cutover genuinely has to be reverted, run stella_0017_rollback.sql ' +
       'first so the closure is withdrawn deliberately rather than as a side effect.',
+  },
+  {
+    // M-8. NOT a link of the ticket chain, and the only rule here whose
+    // superseding package publishes no new object at all.
+    packageName: 'grounding_0002_document_versions',
+    supersededBy: 'grounding_0005_claim_advisory_lock',
+    probe: GROUNDING_0005_INSTALLED_PROBE,
+    wouldRepublish: [
+      `${ADVISORY_LOCKED_CLAIM_BODY.signature} with SELECT ... FROM public.evidence_items ... FOR UPDATE`,
+    ],
+    why:
+      'grounding_0002 publishes claim_active_document_version with a ROW LOCK on ' +
+      'public.evidence_items, and PostgreSQL requires UPDATE privilege on a table to take one — ' +
+      'which uellix_cap_grounding deliberately does not hold (§219 grants SELECT and only SELECT). ' +
+      'grounding_0005 replaced that body IN PLACE with the transaction-scoped advisory lock its ' +
+      'own sibling register_document_version already took. Re-applying grounding_0002 over it ' +
+      'SUCCEEDS — the package is idempotent — and silently restores M-8: every governed ingestion ' +
+      'call by uellix_app dies with 42501 before reading a version, and the write side of the ' +
+      'corpus is dead again. NOTHING ABOUT THE SIGNATURE CHANGES, so no later package, no witness ' +
+      'and no arity check notices; the only observable difference is inside the body. Apply the ' +
+      'grounding unit in order (grounding_0002 -> 0003 -> 0004 -> 0005), and if 0002 genuinely has ' +
+      'to be re-applied, re-apply 0005 immediately afterwards in the same window.',
   },
 ]
 

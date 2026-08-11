@@ -107,7 +107,7 @@ describe('the installer identity is a single contract', () => {
     const files = readdirSync(path.join(ROOT, GOVERNED_DIR)).filter((f) =>
       f.endsWith('.governed.sql'),
     )
-    expect(files.length).toBe(9)
+    expect(files.length).toBe(10)
 
     for (const file of files) {
       const sql = read(`${GOVERNED_DIR}/${file}`)

@@ -86,6 +86,24 @@ const BARE = /^[A-Za-z_][A-Za-z0-9_$]*$/
  */
 const ARGLIST = /^[A-Za-z0-9_$,[\] ]*$/
 
+/**
+ * The inside of a `routine-body` fragment.
+ *
+ * DELIBERATELY NARROWER than everything else here: a bare identifier, nothing
+ * more. A body fragment is the one witness field that becomes a string LITERAL
+ * inside a `position(… in …)` call rather than an identifier PostgreSQL
+ * resolves, so it is the one place where a stray quote would be a composition
+ * hazard rather than a lookup failure. Restricting it to `[A-Za-z_][A-Za-z0-9_]*`
+ * means the escaping below is a second line of defence and not the only one.
+ *
+ * It also keeps the witness HONEST. A fragment rich enough to hold parentheses
+ * and punctuation would be a fragment specific enough to encode an entire
+ * expression — and a witness that matched a whole expression would break the
+ * day someone reformatted whitespace, which is not a fact about whether the
+ * package ran.
+ */
+const BODY_FRAGMENT = /^[A-Za-z_][A-Za-z0-9_]*$/
+
 const lit = (s: string): string => `'${s.replace(/'/g, "''")}'`
 
 const refuse = (code: WitnessSqlRefusalCode, detail: string): WitnessSqlResult => ({ ok: false, code, detail })
@@ -183,6 +201,52 @@ export function witnessPredicateSql(witness: Witness): WitnessSqlResult {
         )
       }
       return { ok: true, sql: `(pg_catalog.to_regprocedure(${lit(id)}) IS NOT NULL)` }
+    }
+
+    case 'routine-body': {
+      const fragment = witness.bodyContains
+      if (typeof fragment !== 'string' || !BODY_FRAGMENT.test(fragment)) {
+        return refuse(
+          'WITNESS_SQL_IDENTIFIER_MALFORMED',
+          `routine-body witness ${JSON.stringify(id)} carries ${JSON.stringify(fragment)} as its body fragment, which is not a bare identifier. A body witness with no fragment measures nothing, and one with punctuation measures formatting.`,
+        )
+      }
+      const open = id.indexOf('(')
+      if (open === -1 || !id.endsWith(')')) {
+        return refuse(
+          'WITNESS_SQL_IDENTIFIER_MALFORMED',
+          `routine-body witness ${JSON.stringify(id)} carries no argument list. It is scoped to ONE routine — a fragment searched across a whole schema would find it in a sibling, which for grounding_0005 is not hypothetical: register_document_version takes the same advisory lock, one function away.`,
+        )
+      }
+      const name = id.slice(0, open)
+      const args = id.slice(open + 1, -1)
+      if (splitQualified(name, 2) === null) {
+        return refuse(
+          'WITNESS_SQL_IDENTIFIER_MALFORMED',
+          `routine-body witness ${JSON.stringify(id)} is not schema.function(...).`,
+        )
+      }
+      if (!ARGLIST.test(args)) {
+        return refuse(
+          'WITNESS_SQL_IDENTIFIER_UNSAFE',
+          `the argument list of ${JSON.stringify(id)} holds a character no PostgreSQL type name contains.`,
+        )
+      }
+      // `to_regprocedure` returns NULL for an absent routine, including one in
+      // an absent schema, so a virgin database answers FALSE rather than
+      // raising — the same property every other function witness relies on.
+      //
+      // Comments are stripped before the search, and that is not tidiness:
+      // pg_get_functiondef returns the source verbatim, and the neighbouring
+      // registrar's body explains its own repair by naming this very call.
+      return {
+        ok: true,
+        sql:
+          `EXISTS (SELECT 1 FROM pg_catalog.pg_proc p ` +
+          `WHERE p.oid = pg_catalog.to_regprocedure(${lit(id)}) ` +
+          `AND position(${lit(fragment)} in ` +
+          `pg_catalog.regexp_replace(pg_catalog.pg_get_functiondef(p.oid), '--[^\\n]*', '', 'g')) > 0)`,
+      }
     }
 
     case 'column': {
@@ -412,6 +476,55 @@ function scanDeclarations(sql: string, verb: RegExp): DeclaredFunction[] {
 const CREATE_FUNCTION = /\bCREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+/
 const DROP_FUNCTION = /\bDROP\s+FUNCTION\s+(?:IF\s+EXISTS\s+)?/
 
+/** `--` comments removed, so prose about code cannot answer a test about code. */
+const withoutComments = (sql: string): string => sql.replace(/--[^\n]*/g, ' ')
+
+/**
+ * The dollar-quoted BODY of one routine, as this package writes it.
+ *
+ * Returns `null` when the package declares no such (name, arity) — which the
+ * caller reports separately, because "the package does not create it" and "it
+ * creates it without the fragment" are different registry defects.
+ *
+ * Scoped to ONE routine on purpose. A fragment searched across the whole file
+ * would find `pg_advisory_xact_lock` in grounding_0002 — in
+ * register_document_version, one function away from the one that lacks it —
+ * and would then refuse a correct registry while accepting a body witness that
+ * could never discriminate.
+ */
+function routineBody(sql: string, wanted: DeclaredFunction): string | null {
+  const surface = withoutComments(sql)
+  const re = new RegExp(CREATE_FUNCTION.source, 'gi')
+  let m: RegExpExecArray | null
+  while ((m = re.exec(surface)) !== null) {
+    const afterVerb = m.index + m[0].length
+    const open = surface.indexOf('(', afterVerb)
+    if (open === -1) continue
+    const name = surface.slice(afterVerb, open).trim().toLowerCase()
+    let depth = 0
+    let close = -1
+    for (let k = open; k < surface.length; k++) {
+      if (surface[k] === '(') depth++
+      else if (surface[k] === ')') {
+        depth--
+        if (depth === 0) {
+          close = k
+          break
+        }
+      }
+    }
+    if (close === -1) continue
+    if (!same({ qualifiedName: name, arity: arityOf(surface.slice(open + 1, close)) }, wanted)) continue
+
+    const opener = /\$([A-Za-z_][A-Za-z0-9_]*)?\$/.exec(surface.slice(close))
+    if (opener === null) return null
+    const bodyStart = close + opener.index + opener[0].length
+    const end = surface.indexOf(opener[0], bodyStart)
+    return end === -1 ? null : surface.slice(bodyStart, end)
+  }
+  return null
+}
+
 /** `schema.name(args)` -> `schema.name` + arity, or null when it is not one. */
 function signatureOf(identifier: string): DeclaredFunction | null {
   const open = identifier.indexOf('(')
@@ -466,10 +579,77 @@ export function anchorWitnessesToCanonicalSql(
     if (entry === undefined || sql === undefined) continue
     const myCreates = creates.get(id) ?? []
     const myDrops = drops.get(id) ?? []
-    const mine = indexOf(id)
+    const mineIndex = indexOf(id)
 
     for (const w of entry.requiredPresentWhenInstalled) {
-      const key = `${w.kind}:${w.identifier}`
+      const key = witnessKey(w)
+
+      // A BODY witness is anchored differently from every other kind, and the
+      // difference is the whole reason the kind exists: its package
+      // deliberately re-creates a signature an EARLIER package created, so the
+      // "created by an earlier package" rule below would refuse it for doing
+      // exactly what it is for. What must instead be true is that the FRAGMENT
+      // is new — present in this package's body for that routine, and absent
+      // from every earlier package's body for the same routine.
+      if (w.kind === 'routine-body') {
+        const sig = signatureOf(w.identifier)
+        if (sig === null || typeof w.bodyContains !== 'string') {
+          problems.push({
+            kind: 'WITNESS_ABSENT_FROM_SOURCE',
+            packageId: id,
+            witness: key,
+            detail: `${w.identifier} needs a full signature AND a body fragment. Without both it names a function rather than a version of one.`,
+          })
+          continue
+        }
+
+        const mine = routineBody(sql, sig)
+        if (mine === null) {
+          problems.push({
+            kind: 'WITNESS_NOT_CREATED_BY_ITS_PACKAGE',
+            packageId: id,
+            witness: key,
+            detail: `db/prepared/${id}.sql declares no ${sig.qualifiedName} of arity ${sig.arity} with a dollar-quoted body. A body witness over a routine the package does not publish cannot witness that the package ran.`,
+          })
+          continue
+        }
+        if (!mine.includes(w.bodyContains)) {
+          problems.push({
+            kind: 'WITNESS_ABSENT_FROM_SOURCE',
+            packageId: id,
+            witness: key,
+            detail: `${sig.qualifiedName} is published by db/prepared/${id}.sql, but its body does not contain ${JSON.stringify(w.bodyContains)}. The witness would be FALSE against a database where this package ran correctly.`,
+          })
+        }
+
+        for (const other of packageIds) {
+          if (other === id) continue
+          const oi = indexOf(other)
+          const otherSql = sources.get(other)
+          if (otherSql === undefined) continue
+          if (oi >= 0 && oi < mineIndex) {
+            const earlier = routineBody(otherSql, sig)
+            if (earlier !== null && earlier.includes(w.bodyContains)) {
+              problems.push({
+                kind: 'WITNESS_CREATED_BY_AN_EARLIER_PACKAGE',
+                packageId: id,
+                witness: key,
+                detail: `${other} already publishes ${sig.qualifiedName} with ${JSON.stringify(w.bodyContains)} in its body, so this witness would report ${id} installed as soon as its predecessor was.`,
+              })
+            }
+          }
+          if (oi >= 0 && oi > mineIndex && (drops.get(other) ?? []).some((d) => same(d, sig))) {
+            problems.push({
+              kind: 'WITNESS_DROPPED_BY_A_LATER_PACKAGE',
+              packageId: id,
+              witness: key,
+              detail: `${other} DROPS ${sig.qualifiedName}/${sig.arity}, so a correctly installed ${id} would flip to ABSENT the moment ${other} landed.`,
+            })
+          }
+        }
+        continue
+      }
+
       if (w.kind !== 'regprocedure') {
         const terminal = w.identifier.split('.').pop() ?? w.identifier
         if (!sql.includes(terminal)) {
@@ -509,7 +689,7 @@ export function anchorWitnessesToCanonicalSql(
       for (const other of packageIds) {
         if (other === id) continue
         const oi = indexOf(other)
-        if (oi >= 0 && oi < mine && (creates.get(other) ?? []).some((c) => same(c, sig))) {
+        if (oi >= 0 && oi < mineIndex && (creates.get(other) ?? []).some((c) => same(c, sig))) {
           problems.push({
             kind: 'WITNESS_CREATED_BY_AN_EARLIER_PACKAGE',
             packageId: id,
@@ -517,7 +697,7 @@ export function anchorWitnessesToCanonicalSql(
             detail: `${other} already creates ${sig.qualifiedName}/${sig.arity}, so this witness would report ${id} installed as soon as its predecessor was. THIS IS THE settle_reserved_quota TRAP: five arguments in stella_0016, ten in stella_0017, and stella_0017 re-creates the five-argument one too.`,
           })
         }
-        if (oi >= 0 && oi > mine && (drops.get(other) ?? []).some((d) => same(d, sig))) {
+        if (oi >= 0 && oi > mineIndex && (drops.get(other) ?? []).some((d) => same(d, sig))) {
           problems.push({
             kind: 'WITNESS_DROPPED_BY_A_LATER_PACKAGE',
             packageId: id,
@@ -553,7 +733,7 @@ export function anchorWitnessesToCanonicalSql(
     for (const dropped of myDrops) {
       if (myCreates.some((c) => same(c, dropped))) continue // dropped and re-created
       const createdEarlier = packageIds.some(
-        (other) => indexOf(other) < mine && (creates.get(other) ?? []).some((c) => same(c, dropped)),
+        (other) => indexOf(other) < mineIndex && (creates.get(other) ?? []).some((c) => same(c, dropped)),
       )
       if (!createdEarlier) continue
       if (!declaredAbsences.some((a) => same(a, dropped))) {

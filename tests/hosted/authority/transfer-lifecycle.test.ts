@@ -284,9 +284,13 @@ describe('a segment gets the topology its own class implies', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('the validated plan is untouched by this remediation', () => {
-  it('still holds 51 classification windows and 59 execution segments', () => {
-    expect(plan.windows).toHaveLength(51)
-    expect(plan.segments).toHaveLength(59)
+  it('still holds 53 classification windows and 61 execution segments', () => {
+    expect(plan.windows).toHaveLength(53)
+    expect(plan.segments).toHaveLength(61)
+    // ELEVEN, unchanged by M-8. `CREATE OR REPLACE` preserves the owner, so a
+    // package that republishes a capability-owned routine transfers nothing —
+    // and this file is about transfers, so the number that must NOT move is
+    // the one asserted here.
     expect(plan.segments.filter((s) => s.authorityClass === 'OWNER_TRANSFER')).toHaveLength(11)
   })
 

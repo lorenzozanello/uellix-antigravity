@@ -12,6 +12,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { PRECHAIN_REMEDIATION } from '@/db/hosted/prechain-remediation'
+import { FORWARD_ONLY_PACKAGES, forwardOnlyPackage } from '@/db/hosted/forward-only-packages'
 
 const ROOT = process.cwd()
 const PREPARED_DIR = path.join(ROOT, 'db', 'prepared')
@@ -171,17 +172,24 @@ describe('ADR 21 safeguard 4 — db/prepared/README.md is an accurate registry',
       // narrow — still lowercase words joined by underscores, still one numeric
       // segment, still an optional trailing letter — so a typo like
       // `stella__0001_x.sql` remains unmatched and still fails here.
-      // COMMIT 5.2. Exactly ONE exemption, and it is typed rather than
-      // spelled here: a FORWARD-ONLY package declares in
-      // db/hosted/prechain-remediation.ts why undoing it is not a thing a
-      // script can do. Writing the filename into this test instead would make
-      // the next exemption a one-line edit nobody has to justify.
-      if (file === `${PRECHAIN_REMEDIATION.id}.sql`) {
-        expect(PRECHAIN_REMEDIATION.kind).toBe('prechain-remediation')
-        expect(PRECHAIN_REMEDIATION.forwardOnlyNoRollbackReason.length).toBeGreaterThan(200)
+      // COMMIT 5.2 / M-8. Exemptions are TYPED rather than spelled here: a
+      // FORWARD-ONLY package declares in db/hosted/forward-only-packages.ts why
+      // undoing it is not a thing a script can do. Writing a filename into this
+      // test instead would make the next exemption a one-line edit nobody has
+      // to justify — which is why the second one generalised the registry
+      // rather than adding a second `if`.
+      const forwardOnly = forwardOnlyPackage(file.replace(/\.sql$/, ''))
+      if (forwardOnly !== null) {
+        // The reason is the whole exemption, so its SUBSTANCE is what is
+        // asserted. A short one is the failure mode this check exists to catch.
+        expect(forwardOnly.reason.length, `${file}: the forward-only reason is too short to be one`).toBeGreaterThan(200)
+        expect(forwardOnly.reversalPath.length).toBeGreaterThan(40)
+
+        const rollbackOf = /^([a-z]+(?:_[a-z]+)*_\d+[a-z]?)_.+\.sql$/.exec(file)
+        expect(rollbackOf, `unexpected prepared script name: ${file}`).not.toBeNull()
         expect(
-          existsSync(path.join(PREPARED_DIR, 'stella_hosted_0002_rollback.sql')),
-          'a forward-only remediation must NOT ship a rollback script',
+          existsSync(path.join(PREPARED_DIR, `${rollbackOf![1]}_rollback.sql`)),
+          `${file} is declared forward-only and must NOT ship a rollback script`,
         ).toBe(false)
         continue
       }
@@ -192,6 +200,25 @@ describe('ADR 21 safeguard 4 — db/prepared/README.md is an accurate registry',
       expect(existsSync(path.join(PREPARED_DIR, rollback)), `missing ${rollback}`).toBe(true)
       expect(readme).toContain(rollback)
     }
+  })
+
+  it('declares no forward-only exemption for a package that does not exist', () => {
+    // The other direction, and the one a registry silently gets wrong: the loop
+    // above only consults this list for files it FINDS, so an entry naming a
+    // deleted or misspelled package would sit there exempting nothing — and the
+    // day a real package took that name it would inherit an exemption written
+    // for something else.
+    for (const entry of FORWARD_ONLY_PACKAGES) {
+      expect(
+        existsSync(path.join(PREPARED_DIR, `${entry.id}.sql`)),
+        `${entry.id} is declared forward-only but db/prepared/${entry.id}.sql does not exist`,
+      ).toBe(true)
+    }
+    // And the prechain declaration is still the source of its own reason, so
+    // the two files cannot drift into justifying the same absence differently.
+    expect(forwardOnlyPackage(PRECHAIN_REMEDIATION.id)?.reason).toBe(
+      PRECHAIN_REMEDIATION.forwardOnlyNoRollbackReason,
+    )
   })
 
   it('names both gate-managed tables and points at the ADR', () => {

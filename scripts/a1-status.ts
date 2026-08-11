@@ -26,7 +26,7 @@ import path from 'node:path'
 import {
   A1_CORROBORATION_ARTEFACT,
   A1_STATUS_ARTEFACT,
-  computeA1Status,
+  computeRecordedA1Status,
   serializeA1Status,
   verifyA1Status,
 } from '../db/hosted/checkpoint-a1'
@@ -74,7 +74,12 @@ function storageUnitState(): StorageUnitState | null {
   }
 }
 
-const status = computeA1Status({
+// EVALUATED AGAINST THE CHAIN THE COMMITTED ARTEFACT MEASURED, not against the
+// chain that exists now. The choice lives in `computeRecordedA1Status` — with
+// the prefix assertion it depends on — so this script and the test that checks
+// `:verify` cannot compute two different verdicts and call the difference a
+// drift. See A1_OBSERVED_CHAIN for why the artefact is not simply extended.
+const status = computeRecordedA1Status({
   raw: read(A1_CORROBORATION_ARTEFACT),
   readBaselineSql: read,
   stellaSources: stellaSources(),

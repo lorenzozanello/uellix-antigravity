@@ -210,9 +210,9 @@ describe('the three phases, in sequence', () => {
         }),
       ),
     )
-    expect(result.steps).toHaveLength(9)
+    expect(result.steps).toHaveLength(10)
     expect(result.steps.map((s) => s.id)).not.toContain('stella_hosted_0001_managed_role_bootstrap')
-    expect(result.steps.at(-1)!.id).toBe('stella_0018_category_bound_operation_tickets')
+    expect(result.steps.at(-1)!.id).toBe('grounding_0005_claim_advisory_lock')
     expect(result.sequenceComplete).toBe(true)
   })
 

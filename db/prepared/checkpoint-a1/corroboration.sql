@@ -1,7 +1,7 @@
 -- ============================================================================
 -- GENERATED — DO NOT EDIT. CHECKPOINT A1 corroboration.
 -- Regenerate with `pnpm a1:observation:generate`; `pnpm a1:observation:verify`
--- compares bytes. The 35 witness arms below come from
+-- compares bytes. The 36 witness arms below come from
 -- db/hosted/package-witnesses.ts, so this file cannot drift from the registry
 -- that classifies its output.
 --
@@ -157,7 +157,7 @@ SELECT jsonb_pretty(jsonb_build_object(
     'environments', coalesce((SELECT jsonb_agg(DISTINCT u.environment)
                               FROM uellix_provisioning.applied_units u), '[]'::jsonb)),
 
-  -- GAP C. 9 packages, 35 witnesses, each measured on its own.
+  -- GAP C. 10 packages, 36 witnesses, each measured on its own.
   'packageObservations', jsonb_build_array(
     jsonb_build_object(
       'packageId', 'grounding_0002_document_versions',
@@ -229,6 +229,11 @@ SELECT jsonb_pretty(jsonb_build_object(
       'packageId', 'stella_0018_category_bound_operation_tickets',
       'witnesses', jsonb_build_object(
       'regprocedure:uellix_stella_ops.bind_operation_ticket(character,uuid,character,character varying)', (pg_catalog.to_regprocedure('uellix_stella_ops.bind_operation_ticket(character,uuid,character,character varying)') IS NOT NULL)
+      )),
+    jsonb_build_object(
+      'packageId', 'grounding_0005_claim_advisory_lock',
+      'witnesses', jsonb_build_object(
+      'routine-body:uellix_grounding.claim_active_document_version(uuid):pg_advisory_xact_lock', EXISTS (SELECT 1 FROM pg_catalog.pg_proc p WHERE p.oid = pg_catalog.to_regprocedure('uellix_grounding.claim_active_document_version(uuid)') AND position('pg_advisory_xact_lock' in pg_catalog.regexp_replace(pg_catalog.pg_get_functiondef(p.oid), '--[^\n]*', '', 'g')) > 0)
       )))
 ));
 

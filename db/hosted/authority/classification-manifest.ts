@@ -19,6 +19,7 @@
 import { readFileSync } from 'node:fs'
 
 import { RECOVERED_WINDOWS, type BoundaryPredicate, type RecoveredWindow } from './recovered-boundaries'
+import { FORWARD_PACKAGE_IDS, FORWARD_WINDOWS } from './forward-boundaries'
 import {
   authorityFromOwnerBefore,
   hostedArtefactPath,
@@ -126,12 +127,35 @@ function resolveBoundary(
 
 export type AuthorityClass = 'OWNER' | 'CAPABILITY' | 'OWNER_TRANSFER'
 
+/**
+ * Where a window's BOUNDARY came from. Never where its statements came from.
+ *
+ * `ORIGINAL_STATEFUL_PARTITION` is evidence: transferred verbatim from the
+ * A_FINAL partition, checkable against arithmetic that table cannot fake.
+ * `AUTHORED_FORWARD_REMEDIATION` is a decision, made after that partition was
+ * taken, for a package that did not exist when it was.
+ *
+ * The two are kept distinguishable at the type level, and stamped onto every
+ * resolved window, because the alternative is a plan in which nobody can tell
+ * which boundaries were measured and which were chosen — and the whole reason
+ * `recovered-boundaries.ts` refused to re-derive its own entries from published
+ * counts is that a plan like that cannot be audited, only trusted.
+ */
+export type WindowAuthoritySource = 'ORIGINAL_STATEFUL_PARTITION' | 'AUTHORED_FORWARD_REMEDIATION'
+export type WindowAuthorityModelVersion = 'A_FINAL_STATEFUL_V1' | 'FORWARD_AUTHORED_V1'
+
+/** The model version each provenance is stated under. Paired, never mixed. */
+const MODEL_VERSION_OF: Readonly<Record<WindowAuthoritySource, WindowAuthorityModelVersion>> = {
+  ORIGINAL_STATEFUL_PARTITION: 'A_FINAL_STATEFUL_V1',
+  AUTHORED_FORWARD_REMEDIATION: 'FORWARD_AUTHORED_V1',
+}
+
 export interface ResolvedClassificationWindow {
   readonly windowId: string
   readonly packageId: string
   readonly authorityClass: AuthorityClass
-  readonly authoritySource: 'ORIGINAL_STATEFUL_PARTITION'
-  readonly authorityModelVersion: 'A_FINAL_STATEFUL_V1'
+  readonly authoritySource: WindowAuthoritySource
+  readonly authorityModelVersion: WindowAuthorityModelVersion
   readonly startStatementIdentity: string
   readonly endStatementIdentity: string
   /** What the recovered table said. Kept for review, never silently trusted. */
@@ -329,7 +353,31 @@ export function buildAuthorityPlan(root = process.cwd()): AuthorityPlan {
 
   const windows: ResolvedClassificationWindow[] = []
 
-  for (const recovered of RECOVERED_WINDOWS) {
+  // Recovered first, authored after, and the concatenation is the ONLY place
+  // the two meet. Everything downstream — anchor resolution, cardinality,
+  // overlap, segmentation, executor re-derivation — treats them identically,
+  // which is deliberate: an authored window must not be able to buy itself a
+  // weaker check by being authored. What it does NOT get is the provenance
+  // stamp, and that is the whole difference.
+  const declared: readonly (readonly [RecoveredWindow, WindowAuthoritySource])[] = [
+    ...RECOVERED_WINDOWS.map((w) => [w, 'ORIGINAL_STATEFUL_PARTITION' as const] as const),
+    ...FORWARD_WINDOWS.map((w) => [w as RecoveredWindow, 'AUTHORED_FORWARD_REMEDIATION' as const] as const),
+  ]
+
+  const duplicateId = declared
+    .map(([w]) => w.windowId)
+    .find((id, i, all) => all.indexOf(id) !== i)
+  if (duplicateId !== undefined) {
+    throw new AuthorityRefusal(
+      'AUTHORITY_STATEMENT_IDENTITY_DUPLICATE',
+      `${duplicateId} is declared twice across the recovered and authored window sets. Window ids ` +
+        `are how a failure injection, a digest sequence and a report name the same window, so two ` +
+        `windows sharing one id would make every reference to it ambiguous — and the second ` +
+        `declaration would silently win in any map keyed by it.`,
+    )
+  }
+
+  for (const [recovered, authoritySource] of declared) {
     const packageRows = rowsByPackage.get(recovered.packageId)
     if (packageRows === undefined) {
       throw new AuthorityRefusal(
@@ -354,8 +402,8 @@ export function buildAuthorityPlan(root = process.cwd()): AuthorityPlan {
       windowId: recovered.windowId,
       packageId: recovered.packageId,
       authorityClass: recovered.authorityClass,
-      authoritySource: 'ORIGINAL_STATEFUL_PARTITION',
-      authorityModelVersion: 'A_FINAL_STATEFUL_V1',
+      authoritySource,
+      authorityModelVersion: MODEL_VERSION_OF[authoritySource],
       startStatementIdentity: statementIdentityKey(members[0].identity),
       endStatementIdentity: statementIdentityKey(members[members.length - 1].identity),
       historicalStatementCount: recovered.historicalCount,
@@ -407,7 +455,30 @@ export interface PartitionResult {
  * independent check. Where they disagree, the disagreement is reported rather
  * than resolved in either direction — that is what makes it a check.
  */
-export function partitionHostedStatements(plan: AuthorityPlan): PartitionResult {
+/**
+ * The packages the RECOVERED arithmetic describes: everything the A_FINAL
+ * partition covered, i.e. the chain minus the forward-authored packages.
+ *
+ * This exists so RECOVERED_TOTALS stays a CHECK. Those integers — 8/167/99/27,
+ * 320 hosted — were transferred from a partition taken over T1..T9, and once a
+ * tenth package joined the chain a whole-chain partition no longer had any
+ * reason to equal them. The available responses were: edit the recovered
+ * integers to match new code (which turns evidence into a fit), or scope the
+ * comparison to what the evidence is about. This is the second.
+ */
+export const RECOVERED_CHAIN_PACKAGE_IDS: readonly string[] = CHAIN_PACKAGE_FILES.map(
+  (e) => e.packageId,
+).filter((id) => !FORWARD_PACKAGE_IDS.includes(id))
+
+export function partitionHostedStatements(
+  plan: AuthorityPlan,
+  /**
+   * Which packages to count. Defaults to the WHOLE chain — the honest default
+   * for "what does this plan do" — and is narrowed by callers comparing against
+   * an integer that was measured over a smaller chain.
+   */
+  packageIds: readonly string[] = CHAIN_PACKAGE_FILES.map((e) => e.packageId),
+): PartitionResult {
   const windowOf = new Map<string, ResolvedClassificationWindow>()
   const governedIndexes = new Map<string, Set<number>>()
 
@@ -433,6 +504,7 @@ export function partitionHostedStatements(plan: AuthorityPlan): PartitionResult 
   const disagreements: PartitionResult['disagreements'] = []
 
   for (const entry of CHAIN_PACKAGE_FILES) {
+    if (!packageIds.includes(entry.packageId)) continue
     const rows = plan.rowsByPackage.get(entry.packageId) ?? []
     const governed = governedIndexes.get(entry.packageId) ?? new Set<number>()
 

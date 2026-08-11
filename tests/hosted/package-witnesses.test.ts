@@ -33,7 +33,7 @@ const negatives = (pkg: string): string[] =>
   PACKAGE_WITNESSES[pkg]!.requiredAbsentWhenInstalled.map(witnessKey)
 
 const T = WITNESSED_PACKAGES
-const [T1, T2, T3, T4, T5, T6, T7, T8, T9] = T as [string, string, string, string, string, string, string, string, string]
+const [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10] = T as [string, string, string, string, string, string, string, string, string, string]
 
 /** T1..T4 installed in every T5+ snapshot: they precede the ticket chain. */
 const BASE = [...positives(T1), ...positives(T2), ...positives(T3), ...positives(T4)]
@@ -89,11 +89,17 @@ describe('the five cumulative snapshots', () => {
   const S7 = [...S6, ...positives(T7)]
   const S8 = [...S7, ...positives(T8)]
   const S9 = [...S8, ...positives(T9)]
+  // M-8's forward repair, whose witness is a routine BODY: nothing in the
+  // catalogue distinguishes a repaired claim_active_document_version from the
+  // one grounding_0002 published, so "everything installed" only means the
+  // repair too if this snapshot names it.
+  const S10 = [...S9, ...positives(T10)]
 
-  it('T5 current — T5 installed, T6..T9 absent', () => {
+  it('T5 current — T5 installed, T6..T10 absent', () => {
     expect(states(S5)).toEqual({
       [T1]: 'INSTALLED', [T2]: 'INSTALLED', [T3]: 'INSTALLED', [T4]: 'INSTALLED',
       [T5]: 'INSTALLED', [T6]: 'ABSENT', [T7]: 'ABSENT', [T8]: 'ABSENT', [T9]: 'ABSENT',
+      [T10]: 'ABSENT',
     })
   })
 
@@ -104,6 +110,7 @@ describe('the five cumulative snapshots', () => {
     expect(states(S6)).toEqual({
       [T1]: 'INSTALLED', [T2]: 'INSTALLED', [T3]: 'INSTALLED', [T4]: 'INSTALLED',
       [T5]: 'INSTALLED', [T6]: 'INSTALLED', [T7]: 'ABSENT', [T8]: 'ABSENT', [T9]: 'ABSENT',
+      [T10]: 'ABSENT',
     })
   })
 
@@ -111,6 +118,7 @@ describe('the five cumulative snapshots', () => {
     expect(states(S7)).toEqual({
       [T1]: 'INSTALLED', [T2]: 'INSTALLED', [T3]: 'INSTALLED', [T4]: 'INSTALLED',
       [T5]: 'INSTALLED', [T6]: 'INSTALLED', [T7]: 'INSTALLED', [T8]: 'ABSENT', [T9]: 'ABSENT',
+      [T10]: 'ABSENT',
     })
   })
 
@@ -120,10 +128,23 @@ describe('the five cumulative snapshots', () => {
     expect(states(S8)[T9]).toBe('ABSENT')
   })
 
-  it('T9 current — everything installed, and the coexisting 3-arg bind is CORRECT', () => {
-    expect(states(S9)).toEqual(
-      Object.fromEntries(T.map((p) => [p, 'INSTALLED'])),
-    )
+  it('T9 current — the nine are installed, and the coexisting 3-arg bind is CORRECT', () => {
+    // T10 is ABSENT here, and that is the state staging is actually in: the
+    // nine-package chain applied, M-8's repair authored afterwards and not yet
+    // installed. It reads ABSENT because its BODY witness is missing, not
+    // because any object is — every object it needs was created by T1.
+    expect(states(S9)).toEqual({
+      ...Object.fromEntries(T.slice(0, 9).map((p) => [p, 'INSTALLED'])),
+      [T10]: 'ABSENT',
+    })
+  })
+
+  it('T10 current — the body witness is what makes the repair visible at all', () => {
+    expect(states(S10)).toEqual(Object.fromEntries(T.map((p) => [p, 'INSTALLED'])))
+    // And the discrimination, stated directly: T9-current and T10-current
+    // differ in exactly one observation, and it is not an object's existence.
+    expect(positives(T10)).toHaveLength(1)
+    expect(positives(T10)[0]).toMatch(/^routine-body:/)
   })
 
   it('T8 is not reported installed merely because T7 is', () => {
@@ -175,7 +196,7 @@ describe('partial and inconsistent states never collapse to absent', () => {
       const m = toStellaPackagesInstalled(r.classifications)
       expect(m.ok).toBe(true)
       if (m.ok) {
-        expect(Object.keys(m.stellaPackagesInstalled)).toHaveLength(9)
+        expect(Object.keys(m.stellaPackagesInstalled)).toHaveLength(T.length)
         expect(Object.values(m.stellaPackagesInstalled).every((v) => v === false)).toBe(true)
       }
     }

@@ -62,6 +62,11 @@ export const CHAIN_PACKAGE_FILES: readonly ChainPackageFile[] = [
   { packageId: 'T7', sourceFile: 'stella_0016_reserved_quota_semantics.sql' },
   { packageId: 'T8', sourceFile: 'stella_0017_governed_stella_consumption.sql' },
   { packageId: 'T9', sourceFile: 'stella_0018_category_bound_operation_tickets.sql' },
+  // M-8, appended. It is LAST because the chain is an application order and
+  // T1..T9 are installed: a repair that renumbered itself next to its own
+  // family would describe a sequence nobody ran. Its windows are AUTHORED, not
+  // recovered, and live in `forward-boundaries.ts` for that reason.
+  { packageId: 'T10', sourceFile: 'grounding_0005_claim_advisory_lock.sql' },
 ]
 
 /* -------------------------------------------------------------------------- */

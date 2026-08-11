@@ -63,9 +63,16 @@ const GOVERNED_EVIDENCE: readonly string[] = [
 
 describe('governed evidence is byte-identical to what git has for it', () => {
   it('enumerates every declared evidence path from the registries', () => {
-    // Four for S1/S3, two for A1, eighteen for the chain — with the A1 pair
-    // shared, because PRECHAIN points at it by reference rather than copying it.
-    expect(GOVERNED_EVIDENCE.length).toBe(4 + 2 + 18)
+    // Four for S1/S3, two for A1, and two per chain step — with the A1 pair
+    // shared, because PRECHAIN points at it by reference rather than copying it
+    // and therefore contributes no new paths.
+    //
+    // DERIVED from the registry rather than written as a literal: the chain
+    // grows (M-8 made it ten packages plus PRECHAIN), and a literal here would
+    // have to be edited on every growth — turning "enumerated from the
+    // registries, never hand-listed" into exactly the hand-list it forbids.
+    const chainPaths = CHAIN_EVIDENCE_REGISTRY.length * 2 - 2
+    expect(GOVERNED_EVIDENCE.length).toBe(4 + 2 + chainPaths)
     expect(GOVERNED_EVIDENCE).toContain(A1_CORROBORATION_ARTEFACT)
     expect(GOVERNED_EVIDENCE.filter((p) => p === A1_CORROBORATION_ARTEFACT)).toHaveLength(1)
   })

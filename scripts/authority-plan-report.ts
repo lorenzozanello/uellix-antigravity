@@ -12,22 +12,49 @@
 import {
   buildAuthorityPlan,
   partitionHostedStatements,
+  RECOVERED_CHAIN_PACKAGE_IDS,
 } from '@/db/hosted/authority/classification-manifest'
-import { RECOVERED_TOTALS } from '@/db/hosted/authority/recovered-boundaries'
+import { FORWARD_PACKAGE_IDS } from '@/db/hosted/authority/forward-boundaries'
+import { RECOVERED_TOTALS, RECOVERED_WINDOWS } from '@/db/hosted/authority/recovered-boundaries'
+import { FORWARD_TOTALS, FORWARD_WINDOWS } from '@/db/hosted/authority/forward-boundaries'
 import { validateResolvedAuthorityPlanForGeneration } from '@/db/hosted/authority/execution-disposition'
 
 const plan = buildAuthorityPlan()
 const partition = partitionHostedStatements(plan)
 
-const byClass = (c: string): number => plan.windows.filter((w) => w.authorityClass === c).length
+/**
+ * Counted PER PROVENANCE, and printed that way.
+ *
+ * A single measured-against-declared line would have read as a two-window drift
+ * the moment M-8's forward package landed — which is the failure mode a report
+ * has: it trains the reviewer to expect a mismatch, and then the real one is
+ * invisible. Recovered and authored are different KINDS of claim, so they get
+ * different lines and each is compared against its own declared total.
+ */
+const bySource = (source: string, c: string): number =>
+  plan.windows.filter((w) => w.authoritySource === source && w.authorityClass === c).length
+
+const recovered = (c: string): number => bySource('ORIGINAL_STATEFUL_PARTITION', c)
+const authored = (c: string): number => bySource('AUTHORED_FORWARD_REMEDIATION', c)
+const recoveredTotal = plan.windows.filter((w) => w.authoritySource === 'ORIGINAL_STATEFUL_PARTITION').length
+const authoredTotal = plan.windows.length - recoveredTotal
 
 console.log('=== CLASSIFICATION WINDOWS ===')
+console.log('  RECOVERED (A_FINAL stateful partition, transferred verbatim — evidence)')
 console.log(
-  `  OWNER=${byClass('OWNER')}/${RECOVERED_TOTALS.owner} ` +
-    `CAPABILITY=${byClass('CAPABILITY')}/${RECOVERED_TOTALS.capability} ` +
-    `OWNER_TRANSFER=${byClass('OWNER_TRANSFER')}/${RECOVERED_TOTALS.transfer} ` +
-    `TOTAL=${plan.windows.length}/51`,
+  `    OWNER=${recovered('OWNER')}/${RECOVERED_TOTALS.owner} ` +
+    `CAPABILITY=${recovered('CAPABILITY')}/${RECOVERED_TOTALS.capability} ` +
+    `OWNER_TRANSFER=${recovered('OWNER_TRANSFER')}/${RECOVERED_TOTALS.transfer} ` +
+    `TOTAL=${recoveredTotal}/${RECOVERED_WINDOWS.length}`,
 )
+console.log('  AUTHORED (forward remediation, boundaries chosen — a decision, not a measurement)')
+console.log(
+  `    OWNER=${authored('OWNER')}/${FORWARD_TOTALS.owner} ` +
+    `CAPABILITY=${authored('CAPABILITY')}/${FORWARD_TOTALS.capability} ` +
+    `OWNER_TRANSFER=${authored('OWNER_TRANSFER')}/${FORWARD_TOTALS.transfer} ` +
+    `TOTAL=${authoredTotal}/${FORWARD_WINDOWS.length}`,
+)
+console.log(`  PLAN TOTAL=${plan.windows.length}`)
 
 console.log('\n=== OWNER_AUTHORITY_STATEMENTS vs OWNER_WINDOW_EXECUTABLE_STATEMENTS ===')
 console.log('  OWNER_AUTHORITY_STATEMENTS         = 167  (recovered A_FINAL canon)')
@@ -74,9 +101,14 @@ console.log('  eliminated: the canonical spans measure 35/40/7/22, identical to 
 console.log('  The ten statements are not named here because naming them would be a fit.')
 
 console.log('\n=== PARTITION (hosted) ===')
-const c = partition.counts
+// SCOPED TO THE RECOVERED CHAIN. The integers on the right were measured over
+// the A_FINAL partition, which covered T1..T9; comparing a ten-package
+// partition against them would print a permanent mismatch and teach the
+// reviewer to ignore this line.
+const c = partitionHostedStatements(plan, RECOVERED_CHAIN_PACKAGE_IDS).counts
+console.log(`  RECOVERED CHAIN (${RECOVERED_CHAIN_PACKAGE_IDS.join(', ')})`)
 console.log(
-  `  INSTALLER=${c.installer}/${RECOVERED_TOTALS.installerStatements} ` +
+  `    INSTALLER=${c.installer}/${RECOVERED_TOTALS.installerStatements} ` +
     `OWNER=${c.owner}/${RECOVERED_TOTALS.ownerStatements} ` +
     `CAPABILITY=${c.capability}/${RECOVERED_TOTALS.capabilityStatements} ` +
     `TRANSFER=${c.ownerTransfer}/${RECOVERED_TOTALS.transferStatements} ` +
@@ -84,8 +116,21 @@ console.log(
     `BOOKKEEPING=${c.bookkeeping}/${RECOVERED_TOTALS.bookkeepingStatements}`,
 )
 console.log(
-  `  governed+bookkeeping=${c.installer + c.owner + c.capability + c.ownerTransfer + c.managedRewrite + c.bookkeeping}/${RECOVERED_TOTALS.hostedStatements}  EXCLUDED=${c.excluded}  file total=${c.total}`,
+  `    governed+bookkeeping=${c.installer + c.owner + c.capability + c.ownerTransfer + c.managedRewrite + c.bookkeeping}/${RECOVERED_TOTALS.hostedStatements}  EXCLUDED=${c.excluded}  file total=${c.total}`,
 )
+
+if (FORWARD_PACKAGE_IDS.length > 0) {
+  const f = partitionHostedStatements(plan, FORWARD_PACKAGE_IDS).counts
+  console.log(`  FORWARD, AUTHORED (${FORWARD_PACKAGE_IDS.join(', ')}) — no historical figure exists`)
+  console.log(
+    `    INSTALLER=${f.installer} OWNER=${f.owner} CAPABILITY=${f.capability} ` +
+      `TRANSFER=${f.ownerTransfer} MANAGED=${f.managedRewrite} BOOKKEEPING=${f.bookkeeping}`,
+  )
+  console.log(`    EXCLUDED=${f.excluded}  file total=${f.total}`)
+}
+
+const whole = partition.counts
+console.log(`  WHOLE PLAN: file total=${whole.total}  EXCLUDED=${whole.excluded}`)
 
 console.log('\n=== INSTALLER statements (outside every window) ===')
 for (const row of partition.installerStatements) {

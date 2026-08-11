@@ -50,6 +50,10 @@ import postgres from 'postgres'
 // qué hay que medir contra una base real, y el arnés de RELEASE es un oráculo
 // que dice qué haría un sistema correcto. Confundirlos sería usar la respuesta
 // como prueba.
+// G-01/M-8. The REAL derivation, so §17 asserts the version identity the
+// pipeline computes rather than a constant transcribed beside it.
+import { deriveVersionId } from '@/lib/grounding/contracts'
+import type { ContentHash } from '@/lib/grounding/contracts'
 import type { RuntimeProjectAttributionReport } from '@/tests/eval/stella-release/project-binding-release-gate'
 import type { LocalRuntimeEvidence } from '@/tests/eval/stella-release/local-release-gate'
 
@@ -1941,109 +1945,157 @@ describe('20. local-runtime-ready', () => {
 })
 
 
+
 /* ========================================================================== */
-/* 17. G-01 — LA INGESTA DE APLICACIÓN, Y EL DEFECTO QUE LA DETIENE (M-8)      */
+/* 17. G-01 — LA CADENA COMPLETA, DE LA INGESTA DE APLICACIÓN A LA CITA        */
 /* ========================================================================== */
 //
-// ESTA SECCIÓN NO DEMUESTRA QUE LA CADENA FUNCIONE. Demuestra dónde se corta, y
-// lo hace midiendo en vez de razonando.
-//
-// La cadena que G-01 iba a cerrar es
+// ESTA SECCIÓN RECORRE LA CADENA ENTERA Y LA MIDE PASO A PASO:
 //
 //   INGESTA DE APLICACIÓN -> T1/T2 GOBERNADOS -> RECUPERACIÓN ATESTADA
 //     -> RESPUESTA FUNDAMENTADA -> TICKET Y CUOTA LIQUIDADOS
 //
-// y se detiene en el PRIMER paso gobernado, por un motivo que no está en el
-// código de aplicación:
+// LO QUE ESTA SECCIÓN AFIRMABA ANTES, Y POR QUÉ CAMBIÓ.
+// Hasta `grounding_0005` fijaba el DEFECTO M-8:
+// `uellix_grounding.claim_active_document_version` hacía
 //
-//   `uellix_grounding.claim_active_document_version` hace
+//     SELECT e.organization_id FROM public.evidence_items e
+//     WHERE e.id = p_evidence_id
+//     FOR UPDATE;
 //
-//       SELECT e.organization_id FROM public.evidence_items e
-//       WHERE e.id = p_evidence_id
-//       FOR UPDATE;
+// PostgreSQL exige privilegio UPDATE sobre una tabla para tomar un candado de
+// fila en ella, `grounding_0002` §219 concede a `uellix_cap_grounding`
+// únicamente SELECT —a propósito— y por tanto toda llamada moría con 42501
+// ANTES de leer una sola versión. Las pruebas de entonces afirmaban ese 42501 y
+// decían textualmente que fallarían «el día que un paquete nuevo lo repare».
+// Ese paquete es `grounding_0005_claim_advisory_lock`, y esto es la reescritura
+// que aquellas pruebas exigían.
 //
-//   PostgreSQL exige privilegio UPDATE sobre una tabla para tomar un candado de
-//   fila en ella, no sólo SELECT. `grounding_0002` concede a
-//   `uellix_cap_grounding` únicamente
-//
-//       GRANT SELECT ON public.evidence_items TO uellix_cap_grounding;   (§219)
-//
-//   así que toda llamada muere con 42501, "permission denied for table
-//   evidence_items", ANTES de leer una sola versión.
-//
-// Lo notable es que el propio paquete documenta este defecto —y lo reparó— para
-// su función HERMANA: `register_document_version` tenía el mismo `FOR UPDATE`,
-// se midió en un contenedor desechable, y se sustituyó por
-// `pg_advisory_xact_lock`, que da la misma exclusión mutua sin necesitar
-// privilegio alguno (§765-787). La reparación no alcanzó a
-// `claim_active_document_version`, que conserva el `FOR UPDATE` original.
-//
-// Por qué nadie lo había visto: ningún camino de aplicación llamaba a la
-// ingesta, y esta batería sembraba versiones y chunks con `supabase_admin`, que
-// es superusuario y no evalúa el privilegio. Los paquetes instalan limpiamente
-// y quedan funcionalmente muertos por el lado de escritura — exactamente el
-// modo de fallo que el propio §765 describe: "a dry-run that inspects structure
-// without INVOKING the functions cannot see that".
-//
-// No se corrige aquí: es SQL gobernado, y esta tarea tiene prohibido tocarlo.
-// Las pruebas de abajo FIJAN el estado medido para que el día que un paquete
-// nuevo lo repare, fallen y obliguen a reescribir esta sección con la cadena
-// completa.
+// EL CORPUS NO SE SIEMBRA. Ni una versión ni un chunk de A4 se escriben con
+// `supabase_admin`. Eso importa porque es exactamente lo que ocultó M-8: el
+// superusuario no evalúa privilegios, así que una batería que sembrara el
+// corpus habría medido un recuperador sano sobre un escritor muerto. Todo lo
+// que hay bajo `EVIDENCE_A4` al final de esta sección lo escribió `uellix_app`
+// a través de las funciones gobernadas.
 
-describe('17. La ingesta de aplicación alcanza el corpus gobernado', () => {
+describe('17. La ingesta de aplicación cierra el corpus gobernado', () => {
   it('parte de un proyecto SIN versiones ni chunks — el punto de partida es medido', async () => {
     expect(await documentVersions(EVIDENCE_A4)).toHaveLength(0)
     expect(await chunkCountFor(EVIDENCE_A4)).toBe(0)
   })
 
-  it('llega hasta la primera función gobernada: todo lo anterior es REAL y pasa', async () => {
-    // Que el fallo sea `claim_history` y no otro es la medida que importa. Para
-    // llegar ahí ya ocurrieron, contra esta base y como `uellix_app`: el gate de
-    // capacidad, la sesión, la derivación de scope, el permiso de gestión de
-    // evidencia, la SELECT acotada por (evidencia, proyecto, organización), la
-    // resolución de bytes de G-02 y su verificación de sha256 contra
-    // `content_hash`. Un fallo en cualquiera de esos habría dado otra etapa u
-    // otro `status`.
-    const result = await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })
-
-    expect(result).toEqual({ status: 'error', stage: 'claim_history' })
-  }, 60_000)
-
-  it('M-8 — la causa es el privilegio, y se mide llamando a la función', async () => {
-    // Como `uellix_app`, que es el principal del runtime.
-    const runtime = postgres(process.env.UELLIX_RUNTIME_DATABASE_URL!, {
-      max: 1,
-      onnotice: () => {},
-    })
-    try {
-      let code: string | null = null
-      try {
-        await runtime`SELECT * FROM uellix_grounding.claim_active_document_version(${EVIDENCE_A4}::uuid)`
-      } catch (error) {
-        code = String((error as { code?: string }).code ?? '')
-      }
-      expect(code).toBe('42501')
-
-      // Y el privilegio que falta es exactamente UPDATE sobre evidence_items.
-      const priv = await admin`
-        SELECT has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'SELECT') AS can_select,
-               has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'UPDATE') AS can_update
-      `
-      expect(priv[0]!.can_select).toBe(true)
-      expect(priv[0]!.can_update).toBe(false)
-    } finally {
-      await runtime.end({ timeout: 5 })
+  it('indexa el documento entero como `uellix_app`, y el corpus lo demuestra', async () => {
+    // Todo lo anterior a la primera función gobernada ya ocurrió contra esta
+    // base y como `uellix_app`: el gate de capacidad, la sesión, la derivación
+    // de scope, el permiso de gestión de evidencia, la SELECT acotada por
+    // (evidencia, proyecto, organización), la resolución de bytes de G-02 y su
+    // verificación de sha256 contra `content_hash`.
+    const result = (await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })) as {
+      status: string
+      versionId?: string
+      chunkCount?: number
+      reingestion?: string
     }
+
+    expect(result.status, JSON.stringify(result)).toBe('indexed')
+    expect(result.reingestion).toBe('first_ingestion')
+    expect(result.chunkCount!).toBeGreaterThan(0)
+
+    // Y el corpus, leído por una conexión distinta, fuera de la transacción de
+    // la acción: «se indexó» es un hecho sobre FILAS COMMITEADAS, nunca sobre
+    // un valor que la acción devolvió acerca de sí misma.
+    const versions = await documentVersions(EVIDENCE_A4)
+    expect(versions).toHaveLength(1)
+    expect(Number(versions[0]!.ordinal)).toBe(1)
+    expect(String(versions[0]!.id)).toBe(result.versionId)
+    expect(await chunkCountFor(EVIDENCE_A4)).toBe(result.chunkCount)
   }, 60_000)
 
-  it('la hermana YA reparada no tiene el defecto — la asimetría es la prueba', async () => {
-    // `register_document_version` cambió su `FOR UPDATE` por un advisory lock.
-    // Se comprueba sobre el CATÁLOGO, no sobre el archivo: lo que importa es lo
-    // que hay instalado.
+  it('la versión registrada es la de los BYTES sellados, no una declarada', async () => {
+    // Lo que ata la fila de custodia al OBJETO y no a lo que dijo el llamante.
+    //
+    // `raw_content_hash` es el sha256 de los bytes que G-02 resolvió y
+    // verificó, y `version_id` NO es ese digest: es
+    // `deriveVersionId(evidenceId, rawContentHash)`, que liga la versión a la
+    // evidencia además de al contenido — dos documentos idénticos bajo dos
+    // evidencias distintas no comparten identidad de versión. Se afirman los
+    // dos, y el segundo con la función real en vez de con una constante
+    // transcrita, para que una reescritura de la derivación no pase inadvertida.
+    const rows = await admin`
+      SELECT version_id, raw_content_hash
+      FROM public.evidence_document_versions
+      WHERE evidence_id = ${EVIDENCE_A4}
+    `
+    expect(rows).toHaveLength(1)
+    expect(String(rows[0]!.raw_content_hash).trim()).toBe(INGESTED_SHA256)
+    expect(String(rows[0]!.version_id).trim()).toBe(
+      deriveVersionId(EVIDENCE_A4, INGESTED_SHA256 as ContentHash),
+    )
+  }, 60_000)
+
+  it('reingestar el MISMO documento no forka la historia — idempotente por version_id', async () => {
+    const again = (await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })) as {
+      status: string
+      reingestion?: string
+    }
+
+    expect(again.status).toBe('indexed')
+    // UNA versión, todavía. La segunda pasada atraviesa `claim` y `register` y
+    // ninguna escribe: es el camino que M-8 hacía imposible de recorrer.
+    expect(await documentVersions(EVIDENCE_A4)).toHaveLength(1)
+  }, 60_000)
+
+  it('el corpus recién indexado RESPONDE — cobra una unidad y liquida el ticket', async () => {
+    // El cierre de la cadena. La pregunta sólo puede responderse desde
+    // INGESTED_TEXT, que ningún otro proyecto tiene sembrado, así que una
+    // respuesta correcta no puede venir del corpus de A1 ni del de A3.
+    const ticket = await issued(PROJECT_A4)
+
+    const before = await chargeCountForProject(ORG_A, PROJECT_A4)
+    const result = await rt.run(PROJECT_A4, 'Cuantos participantes reunio la cohorte de egreso?', ticket)
+    const after = await chargeCountForProject(ORG_A, PROJECT_A4)
+
+    expect(result.status, JSON.stringify(result)).toBe('ok')
+    expect(after - before, 'la consulta fundamentada tiene que cobrar exactamente una unidad').toBe(1)
+    expect(await ticketStatus(ticket)).toBe('completed')
+  }, 60_000)
+})
+
+/* ========================================================================== */
+/* 18. LA POSTURA QUE LA REPARACIÓN CONSERVA                                  */
+/* ========================================================================== */
+//
+// M-8 tenía dos remedios posibles y sólo uno es este. El otro —
+// `GRANT UPDATE ON public.evidence_items TO uellix_cap_grounding` — habría
+// hecho pasar la §17 igual de bien, dejando al rol de capacidad la facultad de
+// CAMBIAR filas de cadena de custodia para poder ESPERAR en una.
+//
+// Por eso la §17 sola no basta como evidencia de la reparación: mide que la
+// cadena funciona, no CÓMO se la hizo funcionar. Lo de abajo mide lo segundo.
+
+describe('18. La reparación no ensanchó ningún privilegio', () => {
+  it('uellix_cap_grounding sigue teniendo SELECT y NO UPDATE sobre evidence_items', async () => {
+    const priv = await admin`
+      SELECT has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'SELECT') AS can_select,
+             has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'UPDATE') AS can_update,
+             has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'INSERT') AS can_insert,
+             has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'DELETE') AS can_delete
+    `
+    expect(priv[0]!.can_select).toBe(true)
+    expect(priv[0]!.can_update).toBe(false)
+    expect(priv[0]!.can_insert).toBe(false)
+    expect(priv[0]!.can_delete).toBe(false)
+  }, 60_000)
+
+  it('las dos funciones hermanas serializan sobre EL MISMO dominio de candado', async () => {
+    // Se comprueba sobre el CATÁLOGO y no sobre el archivo: lo que importa es
+    // el cuerpo instalado. Se le quitan los comentarios primero, porque el
+    // propio `register_document_version` explica su reparación del tren 2
+    // nombrando el `FOR UPDATE` que retiró — buscar en el texto crudo
+    // encontraría el defecto dentro de la frase que dice que no está.
     const rows = await admin`
       SELECT p.proname,
-             pg_get_functiondef(p.oid) LIKE '%FOR UPDATE%'            AS locks_a_row,
-             pg_get_functiondef(p.oid) LIKE '%pg_advisory_xact_lock%' AS locks_advisory
+             regexp_replace(pg_get_functiondef(p.oid), '--[^' || chr(10) || ']*', '', 'g') AS def
       FROM pg_proc p
       JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'uellix_grounding'
@@ -2051,41 +2103,105 @@ describe('17. La ingesta de aplicación alcanza el corpus gobernado', () => {
       ORDER BY p.proname
     `
     const byName = Object.fromEntries(
-      (rows as unknown as Array<Record<string, unknown>>).map((r) => [r.proname, r]),
+      (rows as unknown as Array<Record<string, string>>).map((r) => [r.proname, r.def]),
     )
-    expect(byName['claim_active_document_version']!.locks_a_row).toBe(true)
-    expect(byName['claim_active_document_version']!.locks_advisory).toBe(false)
-    expect(byName['register_document_version']!.locks_advisory).toBe(true)
+
+    const KEY = 'pg_advisory_xact_lock(hashtextextended(p_evidence_id::text, 0))'
+    expect(byName['claim_active_document_version']).toContain(KEY)
+    expect(byName['register_document_version']).toContain(KEY)
+
+    // Y ninguna toma ya un candado de FILA. La asimetría que M-8 nombró está
+    // cerrada en la dirección correcta: no se añadió un candado de fila a
+    // `register`, se retiró el de `claim`.
+    expect(byName['claim_active_document_version']).not.toContain('FOR UPDATE')
+    expect(byName['register_document_version']).not.toContain('FOR UPDATE')
+  }, 60_000)
+
+  it('la clave del candado es la MISMA para un id dado — medida, no leída', async () => {
+    // La igualdad textual de arriba es sobre el código. Esta es sobre el VALOR:
+    // las dos expresiones, evaluadas contra el mismo id, producen la misma
+    // clave de 64 bits, que es lo que hace que las dos funciones se excluyan
+    // mutuamente en vez de esperar cada una en su propio dominio.
+    const rows = await admin`
+      SELECT hashtextextended(${EVIDENCE_A4}::uuid::text, 0) AS key_from_uuid,
+             hashtextextended(${EVIDENCE_A4}::text, 0)       AS key_from_text
+    `
+    expect(String(rows[0]!.key_from_uuid)).toBe(String(rows[0]!.key_from_text))
+  }, 60_000)
+
+  it('claim sigue siendo SECURITY DEFINER, con search_path vacío y su propietario', async () => {
+    // Las tres propiedades que `CREATE OR REPLACE` CONSERVA — y por eso mismo
+    // las que un paquete podría haber roto sin que nada lo dijera.
+    const rows = await admin`
+      SELECT p.prosecdef,
+             pg_get_userbyid(p.proowner) AS owner,
+             coalesce(p.proconfig, ARRAY[]::text[]) AS config
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'uellix_grounding' AND p.proname = 'claim_active_document_version'
+    `
+    expect(rows[0]!.prosecdef).toBe(true)
+    expect(rows[0]!.owner).toBe('uellix_cap_grounding')
+    // PG 17.6 guarda el valor vacío ENTRECOMILLADO. Se aceptan las dos formas
+    // por la misma razón que el paquete: una comprobación escrita para una sola
+    // rechaza una función correctamente configurada.
+    const config = rows[0]!.config as unknown as string[]
+    expect(config.includes('search_path=') || config.includes('search_path=""')).toBe(true)
+  }, 60_000)
+
+  it('el corpus sembrado de OTRO proyecto sigue intacto y sigue respondiendo', async () => {
+    const ticket = await issued(PROJECT_A1)
+
+    const result = await rt.run(PROJECT_A1, 'Cuantos beneficiarios atendio el programa?', ticket)
+
+    expect(result.status).toBe('ok')
   }, 60_000)
 })
 
 /* ========================================================================== */
-/* 18. UNA INGESTA FALLIDA NO DEJA NADA DETRÁS                                */
+/* 19. M-7 — UNA INGESTA FALLIDA NO DEJA CORPUS A MEDIAS                      */
 /* ========================================================================== */
 //
-// M-7 en su forma alcanzable hoy. La prueba completa —registrar una versión y
-// romper el paso siguiente— no puede correrse mientras M-8 impida llegar al
-// registro, así que aquí se mide lo que sí es alcanzable: tras una ingesta
-// fallida el corpus está exactamente como estaba.
+// Ahora ALCANZABLE de verdad. Mientras M-8 impedía llegar al registro, esta
+// prueba sólo podía medir «nada se escribió porque nada llegó a escribir»,
+// que pasa igual con una transacción rota y con una que nunca empezó.
 //
-// El desarme de una escritura A MEDIAS está probado en
-// `app/actions/grounding/__tests__/ingest-evidence.test.ts` (§13-14), donde el
-// doble del contexto registra ENTER/COMMIT/ROLLBACK y la acción tiene que
-// relanzar el fallo para que drizzle deshaga. La inyección de fallo de esta
-// batería (`failChunkInsertOnce`) queda montada para el día que M-8 se repare.
+// Con la cadena viva se puede montar el estado que M-7 describe:
+// `register_document_version` YA ESCRIBIÓ y el paso siguiente rompe. La
+// inyección de fallo (`failChunkInsertOnce`) lo produce sin tocar SQL
+// gobernado, y lo que se afirma es que la versión registrada TAMPOCO queda.
 
-describe('18. Una ingesta fallida no deja corpus a medias', () => {
-  it('no escribe versión ni chunk alguno cuando la ingesta falla', async () => {
-    await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })
+describe('19. Una ingesta fallida a mitad de camino no deja nada detrás', () => {
+  it('la versión que register ya había escrito se deshace con el fallo del paso siguiente', async () => {
+    // Punto de partida MEDIDO: una versión, la de la §17.
+    const before = await documentVersions(EVIDENCE_A4)
+    expect(before).toHaveLength(1)
+    const chunksBefore = await chunkCountFor(EVIDENCE_A4)
 
-    expect(await documentVersions(EVIDENCE_A4)).toHaveLength(0)
-    expect(await chunkCountFor(EVIDENCE_A4)).toBe(0)
+    failChunkInsertOnce = true
+
+    const result = (await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })) as {
+      status: string
+      stage?: string
+    }
+
+    // La acción RELANZA el fallo para que drizzle deshaga; devolverlo
+    // normalmente dejaría committear el contexto y una versión registrada y
+    // vacía pasaría a ser la activa, tapando la última buena.
+    expect(result.status).toBe('error')
+
+    // Y el corpus está exactamente como estaba. No «una versión más sin
+    // chunks»: la MISMA versión, y ni un chunk de diferencia.
+    const after = await documentVersions(EVIDENCE_A4)
+    expect(after).toHaveLength(1)
+    expect(String(after[0]!.id)).toBe(String(before[0]!.id))
+    expect(await chunkCountFor(EVIDENCE_A4)).toBe(chunksBefore)
   }, 60_000)
 
-  it('y el corpus sembrado de OTRO proyecto sigue intacto y sigue respondiendo', async () => {
-    const ticket = await issued(PROJECT_A1)
+  it('y el corpus sigue respondiendo después del fallo', async () => {
+    const ticket = await issued(PROJECT_A4)
 
-    const result = await rt.run(PROJECT_A1, '¿Cuántos beneficiarios atendió el programa?', ticket)
+    const result = await rt.run(PROJECT_A4, 'Cuantos participantes reunio la cohorte de egreso?', ticket)
 
     expect(result.status).toBe('ok')
   }, 60_000)

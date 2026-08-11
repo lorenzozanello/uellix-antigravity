@@ -185,7 +185,12 @@ describe('the registry is derived from HOSTED_CHAIN and selects by declared step
     expect(CHAIN_EVIDENCE_REGISTRY).toHaveLength(WITNESSED_PACKAGES.length + 1)
     expect(CHAIN_EVIDENCE_REGISTRY[0]!.step).toBe(PRECHAIN)
     expect(CHAIN_EVIDENCE_REGISTRY.slice(1).map((e) => e.packageId)).toEqual([...WITNESSED_PACKAGES])
-    expect(CHAIN_EVIDENCE_REGISTRY.map((e) => e.ordinal)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    // Derived, not transcribed: 0 for PRECHAIN then one per chain package. A
+    // literal list here would have to be edited every time the chain grows,
+    // which is how a "the registry is derived" test stops testing derivation.
+    expect(CHAIN_EVIDENCE_REGISTRY.map((e) => e.ordinal)).toEqual(
+      Array.from({ length: WITNESSED_PACKAGES.length + 1 }, (_, i) => i),
+    )
   })
 
   it('points PRECHAIN at the A1 pair, by reference and not by copy', () => {
@@ -225,7 +230,10 @@ describe('the registry is derived from HOSTED_CHAIN and selects by declared step
   })
 
   it('refuses an undeclared step instead of guessing a neighbour', () => {
-    const r = resolveChainStep('POST_T10')
+    // ONE PAST THE END, derived. 'POST_T10' was hard-coded here and became a
+    // real step the day M-8 added a tenth package — the same sentinel trap the
+    // certification input test carried.
+    const r = resolveChainStep(`POST_T${WITNESSED_PACKAGES.length + 1}`)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.code).toBe('CHAIN_STEP_NOT_DECLARED')
   })
@@ -321,7 +329,7 @@ describe('every step in a healthy chain verifies, and the prefix is derived', ()
       expect(v.expectedInstalled).toEqual(CHAIN_PACKAGE_ORDER.slice(0, n))
       expect(v.delta?.newlyInstalled).toEqual([CHAIN_PACKAGE_ORDER[n - 1]])
       expect(v.delta?.regressed).toEqual([])
-      expect(v.delta?.unchanged).toBe(8)
+      expect(v.delta?.unchanged).toBe(CHAIN_PACKAGE_ORDER.length - 1)
       expect(v.lastSuccessfullyInstalledPackage).toBe(CHAIN_PACKAGE_ORDER[n - 1])
     }
   })
@@ -565,19 +573,20 @@ describe('the nine flags stay false for the whole chain', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('the runner replans from each measured state, which is what proves it resumable', () => {
-  it('POST_Tn leaves exactly the 9-n suffix, in order', () => {
-    for (let n = 1; n <= 9; n++) {
+  it('POST_Tn leaves exactly the N-n suffix, in order', () => {
+    for (let n = 1; n <= CHAIN_PACKAGE_ORDER.length; n++) {
       const v = evaluate(chainStepFor(n), evidenceThrough(n))
       expect(v.chainPlan?.ok, chainStepFor(n)).toBe(true)
-      expect(v.chainPlan?.stepCount, chainStepFor(n)).toBe(9 - n)
+      expect(v.chainPlan?.stepCount, chainStepFor(n)).toBe(CHAIN_PACKAGE_ORDER.length - n)
       expect(v.chainPlan?.steps).toEqual(CHAIN_PACKAGE_ORDER.slice(n))
       expect(v.resumable).toBe(true)
       expect(v.chainPlan?.writesPermitted).toBe(false)
     }
   })
 
-  it("POST_T9 plans nothing, and its terminal semantics are READ from the runner", () => {
-    const v = evaluate('POST_T9', evidenceThrough(9))
+  it('the LAST step plans nothing, and its terminal semantics are READ from the runner', () => {
+    const last = CHAIN_PACKAGE_ORDER.length
+    const v = evaluate(chainStepFor(last), evidenceThrough(last))
     expect(v.chainPlan?.stepCount).toBe(0)
     expect(v.chainPlan?.steps).toEqual([])
     expect(v.expectedNextPackage).toBeNull()

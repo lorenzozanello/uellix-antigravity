@@ -44,6 +44,11 @@ describe('HOSTED_CHAIN — shape', () => {
       'stella_0016_reserved_quota_semantics',
       'stella_0017_governed_stella_consumption',
       'stella_0018_category_bound_operation_tickets',
+      // M-8, appended. The chain is an APPLICATION ORDER: this is a grounding
+      // package sitting after six Stella ones because it was authored after all
+      // nine were installed, and renumbering it beside grounding_0002 would
+      // describe a sequence nobody ran.
+      'grounding_0005_claim_advisory_lock',
     ])
   })
 

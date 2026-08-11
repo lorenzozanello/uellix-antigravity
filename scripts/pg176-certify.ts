@@ -1056,14 +1056,26 @@ function main(): number {
     return 0
   }
 
+  // Snapshots are taken AFTER a package commits, and only where an injection
+  // declares it needs one. DERIVED from FAILURE_INJECTIONS rather than listed:
+  // a snapshot nobody asked for costs a container image, and an injection whose
+  // snapshot nobody takes is SKIPPED — reported, but not measured.
+  const SNAPSHOT_POINTS: readonly string[] = [
+    ...new Set(FAILURE_INJECTIONS.map((i) => i.fromSnapshot).filter((s) => s !== 'bootstrap')),
+  ]
   const snapshotAfter = new Map<string, string>()
   const { results, finalState } = applyChain(primary, inputs, (input) => {
-    if (input.packageId === 'T7') snapshotAfter.set('T7', snapshotContainer(primary, 't7'))
+    if (SNAPSHOT_POINTS.includes(input.packageId)) {
+      snapshotAfter.set(input.packageId, snapshotContainer(primary, input.packageId.toLowerCase()))
+    }
   })
   report.chain = results
 
-  const chainComplete = results.length === 9 && results.every((r) => r.stateAfter === 'INSTALLED')
-  console.log(`[cert] chain ${results.filter((r) => r.stateAfter === 'INSTALLED').length}/9 installed`)
+  const chainComplete =
+    results.length === inputs.length && results.every((r) => r.stateAfter === 'INSTALLED')
+  console.log(
+    `[cert] chain ${results.filter((r) => r.stateAfter === 'INSTALLED').length}/${inputs.length} installed`,
+  )
 
   report.posture = {
     functionOwners: finalState.functionOwners,
@@ -1095,9 +1107,12 @@ function main(): number {
   console.log('[cert] failure injections')
   const injections: InjectionResult[] = []
   for (const injection of FAILURE_INJECTIONS) {
-    const t7 = snapshotAfter.get('T7')
-    if (injection.fromSnapshot === 'T7' && t7 === undefined) {
-      console.log(`[cert]   ${injection.id} SKIPPED: the chain never reached T7, so there is no state to inject into`)
+    const fromBootstrap = injection.fromSnapshot === 'bootstrap'
+    const base = fromBootstrap ? bootstrapSnapshot : snapshotAfter.get(injection.fromSnapshot)
+    if (base === undefined) {
+      console.log(
+        `[cert]   ${injection.id} SKIPPED: the chain never reached ${injection.fromSnapshot}, so there is no state to inject into`,
+      )
       injections.push({
         id: injection.id,
         description: injection.description,
@@ -1114,10 +1129,15 @@ function main(): number {
       })
       continue
     }
+    // How many packages the snapshot ALREADY carries, derived from the chain
+    // rather than counted by hand. It was the literal `7` for T7, which is the
+    // kind of constant that is right until a second snapshot point exists and
+    // then silently re-applies nine packages over a database that has them.
     const prefix = inputs.slice(0, inputs.findIndex((i) => i.packageId === injection.packageId))
-    const snapshot = injection.fromSnapshot === 'bootstrap' ? bootstrapSnapshot : (t7 as string)
-    const prefixInputs = injection.fromSnapshot === 'bootstrap' ? prefix : prefix.slice(7)
-    const result = runInjection(injection, snapshot, prefixInputs)
+    const carried = fromBootstrap
+      ? 0
+      : inputs.findIndex((i) => i.packageId === injection.fromSnapshot) + 1
+    const result = runInjection(injection, base, prefix.slice(carried))
     injections.push(result)
     console.log(
       `[cert]   ${result.id} failed=${result.failed} rolledBack=${result.rolledBack} ` +

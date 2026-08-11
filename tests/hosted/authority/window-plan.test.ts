@@ -202,18 +202,23 @@ describe('assertNoWindowOverlap', () => {
 /* The real corpus                                                             */
 /* -------------------------------------------------------------------------- */
 
-describe('the nine chain packages, as they actually are', () => {
+describe('the ten chain packages, as they actually are', () => {
   const parsed = CHAIN_PACKAGE_FILES.map((entry) => ({
     ...entry,
     statements: splitSqlStatements(readFileSync(`db/prepared/${entry.sourceFile}`, 'utf8')),
   }))
 
-  it('maps T1..T9 onto the chain in order', () => {
+  it('maps T1..T10 onto the chain in order', () => {
     expect(parsed.map((p) => p.packageId)).toEqual([
-      'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9',
+      'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10',
     ])
     expect(parsed[6].sourceFile).toBe('stella_0016_reserved_quota_semantics.sql')
     expect(parsed[8].sourceFile).toBe('stella_0018_category_bound_operation_tickets.sql')
+    // T10 is a GROUNDING package sitting after six Stella ones, and the order
+    // is the point: the chain is an application sequence, not a taxonomy. M-8's
+    // repair could not be renumbered next to grounding_0002 without describing
+    // an installation nobody performed.
+    expect(parsed[9].sourceFile).toBe('grounding_0005_claim_advisory_lock.sql')
   })
 
   it('parses every statement of every package — no unmodelled form survives', () => {

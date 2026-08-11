@@ -102,6 +102,13 @@ FORWARD=(
   stella_0016_reserved_quota_semantics
   stella_0017_governed_stella_consumption
   stella_0018_category_bound_operation_tickets
+  # M-8. LAST, and it must be here or §17 measures nothing: without it
+  # `claim_active_document_version` takes a row lock on public.evidence_items,
+  # PostgreSQL requires UPDATE to take one, `uellix_cap_grounding` holds only
+  # SELECT, and every governed ingestion call by `uellix_app` dies with 42501
+  # before reading a version. The chain would install cleanly and be dead on the
+  # write side — which is precisely the state §17 used to pin and now refutes.
+  grounding_0005_claim_advisory_lock
 )
 
 cleanup() {
@@ -229,13 +236,14 @@ package_order_guard() {
       fail "DB_MIGRATOR_PACKAGE_ORDER_VIOLATION: $pkg.sql no puede aplicarse sobre una base que ya tiene $superseder.sql — ver db/prepared-package-order.ts"
     fi
   done <<'RULES'
-stella_0014_operation_tickets|stella_0015_project_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character)') IS NOT NULL
-stella_0015_project_bound_operation_tickets|stella_0016_reserved_quota_semantics|SELECT to_regprocedure('uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character)') IS NOT NULL
-stella_0015_project_bound_operation_tickets|stella_0017_governed_stella_consumption|SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL
-stella_0016_reserved_quota_semantics|stella_0017_governed_stella_consumption|SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL
-stella_0015_project_bound_operation_tickets|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL
-stella_0016_reserved_quota_semantics|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL
-stella_0017_governed_stella_consumption|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL
+stella_0014_operation_tickets|stella_0015_project_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character)') IS NOT NULL AS installed
+stella_0015_project_bound_operation_tickets|stella_0016_reserved_quota_semantics|SELECT to_regprocedure('uellix_stella.settle_reserved_quota(uuid, uuid, character varying, character, character)') IS NOT NULL AS installed
+stella_0015_project_bound_operation_tickets|stella_0017_governed_stella_consumption|SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL AS installed
+stella_0016_reserved_quota_semantics|stella_0017_governed_stella_consumption|SELECT to_regprocedure('uellix_stella_ops.complete_operation_ticket(character, uuid, character, character varying, character varying, integer, jsonb)') IS NOT NULL AS installed
+stella_0015_project_bound_operation_tickets|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL AS installed
+stella_0016_reserved_quota_semantics|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL AS installed
+stella_0017_governed_stella_consumption|stella_0018_category_bound_operation_tickets|SELECT to_regprocedure('uellix_stella_ops.bind_operation_ticket(character, uuid, character, character varying)') IS NOT NULL AS installed
+grounding_0002_document_versions|grounding_0005_claim_advisory_lock|SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'uellix_grounding' AND p.proname = 'claim_active_document_version' AND position('pg_advisory_xact_lock' in regexp_replace(pg_catalog.pg_get_functiondef(p.oid), '--[^' || chr(10) || ']*', '', 'g')) > 0) AS installed
 RULES
 }
 

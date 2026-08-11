@@ -33,6 +33,7 @@ import {
   PREPARED_PACKAGE_SUPERSESSIONS,
   PROJECT_BLIND_TICKET_SIGNATURES,
   PROJECT_BOUND_TICKET_SIGNATURES,
+  GROUNDING_PACKAGE_CHAIN,
   STELLA_TICKET_PACKAGE_CHAIN,
   packageOrderRefusal,
   supersessionsFor,
@@ -217,13 +218,36 @@ describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refu
     // of one is that it is superseded by a package of the chain — the closure it
     // would undo — and that it is actually a rollback rather than a forward
     // package somebody forgot to list.
-    for (const rule of PREPARED_PACKAGE_SUPERSESSIONS) {
-      const to = (STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).indexOf(rule.supersededBy)
-      expect(to, `${rule.supersededBy} is not in the canonical chain`).toBeGreaterThanOrEqual(0)
+    //
+    // M-8 AMENDMENT. The registry stopped being about one campaign: the ninth
+    // rule protects a GROUNDING package, and grounding is a separate chain with
+    // its own order. Precedence still has to hold — a rule pointing backwards
+    // would refuse a forward application that is supposed to be allowed — so
+    // the comparison is made INSIDE whichever chain the rule belongs to, and a
+    // rule spanning two chains is refused rather than exempted.
+    const CHAINS: readonly (readonly string[])[] = [
+      STELLA_TICKET_PACKAGE_CHAIN as readonly string[],
+      GROUNDING_PACKAGE_CHAIN,
+    ]
+    const chainOf = (name: string): readonly string[] | null =>
+      CHAINS.find((c) => c.includes(name)) ?? null
 
-      const from = (STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).indexOf(rule.packageName)
+    for (const rule of PREPARED_PACKAGE_SUPERSESSIONS) {
+      const chain = chainOf(rule.supersededBy)
+      expect(chain, `${rule.supersededBy} is in no declared chain`).not.toBeNull()
+      const to = chain!.indexOf(rule.supersededBy)
+
+      const from = chain!.indexOf(rule.packageName)
       if (from >= 0) {
         expect(to, `${rule.supersededBy} does not come after ${rule.packageName}`).toBeGreaterThan(from)
+      } else if (chainOf(rule.packageName) !== null) {
+        // In a DIFFERENT chain from its superseder. Refused: a supersession
+        // between two independent chains has no order to appeal to, so nothing
+        // could say whether it points forwards or backwards.
+        expect(
+          chainOf(rule.packageName),
+          `${rule.packageName} and ${rule.supersededBy} are in different chains, so "later" is undefined between them`,
+        ).toBe(chain)
       } else {
         expect(
           rule.packageName.endsWith('_rollback'),
@@ -382,6 +406,33 @@ describe('CAPABILITIES -> RUNTIME: applying stella_0014 over stella_0015 is refu
     expect(script).toContain(rule!.packageName)
     expect(script).toContain('uellix_stella_ops.bind_operation_ticket(character, uuid, character)')
     expect(script).toContain('DB_MIGRATOR_PACKAGE_ORDER_VIOLATION')
+  })
+
+  it('the shell heredoc carries EVERY registry rule, byte for byte', () => {
+    // The check above reads the FIRST rule and one hard-coded signature, which
+    // was enough while the registry held one campaign. It is not a check that
+    // the two agree — it is a check that they overlap somewhere, and a rule
+    // added to TypeScript and forgotten in the shell would pass it.
+    //
+    // M-8 made the gap concrete twice over. It added a ninth rule, and that
+    // rule's probe is the first one whose text is not a plain
+    // `to_regprocedure` call: it strips comments before searching a function
+    // BODY, and the escape it needs did NOT survive being written into a shell
+    // heredoc — measured, it arrived as a literal newline and silently changed
+    // what the regex matched. A comparison over whole lines is what caught it.
+    const script = readSourceText('scripts/stella-ticket-e2e.sh')
+
+    for (const rule of PREPARED_PACKAGE_SUPERSESSIONS) {
+      // The one rule that is not about applying a FORWARD package: its
+      // packageName is a rollback, which this script never runs.
+      if (rule.packageName.endsWith('_rollback')) continue
+
+      const line = `${rule.packageName}|${rule.supersededBy}|${rule.probe}`
+      expect(
+        script.includes(line),
+        `scripts/stella-ticket-e2e.sh does not carry this rule verbatim:\n  ${line}`,
+      ).toBe(true)
+    }
   })
 
   it('the migrator runs the guard as a PRECONDITION, inside the transaction, before the script', () => {

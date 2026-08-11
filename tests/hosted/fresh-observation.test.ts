@@ -674,7 +674,7 @@ describe('planHostedApply is the OTHER way to writesPermitted, and it is gated t
 
 describe('nextChainPackage is the chain, not a set', () => {
   it('walks HOSTED_CHAIN order minus the bootstrap', () => {
-    expect(CHAIN_WRITE_ORDER).toHaveLength(9)
+    expect(CHAIN_WRITE_ORDER).toHaveLength(HOSTED_CHAIN.length - 1)
     expect(CHAIN_WRITE_ORDER).not.toContain('stella_hosted_0001_managed_role_bootstrap')
     const states = Object.fromEntries(CHAIN_WRITE_ORDER.map((p) => [p, 'ABSENT' as const]))
     const r = nextChainPackage(states)

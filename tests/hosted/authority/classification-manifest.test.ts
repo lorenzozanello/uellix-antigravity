@@ -26,15 +26,32 @@ import { describe, expect, it } from 'vitest'
 import {
   buildAuthorityPlan,
   partitionHostedStatements,
+  RECOVERED_CHAIN_PACKAGE_IDS,
 } from '@/db/hosted/authority/classification-manifest'
 import { RECOVERED_TOTALS, RECOVERED_WINDOWS } from '@/db/hosted/authority/recovered-boundaries'
+import { FORWARD_TOTALS, FORWARD_WINDOWS } from '@/db/hosted/authority/forward-boundaries'
 import { isCapabilityRoleName, OWNER_ROLE } from '@/db/hosted/authority/ownership-simulation'
 
 const plan = buildAuthorityPlan()
-const partition = partitionHostedStatements(plan)
+/**
+ * SCOPED TO THE RECOVERED CHAIN, deliberately.
+ *
+ * The integers below — 8 installer, 167 owner, 99 capability, 27 transfer, 3
+ * managed, 16 bookkeeping — were transferred from a partition taken over
+ * T1..T9. Once M-8 appended a tenth package there were exactly two ways to keep
+ * this file green: edit those integers to match new code, or compare them
+ * against the chain they were measured over. The first would turn evidence into
+ * a fit, which is the failure `recovered-boundaries.ts` opens by refusing.
+ */
+const partition = partitionHostedStatements(plan, RECOVERED_CHAIN_PACKAGE_IDS)
+
+const recoveredWindows = plan.windows.filter((w) => w.authoritySource === 'ORIGINAL_STATEFUL_PARTITION')
+const authoredWindows = plan.windows.filter((w) => w.authoritySource === 'AUTHORED_FORWARD_REMEDIATION')
 
 const windowsOfClass = (authorityClass: string) =>
   plan.windows.filter((w) => w.authorityClass === authorityClass)
+const recoveredOfClass = (authorityClass: string) =>
+  recoveredWindows.filter((w) => w.authorityClass === authorityClass)
 const segmentsOf = (windowId: string) =>
   plan.segments.filter((s) => s.classificationWindowId === windowId)
 
@@ -44,25 +61,39 @@ const segmentsOf = (windowId: string) =>
 
 describe('the recovered classification windows', () => {
   it('are exactly 51, each resolving to one contiguous run of statements', () => {
+    // STILL 51. M-8 added a tenth chain package with two AUTHORED windows, and
+    // the number on this line did not move — which is the property the split
+    // into two files exists to protect. Had they been appended to
+    // RECOVERED_WINDOWS, this assertion would have been edited to 53 and the
+    // recovered set would have quietly stopped being a transferred measurement.
     expect(RECOVERED_WINDOWS).toHaveLength(51)
-    expect(plan.windows).toHaveLength(51)
+    expect(recoveredWindows).toHaveLength(51)
   })
 
   it('are 26 OWNER, 15 CAPABILITY and 10 OWNER_TRANSFER', () => {
-    expect(windowsOfClass('OWNER')).toHaveLength(RECOVERED_TOTALS.owner)
-    expect(windowsOfClass('CAPABILITY')).toHaveLength(RECOVERED_TOTALS.capability)
-    expect(windowsOfClass('OWNER_TRANSFER')).toHaveLength(RECOVERED_TOTALS.transfer)
+    expect(recoveredOfClass('OWNER')).toHaveLength(RECOVERED_TOTALS.owner)
+    expect(recoveredOfClass('CAPABILITY')).toHaveLength(RECOVERED_TOTALS.capability)
+    expect(recoveredOfClass('OWNER_TRANSFER')).toHaveLength(RECOVERED_TOTALS.transfer)
   })
 
   it('carry their provenance, so a reviewer can tell recovered from derived', () => {
-    for (const window of plan.windows) {
+    // The point of the marker, exercised in BOTH directions. A test that only
+    // asserted the recovered side would pass just as happily if the authored
+    // windows were also stamped ORIGINAL_STATEFUL_PARTITION — which is the one
+    // mistake that would make the whole distinction decorative.
+    for (const window of recoveredWindows) {
       expect(window.authoritySource).toBe('ORIGINAL_STATEFUL_PARTITION')
       expect(window.authorityModelVersion).toBe('A_FINAL_STATEFUL_V1')
     }
+    for (const window of authoredWindows) {
+      expect(window.authoritySource).toBe('AUTHORED_FORWARD_REMEDIATION')
+      expect(window.authorityModelVersion).toBe('FORWARD_AUTHORED_V1')
+    }
+    expect(recoveredWindows.length + authoredWindows.length).toBe(plan.windows.length)
   })
 
-  it('pin a digest for every statement they govern — 51 sequences, none empty', () => {
-    expect(plan.windows).toHaveLength(51)
+  it('pin a digest for every statement they govern — none empty, recovered or authored', () => {
+    expect(plan.windows).toHaveLength(RECOVERED_WINDOWS.length + FORWARD_WINDOWS.length)
     for (const window of plan.windows) {
       expect(window.statementDigestSequence).toHaveLength(window.structuralStatementCount)
       for (const digest of window.statementDigestSequence) {
@@ -373,10 +404,27 @@ describe('temporary schema CREATE', () => {
     // Independently corroborates the recovered claim that three CAPABILITY
     // classification windows involve CREATE — and locates it on the exact
     // segment, so the grant is not held while the window merely REVOKEs.
-    expect(needing.map((s) => s.segmentId)).toEqual(['W38.S2', 'W44.S1', 'W49.S1'])
+    //
+    // W52.S1 is M-8's, and it is here for the same reason W44.S1 and W49.S1
+    // are: `CREATE OR REPLACE` against a routine the capability role already
+    // owns needs CREATE on the containing schema, measured. Its sibling
+    // W53.S1 — the COMMENT — is deliberately ABSENT from this list, which is
+    // the whole reason grounding_0005 declares two one-statement windows
+    // instead of one two-statement window. Merging them would have added
+    // W52.S1 here covering both statements and held CREATE on
+    // uellix_grounding while a comment was written.
+    expect(needing.map((s) => s.segmentId)).toEqual(['W38.S2', 'W44.S1', 'W49.S1', 'W52.S1'])
     expect(new Set(needing.map((s) => s.classificationWindowId))).toEqual(
-      new Set(['W38', 'W44', 'W49']),
+      new Set(['W38', 'W44', 'W49', 'W52']),
     )
+    expect(
+      needing.find((s) => s.segmentId === 'W52.S1')?.statementCount,
+      "M-8's CREATE segment must cover exactly the one statement that needs CREATE",
+    ).toBe(1)
+    expect(
+      plan.segments.find((s) => s.segmentId === 'W53.S1')?.requiredTemporarySchemaCreate,
+      'the COMMENT segment must NOT open CREATE on the schema',
+    ).toBeNull()
   })
 
   it('is needed by every transfer segment, because PostgreSQL checks CREATE against the NEW owner', () => {

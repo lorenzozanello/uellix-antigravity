@@ -42,8 +42,15 @@ Ninguna autoverificación lo detecta, y por construcción: la §9 de
 `grounding_0003` afirma **su** estado final, que es exactamente el que acaba de
 producir. Un GRANT ausente lanza; una POLICY ausente calla.
 
+> **M-8 AÑADE UN CUARTO ESLABÓN A ESTA REGLA.** La cadena completa es
+> `grounding_0002 → 0003 → 0004 → 0005`. `grounding_0005` repara el candado de
+> `claim_active_document_version`, y re-aplicar `grounding_0002` sobre él lo
+> **reabre en silencio** — sin cambiar ninguna firma. El runner lo rechaza
+> (`db/prepared-package-order.ts`), y el detalle está al final de este archivo,
+> en «M-8 — reparación forward-only del candado de `claim`».
+
 **Regla, por tanto:** aplicar `grounding_0002 → 0003 → 0004` **siempre como
-unidad**. Si hace falta re-aplicar `0003` por cualquier motivo, re-aplicar
+unidad**, y `0005` inmediatamente después si `0002` se re-aplicó. Si hace falta re-aplicar `0003` por cualquier motivo, re-aplicar
 `0004` inmediatamente después, en la misma ventana. `scripts/stella-train4-dry-run.sh`
 §12 comprueba que `0003` se re-aplica con `0004` puesto y que `0004` vuelve a
 cerrar la superficie; ese orden es el único ejercitado.
@@ -972,3 +979,63 @@ Su rollback **reabre una escalada de privilegio** y lo anuncia con
 `RAISE WARNING`. No es un defecto del rollback: un rollback cuyas
 postcondiciones afirman un estado más seguro que aquello que revierte no
 restaura nada.
+
+---
+
+## M-8 — reparación forward-only del candado de `claim` (`grounding_0005`)
+
+**Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `grounding_0005_claim_advisory_lock.sql` | **ninguno, a propósito** (`db/hosted/forward-only-packages.ts`) | **ninguno todavía**; exige `grounding_0002` aplicado y su reparación de train 2 presente en `register_document_version` | **No crea rol, esquema, tabla, policy ni trigger, y no concede ni revoca nada.** Republica **en el sitio** `uellix_grounding.claim_active_document_version(uuid)` — misma firma, mismo tipo de retorno, mismo propietario, mismo ACL, mismo `SECURITY DEFINER`, mismo `search_path=''` — sustituyendo `SELECT … FROM public.evidence_items … FOR UPDATE` por `pg_advisory_xact_lock(hashtextextended(p_evidence_id::text, 0))`, la **misma clave** que toma `register_document_version`. Corrige además el `COMMENT ON FUNCTION` que afirmaba lo contrario | **DISEÑO — no aplicado** |
+
+> **El defecto.** PostgreSQL exige privilegio **UPDATE** sobre una tabla para
+> tomar un **candado de fila** en ella, no sólo `SELECT`. `grounding_0002` §219
+> concede a `uellix_cap_grounding` exactamente `GRANT SELECT ON
+> public.evidence_items`, y lo hace a propósito. Así que **toda** llamada de
+> `uellix_app` a `claim_active_document_version` moría con `42501` antes de leer
+> una sola versión: los paquetes instalaban limpios y quedaban **funcionalmente
+> muertos por el lado de escritura**.
+
+> **La asimetría es la prueba.** El mismo `grounding_0002` encontró este defecto
+> en la función **hermana** `register_document_version` durante la revisión
+> adversarial del tren 2, lo midió en un contenedor desechable y sustituyó el
+> candado de fila por el advisory lock (§765-787). La reparación **nunca alcanzó
+> a `claim_active_document_version`**, y el `COMMENT` siguió diciendo que ambas
+> tomaban «el mismo candado de fila».
+
+> **Por qué NO es `GRANT UPDATE`.** El propio §6 de `grounding_0002` lo nombra:
+> ensanchar la superficie de escritura de una tabla de negocio para que un
+> candado dentro de otra función resulte cómodo es cómo una frontera deja de
+> significar algo. El rol pasaría a poder **cambiar** filas de cadena de
+> custodia para poder **esperar** en una. La §2 del paquete vuelve a afirmar,
+> después del cambio, que el privilegio sigue ausente.
+
+> **Por qué no lleva rollback.** Lo que retira es un **defecto**, no una
+> prestación: «restaurar la versión anterior de `claim_active_document_version`»
+> y «republicar un candado que ningún principal puede tomar» son la misma frase.
+> Es el mismo razonamiento que `stella_0016` y `stella_0017` registran para R1 y
+> R6-INT. La reversión honesta, si de verdad se quiere, son los rollbacks de la
+> propia unidad: `grounding_0004` → `grounding_0003` → `grounding_0002`.
+
+> **REAPLICAR `grounding_0002` DESPUÉS DE `grounding_0005` ESTÁ BLOQUEADO POR EL
+> RUNNER.** `grounding_0002` es idempotente, así que volver a ejecutarlo solo
+> **funcionaría** — y republicaría `claim_active_document_version` con el
+> `FOR UPDATE` dentro, reabriendo M-8 junto a su propio arreglo. **Ninguna firma
+> cambia**, así que ninguna comprobación posterior lo notaría. La supersesión
+> está declarada en [`db/prepared-package-order.ts`](../prepared-package-order.ts).
+>
+> Consecuencia operativa para el **AVISO OPERATIVO** de arriba: si la unidad de
+> grounding se re-aplica entera (`0002 → 0003 → 0004`), hay que aplicar
+> `grounding_0005` **inmediatamente después, en la misma ventana**. La cadena
+> completa es `0002 → 0003 → 0004 → 0005`.
+
+> **Lo que el paquete deliberadamente NO emite.** Ni `ALTER FUNCTION … OWNER
+> TO`, ni `REVOKE ALL … FROM PUBLIC`, ni `GRANT EXECUTE … TO uellix_app`.
+> `CREATE OR REPLACE FUNCTION` **conserva** propietario y ACL, así que los tres
+> serían no-ops en el caso normal — y en el caso que importa serían **peores**
+> que no-ops: repararían en silencio una propiedad o un grant que hubiera
+> derivado, y el paquete reportaría éxito sobre una base cuya postura habría
+> cambiado sin decirlo. La §2 los **mide** con `aclexplode()` en vez de
+> re-emitirlos, y se niega.

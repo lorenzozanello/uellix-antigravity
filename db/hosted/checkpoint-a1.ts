@@ -1017,6 +1017,21 @@ export function evaluateCheckpointA1(inputs: A1EvaluationInputs): A1Verdict {
     )
   }
 
+  // THE OBSERVATION MAY BE OLDER THAN THE CHAIN, and if it is, the verdict has
+  // to say so. A checkpoint computed over nine packages is not a statement
+  // about a tenth authored afterwards — and `checkpointPassed: true` sitting
+  // beside an uncovered package, with nothing naming it, is exactly the shape
+  // of the inference this programme keeps having to unwind.
+  const uncovered = a1UncoveredPackages(packageIds)
+  if (uncovered.length > 0) {
+    warnings.push(
+      `this corroboration covers ${packageIds.length} of ${WITNESSED_PACKAGES.length} chain packages; ` +
+        `${uncovered.join(', ')} did not exist when it was measured and is therefore NOT covered by ` +
+        `this verdict — unmeasured, which is not the same as absent. Re-measure the target to extend ` +
+        `A1_OBSERVED_CHAIN; nothing here may extend it by inference`,
+    )
+  }
+
   return {
     corroborationPresent: true,
     refusal: null,
@@ -1068,6 +1083,28 @@ export function computeA1Status(inputs: A1EvaluationInputs): Record<string, unkn
     // plannable against this target", never "the chain has been applied".
     checkpointPassed: verdict.checkpointPassed,
   }
+}
+
+/**
+ * The status of the COMMITTED corroboration, evaluated against the chain that
+ * corroboration measured.
+ *
+ * Split out from `computeA1Status` so the choice of `packageIds` is made ONCE,
+ * in a function both the CLI and its test call. It lived in `scripts/a1-status.ts`
+ * for one revision and that was already a divergence: `:verify` compares the
+ * file on disk against what the contract computes, so a CLI that narrowed the
+ * chain and a test that did not were computing two different verdicts and
+ * calling the difference a drift.
+ *
+ * The prefix assertion runs first, for the same reason it runs first in the
+ * CLI: a declared observed-chain that is not a prefix would shape the verdict
+ * rather than stop it.
+ */
+export function computeRecordedA1Status(
+  inputs: Omit<A1EvaluationInputs, 'packageIds'>,
+): Record<string, unknown> {
+  assertA1ObservedChainIsPrefix()
+  return computeA1Status({ ...inputs, packageIds: A1_OBSERVED_CHAIN })
 }
 
 export const serializeA1Status = (status: Record<string, unknown>): string =>
@@ -1349,6 +1386,109 @@ export const A1_WITNESSED_PACKAGES: readonly string[] = WITNESSED_PACKAGES
 
 /** Sanity anchor for the docs: the chain minus the bootstrap. */
 export const A1_EXPECTED_PACKAGE_COUNT = HOSTED_CHAIN.length - 1
+
+/* -------------------------------------------------------------------------- */
+/* The chain the COMMITTED corroboration was measured against                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The packages `artifacts/hosted-a1-corroboration.json` actually observed.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS FROZEN AND NOT DERIVED FROM WITNESSED_PACKAGES
+ * ---------------------------------------------------------------------------
+ * That artefact is a MEASUREMENT of staging, taken by an operator on
+ * 2026-08-11, before a byte of the chain was applied. It observed nine packages
+ * because nine existed. M-8 later added a tenth.
+ *
+ * Evaluating it against a ten-package chain gives `A1_PACKAGE_COUNT`: "nine
+ * package observation(s); the chain has exactly ten". That refusal is CORRECT
+ * as a general rule — an unmeasured member is unknown, not absent — and wrong
+ * as a verdict about this file, which measured everything there was.
+ *
+ * Two ways out were available. Adding a tenth entry to the artefact would have
+ * been one line and would have been a FABRICATED MEASUREMENT: a claim that an
+ * operator observed grounding_0005 absent in a session that ran before
+ * grounding_0005 was written. The other is to record what the observation
+ * covered, which is this constant, and to make the verdict SAY that the
+ * remainder is uncovered rather than quietly counting it as passed.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT KEEPS IT HONEST
+ * ---------------------------------------------------------------------------
+ * `assertA1ObservedChainIsPrefix` requires it to be a PREFIX of the declared
+ * chain. A prefix cannot skip a package, cannot reorder one, and cannot name
+ * one the chain never had — so the only thing this constant can express is "the
+ * chain, as far as it went at the time". Re-measuring staging is what extends
+ * it, and extending it without re-measuring makes the count check fail.
+ */
+export const A1_OBSERVED_CHAIN: readonly string[] = [
+  'grounding_0002_document_versions',
+  'grounding_0003_evidence_chunks',
+  'grounding_0004_runtime_attestation',
+  'stella_0013_grounded_query_quota',
+  'stella_0014_operation_tickets',
+  'stella_0015_project_bound_operation_tickets',
+  'stella_0016_reserved_quota_semantics',
+  'stella_0017_governed_stella_consumption',
+  'stella_0018_category_bound_operation_tickets',
+]
+
+export class A1ObservedChainRefusal extends Error {
+  constructor(detail: string) {
+    super(`A1_OBSERVED_CHAIN: ${detail}`)
+    this.name = 'A1ObservedChainRefusal'
+  }
+}
+
+/**
+ * Refuses an observed chain that is not a prefix of the declared one.
+ *
+ * Called by the CLI before it evaluates anything, so a constant that drifted
+ * into naming a package the chain does not have — or into skipping one it does
+ * — stops the verdict rather than shaping it.
+ */
+export function assertA1ObservedChainIsPrefix(
+  observed: readonly string[] = A1_OBSERVED_CHAIN,
+  declared: readonly string[] = WITNESSED_PACKAGES,
+): void {
+  if (observed.length === 0) {
+    throw new A1ObservedChainRefusal(
+      'is empty. A checkpoint that observed no package measured nothing, and "nothing was found" ' +
+        'is not the same statement as "nothing is there".',
+    )
+  }
+  if (observed.length > declared.length) {
+    throw new A1ObservedChainRefusal(
+      `names ${observed.length} packages but the chain declares ${declared.length}. An observation ` +
+        `cannot have covered a package that does not exist.`,
+    )
+  }
+  for (const [i, name] of observed.entries()) {
+    if (declared[i] !== name) {
+      throw new A1ObservedChainRefusal(
+        `position ${i} is ${name}, but the chain declares ${declared[i]}. This must be a PREFIX of ` +
+          `the chain: a set that skips or reorders a package could record a checkpoint that never ` +
+          `looked at the middle of the sequence it claims to have cleared.`,
+      )
+    }
+  }
+}
+
+/**
+ * The packages the recorded checkpoint did NOT cover, in chain order.
+ *
+ * Empty when the observation is current. Non-empty means the chain grew after
+ * the measurement, and every consumer of the verdict has to be told — a
+ * `checkpointPassed: true` computed over nine packages is not a statement about
+ * a tenth.
+ */
+export function a1UncoveredPackages(
+  observed: readonly string[] = A1_OBSERVED_CHAIN,
+  declared: readonly string[] = WITNESSED_PACKAGES,
+): readonly string[] {
+  return declared.slice(observed.length)
+}
 
 export type { PackageState, StorageUnitState }
 export { allWitnesses }
