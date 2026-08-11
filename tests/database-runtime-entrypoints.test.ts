@@ -636,6 +636,15 @@ describe('every entry point that can reach the database opens an identity contex
   // layer to close. Both are `contextualized`: the action opens
   // `withOrganizationDatabaseContext` around every read, and the wrapper
   // reaches the database only through that action.
+  //
+  // G-01 (+1 in both layers): `app/actions/grounding/ingest-evidence.ts` is the
+  // first application path that WRITES into the governed grounding corpus. It
+  // is `contextualized` and, unlike most entries here, its context boundary is
+  // load-bearing rather than incidental: register -> insert -> finalize must
+  // share ONE transaction, because `finalize_document_ingestion` verifies the
+  // chunk count without activating a version while
+  // `claim_active_document_version` selects the highest ordinal with no
+  // finalized-state predicate. See the module header (M-7).
   it('the regex-layer coverage matches the figures the docs publish', () => {
     const contextualized = databaseReaching.filter((file) => {
       if (file in ALLOWLIST) return false
@@ -651,7 +660,7 @@ describe('every entry point that can reach the database opens an identity contex
       reaching: databaseReaching.length,
       contextualized: contextualized.length,
       allowlisted: allowlisted.length,
-    }).toEqual({ inventoried: 118, reaching: 94, contextualized: 81, allowlisted: 13 })
+    }).toEqual({ inventoried: 119, reaching: 95, contextualized: 82, allowlisted: 13 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

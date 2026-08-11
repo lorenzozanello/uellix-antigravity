@@ -42,6 +42,7 @@
 // Afirmado, no supuesto: el guion invoca con `env -u GEMINI_API_KEY` y §0 de
 // esta batería vuelve a comprobarlo desde dentro del proceso.
 
+import { createHash } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import postgres from 'postgres'
 // El SHAPE del informe que el §19 construye. Se importa el TIPO, nunca el
@@ -74,14 +75,45 @@ const ACTOR_B1 = '99999999-9999-4999-8999-9999999999b1'
  * abort. Darle evidencia habría cerrado un escenario para abrir otro.
  */
 const PROJECT_A3 = '22222222-2222-4222-8222-2222222222a3'
+/**
+ * G-01. Un CUARTO proyecto de ORG_A cuya evidencia NO se siembra en las tablas
+ * gobernadas.
+ *
+ * Los proyectos A1 y A3 conservan su siembra por `supabase_admin` a propósito:
+ * fijan versiones y chunks con valores exactos, y son lo que hace medibles los
+ * casos negativos de scope y de atribución. Lo que ninguno de los dos puede
+ * demostrar es que la APLICACIÓN sepa escribir el corpus — su contenido llegó
+ * por una conexión privilegiada que ningún camino de producción tiene.
+ *
+ * A4 existe para cerrar exactamente ese hueco: se siembra su fila de
+ * `evidence_items` (la que el propio camino de subida crea) y nada más. Sus
+ * `evidence_document_versions` y sus `evidence_chunks` los escribe
+ * `ingestProjectEvidenceForProject` a través de las funciones gobernadas T1/T2,
+ * como `uellix_app`.
+ */
+const PROJECT_A4 = '22222222-2222-4222-8222-2222222222a4'
 const EVIDENCE_A1 = '33333333-3333-4333-8333-3333333333a1'
 const EVIDENCE_A3 = '33333333-3333-4333-8333-3333333333a3'
+const EVIDENCE_A4 = '33333333-3333-4333-8333-3333333333a4'
 const DOCVER_A1 = '44444444-4444-4444-8444-4444444444a1'
 const DOCVER_A3 = '44444444-4444-4444-8444-4444444444a3'
 
 /** Un documento real, del que el generador extractivo cita literalmente. */
 const DOCUMENT_TEXT =
   'El programa atendió a 1240 beneficiarios durante 2025. La tasa de retención escolar del grupo participante fue del 87 por ciento.'
+
+/**
+ * G-01. El documento de A4, con un dato que NO aparece en A1 ni en A3.
+ *
+ * Distinto a propósito: si el texto fuera el mismo, una respuesta fundamentada
+ * sobre A4 no distinguiría "la aplicación indexó este documento" de "el
+ * recuperador alcanzó el chunk sembrado de otro proyecto", que es justamente el
+ * fallo de scope que el resto de la batería existe para detectar.
+ */
+const INGESTED_TEXT =
+  'La cohorte de egreso reunió a 512 participantes en el segundo semestre. El ingreso promedio mensual posterior al programa fue de 940000 pesos.'
+const INGESTED_BYTES = Buffer.from(INGESTED_TEXT, 'utf8')
+const INGESTED_SHA256 = createHash('sha256').update(INGESTED_BYTES).digest('hex')
 
 /* -------------------------------------------------------------------------- */
 /* La sesión sustituida                                                       */
@@ -138,6 +170,72 @@ vi.mock('@/lib/auth/database-context', async () => {
         { userId: currentActor.userId, organizationId: currentActor.organizationId, isSuperAdmin: false },
         async () => cb() as Promise<T>,
       ),
+  }
+})
+
+/* -------------------------------------------------------------------------- */
+/* G-01 — el ÚNICO sustituto del camino de ingesta, y por qué es ese           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * El lector de objetos, sustituido. La DESVIACIÓN se enuncia en vez de
+ * ocultarse, igual que `--network none` en el guion.
+ *
+ * Este contenedor no tiene Supabase Storage, así que los BYTES tienen que
+ * llegar de algún sitio. Lo que se sustituye es exactamente eso y nada más: la
+ * fuente de bytes. Todo lo que la prueba afirma sigue siendo real — la acción,
+ * el gate de capacidad, el permiso de gestión de evidencia, la consulta acotada
+ * por (evidencia, proyecto, organización), el resolver de G-02 con su
+ * verificación de hash, el repositorio persistente, las funciones gobernadas
+ * T1/T2, el contexto de identidad como `uellix_app`, la recuperación atestada,
+ * el generador extractivo y el protocolo de tickets.
+ *
+ * Que el lector sea sustituible aquí no es una concesión de la prueba: es la
+ * razón por la que G-02 lo tomó como interfaz.
+ */
+vi.mock('@/lib/supabase/evidence-object-reader', () => ({
+  createEvidenceObjectReader: () => ({
+    id: 'supabase-evidence-storage-v1',
+    read: async () => INGESTED_BYTES,
+  }),
+}))
+
+/**
+ * Inyección de fallo para M-7, y SÓLO para M-7.
+ *
+ * El repositorio real se construye igual y se delega todo salvo una llamada,
+ * que falla cuando la bandera está puesta. Es la única forma de alcanzar el
+ * estado que M-7 describe —`register_document_version` ya escribió y el paso
+ * siguiente rompe— sin tocar SQL gobernado ni inventar un modo de fallo que la
+ * base no tiene.
+ *
+ * La bandera se consume en el primer uso, así que no puede filtrarse a otro
+ * escenario aunque una prueba falle antes de reponerla.
+ */
+let failChunkInsertOnce = false
+
+vi.mock('@/db/grounding/grounding-ingestion-repository', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('@/db/grounding/grounding-ingestion-repository')>()
+  return {
+    ...original,
+    createPersistedGroundingIngestionRepository: (
+      ...args: Parameters<typeof original.createPersistedGroundingIngestionRepository>
+    ) => {
+      const repository = original.createPersistedGroundingIngestionRepository(...args)
+      return {
+        ...repository,
+        insertEvidenceChunks: async (
+          request: Parameters<typeof repository.insertEvidenceChunks>[0],
+        ) => {
+          if (failChunkInsertOnce) {
+            failChunkInsertOnce = false
+            throw new Error('E2E fault injection: insert_evidence_chunks')
+          }
+          return repository.insertEvidenceChunks(request)
+        },
+      }
+    },
   }
 })
 
@@ -235,6 +333,29 @@ async function ticketStatus(ticketId: string): Promise<string | null> {
   return rows.length === 0 ? null : String(rows[0]!.status)
 }
 
+/* -------------------------------------------------------------------------- */
+/* G-01 — lectores del corpus, por conexión privilegiada y SÓLO para afirmar   */
+/* -------------------------------------------------------------------------- */
+
+/** Las versiones de un documento, en orden, tal como quedaron en la tabla. */
+async function documentVersions(evidenceId: string): Promise<Array<Record<string, unknown>>> {
+  const rows = await admin`
+    SELECT id, ordinal, version_id, mime_type
+    FROM public.evidence_document_versions
+    WHERE evidence_id = ${evidenceId}
+    ORDER BY ordinal ASC
+  `
+  return rows as unknown as Array<Record<string, unknown>>
+}
+
+/** Cuántos chunks canónicos existen para una evidencia. */
+async function chunkCountFor(evidenceId: string): Promise<number> {
+  const rows = await admin`
+    SELECT count(*)::int AS n FROM public.evidence_chunks WHERE evidence_id = ${evidenceId}
+  `
+  return Number(rows[0]!.n)
+}
+
 async function setQuota(organizationId: string, quota: number | null): Promise<void> {
   await admin`UPDATE public.organizations SET stella_monthly_quota = ${quota} WHERE id = ${organizationId}`
 }
@@ -298,12 +419,28 @@ async function seedWorld(): Promise<void> {
       ('${PROJECT_A1}', '${ORG_A}', 'Project A1', '${ACTOR_A1}'),
       ('${PROJECT_A2}', '${ORG_A}', 'Project A2', '${ACTOR_A1}'),
       ('${PROJECT_A3}', '${ORG_A}', 'Project A3', '${ACTOR_A1}'),
+      ('${PROJECT_A4}', '${ORG_A}', 'Project A4', '${ACTOR_A1}'),
       ('${PROJECT_B1}', '${ORG_B}', 'Project B1', '${ACTOR_B1}')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.evidence_items (id, project_id, organization_id, type, title, status, created_by) VALUES
       ('${EVIDENCE_A1}', '${PROJECT_A1}', '${ORG_A}', 'text', 'Informe 2025', 'approved', '${ACTOR_A1}'),
       ('${EVIDENCE_A3}', '${PROJECT_A3}', '${ORG_A}', 'text', 'Informe 2025 (A3)', 'approved', '${ACTOR_A1}')
+    ON CONFLICT (id) DO NOTHING;
+
+    -- G-01. La fila de A4, y NADA MAS. Es la fila que
+    -- createFileEvidenceForProject escribe: tipo file, con su ruta, su
+    -- tamano, su MIME y el sha256 de los bytes subidos. Sus versiones y sus
+    -- chunks NO se siembran aqui: los escribe la aplicacion.
+    INSERT INTO public.evidence_items (
+      id, project_id, organization_id, type, title, status, created_by,
+      file_path, file_size, mime_type, content_hash
+    ) VALUES (
+      '${EVIDENCE_A4}', '${PROJECT_A4}', '${ORG_A}', 'file', 'Cohorte de egreso', 'approved',
+      '${ACTOR_A1}',
+      '${PROJECT_A4}/${EVIDENCE_A4}/cohorte.txt', ${INGESTED_BYTES.length}, 'text/plain',
+      '${INGESTED_SHA256}'
+    )
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.evidence_document_versions (
@@ -397,6 +534,12 @@ type Runtime = {
 
 let rt: Runtime
 
+/** G-01. `ingestProjectEvidenceForProject`, cargada en `beforeAll`. */
+let ingestEvidence: (
+  projectId: string,
+  request: { evidenceId: string },
+) => Promise<Record<string, unknown>>
+
 beforeAll(async () => {
   if (!CONTAINER_URL || !CONTAINER_URL.includes('127.0.0.1:56322')) {
     throw new Error(
@@ -408,6 +551,10 @@ beforeAll(async () => {
   await seedWorld()
 
   const action = await import('@/app/actions/stella/grounded-query')
+  // G-01. La acción de ingesta, cargada igual que las demás: después de que los
+  // mocks estén en pie, para que su `db` sea el proxy ligado al contexto.
+  ingestEvidence = (await import('@/app/actions/grounding/ingest-evidence'))
+    .ingestProjectEvidenceForProject
   const hash = await import('@/lib/stella/operation-ticket/canonical-query-hash')
   const obs = await import('@/lib/stella/operation-ticket/ticket-observability')
 
@@ -1791,4 +1938,155 @@ describe('20. local-runtime-ready', () => {
     expect(offline.missingForLocalRuntime.join(' ')).toMatch(/applied to NO database/)
     expect(offline.missingForLocalRuntime.join(' ')).toMatch(/quota is enforced but not consumed/)
   }, 120_000)
+})
+
+
+/* ========================================================================== */
+/* 17. G-01 — LA INGESTA DE APLICACIÓN, Y EL DEFECTO QUE LA DETIENE (M-8)      */
+/* ========================================================================== */
+//
+// ESTA SECCIÓN NO DEMUESTRA QUE LA CADENA FUNCIONE. Demuestra dónde se corta, y
+// lo hace midiendo en vez de razonando.
+//
+// La cadena que G-01 iba a cerrar es
+//
+//   INGESTA DE APLICACIÓN -> T1/T2 GOBERNADOS -> RECUPERACIÓN ATESTADA
+//     -> RESPUESTA FUNDAMENTADA -> TICKET Y CUOTA LIQUIDADOS
+//
+// y se detiene en el PRIMER paso gobernado, por un motivo que no está en el
+// código de aplicación:
+//
+//   `uellix_grounding.claim_active_document_version` hace
+//
+//       SELECT e.organization_id FROM public.evidence_items e
+//       WHERE e.id = p_evidence_id
+//       FOR UPDATE;
+//
+//   PostgreSQL exige privilegio UPDATE sobre una tabla para tomar un candado de
+//   fila en ella, no sólo SELECT. `grounding_0002` concede a
+//   `uellix_cap_grounding` únicamente
+//
+//       GRANT SELECT ON public.evidence_items TO uellix_cap_grounding;   (§219)
+//
+//   así que toda llamada muere con 42501, "permission denied for table
+//   evidence_items", ANTES de leer una sola versión.
+//
+// Lo notable es que el propio paquete documenta este defecto —y lo reparó— para
+// su función HERMANA: `register_document_version` tenía el mismo `FOR UPDATE`,
+// se midió en un contenedor desechable, y se sustituyó por
+// `pg_advisory_xact_lock`, que da la misma exclusión mutua sin necesitar
+// privilegio alguno (§765-787). La reparación no alcanzó a
+// `claim_active_document_version`, que conserva el `FOR UPDATE` original.
+//
+// Por qué nadie lo había visto: ningún camino de aplicación llamaba a la
+// ingesta, y esta batería sembraba versiones y chunks con `supabase_admin`, que
+// es superusuario y no evalúa el privilegio. Los paquetes instalan limpiamente
+// y quedan funcionalmente muertos por el lado de escritura — exactamente el
+// modo de fallo que el propio §765 describe: "a dry-run that inspects structure
+// without INVOKING the functions cannot see that".
+//
+// No se corrige aquí: es SQL gobernado, y esta tarea tiene prohibido tocarlo.
+// Las pruebas de abajo FIJAN el estado medido para que el día que un paquete
+// nuevo lo repare, fallen y obliguen a reescribir esta sección con la cadena
+// completa.
+
+describe('17. La ingesta de aplicación alcanza el corpus gobernado', () => {
+  it('parte de un proyecto SIN versiones ni chunks — el punto de partida es medido', async () => {
+    expect(await documentVersions(EVIDENCE_A4)).toHaveLength(0)
+    expect(await chunkCountFor(EVIDENCE_A4)).toBe(0)
+  })
+
+  it('llega hasta la primera función gobernada: todo lo anterior es REAL y pasa', async () => {
+    // Que el fallo sea `claim_history` y no otro es la medida que importa. Para
+    // llegar ahí ya ocurrieron, contra esta base y como `uellix_app`: el gate de
+    // capacidad, la sesión, la derivación de scope, el permiso de gestión de
+    // evidencia, la SELECT acotada por (evidencia, proyecto, organización), la
+    // resolución de bytes de G-02 y su verificación de sha256 contra
+    // `content_hash`. Un fallo en cualquiera de esos habría dado otra etapa u
+    // otro `status`.
+    const result = await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })
+
+    expect(result).toEqual({ status: 'error', stage: 'claim_history' })
+  }, 60_000)
+
+  it('M-8 — la causa es el privilegio, y se mide llamando a la función', async () => {
+    // Como `uellix_app`, que es el principal del runtime.
+    const runtime = postgres(process.env.UELLIX_RUNTIME_DATABASE_URL!, {
+      max: 1,
+      onnotice: () => {},
+    })
+    try {
+      let code: string | null = null
+      try {
+        await runtime`SELECT * FROM uellix_grounding.claim_active_document_version(${EVIDENCE_A4}::uuid)`
+      } catch (error) {
+        code = String((error as { code?: string }).code ?? '')
+      }
+      expect(code).toBe('42501')
+
+      // Y el privilegio que falta es exactamente UPDATE sobre evidence_items.
+      const priv = await admin`
+        SELECT has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'SELECT') AS can_select,
+               has_table_privilege('uellix_cap_grounding', 'public.evidence_items', 'UPDATE') AS can_update
+      `
+      expect(priv[0]!.can_select).toBe(true)
+      expect(priv[0]!.can_update).toBe(false)
+    } finally {
+      await runtime.end({ timeout: 5 })
+    }
+  }, 60_000)
+
+  it('la hermana YA reparada no tiene el defecto — la asimetría es la prueba', async () => {
+    // `register_document_version` cambió su `FOR UPDATE` por un advisory lock.
+    // Se comprueba sobre el CATÁLOGO, no sobre el archivo: lo que importa es lo
+    // que hay instalado.
+    const rows = await admin`
+      SELECT p.proname,
+             pg_get_functiondef(p.oid) LIKE '%FOR UPDATE%'            AS locks_a_row,
+             pg_get_functiondef(p.oid) LIKE '%pg_advisory_xact_lock%' AS locks_advisory
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'uellix_grounding'
+        AND p.proname IN ('register_document_version', 'claim_active_document_version')
+      ORDER BY p.proname
+    `
+    const byName = Object.fromEntries(
+      (rows as unknown as Array<Record<string, unknown>>).map((r) => [r.proname, r]),
+    )
+    expect(byName['claim_active_document_version']!.locks_a_row).toBe(true)
+    expect(byName['claim_active_document_version']!.locks_advisory).toBe(false)
+    expect(byName['register_document_version']!.locks_advisory).toBe(true)
+  }, 60_000)
+})
+
+/* ========================================================================== */
+/* 18. UNA INGESTA FALLIDA NO DEJA NADA DETRÁS                                */
+/* ========================================================================== */
+//
+// M-7 en su forma alcanzable hoy. La prueba completa —registrar una versión y
+// romper el paso siguiente— no puede correrse mientras M-8 impida llegar al
+// registro, así que aquí se mide lo que sí es alcanzable: tras una ingesta
+// fallida el corpus está exactamente como estaba.
+//
+// El desarme de una escritura A MEDIAS está probado en
+// `app/actions/grounding/__tests__/ingest-evidence.test.ts` (§13-14), donde el
+// doble del contexto registra ENTER/COMMIT/ROLLBACK y la acción tiene que
+// relanzar el fallo para que drizzle deshaga. La inyección de fallo de esta
+// batería (`failChunkInsertOnce`) queda montada para el día que M-8 se repare.
+
+describe('18. Una ingesta fallida no deja corpus a medias', () => {
+  it('no escribe versión ni chunk alguno cuando la ingesta falla', async () => {
+    await ingestEvidence(PROJECT_A4, { evidenceId: EVIDENCE_A4 })
+
+    expect(await documentVersions(EVIDENCE_A4)).toHaveLength(0)
+    expect(await chunkCountFor(EVIDENCE_A4)).toBe(0)
+  }, 60_000)
+
+  it('y el corpus sembrado de OTRO proyecto sigue intacto y sigue respondiendo', async () => {
+    const ticket = await issued(PROJECT_A1)
+
+    const result = await rt.run(PROJECT_A1, '¿Cuántos beneficiarios atendió el programa?', ticket)
+
+    expect(result.status).toBe('ok')
+  }, 60_000)
 })

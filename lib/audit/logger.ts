@@ -62,6 +62,11 @@ export const AUDIT_ACTIONS = {
   EVIDENCE_REVIEW_STATUS_CHANGED: 'evidence_item.review_status_changed',
   EVIDENCE_ARCHIVED: 'evidence_item.archived',
   EVIDENCE_CONFIDENCE_SCORE_UPDATED: 'evidence_item.confidence_score_updated',
+  // G-01. One attempt to index an evidence file into the governed grounding
+  // corpus — recorded whether it indexed, was refused or failed, because "who
+  // tried to change what a reviewer can be shown" is the question this row
+  // exists to answer.
+  EVIDENCE_INDEXED: 'evidence_item.indexed',
 
   // Theory of change (nodes + links)
   THEORY_OF_CHANGE_NODE_CREATED: 'theory_of_change_node.created',
