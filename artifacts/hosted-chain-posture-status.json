@@ -1,0 +1,130 @@
+{
+  "generatedBy": "pnpm posture:status:write --attempt=<id> --observation=<file> — do not hand-edit; derived from the observation",
+  "attemptId": "att_881c1c688d82077da32ba481c0482b74",
+  "observationPresent": true,
+  "baseline": {
+    "source": "docs/ops/staging/evidence/2026-08-11-att_d08da545-prechain-observation.json",
+    "attemptId": "att_d08da5453e8899b91e2ab8c18e08b1b9"
+  },
+  "measurements": {
+    "ownerTransfers": {
+      "total": 27,
+      "correct": 27,
+      "wrong": [],
+      "pass": true
+    },
+    "canonicalOwnerContexts": {
+      "total": 3,
+      "correct": 3,
+      "wrong": [],
+      "pass": true
+    },
+    "temporaryMemberships": {
+      "pass": true,
+      "expected": [
+        "uellix_cap_grounding",
+        "uellix_cap_stella_quota",
+        "uellix_cap_stella_ticket"
+      ],
+      "residual": [],
+      "unmeasured": []
+    },
+    "temporaryCreateGrants": {
+      "pass": true,
+      "expected": [
+        "uellix_grounding -> uellix_cap_grounding",
+        "uellix_stella -> uellix_cap_stella_quota",
+        "uellix_stella_ops -> uellix_cap_stella_ticket"
+      ],
+      "residual": [],
+      "unmeasured": []
+    },
+    "persistentRoleTopology": {
+      "pass": true,
+      "measured": [
+        "uellix_app<-postgres (admin=true inherit=false set=false)",
+        "uellix_auditor<-postgres (admin=true inherit=false set=false)",
+        "uellix_cap_grounding<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_quota<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_ticket<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_migrator<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-postgres (admin=false inherit=false set=true)",
+        "uellix_owner<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-uellix_migrator (admin=false inherit=false set=true)",
+        "uellix_writer<-postgres (admin=true inherit=false set=false)",
+        "uellix_writer<-uellix_app (admin=false inherit=true set=false)"
+      ],
+      "prechain": [
+        "uellix_app<-postgres (admin=true inherit=false set=false)",
+        "uellix_auditor<-postgres (admin=true inherit=false set=false)",
+        "uellix_migrator<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-postgres (admin=false inherit=false set=true)",
+        "uellix_owner<-postgres (admin=true inherit=false set=false)",
+        "uellix_owner<-uellix_migrator (admin=false inherit=false set=true)",
+        "uellix_writer<-postgres (admin=true inherit=false set=false)",
+        "uellix_writer<-uellix_app (admin=false inherit=true set=false)"
+      ],
+      "added": [
+        "uellix_cap_grounding<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_quota<-uellix_migrator (admin=true inherit=false set=false)",
+        "uellix_cap_stella_ticket<-uellix_migrator (admin=true inherit=false set=false)"
+      ],
+      "unexpected": [],
+      "missing": [],
+      "removed": [],
+      "capabilityReachableBy": [],
+      "grantors": {
+        "uellix_owner<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_owner<-postgres (admin=false inherit=false set=true)": "postgres",
+        "uellix_migrator<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_app<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_writer<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_auditor<-postgres (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_owner<-uellix_migrator (admin=false inherit=false set=true)": "postgres",
+        "uellix_cap_grounding<-uellix_migrator (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_cap_stella_quota<-uellix_migrator (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_cap_stella_ticket<-uellix_migrator (admin=true inherit=false set=false)": "supabase_admin",
+        "uellix_writer<-uellix_app (admin=false inherit=true set=false)": "postgres"
+      },
+      "baselineSource": "docs/ops/staging/evidence/2026-08-11-att_d08da545-prechain-observation.json"
+    },
+    "securityDefinerGate": {
+      "pass": true,
+      "securityDefiner": 27,
+      "inChainScope": 19,
+      "withoutEmptySearchPath": [],
+      "withPublicExecute": [],
+      "outsideChainScope": [
+        "public.can_read_evidence_object(text,uuid) proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.can_write_evidence_object(text,uuid) proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.current_user_is_super_admin() proconfig=[\"search_path=public\"]  <- NOT an empty search_path (baseline object)",
+        "public.current_user_org_ids() proconfig=[\"search_path=public\"]  <- NOT an empty search_path (baseline object)",
+        "public.current_user_role_in_org(uuid) proconfig=[\"search_path=public\"]  <- NOT an empty search_path (baseline object)",
+        "public.handle_new_user() proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.handle_update_user() proconfig=[\"search_path=\\\"\\\"\"]",
+        "public.uellix_auth_uid() proconfig=[\"search_path=\\\"\\\"\"]"
+      ]
+    },
+    "rlsPolicyEngine": {
+      "pass": true,
+      "policies": 118,
+      "triggers": 11,
+      "duplicates": [],
+      "policiesOnUnprotectedRelations": []
+    }
+  },
+  "blockers": [],
+  "postureVerified": true,
+  "refusal": null,
+  "verdicts": {
+    "POSTURE_ATTEMPT_BINDING": "BOUND",
+    "PRECHAIN_TOPOLOGY_BASELINE": "MEASURED_REMOTELY",
+    "OWNER_TRANSFERS_REMOTE": "27_OF_27_CORRECT",
+    "CANONICAL_OWNER_CONTEXT_REMOTE": "3_OF_3_CORRECT",
+    "TEMP_MEMBERSHIPS": "ZERO",
+    "TEMP_CREATE_GRANTS": "ZERO",
+    "PERSISTENT_ROLE_TOPOLOGY_REMOTE": "EXPECTED",
+    "SD_GATE_REMOTE": "PASS",
+    "RLS_POLICY_ENGINE_REMOTE": "PASS"
+  }
+}

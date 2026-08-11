@@ -87,9 +87,12 @@ artifacts/installer-identity-recheck.json
 artifacts/hosted-chain-final-observation.json
 # F-PI-01. The posture probe, same class as every other attempt-bound *.sql: it
 # carries `att_<32 hex>` as a SQL literal and is rewritten by the next
-# `posture:observation`. The OBSERVATION an operator saves is a working file too
-# and is promoted to docs/ops/staging/evidence/ by `posture:status:write` under a
-# name carrying its attempt id.
+# `posture:observation`. The OBSERVATION an operator saves beside it is a working
+# file for the same reason one level on — the next attempt overwrites it — and
+# `posture:status:write` promotes it verbatim to docs/ops/staging/evidence/ under
+# a name carrying its attempt id. MEASURED: the copy left here after the closure
+# measurement was byte-identical to its promotion, which is exactly what makes it
+# a duplicate rather than a record.
 #
 # `artifacts/hosted-chain-posture-status.json` is deliberately NOT here. It is a
 # DERIVED VERDICT, like every other *-status.json under artifacts/, and it is
@@ -97,6 +100,7 @@ artifacts/hosted-chain-final-observation.json
 # status that nothing recomputes is a number that will eventually be wrong in the
 # direction that flatters the author.
 artifacts/hosted-chain-posture-probe.sql
+artifacts/hosted-chain-posture-observation.json
 # The THREE ATTEMPT LEDGERS are the durable audit trail and ARE versioned, in
 # place, where the tools append to them. Listed here as a statement, not as a
 # rule: nothing below ignores them, and a future glob over artifacts/ must not.

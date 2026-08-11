@@ -17,12 +17,22 @@ bytes de SQL gobernado o pins modificados.
 
 | | |
 |---|---|
-| `POST_INSTALL_VALIDATION_GATE` | **PASS_WITH_HARDENING** |
+| `POST_INSTALL_VALIDATION_GATE` | **FULL_PASS** |
+| `F_PI_01` | **CLOSED** — medido contra staging, §5.3 |
+| `PENDING_EVIDENCE` | **0** |
 | Hallazgos materiales | **0** |
-| Hallazgos de endurecimiento | **2**, ambos corregidos en este commit |
-| Evidencia remota pendiente | **1 bloque** (§5.3). Su ruta de operador ya existe y está probada; falta la medición, que es un acto humano |
+| Hallazgos de endurecimiento | **3**, todos corregidos |
 | `SAFE_TO_ENABLE_STELLA_FEATURES` | `false` |
 | `SAFE_TO_TOUCH_PRODUCTION` | `false` |
+
+El gate llega a `FULL_PASS` en tres commits: `86a8d17` cerró la instalación con la
+evidencia de postura remota pendiente y clasificada; `05f47f9` construyó la ruta de
+operador que la haría medible; este cierra el bloque con la medición tomada.
+
+**`FULL_PASS` sigue sin habilitar nada.** Valida que la infraestructura desplegada es
+la gobernada, que está completa, que nada quedó a medias y —ahora sí— que su postura
+remota es la que el plan de autoridad exige. Las nueve feature flags siguen en
+`false` y este documento no autoriza tocarlas.
 
 ---
 
@@ -223,6 +233,13 @@ intercambiables:
 | funciones/tablas críticas presentes | `MEASURED REMOTELY` | los mismos testigos, por **firma completa** (la aridad es lo que separa las versiones) |
 | el objetivo sigue siendo staging | `MEASURED REMOTELY` + `OPERATOR-ATTESTED` | tres señales: la sentinela sale del catálogo; `declaredProjectRef` y `poolerUser` los declara el operador y `verifyStagingTarget` los cruza |
 | Production nunca fue tocado | `MEASURED REMOTELY` | veto por nombre antes de leer una sola fila de catálogo; ningún registro del ledger, ningún documento de evidencia nombra `ctaxtgujyyprgynmnvtq` |
+| ownership de los 27 traspasos | `MEASURED REMOTELY` | §5.3, `att_881c1c68` |
+| 3 contextos canónicos de dueño | `MEASURED REMOTELY` | §5.3 |
+| `TEMP_MEMBERSHIPS = 0` | `MEASURED REMOTELY` | §5.3 |
+| `TEMP_CREATE_GRANTS = 0` | `MEASURED REMOTELY` | §5.3 |
+| topología de roles = prechain + 3 | `MEASURED REMOTELY` | §5.3, delta contra `att_d08da545` |
+| `SECURITY DEFINER` / `search_path` | `MEASURED REMOTELY` | §5.3, 27 definers, 19 en alcance |
+| RLS: 118 políticas, ninguna inerte | `MEASURED REMOTELY` | §5.3 |
 | ninguna feature flag activada | `OPERATOR-ATTESTED` | ver abajo |
 
 **Las nueve feature flags no son una medición de PostgreSQL, y llamarlas así sería
@@ -249,16 +266,73 @@ variables de entorno del proceso Next.js.
 
 Eso es una propiedad muy fuerte de los bytes. **No es una medición de staging.**
 
-### 5.3 F-PI-01 — la ruta de operador, ya construida; la medición, aún por tomar
+Sigue siendo verdad y sigue siendo valiosa: ahora que §5.3 mide lo mismo contra el
+proyecto remoto, las dos coinciden, y **coincidir es el resultado**. Una postura
+remota que difiriera de la del motor sobre los mismos bytes habría sido el hallazgo.
 
-`TEMP_MEMBERSHIPS` y `TEMP_CREATE_GRANTS` medidos **en el proyecto remoto**, junto
-con ownership, RLS y la postura `SECURITY DEFINER`/`search_path` remota, seguían
-como `PENDING_OPERATOR_EVIDENCE` por una razón concreta: no faltaba la sonda —
-`buildChainPostureSql` existe y es read-only — faltaba **la ruta de operador**. Su
-único invocador era `scripts/remediation-certify.ts`, contra un contenedor, por
-`docker exec`.
+### 5.3 F-PI-01 — CERRADO. Medido contra staging.
 
-Esa ruta ya existe, y no añade **un solo byte de SQL nuevo**:
+```
+F_PI_01                            = CLOSED
+CANONICAL_POSTURE_ATTEMPT          = att_881c1c688d82077da32ba481c0482b74
+REMOTE_CHAIN_POSTURE               = VERIFIED
+REMOTE_TEMP_MEMBERSHIPS_MEASURED   = true
+REMOTE_TEMP_CREATE_GRANTS_MEASURED = true
+PENDING_EVIDENCE                   = 0
+```
+
+| veredicto | valor |
+|---|---|
+| `POSTURE_ATTEMPT_BINDING` | `BOUND` |
+| `PRECHAIN_TOPOLOGY_BASELINE` | `MEASURED_REMOTELY` |
+| `OWNER_TRANSFERS_REMOTE` | `27_OF_27_CORRECT` |
+| `CANONICAL_OWNER_CONTEXT_REMOTE` | `3_OF_3_CORRECT` |
+| `TEMP_MEMBERSHIPS` | `ZERO` |
+| `TEMP_CREATE_GRANTS` | `ZERO` |
+| `PERSISTENT_ROLE_TOPOLOGY_REMOTE` | `EXPECTED` |
+| `SD_GATE_REMOTE` | `PASS` |
+| `RLS_POLICY_ENGINE_REMOTE` | `PASS` |
+
+Medido: **11 filas de membresía** contra las **8** de la línea base prechain. La delta
+son exactamente las tres filas que el plan declara —
+`uellix_cap_*<-uellix_migrator (admin=true inherit=false set=false)`— ninguna fila
+retirada, y `capabilityReachableBy` **vacío** para los tres roles de capacidad.
+`TEMP_MEMBERSHIPS = 0` es eso, no `membership_count = 0`: las ocho filas prechain
+siguen ahí, incluida `uellix_owner<-uellix_migrator` **con SET**, y ninguna de ellas
+es una fuga.
+
+Ninguno de los tres pares `CREATE` que la cadena abre temporalmente sigue concedido.
+27 funciones `SECURITY DEFINER`, 19 en los esquemas de la cadena, **todas** con
+`search_path` vacío y **ninguna** con `EXECUTE` a `PUBLIC`. 118 políticas, cero
+duplicadas, cero sobre una relación con row security desactivado.
+
+El veredicto vive en `artifacts/hosted-chain-posture-status.json` y
+`pnpm posture:status:verify` lo **recalcula desde la evidencia promovida** y compara
+byte a byte. No es una cifra que un documento cite: es una cifra que un comando
+reproduce.
+
+#### Corroboración independiente
+
+Hubo **dos** mediciones remotas completas, con 64 minutos de diferencia:
+
+| intento | hora | resultado |
+|---|---|---|
+| `att_b7e47ab8…` | 16:04 → 16:08 | `VERIFIED` |
+| `att_881c1c68…` | 17:08 → 17:12 | `VERIFIED` ← **canónica** |
+
+Los dos documentos son **byte-idénticos salvo por su propio id de intento**, cada uno
+haciendo eco sólo del suyo. Eso no es una repetición redundante: son dos sondas
+independientes contra el mismo proyecto, separadas por una hora, que devuelven la
+misma postura. Ambas se conservan.
+
+El ledger registra además dos intentos abiertos y **nunca consumidos**
+(`att_e5df8de6…`, `att_1d78582f…`). Son intentos retirados por apertura posterior, no
+mediciones fallidas, y quedan en el libro append-only porque el libro es el registro
+de qué intentos existieron.
+
+#### La ruta, para la próxima vez
+
+No añade **un solo byte de SQL nuevo**:
 
 ```bash
 pnpm posture:observation
@@ -326,19 +400,41 @@ veredicto no puede ser nombrable por quien pueda escribir en un directorio.
 Es sólida porque el predicado de membresías de las dos sondas es **byte-idéntico**, y
 eso está **asertado por un test**, no supuesto.
 
+#### El defecto que este cierre encontró en su propia herramienta
+
+`posture:status:verify` **no podía pasar nunca**, y lo demostró la primera medición
+real. El juicio leía el ledger de intentos y rehusaba si el intento no estaba `OPEN`;
+`posture:status:write` **consume** el intento después de calcular. Así que cualquier
+recálculo posterior a una escritura correcta leía un intento gastado, producía un
+refusal y `:verify` informaba `DIVERGED` — siempre, por construcción — culpando a «la
+observación cambió, o el status se editó» cuando lo único que había cambiado era el
+append del propio comando.
+
+Un gate obligatorio que sólo puede decir que no es un gate inerte, que es exactamente
+la clase de defecto que este repositorio gasta su presupuesto en cerrar. Corregido:
+
+- el **juicio** es ahora función pura de la observación, la línea base declarada y el
+  repositorio — los tres inmutables una vez escritos — así que un status registrado se
+  recalcula mientras esos tres existan. El campo mutable `attemptStatus` sale del
+  artefacto;
+- la **frescura sigue igual de fuerte** y vive donde le corresponde: en el acto que
+  registra y promueve. `posture:status:write` rehúsa un intento gastado antes de
+  calcular nada;
+- con una excepción declarada y estrecha: un intento ya consumido puede
+  **re-materializar** el status que ya produjo, si y sólo si la evidencia promovida
+  existe y es **byte-idéntica** a la observación suministrada. No es un juicio nuevo —
+  es el mismo, sobre los mismos bytes. No promueve nada y no añade ninguna línea al
+  ledger, así que no puede fabricar una medición ni gastar un intento dos veces.
+
+Un test fija las dos mitades: que dos cálculos consecutivos coinciden byte a byte, y
+que la cadena `POSTURE_ATTEMPT_NOT_OPEN` sigue estando en el camino de escritura.
+
 #### Lo que queda
 
-```
-REMOTE_CHAIN_POSTURE = PENDING_OPERATOR_MEASUREMENT
-```
-
-La herramienta está construida, probada y verificada localmente contra la postura
-certificada del motor (`27_OF_27_CORRECT`, `3_OF_3_CORRECT`, `TEMP_MEMBERSHIPS ZERO`,
-`TEMP_CREATE_GRANTS ZERO`). Lo que falta es un acto que sólo un humano puede hacer:
-correr la sonda contra `bvyzblhqymxruxdguaee` y guardar la celda que imprime. Este
-repositorio sigue sin poder conectarse — no hay `.env` con credenciales de staging
-(sólo `.env.example`) y `psql` no está en el PATH — y eso no es una limitación a
-resolver, es el diseño.
+Nada de F-PI-01. El repositorio sigue sin poder conectarse — no hay `.env` con
+credenciales de staging (sólo `.env.example`) y `psql` no está en el PATH — y eso no
+es una limitación que se haya resuelto, es el diseño: la medición la tomó un humano y
+la herramienta sólo la juzga.
 
 ---
 
@@ -453,19 +549,21 @@ este documento.
 - **No** autoriza ninguna escritura contra staging: la cadena está completa y un
   paquete instalado no se vuelve a escribir.
 - **No** autoriza absolutamente nada contra Production (`ctaxtgujyyprgynmnvtq`).
-- **No** cierra por sí solo las postconditions remotas de §5.3. La ruta de operador
-  F-PI-01 ya existe (`posture:observation` / `posture:status`), pero mientras nadie
-  corra la sonda contra el objetivo, el `tempMemberships = 0` / `tempCreate = 0` de
-  staging sigue siendo `ENGINE-PROVEN`, **no** `MEASURED REMOTELY`. Quien lo cite como
-  medido estará citando mal. El veredicto que lo cierra es
-  `REMOTE_CHAIN_POSTURE = VERIFIED` en `artifacts/hosted-chain-posture-status.json`,
-  y ese archivo aún no existe.
-- **Tampoco** autoriza nada cuando exista. Un `REMOTE_CHAIN_POSTURE = VERIFIED` dice
-  que la postura remota es la que el plan exige; no habilita una flag, no permite una
-  escritura y no dice nada sobre Production.
+- **No** convierte `REMOTE_CHAIN_POSTURE = VERIFIED` en un permiso. Dice que la
+  postura remota es la que el plan de autoridad exige, y nada más: no habilita una
+  flag, no permite una escritura y no dice nada sobre Production. Ninguno de los nueve
+  veredictos de §5.3 se llama `AUTHORIZED`, y un test lo fija.
+- **No** valida ningún comportamiento funcional de Stella. Esta fase mide
+  infraestructura y postura de autoridad. Que la cadena esté instalada y su postura
+  sea correcta es la precondición de una integración funcional, no su resultado.
 
 ```
-SAFE_FOR_FINAL_FABLE_EVIDENCE_REVIEW = true
-SAFE_TO_ENABLE_STELLA_FEATURES       = false
-SAFE_TO_TOUCH_PRODUCTION             = false
+POST_INSTALL_VALIDATION_GATE              = FULL_PASS
+F_PI_01                                   = CLOSED
+PENDING_EVIDENCE                          = 0
+SAFE_FOR_FINAL_FABLE_EVIDENCE_REVIEW      = true
+SAFE_TO_CLOSE_POST_INSTALL_PHASE          = true
+SAFE_TO_BEGIN_FUNCTIONAL_STAGING_INTEGRATION = true   (con las 9 flags en false)
+SAFE_TO_ENABLE_STELLA_FEATURES            = false
+SAFE_TO_TOUCH_PRODUCTION                  = false
 ```

@@ -40,6 +40,7 @@ import {
   computePostureStatus,
   parsePostureAttemptLedger,
   postureAttemptLine,
+  postureAttemptStatus,
   readRepoFile,
   serializePostureStatus,
   verifyPostureStatus,
@@ -95,16 +96,23 @@ if (claimed !== latest.attemptId) {
   )
 }
 
+const observationRaw = (() => {
+  try {
+    return readFileSync(path.resolve(ROOT, observationFile), 'utf8')
+  } catch {
+    return null
+  }
+})()
+
+const ledgerState = postureAttemptStatus(parsePostureAttemptLedger(ledgerRaw), latest.attemptId)
+
+// THE JUDGEMENT IS A PURE FUNCTION of the observation, the declared baseline and
+// the repository. The ledger is NOT one of its inputs — see the header of
+// `PostureStatusInputs`. Freshness is enforced below, in `write`, which is the
+// act that records and promotes.
 const status = computePostureStatus({
   expectedAttemptId: latest.attemptId,
-  raw: (() => {
-    try {
-      return readFileSync(path.resolve(ROOT, observationFile), 'utf8')
-    } catch {
-      return null
-    }
-  })(),
-  attemptLedger: ledgerRaw,
+  raw: observationRaw,
   readArtefact: read,
   root: ROOT,
 })
@@ -112,7 +120,7 @@ const status = computePostureStatus({
 function print(): void {
   process.stdout.write(
     [
-      `POSTURE_ATTEMPT      ${status.attemptId} (${status.attemptStatus})`,
+      `POSTURE_ATTEMPT      ${status.attemptId} (${ledgerState})`,
       `OBSERVATION          ${status.observationPresent ? observationFile : 'ABSENT'}`,
       `BASELINE             ${status.baseline.source ?? '(unresolved)'}`,
       '',
@@ -153,25 +161,58 @@ if (status.refusal !== null) {
   die(`[posture] REFUSED  ${status.refusal.code}\n\n${status.refusal.detail}`)
 }
 
-writeFileSync(path.join(ROOT, POSTURE_STATUS_ARTEFACT), serializePostureStatus(status), 'utf8')
-
-// R-H1, for THIS path only. The working copy under artifacts/ is rewritten by
-// the next attempt that runs the same tool; a measurement that can never be
-// taken again must not live only there. The name carries the attempt, and the
-// date comes from the LEDGER's OPENED record rather than from the clock — the
-// file is named for when it was measured, not for when someone got round to
-// promoting it.
-//
-// It REFUSES to overwrite. A promotion that could clobber is the defect it
-// exists to close.
+// R-H1. The name carries the attempt, and the date comes from the LEDGER's
+// OPENED record rather than from the clock — the file is named for when it was
+// measured, not for when someone got round to promoting it.
 const promoted = path.join(
   EVIDENCE_DIR,
   `${latest.at.slice(0, 10)}-${latest.attemptId.slice(0, 12)}-chain-posture-observation.json`,
-)
+).replace(/\\/g, '/')
 const promotedAbs = path.join(ROOT, promoted)
+const alreadyPromoted = existsSync(promotedAbs)
+
+/**
+ * FRESHNESS, enforced HERE — the act that records a verdict and promotes a
+ * measurement — rather than inside the judgement, which must stay recomputable.
+ *
+ * One exception, and it is narrow enough to state completely: an attempt that
+ * is already CONSUMED may re-materialise the status it already produced, if and
+ * only if the promoted evidence exists and is BYTE-IDENTICAL to the observation
+ * supplied now. That is not a new judgement — it is the same one, over the same
+ * bytes, written again because the status file was lost or its shape changed.
+ * Nothing is promoted and nothing is appended on that path, so it cannot
+ * manufacture a measurement or spend an attempt twice.
+ */
+const sameBytes =
+  alreadyPromoted && readFileSync(promotedAbs, 'utf8') === (observationRaw as string)
+const reMaterialise = ledgerState === 'CONSUMED' && sameBytes
+
+if (ledgerState !== 'OPEN' && !reMaterialise) {
+  die(
+    `[posture] REFUSED  POSTURE_ATTEMPT_NOT_OPEN\n\n` +
+      (ledgerState === 'UNKNOWN'
+        ? `attempt ${latest.attemptId} was never opened in ${POSTURE_ATTEMPT_LEDGER}. An attempt is ` +
+          `opened before the probe runs; one that appears only now was not the attempt anything measured.`
+        : `attempt ${latest.attemptId} is spent — it was consumed by a status already. One observation ` +
+          `is judged once, and the observation supplied now is not byte-identical to the one that was ` +
+          `promoted for it, so this is a NEW judgement asking to reuse a spent attempt. Open a new ` +
+          `attempt and measure again.`),
+  )
+}
+
+writeFileSync(path.join(ROOT, POSTURE_STATUS_ARTEFACT), serializePostureStatus(status), 'utf8')
+
 let promotionNote: string
-if (existsSync(promotedAbs)) {
-  promotionNote = `already present, left untouched: ${promoted}`
+if (reMaterialise) {
+  promotionNote = `re-materialised over an existing judgement; promotion untouched: ${promoted}`
+} else if (alreadyPromoted) {
+  // The attempt is OPEN and yet its evidence slot is taken. That is a name
+  // collision, not a re-run, and overwriting is the defect the slot exists to
+  // close.
+  die(
+    `[posture] REFUSED  ${promoted} already exists and this attempt is OPEN. A promotion that could ` +
+      `clobber an earlier measurement is exactly what this directory exists to prevent.`,
+  )
 } else {
   mkdirSync(path.dirname(promotedAbs), { recursive: true })
   copyFileSync(path.resolve(ROOT, observationFile), promotedAbs)
@@ -180,19 +221,24 @@ if (existsSync(promotedAbs)) {
 
 // CONSUMED only here, and only after the status and the promotion have both
 // landed. A refusal above writes no ledger line at all, so there is no branch on
-// which this file records a judgement that was never made.
-appendFileSync(
-  path.join(ROOT, POSTURE_ATTEMPT_LEDGER),
-  postureAttemptLine('CONSUMED', latest.attemptId, KNOWN_STAGING_PROJECT_REF, new Date().toISOString()),
-  'utf8',
-)
+// which this file records a judgement that was never made — and the
+// re-materialisation path appends nothing, because the attempt is already spent.
+if (!reMaterialise) {
+  appendFileSync(
+    path.join(ROOT, POSTURE_ATTEMPT_LEDGER),
+    postureAttemptLine('CONSUMED', latest.attemptId, KNOWN_STAGING_PROJECT_REF, new Date().toISOString()),
+    'utf8',
+  )
+}
 
 print()
 process.stdout.write(
   [
     `[posture] wrote ${POSTURE_STATUS_ARTEFACT}`,
     `[posture] ${promotionNote}`,
-    `[posture] attempt ${latest.attemptId} CONSUMED — one observation is judged once.`,
+    reMaterialise
+      ? `[posture] attempt ${latest.attemptId} was ALREADY CONSUMED — nothing was appended.`
+      : `[posture] attempt ${latest.attemptId} CONSUMED — one observation is judged once.`,
     '',
   ].join('\n'),
 )

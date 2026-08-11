@@ -31,6 +31,8 @@ todo lo que se conserva aquí lleva el intento en el nombre.
 | `2026-08-11-att_0ca699d6-installer-identity-recheck.json` | `att_0ca699d6…` | El re-check de `pnpm identity:verify` inmediatamente antes de la escritura. Idéntico al anterior: el plan comprueba la sesión que mediste, y la conexión que vas a usar es un hecho aparte. |
 | `2026-08-11-att_1398309c-chain-final-observation.json` | `att_1398309c…` | La observación de **cierre**. 9/9 INSTALLED, 0 ABSENT, 0 PARTIAL, `CHAIN_SEQUENCE_COMPLETE`. Su intento se abrió y **nunca se consumió**: evidencia, no autorización. |
 | `2026-08-11-att_d08da545-prechain-observation.json` | `att_d08da545…` | La observación prechain del intento que el ledger registra como `CONSUMED` para `grounding_0002_document_versions` — **el T1 que funcionó**. Ocho filas de membresía: la topología de roles de staging inmediatamente antes de que el primer paquete gobernado hiciera commit. |
+| `2026-08-11-att_881c1c68-chain-posture-observation.json` | `att_881c1c68…` | **La medición de cierre de F-PI-01, y la canónica.** Postura remota completa: 27/27 traspasos de ownership, 3/3 contextos canónicos, 11 filas de membresía (8 prechain + las 3 de la delta), `capabilityReachableBy` vacío, 27 definers con `search_path` vacío, 118 políticas, cero residual de `CREATE`. Es la observación que `artifacts/hosted-chain-posture-status.json` juzga. |
+| `2026-08-11-att_b7e47ab8-chain-posture-observation.json` | `att_b7e47ab8…` | La **primera** medición remota de postura, 64 minutos antes. También `VERIFIED`, también consumida por su propio `posture:status:write`. Byte-idéntica a la canónica salvo por su propio id de intento. |
 
 Los tres de `att_6d9a8c1d` son el expediente completo de la única escritura de
 cadena que se intentó contra staging: por qué se autorizó y con qué evidencia.
@@ -41,14 +43,29 @@ con la que se aplicó el último paquete, su re-check, y la observación que mid
 cadena completa. Léase junto a
 [`../STELLA_STAGING_POST_INSTALL_GATE.md`](../STELLA_STAGING_POST_INSTALL_GATE.md).
 
-El de `att_d08da545` es el **último en llegar y el más antiguo en el tiempo**, y está
-aquí por F-PI-01. Vivía sólo en `artifacts/t1-prechain.json`, que está en `.gitignore`
-porque el próximo intento lo reescribe — exactamente la forma del defecto que este
-directorio existe para cerrar. Ahora es la línea base declarada de la delta de
-membresías (`PRECHAIN_TOPOLOGY_EVIDENCE`), y una línea base que un intento posterior
-pudiera pisar no es una línea base. La postura remota, cuando se mida, se promoverá
-aquí igual, por `pnpm posture:status:write`, con su intento en el nombre y sin
-sobrescribir nada.
+El de `att_d08da545` es **el más antiguo en el tiempo y de los últimos en llegar**, y
+está aquí por F-PI-01. Vivía sólo en `artifacts/t1-prechain.json`, que está en
+`.gitignore` porque el próximo intento lo reescribe — exactamente la forma del defecto
+que este directorio existe para cerrar. Ahora es la línea base declarada de la delta
+de membresías (`PRECHAIN_TOPOLOGY_EVIDENCE`), y una línea base que un intento
+posterior pudiera pisar no es una línea base.
+
+Los dos de postura cierran F-PI-01 y **hay que leerlos como par**. `att_881c1c68` es
+la canónica: es la que nombra `artifacts/hosted-chain-posture-status.json` y la que
+`pnpm posture:status:verify` recalcula. `att_b7e47ab8` se conserva porque es
+**corroboración independiente que no se puede fabricar**: dos sondas contra el mismo
+proyecto, separadas por 64 minutos, devolvieron la misma postura byte a byte. Es una
+medición consumida y completa —su intento tiene su par `OPENED`/`CONSUMED` en el
+ledger— no un resto de una corrida a medias.
+
+El ledger `artifacts/hosted-chain-posture-attempts.jsonl` guarda además dos intentos
+abiertos y **nunca consumidos** (`att_e5df8de6…`, `att_1d78582f…`). Son intentos que
+una apertura posterior retiró; quedan escritos porque el libro es append-only y su
+valor es decir qué intentos existieron, no cuáles salieron bien.
+
+Nota sobre `:verify`: el artefacto de status describe **un** intento, el canónico.
+Pedirle que recalcule el de `att_b7e47ab8` da `DIVERGED`, y es correcto — está
+comparando contra el veredicto de otra medición.
 
 Los de `att_4b60e96a` y `att_9b68c33c` son el **segundo** incidente, y hay que
 leerlos juntos porque por separado cada uno parece decir que todo estaba bien:
@@ -83,6 +100,12 @@ proyecto.
 Se conserva **verbatim** y no redactado por una razón concreta: el campo `digest`
 cubre `corroboration` entera, así que editar el bloque invalidaría el digest y el
 archivo dejaría de verificar. Una evidencia cuyo digest no cuadra no es evidencia.
+
+Los **dos de postura** no tienen esa excepción: no llevan bloque `connection`, ni
+project ref, ni nada del lado del cliente. La sonda de postura lee catálogo y sólo
+catálogo, así que el documento es nombres de objeto, nombres de rol y booleanos.
+`service_role` aparece ocho veces en `functions[].executeGrantees`: es el **nombre de
+un rol** de Supabase, no la clave de servicio —que es un JWT y no está aquí—.
 
 ## Qué no se versiona
 

@@ -717,13 +717,31 @@ export function evaluateRemoteRoleTopology(
 /* The status                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * WHY THE LEDGER IS NOT AN INPUT HERE, AND WAS ONCE.
+ *
+ * The first version refused when the attempt was not OPEN, and the write path
+ * CONSUMES the attempt after computing. So every recomputation after a
+ * successful write read a ledger in which the attempt was spent, produced a
+ * refusal, and `posture:status:verify` reported DIVERGED — always, by
+ * construction, blaming "the observation changed, or the status was edited"
+ * when the only thing that had changed was the tool's own ledger append.
+ *
+ * That is an inert gate wearing a mandatory one's clothes, which is the exact
+ * defect this codebase keeps closing. The freshness binding still exists and is
+ * unweakened; it simply lives where it belongs — in the act that RECORDS and
+ * PROMOTES, not in the pure judgement. `posture:status:write` refuses a spent
+ * attempt before it computes anything.
+ *
+ * What remains here is a function of the observation, the declared baseline and
+ * the repository — all immutable once written — so a recorded status can be
+ * recomputed for as long as those three exist.
+ */
 export interface PostureStatusInputs {
-  /** The attempt the tool opened, read from the ledger — never from a flag. */
+  /** The attempt the ledger names. The document must echo it. */
   readonly expectedAttemptId: string
   /** The posture document the operator saved verbatim. */
   readonly raw: string | null
-  /** The posture attempt ledger's bytes. */
-  readonly attemptLedger: string | null
   /** Reads a repo-relative path. Injected so tests never touch the tree. */
   readonly readArtefact: (repoRelativePath: string) => string | null
   readonly root?: string
@@ -734,7 +752,6 @@ export interface PostureStatusInputs {
 export interface PostureStatus {
   readonly generatedBy: string
   readonly attemptId: string
-  readonly attemptStatus: AttemptStatus
   readonly observationPresent: boolean
   readonly baseline: { readonly source: string | null; readonly attemptId: string | null }
   readonly refusal: { readonly code: string; readonly detail: string } | null
@@ -759,10 +776,6 @@ export function computePostureStatus(inputs: PostureStatusInputs): PostureStatus
   const base = {
     generatedBy: GENERATED_BY,
     attemptId: inputs.expectedAttemptId,
-    attemptStatus: postureAttemptStatus(
-      parsePostureAttemptLedger(inputs.attemptLedger),
-      inputs.expectedAttemptId,
-    ),
     observationPresent: inputs.raw !== null && inputs.raw.trim() !== '',
     baseline: { source: null as string | null, attemptId: null as string | null },
     measurements: null,
@@ -776,21 +789,6 @@ export function computePostureStatus(inputs: PostureStatusInputs): PostureStatus
     verdicts: { REMOTE_CHAIN_POSTURE: 'PENDING_OPERATOR_EVIDENCE' },
     blockers: [`${code}: ${detail}`],
   })
-
-  // THE ATTEMPT FIRST. A document measured through a spent attempt is stale
-  // whatever it contains, and type-checking it first would be reading a
-  // measurement before establishing that it is this one.
-  if (base.attemptStatus !== 'OPEN') {
-    return refuse(
-      'POSTURE_ATTEMPT_NOT_OPEN',
-      base.attemptStatus === 'UNKNOWN'
-        ? `attempt ${inputs.expectedAttemptId} was never opened in ${POSTURE_ATTEMPT_LEDGER}. An ` +
-            `attempt is opened before the probe runs; one that appears only now was not the attempt ` +
-            `anything measured.`
-        : `attempt ${inputs.expectedAttemptId} is spent — it was consumed by a status already or ` +
-            `superseded by a later attempt. One observation is judged once.`,
-    )
-  }
 
   let evidence: ChainPostureEvidence
   try {

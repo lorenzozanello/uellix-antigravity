@@ -46,6 +46,7 @@ import {
   parseChainPostureEvidence,
   parsePostureAttemptLedger,
   postureAttemptLine,
+  postureAttemptStatus,
   resolvePrechainTopologyEvidence,
   serializePostureStatus,
   verifyPostureStatus,
@@ -88,14 +89,8 @@ function certifiedPosture(): Record<string, unknown> {
 const document = (posture: Record<string, unknown>): string => JSON.stringify(posture)
 
 /** The status the operator route computes, over a document and the real baseline. */
-const statusOf = (raw: string | null, attemptId = ATTEMPT, ledger: string | null = openLedger()) =>
-  computePostureStatus({
-    expectedAttemptId: attemptId,
-    raw,
-    attemptLedger: ledger,
-    readArtefact: read,
-    root: ROOT,
-  })
+const statusOf = (raw: string | null, attemptId = ATTEMPT) =>
+  computePostureStatus({ expectedAttemptId: attemptId, raw, readArtefact: read, root: ROOT })
 
 describe('F-PI-01 — the declared prechain baseline', () => {
   it('resolves to a versioned evidence file that exists and describes staging', () => {
@@ -273,16 +268,45 @@ describe('F-PI-01 — the attempt ledger', () => {
     expect(parsed[0]?.kind).toBe(POSTURE_ATTEMPT_KIND)
   })
 
-  it('refuses a status for an attempt that was never opened', () => {
-    const status = statusOf(document(certifiedPosture()), ATTEMPT, null)
-    expect(status.postureVerified).toBe(false)
-    expect(status.refusal?.code).toBe('POSTURE_ATTEMPT_NOT_OPEN')
+  it('reports an unopened attempt as UNKNOWN and a consumed one as CONSUMED', () => {
+    const records = parsePostureAttemptLedger(openLedger())
+    expect(postureAttemptStatus(records, ATTEMPT)).toBe('OPEN')
+    expect(postureAttemptStatus(records, OTHER_ATTEMPT)).toBe('UNKNOWN')
+    expect(postureAttemptStatus(parsePostureAttemptLedger(null), ATTEMPT)).toBe('UNKNOWN')
+    expect(
+      postureAttemptStatus(
+        parsePostureAttemptLedger(
+          openLedger() + postureAttemptLine('CONSUMED', ATTEMPT, KNOWN_STAGING_PROJECT_REF, AT),
+        ),
+        ATTEMPT,
+      ),
+    ).toBe('CONSUMED')
   })
 
-  it('refuses a status for an attempt a later one retired', () => {
-    const status = statusOf(document(certifiedPosture()), ATTEMPT, openLedger() + openLedger(OTHER_ATTEMPT))
-    expect(status.postureVerified).toBe(false)
-    expect(status.refusal?.code).toBe('POSTURE_ATTEMPT_NOT_OPEN')
+  it('retires an attempt when a later one is opened', () => {
+    const records = parsePostureAttemptLedger(openLedger() + openLedger(OTHER_ATTEMPT))
+    expect(postureAttemptStatus(records, ATTEMPT)).toBe('CONSUMED')
+    expect(postureAttemptStatus(records, OTHER_ATTEMPT)).toBe('OPEN')
+  })
+
+  it('the JUDGEMENT does not read the ledger, so a recorded status stays recomputable', () => {
+    // THE DEFECT THIS PINS. `posture:status:write` appends CONSUMED after it
+    // computes. While the ledger was an input to the judgement, every
+    // recomputation after a successful write produced a refusal and
+    // `posture:status:verify` reported DIVERGED — always, blaming an edit that
+    // had not happened. The judgement is now a function of the observation, the
+    // declared baseline and the repository, all immutable once written.
+    const raw = document(certifiedPosture())
+    const before = serializePostureStatus(statusOf(raw))
+    const after = serializePostureStatus(statusOf(raw))
+    expect(after).toBe(before)
+    expect(verifyPostureStatus(before, after).ok).toBe(true)
+    // And the mutable field is not in the artefact at all.
+    expect(before).not.toContain('attemptStatus')
+    // The freshness binding still exists — it is enforced by the write path.
+    const script = read('scripts/posture-status.ts')
+    expect((script as string)).toContain('POSTURE_ATTEMPT_NOT_OPEN')
+    expect((script as string)).toContain("ledgerState !== 'OPEN'")
   })
 })
 
@@ -500,8 +524,26 @@ describe('F-PI-01 — the status artefact', () => {
     expect(gitignore).not.toBeNull()
     const lines = (gitignore as string).split(/\r?\n/).map((l) => l.trim())
     expect(lines).toContain('artifacts/hosted-chain-posture-probe.sql')
+    // The working observation is a duplicate of its promotion, so it is ignored.
+    expect(lines).toContain('artifacts/hosted-chain-posture-observation.json')
     expect(lines).not.toContain('artifacts/hosted-chain-posture-status.json')
     expect(lines).not.toContain(POSTURE_ATTEMPT_LEDGER)
+  })
+
+  it('the recorded status is what the contract computes over the promoted evidence', () => {
+    // THE CLOSURE, ASSERTED. Not a re-read of the artefact: the verdict is
+    // recomputed from the DURABLE evidence file — the one the working copy is
+    // about to stop existing beside — and compared byte for byte.
+    const recorded = read('artifacts/hosted-chain-posture-status.json')
+    if (recorded === null) return // not measured yet on this checkout
+    const attemptId = (JSON.parse(recorded) as { attemptId: string }).attemptId
+    const evidence = read(
+      `docs/ops/staging/evidence/2026-08-11-${attemptId.slice(0, 12)}-chain-posture-observation.json`,
+    )
+    expect(evidence, 'the recorded status must name a promoted measurement').not.toBeNull()
+    const recomputed = serializePostureStatus(statusOf(evidence, attemptId))
+    expect(verifyPostureStatus(recorded, recomputed).ok).toBe(true)
+    expect(JSON.parse(recomputed).postureVerified).toBe(true)
   })
 
   it('authorises nothing: no verdict is a permission', () => {
