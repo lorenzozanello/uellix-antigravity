@@ -350,7 +350,11 @@ describe('RUNTIME -> PRODUCT — the server action selects, never falls back', (
     // of these, so a file-wide indexOf would compare an import against a call
     // and report the order backwards.
     const body = action.slice(action.indexOf('async function runStellaGroundedQuery('))
-    const flagAt = body.indexOf('isGroundedQueryEnabled')
+    // G-03: the gate asks the CAPABILITY, and the capability is named. Anchoring
+    // on `isStellaCapabilityReady(` alone would still pass if someone asked for
+    // a different capability here; the argument is part of the assertion for
+    // the same reason the flag name used to be.
+    const flagAt = body.indexOf("isStellaCapabilityReady('grounded_query')")
     const authAt = body.indexOf('requireOrganizationAccess()')
     const dbAt = body.indexOf('withOrganizationDatabaseContext(')
     expect(flagAt).toBeGreaterThan(0)

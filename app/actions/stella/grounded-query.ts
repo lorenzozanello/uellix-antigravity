@@ -102,7 +102,7 @@ import { randomUUID } from 'node:crypto'
 import { and, eq, inArray } from 'drizzle-orm'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { canUseStella } from '@/lib/auth/permissions'
-import { stellaConfig, stellaState } from '@/lib/stella/config'
+import { isStellaCapabilityReady } from '@/lib/stella/capability-readiness'
 import { nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
@@ -424,7 +424,13 @@ async function runStellaGroundedQuery(
   options: StellaGroundedQueryOptions,
 ): Promise<StellaGroundedQueryResult> {
   // 1. FLAG — first, before anything. See the header.
-  if (!stellaConfig.isEnabled || !stellaConfig.isGroundedQueryEnabled || !stellaState.canUseStella) {
+  //
+  // G-03: readiness is asked of the CAPABILITY. `STELLA_ENABLED` and
+  // `STELLA_GROUNDED_QUERY_ENABLED` are both still required and still checked
+  // first; what is no longer required is `GEMINI_API_KEY`, because this path's
+  // generator is `createExtractiveAnswerProvider` — local, offline, and
+  // incapable of reaching a provider. See lib/stella/capability-readiness.ts.
+  if (!isStellaCapabilityReady('grounded_query')) {
     return { status: 'error', code: 'DISABLED', message: 'La consulta fundamentada de Stella no está habilitada.' }
   }
 
@@ -1067,7 +1073,10 @@ async function issueStellaGroundedQueryTicket(
   projectId: string,
 ): Promise<StellaOperationTicketIssueResult> {
   // 1. FLAG — before authentication, before any read, before any event.
-  if (!stellaConfig.isEnabled || !stellaConfig.isGroundedQueryEnabled || !stellaState.canUseStella) {
+  //    Same capability, same readiness question, same answer as the execution
+  //    path: issuance and execution must not be able to disagree about whether
+  //    the capability is on. See lib/stella/capability-readiness.ts (G-03).
+  if (!isStellaCapabilityReady('grounded_query')) {
     return { status: 'disabled' }
   }
 
