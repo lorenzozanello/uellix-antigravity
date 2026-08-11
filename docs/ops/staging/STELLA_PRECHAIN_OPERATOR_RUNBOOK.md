@@ -104,6 +104,35 @@ propiedad que necesitan). T1–T9 se rechazan aquí: son otra cosa.
 
 ## 4. Aplicar — manual, una transacción, entorno declarado
 
+### 4.1 Antes de psql: los bytes autorizados, revalidados
+
+**Obligatorio.** Entre que el plan imprime y tú ejecutas, el archivo es sólo un
+archivo: una regeneración, un `stash pop`, un checkout o una edición a medias lo
+cambian en silencio. El plan autoriza **bytes**, no un nombre de archivo.
+
+```bash
+pnpm artefact:verify --path=<PACKAGE_PATH> --digest=<el sha256 de PIN_STATUS>
+```
+
+Requerido: `ARTEFACT_DIGEST = PASS`. Si falla, **para**: no apliques, vuelve a
+`authority:verify`, abre un intento nuevo y vuelve a medir.
+
+El helper no conecta a nada, no lee entorno, no toca ningún libro y no autoriza
+nada — sólo compara dos digests. El digest esperado lo pegas tú desde el plan;
+no lo deduce él, porque un verificador que dedujera su propia expectativa
+estaría de acuerdo consigo mismo.
+
+### 4.2 Checkpoint humano
+
+Mira `PACKAGE_PATH`, el objetivo y el entorno declarado, y decide. La secuencia
+completa y sin atajos es:
+
+```
+PLAN AUTHORIZED → pnpm artefact:verify (PASS) → checkpoint humano → psql
+```
+
+### 4.3 psql
+
 ```bash
 psql "$UELLIX_STAGING_URL" -X -1 -v ON_ERROR_STOP=1 \
      -c "SET uellix.bootstrap_environment = 'staging'" \
@@ -217,6 +246,20 @@ El plan imprime `PACKAGE_PATH` y `PACKAGE_DIGEST`, y `PACKAGE_PATH` está
 resuelve con valla y pin **antes** de emitir el comando; si los bytes no
 coinciden con `authority:verify`, no hay plan.
 
+Y **antes de psql**, obligatorio, igual que en §4.1:
+
+```bash
+pnpm artefact:verify --path=<PACKAGE_PATH> --digest=<PACKAGE_DIGEST>
+```
+
+```
+PLAN AUTHORIZED → pnpm artefact:verify (PASS) → checkpoint humano → psql
+```
+
+El pin del plan se comprueba cuando el plan se emite; éste se comprueba cuando
+vas a ejecutar. Son dos momentos distintos y la ventana entre ellos es de un
+humano.
+
 > **Incidente T1 (Commit 5.5).** Antes de este commit el plan imprimía
 > `db/prepared/hosted/<paquete>.hosted.sql`. Ese es el artefacto **intermedio**:
 > una entrada de derivación que conserva la contabilidad canónica
@@ -251,10 +294,21 @@ artifacts/hosted-chain-attempts.jsonl          cadena
 artifacts/hosted-remediation-attempts.jsonl    remediación prechain
 ```
 
-Append-only, nunca reescritos, nunca truncados. Están separados porque son dos
-recursos serializados de forma independiente: abrir un intento de cadena no debe
-retirar un intento de remediación que sigue siendo la medición vigente de otra
-pregunta.
+Append-only, nunca reescritos, nunca truncados, y **versionados en git**: son el
+rastro de auditoría durable de lo que se escribió contra staging. Están separados
+porque son dos recursos serializados de forma independiente: abrir un intento de
+cadena no debe retirar un intento de remediación que sigue siendo la medición
+vigente de otra pregunta.
+
+Commitea el libro después de cada `plan`. Sólo contienen `attemptId`, `event`,
+`targetProjectRef`, `at`, `kind` y `packageId` — nunca una credencial.
+
+Los documentos de trabajo por intento (`artifacts/*-witness.json`,
+`artifacts/hosted-chain-pre-write-*.{json,out}`) **no** se versionan: la corrida
+siguiente los sobrescribe. Lo que merece conservarse se promueve a
+[`evidence/`](evidence/README.md) con el intento en el nombre — el testigo del
+intento `att_34fd431f`, que autorizó el apply de `0002`, se perdió justamente por
+no haberlo hecho.
 
 Desde Commit 5.4 el rechazo es **simétrico** (F-PS-04): un registro que declara
 `kind: "prechain-remediation"` pegado en el libro de la cadena se descarta, igual

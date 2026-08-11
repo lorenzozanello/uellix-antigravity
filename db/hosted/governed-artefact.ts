@@ -47,6 +47,7 @@ import {
   GOVERNED_DIRECTORY,
   GovernedInputRefusal,
   resolveGovernedInput,
+  sha256OfFileContent,
 } from './authority/certification/governed-input'
 import { CHAIN_PACKAGE_FILES } from './authority/window-plan'
 
@@ -104,6 +105,158 @@ export function resolveGovernedApplyTarget(
     relativePath: resolved.relativePath,
     digest: resolved.actualDigest,
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* The one exception, bound to an identity                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The ONLY package an operational path may apply from the middle artefact.
+ *
+ * COMMIT 5.6 (Fable MEDIUM-1). The first version of this rule was a
+ * fall-through — "if the package is not in the governed chain, use the
+ * `.hosted.sql`" — and a fall-through is a rule about the DEFAULT rather than
+ * about the exception. It gives the ungoverned artefact to anything the
+ * governed side fails to recognise, which includes the case that matters: a
+ * tenth chain package added before its governed artefact is generated. The
+ * comment beside it claimed the bootstrap was "named explicitly"; the code did
+ * not name it at all.
+ *
+ * It is an exception on the merits, not a category:
+ *   * it has no governed variant, because there is nothing to govern — it is
+ *     applied by `postgres` against a project where `uellix_owner` owns nothing
+ *     yet, so there is no owner-schema DDL to place in a window;
+ *   * it is the package that ends by handing `uellix_bootstrap` over, which is
+ *     why its own second pass is PROHIBITED.
+ */
+export const FIRST_PROVISION_BOOTSTRAP = 'stella_hosted_0001_managed_role_bootstrap'
+
+export type OperationalApplyTarget =
+  | {
+      readonly kind: 'governed'
+      readonly packageName: string
+      readonly packageId: string
+      readonly relativePath: string
+      readonly digest: string
+    }
+  | {
+      readonly kind: 'first-provision-bootstrap'
+      readonly packageName: typeof FIRST_PROVISION_BOOTSTRAP
+      readonly relativePath: string
+    }
+
+/**
+ * The file an operational path may name for ONE package — or a refusal.
+ *
+ * FAIL-CLOSED. There is exactly one branch that yields a non-governed path and
+ * it is guarded by string equality against a single constant. Every other
+ * package goes through the fenced, pinned resolver, and every way that resolver
+ * can fail — unknown package, unreadable file, moved bytes — throws. No failure
+ * mode produces the middle artefact.
+ */
+export function resolveOperationalApplyTarget(
+  packageName: string,
+  root: string = process.cwd(),
+  readFile?: (absolutePath: string) => string,
+): OperationalApplyTarget {
+  if (packageName === FIRST_PROVISION_BOOTSTRAP) {
+    return {
+      kind: 'first-provision-bootstrap',
+      packageName: FIRST_PROVISION_BOOTSTRAP,
+      relativePath: `db/prepared/hosted/${FIRST_PROVISION_BOOTSTRAP}.hosted.sql`,
+    }
+  }
+  const governed = resolveGovernedApplyTarget(packageName, root, readFile)
+  return {
+    kind: 'governed',
+    packageName: governed.packageName,
+    packageId: governed.packageId,
+    relativePath: governed.relativePath,
+    digest: governed.digest,
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Bytes, and nothing else (HARDENING-1)                                       */
+/* -------------------------------------------------------------------------- */
+
+export type ArtefactDigestRefusalCode =
+  | 'ARTEFACT_DIGEST_MALFORMED'
+  | 'ARTEFACT_UNREADABLE'
+  | 'ARTEFACT_DIGEST_MISMATCH'
+
+export type ArtefactDigestVerdict =
+  | { readonly ok: true; readonly relativePath: string; readonly digest: string }
+  | {
+      readonly ok: false
+      readonly code: ArtefactDigestRefusalCode
+      readonly detail: string
+    }
+
+/**
+ * Whether the bytes on disk are still the bytes the plan authorised.
+ *
+ * COMMIT 5.6 (Fable HARDENING-1). The plan prints PACKAGE_PATH and
+ * PACKAGE_DIGEST, and then a human runs psql — and between those two moments
+ * the file is just a file. A regeneration, a stash pop, a half-finished edit or
+ * a checkout of another branch all change it silently, and the operator would
+ * apply whatever is there against staging inside one transaction.
+ *
+ * This answers ONE question and returns no authority. There is deliberately no
+ * package id in the result, no path resolution, no ledger, no command to run
+ * next: a helper that could say "and therefore you may apply it" would be a
+ * second place authorisation lives. The digest is compared against a value the
+ * CALLER supplies — the one the plan issued — so this cannot re-derive an
+ * expectation and agree with itself.
+ *
+ * LF-normalized, via the same `sha256OfFileContent` the pin uses, so a CRLF
+ * checkout does not report a mismatch that is not one.
+ */
+export function verifyArtefactDigest(inputs: {
+  readonly relativePath: string
+  readonly expectedDigest: string
+  readonly readFile: (relativePath: string) => string
+}): ArtefactDigestVerdict {
+  if (!/^[0-9a-f]{64}$/.test(inputs.expectedDigest)) {
+    return {
+      ok: false,
+      code: 'ARTEFACT_DIGEST_MALFORMED',
+      detail:
+        `${JSON.stringify(inputs.expectedDigest)} is not a SHA-256. Copy PACKAGE_DIGEST from the ` +
+        `plan exactly; a truncated digest that happened to compare equal would be a check that ` +
+        `passes for the wrong reason.`,
+    }
+  }
+
+  let contents: string
+  try {
+    contents = inputs.readFile(inputs.relativePath)
+  } catch (error) {
+    return {
+      ok: false,
+      code: 'ARTEFACT_UNREADABLE',
+      detail:
+        `${inputs.relativePath} could not be read ` +
+        `(${error instanceof Error ? error.message : String(error)}). An unreadable artefact is not ` +
+        `an unchanged one.`,
+    }
+  }
+
+  const actual = sha256OfFileContent(contents)
+  if (actual !== inputs.expectedDigest) {
+    return {
+      ok: false,
+      code: 'ARTEFACT_DIGEST_MISMATCH',
+      detail:
+        `${inputs.relativePath} no longer hashes to the digest the plan authorised.\n` +
+        `  authorised: ${inputs.expectedDigest}\n  on disk:    ${actual}\n` +
+        `The file changed after the plan was issued. Do NOT apply it. Re-run authority:verify, ` +
+        `then open a NEW attempt and re-measure — a plan authorises specific bytes, not a filename.`,
+    }
+  }
+
+  return { ok: true, relativePath: inputs.relativePath, digest: actual }
 }
 
 /** Re-exported so a caller can catch the fence and pin refusals by type. */

@@ -124,6 +124,11 @@ function open(): void {
   )
 }
 
+/** `VERIFIED sha256=<hex>` -> `<hex>`. The record carries the prose; the
+ *  operator needs the value, and retyping a 64-character hex is how a digit
+ *  goes missing. */
+const sourceSha256 = (pinStatus: string): string => pinStatus.replace(/^.*sha256=/, '')
+
 function plan(): void {
   const file = arg('witness')
   if (file === undefined) die('[remediation] --witness=<file> is required; there is no default.')
@@ -173,6 +178,13 @@ function plan(): void {
       `  DECISION                ${r.DECISION}`,
       '',
       ...result.log.map((l) => `  ${l}`),
+      '',
+      'BEFORE psql — revalidate the authorised bytes. A plan authorises BYTES, and',
+      'the window between this line and your keystroke belongs to a human:',
+      '',
+      `  pnpm artefact:verify --path=${r.PACKAGE_PATH} --digest=${sourceSha256(r.PIN_STATUS)}`,
+      '',
+      'Required: ARTEFACT_DIGEST = PASS. Then the human checkpoint.',
       '',
       'The operator applies it manually, in ONE transaction, declaring the environment',
       'in the SAME session:',

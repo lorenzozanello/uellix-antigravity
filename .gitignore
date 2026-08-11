@@ -57,3 +57,19 @@ artifacts/hosted-chain-pre-write-probe.sql
 artifacts/hosted-chain-t1-remediation-probe.sql
 artifacts/hosted-chain-t1-prechain-probe.sql
 artifacts/hosted-remediation-witness-probe.sql
+# COMMIT 5.6. The per-attempt WORKING documents an operator saves the probe
+# output into. Same reasoning one level on: they are rewritten by the next
+# attempt — the witness for att_34fd431f was lost exactly this way — so a copy
+# sitting here is a copy that has already stopped describing the current one.
+# What is worth keeping is promoted to docs/ops/staging/evidence/ under a name
+# carrying its attempt id. See that directory's README.
+artifacts/hosted-remediation-witness.json
+artifacts/hosted-chain-pre-write-probe.out
+artifacts/hosted-chain-pre-write-observation.json
+artifacts/t1-witness.json
+artifacts/t1-prechain.json
+# The two ATTEMPT LEDGERS are the durable audit trail and ARE versioned, in
+# place, where the tools append to them. Listed here as a statement, not as a
+# rule: nothing below ignores them, and a future glob over artifacts/ must not.
+#   artifacts/hosted-chain-attempts.jsonl        VERSIONED
+#   artifacts/hosted-remediation-attempts.jsonl  VERSIONED

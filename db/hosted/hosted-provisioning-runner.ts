@@ -54,8 +54,7 @@ import {
 } from './baseline-journal-wrapper'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
-import { resolveGovernedApplyTarget } from './governed-artefact'
-import { CHAIN_PACKAGE_FILES } from './authority/window-plan'
+import { resolveOperationalApplyTarget } from './governed-artefact'
 import { CHAIN_WRITE_ORDER, authorizeChainWrite } from './fresh-observation'
 import {
   STORAGE_UNIT_SOURCE,
@@ -1116,25 +1115,18 @@ function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
  * an unrunnable step is how an operator ends up improvising one.
  */
 function stellaStep(step: HostedApplyStep, ordinal: number): ProvisioningStep {
-  // The FIRST-PROVISION bootstrap has no governed variant and needs none: it is
-  // applied by `postgres` against a project where uellix_owner owns nothing
-  // yet, and it is the package that hands `uellix_bootstrap` over at its end.
-  // It is named explicitly rather than reached by falling through, so that a
-  // package which merely fails to resolve can never be served the ungoverned
-  // file by accident.
-  const governed = CHAIN_PACKAGE_FILES.some((e) => e.sourceFile === `${step.package}.sql`)
-  const file = governed
-    ? resolveGovernedApplyTarget(step.package).relativePath
-    : `db/prepared/hosted/${step.package}.hosted.sql`
+  // COMMIT 5.6 (Fable MEDIUM-1 and HARDENING-2). Resolved ONCE, and the one
+  // package permitted to use the middle artefact is decided by literal identity
+  // inside `resolveOperationalApplyTarget` rather than by falling through here.
+  // Two resolutions of the same name were also two chances to disagree.
+  const target = resolveOperationalApplyTarget(step.package)
   return {
     ordinal,
     id: step.package,
-    file,
+    file: target.relativePath,
     sha256: step.sourceSha256,
-    generatedSha256: governed
-      ? resolveGovernedApplyTarget(step.package).digest
-      : step.generatedSha256,
-    command: `psql -1 -v ON_ERROR_STOP=1 -f ${file}`,
+    generatedSha256: target.kind === 'governed' ? target.digest : step.generatedSha256,
+    command: `psql -1 -v ON_ERROR_STOP=1 -f ${target.relativePath}`,
   }
 }
 
