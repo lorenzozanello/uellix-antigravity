@@ -87,6 +87,10 @@
     "chain:status:verify": "tsx scripts/chain-status.ts verify",
     "certify:pg176": "tsx scripts/pg176-certify.ts",
     "certify:pg176:diagnostic": "tsx scripts/pg176-certify.ts --diagnostic",
+    "posture:observation": "tsx scripts/posture-observation-sql.ts",
+    "posture:status": "tsx scripts/posture-status.ts report",
+    "posture:status:write": "tsx scripts/posture-status.ts write",
+    "posture:status:verify": "tsx scripts/posture-status.ts verify",
     "remediation:verify": "tsx scripts/remediation-verify.ts",
     "certify:remediation": "tsx scripts/remediation-certify.ts",
     "authority:repin": "tsx scripts/authority-repin.mts"

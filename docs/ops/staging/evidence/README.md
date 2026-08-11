@@ -30,14 +30,25 @@ todo lo que se conserva aquí lleva el intento en el nombre.
 | `2026-08-11-att_0ca699d6-installer-identity.json` | `att_0ca699d6…` | La sonda de identidad **del Commit 5.6**, corrida por la conexión que aplicó T9: `sessionUser = currentUser = uellix_migrator`, `isSuper: false`, `createRole: true`, `canSetOwner: true`. Es la fila de arriba, ya cerrada. |
 | `2026-08-11-att_0ca699d6-installer-identity-recheck.json` | `att_0ca699d6…` | El re-check de `pnpm identity:verify` inmediatamente antes de la escritura. Idéntico al anterior: el plan comprueba la sesión que mediste, y la conexión que vas a usar es un hecho aparte. |
 | `2026-08-11-att_1398309c-chain-final-observation.json` | `att_1398309c…` | La observación de **cierre**. 9/9 INSTALLED, 0 ABSENT, 0 PARTIAL, `CHAIN_SEQUENCE_COMPLETE`. Su intento se abrió y **nunca se consumió**: evidencia, no autorización. |
+| `2026-08-11-att_d08da545-prechain-observation.json` | `att_d08da545…` | La observación prechain del intento que el ledger registra como `CONSUMED` para `grounding_0002_document_versions` — **el T1 que funcionó**. Ocho filas de membresía: la topología de roles de staging inmediatamente antes de que el primer paquete gobernado hiciera commit. |
 
 Los tres de `att_6d9a8c1d` son el expediente completo de la única escritura de
 cadena que se intentó contra staging: por qué se autorizó y con qué evidencia.
 El de `att_996213d2` es por qué el fallo no dejó residuo.
 
-Los tres últimos son el **cierre**: la identidad certificada con la que se aplicó
-el último paquete, su re-check, y la observación que mide la cadena completa. Léase
-junto a [`../STELLA_STAGING_POST_INSTALL_GATE.md`](../STELLA_STAGING_POST_INSTALL_GATE.md).
+Los tres de `att_0ca699d6` y `att_1398309c` son el **cierre**: la identidad certificada
+con la que se aplicó el último paquete, su re-check, y la observación que mide la
+cadena completa. Léase junto a
+[`../STELLA_STAGING_POST_INSTALL_GATE.md`](../STELLA_STAGING_POST_INSTALL_GATE.md).
+
+El de `att_d08da545` es el **último en llegar y el más antiguo en el tiempo**, y está
+aquí por F-PI-01. Vivía sólo en `artifacts/t1-prechain.json`, que está en `.gitignore`
+porque el próximo intento lo reescribe — exactamente la forma del defecto que este
+directorio existe para cerrar. Ahora es la línea base declarada de la delta de
+membresías (`PRECHAIN_TOPOLOGY_EVIDENCE`), y una línea base que un intento posterior
+pudiera pisar no es una línea base. La postura remota, cuando se mida, se promoverá
+aquí igual, por `pnpm posture:status:write`, con su intento en el nombre y sin
+sobrescribir nada.
 
 Los de `att_4b60e96a` y `att_9b68c33c` son el **segundo** incidente, y hay que
 leerlos juntos porque por separado cada uno parece decir que todo estaba bien:

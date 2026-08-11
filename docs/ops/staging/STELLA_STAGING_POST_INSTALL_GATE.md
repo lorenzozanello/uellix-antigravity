@@ -20,7 +20,7 @@ bytes de SQL gobernado o pins modificados.
 | `POST_INSTALL_VALIDATION_GATE` | **PASS_WITH_HARDENING** |
 | Hallazgos materiales | **0** |
 | Hallazgos de endurecimiento | **2**, ambos corregidos en este commit |
-| Evidencia remota pendiente | **1 bloque**, clasificada, no improvisada |
+| Evidencia remota pendiente | **1 bloque** (§5.3). Su ruta de operador ya existe y está probada; falta la medición, que es un acto humano |
 | `SAFE_TO_ENABLE_STELLA_FEATURES` | `false` |
 | `SAFE_TO_TOUCH_PRODUCTION` | `false` |
 
@@ -206,17 +206,36 @@ fuerte que un exit 0: no sólo pasó, pasó midiendo exactamente lo mismo.
 Esta es la parte que hay que leer con cuidado, porque es donde una lectura perezosa
 convertiría «probado en el motor» en «medido en staging».
 
+Cada afirmación de aquí en adelante lleva **una de tres etiquetas**, y no son
+intercambiables:
+
+| etiqueta | qué significa exactamente |
+|---|---|
+| `MEASURED REMOTELY` | PostgreSQL, en el proyecto `bvyzblhqymxruxdguaee`, respondió esto a una consulta read-only. |
+| `ENGINE-PROVEN` | se midió sobre los **mismos bytes gobernados** y el **mismo motor** (PG 17.6, imagen Supabase), en un contenedor local. Es una propiedad de los bytes; **no** es una medición del proyecto remoto. |
+| `OPERATOR-ATTESTED` | lo aportó el operador al ensamblar el documento, y un contrato lo valida. La base de datos no puede verlo y por tanto no lo dice. |
+
 ### 5.1 Lo que la observación final SÍ mide contra staging
 
-| postcondición | evidencia |
-|---|---|
-| objetos esperados presentes | 35 testigos de catálogo, 9/9 paquetes `INSTALLED` |
-| funciones/tablas críticas presentes | los mismos testigos, por **firma completa** (la aridad es lo que separa las versiones) |
-| ninguna feature flag activada | `featureFlags` 9× `false` |
-| el objetivo sigue siendo staging | tres señales: `declaredProjectRef`, `poolerUser`, sentinela |
-| Production nunca fue tocado | veto por nombre antes de leer una sola fila de catálogo; ningún registro del ledger, ningún documento de evidencia nombra `ctaxtgujyyprgynmnvtq` |
+| postcondición | clase | evidencia |
+|---|---|---|
+| objetos esperados presentes | `MEASURED REMOTELY` | 35 testigos de catálogo, 9/9 paquetes `INSTALLED` |
+| funciones/tablas críticas presentes | `MEASURED REMOTELY` | los mismos testigos, por **firma completa** (la aridad es lo que separa las versiones) |
+| el objetivo sigue siendo staging | `MEASURED REMOTELY` + `OPERATOR-ATTESTED` | tres señales: la sentinela sale del catálogo; `declaredProjectRef` y `poolerUser` los declara el operador y `verifyStagingTarget` los cruza |
+| Production nunca fue tocado | `MEASURED REMOTELY` | veto por nombre antes de leer una sola fila de catálogo; ningún registro del ledger, ningún documento de evidencia nombra `ctaxtgujyyprgynmnvtq` |
+| ninguna feature flag activada | `OPERATOR-ATTESTED` | ver abajo |
 
-### 5.2 Lo que está probado en MOTOR, no en staging
+**Las nueve feature flags no son una medición de PostgreSQL, y llamarlas así sería
+falso.** Son variables de entorno del despliegue: el bloque `featureFlags` lo
+ensambla el operador dentro del documento de corroboración, `parseA1Corroboration`
+exige que estén las nueve declaradas en `STELLA_FEATURE_FLAGS` y `enabledFlagNames`
+las normaliza contra un conjunto de valores apagados. Eso es **atestiguado por el
+operador y validado por contrato** — el contrato garantiza que ninguna falta y que
+ninguna se lee como encendida por accidente; **no** garantiza que el operador midió
+el entorno correcto. Ninguna consulta puede corroborarlo: la base de datos no ve las
+variables de entorno del proceso Next.js.
+
+### 5.2 Lo que está probado en MOTOR, no en staging (`ENGINE-PROVEN`)
 
 `certify:pg176` mide, sobre los **mismos bytes gobernados** (mismos digests) y el
 **mismo motor** (PG 17.6, imagen Supabase):
@@ -230,42 +249,96 @@ convertiría «probado en el motor» en «medido en staging».
 
 Eso es una propiedad muy fuerte de los bytes. **No es una medición de staging.**
 
-### 5.3 Evidencia PENDIENTE, y por qué no se improvisó
+### 5.3 F-PI-01 — la ruta de operador, ya construida; la medición, aún por tomar
 
 `TEMP_MEMBERSHIPS` y `TEMP_CREATE_GRANTS` medidos **en el proyecto remoto**, junto
-con ownership, RLS y la postura `SECURITY DEFINER`/`search_path` remota, quedan como
+con ownership, RLS y la postura `SECURITY DEFINER`/`search_path` remota, seguían
+como `PENDING_OPERATOR_EVIDENCE` por una razón concreta: no faltaba la sonda —
+`buildChainPostureSql` existe y es read-only — faltaba **la ruta de operador**. Su
+único invocador era `scripts/remediation-certify.ts`, contra un contenedor, por
+`docker exec`.
+
+Esa ruta ya existe, y no añade **un solo byte de SQL nuevo**:
+
+```bash
+pnpm posture:observation
+pnpm posture:status --attempt=<id> --observation=<file>.json
+```
+
+| pieza | qué es |
+|---|---|
+| generador | `buildChainPostureProbeSql` — la salida de `buildChainPostureSql` con **una clave inyectada**, el id del intento, por un ancla que debe aparecer exactamente una vez |
+| parser | `parseChainPostureEvidence` → liga al intento y **delega el cuerpo a `parseChainPosture`**, el parser certificado, sin tocarlo |
+| evaluadores | los seis `evaluate*` de `chain-postconditions.ts`, más dos residuales derivados del plan de autoridad |
+| conexiones | **cero**. Ambos comandos declaran `CONNECTS TO NOTHING` y un test lo verifica sobre los bytes de los tres archivos |
+
+**La sonda es SELECT-only y se comprueba antes de escribirse en disco**, no sólo en
+un test: exactamente un `SET search_path = ''` y exactamente un `SELECT`, sin ninguna
+palabra mutante fuera de un literal de cadena. Una sonda que creciera una segunda
+sentencia se rechaza en el generador, en la máquina de quien está a punto de pegarla
+en una sesión contra staging.
+
+#### Por qué `TEMP_MEMBERSHIPS = 0` no es `membership_count = 0`
+
+Es el punto donde una comprobación ingenua estaría **mal**, y en la dirección que
+parece prudente. Staging lleva **ocho filas de membresía legítimas anteriores a la
+cadena**, y una de ellas es `uellix_owner<-uellix_migrator` **con `SET`** — el
+permiso que permite abrir la ventana de dueño. Un residual escrito como «ninguna
+membresía con SET» **falla una corrida perfecta**.
+
+Las dos afirmaciones se derivan del plan de autoridad, no se escriben:
+
+- **`TEMP_MEMBERSHIPS`** — la cadena asume temporalmente cada **rol de capacidad**
+  para poder `SET ROLE`. Después de T9 nadie puede alcanzarlos: `capabilityReachableBy`
+  vacío, que es `pg_has_role(..., 'SET')` calculado por el servidor y **transitivo**,
+  así que cierra también el camino por un rol intermedio que una inspección de filas
+  no ve. La delta legítima es `admin=true inherit=false set=false`: confiere
+  administración y ninguna capacidad de convertirse en el rol, y por eso no aparece
+  aquí. `uellix_owner` queda **excluido** del conjunto derivado, y esa exclusión es la
+  sustancia de la comprobación.
+- **`TEMP_CREATE_GRANTS`** — la cadena abre `GRANT CREATE ON SCHEMA <s> TO <capacidad>`
+  para exactamente los tres pares que declaran los segmentos del plan, y revoca cada
+  uno. Ninguno de **esos** pares puede seguir concedido. Las concesiones `CREATE`
+  legítimas anteriores no están en el conjunto derivado y por tanto nunca se leen como
+  fuga.
+
+Ninguna de las dos necesita línea base. Añade un segmento de transferencia en un
+esquema nuevo y el conjunto esperado crece sin que nadie edite una lista.
+
+#### La línea base de la delta de topología, y por qué es una medición
+
+`evaluatePersistentRoleTopology` **sí** es una delta, y la postura anterior a T1 ya no
+existe remotamente: la cadena está instalada. Había tres salidas y sólo una es
+evidencia. La elegida es la medición que **sí se tomó**:
 
 ```
-PENDING_OPERATOR_EVIDENCE
+docs/ops/staging/evidence/2026-08-11-att_d08da545-prechain-observation.json
 ```
 
-No por falta de sonda: `buildChainPostureSql` existe, es read-only, empieza por
-`SET search_path = ''` y mide exactamente esos campos —
-`transferredOwners`, `canonicalContextOwners`, `functions[].securityDefiner`,
-`functions[].proconfig`, la alcanzabilidad `SET` de cada rol de capacidad, las
-políticas y el residual de `CREATE` por esquema.
+Es la observación de autoridad prechain del intento que el ledger registra como
+`CONSUMED` para `grounding_0002_document_versions` — el T1 que funcionó — así que
+describe la topología de roles de staging **inmediatamente antes** de que el primer
+paquete gobernado hiciera commit. Se selecciona desde una **lista fijada**
+(`PRECHAIN_TOPOLOGY_EVIDENCE`), última entrada vigente, por la misma razón que
+`CLASS_C_SQL_EDITOR_EVIDENCE` es una lista y no un glob: la evidencia que gobierna un
+veredicto no puede ser nombrable por quien pueda escribir en un directorio.
 
-Lo que **no** existe es la ruta de operador. Hoy `buildChainPostureSql` sólo lo
-invoca `scripts/remediation-certify.ts`, contra el contenedor, por `docker exec`.
-No hay:
+Es sólida porque el predicado de membresías de las dos sondas es **byte-idéntico**, y
+eso está **asertado por un test**, no supuesto.
 
-- un comando que emita la sonda de postura ligada a un intento (el análogo de lo que
-  `chain:attempt:open` hace con las otras cinco), ni
-- un `status` que consuma un documento de postura suministrado por el operador (el
-  análogo de `a1:status` o `chain:status`).
+#### Lo que queda
 
-Y no hay por dónde conectarse desde este repositorio: **todas** las herramientas
-hosted declaran «CONNECTS TO NOTHING» por diseño, este árbol no tiene `.env` con
-credenciales de staging (sólo `.env.example`), y `psql` no está en el PATH.
+```
+REMOTE_CHAIN_POSTURE = PENDING_OPERATOR_MEASUREMENT
+```
 
-Improvisar una conexión o un SQL nuevo contra el objetivo habría sido exactamente el
-tipo de acto que esta arquitectura gasta su presupuesto en impedir. Así que se
-clasifica como pendiente y se nombra el trabajo que la cierra:
-
-> **F-PI-01** — añadir `posture:observation` (emite `buildChainPostureSql` con el id
-> del intento compilado dentro) y `posture:status` (parsea con `parseChainPosture`,
-> evalúa con los seis `evaluate*` ya certificados). Ambos read-only, ambos sin
-> conectar. Cierra 5.3 sin un solo byte de SQL nuevo.
+La herramienta está construida, probada y verificada localmente contra la postura
+certificada del motor (`27_OF_27_CORRECT`, `3_OF_3_CORRECT`, `TEMP_MEMBERSHIPS ZERO`,
+`TEMP_CREATE_GRANTS ZERO`). Lo que falta es un acto que sólo un humano puede hacer:
+correr la sonda contra `bvyzblhqymxruxdguaee` y guardar la celda que imprime. Este
+repositorio sigue sin poder conectarse — no hay `.env` con credenciales de staging
+(sólo `.env.example`) y `psql` no está en el PATH — y eso no es una limitación a
+resolver, es el diseño.
 
 ---
 
@@ -333,6 +406,16 @@ STELLA_AUDIT_ASSISTANT_ENABLED        false
 Nueve declaradas, nueve en `false`, ninguna tocada. Esta fase valida
 **infraestructura y arquitectura desplegada**. No es activación funcional de Stella.
 
+`OPERATOR-ATTESTED`, **no** `MEASURED REMOTELY`, y la distinción importa: estas nueve
+líneas salen del bloque `featureFlags` que el operador ensambla en el documento de
+corroboración, no de una consulta. Lo que el contrato garantiza es que **están las
+nueve** —`parseA1Corroboration` rechaza un documento al que le falte una— y que
+ninguna se lee como encendida por accidente: `enabledFlagNames` normaliza contra un
+conjunto de valores apagados, así que `"FALSE "` o `"off"` cuentan como apagadas y
+cualquier otra cosa cuenta como **encendida**. Lo que el contrato **no** puede
+garantizar es que el operador leyó el entorno correcto. Ninguna consulta puede: la
+base de datos no ve las variables de entorno del proceso Next.js.
+
 ---
 
 ## 8. Hallazgos
@@ -370,9 +453,16 @@ este documento.
 - **No** autoriza ninguna escritura contra staging: la cadena está completa y un
   paquete instalado no se vuelve a escribir.
 - **No** autoriza absolutamente nada contra Production (`ctaxtgujyyprgynmnvtq`).
-- **No** cierra las postconditions remotas de §5.3. Hasta que exista F-PI-01, el
-  `tempMemberships = 0` / `tempCreate = 0` de staging está **inferido del motor**,
-  no medido en el objetivo. Quien lo cite como medido estará citando mal.
+- **No** cierra por sí solo las postconditions remotas de §5.3. La ruta de operador
+  F-PI-01 ya existe (`posture:observation` / `posture:status`), pero mientras nadie
+  corra la sonda contra el objetivo, el `tempMemberships = 0` / `tempCreate = 0` de
+  staging sigue siendo `ENGINE-PROVEN`, **no** `MEASURED REMOTELY`. Quien lo cite como
+  medido estará citando mal. El veredicto que lo cierra es
+  `REMOTE_CHAIN_POSTURE = VERIFIED` en `artifacts/hosted-chain-posture-status.json`,
+  y ese archivo aún no existe.
+- **Tampoco** autoriza nada cuando exista. Un `REMOTE_CHAIN_POSTURE = VERIFIED` dice
+  que la postura remota es la que el plan exige; no habilita una flag, no permite una
+  escritura y no dice nada sobre Production.
 
 ```
 SAFE_FOR_FINAL_FABLE_EVIDENCE_REVIEW = true
