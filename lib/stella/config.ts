@@ -34,11 +34,20 @@ export const stellaConfig = {
   // false until gate G2 applies db/prepared/stella_0003_suggestion_decisions.sql
   // (the table does not exist before that). See app/actions/stella/decisions.ts.
   isDecisionsPersistenceEnabled: process.env.STELLA_DECISIONS_PERSISTENCE_ENABLED === 'true',
-  // TRAIN 3 — grounded query runtime (PRODUCT-002). DORMANT by default and
-  // required to stay false: db/prepared/grounding_0002 and grounding_0003 are
-  // applied to no database, so the persisted GroundingChunkRepository has
-  // nothing to read. The flag is checked FIRST in the server action, before
-  // auth, quota, any connection and any observability event — see
+  // TRAIN 3 — grounded query runtime (PRODUCT-002). DORMANT by default.
+  //
+  // The reason it is dormant CHANGED, and the old one is no longer true.
+  // Until the governed chain was installed, grounding_0002 and grounding_0003
+  // were applied to no database and the persisted GroundingChunkRepository had
+  // nothing to read. As of 06041e1 the chain T1->T9 is 9/9 INSTALLED in
+  // staging, measured remotely, so the READ side has a real surface.
+  //
+  // What keeps the flag false is now the WRITE side: no application code path
+  // calls `ingestEvidenceDocument`, so a staging project has no evidence chunks
+  // to ground an answer in. See the audit's G-01.
+  //
+  // The flag is checked FIRST in the server action, before auth, quota, any
+  // connection and any observability event — see
   // app/actions/stella/grounded-query.ts.
   isGroundedQueryEnabled: process.env.STELLA_GROUNDED_QUERY_ENABLED === 'true',
 
