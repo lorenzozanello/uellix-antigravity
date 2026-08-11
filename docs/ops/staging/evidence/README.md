@@ -23,10 +23,24 @@ todo lo que se conserva aquí lleva el intento en el nombre.
 | `2026-08-11-att_6d9a8c1d-prechain-observation.json` | `att_6d9a8c1d…` | Observación prechain del mismo intento: gate PASS, 0 refusals, 8 contratos. |
 | `2026-08-11-att_6d9a8c1d-chain-pre-write-observation.json` | `att_6d9a8c1d…` | La observación PRE_WRITE que autorizó la escritura de T1 — la que **falló**. 0 INSTALLED / 9 ABSENT. |
 | `2026-08-11-att_996213d2-post-failure-probe-output.json` | `att_996213d2…` | Salida cruda de la sonda posterior al fallo: los 4 testigos de T1 en `false`, 9/9 ABSENT. **El rollback fue completo, medido.** |
+| `2026-08-11-att_4b60e96a-remediation-witness.json` | `att_4b60e96a…` | Testigo de remediación del **segundo** intento de T1: `INSTALLED`. |
+| `2026-08-11-att_4b60e96a-prechain-observation.json` | `att_4b60e96a…` | Observación prechain del mismo intento. `uellix_migrator {canLogin: true, createRole: true}`, `installerCanSetOwner: true`: **la base de datos estaba lista.** |
+| `2026-08-11-att_9b68c33c-post-failure-probe-output.json` | `att_9b68c33c…` | Sonda posterior al segundo fallo: 35 mediciones de testigo, **9/9 ABSENT**. Rollback completo otra vez. Este intento se abrió y **nunca se consumió**: es evidencia, no autorización. |
+| `2026-08-11-post-incident-operator-identity.txt` | *(ninguno)* | `session_user\|current_user\|rolsuper\|rolcreaterole` = `postgres\|postgres\|f\|t`. La identidad real de la conexión que ejecutó T1. |
 
 Los tres de `att_6d9a8c1d` son el expediente completo de la única escritura de
 cadena que se intentó contra staging: por qué se autorizó y con qué evidencia.
 El de `att_996213d2` es por qué el fallo no dejó residuo.
+
+Los de `att_4b60e96a` y `att_9b68c33c` son el **segundo** incidente, y hay que
+leerlos juntos porque por separado cada uno parece decir que todo estaba bien:
+la observación prechain dice que la base de datos tenía el instalador con LOGIN,
+CREATEROLE y `SET` sobre el dueño, y aun así la escritura murió en
+`permission denied to set role "uellix_cap_grounding"`. La pieza que lo explica
+es la última de la tabla, y es la única que **no lleva intento**: se midió a mano,
+después del fallo, porque hasta el Commit 5.6 no existía ninguna sonda que
+preguntara quién sostenía la conexión. Que la evidencia decisiva no tuviera dónde
+encajar es, exactamente, el defecto.
 
 ## Qué NO contienen
 

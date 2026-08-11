@@ -56,6 +56,11 @@ import {
 } from '../db/hosted/chain-operator'
 import { certifiedCapabilitiesBodyDigest } from '../db/hosted/remediation-operator'
 import { buildRemediationWitnessSql } from '../db/hosted/authority/certification/remediation-probes'
+import {
+  CERTIFIED_CHAIN_INSTALLER,
+  buildInstallerIdentityGuardSql,
+  buildInstallerIdentitySql,
+} from '../db/hosted/authority/certification/installer-identity'
 import { PRECHAIN_REMEDIATION } from '../db/hosted/prechain-remediation'
 import { KNOWN_STAGING_PROJECT_REF } from '../db/hosted/target-identity'
 
@@ -63,6 +68,8 @@ const ROOT = path.resolve(import.meta.dirname, '..')
 const PROBE_OUT = 'artifacts/hosted-chain-pre-write-probe.sql'
 const WITNESS_PROBE_OUT = 'artifacts/hosted-chain-t1-remediation-probe.sql'
 const PRECHAIN_PROBE_OUT = 'artifacts/hosted-chain-t1-prechain-probe.sql'
+const IDENTITY_PROBE_OUT = 'artifacts/hosted-chain-installer-identity-probe.sql'
+const IDENTITY_GUARD_OUT = 'artifacts/hosted-chain-installer-identity-guard.sql'
 
 const read = (rel: string): string | null => {
   try {
@@ -101,6 +108,8 @@ function open(): void {
     'utf8',
   )
   writeFileSync(path.join(ROOT, PRECHAIN_PROBE_OUT), buildPrechainObservationSql(attemptId), 'utf8')
+  writeFileSync(path.join(ROOT, IDENTITY_PROBE_OUT), buildInstallerIdentitySql(attemptId), 'utf8')
+  writeFileSync(path.join(ROOT, IDENTITY_GUARD_OUT), buildInstallerIdentityGuardSql(attemptId), 'utf8')
 
   // APPEND, never rewrite. The ledger is the record of which attempts existed,
   // and an attempt that could be edited out of it is an attempt that could be
@@ -123,6 +132,12 @@ function open(): void {
       `  ${PROBE_OUT}            chain witnesses (always required)`,
       `  ${WITNESS_PROBE_OUT}    remediation witness (required for ${GOVERNED_T1_PACKAGE})`,
       `  ${PRECHAIN_PROBE_OUT}   prechain authority (required for ${GOVERNED_T1_PACKAGE})`,
+      `  ${IDENTITY_PROBE_OUT}   installer identity (required for EVERY package)`,
+      '',
+      `The identity probe must be run through THE CONNECTION THE WRITE WILL USE — that is`,
+      `the only thing it measures. The governed chain is applied as ${CERTIFIED_CHAIN_INSTALLER};`,
+      `the administrative login that applies the baseline and the prechain remediation is a`,
+      `DIFFERENT principal and every capability window refuses it.`,
       '',
       'Run them READ-ONLY against the target, then assemble the observation document:',
       '',
@@ -132,12 +147,12 @@ function open(): void {
       'corroboration: { declaredEnvironment, declaredProjectRef, connection, featureFlags,',
       'observation: <probe output> }, digest } and pass it to:',
       '',
-      `  pnpm chain:attempt:plan --observation=<file>`,
+      `  pnpm chain:attempt:plan --observation=<file> --installer-identity=<file>`,
       '',
       `If the observation authorises ${GOVERNED_T1_PACKAGE}, the other two documents are`,
       'required as well — each is the single JSON cell its probe prints, saved verbatim:',
       '',
-      `  pnpm chain:attempt:plan --observation=<file> \\`,
+      `  pnpm chain:attempt:plan --observation=<file> --installer-identity=<file> \\`,
       `    --remediation-witness=<file> --prechain-observation=<file>`,
       '',
       'Opening another attempt retires this one. Do not keep two open.',
@@ -183,6 +198,9 @@ function plan(): void {
     ...(arg('prechain-observation') !== undefined
       ? { prechainRaw: readOrNull(arg('prechain-observation')) ?? null }
       : {}),
+    ...(arg('installer-identity') !== undefined
+      ? { identityRaw: readOrNull(arg('installer-identity')) ?? null }
+      : {}),
   })
 
   if (!verdict.ok) {
@@ -206,6 +224,8 @@ function plan(): void {
       `  T1_GATE                  ${r.T1_GATE}`,
       `  REMEDIATION_WITNESS      ${r.REMEDIATION_WITNESS}`,
       `  PRECHAIN_AUTHORITY_GATE  ${r.PRECHAIN_AUTHORITY_GATE}`,
+      `  INSTALLER_IDENTITY       ${r.INSTALLER_IDENTITY}`,
+      `  INSTALLER_IDENTITY_GATE  ${r.INSTALLER_IDENTITY_GATE}`,
       `  ATTEMPT_STATUS           ${r.ATTEMPT_STATUS}`,
       `  DECISION                 ${r.DECISION}`,
       '',
@@ -216,9 +236,17 @@ function plan(): void {
       '',
       `  pnpm artefact:verify --path=${r.PACKAGE_PATH} --digest=${r.PACKAGE_DIGEST}`,
       '',
-      'Required: ARTEFACT_DIGEST = PASS. Then the human checkpoint. Then:',
+      'Required: ARTEFACT_DIGEST = PASS. Then re-measure WHO will run it — the plan',
+      'checked the session you measured, and the connection you are about to use is a',
+      'separate fact that only you can supply:',
       '',
-      `  psql -1 -v ON_ERROR_STOP=1 -f ${r.PACKAGE_PATH}`,
+      `  pnpm identity:verify --attempt=${r.CHAIN_ATTEMPT_ID} --identity=<file>`,
+      '',
+      `Required: INSTALLER_IDENTITY = PASS (${CERTIFIED_CHAIN_INSTALLER}). Then the human`,
+      'checkpoint. Then — note the guard, which aborts the transaction before any DDL if',
+      'the principal is still wrong:',
+      '',
+      `  psql -1 -v ON_ERROR_STOP=1 -f ${IDENTITY_GUARD_OUT} -f ${r.PACKAGE_PATH}`,
       '',
       'This attempt is now CONSUMED. Whatever happens to that command — success,',
       'failure, or a connection that dies without answering — the next step is a NEW',

@@ -51,6 +51,10 @@ import {
 } from '@/db/hosted/authority/certification/prechain-requirements'
 import { REMEDIATION_WITNESS_SCHEMA } from '@/db/hosted/authority/certification/remediation-probes'
 import {
+  CERTIFIED_CHAIN_INSTALLER,
+  INSTALLER_IDENTITY_SCHEMA,
+} from '@/db/hosted/authority/certification/installer-identity'
+import {
   EXPECTED_BOOTSTRAP_SCHEMA_GRANTEES,
   type RemediationObservation,
 } from '@/db/hosted/prechain-remediation'
@@ -130,6 +134,29 @@ function healthyPrechain(): PrechainObservation {
 
 const prechain = (attemptId: string, o: PrechainObservation = healthyPrechain()): string =>
   JSON.stringify({ schema: PRECHAIN_OBSERVATION_SCHEMA, attemptId, observation: o })
+
+/**
+ * A session that IS the certified installer (Commit 5.6).
+ *
+ * Every plan that expects an authorization needs one now, for every package.
+ * The refusal-path cases below are deliberately left WITHOUT it: they refuse in
+ * an earlier gate, and leaving them bare is how this file records that the
+ * identity gate runs last and masks none of the refusals in front of it.
+ */
+const identity = (attemptId: string, over: Record<string, unknown> = {}): string =>
+  JSON.stringify({
+    schema: INSTALLER_IDENTITY_SCHEMA,
+    attemptId,
+    identity: {
+      sessionUser: CERTIFIED_CHAIN_INSTALLER,
+      currentUser: CERTIFIED_CHAIN_INSTALLER,
+      canLogin: true,
+      createRole: true,
+      isSuper: false,
+      canSetOwner: true,
+      ...over,
+    },
+  })
 
 /** The installer lost CREATEROLE: E-02, as the engine met it. */
 function drivenPrechain(): PrechainObservation {
@@ -359,12 +386,13 @@ describe('the T1 operator gate — T2..T9 unchanged', () => {
     }
   })
 
-  it('plans T2 from a chain observation alone, with no T1 evidence at all', () => {
+  it('plans T2 from a chain observation and an identity, with no T1 evidence at all', () => {
     const result = planChainWriteForOperator({
       raw: chainObservation([T1]),
       expectedAttemptId: A,
       attemptLedger: OPEN_A,
       at: AT,
+      identityRaw: identity(A),
     })
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error(`${result.code}: ${result.detail}`)
@@ -414,6 +442,7 @@ describe('the T1 operator gate — refusal precedes consumption', () => {
       at: AT,
       witnessRaw: witness(A, REMEDIATION_INSTALLED),
       prechainRaw: prechain(A),
+      identityRaw: identity(A),
     })
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error(`${result.code}: ${result.detail}`)
@@ -435,6 +464,7 @@ describe('the T1 operator gate — refusal precedes consumption', () => {
       at: AT,
       witnessRaw: witness(A, REMEDIATION_INSTALLED),
       prechainRaw: prechain(A),
+      identityRaw: identity(A),
     })
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error(`${result.code}: ${result.detail}`)
@@ -531,5 +561,160 @@ describe('attempt ledgers refuse each other kinds', () => {
     expect(result.ok).toBe(false)
     if (result.ok) throw new Error('a remediation ledger record opened a chain attempt')
     expect(result.code).toBe('CHAIN_OBSERVATION_ATTEMPT_NOT_OPEN')
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* B6 — the second staging incident, reproduced end to end (Commit 5.6)        */
+/* -------------------------------------------------------------------------- */
+
+// The measured failure was:
+//
+//   PACKAGE_PATH   db/prepared/hosted/governed/grounding_0002_document_versions.governed.sql
+//   artefact:verify PASS
+//   psql -1        ERROR: permission denied to set role "uellix_cap_grounding"
+//   session_user = current_user = postgres, rolsuper = f, rolcreaterole = t
+//
+// Every gate that existed passed, because every gate that existed measured the
+// DATABASE. These two cases are the whole correction, stated as the pair the
+// incident report asked for: the same plan, the same evidence, the same
+// artefact, differing only in who is holding the connection.
+
+describe('the installer identity gate — the staging T1 incident, both directions', () => {
+  /** The identity actually measured on the failed attempt, field for field. */
+  const POSTGRES_SESSION = identity(A, {
+    sessionUser: 'postgres',
+    currentUser: 'postgres',
+    isSuper: false,
+    createRole: true,
+  })
+
+  it('REFUSES governed T1 before any write when the session is postgres', () => {
+    const result = planChainWriteForOperator({
+      raw: chainObservation([]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      witnessRaw: witness(A, REMEDIATION_INSTALLED),
+      prechainRaw: prechain(A),
+      identityRaw: POSTGRES_SESSION,
+    })
+
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error('postgres was authorised to apply the governed chain')
+    expect(result.code).toBe('INSTALLER_IDENTITY_WRONG_PRINCIPAL')
+
+    // BEFORE THE WRITE, and that is the load-bearing half. A refusal carries no
+    // ledger line, so there is no branch on which the attempt is spent and no
+    // PACKAGE_PATH is ever printed — the operator is never handed a command.
+    expect(result).not.toHaveProperty('consumedLedgerLine')
+    expect(result).not.toHaveProperty('record')
+
+    // The message has to name the mistake, not merely the rule. `postgres` is a
+    // real and correct identity one phase earlier, so "wrong principal" alone
+    // would read as a bug in the tool to the operator who just used it
+    // successfully for the prechain remediation.
+    expect(result.detail).toContain('postgres')
+    expect(result.detail).toContain(CERTIFIED_CHAIN_INSTALLER)
+    expect(result.detail).toContain('permission denied to set role')
+  })
+
+  it('ACCEPTS governed T1 when the session is the certified installer', () => {
+    const result = planChainWriteForOperator({
+      raw: chainObservation([]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      witnessRaw: witness(A, REMEDIATION_INSTALLED),
+      prechainRaw: prechain(A),
+      identityRaw: identity(A),
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(`${result.code}: ${result.detail}`)
+    expect(result.authorization.packageId).toBe(T1)
+    expect(result.record.INSTALLER_IDENTITY).toBe(CERTIFIED_CHAIN_INSTALLER)
+    expect(result.record.INSTALLER_IDENTITY_GATE).toBe('PASS')
+    expect(result.record.PACKAGE_PATH).toBe(`db/prepared/hosted/governed/${T1}.governed.sql`)
+  })
+
+  it('refuses every package and not only T1', () => {
+    // T2..T9 have no prechain prerequisite, so `gateGovernedT1` is inert for
+    // them — but every one of the nine emits at least one
+    // `GRANT <capability> TO <installer> ... SET TRUE; SET ROLE <capability>;`
+    // pair, so every one of them is refused for the wrong principal. A gate
+    // keyed on T1 would have let T2 fail in exactly the way T1 just did.
+    const result = planChainWriteForOperator({
+      raw: chainObservation([T1]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      identityRaw: POSTGRES_SESSION,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error('postgres was authorised to apply T2')
+    expect(result.code).toBe('INSTALLER_IDENTITY_WRONG_PRINCIPAL')
+    expect(result).not.toHaveProperty('consumedLedgerLine')
+  })
+
+  it('refuses a plan that supplies no identity measurement at all', () => {
+    const result = planChainWriteForOperator({
+      raw: chainObservation([T1]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error('a plan was issued without measuring the session')
+    expect(result.code).toBe('INSTALLER_IDENTITY_REQUIRED')
+  })
+
+  it('refuses an identity measured for a different attempt', () => {
+    const stale = identity('att_' + 'b'.repeat(32))
+    const result = planChainWriteForOperator({
+      raw: chainObservation([T1]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      identityRaw: stale,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error("yesterday's terminal authorised today's write")
+    expect(result.code).toBe('INSTALLER_IDENTITY_ATTEMPT_MISMATCH')
+  })
+
+  it('does not let SET ROLE stand in for connecting as the installer', () => {
+    // The tempting shortcut, and mechanically wrong: the packages close every
+    // window with `RESET ROLE`, which returns to session_user. Such a session
+    // would be dropped back to postgres at grounding_0002:273 and fail at the
+    // same statement as the real incident.
+    const assumed = identity(A, { sessionUser: 'postgres' })
+    const result = planChainWriteForOperator({
+      raw: chainObservation([T1]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      identityRaw: assumed,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error('SET ROLE was accepted as the installer identity')
+    expect(result.code).toBe('INSTALLER_IDENTITY_WRONG_PRINCIPAL')
+    expect(result.detail).toContain('RESET ROLE')
+  })
+
+  it('leaves the gate ordering intact — earlier refusals are not masked', () => {
+    // The identity gate runs LAST. An operator on the wrong connection AND
+    // without remediation evidence must still be told about the evidence,
+    // because that is the refusal that was already certified.
+    const result = planChainWriteForOperator({
+      raw: chainObservation([]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      identityRaw: POSTGRES_SESSION,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error('T1 was planned without evidence')
+    expect(result.code).toBe('CHAIN_T1_EVIDENCE_REQUIRED')
   })
 })

@@ -63,6 +63,13 @@ import {
   type PrechainRefusal,
 } from './authority/certification/prechain-authority-gate'
 import {
+  CERTIFIED_CHAIN_INSTALLER,
+  InstallerIdentityRefusal,
+  parseInstallerIdentity,
+  verifyInstallerIdentity,
+  type ObservedInstallerIdentity,
+} from './authority/certification/installer-identity'
+import {
   collapseByObject,
   derivePrechainRequirements,
   type PrechainObjectContract,
@@ -376,6 +383,67 @@ export function gateGovernedT1(inputs: T1GateInputs): T1GateResult {
 }
 
 /* -------------------------------------------------------------------------- */
+/* The installer identity gate                                                 */
+/* -------------------------------------------------------------------------- */
+
+export type InstallerIdentityGateResult =
+  | { readonly ok: true; readonly identity: ObservedInstallerIdentity }
+  | T1GateRefusal
+
+export interface InstallerIdentityGateInputs {
+  /** The attempt the identity document must echo. */
+  readonly attemptId: string
+  readonly identityRaw?: string | null
+}
+
+/**
+ * Whether the SESSION about to write is the certified chain installer.
+ *
+ * Keyed on NOTHING — unlike `gateGovernedT1`, which is inert for T2..T9 because
+ * only T1 has a prechain prerequisite. Every one of the nine packages emits at
+ * least one `GRANT <capability> TO <installer> ... SET TRUE; SET ROLE
+ * <capability>;` pair (twenty-two across the chain), so every one of them is
+ * refused for a session that is not the installer. A gate that asked only about
+ * T1 would let T2 fail in exactly the way T1 just did.
+ *
+ * There is deliberately no `--installer-identity=<role>` flag and no
+ * `--skip-identity`. The expectation comes from `CERTIFIED_CHAIN_INSTALLER`,
+ * which is derived from the same role registry the generator names roles from;
+ * who the operator is connected as is a MEASUREMENT, never a declaration.
+ */
+export function gateInstallerIdentity(
+  inputs: InstallerIdentityGateInputs,
+): InstallerIdentityGateResult {
+  if (inputs.identityRaw === undefined || inputs.identityRaw === null) {
+    return deny(
+      'INSTALLER_IDENTITY_REQUIRED',
+      `the governed chain is applied AS ${CERTIFIED_CHAIN_INSTALLER}, and no identity measurement ` +
+        `was supplied for this attempt. The document is the single JSON cell printed by the probe ` +
+        `\`artifacts/hosted-chain-installer-identity-probe.sql\`, which \`pnpm chain:attempt:open\` ` +
+        `emits alongside the others. Run it through the SAME connection the write will use — that ` +
+        `is the entire question it answers.`,
+    )
+  }
+
+  let document: ReturnType<typeof parseInstallerIdentity>
+  try {
+    document = parseInstallerIdentity(inputs.identityRaw, inputs.attemptId)
+  } catch (error) {
+    if (error instanceof InstallerIdentityRefusal) return deny(error.code, error.message)
+    throw error
+  }
+
+  const findings = verifyInstallerIdentity(document.identity)
+  if (findings.length > 0) {
+    return deny(
+      findings[0]!.code,
+      findings.map((f) => `${f.code}: ${f.detail}`).join('\n\n'),
+    )
+  }
+  return { ok: true, identity: document.identity }
+}
+
+/* -------------------------------------------------------------------------- */
 /* One operator plan                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -389,6 +457,9 @@ export interface ChainOperatorRecord {
   readonly T1_GATE: 'NOT_APPLICABLE' | 'PASS'
   readonly REMEDIATION_WITNESS: 'NOT_MEASURED' | 'INSTALLED'
   readonly PRECHAIN_AUTHORITY_GATE: 'NOT_APPLICABLE' | 'PASS'
+  /** The principal the identity probe measured. Always the certified installer. */
+  readonly INSTALLER_IDENTITY: string
+  readonly INSTALLER_IDENTITY_GATE: 'PASS'
   readonly ATTEMPT_STATUS: 'CONSUMED'
   readonly DECISION: 'AUTHORIZED'
 }
@@ -412,6 +483,11 @@ export type ChainOperatorResult = ChainOperatorAuthorization | T1GateRefusal
 export interface ChainOperatorInputs extends ChainWriteRequest {
   readonly witnessRaw?: string | null
   readonly prechainRaw?: string | null
+  /**
+   * The identity document measured through the connection the write will use.
+   * Required for EVERY package — see `gateInstallerIdentity`.
+   */
+  readonly identityRaw?: string | null
   readonly contracts?: readonly PrechainObjectContract[]
   readonly at: string
   /** Repo root, for resolving the governed artefact. */
@@ -464,6 +540,18 @@ export function planChainWriteForOperator(inputs: ChainOperatorInputs): ChainOpe
   })
   if (!t1.ok) return t1
 
+  // LAST, and applying to every package. The gates above answer "is there
+  // anything to apply, and are its bytes the governed ones"; this one answers
+  // "can the session in front of us apply it at all". It runs before the record
+  // and before `consumedLedgerLine` exists, so a refusal here leaves nothing
+  // consumed and prints no psql command — which is the whole correction: a plan
+  // cannot reach the human checkpoint without having shown who will execute.
+  const identity = gateInstallerIdentity({
+    attemptId: authorization.attemptId,
+    ...(inputs.identityRaw !== undefined ? { identityRaw: inputs.identityRaw } : {}),
+  })
+  if (!identity.ok) return identity
+
   return {
     ok: true,
     authorization,
@@ -483,6 +571,8 @@ export function planChainWriteForOperator(inputs: ChainOperatorInputs): ChainOpe
       T1_GATE: t1.required ? 'PASS' : 'NOT_APPLICABLE',
       REMEDIATION_WITNESS: t1.required ? 'INSTALLED' : 'NOT_MEASURED',
       PRECHAIN_AUTHORITY_GATE: t1.required ? 'PASS' : 'NOT_APPLICABLE',
+      INSTALLER_IDENTITY: identity.identity.sessionUser,
+      INSTALLER_IDENTITY_GATE: 'PASS',
       ATTEMPT_STATUS: 'CONSUMED',
       DECISION: 'AUTHORIZED',
     },

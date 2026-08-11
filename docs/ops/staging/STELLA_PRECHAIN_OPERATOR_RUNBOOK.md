@@ -4,6 +4,11 @@
 remediación) y F-PS-02 (`chain:attempt:plan` podía autorizar T1 sin consultar
 `authorizeGovernedT1`).
 
+**Commit 5.6.** Cierra la ruptura entre la identidad de ejecución **certificada**
+(`uellix_migrator`) y la del **operador** (`postgres`), que es el segundo
+incidente real de T1 en staging. **Empieza por §0.0**: si te saltas esa sección,
+todo lo demás está bien y la escritura falla igual.
+
 Este documento describe **el único camino soportado**. Ninguna otra secuencia
 está certificada, y las dos que la gente improvisa —derivar el testigo a mano
 desde `db/prepared/prechain/observation.sql`, o correr `psql` sin intento
@@ -18,9 +23,113 @@ PRODUCCIÓN  ctaxtgujyyprgynmnvtq     ← lista de denegación. Nunca.
 `uellix-antigravity.vercel.app`. El veto de producción se comprueba **antes** que
 cualquier otra señal: ninguna observación lo levanta.
 
-Aquí no aparece ninguna DSN ni ninguna contraseña. La conexión vive en el
-entorno del operador (`$UELLIX_STAGING_URL`) y ninguna herramienta de este
-repositorio la lee, la imprime ni la persiste.
+Aquí no aparece ninguna DSN ni ninguna contraseña. Las conexiones viven en el
+entorno del operador y ninguna herramienta de este repositorio las lee, las
+imprime ni las persiste.
+
+---
+
+## 0.0 LAS DOS IDENTIDADES — leer antes de conectar
+
+**Commit 5.6.** Esta sección existe porque T1 murió en staging por segunda vez y
+la causa no fue el artefacto: fue *quién* sostenía la conexión.
+
+Este runbook usaba **una sola** variable, `$UELLIX_STAGING_URL`, para todo. Hay
+**dos** identidades de ejecución y no son intercambiables:
+
+| | Conexión de **bootstrap/admin** | Conexión de **instalador de cadena** |
+|---|---|---|
+| Variable | `$UELLIX_STAGING_ADMIN_URL` | `$UELLIX_STAGING_INSTALLER_URL` |
+| Principal | `postgres` | `uellix_migrator` |
+| Aplica | PHASE_BASELINE (§1 de `STELLA_APPLY_IDENTITY_PROBE`), `stella_hosted_0001`, `stella_hosted_0002` | **T1–T9 gobernados, y sólo ellos** |
+| Modo | directo o session pooler | **directo, obligatorio** — ver 0.0.2 |
+| Por qué | `uellix_migrator` **no existe** hasta que `stella_hosted_0001` lo crea; antes de eso `postgres` es el único login administrativo | los nueve paquetes emiten `GRANT <cap> TO uellix_migrator WITH INHERIT FALSE, SET TRUE;` seguido de `SET ROLE <cap>;` |
+
+### 0.0.1 Por qué `postgres` no puede aplicar la cadena
+
+No es una convención. Está escrito en los bytes gobernados, que no se tocan:
+
+```sql
+-- grounding_0002_document_versions.governed.sql:997-998
+GRANT uellix_cap_grounding TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
+SET ROLE uellix_cap_grounding;
+```
+
+El `GRANT` nombra a `uellix_migrator` **literalmente**; el `SET ROLE` lo ejecuta
+la sesión. Bajo cualquier otro principal, el permiso se le entrega a un rol que
+la sesión no es, y la sentencia siguiente se rechaza con
+`permission denied to set role`. Son 22 pares como ése repartidos por los nueve
+paquetes, y **cada paquete contiene al menos uno**: no es una propiedad de T1.
+
+Dos consecuencias que conviene tener escritas:
+
+1. **Conceder la pertenencia a `postgres` no arregla nada.** El paquete seguiría
+   entregando el `SET` a `uellix_migrator` por nombre, y la topología de
+   pertenencias que fijan las postcondiciones de cadena
+   (`<cap> <- uellix_migrator`) no sería la producida.
+2. **`SET ROLE uellix_migrator` desde `postgres` tampoco.** Los paquetes cierran
+   cada ventana con `RESET ROLE`, que vuelve a `session_user`: la sesión caería
+   de nuevo a `postgres` en `grounding_0002:273` y moriría en la misma
+   sentencia, varios cientos de líneas después. Por eso el verificador exige
+   `session_user = current_user = uellix_migrator`.
+
+### 0.0.2 Por qué la conexión del instalador es **directa**
+
+`projectRefFromPoolerUser` (`db/hosted/target-identity.ts`) deriva el ref del
+proyecto del rol de login con la forma `postgres.<ref>`, y **sólo** con esa
+forma. Una sesión de `uellix_migrator` por session pooler no tiene de dónde
+sacar el ref y la corroboración del objetivo se rechaza.
+
+Por conexión directa el ref sale del **host** (`db.<ref>.supabase.co`), que no
+depende del rol de login. Ésa es la única forma en la que las dos exigencias
+—corroborar el proyecto y ser el instalador— se satisfacen a la vez.
+
+No se «arregla» el parser del pooler para aceptar `uellix_migrator.<ref>`: es
+contrato de identidad certificado, y nadie ha medido que el pooler enrute roles
+distintos de `postgres`. Puerto **5432**, nunca 6543.
+
+### 0.0.3 La credencial de `uellix_migrator`
+
+`stella_hosted_0001` crea el rol `WITH LOGIN` y **no le fija contraseña**. Así
+que hay una credencial que establecer, y este repositorio no participa en ella.
+
+Procedimiento, ejecutado **por el operador** sobre la conexión de admin:
+
+1. Genera la contraseña en tu gestor de contraseñas. **No la generes en una
+   terminal con historial, ni en un chat, ni en un editor con telemetría.**
+2. Fíjala con `psql` en modo interactivo usando `\password`, que la pide por
+   `stdin` y **nunca la pone en la línea de comandos ni en el historial**:
+
+   ```bash
+   psql "$UELLIX_STAGING_ADMIN_URL" -X
+   ```
+   ```
+   \password uellix_migrator
+   ```
+
+   `\password` construye el `ALTER ROLE ... PASSWORD` con el hash SCRAM ya
+   calculado en el cliente, de modo que la contraseña en claro no viaja ni
+   aparece en `pg_stat_activity` ni en los logs del servidor.
+3. Componte `$UELLIX_STAGING_INSTALLER_URL` en tu gestor de secretos con el host
+   **directo** de 0.0.2. Expórtala sólo en la sesión de shell donde vayas a
+   aplicar.
+
+Qué **no** ocurre nunca, y es comprobable:
+
+- ninguna contraseña ni DSN entra al repositorio — ningún script lee `process.env`
+  ni abre conexiones (test: «reads no environment variable and opens no connection»);
+- ninguna entra al libro de intentos: sus registros son `attemptId`, `event`,
+  `targetProjectRef`, `at`, `packageId`, `kind`, y nada más;
+- ninguna entra a las evidencias: la sonda de identidad emite seis campos —dos
+  nombres de rol y cuatro booleanos— y el documento no tiene sitio donde
+  alojar otra cosa;
+- ninguna entra a un prompt de Claude/Fable: no se pega una DSN en una
+  conversación para «que la revise». Los refs de proyecto no son secretos; las
+  credenciales sí.
+
+Si `\password` es rechazado sobre el proyecto gestionado, **para**. Eso sería un
+hecho nuevo sobre los privilegios de `postgres` en Supabase gestionado y hay que
+medirlo y registrarlo, no rodearlo.
 
 ---
 
@@ -65,7 +174,7 @@ El operador ejecuta la sonda manualmente. No hay herramienta en este repositorio
 que se conecte a staging.
 
 ```bash
-psql "$UELLIX_STAGING_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+psql "$UELLIX_STAGING_ADMIN_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
      -f artifacts/hosted-remediation-witness-probe.sql \
      > artifacts/hosted-remediation-witness.json
 ```
@@ -134,7 +243,7 @@ PLAN AUTHORIZED → pnpm artefact:verify (PASS) → checkpoint humano → psql
 ### 4.3 psql
 
 ```bash
-psql "$UELLIX_STAGING_URL" -X -1 -v ON_ERROR_STOP=1 \
+psql "$UELLIX_STAGING_ADMIN_URL" -X -1 -v ON_ERROR_STOP=1 \
      -c "SET uellix.bootstrap_environment = 'staging'" \
      -f db/prepared/stella_hosted_0002_prechain_authority_reconciliation.sql
 ```
@@ -152,7 +261,7 @@ es un entorno ambiguo y §0 lo rechaza.
 
 ```bash
 pnpm remediation:attempt:open
-psql "$UELLIX_STAGING_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+psql "$UELLIX_STAGING_ADMIN_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
      -f artifacts/hosted-remediation-witness-probe.sql \
      > artifacts/hosted-remediation-witness-post.json
 pnpm remediation:attempt:plan --witness=artifacts/hosted-remediation-witness-post.json
@@ -177,19 +286,40 @@ no se reaplica.
 pnpm chain:attempt:open
 ```
 
-Escribe tres sondas, todas con el mismo `attemptId`. Ejecuta las dos que el gate
-necesita:
+Escribe **cuatro** sondas y un guard, todos con el mismo `attemptId`. Ejecuta las
+dos que el gate prechain necesita:
 
 ```bash
-psql "$UELLIX_STAGING_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+psql "$UELLIX_STAGING_ADMIN_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
      -f artifacts/hosted-chain-t1-remediation-probe.sql > artifacts/t1-witness.json
-psql "$UELLIX_STAGING_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+psql "$UELLIX_STAGING_ADMIN_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
      -f artifacts/hosted-chain-t1-prechain-probe.sql > artifacts/t1-prechain.json
 
 pnpm chain:attempt:gate --attempt=<attemptId> \
      --remediation-witness=artifacts/t1-witness.json \
      --prechain-observation=artifacts/t1-prechain.json
 ```
+
+### 6.1 La sonda de identidad — por la conexión del INSTALADOR
+
+Ésta es la única que **no** se mide por la conexión de admin, y medirla por la
+conexión equivocada es exactamente el incidente:
+
+```bash
+psql "$UELLIX_STAGING_INSTALLER_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+     -f artifacts/hosted-chain-installer-identity-probe.sql \
+     > artifacts/installer-identity.json
+```
+
+Read-only: dos palabras clave de sesión y una lectura de `pg_catalog`. No hace
+`SET ROLE`, no altera nada y no imprime ninguna credencial — los seis campos que
+emite son dos nombres de rol y cuatro booleanos.
+
+Las tres sondas anteriores miden **la base de datos** y dan lo mismo desde
+cualquier conexión. Ésta mide **la sesión**, y por eso es la única que tiene que
+salir de la conexión con la que vas a escribir. Si la ejecutas por la conexión de
+admin obtendrás `postgres` y el plan te rechazará — que es el comportamiento
+correcto y la razón de que exista.
 
 Requerido: **`PRECHAIN_AUTHORITY_GATE = PASS`**. `gate` invoca
 `validateHostedPrechainAuthorityContract` y `authorizeGovernedT1` —los mismos que
@@ -220,24 +350,39 @@ una decisión.
 
 ```bash
 pnpm chain:attempt:plan --observation=<chain-observation.json> \
+     --installer-identity=artifacts/installer-identity.json \
      --remediation-witness=artifacts/t1-witness.json \
      --prechain-observation=artifacts/t1-prechain.json
 ```
 
-Cuando —y sólo cuando— la observación autoriza T1, el CLI exige los dos
-documentos y llama a `authorizeGovernedT1`. La matriz completa:
+`--installer-identity` es obligatorio **para los nueve paquetes**, no sólo para
+T1: el gate prechain es inerte para T2–T9, y el de identidad no, porque cada uno
+de los nueve abre al menos una ventana de capacidad a nombre de
+`uellix_migrator`.
 
-| remediación | gate prechain | resultado |
-|---|---|---|
-| `ABSENT` | cualquiera | **REFUSED** `REMEDIATION_ABSENT` |
-| `PARTIAL_OR_INCONSISTENT` | cualquiera | **REFUSED** `REMEDIATION_PARTIAL` |
-| `INSTALLED` | FAIL | **REFUSED** `PRECHAIN_GATE_FAILED` |
-| `INSTALLED` | PASS | **AUTORIZADO** (más la autorización normal de cadena) |
-| documentos ausentes | — | **REFUSED** `CHAIN_T1_EVIDENCE_REQUIRED` |
+Cuando —y sólo cuando— la observación autoriza T1, el CLI exige además los dos
+documentos prechain y llama a `authorizeGovernedT1`. La matriz completa:
 
-No hay bandera que sustituya a la evidencia. `--remediation-installed` y
-`--prechain-pass` no existen y un test permanente comprueba que no aparezcan: el
-estado de la base de datos no es algo que el operador declare.
+| identidad | remediación | gate prechain | resultado |
+|---|---|---|---|
+| ausente | cualquiera | cualquiera | **REFUSED** `INSTALLER_IDENTITY_REQUIRED` |
+| `postgres` | cualquiera | cualquiera | **REFUSED** `INSTALLER_IDENTITY_WRONG_PRINCIPAL` |
+| asumida por `SET ROLE` | cualquiera | cualquiera | **REFUSED** `INSTALLER_IDENTITY_ROLE_ASSUMED` |
+| de otro intento | cualquiera | cualquiera | **REFUSED** `INSTALLER_IDENTITY_ATTEMPT_MISMATCH` |
+| `uellix_migrator` | `ABSENT` | cualquiera | **REFUSED** `REMEDIATION_ABSENT` |
+| `uellix_migrator` | `PARTIAL_OR_INCONSISTENT` | cualquiera | **REFUSED** `REMEDIATION_PARTIAL` |
+| `uellix_migrator` | `INSTALLED` | FAIL | **REFUSED** `PRECHAIN_GATE_FAILED` |
+| `uellix_migrator` | `INSTALLED` | PASS | **AUTORIZADO** (más la autorización normal de cadena) |
+| `uellix_migrator` | documentos ausentes | — | **REFUSED** `CHAIN_T1_EVIDENCE_REQUIRED` |
+
+El gate de identidad corre **el último**, a propósito: un operador conectado mal
+*y* sin evidencia de remediación debe seguir enterándose de lo de la evidencia,
+que es el rechazo ya certificado. Ninguno de los dos oculta al otro.
+
+No hay bandera que sustituya a la evidencia. `--remediation-installed`,
+`--prechain-pass`, `--installer=<rol>` y `--skip-identity` no existen y un test
+permanente comprueba que no aparezcan: ni el estado de la base de datos ni la
+identidad de la sesión son algo que el operador declare.
 
 ### El artefacto es siempre el GOBERNADO
 
@@ -250,15 +395,41 @@ Y **antes de psql**, obligatorio, igual que en §4.1:
 
 ```bash
 pnpm artefact:verify --path=<PACKAGE_PATH> --digest=<PACKAGE_DIGEST>
+pnpm identity:verify --attempt=<CHAIN_ATTEMPT_ID> --identity=artifacts/installer-identity.json
 ```
 
 ```
-PLAN AUTHORIZED → pnpm artefact:verify (PASS) → checkpoint humano → psql
+PLAN AUTHORIZED
+  → pnpm artefact:verify (PASS)          ¿son éstos los bytes?
+  → pnpm identity:verify (PASS)          ¿soy yo quien los va a aplicar?
+  → checkpoint humano
+  → psql
 ```
 
-El pin del plan se comprueba cuando el plan se emite; éste se comprueba cuando
+El pin del plan se comprueba cuando el plan se emite; éstos se comprueban cuando
 vas a ejecutar. Son dos momentos distintos y la ventana entre ellos es de un
-humano.
+humano — una terminal distinta, un `PGSERVICE` distinto, una variable que se
+expande a otra cosa.
+
+### 8.1 El guard, dentro de la misma transacción
+
+Por eso el comando que imprime el plan lleva **dos** `-f`:
+
+```bash
+psql "$UELLIX_STAGING_INSTALLER_URL" -X -1 -v ON_ERROR_STOP=1 \
+     -f artifacts/hosted-chain-installer-identity-guard.sql \
+     -f <PACKAGE_PATH>
+```
+
+Bajo `-1` los dos archivos corren en **una sola transacción**, en orden. El guard
+es la primera sentencia: si el principal es el correcto no hace nada, y si no lo
+es aborta la transacción **antes de que exista un solo objeto que deshacer**. Es
+lo único que puede rechazar en el instante de la escritura, y es la única defensa
+frente a «medí la identidad por una conexión y escribí por otra».
+
+No está fijado por `artefact:verify`, deliberadamente: manipularlo sólo puede
+hacerlo más permisivo, y el gate que decide de verdad es el del plan. No lo
+sustituyas por el `-f` a secas «porque ya verifiqué».
 
 > **Incidente T1 (Commit 5.5).** Antes de este commit el plan imprimía
 > `db/prepared/hosted/<paquete>.hosted.sql`. Ese es el artefacto **intermedio**:
@@ -277,9 +448,30 @@ humano.
 > El único `.hosted.sql` que se aplica es el bootstrap de primera provisión,
 > que no tiene variante gobernada.
 
-**T2–T9 no cambian.** No tienen prerequisito prechain —dependen de que su
-predecesor esté `INSTALLED`, que los testigos de cadena ya establecen— y el gate
-es inerte para ellos. Se planifican con `--observation` a secas.
+> **Segundo incidente T1 (Commit 5.6).** Con el artefacto ya corregido, T1 volvió
+> a morir:
+>
+> ```
+> PACKAGE_PATH    db/prepared/hosted/governed/grounding_0002_document_versions.governed.sql
+> artefact:verify PASS
+> ERROR:  permission denied to set role "uellix_cap_grounding"
+> session_user = current_user = postgres · rolsuper = f · rolcreaterole = t
+> ```
+>
+> Ni el plan ni el artefacto estaban mal esta vez. `artifacts/t1-prechain.json`
+> del intento fallido registra `uellix_migrator {canLogin: true, createRole:
+> true}` e `installerCanSetOwner: true`: **la base de datos estaba lista**. Todos
+> los gates que existían medían el objetivo, y ninguno había preguntado nunca
+> quién sostenía la conexión.
+>
+> Un gate que mide el destino y nunca al que llama tiene un punto ciego del
+> ancho exacto de la terminal del operador. §0.0 y §6.1 son ese punto ciego,
+> cerrado.
+
+**T2–T9 no cambian *en lo prechain*.** No tienen ese prerequisito —dependen de
+que su predecesor esté `INSTALLED`, que los testigos de cadena ya establecen— y
+el gate prechain es inerte para ellos. Se planifican con `--observation` y
+`--installer-identity`: la identidad **no** es inerte para ninguno.
 
 El rechazo ocurre **antes** de emitir un plan autorizado: una negativa no lleva
 línea de libro alguna, así que no hay rama en la que el CLI pueda registrar
