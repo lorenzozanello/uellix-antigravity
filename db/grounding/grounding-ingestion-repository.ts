@@ -121,16 +121,49 @@ const SQLSTATE_TO_FAILURE = {
 } as const
 
 /**
+ * How deep the cause chain is walked. Four is one more link than any wrapper
+ * this stack is known to add, and it is a BOUND rather than a recursion: a
+ * cause cycle — which a driver is free to construct and an aggregator does —
+ * would otherwise hang the request inside a SECURITY DEFINER call.
+ */
+const SQLSTATE_CAUSE_DEPTH = 5
+
+/**
  * Read the SQLSTATE off a driver error without depending on a driver type.
  *
- * `postgres`, `pg` and drizzle all surface it as a `code` property on the
- * error; none of them share a class this file could `instanceof`. Reading one
- * string defensively is the smaller coupling.
+ * `postgres`, `pg` and drizzle all surface it as a `code` property; none of
+ * them share a class this file could `instanceof`. Reading one string
+ * defensively is the smaller coupling.
+ *
+ * FIXED (M-8 review). Reading `error.code` ALONE was correct only for a raw
+ * driver error. Drizzle 0.45.x does not throw one: `execute` wraps every driver
+ * failure in `DrizzleQueryError`, whose own `code` is undefined and which
+ * carries the driver error on `.cause` (drizzle-orm/errors.js). So every one of
+ * the five governed SQLSTATEs this adapter maps — U0100 invalid_request, U0101
+ * pipeline_version_conflict, U0102 evidence_not_found, U0103
+ * incomplete_ingestion, U0104 chunk_identity_rejected — collapsed to the
+ * unmapped default, `unavailable`, which `isRetryablePersistenceFailure` calls
+ * RETRYABLE. A caller was therefore told to retry a request the database had
+ * refused as a statement about the request itself, and the orchestrator's
+ * branch on `pipeline_version_conflict` could never be taken.
+ *
+ * It went unnoticed for the same reason M-8 did: no application path reached
+ * these functions, so no wrapped error was ever classified in anger.
+ *
+ * The sibling adapter `db/stella/operation-tickets.ts` already walks the chain
+ * for exactly this reason — its E2E presented a bound ticket with a second
+ * query and got the wrong product code back. This is that lesson, applied to
+ * the adapter that had no E2E to teach it.
  */
 function sqlStateOf(error: unknown): string | null {
-  if (typeof error !== 'object' || error === null) return null
-  const code = (error as { code?: unknown }).code
-  return typeof code === 'string' ? code : null
+  let current: unknown = error
+  for (let depth = 0; depth < SQLSTATE_CAUSE_DEPTH; depth += 1) {
+    if (typeof current !== 'object' || current === null) return null
+    const code = (current as { code?: unknown }).code
+    if (typeof code === 'string') return code
+    current = (current as { cause?: unknown }).cause
+  }
+  return null
 }
 
 /**
