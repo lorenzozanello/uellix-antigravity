@@ -27,10 +27,17 @@ todo lo que se conserva aquí lleva el intento en el nombre.
 | `2026-08-11-att_4b60e96a-prechain-observation.json` | `att_4b60e96a…` | Observación prechain del mismo intento. `uellix_migrator {canLogin: true, createRole: true}`, `installerCanSetOwner: true`: **la base de datos estaba lista.** |
 | `2026-08-11-att_9b68c33c-post-failure-probe-output.json` | `att_9b68c33c…` | Sonda posterior al segundo fallo: 35 mediciones de testigo, **9/9 ABSENT**. Rollback completo otra vez. Este intento se abrió y **nunca se consumió**: es evidencia, no autorización. |
 | `2026-08-11-post-incident-operator-identity.txt` | *(ninguno)* | `session_user\|current_user\|rolsuper\|rolcreaterole` = `postgres\|postgres\|f\|t`. La identidad real de la conexión que ejecutó T1. |
+| `2026-08-11-att_0ca699d6-installer-identity.json` | `att_0ca699d6…` | La sonda de identidad **del Commit 5.6**, corrida por la conexión que aplicó T9: `sessionUser = currentUser = uellix_migrator`, `isSuper: false`, `createRole: true`, `canSetOwner: true`. Es la fila de arriba, ya cerrada. |
+| `2026-08-11-att_0ca699d6-installer-identity-recheck.json` | `att_0ca699d6…` | El re-check de `pnpm identity:verify` inmediatamente antes de la escritura. Idéntico al anterior: el plan comprueba la sesión que mediste, y la conexión que vas a usar es un hecho aparte. |
+| `2026-08-11-att_1398309c-chain-final-observation.json` | `att_1398309c…` | La observación de **cierre**. 9/9 INSTALLED, 0 ABSENT, 0 PARTIAL, `CHAIN_SEQUENCE_COMPLETE`. Su intento se abrió y **nunca se consumió**: evidencia, no autorización. |
 
 Los tres de `att_6d9a8c1d` son el expediente completo de la única escritura de
 cadena que se intentó contra staging: por qué se autorizó y con qué evidencia.
 El de `att_996213d2` es por qué el fallo no dejó residuo.
+
+Los tres últimos son el **cierre**: la identidad certificada con la que se aplicó
+el último paquete, su re-check, y la observación que mide la cadena completa. Léase
+junto a [`../STELLA_STAGING_POST_INSTALL_GATE.md`](../STELLA_STAGING_POST_INSTALL_GATE.md).
 
 Los de `att_4b60e96a` y `att_9b68c33c` son el **segundo** incidente, y hay que
 leerlos juntos porque por separado cada uno parece decir que todo estaba bien:
@@ -52,7 +59,9 @@ Verificado antes de versionar, con búsqueda de patrones sobre los bytes:
 Sólo hay metadatos y lecturas de catálogo: ids de intento, timestamps, el project
 ref, estados de paquete y atributos de rol.
 
-Una excepción declarada: `…-chain-pre-write-observation.json` incluye el bloque
+Una excepción declarada, y ahora en **dos** archivos —
+`…-chain-pre-write-observation.json` y `…-chain-final-observation.json`—:
+ambos incluyen el bloque
 `connection` que el contrato A1 exige — `connectionHost`
 (`aws-0-us-east-2.pooler.supabase.com`), `poolerUser` (`postgres.<ref>`) y
 `connectionPort`. Es host, **nombre de usuario** y puerto: ni contraseña ni DSN,

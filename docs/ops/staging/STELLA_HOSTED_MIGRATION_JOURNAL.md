@@ -1,8 +1,13 @@
 # STELLA — RR-25: el journal autoritativo de aplicación hosted
 
-> Train 5C2. **Ninguna escritura hosted se ha realizado.** El journal está
-> implementado en bytes generados y verificados localmente; nada se ha ejecutado
-> contra el proyecto remoto.
+> Train 5C2 escribió aquí «ninguna escritura hosted se ha realizado». Eso dejó de
+> ser cierto el **2026-08-11**: la cadena gobernada T1→T9 se aplicó contra staging
+> `bvyzblhqymxruxdguaee` y el journal midió **50/50 unidades base APPLIED**.
+> El banner se corrige en vez de dejarse, porque un documento de estado que ya no
+> describe el estado es peor que ninguno. El cierre está en
+> [`STELLA_STAGING_POST_INSTALL_GATE.md`](STELLA_STAGING_POST_INSTALL_GATE.md).
+>
+> Lo que sigue describe el **mecanismo** del journal, que no ha cambiado.
 
 ---
 
