@@ -192,8 +192,24 @@ stella_hosted_0001_managed_role_bootstrap   ← sustituye a stella_0004 en hoste
    └── stella_0013 → 0014 → 0015 → 0016 → 0017 → 0018
 ```
 
-- **Archivos enviados:** `db/prepared/hosted/<paquete>.hosted.sql`, generados y
-  versionados. `pnpm hosted:verify` los regenera y compara byte a byte.
+- **Archivos enviados:** `db/prepared/hosted/governed/<paquete>.governed.sql`,
+  generados y versionados. `pnpm authority:verify` los regenera y compara byte a
+  byte, y el planificador de operador los resuelve con valla (`/governed/`) y
+  pin antes de emitir un comando.
+
+  > **Corregido tras el incidente de T1 (Commit 5.5).** Esta línea decía
+  > `db/prepared/hosted/<paquete>.hosted.sql`. Ese es el artefacto **intermedio**:
+  > conserva la contabilidad canónica `SET ROLE`/`RESET ROLE`, que —en palabras
+  > de `governed-generator.ts`— «asume un superusuario aplicando el paquete, que
+  > es justo lo que Supabase gestionado no tiene». Cincuenta y cuatro statements
+  > repartidos por los nueve paquetes ejecutarían DDL como el instalador dentro
+  > de esquemas propiedad de `uellix_owner`. T1 se aplicó desde él contra staging
+  > y murió en `permission denied for schema uellix_grounding`. El intermedio es
+  > una **entrada de derivación**, nunca un entregable.
+
+- **Bootstrap:** `stella_hosted_0001_managed_role_bootstrap.hosted.sql` es la
+  excepción declarada — no tiene variante gobernada y no la necesita: lo aplica
+  `postgres` cuando `uellix_owner` todavía no posee nada.
 - **Identidad de aplicación:** el rol administrativo del proyecto (`postgres`),
   que **no** es superusuario. `stella_0004` queda fuera de la cadena hosted por
   decisión, no por omisión: el planificador lo rechaza con

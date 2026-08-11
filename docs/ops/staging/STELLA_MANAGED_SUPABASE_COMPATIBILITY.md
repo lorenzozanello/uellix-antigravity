@@ -32,8 +32,18 @@ db/prepared/<paquete>.sql            fuente única de verdad (sin tocar)
         │  db/hosted/rewrite-rules.ts        4 reglas enumeradas
         │  db/hosted/hosted-package-manifest.ts   SHA-256 + conteos esperados
         ▼
-db/prepared/hosted/<paquete>.hosted.sql   artefacto derivado, versionado
+db/prepared/hosted/<paquete>.hosted.sql   artefacto INTERMEDIO, versionado
+        │                                 (entrada de derivación, NO se aplica)
+        │  db/hosted/authority/governed-generator.ts   quién ejecuta cada statement
+        ▼
+db/prepared/hosted/governed/<paquete>.governed.sql   lo que se aplica
 ```
+
+El intermedio conserva la contabilidad canónica `SET ROLE`/`RESET ROLE`, que
+asume un superusuario. Aplicarlo a un proyecto gestionado ejecuta DDL de esquema
+ajeno como el instalador — es lo que hizo fallar a T1 en staging. El único
+paquete que se aplica desde el intermedio es el bootstrap de primera provisión,
+que no tiene variante gobernada.
 
 **Por qué generación y no diez variantes a mano.** Una copia editada produce dos
 fuentes para un contrato, y la segunda diverge la primera vez que alguien parchea

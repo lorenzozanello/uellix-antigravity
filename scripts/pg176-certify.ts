@@ -13,8 +13,12 @@
 // and pins every file by digest, and both refusals happen before a byte of SQL
 // reaches a server.
 //
-// The operational runners in db/hosted/** still resolve `.hosted.sql`. That is
-// left alone deliberately — see the header of governed-input.ts.
+// COMMIT 5.5. The operational runners USED to resolve `.hosted.sql`, left alone
+// deliberately by Commit 5 — and staging paid for it: the chain CLI handed an
+// operator that path and T1 died at «permission denied for schema
+// uellix_grounding». They now resolve through `db/hosted/governed-artefact.ts`,
+// which delegates to the same fenced, pinned resolver this harness uses. The
+// engine half of that finding is reproduced below as UNGOVERNED_ARTEFACT_ENGINE.
 //
 // ---------------------------------------------------------------------------
 // WHY docker exec AND NOT A CONNECTION STRING
@@ -993,6 +997,59 @@ function main(): number {
     console.log(`[cert] installer ${probe.installer}: applied=${probe.applied} T1=${probe.leftT1}`)
     if (probe.firstRefusal) console.log(`[cert]     ${probe.firstRefusal}`)
   }
+
+  /* THE UNGOVERNED ARTEFACT, ON THE ENGINE (Commit 5.5).
+   *
+   * Section 22 of the brief already proves the RESOLVER refuses
+   * `db/prepared/hosted/<pkg>.hosted.sql` before any SQL is read. That is a
+   * statement about this harness, and staging proved it was not a statement
+   * about the operator: the chain CLI formatted that path itself, the operator
+   * ran it, and T1 died at
+   *
+   *   grounding_0002_document_versions.hosted.sql:915
+   *   ERROR:  permission denied for schema uellix_grounding
+   *
+   * So the failure is reproduced HERE, on the engine, as the managed
+   * non-superuser installer — the same file, the same psql flags — and the
+   * rollback it leaves behind is measured rather than assumed. Run on a
+   * disposable copy so the primary stays PRECHAIN-clean. */
+  const ungovernedProbe = (() => {
+    const name = 'ungoverned-t1'
+    const container = startContainer(name, bootstrapSnapshot)
+    try {
+      const relativePath = 'db/prepared/hosted/grounding_0002_document_versions.hosted.sql'
+      const sql = readFileSync(path.join(ROOT, relativePath), 'utf8')
+      const attempt = applyPackageSql(container, sql)
+      const after = observe(container)
+      return {
+        relativePath,
+        installer: INSTALLER,
+        exitStatus: attempt.status,
+        firstRefusal: attempt.status === 0 ? null : diagnosticLines(attempt.stderr, 3),
+        permissionDeniedOnOwnerSchema: /permission denied for schema uellix_grounding/.test(
+          attempt.stderr,
+        ),
+        t1StateAfter: stateOf(after, 'T1'),
+        temporaryMembershipsAfter: membershipDelta(after, prechain.memberships).length,
+        schemaCreateResidualAfter: schemaCreateDelta(
+          after,
+          prechain.schemaCreateResidual,
+          schemaOwners(after),
+        ).length,
+      }
+    } finally {
+      if (!KEEP) destroyContainer(name)
+    }
+  })()
+  report.ungovernedArtefactProbe = ungovernedProbe
+  console.log(
+    `[cert] UNGOVERNED_ARTEFACT_ENGINE exit=${ungovernedProbe.exitStatus} ` +
+      `permissionDenied=${ungovernedProbe.permissionDeniedOnOwnerSchema} ` +
+      `T1=${ungovernedProbe.t1StateAfter} ` +
+      `tempMemberships=${ungovernedProbe.temporaryMembershipsAfter} ` +
+      `tempCreate=${ungovernedProbe.schemaCreateResidualAfter}`,
+  )
+  if (ungovernedProbe.firstRefusal) console.log(`[cert]     ${ungovernedProbe.firstRefusal}`)
 
   if (ONLY === 'provision') {
     writeReport(report)

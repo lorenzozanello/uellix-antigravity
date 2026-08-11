@@ -427,6 +427,43 @@ describe('the T1 operator gate — refusal precedes consumption', () => {
     expect(consumed[0]?.packageId).toBe(T1)
   })
 
+  it('names the governed artefact, pinned, and never the middle one', () => {
+    const result = planChainWriteForOperator({
+      raw: chainObservation([]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      witnessRaw: witness(A, REMEDIATION_INSTALLED),
+      prechainRaw: prechain(A),
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(`${result.code}: ${result.detail}`)
+    expect(result.record.PACKAGE_PATH).toBe(
+      `db/prepared/hosted/governed/${T1}.governed.sql`,
+    )
+    expect(result.record.PACKAGE_PATH).not.toContain('.hosted.sql')
+    expect(result.record.PACKAGE_DIGEST).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('issues no plan at all when the governed artefact does not match its pin', () => {
+    // The refusal has to arrive here rather than at psql: this is a write into
+    // an open transaction against staging, and «the bytes moved» is not
+    // something to discover at statement 915.
+    const result = planChainWriteForOperator({
+      raw: chainObservation([]),
+      expectedAttemptId: A,
+      attemptLedger: OPEN_A,
+      at: AT,
+      witnessRaw: witness(A, REMEDIATION_INSTALLED),
+      prechainRaw: prechain(A),
+      readGovernedArtefact: () => '-- somebody edited this\n',
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) throw new Error('an unpinned artefact was authorised')
+    expect(result.code).toBe('CERT_DIGEST_MISMATCH')
+    expect(result).not.toHaveProperty('consumedLedgerLine')
+  })
+
   it('consults the gate in the shell rather than authorising directly', () => {
     expect(SHELL).toContain('planChainWriteForOperator')
     expect(SHELL).not.toMatch(/authorizeChainWrite\s*\(/)

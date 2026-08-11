@@ -54,6 +54,8 @@ import {
 } from './baseline-journal-wrapper'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
+import { resolveGovernedApplyTarget } from './governed-artefact'
+import { CHAIN_PACKAGE_FILES } from './authority/window-plan'
 import { CHAIN_WRITE_ORDER, authorizeChainWrite } from './fresh-observation'
 import {
   STORAGE_UNIT_SOURCE,
@@ -1099,14 +1101,40 @@ function planChainPhase(request: ProvisioningRequest): ProvisioningPlan {
   )
 }
 
+/**
+ * One chain step, naming the GOVERNED artefact.
+ *
+ * COMMIT 5.5. This function used to emit `db/prepared/hosted/<pkg>.hosted.sql`
+ * — the middle artefact, which still carries the canonical SET ROLE / RESET
+ * ROLE bookkeeping and therefore runs owner-schema DDL as the installer. A
+ * managed apply of it fails at the first such statement; T1 did, against
+ * staging, at `permission denied for schema uellix_grounding`.
+ *
+ * The path is resolved rather than formatted, so the fence (governed directory
+ * only) and the pin (bytes match `authority:verify`) both run before a command
+ * is ever printed. A package that cannot be resolved gets NO command: emitting
+ * an unrunnable step is how an operator ends up improvising one.
+ */
 function stellaStep(step: HostedApplyStep, ordinal: number): ProvisioningStep {
+  // The FIRST-PROVISION bootstrap has no governed variant and needs none: it is
+  // applied by `postgres` against a project where uellix_owner owns nothing
+  // yet, and it is the package that hands `uellix_bootstrap` over at its end.
+  // It is named explicitly rather than reached by falling through, so that a
+  // package which merely fails to resolve can never be served the ungoverned
+  // file by accident.
+  const governed = CHAIN_PACKAGE_FILES.some((e) => e.sourceFile === `${step.package}.sql`)
+  const file = governed
+    ? resolveGovernedApplyTarget(step.package).relativePath
+    : `db/prepared/hosted/${step.package}.hosted.sql`
   return {
     ordinal,
     id: step.package,
-    file: `db/prepared/hosted/${step.package}.hosted.sql`,
+    file,
     sha256: step.sourceSha256,
-    generatedSha256: step.generatedSha256,
-    command: `psql -1 -v ON_ERROR_STOP=1 -f db/prepared/hosted/${step.package}.hosted.sql`,
+    generatedSha256: governed
+      ? resolveGovernedApplyTarget(step.package).digest
+      : step.generatedSha256,
+    command: `psql -1 -v ON_ERROR_STOP=1 -f ${file}`,
   }
 }
 

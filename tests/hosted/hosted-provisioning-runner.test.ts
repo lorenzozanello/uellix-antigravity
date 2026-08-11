@@ -216,6 +216,41 @@ describe('the three phases, in sequence', () => {
     expect(result.sequenceComplete).toBe(true)
   })
 
+  it('PHASE_STELLA_CHAIN applies the GOVERNED artefact, never the middle one', () => {
+    // COMMIT 5.5. This step used to name `db/prepared/hosted/<pkg>.hosted.sql`
+    // — the derivation input, which keeps the canonical SET ROLE / RESET ROLE
+    // bookkeeping and therefore runs owner-schema DDL as the installer. T1 was
+    // applied from it against staging and died at
+    // «permission denied for schema uellix_grounding».
+    const result = plan(
+      planProvisioningPhase(
+        request({
+          phase: 'PHASE_STELLA_CHAIN',
+          state: BOOTSTRAPPED,
+          target: { ...target, sentinel: { environment: 'staging', projectRef: REF } },
+        }),
+      ),
+    )
+    for (const step of result.steps) {
+      expect(step.file, step.id).toMatch(/^db\/prepared\/hosted\/governed\/.+\.governed\.sql$/)
+      expect(step.command, step.id).toContain(step.file)
+      expect(step.command, step.id).not.toContain('.hosted.sql')
+      expect(step.generatedSha256, step.id).toMatch(/^[0-9a-f]{64}$/)
+    }
+  })
+
+  it('PHASE_STELLA_BOOTSTRAP keeps its own artefact, which has no governed variant', () => {
+    // Named, not fallen through to: the bootstrap is applied by postgres against
+    // a project where uellix_owner owns nothing yet, and it is the package that
+    // hands uellix_bootstrap over at its end.
+    const result = plan(
+      planProvisioningPhase(request({ phase: 'PHASE_STELLA_BOOTSTRAP', state: BASELINE_DONE })),
+    )
+    expect(result.steps.map((s) => s.file)).toEqual([
+      'db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql',
+    ])
+  })
+
   it('APPLY refuses while the production ref denylist is empty — the veto must be loaded first', () => {
     // Adversarial review of Train 5C1: the apply-authorization gate consulted
     // `productionDenylistStatus`, and NOTHING consulted the gate. Both planners

@@ -201,6 +201,8 @@ function plan(): void {
       `  CHAIN_ATTEMPT_ID         ${r.CHAIN_ATTEMPT_ID}`,
       `  TARGET_PROJECT_REF       ${r.TARGET_PROJECT_REF}`,
       `  PACKAGE_ID               ${r.PACKAGE_ID}`,
+      `  PACKAGE_PATH             ${r.PACKAGE_PATH}`,
+      `  PACKAGE_DIGEST           ${r.PACKAGE_DIGEST}`,
       `  T1_GATE                  ${r.T1_GATE}`,
       `  REMEDIATION_WITNESS      ${r.REMEDIATION_WITNESS}`,
       `  PRECHAIN_AUTHORITY_GATE  ${r.PRECHAIN_AUTHORITY_GATE}`,

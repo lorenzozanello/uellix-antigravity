@@ -799,6 +799,16 @@
       "leftT1": "INSTALLED"
     }
   ],
+  "ungovernedArtefactProbe": {
+    "relativePath": "db/prepared/hosted/grounding_0002_document_versions.hosted.sql",
+    "installer": "uellix_migrator",
+    "exitStatus": 3,
+    "firstRefusal": "psql:<stdin>:258: ERROR:  permission denied for schema uellix_grounding",
+    "permissionDeniedOnOwnerSchema": true,
+    "t1StateAfter": "ABSENT",
+    "temporaryMembershipsAfter": 0,
+    "schemaCreateResidualAfter": 0
+  },
   "chain": [
     {
       "packageId": "T1",

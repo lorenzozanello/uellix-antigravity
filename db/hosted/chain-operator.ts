@@ -68,6 +68,11 @@ import {
   type PrechainObjectContract,
 } from './authority/certification/prechain-requirements'
 import { prechainObservationSql } from './authority/certification/engine-probes'
+import {
+  GovernedArtefactRefusal,
+  GovernedInputRefusal,
+  resolveGovernedApplyTarget,
+} from './governed-artefact'
 
 /** The first governed package. The only one with a prechain prerequisite. */
 export const GOVERNED_T1_PACKAGE = CHAIN_WRITE_ORDER[0] as string
@@ -378,7 +383,9 @@ export interface ChainOperatorRecord {
   readonly CHAIN_ATTEMPT_ID: string
   readonly TARGET_PROJECT_REF: string
   readonly PACKAGE_ID: string
+  /** ALWAYS the governed artefact. Resolved, fenced and pinned before issue. */
   readonly PACKAGE_PATH: string
+  readonly PACKAGE_DIGEST: string
   readonly T1_GATE: 'NOT_APPLICABLE' | 'PASS'
   readonly REMEDIATION_WITNESS: 'NOT_MEASURED' | 'INSTALLED'
   readonly PRECHAIN_AUTHORITY_GATE: 'NOT_APPLICABLE' | 'PASS'
@@ -407,6 +414,14 @@ export interface ChainOperatorInputs extends ChainWriteRequest {
   readonly prechainRaw?: string | null
   readonly contracts?: readonly PrechainObjectContract[]
   readonly at: string
+  /** Repo root, for resolving the governed artefact. */
+  readonly root?: string
+  /**
+   * Injected so the fence and pin refusals can be exercised without writing a
+   * corrupted artefact into the repository — the same reason
+   * `resolveGovernedInput` takes one.
+   */
+  readonly readGovernedArtefact?: (absolutePath: string) => string
 }
 
 /**
@@ -420,6 +435,25 @@ export interface ChainOperatorInputs extends ChainWriteRequest {
 export function planChainWriteForOperator(inputs: ChainOperatorInputs): ChainOperatorResult {
   const authorization = authorizeChainWrite(inputs)
   if (!authorization.ok) return deny(authorization.code, authorization.detail)
+
+  // THE ARTEFACT, BEFORE THE PLAN. A package is applied from the GOVERNED file
+  // and from nowhere else. Resolving here means a missing, mislocated or
+  // moved artefact is refused while the operator still has nothing to run —
+  // rather than at line 915 of a transaction already open against staging,
+  // which is how this requirement was discovered.
+  let target: ReturnType<typeof resolveGovernedApplyTarget>
+  try {
+    target = resolveGovernedApplyTarget(
+      authorization.packageId,
+      inputs.root,
+      inputs.readGovernedArtefact,
+    )
+  } catch (error) {
+    if (error instanceof GovernedArtefactRefusal || error instanceof GovernedInputRefusal) {
+      return deny(error.code, error.message)
+    }
+    throw error
+  }
 
   const t1 = gateGovernedT1({
     packageId: authorization.packageId,
@@ -444,7 +478,8 @@ export function planChainWriteForOperator(inputs: ChainOperatorInputs): ChainOpe
       CHAIN_ATTEMPT_ID: authorization.attemptId,
       TARGET_PROJECT_REF: authorization.projectRef,
       PACKAGE_ID: authorization.packageId,
-      PACKAGE_PATH: `db/prepared/hosted/${authorization.packageId}.hosted.sql`,
+      PACKAGE_PATH: target.relativePath,
+      PACKAGE_DIGEST: target.digest,
       T1_GATE: t1.required ? 'PASS' : 'NOT_APPLICABLE',
       REMEDIATION_WITNESS: t1.required ? 'INSTALLED' : 'NOT_MEASURED',
       PRECHAIN_AUTHORITY_GATE: t1.required ? 'PASS' : 'NOT_APPLICABLE',

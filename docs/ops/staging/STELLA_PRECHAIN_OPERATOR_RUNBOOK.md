@@ -210,6 +210,30 @@ No hay bandera que sustituya a la evidencia. `--remediation-installed` y
 `--prechain-pass` no existen y un test permanente comprueba que no aparezcan: el
 estado de la base de datos no es algo que el operador declare.
 
+### El artefacto es siempre el GOBERNADO
+
+El plan imprime `PACKAGE_PATH` y `PACKAGE_DIGEST`, y `PACKAGE_PATH` está
+**siempre** bajo `db/prepared/hosted/governed/` con sufijo `.governed.sql`. Se
+resuelve con valla y pin **antes** de emitir el comando; si los bytes no
+coinciden con `authority:verify`, no hay plan.
+
+> **Incidente T1 (Commit 5.5).** Antes de este commit el plan imprimía
+> `db/prepared/hosted/<paquete>.hosted.sql`. Ese es el artefacto **intermedio**:
+> una entrada de derivación que conserva la contabilidad canónica
+> `SET ROLE`/`RESET ROLE` y por tanto asume superusuario. Aplicado a staging,
+> T1 murió en:
+>
+> ```
+> grounding_0002_document_versions.hosted.sql:915
+> ERROR:  permission denied for schema uellix_grounding
+> ```
+>
+> La decisión del plan era correcta; el archivo no. Nunca apliques un
+> `.hosted.sql` a un proyecto gestionado: 54 statements repartidos por los nueve
+> paquetes ejecutan DDL como el instalador dentro de esquemas de `uellix_owner`.
+> El único `.hosted.sql` que se aplica es el bootstrap de primera provisión,
+> que no tiene variante gobernada.
+
 **T2–T9 no cambian.** No tienen prerequisito prechain —dependen de que su
 predecesor esté `INSTALLED`, que los testigos de cadena ya establecen— y el gate
 es inerte para ellos. Se planifican con `--observation` a secas.

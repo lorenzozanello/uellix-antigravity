@@ -4,14 +4,22 @@
 // ---------------------------------------------------------------------------
 // WHY THIS IS A SEPARATE RESOLVER AND NOT A FLAG ON THE EXISTING RUNNER
 // ---------------------------------------------------------------------------
-// The operational runners in db/hosted/** still resolve
-// `db/prepared/hosted/<name>.hosted.sql` — the UNGOVERNED middle artefact. That
-// is correct for them and it is deliberately left alone in this commit: those
-// runners drive staging, and repointing them as a side effect of a local
-// certification would be the largest possible change smuggled in under the
-// smallest possible heading.
+// COMMIT 5.5 — HISTORICAL NOTE, KEPT BECAUSE IT PREDICTED THE INCIDENT.
 //
-// But it also means a certification harness that shared their resolution would
+// This header used to say that the operational runners in db/hosted/** still
+// resolve `db/prepared/hosted/<name>.hosted.sql` — the UNGOVERNED middle
+// artefact — and that leaving them was correct for that commit. The reasoning
+// below about WHY that file is dangerous was exactly right; the estimate of how
+// long it could safely be deferred was not. The chain operator boundary
+// formatted that path, an operator ran it against staging, and T1 died at
+// «permission denied for schema uellix_grounding» — the first of fifty-four
+// statements that would run owner-schema DDL as the installer.
+//
+// The operational runners now resolve through `db/hosted/governed-artefact.ts`,
+// which delegates here. There is one resolver.
+//
+// The original point stands and is why: a certification harness that shared the
+// operational resolution would
 // be one basename away from certifying the wrong file. `.hosted.sql` and
 // `.governed.sql` differ by one path segment and one suffix; they apply without
 // error against the same database; and the difference between them is the
