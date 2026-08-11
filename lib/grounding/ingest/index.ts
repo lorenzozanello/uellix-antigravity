@@ -47,6 +47,14 @@ export type {
   ReingestionKind,
 } from './orchestrate-ingestion'
 
+export { resolveEvidenceSource } from './resolve-evidence-source'
+export type {
+  EvidenceObjectReader,
+  EvidenceSourceRecord,
+  EvidenceSourceRefusal,
+  EvidenceSourceResolution,
+} from './resolve-evidence-source'
+
 export { MAX_NORMALIZED_CHARS, normalizeDocumentText } from './normalize'
 export type { NormalizationOutput } from './normalize'
 
