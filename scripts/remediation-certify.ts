@@ -140,13 +140,29 @@ import {
 } from '../db/hosted/prechain-remediation'
 import { classifyAllPackages } from '../db/hosted/package-witnesses'
 import { CHAIN_PACKAGE_FILES } from '../db/hosted/authority/window-plan'
+import {
+  assertRunNamespaceAbsent,
+  certificationRunNamespace,
+  namespacedPrefix,
+  ownsResource,
+} from '../db/hosted/authority/certification/run-namespace'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const ARTEFACT = 'artifacts/remediation-certification/latest.json'
 
-/** Every container this script creates carries it, and only these are removed. */
-const PREFIX = 'uellix-rem-cert'
-const SNAPSHOT_REPO = 'uellix-rem-cert-snapshot'
+/**
+ * Every container and image this RUN creates carries it, and only these are
+ * removed.
+ *
+ * F-4, the same defect measured in scripts/pg176-certify.ts and fixed with the
+ * same helper: a fixed prefix meant a second certification on the same machine
+ * named the same container, and `startContainer` begins by removing whatever
+ * holds the name. The token never reaches the artefact — `writeReport`
+ * enforces that.
+ */
+const RUN_NAMESPACE = certificationRunNamespace(process.pid, Date.now())
+const PREFIX = namespacedPrefix('uellix-rem-cert', RUN_NAMESPACE)
+const SNAPSHOT_REPO = namespacedPrefix('uellix-rem-cert-snapshot', RUN_NAMESPACE)
 
 /** The lab's stand-in for a project ref. Never a real one. See LAB_PROJECT_REF. */
 const TARGET_REF = 'localcertlabnotrealx'
@@ -238,9 +254,9 @@ function waitUntilReady(container: string): void {
 }
 
 function destroyContainer(name: string): void {
-  const full = name.startsWith(PREFIX) ? name : `${PREFIX}-${name}`
-  if (!full.startsWith(PREFIX)) {
-    throw new Error(`refusing to remove ${full}: not a remediation-certification container`)
+  const full = ownsResource(PREFIX, name) ? name : `${PREFIX}-${name}`
+  if (!ownsResource(PREFIX, full)) {
+    throw new Error(`refusing to remove ${full}: not a container of this remediation-certification run`)
   }
   docker(['rm', '-f', full])
   live.delete(full)
@@ -257,13 +273,14 @@ function snapshotContainer(container: string, tag: string): string {
   return image
 }
 
+/** Removes what THIS RUN created, and refuses to touch anything else. */
 function teardown(): void {
   for (const name of [...live]) {
-    docker(['rm', '-f', name])
+    if (ownsResource(PREFIX, name)) docker(['rm', '-f', name])
     live.delete(name)
   }
   for (const image of [...snapshots]) {
-    docker(['rmi', '-f', image])
+    if (ownsResource(SNAPSHOT_REPO, image)) docker(['rmi', '-f', image])
     snapshots.delete(image)
   }
 }
@@ -687,8 +704,15 @@ function main(): number {
     return 1
   }
 
-  const stagingShapeSnapshot = snapshotContainer(primary, 'staging-shape')
-  report.stagingShapeSnapshot = stagingShapeSnapshot
+  const STAGING_SHAPE_TAG = 'staging-shape'
+  const stagingShapeSnapshot = snapshotContainer(primary, STAGING_SHAPE_TAG)
+  // The TAG, not the image reference. F-4 namespaces the snapshot REPOSITORY
+  // per run, and recording `uellix-rem-cert-snapshot-r<pid>-<t>:staging-shape`
+  // would put this process's identity into a tracked artefact — caught by
+  // `assertRunNamespaceAbsent` in writeReport, which is what it is for. What
+  // the evidence needs to state is WHICH point the exercises ran from, and
+  // that is the tag.
+  report.stagingShapeSnapshot = STAGING_SHAPE_TAG
 
   /* ------------------------------------------------- 3. FRESH OBSERVATION  */
   console.log('[rem] fresh observation on the unremediated shape')
@@ -1373,6 +1397,11 @@ function partialRecoveryExercise(snapshotImage: string, ledger: Ledger): unknown
 /* -------------------------------------------------------------------------- */
 
 function writeReport(report: Record<string, unknown>): void {
+  // F-4. `artifacts/remediation-certification/latest.json` is TRACKED, so its
+  // content must be a function of the packages and the engine — not of which
+  // process happened to run the certification.
+  assertRunNamespaceAbsent(report, RUN_NAMESPACE)
+
   mkdirSync(path.join(ROOT, path.dirname(ARTEFACT)), { recursive: true })
   writeFileSync(path.join(ROOT, ARTEFACT), `${JSON.stringify(report, null, 2)}\n`, 'utf8')
   console.log(`[rem] recorded: ${ARTEFACT}`)

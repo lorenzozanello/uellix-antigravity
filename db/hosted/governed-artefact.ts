@@ -90,7 +90,7 @@ export function resolveGovernedApplyTarget(
   if (entry === undefined) {
     throw new GovernedArtefactRefusal(
       'HOSTED_PACKAGE_NOT_GOVERNED',
-      `${packageName} is not one of the nine governed chain packages ` +
+      `${packageName} is not one of the ${CHAIN_PACKAGE_FILES.length} governed chain packages ` +
         `(${CHAIN_PACKAGE_FILES.map((e) => e.sourceFile.replace(/\.sql$/, '')).join(', ')}). ` +
         `There is no basename fallback and no ungoverned alternative: the middle artefact under ` +
         `db/prepared/hosted/ is a derivation input, and applying it to a managed project runs ` +

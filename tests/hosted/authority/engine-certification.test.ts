@@ -30,13 +30,30 @@ import path from 'node:path'
 
 import {
   assertGovernedPath,
+  firstUndeclaredPackageId,
   GOVERNED_CERTIFICATION_INPUTS,
   GOVERNED_DIRECTORY,
   GovernedInputRefusal,
   resolveGovernedChainInputs,
   resolveGovernedInput,
   sha256OfFileContent,
+  UNKNOWN_PACKAGE_ID,
 } from '@/db/hosted/authority/certification/governed-input'
+import {
+  REQUIRED_REFUSAL_IDS,
+  refusalExercises,
+} from '@/db/hosted/authority/certification/refusal-exercises'
+import {
+  certificationPredicates,
+  certificationVerdict,
+  type CertificationEvidence,
+} from '@/db/hosted/authority/certification/certification-verdict'
+import {
+  assertRunNamespaceAbsent,
+  certificationRunNamespace,
+  namespacedPrefix,
+  ownsResource,
+} from '@/db/hosted/authority/certification/run-namespace'
 import {
   FAILURE_INJECTIONS,
   INJECTION_MARKER,
@@ -74,9 +91,11 @@ const ROOT = process.cwd()
  * available too — had grounding_0005 been numbered anything else, this test
  * would have gone on passing while testing a package that existed.
  *
- * So the sentinel is one past the end of whatever the chain currently is.
+ * F-1: this file derived it and `scripts/pg176-certify.ts` did not, so the two
+ * paths drifted and the EXECUTED probe went on naming a package that had become
+ * real. It is now IMPORTED from the one place that derives it, so there is no
+ * second derivation left to drift from.
  */
-const UNKNOWN_PACKAGE_ID = `T${CHAIN_PACKAGE_FILES.length + 1}`
 
 /* -------------------------------------------------------------------------- */
 /* The input set                                                               */
@@ -389,5 +408,192 @@ describe('the lab environment declares itself before it reports anything', () =>
     // E-02. Picking one would have produced a green report about whichever
     // failure the chosen identity does not hit.
     expect([...CANDIDATE_INSTALLERS].sort()).toEqual(['postgres', 'uellix_migrator'])
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* F-1 — the unknown-package sentinel, and the verdict that must depend on it  */
+/* -------------------------------------------------------------------------- */
+
+describe('the unknown-package sentinel is derived once, for every path', () => {
+  it('is the first Tn the chain does not declare', () => {
+    expect(UNKNOWN_PACKAGE_ID).toBe(`T${CHAIN_PACKAGE_FILES.length + 1}`)
+    expect(GOVERNED_CERTIFICATION_INPUTS.map((i) => i.packageId)).not.toContain(UNKNOWN_PACKAGE_ID)
+    expect(() => resolveGovernedInput(UNKNOWN_PACKAGE_ID, ROOT)).toThrow(/CERT_UNKNOWN_PACKAGE/)
+  })
+
+  it('steps past an id the chain already declares rather than returning it', () => {
+    // `length + 1` is only unknown while the ids are contiguous from T1. A
+    // chain that ever declares a gap — T1..T9 plus T11, say — would make the
+    // arithmetic hand back a REAL package, which is the same defect as the
+    // literal, arrived at by a different route. So the rule searches.
+    const declared = GOVERNED_CERTIFICATION_INPUTS
+    const shadowed = [
+      ...declared,
+      { ...declared[0], packageId: `T${declared.length + 1}` },
+    ]
+    expect(firstUndeclaredPackageId(shadowed)).toBe(`T${declared.length + 2}`)
+  })
+
+  it('never returns an id that is in the set it was given', () => {
+    for (const inputs of [GOVERNED_CERTIFICATION_INPUTS, GOVERNED_CERTIFICATION_INPUTS.slice(0, 3)]) {
+      expect(inputs.map((i) => i.packageId)).not.toContain(firstUndeclaredPackageId(inputs))
+    }
+  })
+})
+
+describe('the refusal set the certification EXECUTES', () => {
+  // Not a parallel fixture. `scripts/pg176-certify.ts` calls this exact
+  // function, which is the whole point of F-1: the offline fixture already
+  // derived the sentinel correctly while the executable script did not, and a
+  // test over a second implementation could not have caught that.
+  const exercises = refusalExercises(ROOT)
+
+  it('runs exactly the required exercises, in order', () => {
+    expect(exercises.map((e) => e.id)).toEqual([...REQUIRED_REFUSAL_IDS])
+  })
+
+  it('refuses every one of them before a byte reaches a server', () => {
+    for (const exercise of exercises) {
+      expect(exercise.refused, exercise.id).toBe(true)
+      expect(exercise.reachedServer, exercise.id).toBe(false)
+    }
+  })
+
+  it('probes the DERIVED unknown package, and says which one it probed', () => {
+    const unknown = exercises.find((e) => e.id === 'UNKNOWN_PACKAGE')
+    expect(unknown).toBeDefined()
+    expect(unknown!.code).toBe('CERT_UNKNOWN_PACKAGE')
+    // The recorded evidence names the id that was actually attempted. A report
+    // that says "a package the chain does not declare" without naming it
+    // cannot be audited for this defect at all — which is how T10 survived.
+    expect(unknown!.attempted).toContain(UNKNOWN_PACKAGE_ID)
+  })
+})
+
+describe('COMPLETE is a conjunction, and the refusals are in it', () => {
+  const passing: CertificationEvidence = {
+    provisioningComplete: true,
+    prechainClean: true,
+    prechainAuthorityGatePassed: true,
+    chainComplete: true,
+    refusals: REQUIRED_REFUSAL_IDS.map((id) => ({ id, refused: true })),
+    injections: [{ id: 'F1', failed: true, rolledBack: true }],
+  }
+
+  it('reaches COMPLETE when every predicate holds', () => {
+    expect(certificationVerdict(passing)).toBe('COMPLETE')
+    expect(certificationPredicates(passing).every((p) => p.holds)).toBe(true)
+  })
+
+  it('CANNOT reach COMPLETE when the unknown package resolves (F-1)', () => {
+    // The regression this whole commit exists for. Before the fix the script
+    // recorded `UNKNOWN_PACKAGE refused=false` and `verdict=COMPLETE` in the
+    // same artefact, and the artefact is versioned evidence.
+    const resolved: CertificationEvidence = {
+      ...passing,
+      refusals: passing.refusals.map((r) =>
+        r.id === 'UNKNOWN_PACKAGE' ? { ...r, refused: false } : r,
+      ),
+    }
+    expect(certificationVerdict(resolved)).not.toBe('COMPLETE')
+    expect(certificationVerdict(resolved)).toBe('REQUIRED_REFUSAL_NOT_REFUSED')
+  })
+
+  it('CANNOT reach COMPLETE when a required refusal is missing entirely', () => {
+    // Deleting the exercise must not be a way to pass it.
+    const dropped: CertificationEvidence = {
+      ...passing,
+      refusals: passing.refusals.filter((r) => r.id !== 'UNKNOWN_PACKAGE'),
+    }
+    expect(certificationVerdict(dropped)).not.toBe('COMPLETE')
+  })
+
+  it('CANNOT reach COMPLETE when an injection is not contained', () => {
+    for (const broken of [
+      { id: 'F1', failed: false, rolledBack: true },
+      { id: 'F1', failed: true, rolledBack: false },
+    ]) {
+      expect(certificationVerdict({ ...passing, injections: [broken] })).toBe(
+        'FAILURE_INJECTION_NOT_CONTAINED',
+      )
+    }
+  })
+
+  it('keeps every predicate that already gated, with the verdict strings it used', () => {
+    // Not weakened, and not renamed: `CHAIN_INCOMPLETE_INJECTIONS_RUN` and the
+    // three early-return codes are what the existing artefacts and runbooks
+    // read.
+    expect(certificationVerdict({ ...passing, chainComplete: false })).toBe(
+      'CHAIN_INCOMPLETE_INJECTIONS_RUN',
+    )
+    expect(certificationVerdict({ ...passing, provisioningComplete: false })).toBe(
+      'PROVISIONING_FAILED',
+    )
+    expect(certificationVerdict({ ...passing, prechainClean: false })).toBe('PRECHAIN_INVALID')
+    expect(certificationVerdict({ ...passing, prechainAuthorityGatePassed: false })).toBe(
+      'PRECHAIN_AUTHORITY_GATE_FAILED',
+    )
+  })
+
+  it('names every required refusal id in the predicate set, so the list is auditable', () => {
+    const refusalPredicate = certificationPredicates(passing).find(
+      (p) => p.id === 'ALL_REQUIRED_REFUSALS_REFUSED',
+    )
+    expect(refusalPredicate).toBeDefined()
+    for (const id of REQUIRED_REFUSAL_IDS) expect(refusalPredicate!.detail).toContain(id)
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* Concurrent certifications                                                   */
+/* -------------------------------------------------------------------------- */
+
+describe('two certifications can run at once without deleting each other', () => {
+  const a = certificationRunNamespace(1234, 1_700_000_000_000)
+  const b = certificationRunNamespace(5678, 1_700_000_000_000)
+
+  it('gives each run its own namespace', () => {
+    expect(a).not.toBe(b)
+    expect(certificationRunNamespace(1234, 1_700_000_000_001)).not.toBe(a)
+  })
+
+  it('spells the namespace in the charset docker accepts for names AND repositories', () => {
+    // A container name may carry uppercase; an image repository may not. One
+    // token is used for both, so it is held to the stricter rule.
+    for (const ns of [a, b, certificationRunNamespace(process.pid, Date.now())]) {
+      expect(ns).toMatch(/^[a-z0-9][a-z0-9-]*$/)
+    }
+  })
+
+  it('produces disjoint container and snapshot names for the two runs', () => {
+    const prefixA = namespacedPrefix('uellix-pg176-cert', a)
+    const prefixB = namespacedPrefix('uellix-pg176-cert', b)
+    expect(prefixA).not.toBe(prefixB)
+    expect(`${prefixA}-primary`).not.toBe(`${prefixB}-primary`)
+  })
+
+  it('claims only its own resources, so cleanup cannot reach the other run', () => {
+    const prefixA = namespacedPrefix('uellix-pg176-cert', a)
+    const prefixB = namespacedPrefix('uellix-pg176-cert', b)
+
+    expect(ownsResource(prefixA, `${prefixA}-primary`)).toBe(true)
+    expect(ownsResource(prefixA, `${prefixB}-primary`)).toBe(false)
+    // And the un-namespaced name a pre-F-4 run would have used is not ours
+    // either: an old container left behind is not this run's to remove.
+    expect(ownsResource(prefixA, 'uellix-pg176-cert-primary')).toBe(false)
+  })
+
+  it('keeps the run token out of the versioned evidence', () => {
+    // artifacts/pg176-certification/latest.json is TRACKED. A pid or timestamp
+    // in it would make the certification content differ run to run for a
+    // reason that has nothing to do with the database being certified.
+    expect(() => assertRunNamespaceAbsent({ verdict: 'COMPLETE' }, a)).not.toThrow()
+    expect(() => assertRunNamespaceAbsent({ verdict: 'COMPLETE', container: `x-${a}` }, a)).toThrow(
+      /CERT_RUN_NAMESPACE_LEAKED/,
+    )
+    expect(() =>
+      assertRunNamespaceAbsent({ nested: [{ note: `started ${a}-primary` }] }, a),
+    ).toThrow(/CERT_RUN_NAMESPACE_LEAKED/)
   })
 })

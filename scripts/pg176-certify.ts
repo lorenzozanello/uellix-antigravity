@@ -58,12 +58,22 @@ import {
   STORAGE_SHIM_SQL,
 } from '../db/hosted/authority/certification/lab-environment'
 import {
-  assertGovernedPath,
   GOVERNED_CERTIFICATION_INPUTS,
-  GovernedInputRefusal,
   resolveGovernedInput,
   type ResolvedGovernedInput,
 } from '../db/hosted/authority/certification/governed-input'
+import { refusalExercises } from '../db/hosted/authority/certification/refusal-exercises'
+import {
+  certificationPredicates,
+  certificationVerdict,
+  type CertificationEvidence,
+} from '../db/hosted/authority/certification/certification-verdict'
+import {
+  assertRunNamespaceAbsent,
+  certificationRunNamespace,
+  namespacedPrefix,
+  ownsResource,
+} from '../db/hosted/authority/certification/run-namespace'
 import {
   ENGINE_IDENTITY_PROBE_SQL,
   FUNCTION_OWNER_PROBE_SQL,
@@ -110,9 +120,20 @@ const ROOT = path.resolve(import.meta.dirname, '..')
 const ARTEFACT_CERTIFICATION = 'artifacts/pg176-certification/latest.json'
 const ARTEFACT_DIAGNOSTIC = 'artifacts/pg176-certification/diagnostic.json'
 
-/** Every container this script creates carries it, and only these are removed. */
-const PREFIX = 'uellix-pg176-cert'
-const SNAPSHOT_REPO = 'uellix-pg176-cert-snapshot'
+/**
+ * Every container and image this RUN creates carries it, and only these are
+ * removed.
+ *
+ * F-4. The prefix used to be fixed, so a second certification on the same
+ * machine named the same container — and `startContainer` begins by removing
+ * whatever holds the name. Two concurrent runs deleted each other's databases
+ * and overwrote each other's snapshots, and each then reported what the
+ * wreckage measured. The token never reaches the artefact; `writeReport`
+ * enforces that rather than trusting it.
+ */
+const RUN_NAMESPACE = certificationRunNamespace(process.pid, Date.now())
+const PREFIX = namespacedPrefix('uellix-pg176-cert', RUN_NAMESPACE)
+const SNAPSHOT_REPO = namespacedPrefix('uellix-pg176-cert-snapshot', RUN_NAMESPACE)
 
 const argv = process.argv.slice(2)
 const KEEP = argv.includes('--keep')
@@ -258,8 +279,10 @@ function waitUntilReady(container: string): void {
 }
 
 function destroyContainer(name: string): void {
-  const full = name.startsWith(PREFIX) ? name : `${PREFIX}-${name}`
-  if (!full.startsWith(PREFIX)) throw new Error(`refusing to remove ${full}: not a certification container`)
+  const full = ownsResource(PREFIX, name) ? name : `${PREFIX}-${name}`
+  if (!ownsResource(PREFIX, full)) {
+    throw new Error(`refusing to remove ${full}: not a container of this certification run`)
+  }
   docker(['rm', '-f', full])
   live.delete(full)
 }
@@ -275,13 +298,21 @@ function snapshotContainer(container: string, tag: string): string {
   return image
 }
 
+/**
+ * Removes what THIS RUN created, and refuses to touch anything else.
+ *
+ * The sets only ever hold this run's resources, so the ownership check cannot
+ * fire — which is the point of asserting it here rather than trusting it. A
+ * concurrent run's containers are not this one's to clean up, and neither are
+ * the un-namespaced leftovers of a pre-F-4 run.
+ */
 function teardown(): void {
   for (const name of [...live]) {
-    docker(['rm', '-f', name])
+    if (ownsResource(PREFIX, name)) docker(['rm', '-f', name])
     live.delete(name)
   }
   for (const image of [...snapshots]) {
-    docker(['rmi', '-f', image])
+    if (ownsResource(SNAPSHOT_REPO, image)) docker(['rmi', '-f', image])
     snapshots.delete(image)
   }
 }
@@ -777,76 +808,17 @@ function runInjection(
 /* -------------------------------------------------------------------------- */
 /* Refusal exercises — sections 21 and 22                                      */
 /* -------------------------------------------------------------------------- */
-
-interface RefusalExercise {
-  readonly id: string
-  readonly attempted: string
-  readonly refused: boolean
-  readonly code: string | null
-  readonly reachedServer: boolean
-}
-
-function refusalExercises(): RefusalExercise[] {
-  const out: RefusalExercise[] = []
-
-  // 21 — a governed artefact whose bytes moved.
-  try {
-    resolveGovernedInput('T1', ROOT, (p) => `${readFileSync(p, 'utf8')}\n-- tampered\n`)
-    out.push({ id: 'PIN', attempted: 'apply a governed artefact whose bytes moved', refused: false, code: null, reachedServer: false })
-  } catch (error) {
-    out.push({
-      id: 'PIN',
-      attempted: 'apply a governed artefact whose bytes moved',
-      refused: error instanceof GovernedInputRefusal,
-      code: error instanceof GovernedInputRefusal ? error.code : null,
-      reachedServer: false,
-    })
-  }
-
-  // 22 — the UNGOVERNED artefact the operational runners still reference.
-  try {
-    resolveGovernedInput('T1', ROOT, (p) => readFileSync(p.replace(/[\\/]governed[\\/]/, '/').replace('.governed.sql', '.hosted.sql'), 'utf8'))
-    out.push({ id: 'UNGOVERNED_BYTES', attempted: 'feed T1 the ungoverned .hosted.sql bytes', refused: false, code: null, reachedServer: false })
-  } catch (error) {
-    out.push({
-      id: 'UNGOVERNED_BYTES',
-      attempted: 'feed T1 the ungoverned .hosted.sql bytes',
-      refused: error instanceof GovernedInputRefusal,
-      code: error instanceof GovernedInputRefusal ? error.code : null,
-      reachedServer: false,
-    })
-  }
-
-  // 22 — and the path itself, which never gets as far as being read.
-  try {
-    assertGovernedPath(path.join(ROOT, 'db/prepared/hosted/grounding_0002_document_versions.hosted.sql'))
-    out.push({ id: 'UNGOVERNED_PATH', attempted: 'resolve a path outside db/prepared/hosted/governed/', refused: false, code: null, reachedServer: false })
-  } catch (error) {
-    out.push({
-      id: 'UNGOVERNED_PATH',
-      attempted: 'resolve a path outside db/prepared/hosted/governed/',
-      refused: error instanceof GovernedInputRefusal,
-      code: error instanceof GovernedInputRefusal ? error.code : null,
-      reachedServer: false,
-    })
-  }
-
-  // An unknown package id: no basename fallback, no glob.
-  try {
-    resolveGovernedInput('T10', ROOT)
-    out.push({ id: 'UNKNOWN_PACKAGE', attempted: 'resolve a package the chain does not declare', refused: false, code: null, reachedServer: false })
-  } catch (error) {
-    out.push({
-      id: 'UNKNOWN_PACKAGE',
-      attempted: 'resolve a package the chain does not declare',
-      refused: error instanceof GovernedInputRefusal,
-      code: error instanceof GovernedInputRefusal ? error.code : null,
-      reachedServer: false,
-    })
-  }
-
-  return out
-}
+//
+// F-1. These used to be re-implemented HERE, and the offline suite tested a
+// second copy of them in tests/hosted/authority/engine-certification.test.ts.
+// The two drifted: the fixture derived its unknown-package sentinel from the
+// chain, this file spelled it `'T10'`, and M-8 made T10 real. The executed
+// probe resolved, recorded `refused=false`, and the run reported COMPLETE
+// anyway.
+//
+// There is now one implementation, in
+// db/hosted/authority/certification/refusal-exercises.ts, and the tests
+// exercise the same function this script calls.
 
 /* -------------------------------------------------------------------------- */
 /* Main                                                                        */
@@ -861,12 +833,19 @@ function main(): number {
   }
 
   console.log(`[cert] image ${CERTIFICATION_IMAGE}`)
+  console.log(`[cert] run namespace ${RUN_NAMESPACE} — docker resources are scoped to ${PREFIX}*`)
   console.log(`[cert] resolving governed inputs (no glob, no basename fallback)`)
   const inputs = GOVERNED_CERTIFICATION_INPUTS.map((i) => resolveGovernedInput(i.packageId, ROOT))
   report.inputs = inputs.map((i) => ({ packageId: i.packageId, path: i.relativePath, digest: i.actualDigest }))
   for (const i of inputs) console.log(`[cert]   ${i.packageId} ${i.relativePath} ${i.actualDigest}`)
 
-  report.refusals = refusalExercises()
+  // Recorded AND printed. The defect these closed was invisible in a 4 000-line
+  // artefact and would have been one line on a terminal.
+  const refusals = refusalExercises(ROOT)
+  report.refusals = refusals
+  for (const r of refusals) {
+    console.log(`[cert] refusal ${r.id} refused=${r.refused} code=${r.code ?? '-'} — ${r.attempted}`)
+  }
 
   const primary = startContainer('primary')
 
@@ -912,11 +891,14 @@ function main(): number {
     console.log(`[cert]     ${provisioned.sentinelRefusalBeforeWrite}`)
   }
 
-  if (
-    provisioned.baselineFailures.length > 0 ||
-    !provisioned.bootstrapApplied ||
-    !provisioned.sentinelWritten
-  ) {
+  // Captured rather than only branched on: these are three of the six
+  // predicates COMPLETE is a conjunction of, and the artefact records the whole
+  // conjunction beside the verdict it produced.
+  const provisioningComplete =
+    provisioned.baselineFailures.length === 0 &&
+    provisioned.bootstrapApplied &&
+    provisioned.sentinelWritten
+  if (!provisioningComplete) {
     report.verdict = 'PROVISIONING_FAILED'
     writeReport(report)
     return 1
@@ -954,11 +936,12 @@ function main(): number {
     ))[0][0],
   ) as PrechainObservation
   const gateRefusals = validateHostedPrechainAuthorityContract(prechainObservation, contracts)
+  const prechainAuthorityGatePassed = gateRefusals.length === 0
   report.prechainAuthorityGate = {
     contracts,
     observation: prechainObservation,
     refusals: gateRefusals,
-    verdict: gateRefusals.length === 0 ? 'PASS' : 'FAIL',
+    verdict: prechainAuthorityGatePassed ? 'PASS' : 'FAIL',
   }
   console.log(
     `[cert] PRECHAIN_AUTHORITY_GATE ${gateRefusals.length === 0 ? 'PASS' : 'FAIL'} — ` +
@@ -1147,13 +1130,41 @@ function main(): number {
   }
   report.injections = injections
 
-  report.verdict = DIAGNOSTIC
-    ? 'DIAGNOSTIC_ONLY_NOT_CERTIFICATION'
-    : chainComplete
-      ? 'COMPLETE'
-      : 'CHAIN_INCOMPLETE_INJECTIONS_RUN'
+  /* THE VERDICT (F-1).
+   *
+   * It used to be `chainComplete ? 'COMPLETE' : ...` and nothing else. The
+   * refusal exercises and the failure injections were recorded next to it and
+   * gated NOTHING, so the run that first met a resolving unknown-package probe
+   * wrote `"refused": false` and `"verdict": "COMPLETE"` into the same tracked
+   * artefact. A negative control that cannot fail the run is decoration.
+   *
+   * Now COMPLETE is the conjunction, computed by a pure function so that "a
+   * resolving unknown package makes COMPLETE impossible" is a test that runs
+   * without Docker — and the whole predicate set is written down beside the
+   * verdict, because a verdict that does not say what it required cannot be
+   * audited for the thing that went wrong here. */
+  const evidence: CertificationEvidence = {
+    provisioningComplete,
+    prechainClean,
+    prechainAuthorityGatePassed,
+    chainComplete,
+    refusals,
+    injections,
+  }
+  const predicates = certificationPredicates(evidence)
+  report.requiredPredicates = predicates
+  report.verdict = DIAGNOSTIC ? 'DIAGNOSTIC_ONLY_NOT_CERTIFICATION' : certificationVerdict(evidence)
+
+  for (const p of predicates) {
+    console.log(`[cert] ${p.holds ? 'HOLDS  ' : 'FAILED '} ${p.id} — ${p.detail}`)
+  }
+  console.log(`[cert] VERDICT ${String(report.verdict)}`)
+
   writeReport(report)
-  return 0
+  // Aligned with the verdict, as the three earlier gates already are. The
+  // artefact remains the evidence — this only stops `certify && something-else`
+  // from continuing past a run that did not certify.
+  return report.verdict === 'COMPLETE' ? 0 : 1
 }
 
 /**
@@ -1170,14 +1181,22 @@ function forwardOnlyExercise(state: CatalogState): unknown {
     policy: 'forward-only',
     installedPackageAction: 'refuse',
     note:
-      'Every one of the nine is observed INSTALLED from the catalog, so nextChainPackage has no ' +
-      'candidate left and any plan naming one of them is refused. Exercised as a contract test in ' +
+      `All ${installed.length} of the ${CHAIN_PACKAGE_FILES.length} declared packages are observed ` +
+      'INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming ' +
+      'one of them is refused. Exercised as a contract test in ' +
       'tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: ' +
       're-applying to find out would be the very thing the contract forbids.',
   }
 }
 
 function writeReport(report: Record<string, unknown>): void {
+  // F-4. The run token names containers and images; it is not a fact about the
+  // database, and this artefact is TRACKED. A pid reaching it would put a diff
+  // in every run, reviewers would learn the diff is noise, and the one run
+  // whose content actually changed would go unread. Enforced on the way to
+  // disk rather than reasoned about at each field.
+  assertRunNamespaceAbsent(report, RUN_NAMESPACE)
+
   // A diagnostic run writes a DIFFERENT file. Overwriting the certification
   // artefact with a run that patched the environment is the one way this
   // harness could produce a green record of something it never certified.
@@ -1197,7 +1216,10 @@ try {
     console.log(`[cert] --keep: ${[...live].join(', ') || 'no containers'} left running`)
   } else {
     teardown()
-    console.log('[cert] teardown complete: 0 certification containers, 0 snapshot images')
+    console.log(
+      `[cert] teardown complete: 0 containers and 0 snapshot images left by run ${RUN_NAMESPACE}. ` +
+        'Resources belonging to any other run were not touched.',
+    )
   }
 }
 process.exit(code)

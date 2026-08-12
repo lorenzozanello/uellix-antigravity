@@ -100,9 +100,9 @@
     },
     {
       "id": "UNKNOWN_PACKAGE",
-      "attempted": "resolve a package the chain does not declare",
-      "refused": false,
-      "code": null,
+      "attempted": "resolve T11, a package the chain does not declare",
+      "refused": true,
+      "code": "CERT_UNKNOWN_PACKAGE",
       "reachedServer": false
     }
   ],
@@ -1803,7 +1803,7 @@
     ],
     "policy": "forward-only",
     "installedPackageAction": "refuse",
-    "note": "Every one of the nine is observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
+    "note": "All 10 of the 10 declared packages are observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
   },
   "injections": [
     {
@@ -2015,6 +2015,38 @@
       "ownershipRestored": true,
       "providerMembershipsUnchanged": true,
       "priorPackagesIntact": true
+    }
+  ],
+  "requiredPredicates": [
+    {
+      "id": "PROVISIONING_COMPLETE",
+      "holds": true,
+      "detail": "baseline units, bootstrap and the staging sentinel all applied"
+    },
+    {
+      "id": "PRECHAIN_CLEAN",
+      "holds": true,
+      "detail": "every chain package measured ABSENT before the first governed statement"
+    },
+    {
+      "id": "PRECHAIN_AUTHORITY_GATE_PASSED",
+      "holds": true,
+      "detail": "the derived object-authority contract held, with zero refusals"
+    },
+    {
+      "id": "CHAIN_COMPLETE",
+      "holds": true,
+      "detail": "every declared package applied and measured INSTALLED"
+    },
+    {
+      "id": "ALL_REQUIRED_REFUSALS_REFUSED",
+      "holds": true,
+      "detail": "required: PIN, UNGOVERNED_BYTES, UNGOVERNED_PATH, UNKNOWN_PACKAGE"
+    },
+    {
+      "id": "ALL_FAILURE_INJECTIONS_FAILED_AND_ROLLED_BACK",
+      "holds": true,
+      "detail": "15/15 failed and rolled back"
     }
   ],
   "verdict": "COMPLETE"

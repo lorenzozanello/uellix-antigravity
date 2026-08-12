@@ -82,7 +82,7 @@ export interface GovernedCertificationInput {
 }
 
 /**
- * The nine inputs, in chain order, derived rather than transcribed.
+ * The chain's inputs, in chain order, derived rather than transcribed.
  *
  * Order comes from CHAIN_PACKAGE_FILES and the digests from GOVERNED_PINS, so
  * there is no fourth list of package names to drift from the other three.
@@ -102,6 +102,46 @@ export const GOVERNED_CERTIFICATION_INPUTS: readonly GovernedCertificationInput[
       expectedDigest: pin.generatedDigest,
     }
   })
+
+/**
+ * A package id the chain provably does NOT declare — the negative probe's input.
+ *
+ * F-1. The refusal this feeds is "an unknown package id resolves to nothing: no
+ * basename fallback, no glob". `scripts/pg176-certify.ts` spelled it as the
+ * literal `'T10'`, which was unknown when it was written and became a real
+ * chain package when M-8 landed. The probe then resolved, recorded
+ * `refused=false`, and the run still reported `verdict=COMPLETE` — a negative
+ * control that had quietly stopped being negative, in versioned evidence.
+ *
+ * The offline fixture had already derived it correctly, which is the actual
+ * lesson: the defect was not the literal, it was the SECOND derivation. So this
+ * is the only one, and both the executable harness and the tests import it.
+ *
+ * It SEARCHES rather than computing `length + 1` once. The arithmetic is only
+ * sound while the ids are contiguous from T1; a chain that ever declared a gap
+ * would hand back a real package again, by a different route.
+ */
+export function firstUndeclaredPackageId(
+  inputs: readonly GovernedCertificationInput[] = GOVERNED_CERTIFICATION_INPUTS,
+): string {
+  const declared = new Set(inputs.map((i) => i.packageId))
+  for (let n = inputs.length + 1; n <= inputs.length + 1000; n += 1) {
+    const candidate = `T${n}`
+    if (!declared.has(candidate)) return candidate
+  }
+  /* c8 ignore next 4 -- unreachable: 1000 candidates cannot all collide with `inputs.length` ids. */
+  throw new GovernedInputRefusal(
+    'CERT_UNKNOWN_PACKAGE',
+    'no Tn beyond the declared chain is undeclared, so there is no id left to probe the unknown-package refusal with.',
+  )
+}
+
+/**
+ * The derived sentinel itself, resolved once at load so every consumer — the
+ * harness, the refusal exercises and the offline contract tests — probes the
+ * same id. Deliberately NOT a literal anywhere.
+ */
+export const UNKNOWN_PACKAGE_ID: string = firstUndeclaredPackageId()
 
 export function sha256OfFileContent(contents: string): string {
   return createHash('sha256').update(contents.replace(/\r\n/g, '\n'), 'utf8').digest('hex')
@@ -150,7 +190,7 @@ export function resolveGovernedInput(
   if (input === undefined) {
     throw new GovernedInputRefusal(
       'CERT_UNKNOWN_PACKAGE',
-      `${packageId} is not one of the nine governed chain packages (${inputs.map((i) => i.packageId).join(', ')}). There is no basename fallback here on purpose.`,
+      `${packageId} is not one of the ${inputs.length} governed chain packages (${inputs.map((i) => i.packageId).join(', ')}). There is no basename fallback here on purpose.`,
     )
   }
 
