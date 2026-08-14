@@ -1,6 +1,6 @@
 {
   "generatedBy": "pnpm posture:status:write --attempt=<id> --observation=<file> — do not hand-edit; derived from the observation",
-  "attemptId": "att_881c1c688d82077da32ba481c0482b74",
+  "attemptId": "att_9c885e6f165dbfa574998ca46643905a",
   "observationPresent": true,
   "baseline": {
     "source": "docs/ops/staging/evidence/2026-08-11-att_d08da545-prechain-observation.json",

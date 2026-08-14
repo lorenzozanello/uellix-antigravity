@@ -24,3 +24,6 @@
 {"attemptId":"att_0ca699d67f963d779b784d578e8bf2a0","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-11T14:30:52.317Z"}
 {"attemptId":"att_0ca699d67f963d779b784d578e8bf2a0","event":"CONSUMED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-11T14:32:51.892Z","packageId":"stella_0018_category_bound_operation_tickets","kind":"hosted-chain"}
 {"attemptId":"att_1398309c556fb6cc9f997ebfc5dc0de6","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-11T14:34:40.897Z"}
+{"attemptId":"att_39b560a1f433b77a8ea65cbbda45e8a0","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T01:13:26.655Z"}
+{"attemptId":"att_39b560a1f433b77a8ea65cbbda45e8a0","event":"CONSUMED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T02:31:02.754Z","packageId":"grounding_0005_claim_advisory_lock","kind":"hosted-chain"}
+{"attemptId":"att_dee3d5973996ca86e5f92b258308ab03","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T02:41:41.796Z"}

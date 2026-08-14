@@ -101,9 +101,37 @@ artifacts/hosted-chain-final-observation.json
 # direction that flatters the author.
 artifacts/hosted-chain-posture-probe.sql
 artifacts/hosted-chain-posture-observation.json
-# The THREE ATTEMPT LEDGERS are the durable audit trail and ARE versioned, in
+# The same working document under the names later runs give it — the attempt-bound
+# one `-o` writes and the `-postcred` one. Both are duplicates of a promotion.
+artifacts/hosted-chain-posture-observation-*.json
+# M-8 RUNTIME CLOSEOUT. The working documents the operator saved from the M-8
+# probes, on both credential lifecycles. Same rule as every other measurement
+# under artifacts/: what is worth keeping was promoted VERBATIM to
+# docs/ops/staging/evidence/ under a name carrying its attempt, and the copies
+# here are duplicates. MEASURED before ignoring them: every promotion is
+# byte-identical to the file it came from.
+#
+# The four M-8 *.sql PROBES are deliberately NOT here, and the distinction is
+# the one H-1 draws. They compile no `att_<32 hex>` literal — the runtime proof
+# takes its attempt as `-v m8_attempt_id`, on purpose — so none of them is the
+# re-runnable-against-a-spent-attempt class this file exists to refuse. They are
+# the instruments that produced committed evidence, and an auditor who cannot
+# read the instrument is reading a number.
+artifacts/hosted-m8-app-identity.json
+artifacts/hosted-m8-claim-observation.json
+artifacts/hosted-m8-credential-authority.json
+artifacts/hosted-m8-credential-closure.json
+artifacts/hosted-m8-*-att_*.json
+artifacts/hosted-chain-posture-observation-postcred.json
+# Raw psql output of the post-T10 chain probe. Same class as
+# `hosted-chain-pre-write-probe.out` above: a transcript, rewritten by the next
+# probe. The POST_T10 canonical `chain:status` evidence is a DECLARED DEBT, not
+# something this transcript closes — see docs/ops/staging/M8_RUNTIME_CLOSEOUT.md.
+artifacts/hosted-chain-post-t10-probe.out
+# The FOUR ATTEMPT LEDGERS are the durable audit trail and ARE versioned, in
 # place, where the tools append to them. Listed here as a statement, not as a
 # rule: nothing below ignores them, and a future glob over artifacts/ must not.
 #   artifacts/hosted-chain-attempts.jsonl          VERSIONED
 #   artifacts/hosted-remediation-attempts.jsonl    VERSIONED
 #   artifacts/hosted-chain-posture-attempts.jsonl  VERSIONED
+#   artifacts/hosted-m8-runtime-attempts.jsonl     VERSIONED  (M-8 runtime)

@@ -1,5 +1,15 @@
 # M-8 — el candado que `claim_active_document_version` no podía tomar
 
+> **SUPERADO POR LA EJECUCIÓN — 2026-08-12.** T10 se aplicó en staging (10/10
+> `INSTALLED`) y M-8 quedó cerrado **por invocación real**, no por catálogo:
+> `M8_RUNTIME = PASS`, `SQLSTATE = U0102` bajo `session_user = current_user =
+> uellix_app`. Ver [`M8_RUNTIME_CLOSEOUT.md`](./M8_RUNTIME_CLOSEOUT.md).
+>
+> Lo que sigue se conserva **verbatim** como el registro del defecto, su análisis
+> y su remediación en el momento en que se escribieron. El «Estado» de abajo era
+> cierto entonces y no se reescribe: un documento de diseño corregido a posteriori
+> deja de decir qué se sabía al decidir.
+
 **Estado: REPARADO EN EL REPOSITORIO, NO INSTALADO EN NINGUNA BASE.**
 `db/prepared/grounding_0005_claim_advisory_lock.sql` está escrito, derivado,
 firmado y certificado contra PostgreSQL 17.6 desechable. **Staging sigue en

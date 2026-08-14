@@ -28,7 +28,7 @@
 // eighth case below exists to pin that.
 
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 import {
@@ -537,9 +537,20 @@ describe('F-PI-01 — the status artefact', () => {
     const recorded = read('artifacts/hosted-chain-posture-status.json')
     if (recorded === null) return // not measured yet on this checkout
     const attemptId = (JSON.parse(recorded) as { attemptId: string }).attemptId
-    const evidence = read(
-      `docs/ops/staging/evidence/2026-08-11-${attemptId.slice(0, 12)}-chain-posture-observation.json`,
+    // THE ATTEMPT NAMES THE FILE; THE DATE DOES NOT. `posture:status:write`
+    // derives the prefix from the ledger's OPENED record — "the file is named
+    // for when it was measured" — so a date written into this test is an
+    // assumption about WHEN the next posture is taken. It held only while every
+    // measurement fell on 2026-08-11: the first one taken on another day
+    // promoted correctly and failed here, reporting a missing promotion for a
+    // file that exists. Found by the M-8 runtime closeout, whose post-credential
+    // posture was measured on the 12th.
+    const suffix = `-${attemptId.slice(0, 12)}-chain-posture-observation.json`
+    const promoted = readdirSync(path.join(ROOT, 'docs/ops/staging/evidence')).filter((n) =>
+      n.endsWith(suffix),
     )
+    expect(promoted, 'the recorded status must name exactly one promoted measurement').toHaveLength(1)
+    const evidence = read(`docs/ops/staging/evidence/${promoted[0]}`)
     expect(evidence, 'the recorded status must name a promoted measurement').not.toBeNull()
     const recomputed = serializePostureStatus(statusOf(evidence, attemptId))
     expect(verifyPostureStatus(recorded, recomputed).ok).toBe(true)

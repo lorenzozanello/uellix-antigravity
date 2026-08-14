@@ -1,0 +1,23 @@
+{
+    "note": "Structural M-8 verification. No credential, connection string or user data is recorded here.",
+    "schema": "uellix.hosted.m8.claim/1",
+    "claimAcl": "uellix_cap_grounding=X/uellix_cap_grounding | uellix_app=X/uellix_cap_grounding",
+    "claimOwner": "uellix_cap_grounding",
+    "measuredBy": "operator, read-only transaction, post-T10",
+    "claimLanguage": "plpgsql",
+    "claimProconfig": [
+        "search_path=\"\""
+    ],
+    "claimResultType": "TABLE(id uuid, version_id character, ordinal integer, normalized_content_hash character, normalization_version character varying, extractor_version character varying, chunker_version character varying)",
+    "claimRoutineCount": 1,
+    "claimForUpdateAbsent": true,
+    "claimSecurityDefiner": true,
+    "evidenceItemsPresent": true,
+    "registerRoutineCount": 1,
+    "capGroundingRolePresent": true,
+    "claimForUpdateInRawText": true,
+    "claimAdvisoryLockPresent": true,
+    "registerAdvisoryLockPresent": true,
+    "capGroundingSelectOnEvidenceItems": true,
+    "capGroundingUpdateOnEvidenceItems": false
+}

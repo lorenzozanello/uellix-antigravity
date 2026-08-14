@@ -4,3 +4,7 @@
 {"attemptId":"att_1d78582f53c4245e1c6f67dda0c554ee","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-11T17:07:21.102Z","kind":"hosted-chain-posture"}
 {"attemptId":"att_881c1c688d82077da32ba481c0482b74","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-11T17:08:13.548Z","kind":"hosted-chain-posture"}
 {"attemptId":"att_881c1c688d82077da32ba481c0482b74","event":"CONSUMED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-11T17:12:56.277Z","kind":"hosted-chain-posture"}
+{"attemptId":"att_3d939704436d579a079e59eebfbcf94e","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T02:46:44.280Z","kind":"hosted-chain-posture"}
+{"attemptId":"att_5613578342d3a35191f9fcd8119fc54e","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T12:04:25.703Z","kind":"hosted-chain-posture"}
+{"attemptId":"att_9c885e6f165dbfa574998ca46643905a","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T13:22:49.112Z","kind":"hosted-chain-posture"}
+{"attemptId":"att_9c885e6f165dbfa574998ca46643905a","event":"CONSUMED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-14T21:44:51.001Z","kind":"hosted-chain-posture"}
