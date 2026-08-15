@@ -26,6 +26,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # First, and before anything that could echo a file into the log. The
+      # 2026-07-06 leak sat in the tree for six weeks because no step was
+      # looking; this is that step. It prints fingerprints, never values —
+      # see scripts/scan-secrets.ts and docs/ops/CREDENTIAL_HYGIENE.md.
+      #
+      # It reads the working tree, so it catches a credential regardless of
+      # which commit introduced it. It does NOT read history: the pre-rotation
+      # blobs are a known, accepted and documented condition, not a regression.
+      - name: Scan for credentials
+        run: pnpm secrets:scan
+
       - name: Lint
         run: pnpm lint
 

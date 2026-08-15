@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "secrets:scan": "tsx scripts/scan-secrets.ts",
+    "secrets:scan:staged": "tsx scripts/scan-secrets.ts --staged",
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",

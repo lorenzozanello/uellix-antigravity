@@ -288,9 +288,11 @@ describe('redactForHostedLog — no refusal may leak a credential', () => {
   })
 
   it('removes a current-format Supabase secret key, not only the legacy sbp_ one', () => {
-    const line = redactForHostedLog('key sb_secret_AbCdEfGhIjKlMnOpQrStUvWx and sb_publishable_0123456789abcdefghij')
+    // secret-scan-ok: synthetic key, this suite feeds it to the redactor on purpose
+    const secret = 'sb_secret_AbCdEfGhIjKlMnOpQrStUvWx'
+    const line = redactForHostedLog(`key ${secret} and sb_publishable_0123456789abcdefghij`)
 
-    expect(line).not.toContain('sb_secret_AbCdEfGhIjKlMnOpQrStUvWx')
+    expect(line).not.toContain(secret)
     expect(line).not.toContain('sb_publishable_0123456789abcdefghij')
   })
 
