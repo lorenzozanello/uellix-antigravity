@@ -20,22 +20,45 @@
 // 2. It parses structure, it does not match substrings. `scripts/
 //    ci-assert-local-targets.ts` records why: a `grep -E "127.0.0.1|localhost"`
 //    accepts `localhost.attacker.example`. A DSN is therefore split into user,
-//    password and host, and the verdict is taken on the parsed host.
+//    password and host, and each component is judged as what it is.
 //
-// THE FIXTURE PROBLEM. This repository is full of DSNs on purpose — the safety
-// classifier suites feed it hostile ones. A gate that cannot tell
-// `db.x.supabase.co` from `db.ctaxtgujyyprgynmnvtq.supabase.co` is a gate that
-// gets switched off in a week. Fixtures are recognised by their HOST, through
-// rules that a real target cannot satisfy by accident: loopback, the RFC 2606
-// reserved names, an unexpanded `${...}` template, or an explicit entry in
-// SYNTHETIC_SUPABASE_REFS. And because an allowlist is only ever one careless
-// edit from naming something real, `assertAllowlistIsSynthetic` refuses to run
-// at all if any entry collides with `KNOWN_PRODUCTION_IDENTIFIERS` or with
-// `KNOWN_STAGING_PROJECT_REF`.
+// ---------------------------------------------------------------------------
+// WHAT DECIDES, AND WHAT ONLY DESCRIBES
+// ---------------------------------------------------------------------------
+// The first version of this gate decided on the HOST: a DSN aimed at
+// `db.x.supabase.co` was waved through whatever its password was. Independent
+// review closed that, because it had the polarity backwards — it let the
+// PUBLIC half of a credential vouch for the SECRET half. Sanitising the
+// hostname of a leaked DSN while keeping the password is a one-line edit no
+// reviewer would question, and this gate would have applauded it.
+//
+// So the verdict is taken on the CREDENTIAL COMPONENT ITSELF. A password, a
+// token or a key is ignored only when
+//
+//   (a) the value announces itself as a fixture — `[YOUR-PASSWORD]`, an
+//       unexpanded `${...}`, or a body carrying a marker such as
+//       `not-a-real`, `placeholder`, `example`, `fake`, `synthetic`; or
+//   (b) the line carries an explicit `secret-scan-ok: <reason>`.
+//
+// The host is still parsed, and `isSyntheticHost` still exists — but only to
+// LABEL a finding ("this host cannot resolve"), never to excuse one. Triage
+// context, not a verdict.
+//
+// ---------------------------------------------------------------------------
+// PARITY WITH GITHUB PUSH PROTECTION
+// ---------------------------------------------------------------------------
+// On 2026-08-15 a push of this branch was rejected with GH013: GitHub Push
+// Protection classified `sbp_`-prefixed literals in
+// `tests/hosted/target-identity.test.ts` as Supabase Personal Access Tokens.
+// This gate had no such detector — a remote check caught what the local one
+// did not, which is the wrong way round for a gate whose job is to fail before
+// the push. `SUPABASE_PERSONAL_ACCESS_TOKEN` closes the gap, and deliberately
+// at a lower threshold than GitHub's own 40-hex shape, so a truncated or
+// re-encoded token is still a finding.
 //
 // Usage:
-//   pnpm scan:secrets            scan every tracked file
-//   pnpm scan:secrets --staged   scan the staged delta only (pre-commit)
+//   pnpm secrets:scan            scan every tracked file
+//   pnpm secrets:scan:staged     scan the staged delta only (pre-commit)
 
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
@@ -52,6 +75,7 @@ export type SecretFindingKind =
   | 'JWT_LIKE'
   | 'GOOGLE_API_KEY'
   | 'SUPABASE_SECRET_KEY'
+  | 'SUPABASE_PERSONAL_ACCESS_TOKEN'
   | 'OPENAI_STYLE_KEY'
   | 'PRIVATE_KEY_BLOCK'
 
@@ -70,9 +94,10 @@ export interface SecretFinding {
 /**
  * Supabase project refs that appear in fixtures and cannot address anything.
  *
- * A real ref is twenty lowercase letters, and so are several of these, so the
- * shape alone cannot separate them — the list is explicit on purpose, and
- * `assertAllowlistIsSynthetic` is what keeps it honest.
+ * These NO LONGER suppress a finding — see "what decides, and what only
+ * describes" above. They survive because a finding that says "this host cannot
+ * resolve" is faster to triage than one that does not, and because
+ * `assertAllowlistIsSynthetic` uses the same list as a tripwire.
  */
 const SYNTHETIC_SUPABASE_REFS: readonly string[] = [
   'x',
@@ -96,16 +121,35 @@ const RESERVED_SUFFIXES: readonly string[] = [
 const LOOPBACK = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1\]?|host\.docker\.internal)$/i
 
 /**
- * Passwords that carry no secret: placeholders, and the short literals the
- * ephemeral docker containers in `scripts/` use.
+ * A whole value that is a placeholder rather than a credential: the forms a
+ * template, a runbook or a docker-compose file legitimately carries.
  */
-const PLACEHOLDER_PASSWORD =
+const PLACEHOLDER_LITERAL =
   /^(\[?YOUR[-_ ]?PASSWORD\]?|<[^>]*>|\{\{?[^}]*\}?\}|password|postgres|pass|secret|changeme|dev|local|test|example|x+|xxx+|\*+|\.\.\.|…|REDACTED.*|\$\{[^}]*\}|%[A-Z_]+%)$/i
 
 /**
- * The escape hatch, for a literal that is a fixture but cannot be recognised as
- * one by its shape — a fake API key fed to the redactor, say, where there is no
- * host to reason about.
+ * A marker INSIDE the value that announces it as fixture material.
+ *
+ * This is the ergonomic half of the gate: a suite that needs a credential-
+ * SHAPED literal can have one, provided the literal says so in its own body.
+ * The words are chosen to be ones a high-entropy issued credential cannot
+ * plausibly contain — `fake` and `placeholder` are not hexadecimal, and the
+ * odds of any of them falling out of a random base62 run are ~10⁻⁶.
+ *
+ * Unlike the hostname rule it replaces, this reads the SECRET half of the
+ * credential. A leaked password does not acquire the word `synthetic`.
+ */
+const FIXTURE_MARKER =
+  /(not[-_ ]?a[-_ ]?real|placeholder|example|sample|fake|synthetic|dummy|fixture|redacted)/i
+
+/** True when the credential component itself is unambiguously non-secret. */
+export function isUnmistakablePlaceholder(value: string): boolean {
+  return PLACEHOLDER_LITERAL.test(value) || FIXTURE_MARKER.test(value)
+}
+
+/**
+ * The escape hatch, for a literal that is a fixture but cannot say so in its
+ * own body — a token whose exact bytes the assertion depends on, say.
  *
  *   // secret-scan-ok: synthetic key, this suite feeds it to the redactor
  *
@@ -117,12 +161,18 @@ const PLACEHOLDER_PASSWORD =
  */
 const ALLOW_ANNOTATION = /secret-scan-ok:\s*\S+/
 
-/** Paths whose whole purpose is to describe the incident, or to test this scanner. */
-const EXEMPT_PATHS: readonly RegExp[] = [
-  /^scripts\/scan-secrets\.ts$/,
-  /^tests\/scan-secrets\.test\.ts$/,
-  /^pnpm-lock\.yaml$/,
-]
+/**
+ * Paths not scanned.
+ *
+ * This list used to hold this script and its suite. Both were removed: a
+ * file-wide switch is the thing the annotation above is designed to avoid, and
+ * exempting the gate's own test file is how a gate stops noticing that its
+ * fixtures drifted into real shapes. They are scanned like everything else, and
+ * the two lines that genuinely need a credential-shaped literal carry an
+ * annotation. What remains is a generated lockfile whose integrity hashes are
+ * base64 runs that no detector should be asked to reason about.
+ */
+const EXEMPT_PATHS: readonly RegExp[] = [/^pnpm-lock\.yaml$/]
 
 /** Git's -z separator, and the byte that marks a blob as binary. */
 const NUL = '\u0000'
@@ -145,9 +195,10 @@ const bareHost = (host: string): string => (host.split(',')[0] ?? '').split(':')
 /**
  * True when this host demonstrably cannot address real infrastructure.
  *
- * Deliberately positive: an unrecognised host is a finding, not a pass. A gate
- * that fails open on the unfamiliar would have said nothing about
- * `db.ctaxtgujyyprgynmnvtq.supabase.co` on 2026-07-06.
+ * CONTEXT ONLY. Nothing in this file suppresses a finding because of what this
+ * returns; it decorates the finding so a reviewer can tell "fixture pointed at
+ * nowhere" from "credential pointed at Production" at a glance. It is exported
+ * because `assertAllowlistIsSynthetic` and the suite both interrogate it.
  */
 export function isSyntheticHost(host: string): boolean {
   if (host.includes('${') || host.includes('{{') || host.includes('%')) return true
@@ -168,10 +219,11 @@ export function isSyntheticHost(host: string): boolean {
 /**
  * Refuse to run if the fixture allowlist has drifted onto something real.
  *
- * The allowlist is the one part of this gate that weakens it, and it weakens it
- * silently: appending the wrong twenty letters would make the next leak of the
- * Production ref invisible. So the collision is checked, every run, against the
- * repository's own record of which refs are real.
+ * Less load-bearing than it was — the allowlist no longer excuses anything —
+ * but kept, and kept fatal, for two reasons. A finding labelled "this host
+ * cannot resolve" while pointing at Production would misdirect the very triage
+ * the label exists to speed up; and if a future edit ever reconnects the
+ * hostname to the verdict, this is the tripwire that was already armed.
  */
 export function assertAllowlistIsSynthetic(): void {
   const real = new Set<string>([
@@ -201,40 +253,41 @@ interface Detector {
   readonly extract: (m: RegExpExecArray) => { value: string; context: string } | null
 }
 
+/** A token detector: the whole match is the secret, and only its own body can excuse it. */
+const token = (kind: SecretFindingKind, pattern: RegExp): Detector => ({
+  kind,
+  pattern,
+  extract: (m) => (isUnmistakablePlaceholder(m[0]) ? null : { value: m[0], context: '' }),
+})
+
 const DETECTORS: readonly Detector[] = [
   {
     kind: 'PG_DSN_EMBEDDED_PASSWORD',
     pattern: /postgres(?:ql)?:\/\/([^\s:@/'"`]+):([^\s@/'"`]+)@([^\s/'"`?]+)/g,
     extract: (m) => {
       const [, user, password, host] = m as unknown as [string, string, string, string]
-      if (PLACEHOLDER_PASSWORD.test(password)) return null
+      // THE VERDICT IS THE PASSWORD'S. The host follows it into the report; it
+      // never decides whether there is one.
+      if (isUnmistakablePlaceholder(password)) return null
       if (password.length < 6) return null
-      if (isSyntheticHost(host)) return null
-      return { value: password, context: `user=${user} host=${bareHost(host)}` }
+      const unreachable = isSyntheticHost(host) ? ' (host cannot resolve)' : ''
+      return { value: password, context: `user=${user} host=${bareHost(host)}${unreachable}` }
     },
   },
-  {
-    kind: 'JWT_LIKE',
-    pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
-    extract: (m) => ({ value: m[0], context: '' }),
-  },
-  {
-    kind: 'GOOGLE_API_KEY',
-    pattern: /\bAIza[0-9A-Za-z_-]{35}\b/g,
-    extract: (m) => ({ value: m[0], context: '' }),
-  },
-  {
-    kind: 'SUPABASE_SECRET_KEY',
-    pattern: /\bsb_secret_[A-Za-z0-9_-]{20,}/g,
-    extract: (m) => ({ value: m[0], context: '' }),
-  },
-  {
-    kind: 'OPENAI_STYLE_KEY',
-    pattern: /\bsk-[A-Za-z0-9_-]{20,}/g,
-    extract: (m) => ({ value: m[0], context: '' }),
-  },
+  token('JWT_LIKE', /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g),
+  token('GOOGLE_API_KEY', /\bAIza[0-9A-Za-z_-]{35}\b/g),
+  token('SUPABASE_SECRET_KEY', /\bsb_secret_[A-Za-z0-9_-]{20,}/g),
+  // The legacy Supabase Personal Access Token: `sbp_` + 40 lowercase hex.
+  // Matched at 20+ of any token character rather than exactly 40 hex, so a
+  // truncated, re-cased or separator-broken copy is still a finding — the
+  // evasions that would satisfy GitHub's stricter pattern while leaving the
+  // token perfectly recoverable.
+  token('SUPABASE_PERSONAL_ACCESS_TOKEN', /\bsbp_[A-Za-z0-9_-]{20,}/g),
+  token('OPENAI_STYLE_KEY', /\bsk-[A-Za-z0-9_-]{20,}/g),
   {
     kind: 'PRIVATE_KEY_BLOCK',
+    // No placeholder path: a PEM header is never fixture material by virtue of
+    // its own contents, so this one is annotation-gated or nothing.
     pattern: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g,
     extract: (m) => ({ value: m[0], context: '' }),
   },
@@ -328,9 +381,13 @@ function main(): void {
     )
   }
   console.error(
-    '\nIf this is a fixture, give it a host that cannot resolve — a loopback address, ' +
-      'an RFC 2606 name such as `db.example.com`, or a ref listed in SYNTHETIC_SUPABASE_REFS. ' +
-      'If it is real: rotate it FIRST, then redact. See docs/ops/CREDENTIAL_HYGIENE.md.'
+    '\nIf it is real: rotate it FIRST, then redact — redacting first leaves the credential ' +
+      'live in history and destroys the only record of what needed rotating.\n' +
+      'If it is a fixture, change the CREDENTIAL, not the hostname: a value carrying ' +
+      '`not-a-real`, `placeholder`, `fake` or an unexpanded `${...}` is recognised as one. ' +
+      'Where the exact bytes are load-bearing, annotate the line with a reason. ' +
+      'A synthetic-looking host no longer excuses a real-looking secret. ' +
+      'See docs/ops/CREDENTIAL_HYGIENE.md.'
   )
   process.exit(1)
 }

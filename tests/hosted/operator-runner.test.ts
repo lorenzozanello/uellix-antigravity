@@ -1692,8 +1692,8 @@ describe('probe diagnostics', () => {
   })
 
   it('redacts a secret that reached stderr', () => {
-    const r = report({ stderr: 'connection failed: postgresql://postgres:hunter2@h:5432/postgres' })
-    expect(r).not.toContain('hunter2')
+    const r = report({ stderr: 'connection failed: postgresql://postgres:not-a-real-password@h:5432/postgres' })
+    expect(r).not.toContain('not-a-real-password')
   })
 
   it('redacts a password-shaped assignment anywhere in the captured output', () => {
@@ -1703,8 +1703,8 @@ describe('probe diagnostics', () => {
 
 describe('log redaction', () => {
   it('removes a connection string', () => {
-    const line = redactOperatorLog('connecting to postgresql://postgres:hunter2@db.x.supabase.co:5432/postgres')
-    expect(line).not.toContain('hunter2')
+    const line = redactOperatorLog('connecting to postgresql://postgres:not-a-real-password@db.x.supabase.co:5432/postgres')
+    expect(line).not.toContain('not-a-real-password')
   })
 
   it('keeps the project ref, which is public and the most useful thing to see', () => {

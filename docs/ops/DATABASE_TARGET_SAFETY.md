@@ -115,6 +115,7 @@ Cortaba la autoridad en `[/?#]` mientras el driver corta sólo en `[?/]`, así
 que todo lo que siguiera a un `#` quedaba invisible para la comprobación:
 
 ```
+# secret-scan-ok: la "contraseña" es un puerto y un '#' — la discrepancia de parsers, no una credencial.
 postgresql://127.0.0.1:56322#@evil.example.com,127.0.0.1/postgres
   guarda -> local_loopback:56322                 (AUTORIZADO)
   driver -> host ["evil.example.com","127.0.0.1"]

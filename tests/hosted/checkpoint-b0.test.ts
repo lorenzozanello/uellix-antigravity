@@ -159,8 +159,8 @@ describe('the observation is refused unless it is trustworthy', () => {
   it('refuses anything shaped like a credential in environmentSecretNames', () => {
     for (const leak of [
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
-      'postgresql://postgres:hunter2@db.x.supabase.co:5432/postgres',
-      'sbp_0123456789abcdef0123456789abcdef',
+      'postgresql://postgres:not-a-real-password@db.x.supabase.co:5432/postgres',
+      'sbp_notARealPersonalAccessToken00',
     ]) {
       expect(codeOf(json({ ...conforming(), environmentSecretNames: [leak] })), leak.slice(0, 12)).toBe(
         'B0_OBSERVATION_CARRIES_SECRET',

@@ -239,7 +239,7 @@ describe('Phase 12 — attacks that must fail closed', () => {
   it('no refusal message can carry a connection string', () => {
     const plan = attack({
       target: {
-        declaredEnvironment: 'postgresql://uellix_migrator:hunter2@db.x.supabase.co/postgres',
+        declaredEnvironment: 'postgresql://uellix_migrator:not-a-real-password@db.x.supabase.co/postgres',
         declaredProjectRef: REF,
         connectionHost: `db.${REF}.supabase.co`,
         sentinel: null,
@@ -618,9 +618,9 @@ describe('Phase 12 — feature flags', () => {
 describe('redactForHostedLog is applied where it matters', () => {
   it('scrubs a driver-shaped error that embeds the host and userinfo', () => {
     const scrubbed = redactForHostedLog(
-      'write ECONNRESET postgresql://uellix_app:p%40ss@db.abcdefghijklmnopqrst.supabase.co:5432',
+      'write ECONNRESET postgresql://uellix_app:not-a-real-p%40ss@db.abcdefghijklmnopqrst.supabase.co:5432',
     )
-    expect(scrubbed).not.toContain('p%40ss')
+    expect(scrubbed).not.toContain('not-a-real-p%40ss')
     expect(scrubbed).toContain('[redacted]')
   })
 })

@@ -344,6 +344,7 @@ function hasAmbiguousAuthority(raw: string): boolean {
   // character — `URL` treats `#` as the start of a fragment, the driver does
   // not, so everything after it stayed invisible to this check:
   //
+  // secret-scan-ok: the "password" below is a port number and a '#' — the parser disagreement itself, not a credential.
   //   postgresql://127.0.0.1:56322#@evil.example.com,127.0.0.1/postgres
   //     guard  -> local_loopback:56322   (allowed)
   //     driver -> host ["evil.example.com", "127.0.0.1"]

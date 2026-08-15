@@ -234,6 +234,7 @@ describe('classifyDatabaseTarget — remote and private targets', () => {
     // postgres-js cuts at `[?/]` only, so one character restored the bypass.
     // Guard saw 127.0.0.1:56322; driver dialled evil.example.com first.
     const target = classifyDatabaseTarget(
+      // secret-scan-ok: a port number and a '#' — the parser disagreement under test, not a credential.
       `postgresql://127.0.0.1:${LOCAL_DB_PORT}#@evil.example.com,127.0.0.1/postgres`
     )
     expect(target.kind).toBe('unknown')
@@ -243,7 +244,9 @@ describe('classifyDatabaseTarget — remote and private targets', () => {
   it.each([
     ['comma-only form', `postgresql://127.0.0.1:${LOCAL_DB_PORT}#,evil.example.com/db`],
     ['uppercase scheme', `POSTGRESQL://127.0.0.1:${LOCAL_DB_PORT}#@evil.example.com,127.0.0.1/db`],
+    // secret-scan-ok: a port number and a '#' in both rows below, not credentials.
     ['surrounding whitespace', `  postgresql://127.0.0.1:${LOCAL_DB_PORT}#@evil.example.com,127.0.0.1/db  `],
+    // secret-scan-ok: a port number and a '#', not a credential.
     ['bracketed IPv6', `postgresql://[::1]:${LOCAL_DB_PORT}#@evil.example.com,127.0.0.1/db`],
   ])('refuses the "#" bypass variant: %s', (_label, url) => {
     expect(classifyDatabaseTarget(url).kind).toBe('unknown')

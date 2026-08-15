@@ -264,10 +264,10 @@ describe('projectRefFromHost', () => {
 describe('redactForHostedLog — no refusal may leak a credential', () => {
   it('removes a whole connection string', () => {
     const line = redactForHostedLog(
-      'failed against postgresql://uellix_migrator:hunter2@db.abcdefghijklmnopqrst.supabase.co:5432/postgres',
+      'failed against postgresql://uellix_migrator:not-a-real-password@db.abcdefghijklmnopqrst.supabase.co:5432/postgres',
     )
 
-    expect(line).not.toContain('hunter2')
+    expect(line).not.toContain('not-a-real-password')
     expect(line).not.toContain('uellix_migrator:')
     expect(line).not.toContain('postgresql://')
   })
@@ -279,11 +279,11 @@ describe('redactForHostedLog — no refusal may leak a credential', () => {
 
   it('removes anything shaped like a JWT or an API key', () => {
     const line = redactForHostedLog(
-      'token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.abc and key sbp_0123456789abcdef0123456789abcdef01234567',
+      'token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.abc and key sbp_notARealPersonalAccessToken00',
     )
 
     expect(line).not.toContain('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')
-    expect(line).not.toContain('sbp_0123456789abcdef0123456789abcdef01234567')
+    expect(line).not.toContain('sbp_notARealPersonalAccessToken00')
     expect(line).toContain('[redacted]')
   })
 

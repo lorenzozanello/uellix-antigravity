@@ -38,6 +38,7 @@ siguiente no puede saber a qué apuntaba la credencial.
 | --- | --- |
 | La contraseña de un DSN | Rotar y redactar. |
 | `sb_secret_…`, service-role keys | Rotar y redactar. |
+| Un personal access token `sbp_…` | Rotar y redactar. |
 | `GEMINI_API_KEY` / `AIza…` | Rotar y redactar. |
 | Cualquier JWT firmado, cualquier clave privada | Rotar y redactar. |
 
@@ -68,30 +69,53 @@ Dos propiedades importan más que la cobertura:
 2. **Analiza estructura, no subcadenas.** Un `grep -E "127.0.0.1|localhost"`
    acepta `localhost.attacker.example` — la clase de bug que
    [`ci-assert-local-targets.ts`](../../scripts/ci-assert-local-targets.ts) fue
-   escrito para eliminar. El DSN se parte en usuario, contraseña y host, y el
-   veredicto se toma sobre el host ya parseado.
+   escrito para eliminar. El DSN se parte en usuario, contraseña y host, y cada
+   componente se juzga por lo que es.
 
-### Fixtures
+### Qué decide y qué sólo describe
 
-Este repositorio contiene DSNs a propósito: las suites de `db/safety/` le dan de
-comer destinos hostiles. Un gate incapaz de distinguir `db.x.supabase.co` de
-`db.ctaxtgujyyprgynmnvtq.supabase.co` es un gate que se apaga en una semana.
+La primera versión de este gate decidía **por el host**: un DSN apuntando a
+`db.x.supabase.co` pasaba con la contraseña que fuera. La revisión independiente
+del 2026-08-15 lo cerró, porque tenía la polaridad invertida — dejaba que la
+mitad **pública** de una credencial avalara la mitad **secreta**. Sanear el
+hostname de un DSN filtrado conservando la contraseña es una edición de una
+línea que ningún revisor cuestionaría, y ese gate la habría aplaudido. Se
+midieron 18 sitios del árbol que vivían de esa exención.
 
-Un fixture se reconoce **por su host**, mediante reglas que un destino real no
-puede satisfacer por accidente:
+Hoy **el veredicto lo toma el componente credencial**. Una contraseña, un token
+o una clave se ignoran sólo cuando:
 
-- loopback (`127.0.0.1`, `localhost`, `::1`);
-- nombres reservados por RFC 2606 / 6761 (`*.example.com`, `*.test`, `*.invalid`);
-- una plantilla sin expandir (`${LOCAL_DB_PORT}`);
-- un ref listado en `SYNTHETIC_SUPABASE_REFS`;
-- una etiqueta única sin punto (`h`), típica de los tests de formateo de errores.
+- **(a)** el valor se delata a sí mismo como fixture — `[YOUR-PASSWORD]`, una
+  plantilla sin expandir `${...}`, o un cuerpo que lleva un marcador como
+  `not-a-real`, `placeholder`, `example`, `fake`, `synthetic`, `dummy`; o
+- **(b)** la línea lleva una anotación `secret-scan-ok: <motivo>` explícita.
 
-**Un host no reconocido es un hallazgo, no un aprobado.** El host del 6 de julio
-tampoco era reconocido por nada del repositorio en aquel momento; un gate que
-falle abierto ante lo desconocido no habría dicho nada.
+El host se sigue parseando y `isSyntheticHost()` sigue existiendo, pero **sólo
+para etiquetar** el hallazgo (`host cannot resolve`) y acelerar el triaje. Nunca
+para excusarlo. Un host no reconocido tampoco es un aprobado: el host del 6 de
+julio no era reconocido por nada del repositorio en aquel momento.
 
-Para el literal que es fixture pero cuya forma no lo delata —una clave falsa que
-se le pasa al redactor, donde no hay host sobre el que razonar— existe una
+La diferencia práctica, para quien escribe un fixture: **cambie la credencial,
+no el hostname.**
+
+```ts
+// SE REPORTA — la contraseña tiene aspecto de credencial emitida, aunque el
+// host sea loopback y no pueda resolver.
+'postgresql://uellix_app:<16 caracteres de alta entropía>@127.0.0.1:54322/postgres'
+
+// NO SE REPORTA — la credencial se delata a sí misma, aunque el host sea el de
+// Producción.
+'postgresql://uellix_app:not-a-real-password@db.ctaxtgujyyprgynmnvtq.supabase.co:5432/postgres'
+```
+
+El valor de la primera línea va descrito y no escrito **a propósito**: esta
+página está sujeta a su propia regla, y la primera redacción de este ejemplo
+llevaba dieciséis caracteres de alta entropía de verdad. El gate la rechazó en
+la suite antes de que llegara a existir un commit. Es la demostración más
+barata de que la regla nueva funciona: atrapó a su propio autor.
+
+Para el literal que es fixture pero **no puede** decirlo en su propio cuerpo
+—un token cuyos bytes exactos son justo lo que la aserción comprueba— queda la
 anotación en línea, **con motivo obligatorio**:
 
 ```ts
@@ -104,15 +128,43 @@ es obligatorio porque un marcador desnudo se añade con la misma ligereza con qu
 se lee por encima: obligar a escribir la frase es la única parte de esto con la
 que un revisor puede realmente estar en desacuerdo.
 
+**Ya no hay exenciones por archivo.** `scripts/scan-secrets.ts` y
+`tests/scan-secrets.test.ts` estaban exentos y dejaron de estarlo: un interruptor
+que cubre un archivo entero es exactamente lo que la anotación existe para
+evitar, y eximir la suite del propio gate es cómo un gate deja de notar que sus
+fixtures derivaron hacia formas reales. Sólo queda fuera `pnpm-lock.yaml`, cuyos
+hashes de integridad son cadenas base64 sobre las que ningún detector debería
+razonar.
+
+### Lo que este gate sigue sin ver
+
+Un gate que no publica sus límites se lee como si no tuviera ninguno. Estos
+están medidos y siguen abiertos:
+
+- **Asignación desnuda.** `POSTGRES_PASSWORD=<valor>` sin DSN alrededor no
+  coincide con ningún detector. Es, además, la forma exacta del incidente de
+  julio (`.env` citado textualmente), y sólo se atrapó allí porque la línea
+  citada era un DSN completo.
+- **Un byte NUL exime el archivo entero.** `scanText` descarta cualquier blob
+  que contenga un NUL para no ahogarse en binarios.
+- **Un DSN partido en dos líneas** no se reensambla: el barrido es por línea.
+
+Ninguna es una regresión de esta iteración; las tres preceden al gate y se
+registran aquí para que la próxima revisión empiece donde ésta terminó.
+
 ### El guardián del guardián
 
 Una allowlist está siempre a una edición descuidada de nombrar algo real, y
-falla en silencio: añadir las veinte letras equivocadas volvería invisible la
-próxima fuga del ref de Producción. Por eso `assertAllowlistIsSynthetic()` se
-ejecuta en cada corrida y **aborta el scan** si algún elemento de
-`SYNTHETIC_SUPABASE_REFS` colisiona con `KNOWN_PRODUCTION_IDENTIFIERS` o con
-`KNOWN_STAGING_PROJECT_REF`, o si `isSyntheticHost()` llegara a aceptar un host
-de producción conocido.
+falla en silencio. `assertAllowlistIsSynthetic()` se ejecuta en cada corrida y
+**aborta el scan** si algún elemento de `SYNTHETIC_SUPABASE_REFS` colisiona con
+`KNOWN_PRODUCTION_IDENTIFIERS` o con `KNOWN_STAGING_PROJECT_REF`, o si
+`isSyntheticHost()` llegara a aceptar un host de producción conocido.
+
+Pesa menos que antes —la allowlist ya no excusa nada— pero se conserva, y se
+conserva fatal, por dos razones: un hallazgo etiquetado «este host no resuelve»
+mientras apunta a Producción desorientaría el triaje que la etiqueta existe para
+acelerar; y si una edición futura vuelve a conectar el hostname al veredicto, el
+cable trampa ya está puesto.
 
 ## 4. El incidente de 2026-08-15
 
@@ -177,25 +229,112 @@ Reescribir los 595 commits que contienen el documento.
    además un worktree enlazado de `uellix-antigravity`: comparten almacén de
    objetos, así que una reescritura los afecta a los dos a la vez.
 
-### Premisa no verificada, y qué la cambiaría
+### La premisa era falsa: el repositorio es PÚBLICO
 
-Esta decisión supone que **`github.com/lorenzozanello/uellix-antigravity` es
-privado**. No se comprobó desde aquí: el cierre del incidente se ejecutó sin
-acceso remoto por diseño. Confírmelo el operador.
+La primera redacción de esta sección suponía que
+`github.com/lorenzozanello/uellix-antigravity` era privado, no lo comprobó, y
+dejó escrito que si alguna vez fuera público debía revaluarse la Opción B.
 
-**Si el repositorio es —o alguna vez fue— público, revalúese la Opción B.** La
-credencial seguiría revocada, así que la urgencia sería baja, pero la exposición
-histórica pasa a ser indefinida (forks, mirrors, cachés de terceros) y el
-borrado adquiere un valor que aquí no tiene. En ese caso la reescritura debe
-planificarse como un ejercicio con nombre propio, con re-anclaje explícito de la
-cadena de evidencia y un redeploy de Producción sobre un SHA nuevo — nunca como
-un `filter-repo` a la carrera.
+**Ese disparador se activó.** El operador confirmó el 2026-08-15 que la
+visibilidad del repositorio es **PÚBLICA**, y lo ha sido durante la ventana de
+exposición. La revaluación exigida por la propia condición **se ejecutó**, y su
+resultado se registra aquí.
 
-**Otros disparadores para revisar:** un requisito de auditoría externa que exija
-ausencia histórica; o un hallazgo de que el valor filtrado se reutilizó en algún
-otro sistema, en cuyo caso el problema no es este repositorio.
+**`HISTORY_REWRITE_RECOMMENDED` sigue siendo `false`.** Lo que cambia no es la
+decisión, sino la clasificación de la exposición:
 
-## 6. Si encuentra una credencial
+1. **Hay que presumir la credencial cosechada.** En un repositorio público, un
+   secreto presente seis semanas y en 595 commits debe darse por recolectado por
+   crawlers y mirrors de terceros. No se afirma que ocurriera; se asume que pudo
+   ocurrir, que es la única postura defendible sin telemetría del atacante.
+2. **La contención efectiva fue la rotación, no el borrado.** El valor está
+   revocado desde el 2026-08-15. Una reescritura no recupera confidencialidad ya
+   perdida; sobre un secreto que ya no autentica, su beneficio incremental de
+   seguridad es esencialmente nulo.
+3. **Una reescritura no puede limpiar clones, forks ni cachés de terceros.** No
+   automáticamente y, en el caso de las referencias cacheadas de GitHub, no sin
+   abrir un ticket de soporte. El borrado sería parcial por construcción,
+   mientras que el coste sería total.
+4. **El SHA que Producción está corriendo está dentro del radio de la
+   reescritura.** `dd36a4e` desciende de `782ac5f` y contiene el blob; tras un
+   rewrite dejaría de existir, rompiendo el vínculo entre «qué está desplegado» y
+   «qué hay en el repositorio». Esto sigue siendo el argumento decisivo, y es
+   operativo, no contable.
+5. **Los anclajes de la evidencia gobernada siguen intactos por diseño.** La
+   cadena T1–T10 y sus certificaciones anclan SHAs concretos y varias releen el
+   `GIT_DIR` del snapshot.
+
+**Clasificación resultante:**
+
+| Dimensión | Estado |
+| --- | --- |
+| Incidente de acceso con credencial | CERRADO (rotación + redeploy + smoke) |
+| Árbol actual del repositorio | LIMPIO, verificado por `pnpm secrets:scan` |
+| Presencia histórica del literal | **ACCEPTED_RESIDUAL_RISK**, documentada aquí |
+| Visibilidad del repositorio | PÚBLICA |
+| Reescritura de la historia | NO recomendada, NO realizada |
+
+**Qué haría revisar esto de nuevo:** que se descubra que el valor filtrado se
+reutilizó en algún otro sistema —en cuyo caso el problema no es este
+repositorio, y lo urgente es ese otro sistema—; o un requisito de auditoría
+externa que exija ausencia histórica demostrable. En ese caso la reescritura
+debe planificarse como un ejercicio con nombre propio, con re-anclaje explícito
+de la cadena de evidencia y un redeploy de Producción sobre un SHA nuevo — nunca
+como un `filter-repo` a la carrera.
+
+**Higiene pendiente, no bloqueante:** las ramas publicadas cuyo *árbol actual*
+—no sólo su historia— aún contiene el literal pre-redacción sanan al rebasar,
+mergear o podar contra este commit. Es limpieza, no contención: la contención ya
+la hizo la rotación.
+
+## 6. GH013: el rechazo de GitHub Push Protection (2026-08-15)
+
+**Qué pasó.** El push de `codex/stella-staging` fue rechazado con
+`GH013 / GITHUB PUSH PROTECTION`. **Ninguna referencia remota se actualizó.**
+GitHub clasificó varios literales de `tests/hosted/target-identity.test.ts` como
+*Supabase Personal Access Token*, y los detectó tanto en el tip como en commits
+históricos (`7ae6a5e`, `7e1730a`).
+
+**Qué demostró.** Que un control remoto atrapó una clase que el gate local no
+tenía. Eso es la polaridad equivocada para un gate cuyo trabajo es fallar
+*antes* del push: la primera noticia de un token con forma real no puede llegar
+del servidor.
+
+**Auditoría de los literales señalados** — sin reproducir ninguno:
+
+| Huella (SHA-256:12) | Sitios | Forma | Veredicto |
+| --- | --- | --- | --- |
+| `8246ef07a213` | `tests/hosted/target-identity.test.ts`, 8 blobs históricos | `sbp_` + 40 hex | **Sintético.** Su cuerpo es la secuencia hex ascendente `0123456789abcdef` repetida; entropía 3,97 b/carácter. Ningún emisor produce eso. |
+| `2f54b13e0163` | `tests/hosted/checkpoint-b0.test.ts`, 1 blob | `sbp_` + 32 hex | **Sintético**, misma construcción. |
+
+Un barrido independiente sobre **todos** los blobs de la historia no encontró
+ningún otro literal con prefijo `sbp_`. **Ninguno es una credencial viva**, y
+ninguno fue emitido jamás por Supabase. Ambos estaban en el árbol actual además
+de en la historia.
+
+**Qué se hizo.**
+
+1. Se añadió el detector `SUPABASE_PERSONAL_ACCESS_TOKEN` al gate local, con un
+   umbral *más* agresivo que el de GitHub —20 caracteres de token en lugar de
+   exactamente 40 hex— para que una copia truncada, recapitalizada o partida por
+   separadores siga siendo un hallazgo. Sin exención por directorio: `tests/` no
+   está exento, y `tests/hosted/target-identity.test.ts` tampoco.
+2. Se retiraron del **tip** los fixtures con forma de PAT, sustituidos por
+   valores que se delatan (`sbp_notARealPersonalAccessToken00`), que los
+   validadores y el redactor siguen reconociendo como credencial-shaped.
+3. La suite del gate construye su fixture con forma de PAT **en tiempo de
+   ejecución**, de modo que ningún blob de este repositorio vuelve a contener el
+   literal que provocó el rechazo.
+
+**Las detecciones históricas no se resuelven reescribiendo la historia.** Son
+material de fixture, sintético y confirmado como tal arriba. La vía prevista es,
+en este orden: retirar las formas PAT del tip (hecho); confirmar de forma
+independiente que las detecciones históricas son sintéticas (hecho); y sólo si
+hiciera falta para desbloquear el push, usar el bypass de Push Protection con el
+motivo **«used in tests»**, que es exactamente lo que son. Nunca un rebase
+interactivo ni un `filter-repo`, por las razones de §5.
+
+## 7. Si encuentra una credencial
 
 1. **No la pegue en ningún sitio.** Ni en un issue, ni en un chat, ni en el
    mensaje del commit que la arregla.

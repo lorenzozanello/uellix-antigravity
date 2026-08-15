@@ -389,12 +389,12 @@ describe('a record cannot be built around the sanitizer', () => {
   it('sanitizes on construction, so an unsanitized record cannot exist', () => {
     const r = buildCapabilityProbeRecord({
       outcome: 'CAPABILITY_PROBE_CREATE_FAILED',
-      rawError: 'denied: postgresql://postgres:hunter2@db.abc.supabase.co:5432/postgres',
+      rawError: 'denied: postgresql://postgres:not-a-real-password@db.abc.supabase.co:5432/postgres',
       timestamp: at,
       projectRef: STAGING,
     })
     expect(r.error).toContain('[REDACTED]')
-    expect(r.error).not.toContain('hunter2')
+    expect(r.error).not.toContain('not-a-real-password')
     expect(r.policyName).toBe(CAPABILITY_PROBE_POLICY)
   })
 
@@ -430,14 +430,14 @@ describe('a record cannot be built around the sanitizer', () => {
 
 describe('the recorded outcome carries no secret', () => {
   it.each([
-    ['a connection string', 'failed: postgresql://postgres:hunter2@db.abc.supabase.co:5432/postgres'],
+    ['a connection string', 'failed: postgresql://postgres:not-a-real-password@db.abc.supabase.co:5432/postgres'],
     ['a JWT', 'error eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.Zm9vYmFy'],
     ['a Supabase key', 'denied for sbp_0123456789abcdef'],
     ['an inline secret', 'api_key=abcdef123456'],
   ])('redacts %s', (_label, raw) => {
     const out = sanitizeProbeError(raw)
     expect(out).toContain('[REDACTED]')
-    expect(out).not.toMatch(/hunter2|eyJhbGciOiJIUzI1NiJ9|sbp_0123456789abcdef|abcdef123456/)
+    expect(out).not.toMatch(/not-a-real-password|eyJhbGciOiJIUzI1NiJ9|sbp_0123456789abcdef|abcdef123456/)
   })
 
   it('keeps the diagnostic text, which is the whole point of recording it', () => {

@@ -145,15 +145,15 @@ describe('capability URL resolution — DATABASE_URL no longer means three thing
   })
 
   it('never echoes the URL or the password in a resolution error', () => {
-    const leaky = `postgresql://${LEGACY_ADMIN_DATABASE_ROLE}:sup3r-s3cret@db.example.com:5432/postgres`
+    const leaky = `postgresql://${LEGACY_ADMIN_DATABASE_ROLE}:not-a-real-password@db.example.com:5432/postgres`
     const { message } = capture(() => resolveRuntimeDatabaseUrl({ [RUNTIME_DATABASE_URL_ENV_VAR]: leaky }))
-    expect(message).not.toContain('sup3r-s3cret')
+    expect(message).not.toContain('not-a-real-password')
     expect(message).not.toContain('db.example.com')
     expect(message).not.toContain('postgresql://')
   })
 
   it('parses the role without ever surfacing the password', () => {
-    expect(parseDeclaredRole('postgresql://uellix_app:hunter2@127.0.0.1:56322/postgres')).toBe(
+    expect(parseDeclaredRole('postgresql://uellix_app:not-a-real-password@127.0.0.1:56322/postgres')).toBe(
       'uellix_app'
     )
     expect(parseDeclaredRole('not a url')).toBeNull()
