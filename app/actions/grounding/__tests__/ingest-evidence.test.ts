@@ -87,16 +87,41 @@ vi.mock('@/lib/auth/database-context', () => ({
 /* -------------------------------------------------------------------------- */
 
 let evidenceRows: Record<string, unknown>[] = []
+/**
+ * The predicate the evidence lookup was actually built with.
+ *
+ * Recorded because every case in this file sets `evidenceRows` BY HAND, which
+ * makes the WHERE clause invisible: dropping `eq(evidenceItems.projectId, …)`
+ * changed nothing any test could see. Found by mutation, 2026-08-15.
+ */
+let lookupPredicate: unknown = null
 // The signature is declared on `vi.fn` rather than as a named parameter: the
 // spread call site needs a rest type, and an unused `_args` binding would only
 // trade a type error for a lint warning.
 const mockSelect = vi.fn<(...args: unknown[]) => unknown>(() => ({
   from: () => ({
-    where: () => ({
-      limit: async () => evidenceRows,
-    }),
+    where: (predicate: unknown) => {
+      lookupPredicate = predicate
+      return { limit: async () => evidenceRows }
+    },
   }),
 }))
+
+/** Every value drizzle bound into a predicate, flattened. */
+function boundValues(predicate: unknown): string[] {
+  const values: string[] = []
+  const walk = (node: unknown, depth: number): void => {
+    if (depth > 8 || node === null || node === undefined) return
+    if (Array.isArray(node)) return node.forEach((child) => walk(child, depth + 1))
+    if (typeof node === 'string') return void values.push(node)
+    if (typeof node !== 'object') return
+    const chunks = (node as { queryChunks?: unknown }).queryChunks
+    if (chunks !== undefined) return walk(chunks, depth + 1)
+    if ('value' in (node as object)) walk((node as { value: unknown }).value, depth + 1)
+  }
+  walk(predicate, 0)
+  return values
+}
 vi.mock('@/db/client', () => ({
   db: {
     select: (...args: unknown[]) => mockSelect(...args),
@@ -260,6 +285,28 @@ describe('2. insufficient evidence-management role', () => {
 })
 
 describe('3-5. tenancy', () => {
+  it('looks the row up by evidence AND project AND organization, together', async () => {
+    // THE PREDICATE ITSELF, not its result. Every other case here sets
+    // `evidenceRows` by hand, so removing `eq(evidenceItems.projectId, …)` left
+    // all of them passing — the boundary a retry re-establishes could be
+    // deleted in silence.
+    //
+    // It matters most on the RETRY path: `indexEvidence.action.ts` forwards a
+    // (projectId, evidenceId) pair straight from a form, and this is the
+    // statement that refuses to answer for a pair the session does not own.
+    // Without the project half, an evidence id from a SIBLING project of the
+    // same organization would be selected — and the resolver's second check
+    // would then answer `refused: scope_mismatch`, which is observably
+    // different from `unauthorized` and therefore tells the caller the row
+    // exists somewhere else.
+    await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
+
+    const bound = boundValues(lookupPredicate)
+    expect(bound).toContain(EVIDENCE)
+    expect(bound, 'the lookup lost its project predicate').toContain(PROJECT)
+    expect(bound, 'the lookup lost its organization predicate').toContain(ORG)
+  })
+
   it('wrong organization — the row is not returned by the scoped SELECT', async () => {
     // The action filters on (id, projectId, organizationId); a row of another
     // organization is simply not selected.
@@ -438,6 +485,34 @@ describe('13-14. M-7 — a failed ingestion unwinds the whole transaction', () =
     expect(result).toEqual({ status: 'not_indexed', reason: 'unsupported_format' })
     // Nothing was written, so there is nothing to unwind.
     expect(contextEvents).not.toContain('rollback')
+  })
+
+  it('records WHY the document was not indexed, not merely that it was not', async () => {
+    // The trail is the only durable record of an attempt that wrote nothing:
+    // the version and its chunks unwind, the audit row is a separate short
+    // transaction and survives. A row saying "not_indexed" with no reason
+    // cannot tell "this format has no extractor" (terminal — never offer a
+    // retry) from "the document normalized to nothing" — and the evidence
+    // screen has to make exactly that distinction.
+    //
+    // The reason is a VOCABULARY WORD from `IngestionSkipReason` /
+    // `IngestionRejectReason`. No passage, no path, no hash.
+    mockIngest.mockResolvedValue({
+      status: 'not_indexed',
+      ingestion: { status: 'skipped', reason: 'empty_document', warnings: [] },
+      repositoryId: 'db-grounding-ingestion-v1',
+    })
+
+    await ingestProjectEvidenceForProject(PROJECT, { evidenceId: EVIDENCE })
+
+    expect(mockLogAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        afterJson: expect.objectContaining({
+          stage: 'not_indexed',
+          notIndexedReason: 'empty_document',
+        }),
+      }),
+    )
   })
 
   it('does not roll back a successful ingestion', async () => {

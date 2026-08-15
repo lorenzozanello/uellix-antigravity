@@ -12,10 +12,18 @@ import { createFileEvidenceAction } from '@/app/app/projects/[projectId]/pipelin
 import { createUrlEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createUrlEvidence.action'
 import { createTextEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/createTextEvidence.action'
 import { verifyEvidenceIntegrityAction } from '@/app/app/projects/[projectId]/pipeline/evidence/verifyEvidenceIntegrity.action'
+import { indexEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/indexEvidence.action'
+import { readProjectCorpusStateForProject } from '@/app/actions/grounding/evidence-corpus-state'
+import { EvidenceIndexStatus } from '@/components/evidence/EvidenceIndexStatus'
 import { archiveEvidenceAction } from '@/app/app/projects/[projectId]/pipeline/evidence/archiveEvidence.action'
 import { updateEvidenceReviewStatusAction } from '@/app/app/projects/[projectId]/pipeline/evidence/updateEvidenceReviewStatus.action'
 import { canUploadEvidence, hasRole } from '@/lib/auth/permissions'
-import { listEvidenceForProject, MAX_EVIDENCE_FILE_SIZE_BYTES } from '@/lib/pipeline/evidence'
+import {
+  listEvidenceForProject,
+  ALLOWED_EVIDENCE_MIME_TYPES,
+  MAX_EVIDENCE_FILE_SIZE_BYTES,
+} from '@/lib/pipeline/evidence'
+import { classifyGroundingFormat } from '@/lib/grounding/extract'
 import { runWithOrganizationAccess } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
 import { FileText, Link2, AlignLeft, Archive } from 'lucide-react'
@@ -121,6 +129,30 @@ export const verifyIntegrityAction = async (formData: FormData) => {
   revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
+/**
+ * Index ONE evidence row on request — the manual half of G-01.
+ *
+ * The pair carried by the form is NOT trusted: `indexEvidenceAction` forwards
+ * to `ingestProjectEvidenceForProject`, which re-resolves the session, the
+ * organization and the evidence-management threshold, and then looks the row up
+ * by (evidence id, project id, organization id) together. A forged pair returns
+ * `unauthorized` — the same answer a row that does not exist gets.
+ *
+ * The outcome is deliberately not surfaced from here: the page re-reads the
+ * corpus state after `revalidatePath`, so what the reviewer sees next is the
+ * DURABLE result of the attempt rather than the message this call returned. A
+ * transient banner and a durable read model that disagreed would be two answers
+ * to one question.
+ */
+export const indexEvidenceFormAction = async (formData: FormData) => {
+  'use server'
+  const projectId = formData.get('projectId') as string
+  const evidenceId = formData.get('evidenceId') as string
+  if (!projectId || !evidenceId) return
+  await indexEvidenceAction(projectId, evidenceId)
+  revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
+}
+
 const EVIDENCE_STATUS: Record<
   string,
   { variant: 'neutral' | 'warning' | 'info' | 'success' | 'danger'; label: string }
@@ -131,6 +163,26 @@ const EVIDENCE_STATUS: Record<
   rejected: { variant: 'danger', label: 'Rechazado' },
   archived: { variant: 'neutral', label: 'Archivado' },
 }
+
+/**
+ * The uploadable MIME types the grounding extractor actually parses.
+ *
+ * COMPUTED from the two authorities rather than written out: the upload
+ * allowlist (`ALLOWED_EVIDENCE_MIME_TYPES`, a SEC-003 control) intersected with
+ * the extractor's own table (`classifyGroundingFormat`). A hand-written list
+ * here would be a third claim about formats, free to promise PDF the day
+ * somebody reads the upload allowlist and forgets the extractor — which is the
+ * exact confusion this line exists to remove.
+ *
+ * It is `text/plain` alone today. `text/csv` HAS an extractor and is not an
+ * accepted upload type, so it cannot appear; that gap is real and is reported
+ * as a finding rather than closed here, because widening a security allowlist
+ * is not a UX change.
+ */
+const GROUNDING_INDEXABLE_UPLOAD_TYPES = ALLOWED_EVIDENCE_MIME_TYPES.filter((mimeType) => {
+  const format = classifyGroundingFormat(mimeType)
+  return format.kind === 'text' || format.kind === 'csv'
+}).join(', ')
 
 function confidenceBadgeVariant(score: number): 'danger' | 'warning' | 'success' {
   if (score < 40) return 'danger'
@@ -159,6 +211,21 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
   const canCreate = canUploadEvidence(membership.role)
   const canArchive = hasRole(membership.role, 'analyst')
   const canReview = hasRole(membership.role, 'impact_manager')
+
+  // G-01. Read OUTSIDE the block above: the action authenticates and opens its
+  // own identity context, exactly as it does when a form calls it. The
+  // principal is memoised, so the second `requireOrganizationAccess()` issues
+  // no query of its own.
+  const corpus = await readProjectCorpusStateForProject(projectId)
+  const corpusStates =
+    corpus.status === 'ready'
+      ? new Map(corpus.states.map((state) => [state.evidenceId, state]))
+      : null
+  // The column is rendered ONLY when the corpus was actually read. On `error`
+  // it is withheld on purpose: a cell reading "pendiente de indexar" for every
+  // row would tell a reviewer the index is empty when the truth is that nobody
+  // could look at it.
+  const showIndexColumn = corpusStates !== null
 
   // Mirror the corresponding server-action feature-flag gates (app/actions/stella/*).
   const stellaAdvisorEnabled =
@@ -217,6 +284,23 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
           Evidencia registrada
         </h2>
 
+        {/* G-01. Storage and grounding are different facts about the same row,
+            so when the second cannot be shown the reason is stated rather than
+            left as an absent column. Addressed to the people who could act on
+            it; a reviewer with no upload rights cannot. */}
+        {canCreate && corpus.status === 'disabled' && (
+          <p className="mb-3 text-xs text-muted-foreground">
+            La indexación para grounding no está habilitada en este despliegue. La evidencia se
+            almacena y se conserva su hash, pero no alimenta respuestas fundamentadas.
+          </p>
+        )}
+        {canCreate && corpus.status === 'error' && (
+          <p className="mb-3 text-xs text-muted-foreground">
+            No se pudo leer el estado del índice de grounding. La evidencia listada abajo está
+            almacenada; su estado de indexación es desconocido en este momento.
+          </p>
+        )}
+
         {evidences.length === 0 ? (
           <EmptyState
             icon={<FileText className="h-6 w-6 text-neutral-500" />}
@@ -231,6 +315,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
                 <TableHead>Tipo</TableHead>
                 <TableHead>Estado de revisión</TableHead>
                 <TableHead>Confianza</TableHead>
+                {showIndexColumn && <TableHead>Grounding</TableHead>}
                 <TableHead>Hash SHA-256</TableHead>
                 <TableHead>Registrado</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -296,6 +381,24 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
                         )}
                       </div>
                     </TableCell>
+                    {showIndexColumn && (
+                      <TableCell>
+                        {corpusStates?.get(ev.id) ? (
+                          <EvidenceIndexStatus
+                            state={corpusStates.get(ev.id)!}
+                            projectId={projectId}
+                            retryAction={indexEvidenceFormAction}
+                            evidenceTitle={ev.title}
+                          />
+                        ) : (
+                          // The read model derives one state per evidence row of
+                          // the project, so a gap here means the two lists
+                          // disagree. An em dash says "not known" instead of
+                          // inventing a phase for a row nobody described.
+                          <span className="text-xs text-muted-foreground/60">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       {ev.contentHash ? (
                         <code
@@ -392,6 +495,19 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
                   Sube un documento. Se calculará y almacenará un hash SHA-256 para verificación
                   de integridad.
                 </p>
+                {/* G-01. Said at the point of upload, because "stored" and
+                    "indexable" diverge here and nowhere else — every accepted
+                    type is stored; only these feed grounded answers. Derived
+                    from the extractor's own table, so it cannot claim a format
+                    the pipeline would skip. */}
+                {corpus.status === 'ready' && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Se indexa para grounding:{' '}
+                    <span className="text-foreground">{GROUNDING_INDEXABLE_UPLOAD_TYPES}</span>. El
+                    resto se almacena como evidencia con su hash, pero no alimenta respuestas
+                    fundamentadas.
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <form action={fileAction} className="space-y-3">

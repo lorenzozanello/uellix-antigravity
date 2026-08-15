@@ -140,8 +140,13 @@ const refuse = (reason: EvidenceSourceRefusal, detail: string): RefusedResolutio
  * type/subtype pair. `SourceDocument.mimeType` is specified as normalized with
  * parameters stripped, so this is the contract's own requirement rather than a
  * convenience.
+ *
+ * EXPORTED so the render-time indexability predicate can reach the same verdict
+ * about a malformed `mime_type` that this resolver reaches at ingestion time.
+ * A copy of the pattern over there would be free to accept a string this one
+ * refuses, and the screen would offer to index a row the pipeline rejects.
  */
-function normalizeMimeType(raw: string | null): string | null {
+export function normalizeEvidenceMimeType(raw: string | null): string | null {
   if (typeof raw !== 'string') return null
   const base = raw.split(';', 1)[0]!.trim().toLowerCase()
   return /^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/.test(base) ? base : null
@@ -272,7 +277,7 @@ async function resolveFileBytes(
   evidence: EvidenceSourceRecord,
   reader: EvidenceObjectReader,
 ): Promise<ResolvedBytes | RefusedResolution> {
-  const mimeType = normalizeMimeType(evidence.mimeType)
+  const mimeType = normalizeEvidenceMimeType(evidence.mimeType)
   if (mimeType === null) {
     return refuse('malformed_metadata', 'file evidence has no usable MIME type')
   }

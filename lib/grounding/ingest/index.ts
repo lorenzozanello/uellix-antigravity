@@ -47,7 +47,7 @@ export type {
   ReingestionKind,
 } from './orchestrate-ingestion'
 
-export { resolveEvidenceSource } from './resolve-evidence-source'
+export { normalizeEvidenceMimeType, resolveEvidenceSource } from './resolve-evidence-source'
 export type {
   EvidenceObjectReader,
   EvidenceSourceRecord,

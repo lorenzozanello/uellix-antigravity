@@ -376,17 +376,28 @@ Dos capas, en el mismo archivo (`tests/database-runtime-entrypoints.test.ts`):
 
 | | |
 |---|---|
-| Entry points inventariados (`app/**`) | 118 |
-| Alcanzan `db/client.ts` (grafo de imports transitivo) | 94 |
-| Abren contexto de identidad | 81 |
-| En allowlist documentada | 13 |
+| Entry points inventariados (`app/**`) | 121 |
+| Alcanzan `db/client.ts` (grafo de imports transitivo) | 97 |
+| Abren contexto de identidad | 83 |
+| En allowlist documentada | 14 |
 
 > Cifra corregida en el cierre de reauditoría (2026-08-02): el inventario de la
 > capa regex es **117**, no 110 — un test que sólo comprobaba `> 40` dejó
 > derivar el número publicado. Ahora `tests/database-runtime-entrypoints.test.ts`
-> fija los cuatro valores exactos (118/94/81/13 tras el tren 3 de Stella, que
-> añadió `app/actions/stella/grounded-query.ts`) y falla si cualquiera cambia
-> sin actualizar esta tabla.
+> fija los cuatro valores exactos y falla si cualquiera cambia sin actualizar
+> esta tabla.
+>
+> Historial de la cifra: 118/94/81/13 tras el tren 3 de Stella
+> (`app/actions/stella/grounded-query.ts`); 119/95/82/13 con G-01
+> (`app/actions/grounding/ingest-evidence.ts`, la primera ruta de aplicación que
+> ESCRIBE en el corpus gobernado); **121/97/83/14** con la ruta de producto de
+> G-01, que añade el modelo de lectura
+> `app/actions/grounding/evidence-corpus-state.ts` (contextualizado) y el
+> reintento manual
+> `app/app/projects/[projectId]/pipeline/evidence/indexEvidence.action.ts`
+> (allowlist 13 → 14: reenvía a `ingestProjectEvidenceForProject`, que posee
+> tres contextos con una descarga de Storage entre los dos primeros, así que un
+> contexto externo colapsaría la frontera transaccional de M-7).
 
 Reconstruye el grafo de imports —resolviendo `@/`, relativos, re-exports y
 `import()` dinámico, e ignorando `import type` y módulos `'use client'`— y
@@ -413,10 +424,10 @@ protegido si está **dentro del argumento** de un opener aprobado.
 
 | | |
 |---|---|
-| Módulos servidor verificados (`app/**` + `components/**`) | 119 |
-| Alcanzan la base (raíz = `db/client.ts` **o** import de driver) | 97 |
-| Contextualizados | 84 |
-| En allowlist documentada (la misma de la capa regex) | 13 |
+| Módulos servidor verificados (`app/**` + `components/**`) | 122 |
+| Alcanzan la base (raíz = `db/client.ts` **o** import de driver) | 100 |
+| Contextualizados | 86 |
+| En allowlist documentada (la misma de la capa regex) | 14 |
 | Sin guardia | 0 |
 
 El resultado se compara contra un **inventario versionado**

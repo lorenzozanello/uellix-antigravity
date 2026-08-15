@@ -477,9 +477,11 @@ const ALLOWLIST: Record<string, string> = {
 
   // ---- The service owns its contexts, because something slow sits between --
   'app/app/projects/[projectId]/pipeline/evidence/createFileEvidence.action.ts':
-    'createFileEvidenceForProject owns three contexts with a storage upload of up to 25 MB between them. An outer context would be reused by all three and put the upload back inside a transaction. Covered by SERVICE_OWNED_CONTEXTS below.',
+    'createFileEvidenceForProject owns three contexts with a storage upload of up to 25 MB between them, and the G-01 auto-index it then calls owns three more. An outer context would be reused by all of them and put both the upload and the grounding storage read back inside a transaction. Covered by SERVICE_OWNED_CONTEXTS below.',
   'app/app/projects/[projectId]/pipeline/evidence/verifyEvidenceIntegrity.action.ts':
     'verifyFileEvidenceIntegrity owns its contexts: the stored file is downloaded and re-hashed between the read and the write. Covered by SERVICE_OWNED_CONTEXTS below.',
+  'app/app/projects/[projectId]/pipeline/evidence/indexEvidence.action.ts':
+    'G-01 manual retry. ingestProjectEvidenceForProject owns three contexts — a scoped lookup, ONE that carries register -> insert -> finalize as a single transaction (M-7), and the audit write — with a Storage download between the first two. An outer context would be reused by all three, collapsing the M-7 transaction boundary and putting the download inside it. Covered by SERVICE_OWNED_CONTEXTS below.',
 }
 
 /**
@@ -492,6 +494,11 @@ const ALLOWLIST: Record<string, string> = {
  */
 const SERVICE_OWNED_CONTEXTS = [
   'lib/pipeline/evidence.ts',
+  // G-01. Where the coverage moved for `indexEvidence.action.ts`, and for the
+  // second half of `createFileEvidence.action.ts`. It is separately checked as
+  // an entry point of its own; naming it here is what makes those two allowlist
+  // rows point at something instead of asserting themselves.
+  'app/actions/grounding/ingest-evidence.ts',
 ] as const
 
 /**
@@ -625,7 +632,7 @@ describe('every entry point that can reach the database opens an identity contex
   // The published regex-layer figures (docs/ops/DATABASE_RUNTIME_CUTOVER.md and
   // STELLA_FABLE_TEST_LEDGER.md) are pinned here so they cannot drift in silence.
   // These are the app/** entry-point counts of the REGEX layer, distinct from
-  // the AST layer's 119/97/84/13 over app/** + components/**. Update BOTH the
+  // the AST layer's 122/100/86/14 over app/** + components/**. Update BOTH the
   // number and the doc together, deliberately.
   //
   // TRAIN 3 (+1 here, +2 in the AST layer): the grounded-query server action
@@ -645,6 +652,17 @@ describe('every entry point that can reach the database opens an identity contex
   // chunk count without activating a version while
   // `claim_active_document_version` selects the highest ordinal with no
   // finalized-state predicate. See the module header (M-7).
+  //
+  // G-01 PRODUCT PATH (+2 here, +2 in the AST layer):
+  // `app/actions/grounding/evidence-corpus-state.ts` is the READ model behind
+  // the evidence screen's grounding column — `contextualized`, and its queries
+  // sit inline in the opener's callback rather than in a helper, because the
+  // decorative-wrapper shape is one this suite refuses on purpose.
+  // `app/app/projects/[projectId]/pipeline/evidence/indexEvidence.action.ts` is
+  // the manual retry and is ALLOWLISTED (13 -> 14): it forwards to
+  // `ingestProjectEvidenceForProject`, which owns three contexts with a Storage
+  // download between the first two, so an outer one would collapse the M-7
+  // transaction boundary. Its coverage is named in SERVICE_OWNED_CONTEXTS.
   it('the regex-layer coverage matches the figures the docs publish', () => {
     const contextualized = databaseReaching.filter((file) => {
       if (file in ALLOWLIST) return false
@@ -660,7 +678,7 @@ describe('every entry point that can reach the database opens an identity contex
       reaching: databaseReaching.length,
       contextualized: contextualized.length,
       allowlisted: allowlisted.length,
-    }).toEqual({ inventoried: 119, reaching: 95, contextualized: 82, allowlisted: 13 })
+    }).toEqual({ inventoried: 121, reaching: 97, contextualized: 83, allowlisted: 14 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

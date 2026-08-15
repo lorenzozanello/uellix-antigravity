@@ -239,6 +239,13 @@ async function ingestProjectEvidence(
     if (outcome.status === 'not_indexed') {
       void audit(ctx, evidenceId, {
         stage: 'not_indexed',
+        // The REASON, not just the fact. This row is the only durable record of
+        // an attempt that wrote nothing, and the evidence screen has to tell
+        // "no extractor for this format" (never worth a retry) from "the
+        // document normalized to nothing". A vocabulary word from
+        // `IngestionSkipReason` / `IngestionRejectReason` — never a passage,
+        // never a path, never a hash.
+        notIndexedReason: outcome.ingestion.reason,
         reingestion: null,
         repositoryId: outcome.repositoryId,
       })
