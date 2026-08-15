@@ -29,6 +29,7 @@
 // what the driver will decode it to.
 
 import { LOCAL_CONTAINER_HOSTS } from './local-stack'
+import { deriveTargetProjectIdentity, type TargetProjectIdentity } from './runtime-project-pins'
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -91,8 +92,34 @@ export interface DatabaseTarget {
   /**
    * Project reference parsed out of a Supabase host or pooler username.
    * Compared against caller expectations; never printed.
+   *
+   * DELIBERATELY LAX, and therefore NOT the SYS-02 signal. It accepts forms
+   * such as `db.<ref>.<anything>.supabase.co` and any first label of a
+   * `*.supabase.co` host without checking its shape. That is tolerable for the
+   * `controlled_*` capabilities it serves, which additionally require a
+   * per-capability authorization token, an operator-declared project id and an
+   * exact confirmation string — the ref is corroboration there, not the gate.
+   *
+   * It is NOT tolerable as the answer to "which project is this?", so
+   * `provenIdentity` below answers that instead, through the strict derivation.
    */
   readonly projectRef: string | null
+  /**
+   * SYS-02. What project the connection STRUCTURALLY proves it points at, or a
+   * refusal reason when nothing does.
+   *
+   * Derived here, during classification, rather than in the authorization
+   * layer, for one specific reason: the authorization layer never sees the URL
+   * — by design, so that no code path can print it. Identity therefore has to
+   * be extracted from the SAME parse of the SAME string that produced
+   * `hostname`, which also makes it impossible for the identity that was
+   * validated and the target that gets dialled to come from different values.
+   *
+   * Never `proven` for a local, private or unclassifiable target: those have no
+   * Supabase project, and asking them for one would be a category error rather
+   * than a security check.
+   */
+  readonly provenIdentity: TargetProjectIdentity
   /** True when the URL carried a username and/or password. Never their values. */
   readonly hasCredentials: boolean
   /**
@@ -308,6 +335,7 @@ function invalid(reason: DatabaseTargetReason): DatabaseTarget {
     port: null,
     provider: null,
     projectRef: null,
+    provenIdentity: { proven: false, code: 'TARGET_INVALID' },
     hasCredentials: false,
     injectedConnectionParameters: [],
     reason,
@@ -451,6 +479,21 @@ export function classifyDatabaseTarget(
       kind,
       provider: kind === 'managed_remote' ? (isSupabase ? 'supabase' : 'other') : null,
       projectRef: isSupabase ? supabaseProjectRef(host, parsed.username) : null,
+      // Only a managed remote can name a project. Everything else — loopback,
+      // container, private network, and every `unknown` including an authority
+      // the driver would read differently than we do — is unproven, which every
+      // pinned capability refuses.
+      provenIdentity:
+        kind === 'managed_remote'
+          ? deriveTargetProjectIdentity({
+              host,
+              username: parsed.username,
+              // `getAll`, not `get`: the driver's query map keeps the LAST
+              // value of a repeated key and `get()` returns the FIRST, so the
+              // repetition itself has to be visible to the derivation.
+              optionsParameters: parsed.searchParams.getAll('options'),
+            })
+          : { proven: false, code: 'NOT_A_MANAGED_REMOTE' },
       reason,
     }
   }

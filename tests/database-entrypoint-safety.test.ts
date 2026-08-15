@@ -29,6 +29,7 @@ import { describeError } from '@/db/safety/redact-error'
 import { resolveLocalDatabaseUrl } from '@/db/safety/resolve-local-database-url'
 import { resolveRuntimeDatabaseUrl } from '@/db/safety/resolve-capability-database-url'
 import { mergeGuardedConnectionOptions } from '@/db/client'
+import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 
 const ROOT = process.cwd()
 const TSX_CLI = path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs')
@@ -36,6 +37,19 @@ const TSX_CLI = path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs')
 const FAKE_REMOTE_URL =
   'postgresql://seeduser:nOt-a-ReAl-p4ssw0rd@db.projectref123.supabase.co:5432/postgres'
 const FAKE_REMOTE_API_URL = 'https://projectref123.supabase.co'
+
+/**
+ * A remote `app_runtime` is ALLOWED to reach, paired with the environment that
+ * may reach it.
+ *
+ * `FAKE_REMOTE_URL` names an invented project, and since SYS-02 that is refused
+ * for `app_runtime` in every environment — correctly, because an unpinned
+ * project is exactly what the runtime must not accept. The tests below that
+ * assert what the driver RECEIVES therefore need a target that gets that far.
+ * The ref is a public identifier; the credential is still fictional.
+ */
+const PINNED_REMOTE_URL = `postgresql://seeduser:nOt-a-ReAl-p4ssw0rd@db.${KNOWN_STAGING_PROJECT_REF}.supabase.co:5432/postgres`
+const PINNED_REMOTE_ENVIRONMENT = 'staging' as const
 
 /**
  * A syntactically valid, loopback-only, synthetic `UELLIX_RUNTIME_DATABASE_URL`
@@ -846,21 +860,21 @@ describe('db/client — the guard runs before the driver', () => {
 
   it('the audit line names forwarded URL parameters, without their values', () => {
     const created = client.createDatabaseClient({
-      connectionString: `${FAKE_REMOTE_URL}?options=reference%3Dprojectref123&application_name=uellix`,
+      connectionString: `${PINNED_REMOTE_URL}?options=reference%3D${KNOWN_STAGING_PROJECT_REF}&application_name=uellix`,
       capability: 'app_runtime',
-      environment: 'production',
+      environment: PINNED_REMOTE_ENVIRONMENT,
       env: {},
     })
     expect(created.decision.auditLine).toContain('urlParams=[options,application_name]')
-    expect(created.decision.auditLine).not.toContain('projectref123')
+    expect(created.decision.auditLine).not.toContain(KNOWN_STAGING_PROJECT_REF)
     expect(created.decision.auditLine).not.toContain('uellix')
   })
 
   it('a parameter name shaped like a hostname is not echoed into the audit line', () => {
     const created = client.createDatabaseClient({
-      connectionString: `${FAKE_REMOTE_URL}?db.projectref123.supabase.co=1`,
+      connectionString: `${PINNED_REMOTE_URL}?db.projectref123.supabase.co=1`,
       capability: 'app_runtime',
-      environment: 'production',
+      environment: PINNED_REMOTE_ENVIRONMENT,
       env: {},
     })
     expect(created.decision.auditLine).toContain('urlParams=[(unnamed)]')
@@ -880,9 +894,9 @@ describe('db/client — the guard runs before the driver', () => {
 
   it('app_runtime does not have its TLS posture changed by this layer', () => {
     client.createDatabaseClient({
-      connectionString: FAKE_REMOTE_URL,
+      connectionString: PINNED_REMOTE_URL,
       capability: 'app_runtime',
-      environment: 'production',
+      environment: PINNED_REMOTE_ENVIRONMENT,
       env: {},
     })
     expect(spies.postgresOptions.at(-1)?.ssl).toBeUndefined()

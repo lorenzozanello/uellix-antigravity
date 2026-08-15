@@ -33,6 +33,7 @@ import {
   type EnvironmentSource,
 } from './database-target'
 import { LOCAL_CONTAINER_HOSTS } from './local-stack'
+import { runtimeProjectPinFor } from './runtime-project-pins'
 
 /* -------------------------------------------------------------------------- */
 /* Capabilities and environments                                              */
@@ -82,6 +83,17 @@ export type DatabaseSafetyErrorCode =
   | 'DB_CONFIRMATION_MISMATCH'
   | 'DB_OPERATION_DECLARATION_REQUIRED'
   | 'DB_OPERATION_DECLARATION_MISMATCH'
+  /* SYS-02 — runtime target identity. */
+  /** A hosted environment was given a target that is not a managed remote. */
+  | 'DB_RUNTIME_TARGET_NOT_HOSTED'
+  /** A non-hosted environment (development/test/ci) was given a managed remote. */
+  | 'DB_RUNTIME_REMOTE_NOT_ALLOWED'
+  /** The connection proves no project, so it cannot be compared with the pin. */
+  | 'DB_RUNTIME_PROJECT_UNPINNED'
+  /** The connection proves a project, and it is not this environment's. */
+  | 'DB_RUNTIME_PROJECT_MISMATCH'
+  /** UELLIX_APP_ENV was set to something no environment is called. */
+  | 'DB_RUNTIME_ENVIRONMENT_UNRECOGNISED'
 
 export class DatabaseSafetyError extends Error {
   readonly name = 'DatabaseSafetyError'
@@ -176,6 +188,18 @@ interface CapabilityPolicy {
    * docs/ops/DATABASE_TARGET_SAFETY.md.
    */
   readonly requiresTls: boolean
+  /**
+   * SYS-02. The target must positively prove it is THIS environment's project.
+   *
+   * Only `app_runtime` sets it, and only `app_runtime` needs it: every other
+   * capability either pins a loopback port (local_*) or already demands an
+   * operator-declared project id plus a per-capability token and an exact
+   * confirmation (controlled_*). `app_runtime` is the one capability that may
+   * reach a managed remote on nothing but deployment configuration, so it is
+   * the one capability where "the role and the shape look right" was the whole
+   * check — and the role is identical on both projects.
+   */
+  readonly requiresPinnedProjectIdentity: boolean
 }
 
 const LOCAL_KINDS: readonly DatabaseTargetKind[] = ['local_loopback', 'local_container']
@@ -200,6 +224,7 @@ const localPolicy = (overrides: Partial<CapabilityPolicy> = {}): CapabilityPolic
   readOnly: false,
   refusesParameterInjection: true,
   requiresTls: false,
+  requiresPinnedProjectIdentity: false,
   ...overrides,
 })
 
@@ -210,6 +235,12 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
       // explicit token: it is the product itself running. It still refuses
       // `unknown` and `invalid`, so a malformed DATABASE_URL fails at the
       // guard rather than inside the driver.
+      //
+      // The kind list stays WIDE on purpose and the narrowing happens in step
+      // 3b instead, because which kinds are acceptable depends on the
+      // environment: a hosted environment accepts only a managed remote whose
+      // project is proven, while development accepts loopback and a private
+      // network and no remote at all. A single static list cannot say that.
       allowedKinds: ['local_loopback', 'local_container', 'private_network', 'managed_remote'],
       allowedEnvironments: ALL_ENVIRONMENTS,
       requiresExpectedLocalPort: false,
@@ -221,6 +252,7 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
       readOnly: false,
       refusesParameterInjection: false,
       requiresTls: false,
+      requiresPinnedProjectIdentity: true,
     },
 
     readonly_audit: localPolicy({ readOnly: true }),
@@ -257,6 +289,7 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
       readOnly: false,
       refusesParameterInjection: true,
       requiresTls: true,
+      requiresPinnedProjectIdentity: false,
     },
 
     controlled_remote_read: {
@@ -271,6 +304,7 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
       readOnly: true,
       refusesParameterInjection: true,
       requiresTls: true,
+      requiresPinnedProjectIdentity: false,
     },
 
     controlled_remote_write: {
@@ -285,6 +319,7 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
       readOnly: false,
       refusesParameterInjection: true,
       requiresTls: true,
+      requiresPinnedProjectIdentity: false,
     },
   })
 
@@ -293,29 +328,83 @@ export const CAPABILITY_POLICIES: Readonly<Record<DatabaseCapability, Capability
 /* -------------------------------------------------------------------------- */
 
 /**
- * Resolve the deployment environment without boolean coercion.
+ * How much authority the resolved environment carries.
  *
- * `UELLIX_APP_ENV` wins when it names a known environment. Otherwise CI is
- * detected explicitly, then NODE_ENV is mapped. An unrecognised value resolves
- * to `production`, the most restrictive answer — never to `development`.
+ * SYS-02 needs this distinction because `resolveEnvironment` answers
+ * `production` in two very different situations: because somebody DECLARED
+ * production, and because somebody declared `produciton` and the resolver
+ * fell back to the most restrictive answer. Collapsing a typo into
+ * "production" is the right default — but it must not also become AUTHORITY to
+ * open the production database, or a mistyped variable becomes a credential.
  */
-export function resolveEnvironment(env: EnvironmentSource = process.env): DeploymentEnvironment {
+export type EnvironmentProvenance =
+  /** `UELLIX_APP_ENV` named a known environment. */
+  | 'declared'
+  /** Derived from VERCEL_ENV / NODE_ENV / CI. Trustworthy, not declarative. */
+  | 'inferred'
+  /** `UELLIX_APP_ENV` was set to something no environment is called. */
+  | 'unrecognised_declaration'
+
+export interface EnvironmentDecision {
+  readonly environment: DeploymentEnvironment
+  readonly provenance: EnvironmentProvenance
+}
+
+/**
+ * Resolve the deployment environment without boolean coercion, and say where
+ * the answer came from.
+ *
+ * PRECEDENCE, most authoritative first:
+ *
+ *   1. `UELLIX_APP_ENV` — the explicit declaration.
+ *   2. `NODE_ENV=test`  — a test process is a test process wherever it runs,
+ *      and this is what stops a suite from resolving to a hosted environment
+ *      and reaching a hosted database.
+ *   3. `CI`             — same reasoning, one layer out.
+ *   4. `VERCEL_ENV`     — the platform's own answer, added for SYS-02: without
+ *      it a PREVIEW deployment falls through to NODE_ENV=production and
+ *      resolves to `production`, so the project pin would demand the
+ *      production project of a staging database. Fail-closed, but an outage.
+ *   5. `NODE_ENV`.
+ *
+ * An unrecognised value resolves to `production`, the most restrictive answer
+ * — never to `development` — and is reported as `unrecognised_declaration` so
+ * the pinned capabilities can refuse a remote outright rather than treat a typo
+ * as an intention.
+ */
+export function resolveEnvironmentDecision(
+  env: EnvironmentSource = process.env
+): EnvironmentDecision {
   const explicit = env.UELLIX_APP_ENV
   if (explicit !== undefined && explicit !== '') {
-    // Set but unrecognised (a typo, a stale value) resolves to `production`,
-    // NOT to the default. Falling through to NODE_ENV here would turn an
-    // operator's typo into the most permissive environment available.
     return (ALL_ENVIRONMENTS as readonly string[]).includes(explicit)
-      ? (explicit as DeploymentEnvironment)
-      : 'production'
+      ? { environment: explicit as DeploymentEnvironment, provenance: 'declared' }
+      : { environment: 'production', provenance: 'unrecognised_declaration' }
   }
-  if (env.NODE_ENV === 'test') return 'test'
-  if (env.CI === 'true' || env.CI === '1') return 'ci'
+  const inferred = (environment: DeploymentEnvironment): EnvironmentDecision => ({
+    environment,
+    provenance: 'inferred',
+  })
+
+  if (env.NODE_ENV === 'test') return inferred('test')
+  if (env.CI === 'true' || env.CI === '1') return inferred('ci')
+
+  // Vercel sets exactly one of these three. `preview` is the staging train's
+  // deployment target, so it maps to `staging` rather than to production.
+  if (env.VERCEL_ENV === 'production') return inferred('production')
+  if (env.VERCEL_ENV === 'preview') return inferred('staging')
+  if (env.VERCEL_ENV === 'development') return inferred('development')
+
   if (env.NODE_ENV === 'development' || env.NODE_ENV === undefined || env.NODE_ENV === '') {
-    return 'development'
+    return inferred('development')
   }
-  if (env.NODE_ENV === 'production') return 'production'
-  return 'production'
+  if (env.NODE_ENV === 'production') return inferred('production')
+  return inferred('production')
+}
+
+/** The environment alone. Unchanged signature; see `resolveEnvironmentDecision`. */
+export function resolveEnvironment(env: EnvironmentSource = process.env): DeploymentEnvironment {
+  return resolveEnvironmentDecision(env).environment
 }
 
 /* -------------------------------------------------------------------------- */
@@ -375,7 +464,11 @@ function assertTargetAllowed(
   }
 
   const env = input.env ?? process.env
-  const environment = input.environment ?? resolveEnvironment(env)
+  // Resolved once, with its provenance, so step 3b can tell "somebody declared
+  // production" apart from "somebody mistyped and we defaulted to production".
+  const resolvedEnvironment = resolveEnvironmentDecision(env)
+  const environment = input.environment ?? resolvedEnvironment.environment
+  const environmentProvenance = resolvedEnvironment.provenance
   const redactedHost = target.redactedHost
   // Explicitly annotated const so TypeScript treats `fail(...)` as a
   // never-returning call for control-flow analysis.
@@ -436,6 +529,79 @@ function assertTargetAllowed(
       'DB_ENVIRONMENT_NOT_ALLOWED',
       `environment "${environment}" is not in [${policy.allowedEnvironments.join(', ')}]`
     )
+  }
+
+  /* 3b. SYS-02 — the target must BE this environment's project. -------------
+   *
+   * Runs only for a capability that opted in (today: `app_runtime`), and only
+   * after the environment is known, because the question it asks is
+   * environment-relative.
+   *
+   * The rule is a positive identity, not a denylist:
+   *
+   *   hosted environment  → managed remote, project PROVEN, project == pin
+   *   non-hosted          → no managed remote at all
+   *
+   * The two halves are symmetric on purpose. Refusing only the production ref
+   * would leave `pnpm test` free to reach hosted STAGING, and a suite that
+   * TRUNCATEs an append-only table does not become safe by aiming at the
+   * shared database everyone else is using. */
+  if (policy.requiresPinnedProjectIdentity) {
+    const pin = runtimeProjectPinFor(environment)
+    const isRemote = target.kind === 'managed_remote'
+
+    // A typo in UELLIX_APP_ENV resolves to `production` because that is the
+    // most restrictive ENVIRONMENT — but it must not thereby become authority
+    // to open the production DATABASE. Only checked when the caller did not
+    // state its own environment, and only for a remote: a local stack is
+    // unaffected by how the variable was spelled.
+    if (isRemote && input.environment === undefined && environmentProvenance === 'unrecognised_declaration') {
+      fail(
+        'DB_RUNTIME_ENVIRONMENT_UNRECOGNISED',
+        'UELLIX_APP_ENV is set to a value no environment is called, so no project is pinned and ' +
+          'a managed remote cannot be authorised. Set it to one of ' +
+          `[${ALL_ENVIRONMENTS.join(', ')}], exactly`
+      )
+    }
+
+    if (pin === null) {
+      if (isRemote) {
+        fail(
+          'DB_RUNTIME_REMOTE_NOT_ALLOWED',
+          `environment "${environment}" has no hosted database, so a managed remote is never its ` +
+            'target. Point this at the local stack, or declare the hosted environment you mean ' +
+            'via UELLIX_APP_ENV'
+        )
+      }
+    } else if (!isRemote) {
+      fail(
+        'DB_RUNTIME_TARGET_NOT_HOSTED',
+        `environment "${environment}" runs against its pinned hosted project, so a ` +
+          `${target.kind} target is not a valid destination for it`
+      )
+    } else if (!target.provenIdentity.proven) {
+      // Fail CLOSED on an unprovable identity. This is the case that makes the
+      // check worth having: an opaque pooler URL, a lookalike domain, or a
+      // managed host that names no project cannot be compared with the pin, and
+      // "cannot be compared" must never resolve to "allowed".
+      fail(
+        'DB_RUNTIME_PROJECT_UNPINNED',
+        `the connection does not structurally prove which project it points at ` +
+          `(${target.provenIdentity.code}), so it cannot be shown to be the one pinned for ` +
+          `environment "${environment}". Use a db.<ref>.supabase.co host, a postgres.<ref> pooler ` +
+          'login role, or the pooler reference parameter'
+      )
+    } else if (target.provenIdentity.projectRef !== pin) {
+      // Neither ref is printed. Both are public, but this layer's rule is that
+      // nothing organisation-identifying reaches a message that a run report
+      // might capture, and the environment name is what makes it actionable.
+      fail(
+        'DB_RUNTIME_PROJECT_MISMATCH',
+        `the connection proves a different Supabase project than the one pinned for environment ` +
+          `"${environment}". The runtime role is identical across projects, so a matching role ` +
+          'is not evidence of a matching target'
+      )
+    }
   }
 
   /* 4. Local port pinning. ----------------------------------------------- */

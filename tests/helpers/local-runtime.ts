@@ -20,8 +20,13 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { config as loadEnvFile } from 'dotenv'
 import type postgres from 'postgres'
-import { getDefaultDatabaseClient, type DatabaseClient } from '@/db/client'
+import {
+  getDefaultDatabaseClient,
+  restrictDefaultDatabaseClient,
+  type DatabaseClient,
+} from '@/db/client'
 import { createMigratorClient } from '@/db/migrator'
+import { LOCAL_DB_PORT } from '@/db/safety/local-stack'
 
 const REPO_ROOT = resolve(import.meta.dirname, '..', '..')
 
@@ -85,8 +90,81 @@ async function probe(open: () => DatabaseClient): Promise<LiveConnection> {
   }
 }
 
-/** The application's own client, authenticated as `uellix_app`. */
-export const RUNTIME_CONNECTION: LiveConnection = await probe(() => getDefaultDatabaseClient())
+/* -------------------------------------------------------------------------- */
+/* SYS-02 — this helper's client is pinned to the local stack, structurally    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Narrow the shared client away from `app_runtime` BEFORE the first probe.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS NOT REDUNDANT WITH THE GUARD'S OWN ENVIRONMENT RULE
+ * ---------------------------------------------------------------------------
+ * Since SYS-02 the guard refuses a managed remote whenever the environment
+ * resolves to development/test/ci, and under vitest it resolves to `test`. That
+ * closes the accident. It does not close the DECLARATION: a shell that exports
+ * `UELLIX_APP_ENV=staging` makes the environment `staging`, and `pnpm test`
+ * would then be free to reach hosted staging with the real `uellix_app`
+ * credential.
+ *
+ * That matters more here than almost anywhere else in the repository, because
+ * the files that import this helper include tests/database-ddl-containment.ts,
+ * which executes fifteen deliberately destructive statements — TRUNCATE on an
+ * append-only table, DROP ROLE, DROP POLICY, DISABLE ROW LEVEL SECURITY,
+ * ALTER ROLE … BYPASSRLS — and asserts each is denied with SQLSTATE 42501.
+ *
+ * A test whose subject is "the runtime CANNOT do this" must never learn the
+ * answer by trying it on a shared database. If the privilege model were ever
+ * wrong, the proof of the defect would BE the damage. Remote DDL containment
+ * belongs behind the governed operator gate (db/hosted/**), where a human
+ * authorises a single measured attempt — not in a suite that runs on every
+ * `pnpm test`.
+ *
+ * `local_integration_test` accepts loopback and this worktree's port and
+ * NOTHING else — no environment variable, flag or declaration widens it.
+ */
+function pinToLocalStack(): string | null {
+  try {
+    restrictDefaultDatabaseClient({
+      capability: 'local_integration_test',
+      expectedLocalPort: LOCAL_DB_PORT,
+    })
+    return null
+  } catch (error) {
+    // ONLY "already applied" is tolerable — under the integration config
+    // vitest.setup.integration.ts or tests/integration/_guard.ts got there
+    // first, with the same capability and the same port. Anything else,
+    // including DB_RESTRICTION_TOO_LATE, means the restriction did NOT take
+    // effect and the shared client may still be `app_runtime`.
+    const code = (error as { code?: string }).code
+    return code === 'DB_RESTRICTION_ALREADY_APPLIED' ? null : (code ?? 'DB_RESTRICTION_FAILED')
+  }
+}
+
+// Credentials are loaded here rather than inside the first probe so that the
+// restriction is applied at a point where no client can exist yet.
+loadCredentials()
+const RESTRICTION_FAILURE = pinToLocalStack()
+
+const REFUSED: LiveConnection = {
+  available: false,
+  reason: RESTRICTION_FAILURE,
+  client: null,
+  sql: null,
+  close: async () => undefined,
+}
+
+/**
+ * The application's own client, authenticated as `uellix_app`, against the
+ * local stack.
+ *
+ * `available: false` degrades to a skip exactly as an absent stack does — and
+ * because the capability is pinned above, "available" now means "the LOCAL
+ * stack answered", not merely "something answered".
+ */
+export const RUNTIME_CONNECTION: LiveConnection = RESTRICTION_FAILURE
+  ? REFUSED
+  : await probe(() => getDefaultDatabaseClient())
 
 /** The migration wrapper's client, authenticated as `uellix_migrator`. */
 export const MIGRATOR_CONNECTION: LiveConnection = await probe(() => createMigratorClient())

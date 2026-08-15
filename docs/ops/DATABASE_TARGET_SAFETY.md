@@ -215,7 +215,7 @@ la propia guarda.
 
 | Capacidad | Destinos aceptados | Entornos | Señales exigidas |
 |---|---|---|---|
-| `app_runtime` | loopback, container, private, **managed_remote** | todos | ninguna extra; rechaza `unknown`/`invalid` |
+| `app_runtime` | **depende del entorno** (§3.5) | todos | identidad de proyecto probada e igual al pin del entorno; rechaza `unknown`/`invalid` |
 | `readonly_audit` | loopback, container | dev, test, ci | puerto local esperado; sesión forzada a solo lectura |
 | `local_seed` | loopback, container | dev, test, ci | puerto local esperado |
 | `local_integration_test` | loopback, container | dev, test, ci | puerto local esperado |
@@ -267,17 +267,77 @@ de modo que un token acuñado para un stack u operación no confirma otra.
 `DB_CONFIRMATION_REQUIRED`, `DB_CONFIRMATION_MISMATCH`,
 `DB_OPERATION_DECLARATION_REQUIRED`, `DB_OPERATION_DECLARATION_MISMATCH`.
 
+Y los de SYS-02 (§3.5): `DB_RUNTIME_TARGET_NOT_HOSTED`,
+`DB_RUNTIME_REMOTE_NOT_ALLOWED`, `DB_RUNTIME_PROJECT_UNPINNED`,
+`DB_RUNTIME_PROJECT_MISMATCH`, `DB_RUNTIME_ENVIRONMENT_UNRECOGNISED`.
+
 ### 3.4 Resolución del entorno
 
-`resolveEnvironment()` — sin coerción booleana:
+`resolveEnvironment()` — sin coerción booleana. `resolveEnvironmentDecision()`
+devuelve además la **procedencia** de la respuesta, que SYS-02 necesita para
+distinguir "alguien declaró `production`" de "alguien escribió `produciton` y
+caímos al valor más restrictivo":
 
-1. `UELLIX_APP_ENV` gana si nombra un entorno conocido. **Si está definida
-   pero no se reconoce, resuelve a `production`**, no al valor por defecto: la
-   errata de un operador no debe convertirse en el entorno más permisivo.
+1. `UELLIX_APP_ENV` gana si nombra un entorno conocido (`declared`). **Si está
+   definida pero no se reconoce, resuelve a `production`** (`unrecognised_declaration`),
+   no al valor por defecto: la errata de un operador no debe convertirse en el
+   entorno más permisivo — ni, desde SYS-02, en autoridad para abrir la base de
+   producción (`DB_RUNTIME_ENVIRONMENT_UNRECOGNISED`).
 2. `NODE_ENV=test` → `test`.
 3. `CI` exactamente `true` o `1` → `ci`.
-4. `NODE_ENV` ausente o `development` → `development`.
-5. Cualquier otra cosa → `production`.
+4. `VERCEL_ENV`: `production` → `production`, **`preview` → `staging`**,
+   `development` → `development`. Añadido por SYS-02: sin esto un despliegue de
+   preview caía en `NODE_ENV=production` y el pin habría exigido el proyecto de
+   producción a una base de staging.
+5. `NODE_ENV` ausente o `development` → `development`.
+6. Cualquier otra cosa → `production`.
+
+### 3.5 SYS-02 — identidad del proyecto en `app_runtime`
+
+`app_runtime` es la única capacidad que alcanza un remoto gestionado sin token
+explícito, porque es el producto sirviendo tráfico. Hasta SYS-02 preguntaba
+cuatro cosas, y **una cadena de producción respondía las cuatro exactamente
+igual que una de staging**: destino clasificable, tipo permitido, entorno
+permitido, y `requiresProjectId: false` — es decir, el project ref nunca se
+comparaba con nada.
+
+El rol tampoco distingue: ambos proyectos exponen `uellix_app`, porque el modelo
+de roles se despliega desde las mismas migraciones. La línea de auditoría de los
+dos destinos era **idéntica byte a byte**:
+
+```
+capability=app_runtime target=managed_remote host=***.supabase.co
+  port=5432 env=staging readOnly=false tls=from-url
+```
+
+La regla ahora es **identidad positiva**, no una denylist más ancha:
+
+| Entorno | Destinos aceptados | Identidad exigida |
+|---|---|---|
+| `production` | sólo `managed_remote` | probada **e igual** al ref de producción |
+| `staging` | sólo `managed_remote` | probada **e igual** al ref de staging |
+| `development`, `test`, `ci` | loopback, container, private | ninguna — y **ningún** `managed_remote`, ni siquiera staging |
+
+Los pins viven en `db/safety/runtime-project-pins.ts` y se **importan** de
+`db/hosted/target-identity.ts`: un segundo registro que pudiera desincronizarse
+sería peor que ninguno. La identidad se deriva de forma estructural por tres
+mecanismos, y si no se puede probar **se rechaza** (`DB_RUNTIME_PROJECT_UNPINNED`):
+
+1. host directo `db.<ref>.supabase.co` (o `<ref>.supabase.co`);
+2. rol de login del pooler `postgres.<ref>`;
+3. parámetro de enrutado de Supavisor `?options=reference%3D<ref>`.
+
+Dos fuentes que se contradicen son un rechazo, nunca una preferencia. El
+**puerto no participa**: el modo de pooling (sesión 5432 / transacción 6543) es
+una cuestión de aprovisionamiento, no de identidad, y el runtime usa
+legítimamente el pooler de transacción.
+
+> **Precondición de despliegue.** El pin se elige por entorno, así que el Vercel
+> de staging **debe** declarar `UELLIX_APP_ENV=staging`. Si faltara, la
+> resolución cae en `VERCEL_ENV` (`preview` → `staging`, ya contemplado) y, en
+> última instancia, en `NODE_ENV=production` → el pin esperaría el ref de
+> producción y rechazaría la base de staging. El fallo sería cerrado (una caída
+> visible, nunca un acceso silencioso a producción), pero es una caída.
 
 ---
 

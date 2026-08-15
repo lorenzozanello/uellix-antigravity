@@ -3,9 +3,17 @@
 // Unit coverage for the database access safety layer (db/safety/*).
 //
 // Fully offline: classification and authorization never open a connection, so
-// nothing here touches a database. Every URL below is fictional — RFC 5737 /
-// RFC 3849 documentation ranges, example.com, and an invented Supabase
-// project reference. No real host, credential or project id appears.
+// nothing here touches a database. Every credential below is fictional, and so
+// are the hosts — RFC 5737 / RFC 3849 documentation ranges, example.com, and an
+// invented Supabase project reference.
+//
+// ONE EXCEPTION, added by SYS-02: the handful of cases that must exercise an
+// ALLOWED managed remote now use the real staging project ref, imported from
+// db/hosted/target-identity.ts. They have to — `app_runtime` no longer accepts
+// an arbitrary Supabase project, which is the entire point of that change, so a
+// test that keeps using an invented ref would be asserting a refusal while
+// claiming to assert an acceptance. The ref is a PUBLIC identifier (it appears
+// in every URL the project serves) and no credential accompanies it.
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -35,6 +43,7 @@ import {
   LocalDatabaseUrlResolutionError,
   resolveLocalDatabaseUrl,
 } from '@/db/safety/resolve-local-database-url'
+import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 
 /* -------------------------------------------------------------------------- */
 /* Fictional fixtures                                                         */
@@ -51,6 +60,18 @@ const pg = (host: string, port?: number, extra = '', user = FAKE_USER) =>
 const LOCAL_OK = pg('127.0.0.1', LOCAL_DB_PORT)
 const REMOTE_SUPABASE = pg(REMOTE_HOST, 5432)
 const CONTAINER_HOSTS = ['supabase_db_rehearsal'] as const
+
+/**
+ * A managed remote `app_runtime` is actually ALLOWED to reach, and the
+ * environment that may reach it.
+ *
+ * Since SYS-02 the pair is inseparable: the ref alone is not an allowed target
+ * and the environment alone does not authorise one. Tests that need "a remote
+ * this capability accepts" therefore have to name both. The dedicated coverage
+ * for the refusals lives in tests/database-runtime-target-identity.ts.
+ */
+const PINNED_STAGING_HOST = `db.${KNOWN_STAGING_PROJECT_REF}.supabase.co`
+const PINNED_STAGING_URL = pg(PINNED_STAGING_HOST, 5432)
 
 /* -------------------------------------------------------------------------- */
 /* Pinned constants vs supabase/config.toml                                   */
@@ -578,13 +599,21 @@ describe('capabilities — a URL may not override our own connection settings', 
     // Supabase's shared pooler uses `?options=reference%3D<ref>`. Refusing it
     // here would break the product at startup, and app_runtime sets no
     // connection options of its own for a URL parameter to override.
+    //
+    // Since SYS-02 that same parameter is also an IDENTITY source, so the ref
+    // it carries has to be the pinned one — a URL that is tolerated for its
+    // parameters and refused for its project would prove nothing about
+    // parameter handling.
     const decision = assertDatabaseOperationAllowed({
-      url: `${REMOTE_SUPABASE}?options=reference%3D${FAKE_PROJECT_REF}`,
+      url:
+        `postgresql://${FAKE_USER}:${FAKE_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543` +
+        `/postgres?options=reference%3D${KNOWN_STAGING_PROJECT_REF}`,
       capability: 'app_runtime',
-      environment: 'production',
+      environment: 'staging',
       env: {},
     })
     expect(decision.targetKind).toBe('managed_remote')
+    expect(decision.auditLine).toContain('urlParams=[options]')
   })
 
   it('flags "sslrootcert" as forwarded — empirically NOT one of the driver\'s own options', () => {
@@ -679,19 +708,27 @@ describe('capabilities — local_reset', () => {
 })
 
 describe('capabilities — app_runtime', () => {
-  it('permits a managed remote target without any destructive flag', () => {
+  it('permits its own pinned managed remote without any destructive flag', () => {
+    // Still no token, no confirmation and no operation name: the product
+    // serving traffic is not a destructive operation. What SYS-02 added is that
+    // the remote must be THIS environment's project — see
+    // tests/database-runtime-target-identity.test.ts for the refusals.
     const decision = assertDatabaseOperationAllowed({
-      url: REMOTE_SUPABASE,
+      url: PINNED_STAGING_URL,
       capability: 'app_runtime',
-      environment: 'production',
+      environment: 'staging',
       env: {},
     })
     expect(decision.targetKind).toBe('managed_remote')
-    expect(decision.environment).toBe('production')
+    expect(decision.environment).toBe('staging')
     expect(decision.readOnly).toBe(false)
   })
 
-  it('permits local and private targets too', () => {
+  it('permits local and private targets in the environments that have no hosted project', () => {
+    // `private_network` moved from `production` to `development` here, and that
+    // is a behaviour change rather than a test tidy-up: a hosted environment
+    // now runs against its pinned project or nothing, so a private-network
+    // target under production is refused (DB_RUNTIME_TARGET_NOT_HOSTED).
     expect(
       assertDatabaseOperationAllowed({
         url: LOCAL_OK,
@@ -704,7 +741,7 @@ describe('capabilities — app_runtime', () => {
       assertDatabaseOperationAllowed({
         url: pg('10.0.0.5', 5432),
         capability: 'app_runtime',
-        environment: 'production',
+        environment: 'development',
         env: {},
       }).targetKind
     ).toBe('private_network')
@@ -933,16 +970,19 @@ describe('error messages never leak credentials or the URL', () => {
 
   it('the audit line of an allowed decision is equally credential-free', () => {
     const decision = assertDatabaseOperationAllowed({
-      url: `postgresql://${FAKE_USER}:${FAKE_PASSWORD}@${REMOTE_HOST}:5432/postgres?sslmode=require`,
+      url: `postgresql://${FAKE_USER}:${FAKE_PASSWORD}@${PINNED_STAGING_HOST}:5432/postgres?sslmode=require`,
       capability: 'app_runtime',
-      environment: 'production',
+      environment: 'staging',
       env: {},
     })
     expect(decision.auditLine).not.toContain(FAKE_PASSWORD)
     expect(decision.auditLine).not.toContain(FAKE_USER)
-    expect(decision.auditLine).not.toContain(FAKE_PROJECT_REF)
     expect(decision.auditLine).not.toContain('sslmode')
     expect(decision.auditLine).toContain('***.supabase.co')
+    // The project ref stays out too. It is public, but this layer masks the
+    // host precisely so a run report cannot be traced to an organisation, and
+    // printing the ref next to a masked host would undo that.
+    expect(decision.auditLine).not.toContain(KNOWN_STAGING_PROJECT_REF)
   })
 })
 
