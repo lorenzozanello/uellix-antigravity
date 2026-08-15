@@ -74,6 +74,11 @@
       "packageId": "T10",
       "path": "db/prepared/hosted/governed/grounding_0005_claim_advisory_lock.governed.sql",
       "digest": "c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34"
+    },
+    {
+      "packageId": "T11",
+      "path": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
+      "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68"
     }
   ],
   "refusals": [
@@ -100,7 +105,7 @@
     },
     {
       "id": "UNKNOWN_PACKAGE",
-      "attempted": "resolve T11, a package the chain does not declare",
+      "attempted": "resolve T12, a package the chain does not declare",
       "refused": true,
       "code": "CERT_UNKNOWN_PACKAGE",
       "reachedServer": false
@@ -141,7 +146,8 @@
       "stella_0016_reserved_quota_semantics": "ABSENT",
       "stella_0017_governed_stella_consumption": "ABSENT",
       "stella_0018_category_bound_operation_tickets": "ABSENT",
-      "grounding_0005_claim_advisory_lock": "ABSENT"
+      "grounding_0005_claim_advisory_lock": "ABSENT",
+      "stella_0019_storage_write_roles": "ABSENT"
     },
     "memberships": [
       "anon|authenticator|supabase_admin|f|f|t",
@@ -959,6 +965,21 @@
       "exitStatus": 0,
       "error": null,
       "stateAfter": "INSTALLED",
+      "temporaryMembershipsAfter": [],
+      "schemaCreateResidualAfter": [],
+      "providerMembershipsUnchanged": true,
+      "sessionStateAfter": [
+        "postgres|postgres|none"
+      ]
+    },
+    {
+      "packageId": "T11",
+      "sourcePath": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
+      "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68",
+      "stateBefore": "ABSENT",
+      "exitStatus": 3,
+      "error": "psql:<stdin>:379: ERROR:  stella_0019 aborted: can_write_evidence_object is owned by postgres, not uellix_owner. The owner window below becomes that role to republish the body; over a differently-owned function it would either fail or transfer ownership by accident. Apply stella_0004 (local) or stella_hosted_0001 (managed) first. / CONTEXT:  PL/pgSQL function inline_code_block line 91 at RAISE",
+      "stateAfter": "ABSENT",
       "temporaryMembershipsAfter": [],
       "schemaCreateResidualAfter": [],
       "providerMembershipsUnchanged": true,
@@ -1803,7 +1824,7 @@
     ],
     "policy": "forward-only",
     "installedPackageAction": "refuse",
-    "note": "All 10 of the 10 declared packages are observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
+    "note": "All 10 of the 11 declared packages are observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
   },
   "injections": [
     {
@@ -2035,7 +2056,7 @@
     },
     {
       "id": "CHAIN_COMPLETE",
-      "holds": true,
+      "holds": false,
       "detail": "every declared package applied and measured INSTALLED"
     },
     {
@@ -2049,5 +2070,5 @@
       "detail": "15/15 failed and rolled back"
     }
   ],
-  "verdict": "COMPLETE"
+  "verdict": "CHAIN_INCOMPLETE_INJECTIONS_RUN"
 }

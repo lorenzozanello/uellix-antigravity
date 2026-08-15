@@ -30,7 +30,11 @@ import {
   sha256OfSql,
 } from './hosted-package-manifest'
 import { generateHostedPackage } from './generate-hosted-package'
-import { packageOrderRefusal, supersessionsFor } from '../prepared-package-order'
+import {
+  packageOrderRefusal,
+  supersessionsFor,
+  STELLA_TICKET_PACKAGE_CHAIN,
+} from '../prepared-package-order'
 import {
   productionDenylistStatus,
   redactForHostedLog,
@@ -128,7 +132,28 @@ export type HostedApplyPlan =
   | { readonly ok: false; readonly code: HostedApplyFailureCode; readonly message: string }
 
 const GROUNDING_UNIT = HOSTED_CHAIN.filter((n) => n.startsWith('grounding_'))
-const TICKET_CHAIN = HOSTED_CHAIN.filter((n) => n.startsWith('stella_00'))
+
+// THE TICKET CHAIN IS READ FROM THE REGISTRY THAT DECLARES IT, NOT FROM A NAME.
+//
+// This was `HOSTED_CHAIN.filter((n) => n.startsWith('stella_00'))`, and it was
+// correct only by coincidence: every `stella_00*` member of HOSTED_CHAIN
+// happened to be a ticket package. The prefix never MEANT "ticket" —
+// stella_0002 … stella_0012 carry it too and are simply not chain members — so
+// the first non-ticket package to join the chain under that prefix inherits a
+// completeness rule written for a protocol it has nothing to do with.
+//
+// stella_0019 is that package. Under the prefix filter, applying it alone would
+// be refused with HOSTED_TICKET_CHAIN_INCOMPLETE unless stella_0013…0018 were
+// all present, and applying stella_0013 would demand a storage role fix — two
+// refusals that protect nothing and block the one write each operator came to
+// make. STELLA_TICKET_PACKAGE_CHAIN is the registry that states the membership
+// as data, which db/prepared-package-order.ts already requires of itself.
+//
+// The gate is not loosened: the six members and the completeness rule over them
+// are unchanged. It stops applying to packages that were never in the chain.
+const TICKET_CHAIN = HOSTED_CHAIN.filter((n) =>
+  (STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).includes(n),
+)
 
 function fail(code: HostedApplyFailureCode, message: string): HostedApplyPlan {
   return { ok: false, code, message: redactForHostedLog(message) }

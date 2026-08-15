@@ -107,19 +107,48 @@ describe('the installer identity is a single contract', () => {
     const files = readdirSync(path.join(ROOT, GOVERNED_DIR)).filter((f) =>
       f.endsWith('.governed.sql'),
     )
-    expect(files.length).toBe(10)
+    // ELEVEN since M-2. The identity contract is per-artefact, so a new chain
+    // member simply has to satisfy it like the other ten.
+    expect(files.length).toBe(11)
+
+    // M-2. A package whose ONLY authority window is OWNER class grants nothing,
+    // and that is the contract holding rather than being skipped: a temporary
+    // membership is needed to reach a CAPABILITY role, which exists precisely
+    // so it has ZERO members. `uellix_owner` is different — the installer's
+    // right to SET ROLE to it is a PRECONDITION, asserted by
+    // uellix_bootstrap.assert_hosted_capabilities() (C2) before the package
+    // runs, so a package that emits `GRANT uellix_owner TO uellix_migrator`
+    // would be granting itself something it was required to already have.
+    //
+    // stella_0019 is the first such package: it republishes one baseline
+    // function that uellix_owner already owns. Declared by name, so a package
+    // that stops opening a window by ACCIDENT still fails here.
+    const OWNER_WINDOW_ONLY = ['stella_0019_storage_write_roles.governed.sql']
 
     for (const file of files) {
       const sql = read(`${GOVERNED_DIR}/${file}`)
       const grants = [...sql.matchAll(/^GRANT \S+ TO (\S+) WITH INHERIT FALSE, SET TRUE;$/gm)]
-      expect(grants.length, `${file} opens no elevation window`).toBeGreaterThan(0)
 
       // Every temporary elevation names the installer or the owner, and nothing
       // else. A grant to a third role would be an execution path this gate does
-      // not describe.
+      // not describe. Checked for EVERY package, including the owner-only one:
+      // its grant count is zero, so the loop is vacuous and the next assertion
+      // is what carries the weight.
       for (const [, grantee] of grants) {
         expect([CERTIFIED_CHAIN_INSTALLER, CERTIFIED_CHAIN_OWNER]).toContain(grantee)
       }
+
+      if (OWNER_WINDOW_ONLY.includes(file)) {
+        expect(grants, `${file} is declared owner-window-only and must grant nothing`).toEqual([])
+        // What it must do instead: reach the owner by SET ROLE, and give it back.
+        expect(sql, `${file} does not open an owner window`).toMatch(
+          new RegExp(`^SET ROLE ${CERTIFIED_CHAIN_OWNER};$`, 'm'),
+        )
+        expect(sql, `${file} does not close its owner window`).toMatch(/^RESET ROLE;$/m)
+        continue
+      }
+
+      expect(grants.length, `${file} opens no elevation window`).toBeGreaterThan(0)
       // And at least one names the installer, which is why the session must BE
       // it: `GRANT <cap> TO <installer> ...` followed by `SET ROLE <cap>`.
       expect(

@@ -67,9 +67,9 @@
     "bootstrapError": null,
     "sentinelWritten": true
   },
-  "stagingShapeSnapshot": "uellix-rem-cert-snapshot:staging-shape",
+  "stagingShapeSnapshot": "staging-shape",
   "sourceObservation": {
-    "attemptId": "att_677ee3564ca466bd97509b35c8574cd8",
+    "attemptId": "att_e7984b9f490b34b8eb1fa0cd1749566f",
     "state": "ABSENT",
     "present": [],
     "missing": [
@@ -159,7 +159,7 @@
   "attemptLedger": {
     "planned": {
       "packageId": "stella_hosted_0002_prechain_authority_reconciliation",
-      "attemptId": "att_677ee3564ca466bd97509b35c8574cd8"
+      "attemptId": "att_e7984b9f490b34b8eb1fa0cd1749566f"
     },
     "secondPlanFromTheSameObservation": "REMEDIATION_ATTEMPT_NOT_OPEN",
     "ledgerLines": 3
@@ -170,7 +170,7 @@
     "notices": []
   },
   "postApplyObservation": {
-    "attemptId": "att_89cea2acff9f2f1578dbf7d0ffddb694",
+    "attemptId": "att_b7f35873fb316599401381e2c3701f12",
     "state": "INSTALLED",
     "present": [
       "installer holds CREATEROLE",
@@ -277,6 +277,16 @@
       "packageId": "T9",
       "path": "db/prepared/hosted/governed/stella_0018_category_bound_operation_tickets.governed.sql",
       "digest": "0b5c481f9cc261f3d184c33a621881f76fed7b29b8ed0c8bf0c8d76a679316ac"
+    },
+    {
+      "packageId": "T10",
+      "path": "db/prepared/hosted/governed/grounding_0005_claim_advisory_lock.governed.sql",
+      "digest": "c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34"
+    },
+    {
+      "packageId": "T11",
+      "path": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
+      "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68"
     }
   ],
   "chain": [
@@ -296,7 +306,9 @@
         "stella_0015_project_bound_operation_tickets": "ABSENT",
         "stella_0016_reserved_quota_semantics": "ABSENT",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -317,7 +329,9 @@
         "stella_0015_project_bound_operation_tickets": "ABSENT",
         "stella_0016_reserved_quota_semantics": "ABSENT",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -338,7 +352,9 @@
         "stella_0015_project_bound_operation_tickets": "ABSENT",
         "stella_0016_reserved_quota_semantics": "ABSENT",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -359,7 +375,9 @@
         "stella_0015_project_bound_operation_tickets": "ABSENT",
         "stella_0016_reserved_quota_semantics": "ABSENT",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -380,7 +398,9 @@
         "stella_0015_project_bound_operation_tickets": "ABSENT",
         "stella_0016_reserved_quota_semantics": "ABSENT",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -401,7 +421,9 @@
         "stella_0015_project_bound_operation_tickets": "INSTALLED",
         "stella_0016_reserved_quota_semantics": "ABSENT",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -422,7 +444,9 @@
         "stella_0015_project_bound_operation_tickets": "INSTALLED",
         "stella_0016_reserved_quota_semantics": "INSTALLED",
         "stella_0017_governed_stella_consumption": "ABSENT",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -443,7 +467,9 @@
         "stella_0015_project_bound_operation_tickets": "INSTALLED",
         "stella_0016_reserved_quota_semantics": "INSTALLED",
         "stella_0017_governed_stella_consumption": "INSTALLED",
-        "stella_0018_category_bound_operation_tickets": "ABSENT"
+        "stella_0018_category_bound_operation_tickets": "ABSENT",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
@@ -464,13 +490,61 @@
         "stella_0015_project_bound_operation_tickets": "INSTALLED",
         "stella_0016_reserved_quota_semantics": "INSTALLED",
         "stella_0017_governed_stella_consumption": "INSTALLED",
-        "stella_0018_category_bound_operation_tickets": "INSTALLED"
+        "stella_0018_category_bound_operation_tickets": "INSTALLED",
+        "grounding_0005_claim_advisory_lock": "ABSENT",
+        "stella_0019_storage_write_roles": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T10",
+      "path": "db/prepared/hosted/governed/grounding_0005_claim_advisory_lock.governed.sql",
+      "digest": "c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "INSTALLED",
+        "stella_0016_reserved_quota_semantics": "INSTALLED",
+        "stella_0017_governed_stella_consumption": "INSTALLED",
+        "stella_0018_category_bound_operation_tickets": "INSTALLED",
+        "grounding_0005_claim_advisory_lock": "INSTALLED",
+        "stella_0019_storage_write_roles": "ABSENT"
+      },
+      "leakedMembershipsAfter": [],
+      "schemaCreateResidualAfter": []
+    },
+    {
+      "packageId": "T11",
+      "path": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
+      "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68",
+      "exitStatus": 3,
+      "error": "psql:<stdin>:379: ERROR:  stella_0019 aborted: can_write_evidence_object is owned by postgres, not uellix_owner. The owner window below becomes that role to republish the body; over a differently-owned function it would either fail or transfer ownership by accident. Apply stella_0004 (local) or stella_hosted_0001 (managed) first. / CONTEXT:  PL/pgSQL function inline_code_block line 91 at RAISE",
+      "stateAfter": "ABSENT",
+      "witnessedStates": {
+        "grounding_0002_document_versions": "INSTALLED",
+        "grounding_0003_evidence_chunks": "INSTALLED",
+        "grounding_0004_runtime_attestation": "INSTALLED",
+        "stella_0013_grounded_query_quota": "INSTALLED",
+        "stella_0014_operation_tickets": "INSTALLED",
+        "stella_0015_project_bound_operation_tickets": "INSTALLED",
+        "stella_0016_reserved_quota_semantics": "INSTALLED",
+        "stella_0017_governed_stella_consumption": "INSTALLED",
+        "stella_0018_category_bound_operation_tickets": "INSTALLED",
+        "grounding_0005_claim_advisory_lock": "INSTALLED",
+        "stella_0019_storage_write_roles": "ABSENT"
       },
       "leakedMembershipsAfter": [],
       "schemaCreateResidualAfter": []
     }
   ],
-  "chainInstalled": 9,
+  "chainInstalled": 10,
   "postconditions": {
     "ownerTransfers": {
       "total": 27,
@@ -1846,6 +1920,17 @@
         "securityDefiner": true
       },
       {
+        "owner": "uellix_owner",
+        "schema": "public",
+        "proconfig": [],
+        "signature": "public.uellix_check_canonical_chunk()",
+        "executeGrantees": [
+          "PUBLIC",
+          "uellix_owner"
+        ],
+        "securityDefiner": false
+      },
+      {
         "owner": "uellix_cap_grounding",
         "schema": "uellix_grounding",
         "proconfig": [
@@ -1857,17 +1942,6 @@
           "uellix_cap_grounding"
         ],
         "securityDefiner": true
-      },
-      {
-        "owner": "uellix_owner",
-        "schema": "public",
-        "proconfig": [],
-        "signature": "public.uellix_check_canonical_chunk()",
-        "executeGrantees": [
-          "PUBLIC",
-          "uellix_owner"
-        ],
-        "securityDefiner": false
       },
       {
         "owner": "uellix_cap_grounding",
@@ -2679,7 +2753,7 @@
   "ambiguousSuccess": {
     "applyExitStatus": 0,
     "committedButUnknownToTheOperator": true,
-    "priorAttempt": "att_ec7fec6b29b794a092b694471dafd979",
+    "priorAttempt": "att_c8d8a0a76d33772fc0cc25005a5cc67e",
     "priorAttemptStateBeforeApply": "ABSENT",
     "freshWitnessAfter": "INSTALLED",
     "plannerResult": "REMEDIATION_ALREADY_INSTALLED",
@@ -2690,10 +2764,10 @@
   "ambiguousFailure": {
     "applyExitStatus": 3,
     "injectedAt": "R8",
-    "priorAttempt": "att_646e3d8e04122c232e3b1645c1534e35",
+    "priorAttempt": "att_7f9b42a77179872b06fa03508f193e8e",
     "reuseOfPriorAttempt": "REMEDIATION_ATTEMPT_NOT_OPEN",
     "freshWitnessAfter": "ABSENT",
-    "newAttempt": "att_2d32383686a3bfbc7ffbba0cfbc353a3",
+    "newAttempt": "att_5b4ccd954bd4210d1f60f59d09a56794",
     "newAttemptAuthorized": true,
     "newAttemptRequired": true
   },
@@ -2727,60 +2801,60 @@
   ],
   "ledger": {
     "lines": [
-      "{\"attemptId\":\"att_e2ebd9c9c63804dc0ac0aa38230ff8a9\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:43:56.570Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_e2ebd9c9c63804dc0ac0aa38230ff8a9\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:43:56.571Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_677ee3564ca466bd97509b35c8574cd8\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:41.856Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_677ee3564ca466bd97509b35c8574cd8\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:45.632Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_89cea2acff9f2f1578dbf7d0ffddb694\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:45.993Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_89cea2acff9f2f1578dbf7d0ffddb694\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:46.279Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_186f07f8da229147683d6c63a4b7f2ac\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:57.034Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_186f07f8da229147683d6c63a4b7f2ac\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:57.463Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_55a8bcf4e175bcb4194fd68d390bb579\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:57.840Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_55a8bcf4e175bcb4194fd68d390bb579\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:58.332Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_eb32adea3346494957493efb5bf9dba3\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:44:59.713Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_eb32adea3346494957493efb5bf9dba3\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:00.144Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_ba9da3cf899a79b4a5309d673c7a52c3\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:00.450Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_ba9da3cf899a79b4a5309d673c7a52c3\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:00.984Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_a6b31ac51490f61befd62566eb7c715e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:02.382Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_a6b31ac51490f61befd62566eb7c715e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:02.789Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_a8594f0ca0f54b2ed8f073d4235057e5\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:03.072Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_a8594f0ca0f54b2ed8f073d4235057e5\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:03.593Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_59f10630939da109a2a84aae7ee7db73\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:05.018Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_59f10630939da109a2a84aae7ee7db73\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:05.454Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_721d5309f70b19926c2908fee9182f6d\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:05.801Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_721d5309f70b19926c2908fee9182f6d\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:06.435Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_ac349d9201d87a20a381508960fc8b86\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:07.940Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_ac349d9201d87a20a381508960fc8b86\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:08.340Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_a3a967f3383e68196072f8d294c5b87f\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:08.637Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_a3a967f3383e68196072f8d294c5b87f\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:09.140Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_e7a1b9cb94924fd2ce789c4447cd9167\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:10.563Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_e7a1b9cb94924fd2ce789c4447cd9167\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:10.956Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_dc56521a68bd219cfa6171d3866102de\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:11.314Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_dc56521a68bd219cfa6171d3866102de\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:11.839Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_35a3c2deef540feff3a22429a5a4eb27\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:13.276Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_35a3c2deef540feff3a22429a5a4eb27\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:13.668Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_fa6e09997e102703da3a22849ed78fdc\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:13.997Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_fa6e09997e102703da3a22849ed78fdc\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:14.540Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_4b946ac287718000a94694f97705d758\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:16.030Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_4b946ac287718000a94694f97705d758\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:16.524Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_1e887b77242e23876861028cce9a996f\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:16.887Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_1e887b77242e23876861028cce9a996f\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:17.420Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_55556c9f9763edbb4e58911b42552544\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:18.810Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_55556c9f9763edbb4e58911b42552544\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:19.232Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_b05e9f451256f6ccdc67f262c687956b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:19.596Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_b05e9f451256f6ccdc67f262c687956b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:20.085Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_ec7fec6b29b794a092b694471dafd979\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:21.514Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_ec7fec6b29b794a092b694471dafd979\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:21.873Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_8ad6129b4d512f76db7c73d4ddfb6b8e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:22.252Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_8ad6129b4d512f76db7c73d4ddfb6b8e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:22.515Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_646e3d8e04122c232e3b1645c1534e35\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:24.282Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_646e3d8e04122c232e3b1645c1534e35\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:24.635Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_2d32383686a3bfbc7ffbba0cfbc353a3\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:25.005Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_2d32383686a3bfbc7ffbba0cfbc353a3\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:25.267Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_248998ce87b59374bc40fa46ad9cff5b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:27.524Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_248998ce87b59374bc40fa46ad9cff5b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:27.784Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
-      "{\"attemptId\":\"att_30973b317c8eb656212771a11424289a\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:30.342Z\",\"kind\":\"prechain-remediation\"}",
-      "{\"attemptId\":\"att_30973b317c8eb656212771a11424289a\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-10T19:45:30.585Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}"
+      "{\"attemptId\":\"att_176643260b430d7aa85499e98727267a\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:18:22.774Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_176643260b430d7aa85499e98727267a\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:18:22.775Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_e7984b9f490b34b8eb1fa0cd1749566f\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:19.288Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_e7984b9f490b34b8eb1fa0cd1749566f\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:27.152Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_b7f35873fb316599401381e2c3701f12\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:27.880Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_b7f35873fb316599401381e2c3701f12\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:28.531Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_692c0deabca7fc862c643ac44cc5368d\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:57.282Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_692c0deabca7fc862c643ac44cc5368d\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:58.091Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_92dded995303e6fa0af2109281ae4617\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:19:58.795Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_92dded995303e6fa0af2109281ae4617\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:00.218Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_054b488547c0c8a9c864dffe5bf7790e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:03.906Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_054b488547c0c8a9c864dffe5bf7790e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:04.716Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_480fe8fce9c45d93d1b6f1e85e49f28b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:05.458Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_480fe8fce9c45d93d1b6f1e85e49f28b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:06.746Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_c7a81cbdbe454b26c7ca7260c0248515\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:10.403Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_c7a81cbdbe454b26c7ca7260c0248515\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:11.281Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_98d7356dcf5e21aea7ccbcd13c29b9e4\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:12.028Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_98d7356dcf5e21aea7ccbcd13c29b9e4\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:13.395Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_c9995292ece61dc3f0e3ef8b80a768ec\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:17.043Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_c9995292ece61dc3f0e3ef8b80a768ec\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:17.835Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_bf292f9ddf50ace379d410d2e436506b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:18.596Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_bf292f9ddf50ace379d410d2e436506b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:19.994Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_a75170ed52245261e1005e095c631462\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:23.528Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_a75170ed52245261e1005e095c631462\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:24.325Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_85ea05dd58802d66205935fb626ad7d4\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:25.063Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_85ea05dd58802d66205935fb626ad7d4\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:26.464Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_beb755a8c9ea0c8661ac547cf61f561c\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:30.068Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_beb755a8c9ea0c8661ac547cf61f561c\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:30.891Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_e62dc8877c83e0673a0837d64bb982db\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:31.652Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_e62dc8877c83e0673a0837d64bb982db\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:32.990Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_cca74c52c9a020f7af174d74ac7cf740\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:36.480Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_cca74c52c9a020f7af174d74ac7cf740\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:37.280Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_c2df6d9c1ea78a96267097146946926c\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:38.085Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_c2df6d9c1ea78a96267097146946926c\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:39.512Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_36784db3a500c0e13c9e78f2cc53cf36\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:43.049Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_36784db3a500c0e13c9e78f2cc53cf36\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:43.855Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_4565dc07e4ba2254f79caf41b11e788a\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:44.623Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_4565dc07e4ba2254f79caf41b11e788a\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:46.019Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_586eb429279cb030f96449fa15e3bc5d\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:49.543Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_586eb429279cb030f96449fa15e3bc5d\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:50.340Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_e216a2d76059f3a1337e2edc763d0287\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:51.149Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_e216a2d76059f3a1337e2edc763d0287\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:52.525Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_c8d8a0a76d33772fc0cc25005a5cc67e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:56.350Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_c8d8a0a76d33772fc0cc25005a5cc67e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:57.265Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_3114de9108ce68f256cb71ffcb11a43b\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:58.165Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_3114de9108ce68f256cb71ffcb11a43b\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:20:59.009Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_7f9b42a77179872b06fa03508f193e8e\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:04.169Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_7f9b42a77179872b06fa03508f193e8e\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:05.053Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_5b4ccd954bd4210d1f60f59d09a56794\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:06.053Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_5b4ccd954bd4210d1f60f59d09a56794\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:06.899Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_b9807b4190f495d34e93c4e974f2ccbe\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:12.731Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_b9807b4190f495d34e93c4e974f2ccbe\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:13.596Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}",
+      "{\"attemptId\":\"att_a99eedcd5d5c82c19e7589724fde717c\",\"event\":\"OPENED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:19.981Z\",\"kind\":\"prechain-remediation\"}",
+      "{\"attemptId\":\"att_a99eedcd5d5c82c19e7589724fde717c\",\"event\":\"CONSUMED\",\"targetProjectRef\":\"localcertlabnotrealx\",\"at\":\"2026-08-16T00:21:20.666Z\",\"kind\":\"prechain-remediation\",\"packageId\":\"stella_hosted_0002_prechain_authority_reconciliation\"}"
     ]
   },
   "verdicts": {
@@ -2789,7 +2863,7 @@
     "EXACT_STAGING_REMEDIATION": "PASS",
     "POST_REMEDIATION_PRECHAIN_GATE": "PASS",
     "T1_AUTHORIZATION_AFTER_REMEDIATION": "PASS",
-    "POST_REMEDIATION_GOVERNED_CHAIN": "9_OF_9_PASS",
+    "POST_REMEDIATION_GOVERNED_CHAIN": "INCOMPLETE",
     "OWNER_TRANSFERS_ENGINE": "27_OF_27_CORRECT",
     "CANONICAL_OWNER_CONTEXT_ENGINE": "3_OF_3_CORRECT",
     "TRANSFER_MEMBERSHIP_CLEANUP": "11_OF_11",
@@ -2805,5 +2879,5 @@
     "REMEDIATION_PIN": "ENFORCED",
     "T1_DEPENDENCY_MATRIX": "ONE_OF_FOUR_AUTHORISES"
   },
-  "verdict": "COMPLETE"
+  "verdict": "INCOMPLETE"
 }

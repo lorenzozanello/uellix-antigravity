@@ -48,45 +48,59 @@ const revalidate = (generated: (typeof packages)[number]) => validateGeneratedPa
 /* -------------------------------------------------------------------------- */
 
 describe('the governed chain', () => {
-  it('is ten packages, published and matching a fresh regeneration', () => {
-    // TEN since M-8. The tenth, grounding_0005, is the first chain package
-    // whose classification windows are AUTHORED rather than recovered — and it
-    // goes through every gate below unchanged, which is the property the split
-    // between recovered and authored boundaries was designed to preserve.
-    expect(packages).toHaveLength(10)
+  it('is eleven packages, published and matching a fresh regeneration', () => {
+    // TEN since M-8, ELEVEN since M-2. grounding_0005 was the first chain
+    // package whose classification windows are AUTHORED rather than recovered;
+    // stella_0019 is the second, and the first whose authored window is OWNER
+    // class rather than CAPABILITY — it repairs a BASELINE function owned by
+    // uellix_owner, so there is no capability role to become. Both go through
+    // every gate below unchanged, which is the property the split between
+    // recovered and authored boundaries was designed to preserve.
+    expect(packages).toHaveLength(11)
     expect(verifyGovernedChain()).toEqual([])
   })
 
-  it('consumes 53 windows, 61 segments and 11 transfer segments', () => {
-    // 51 recovered + 2 authored; 59 + 2. TRANSFERS DID NOT MOVE, and that is
-    // the load-bearing half of this line: grounding_0005 republishes a function
-    // the capability role ALREADY owns, and `CREATE OR REPLACE` preserves the
-    // owner — so a package that repairs a governed routine adds no ownership
-    // transfer at all. An eleventh transfer here would mean the repair had
-    // moved an object between owners, which is not something it is allowed to do.
-    expect(plan.windows).toHaveLength(53)
-    expect(plan.segments).toHaveLength(61)
+  it('consumes 54 windows, 62 segments and 11 transfer segments', () => {
+    // 51 recovered + 3 authored; 59 + 3. TRANSFERS DID NOT MOVE, and that is
+    // the load-bearing half of this line — now twice over. grounding_0005
+    // republishes a function the capability role ALREADY owns and stella_0019
+    // republishes one uellix_owner ALREADY owns; `CREATE OR REPLACE` preserves
+    // the owner in both cases, so a package that repairs a routine adds no
+    // ownership transfer at all. A twelfth transfer here would mean a repair
+    // had moved an object between owners, which is not something either is
+    // allowed to do — and stella_0019's §2 measures the owner before and after
+    // rather than trusting this count alone.
+    expect(plan.windows).toHaveLength(54)
+    expect(plan.segments).toHaveLength(62)
     expect(plan.segments.filter((s) => s.authorityClass === 'OWNER_TRANSFER')).toHaveLength(11)
   })
 
   it('carries every canonical statement except the replaced bookkeeping', () => {
-    // 378 parsed statements, 16 of them the canonical SET ROLE / RESET ROLE the
+    // 385 parsed statements, 18 of them the canonical SET ROLE / RESET ROLE the
     // governed output replaces outright.
     //
     // 372 -> 378 is grounding_0005's six: two SET, its §0 precondition block,
     // the CREATE OR REPLACE, the COMMENT and its §2 self-verification block.
-    // The SIXTEEN did not move: the forward package states no canonical SET
-    // ROLE bookkeeping of its own — it was written for a chain that already
-    // derives its authority — so there was nothing new to replace.
+    // The SIXTEEN did not move there: that package states no canonical SET ROLE
+    // bookkeeping of its own — it was written for a chain that already derives
+    // its authority — so there was nothing new to replace.
+    //
+    // 378 -> 385 is stella_0019's seven: two SET, its §0 precondition block, a
+    // SET ROLE, the CREATE OR REPLACE, a RESET ROLE and its §2 self-verification
+    // block. It issues NO COMMENT — unlike M-8 there is no stale one to correct.
+    // And SIXTEEN -> EIGHTEEN is exactly that SET ROLE / RESET ROLE pair: this
+    // package DOES state its own owner window, in the shape grounding_0002 §2
+    // uses, so that the canonical file is applicable on its own as superuser
+    // and the governed derivation has a window to replace rather than invent.
     const canonical = packages.reduce((n, p) => n + p.counts.generatedExecutable, 0)
     const input = packages.reduce((n, p) => n + p.counts.canonicalExecutable, 0)
 
-    expect(input).toBe(378)
-    expect(canonical).toBe(362)
-    expect(input - canonical).toBe(16)
+    expect(input).toBe(385)
+    expect(canonical).toBe(367)
+    expect(input - canonical).toBe(18)
   })
 
-  it('opens 62 temporary membership lifecycles: 59 segments plus 3 owner contexts', () => {
+  it('opens 65 temporary membership lifecycles: 62 segments plus 3 owner contexts', () => {
     const memberships = packages.reduce((n, p) => n + p.counts.temporaryMembershipLifecycles, 0)
     const contexts = packages.reduce((n, p) => n + p.counts.canonicalContext, 0)
 
@@ -94,6 +108,9 @@ describe('the governed chain', () => {
     expect(memberships).toBe(plan.segments.length + contexts)
   })
 
+  // UNMOVED by M-2: stella_0019's W54 is OWNER class and creates nothing in a
+  // schema uellix_owner does not already hold CREATE on, so
+  // requiredTemporarySchemaCreate resolves to null and no lifecycle opens.
   it('opens 15 temporary schema CREATE lifecycles: 11 transfers plus 4 capability segments', () => {
     const creates = packages.reduce((n, p) => n + p.counts.temporarySchemaCreateLifecycles, 0)
     const capabilityCreates = plan.segments.filter(
@@ -126,7 +143,7 @@ describe('the governed chain', () => {
   })
 
   it('pins the source, the plan and the output separately', () => {
-    expect(GOVERNED_PINS).toHaveLength(10)
+    expect(GOVERNED_PINS).toHaveLength(11)
     for (const generated of packages) {
       const pin = GOVERNED_PINS.find((p) => p.packageId === generated.packageId)!
       expect(pin.sourceDigest).toBe(generated.sourceDigest)

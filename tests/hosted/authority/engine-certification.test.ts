@@ -102,11 +102,11 @@ const ROOT = process.cwd()
 /* -------------------------------------------------------------------------- */
 
 describe('the certification input set is governed, explicit and pinned', () => {
-  it('is exactly the ten chain packages, in chain order', () => {
+  it('is exactly the eleven chain packages, in chain order', () => {
     expect(GOVERNED_CERTIFICATION_INPUTS.map((i) => i.packageId)).toEqual(
       CHAIN_PACKAGE_FILES.map((e) => e.packageId),
     )
-    expect(GOVERNED_CERTIFICATION_INPUTS).toHaveLength(10)
+    expect(GOVERNED_CERTIFICATION_INPUTS).toHaveLength(11)
   })
 
   it('resolves every input under db/prepared/hosted/governed/, never beside it', () => {

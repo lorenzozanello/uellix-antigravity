@@ -33,7 +33,9 @@ const negatives = (pkg: string): string[] =>
   PACKAGE_WITNESSES[pkg]!.requiredAbsentWhenInstalled.map(witnessKey)
 
 const T = WITNESSED_PACKAGES
-const [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10] = T as [string, string, string, string, string, string, string, string, string, string]
+const [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11] = T as [
+  string, string, string, string, string, string, string, string, string, string, string,
+]
 
 /** T1..T4 installed in every T5+ snapshot: they precede the ticket chain. */
 const BASE = [...positives(T1), ...positives(T2), ...positives(T3), ...positives(T4)]
@@ -94,12 +96,13 @@ describe('the five cumulative snapshots', () => {
   // one grounding_0002 published, so "everything installed" only means the
   // repair too if this snapshot names it.
   const S10 = [...S9, ...positives(T10)]
+  const S11 = [...S10, ...positives(T11)]
 
   it('T5 current — T5 installed, T6..T10 absent', () => {
     expect(states(S5)).toEqual({
       [T1]: 'INSTALLED', [T2]: 'INSTALLED', [T3]: 'INSTALLED', [T4]: 'INSTALLED',
       [T5]: 'INSTALLED', [T6]: 'ABSENT', [T7]: 'ABSENT', [T8]: 'ABSENT', [T9]: 'ABSENT',
-      [T10]: 'ABSENT',
+      [T10]: 'ABSENT', [T11]: 'ABSENT',
     })
   })
 
@@ -110,7 +113,7 @@ describe('the five cumulative snapshots', () => {
     expect(states(S6)).toEqual({
       [T1]: 'INSTALLED', [T2]: 'INSTALLED', [T3]: 'INSTALLED', [T4]: 'INSTALLED',
       [T5]: 'INSTALLED', [T6]: 'INSTALLED', [T7]: 'ABSENT', [T8]: 'ABSENT', [T9]: 'ABSENT',
-      [T10]: 'ABSENT',
+      [T10]: 'ABSENT', [T11]: 'ABSENT',
     })
   })
 
@@ -118,7 +121,7 @@ describe('the five cumulative snapshots', () => {
     expect(states(S7)).toEqual({
       [T1]: 'INSTALLED', [T2]: 'INSTALLED', [T3]: 'INSTALLED', [T4]: 'INSTALLED',
       [T5]: 'INSTALLED', [T6]: 'INSTALLED', [T7]: 'INSTALLED', [T8]: 'ABSENT', [T9]: 'ABSENT',
-      [T10]: 'ABSENT',
+      [T10]: 'ABSENT', [T11]: 'ABSENT',
     })
   })
 
@@ -135,16 +138,34 @@ describe('the five cumulative snapshots', () => {
     // because any object is — every object it needs was created by T1.
     expect(states(S9)).toEqual({
       ...Object.fromEntries(T.slice(0, 9).map((p) => [p, 'INSTALLED'])),
-      [T10]: 'ABSENT',
+      [T10]: 'ABSENT', [T11]: 'ABSENT',
     })
   })
 
   it('T10 current — the body witness is what makes the repair visible at all', () => {
-    expect(states(S10)).toEqual(Object.fromEntries(T.map((p) => [p, 'INSTALLED'])))
+    expect(states(S10)).toEqual({
+      ...Object.fromEntries(T.slice(0, 10).map((p) => [p, 'INSTALLED'])),
+      // M-2 is authored after M-8 and not yet installed anywhere. Like T10
+      // one snapshot earlier, it reads ABSENT because its BODY witness is
+      // missing and not because any object is: can_write_evidence_object is
+      // a BASELINE function that has existed since unit 41.
+      [T11]: 'ABSENT',
+    })
     // And the discrimination, stated directly: T9-current and T10-current
     // differ in exactly one observation, and it is not an object's existence.
     expect(positives(T10)).toHaveLength(1)
     expect(positives(T10)[0]).toMatch(/^routine-body:/)
+  })
+
+  it('T11 current - the second body witness, on a BASELINE signature', () => {
+    expect(states(S11)).toEqual(Object.fromEntries(T.map((p) => [p, 'INSTALLED'])))
+    // Same shape as T10 and a stronger anchoring position: T10's signature
+    // is created by an EARLIER CHAIN package (grounding_0002), so only the
+    // body can distinguish the repair. T11's is created by the BASELINE,
+    // which no chain package publishes at all - so nothing in the chain
+    // could make this witness true ahead of time even in principle.
+    expect(positives(T11)).toHaveLength(1)
+    expect(positives(T11)[0]).toMatch(/^routine-body:/)
   })
 
   it('T8 is not reported installed merely because T7 is', () => {

@@ -104,6 +104,34 @@ export const FORWARD_WINDOWS: readonly ForwardWindow[] = [
     start: commentOn(FN.claim),
     end: commentOn(FN.claim),
   },
+  {
+    windowId: 'W54',
+    packageId: 'T11',
+    authorityClass: 'OWNER',
+    historicalCount: 1,
+    describedAs:
+      'CREATE OR REPLACE FUNCTION public.can_write_evidence_object(text, uuid) — already owned by uellix_owner; no temporary schema CREATE',
+    declaredAs:
+      'OWNER and not CAPABILITY, which is the whole difference between this window and W52. ' +
+      'can_write_evidence_object is a BASELINE object — unit 41 publishes it, stella_0004 (local) ' +
+      'and stella_hosted_0001 (managed) transfer it to uellix_owner — so no capability role is ' +
+      'involved and `CREATE OR REPLACE` needs exactly one thing: to be executed BY the owner. ' +
+      'MEASURED on PG 17.6 against a restored baseline: as uellix_migrator without the owner ' +
+      'window the statement fails with `permission denied for schema public`, and inside it the ' +
+      'statement succeeds with owner, ACL, SECURITY DEFINER, search_path and argument names all ' +
+      'preserved. ' +
+      'It opens NO temporary schema CREATE, and that is derived rather than asserted: ' +
+      'requiredTemporarySchemaCreate is non-null only for a transfer or for a CAPABILITY window ' +
+      'that creates, and this is neither — uellix_owner already holds CREATE on public ' +
+      'permanently, which is the same fact assert_hosted_capabilities (C4) checks before any ' +
+      'chain package runs. FORWARD_TEMPORARY_CREATE_SCHEMAS is therefore unchanged, and that is ' +
+      'the tripwire working rather than being edited around. ' +
+      'ONE STATEMENT, like W52: the package publishes exactly one CREATE OR REPLACE and issues no ' +
+      'COMMENT, so there is no second owner-requiring statement to span. Its §0 and §2 are DO ' +
+      'blocks, which run as the installer and are outside every window by construction.',
+    start: createFn(FN.canWriteEvidenceObject),
+    end: createFn(FN.canWriteEvidenceObject),
+  },
 ]
 
 /**
@@ -122,10 +150,10 @@ export const FORWARD_PACKAGE_IDS: readonly string[] = [
  * RECOVERED_TOTALS so neither can be edited to make the other add up.
  */
 export const FORWARD_TOTALS = {
-  owner: 0,
+  owner: 1,
   capability: 2,
   transfer: 0,
-  ownerStatements: 0,
+  ownerStatements: 1,
   capabilityStatements: 2,
   transferStatements: 0,
 } as const

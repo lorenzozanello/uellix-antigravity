@@ -75,7 +75,15 @@ export function authorityPlanDigest(plan: AuthorityPlan): string {
  * rather than shipping an artefact whose authority plan describes a file that no
  * longer exists.
  */
-export const GOVERNED_PLAN_DIGEST = 'a889a72681e86b98683ad835ab70786edfb4f05f7e98fb219730c9bbb27e2748'
+// RE-PINNED ONCE, for M-2 / T11. The plan digest covers every window and every
+// segment of the WHOLE chain, so appending an eleventh package moves it even
+// though T1..T10 are byte-identical — which is the pin working, not failing.
+// What must be true, and is asserted rather than asserted-away: the ten
+// per-package pins below are UNCHANGED by this edit, so the plan moved because a
+// window was ADDED and not because an existing one was re-anchored, re-split or
+// re-executed.
+//   previous: a889a72681e86b98683ad835ab70786edfb4f05f7e98fb219730c9bbb27e2748  (T1..T10)
+export const GOVERNED_PLAN_DIGEST = 'f506c1e09aac2b7f1fe5eb66ea9bfc55c8e2782a4a74e565ea47ee8a84ca5af6'
 
 export const GOVERNED_PINS: readonly GovernedPin[] = [
   {
@@ -141,6 +149,17 @@ export const GOVERNED_PINS: readonly GovernedPin[] = [
     sourceFile: 'grounding_0005_claim_advisory_lock.sql',
     sourceDigest: 'd112386727dd36c7873362d0a5ddb2f44efa1e9e283b22bc3fe0b84f0fd09a03',
     generatedDigest: 'c784b121a3509f30cf2aacb2be619d9d14bc0072440edda1cb155edf91a9ed34',
+  },
+  {
+    // M-2. The eleventh pin, and the first for a package whose authored window
+    // is OWNER class: can_write_evidence_object is a BASELINE object owned by
+    // uellix_owner, so there is no capability role to become and no temporary
+    // schema CREATE to open. Nothing about the pinning changes for that reason —
+    // the digests are over bytes either way.
+    packageId: 'T11',
+    sourceFile: 'stella_0019_storage_write_roles.sql',
+    sourceDigest: 'e467672fa8247aac5c03c3c8ec92ec86646c7d5e60b67adcf6e2a44ef60a8a2a',
+    generatedDigest: '7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68',
   },
 ]
 

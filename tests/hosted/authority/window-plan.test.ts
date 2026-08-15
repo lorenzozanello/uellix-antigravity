@@ -202,15 +202,15 @@ describe('assertNoWindowOverlap', () => {
 /* The real corpus                                                             */
 /* -------------------------------------------------------------------------- */
 
-describe('the ten chain packages, as they actually are', () => {
+describe('the eleven chain packages, as they actually are', () => {
   const parsed = CHAIN_PACKAGE_FILES.map((entry) => ({
     ...entry,
     statements: splitSqlStatements(readFileSync(`db/prepared/${entry.sourceFile}`, 'utf8')),
   }))
 
-  it('maps T1..T10 onto the chain in order', () => {
+  it('maps T1..T11 onto the chain in order', () => {
     expect(parsed.map((p) => p.packageId)).toEqual([
-      'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10',
+      'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11',
     ])
     expect(parsed[6].sourceFile).toBe('stella_0016_reserved_quota_semantics.sql')
     expect(parsed[8].sourceFile).toBe('stella_0018_category_bound_operation_tickets.sql')

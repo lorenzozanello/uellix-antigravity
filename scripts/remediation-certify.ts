@@ -959,10 +959,20 @@ function main(): number {
   for (const w of postconditions.securityDefinerGate.withoutEmptySearchPath) console.log(`[rem]   SD ${w}`)
   for (const w of postconditions.securityDefinerGate.withPublicExecute) console.log(`[rem]   SD PUBLIC EXECUTE ${w}`)
 
+  // DERIVED FROM `inputs`, NOT TRANSCRIBED. This read `installed === 9`, which
+  // was correct for exactly as long as the governed chain had nine links: M-8
+  // took it to ten and M-2 to eleven, and a transcribed literal reports
+  // CHAIN_INCOMPLETE over a chain that installed perfectly. That is the worst
+  // direction for a certification to be wrong in — it fails closed on a real
+  // pass, so the next operator learns to discount it.
+  //
+  // NOT THE SAME NINE as REMEDIATION_TRANSACTION_ROLLBACK below. That one
+  // counts the R1..R9 failure-injection anchors, which are a property of the
+  // remediation package and move only when an anchor is added.
   if (ONLY === 'chain') {
-    report.verdict = installed === 9 ? 'CHAIN_COMPLETE' : 'CHAIN_INCOMPLETE'
+    report.verdict = installed === inputs.length ? 'CHAIN_COMPLETE' : 'CHAIN_INCOMPLETE'
     writeReport(report)
-    return installed === 9 ? 0 : 1
+    return installed === inputs.length ? 0 : 1
   }
 
   /* -------------------------------------------------- 7. R1..R9 ROLLBACK  */
@@ -1015,7 +1025,9 @@ function main(): number {
     EXACT_STAGING_REMEDIATION: apply.status === 0 ? 'PASS' : 'FAIL',
     POST_REMEDIATION_PRECHAIN_GATE: gateAfter.refusals.length === 0 ? 'PASS' : 'FAIL',
     T1_AUTHORIZATION_AFTER_REMEDIATION: t1.ok ? 'PASS' : 'FAIL',
-    POST_REMEDIATION_GOVERNED_CHAIN: installed === 9 ? '9_OF_9_PASS' : 'INCOMPLETE',
+    // Derived, for the reason stated where `installed` is compared above.
+    POST_REMEDIATION_GOVERNED_CHAIN:
+      installed === inputs.length ? `${installed}_OF_${inputs.length}_PASS` : 'INCOMPLETE',
     OWNER_TRANSFERS_ENGINE: postconditions.ownerTransfers.pass
       ? `${postconditions.ownerTransfers.correct}_OF_${postconditions.ownerTransfers.total}_CORRECT`
       : 'INCOMPLETE',
@@ -1030,9 +1042,15 @@ function main(): number {
     PERSISTENT_ROLE_TOPOLOGY: postconditions.persistentRoleTopology.pass ? 'EXPECTED' : 'DRIFTED',
     SD_GATE_ENGINE_V2: postconditions.securityDefinerGate.pass ? 'PASS' : 'FAIL',
     RLS_POLICY_ENGINE: postconditions.rlsPolicyEngine.pass ? 'PASS' : 'FAIL',
+    // THIS NINE IS NOT THE CHAIN. It is the count of R1..R9 failure-injection
+    // anchors in REMEDIATION_FAILURE_INJECTIONS — a property of the remediation
+    // package, unrelated to how many governed packages exist. The two were
+    // spelled identically and one of them was wrong; deriving both from their
+    // own sources is what stops a future reader from "fixing" the wrong one.
     REMEDIATION_TRANSACTION_ROLLBACK:
-      rollbacks.length === 9 && rollbacks.every((r) => r.reached && r.failed && r.restored)
-        ? 'PASS_9_OF_9'
+      rollbacks.length === REMEDIATION_FAILURE_INJECTIONS.length &&
+      rollbacks.every((r) => r.reached && r.failed && r.restored)
+        ? `PASS_${rollbacks.length}_OF_${REMEDIATION_FAILURE_INJECTIONS.length}`
         : 'FAIL',
     REMEDIATION_AMBIGUOUS_SUCCESS: ambiguousSuccess.recoveredWithoutReapply
       ? 'RECOVERED_WITHOUT_REAPPLY'

@@ -1039,3 +1039,145 @@ restaura nada.
 > derivado, y el paquete reportaría éxito sobre una base cuya postura habría
 > cambiado sin decirlo. La §2 los **mide** con `aclexplode()` en vez de
 > re-emitirlos, y se niega.
+
+---
+
+## M-2 — la lista de roles de escritura en Storage (`stella_0019`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted. Ninguna bandera
+habilitada.** Probado por ejecución en contenedor desechable sobre el baseline
+versionado de [`../baseline/`](../baseline/README.md).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_0019_storage_write_roles.sql` | `stella_0019_rollback.sql` | **ninguno todavía**; exige el BASELINE (unidad 41), `stella_0004`/`stella_hosted_0001` para el owner y `stella_0005d` para el `USAGE` sobre el esquema `storage` | **No crea rol, esquema, tabla, policy ni trigger, y no concede ni revoca nada.** Republica **en el sitio** `public.can_write_evidence_object(text, uuid)` — misma firma, mismos nombres de argumento, mismo propietario, mismo ACL, mismo `SECURITY DEFINER`, mismo `search_path=''` — sustituyendo `om.role IN ('organization_admin','analyst')` por los **cuatro** roles canónicos `('super_admin','organization_admin','impact_manager','analyst')` | **DISEÑO — no aplicado en hosted** |
+
+> **El defecto.** Uellix tiene **una** frontera de permiso para «este miembro
+> puede adjuntar evidencia a este proyecto», escrita en tres sitios que deberían
+> coincidir: `canUploadEvidence()` en `lib/auth/permissions.ts`
+> (`hasRole(role,'analyst')`, es decir los cuatro roles con `ROLE_HIERARCHY >=
+> 40`), la policy `evidence_items_insert` de `db/migrations/0031_rls_core.sql`
+> (los mismos cuatro, deletreados), y este helper — que nombraba **dos**. La
+> consecuencia no es simétrica: la tabla acepta la fila y Storage rechaza el
+> objeto. Un `impact_manager` crea los metadatos de una evidencia y **no puede
+> subir el fichero que describen**; lo que ve es «new row violates row-level
+> security policy» sobre una operación que el propio helper de permisos de la
+> aplicación ya había autorizado.
+>
+> **Medido, no deducido**, sobre el baseline restaurado y a través de la policy
+> real `insert_evidence` como `authenticated`: con el cuerpo de la unidad 41,
+> `can_read_evidence_object` responde **true** para `impact_manager` y el
+> `INSERT` en `storage.objects` **falla**. Con `stella_0019`, ambos pasan.
+
+> **Por qué NO es una edición de la unidad 41.**
+> `supabase/migrations/20260716000001_storage_policies.sql` y su mitad derivada
+> `db/prepared/storage/20260716000001_part_a_helpers.psql.sql` son bytes de
+> **baseline**: instalados, fijados por hash en `db/hosted/baseline-manifest.ts`
+> y parte de un manifiesto **congelado en 50 unidades**; además la mitad derivada
+> se **genera**, y `pnpm storage:verify` rechaza una edición a mano. Es el mismo
+> razonamiento que `grounding_0005` registra para `grounding_0002`: la
+> reparación es un **eslabón nuevo**, no una reescritura de uno instalado.
+
+> **Por qué SÍ lleva rollback, cuando las tres reparaciones anteriores no.**
+> `grounding_0005`, `stella_0016` y `stella_0017` son forward-only porque
+> revertirlos **reabriría una vulnerabilidad**. Aquí la dirección es la
+> contraria: el forward **amplía** una autorización de dos roles a cuatro, y el
+> rollback la **estrecha** de vuelta a dos. Una base revertida rechaza **más**
+> que un momento antes, nunca menos, y no existe entrada bajo la cual el
+> rollback conceda nada a nadie. Es exactamente la condición en que la regla 4
+> de este README aplica sin excepción, así que la excepción no se toma y
+> `db/hosted/forward-only-packages.ts` **no se toca**. El rollback **reabre M-2 y
+> lo anuncia con `RAISE WARNING`** — un rollback cuyas postcondiciones afirmaran
+> un estado más seguro que aquello que revierte no restauraría nada.
+
+> **Lo que el paquete deliberadamente NO hace.** No añade
+> `OR public.current_user_is_super_admin()`. Las dos policies de
+> `evidence_items` llevan ese escape y **los dos helpers de Storage no** —
+> `can_read_evidence_object` tampoco. Añadirlo aquí daría a un super admin de
+> **plataforma sin pertenencia activa** el derecho a escribir objetos en el
+> bucket de una organización: una capacidad que hoy no existe en el contrato de
+> Storage y que nadie pidió a este paquete. La asimetría entre la tabla y el
+> bucket es real y queda **registrada como hallazgo**, no cerrada por un paquete
+> cuyo asunto es una lista de roles.
+>
+> Tampoco emite `ALTER FUNCTION … OWNER TO`, `REVOKE` ni `GRANT`:
+> `CREATE OR REPLACE FUNCTION` conserva propietario y ACL, así que los tres
+> serían no-ops en el caso normal y **peores que no-ops** en el que importa. La
+> §2 los **mide** —capturando el ACL en la §0 y comparándolo después, no
+> fijándolo, porque una pila donde la unidad 41 corrió como `postgres` conserva
+> una entrada residual `postgres=X` que una instalada por `uellix_migrator`
+> nunca tuvo, y **ambas son correctas**.
+
+> **`M2-COMP-01` NO se cierra aquí, y es deliberado.** El `DELETE`
+> compensatorio de `lib/pipeline/evidence.ts` puede afectar **cero filas** en
+> silencio: `evidence_items` no tiene policy de `DELETE` (la unidad de RLS la
+> omite a propósito — el archivado es un `UPDATE` a `status='archived'`), así
+> que RLS lo niega sin error. `stella_0019` hace ese camino **menos frecuente**
+> (dos roles dejan de fallar) y **no más correcto** (los roles que siguen
+> fallando por otros motivos siguen dejando la fila huérfana). Confundir las dos
+> cosas dejaría que una lista de roles cerrara sobre el papel un defecto de
+> integridad transaccional.
+
+> **PELIGRO DE REAPLICACIÓN, para el operador.** Reaplicar la mitad de Storage
+> del **baseline** sobre este paquete republicaría el cuerpo de dos roles junto a
+> su propio arreglo, **sin cambiar ninguna firma** y sin que nada posterior lo
+> note. No está declarado en [`db/prepared-package-order.ts`](../prepared-package-order.ts)
+> porque **no es alcanzable**: `db/prepared/storage/` está fuera del directorio
+> contra el que `scripts/db-migrate-local.ts` resuelve por `basename`, y el
+> baseline es una instalación prechain que no reejecuta una unidad aislada. Una
+> sonda de supersesión que no puede dispararse nunca es una guarda que enseña al
+> operador a confiar en una comprobación que no está corriendo, así que el
+> peligro se registra **aquí, para el humano**, en vez de allí.
+>
+> La dirección normal sí converge: `stella_0019` es idempotente, su §0 acepta
+> explícitamente el estado ya reparado y **rechaza** un tercer estado editado a
+> mano en vez de sobrescribirlo.
+
+> **BLOQUEADOR DE PUBLICACIÓN EN HOSTED, MEDIDO DOS VECES (2026-08-15).**
+> `pnpm certify:pg176` y `pnpm certify:remediation` aplican la cadena gobernada
+> sobre la forma **gestionada** —bootstrap + las 50 unidades de baseline— y
+> `stella_0019` **se niega ahí**, en su propia guarda §0.6:
+>
+> ```
+> stella_0019 aborted: can_write_evidence_object is owned by postgres,
+> not uellix_owner.
+> ```
+>
+> No es un defecto del paquete: es la guarda funcionando. La hipótesis de
+> propiedad que planteó la auditoría M-2 **es cierta en hosted y falsa en
+> local**, y sólo una medición local no podía verlo:
+>
+> | | dueño de los dos helpers |
+> |---|---|
+> | local (post-`stella_0004`) | `uellix_owner` |
+> | gestionado (baseline + `stella_hosted_0001`) | **`postgres`** |
+>
+> Tres hechos independientes lo confirman, y ninguno es del arnés:
+> `BASELINE_GLOBAL_INVARIANTS.ownershipStatements = 0` —las 50 unidades no
+> transfieren propiedad de nada—; `stella_hosted_0001` sólo transfiere
+> `stella_interactions` y su propio esquema, **no** las 38 tablas y 8 funciones
+> que mueve `stella_0004`; y `posture.functionOwners` del artefacto de
+> certificación ahora **registra** `owner: postgres` para ambos helpers con
+> `baselineApplied: 50`. Esa propiedad **nunca se había medido**: ningún
+> artefacto de staging committeado la recoge.
+>
+> **Por qué ningún mecanismo existente lo cierra.** `stella_hosted_0001`
+> concede `uellix_owner` **a** `postgres` (§297) y **a** `uellix_migrator`
+> (§423), pero nunca `postgres` a `uellix_migrator`. El patrón de T10 —membresía
+> temporal emitida por el generador gobernado— sólo alcanza roles que
+> `uellix_migrator` creó y sobre los que tiene ADMIN; `postgres` no es uno. Así
+> que el instalador gobernado **no puede** reemplazar una función de `postgres`,
+> y T11 no llega a staging por la cadena.
+>
+> **El precedente para la resolución no es la cadena.**
+> `stella_hosted_0002_prechain_authority_reconciliation` es gobernado,
+> forward-only, se aplica en gestionado **como `postgres`** y **no** está en
+> `HOSTED_CHAIN`. `postgres` posee los helpers **y** puede `SET ROLE
+> uellix_owner`, así que un T11 ejecutado por `postgres` sí funciona ahí — que
+> es exactamente la forma que toma `stella_0005d` en local para estas dos mismas
+> funciones. La decisión entre (a) mover T11 a esa vía administrativa y (b)
+> añadir una normalización de propiedad hosted previa **no se ha tomado**.
+>
+> **El cierre LOCAL no se ve afectado y sigue medido:** 31/31 en la matriz de
+> roles sobre el cuerpo de T11 y 31/31 sobre el de la unidad 41 tras el
+> rollback, idempotencia, ACL y las tres policies sin cambios.

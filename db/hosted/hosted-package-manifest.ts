@@ -543,6 +543,93 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'so nothing later would notice.',
     hostedCompatibility: 'derived-precondition-only',
   },
+  {
+    // M-2. The eleventh governed link, and the second in a row that publishes
+    // NOTHING: no role, no schema, no table, no policy, no trigger, no grant
+    // and no revoke. It republishes one function body at a signature the
+    // BASELINE created — the first link that repairs a baseline object rather
+    // than a campaign one.
+    //
+    // WHAT WAS WRONG. public.can_write_evidence_object authorised
+    // ('organization_admin','analyst'). The permission contract it stands for
+    // authorises four roles: lib/auth/permissions.ts canUploadEvidence() is
+    // hasRole(role,'analyst'), i.e. everything at or above 40 in
+    // ROLE_HIERARCHY, and db/migrations/0031_rls_core.sql spells the same four
+    // out in evidence_items_insert. So impact_manager and super_admin could
+    // create the evidence_items ROW and not upload the OBJECT it describes.
+    // MEASURED on a restored baseline, through the real insert_evidence policy,
+    // as `authenticated`: read PASS / storage INSERT FAIL for impact_manager.
+    //
+    // WHY IT IS NOT AN EDIT TO UNIT 41. That unit is baseline: installed,
+    // hash-pinned in db/hosted/baseline-manifest.ts, part of a manifest frozen
+    // at 50 units, and its prepared half is GENERATED (pnpm storage:verify
+    // refuses a hand edit). Same reasoning grounding_0005 records for
+    // grounding_0002 — the repair is a new link, not a rewrite of an installed
+    // one.
+    name: 'stella_0019_storage_write_roles',
+    sourceFile: 'stella_0019_storage_write_roles.sql',
+    sourceSha256: '0be837a47d83417fb3e7422e009114f7d34f4d0f958353b40495df5ce9401750',
+    expectedRewrites: {
+      ...NO_REWRITES,
+      // Its §0 guard, in the same three-line shape the other ten use. The two
+      // capabilities the rewritten assertion checks are exactly the two this
+      // package needs: (C2) the right to SET ROLE uellix_owner, and (C4) CREATE
+      // on schema public FOR uellix_owner. Measured, PG 17.6: uellix_migrator
+      // without the owner window fails at `permission denied for schema public`.
+      'superuser-precondition': 1,
+      // It creates no role, so there is no ALTER ROLE to split and no capability
+      // membership to count; it resolves no session actor, so there is no auth
+      // path to reroute. The function receives the user id as an ARGUMENT — the
+      // auth.uid() call lives in the storage.objects policy, which this package
+      // does not touch.
+    },
+    // Only the bootstrap. This package is independent of both campaigns: it
+    // needs the five roles and the owner window, and nothing from grounding or
+    // from the ticket protocol. Its real predecessors — baseline unit 41 and
+    // stella_0005d — are not chain members, so they are asserted by its §0
+    // instead of declared here.
+    dependsOn: ['stella_hosted_0001_managed_role_bootstrap'],
+    expectedObjects: [
+      'function public.can_write_evidence_object(text, uuid) — the SAME signature, a different body',
+      'its body authorises super_admin, organization_admin, impact_manager and analyst',
+      'its body names NEITHER reviewer NOR viewer — both rank below the upload threshold',
+      'its body still derives the project from (storage.foldername(object_name))[1] and still requires om.status = active',
+      'its body calls NO current_user_is_super_admin() — the platform-super-admin escape the evidence_items policies carry is deliberately NOT introduced into the bucket',
+      'function public.can_read_evidence_object(text, uuid) UNCHANGED — fingerprinted before and compared after',
+    ],
+    expectedOwners: [
+      'uellix_owner still owns can_write_evidence_object — CREATE OR REPLACE preserves the owner, and the package MEASURES that rather than re-stating it',
+      'uellix_owner still owns can_read_evidence_object, which this package never names in a DDL statement',
+    ],
+    expectedGrants: [
+      'NONE ISSUED, and that is the contract. CREATE OR REPLACE preserves the ACL, so the package grants nothing and revokes nothing',
+      'the EXECUTE ACL is captured in §0 and compared in §2 rather than pinned: a stack where unit 41 ran as postgres carries a residual postgres=X entry that one installed by uellix_migrator never had, and both are correct',
+      'EXECUTE still held by authenticated; PUBLIC and anon still hold nothing — asserted through aclexplode, not re-granted',
+      'NO privilege on storage.objects for anyone. The three baseline policies are neither dropped nor recreated; their digest is compared before and after',
+    ],
+    rollbackPolicy:
+      'stella_0019_rollback.sql restores the unit 41 two-role body. Unlike grounding_0005, ' +
+      'stella_0016 and stella_0017, this package is NOT forward-only, and the difference is the ' +
+      'direction: it WIDENS an authorisation, so its rollback NARROWS one. A rolled-back database ' +
+      'refuses more than it did a moment earlier, never less, and there is no input under which the ' +
+      'rollback grants anybody anything — so db/prepared/README.md rule 4 applies with no exemption ' +
+      'and db/hosted/forward-only-packages.ts is deliberately not involved. The rollback reopens M-2 ' +
+      'and says so in a RAISE WARNING; it preserves owner, ACL, the read helper and the three ' +
+      'storage policies, each measured the same way the forward package measures them.',
+    reapplyPolicy:
+      'Idempotent and convergent: §0 accepts the already-repaired body explicitly (state B) instead ' +
+      'of refusing it, and a hand-edited third state is refused rather than overwritten. Measured on ' +
+      'a restored baseline: apply, re-apply, roll back, roll back again, re-apply — the role matrix ' +
+      'reproduces the matching verdict on all 31 scenarios at every step. The DANGEROUS direction is ' +
+      're-applying the BASELINE storage half over this package, which would republish the two-role ' +
+      'body next to its own fix with no signature change for anything later to notice. That is NOT ' +
+      'declared in db/prepared-package-order.ts because it is not reachable: db/prepared/storage/ is ' +
+      'outside the directory scripts/db-migrate-local.ts resolves against, and the baseline is a ' +
+      'prechain install that does not re-run one unit in isolation. A supersession probe that can ' +
+      'never fire is a guard that teaches an operator to trust a check that is not running, so the ' +
+      'hazard is recorded in db/prepared/README.md for the human instead.',
+    hostedCompatibility: 'derived-precondition-only',
+  },
 ]
 
 /** The forward chain, derived from the manifest so the two cannot disagree. */

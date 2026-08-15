@@ -16,6 +16,7 @@
 import { describe, it, expect } from 'vitest'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { forwardOnlyPackage } from '@/db/hosted/forward-only-packages'
 
 const PREPARED = path.resolve(process.cwd(), 'db', 'prepared')
 const read = (name: string) => readFileSync(path.join(PREPARED, name), 'utf8')
@@ -344,6 +345,19 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // DESIGN ONLY.
       'stella_0018_category_bound_operation_tickets.sql',
       'stella_0018_rollback.sql',
+      // M-2. NOT part of the ticket protocol despite the number — the shared
+      // `stella_00` prefix is a numbering sequence, not a campaign marker, and
+      // db/hosted/hosted-migrator.ts had to stop reading it as one when this
+      // package landed. It repairs a BASELINE object: unit 41's
+      // can_write_evidence_object authorised two roles where the permission
+      // contract (lib/auth/permissions.ts, evidence_items_insert) authorises
+      // four, so impact_manager and super_admin could create an evidence row
+      // and not upload the object it describes. Creates nothing; republishes
+      // one body in place. It DOES ship a rollback, because widening an
+      // authorisation is the one direction whose reversal grants nobody
+      // anything.
+      'stella_0019_rollback.sql',
+      'stella_0019_storage_write_roles.sql',
       // TRAIN 5B. The managed-Supabase counterpart of stella_0004: same five
       // roles, no superuser anywhere, an auth shim in place of a grant that
       // `postgres` cannot issue (RR-09). It is a `stella_*` script and is swept
@@ -2592,5 +2606,209 @@ describe('review round 3 — documentation is in sync with the SQL', () => {
     expect(g2).toMatch(/ALTER DATABASE .* SET stella\.writer_role/)
     expect(g2).toMatch(/supabase db execute --file/)
     expect(g2).toMatch(/rama ASSUMPTION/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// M-2 — stella_0019, the Storage write-role repair
+// ---------------------------------------------------------------------------
+// These assertions are the OFFLINE half. The behavioural half is measured, not
+// linted: the package is applied to a disposable container restored from the
+// versioned baseline in db/baseline/, and a 31-scenario role matrix is run
+// against the installed function through the real storage.objects policies —
+// before, after, and after the rollback. This file pins the properties a diff
+// can change silently; it does not pretend to prove the behaviour.
+describe('db/prepared/stella_0019_storage_write_roles.sql — M-2', () => {
+  const ROOT = path.resolve(process.cwd())
+  const raw = read('stella_0019_storage_write_roles.sql')
+  const code = stripCommentsAndStrings(raw)
+  const rb = read('stella_0019_rollback.sql')
+  const rbCode = stripCommentsAndStrings(rb)
+
+  /** The body of the `CREATE OR REPLACE FUNCTION ... AS $$ ... $$` in a script. */
+  function functionBody(sql: string): string {
+    const m = /CREATE OR REPLACE FUNCTION public\.can_write_evidence_object[\s\S]*?AS \$\$([\s\S]*?)\$\$;/.exec(sql)
+    expect(m, 'no can_write_evidence_object body found').not.toBeNull()
+    return m![1]
+  }
+
+  it('has balanced parentheses outside comments and strings', () => {
+    expectBalancedParens(code)
+    expectBalancedParens(rbCode)
+  })
+
+  it('pins search_path to public as its first statement', () => {
+    expect(statements(raw)[0]).toMatch(/^SET search_path = public$/i)
+    expect(statements(rb)[0]).toMatch(/^SET search_path = public$/i)
+  })
+
+  it('is compatible with single-transaction execution and says so', () => {
+    expect(code).not.toMatch(/CONCURRENTLY/i)
+    expect(raw).toMatch(/-1 -v ON_ERROR_STOP=1/)
+    expect(rb).toMatch(/-1 -v ON_ERROR_STOP=1/)
+  })
+
+  // --- the functional delta, which is the whole package --------------------
+
+  it('authorises exactly the four canonical evidence-upload roles', () => {
+    expect(functionBody(raw)).toMatch(
+      /om\.role IN \('super_admin', 'organization_admin', 'impact_manager', 'analyst'\)/,
+    )
+  })
+
+  it('names NEITHER reviewer NOR viewer in the published body', () => {
+    // Quoted literals, not bare words: the header prose names both roles while
+    // explaining that they stay refused, and a bare search would find them
+    // there. Same defect stella_0002 closed as MIN-A.
+    const body = functionBody(raw)
+    expect(body).not.toContain("'reviewer'")
+    expect(body).not.toContain("'viewer'")
+  })
+
+  it('agrees with the application permission contract, read from source', () => {
+    // The four are not a list somebody typed here: they are the roles at or
+    // above `analyst` in ROLE_HIERARCHY, which is what canUploadEvidence()
+    // tests. If a role is ever inserted into the hierarchy above analyst and
+    // not added to the helper, THIS is where the two drift apart visibly.
+    const roles = readFileSync(path.join(ROOT, 'lib', 'auth', 'roles.ts'), 'utf8')
+    const hierarchy = [...roles.matchAll(/\[ROLES\.([A-Z_]+)\]:\s*(\d+)/g)].map((m) => ({
+      name: m[1].toLowerCase(),
+      rank: Number(m[2]),
+    }))
+    expect(hierarchy.length).toBe(6)
+    const analystRank = hierarchy.find((r) => r.name === 'analyst')!.rank
+    const expected = hierarchy.filter((r) => r.rank >= analystRank).map((r) => r.name).sort()
+
+    const inList = /om\.role IN \(([^)]*)\)/.exec(functionBody(raw))![1]
+    const actual = [...inList.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort()
+    expect(actual).toEqual(expected)
+  })
+
+  it('matches the evidence_items INSERT policy role set exactly', () => {
+    // The second independent statement of the same contract. 0031 is the RLS
+    // unit the table is governed by; a helper authorising a different set than
+    // the table is the defect M-2 names, in whichever direction it points.
+    const rls = readFileSync(path.join(ROOT, 'db', 'migrations', '0031_rls_core.sql'), 'utf8')
+    const policy = /CREATE POLICY "evidence_items_insert"[\s\S]*?;/.exec(rls)![0]
+    const policyRoles = [...policy.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort()
+    expect(policyRoles.length).toBe(4)
+
+    const inList = /om\.role IN \(([^)]*)\)/.exec(functionBody(raw))![1]
+    expect([...inList.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort()).toEqual(policyRoles)
+  })
+
+  it('changes ONLY the role list — the rest of the body is unit 41 verbatim', () => {
+    // The strongest assertion here. Both bodies are normalised by replacing the
+    // IN-list and collapsing whitespace; anything else that differs — the path
+    // parse, the status filter, the to_regclass guard, the EXCEPTION handler —
+    // shows up as a mismatch.
+    const unit41 = readFileSync(
+      path.join(ROOT, 'supabase', 'migrations', '20260716000001_storage_policies.sql'),
+      'utf8',
+    )
+    const norm = (s: string) =>
+      s
+        .replace(/--[^\n]*/g, '')
+        .replace(/om\.role IN \([^)]*\)/, 'om.role IN (ROLES)')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+    expect(norm(functionBody(raw))).toBe(norm(functionBody(unit41)))
+    expect(norm(functionBody(rb))).toBe(norm(functionBody(unit41)))
+  })
+
+  // --- the authority model -------------------------------------------------
+
+  it('carries the superuser guard in the exact shape the hosted rewrite matches', () => {
+    // If this is reformatted the rewrite silently stops firing. The manifest's
+    // expectedRewrites count catches that too, but a count mismatch names a
+    // number; this names the reason.
+    const guard =
+      /^ {2}IF NOT \(SELECT rolsuper FROM pg_roles WHERE rolname = current_user\) THEN\n {4}RAISE EXCEPTION '[^']*', current_user;\n {2}END IF;$/m
+    expect(raw).toMatch(guard)
+    expect(rb).toMatch(guard)
+  })
+
+  it('opens the owner window and closes it', () => {
+    for (const [name, src] of [['forward', code], ['rollback', rbCode]] as const) {
+      expect(src, `${name} does not SET ROLE uellix_owner`).toMatch(/^SET ROLE uellix_owner;$/m)
+      expect(src, `${name} does not RESET ROLE`).toMatch(/^RESET ROLE;$/m)
+      expect(src.indexOf('SET ROLE uellix_owner')).toBeLessThan(src.indexOf('RESET ROLE'))
+    }
+  })
+
+  // --- what it must NOT do -------------------------------------------------
+
+  it('issues no GRANT, no REVOKE and no ownership transfer', () => {
+    for (const [name, src] of [['forward', code], ['rollback', rbCode]] as const) {
+      expect(src, `${name} grants something`).not.toMatch(/^\s*GRANT\b/im)
+      expect(src, `${name} revokes something`).not.toMatch(/^\s*REVOKE\b/im)
+      expect(src, `${name} transfers ownership`).not.toMatch(/ALTER FUNCTION[^;]*OWNER TO/i)
+      expectNoAnonOrPublicGrants(src)
+    }
+  })
+
+  it('creates, drops and alters no policy, table, trigger or role', () => {
+    for (const [name, src] of [['forward', code], ['rollback', rbCode]] as const) {
+      expect(src, `${name} touches a policy`).not.toMatch(/\b(CREATE|DROP|ALTER)\s+POLICY\b/i)
+      expect(src, `${name} touches a table`).not.toMatch(/\b(CREATE|DROP|ALTER)\s+TABLE\b/i)
+      expect(src, `${name} touches a trigger`).not.toMatch(/\b(CREATE|DROP)\s+TRIGGER\b/i)
+      expect(src, `${name} touches a role`).not.toMatch(/\b(CREATE|DROP|ALTER)\s+ROLE\b/i)
+    }
+  })
+
+  it('never republishes can_read_evidence_object', () => {
+    for (const [name, src] of [['forward', code], ['rollback', rbCode]] as const) {
+      expect(src, `${name} redefines the read helper`).not.toMatch(
+        /CREATE OR REPLACE FUNCTION public\.can_read_evidence_object/i,
+      )
+    }
+  })
+
+  it('introduces no platform-super-admin escape into the bucket', () => {
+    // evidence_items_insert carries `OR current_user_is_super_admin()`; neither
+    // Storage helper does, and adding one here would let a platform super admin
+    // with NO active membership write into an organisation's bucket.
+    expect(functionBody(raw)).not.toMatch(/current_user_is_super_admin/i)
+    expect(functionBody(rb)).not.toMatch(/current_user_is_super_admin/i)
+  })
+
+  // --- the rollback --------------------------------------------------------
+
+  it('the rollback restores exactly the two baseline roles', () => {
+    const body = functionBody(rb)
+    expect(body).toMatch(/om\.role IN \('organization_admin', 'analyst'\)/)
+    expect(body).not.toContain("'impact_manager'")
+    expect(body).not.toContain("'super_admin'")
+  })
+
+  it('is NOT declared forward-only, and ships a real rollback script', () => {
+    // The exemption registry must stay silent about this package: widening an
+    // authorisation is the one direction whose reversal grants nobody anything,
+    // so db/prepared/README.md rule 4 applies with no exemption.
+    expect(forwardOnlyPackage('stella_0019_storage_write_roles')).toBeNull()
+    expect(existsSync(path.join(PREPARED, 'stella_0019_rollback.sql'))).toBe(true)
+  })
+
+  it('the rollback announces that it reopens M-2 rather than implying success', () => {
+    expect(rb).toMatch(/RAISE WARNING[\s\S]*M-2 IS REOPENED/)
+  })
+
+  // --- self-verification is present, and measures rather than restates -----
+
+  it('measures owner, ACL, the read helper and the storage policies', () => {
+    for (const [name, src] of [['forward', raw], ['rollback', rb]] as const) {
+      expect(src, `${name} does not read the ACL literally`).toMatch(/aclexplode/)
+      expect(src, `${name} does not compare a captured ACL`).toMatch(/current_setting\('stella_0019/)
+      expect(src, `${name} does not fingerprint the read helper`).toMatch(/read_fingerprint/)
+      expect(src, `${name} does not fingerprint the storage policies`).toMatch(/storage_policies/)
+    }
+  })
+
+  it('accepts both spellings of the empty search_path (PG 17.6 quotes it)', () => {
+    for (const [name, src] of [['forward', raw], ['rollback', rb]] as const) {
+      expect(src, `${name} misses the quoted spelling`).toMatch(/search_path=""/)
+      expect(src, `${name} misses the bare spelling`).toMatch(/ARRAY\['search_path='\]/)
+    }
   })
 })

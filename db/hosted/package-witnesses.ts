@@ -251,6 +251,31 @@ export const PACKAGE_WITNESSES: Readonly<Record<string, PackageWitnesses>> = {
       'in its SIBLING register_document_version, so the fragment scoped to THIS routine cannot ' +
       'fire before this package ran.',
   },
+  stella_0019_storage_write_roles: {
+    requiredPresentWhenInstalled: [
+      {
+        kind: 'routine-body',
+        identifier: 'public.can_write_evidence_object(text, uuid)',
+        bodyContains: 'impact_manager',
+      },
+    ],
+    requiredAbsentWhenInstalled: [],
+    discriminates:
+      'THE BODY, for the same reason grounding_0005 needs one and with one difference that makes ' +
+      'the case cleaner. This package creates no role, schema, table, column, constraint or new ' +
+      'signature; it replaces can_write_evidence_object in place, preserving owner, ACL, SECURITY ' +
+      'DEFINER, search_path, argument names and return type — so everything a catalogue-shaped ' +
+      'witness can see is IDENTICAL before and after. The difference from grounding_0005: the ' +
+      'signature is published by the BASELINE (unit 41, supabase/migrations/20260716000001_storage_' +
+      'policies.sql), not by an earlier CHAIN package, so no chain member can make this witness ' +
+      'true ahead of time — the anchoring gate has nothing to refuse it for. `impact_manager` is ' +
+      'the discriminator rather than `super_admin` only because either would do and one suffices: ' +
+      'the baseline list is exactly (organization_admin, analyst), this package publishes exactly ' +
+      '(super_admin, organization_admin, impact_manager, analyst), and the two added roles never ' +
+      'appear apart — §0 of the package refuses a body carrying one without the other. Comments are ' +
+      'stripped before the search, which matters here: the published body explains the repair by ' +
+      'naming the role it adds.',
+  },
 }
 
 /** The nine, derived from HOSTED_CHAIN so there is no parallel list of ids. */

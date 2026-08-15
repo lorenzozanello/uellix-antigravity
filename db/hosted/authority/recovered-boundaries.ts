@@ -99,6 +99,14 @@ const FN = {
   complete3: `function:${OPS}.complete_operation_ticket(bpchar,uuid,bpchar)`,
   complete7: `function:${OPS}.complete_operation_ticket(bpchar,uuid,bpchar,varchar,varchar,int4,jsonb)`,
   inspect2: `function:${OPS}.inspect_operation_ticket(bpchar,uuid)`,
+  // M-2 / T11. The only entry here that names an object in `public` and the
+  // only one the recovered partition never saw: unit 41 published it long
+  // before this table was taken. It lives in FN anyway, for the reason the
+  // docstring above gives — `forward-boundaries.ts` anchors an AUTHORED window
+  // on it, and a second spelling in a second file is a typo waiting for a
+  // package to be misclassified. Being in FN does not make it recovered; no
+  // RECOVERED_WINDOWS entry references it, and RECOVERED_TOTALS is unmoved.
+  canWriteEvidenceObject: 'function:public.can_write_evidence_object(text,uuid)',
 } as const
 
 /** The routine signatures above, for authored windows in sibling modules. */

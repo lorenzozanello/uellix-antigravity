@@ -49,12 +49,47 @@ describe('HOSTED_CHAIN — shape', () => {
       // nine were installed, and renumbering it beside grounding_0002 would
       // describe a sequence nobody ran.
       'grounding_0005_claim_advisory_lock',
+      // M-2, appended for the same reason and belonging to NEITHER campaign.
+      // It repairs a BASELINE object — unit 41's can_write_evidence_object,
+      // which authorised two of the four roles the permission contract names —
+      // so the `stella_00` prefix it carries is a numbering sequence and not a
+      // campaign marker. The assertion above selects the ticket chain by
+      // registry membership rather than by that prefix, for exactly this file.
+      'stella_0019_storage_write_roles',
     ])
   })
 
   it('agrees with STELLA_TICKET_PACKAGE_CHAIN — two registries, one order', () => {
-    const ticketPart = HOSTED_CHAIN.filter((n) => n.startsWith('stella_00'))
+    // Selected by MEMBERSHIP in the declared registry, not by the `stella_00`
+    // prefix this used to read. The prefix never meant "ticket" — stella_0002 …
+    // stella_0012 carry it and are not ticket packages — it was correct only
+    // while every stella_00* member of the chain happened to be one. M-2's
+    // stella_0019 is the first that is not, and under the old spelling this
+    // assertion failed for a package that has nothing to do with the protocol.
+    //
+    // Still not tautological: it proves all six are PRESENT in HOSTED_CHAIN and
+    // that their relative ORDER there matches the registry.
+    const ticketPart = HOSTED_CHAIN.filter((n) =>
+      (STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).includes(n),
+    )
     expect(ticketPart).toEqual([...STELLA_TICKET_PACKAGE_CHAIN])
+  })
+
+  it('classifies every stella_00* chain member as ticket or explicitly not', () => {
+    // The tripwire the line above gave up when it stopped reading the prefix.
+    // Selecting by membership means a SEVENTH ticket package added to
+    // HOSTED_CHAIN but forgotten in STELLA_TICKET_PACKAGE_CHAIN would simply be
+    // filtered out and the assertion would still pass. This puts that back: a
+    // new stella_00* chain member must be classified in one list or the other,
+    // and landing in neither is the failure.
+    const declaredNonTicket = ['stella_0019_storage_write_roles']
+    const unclassified = HOSTED_CHAIN.filter(
+      (n) =>
+        /^stella_00/.test(n) &&
+        !(STELLA_TICKET_PACKAGE_CHAIN as readonly string[]).includes(n) &&
+        !declaredNonTicket.includes(n),
+    )
+    expect(unclassified).toEqual([])
   })
 
   it('never contains stella_0004 — the local role bootstrap is superseded on hosted, not reused', () => {

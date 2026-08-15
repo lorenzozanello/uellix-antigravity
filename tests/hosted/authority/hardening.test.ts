@@ -517,9 +517,9 @@ describe('F-08C: boundary disambiguators read executable text, not source', () =
     expect(normalizeExecutable(withComment.raw)).not.toContain('pg_get_constraintdef')
   })
 
-  it('still resolves all 53 boundaries against executable text alone', () => {
+  it('still resolves all 54 boundaries against executable text alone', () => {
     // 51 recovered + 2 authored. Both sets go through the same resolver, and
     // that is deliberate: an authored boundary gets no weaker anchor rule.
-    expect(plan.windows).toHaveLength(53)
+    expect(plan.windows).toHaveLength(54)
   })
 })

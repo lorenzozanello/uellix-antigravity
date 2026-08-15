@@ -78,8 +78,8 @@ const STELLA_SOURCES: Record<string, string> = Object.fromEntries(
   HOSTED_CHAIN.map((name) => [name, readFileSync(path.join(ROOT, 'db', 'prepared', `${name}.sql`), 'utf8')]),
 )
 
-const [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10] = WITNESSED_PACKAGES as unknown as [
-  string, string, string, string, string, string, string, string, string, string,
+const [T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11] = WITNESSED_PACKAGES as unknown as [
+  string, string, string, string, string, string, string, string, string, string, string,
 ]
 
 const positives = (pkg: string): string[] =>
@@ -168,15 +168,19 @@ const blockerText = (v: ReturnType<typeof evaluate>): string => v.blockers.join(
 /* THE HAPPY PATH — and it goes through the REAL runner                        */
 /* -------------------------------------------------------------------------- */
 
-describe('the expected target: sentinel correct, three signals agreeing, nine packages absent', () => {
-  it('passes, and the plan is the nine chain packages in order', () => {
+describe('the expected target: sentinel correct, three signals agreeing, eleven packages absent', () => {
+  it('passes, and the plan is the eleven chain packages in order', () => {
     const v = evaluate(corroboration())
     expect(blockerText(v)).toBe('')
     expect(v.checkpointPassed).toBe(true)
     expect(v.packageCount).toBe(A1_EXPECTED_PACKAGE_COUNT)
-    expect(v.packageCount).toBe(10)
+    // ELEVEN since M-2. A1_EXPECTED_PACKAGE_COUNT is HOSTED_CHAIN.length - 1
+    // and is asserted on the line above; this literal is the second reader,
+    // so a chain that grows silently fails here rather than agreeing with
+    // itself.
+    expect(v.packageCount).toBe(11)
     expect(v.chainPlan?.ok).toBe(true)
-    expect(v.chainPlan?.stepCount).toBe(10)
+    expect(v.chainPlan?.stepCount).toBe(11)
     // The order is the APPLICATION order, transcribed rather than derived, so
     // a reordering of the chain has to be re-read by a person here. T10 sits
     // after the six Stella packages although it is a grounding one: M-8's
@@ -193,6 +197,9 @@ describe('the expected target: sentinel correct, three signals agreeing, nine pa
       'stella_0017_governed_stella_consumption',
       'stella_0018_category_bound_operation_tickets',
       'grounding_0005_claim_advisory_lock',
+      // T11 sits last for the same reason and belongs to neither campaign:
+      // M-2's repair of a BASELINE function, authored after all ten.
+      'stella_0019_storage_write_roles',
     ])
     expect(v.chainPlan?.sequenceComplete).toBe(true)
     // A1 IS READ-ONLY. It says the chain may be PLANNED, never that it may run.
@@ -591,7 +598,7 @@ describe('the successor discrimination the whole registry exists for', () => {
     const v = evaluate(corroboration({}, { packageObservations: packageObservations(present) }))
     expect(v.packageStates[T7]).toBe('INSTALLED')
     expect(v.packageStates[T8]).toBe('ABSENT')
-    expect(v.chainPlan?.steps).toEqual([T8, T9, T10])
+    expect(v.chainPlan?.steps).toEqual([T8, T9, T10, T11])
   })
 
   it('T9 installed with the three-argument bind still standing is CORRECT — stella_0018 re-creates it', () => {
@@ -608,10 +615,15 @@ describe('the successor discrimination the whole registry exists for', () => {
       // Including it here is what makes "every package installed" mean the
       // repair too, instead of nine objects and an unmeasured tenth.
       ...positives(T10),
+      // T11 is M-2's repair, and its witness is a routine BODY for the same
+      // reason: can_write_evidence_object is a BASELINE function, so nothing
+      // in the catalogue tells a two-role body from a four-role one.
+      ...positives(T11),
     ]
     const v = evaluate(corroboration({}, { packageObservations: packageObservations(present) }))
     expect(v.packageStates[T9]).toBe('INSTALLED')
     expect(v.packageStates[T10]).toBe('INSTALLED')
+    expect(v.packageStates[T11]).toBe('INSTALLED')
     expect(v.partialPackages).toEqual([])
     // Every package installed: the runner reports the sequence complete and plans
     // nothing, which is a PASS and not a refusal.
@@ -623,7 +635,7 @@ describe('the successor discrimination the whole registry exists for', () => {
   it('a successor already installed leaves the runner to decide, and it plans only the rest', () => {
     const present = [...BASE, ...positives(T5), ...positives(T6)]
     const v = evaluate(corroboration({}, { packageObservations: packageObservations(present) }))
-    expect(v.chainPlan?.steps).toEqual([T7, T8, T9, T10])
+    expect(v.chainPlan?.steps).toEqual([T7, T8, T9, T10, T11])
     expect(v.warnings.join(' ')).toContain('ALREADY INSTALLED')
   })
 })

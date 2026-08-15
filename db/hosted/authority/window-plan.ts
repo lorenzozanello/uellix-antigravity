@@ -67,6 +67,13 @@ export const CHAIN_PACKAGE_FILES: readonly ChainPackageFile[] = [
   // family would describe a sequence nobody ran. Its windows are AUTHORED, not
   // recovered, and live in `forward-boundaries.ts` for that reason.
   { packageId: 'T10', sourceFile: 'grounding_0005_claim_advisory_lock.sql' },
+  // M-2, appended for the same reason and with one difference worth naming: it
+  // is the first link that repairs a BASELINE object rather than a campaign
+  // one. public.can_write_evidence_object is published by unit 41, is owned by
+  // uellix_owner, and needs no capability role at all — so its authored window
+  // is OWNER class, not CAPABILITY, and it opens no temporary schema CREATE
+  // (uellix_owner holds CREATE on public permanently; measured, PG 17.6).
+  { packageId: 'T11', sourceFile: 'stella_0019_storage_write_roles.sql' },
 ]
 
 /* -------------------------------------------------------------------------- */

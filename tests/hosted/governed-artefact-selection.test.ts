@@ -220,6 +220,18 @@ describe('the two derived families differ by exactly this defect class', () => {
     // If this ever reaches zero the detector has stopped detecting, not the
     // middle artefact become safe: `.hosted.sql` is a derivation INPUT and is
     // never meant to be applied to a managed project.
+    // M-2. NOT every chain package can carry this defect class, and stella_0019
+    // is the first that cannot: the class is DDL in one of the three CAMPAIGN
+    // schemas (OWNER_HELD_SCHEMAS above), and stella_0019 touches only `public`
+    // — it repairs a BASELINE function rather than creating a campaign object,
+    // and its canonical source already opens its own `SET ROLE uellix_owner`
+    // window, so nothing in it runs owner DDL in installer context anywhere.
+    //
+    // Asserting `> 0` for it would demand a defect the package does not have.
+    // The exemption is DECLARED rather than inferred from a zero, so a package
+    // that stops carrying the class by accident still fails here.
+    const NO_CAMPAIGN_SCHEMA_DDL = ['stella_0019_storage_write_roles']
+
     let total = 0
     for (const packageName of CHAIN_WRITE_ORDER) {
       const sql = readFileSync(
@@ -227,7 +239,11 @@ describe('the two derived families differ by exactly this defect class', () => {
         'utf8',
       )
       const hits = installerContextDdlInOwnerSchemas(sql)
-      expect(hits.length, packageName).toBeGreaterThan(0)
+      if (NO_CAMPAIGN_SCHEMA_DDL.includes(packageName)) {
+        expect(hits, `${packageName} is declared to touch no campaign schema`).toEqual([])
+      } else {
+        expect(hits.length, packageName).toBeGreaterThan(0)
+      }
       total += hits.length
     }
     // 54 across the nine original packages, plus ONE for M-8's forward repair:
@@ -235,6 +251,9 @@ describe('the two derived families differ by exactly this defect class', () => {
     // class this check counts — DDL an installer cannot run in a schema it does
     // not own, which is why the governed derivation wraps it in a capability
     // window and the middle artefact does not.
+    //
+    // UNMOVED by M-2, and that is the measurement rather than an accident of
+    // arithmetic: stella_0019 adds zero, because it adds none of this class.
     expect(total).toBe(55)
   })
 

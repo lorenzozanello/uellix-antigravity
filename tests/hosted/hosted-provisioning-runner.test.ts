@@ -200,7 +200,7 @@ describe('the three phases, in sequence', () => {
     expect(result.sequenceComplete).toBe(false)
   })
 
-  it('PHASE_STELLA_CHAIN plans the remaining nine once the sentinel exists', () => {
+  it('PHASE_STELLA_CHAIN plans the remaining eleven once the sentinel exists', () => {
     const result = plan(
       planProvisioningPhase(
         request({
@@ -210,9 +210,12 @@ describe('the three phases, in sequence', () => {
         }),
       ),
     )
-    expect(result.steps).toHaveLength(10)
+    expect(result.steps).toHaveLength(11)
     expect(result.steps.map((s) => s.id)).not.toContain('stella_hosted_0001_managed_role_bootstrap')
-    expect(result.steps.at(-1)!.id).toBe('grounding_0005_claim_advisory_lock')
+    // LAST is M-2's storage role repair since it was appended after M-8. The
+    // chain is an application order, so the tail moves whenever a link is
+    // added and this line is where that has to be read by a person.
+    expect(result.steps.at(-1)!.id).toBe('stella_0019_storage_write_roles')
     expect(result.sequenceComplete).toBe(true)
   })
 
