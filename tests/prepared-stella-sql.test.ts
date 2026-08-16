@@ -385,12 +385,20 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // ownershipStatements = 0, and stella_hosted_0001 transfers only
       // stella_interactions. It transfers the pair and does nothing else.
       'stella_hosted_0003_storage_helper_ownership.sql',
-      // M-2, the second half of the prechain pair — and separate for the same
+      // M-2, the second of the prechain TRIO — and separate for the same
       // reason stella_0005d is separate from stella_0004 locally: it grants on
       // a schema the PLATFORM owns, which is a different question from who owns
       // our function. MEASURED: with 0003 applied and this absent, stella_0019
       // still refuses, at its §0.7 instead of its §0.6.
       'stella_hosted_0004_storage_schema_usage.sql',
+      // M-2, the THIRD and last. The pair above was not enough and the gap was
+      // invisible to every structural witness: with 0003 and 0004 both applied,
+      // uellix_owner still could not SELECT public.organization_members — the
+      // second relation both SECURITY DEFINER bodies join — so the read raised
+      // inside the definer, the bodies' own EXCEPTION WHEN OTHERS swallowed it,
+      // and all nine cases of the role matrix were refused on BOTH helpers
+      // while T11 measured INSTALLED. One privilege, one table, no rollback.
+      'stella_hosted_0005_storage_helper_table_read.sql',
     ])
   })
 
@@ -2755,6 +2763,51 @@ describe('db/prepared/stella_0019_storage_write_roles.sql — M-2', () => {
     }
   })
 
+  // --- §0.7b / §0.7c: the definer's READ authority -------------------------
+  //
+  // Fable's final blocker, and the reason it cost a full certification cycle:
+  // §0.7 checks USAGE on schema storage, which is only the FIRST thing the body
+  // needs. The second is SELECT on the two relations it joins, and missing it
+  // produces the IDENTICAL symptom — swallowed by the body's own EXCEPTION
+  // WHEN OTHERS THEN RETURN false — from a different cause.
+
+  it('refuses when the definer cannot SELECT the relations its body joins', () => {
+    // The attack: T11 installs cleanly over a surface that denies everyone, and
+    // reports a corrected role list governing nothing. It must refuse instead.
+    expect(raw).toMatch(
+      /has_table_privilege\('uellix_owner', m\.rel, 'SELECT'\)/,
+    )
+    for (const rel of ['public.projects', 'public.organization_members']) {
+      expect(raw, `§0.7b does not name ${rel}`).toContain(`('${rel}')`)
+    }
+    expect(raw).toMatch(/stella_0019 aborted: uellix_owner cannot SELECT %/)
+  })
+
+  it('names the prechain unit that prepares that authority', () => {
+    // A refusal that does not say what to do next is a refusal an operator
+    // works around.
+    expect(raw).toContain('stella_hosted_0005_storage_helper_table_read.sql')
+  })
+
+  it('refuses when the definer cannot execute the RLS policy functions', () => {
+    expect(raw).toContain('public.current_user_org_ids()')
+    expect(raw).toContain('public.current_user_is_super_admin()')
+    expect(raw).toMatch(/has_function_privilege\('uellix_owner', m\.fn, 'EXECUTE'\)/)
+    // Only where it can bite: a role that OWNS both tables bypasses its own
+    // RLS, which is the LOCAL posture stella_0004 produces. Checking it there
+    // would be a false blocker on every local apply.
+    expect(raw).toMatch(/relrowsecurity/)
+    expect(raw).toMatch(/rolbypassrls/)
+  })
+
+  it('VERIFIES the authority and never GRANTS it — the prechain does that', () => {
+    // The separation the whole design rests on: prechain prepares authority,
+    // T11 verifies it and makes the functional change. A package that granted
+    // itself what it needs is one that can never refuse.
+    expect(code).not.toMatch(/GRANT\s+SELECT/i)
+    expect(code).not.toMatch(/organization_members\s+TO/i)
+  })
+
   // --- what it must NOT do -------------------------------------------------
 
   it('issues no GRANT, no REVOKE and no ownership transfer', () => {
@@ -2810,6 +2863,23 @@ describe('db/prepared/stella_0019_storage_write_roles.sql — M-2', () => {
 
   it('the rollback announces that it reopens M-2 rather than implying success', () => {
     expect(rb).toMatch(/RAISE WARNING[\s\S]*M-2 IS REOPENED/)
+  })
+
+  it('the rollback does NOT undo the prechain authority prerequisites', () => {
+    // M-2. Rolling back the ROLE LIST must not revoke the SELECT, the schema
+    // USAGE or the ownership the three prechain units established: those are
+    // prerequisites of the surface working AT ALL, not of the four-role
+    // widening, and taking them away would turn a narrowing rollback into a
+    // total outage for the two roles it is supposed to keep.
+    expect(rbCode).not.toMatch(/^\s*REVOKE\b/im)
+    expect(rbCode).not.toMatch(/^\s*GRANT\b/im)
+    expect(rbCode).not.toMatch(/ALTER\s+(FUNCTION|TABLE)[^;]*OWNER TO/i)
+    // NOT "the rollback never mentions organization_members" — the restored
+    // two-role body JOINS it, as it must. The invariant is that no PRIVILEGE
+    // statement names it, which the three lines above already establish for the
+    // whole file; this pins the table specifically so a future edit that adds a
+    // REVOKE for it is caught by a test that says why.
+    expect(rbCode).not.toMatch(/\b(GRANT|REVOKE)\b[^;]*organization_members/i)
   })
 
   // --- self-verification is present, and measures rather than restates -----

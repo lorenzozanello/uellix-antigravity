@@ -158,8 +158,8 @@ export const GOVERNED_PINS: readonly GovernedPin[] = [
     // the digests are over bytes either way.
     packageId: 'T11',
     sourceFile: 'stella_0019_storage_write_roles.sql',
-    sourceDigest: 'e467672fa8247aac5c03c3c8ec92ec86646c7d5e60b67adcf6e2a44ef60a8a2a',
-    generatedDigest: '7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68',
+    sourceDigest: '2b5a3203f3e37f4e98dc22d11857339350531ca118c6c0d007b11d73db8cfa74',
+    generatedDigest: '69dc9c34c5440a1f2f236d124d7a6152acea4a3575d0d3a96385e6110d960410',
   },
 ]
 

@@ -69,6 +69,14 @@ import {
   type CertificationEvidence,
 } from '../db/hosted/authority/certification/certification-verdict'
 import {
+  STORAGE_FUNCTIONAL_FIXTURE_SQL,
+  STORAGE_FUNCTIONAL_MATRIX_SQL,
+  evaluateStorageFunctionalProbe,
+  storageFunctionalNotRun,
+  type StorageFunctionalObservation,
+  type StorageFunctionalResult,
+} from '../db/hosted/authority/certification/storage-functional-probe'
+import {
   assertRunNamespaceAbsent,
   certificationRunNamespace,
   namespacedPrefix,
@@ -1147,6 +1155,54 @@ function main(): number {
    * hosted workflow, not by the database. */
   report.forwardOnly = forwardOnlyExercise(finalState)
 
+  /* M-2. THE FUNCTIONAL PROBE, and the reason it is not optional.
+   *
+   * Everything above measures INSTALLATION. T11 was recorded INSTALLED — the
+   * function present, four roles in its body, owner and ACL unmoved, all three
+   * storage policies intact — on a database where all nine cases of the role
+   * matrix were refused, because uellix_owner could not SELECT
+   * public.organization_members and the helper bodies swallow their own
+   * permission error. No structural witness can see that.
+   *
+   * Run LAST, on the primary, after the chain: it writes fixture rows, and
+   * nothing after it reads the primary's data. The failure injections that
+   * follow work from snapshots taken DURING the chain, so they are unaffected.
+   *
+   * A throw here is recorded as a failure rather than aborting the run: a
+   * certification that ends with no artefact because its own probe errored is
+   * one nobody can audit. */
+  const storageFunctional: StorageFunctionalResult = (() => {
+    if (!chainComplete) {
+      return storageFunctionalNotRun(
+        'the chain did not complete, so there is no final managed shape to drive the policies on',
+      )
+    }
+    try {
+      const fixture = applySql(primary, STORAGE_FUNCTIONAL_FIXTURE_SQL)
+      if (fixture.status !== 0) {
+        return storageFunctionalNotRun(`the fixture failed to apply: ${diagnosticLines(fixture.stderr, 2)}`)
+      }
+      const rows = query(primary, STORAGE_FUNCTIONAL_MATRIX_SQL)
+      if (rows.length !== 1 || rows[0][0] === undefined || rows[0][0].length === 0) {
+        return storageFunctionalNotRun(
+          `the matrix query returned ${rows.length} row(s) and it projects exactly one JSON document`,
+        )
+      }
+      return evaluateStorageFunctionalProbe(JSON.parse(rows[0][0]) as StorageFunctionalObservation)
+    } catch (error) {
+      return storageFunctionalNotRun(
+        `the probe raised: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  })()
+  report.storageFunctionalProbe = storageFunctional
+  console.log(
+    `[cert] STORAGE_FUNCTIONAL ran=${storageFunctional.ran} passed=${storageFunctional.passed} — ${storageFunctional.detail}`,
+  )
+  for (const m of storageFunctional.mismatches) {
+    console.log(`[cert]   MISMATCH ${m.caseId}.${m.operation}: expected ${m.expected}, observed ${m.observed}`)
+  }
+
   if (ONLY === 'chain') {
     report.verdict = chainComplete ? 'CHAIN_COMPLETE' : 'CHAIN_INCOMPLETE'
     writeReport(report)
@@ -1218,6 +1274,11 @@ function main(): number {
     prechainClean,
     prechainAuthorityGatePassed,
     chainComplete,
+    storageFunctionalProbe: {
+      ran: storageFunctional.ran,
+      passed: storageFunctional.passed,
+      detail: storageFunctional.detail,
+    },
     refusals,
     injections,
   }

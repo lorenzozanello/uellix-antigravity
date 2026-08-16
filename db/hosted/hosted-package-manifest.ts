@@ -568,7 +568,14 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     // one.
     name: 'stella_0019_storage_write_roles',
     sourceFile: 'stella_0019_storage_write_roles.sql',
-    sourceSha256: '0be837a47d83417fb3e7422e009114f7d34f4d0f958353b40495df5ce9401750',
+    // REPINNED for the §0.7b/§0.7c table-read guard. The previous pin was
+    // 0be837a4…, and the counts below were re-derived rather than carried over:
+    // the guard adds two catalog assertions and no rewritable construct, so
+    // every count is UNCHANGED, which is itself the check. If the edit had
+    // introduced a superuser test, a CREATE ROLE or an auth.uid() call, one of
+    // these numbers would have had to move and a pin bumped alone would have
+    // hidden it.
+    sourceSha256: '3b12f27545511f31b0ddc4a9326f583a7def09128b00f297eb00df71df5fad58',
     expectedRewrites: {
       ...NO_REWRITES,
       // Its §0 guard, in the same three-line shape the other ten use. The two
@@ -576,12 +583,18 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       // package needs: (C2) the right to SET ROLE uellix_owner, and (C4) CREATE
       // on schema public FOR uellix_owner. Measured, PG 17.6: uellix_migrator
       // without the owner window fails at `permission denied for schema public`.
+      //
+      // STILL ONE after §0.7b/§0.7c. Those check has_table_privilege and
+      // has_function_privilege for uellix_owner — catalog reads any role may
+      // make — and introduce no second `rolsuper` test for the rewriter to find.
       'superuser-precondition': 1,
       // It creates no role, so there is no ALTER ROLE to split and no capability
       // membership to count; it resolves no session actor, so there is no auth
       // path to reroute. The function receives the user id as an ARGUMENT — the
       // auth.uid() call lives in the storage.objects policy, which this package
-      // does not touch.
+      // does not touch. §0.7c names current_user_is_super_admin() and
+      // current_user_org_ids(), but only inside has_function_privilege() — it
+      // asks whether the owner MAY call them, and calls neither.
     },
     // Only the bootstrap. This package is independent of both campaigns: it
     // needs the five roles and the owner window, and nothing from grounding or

@@ -15,6 +15,7 @@ import path from 'node:path'
 import {
   PRECHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_OWNERSHIP,
+  PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_STORAGE_USAGE,
   sha256OfPreparedSql,
 } from '@/db/hosted/prechain-ownership'
@@ -182,13 +183,14 @@ describe('the registry states reasons, not shrugs', () => {
 })
 
 
-describe('the prechain PAIR, and the order that is load-bearing', () => {
+describe('the prechain TRIO, and the order that is load-bearing', () => {
   const usageSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_USAGE.sourceFile), 'utf8')
 
-  it('declares both units in application order', () => {
+  it('declares all three units in application order', () => {
     expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
       PRECHAIN_OWNERSHIP.id,
       PRECHAIN_STORAGE_USAGE.id,
+      PRECHAIN_STORAGE_TABLE_READ.id,
     ])
   })
 
@@ -225,11 +227,144 @@ describe('the prechain PAIR, and the order that is load-bearing', () => {
     expect(usageSql).toMatch(/uellix_app/)
   })
 
-  it('both halves are declared forward-only with substantial reasons', () => {
+  it('all three are declared forward-only with substantial reasons', () => {
     for (const unit of PRECHAIN_ADMINISTRATIVE_UNITS) {
       const entry = forwardOnlyPackage(unit.id)
       expect(entry, unit.id).not.toBeNull()
       expect(entry!.reason.length, unit.id).toBeGreaterThan(200)
     }
+  })
+})
+
+/**
+ * M-2 — the TABLE-READ unit, and the ways a diff could widen it.
+ *
+ * Fable's final blocker. `uellix_owner` owned both helpers and held USAGE on
+ * schema storage, and every one of the nine role-matrix cases was still refused,
+ * on read as well as on write, because the definer could not SELECT
+ * public.organization_members and the bodies swallow their own permission error.
+ *
+ * Every `it` below is an attack that must fail on a widened package.
+ */
+describe('the prechain TABLE-READ unit grants exactly one privilege on one table', () => {
+  const readSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_TABLE_READ.sourceFile), 'utf8')
+  const executableRead = stripSqlSurface(readSql)
+
+  it('exists at the path the registry names, and hashes to its pin', () => {
+    expect(existsSync(path.join(ROOT, PRECHAIN_STORAGE_TABLE_READ.sourceFile))).toBe(true)
+    expect(sha256OfPreparedSql(readSql)).toBe(PRECHAIN_STORAGE_TABLE_READ.sourceSha256)
+  })
+
+  it('pins the LF-normalized bytes, so a CRLF checkout is not a different package', () => {
+    expect(sha256OfPreparedSql(readSql.replace(/\n/g, '\r\n'))).toBe(
+      PRECHAIN_STORAGE_TABLE_READ.sourceSha256,
+    )
+  })
+
+  it('is NOT a chain member and takes no chain witness', () => {
+    expect(HOSTED_CHAIN).not.toContain(PRECHAIN_STORAGE_TABLE_READ.id)
+    expect(WITNESSED_PACKAGES).not.toContain(PRECHAIN_STORAGE_TABLE_READ.id)
+  })
+
+  it('issues exactly ONE GRANT, for SELECT, on organization_members, to uellix_owner', () => {
+    // The attack this closes: a second GRANT, a wider privilege list, or a
+    // different role smuggled into a package whose contract says "one".
+    const grants = [...executableRead.matchAll(/^\s*GRANT\s+([\s\S]*?);/gim)]
+    expect(grants).toHaveLength(1)
+    expect(grants[0]![1].replace(/\s+/g, ' ').trim()).toBe(
+      'SELECT ON TABLE public.organization_members TO uellix_owner',
+    )
+  })
+
+  it('issues no REVOKE, no ALTER, no CREATE and no DROP', () => {
+    // A package that granted and revoked in one breath would pass a naive
+    // "one GRANT" check. So would one that altered an owner on the way past.
+    expect(executableRead).not.toMatch(/^\s*REVOKE\b/im)
+    expect(executableRead).not.toMatch(/^\s*ALTER\s+(TABLE|FUNCTION|ROLE|POLICY|SCHEMA)\b/im)
+    expect(executableRead).not.toMatch(/^\s*CREATE\s+(OR\s+REPLACE\s+)?(FUNCTION|POLICY|ROLE|TABLE)\b/im)
+    expect(executableRead).not.toMatch(/^\s*DROP\b/im)
+  })
+
+  it('grants no WRITE privilege, in the SQL or in its contract', () => {
+    expect(executableRead).not.toMatch(/GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE|ALL)\b/i)
+    // And §2 asserts the absence of all six, not just the obvious three.
+    for (const priv of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']) {
+      expect(readSql, priv).toContain(`('${priv}')`)
+    }
+  })
+
+  it('grants no GRANT OPTION, and asserts it did not', () => {
+    expect(executableRead).not.toMatch(/GRANT[^;]*WITH\s+GRANT\s+OPTION/i)
+    expect(readSql).toMatch(/is_grantable/)
+  })
+
+  it('names uellix_owner and no other grantee', () => {
+    // The wrong-role attack: `TO uellix_app` would hand the RUNTIME role a read
+    // of the membership table, which is a different and much larger change.
+    const grantTargets = [...executableRead.matchAll(/GRANT[^;]*?\bTO\s+([a-z_ ,]+)/gi)].map((m) =>
+      m[1].trim(),
+    )
+    expect(grantTargets).toEqual(['uellix_owner'])
+    expect(executableRead).not.toMatch(/GRANT[^;]*TO[^;]*\b(uellix_app|uellix_migrator|authenticated|anon|PUBLIC|service_role)\b/i)
+  })
+
+  it('refuses when applied out of order — before ownership, or before storage USAGE', () => {
+    // The ordering is enforced by the PACKAGE, so a harness that reordered the
+    // three gets a refusal rather than a silent swap.
+    expect(readSql).toMatch(/apply stella_hosted_0003_storage_helper_ownership\.sql first/i)
+    expect(readSql).toMatch(/apply stella_hosted_0004_storage_schema_usage\.sql first/i)
+    expect(readSql).toMatch(/has_schema_privilege\('uellix_owner', 'storage', 'USAGE'\)/)
+    expect(readSql).toMatch(/pg_get_userbyid\(p\.proowner\) = 'uellix_owner'/)
+  })
+
+  it('asserts BOTH helpers, not only the write one', () => {
+    // The read helper was equally dead, and a package that only checked the
+    // write side would have certified half a repair.
+    expect(readSql).toContain('can_read_evidence_object')
+    expect(readSql).toContain('can_write_evidence_object')
+  })
+
+  it('asserts projects rather than granting it — the complete surface, one owner each', () => {
+    expect(readSql).toMatch(/has_table_privilege\('uellix_owner', 'public\.projects', 'SELECT'\)/)
+    expect(executableRead).not.toMatch(/GRANT[^;]*public\.projects/i)
+    expect(readSql).toContain('stella_hosted_0001')
+  })
+
+  it('asserts the RLS helper functions the SELECT policies invoke', () => {
+    // Measured: both tables have RLS enabled, uellix_owner owns neither and
+    // holds no BYPASSRLS, so the policies run for the definer. A missing
+    // EXECUTE there fails for SOME callers, which is harder to find than a
+    // total outage.
+    expect(readSql).toContain('current_user_org_ids()')
+    expect(readSql).toContain('current_user_is_super_admin()')
+  })
+
+  it('aborts on an unknown posture instead of normalising it', () => {
+    expect(readSql).toMatch(/already holds a WRITE privilege/i)
+  })
+
+  it('proves scope as a measured DELTA, not against a hand-picked canary list', () => {
+    // A literal list would have been WRONG here: uellix_owner owns
+    // public.stella_interactions and therefore reads it implicitly, so a canary
+    // asserting "no other SELECT" would fail on a correct database.
+    expect(readSql).toContain('stella_hosted_0005.select_surface')
+    expect(readSql).toMatch(/EXCEPT/)
+    expect(readSql).toMatch(/LOST SELECT/)
+  })
+
+  it('fingerprints the helpers and the storage policies, and compares them after', () => {
+    // The "new package changes function body/ACL/owner" attack.
+    expect(readSql).toContain('stella_hosted_0005.helpers')
+    expect(readSql).toContain('stella_hosted_0005.storage_policies')
+    expect(readSql).toMatch(/pg_get_functiondef/)
+    expect(readSql).toMatch(/proacl/)
+  })
+
+  it('declares what it is for, and names the guard it unblocks', () => {
+    expect(PRECHAIN_STORAGE_TABLE_READ.purpose.length).toBeGreaterThan(200)
+    expect(PRECHAIN_STORAGE_TABLE_READ.unblocks).toContain('stella_0019_storage_write_roles')
+    expect(PRECHAIN_STORAGE_TABLE_READ.destinationOwner).toBe('uellix_owner')
+    // It normalises no function — that was 0003's job and it says so.
+    expect(PRECHAIN_STORAGE_TABLE_READ.normalisedFunctions).toHaveLength(0)
   })
 })

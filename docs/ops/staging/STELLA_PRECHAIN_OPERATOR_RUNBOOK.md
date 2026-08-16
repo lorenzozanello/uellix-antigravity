@@ -41,7 +41,7 @@ Este runbook usaba **una sola** variable, `$UELLIX_STAGING_URL`, para todo. Hay
 |---|---|---|
 | Variable | `$UELLIX_STAGING_ADMIN_URL` | `$UELLIX_STAGING_INSTALLER_URL` |
 | Principal | `postgres` | `uellix_migrator` |
-| Aplica | PHASE_BASELINE (§1 de `STELLA_APPLY_IDENTITY_PROBE`), `stella_hosted_0001`, `stella_hosted_0002` | **T1–T9 gobernados, y sólo ellos** |
+| Aplica | PHASE_BASELINE (§1 de `STELLA_APPLY_IDENTITY_PROBE`), `stella_hosted_0001`, `stella_hosted_0002`, y las **tres unidades administrativas prechain** `stella_hosted_0003` → `0004` → `0005` (ver §0.0.3) | **T1–T11 gobernados, y sólo ellos** |
 | Modo | directo o session pooler | **directo, obligatorio** — ver 0.0.2 |
 | Por qué | `uellix_migrator` **no existe** hasta que `stella_hosted_0001` lo crea; antes de eso `postgres` es el único login administrativo | los nueve paquetes emiten `GRANT <cap> TO uellix_migrator WITH INHERIT FALSE, SET TRUE;` seguido de `SET ROLE <cap>;` |
 
@@ -130,6 +130,60 @@ Qué **no** ocurre nunca, y es comprobable:
 Si `\password` es rechazado sobre el proyecto gestionado, **para**. Eso sería un
 hecho nuevo sobre los privilegios de `postgres` en Supabase gestionado y hay que
 medirlo y registrarlo, no rodearlo.
+
+### 0.0.3 Las tres unidades administrativas prechain (M-2)
+
+**Corrección de 2026-08-15.** La tabla de §0.0 decía «`stella_hosted_0001`,
+`stella_hosted_0002`» y «T1–T9». Ambas cosas son falsas hoy: la cadena tiene
+**once** eslabones, y la conexión administrativa aplica además **tres** unidades
+prechain que la cadena no puede aplicarse a sí misma.
+
+Van **con la conexión ADMIN** (`postgres`), **en este orden**, después de
+`0001`/`0002` y **antes de T1**:
+
+```
+stella_hosted_0003_storage_helper_ownership.sql     ALTER FUNCTION … OWNER TO uellix_owner (×2)
+stella_hosted_0004_storage_schema_usage.sql         GRANT USAGE ON SCHEMA storage TO uellix_owner
+stella_hosted_0005_storage_helper_table_read.sql    GRANT SELECT ON public.organization_members TO uellix_owner
+```
+
+Cada una con `-1 -v ON_ERROR_STOP=1`, una transacción por archivo.
+
+**No hace falta memorizar el orden: lo imponen los propios paquetes.** `0004`
+§0.4 se niega si ningún helper SECURITY DEFINER es ya de `uellix_owner`; `0005`
+§0.3 exige lo mismo **y** §0.4 exige el `USAGE` que concede `0004`. Aplicar
+cualquiera fuera de orden es una **negativa**, no un reordenamiento silencioso.
+Medido, 2026-08-15: con el `USAGE` revocado, `0005` aborta citando
+`stella_hosted_0004`; con los helpers de `postgres`, aborta citando
+`stella_hosted_0003`, y `stella_0019` §0.6 aborta también.
+
+**Respecto al sentinel el orden es indiferente**, y conviene decirlo para que
+nadie invente una restricción: ninguna de las tres lee
+`uellix_bootstrap.staging_sentinel` (medido: cero referencias en los tres
+archivos). Lo único vinculante es que estén **antes de T1**. Las certificaciones
+canónicas escriben el sentinel primero y aplican el trío después; hacerlo al
+revés produce el mismo estado final.
+
+**Ninguna de las tres es miembro de `HOSTED_CHAIN`**, ninguna toma testigo de
+cadena y ninguna cuenta para `CHAIN_INSTALLED`. Son prerequisitos, y las aplica
+un principal que no es el instalador de la cadena — que es precisamente por lo
+que existen.
+
+**Las tres son forward-only y ninguna trae `_rollback.sql`.** Las razones están
+tipadas en `db/hosted/forward-only-packages.ts`; la común es que lo que quitan es
+el motivo por el que la superficie no funciona, así que «restaurar el estado
+anterior» y «devolver Storage a negar a todo el mundo sin decirlo» son la misma
+frase.
+
+**Por qué `0005` existe, medido.** Con `0003` y `0004` aplicados y `0005`
+ausente, T11 se instala limpiamente **y todas las subidas siguen negándose**:
+los dos cuerpos SECURITY DEFINER unen `public.projects` **y**
+`public.organization_members`, `uellix_owner` sólo tenía `SELECT` sobre la
+primera, la lectura lanza dentro del definer y el `EXCEPTION WHEN OTHERS THEN
+RETURN false` del propio cuerpo se la traga. Los nueve casos de la matriz de
+roles daban DENY, en escritura y en lectura, con los once testigos en verde. Hoy
+`stella_0019` §0.7b **se niega** en ese estado y `STORAGE_HELPER_FUNCTIONAL_PROBE`
+impide que una certificación diga `COMPLETE` sobre él.
 
 ---
 

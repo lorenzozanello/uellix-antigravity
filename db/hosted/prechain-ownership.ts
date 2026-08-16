@@ -165,16 +165,81 @@ export const PRECHAIN_STORAGE_USAGE: PrechainOwnershipPackage = {
 }
 
 /**
- * Both prechain administrative units, IN APPLICATION ORDER.
+ * The table-read authority the definer needs once it owns the helpers AND can
+ * resolve names in schema storage.
  *
- * Order is load-bearing and asserted by stella_hosted_0004 §0.4: the USAGE
- * grant refuses unless a SECURITY DEFINER helper is already owned by
- * uellix_owner, so applying it first is a refusal rather than a silent
- * reordering.
+ * A THIRD package for the third time the same argument holds: it grants on a
+ * different object class than either predecessor, and both of those state in
+ * their own pinned contracts what they do not do — PRECHAIN_OWNERSHIP "issues no
+ * GRANT or REVOKE", PRECHAIN_STORAGE_USAGE "no table privilege in storage is
+ * granted". Both are also INSTALLED on the staging project, so editing either
+ * would make the installed artefact and the repository disagree about what ran.
+ *
+ * MEASURED, and the reason the pair before it was not enough: with 0003 and
+ * 0004 both applied and this absent, the helper bodies still read
+ * `public.organization_members`, uellix_owner holds no SELECT on it, the read
+ * raises inside the definer, and `EXCEPTION WHEN OTHERS THEN RETURN false`
+ * answers false for every role on BOTH helpers. Driven through the real
+ * storage.objects policies, all nine cases of the role matrix denied.
+ *
+ * ONE TABLE, because `public.projects` — the other relation both bodies read —
+ * is already granted by stella_hosted_0001 §7, whose list is derived from what
+ * the CHAIN reads and correct for that. organization_members is absent from it
+ * because no chain package touches it: when that list was written the helpers
+ * were owned by `postgres`, which owns both tables. stella_hosted_0003 changed
+ * who executes those bodies and moved a relation into the required-read set
+ * that no list recomputed.
+ */
+export const PRECHAIN_STORAGE_TABLE_READ: PrechainOwnershipPackage = {
+  id: 'stella_hosted_0005_storage_helper_table_read',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_hosted_0005_storage_helper_table_read.sql',
+  sourceSha256: '038d16303a28c7cb40de8649bc8f549b8af1dcec0925ba1a4a521a28a84e26a8',
+  purpose:
+    'Grants uellix_owner SELECT on public.organization_members — one privilege, one table, not ' +
+    'grantable — so that the SECURITY DEFINER bodies of the two Storage helpers can execute the ' +
+    'join they both run: FROM public.projects p JOIN public.organization_members om. Without it ' +
+    'the read raises permission denied INSIDE the definer, the bodies own EXCEPTION WHEN OTHERS ' +
+    'swallows it, and every evidence object operation is refused silently for every role on both ' +
+    'the read and the write helper. public.projects is NOT granted here: stella_hosted_0001 §7 ' +
+    'already issues it, and this package asserts that rather than standing in for it. It changes ' +
+    'no function body, owner or ACL, recreates no policy, creates no role, alters no membership, ' +
+    'and adds no INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES or TRIGGER. uellix_app and ' +
+    'uellix_migrator are compared before and after and must not move, and the whole read surface ' +
+    'of uellix_owner in schema public is compared as a delta that must be exactly one relation.',
+  forwardOnlyNoRollbackReason:
+    'FORWARD-ONLY. Revoking it re-opens the exact outage it closes — every evidence object ' +
+    'operation refused, silently, for every role, on read as well as on write — on a project ' +
+    'whose helpers uellix_owner now owns and whose storage USAGE it now holds. "Restore the ' +
+    'previous state" and "return the Storage surface to denying everyone without saying so" are ' +
+    'the same sentence, which is the same reason stella_hosted_0004 ships none. It is also the ' +
+    'third of three units that cannot be undone independently: with ownership moved and USAGE ' +
+    'granted, removing this leaves a posture neither the local model nor the hosted one produces. ' +
+    'Deliberate reversal is a single administrative REVOKE by the same principal, with the ' +
+    'consequence visible at the time.',
+  normalisedFunctions: [],
+  destinationOwner: 'uellix_owner',
+  unblocks:
+    'stella_0019_storage_write_roles (T11) at its §0.7b guard, which refuses to correct a role ' +
+    'list over a surface whose definer cannot read the relations it joins. Measured: with ' +
+    'PRECHAIN_OWNERSHIP and PRECHAIN_STORAGE_USAGE applied and this absent, T11 would install and ' +
+    'the role matrix would still deny all nine cases — which is why the guard exists and why ' +
+    'certification now requires a FUNCTIONAL probe and not only an installed witness.',
+}
+
+/**
+ * All three prechain administrative units, IN APPLICATION ORDER.
+ *
+ * Order is load-bearing and asserted by the packages themselves rather than by
+ * whatever loop applies them: stella_hosted_0004 §0.4 refuses unless a SECURITY
+ * DEFINER helper is already owned by uellix_owner, and stella_hosted_0005 §0.3
+ * requires the same AND §0.4 requires the storage USAGE 0004 grants. Applying
+ * any of them early is a refusal rather than a silent reordering.
  */
 export const PRECHAIN_ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] = [
   PRECHAIN_OWNERSHIP,
   PRECHAIN_STORAGE_USAGE,
+  PRECHAIN_STORAGE_TABLE_READ,
 ]
 
 export function sha256OfPreparedSql(sql: string): string {

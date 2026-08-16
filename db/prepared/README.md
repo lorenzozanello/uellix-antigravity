@@ -1244,9 +1244,15 @@ contenedor desechable y por las dos certificaciones canónicas.
 > reintentar no puede dañar no necesita un mecanismo cuyo único fin es impedir
 > el reintento.
 
-> **Orden prechain:** baseline (50 unidades) → `stella_hosted_0001` →
+> **Orden prechain (completo):** baseline (50 unidades) → `stella_hosted_0001` →
 > [`stella_hosted_0002` si el proyecto ya estaba bootstrapeado] →
-> **`stella_hosted_0003`** → sentinel → `HOSTED_CHAIN` T1…T11.
+> **`stella_hosted_0003`** → **`stella_hosted_0004`** → **`stella_hosted_0005`**
+> → sentinel → `HOSTED_CHAIN` T1…T11.
+>
+> Los tres paquetes `0003`/`0004`/`0005` son **unidades administrativas
+> prechain**: no son miembros de `HOSTED_CHAIN`, no toman testigo de cadena, y
+> los aplica la identidad administrativa (`postgres`), no `uellix_migrator`. El
+> orden entre ellos lo imponen **sus propias precondiciones**, no el runbook.
 
 ### M-2 — USAGE sobre el esquema `storage` en hosted (`stella_hosted_0004`)
 
@@ -1281,3 +1287,74 @@ par prechain, y es un paquete aparte por la misma razón por la que
 > `stella_hosted_0004` se niega si no hay ya un helper SECURITY DEFINER
 > propiedad de `uellix_owner`. Aplicarlo primero es una **negativa**, no un
 > reordenamiento silencioso.
+
+> **CORRECCIÓN (M-2, 2026-08-15).** Este apartado decía que el prechain era un
+> **par**. Era falso, y la frase «con `stella_hosted_0003` aplicado y éste
+> ausente, T11 sigue negándose» describía **el primero** de dos agujeros, no el
+> último. Con `0003` y `0004` aplicados la superficie **seguía muerta**, y lo
+> cerró un tercer paquete: `stella_hosted_0005`. El prechain es un **trío**.
+
+### M-2 — SELECT de tabla para el definer en hosted (`stella_hosted_0005`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted.** Es la **tercera** unidad
+prechain y la última prerequisito de los helpers de Storage.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0005_storage_helper_table_read.sql` | **ninguno, a propósito** (`db/hosted/prechain-ownership.ts`) | `STORAGE_HELPER_FUNCTIONAL_PROBE` en ambas certificaciones; exige `stella_hosted_0003` **y** `stella_hosted_0004` ya aplicados (§0.3 y §0.4) | **Una sola sentencia:** `GRANT SELECT ON TABLE public.organization_members TO uellix_owner`. Sin `WITH GRANT OPTION`, sin INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER, sin tocar cuerpo, dueño ni ACL de ninguna función, sin recrear ninguna policy | **DISEÑO — no aplicado** |
+
+> **Por qué hacía falta un tercero.** Medido sobre la forma gestionada (baseline
+> 50 → `stella_hosted_0001` → `0003` → `0004`), 2026-08-15: dueño de ambos
+> helpers `uellix_owner`, `USAGE` sobre `storage` **true**, `SELECT` sobre
+> `public.projects` **true**, `SELECT` sobre `public.organization_members`
+> **FALSE**. Los dos cuerpos leen **dos** relaciones en la misma sentencia
+> (`FROM public.projects p JOIN public.organization_members om …`), y como son
+> SECURITY DEFINER esa lectura ocurre con los privilegios del **dueño**. Falta
+> el `SELECT` → `permission denied for table` **dentro** del definer → el
+> `EXCEPTION WHEN OTHERS THEN RETURN false` del propio cuerpo se lo traga → se
+> niega **en silencio**. Ejecutado contra las policies reales de
+> `storage.objects` como `authenticated` con `request.jwt.claim.sub` real, los
+> **nueve** casos de la matriz de roles daban DENY, en escritura **y en
+> lectura**.
+
+> **Por qué UNA tabla y no dos.** `public.projects` ya está cubierta por
+> `stella_hosted_0001` §7 (`GRANT SELECT, REFERENCES ON TABLE public.projects TO
+> uellix_owner WITH GRANT OPTION`). Esa lista deriva de otra pregunta —la propia
+> negativa del bootstrap lo dice: «the governed chain runs twelve statements
+> against these objects as uellix_owner»— y es correcta para la cadena.
+> `organization_members` no está en ella porque **ningún paquete de la cadena
+> toca esa tabla**: cuando se escribió la lista los helpers eran de `postgres`,
+> que es dueño de ambas tablas y no necesita concesión. `stella_hosted_0003`
+> cambió **quién ejecuta** esos cuerpos y con ello metió una relación en el
+> conjunto de lecturas requeridas que ninguna lista recalculó. La §0.5 de este
+> paquete **afirma** `projects` en vez de concederla.
+
+> **La otra mitad de la superficie de lectura: RLS, que no es una concesión.**
+> Medido: ambas tablas tienen RLS **habilitada**, ambas son de `postgres` en
+> hosted, y `uellix_owner` no tiene `BYPASSRLS` — así que sus policies de SELECT
+> se evalúan **también para el definer**, y leen
+> `organization_id = ANY (current_user_org_ids()) OR current_user_is_super_admin()`.
+> Esas dos funciones son SECURITY DEFINER de `postgres` y `stella_hosted_0001`
+> §7 ya concede `EXECUTE` sobre ambas a `uellix_owner`, así que el filtro
+> resuelve bien y no hace falta nada de aquí. La §0.6 lo **afirma** en vez de
+> asumirlo.
+
+> **Por qué la sonda no llama a la función.** Consecuencia directa de lo
+> anterior: `current_user_org_ids()` resuelve `auth.uid()`, es decir
+> `request.jwt.claim.sub`. Una sesión administrativa sin claim no ve **ninguna**
+> fila a través de esas policies, así que
+> `SELECT public.can_write_evidence_object(…)` devuelve **false** en una base
+> perfectamente sana. Medido en ambos sentidos: sin claim `false`, con claim
+> `true`. Una certificación que sondease la función así reportaría DENY-para-
+> todos sobre una base que funciona, y no podría distinguirlo del apagón real.
+> Por eso `STORAGE_HELPER_FUNCTIONAL_PROBE` se hace `authenticated`, fija un
+> claim real y deja decidir a la **policy** de `storage.objects`.
+
+> **Por qué la certificación tuvo que cambiar, no sólo los paquetes.** Todo lo
+> anterior era invisible para los testigos: T11 se medía `INSTALLED` —función
+> presente, cuatro roles en el cuerpo, dueño y ACL intactos, las tres policies
+> sin tocar— sobre una base donde **toda** subida se negaba. `COMPLETE` es ahora
+> una conjunción que incluye la sonda funcional, y `stella_0019` §0.7b/§0.7c se
+> **niega** si el definer no puede leer lo que une. Hacen falta los dos: la
+> guarda impide que ocurra, la sonda impide que ocurra **en silencio** si alguna
+> edición futura quita la guarda.

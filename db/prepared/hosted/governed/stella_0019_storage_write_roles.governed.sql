@@ -5,7 +5,7 @@
 --
 -- Package: T11
 -- Derived from: db/prepared/hosted/stella_0019_storage_write_roles.hosted.sql
--- Source SHA-256 (LF-normalized): e467672fa8247aac5c03c3c8ec92ec86646c7d5e60b67adcf6e2a44ef60a8a2a
+-- Source SHA-256 (LF-normalized): 2b5a3203f3e37f4e98dc22d11857339350531ca118c6c0d007b11d73db8cfa74
 --
 -- WHAT CHANGED, AND ONLY THIS:
 --   The canonical SET ROLE / RESET ROLE bookkeeping was replaced. It assumes
@@ -23,7 +23,7 @@
 -- ============================================================================
 --
 -- Derived from: db/prepared/stella_0019_storage_write_roles.sql
--- Source SHA-256 (LF-normalized): 0be837a47d83417fb3e7422e009114f7d34f4d0f958353b40495df5ce9401750
+-- Source SHA-256 (LF-normalized): 3b12f27545511f31b0ddc4a9326f583a7def09128b00f297eb00df71df5fad58
 --
 -- The canonical file above is the ONLY source of truth. This artefact exists
 -- because managed Supabase exposes no superuser and does not let `postgres`
@@ -328,6 +328,70 @@ BEGIN
   --     everything, and the next audit would blame the role list.
   IF NOT has_schema_privilege('uellix_owner', 'storage', 'USAGE') THEN
     RAISE EXCEPTION 'stella_0019 aborted: uellix_owner has no USAGE on schema storage, so both helpers already return false for every caller (stella_0005d). Fixing the role list first would report success over a surface that denies everyone. Apply db/prepared/stella_0005d_storage_definer_repair.sql first.';
+  END IF;
+
+  -- 0.7b THE TABLE READS THE DEFINER PERFORMS, which §0.7 does not cover and
+  --      which cost a full certification cycle to find. Resolving a name in
+  --      schema storage is only the FIRST thing the body does; the second is
+  --
+  --          FROM public.projects p
+  --          JOIN public.organization_members om ON om.organization_id = p.organization_id
+  --
+  --      executed with the OWNER's privileges. Missing SELECT on either relation
+  --      raises `permission denied for table ...` inside the definer, where the
+  --      same `EXCEPTION WHEN OTHERS THEN RETURN false` swallows it — so the
+  --      symptom is identical to §0.7's and the cause is a different one.
+  --
+  --      MEASURED on the managed shape after stella_hosted_0003 and 0004: the
+  --      helpers were owned by uellix_owner, storage USAGE was held, projects
+  --      was readable, organization_members was NOT, and all nine cases of the
+  --      role matrix were denied on BOTH helpers. T11 would have installed
+  --      cleanly over that and reported a corrected role list governing nothing.
+  --
+  --      LOCALLY this cannot fail: stella_0004 moves both tables to
+  --      uellix_owner, and an owner reads its own table without a grant. It is
+  --      the HOSTED path that needs it, where the baseline units run as postgres
+  --      and leave both tables owned by postgres — which is exactly why the
+  --      check belongs here rather than in a local-only script.
+  --
+  --      This package does NOT grant it. The prechain prepares authority; T11
+  --      verifies authority and makes the functional change. A package that
+  --      granted itself what it needs would be one that can never refuse.
+  SELECT string_agg(m.rel, ', ' ORDER BY m.rel) INTO problem
+  FROM (VALUES ('public.projects'), ('public.organization_members')) AS m(rel)
+  WHERE NOT has_table_privilege('uellix_owner', m.rel, 'SELECT');
+
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0019 aborted: uellix_owner cannot SELECT %, which both helper bodies join in every call. As SECURITY DEFINER the read happens with the OWNER''s privileges, so it raises inside the definer, the body''s own EXCEPTION WHEN OTHERS THEN RETURN false swallows it, and BOTH helpers already answer false for every role. Correcting the role list over that surface would report success over an outage. On managed Supabase apply db/prepared/stella_hosted_0005_storage_helper_table_read.sql first; locally this cannot happen, because stella_0004 makes uellix_owner the owner of both tables.', problem;
+  END IF;
+
+  -- 0.7c AND THE ROW FILTER THOSE READS PASS THROUGH. Both tables have RLS
+  --      ENABLED and uellix_owner neither owns them (on the hosted shape) nor
+  --      holds BYPASSRLS, so their SELECT policies run for the definer too and
+  --      call these two SECURITY DEFINER functions. A missing EXECUTE raises in
+  --      the same swallowed place — and because the policy is `... OR
+  --      current_user_is_super_admin()`, it would do so for SOME callers and not
+  --      others, which is harder to find than a total outage.
+  --
+  --      Checked only where it can bite: a role that OWNS both tables bypasses
+  --      its own RLS, so on the local posture there is no policy to evaluate and
+  --      no privilege to hold.
+  IF EXISTS (
+    SELECT 1 FROM pg_class c
+    WHERE c.oid IN ('public.projects'::regclass, 'public.organization_members'::regclass)
+      AND c.relrowsecurity
+      AND pg_catalog.pg_get_userbyid(c.relowner) <> 'uellix_owner'
+  ) AND NOT (SELECT rolbypassrls FROM pg_roles WHERE rolname = 'uellix_owner') THEN
+    SELECT string_agg(m.fn, ', ' ORDER BY m.fn) INTO problem
+    FROM (VALUES
+      ('public.current_user_org_ids()'), ('public.current_user_is_super_admin()')
+    ) AS m(fn)
+    WHERE to_regprocedure(m.fn) IS NOT NULL
+      AND NOT has_function_privilege('uellix_owner', m.fn, 'EXECUTE');
+
+    IF problem IS NOT NULL THEN
+      RAISE EXCEPTION 'stella_0019 aborted: uellix_owner cannot execute %, which the RLS SELECT policies on public.projects and public.organization_members invoke. uellix_owner does not own those tables and does not hold BYPASSRLS, so those policies are evaluated for the definer, and a missing EXECUTE makes the helpers answer false for part of the role matrix. Granted by stella_hosted_0001 §7 on the managed shape.', problem;
+    END IF;
   END IF;
 
   -- 0.8 The three policies this package must not disturb. Their presence is the

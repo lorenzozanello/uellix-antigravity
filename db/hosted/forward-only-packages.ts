@@ -42,7 +42,11 @@
 // whose whole argument is that the state it removed should not come back.
 
 import { PRECHAIN_REMEDIATION } from './prechain-remediation'
-import { PRECHAIN_OWNERSHIP, PRECHAIN_STORAGE_USAGE } from './prechain-ownership'
+import {
+  PRECHAIN_OWNERSHIP,
+  PRECHAIN_STORAGE_TABLE_READ,
+  PRECHAIN_STORAGE_USAGE,
+} from './prechain-ownership'
 
 export interface ForwardOnlyPackage {
   /** Basename WITHOUT `.sql`, exactly as it appears in db/prepared/. */
@@ -103,8 +107,13 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'governed chain cannot reach.',
   },
   {
-    // M-2, the second half of the prechain pair. Separate from the first for
-    // the same reason stella_0005d is separate from stella_0004 locally.
+    // M-2, the SECOND OF THREE. It was written as "the second half of the
+    // prechain pair", and the pair turned out not to be enough: see the entry
+    // below. The package's own pinned SQL still says "pair" and is deliberately
+    // NOT edited — it is audited and installed-shaped, and the correction
+    // belongs where the reader looks (db/prepared/README.md), not in a rewrite
+    // of the artefact. Separate from the first for the same reason stella_0005d
+    // is separate from stella_0004 locally.
     id: PRECHAIN_STORAGE_USAGE.id,
     reason: PRECHAIN_STORAGE_USAGE.forwardOnlyNoRollbackReason,
     reversalPath:
@@ -112,6 +121,19 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'uellix_owner`, issued by the principal that applied this package, undoes it — and returns ' +
       'the two SECURITY DEFINER helpers to answering false for every caller, which is the ' +
       'outage stella_0005d was written to close locally.',
+  },
+  {
+    // M-2, the third of the prechain trio. Separate from the first two for the
+    // same reason they are separate from each other: a different object class,
+    // and two pinned contracts that both say they do not do this.
+    id: PRECHAIN_STORAGE_TABLE_READ.id,
+    reason: PRECHAIN_STORAGE_TABLE_READ.forwardOnlyNoRollbackReason,
+    reversalPath:
+      'There is none by script. A single administrative `REVOKE SELECT ON TABLE ' +
+      'public.organization_members FROM uellix_owner`, issued by the principal that applied this ' +
+      'package, undoes it — and returns both SECURITY DEFINER helpers to answering false for ' +
+      'every caller on read and on write, which is the outage measured on the certification ' +
+      'shape before this package existed.',
   },
 ]
 

@@ -40,6 +40,19 @@ export interface CertificationEvidence {
   readonly prechainAuthorityGatePassed: boolean
   /** Every declared package applied and measured INSTALLED. */
   readonly chainComplete: boolean
+  /**
+   * M-2. The Storage role matrix, driven through the REAL storage.objects
+   * policies on the final managed shape.
+   *
+   * SEPARATE FROM `chainComplete` because the two are independent, and that
+   * independence is the whole finding: T11 was measured INSTALLED — function
+   * present, four roles in the body, owner and ACL intact, all three policies
+   * untouched — on a database where every one of the nine cases was refused,
+   * because uellix_owner could not SELECT public.organization_members and the
+   * helper bodies swallow their own permission error. Structural witnesses
+   * cannot see that. COMPLETE now requires calling the thing.
+   */
+  readonly storageFunctionalProbe: { readonly ran: boolean; readonly passed: boolean; readonly detail: string }
   readonly refusals: readonly { readonly id: string; readonly refused: boolean }[]
   readonly injections: readonly {
     readonly id: string
@@ -53,6 +66,7 @@ export type CertificationPredicateId =
   | 'PRECHAIN_CLEAN'
   | 'PRECHAIN_AUTHORITY_GATE_PASSED'
   | 'CHAIN_COMPLETE'
+  | 'STORAGE_HELPER_FUNCTIONAL_PROBE'
   | 'ALL_REQUIRED_REFUSALS_REFUSED'
   | 'ALL_FAILURE_INJECTIONS_FAILED_AND_ROLLED_BACK'
 
@@ -75,6 +89,11 @@ const VERDICT_WHEN_FAILED: Readonly<Record<CertificationPredicateId, string>> = 
   PRECHAIN_CLEAN: 'PRECHAIN_INVALID',
   PRECHAIN_AUTHORITY_GATE_PASSED: 'PRECHAIN_AUTHORITY_GATE_FAILED',
   CHAIN_COMPLETE: 'CHAIN_INCOMPLETE_INJECTIONS_RUN',
+  // A NEW string, deliberately: a chain that installed and a surface that
+  // denies everyone are different outcomes, and collapsing the second into
+  // CHAIN_INCOMPLETE would say the installation failed when it did not — which
+  // is the sentence that would send the next reader to the wrong place.
+  STORAGE_HELPER_FUNCTIONAL_PROBE: 'STORAGE_HELPER_FUNCTIONAL_PROBE_FAILED',
   ALL_REQUIRED_REFUSALS_REFUSED: 'REQUIRED_REFUSAL_NOT_REFUSED',
   ALL_FAILURE_INJECTIONS_FAILED_AND_ROLLED_BACK: 'FAILURE_INJECTION_NOT_CONTAINED',
 }
@@ -146,6 +165,14 @@ export function certificationPredicates(
       id: 'CHAIN_COMPLETE',
       holds: evidence.chainComplete,
       detail: 'every declared package applied and measured INSTALLED',
+    },
+    {
+      id: 'STORAGE_HELPER_FUNCTIONAL_PROBE',
+      // `ran && passed`, never `passed` alone. A probe that did not run reports
+      // passed=false already, but stating the conjunction here means a future
+      // shape that forgets to set one of the two cannot default into a pass.
+      holds: evidence.storageFunctionalProbe.ran && evidence.storageFunctionalProbe.passed,
+      detail: `the Storage role matrix, driven through the real storage.objects policies — ${evidence.storageFunctionalProbe.detail}`,
     },
     refusalsHold(evidence),
     injectionsHold(evidence),

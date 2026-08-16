@@ -137,6 +137,14 @@ import {
   sha256OfPreparedSql as sha256OfPrechainOwnershipSql,
 } from '../db/hosted/prechain-ownership'
 import {
+  STORAGE_FUNCTIONAL_FIXTURE_SQL,
+  STORAGE_FUNCTIONAL_MATRIX_SQL,
+  evaluateStorageFunctionalProbe,
+  storageFunctionalNotRun,
+  type StorageFunctionalObservation,
+  type StorageFunctionalResult,
+} from '../db/hosted/authority/certification/storage-functional-probe'
+import {
   PRECHAIN_REMEDIATION,
   authorizeGovernedT1,
   classifyRemediation,
@@ -971,6 +979,42 @@ function main(): number {
   report.chain = chain
   report.chainInstalled = installed
 
+  /* M-2. THE FUNCTIONAL PROBE, for the same reason pg176-certify.ts runs one.
+   *
+   * `installed === inputs.length` is a statement about witnesses. It was TRUE on
+   * a managed shape where every evidence upload was refused, because
+   * uellix_owner could not SELECT public.organization_members and both SECURITY
+   * DEFINER helpers swallow their own permission error. This drives the real
+   * storage.objects policies as `authenticated` and makes COMPLETE mean the
+   * surface works, not only that it installed. */
+  const storageFunctional: StorageFunctionalResult = (() => {
+    if (installed !== inputs.length) {
+      return storageFunctionalNotRun(
+        `only ${installed}/${inputs.length} packages installed, so there is no final shape to drive the policies on`,
+      )
+    }
+    try {
+      const fixture = applySql(primary, STORAGE_FUNCTIONAL_FIXTURE_SQL)
+      if (fixture.status !== 0) {
+        return storageFunctionalNotRun(`the fixture failed to apply: ${diagnosticLines(fixture.stderr)}`)
+      }
+      return evaluateStorageFunctionalProbe(
+        JSON.parse(queryDocument(primary, STORAGE_FUNCTIONAL_MATRIX_SQL)) as StorageFunctionalObservation,
+      )
+    } catch (error) {
+      return storageFunctionalNotRun(
+        `the probe raised: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  })()
+  report.storageFunctionalProbe = storageFunctional
+  console.log(
+    `[rem] STORAGE_FUNCTIONAL ran=${storageFunctional.ran} passed=${storageFunctional.passed} — ${storageFunctional.detail}`,
+  )
+  for (const m of storageFunctional.mismatches) {
+    console.log(`[rem]   MISMATCH ${m.caseId}.${m.operation}: expected ${m.expected}, observed ${m.observed}`)
+  }
+
   const finalPosture = measurePosture(primary, postureSql)
   const postconditions = {
     ownerTransfers: evaluateOwnerTransfers(expectedTransfers, finalPosture),
@@ -1076,6 +1120,13 @@ function main(): number {
     // Derived, for the reason stated where `installed` is compared above.
     POST_REMEDIATION_GOVERNED_CHAIN:
       installed === inputs.length ? `${installed}_OF_${inputs.length}_PASS` : 'INCOMPLETE',
+    // M-2. INDEPENDENT of the line above, which is the finding: the chain read
+    // 11_OF_11_PASS while every one of the nine role-matrix cases was refused.
+    // `ran && passed`, so a probe that never ran cannot pass by absence.
+    STORAGE_HELPER_FUNCTIONAL_PROBE:
+      storageFunctional.ran && storageFunctional.passed
+        ? `PASS_${storageFunctional.cases}_CASES`
+        : 'FAIL',
     OWNER_TRANSFERS_ENGINE: postconditions.ownerTransfers.pass
       ? `${postconditions.ownerTransfers.correct}_OF_${postconditions.ownerTransfers.total}_CORRECT`
       : 'INCOMPLETE',

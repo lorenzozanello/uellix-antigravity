@@ -477,6 +477,7 @@ describe('COMPLETE is a conjunction, and the refusals are in it', () => {
     prechainClean: true,
     prechainAuthorityGatePassed: true,
     chainComplete: true,
+    storageFunctionalProbe: { ran: true, passed: true, detail: '10/10 cases matched' },
     refusals: REQUIRED_REFUSAL_IDS.map((id) => ({ id, refused: true })),
     injections: [{ id: 'F1', failed: true, rolledBack: true }],
   }
@@ -484,6 +485,60 @@ describe('COMPLETE is a conjunction, and the refusals are in it', () => {
   it('reaches COMPLETE when every predicate holds', () => {
     expect(certificationVerdict(passing)).toBe('COMPLETE')
     expect(certificationPredicates(passing).every((p) => p.holds)).toBe(true)
+  })
+
+  // M-2. The certification blind spot, as three cases that must each break
+  // COMPLETE. The defect was not that the probe answered wrongly — there was no
+  // probe, and eleven structural witnesses said INSTALLED over a Storage
+  // surface that refused all nine role-matrix cases.
+  it('CANNOT reach COMPLETE when the Storage functional probe FAILS (M-2)', () => {
+    const denied: CertificationEvidence = {
+      ...passing,
+      storageFunctionalProbe: {
+        ran: true,
+        passed: false,
+        detail: '9 mismatch(es): analyst.write expected ALLOW, observed DENY',
+      },
+    }
+    expect(certificationVerdict(denied)).not.toBe('COMPLETE')
+    expect(certificationVerdict(denied)).toBe('STORAGE_HELPER_FUNCTIONAL_PROBE_FAILED')
+  })
+
+  it('CANNOT reach COMPLETE when the Storage functional probe DID NOT RUN', () => {
+    // Skipping the probe must not be a way to pass it — the same rule the
+    // missing-refusal case above encodes, for the newest predicate.
+    const skipped: CertificationEvidence = {
+      ...passing,
+      storageFunctionalProbe: { ran: false, passed: false, detail: 'NOT RUN' },
+    }
+    expect(certificationVerdict(skipped)).not.toBe('COMPLETE')
+    expect(certificationVerdict(skipped)).toBe('STORAGE_HELPER_FUNCTIONAL_PROBE_FAILED')
+  })
+
+  it('CANNOT reach COMPLETE on a probe that claims to pass without having run', () => {
+    // The incoherent shape a future refactor could produce. `ran && passed` is
+    // written as a conjunction precisely so this cannot default into a pass.
+    const incoherent: CertificationEvidence = {
+      ...passing,
+      storageFunctionalProbe: { ran: false, passed: true, detail: 'claims a pass it never measured' },
+    }
+    expect(certificationVerdict(incoherent)).not.toBe('COMPLETE')
+  })
+
+  it('separates INSTALLATION from FUNCTION, which is the whole finding', () => {
+    // A chain that installed perfectly and a surface that denies everyone is
+    // exactly the state Fable measured. The two predicates must be independent,
+    // and the verdict must name the functional one rather than blaming the
+    // installation — otherwise the next reader is sent to the wrong place.
+    const installedButDead: CertificationEvidence = {
+      ...passing,
+      chainComplete: true,
+      storageFunctionalProbe: { ran: true, passed: false, detail: 'all nine cases denied' },
+    }
+    const predicates = certificationPredicates(installedButDead)
+    expect(predicates.find((p) => p.id === 'CHAIN_COMPLETE')!.holds).toBe(true)
+    expect(predicates.find((p) => p.id === 'STORAGE_HELPER_FUNCTIONAL_PROBE')!.holds).toBe(false)
+    expect(certificationVerdict(installedButDead)).toBe('STORAGE_HELPER_FUNCTIONAL_PROBE_FAILED')
   })
 
   it('CANNOT reach COMPLETE when the unknown package resolves (F-1)', () => {

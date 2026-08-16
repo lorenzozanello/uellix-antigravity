@@ -78,7 +78,7 @@
     {
       "packageId": "T11",
       "path": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
-      "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68"
+      "digest": "69dc9c34c5440a1f2f236d124d7a6152acea4a3575d0d3a96385e6110d960410"
     }
   ],
   "refusals": [
@@ -148,6 +148,13 @@
         {
           "packageId": "stella_hosted_0004_storage_schema_usage",
           "digest": "00071f423801df29771bd284e33e34c1c3d731d96efbd90136f57feebedb552a",
+          "exitStatus": 0,
+          "error": null,
+          "inHostedChain": false
+        },
+        {
+          "packageId": "stella_hosted_0005_storage_helper_table_read",
+          "digest": "038d16303a28c7cb40de8649bc8f549b8af1dcec0925ba1a4a521a28a84e26a8",
           "exitStatus": 0,
           "error": null,
           "inHostedChain": false
@@ -996,7 +1003,7 @@
     {
       "packageId": "T11",
       "sourcePath": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
-      "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68",
+      "digest": "69dc9c34c5440a1f2f236d124d7a6152acea4a3575d0d3a96385e6110d960410",
       "stateBefore": "ABSENT",
       "exitStatus": 0,
       "error": null,
@@ -1848,6 +1855,56 @@
     "installedPackageAction": "refuse",
     "note": "All 11 of the 11 declared packages are observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
   },
+  "storageFunctionalProbe": {
+    "ran": true,
+    "passed": true,
+    "cases": 10,
+    "mismatches": [],
+    "observation": {
+      "super_admin": {
+        "write": "ALLOW",
+        "read": "ALLOW"
+      },
+      "organization_admin": {
+        "write": "ALLOW",
+        "read": "ALLOW"
+      },
+      "impact_manager": {
+        "write": "ALLOW",
+        "read": "ALLOW"
+      },
+      "analyst": {
+        "write": "ALLOW",
+        "read": "ALLOW"
+      },
+      "reviewer": {
+        "write": "DENY",
+        "read": "ALLOW"
+      },
+      "viewer": {
+        "write": "DENY",
+        "read": "ALLOW"
+      },
+      "inactive_membership": {
+        "write": "DENY",
+        "read": "DENY"
+      },
+      "no_membership": {
+        "write": "DENY",
+        "read": "DENY"
+      },
+      "cross_org": {
+        "write": "DENY",
+        "read": "DENY"
+      },
+      "cross_org_own_project": {
+        "write": "ALLOW",
+        "read": "DENY"
+      }
+    },
+    "detail": "10/10 cases matched the declared matrix, driven through the storage.objects policies as `authenticated` with real request.jwt.claim.sub claims",
+    "shimNote": "storage.objects is the four-column shim and storage.foldername is a string_to_array stand-in (both declared in LAB_SHIMS). The three storage policies, both SECURITY DEFINER helpers, the RLS on public.projects and public.organization_members, and every privilege the prechain units produced are REAL. The shim supplies a table and a path parser and no authorisation."
+  },
   "injections": [
     {
       "id": "F1",
@@ -2080,6 +2137,11 @@
       "id": "CHAIN_COMPLETE",
       "holds": true,
       "detail": "every declared package applied and measured INSTALLED"
+    },
+    {
+      "id": "STORAGE_HELPER_FUNCTIONAL_PROBE",
+      "holds": true,
+      "detail": "the Storage role matrix, driven through the real storage.objects policies — 10/10 cases matched the declared matrix, driven through the storage.objects policies as `authenticated` with real request.jwt.claim.sub claims"
     },
     {
       "id": "ALL_REQUIRED_REFUSALS_REFUSED",
