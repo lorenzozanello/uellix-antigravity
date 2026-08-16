@@ -48,8 +48,22 @@ type RedactionRule = {
 //  4. Phones last.
 const RULES: readonly RedactionRule[] = [
   {
+    // F-GB-01: the trailing class excludes QUOTE characters, not just
+    // whitespace. It used to be `[^\s]+`, which made this rule unsafe to run
+    // over any serialized structure — minified JSON has no whitespace, so one
+    // match ran past the closing quote and ate the following keys. The failure
+    // was silent rather than loud: redacting
+    //   {"a":"https://u:pw@h.test/x","b":"siguiente valor","c":42}
+    // produced {"a":"[REDACTED:url-credentials] valor","c":42} — still valid
+    // JSON, with key `b` deleted. At the model boundary that would have
+    // reshaped the payload out from under the citation catalog, silently
+    // re-pointing every sourceRefIndex the model returns at the wrong field.
+    //
+    // Excluding quotes costs nothing in prose (a URL cannot contain a bare
+    // quote) and makes every rule in this file safe to compose over
+    // structured text.
     kind: 'url-credentials',
-    pattern: /\bhttps?:\/\/[^\s/:@]+:[^\s/@]+@[^\s]+/gi,
+    pattern: /\bhttps?:\/\/[^\s/:@]+:[^\s/@]+@[^\s"'`]+/gi,
     replace: '[REDACTED:url-credentials]',
   },
   {

@@ -4,6 +4,7 @@
 // labels, PII redaction on all free-text paths.
 
 import { redactPii } from '../security/redact-pii'
+import { redactModelBoundPayload } from '../security/redact-model-bound'
 
 // Secret-oriented patterns — matched case-insensitively as substrings.
 const FORBIDDEN_PATTERNS = [
@@ -144,9 +145,21 @@ export const UNTRUSTED_DATA_MARKER = 'UNTRUSTED_PROJECT_DATA'
  * the marker on its own line followed by a single JSON payload.
  * JSON.stringify escapes newlines and quotes, so payload content can never
  * start a new line, close the envelope, or spoof the marker at line start.
+ *
+ * F-GB-01: the payload is deep-redacted BEFORE serialization, while it is
+ * still a structure. Redacting the serialized string instead would let a
+ * whitespace-bounded rule run past a closing quote and delete the following
+ * key — silently, since the result still parses. Walking string leaves keeps
+ * keys, array lengths and numbers identical, which is what the request-local
+ * citation catalog is computed from.
+ *
+ * This is DEFENSE IN DEPTH. The authoritative boundary is
+ * `redactProviderRequest`, applied inside the adapter, because that is the
+ * only point every caller must pass through. Both are idempotent, so a
+ * payload redacted here is unchanged by the second pass.
  */
 export function wrapUntrustedData(payload: unknown): string {
-  return `${UNTRUSTED_DATA_MARKER}\n${JSON.stringify(payload)}`
+  return `${UNTRUSTED_DATA_MARKER}\n${JSON.stringify(redactModelBoundPayload(payload))}`
 }
 
 /**

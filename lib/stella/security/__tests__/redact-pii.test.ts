@@ -154,3 +154,57 @@ describe('redactPii — combinations and edges', () => {
     expect(result.text).toBe('Antes [REDACTED:email] después')
   })
 })
+
+describe('F-GB-01 — every rule is quote-bounded, so redaction composes over JSON', () => {
+  // THE SILENT FAILURE THIS GUARDS.
+  //
+  // `url-credentials` used to end in `[^\s]+`. Minified JSON contains no
+  // whitespace, so one match ran past the closing quote and consumed the
+  // following keys — and the result STILL PARSED, one key short:
+  //
+  //   in : {"a":"https://u:pw@h.test/x","b":"siguiente valor","c":42}
+  //   out: {"a":"[REDACTED:url-credentials] valor","c":42}
+  //
+  // At the model boundary that reshapes the payload out from under the
+  // request-local citation catalog — which is built from keys and array
+  // indexes — silently re-pointing every sourceRefIndex the model returns at
+  // the wrong field. Nothing throws; the answer is just wrong.
+  it('does not destroy a following key when redacting inside serialized JSON', () => {
+    const payload = {
+      a: 'https://operador:not-a-real-password@panel.ejemplo.test/informes',
+      b: 'siguiente valor',
+      c: 42,
+    }
+
+    const out = redactPii(JSON.stringify(payload)).text
+    const parsed = JSON.parse(out) as Record<string, unknown>
+
+    expect(Object.keys(parsed)).toEqual(['a', 'b', 'c'])
+    expect(parsed.b).toBe('siguiente valor')
+    expect(parsed.c).toBe(42)
+    expect(out).not.toContain('not-a-real-password')
+  })
+
+  it('still redacts a credentialled URL in ordinary prose', () => {
+    // The quote bound must not cost coverage where it matters.
+    const out = redactPii('Ver https://admin:not-a-real-pw@repo.ejemplo.test/data.csv archivado').text
+    expect(out).not.toContain('not-a-real-pw')
+    expect(out).toContain('[REDACTED:url-credentials]')
+    expect(out).toContain('archivado')
+  })
+
+  it('no rule crosses a JSON string boundary, for any PII class', () => {
+    const payload = {
+      email: 'ana.gomez@ejemplo.test',
+      phone: '+57 300 123 4567',
+      doc: 'cédula 1.234.567.890',
+      url: 'https://u:not-a-real-pw@h.ejemplo.test/x',
+      tail: 'SENTINEL_TAIL',
+      n: 7,
+    }
+    const parsed = JSON.parse(redactPii(JSON.stringify(payload)).text) as Record<string, unknown>
+    expect(Object.keys(parsed)).toEqual(['email', 'phone', 'doc', 'url', 'tail', 'n'])
+    expect(parsed.tail).toBe('SENTINEL_TAIL')
+    expect(parsed.n).toBe(7)
+  })
+})

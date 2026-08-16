@@ -2,9 +2,11 @@
 // Sprint 9B: Stella Gemini adapter - server-only, request/response, no streaming
 // Dynamic import of @google/genai ensures this stays server-side only (never bundled client)
 
+import { redactSecrets } from '@/lib/security/redact-secrets'
 import { stellaConfig } from '../config'
 import { StellaParseError, StellaGeminiError, StellaTimeoutError } from '../errors'
 import { assertPromptWithinLimit } from '../security/payload-limits'
+import { redactProviderRequest } from '../security/redact-model-bound'
 import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig } from './types'
 
 export class StellaGeminiAdapter {
@@ -36,16 +38,35 @@ export class StellaGeminiAdapter {
     // oversized payload can never reach the model or count against quota.
     assertPromptWithinLimit(request, this.config.maxPromptChars)
 
+    // F-GB-01: THE MODEL BOUNDARY.
+    //
+    // Every path to a provider — the four Stella server actions, the
+    // contextual advisor pipeline and the offline eval harness — reaches the
+    // network through this method, so this is the one place where "no personal
+    // data and no credential leaves the application" can be stated as a fact
+    // about the system rather than as a rule each caller has to remember.
+    //
+    // It sits AHEAD of the mockProvider branch deliberately. A test provider
+    // must observe exactly the bytes Google would observe; if this moved below
+    // the branch, every redaction assertion written against a mock would go
+    // quietly vacuous while the live path leaked.
+    const safeRequest = redactProviderRequest(request)
+
+    // A redaction token can be longer than the value it replaced, so the cap
+    // is re-checked against what actually egresses rather than only against
+    // what the caller submitted.
+    assertPromptWithinLimit(safeRequest, this.config.maxPromptChars)
+
     // Tests inject a mock provider — no real Gemini calls ever happen in tests
     if (this.mockProvider) {
-      return this.mockProvider.generate(request)
+      return this.mockProvider.generate(safeRequest)
     }
 
     if (!this.config.apiKey) {
       throw new Error('GEMINI_API_KEY is required but not configured')
     }
 
-    return this.generateWithTimeout(request, this.config.timeoutMs)
+    return this.generateWithTimeout(safeRequest, this.config.timeoutMs)
   }
 
   private async generateWithTimeout(request: StellaRequest, timeoutMs: number): Promise<StellaResponse> {
@@ -100,7 +121,16 @@ export class StellaGeminiAdapter {
         role: request.role,
         ...buildGeminiErrorLog(error, this.config.apiKey),
       })
-      throw new StellaGeminiError(error instanceof Error ? error.message : String(error))
+      // F-GB-02: the message is redacted at CONSTRUCTION, not at each of the
+      // places that later read it. A provider error routinely echoes the
+      // failing request — the key in the query string of a 403, a bearer token
+      // from a proxy, the request body on a 400 — and this object then travels
+      // to `reportStellaFailure` (Sentry) and into server logs. Redacting here
+      // means every downstream consumer inherits it, including ones written
+      // after this line.
+      throw new StellaGeminiError(
+        redactSecrets(error instanceof Error ? error.message : String(error), [this.config.apiKey])
+      )
     } finally {
       clearTimeout(timeoutId)
     }
@@ -129,14 +159,29 @@ export class StellaGeminiAdapter {
 
 /**
  * Extract a safe, structured summary of a Gemini/@google/genai error for
- * server-side logging. Redacts the API key so it never lands in logs.
+ * server-side logging.
+ *
+ * F-GB-02: this used to redact by splitting the message on the CONFIGURED key
+ * — `apiKey ? rawMessage.split(apiKey).join('[REDACTED]') : rawMessage`. Two
+ * holes, both load-bearing:
+ *
+ *   1. It defended against exactly one value. A Postgres DSN echoed by a
+ *      driver, a bearer token in a proxy's 401, a session cookie in a captured
+ *      header all passed through untouched.
+ *   2. When `apiKey` is the empty string — the mock-provider and test
+ *      configuration, and any misconfigured deployment — the ternary forwards
+ *      the RAW message. The redaction disappeared exactly when the
+ *      configuration was already wrong.
+ *
+ * Now the pattern rules decide, and the configured key is passed as one more
+ * known value on top of them rather than as the mechanism.
  */
 export function buildGeminiErrorLog(
   error: unknown,
   apiKey: string
 ): { status?: number; message: string } {
   const rawMessage = error instanceof Error ? error.message : String(error)
-  const message = apiKey ? rawMessage.split(apiKey).join('[REDACTED]') : rawMessage
+  const message = redactSecrets(rawMessage, [apiKey])
 
   const statusValue = (error as { status?: unknown } | null)?.status
   const status = typeof statusValue === 'number' ? statusValue : undefined

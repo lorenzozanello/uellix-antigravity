@@ -15,6 +15,8 @@
 
 import * as Sentry from '@sentry/nextjs'
 
+import { redactSecrets } from '@/lib/security/redact-secrets'
+
 export type StellaFailureCode =
   | 'GEMINI_ERROR'
   | 'TIMEOUT'
@@ -31,12 +33,26 @@ export type StellaObservabilityMeta = Record<string, string | number | boolean |
 const MAX_SENTRY_MESSAGE_CHARS = 200
 
 /**
- * Clone an Error for Sentry with a truncated message and a stack whose header
- * line is rebuilt from the truncated message (V8 stacks embed the FULL message
- * in their first line — copying the stack verbatim would undo the truncation).
+ * Clone an Error for Sentry with a REDACTED, truncated message and a stack
+ * whose header line is rebuilt from it (V8 stacks embed the FULL message in
+ * their first line — copying the stack verbatim would undo the truncation).
+ *
+ * F-GB-02: redaction happens BEFORE truncation, and it is the part that was
+ * missing. Truncation only defends against a message long enough to be an
+ * echoed request body; a 39-character Gemini key inside
+ * `Gemini 403: API key AIza… is blocked` sits at offset 20 and sailed through
+ * the 200-char window untouched. Order matters the other way too: redacting
+ * first means a credential straddling the cut is removed as a whole value
+ * rather than left as a truncated fragment.
+ *
+ * This is now the SECOND of two defenses — `beforeSend` scrubs the assembled
+ * event as well. Both are kept: this one also shapes the message length, and a
+ * boundary that depends on exactly one hook being registered is a boundary one
+ * config edit away from being gone.
  */
 function sanitizeErrorForSentry(error: Error): Error {
-  const truncated = error.message.slice(0, MAX_SENTRY_MESSAGE_CHARS)
+  const redacted = redactSecrets(error.message)
+  const truncated = redacted.slice(0, MAX_SENTRY_MESSAGE_CHARS)
   const clone = new Error(truncated)
   clone.name = error.name
   if (error.stack) {

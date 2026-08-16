@@ -1,6 +1,7 @@
 import { ADVISOR_STEP_CONTRACTS } from '../advisor/step-contracts'
 import { assertAdvisorPipelineStep, type AdvisorPipelineStep } from '../advisor/steps'
 import { buildAdvisorStepContext } from '../context/build-advisor-step-context'
+import { wrapUntrustedData } from '../context/sanitize'
 import type { ContextualAdvisorContext } from '../context/types'
 import { SHARED_GUARDRAILS, SENSITIVE_POPULATIONS_NOTICE } from './shared-guardrails'
 
@@ -71,5 +72,12 @@ export function buildAdvisorContextualUserMessage(
   const sensitiveNotice = context.sensitivePopulations?.detected
     ? `${SENSITIVE_POPULATIONS_NOTICE}\n\n`
     : ''
-  return `${sensitiveNotice}UNTRUSTED_PROJECT_DATA\n${JSON.stringify(payload)}`
+  // F-GB-01: this line used to inline the envelope as
+  // `UNTRUSTED_PROJECT_DATA\n${JSON.stringify(payload)}`, which meant it was
+  // the one builder that never went through `wrapUntrustedData` — and so the
+  // one builder no redaction applied to. Of the whole slice only
+  // `narrativeSummary` was scrubbed, and only because `sanitizeNarrative`
+  // happens to call redactPii upstream; project titles, stakeholder names,
+  // outcome descriptions and evidence titles were serialized verbatim.
+  return `${sensitiveNotice}${wrapUntrustedData(payload)}`
 }

@@ -255,3 +255,65 @@ describe('wrapUntrustedData / markAsData (envelope)', () => {
     expect(markAsData('hello')).toBe(`${UNTRUSTED_DATA_MARKER}\n"hello"`)
   })
 })
+
+describe('wrapUntrustedData — F-GB-01 deep redaction, on its own', () => {
+  // WHY THIS EXISTS. The provider-boundary suite proves the request Gemini
+  // would receive is clean — but it stays clean even with this layer removed,
+  // because the adapter redacts too. Defense in depth made this layer
+  // invisible to its own tests, and a mutation removing it survived. These
+  // assertions call `wrapUntrustedData` directly so the envelope is pinned
+  // independently of the boundary downstream of it.
+  const payloadOf = (wrapped: string): unknown =>
+    JSON.parse(wrapped.slice(UNTRUSTED_DATA_MARKER.length + 1))
+
+  it('redacts personal data in a nested structured field', () => {
+    const wrapped = wrapUntrustedData({
+      projectName: 'Programa contacto ana.gomez@ejemplo-fundacion.test',
+      stakeholders: [{ name: 'Carlos Díaz', phone: '+57 300 123 4567' }],
+    })
+    expect(wrapped).not.toContain('ana.gomez@ejemplo-fundacion.test')
+    expect(wrapped).not.toContain('+57 300 123 4567')
+  })
+
+  it('redacts credential material arriving as project content', () => {
+    const wrapped = wrapUntrustedData({
+      evidence: [{ excerpt: 'runbook: GEMINI_API_KEY=AIzaSyNOT_A_REAL_KEY_000000000000000000' }],
+    })
+    expect(wrapped).not.toContain('AIzaSyNOT_A_REAL_KEY_000000000000000000')
+  })
+
+  it('preserves structure exactly — keys, array length, numbers', () => {
+    const wrapped = wrapUntrustedData({
+      id: 'outcome-1',
+      beneficiaries: 3500,
+      ratio: 2.4,
+      groups: ['a', 'b', 'c'],
+      nested: { ok: true, missing: null },
+    })
+    expect(payloadOf(wrapped)).toEqual({
+      id: 'outcome-1',
+      beneficiaries: 3500,
+      ratio: 2.4,
+      groups: ['a', 'b', 'c'],
+      nested: { ok: true, missing: null },
+    })
+  })
+
+  it('stays a two-line, parseable envelope after redaction', () => {
+    const wrapped = wrapUntrustedData({
+      a: 'https://operador:not-a-real-password@panel.ejemplo.test/x',
+      b: 'siguiente valor',
+      c: 42,
+    })
+    expect(wrapped.split('\n')).toHaveLength(2)
+    // The silent failure this guards: a whitespace-bounded rule eating the
+    // closing quote and deleting key `b` while still producing valid JSON.
+    expect(payloadOf(wrapped)).toMatchObject({ b: 'siguiente valor', c: 42 })
+  })
+
+  it('is idempotent — wrapping already-redacted content changes nothing more', () => {
+    const once = payloadOf(wrapUntrustedData({ v: 'correo ana.gomez@ejemplo-fundacion.test' }))
+    const twice = payloadOf(wrapUntrustedData(once))
+    expect(twice).toEqual(once)
+  })
+})

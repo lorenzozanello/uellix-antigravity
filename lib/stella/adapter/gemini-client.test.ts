@@ -148,7 +148,11 @@ describe('buildGeminiErrorLog', () => {
     const log = buildGeminiErrorLog(error, apiKey)
 
     expect(log.message).not.toContain(apiKey)
-    expect(log.message).toContain('[REDACTED]')
+    // F-GB-02: the marker names the RULE that fired ('[REDACTED:known-secret]',
+    // '[REDACTED:google-api-key]', …) rather than being a bare '[REDACTED]',
+    // so a reader can tell why a value went. Asserted as a prefix so adding a
+    // rule never breaks this test.
+    expect(log.message).toContain('[REDACTED:')
   })
 
   it('extracts the HTTP status code from a @google/genai ApiError', () => {
