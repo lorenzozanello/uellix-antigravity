@@ -103,6 +103,10 @@ import {
   type FailureInjection,
 } from '../db/hosted/authority/certification/failure-injection'
 import { BASELINE_UNITS } from '../db/hosted/baseline-manifest'
+import {
+  PRECHAIN_ADMINISTRATIVE_UNITS,
+  sha256OfPreparedSql,
+} from '../db/hosted/prechain-ownership'
 import { classifyAllPackages, type ObservedWitnesses } from '../db/hosted/package-witnesses'
 import { hostedArtefactPath, BOOTSTRAP_ARTEFACT } from '../db/hosted/authority/ownership-simulation'
 import { CHAIN_PACKAGE_FILES } from '../db/hosted/authority/window-plan'
@@ -551,6 +555,18 @@ interface ProvisionOutcome {
   readonly measuredClassC: Record<string, string>
   /** The prerequisite stella_hosted_0001 refuses to mint for itself. */
   readonly sentinelWritten: boolean
+  readonly prechainAdministrative: {
+    readonly appliedAs: string
+    readonly allApplied: boolean
+    readonly units: readonly {
+      readonly packageId: string
+      readonly digest: string
+      readonly exitStatus: number | null
+      readonly error: string | null
+      readonly inHostedChain: false
+    }[]
+    readonly inHostedChain: false
+  }
   /** What T1 said when the sentinel was still absent. `null` means it APPLIED. */
   readonly sentinelRefusalBeforeWrite: string | null
 }
@@ -596,6 +612,14 @@ function provision(container: string): ProvisionOutcome {
   let bootstrapError: string | null = null
   let sentinelWritten = false
   let sentinelRefusalBeforeWrite: string | null = null
+  let ownershipReconciled = false
+  const prechainAdmin: {
+    packageId: string
+    digest: string
+    exitStatus: number | null
+    error: string | null
+    inHostedChain: false
+  }[] = []
   if (failures.length === 0) {
     const bootstrapSql = readFileSync(hostedArtefactPath(BOOTSTRAP_ARTEFACT, ROOT), 'utf8')
     const result = applySql(container, `${BOOTSTRAP_ENVIRONMENT_SETTING}\n${bootstrapSql}`)
@@ -625,6 +649,46 @@ function provision(container: string): ProvisionOutcome {
     sentinelWritten = sentinel.status === 0
     if (!sentinelWritten) bootstrapError = `sentinel: ${sentinel.stderr.trim()}`
 
+    // M-2. THE PRECHAIN OWNERSHIP RECONCILIATION, and the identity it runs
+    // under is the whole point of it being here rather than in the chain.
+    //
+    // `applySql` is the UNRESTRICTED path — the one that applied the baseline
+    // units, i.e. `postgres`. The chain below runs through `applyPackageSql`,
+    // which is `uellix_migrator`. This package must use the first because the
+    // baseline units left the Storage helpers owned by the role that created
+    // them, and `ALTER FUNCTION … OWNER TO` requires membership in the CURRENT
+    // owner. Running it on the migrator path is not a stricter version of the
+    // same thing; it is impossible, which is exactly what T11 refusing at 10/11
+    // measured before this package existed.
+    //
+    // Pinned before it is applied, for the same reason every governed input is:
+    // a byte change here would otherwise certify a file nobody reviewed.
+    // BOTH units, IN ORDER. The second refuses unless the first has run — its
+    // §0.4 requires a SECURITY DEFINER helper already owned by uellix_owner —
+    // so the sequence is enforced by the packages rather than by this loop.
+    for (const unit of PRECHAIN_ADMINISTRATIVE_UNITS) {
+      const unitSql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      const digest = sha256OfPreparedSql(unitSql)
+      if (digest !== unit.sourceSha256) {
+        throw new Error(
+          `PRECHAIN_ADMIN_PIN_MISMATCH: ${unit.sourceFile} hashes to ${digest} and the ` +
+            `registry pins ${unit.sourceSha256}.`,
+        )
+      }
+      const applied = applySql(container, unitSql)
+      prechainAdmin.push({
+        packageId: unit.id,
+        digest,
+        exitStatus: applied.status,
+        error: applied.status === 0 ? null : diagnosticLines(applied.stderr, 2),
+        inHostedChain: false,
+      })
+      if (applied.status !== 0) {
+        bootstrapError = `prechain ${unit.id}: ${diagnosticLines(applied.stderr, 2)}`
+        break
+      }
+    }
+    ownershipReconciled = prechainAdmin.every((u) => u.exitStatus === 0)
   }
 
   return {
@@ -636,6 +700,12 @@ function provision(container: string): ProvisionOutcome {
     measuredClassC,
     sentinelWritten,
     sentinelRefusalBeforeWrite,
+    prechainAdministrative: {
+      appliedAs: 'administrative (unrestricted) — NOT the chain installer',
+      allApplied: ownershipReconciled,
+      units: prechainAdmin,
+      inHostedChain: false,
+    },
   }
 }
 

@@ -1181,3 +1181,103 @@ versionado de [`../baseline/`](../baseline/README.md).
 > **El cierre LOCAL no se ve afectado y sigue medido:** 31/31 en la matriz de
 > roles sobre el cuerpo de T11 y 31/31 sobre el de la unidad 41 tras el
 > rollback, idempotencia, ACL y las tres policies sin cambios.
+
+### M-2 — reconciliación de propiedad prechain (`stella_hosted_0003`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted.** Probado por ejecución en
+contenedor desechable y por las dos certificaciones canónicas.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0003_storage_helper_ownership.sql` | **ninguno, a propósito** (`db/hosted/prechain-ownership.ts`) | **ninguno todavía**; exige el BASELINE (unidad 41) y `stella_hosted_0001` (para que exista `uellix_owner` y para la membresía que el traspaso necesita) | **No crea rol, esquema, tabla, policy ni función, y no concede ni revoca nada.** Emite exactamente **dos** sentencias: `ALTER FUNCTION public.can_read_evidence_object(text, uuid) OWNER TO uellix_owner` y la misma para `can_write_evidence_object` | **DISEÑO — no aplicado en hosted** |
+
+> **Es la única operación que no se puede delegar.** `ALTER FUNCTION … OWNER TO`
+> exige pertenencia al dueño **actual**. En gestionado ese dueño es `postgres`, y
+> `uellix_migrator` no es miembro suyo: `stella_hosted_0001` concede
+> `uellix_owner` **a** `postgres` (§297) y **a** `uellix_migrator` (§423), nunca
+> `postgres` a nadie. El patrón de T10 —membresía temporal emitida por el
+> generador gobernado— sólo alcanza roles que el propio `uellix_migrator` creó y
+> sobre los que tiene ADMIN OPTION. Por eso el traspaso lo hace `postgres` y
+> **nada más** lo hace: el cambio funcional (los cuatro roles) se queda en T11,
+> en la ruta gobernada, aplicado por `uellix_migrator` **sin ningún privilegio
+> administrativo**. Medido: tras la reconciliación, `CREATE OR REPLACE` bajo
+> `uellix_migrator` (`rolsuper = false`) + `SET LOCAL ROLE uellix_owner` **tiene
+> éxito**.
+
+> **Por qué los DOS helpers y no sólo el que T11 republica.** No es simetría:
+> `stella_0019` §0.6 afirma el dueño de **ambos** («the two helpers were
+> published and transferred together; a split ownership is a state this package
+> cannot account for»). Normalizar sólo el de escritura dejaría a T11
+> negándose en la guarda siguiente. Además el §0.3 de este paquete **rechaza**
+> una propiedad partida, porque es un estado que ni el baseline ni `stella_0004`
+> ni `stella_hosted_0001` producen.
+
+> **Lo único que no puede dejar intacto, dicho antes del código.**
+> `ALTER … OWNER TO` reescribe la entrada de ACL **del dueño**. Medido en
+> PG 17.6, dirección forward, sobre la forma hosted:
+> `{postgres=X/postgres, authenticated=X/postgres, service_role=X/postgres}` →
+> `{uellix_owner=X/uellix_owner, authenticated=X/uellix_owner, service_role=X/uellix_owner}`.
+> La entrada implícita del dueño viejo desaparece, la del nuevo se crea, y **todo
+> otro concesionario se conserva**. Así que «el ACL no cambia» sería **falso** y
+> fallaría en toda ejecución correcta; lo que la §2 afirma es que el conjunto de
+> pares (concesionario, privilegio) **no-dueño** es idéntico antes y después.
+> **Consecuencia declarada:** `postgres` pierde su EXECUTE implícito salvo que
+> tuviera además uno explícito — ninguna ruta de runtime llama a estos helpers
+> como `postgres`, y es exactamente la postura que `stella_0004` produce en
+> local.
+
+> **Por qué NO está en `HOSTED_CHAIN`.** Dos razones, y la segunda es la que
+> pesa. (1) Es una **precondición**, no un eslabón: un miembro de la cadena
+> adquiere testigos, aparece en `nextChainPackage` y pasa a ser algo que a un
+> operador se le puede decir que aplique «a continuación». (2) **Lo aplica un
+> principal distinto**: cada eslabón de `HOSTED_CHAIN` lo aplica
+> `uellix_migrator`, y éste no puede — ésa es toda su razón de existir. Contarlo
+> como miembro haría que el conteo de la cadena fuera un número que **ninguna
+> identidad puede producir por sí sola**.
+
+> **Por qué reutiliza la FORMA prechain pero no el LEDGER de intentos.** El
+> protocolo de `remediation-attempt.ts` existe porque `stella_hosted_0002` tiene
+> un resultado **ambiguo** que sólo una observación fresca puede clasificar, así
+> que nunca debe reintentarse a ciegas. `ALTER FUNCTION … OWNER TO` no tiene ese
+> resultado: es idempotente y convergente, y re-aplicarlo sobre un par ya movido
+> es un no-op cuyo ACL queda byte a byte igual (medido). Un paquete al que
+> reintentar no puede dañar no necesita un mecanismo cuyo único fin es impedir
+> el reintento.
+
+> **Orden prechain:** baseline (50 unidades) → `stella_hosted_0001` →
+> [`stella_hosted_0002` si el proyecto ya estaba bootstrapeado] →
+> **`stella_hosted_0003`** → sentinel → `HOSTED_CHAIN` T1…T11.
+
+### M-2 — USAGE sobre el esquema `storage` en hosted (`stella_hosted_0004`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted.** Es la **segunda mitad** del
+par prechain, y es un paquete aparte por la misma razón por la que
+`stella_0005d` es un script aparte de `stella_0004` en local.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0004_storage_schema_usage.sql` | **ninguno, a propósito** (`db/hosted/prechain-ownership.ts`) | **ninguno todavía**; exige `stella_hosted_0003` **ya aplicado** (precondición dura en §0.4) | **Una sola sentencia:** `GRANT USAGE ON SCHEMA storage TO uellix_owner`. Nada más | **DISEÑO — no aplicado** |
+
+> **Por qué hacen falta los dos.** Medido: con `stella_hosted_0003` aplicado y
+> éste ausente, T11 **sigue negándose** — en su §0.7 en vez de su §0.6:
+> «uellix_owner has no USAGE on schema storage, so both helpers already return
+> false for every caller (stella_0005d)». Los cuerpos de los dos helpers llaman
+> a `storage.foldername(name)` y son SECURITY DEFINER, así que esa llamada
+> resuelve con los privilegios del **dueño**. En cuanto el dueño pasa a ser
+> `uellix_owner` y ése no tiene USAGE sobre `storage`, la referencia cualificada
+> lanza **dentro** del definer, el `EXCEPTION WHEN OTHERS THEN RETURN false` del
+> propio cuerpo se la traga, y toda operación de objetos de evidencia se niega
+> **en silencio para todos los roles**. Es exactamente el agujero que
+> `stella_0005d` cerró en local, reabierto en hosted por el traspaso.
+
+> **Por qué `postgres` puede hacerlo sin superusuario.** El esquema `storage` es
+> de la plataforma y `stella_0005d` exige superusuario en local. Gestionado no
+> expone ninguno — y no le hace falta: **medido** sobre la imagen de
+> certificación, `postgres` tiene `U*` sobre ese esquema (USAGE **WITH GRANT
+> OPTION**, concedido por `supabase_admin`), que es justo el derecho a pasarlo a
+> otro rol. La §0.3 lo **pregunta** en vez de asumirlo.
+
+> **El orden es vinculante y lo impone el paquete, no el runbook.** La §0.4 de
+> `stella_hosted_0004` se niega si no hay ya un helper SECURITY DEFINER
+> propiedad de `uellix_owner`. Aplicarlo primero es una **negativa**, no un
+> reordenamiento silencioso.

@@ -133,7 +133,28 @@
       "postgres_is_superuser": "false"
     },
     "sentinelWritten": true,
-    "sentinelRefusalBeforeWrite": "psql:<stdin>:218: ERROR:  grounding_0002_document_versions aborted: the current identity (uellix_migrator) lacks what this package needs on managed Supabase: uellix_bootstrap.staging_sentinel row declaring environment=staging. This check replaced a SUPERUSER requirement; it is narrower, not weaker — a superuser satisfies all of it. / CONTEXT:  PL/pgSQL function uellix_bootstrap.assert_hosted_capabilities(text) line 85 at RAISE"
+    "sentinelRefusalBeforeWrite": "psql:<stdin>:218: ERROR:  grounding_0002_document_versions aborted: the current identity (uellix_migrator) lacks what this package needs on managed Supabase: uellix_bootstrap.staging_sentinel row declaring environment=staging. This check replaced a SUPERUSER requirement; it is narrower, not weaker — a superuser satisfies all of it. / CONTEXT:  PL/pgSQL function uellix_bootstrap.assert_hosted_capabilities(text) line 85 at RAISE",
+    "prechainAdministrative": {
+      "appliedAs": "administrative (unrestricted) — NOT the chain installer",
+      "allApplied": true,
+      "units": [
+        {
+          "packageId": "stella_hosted_0003_storage_helper_ownership",
+          "digest": "390c4fb9a4325f8ac6f4aed3dcfa8f63342d71fbfc7f5d50356c00280b49be60",
+          "exitStatus": 0,
+          "error": null,
+          "inHostedChain": false
+        },
+        {
+          "packageId": "stella_hosted_0004_storage_schema_usage",
+          "digest": "00071f423801df29771bd284e33e34c1c3d731d96efbd90136f57feebedb552a",
+          "exitStatus": 0,
+          "error": null,
+          "inHostedChain": false
+        }
+      ],
+      "inHostedChain": false
+    }
   },
   "prechain": {
     "packageStates": {
@@ -977,9 +998,9 @@
       "sourcePath": "db/prepared/hosted/governed/stella_0019_storage_write_roles.governed.sql",
       "digest": "7dd0cdbc9ff22c91d9e50ebf7677fc946ccb330e6bc79d7b355333b8d04dac68",
       "stateBefore": "ABSENT",
-      "exitStatus": 3,
-      "error": "psql:<stdin>:379: ERROR:  stella_0019 aborted: can_write_evidence_object is owned by postgres, not uellix_owner. The owner window below becomes that role to republish the body; over a differently-owned function it would either fail or transfer ownership by accident. Apply stella_0004 (local) or stella_hosted_0001 (managed) first. / CONTEXT:  PL/pgSQL function inline_code_block line 91 at RAISE",
-      "stateAfter": "ABSENT",
+      "exitStatus": 0,
+      "error": null,
+      "stateAfter": "INSTALLED",
       "temporaryMembershipsAfter": [],
       "schemaCreateResidualAfter": [],
       "providerMembershipsUnchanged": true,
@@ -993,18 +1014,18 @@
       {
         "signature": "public.can_read_evidence_object(text,uuid)",
         "schema": "public",
-        "owner": "postgres",
+        "owner": "uellix_owner",
         "securityDefiner": true,
         "proconfig": "search_path=\"\"",
-        "executeGrantees": "postgres,authenticated,service_role"
+        "executeGrantees": "uellix_owner,authenticated,service_role"
       },
       {
         "signature": "public.can_write_evidence_object(text,uuid)",
         "schema": "public",
-        "owner": "postgres",
+        "owner": "uellix_owner",
         "securityDefiner": true,
         "proconfig": "search_path=\"\"",
-        "executeGrantees": "postgres,authenticated,service_role"
+        "executeGrantees": "uellix_owner,authenticated,service_role"
       },
       {
         "signature": "public.current_user_is_super_admin()",
@@ -1555,7 +1576,7 @@
     "schemaAcls": [
       "auth|supabase_admin|supabase_admin:USAGE,supabase_admin:CREATE,anon:USAGE,authenticated:USAGE,service_role:USAGE,supabase_auth_admin:USAGE,supabase_auth_admin:CREATE,dashboard_user:USAGE,dashboard_user:CREATE,postgres:USAGE",
       "public|pg_database_owner|pg_database_owner:USAGE,pg_database_owner:CREATE,PUBLIC:USAGE,postgres:USAGE,anon:USAGE,authenticated:USAGE,service_role:USAGE,uellix_owner:USAGE,uellix_owner:CREATE,uellix_migrator:USAGE,uellix_app:USAGE,uellix_writer:USAGE,uellix_auditor:USAGE",
-      "storage|supabase_admin|supabase_admin:USAGE,supabase_admin:CREATE,postgres:USAGE,anon:USAGE,authenticated:USAGE,service_role:USAGE,supabase_storage_admin:USAGE,supabase_storage_admin:CREATE,dashboard_user:USAGE,dashboard_user:CREATE",
+      "storage|supabase_admin|supabase_admin:USAGE,supabase_admin:CREATE,postgres:USAGE,anon:USAGE,authenticated:USAGE,service_role:USAGE,supabase_storage_admin:USAGE,supabase_storage_admin:CREATE,dashboard_user:USAGE,dashboard_user:CREATE,uellix_owner:USAGE",
       "uellix_bootstrap|uellix_owner|uellix_owner:USAGE,uellix_owner:CREATE,uellix_migrator:USAGE,uellix_app:USAGE,uellix_auditor:USAGE",
       "uellix_grounding|uellix_owner|uellix_owner:USAGE,uellix_owner:CREATE,uellix_migrator:USAGE,uellix_app:USAGE,uellix_cap_grounding:USAGE",
       "uellix_stella|uellix_owner|uellix_owner:USAGE,uellix_owner:CREATE,uellix_migrator:USAGE,uellix_app:USAGE,uellix_cap_stella_quota:USAGE,uellix_cap_stella_ticket:USAGE",
@@ -1820,11 +1841,12 @@
       "stella_0016_reserved_quota_semantics",
       "stella_0017_governed_stella_consumption",
       "stella_0018_category_bound_operation_tickets",
-      "grounding_0005_claim_advisory_lock"
+      "grounding_0005_claim_advisory_lock",
+      "stella_0019_storage_write_roles"
     ],
     "policy": "forward-only",
     "installedPackageAction": "refuse",
-    "note": "All 10 of the 11 declared packages are observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
+    "note": "All 11 of the 11 declared packages are observed INSTALLED from the catalog, so nextChainPackage has no candidate left and any plan naming one of them is refused. Exercised as a contract test in tests/hosted/authority/engine-certification.test.ts rather than by re-applying SQL here: re-applying to find out would be the very thing the contract forbids."
   },
   "injections": [
     {
@@ -2056,7 +2078,7 @@
     },
     {
       "id": "CHAIN_COMPLETE",
-      "holds": false,
+      "holds": true,
       "detail": "every declared package applied and measured INSTALLED"
     },
     {
@@ -2070,5 +2092,5 @@
       "detail": "15/15 failed and rolled back"
     }
   ],
-  "verdict": "CHAIN_INCOMPLETE_INJECTIONS_RUN"
+  "verdict": "COMPLETE"
 }

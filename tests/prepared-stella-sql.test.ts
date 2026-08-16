@@ -373,6 +373,24 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // privileges the chain may already depend on, which is correct only
       // under assumptions about what happened since.
       'stella_hosted_0002_prechain_authority_reconciliation.sql',
+      // M-2. The SECOND forward-only prechain unit, and the second script in
+      // this directory with no rollback file. Its reason is carried by
+      // db/hosted/prechain-ownership.ts: what it removes is the reason a
+      // governed package cannot be applied, so restoring the previous owner and
+      // making the chain uninstallable again are the same sentence.
+      //
+      // It exists because the certification MEASURED that the Storage helpers
+      // are owned by `postgres` on a managed project and by `uellix_owner`
+      // locally — stella_0004 is local-only, the fifty baseline units carry
+      // ownershipStatements = 0, and stella_hosted_0001 transfers only
+      // stella_interactions. It transfers the pair and does nothing else.
+      'stella_hosted_0003_storage_helper_ownership.sql',
+      // M-2, the second half of the prechain pair — and separate for the same
+      // reason stella_0005d is separate from stella_0004 locally: it grants on
+      // a schema the PLATFORM owns, which is a different question from who owns
+      // our function. MEASURED: with 0003 applied and this absent, stella_0019
+      // still refuses, at its §0.7 instead of its §0.6.
+      'stella_hosted_0004_storage_schema_usage.sql',
     ])
   })
 

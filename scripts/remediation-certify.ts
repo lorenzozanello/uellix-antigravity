@@ -133,6 +133,10 @@ import {
   verifyRemediationPin,
 } from '../db/hosted/remediation-attempt'
 import {
+  PRECHAIN_ADMINISTRATIVE_UNITS,
+  sha256OfPreparedSql as sha256OfPrechainOwnershipSql,
+} from '../db/hosted/prechain-ownership'
+import {
   PRECHAIN_REMEDIATION,
   authorizeGovernedT1,
   classifyRemediation,
@@ -856,6 +860,50 @@ function main(): number {
     report.verdict = 'REMEDIATION_ONLY'
     writeReport(report)
     return 0
+  }
+
+  /* ------------------------------- 5b. PRECHAIN OWNERSHIP RECONCILIATION */
+  // M-2. Applied by the ADMINISTRATIVE identity — `applySql` defaults to
+  // `postgres`, the role that applied the baseline units and therefore the role
+  // that OWNS the Storage helpers on a managed project. The chain below runs as
+  // `uellix_migrator`, which cannot perform this transfer at all: ALTER FUNCTION
+  // ... OWNER TO requires membership in the CURRENT owner, and no package grants
+  // postgres to the installer. That impossibility is what stella_0019 refusing at
+  // 10/11 measured before this package existed.
+  //
+  // It is a PREREQUISITE, not a chain member: it is not in HOSTED_CHAIN, it takes
+  // no chain witness, and it is reported under its own key so no reader can
+  // mistake it for a twelfth link.
+  const prechainAdmin: Record<string, unknown>[] = []
+  for (const unit of PRECHAIN_ADMINISTRATIVE_UNITS) {
+    const unitSql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+    const digest = sha256OfPrechainOwnershipSql(unitSql)
+    if (digest !== unit.sourceSha256) {
+      throw new Error(
+        `PRECHAIN_ADMIN_PIN_MISMATCH: ${unit.sourceFile} hashes to ${digest} and the ` +
+          `registry pins ${unit.sourceSha256}.`,
+      )
+    }
+    const applied = applySql(primary, unitSql)
+    prechainAdmin.push({
+      packageId: unit.id,
+      digest,
+      exitStatus: applied.status,
+      error: applied.status === 0 ? null : diagnosticLines(applied.stderr, 2),
+      inHostedChain: false,
+    })
+    console.log(
+      `[rem] prechain ${unit.id} exit=${applied.status} (applied as postgres, NOT a chain member)`,
+    )
+    if (applied.status !== 0) {
+      console.log(`[rem]   ${diagnosticLines(applied.stderr, 2)}`)
+      break
+    }
+  }
+  report.prechainAdministrative = {
+    appliedAs: 'postgres (administrative) — NOT the chain installer',
+    units: prechainAdmin,
+    inHostedChain: false,
   }
 
   /* ------------------------------------------------- 6. GOVERNED T1 -> T9 */

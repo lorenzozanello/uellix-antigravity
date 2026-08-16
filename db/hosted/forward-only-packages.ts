@@ -42,6 +42,7 @@
 // whose whole argument is that the state it removed should not come back.
 
 import { PRECHAIN_REMEDIATION } from './prechain-remediation'
+import { PRECHAIN_OWNERSHIP, PRECHAIN_STORAGE_USAGE } from './prechain-ownership'
 
 export interface ForwardOnlyPackage {
   /** Basename WITHOUT `.sql`, exactly as it appears in db/prepared/. */
@@ -86,6 +87,31 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'grounding_0003_rollback.sql, then grounding_0002_rollback.sql. That withdraws the whole ' +
       'surface deliberately, which is the honest way to remove a function four packages depend on ' +
       '— rather than leaving a broken version of it behind.',
+  },
+  {
+    // M-2. Derived from the prechain-ownership declaration for the same reason
+    // the first entry is derived from the remediation one: two files must not
+    // be able to give different reasons for the same absence.
+    id: PRECHAIN_OWNERSHIP.id,
+    reason: PRECHAIN_OWNERSHIP.forwardOnlyNoRollbackReason,
+    reversalPath:
+      'There is none by script, and that is the point. A single administrative ' +
+      '`ALTER FUNCTION public.can_read_evidence_object(text, uuid) OWNER TO postgres` and the same ' +
+      'for can_write_evidence_object, issued by the principal that applied this package, restores ' +
+      'the prior owner — with the consequence visible at the time: stella_0019 becomes ' +
+      'uninstallable again, and any already-installed four-role body is left owned by a role the ' +
+      'governed chain cannot reach.',
+  },
+  {
+    // M-2, the second half of the prechain pair. Separate from the first for
+    // the same reason stella_0005d is separate from stella_0004 locally.
+    id: PRECHAIN_STORAGE_USAGE.id,
+    reason: PRECHAIN_STORAGE_USAGE.forwardOnlyNoRollbackReason,
+    reversalPath:
+      'There is none by script. A single administrative `REVOKE USAGE ON SCHEMA storage FROM ' +
+      'uellix_owner`, issued by the principal that applied this package, undoes it — and returns ' +
+      'the two SECURITY DEFINER helpers to answering false for every caller, which is the ' +
+      'outage stella_0005d was written to close locally.',
   },
 ]
 
