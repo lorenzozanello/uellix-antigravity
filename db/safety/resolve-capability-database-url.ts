@@ -34,6 +34,7 @@ import {
   MIGRATOR_DATABASE_ROLE,
   RUNTIME_DATABASE_ROLE,
 } from './database-role'
+import { parseQualifiedPoolerUser } from '../hosted/target-identity'
 
 export const RUNTIME_DATABASE_URL_ENV_VAR = 'UELLIX_RUNTIME_DATABASE_URL'
 export const MIGRATOR_DATABASE_URL_ENV_VAR = 'UELLIX_MIGRATOR_DATABASE_URL'
@@ -66,18 +67,30 @@ export class CapabilityDatabaseUrlError extends Error {
 
 export interface ResolvedCapabilityDatabaseUrl {
   readonly url: string
-  /** The role name parsed out of the URL's userinfo. Never a secret. */
+  /**
+   * The role the server will authenticate this connection as. Never a secret.
+   *
+   * For a Supavisor qualified username, `uellix_app.<project-ref>`, this is the
+   * ROLE HALF — `uellix_app` — because that is what the pooler authenticates as
+   * once it has consumed the qualifier for routing. For every other form it is
+   * the userinfo username verbatim.
+   */
   readonly declaredRole: string
   /** Credential-free notes worth surfacing before the operation runs. */
   readonly warnings: readonly string[]
 }
 
 /**
- * Read the login role out of a connection URL's userinfo.
+ * Read the userinfo USERNAME out of a connection URL, verbatim.
  *
  * Returns `null` rather than throwing so callers can attach their own error
  * code, and never returns the password — `URL` parses it into a separate
  * field which this function simply does not read.
+ *
+ * This is the LITERAL username, not necessarily the role: through the Supavisor
+ * pooler it is `<role>.<project-ref>`, and separating those two identities is
+ * `parseQualifiedPoolerUser`'s job, not this one's. Callers comparing the
+ * result against a role name must split it first — see `resolveForRole`.
  */
 export function parseDeclaredRole(url: string): string | null {
   let parsed: URL
@@ -123,8 +136,8 @@ function resolveForRole(
   }
   const url = raw.trim()
 
-  const declaredRole = parseDeclaredRole(url)
-  if (declaredRole === null) {
+  const declaredUser = parseDeclaredRole(url)
+  if (declaredUser === null) {
     throw new CapabilityDatabaseUrlError(
       'DB_CAPABILITY_URL_NO_ROLE',
       envVar,
@@ -132,6 +145,33 @@ function resolveForRole(
         `whatever the server defaults to rather than "${expectedRole}".`
     )
   }
+
+  // SUPAVISOR QUALIFIES THE LOGIN ROLE WITH THE PROJECT REF.
+  //
+  // Through the shared pooler the runtime authenticates as
+  // `uellix_app.<project-ref>`: ONE userinfo field carrying TWO independent
+  // identities. Comparing the whole string against the expected role refused
+  // the pooler outright — the role was right and the comparison was reading the
+  // project ref as part of its name.
+  //
+  // So the two halves are separated and checked in the two places that can
+  // actually check them:
+  //
+  //   role     — here, against this capability's expected role;
+  //   project  — SYS-02, in db/safety/runtime-project-pins.ts, against the pin
+  //              for the deployment environment.
+  //
+  // Neither substitutes for the other, and neither is weakened by the split: a
+  // qualified username still has to name the right role AND prove the right
+  // project, and it now fails the correct one of the two when it does not.
+  //
+  // A username that is not a qualified role — the direct-connection form
+  // `uellix_app@db.<ref>.supabase.co`, or anything malformed — parses as null
+  // and is compared LITERALLY, exactly as before. That is deliberate: a
+  // half-recognised qualifier must fail closed against the whole string rather
+  // than be mined for a role name.
+  const qualified = parseQualifiedPoolerUser(declaredUser)
+  const declaredRole = qualified === null ? declaredUser : qualified.databaseRole
 
   // A pre-check, NOT the guarantee. The URL is caller-controlled configuration
   // and only states an intent; the authoritative check is the bootstrap query

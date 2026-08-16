@@ -256,8 +256,8 @@ export function assertSupabaseProjectCoherence(
       'SUPABASE_DB_IDENTITY_UNPROVEN',
       'the runtime database connection does not structurally prove which Supabase project it points ' +
         'at, so it cannot be shown to be the same project Auth authenticates against. Use a ' +
-        'db.<ref>.supabase.co host, a postgres.<ref> pooler login role, or the pooler reference ' +
-        'parameter'
+        'db.<ref>.supabase.co host, a qualified <role>.<ref> pooler login role, or the pooler ' +
+        'reference parameter'
     )
   }
   if (databaseIdentity !== pin) {

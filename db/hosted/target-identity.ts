@@ -320,7 +320,98 @@ export function classifySupabaseHost(host: string): SupabaseHostKind {
 }
 
 /**
- * The project ref out of a Supabase Session Pooler USERNAME.
+ * The two identities a Supavisor login role carries in ONE string.
+ *
+ * They are INDEPENDENT and must be validated independently: the role says what
+ * privileges the session will hold, the ref says which database it will hold
+ * them on. Returning them as one value is what lets a caller check both instead
+ * of accidentally checking whichever half it happened to parse.
+ */
+export interface QualifiedPoolerIdentity {
+  /** The role Supavisor authenticates as, once it has stripped the ref. */
+  readonly databaseRole: string
+  /** The project Supavisor routes the connection to. */
+  readonly projectRef: string
+}
+
+/** The login role the OPERATOR provisioning path connects through the pooler as. */
+export const OPERATOR_POOLER_ROLE = 'postgres'
+
+/**
+ * An unquoted Postgres role name: a letter or underscore, then letters, digits
+ * or underscores, bounded by NAMEDATALEN-1.
+ *
+ * Deliberately narrower than what Postgres would accept if the name were
+ * quoted. Every role this repository provisions is unquoted and lowercase, so a
+ * name outside this shape is not a role we issued, and the parser returning
+ * null for it means the caller falls back to comparing the LITERAL username —
+ * which then fails the role check. The narrow shape therefore only ever fails
+ * closed.
+ */
+const DATABASE_ROLE_NAME = /^[a-z_][a-z0-9_]{0,62}$/
+
+/**
+ * Split a Supavisor QUALIFIED login role, `<database-role>.<project-ref>`, into
+ * the two identities it encodes. Returns null for anything else.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS EXISTS SEPARATELY FROM `projectRefFromPoolerUser`
+ * ---------------------------------------------------------------------------
+ * Supavisor qualifies EVERY login role with the project ref, not just
+ * `postgres`: the application runtime authenticates as
+ * `uellix_app.<ref>`. The repository only ever modelled `postgres.<ref>`,
+ * because that is the form the operator provisioning path uses, so the runtime
+ * form failed twice over — the capability layer read the whole string as a role
+ * name and refused it, and SYS-02 read no project out of it at all and refused
+ * that too.
+ *
+ * The fix is NOT to loosen `projectRefFromPoolerUser`. Five operator-facing
+ * call sites depend on its `postgres.<ref>` contract, and widening it would
+ * silently widen the hosted provisioning chain to accept login roles the
+ * operator runbook never authorised. So the general parser is introduced here
+ * and the operator one becomes the narrow case of it — one shape contract, two
+ * deliberately different acceptances.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT MAKES THIS STRICT
+ * ---------------------------------------------------------------------------
+ * No `startsWith`, no `includes`, no permissive pattern. The string is split on
+ * `.` and must yield EXACTLY two non-empty segments, each matching its own
+ * anchored shape. That is what refuses `uellix_app.<ref>.extra` (three
+ * segments), `uellix_app..<ref>` (an empty middle segment), `uellix_app.` and
+ * `.<ref>` (an empty half) rather than mining a ref out of them.
+ *
+ * Case is NOT folded. `projectRefFromPoolerUser` folds it for compatibility
+ * with what operators paste out of the dashboard; here a role that differs in
+ * case is simply not the role that was expected, and returning null sends it
+ * down the literal-comparison path where it fails closed.
+ *
+ * It is a USERNAME. It carries no password, no token and no key, and the ref
+ * inside it is public — it appears in every URL the project serves. Anything
+ * shaped like a connection string or carrying credentials is refused outright
+ * rather than parsed around, so a well-meaning paste of a full DSN is rejected
+ * instead of being mined for a ref.
+ */
+export function parseQualifiedPoolerUser(user: string): QualifiedPoolerIdentity | null {
+  const normalized = (user ?? '').trim()
+  if (normalized === '') return null
+  // Refuse anything that could carry a credential rather than parse around it.
+  if (/[:@/\s]/.test(normalized)) return null
+
+  // EXACTLY two segments. A qualified role names one role and one project, so
+  // any other count is a string that merely resembles one.
+  const segments = normalized.split('.')
+  if (segments.length !== 2) return null
+
+  const [databaseRole, projectRef] = segments
+  if (!DATABASE_ROLE_NAME.test(databaseRole)) return null
+  if (!PROJECT_REF.test(projectRef)) return null
+
+  return { databaseRole, projectRef }
+}
+
+/**
+ * The project ref out of a Supabase Session Pooler OPERATOR username.
  *
  * ---------------------------------------------------------------------------
  * WHY THE USERNAME, AND WHY IT IS NOT A SECRET
@@ -340,14 +431,20 @@ export function classifySupabaseHost(host: string): SupabaseHostKind {
  * The DATABASE user is NOT this value. `current_user` after connecting through
  * the pooler is plain `postgres`, which is why the apply-identity probe cannot
  * supply it and the operator must.
+ *
+ * SCOPE IS UNCHANGED AND DELIBERATE: still `postgres.<ref>` and nothing else.
+ * It is now expressed as the narrow case of `parseQualifiedPoolerUser` so the
+ * two cannot drift on what a username may contain, but a runtime role such as
+ * `uellix_app.<ref>` still returns null here — the operator chain's contract is
+ * the operator login role, and SYS-02 reads the general form itself.
  */
 export function projectRefFromPoolerUser(user: string): string | null {
-  const normalized = (user ?? '').trim()
-  if (normalized === '') return null
-  // Refuse anything that could carry a credential rather than parse around it.
-  if (/[:@/\s]/.test(normalized)) return null
-  const match = /^postgres\.([a-z]{20})$/.exec(normalized.toLowerCase())
-  return match && PROJECT_REF.test(match[1]) ? match[1] : null
+  // Folded to lower case FIRST, preserving this function's historical
+  // tolerance of what an operator pastes out of the dashboard. The general
+  // parser deliberately does not fold, so the two differ here and only here.
+  const qualified = parseQualifiedPoolerUser((user ?? '').trim().toLowerCase())
+  if (qualified === null) return null
+  return qualified.databaseRole === OPERATOR_POOLER_ROLE ? qualified.projectRef : null
 }
 
 /**

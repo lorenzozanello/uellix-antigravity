@@ -51,9 +51,10 @@
 import {
   KNOWN_PRODUCTION_IDENTIFIERS,
   KNOWN_STAGING_PROJECT_REF,
+  OPERATOR_POOLER_ROLE,
   classifySupabaseHost,
   deriveConnectionIdentity,
-  projectRefFromPoolerUser,
+  parseQualifiedPoolerUser,
   type ConnectionMechanism,
 } from '../hosted/target-identity'
 
@@ -94,14 +95,24 @@ export function runtimeProjectPinFor(environment: string): string | null {
 /**
  * How the project was proven.
  *
- * `supavisor-reference` is the one mechanism the hosted operator path does not
- * know about, because operators connect with a `postgres.<ref>` login role
- * while a DEPLOYMENT may legitimately use the shared pooler's routing
- * parameter instead: `?options=reference%3D<ref>`. That parameter is not
- * decoration — it is the value Supavisor routes the connection by, which gives
- * it exactly the same standing as the login role.
+ * Two of these are mechanisms the hosted operator path does not know about,
+ * because operators connect with a `postgres.<ref>` login role while a
+ * DEPLOYMENT legitimately connects other ways:
+ *
+ * `supavisor-qualified-role` — the runtime authenticates as
+ * `uellix_app.<ref>`. Supavisor qualifies EVERY login role with the project
+ * ref, not just `postgres`, and the qualifier is not decoration: it is the
+ * value the connection is routed by, which gives it exactly the same standing
+ * as the operator form. Reading it required treating the username as the TWO
+ * identities it is — a role and a project — rather than as one string.
+ *
+ * `supavisor-reference` — the shared pooler's routing parameter,
+ * `?options=reference%3D<ref>`, used where the username carries no qualifier.
  */
-export type TargetIdentityMechanism = ConnectionMechanism | 'supavisor-reference'
+export type TargetIdentityMechanism =
+  | ConnectionMechanism
+  | 'supavisor-reference'
+  | 'supavisor-qualified-role'
 
 export type TargetProjectIdentity =
   | {
@@ -211,12 +222,24 @@ export function deriveTargetProjectIdentity(input: {
   const host = (input.host ?? '').trim().toLowerCase()
   const username = decodeUserinfo(input.username ?? '')
 
-  // Only a POOLER-SHAPED username is offered as an identity source. The hosted
-  // derivation refuses a login role that does not parse as `postgres.<ref>`
-  // when one is supplied — correct for an operator who declared a pooler role,
-  // wrong here, where the username is simply whichever role the DSN
+  // The username, split into the two identities a Supavisor login role encodes.
+  // Null for a bare role such as `uellix_app`, which names no project at all,
+  // and null for anything that merely resembles a qualified role.
+  const qualified = parseQualifiedPoolerUser(username)
+  const qualifiedRef = qualified === null ? null : qualified.projectRef
+
+  // Only the OPERATOR form is forwarded to the hosted derivation. Its pooler
+  // contract is `postgres.<ref>` and the provisioning chain depends on that
+  // narrowness, so the general form is read HERE instead of by widening a
+  // module five operator-facing call sites share.
+  //
+  // A username that is not qualified at all is still passed as null rather than
+  // verbatim: the hosted derivation refuses a login role it cannot parse when
+  // one is supplied, which is correct for an operator who declared a pooler
+  // role and wrong here, where the username is simply whichever role the DSN
   // authenticates as and `uellix_app` is the normal answer.
-  const poolerUser = projectRefFromPoolerUser(username) !== null ? username : null
+  const poolerUser =
+    qualified !== null && qualified.databaseRole === OPERATOR_POOLER_ROLE ? username : null
 
   const verdict = deriveConnectionIdentity({ connectionHost: host, poolerUser })
   const reference = referenceParameterRef(input.optionsParameters ?? [])
@@ -228,37 +251,65 @@ export function deriveTargetProjectIdentity(input: {
   const referenceRef = reference
 
   if (verdict.ok) {
-    // A routing parameter alongside a ref-bearing host or login role is a
-    // SECOND source. Two sources that disagree are a contradiction, never a
-    // choice.
+    // EVERY source that named a project must have named the SAME one. A
+    // routing parameter or a qualified login role alongside a ref-bearing host
+    // is an ADDITIONAL source, and sources that disagree are a contradiction,
+    // never a choice — a silent preference is how a contradiction becomes a
+    // pass.
     if (referenceRef !== null && referenceRef !== verdict.projectRef) {
+      return UNPROVEN('IDENTITY_CONTRADICTION')
+    }
+    if (qualifiedRef !== null && qualifiedRef !== verdict.projectRef) {
       return UNPROVEN('IDENTITY_CONTRADICTION')
     }
     return {
       proven: true,
       projectRef: verdict.projectRef,
       mechanism: verdict.mechanism,
-      corroboratedBy:
-        referenceRef === null
-          ? verdict.corroboratedBy
-          : [...verdict.corroboratedBy, 'supavisor reference parameter'],
+      corroboratedBy: [
+        ...verdict.corroboratedBy,
+        // Counted only when it is a SEPARATE source. When the verdict itself
+        // came from the login role, naming it again would overstate how many
+        // independent things agreed.
+        ...(qualifiedRef !== null && poolerUser === null ? ['supavisor qualified login role'] : []),
+        ...(referenceRef !== null ? ['supavisor reference parameter'] : []),
+      ],
     }
   }
 
-  // The host names no project and no login role did either. The shared pooler
-  // is the ONE case where that is expected rather than suspicious, and the
-  // routing parameter is the source it leaves instead.
+  // The host names no project and no OPERATOR login role did either. The shared
+  // pooler is the ONE case where that is expected rather than suspicious: the
+  // host is regional, so the project travels in the qualified login role or in
+  // the routing parameter instead.
   //
-  // Gated on the host actually being a recognised Supabase pooler: without
-  // that, `?options=reference=<ref>` appended to any host at all would "prove"
-  // a project, which is precisely the substring-matching failure this module
+  // Both are gated on the host actually being a recognised Supabase pooler.
+  // Without that gate, a qualified-looking username or a
+  // `?options=reference=<ref>` appended to ANY host at all would "prove" a
+  // project, which is precisely the substring-matching failure this module
   // exists to avoid.
-  if (referenceRef !== null && classifySupabaseHost(host) === 'pooler') {
-    return {
-      proven: true,
-      projectRef: referenceRef,
-      mechanism: 'supavisor-reference',
-      corroboratedBy: ['supavisor reference parameter'],
+  if (classifySupabaseHost(host) === 'pooler') {
+    if (qualifiedRef !== null) {
+      if (referenceRef !== null && referenceRef !== qualifiedRef) {
+        return UNPROVEN('IDENTITY_CONTRADICTION')
+      }
+      return {
+        proven: true,
+        projectRef: qualifiedRef,
+        mechanism: 'supavisor-qualified-role',
+        corroboratedBy: [
+          'supavisor qualified login role',
+          ...(referenceRef !== null ? ['supavisor reference parameter'] : []),
+        ],
+      }
+    }
+
+    if (referenceRef !== null) {
+      return {
+        proven: true,
+        projectRef: referenceRef,
+        mechanism: 'supavisor-reference',
+        corroboratedBy: ['supavisor reference parameter'],
+      }
     }
   }
 

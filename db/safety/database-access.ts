@@ -588,8 +588,8 @@ function assertTargetAllowed(
         'DB_RUNTIME_PROJECT_UNPINNED',
         `the connection does not structurally prove which project it points at ` +
           `(${target.provenIdentity.code}), so it cannot be shown to be the one pinned for ` +
-          `environment "${environment}". Use a db.<ref>.supabase.co host, a postgres.<ref> pooler ` +
-          'login role, or the pooler reference parameter'
+          `environment "${environment}". Use a db.<ref>.supabase.co host, a qualified <role>.<ref> ` +
+          'pooler login role, or the pooler reference parameter'
       )
     } else if (target.provenIdentity.projectRef !== pin) {
       // Neither ref is printed. Both are public, but this layer's rule is that
