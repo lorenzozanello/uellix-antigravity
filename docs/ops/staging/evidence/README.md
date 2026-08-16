@@ -44,6 +44,10 @@ todo lo que se conserva aquí lleva el intento en el nombre.
 | `2026-08-12-att_9d8c0412-m8-runtime-observation.json` | `att_9d8c0412…` | **`M8_RUNTIME = PASS`.** Los dos documentos del probe v2: `sqlstate = U0102` bajo `session_user = current_user = uellix_app`, y el bracket `TRUE/TRUE → FALSE/FALSE` que prueba que la transacción se cerró. `42501` ausente. Irrepetible: la credencial que lo produjo ya no existe. |
 | `2026-08-12-att_9d8c0412-m8-credential-closure.json` | `att_9d8c0412…` | Cierre del ciclo #2. Byte-idéntico al del ciclo #1 (`sha256 6b9d7e98…`): sólo se movió `rolpassword`. |
 | `2026-08-12-att_9c885e6f-chain-posture-observation.json` | `att_9c885e6f…` | **La canónica actual.** Postura después de retirar la credencial del ciclo #2: 27/27, 3/3, membresías y `CREATE` temporales en cero, SD gate y motor RLS `PASS`. Es la que juzga `artifacts/hosted-chain-posture-status.json`. |
+| `2026-08-16-att_5878e6da-chain-pre-write-observation.json` | `att_5878e6da…` | La observación `PRE_WRITE` que autorizó **T11** (`stella_0019_storage_write_roles`): **T1–T10 INSTALLED y T11 ABSENT**, que es el único estado bajo el cual `nextChainPackage` autoriza este paquete y ningún otro. Es la salida **verbatim de la sonda** —la mitad que produce el servidor—, no el sobre ensamblado; ver la nota de abajo. |
+| `2026-08-16-att_5878e6da-installer-identity.json` | `att_5878e6da…` | La sonda de identidad corrida **por la conexión del instalador** que escribió T11: `sessionUser = currentUser = uellix_migrator`, `isSuper: false`, `createRole: true`, `canSetOwner: true`. |
+| `2026-08-16-att_5878e6da-remediation-witness.json` | `att_5878e6da…` | Testigo de remediación del mismo intento: cuerpo de capacidades certificado, `installerCanSetOwner`, los tres roles de capacidad presentes. Para T11 **no autoriza nada** —el gate prechain es inerte fuera de T1— y se conserva como contexto medido en el mismo instante. |
+| `2026-08-16-att_5878e6da-prechain-observation.json` | `att_5878e6da…` | Observación prechain del mismo intento: la **topología de roles y privilegios inmediatamente antes** de que el último eslabón hiciera commit — 8 roles, 11 filas de membresía, `capabilityReachableBy` vacío, `installerCanSetOwner: true`. Igual que la anterior: contexto, no autorización. |
 
 Los tres de `att_6d9a8c1d` son el expediente completo de la única escritura de
 cadena que se intentó contra staging: por qué se autorizó y con qué evidencia.
@@ -107,6 +111,60 @@ después del fallo, porque hasta el Commit 5.6 no existía ninguna sonda que
 preguntara quién sostenía la conexión. Que la evidencia decisiva no tuviera dónde
 encajar es, exactamente, el defecto.
 
+## El cierre de T11 (`att_5878e6da…`), y lo que de él NO se conservó
+
+Los **cuatro de `att_5878e6da`** son el expediente del último eslabón,
+`stella_0019_storage_write_roles` — el primero que repara un objeto de la
+**baseline** en vez de uno de campaña. Su par `OPENED`/`CONSUMED` está en
+`artifacts/hosted-chain-attempts.jsonl` y nombra ese paquete y ningún otro.
+
+La pieza decisiva es la observación `PRE_WRITE`, y hay que leerla junto a la
+identidad del instalador: son las dos mitades que el plan exige y fallan
+distinto — una dice *qué* falta, la otra *quién* lo va a escribir. Ninguna de las
+dos se puede deducir de la otra, y el segundo incidente de T1 fue exactamente lo
+que ocurre cuando sólo se mide la primera.
+
+**Lo que falta, dicho en voz alta.** De este intento **no** se conservaron:
+
+- el **sobre A1 ensamblado** (`schema` / `phase` / `observationId` /
+  `corroboration` / `digest`) que consumió `chain:attempt:plan`. Lo que hay aquí
+  es su mitad de servidor, verbatim; la envoltura del lado del cliente —incluido
+  el bloque `connection` que las evidencias del 11 de agosto sí llevan— se perdió
+  por no promoverse a tiempo. Consecuencia concreta y sin rodeos: el `digest` de
+  este intento **no es recomputable desde este directorio**;
+- una **observación de cierre post-apply** ligada a este intento: no existe
+  artefacto, porque volver a medir habría exigido abrir un intento nuevo;
+- la salida original de la **matriz funcional de Storage** y la de la
+  comprobación de **residuo cero**.
+
+La matriz se reporta **10/10** y queda como **REPORTED, consistent-with-evidence**.
+No es reproducible sin escribir —su fixture inserta filas y crea dos funciones
+sonda—, y por eso se ejecutó envuelta en un `BEGIN … ROLLBACK` explícito en lugar
+del `psql -1` del harness, que habría **commiteado** ambas cosas contra staging.
+Deliberadamente **no** se ha vuelto a ejecutar para rellenar este hueco: fabricar
+la evidencia que falta es peor que declararla ausente.
+
+La auditoría adversarial independiente del mismo día volvió a medir el proyecto en
+solo-lectura y encontró el cuerpo de `can_write_evidence_object` con los cuatro
+roles, el trío prechain aplicado y **cero residuo** de la matriz. Esa lectura se
+tomó dentro de `BEGIN READ ONLY … ROLLBACK` y **su salida tampoco se conservó como
+artefacto**, así que consta aquí como lectura de auditoría y no como evidencia
+promovida.
+
+Las **sondas** de este intento (`artifacts/hosted-chain-*-probe.sql` y el guard de
+identidad) no se promueven, y aquí no es una pérdida sino la política de «Qué no
+se versiona»: llevan el id del intento compilado como literal SQL, y una sonda
+versionada es justo la que alguien vuelve a correr mañana.
+
+**Sobre los finales de línea**, que vale para todo el directorio y no sólo para
+estos cuatro: `psql` en Windows escribe CRLF y `core.autocrlf` normaliza a LF al
+indexar, así que **todos** los blobs de aquí están en LF y ninguno contiene un
+`\r` — verificado. El contenido es verbatim; lo único que se movió es el
+terminador de línea, que es también la razón por la que cada digest de este
+repositorio se calcula sobre texto normalizado a LF. Un auditor que compare bytes
+crudos contra `artifacts/` verá esa diferencia de un byte por línea y no es una
+edición.
+
 ## Qué NO contienen
 
 Verificado antes de versionar, con búsqueda de patrones sobre los bytes:
@@ -117,9 +175,11 @@ Verificado antes de versionar, con búsqueda de patrones sobre los bytes:
 Sólo hay metadatos y lecturas de catálogo: ids de intento, timestamps, el project
 ref, estados de paquete y atributos de rol.
 
-Una excepción declarada, y ahora en **dos** archivos —
-`…-chain-pre-write-observation.json` y `…-chain-final-observation.json`—:
-ambos incluyen el bloque
+Una excepción declarada, y en **tres** archivos, los tres del 11 de agosto —
+`att_0ca699d6-chain-pre-write-observation`,
+`att_6d9a8c1d-chain-pre-write-observation` y
+`att_1398309c-chain-final-observation`—:
+incluyen el bloque
 `connection` que el contrato A1 exige — `connectionHost`
 (`aws-0-us-east-2.pooler.supabase.com`), `poolerUser` (`postgres.<ref>`) y
 `connectionPort`. Es host, **nombre de usuario** y puerto: ni contraseña ni DSN,
@@ -136,6 +196,12 @@ project ref, ni nada del lado del cliente. La sonda de postura lee catálogo y s
 catálogo, así que el documento es nombres de objeto, nombres de rol y booleanos.
 `service_role` aparece ocho veces en `functions[].executeGrantees`: es el **nombre de
 un rol** de Supabase, no la clave de servicio —que es un JWT y no está aquí—.
+
+Los **cuatro de `att_5878e6da`** tampoco: por la razón de arriba —se promovió la
+salida de la sonda y no el sobre— no hay bloque `connection` en ninguno, y el
+propio documento lo dice en su campo `note`. Host, usuario de pooler y puerto son
+hechos del lado del cliente que la base de datos no puede ver, así que aquí no
+aparecen en absoluto.
 
 ## Qué no se versiona
 

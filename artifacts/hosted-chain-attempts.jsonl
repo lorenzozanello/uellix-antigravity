@@ -27,3 +27,5 @@
 {"attemptId":"att_39b560a1f433b77a8ea65cbbda45e8a0","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T01:13:26.655Z"}
 {"attemptId":"att_39b560a1f433b77a8ea65cbbda45e8a0","event":"CONSUMED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T02:31:02.754Z","packageId":"grounding_0005_claim_advisory_lock","kind":"hosted-chain"}
 {"attemptId":"att_dee3d5973996ca86e5f92b258308ab03","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-12T02:41:41.796Z"}
+{"attemptId":"att_5878e6da1f8e7dd09533a925816c4d64","event":"OPENED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-16T13:47:42.098Z"}
+{"attemptId":"att_5878e6da1f8e7dd09533a925816c4d64","event":"CONSUMED","targetProjectRef":"bvyzblhqymxruxdguaee","at":"2026-08-16T14:20:21.361Z","packageId":"stella_0019_storage_write_roles","kind":"hosted-chain"}
