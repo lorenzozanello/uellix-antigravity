@@ -62,6 +62,14 @@ export const AUDIT_ACTIONS = {
   EVIDENCE_REVIEW_STATUS_CHANGED: 'evidence_item.review_status_changed',
   EVIDENCE_ARCHIVED: 'evidence_item.archived',
   EVIDENCE_CONFIDENCE_SCORE_UPDATED: 'evidence_item.confidence_score_updated',
+  // M2-COMP-01. A file upload that reserved a row and never produced stored
+  // bytes. Distinct from EVIDENCE_ARCHIVED because the two archive the same row
+  // for opposite reasons: one is a reviewer retiring real evidence, this one is
+  // the platform withdrawing a row whose file does not exist. Collapsing them
+  // would make "why is there no file here?" unanswerable from the trail — and
+  // this row is the ONLY durable record when the compensation itself fails,
+  // since nothing else survives to say a row was left behind.
+  EVIDENCE_UPLOAD_FAILED: 'evidence_item.upload_failed',
   // G-01. One attempt to index an evidence file into the governed grounding
   // corpus — recorded whether it indexed, was refused or failed, because "who
   // tried to change what a reviewer can be shown" is the question this row

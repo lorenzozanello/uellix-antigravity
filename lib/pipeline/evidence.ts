@@ -2,7 +2,7 @@
 
 import { db } from '@/db/client'
 import { evidenceItems, projects, outcomes, indicators } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 import { createClient } from '@/lib/supabase/server'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { hasRole } from '@/lib/auth/permissions'
@@ -108,6 +108,163 @@ async function verifyOutcomeIndicator(projectId: string, outcomeId?: string, ind
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* M2-COMP-01 — compensating a file upload that stored no bytes               */
+/* -------------------------------------------------------------------------- */
+
+/** Where a file upload stopped after its row was already committed. */
+export type EvidenceUploadFailureStage = 'upload' | 'finalize'
+
+/**
+ * The compensation itself did not take effect.
+ *
+ * Thrown INSTEAD of the underlying cause, because it is the louder fact: the
+ * upload failing is ordinary and recoverable, a row surviving with no file is
+ * neither. It names no storage path and no message from the driver.
+ */
+export class EvidenceUploadCompensationError extends Error {
+  readonly name = 'EvidenceUploadCompensationError'
+  readonly code = 'EVIDENCE_COMPENSATION_NOT_APPLIED'
+  readonly evidenceId: string
+  readonly stage: EvidenceUploadFailureStage
+
+  constructor(evidenceId: string, stage: EvidenceUploadFailureStage) {
+    super(
+      'A file upload failed and its evidence row could not be withdrawn from the working set. ' +
+        'A row with no stored bytes may still be readable as evidence and needs manual review.'
+    )
+    this.evidenceId = evidenceId
+    this.stage = stage
+  }
+}
+
+/**
+ * Withdraw the row of an upload that never produced stored bytes.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS NOT A DELETE — M2-COMP-01
+ * ---------------------------------------------------------------------------
+ * It used to be. `evidence_items` has RLS enabled, carries SELECT / INSERT /
+ * UPDATE policies, and deliberately has NO DELETE policy (db/policies/
+ * 001_initial_auth_rls.sql: "DELETE is strictly denied ... Archiving must be
+ * performed via UPDATE to status='archived'"). The DELETE privilege is
+ * nonetheless granted, through `uellix_writer`, and that combination is the
+ * whole defect: PostgreSQL applies RLS as a SCAN FILTER, so with the grant
+ * present and the policy absent the statement is legal, matches nothing, and
+ * reports zero rows WITHOUT raising. Measured on PG 17.6 as `uellix_app`:
+ *
+ *     INSERT 0 1   -- the row commits
+ *     DELETE 0     -- no error; the transaction COMMITs
+ *     SELECT ...   -- the row is still there, status 'draft', file_path NULL
+ *
+ * The old code awaited that DELETE and inspected nothing, so a compensation
+ * that erased nothing was indistinguishable from one that worked.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY `archived` AND NOT A NEW STATE
+ * ---------------------------------------------------------------------------
+ * `archived` is not a euphemism here, it is the state every consumer already
+ * reads as "not part of the evidence set": the SROI evidence gate counts only
+ * `draft | under_review | approved` (lib/pipeline/sroi-calculation.ts), the
+ * confidence score scores it 0 (lib/pipeline/confidence-score.ts), and the
+ * grounding read model withholds the index action for it (lib/grounding/
+ * corpus-state.ts). `draft` — what the row is left in today — is counted by all
+ * three, which is why the orphan is not merely untidy: it satisfies the SROI
+ * gate for an outcome whose supporting file does not exist.
+ *
+ * A dedicated `failed` state would mean a new value in
+ * `evidence_items_status_check`, i.e. a migration, for a condition the schema
+ * can already express. What makes the state UNAMBIGUOUS is the pair, not the
+ * column: `type='file' AND file_path IS NULL AND status='archived'` is reached
+ * by nothing else — a reviewer archiving real evidence archives a row that has
+ * a path. The trail names the cause; the row is derivable without it. That is
+ * the same "derive it, do not add a column" reasoning lib/grounding/
+ * corpus-state.ts applies to indexing state.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE PREDICATE IS FOR
+ * ---------------------------------------------------------------------------
+ * Every term is load-bearing and every value is server-owned — the project was
+ * verified in phase 1, the organisation comes from the session, and the id is
+ * the row this call just created:
+ *
+ *   id + project + organisation  a compensation can never reach another
+ *                                tenant's row, above what RLS already refuses;
+ *   file_path IS NULL            EVIDENCE IMMUTABILITY. A row that has bytes is
+ *                                stored evidence and is outside this statement
+ *                                by construction, whatever else goes wrong.
+ *
+ * Measured, same database: `impact_manager` and `organization_admin` compensate
+ * (UPDATE 1), `viewer` cannot (UPDATE 0), a member of another organisation
+ * cannot (UPDATE 0), and a row that has a `file_path` cannot be touched
+ * (UPDATE 0).
+ */
+async function compensateFailedFileUpload(params: {
+  readonly evidenceId: string
+  readonly projectId: string
+  readonly organizationId: string
+  readonly actorUserId: string
+  readonly stage: EvidenceUploadFailureStage
+}): Promise<void> {
+  const { evidenceId, projectId, organizationId, actorUserId, stage } = params
+
+  // RETURNING, not a bare UPDATE: the row count IS the outcome. This is the
+  // check whose absence was the defect, so it is read here and nowhere else.
+  const compensated = await withOrganizationDatabaseContext(async () => {
+    return db
+      .update(evidenceItems)
+      .set({ status: 'archived', updatedAt: new Date() })
+      .where(
+        and(
+          eq(evidenceItems.id, evidenceId),
+          eq(evidenceItems.projectId, projectId),
+          eq(evidenceItems.organizationId, organizationId),
+          isNull(evidenceItems.filePath)
+        )
+      )
+      .returning({ id: evidenceItems.id })
+  })
+
+  const applied = compensated.length === 1
+
+  // A SECOND context on purpose. This row is the only durable trace of an
+  // upload that stored nothing, and it matters MOST in the branch where the
+  // compensation failed — so it must not be inside the transaction whose
+  // outcome it reports, and it must not be able to suppress that outcome.
+  try {
+    await withOrganizationDatabaseContext(async () => {
+      await logAuditAction({
+        organizationId,
+        projectId,
+        actorUserId,
+        entityType: 'evidence_item',
+        entityId: evidenceId,
+        action: AUDIT_ACTIONS.EVIDENCE_UPLOAD_FAILED,
+        reason:
+          stage === 'upload'
+            ? 'The storage upload failed; no bytes were stored for this evidence row.'
+            : 'The upload was stored but finalisation failed; the row never recorded its file path.',
+        afterJson: { stage, compensated: applied, status: applied ? 'archived' : null },
+      })
+    })
+  } catch (auditError) {
+    // Named, never carried: the error may quote a statement. Losing the trail
+    // must not turn a successful compensation into a failed one, nor hide a
+    // failed one — both verdicts are decided by `applied`, below.
+    console.error(
+      '[evidence-compensation] audit write failed:',
+      auditError instanceof Error ? auditError.name : 'unknown'
+    )
+  }
+
+  // `recalculateConfidenceScore` is deliberately NOT called. It scores a file
+  // row 35 for its type before it looks at anything else, so recomputing here
+  // would stamp a positive confidence on evidence that does not exist. Leaving
+  // the column NULL says "never scored", which is true.
+
+  if (!applied) throw new EvidenceUploadCompensationError(evidenceId, stage)
+}
+
 // Service functions
 export async function listEvidenceForProject(projectId: string) {
   const { organization } = await requireOrganizationAccess()
@@ -143,8 +300,13 @@ export async function getEvidenceByIdForProject(projectId: string, evidenceId: s
  *     that can never be reissued. An orphan with no row to find it from.
  *
  * So the phases are explicit: write the row, close; upload, outside any
- * transaction; finalise or compensate, in a second one. The compensating delete
- * is live again, and it is the only ordering in which it can be.
+ * transaction; finalise or compensate, in a second one. It is the only ordering
+ * in which a compensation can run at all.
+ *
+ * WHAT THE COMPENSATION IS, THOUGH, IS NOT A DELETE — see
+ * `compensateFailedFileUpload`. The reasoning above establishes only WHEN it
+ * can run; M2-COMP-01 is about what happens when it does, and a DELETE against
+ * a table with no DELETE policy erases nothing while reporting no error.
  */
 export async function createFileEvidenceForProject(projectId: string, input: unknown) {
   const { membership, organization, user } = await requireOrganizationAccess()
@@ -190,29 +352,53 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
   })
 
   if (error) {
-    // Compensate: the row exists and its file does not. Its own context.
-    await withOrganizationDatabaseContext(async () => {
-      await db.delete(evidenceItems).where(eq(evidenceItems.id, evidence.id))
+    // Compensate: the row exists and its file does not. Its own context, and
+    // its row count is checked — see compensateFailedFileUpload (M2-COMP-01).
+    await compensateFailedFileUpload({
+      evidenceId: evidence.id,
+      projectId,
+      organizationId: organization.id,
+      actorUserId: user.id,
+      stage: 'upload',
     })
     throw new Error(`Storage upload failed: ${error.message}`)
   }
 
   // ---- Phase 3: finalise -----------------------------------------------------
-  await withOrganizationDatabaseContext(async () => {
-    await db.update(evidenceItems).set({ filePath }).where(eq(evidenceItems.id, evidence.id))
+  try {
+    await withOrganizationDatabaseContext(async () => {
+      await db.update(evidenceItems).set({ filePath }).where(eq(evidenceItems.id, evidence.id))
 
-    await logAuditAction({
-      organizationId: organization.id,
-      projectId,
-      actorUserId: user.id,
-      entityType: 'evidence_item',
-      entityId: evidence.id,
-      action: AUDIT_ACTIONS.EVIDENCE_CREATED,
-      afterJson: { type: 'file', title: parsed.title, sha256 },
+      await logAuditAction({
+        organizationId: organization.id,
+        projectId,
+        actorUserId: user.id,
+        entityType: 'evidence_item',
+        entityId: evidence.id,
+        action: AUDIT_ACTIONS.EVIDENCE_CREATED,
+        afterJson: { type: 'file', title: parsed.title, sha256 },
+      })
+
+      await recalculateConfidenceScore(projectId, evidence.id)
     })
-
-    await recalculateConfidenceScore(projectId, evidence.id)
-  })
+  } catch (finalizeError) {
+    // ONE transaction, so there is no partial finalise: the row still has no
+    // `file_path`, and nothing can rediscover the object from it. The bytes are
+    // now unreferenced in the bucket — that is a storage cost, not an evidence
+    // claim, and it is strictly better than a row that reads as evidence for a
+    // file the row cannot name. The object is NOT deleted in compensation: that
+    // would route this path through `can_write_evidence_object`, which admits
+    // only two of the four roles allowed to upload (M-2), i.e. a second
+    // unreliable channel to repair the first.
+    await compensateFailedFileUpload({
+      evidenceId: evidence.id,
+      projectId,
+      organizationId: organization.id,
+      actorUserId: user.id,
+      stage: 'finalize',
+    })
+    throw finalizeError
+  }
 
   return evidence
 }

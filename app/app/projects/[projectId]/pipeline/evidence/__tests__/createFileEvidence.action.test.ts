@@ -83,9 +83,12 @@ describe('indexing happens after the evidence row exists, and only then', () => 
   })
 
   it('never asks for indexing when evidence creation fails', async () => {
-    // The compensating delete in `createFileEvidenceForProject` runs on a
-    // failed upload, so there may be no row and no object. Indexing anything
-    // here would be indexing an identity that does not exist.
+    // A failed upload is compensated inside `createFileEvidenceForProject`:
+    // the row is withdrawn to `archived` with no `file_path` (M2-COMP-01) and
+    // the call throws. There is no object and no usable identity, so indexing
+    // here would be indexing evidence that does not exist — and the resolver
+    // would refuse it as `missing_bytes` while writing that refusal to the
+    // operator trail for a failure nobody caused.
     mockCreateFileEvidence.mockRejectedValue(new Error('Storage upload failed'))
 
     await expect(createFileEvidenceAction(PROJECT, VALID_INPUT)).rejects.toThrow('Storage upload failed')
