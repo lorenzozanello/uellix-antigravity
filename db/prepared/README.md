@@ -1460,3 +1460,94 @@ prechain y la última prerequisito de los helpers de Storage.
 > **niega** si el definer no puede leer lo que une. Hacen falta los dos: la
 > guarda impide que ocurra, la sonda impide que ocurra **en silencio** si alguna
 > edición futura quita la guarda.
+
+---
+
+## G1-B — la mitad hosted de la policy de INSERT en `audit_logs` (`stella_hosted_0008`)
+
+| Script | Rollback | Aplicado | Qué hace | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0008_audit_log_write_capability.sql` | `stella_hosted_0008_rollback.sql` | **ninguno todavía** | **Ni un GRANT.** Crea **una** policy: `audit_logs_insert_member_or_admin ON public.audit_logs FOR INSERT TO uellix_app`, con el `WITH CHECK` de `stella_0005c` **carácter por carácter** | **DISEÑO — no aplicado** |
+
+> **El hallazgo, medido.** En el proyecto hosted de staging `public.audit_logs`
+> tiene RLS **habilitada** y **exactamente una** policy —
+> `audit_logs_select_member_or_admin`, de `SELECT` — según
+> `artifacts/hosted-chain-posture-observation-postcred.json`. No hay policy de
+> `INSERT`. `uellix_app` es `NOBYPASSRLS` y no es dueño de la tabla, así que
+> **todo** append del runtime al rastro de auditoría es negado por RLS.
+
+> **Y es negado a pesar de que el privilegio de tabla está bien.**
+> `stella_hosted_0007` §1 concede `SELECT, INSERT ON public.audit_logs TO
+> uellix_writer`, y `stella_hosted_0001` §433 concede `uellix_writer TO
+> uellix_app WITH INHERIT TRUE`. El `GRANT` está; la **policy** no está. La
+> postura resultante es **segura** (nadie no autorizado escribe) y
+> **funcionalmente muerta** (nadie autorizado escribe tampoco):
+> `SAFE_BUT_FUNCTIONALLY_BLOCKED`.
+
+> **Por qué hosted nunca la recibió.** La policy existe en local, creada por
+> `stella_0005c_runtime_policy_scope.sql` (y antes por `stella_0005`). Ambos son
+> paquetes **LOCAL-ONLY** que se aplican con `pnpm db:prepared:apply:local`;
+> ninguno es miembro de `HOSTED_CHAIN` ni figura en
+> `db/hosted/hosted-package-manifest.ts`. Es exactamente la misma clase de
+> omisión que `stella_hosted_0006` cerró para la capa de **funciones** y
+> `stella_hosted_0007` para la de **tablas**: ésta es la capa de **policies**,
+> y la última que el runtime necesita.
+
+> **Por qué el predicado se copia y no se adapta.** Una policy hosted meramente
+> *parecida* a la local significaría **dos** reglas de tenancy que revisar en vez
+> de una, y la diferencia entre ambas viviría en la cabeza de nadie.
+> `tests/stella-audit-log-write-capability.test.ts` compara los dos cuerpos
+> normalizando espacios y falla si divergen.
+
+> **Lo que el paquete NO hace.** No concede nada a nadie —el privilegio de tabla
+> ya existe—; no crea policy para `authenticated`, `service_role`, `anon` ni
+> `PUBLIC` (una policy sin `TO` es `TO PUBLIC` y reabriría el hallazgo M1 que
+> `stella_0005c` cerró); no habilita, deshabilita ni fuerza RLS; no toca la
+> policy de `SELECT`, el trigger append-only, ninguna otra tabla, ningún rol y
+> ningún dueño.
+
+> **Sus guardas.** §0.3 se **niega** si RLS no está habilitada en la tabla —una
+> policy permisiva sobre una tabla sin RLS no concede nada y **oculta** ese
+> hecho—; §0.4 se niega si `uellix_app` no tiene ya `INSERT` (habría que aplicar
+> `stella_hosted_0007` antes); §0.5 se niega si no puede `EXECUTE` los helpers
+> que el predicado invoca (`stella_hosted_0006`). La postcondición afirma además
+> que **no existe una segunda** policy de escritura: las permisivas se combinan
+> con `OR`, así que una policy extra derrotaría el binding de actor y de
+> organización mientras todas las demás afirmaciones seguirían pasando.
+
+---
+
+## G1-B — el modelo del proveedor deja de ser un DEFAULT de columna (`stella_0020`)
+
+| Script | Rollback | Aplicado | Qué hace | Estado |
+|---|---|---|---|---|
+| `stella_0020_stella_interactions_model_default.sql` | `stella_0020_rollback.sql` | **ninguno todavía** | Una sola sentencia: `ALTER TABLE public.stella_interactions ALTER COLUMN model_used DROP DEFAULT`. La columna **sigue** `NOT NULL` | **DISEÑO — no aplicado** |
+
+> **El hallazgo.** `db/migrations/0012_stella_interactions.sql` creó
+> `model_used varchar(100) DEFAULT 'gemini-2.0-flash' NOT NULL`.
+> `gemini-2.0-flash` fue **retirado** por Google y devuelve 404 (ver el bloque
+> MODEL HISTORY en `lib/stella/config.ts`). El default es por tanto una
+> **segunda fuente de verdad** del modelo de Stella que **no coincide** con la
+> única real, `STELLA_DEFAULT_GEMINI_MODEL`.
+
+> **Por qué se elimina y no se reapunta a `gemini-3.6-flash`.** `model_used`
+> registra **qué modelo respondió**: es una *medición*, no una configuración, y
+> un default de columna es la base de datos **inventando** una medición para una
+> fila cuyo escritor no la aportó. Reapuntar el literal conservaría exactamente
+> esa propiedad y la haría **más difícil de ver**, porque el valor inventado
+> pasaría a parecer plausible.
+
+> **Por qué no cambia ningún comportamiento.** Desde `stella_0017` hay
+> exactamente **un** escritor de `public.stella_interactions`:
+> `uellix_stella.settle_reserved_quota`, llamada por
+> `uellix_stella_ops.complete_operation_ticket`. Esa función resuelve
+> `v_model := COALESCE(p_model_used, 'not-applicable')` y **nombra** la columna
+> en su lista de `INSERT`, así que la cláusula `DEFAULT` es inalcanzable desde
+> ella. La §0.3 del paquete **demuestra** esa afirmación contra el catálogo —se
+> niega si algún principal fuera de la capability tiene `INSERT`— en vez de
+> asumirla.
+
+> **El rollback restaura un modelo retirado, a propósito.** Un rollback restaura
+> lo que había; no lo mejora. Por eso `stella_0020_rollback.sql` escribe
+> `gemini-2.0-flash` y **nunca** `gemini-3.6-flash`, y por eso no debe leerse
+> como una recomendación de modelo.

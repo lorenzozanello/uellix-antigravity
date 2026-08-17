@@ -18,12 +18,20 @@ import { BASE_EXCLUDE } from "./vitest.shared";
  *
  * It is only ever launched by scripts/stella-ticket-e2e.sh, which builds the
  * database it needs and destroys it afterwards.
+ *
+ * HZ-01: `setupFiles` is no longer empty. It carries the Gemini network guard
+ * and NOTHING else — the reason the list was empty ("vitest.setup.ts wires
+ * @testing-library/react cleanup, which has nothing to clean here") is a
+ * statement about DOM cleanup and says nothing about network egress. A config
+ * that collected tests without the guard would be a hole shaped exactly like
+ * the incident the guard closes.
  */
 export default defineConfig({
   test: {
     environment: "node",
     globals: true,
     include: ["tests/e2e/**/*.e2e.test.ts"],
+    setupFiles: ["./vitest.setup.network-guard.ts"],
     exclude: [...BASE_EXCLUDE],
     // One file, one database, shared mutable ledger state: parallel forks
     // would race each other's quota and charge counts and turn a real

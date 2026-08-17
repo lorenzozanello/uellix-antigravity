@@ -54,6 +54,7 @@ import { canUseStella } from '@/lib/auth/permissions'
 import { stellaConfig } from '@/lib/stella/config'
 import { db } from '@/db/client'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
+import { reportStellaFailure } from '@/lib/stella/observability'
 import { logAuditAction, AUDIT_ACTIONS, type AuditLogEntry } from '@/lib/audit/logger'
 import { StellaDecisionInputSchema, type StellaDecisionInput } from './decisions-schema'
 
@@ -70,7 +71,20 @@ async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
     // Its own short transaction — see the same note in app/actions/stella/advisor.ts.
     await withOrganizationDatabaseContext(() => logAuditAction(entry))
   } catch (error) {
+    // The console line is the local trace; the Sentry report is the one an
+    // operator sees. G1-B PRECONDITIONS added the second half because the first
+    // was not enough: on the hosted staging project `audit_logs` has RLS
+    // enabled and NO INSERT policy (prepared stella_hosted_0008 closes that), so
+    // every governed Stella run has been swallowing an RLS denial here and
+    // reporting success. Fire-and-forget must stay fire-and-forget — an audit
+    // failure may never change a user-facing Stella result — but it must not
+    // stay INVISIBLE, or "audit event persisted" is a claim nobody can check.
     console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
+    reportStellaFailure('decisions', 'AUDIT_ERROR', error, {
+      organizationId: entry.organizationId ?? null,
+      action: entry.action,
+      entityType: entry.entityType,
+    })
   }
 }
 

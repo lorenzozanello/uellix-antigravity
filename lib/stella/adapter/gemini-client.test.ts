@@ -1,8 +1,10 @@
 // lib/stella/adapter/gemini-client.test.ts
 // Sprint 9B: Stella Gemini adapter tests - mock provider, no real Gemini calls
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { StellaGeminiAdapter, buildGeminiErrorLog, getGeminiAdapter } from './gemini-client'
+import { stellaConfig } from '../config'
+import { StellaTimeoutError } from '../errors'
 import { ValidatorOutputSchema } from '../schemas/validator-output'
 import { StellaPayloadTooLargeError } from '../security/payload-limits'
 import type { StellaMockProvider, StellaRequest, StellaResponse } from './types'
@@ -462,5 +464,113 @@ describe('getGeminiAdapter', () => {
     const second = getGeminiAdapter()
 
     expect(first).not.toBe(second)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// FABLE FINDING F1 — the timeout, measured on the path that uses it
+// ---------------------------------------------------------------------------
+//
+// The suite this replaces asserted `expect(mockStellaConfig.requestTimeoutMs)
+// .toBe(15000)` against a config object the same file had declared. That
+// compares a literal with itself: it stays green if the adapter ignores the
+// configured value, hardcodes its own, or never arms the timer at all.
+//
+// These cases measure BEHAVIOUR against the REAL `lib/stella/config` — this
+// file does not mock it — so the boundary asserted below is the production
+// number, reached the way production reaches it: the adapter is constructed
+// with NO `timeoutMs` override, exactly as `getGeminiAdapter()` is called from
+// the five server actions.
+//
+// `stellaConfig.requestTimeoutMs` appears as the EXPECTED BOUNDARY rather than
+// as the assertion. What is asserted is when the abort fires relative to it,
+// which is a fact about the adapter and not about the constant.
+
+describe('the configured request timeout is the one the provider call actually gets', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    mockGenerateContent.mockReset()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  /**
+   * A provider call that NEVER settles on its own and only rejects when the
+   * adapter's own AbortController fires.
+   *
+   * This is the whole design of the case: the promise cannot resolve, cannot
+   * time out by itself, and carries no timer. The only thing that can end it is
+   * the signal the adapter passed in — so if the assertion below observes a
+   * rejection, the signal was armed, was wired into the request, and fired.
+   */
+  function hangUntilAborted(): void {
+    mockGenerateContent.mockImplementation((request: { config?: { abortSignal?: AbortSignal } }) => {
+      const signal = request?.config?.abortSignal
+      return new Promise((_resolve, reject) => {
+        if (!signal) return // never settles — the test then fails on timeout, correctly
+        signal.addEventListener('abort', () => {
+          // The shape Node's fetch stack produces on an aborted request.
+          reject(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }))
+        })
+      })
+    })
+  }
+
+  it('has NOT aborted one millisecond before the configured budget', async () => {
+    hangUntilAborted()
+    const adapter = new StellaGeminiAdapter({ apiKey: 'test-key' })
+
+    let settled: 'pending' | 'resolved' | 'rejected' = 'pending'
+    const call = adapter
+      .generate({ role: 'advisor', systemPrompt: 'sys', userMessage: 'msg' })
+      .then(() => { settled = 'resolved' }, () => { settled = 'rejected' })
+
+    await vi.advanceTimersByTimeAsync(stellaConfig.requestTimeoutMs - 1)
+    expect(settled).toBe('pending')
+
+    // Let the call finish so the test does not leave a floating promise.
+    await vi.advanceTimersByTimeAsync(1)
+    await call
+  })
+
+  it('aborts AT the configured budget and surfaces StellaTimeoutError', async () => {
+    hangUntilAborted()
+    const adapter = new StellaGeminiAdapter({ apiKey: 'test-key' })
+
+    const call = adapter.generate({ role: 'advisor', systemPrompt: 'sys', userMessage: 'msg' })
+    const assertion = expect(call).rejects.toBeInstanceOf(StellaTimeoutError)
+
+    await vi.advanceTimersByTimeAsync(stellaConfig.requestTimeoutMs)
+    await assertion
+  })
+
+  it('takes the budget from stellaConfig when the caller overrides nothing', async () => {
+    // The discriminating case. An adapter built with an EXPLICIT, much shorter
+    // budget aborts at that budget — so the previous case's boundary is read
+    // from the configuration and is not a constant baked into the adapter.
+    hangUntilAborted()
+    const shortBudgetMs = 25
+    expect(shortBudgetMs).toBeLessThan(stellaConfig.requestTimeoutMs)
+
+    const adapter = new StellaGeminiAdapter({ apiKey: 'test-key', timeoutMs: shortBudgetMs })
+    const call = adapter.generate({ role: 'advisor', systemPrompt: 'sys', userMessage: 'msg' })
+    const assertion = expect(call).rejects.toBeInstanceOf(StellaTimeoutError)
+
+    await vi.advanceTimersByTimeAsync(shortBudgetMs)
+    await assertion
+  })
+
+  it('hands the SAME signal to the provider request that the timer aborts', async () => {
+    hangUntilAborted()
+    const adapter = new StellaGeminiAdapter({ apiKey: 'test-key', timeoutMs: 10 })
+    const call = adapter.generate({ role: 'advisor', systemPrompt: 'sys', userMessage: 'msg' })
+    const assertion = expect(call).rejects.toBeInstanceOf(StellaTimeoutError)
+    await vi.advanceTimersByTimeAsync(10)
+    await assertion
+
+    const request = mockGenerateContent.mock.calls[0][0] as { config: { abortSignal: AbortSignal } }
+    expect(request.config.abortSignal).toBeInstanceOf(AbortSignal)
+    expect(request.config.abortSignal.aborted).toBe(true)
   })
 })

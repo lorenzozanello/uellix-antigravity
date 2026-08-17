@@ -43,7 +43,7 @@ interface StellaComposerPanelProps {
    * button is not rendered (the draft remains visible, review-only).
    */
   onUseDraft?: (draft: ComposerDraft) => void
-  /** Server-passed availability — see StellaAdvisorPanel. */
+  /** Server-passed availability — see StellaContextualAdvisorPanel. */
   enabled?: boolean
   /**
    * Heading level for the panel's subsection headings. The report page

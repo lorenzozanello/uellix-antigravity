@@ -692,7 +692,14 @@ describe('every entry point that can reach the database opens an identity contex
     // `app/api/health/runtime-identity/route.ts`, allowlisted because it
     // observes the CONNECTION rather than tenant data — see its ALLOWLIST row.
     // `contextualized` is unchanged at 83: no existing module changed class.
-    }).toEqual({ inventoried: 123, reaching: 99, contextualized: 83, allowlisted: 16 })
+    //
+    // 123 -> 124, and REACHING STAYS 99: G1-B PRECONDITIONS adds
+    // `app/api/health/stella-preconditions/route.ts`, which reads env-derived
+    // configuration and opens no connection. That it moves `inventoried`
+    // without moving `reaching` is the assertion — a health route that had
+    // quietly started touching tenant data would move both, and would need an
+    // ALLOWLIST row it does not have.
+    }).toEqual({ inventoried: 124, reaching: 99, contextualized: 83, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

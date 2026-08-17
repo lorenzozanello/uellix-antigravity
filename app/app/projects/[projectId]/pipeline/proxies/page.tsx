@@ -2,7 +2,7 @@
 
 import Stepper from '@/components/sroi/Stepper'
 import { PipelineStepHeader } from '@/components/sroi/PipelineStepHeader'
-import { StellaAdvisorPanel, StellaContextualAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaContextualAdvisorPanel, StellaReviewerPanel } from '@/components/stella'
 // Server-only config read (READ-ONLY module) — availability passed as prop (U5).
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
@@ -217,14 +217,6 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
 
       <Stepper />
 
-      {/* DP-03 (pending product decision): legacy generic advisor stays
-          mounted alongside the new contextual advisor. */}
-      <StellaAdvisorPanel
-        projectId={projectId}
-        step="Proxies"
-        highlightHint={assignments.length === 0}
-        enabled={stellaAdvisorEnabled}
-      />
       {/* U3: proxy assignments are structured records (values, currencies,
           confidence) — no free-text apply target, so apply offers
           copy-to-clipboard. */}

@@ -358,6 +358,18 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // anything.
       'stella_0019_rollback.sql',
       'stella_0019_storage_write_roles.sql',
+      // G1-B PRECONDITIONS. One statement: drop the DEFAULT on
+      // public.stella_interactions.model_used. Migration 0012 created it as
+      // DEFAULT 'gemini-2.0-flash', a model Google has since retired, so the
+      // column carried a second and WRONG source of truth for Stella's model
+      // target next to STELLA_DEFAULT_GEMINI_MODEL. The default is DROPPED
+      // rather than retargeted: model_used records which model ANSWERED — a
+      // measurement — and a default is the database inventing one. The column
+      // stays NOT NULL, so a writer that supplies no model now fails instead of
+      // being filled in. §0.3 proves the default is unreachable (stella_0017
+      // left exactly one writer) before touching anything.
+      'stella_0020_rollback.sql',
+      'stella_0020_stella_interactions_model_default.sql',
       // TRAIN 5B. The managed-Supabase counterpart of stella_0004: same five
       // roles, no superuser anywhere, an auth shim in place of a grant that
       // `postgres` cannot issue (RR-09). It is a `stella_*` script and is swept
@@ -419,6 +431,18 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // tables capability-only — and grants nothing whatsoever to uellix_app,
       // which inherits.
       'stella_hosted_0007_runtime_table_acl_contract.sql',
+      // G1-B PRECONDITIONS. The POLICY half of the same omission RT-01 repaired
+      // for functions and RT-02 for tables — and the last layer the runtime
+      // needs. MEASURED on the hosted staging project: public.audit_logs has RLS
+      // enabled and EXACTLY ONE policy, audit_logs_select_member_or_admin. There
+      // is no INSERT policy, so every audit append from uellix_app is refused by
+      // RLS even though stella_hosted_0007 §1 grants it the table privilege:
+      // SAFE, and FUNCTIONALLY DEAD. The policy exists locally (stella_0005c),
+      // which is local-only and was never in any hosted manifest. This package
+      // creates that one policy, TO uellix_app, with stella_0005c's WITH CHECK
+      // character for character — and grants nothing to anyone.
+      'stella_hosted_0008_audit_log_write_capability.sql',
+      'stella_hosted_0008_rollback.sql',
     ])
   })
 

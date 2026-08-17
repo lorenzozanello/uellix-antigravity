@@ -17,6 +17,10 @@ import type { RateLimitResult } from '@/lib/stella/rate-limit'
 const mockStellaConfig = {
   isEnabled: true,
   isAdvisorEnabled: true,
+  // G1-B: the legacy step advisor now has its own flag, DEFAULT FALSE in the
+  // real config. This suite is the quarantined path's coverage, so it opts in
+  // explicitly — which is also what makes the DISABLED case below meaningful.
+  isLegacyAdvisorEnabled: true,
   geminiApiKey: 'test-key',
   geminiModel: 'gemini-2.0-flash',
   requestTimeoutMs: 15000,

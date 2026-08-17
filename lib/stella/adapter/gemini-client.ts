@@ -7,6 +7,14 @@ import { stellaConfig } from '../config'
 import { StellaParseError, StellaGeminiError, StellaTimeoutError } from '../errors'
 import { assertPromptWithinLimit } from '../security/payload-limits'
 import { redactProviderRequest } from '../security/redact-model-bound'
+import {
+  classifyProviderFailure,
+  emitProviderCallCompleted,
+  emitProviderCallFailed,
+  emitProviderCallStarted,
+  newProviderInvocationId,
+  type ProviderCallScope,
+} from './provider-call-log'
 import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig, StellaProviderMetadata } from './types'
 
 export class StellaGeminiAdapter {
@@ -72,6 +80,22 @@ export class StellaGeminiAdapter {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
+    // G1-B — THE PROVIDER INVOCATION COUNTER (see ./provider-call-log.ts).
+    //
+    // Declared OUT HERE, before the try, so the catch below can tell two cases
+    // apart that would otherwise look identical: an error raised BEFORE the SDK
+    // was invoked (the dynamic import, the client constructor) and one raised
+    // by the invocation itself. Only the second may emit a `failed` event, or
+    // the started/failed pairing the cardinality contract rests on would drift.
+    let scope: ProviderCallScope | null = null
+    let invocationStartedAt = 0
+    // Once an invocation has emitted `completed` OR `failed` it is settled and
+    // must never emit again. Without this, the empty-`rawOutput` StellaParseError
+    // below — raised AFTER the provider answered — would fall into the catch and
+    // file a `failed` next to its own `completed`, putting one invocation at
+    // started=1, completed=1, failed=1.
+    let invocationSettled = false
+
     try {
       // Dynamic import keeps @google/genai out of the client bundle
       const { GoogleGenAI } = await import('@google/genai')
@@ -117,6 +141,21 @@ export class StellaGeminiAdapter {
       // Tuning `thinkingConfig` is a post-G1-A decision, taken against measured
       // thoughtsTokenCount / finish reasons — never as a guess.
       // ─────────────────────────────────────────────────────────────────────
+      // THE COUNTER'S EMISSION POINT, and its position is the soundness
+      // argument. `started` is emitted with NO `await` between it and the call
+      // below, which makes it a NECESSARY CONDITION of the invocation:
+      //   0 started  =>  0 invocations
+      // — the direction G1-B's negative block depends on. See
+      // `emitProviderCallStarted` for why emitting after the SDK returns its
+      // Promise would break that implication.
+      scope = {
+        invocationId: newProviderInvocationId(),
+        role: request.role,
+        requestedModel: this.config.model,
+      }
+      invocationStartedAt = Date.now()
+      emitProviderCallStarted(scope)
+
       const response = await ai.models.generateContent({
         model: this.config.model,
         contents: request.userMessage,
@@ -128,6 +167,21 @@ export class StellaGeminiAdapter {
           abortSignal: controller.signal,
         },
       })
+
+      // H2: additive observability. Read-only projection of counts, ids and
+      // one enum — see StellaProviderMetadata for what may never go in here.
+      // Nothing in the product consumes this; it exists for the G1-A evidence
+      // package, and its absence changes no behaviour. Computed here, once, and
+      // shared with the completed event so the log and the response object
+      // cannot disagree about what the provider reported.
+      const providerMetadata = extractProviderMetadata(response)
+
+      // SETTLED HERE, before any of our own contract checks run. The provider
+      // ANSWERED; whether its answer satisfies us is a separate question with a
+      // separate failure, and conflating them would make `completed` mean
+      // "Stella was happy" instead of "the SDK returned".
+      invocationSettled = true
+      emitProviderCallCompleted(scope, providerMetadata, Date.now() - invocationStartedAt)
 
       const rawOutput = response.text ?? ''
       if (!rawOutput) {
@@ -141,13 +195,18 @@ export class StellaGeminiAdapter {
         modelUsed: this.config.model,
         tokensUsed: response.usageMetadata?.totalTokenCount,
         timestamp: new Date(),
-        // H2: additive observability. Read-only projection of counts, ids and
-        // one enum — see StellaProviderMetadata for what may never go in here.
-        // Nothing in the product consumes this; it exists for the G1-A evidence
-        // package, and its absence changes no behaviour.
-        providerMetadata: extractProviderMetadata(response),
+        providerMetadata,
       }
     } catch (error) {
+      // Only an invocation that STARTED and has not settled may file `failed`.
+      // Both guards are load-bearing: the first excludes errors from the import
+      // and the client constructor, the second excludes our own post-response
+      // contract checks. Nothing about the error is read except its category.
+      if (scope !== null && !invocationSettled) {
+        invocationSettled = true
+        emitProviderCallFailed(scope, classifyProviderFailure(error), Date.now() - invocationStartedAt)
+      }
+
       if (error instanceof StellaParseError) throw error
       if (error instanceof StellaGeminiError) throw error
       if (error instanceof DOMException && error.name === 'AbortError') {

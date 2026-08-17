@@ -1773,7 +1773,34 @@ function checkStellaDecisionPersistenceErrorNonLeaking(): ReleaseCaseResult {
 
   const DB_ERROR_RETURN_LITERAL = "return { ok: false, error: 'DB_ERROR', message: 'Failed to record decision. Please try again.' }"
   const SERVER_LOG_NARROWED = "console.error('[stella] recordStellaDecision insert failed:', error instanceof Error ? error.name : 'unknown')"
-  const AUDIT_CATCH_SWALLOWED = "} catch (error) {\n    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')\n  }"
+  const AUDIT_CONSOLE_NARROWED = "console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')"
+
+  // G1-B PRECONDITIONS — THIS CHECK IS STRUCTURAL NOW, NOT A PINNED BLOCK.
+  //
+  // It used to compare the catch block against one exact string, so the gate
+  // failed the moment `logStellaAudit` added a `reportStellaFailure` call
+  // beside its console line — a change that makes an audit-write failure
+  // VISIBLE and leaves the swallowing behaviour untouched. (It had to become
+  // visible: on hosted staging `audit_logs` has RLS enabled and no INSERT
+  // policy, so this catch block has been absorbing an RLS denial on every
+  // governed run. See prepared stella_hosted_0008.)
+  //
+  // A gate that cannot tell "the block gained a line" from "the block started
+  // rethrowing" is measuring the text, not the property. The property is: the
+  // catch block of `logStellaAudit` contains no `throw`, so an audit failure
+  // can never change the user-facing result. The negative control below still
+  // proves the detector fires.
+  const auditCatchRethrows = (text: string): boolean => {
+    const start = text.indexOf('async function logStellaAudit')
+    // ABSENT COUNTS AS A VIOLATION. A renamed or deleted helper must not read
+    // as "no rethrow found, therefore safe".
+    if (start < 0) return true
+    const end = text.indexOf('\n}', start)
+    const body = end < 0 ? text.slice(start) : text.slice(start, end)
+    const catchAt = body.indexOf('} catch (error) {')
+    if (catchAt < 0) return true
+    return /\bthrow\b/.test(body.slice(catchAt))
+  }
 
   const evaluate = (text: string): string[] => {
     const problems: string[] = []
@@ -1783,7 +1810,10 @@ function checkStellaDecisionPersistenceErrorNonLeaking(): ReleaseCaseResult {
     if (!text.includes(SERVER_LOG_NARROWED)) {
       problems.push('server log does not narrow the caught error down to error.name — a raw error could leak query/connection detail to logs')
     }
-    if (!text.includes(AUDIT_CATCH_SWALLOWED)) {
+    if (!text.includes(AUDIT_CONSOLE_NARROWED)) {
+      problems.push('the audit-failure log does not narrow the caught error down to error.name — a raw error could leak query/connection detail to logs')
+    }
+    if (auditCatchRethrows(text)) {
       problems.push('logStellaAudit does not swallow its own failure without rethrowing — an audit-write failure could change the user-facing result')
     }
     return problems
@@ -1802,8 +1832,8 @@ function checkStellaDecisionPersistenceErrorNonLeaking(): ReleaseCaseResult {
       'nc-decision-audit-failure-rethrown',
       'an audit-log catch block that rethrows must be reported',
       () => evaluate(source.replace(
-        AUDIT_CATCH_SWALLOWED,
-        "} catch (error) {\n    console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')\n    throw error\n  }",
+        AUDIT_CONSOLE_NARROWED,
+        `${AUDIT_CONSOLE_NARROWED}\n    throw error`,
       )),
     ),
   ]

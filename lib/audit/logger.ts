@@ -122,8 +122,37 @@ export interface AuditLogEntry {
 /**
  * Persists an audit log entry to the database.
  *
- * Uses the service-level Drizzle client (bypasses RLS) — this is intentional.
- * Audit logging must always succeed regardless of the caller's RLS context.
+ * ---------------------------------------------------------------------------
+ * CORRECTION (G1-B, Fable finding): THIS DOES NOT BYPASS RLS.
+ * ---------------------------------------------------------------------------
+ * This comment used to read "uses the service-level Drizzle client (bypasses
+ * RLS) — this is intentional. Audit logging must always succeed regardless of
+ * the caller's RLS context." Every clause of that was false after the runtime
+ * cutover, and believing it is how a dead audit path stayed invisible.
+ *
+ * What actually happens: `db` is the PROXY exported by db/client.ts. Inside an
+ * identity context it resolves to the drizzle handle bound to that request's
+ * transaction — connected as `uellix_app`, which is NOBYPASSRLS, owns nothing,
+ * and is subject to every policy on `public.audit_logs`. Outside a context it
+ * falls back to a claimless pooled handle that sees no rows.
+ *
+ * TWO CONSEQUENCES FOR CALLERS, and both are requirements rather than advice:
+ *
+ *   1. A Stella audit write MUST run inside `withOrganizationDatabaseContext`
+ *      (or `withDatabaseIdentityContext`). The INSERT policy's WITH CHECK reads
+ *      `auth.uid()` and `current_user_org_ids()`, both of which resolve from
+ *      `request.jwt.claims` — a setting only the identity context installs.
+ *      Outside one, `auth.uid()` is NULL and the row is refused. The five
+ *      Stella actions do this: see `logStellaAudit`.
+ *   2. It can FAIL, and it does. The policy must exist on the target database:
+ *      it is created locally by prepared stella_0005c and on the hosted side by
+ *      prepared stella_hosted_0008. Where the policy is absent, RLS refuses
+ *      every append even though the table GRANT is present.
+ *
+ * "Audit logging must always succeed" was never a property of this function. It
+ * is a property the CALLERS provide — by treating the write as fire-and-forget
+ * so a failure cannot change a user-facing result — and G1-B made that failure
+ * observable (`reportStellaFailure(..., 'AUDIT_ERROR', ...)`) instead of silent.
  *
  * All sensitive fields should be passed explicitly; never log plaintext secrets.
  */

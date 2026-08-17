@@ -40,6 +40,21 @@ export const stellaConfig = {
   // Enabled only if explicitly set to 'true' (string)
   isEnabled: process.env.STELLA_ENABLED === 'true',
   isAdvisorEnabled: process.env.STELLA_ADVISOR_ENABLED === 'true',
+  // G1-B PRECONDITIONS — THE LEGACY STEP ADVISOR HAS ITS OWN SWITCH.
+  //
+  // `getStellaAdvisor` (app/actions/stella/advisor.ts) and
+  // `getStellaContextualAdvisor` are two advisor surfaces with materially
+  // different governance: only the contextual one sends a provider-side
+  // `responseJsonSchema`, validates against a `.strict()` Zod contract, carries
+  // a validated citation catalog and pins `requiresHumanReview: true`. Until
+  // this flag existed both were opened by `STELLA_ADVISOR_ENABLED`, so turning
+  // Stella's advisor on in Preview also opened the weaker one.
+  //
+  // DEFAULT FALSE, and it stays false: the legacy panel is unmounted from every
+  // pipeline page and the action survives only as the advisor category's
+  // representative in the governed multi-category quota harness. See
+  // app/actions/stella/__tests__/legacy-advisor-disposition.test.ts.
+  isLegacyAdvisorEnabled: process.env.STELLA_LEGACY_ADVISOR_ENABLED === 'true',
   isValidatorEnabled: process.env.STELLA_VALIDATOR_ENABLED === 'true',
   isComposerEnabled: process.env.STELLA_COMPOSER_ENABLED === 'true',
   // Fase 5b reviewer roles — default false, enabled per-role via env vars.
@@ -97,7 +112,18 @@ export const stellaConfig = {
 } as const
 
 // Computed flags
+//
+// G1-B PRECONDITIONS — `.trim()`, and it is not cosmetic.
+//
+// This used to read `geminiApiKey.length > 0` while
+// `lib/stella/capability-readiness.ts` read `geminiApiKey.trim() === ''`. A key
+// set to whitespace — a mis-pasted secret, a trailing newline in a Vercel value
+// — was therefore PRESENT to the six action gates (which decide whether to
+// proceed) and ABSENT to the readiness table (which only reports). The action
+// won: the run continued, minted a ticket, RESERVED a quota unit, and handed
+// "   " to Google as an API key. The failure arrived as a provider 4xx after
+// the reservation instead of as a refusal before it.
 export const stellaState = {
-  canUseStella: stellaConfig.isEnabled && stellaConfig.geminiApiKey.length > 0,
-  missingApiKey: stellaConfig.isEnabled && !stellaConfig.geminiApiKey,
+  canUseStella: stellaConfig.isEnabled && stellaConfig.geminiApiKey.trim().length > 0,
+  missingApiKey: stellaConfig.isEnabled && stellaConfig.geminiApiKey.trim().length === 0,
 } as const

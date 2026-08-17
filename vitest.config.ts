@@ -12,7 +12,10 @@ export default defineConfig({
     // See vitest.shared.ts for why the integration glob is excluded here and
     // why the list is shared rather than inherited.
     exclude: [...BASE_EXCLUDE, INTEGRATION_GLOB, E2E_GLOB],
-    setupFiles: ["./vitest.setup.ts"],
+    // HZ-01: the network guard is FIRST, so it is installed before any other
+    // setup file or test module can issue a request. See
+    // vitest.setup.network-guard.ts for the incident it closes.
+    setupFiles: ["./vitest.setup.network-guard.ts", "./vitest.setup.ts"],
   },
   resolve: {
     alias: {

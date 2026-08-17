@@ -103,6 +103,9 @@ const mockStellaConfig = {
   isEnabled: true,
   isGroundedQueryEnabled: true,
   isAdvisorEnabled: true,
+  // G1-B: the legacy step advisor is this harness's advisor-category
+  // representative, and its own flag defaults to false in the real config.
+  isLegacyAdvisorEnabled: true,
   isValidatorEnabled: true,
   isComposerEnabled: true,
   isProxyReviewerEnabled: true,
@@ -708,6 +711,9 @@ beforeEach(async () => {
     isEnabled: true,
     isGroundedQueryEnabled: true,
     isAdvisorEnabled: true,
+  // G1-B: the legacy step advisor is this harness's advisor-category
+  // representative, and its own flag defaults to false in the real config.
+  isLegacyAdvisorEnabled: true,
     isValidatorEnabled: true,
     isComposerEnabled: true,
     isProxyReviewerEnabled: true,

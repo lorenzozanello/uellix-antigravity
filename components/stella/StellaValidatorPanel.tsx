@@ -27,7 +27,7 @@ interface StellaValidatorPanelProps {
   step?: 'Calculation' | 'Cálculo'
   title?: string
   className?: string
-  /** Server-passed availability — see StellaAdvisorPanel. */
+  /** Server-passed availability — see StellaContextualAdvisorPanel. */
   enabled?: boolean
 }
 

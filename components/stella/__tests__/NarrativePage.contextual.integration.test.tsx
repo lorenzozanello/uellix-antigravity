@@ -155,9 +155,14 @@ describe('NarrativePage × StellaContextualAdvisorPanel (integration-style)', ()
     cleanup()
   })
 
-  it('mounts both the legacy advisor and the contextual panel (DP-03)', async () => {
+  // G1-B PRECONDITIONS — DP-03 IS DECIDED. The legacy generic advisor is no
+  // longer mounted anywhere: it shared `STELLA_ADVISOR_ENABLED` with the
+  // contextual advisor while carrying no provider-side response schema, no
+  // strict Zod contract, no citations and no `requiresHumanReview`. See
+  // app/actions/stella/__tests__/legacy-advisor-disposition.test.ts.
+  it('mounts the contextual panel and NOT the legacy advisor', async () => {
     await renderNarrativePage()
-    expect(screen.queryByText('Stella Advisor')).not.toBeNull()
+    expect(screen.queryByText('Stella Advisor')).toBeNull()
     expect(screen.queryByTestId('stella-contextual-advisor-panel')).not.toBeNull()
   })
 

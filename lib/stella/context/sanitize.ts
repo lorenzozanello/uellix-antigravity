@@ -85,6 +85,58 @@ export function hasForbiddenPattern(input: string): boolean {
 }
 
 /**
+ * Neutralize ONE user/tenant-editable field bound for the untrusted-data
+ * envelope: clean it, and replace it wholesale with a neutral placeholder if it
+ * carries secret-oriented or instruction-shaped content.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A FUNCTION AND NOT A CONVENTION
+ * ---------------------------------------------------------------------------
+ * `hasForbiddenPattern(x) ? '[Placeholder]' : sanitizeString(x, n)` was written
+ * inline, field by field, in `build-advisor-context.ts`. It reached FIVE fields
+ * (project name, narrative, stakeholder name, evidence title, activity title)
+ * and missed every other one the builder emits — outcome titles, outcome types,
+ * indicator names and units, stakeholder types, proxy names, proxy sources,
+ * proxy values and currencies, report section titles and section types. An
+ * inline convention protects the fields whose author remembered it; a function
+ * protects the field list, and a field added without it is visible as a raw
+ * `sanitizeString` in a builder where nothing else uses one.
+ *
+ * ---------------------------------------------------------------------------
+ * BOTH THE RAW AND THE CLEANED FORM ARE TESTED, AND THE ASYMMETRY IS THE POINT
+ * ---------------------------------------------------------------------------
+ * Cleaning can DESTROY a marker (truncation cuts "ignore all previous
+ * instructions" in half) and it can CREATE one (a NUL inside "ignore\x00all
+ * previous" becomes a space, and only then does the `\s+` in the rule match).
+ * Testing one form would leave the other open, so both are tested and either
+ * one is enough to replace the field.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THIS DELIBERATELY DOES NOT DO
+ * ---------------------------------------------------------------------------
+ * It does not strip, mask or rewrite parts of a value. Project data is DATA,
+ * and partial rewriting produces text that reads as the tenant's prose while no
+ * longer being it — worse for the reviewer than an explicit placeholder, and
+ * indistinguishable from a model hallucination downstream. Either the field is
+ * forwarded verbatim or it is replaced by a value that announces itself.
+ *
+ * The envelope (`wrapUntrustedData`) and the system prompt remain the
+ * AUTHORITATIVE defense: this is defense in depth over a rule set deliberately
+ * narrow enough that ordinary ToC prose — "actúa como articulador entre los
+ * actores locales", "Sistema: educativo departamental" — passes untouched.
+ */
+export function sanitizeUntrustedText(
+  input: string | null | undefined,
+  maxLength: number,
+  placeholder: string
+): string {
+  const raw = input ?? ''
+  const cleaned = sanitizeString(raw, maxLength)
+  if (hasForbiddenPattern(raw) || hasForbiddenPattern(cleaned)) return placeholder
+  return cleaned
+}
+
+/**
  * Sanitize narrative text for safe inclusion in prompts.
  * FIX 7 (audit): PII is redacted BEFORE truncation — a value straddling the
  * cut would otherwise survive as a fragment the patterns no longer match.

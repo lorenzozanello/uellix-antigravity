@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/narrative/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel, StellaContextualAdvisorField } from '@/components/stella';
+import { StellaContextualAdvisorField } from '@/components/stella';
 // Server-only config read (READ-ONLY module): Stella availability is resolved
 // here and passed down as a serializable prop (U5).
 import { stellaConfig, stellaState } from '@/lib/stella/config';
@@ -111,16 +111,6 @@ export default async function NarrativePage({ params }: { params: Promise<{ proj
         </p>
       </div>
       <Stepper />
-      {/* DP-03 (pending product decision): the legacy generic advisor stays
-          mounted alongside the new contextual advisor until the coordinator
-          resolves which one survives. The contextual panel for this page is
-          mounted next to its apply target (the narrative textarea) below. */}
-      <StellaAdvisorPanel
-        projectId={projectId}
-        step="Narrativa"
-        highlightHint={!narrative}
-        enabled={stellaAdvisorEnabled}
-      />
       {canReviewMethodology(membership.role) && (
         <MethodologyReviewPanel projectId={projectId} step="narrative" title="Revisión metodológica — Narrativa / Teoría de cambio" />
       )}

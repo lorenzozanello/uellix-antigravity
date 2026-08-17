@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import { StellaAdvisorPanel, StellaContextualAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
+import { StellaContextualAdvisorPanel, StellaValidatorPanel, StellaReviewerPanel } from '@/components/stella'
 // Server-only config read (READ-ONLY module) — availability passed as prop (U5).
 import { stellaConfig, stellaState } from '@/lib/stella/config'
 import {
@@ -450,14 +450,6 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
         </CardContent>
       </Card>
 
-      {/* DP-03 (pending product decision): legacy generic advisor stays
-          mounted alongside the new contextual advisor. */}
-      <StellaAdvisorPanel
-        projectId={projectId}
-        step="Cálculo"
-        highlightHint={!readiness.hasInvestment}
-        enabled={stellaAdvisorEnabled}
-      />
       {/* U3: the calculation step is numeric/derived — no free-text apply
           target, so apply offers copy-to-clipboard. */}
       <StellaContextualAdvisorPanel

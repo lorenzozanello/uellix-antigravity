@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/stakeholders/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/stella';
+import { StellaContextualAdvisorPanel } from '@/components/stella';
 // Server-only config read (READ-ONLY module) — availability passed as prop (U5).
 import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
@@ -59,14 +59,6 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
         </p>
       </div>
       <Stepper />
-      {/* DP-03 (pending product decision): legacy generic advisor stays
-          mounted alongside the new contextual advisor. */}
-      <StellaAdvisorPanel
-        projectId={projectId}
-        step="Grupos de interés"
-        highlightHint={!stakeholders?.length}
-        enabled={stellaAdvisorEnabled}
-      />
       {/* U3: no single obvious editable target on this page (stakeholders are
           a list of records) — apply shows a copy-to-clipboard affordance. */}
       <StellaContextualAdvisorPanel

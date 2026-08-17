@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/indicators/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/stella';
+import { StellaContextualAdvisorPanel } from '@/components/stella';
 // Server-only config read (READ-ONLY module) — availability passed as prop (U5).
 import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
@@ -88,14 +88,6 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
         </p>
       </div>
       <Stepper />
-      {/* DP-03 (pending product decision): legacy generic advisor stays
-          mounted alongside the new contextual advisor. */}
-      <StellaAdvisorPanel
-        projectId={projectId}
-        step="Indicadores"
-        highlightHint={!indicators?.length}
-        enabled={stellaAdvisorEnabled}
-      />
       {/* U3: indicators are a per-outcome list — no single apply target, so
           apply offers copy-to-clipboard. */}
       <StellaContextualAdvisorPanel

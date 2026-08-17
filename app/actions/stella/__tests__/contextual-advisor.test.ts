@@ -17,6 +17,10 @@ import type { RateLimitResult } from '@/lib/stella/rate-limit'
 const mockStellaConfig = {
   isEnabled: true,
   isAdvisorEnabled: true,
+  // Legacy step advisor OFF, exactly as the real config defaults it. The two
+  // assertions in this suite that call `getStellaAdvisor` only ever check that
+  // it does NOT reach the provider, so the flag makes them stronger, not weaker.
+  isLegacyAdvisorEnabled: false,
   geminiApiKey: 'test-key',
   geminiModel: 'gemini-2.5-flash',
   requestTimeoutMs: 15000,
@@ -228,6 +232,40 @@ function mockGenerateResolves(step: string, sourceRefIndexes: unknown[] = []) {
   })
 }
 
+/**
+ * FABLE FINDING F2 — the LEGACY path's happy path, used only by the
+ * discriminating case that proves the legacy auth assertions are not both
+ * trivially satisfiable.
+ *
+ * The legacy action decodes with `adapter.parseResponse(raw, AdvisorOutputSchema)`
+ * rather than through the contextual decoder, so its success needs its own
+ * fixture: an `AdvisorOutput`, not an `AdvisorContextualOutput`.
+ */
+function setupSuccessfulLegacyCall() {
+  mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
+  mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
+  installGovernedTicketHappyPath()
+  mockBuildAdvisorContext.mockResolvedValue(MOCK_CONTEXT)
+  const legacyOutput = {
+    step: 'narrative',
+    what_to_do: 'Redactá la narrativa',
+    why_it_matters: 'Sustenta la teoría de cambio',
+    how_to_do_it: 'Partí de los grupos de interés',
+    common_mistakes: [],
+    suggested_next_actions: [],
+  }
+  mockAdapterGenerate.mockResolvedValue({
+    role: 'advisor',
+    rawOutput: JSON.stringify(legacyOutput),
+    parsedOutput: null,
+    modelUsed: 'gemini-3.6-flash',
+    tokensUsed: 42,
+    timestamp: new Date(),
+  })
+  mockAdapter.parseResponse.mockResolvedValue(legacyOutput)
+  mockInsertValues.mockResolvedValue([])
+}
+
 function setupSuccessfulCall(step: string = 'narrative') {
   mockCheckStellaRateLimit.mockReturnValue(RATE_LIMIT_OK)
   mockRequireOrganizationAccess.mockResolvedValue(MOCK_ORG_CONTEXT)
@@ -246,6 +284,9 @@ describe('getStellaContextualAdvisor server action', () => {
     vi.clearAllMocks()
     mockStellaConfig.isEnabled = true
     mockStellaConfig.isAdvisorEnabled = true
+    // Restored per case, because one case below flips it deliberately and a
+    // leaked `true` would silently widen every other case in this suite.
+    mockStellaConfig.isLegacyAdvisorEnabled = false
     mockStellaState.canUseStella = true
     mockInsertValues.mockResolvedValue([])
     mockDbInsert.mockReturnValue({ values: mockInsertValues })
@@ -474,14 +515,76 @@ describe('getStellaContextualAdvisor server action', () => {
       ])
     })
 
-    it('every exported Gemini-reaching function refuses to call the adapter without organization access', async () => {
+    // -----------------------------------------------------------------------
+    // FABLE FINDING F2 — one assertion was proving two different things, and
+    // one of them vacuously.
+    // -----------------------------------------------------------------------
+    // What stood here looped both exported Gemini-reaching functions through a
+    // single "refuses without organization access" claim. For
+    // `getStellaContextualAdvisor` that claim was real. For `getStellaAdvisor`
+    // it was VACUOUS: this suite runs with `isLegacyAdvisorEnabled: false`
+    // (production's default), so the legacy action returns DISABLED at its
+    // first line and never reaches auth at all. The adapter was indeed not
+    // called — for a reason that has nothing to do with authorization, and the
+    // assertion would have stayed green with the auth gate deleted.
+    //
+    // The two properties are now separate, because they ARE separate, and the
+    // legacy one is stated in the only configuration where it has content: with
+    // its flag deliberately on. The default is not weakened — it is restored by
+    // `beforeEach`, and the flag-off behaviour is asserted immediately below as
+    // a property in its own right.
+
+    it('contextual: refuses to reach the adapter without organization access', async () => {
       mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
 
-      await getStellaContextualAdvisor('proj-1', 'narrative', TICKET)
-      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+      const result = await getStellaContextualAdvisor('proj-1', 'narrative', TICKET)
 
-      await getStellaAdvisor('proj-1', 'narrative', TICKET)
+      expect(result).toMatchObject({ ok: false, error: 'UNAUTHORIZED' })
+      expect(mockRequireOrganizationAccess).toHaveBeenCalled()
       expect(mockAdapterGenerate).not.toHaveBeenCalled()
+      expect(mockBindOperationTicket).not.toHaveBeenCalled()
+    })
+
+    it('legacy DISABLED: cuts before authentication is even attempted', async () => {
+      // The flag is off (beforeEach). The refusal is a DEPLOYMENT decision, and
+      // it is taken before any identity work — which is why the case asserts
+      // `requireOrganizationAccess` was NEVER CALLED rather than that it failed.
+      mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
+
+      const result = await getStellaAdvisor('proj-1', 'narrative', TICKET)
+
+      expect(result).toMatchObject({ ok: false, error: 'DISABLED' })
+      expect(mockRequireOrganizationAccess).not.toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+    })
+
+    it('legacy ENABLED: still requires organization access before the provider', async () => {
+      // The case the old assertion CLAIMED to make. With the quarantine flag
+      // explicitly on, the legacy action must still authenticate — so the
+      // refusal here comes from the auth gate, not from the feature gate, and
+      // deleting that gate would fail this test.
+      mockStellaConfig.isLegacyAdvisorEnabled = true
+      mockRequireOrganizationAccess.mockRejectedValue(new Error('Not authenticated'))
+
+      const result = await getStellaAdvisor('proj-1', 'narrative', TICKET)
+
+      expect(result).toMatchObject({ ok: false, error: 'UNAUTHORIZED' })
+      expect(mockRequireOrganizationAccess).toHaveBeenCalled()
+      expect(mockAdapterGenerate).not.toHaveBeenCalled()
+      expect(mockBindOperationTicket).not.toHaveBeenCalled()
+    })
+
+    it('legacy ENABLED: an AUTHORIZED caller does reach the provider — the two cases above are not both trivial', async () => {
+      // The discriminator. Without it, "UNAUTHORIZED before the provider" could
+      // be satisfied by an action that never reaches the provider under ANY
+      // condition, and the two cases above would prove nothing about the gate.
+      mockStellaConfig.isLegacyAdvisorEnabled = true
+      setupSuccessfulLegacyCall()
+
+      const result = await getStellaAdvisor('proj-1', 'narrative', TICKET)
+
+      expect(result).toMatchObject({ ok: true })
+      expect(mockAdapterGenerate).toHaveBeenCalledTimes(1)
     })
   })
 

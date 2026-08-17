@@ -60,24 +60,17 @@ import { randomUUID } from 'node:crypto'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { canUseStella } from '@/lib/auth/permissions'
 import { consumeStellaRateLimit } from '@/lib/stella/rate-limit'
+import { normalizeStellaProjectId } from './normalize-project-id'
 import { issueOperationTicket } from '@/db/stella/operation-tickets'
 import { emitTicketEvent } from './ticket-observability'
 import type { StellaInteractionCategory } from './categories'
 import type { StellaTicketIssueResult } from '@/components/stella/operation-ticket'
 
-/**
- * Shape-check and narrow a project id.
- *
- * A trim and nothing more — this cannot verify that the project is one the
- * caller may execute against, and does not pretend to. The database re-imposes
- * that inside `issue_operation_ticket` (a trigger plus RLS), against the
- * organization derived from the session, which is the only copy no request can
- * influence.
- */
-function derivedProject(boundProjectId: string): string | null {
-  const trimmed = typeof boundProjectId === 'string' ? boundProjectId.trim() : ''
-  return trimmed === '' ? null : trimmed
-}
+// G1-B PRECONDITIONS: the private `derivedProject` that used to live here is
+// gone. It trimmed, and `runGovernedStellaOperation` did not, so one padded
+// project id was issuable and then unexecutable. Both ends now call
+// `normalizeStellaProjectId` — see lib/stella/operation-ticket/normalize-project-id.ts
+// for why a shared definition is the fix rather than a second copy of the trim.
 
 /**
  * Mint one operation ticket for one sibling Stella operation.
@@ -100,7 +93,7 @@ export async function issueGovernedStellaTicket(
 
   // 2/3. SCOPE — derived, never received.
   const organizationId = ctx.organization.id
-  const boundProjectId = derivedProject(projectId)
+  const boundProjectId = normalizeStellaProjectId(projectId)
   if (boundProjectId === null) {
     return {
       status: 'error',

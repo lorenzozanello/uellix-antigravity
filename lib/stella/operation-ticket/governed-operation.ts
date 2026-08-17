@@ -70,6 +70,7 @@ import {
   type OperationTicketRejection,
 } from '@/db/stella/operation-tickets'
 import { emitTicketEvent, type TicketEventScope } from './ticket-observability'
+import { normalizeStellaProjectId } from './normalize-project-id'
 import { operationRequestHash } from './operation-request-hash'
 import type { StellaInteractionCategory } from './categories'
 
@@ -205,7 +206,19 @@ export type GovernedStellaOperationOutcome<T, F> =
 export async function runGovernedStellaOperation<T, F>(
   input: GovernedStellaOperationInput<T, F>,
 ): Promise<GovernedStellaOperationOutcome<T, F>> {
-  const { category, organizationId, projectId, ticket } = input
+  const { category, organizationId, ticket } = input
+
+  // G1-B PRECONDITIONS — NORMALISE THE EXECUTION PROJECT, exactly as issuance
+  // does. Until this line the two ends disagreed: `issueGovernedStellaTicket`
+  // trimmed, so a padded id minted a ticket welded to the CANONICAL project,
+  // and this driver then hashed and bound the PADDED one — an operation that
+  // could be started and never completed. Refusing here costs nothing (no
+  // reservation has been taken yet) and it is refused as a scope failure, which
+  // is what it is.
+  const projectId = normalizeStellaProjectId(input.projectId)
+  if (projectId === null) {
+    return { kind: 'rejected', reason: 'out_of_scope' }
+  }
 
   // The digest this ticket is bound to. Computed BEFORE any row is read, from
   // the request alone, so a retry thirty seconds later produces the same value

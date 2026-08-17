@@ -24,7 +24,7 @@ import {
   sroiReportSections,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
-import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
+import { sanitizeNarrative, sanitizeUntrustedText } from './sanitize'
 import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
   AdvisorProjectContext,
@@ -102,9 +102,12 @@ export async function buildAdvisorContext(
     throw new StellaBuildContextError('UNAUTHORIZED', 'Project does not belong to your organization')
   }
 
-  const projectName = hasForbiddenPattern(project.name)
-    ? '[Project]'
-    : sanitizeString(project.name, 200)
+  // G1-B P0 — EVERY tenant-editable field below goes through
+  // `sanitizeUntrustedText`. See lib/stella/context/sanitize.ts for why the
+  // inline `hasForbiddenPattern ? placeholder : sanitizeString` form was
+  // replaced: it protected the five fields whose author remembered it and left
+  // outcome titles, indicator names, proxy names and report sections raw.
+  const projectName = sanitizeUntrustedText(project.name, 200, '[Project]')
 
   // Fetch narrative summary (latest version)
   const narrative = await db
@@ -139,8 +142,8 @@ export async function buildAdvisorContext(
   const stakeholderCount = rawStakeholders.length
   const stakeholdersSnapshot: ContextualStakeholderRef[] = rawStakeholders.map((s) => ({
     id: s.id,
-    name: hasForbiddenPattern(s.name) ? '[Stakeholder group]' : sanitizeString(s.name, 200),
-    type: sanitizeString(s.type ?? '', 100),
+    name: sanitizeUntrustedText(s.name, 200, '[Stakeholder group]'),
+    type: sanitizeUntrustedText(s.type, 100, '[Stakeholder type]'),
   }))
 
   // Fetch outcomes (title + type — no descriptions that might contain PII)
@@ -160,8 +163,8 @@ export async function buildAdvisorContext(
 
   const outcomesSnapshot: OutcomeRef[] = rawOutcomes.map((o) => ({
     id: o.id,
-    name: sanitizeString(o.title, 200),
-    description: o.outcomeType ? sanitizeString(o.outcomeType, 100) : '',
+    name: sanitizeUntrustedText(o.title, 200, '[Outcome]'),
+    description: o.outcomeType ? sanitizeUntrustedText(o.outcomeType, 100, '[Outcome type]') : '',
     stakeholderGroups: o.stakeholderGroupId ? [o.stakeholderGroupId] : [],
   }))
   const outcomeTitleById = new Map(outcomesSnapshot.map((o) => [o.id, o.name]))
@@ -180,8 +183,8 @@ export async function buildAdvisorContext(
   const indicatorsSnapshot: IndicatorRef[] = rawIndicators.map((i) => ({
     id: i.id,
     outcomeId: i.outcomeId,
-    name: sanitizeString(i.name, 200),
-    unit: sanitizeString(i.unit ?? '', 50),
+    name: sanitizeUntrustedText(i.name, 200, '[Indicator]'),
+    unit: sanitizeUntrustedText(i.unit, 50, '[Unit]'),
   }))
   const indicatorNameById = new Map(indicatorsSnapshot.map((i) => [i.id, i.name]))
 
@@ -208,9 +211,7 @@ export async function buildAdvisorContext(
     )
 
   const evidenceMetadata: EvidenceMeta[] = rawEvidence.map((ev) => {
-    const safeTitle = hasForbiddenPattern(ev.title)
-      ? '[Evidence item]'
-      : sanitizeString(ev.title, 150)
+    const safeTitle = sanitizeUntrustedText(ev.title, 150, '[Evidence item]')
 
     return {
       id: ev.id,
@@ -268,12 +269,17 @@ export async function buildAdvisorContext(
 
   const proxySummary: ProxyRef[] = rawAssignments.map((a) => ({
     id: a.proxyId,
-    name: sanitizeString(a.proxyName, 200),
-    source: a.sourceId ? sanitizeString(sourcesMap.get(a.sourceId) ?? 'Unknown source', 150) : 'Unknown source',
+    name: sanitizeUntrustedText(a.proxyName, 200, '[Proxy]'),
+    source: a.sourceId
+      ? sanitizeUntrustedText(sourcesMap.get(a.sourceId) ?? 'Unknown source', 150, '[Proxy source]')
+      : 'Unknown source',
     // Registered proxy value/currency from the proxies table — reference data
-    // only; the deterministic engine remains the only calculator.
-    value: a.value ?? '',
-    currency: a.currency ?? '',
+    // only; the deterministic engine remains the only calculator. They are
+    // NUMERIC/varchar columns, but both are tenant-writable and both are
+    // serialized into the envelope as strings, so both are neutralized like any
+    // other free text rather than trusted because of their column type.
+    value: sanitizeUntrustedText(a.value, 64, '[Proxy value]'),
+    currency: sanitizeUntrustedText(a.currency, 16, '[Currency]'),
     confidenceLevel: a.confidenceLevel as ProxyRef['confidenceLevel'] ?? undefined,
     methodologicalRisk: a.methodologicalRisk as ProxyRef['methodologicalRisk'] ?? undefined,
   }))
@@ -296,7 +302,7 @@ export async function buildAdvisorContext(
 
   const activitiesSummary: ContextualActivityRef[] = rawActivities.map((a) => ({
     id: a.id,
-    title: hasForbiddenPattern(a.title) ? '[Activity]' : sanitizeString(a.title, 200),
+    title: sanitizeUntrustedText(a.title, 200, '[Activity]'),
   }))
 
   // Filter set percentages for this project's active assignments
@@ -391,8 +397,8 @@ export async function buildAdvisorContext(
 
   const reportSections: SectionRef[] = rawSections.map((s) => ({
     id: s.id,
-    sectionType: s.sectionType,
-    title: sanitizeString(s.title, 200),
+    sectionType: sanitizeUntrustedText(s.sectionType, 100, '[Section type]'),
+    title: sanitizeUntrustedText(s.title, 200, '[Section]'),
     contentLength: s.content?.length ?? 0,
     status: s.content && s.content.length > 0 ? 'in_progress' : 'draft',
   }))

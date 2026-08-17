@@ -1,6 +1,6 @@
 // app/app/projects/[projectId]/pipeline/outcomes/page.tsx
 import Stepper from '@/components/sroi/Stepper';
-import { StellaAdvisorPanel, StellaContextualAdvisorPanel } from '@/components/stella';
+import { StellaContextualAdvisorPanel } from '@/components/stella';
 // Server-only config read (READ-ONLY module) — availability passed as prop (U5).
 import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
@@ -115,14 +115,6 @@ export default async function OutcomesPage({ params }: { params: Promise<{ proje
         </p>
       </div>
       <Stepper />
-      {/* DP-03 (pending product decision): legacy generic advisor stays
-          mounted alongside the new contextual advisor. */}
-      <StellaAdvisorPanel
-        projectId={projectId}
-        step="Resultados"
-        highlightHint={!outcomes?.length}
-        enabled={stellaAdvisorEnabled}
-      />
       {/* U3: outcomes are a list of records with per-row edit forms — no
           single apply target, so apply offers copy-to-clipboard. */}
       <StellaContextualAdvisorPanel

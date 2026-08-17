@@ -90,7 +90,20 @@ async function logStellaAudit(entry: AuditLogEntry): Promise<void> {
     // with the seconds-long provider round trip.
     await withOrganizationDatabaseContext(() => logAuditAction(entry))
   } catch (error) {
+    // The console line is the local trace; the Sentry report is the one an
+    // operator sees. G1-B PRECONDITIONS added the second half because the first
+    // was not enough: on the hosted staging project `audit_logs` has RLS
+    // enabled and NO INSERT policy (prepared stella_hosted_0008 closes that), so
+    // every governed Stella run has been swallowing an RLS denial here and
+    // reporting success. Fire-and-forget must stay fire-and-forget — an audit
+    // failure may never change a user-facing Stella result — but it must not
+    // stay INVISIBLE, or "audit event persisted" is a claim nobody can check.
     console.error('[stella-audit] audit write failed:', error instanceof Error ? error.name : 'unknown')
+    reportStellaFailure('advisor', 'AUDIT_ERROR', error, {
+      organizationId: entry.organizationId ?? null,
+      action: entry.action,
+      entityType: entry.entityType,
+    })
   }
 }
 
@@ -325,13 +338,32 @@ function contextualAdvisorExecutionFailure(
   return { ok: false, error: 'UNKNOWN_ERROR', message: 'An unexpected error occurred.' }
 }
 
+/**
+ * THE LEGACY STEP ADVISOR. RETIRED AS A PRODUCT SURFACE.
+ *
+ * No page mounts it: `StellaAdvisorPanel` was deleted and the seven pipeline
+ * pages now mount only the contextual advisor, which covers the same seven
+ * steps with a strictly stronger contract (provider-side responseJsonSchema,
+ * `.strict()` Zod, validated citations, `requiresHumanReview: true`).
+ *
+ * It survives behind `STELLA_LEGACY_ADVISOR_ENABLED` — its OWN flag, DEFAULT
+ * FALSE — because it is the advisor category's representative in the governed
+ * multi-category quota harness. The flag is what makes "turning the contextual
+ * advisor on can never open this" a property rather than a habit.
+ */
 export async function getStellaAdvisor(
   projectId: string,
   step: string,
   ticket: string
 ): Promise<StellaAdvisorResult> {
-  // Feature flag gate — all flags default to false
-  if (!stellaConfig.isEnabled || !stellaConfig.isAdvisorEnabled || !stellaState.canUseStella) {
+  // Feature flag gate — all flags default to false. `isLegacyAdvisorEnabled` is
+  // FIRST because it is the narrowest and the one this surface exists under.
+  if (
+    !stellaConfig.isLegacyAdvisorEnabled ||
+    !stellaConfig.isEnabled ||
+    !stellaConfig.isAdvisorEnabled ||
+    !stellaState.canUseStella
+  ) {
     return {
       ok: false,
       error: 'DISABLED',

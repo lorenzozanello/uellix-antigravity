@@ -626,7 +626,13 @@ export const stellaInteractions = pgTable('stella_interactions', {
   pipelineStep: varchar('pipeline_step', { length: 100 }).notNull(),
   contextHash: varchar('context_hash', { length: 64 }).notNull(),
   responseJson: jsonb('response_json').notNull(),
-  modelUsed: varchar('model_used', { length: 100 }).default('gemini-2.0-flash').notNull(),
+  // NO DEFAULT, and that is the contract — see prepared stella_0020. This
+  // column records WHICH MODEL ANSWERED; a default would be the database
+  // inventing a measurement. It carried 'gemini-2.0-flash' (migration 0012)
+  // long after Google retired that model, which made it a second, wrong source
+  // of truth next to STELLA_DEFAULT_GEMINI_MODEL. NOT NULL stays: a writer that
+  // supplies no model must fail, not be filled in.
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
   tokensUsed: integer('tokens_used'),
   riskLevel: varchar('risk_level', { length: 50 }),
   riskFlags: text('risk_flags').array(),
