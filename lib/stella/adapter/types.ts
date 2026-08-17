@@ -38,7 +38,10 @@ export interface StellaAdapterConfig {
   timeoutMs: number
   // WS3 adapter caps
   maxOutputTokens: number
-  temperature: number
+  // G1-M0: no `temperature`, no `topP`, no `topK`. These are deprecated for
+  // Gemini 3.6 Flash and must not be sent. Removed from the TYPE, not just from
+  // the request, so a caller that tries to pass one fails to compile instead of
+  // having it silently dropped. See lib/stella/config.ts.
   maxPromptChars: number
   mockProvider?: StellaMockProvider // For testing
 }

@@ -92,12 +92,13 @@
 
 | # | Riesgo | Estado | Nota |
 |---|---|---|---|
-| **m1** | Variables consumidas y no documentadas | `STELLA_MAX_OUTPUT_TOKENS`, `STELLA_TEMPERATURE`, `STELLA_MAX_PROMPT_CHARS` se leen en `lib/stella/config.ts` y no están en `.env.example`. Todas con fallback razonable |
+| **m1** | Variables consumidas y no documentadas | `STELLA_MAX_OUTPUT_TOKENS` y `STELLA_MAX_PROMPT_CHARS` se leen en `lib/stella/config.ts` y no están en `.env.example`. Ambas con fallback razonable. **Actualizado en G1-M0:** `STELLA_TEMPERATURE` sale de esta lista porque ya **no se consume** — `temperature` fue eliminada de la request (deprecated para Gemini 3.6 Flash) y del tipo `StellaAdapterConfig`; fijarla no tiene efecto |
 | **m2** | Falta de datos de prueba en staging | No existe seed de staging. `scripts/seed-stella-local.ts` tiene guarda de host **y** deja de funcionar tras `stella_0017` (escribe el ledger sin clave) |
 | **m3** | `STELLA_RATE_LIMIT_PER_HOUR` con fallback `100` | Alto para un piloto; debe fijarse explícitamente |
 | **m4** | `NEXT_PUBLIC_APP_URL` / `SITE_URL` con fallback a `localhost:3000` | Enlaces de invitación rotos o cruzados entre entornos |
 | **m5** | `NEXT_PUBLIC_GEMINI_API_KEY` referenciada en el árbol | Cualquier valor se inlinearía en el bundle del navegador. Debe quedar **prohibida por escrito** en el aprovisionamiento |
 | **m6** | KV con fallback en memoria per-instance | RK-24, avisado once-per-process. El rate limit efectivo no es global en serverless |
+| **m7** | **G1-B PRECONDITION / DATABASE DEFAULT HYGIENE** | `db/schema.ts` declara `stella_interactions.model_used` con `DEFAULT 'gemini-2.0-flash'` — un modelo retirado por Google (404 desde 2026-07). **Inocuo hoy:** el camino gobernado (`complete_operation_ticket`) siempre suministra `model_used` desde `StellaResponse.modelUsed`, así que el default de columna nunca se ejerce; una fila con ese valor sólo podría venir de un INSERT que omitiera la columna, y `uellix_app` no tiene esa ruta. **No corregido en G1-M0** porque exige una migración Drizzle y no tiene efecto sobre G1-A. **Acción:** alinear el default (o eliminarlo, que es la opción más honesta: un default de modelo en la BD es una fuente de verdad duplicada frente a `STELLA_DEFAULT_GEMINI_MODEL`) como precondición de G1-B |
 
 ### 2.4 Riesgos que la instrucción listó y NO están presentes
 

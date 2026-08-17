@@ -1,6 +1,21 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+// G1-M0 — PARITY. The model target is READ FROM PRODUCTION CONFIG, never
+// re-stated here. This file used to fall back to its own hardcoded copy of the
+// default model id in three separate places (the run manifest, resume
+// validation, and the adapter construction), so a production model bump could
+// leave the harness certifying the previous model — silently, since all three
+// copies agreed with each other.
+//
+// The regression is pinned by lib/stella/__tests__/model-target.test.ts, which
+// asserts no model-id literal appears anywhere in this file — comments included.
+// That is why the old id is described here rather than quoted.
+//
+// Safe for --dry-run: lib/stella/config.ts imports nothing and only reads
+// environment variables, so importing it here does NOT pull in @google/genai.
+// The dry run's zero-network guarantee is unchanged.
+import { stellaConfig } from '@/lib/stella/config'
 import { OFFICIAL_CONTEXTUAL_MOCK_CASES } from '../stella-contextual/cases'
 import { createRunArtifacts, initializeRunManifest } from './artifacts'
 import { parseRealRunnerArgs, selectRealRunnerCases } from './guards'
@@ -37,7 +52,7 @@ async function main(): Promise<void> {
         head: currentRuntime.head,
         originMainSHA: currentRuntime.originMainSHA,
         providerMode: String(process.env.STELLA_PROVIDER_MODE ?? ''),
-        model: String(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash'),
+        model: stellaConfig.geminiModel,
         caseCatalogHash: catalogHash,
         caseIds: selectedCaseIds,
         knownCaseIds: OFFICIAL_CONTEXTUAL_MOCK_CASES.map((item) => item.caseId),
@@ -66,7 +81,7 @@ async function main(): Promise<void> {
       originMainSHA: currentRuntime.originMainSHA,
       dirtyTrackedTree: false,
       providerMode: process.env.STELLA_PROVIDER_MODE,
-      model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      model: stellaConfig.geminiModel,
       caseCatalogHash: catalogHash,
       caseIds: selectedCaseIds,
       expectedCalls: selectedCaseIds.length,
@@ -83,7 +98,12 @@ async function main(): Promise<void> {
   }
   const provider = args.dryRun ? undefined : await (async () => {
     const { getGeminiAdapter } = await import('@/lib/stella/adapter/gemini-client')
-    const adapter = getGeminiAdapter({ apiKey: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash', timeoutMs: 60_000 })
+    // G1-M0: same model as production, and NO sampling overrides — the adapter
+    // sends none, and `StellaAdapterConfig` no longer has a `temperature` field
+    // to pass one through. `timeoutMs: 60_000` is the ONE deliberate divergence
+    // that survives: G1-A measures model behaviour, not production latency; the
+    // real 15 s budget is exercised in G1-B.
+    const adapter = getGeminiAdapter({ apiKey: process.env.GEMINI_API_KEY, model: stellaConfig.geminiModel, timeoutMs: 60_000 })
     return async (request: { systemPrompt: string; userMessage: string; responseJsonSchema: Record<string, unknown> }) => JSON.parse((await adapter.generate({ role: 'advisor', systemPrompt: request.systemPrompt, userMessage: request.userMessage, responseJsonSchema: request.responseJsonSchema })).rawOutput) as unknown
   })()
   const result = await runGuardedContextualEvaluation({

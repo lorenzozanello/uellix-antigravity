@@ -80,7 +80,7 @@ defecto silencioso.
 | Variable | Consumidor | Staging | Build | Runtime | Secreta | Comportamiento | Riesgo si falta |
 |---|---|---|---|---|---|---|---|
 | `GEMINI_API_KEY` | `lib/stella/config.ts:17` | sólo para CHECKPOINT E | no | sí | **sí, crítica** | **fail-closed**: `canUseStella = isEnabled && apiKey.length > 0` | Stella inerte, que es el estado deseado hasta la rotación de ámbito staging |
-| `GEMINI_MODEL` | `config.ts:21` | opcional | no | sí | no | **fallback** `gemini-2.5-flash` | Bajo: modelo por defecto explícito |
+| `GEMINI_MODEL` | `lib/stella/config.ts` (`stellaConfig.geminiModel`) | opcional | no | sí | no | **fallback** `gemini-3.6-flash` (constante exportada `STELLA_DEFAULT_GEMINI_MODEL`; G1-M0) | Bajo: modelo por defecto explícito. `gemini-2.5-flash` tiene shutdown anunciado 2026-10-16 y **no** debe volver a fijarse aquí |
 | `NEXT_PUBLIC_GEMINI_API_KEY` | referenciada en el árbol | **NUNCA** | — | — | **sí** | — | **Prohibida**: cualquier valor aquí se inlinea en el bundle del navegador |
 
 ### 2.5 Feature flags Stella (los nueve, todos `false`)
@@ -106,7 +106,7 @@ Todos con la misma semántica: `process.env.X === 'true'`. Cualquier otro valor
 |---|---|---|---|---|---|
 | `STELLA_RATE_LIMIT_PER_HOUR` | `config.ts:57` | recomendada | no | **fallback** `100` | Límite por defecto más alto del deseable para un piloto |
 | `STELLA_MAX_OUTPUT_TOKENS` | `config.ts:50` | opcional | no | **fallback** `4096` | **No está en `.env.example`** |
-| `STELLA_TEMPERATURE` | `config.ts:52` | opcional | no | **fallback** `0.2` (rechaza fuera de `[0,2]`) | **No está en `.env.example`** |
+| ~~`STELLA_TEMPERATURE`~~ | **ninguno — ya no se consume** | no configurar | — | **Sin efecto.** Eliminada del código en G1-M0: `temperature`/`top_p`/`top_k` están deprecated para Gemini 3.6 Flash y no se envían en la request. La variable no se lee, no se valida y fijarla no cambia nada | Ninguno. Fijarla induce a un operador a creer que ajustó el modelo |
 | `STELLA_MAX_PROMPT_CHARS` | `config.ts:55` | opcional | no | **fallback** `120000` | **No está en `.env.example`** |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | limitador distribuido | **sí** | token: **sí** | **fail-closed al usuario** (`RATE_LIMIT_UNAVAILABLE`) con fallback en memoria **por instancia** avisado once-per-process (RK-24) | Rate limit efectivo por instancia serverless, no global |
 

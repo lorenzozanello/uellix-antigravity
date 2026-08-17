@@ -185,33 +185,193 @@ describe('adapter caps (WS3)', () => {
     })
   })
 
-  describe('maxOutputTokens + temperature are passed to generateContent', () => {
-    it('uses the defaults (4096 / 0.2) when not overridden', async () => {
+  describe('maxOutputTokens is passed to generateContent', () => {
+    it('uses the default (4096) when not overridden', async () => {
       const adapter = new StellaGeminiAdapter({ apiKey: 'test-key' })
 
       await adapter.generate({ role: 'validator', systemPrompt: 'sys', userMessage: 'user' })
 
       expect(mockGenerateContent).toHaveBeenCalledWith(
         expect.objectContaining({
-          config: expect.objectContaining({ maxOutputTokens: 4096, temperature: 0.2 }),
+          config: expect.objectContaining({ maxOutputTokens: 4096 }),
         })
       )
     })
 
-    it('honors per-adapter overrides', async () => {
-      const adapter = new StellaGeminiAdapter({
-        apiKey: 'test-key',
-        maxOutputTokens: 128,
-        temperature: 0.7,
-      })
+    it('honors a per-adapter override', async () => {
+      const adapter = new StellaGeminiAdapter({ apiKey: 'test-key', maxOutputTokens: 128 })
 
       await adapter.generate({ role: 'validator', systemPrompt: 'sys', userMessage: 'user' })
 
       expect(mockGenerateContent).toHaveBeenCalledWith(
         expect.objectContaining({
-          config: expect.objectContaining({ maxOutputTokens: 128, temperature: 0.7 }),
+          config: expect.objectContaining({ maxOutputTokens: 128 }),
         })
       )
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // G1-M0 — GEMINI 3.6 FLASH REQUEST CONTRACT
+  //
+  // temperature/top_p/top_k are deprecated for gemini-3.6-flash and must not be
+  // sent. `objectContaining` cannot express absence, so these tests read the
+  // ACTUAL config object out of the captured call and assert on its own keys —
+  // an assertion that fails if a sampling parameter is reintroduced anywhere,
+  // including as an explicit `undefined` or `null`.
+  // -------------------------------------------------------------------------
+  describe('G1-M0 — no sampling parameters reach the provider', () => {
+    const capturedConfig = (): Record<string, unknown> => {
+      expect(mockGenerateContent).toHaveBeenCalledTimes(1)
+      const call = mockGenerateContent.mock.calls[0]![0] as { config: Record<string, unknown> }
+      return call.config
+    }
+
+    it('sends no temperature — not as a value, not as undefined, not as null', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const config = capturedConfig()
+      // `in` rather than `!== undefined`: @google/genai copies fields under a
+      // `!= null` guard, but an explicit `temperature: undefined` key would
+      // still show intent to send one, and that intent is what must not exist.
+      expect('temperature' in config).toBe(false)
+    })
+
+    it('sends no topP', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const config = capturedConfig()
+      expect('topP' in config).toBe(false)
+      expect('top_p' in config).toBe(false)
+    })
+
+    it('sends no topK', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const config = capturedConfig()
+      expect('topK' in config).toBe(false)
+      expect('top_k' in config).toBe(false)
+    })
+
+    it('sends no thinkingConfig — the target keeps its own default (medium)', async () => {
+      // NOT the same claim as "thinking is off". gemini-3.6-flash runs at
+      // thinking level `medium` by default; omitting thinkingConfig means G1-A
+      // measures that default instead of a configuration nobody has evidence
+      // for. This test pins the omission so a later tuning pass has to be a
+      // deliberate edit with measurements behind it.
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const config = capturedConfig()
+      expect('thinkingConfig' in config).toBe(false)
+      expect('thinkingLevel' in config).toBe(false)
+      expect('thinkingBudget' in config).toBe(false)
+    })
+
+    it('sends NO sampling key at all, by exhaustive comparison against the allowed set', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+        responseJsonSchema: { type: 'object' },
+      })
+
+      // The COMPLETE set of config keys the adapter is allowed to send. A new
+      // key — sampling or otherwise — fails here and forces a decision rather
+      // than arriving unnoticed with the next edit.
+      expect(Object.keys(capturedConfig()).sort()).toEqual(
+        [
+          'abortSignal',
+          'maxOutputTokens',
+          'responseJsonSchema',
+          'responseMimeType',
+          'systemInstruction',
+        ].sort()
+      )
+    })
+  })
+
+  describe('G1-M0 — the rest of the request contract is preserved', () => {
+    it('still targets the configured model and still sends JSON mime type', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key', model: 'gemini-3.6-flash' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const call = mockGenerateContent.mock.calls[0]![0] as {
+        model: string
+        config: Record<string, unknown>
+      }
+      expect(call.model).toBe('gemini-3.6-flash')
+      expect(call.config.responseMimeType).toBe('application/json')
+      expect(call.config.systemInstruction).toBe('sys')
+    })
+
+    it('still forwards responseJsonSchema when the caller supplies one', async () => {
+      const schema = { type: 'object', additionalProperties: false, required: ['step'] }
+
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'advisor',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+        responseJsonSchema: schema,
+      })
+
+      const call = mockGenerateContent.mock.calls[0]![0] as { config: Record<string, unknown> }
+      expect(call.config.responseJsonSchema).toEqual(schema)
+    })
+
+    it('omits responseJsonSchema entirely when the caller supplies none', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'advisor',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const call = mockGenerateContent.mock.calls[0]![0] as { config: Record<string, unknown> }
+      expect('responseJsonSchema' in call.config).toBe(false)
+    })
+
+    it('still passes an abort signal, and it is still unaborted at call time', async () => {
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'user',
+      })
+
+      const call = mockGenerateContent.mock.calls[0]![0] as { config: { abortSignal: AbortSignal } }
+      expect(call.config.abortSignal).toBeInstanceOf(AbortSignal)
+      expect(call.config.abortSignal.aborted).toBe(false)
+    })
+
+    it('still redacts BEFORE the provider sees the request', async () => {
+      // The redaction boundary is upstream of both the mock branch and the live
+      // branch (F-GB-01). Removing temperature must not have moved it.
+      await new StellaGeminiAdapter({ apiKey: 'test-key' }).generate({
+        role: 'validator',
+        systemPrompt: 'sys',
+        userMessage: 'escribí a ana.perez@example.com por favor',
+      })
+
+      const call = mockGenerateContent.mock.calls[0]![0] as { contents: string }
+      expect(call.contents).not.toContain('ana.perez@example.com')
+      expect(call.contents).toContain('[REDACTED:')
     })
   })
 

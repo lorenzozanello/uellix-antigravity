@@ -19,7 +19,6 @@ export class StellaGeminiAdapter {
       model: config?.model || stellaConfig.geminiModel,
       timeoutMs: config?.timeoutMs || stellaConfig.requestTimeoutMs,
       maxOutputTokens: config?.maxOutputTokens ?? stellaConfig.maxOutputTokens,
-      temperature: config?.temperature ?? stellaConfig.temperature,
       maxPromptChars: config?.maxPromptChars ?? stellaConfig.maxPromptChars,
       mockProvider: config?.mockProvider,
     }
@@ -78,6 +77,46 @@ export class StellaGeminiAdapter {
       const { GoogleGenAI } = await import('@google/genai')
       const ai = new GoogleGenAI({ apiKey: this.config.apiKey })
 
+      // G1-M0: NO SAMPLING PARAMETERS IN THIS OBJECT.
+      //
+      // `temperature` used to sit between maxOutputTokens and the schema. It is
+      // gone, and `topP`/`topK` were never here. temperature/top_p/top_k are
+      // deprecated for Gemini 3.6 Flash and must be omitted from the request —
+      // omitted, not sent as null: @google/genai copies these fields under a
+      // `!= null` guard (dist/index.mjs, tGenerateContentConfig), so an absent
+      // key produces no key in the wire body, while an explicit null would.
+      //
+      // What remains is the whole determinism contract, and it is structural
+      // rather than statistical: the trusted system instruction, a JSON-only
+      // response type, a bounded output, the provider-side JSON schema when the
+      // caller supplies one, and the abort signal.
+      //
+      // ─────────────────────────────────────────────────────────────────────
+      // THINKING: NO `thinkingConfig`, AND THAT IS A MEASUREMENT DECISION.
+      //
+      // gemini-3.6-flash runs at thinking level `medium` BY DEFAULT. This is the
+      // model's stated contract, not a possibility — so the absence of
+      // `thinkingConfig` here does not mean "no thinking", it means "the target's
+      // own default, unmodified".
+      //
+      // It is left unset ON PURPOSE for G1-A: the first real canary must measure
+      // the natural behaviour of the stable target before anyone tunes it.
+      // Setting `minimal`/`low`/`high` now would mean certifying a configuration
+      // nobody has evidence about, which is the failure this gate exists to
+      // avoid.
+      //
+      // TWO CONSEQUENCES G1-A MUST OBSERVE, because both are real and neither is
+      // visible from here:
+      //   * thinking tokens count toward `maxOutputTokens` (4096), so a
+      //     thinking-heavy response can truncate the JSON. That path fails
+      //     CLOSED — empty or unparseable text becomes StellaParseError, the
+      //     ticket aborts and nothing is charged — but it fails.
+      //   * thinking tokens are BILLED AS OUTPUT (lib/stella/cost-model.ts,
+      //     assumption 4), so they are the expensive direction.
+      //
+      // Tuning `thinkingConfig` is a post-G1-A decision, taken against measured
+      // thoughtsTokenCount / finish reasons — never as a guess.
+      // ─────────────────────────────────────────────────────────────────────
       const response = await ai.models.generateContent({
         model: this.config.model,
         contents: request.userMessage,
@@ -85,7 +124,6 @@ export class StellaGeminiAdapter {
           systemInstruction: request.systemPrompt,
           responseMimeType: 'application/json',
           maxOutputTokens: this.config.maxOutputTokens,
-          temperature: this.config.temperature,
           ...(request.responseJsonSchema ? { responseJsonSchema: request.responseJsonSchema } : {}),
           abortSignal: controller.signal,
         },
