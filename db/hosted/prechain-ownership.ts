@@ -228,7 +228,86 @@ export const PRECHAIN_STORAGE_TABLE_READ: PrechainOwnershipPackage = {
 }
 
 /**
- * All three prechain administrative units, IN APPLICATION ORDER.
+ * The RUNTIME half of the cutover, which the hosted path never received.
+ *
+ * A FOURTH package, and for the first time the argument is not "a different
+ * object class" but "a different ACTOR". The prechain authority contract of
+ * stella_hosted_0001 5d is derived by prechain-requirements.ts from the
+ * governed chain's authority plan -- every object a non-installer EXECUTOR
+ * touches -- and the executor it models is `uellix_owner`. The application
+ * runtime was never in that derivation, so hosted still runs the PRE-cutover
+ * helper contract: 0039_grant_rls_helper_execution.sql grants EXECUTE to
+ * `authenticated` and to nobody else, which was the whole answer to "who
+ * evaluates RLS" before the runtime stopped being `postgres`.
+ *
+ * MEASURED through the deployed application on the staging project, 2026-08-16:
+ * every authenticated request answers 42501 `permission denied for function
+ * current_user_is_super_admin`, raised by the check query in
+ * db/identity-context.ts before any business statement runs.
+ *
+ * IT HARDENS AS WELL AS GRANTS, AND THE TWO CANNOT BE SPLIT. The hosted bodies
+ * are SECURITY DEFINER owned by a SUPERUSER with `search_path=public` and
+ * unqualified relation references; PostgreSQL searches pg_temp before any schema
+ * in the path, so a caller that can `CREATE TEMP TABLE users` decides its own
+ * `is_super_admin` -- the super-admin disjunct of 89 policies, computed with
+ * superuser privileges. REPRODUCED on PostgreSQL 17 by
+ * scripts/runtime-helper-contract-dry-run.sh, which measures `true` before the
+ * package and `false` after it. Granting EXECUTE without the hardening would
+ * hand that primitive to the runtime principal.
+ *
+ * NOT A CHAIN LINK, for the two reasons every prechain unit records: it is a
+ * prerequisite rather than a step, and it is applied by a principal the chain
+ * installer is not -- here necessarily so, because CREATE OR REPLACE FUNCTION
+ * requires ownership and uellix_owner holds none. That same fact dissolves the
+ * authority gap on `current_user_role_in_org(uuid)`, which uellix_owner cannot
+ * execute at all and therefore could never have granted.
+ */
+export const PRECHAIN_RUNTIME_HELPER_CONTRACT: PrechainOwnershipPackage = {
+  id: 'stella_hosted_0006_runtime_rls_helper_contract',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_hosted_0006_runtime_rls_helper_contract.sql',
+  sourceSha256: '06514eeac2745aea962f5b22d1b6dee33c371154beb8d4fdd4418ee2fde69145',
+  purpose:
+    'Converges the three baseline RLS helpers - current_user_org_ids(), ' +
+    'current_user_is_super_admin() and current_user_role_in_org(uuid) - to the hardened form ' +
+    'db/prepared/stella_0005_runtime_cutover.sql already publishes (empty search_path with ' +
+    'public.users and public.organization_members qualified), and grants EXECUTE on all three to ' +
+    'uellix_writer and uellix_auditor, which is stella_0004_role_separation.sql 6b verbatim. ' +
+    'uellix_app is deliberately NOT a grantee: it reaches them through its inheriting membership ' +
+    'in uellix_writer, and the package asserts that EFFECTIVE privilege separately from the grant. ' +
+    'It preserves every signature, SECURITY DEFINER, both owners and auth.uid() as the identity ' +
+    'primitive; it grants no USAGE on schema auth, rewrites no policy, creates no role, no schema ' +
+    'and no object, changes no owner and issues no REVOKE. Idempotent and post-state aware: it ' +
+    'accepts an already-hardened database and REFUSES a third state rather than normalising it, ' +
+    'so it can be pointed at an environment whose posture has not been measured. No project ' +
+    'reference appears in it.',
+  forwardOnlyNoRollbackReason:
+    'FORWARD-ONLY, and for an ASYMMETRIC reason worth stating precisely, because half of this ' +
+    'package is genuinely reversible. The GRANT is: one administrative REVOKE undoes it, at the ' +
+    'cost of re-opening the 42501 on every authenticated request. The HARDENING is not: restoring ' +
+    'search_path=public with unqualified relation references means republishing a ' +
+    'superuser-context privilege escalation, so "restore the previous body" and "republish the ' +
+    'vulnerability" are the same sentence - the identical argument grounding_0005 records. A ' +
+    'rollback script that reversed both would exist to reintroduce a vulnerability, and one that ' +
+    'reversed only the grant would be named for something it does not do. Neither is worth ' +
+    'shipping, so the reversible half is documented as an operator statement and the file is ' +
+    'absent by declaration rather than by omission.',
+  normalisedFunctions: [
+    'public.current_user_org_ids()',
+    'public.current_user_is_super_admin()',
+    'public.current_user_role_in_org(uuid)',
+  ],
+  destinationOwner: 'postgres',
+  unblocks:
+    'The hosted runtime itself. With it absent, withDatabaseIdentityContext() raises 42501 before ' +
+    'its first business statement, so every authenticated route fails - measured on ' +
+    'dpl_Es3PkRXJ9N8QLhaqfEuDHdYbCSeG. It also closes the pg_temp shadowing escalation on the ' +
+    'three helpers, which authenticated can reach on any environment that installed ' +
+    '0031_rls_core.sql and 0039_grant_rls_helper_execution.sql without stella_0005.',
+}
+
+/**
+ * All four prechain administrative units, IN APPLICATION ORDER.
  *
  * Order is load-bearing and asserted by the packages themselves rather than by
  * whatever loop applies them: stella_hosted_0004 §0.4 refuses unless a SECURITY
@@ -240,6 +319,7 @@ export const PRECHAIN_ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] 
   PRECHAIN_OWNERSHIP,
   PRECHAIN_STORAGE_USAGE,
   PRECHAIN_STORAGE_TABLE_READ,
+  PRECHAIN_RUNTIME_HELPER_CONTRACT,
 ]
 
 export function sha256OfPreparedSql(sql: string): string {

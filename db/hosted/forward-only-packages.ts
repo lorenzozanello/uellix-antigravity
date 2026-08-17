@@ -44,6 +44,7 @@
 import { PRECHAIN_REMEDIATION } from './prechain-remediation'
 import {
   PRECHAIN_OWNERSHIP,
+  PRECHAIN_RUNTIME_HELPER_CONTRACT,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_STORAGE_USAGE,
 } from './prechain-ownership'
@@ -134,6 +135,22 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'package, undoes it — and returns both SECURITY DEFINER helpers to answering false for ' +
       'every caller on read and on write, which is the outage measured on the certification ' +
       'shape before this package existed.',
+  },
+  {
+    // The runtime helper contract. The first entry in this registry whose two
+    // halves reverse DIFFERENTLY, which is why its reason argues the asymmetry
+    // instead of asserting irreversibility: the grant can be revoked, the
+    // hardening must not be.
+    id: PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
+    reason: PRECHAIN_RUNTIME_HELPER_CONTRACT.forwardOnlyNoRollbackReason,
+    reversalPath:
+      'For the GRANT only, and never for the hardening: a single administrative REVOKE EXECUTE ' +
+      'ON FUNCTION public.current_user_org_ids(), public.current_user_is_super_admin(), ' +
+      'public.current_user_role_in_org(uuid) FROM uellix_writer, uellix_auditor, issued by the ' +
+      'principal that applied this package. It returns every authenticated request to 42501, ' +
+      'which is the state this package was written to leave. The hardened bodies STAY: reverting ' +
+      'them would republish a pg_temp shadowing escalation that runs with the definer superuser ' +
+      'privileges, and no operator statement in this repository does that.',
   },
 ]
 

@@ -1254,6 +1254,50 @@ contenedor desechable y por las dos certificaciones canónicas.
 > los aplica la identidad administrativa (`postgres`), no `uellix_migrator`. El
 > orden entre ellos lo imponen **sus propias precondiciones**, no el runbook.
 
+### RT-01 — contrato runtime de los helpers RLS en hosted (`stella_hosted_0006`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted.** Cuarta unidad prechain, y
+la primera cuyo argumento no es «otra clase de objeto» sino **otro ACTOR**: el
+contrato de autoridad prechain de `stella_hosted_0001` §5d se deriva del plan de
+autoridad de la **cadena**, así que modela al **instalador** (`uellix_owner`) y
+nunca al **runtime** (`uellix_app`).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0006_runtime_rls_helper_contract.sql` | **ninguno, a propósito** (`db/hosted/prechain-ownership.ts`; la asimetría se argumenta en `forwardOnlyNoRollbackReason`) | **ninguno todavía**; exige los 5 roles y la membresía `uellix_app → uellix_writer` con `INHERIT TRUE` (§0.5/§0.6), y que el ejecutor **posea** las tres funciones (§0.4) | `CREATE OR REPLACE` de las **3** funciones (`current_user_org_ids`, `current_user_is_super_admin`, `current_user_role_in_org(uuid)`) a la forma de `stella_0005` — `search_path=''` + `public.*` cualificado — y **un** `GRANT EXECUTE` sobre las tres `TO uellix_writer, uellix_auditor`. Ni un objeto nuevo, ni un rol, ni una policy, ni un `REVOKE` | **DISEÑO — no aplicado** |
+
+> **Por qué las dos mitades viajan juntas.** Medido en PG 17 por
+> `scripts/runtime-helper-contract-dry-run.sh`: los cuerpos hospedados son
+> SECURITY DEFINER **propiedad de un superusuario** con `search_path=public` y
+> referencias **sin cualificar**. PostgreSQL busca `pg_temp` antes que cualquier
+> esquema del path, y todo rol tiene TEMP sobre la base por defecto, así que
+> `CREATE TEMP TABLE users(is_super_admin=true)` hace que
+> `current_user_is_super_admin()` devuelva **true** — el disyunto de super-admin
+> de **89** policies, evaluado con privilegios de superusuario. El arnés mide
+> `PG_TEMP_ESCALATION_PRE_FIX=true` y `POST_FIX=false`. Conceder EXECUTE sin
+> endurecer entregaría esa primitiva al principal de runtime.
+
+> **Por qué el ejecutor es el dueño y no `uellix_owner`.** `CREATE OR REPLACE
+> FUNCTION` exige **propiedad**, y ningún GRANT la confiere. Eso además **disuelve**
+> el hueco de autoridad sobre `current_user_role_in_org(uuid)`: `uellix_owner` no
+> tiene EXECUTE sobre ella —ni con GRANT OPTION— así que un T12 gobernado jamás
+> habría podido emitir ese tercer grant. No se escala autoridad a nadie, no se
+> cambia ningún dueño y no se añade ningún eslabón a `HOSTED_CHAIN`.
+
+> **Por qué `search_path=''` y no sólo cualificar.** Medidas las cuatro
+> combinaciones en PG 17: cualificar **ya** basta para frenar el sombreado, y
+> `pg_catalog, pg_temp` también. Se elige el path vacío porque es el único que
+> hace el defecto **inescribible** — son funciones `LANGUAGE sql`, parseadas al
+> crearse, así que una referencia sin cualificar bajo `search_path=''` ni siquiera
+> se crea (`ERROR: relation "users" does not exist`). La segunda capa impide que
+> se retire la primera.
+
+> **`uellix_app` no es grantee.** Alcanza las tres por herencia de
+> `uellix_writer` (`stella_hosted_0001` §3), igual que en el modelo local. El §3
+> del paquete aserta el privilegio **efectivo** de `uellix_app` por separado del
+> grant: aserta sólo el grant pasaría en una base donde la membresía se hubiera
+> perdido, entregando un contrato que no alcanza a nadie.
+
 ### M-2 — USAGE sobre el esquema `storage` en hosted (`stella_hosted_0004`)
 
 **Estado: DISEÑO. No aplicado a ninguna base hosted.** Es la **segunda mitad** del

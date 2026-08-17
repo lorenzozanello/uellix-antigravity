@@ -15,6 +15,7 @@ import path from 'node:path'
 import {
   PRECHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_OWNERSHIP,
+  PRECHAIN_RUNTIME_HELPER_CONTRACT,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_STORAGE_USAGE,
   sha256OfPreparedSql,
@@ -32,6 +33,26 @@ const stripSqlSurface = (s: string): string =>
   s.replace(/--[^\n]*/g, '').replace(/'(?:[^']|'')*'/g, "''")
 
 const executable = stripSqlSurface(sql)
+
+/** The RT-01 package, and a reader for the two local packages it converges to. */
+const runtimeHelperSql = readFileSync(
+  path.join(ROOT, PRECHAIN_RUNTIME_HELPER_CONTRACT.sourceFile),
+  'utf8'
+)
+const read = (name: string): string =>
+  readFileSync(path.join(ROOT, 'db/prepared', name), 'utf8')
+
+/** Comments only. The header of RT-01 QUOTES the statements it must not issue --
+ *  a GRANT to uellix_app, an ALTER FUNCTION ... OWNER TO -- because explaining
+ *  what a package deliberately does not do is half its contract. A check that
+ *  read the raw file would fail on the explanation instead of on the code. */
+const runtimeHelperExec = runtimeHelperSql.replace(/--[^\n]*/g, '')
+
+/** Comments AND single-quoted literals stripped, as the sibling suites do. The
+ *  §3 refusal messages NAME the statements the package must not issue — "this
+ *  package issues no ALTER FUNCTION ... OWNER TO" — so a check that only removed
+ *  comments would fail on the error text that proves the property. */
+const runtimeHelperStatements = stripSqlSurface(runtimeHelperSql)
 
 describe('the package is registered, pinned, and is NOT a chain package', () => {
   it('exists at the path the registry names', () => {
@@ -186,12 +207,136 @@ describe('the registry states reasons, not shrugs', () => {
 describe('the prechain TRIO, and the order that is load-bearing', () => {
   const usageSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_USAGE.sourceFile), 'utf8')
 
-  it('declares all three units in application order', () => {
+  it('declares all four units in application order', () => {
     expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
       PRECHAIN_OWNERSHIP.id,
       PRECHAIN_STORAGE_USAGE.id,
       PRECHAIN_STORAGE_TABLE_READ.id,
+      // RT-01. Last because it depends on nothing the other three publish and
+      // publishes nothing they need: it repairs the BASELINE helper contract for
+      // the application runtime, where the first three repair the Storage helper
+      // contract for the installer. Ordering it after them keeps the trio's own
+      // argument — 0004 needs 0003, 0005 needs both — readable as a unit.
+      PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
     ])
+  })
+
+  it('pins the runtime helper contract and finds it on disk', () => {
+    expect(existsSync(path.join(ROOT, PRECHAIN_RUNTIME_HELPER_CONTRACT.sourceFile))).toBe(true)
+    expect(sha256OfPreparedSql(runtimeHelperSql)).toBe(
+      PRECHAIN_RUNTIME_HELPER_CONTRACT.sourceSha256
+    )
+  })
+
+  describe('RT-01 — the runtime helper contract', () => {
+    // THE ASSERTION WHOSE ABSENCE LET THE DEFECT SHIP. Nothing in this
+    // repository checked that the RUNTIME could execute the baseline RLS
+    // helpers: every has_function_privilege('uellix_app', ...) test targets a
+    // CAMPAIGN function (uellix_stella*, uellix_grounding*), and the local
+    // stack has stella_0004 applied so it never diverged there. The hosted path
+    // does not, and the two contracts drifted in silence for the whole cutover.
+    it('grants EXECUTE to the writer and the auditor, and never to uellix_app', () => {
+      expect(runtimeHelperSql).toMatch(
+        /GRANT EXECUTE ON FUNCTION[\s\S]*?TO uellix_writer, uellix_auditor;/
+      )
+      // uellix_app must reach these BY INHERITANCE. A direct grant would be a
+      // second way for one principal to hold one privilege, and only one of the
+      // two would be measured.
+      // The GRANT statement ITSELF, isolated: scanning the whole body would
+      // match the §0.5 role list, which legitimately names uellix_app in order
+      // to assert that the role exists.
+      const grant = /GRANT EXECUTE ON FUNCTION[\s\S]*?;/.exec(runtimeHelperExec)?.[0] ?? ''
+      expect(grant).toContain('uellix_writer, uellix_auditor')
+      expect(grant).not.toContain('uellix_app')
+    })
+
+    it('asserts the EFFECTIVE privilege of uellix_app, not merely the grant', () => {
+      // Asserting only the grant would pass on a database whose
+      // uellix_app -> uellix_writer membership had been dropped, shipping a
+      // contract that reaches nobody.
+      expect(runtimeHelperSql).toContain("('uellix_writer'), ('uellix_auditor'), ('uellix_app')")
+      expect(runtimeHelperSql).toContain("pg_has_role('uellix_app', 'uellix_writer', 'USAGE')")
+    })
+
+    it('hardens all three helper bodies against pg_temp shadowing', () => {
+      for (const fn of PRECHAIN_RUNTIME_HELPER_CONTRACT.normalisedFunctions) {
+        expect(runtimeHelperSql).toContain(fn.replace(/\(.*\)$/, ''))
+      }
+      // Three CREATE OR REPLACE, three empty search_paths, and both relations
+      // schema-qualified everywhere they appear in a published body.
+      expect(runtimeHelperExec.match(/CREATE OR REPLACE FUNCTION public\./g)).toHaveLength(3)
+      // Counted inside the PUBLISHED bodies only: §3's refusal messages quote the
+      // clause verbatim so an operator can read what is missing, and those quotes
+      // are not statements.
+      const bodies = runtimeHelperExec.match(
+        /CREATE OR REPLACE FUNCTION[\s\S]*?\$function\$;/g
+      ) ?? []
+      expect(bodies).toHaveLength(3)
+      for (const b of bodies) expect(b).toContain("SET search_path = ''")
+      expect(runtimeHelperSql).toContain('FROM public.organization_members om')
+      expect(runtimeHelperSql).toContain('FROM public.users u')
+    })
+
+    it('drives an ACTIVE pg_temp probe that refuses to pass vacuously', () => {
+      // A structural check says the body LOOKS right. The package additionally
+      // shadows both relations through pg_temp and requires the helpers to
+      // ignore them — and first confirms auth.uid() resolves, because with a
+      // NULL subject every assertion would pass without exercising anything.
+      expect(runtimeHelperSql).toContain('CREATE TEMP TABLE users')
+      expect(runtimeHelperSql).toContain('CREATE TEMP TABLE organization_members')
+      expect(runtimeHelperSql).toContain('could not establish a subject')
+    })
+
+    it('classifies three prestates and refuses the third', () => {
+      expect(runtimeHelperSql).toContain('VULNERABLE_PRESTATE')
+      expect(runtimeHelperSql).toContain('HARDENED_PRESTATE')
+      expect(runtimeHelperSql).toContain('is in a state this package cannot account for')
+      // PG 17 stores SET search_path = '' as search_path="" — QUOTED. A check
+      // that only knew the bare form would classify a hardened database as
+      // vulnerable and republish bodies nobody asked it to touch.
+      expect(runtimeHelperSql).toContain(`'search_path=""'`)
+    })
+
+    it('introduces no schema privilege, no policy change and no project reference', () => {
+      expect(runtimeHelperStatements).not.toMatch(/GRANT\s+USAGE\s+ON\s+SCHEMA/i)
+      expect(runtimeHelperStatements).not.toMatch(/CREATE\s+POLICY|DROP\s+POLICY|ALTER\s+POLICY/i)
+      expect(runtimeHelperStatements).not.toMatch(/ALTER\s+FUNCTION[\s\S]{0,80}OWNER\s+TO/i)
+      // LINE-ANCHORED, the idiom the sibling suites use for "issues no X": the
+      // §3 refusal messages name CREATE ROLE and DROP ROLE in prose, and the
+      // literal-stripper cannot be relied on to remove them — this package
+      // writes `search_path = ''''`, whose doubled quotes desynchronise a
+      // regex-based string scanner. A statement, unlike prose, starts a line.
+      expect(runtimeHelperExec).not.toMatch(/^\s*(CREATE|DROP)\s+ROLE\b/im)
+      expect(runtimeHelperExec).not.toMatch(/^\s*(CREATE|DROP)\s+SCHEMA\b/im)
+      // A 20-lowercase-letter token is a Supabase project ref. The package must
+      // be applicable to any affected environment, so it may name none.
+      expect(runtimeHelperExec).not.toMatch(/\b[a-z]{20}\b/)
+    })
+
+    // CROSS-ENVIRONMENT CONTRACT. The local model and the hosted model must not
+    // drift again on the two properties that drifted this time.
+    it('publishes the same hardened bodies the local cutover publishes', () => {
+      const local = read('stella_0005_runtime_cutover.sql')
+      for (const marker of [
+        'FROM public.organization_members om',
+        'FROM public.users u',
+        "SET search_path = ''",
+      ]) {
+        expect(local).toContain(marker)
+        expect(runtimeHelperSql).toContain(marker)
+      }
+    })
+
+    it('grants the same helpers to the same roles the local role separation does', () => {
+      const local = read('stella_0004_role_separation.sql')
+      // stella_0004 §6b — the statement this package reproduces for hosted.
+      expect(local).toMatch(
+        /GRANT EXECUTE ON FUNCTION\s+public\.current_user_org_ids\(\),\s+public\.current_user_is_super_admin\(\),\s+public\.current_user_role_in_org\(uuid\)\s+TO uellix_writer, uellix_auditor;/
+      )
+      expect(runtimeHelperSql).toMatch(
+        /GRANT EXECUTE ON FUNCTION\s+public\.current_user_org_ids\(\),\s+public\.current_user_is_super_admin\(\),\s+public\.current_user_role_in_org\(uuid\)\s+TO uellix_writer, uellix_auditor;/
+      )
+    })
   })
 
   it('pins the storage-usage unit and finds it on disk', () => {

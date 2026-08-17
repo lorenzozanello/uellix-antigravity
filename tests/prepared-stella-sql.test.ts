@@ -399,6 +399,14 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // and all nine cases of the role matrix were refused on BOTH helpers
       // while T11 measured INSTALLED. One privilege, one table, no rollback.
       'stella_hosted_0005_storage_helper_table_read.sql',
+      // RT-01. The runtime half of the cutover, which the hosted path never
+      // received: stella_0004 §6b (the helper EXECUTE grants) and stella_0005
+      // (the hardened bodies) are both local-only, and the hosted substitute
+      // was scoped to what the INSTALLER needs. It converges the three baseline
+      // RLS helpers to the hardened form and grants them to uellix_writer and
+      // uellix_auditor — closing a 42501 on every authenticated request AND a
+      // pg_temp shadowing escalation that the grant alone would have widened.
+      'stella_hosted_0006_runtime_rls_helper_contract.sql',
     ])
   })
 
