@@ -115,65 +115,110 @@ export async function readRuntimeIdentity(sql: postgres.Sql): Promise<RuntimeIde
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* The rules — ONE table, two readers                                         */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Throw unless the connection is the least-privilege runtime role.
+ * What makes an observed identity unacceptable, as DATA rather than as control
+ * flow.
  *
- * The checks are ordered so the most diagnostic message wins: being the wrong
- * role explains every other failure, so it is reported first rather than
- * leaving an operator to work out why `postgres` "has BYPASSRLS".
+ * Until STELLA_STAGING_B this was a chain of six `if (…) throw` statements
+ * inside `assertRuntimeIdentity`, which was fine while the bootstrap gate was
+ * the only reader. It is not fine with two: the gate needs the FIRST failure
+ * (it is aborting startup and wants the most diagnostic message), while the
+ * observability endpoint needs EVERY failure (it is describing a deployment and
+ * "wrong role" alone would hide that the role also holds BYPASSRLS).
+ *
+ * Two readers over two hand-written copies of the same six predicates is how a
+ * check drifts: someone adds a seventh property to the gate, the endpoint keeps
+ * reporting six, and the endpoint reports `verified` on a connection the gate
+ * would refuse. So the predicates live here once, and both readers are derived
+ * from this array.
+ *
+ * ORDER IS PART OF THE CONTRACT. `assertRuntimeIdentity` throws on the first
+ * entry that matches, and being the wrong role explains every other failure —
+ * so it stays first rather than leaving an operator to work out why `postgres`
+ * "has BYPASSRLS".
  *
  * No message contains a URL, a password or a claim value.
  */
-export function assertRuntimeIdentity(identity: RuntimeIdentity): void {
-  if (
-    identity.sessionUser !== RUNTIME_DATABASE_ROLE ||
-    identity.currentUser !== RUNTIME_DATABASE_ROLE
-  ) {
-    throw new RuntimeIdentityError(
-      'DB_RUNTIME_IDENTITY_WRONG_ROLE',
+interface RuntimeIdentityRule {
+  readonly code: Exclude<RuntimeIdentityErrorCode, 'DB_RUNTIME_IDENTITY_UNVERIFIABLE'>
+  readonly failed: (identity: RuntimeIdentity) => boolean
+  readonly message: (identity: RuntimeIdentity) => string
+}
+
+const RUNTIME_IDENTITY_RULES: readonly RuntimeIdentityRule[] = Object.freeze([
+  {
+    code: 'DB_RUNTIME_IDENTITY_WRONG_ROLE',
+    failed: (identity) =>
+      identity.sessionUser !== RUNTIME_DATABASE_ROLE ||
+      identity.currentUser !== RUNTIME_DATABASE_ROLE,
+    message: (identity) =>
       `The runtime connection authenticated as session_user="${identity.sessionUser}", ` +
-        `current_user="${identity.currentUser}". It must be "${RUNTIME_DATABASE_ROLE}".`
-    )
-  }
-
-  if (identity.isSuperuser) {
-    throw new RuntimeIdentityError(
-      'DB_RUNTIME_IDENTITY_SUPERUSER',
+      `current_user="${identity.currentUser}". It must be "${RUNTIME_DATABASE_ROLE}".`,
+  },
+  {
+    code: 'DB_RUNTIME_IDENTITY_SUPERUSER',
+    failed: (identity) => identity.isSuperuser,
+    message: () =>
       `"${RUNTIME_DATABASE_ROLE}" is a superuser on this database. Row-level security does not ` +
-        'apply to superusers, so every policy would be decorative.'
-    )
-  }
-
-  if (identity.bypassesRls) {
-    throw new RuntimeIdentityError(
-      'DB_RUNTIME_IDENTITY_BYPASSRLS',
+      'apply to superusers, so every policy would be decorative.',
+  },
+  {
+    code: 'DB_RUNTIME_IDENTITY_BYPASSRLS',
+    failed: (identity) => identity.bypassesRls,
+    message: () =>
       `"${RUNTIME_DATABASE_ROLE}" holds BYPASSRLS. Tenant isolation would depend entirely on ` +
-        'application-side filtering, which is the state this cutover exists to leave.'
-    )
-  }
-
-  if (identity.canCreateRole) {
-    throw new RuntimeIdentityError(
-      'DB_RUNTIME_IDENTITY_CREATEROLE',
+      'application-side filtering, which is the state this cutover exists to leave.',
+  },
+  {
+    code: 'DB_RUNTIME_IDENTITY_CREATEROLE',
+    failed: (identity) => identity.canCreateRole,
+    message: () =>
       `"${RUNTIME_DATABASE_ROLE}" holds CREATEROLE, which is an escalation path to any ` +
-        'non-superuser role on this database.'
-    )
-  }
-
-  if (identity.canSetOwnerRole) {
-    throw new RuntimeIdentityError(
-      'DB_RUNTIME_IDENTITY_CAN_SET_OWNER',
+      'non-superuser role on this database.',
+  },
+  {
+    code: 'DB_RUNTIME_IDENTITY_CAN_SET_OWNER',
+    failed: (identity) => identity.canSetOwnerRole,
+    message: () =>
       `"${RUNTIME_DATABASE_ROLE}" can SET ROLE to "${OWNER_DATABASE_ROLE}". The owner is exempt ` +
-        'from RLS on its own tables and can drop policies and triggers.'
-    )
-  }
-
-  if (identity.canCreateInPublic) {
-    throw new RuntimeIdentityError(
-      'DB_RUNTIME_IDENTITY_CAN_CREATE_PUBLIC',
+      'from RLS on its own tables and can drop policies and triggers.',
+  },
+  {
+    code: 'DB_RUNTIME_IDENTITY_CAN_CREATE_PUBLIC',
+    failed: (identity) => identity.canCreateInPublic,
+    message: () =>
       `"${RUNTIME_DATABASE_ROLE}" holds CREATE on schema public, which is enough to define a ` +
-        'SECURITY DEFINER function and escalate from there.'
-    )
+      'SECURITY DEFINER function and escalate from there.',
+  },
+])
+
+/**
+ * EVERY rule this identity violates, in rule order. Empty means acceptable.
+ *
+ * The reporting half of the contract. It exists so that an observability
+ * surface never has to re-state a predicate: `failures.length === 0` is the
+ * same judgement `assertRuntimeIdentity` makes, evaluated over the same table.
+ */
+export function collectRuntimeIdentityFailures(
+  identity: RuntimeIdentity
+): readonly RuntimeIdentityErrorCode[] {
+  return RUNTIME_IDENTITY_RULES.filter((rule) => rule.failed(identity)).map((rule) => rule.code)
+}
+
+/**
+ * Throw unless the connection is the least-privilege runtime role.
+ *
+ * The enforcing half of the contract, and the one the bootstrap gate calls.
+ */
+export function assertRuntimeIdentity(identity: RuntimeIdentity): void {
+  for (const rule of RUNTIME_IDENTITY_RULES) {
+    if (rule.failed(identity)) {
+      throw new RuntimeIdentityError(rule.code, rule.message(identity))
+    }
   }
 }
 

@@ -10,6 +10,7 @@ import {
 } from './safety/database-access'
 import type { EnvironmentSource } from './safety/database-target'
 import { getBoundDatabaseContext } from './identity-store'
+import { gateSqlOnRuntimeIdentity } from './runtime-gate'
 import { LOCAL_DB_PORT } from './safety/local-stack'
 import { resolveLocalDatabaseUrl } from './safety/resolve-local-database-url'
 import { resolveRuntimeDatabaseUrl } from './safety/resolve-capability-database-url'
@@ -388,6 +389,29 @@ function getDefaultClient(): DatabaseClient {
 }
 
 /**
+ * The drizzle handle the `db` proxy falls back to OUTSIDE an identity context.
+ *
+ * Deliberately NOT `getDefaultClient().db`. That handle sits on the raw
+ * postgres-js client, and the raw client had never been asked who the server
+ * authenticated it as: `ensureRuntimeIdentityVerified` has one caller,
+ * db/identity-context.ts, and this path does not go through it. See
+ * db/runtime-gate.ts for what that meant for the three entry points that
+ * legitimately query outside a context.
+ *
+ * Built once and cached, because the certification is memoised per handle and a
+ * second drizzle instance over the same connection would be a second thing to
+ * keep in step for no gain.
+ */
+let gatedFallbackDatabase: PostgresJsDatabase<typeof schema> | null = null
+
+function getGatedFallbackDatabase(): PostgresJsDatabase<typeof schema> {
+  if (gatedFallbackDatabase === null) {
+    gatedFallbackDatabase = drizzle(gateSqlOnRuntimeIdentity(getDefaultClient().sql), { schema })
+  }
+  return gatedFallbackDatabase
+}
+
+/**
  * Keys that are module/language protocol rather than part of drizzle's query
  * surface. Reading one is INSPECTION, and inspection must never build a
  * client — only use may.
@@ -429,12 +453,18 @@ export const db: PostgresJsDatabase<typeof schema> = new Proxy(
       // context, it falls back to the pooled client, which has no claims and
       // therefore sees no rows.
       //
-      // That fallback is deliberate and is NOT a hole: as `uellix_app` a
-      // claimless query returns zero rows rather than everything, so code that
-      // forgot to open a context fails closed and visibly. Before the cutover
-      // the same code path ran as `postgres` and returned every tenant's rows.
+      // The fallback used to be defended as "not a hole: as `uellix_app` a
+      // claimless query returns zero rows rather than everything". The premise
+      // is the load-bearing half of that sentence, and this path was the one
+      // place in the runtime that never checked it — see db/runtime-gate.ts.
+      // It now goes through a handle that cannot execute a statement until the
+      // server has confirmed which role it authenticated, so BOTH halves of
+      // "fails closed as uellix_app" are established rather than one assumed.
+      //
+      // The in-context branch is unchanged and uncosted: it already awaited the
+      // same memoised gate before its transaction opened.
       const bound = getBoundDatabaseContext()
-      const real = (bound?.db ?? getDefaultClient().db) as unknown as Record<string, unknown>
+      const real = (bound?.db ?? getGatedFallbackDatabase()) as unknown as Record<string, unknown>
       const value = real[property]
       return typeof value === 'function' ? value.bind(real) : value
     },

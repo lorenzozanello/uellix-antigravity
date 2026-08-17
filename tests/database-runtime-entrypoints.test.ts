@@ -466,6 +466,10 @@ const ALLOWLIST: Record<string, string> = {
   'app/(authenticated)/app/onboarding/page.tsx':
     'requireAuth() + getCurrentMembership(); both read the memoised principal.',
 
+  // ---- Observes the CONNECTION, deliberately outside any context ----------
+  'app/api/health/runtime-identity/route.ts':
+    'STELLA_STAGING_B. Reads session_user/current_user/rolbypassrls and the in-database staging sentinel off the runtime pool. An identity context is the wrong tool and would defeat the probe: it opens a transaction whose claims are a REQUEST property, while this route observes a CONNECTION property, and db/identity-context.ts would answer with a certification this route exists to take fresh. It touches no application table, holds a read-only transaction, and returns booleans plus two role names.',
+
   // ---- Auth bootstrap: opens its context inside syncUserProfile ------------
   'app/(public)/login/actions.ts':
     'syncUserProfile() opens its own context (the users row may not exist yet); getCurrentMembership() reads the principal.',
@@ -684,12 +688,11 @@ describe('every entry point that can reach the database opens an identity contex
       reaching: databaseReaching.length,
       contextualized: contextualized.length,
       allowlisted: allowlisted.length,
-    // 121 -> 122 / 97 -> 98 / allowlisted 14 -> 15: `app/(authenticated)/
-    // layout.tsx` is a NEW module, and an allowlisted one for the same reason
-    // app/app/layout.tsx is — requireAuth() reads the memoised principal and
-    // issues no query. `contextualized` is unchanged at 83: the onboarding page
-    // and action only MOVED, and both keep the classification they had.
-    }).toEqual({ inventoried: 122, reaching: 98, contextualized: 83, allowlisted: 15 })
+    // 122 -> 123 / 98 -> 99 / allowlisted 15 -> 16: STELLA_STAGING_B adds
+    // `app/api/health/runtime-identity/route.ts`, allowlisted because it
+    // observes the CONNECTION rather than tenant data — see its ALLOWLIST row.
+    // `contextualized` is unchanged at 83: no existing module changed class.
+    }).toEqual({ inventoried: 123, reaching: 99, contextualized: 83, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {
