@@ -457,7 +457,13 @@ const ALLOWLIST: Record<string, string> = {
   'app/app/layout.tsx':
     'Reads organisation/membership from requireOrganizationAccess(), which resolves the memoised principal and issues no query of its own.',
   'app/admin/layout.tsx': 'requireAdminAccess() only — no query of its own.',
-  'app/app/onboarding/page.tsx':
+  'app/(authenticated)/layout.tsx':
+    'requireAuth() only — resolves the memoised principal and issues no query of its own, exactly as app/app/layout.tsx does for the organisation gate.',
+  // Served at /app/onboarding. It sits in the (authenticated) route group
+  // rather than under app/app/ because the organisation gate redirects TO it:
+  // nested under that gate it redirected to itself. See
+  // tests/auth/route-authorization-boundary.test.ts.
+  'app/(authenticated)/app/onboarding/page.tsx':
     'requireAuth() + getCurrentMembership(); both read the memoised principal.',
 
   // ---- Auth bootstrap: opens its context inside syncUserProfile ------------
@@ -678,7 +684,12 @@ describe('every entry point that can reach the database opens an identity contex
       reaching: databaseReaching.length,
       contextualized: contextualized.length,
       allowlisted: allowlisted.length,
-    }).toEqual({ inventoried: 121, reaching: 97, contextualized: 83, allowlisted: 14 })
+    // 121 -> 122 / 97 -> 98 / allowlisted 14 -> 15: `app/(authenticated)/
+    // layout.tsx` is a NEW module, and an allowlisted one for the same reason
+    // app/app/layout.tsx is — requireAuth() reads the memoised principal and
+    // issues no query. `contextualized` is unchanged at 83: the onboarding page
+    // and action only MOVED, and both keep the classification they had.
+    }).toEqual({ inventoried: 122, reaching: 98, contextualized: 83, allowlisted: 15 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

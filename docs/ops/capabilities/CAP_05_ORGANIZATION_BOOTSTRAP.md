@@ -11,7 +11,7 @@
 
 | Aspecto | Realidad medida |
 |---|---|
-| Entry point | `app/app/onboarding/actions.ts::createFirstOrganization` (server action) |
+| Entry point | `app/(authenticated)/app/onboarding/actions.ts::createFirstOrganization` (server action) |
 | Actor | Usuario autenticado **sin** membresía |
 | Autenticación | **Sí**: `supabase.auth.getUser()`, redirige a `/login` si no hay |
 | Información disponible | `FormData` con `name`, `slug`, `legalName`, `country`, `sector`; la sesión |

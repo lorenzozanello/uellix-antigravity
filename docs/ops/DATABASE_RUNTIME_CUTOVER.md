@@ -397,7 +397,15 @@ Dos capas, en el mismo archivo (`tests/database-runtime-entrypoints.test.ts`):
 > `app/app/projects/[projectId]/pipeline/evidence/indexEvidence.action.ts`
 > (allowlist 13 → 14: reenvía a `ingestProjectEvidenceForProject`, que posee
 > tres contextos con una descarga de Storage entre los dos primeros, así que un
-> contexto externo colapsaría la frontera transaccional de M-7).
+> contexto externo colapsaría la frontera transaccional de M-7);
+> **122/98/83/15** al separar la frontera AUTHENTICATED de la
+> ORGANIZATION_REQUIRED, que añade `app/(authenticated)/layout.tsx`
+> (allowlist 14 → 15: `requireAuth()` resuelve el principal memoizado y no
+> emite consulta propia, igual que `app/app/layout.tsx`). Los `contextualized`
+> no se mueven: la página y la acción de onboarding sólo CAMBIAN DE SITIO
+> —a `app/(authenticated)/app/onboarding/`, para que el gate de organización
+> deje de redirigir a una ruta gobernada por él mismo— y conservan su
+> clasificación.
 
 Reconstruye el grafo de imports —resolviendo `@/`, relativos, re-exports y
 `import()` dinámico, e ignorando `import type` y módulos `'use client'`— y
@@ -448,7 +456,7 @@ código que los contiene.
 
 | Camino | Por qué no puede pasar | Qué haría falta |
 |---|---|---|
-| Alta autoservicio de organización (`app/app/onboarding/actions.ts`) | `orgs_insert_super_admin` exige super admin; `members_insert_admin` exige ya ser admin de esa organización | policy acotada, o identidad técnica de bootstrap |
+| Alta autoservicio de organización (`app/(authenticated)/app/onboarding/actions.ts`) | `orgs_insert_super_admin` exige super admin; `members_insert_admin` exige ya ser admin de esa organización | policy acotada, o identidad técnica de bootstrap |
 | Aceptar invitación (`lib/invitations/service.ts`) | mismo `members_insert_admin`: quien acepta todavía no es miembro | policy que exprese "invitación válida" en la base |
 | Webhook de Stripe (`app/api/webhooks/stripe/route.ts`) | no hay sesión; la organización se busca por `stripe_customer_id`, no por membresía | identidad técnica de webhook con grant estrecho |
 | Verificación pública por hash (`lib/reports/public-verify.ts`) | no hay policy de SELECT anónima sobre `sroi_reports` | policy de capacidad: reportes `locked`, por hash |

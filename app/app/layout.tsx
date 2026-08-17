@@ -5,6 +5,20 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { OnboardingCheck } from '@/components/auth/OnboardingCheck'
 
+/**
+ * The ORGANIZATION_REQUIRED boundary. Everything under `app/app/` is gated by
+ * it, and that default is deliberate: a route added here is organisation-gated
+ * because of where it sits, not because someone remembered to gate it.
+ *
+ * THE ONE EXCEPTION IS `/app/onboarding`, and it is not under this directory.
+ * It lives at `app/(authenticated)/app/onboarding/`, whose layout requires a
+ * session and nothing else. It has to: `requireOrganizationAccess()` sends a
+ * member-less user THERE, so a version of that page gated by this layout would
+ * redirect to itself forever — which is exactly what the hosted preview
+ * measured before the route group existed. See `app/(authenticated)/layout.tsx`
+ * for the full argument, and `tests/auth/route-authorization-boundary.test.ts`
+ * for the check that keeps the exception to exactly one route.
+ */
 export default async function PrivateLayout({
   children,
 }: {
