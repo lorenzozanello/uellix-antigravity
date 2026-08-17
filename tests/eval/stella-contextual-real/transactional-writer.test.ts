@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createCaseState, transitionCase, type TransactionalCaseState } from './case-state'
-import type { DecodedResult, RawResponse, SafeRunError } from './types'
+import type { DecodedResult, ProviderCallTelemetry, RawResponse, SafeRunError, SanitizedCaseInput } from './types'
 import {
   HASHED_CHECKPOINT_FILES,
   inspectCheckpointSequences,
@@ -17,9 +17,26 @@ import {
 const directories: string[] = []
 const timestamp = '2026-07-30T12:00:00.000Z'
 
-async function createDirectory(): Promise<string> {
+/**
+ * H3: a run directory now REQUIRES its manifest before any checkpoint can be
+ * written — the integrity record binds HEAD/branch/model/caseCatalogHash by
+ * value and hashes the manifest file, so a checkpoint without one would be
+ * evidence bound to nothing. Every fixture directory therefore gets one, with
+ * `runId` matching the `input()` helper below.
+ */
+export const MANIFEST_FIXTURE = {
+  runId: 'run-1',
+  head: 'f8969f5d9f1bbde2719866b236d61ad2647fc0e1',
+  branch: 'codex/stella-staging',
+  model: 'gemini-3.6-flash',
+  caseCatalogHash: 'catalog-hash',
+  caseIds: ['case-1'],
+}
+
+async function createDirectory(manifest: Record<string, unknown> = MANIFEST_FIXTURE): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'stella-transactional-writer-'))
   directories.push(directory)
+  await writeFile(join(directory, 'run-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
   return directory
 }
 
@@ -41,6 +58,9 @@ function input(
     rawResponses: [],
     decodedResults: [],
     errors: [],
+    telemetry: [],
+    sanitizedInputs: [],
+    adversarialCaseIds: [],
     status: 'INITIALIZED',
     checkpointStatus: 'PARTIAL_CHECKPOINT',
     startedAt: timestamp,
@@ -63,6 +83,37 @@ const rawResponse: RawResponse = {
     suggestions: [{ sourceRefIndexes: [1] }],
   },
   timestamp,
+}
+
+/** H2: one fully instrumented provider call. */
+const telemetryRecord: ProviderCallTelemetry = {
+  caseId: 'case-1',
+  requestedModel: 'gemini-3.6-flash',
+  providerModelVersion: 'gemini-3.6-flash',
+  requestStartedAt: timestamp,
+  responseReceivedAt: '2026-07-30T12:00:04.200Z',
+  latencyMs: 4200,
+  usage: {
+    promptTokenCount: 5000,
+    candidatesTokenCount: 700,
+    thoughtsTokenCount: 900,
+    totalTokenCount: 6600,
+  },
+  usageAvailable: true,
+  finishReason: 'STOP',
+  outputChars: 2048,
+}
+
+/** H4: one post-redaction, provider-safe input. */
+const sanitizedInput: SanitizedCaseInput = {
+  caseId: 'case-1',
+  step: 'stakeholders',
+  category: 'complete',
+  systemPrompt: 'You are Stella, the contextual methodology advisor for Uellix.',
+  userMessage: 'UNTRUSTED_PROJECT_DATA\n{"step":"stakeholders"}',
+  responseJsonSchema: { type: 'object' },
+  canonicalSourceFieldPaths: ['stakeholders[0].name'],
+  redaction: 'post-redaction',
 }
 
 const decodedResult = {
@@ -178,6 +229,8 @@ describe('transactional multi-artifact checkpoint writer', () => {
       'raw-responses.json',
       'decoded-results.json',
       'errors.json',
+      'provider-telemetry.json',
+      'sanitized-inputs.json',
       'hashes.json',
     ]) {
       await expect(readJson(directory, file)).resolves.toMatchObject({ checkpointSequence: 0 })
@@ -189,13 +242,16 @@ describe('transactional multi-artifact checkpoint writer', () => {
     const events: string[] = []
     await writeTransactionalCheckpoint(input(directory, createCaseState(['case-1']), { fileSystem: nodeFileSystem(events) }))
 
-    expect(events.filter((event) => event.startsWith('close:'))).toHaveLength(6)
+    expect(events.filter((event) => event.startsWith('close:'))).toHaveLength(8)
     expect(events.filter((event) => event.startsWith('rename:'))).toEqual([
       'rename:raw-responses.json',
       'rename:decoded-results.json',
       'rename:errors.json',
+      'rename:provider-telemetry.json',
+      'rename:sanitized-inputs.json',
       'rename:summary.json',
       'rename:hashes.json',
+      // run-state.json stays LAST: it is the commit marker.
       'rename:run-state.json',
     ])
     expect((await readdir(directory)).filter((file) => file.endsWith('.tmp'))).toEqual([])
@@ -220,12 +276,18 @@ describe('transactional multi-artifact checkpoint writer', () => {
 
   it('preserves the immutable manifest, raw indexes, canonical fields, and caller-owned raw data', async () => {
     const directory = await createDirectory()
-    const manifest = '{"runId":"run-1","immutable":true}\n'
-    await writeFile(join(directory, 'run-manifest.json'), manifest, { encoding: 'utf8', flag: 'wx' })
+    // H3: the manifest is now READ by the checkpoint (to bind and hash it) and
+    // must still never be rewritten by it. Captured before the write and
+    // compared byte for byte after.
+    const manifest = await readFile(join(directory, 'run-manifest.json'), 'utf8')
     const originalRaw = structuredClone(rawResponse)
     await writeTransactionalCheckpoint(input(directory, succeededState(), {
       rawResponses: [rawResponse],
       decodedResults: [decodedResult],
+      // FINAL now demands full instrumentation: one telemetry row per provider
+      // call, one sanitized input per selected case.
+      telemetry: [telemetryRecord],
+      sanitizedInputs: [sanitizedInput],
       status: 'COMPLETED_PENDING_HUMAN_REVIEW',
       checkpointStatus: 'FINAL',
     }))
@@ -271,7 +333,10 @@ describe('transactional multi-artifact checkpoint writer', () => {
   ])('blocks the complete write for invariant violation: %s', async (_name, mutate) => {
     const directory = await createDirectory()
     await expect(writeTransactionalCheckpoint(mutate(input(directory)))).rejects.toThrow('CHECKPOINT_ERROR')
-    expect(await readdir(directory)).toEqual([])
+    // The manifest is a PRECONDITION of the run directory, not an output of the
+    // checkpoint, so it is excluded: what must be empty is everything the
+    // blocked write could have produced.
+    expect((await readdir(directory)).filter((file) => file !== 'run-manifest.json')).toEqual([])
   })
 
   it('detects auxiliary artifacts whose sequence disagrees with the confirmed run-state', () => {
@@ -280,12 +345,14 @@ describe('transactional multi-artifact checkpoint writer', () => {
       'raw-responses.json': 5,
       'decoded-results.json': 5,
       'errors.json': 5,
+      'provider-telemetry.json': 5,
+      'sanitized-inputs.json': 5,
       'hashes.json': 5,
     })).toEqual({
       valid: false,
       error: 'CHECKPOINT_SEQUENCE_MISMATCH',
       confirmedCheckpointSequence: 4,
-      mismatchedFiles: ['summary.json', 'raw-responses.json', 'decoded-results.json', 'errors.json', 'hashes.json'],
+      mismatchedFiles: ['summary.json', 'raw-responses.json', 'decoded-results.json', 'errors.json', 'provider-telemetry.json', 'sanitized-inputs.json', 'hashes.json'],
     })
   })
 
@@ -295,6 +362,8 @@ describe('transactional multi-artifact checkpoint writer', () => {
       'raw-responses.json': 4,
       'decoded-results.json': 4,
       'errors.json': 4,
+      'provider-telemetry.json': 4,
+      'sanitized-inputs.json': 4,
     })).toMatchObject({
       valid: false,
       error: 'CHECKPOINT_SEQUENCE_MISMATCH',

@@ -7,7 +7,7 @@ import { stellaConfig } from '../config'
 import { StellaParseError, StellaGeminiError, StellaTimeoutError } from '../errors'
 import { assertPromptWithinLimit } from '../security/payload-limits'
 import { redactProviderRequest } from '../security/redact-model-bound'
-import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig } from './types'
+import type { StellaRequest, StellaResponse, StellaMockProvider, StellaAdapterConfig, StellaProviderMetadata } from './types'
 
 export class StellaGeminiAdapter {
   private config: StellaAdapterConfig
@@ -141,6 +141,11 @@ export class StellaGeminiAdapter {
         modelUsed: this.config.model,
         tokensUsed: response.usageMetadata?.totalTokenCount,
         timestamp: new Date(),
+        // H2: additive observability. Read-only projection of counts, ids and
+        // one enum — see StellaProviderMetadata for what may never go in here.
+        // Nothing in the product consumes this; it exists for the G1-A evidence
+        // package, and its absence changes no behaviour.
+        providerMetadata: extractProviderMetadata(response),
       }
     } catch (error) {
       if (error instanceof StellaParseError) throw error
@@ -193,6 +198,63 @@ export class StellaGeminiAdapter {
   isReady(): boolean {
     return !!this.config.apiKey || !!this.mockProvider
   }
+}
+
+/**
+ * H2 — project the provider response down to numbers, ids and one enum.
+ *
+ * An ALLOWLIST by construction: every field is named explicitly, so a future
+ * @google/genai release that starts returning thought text, headers or the echoed
+ * request cannot widen what this returns. Copying `usageMetadata` wholesale
+ * would not have that property.
+ *
+ * `usageAvailable` records whether the provider reported usage AT ALL, so a
+ * missing `thoughtsTokenCount` can be told apart from a reported zero — the
+ * difference between "the model did not think" and "we were not told".
+ */
+export function extractProviderMetadata(response: {
+  modelVersion?: string
+  responseId?: string
+  usageMetadata?: unknown
+  candidates?: Array<{ finishReason?: unknown }>
+}): StellaProviderMetadata {
+  const raw = response.usageMetadata
+  // `usageAvailable` means "the provider reported a usage OBJECT". A string, a
+  // number, an array, null or undefined are all "did not report" — and nothing
+  // is coerced out of them, because a coerced count is an invented measurement.
+  const usageAvailable = Boolean(raw) && typeof raw === 'object' && !Array.isArray(raw)
+  const usage = usageAvailable ? (raw as Record<string, unknown>) : {}
+  const finishReason = response.candidates?.[0]?.finishReason
+  return {
+    ...(typeof response.modelVersion === 'string' ? { modelVersion: response.modelVersion } : {}),
+    ...(typeof response.responseId === 'string' ? { responseId: response.responseId } : {}),
+    // The SDK types this as an enum whose members are strings; anything else is
+    // dropped rather than coerced.
+    ...(typeof finishReason === 'string' ? { finishReason } : {}),
+    usage: {
+      ...counter('promptTokenCount', usage.promptTokenCount),
+      ...counter('candidatesTokenCount', usage.candidatesTokenCount),
+      ...counter('thoughtsTokenCount', usage.thoughtsTokenCount),
+      ...counter('totalTokenCount', usage.totalTokenCount),
+      ...counter('cachedContentTokenCount', usage.cachedContentTokenCount),
+    },
+    usageAvailable,
+  }
+}
+
+/**
+ * Keep a token counter only if it is a real, non-negative, finite number.
+ *
+ * NaN, Infinity, -Infinity and negatives are DROPPED HERE rather than carried
+ * forward to die at the checkpoint. The failure modes differ and only one is
+ * acceptable: dropping loses a metric the provider never meaningfully reported,
+ * while carrying forward would abort the whole evidence commit for a run whose
+ * model behaviour was fine. Dropping also cannot be mistaken for a measurement
+ * — an absent key with `usageAvailable: true` reads as "not reported", which is
+ * exactly what it is.
+ */
+function counter(name: string, value: unknown): Record<string, number> {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? { [name]: value } : {}
 }
 
 /**

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -263,6 +263,16 @@ describe('guarded contextual real runner', () => {
   ] as Array<[CasePhase, number, number]>)('preserves the real writer marker when %s persistence fails', async (failurePhase, expectedProviderCalls, confirmedSequence) => {
     const directory = await mkdtemp(join(tmpdir(), 'stella-runner-writer-'))
     const ids = OFFICIAL_CONTEXTUAL_MOCK_CASES.slice(0, 2).map((item) => item.caseId)
+    // H3: the writer now binds the integrity record to the manifest, so a run
+    // directory without one cannot be checkpointed at all.
+    await writeFile(join(directory, 'run-manifest.json'), `${JSON.stringify({
+      runId: 'run-1',
+      head: 'head',
+      branch: 'branch',
+      model: 'gemini-3.6-flash',
+      caseCatalogHash: 'catalog-hash',
+      caseIds: ids,
+    }, null, 2)}\n`, 'utf8')
     let calls = 0
     try {
       const error = await captureRunnerError(runGuardedContextualEvaluation({
@@ -278,6 +288,9 @@ describe('guarded contextual real runner', () => {
             scope: 'canary',
             selectedCaseIds: ids,
             caseState: checkpoint.caseState,
+            telemetry: checkpoint.telemetry,
+            sanitizedInputs: checkpoint.sanitizedInputs,
+            adversarialCaseIds: checkpoint.adversarialCaseIds,
             rawResponses: checkpoint.rawResponses,
             decodedResults: checkpoint.decodedResults,
             errors: checkpoint.errors,

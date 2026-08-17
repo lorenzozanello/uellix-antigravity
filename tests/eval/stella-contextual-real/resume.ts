@@ -12,9 +12,11 @@ import { AdvisorContextualOutputSchema } from '@/lib/stella/schemas/advisor-cont
 import {
   SAFE_ERROR_CATEGORIES,
   type DecodedResult,
+  type ProviderCallTelemetry,
   type RawResponse,
   type RealRunnerScope,
   type SafeRunError,
+  type SanitizedCaseInput,
 } from './types'
 import {
   HASHED_CHECKPOINT_FILES,
@@ -73,6 +75,8 @@ export interface ResumableArtifacts {
   rawResponses: RawResponse[]
   decodedResults: DecodedResult[]
   errors: SafeRunError[]
+  telemetry: ProviderCallTelemetry[]
+  sanitizedInputs: SanitizedCaseInput[]
   hashes: HashesArtifact
 }
 
@@ -85,6 +89,7 @@ export interface ValidatedResume {
   rawResponses: RawResponse[]
   decodedResults: DecodedResult[]
   errors: SafeRunError[]
+  telemetry: ProviderCallTelemetry[]
 }
 
 const resumeError = (detail: string): Error => new Error(`RESUME_INTEGRITY_ERROR: ${detail}`)
@@ -167,6 +172,9 @@ function assertRuntimeCollections(rawResponses: readonly unknown[], decodedResul
 
 export async function loadResumableArtifacts(directory: string): Promise<ResumableArtifacts> {
   const root = resolve(directory)
+  // H3: every file the integrity record covers must be present and readable,
+  // plus the record itself. A resume that skipped one would recompute a hash
+  // set the record does not describe.
   const requiredFiles = [
     'run-manifest.json',
     'run-state.json',
@@ -174,6 +182,8 @@ export async function loadResumableArtifacts(directory: string): Promise<Resumab
     'raw-responses.json',
     'decoded-results.json',
     'errors.json',
+    'provider-telemetry.json',
+    'sanitized-inputs.json',
     'hashes.json',
   ] as const
   let contents: Record<(typeof requiredFiles)[number], string>
@@ -202,6 +212,8 @@ export async function loadResumableArtifacts(directory: string): Promise<Resumab
   const rawArtifact = parsed['raw-responses.json']
   const decodedArtifact = parsed['decoded-results.json']
   const errorsArtifact = parsed['errors.json']
+  const telemetryArtifact = parsed['provider-telemetry.json']
+  const sanitizedInputsArtifact = parsed['sanitized-inputs.json']
   const hashesArtifact = parsed['hashes.json']
   const confirmedSequence = sequenceOf(state)
   const sequenceInspection = inspectCheckpointSequences(confirmedSequence, {
@@ -209,6 +221,8 @@ export async function loadResumableArtifacts(directory: string): Promise<Resumab
     'raw-responses.json': sequenceOf(rawArtifact),
     'decoded-results.json': sequenceOf(decodedArtifact),
     'errors.json': sequenceOf(errorsArtifact),
+    'provider-telemetry.json': sequenceOf(telemetryArtifact),
+    'sanitized-inputs.json': sequenceOf(sanitizedInputsArtifact),
     'hashes.json': sequenceOf(hashesArtifact),
   })
   if (!sequenceInspection.valid) throw resumeError('checkpoint sequence mismatch')
@@ -235,6 +249,16 @@ export async function loadResumableArtifacts(directory: string): Promise<Resumab
   const errorCaseIds = errors.map((error) => error.caseId).filter((id): id is string => typeof id === 'string')
   if (new Set(errorCaseIds).size !== errorCaseIds.length) throw resumeError('duplicate error id')
 
+  const telemetry = readCollection<ProviderCallTelemetry>(telemetryArtifact, 'calls')
+  assertUniqueIds(telemetry, 'telemetry record')
+  // H4: the marker is checked on the way IN as well as on the way out. A
+  // resumed run must not inherit an input set that does not declare itself
+  // post-redaction.
+  if (sanitizedInputsArtifact.redaction !== 'post-redaction') throw resumeError('sanitized inputs are not marked post-redaction')
+  const sanitizedInputs = readCollection<SanitizedCaseInput>(sanitizedInputsArtifact, 'inputs')
+  assertUniqueIds(sanitizedInputs, 'sanitized input')
+  if (sanitizedInputs.some((entry) => entry.redaction !== 'post-redaction')) throw resumeError('sanitized input is not marked post-redaction')
+
   return {
     directory: root,
     manifest,
@@ -243,6 +267,8 @@ export async function loadResumableArtifacts(directory: string): Promise<Resumab
     rawResponses,
     decodedResults,
     errors,
+    telemetry,
+    sanitizedInputs,
     hashes: hashesArtifact as unknown as HashesArtifact,
   }
 }
@@ -362,6 +388,25 @@ export function validateResumableArtifacts(
   } catch {
     throw resumeError('invalid case state')
   }
+  // H2 — TELEMETRY MUST AGREE WITH CASE STATE ACROSS THE CRASH.
+  //
+  // A resume is the one moment a telemetry row and the case it describes can
+  // drift apart: the rows are restored from a file while the phases are
+  // restored from another, and nothing else compares them. Three facts have to
+  // hold, and each catches a different corruption — an unknown id (rows from
+  // another run), a PENDING id (a measurement for a call that never happened),
+  // and more rows than calls (a duplicated or replayed row).
+  if (artifacts.telemetry.some((entry) => !expected.caseIds.includes(entry.caseId))) {
+    throw resumeError('telemetry references an unknown case')
+  }
+  if (artifacts.telemetry.some((entry) => caseState.phases[entry.caseId] === 'PENDING')) {
+    throw resumeError('telemetry references a case that never started')
+  }
+  if (artifacts.telemetry.length > providerCalls) throw resumeError('more telemetry records than provider calls')
+  if (artifacts.sanitizedInputs.some((entry) => !expected.caseIds.includes(entry.caseId))) {
+    throw resumeError('sanitized inputs reference an unknown case')
+  }
+
   const derived = deriveCaseState(caseState)
   const sameIds = (value: unknown, expectedIds: readonly string[]): boolean => (
     Array.isArray(value)
@@ -425,5 +470,6 @@ export function validateResumableArtifacts(
     rawResponses: structuredClone(artifacts.rawResponses),
     decodedResults: structuredClone(artifacts.decodedResults),
     errors: structuredClone(artifacts.errors),
+    telemetry: structuredClone(artifacts.telemetry),
   }
 }

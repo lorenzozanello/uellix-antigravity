@@ -104,7 +104,47 @@ async function main(): Promise<void> {
     // that survives: G1-A measures model behaviour, not production latency; the
     // real 15 s budget is exercised in G1-B.
     const adapter = getGeminiAdapter({ apiKey: process.env.GEMINI_API_KEY, model: stellaConfig.geminiModel, timeoutMs: 60_000 })
-    return async (request: { systemPrompt: string; userMessage: string; responseJsonSchema: Record<string, unknown> }) => JSON.parse((await adapter.generate({ role: 'advisor', systemPrompt: request.systemPrompt, userMessage: request.userMessage, responseJsonSchema: request.responseJsonSchema })).rawOutput) as unknown
+    // H2: latency is measured AROUND the adapter call, so it includes the
+    // redaction boundary and the JSON decode — the latency the PRODUCT would
+    // experience, not socket time. That meaning is unchanged.
+    //
+    // TWO CLOCKS, ON PURPOSE. The absolute timestamps come from `Date`, because
+    // an evidence artifact has to say WHEN. The DURATION comes from
+    // `performance.now()`, because subtracting two wall-clock readings measures
+    // elapsed time plus any clock adjustment in between — an NTP correction or
+    // a DST step during a 28-case run pacing at 10 s could produce a negative or
+    // absurd latency, and a negative one is rejected by the checkpoint. A
+    // monotonic delta cannot move backwards.
+    const monotonic = typeof performance?.now === 'function' ? () => performance.now() : () => Date.now()
+    return async (request: { systemPrompt: string; userMessage: string; responseJsonSchema: Record<string, unknown> }) => {
+      const requestStartedAt = new Date().toISOString()
+      const startedTick = monotonic()
+      const generated = await adapter.generate({
+        role: 'advisor',
+        systemPrompt: request.systemPrompt,
+        userMessage: request.userMessage,
+        responseJsonSchema: request.responseJsonSchema,
+      })
+      const latencyMs = Math.max(0, Math.round(monotonic() - startedTick))
+      const responseReceivedAt = new Date().toISOString()
+      const metadata = generated.providerMetadata
+      return {
+        response: JSON.parse(generated.rawOutput) as unknown,
+        telemetry: {
+          requestedModel: generated.modelUsed,
+          ...(metadata?.modelVersion !== undefined ? { providerModelVersion: metadata.modelVersion } : {}),
+          ...(metadata?.responseId !== undefined ? { responseId: metadata.responseId } : {}),
+          requestStartedAt,
+          responseReceivedAt,
+          latencyMs,
+          usage: metadata?.usage ?? {},
+          // Absent metadata is reported as "not available", never as zeros.
+          usageAvailable: metadata?.usageAvailable ?? false,
+          ...(metadata?.finishReason !== undefined ? { finishReason: metadata.finishReason } : {}),
+          outputChars: generated.rawOutput.length,
+        },
+      }
+    }
   })()
   const result = await runGuardedContextualEvaluation({
     cases: OFFICIAL_CONTEXTUAL_MOCK_CASES,
@@ -120,6 +160,7 @@ async function main(): Promise<void> {
     initialRawResponses: validatedResume?.rawResponses,
     initialDecodedResults: validatedResume?.decodedResults,
     initialErrors: validatedResume?.errors,
+    initialTelemetry: validatedResume?.telemetry,
     onCheckpoint: output
       ? async (checkpoint) => {
           await writeTransactionalCheckpoint({
@@ -131,6 +172,9 @@ async function main(): Promise<void> {
             rawResponses: checkpoint.rawResponses,
             decodedResults: checkpoint.decodedResults,
             errors: checkpoint.errors,
+            telemetry: checkpoint.telemetry,
+            sanitizedInputs: checkpoint.sanitizedInputs,
+            adversarialCaseIds: checkpoint.adversarialCaseIds,
             metrics: checkpoint.metrics,
             status: checkpoint.status,
             checkpointStatus: checkpoint.checkpointStatus,

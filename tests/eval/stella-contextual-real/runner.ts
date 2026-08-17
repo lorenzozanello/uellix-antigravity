@@ -2,9 +2,11 @@ import { buildContextualAdvisorRequest } from '@/lib/stella/context/build-contex
 import { decodeProviderSourceRefIndexes, ProviderSourceRefIndexesError, InternalSchemaValidationError } from '@/lib/stella/context/decode-provider-source-ref-indexes'
 import { ContextualSourceFieldsValidationError } from '@/lib/stella/context/validate-contextual-source-fields'
 import { buildAdvisorContextualUserMessage } from '@/lib/stella/prompts/advisor-contextual-system'
+import { redactProviderRequest } from '@/lib/stella/security/redact-model-bound'
 import { runAdvisorOutputTextDetectors } from '../stella-contextual/harness'
 import { resolvePacingMilliseconds, selectRealRunnerCases, validateRealRunnerAuthorization, validateRuntimeGuards } from './guards'
-import type { ContextualProvider, DecodedResult, RawResponse, RealRunnerStatus, RealRunnerSummary, RunnerRuntime, SafeErrorCategory, SafeRunError } from './types'
+import { isInstrumentedProviderResult } from './types'
+import type { ContextualProvider, DecodedResult, ProviderCallTelemetry, RawResponse, RealRunnerStatus, RealRunnerSummary, RunnerRuntime, SafeErrorCategory, SafeRunError, SanitizedCaseInput } from './types'
 import type { ContextualMockCase } from '../stella-contextual/cases'
 import { assertCaseStateInvariants, createCaseState, deriveCaseState, transitionCase, type TransactionalCaseState } from './case-state'
 import type { CheckpointCommitStatus } from './transactional-writer'
@@ -22,8 +24,53 @@ export interface RunnerCheckpoint {
   rawResponses: RawResponse[]
   decodedResults: DecodedResult[]
   errors: SafeRunError[]
+  /** H2: one entry per provider call actually made, keyed by caseId. */
+  telemetry: ProviderCallTelemetry[]
+  /** H4: post-redaction provider-bound inputs for every SELECTED case. */
+  sanitizedInputs: SanitizedCaseInput[]
+  /**
+   * H5: the adversarial subset, passed down so the writer can compute
+   * `adversarialCasesPassed` from case state instead of parsing case ids.
+   */
+  adversarialCaseIds: string[]
   metrics?: Record<string, number>
   lastCheckpointAt: string
+}
+
+/**
+ * H4 — derive the provider-bound TEXT for one case, post-redaction.
+ *
+ * Runs the SAME `redactProviderRequest` the adapter applies at its boundary, on
+ * the SAME strings the runner hands the provider, so the two text fields are
+ * byte-identical to the ones that egress rather than a reconstruction of them.
+ * Redaction is idempotent, so applying it here and again inside the adapter
+ * yields the same bytes. This is the request TEXT, not the whole HTTP request —
+ * see SanitizedCaseInput for exactly what is and is not covered.
+ *
+ * Deterministic from the frozen case catalog, which is why it is recomputed on
+ * every execution instead of being carried through resume: a recomputation that
+ * disagreed with the stored file would mean the catalog moved, and that is
+ * exactly the tampering the hash chain should surface.
+ */
+function sanitizedInputFor(
+  item: ContextualMockCase,
+  request: { systemPrompt: string; responseJsonSchema: Record<string, unknown>; canonicalSourceFieldPaths: readonly string[]; serializedContext: ContextualMockCase['context'] },
+): SanitizedCaseInput {
+  const safe = redactProviderRequest({
+    role: 'advisor',
+    systemPrompt: request.systemPrompt,
+    userMessage: buildAdvisorContextualUserMessage(item.step, request.serializedContext, item.userQuestion),
+  })
+  return {
+    caseId: item.caseId,
+    step: item.step,
+    category: item.category,
+    systemPrompt: safe.systemPrompt,
+    userMessage: safe.userMessage,
+    responseJsonSchema: request.responseJsonSchema,
+    canonicalSourceFieldPaths: request.canonicalSourceFieldPaths,
+    redaction: 'post-redaction',
+  }
 }
 export interface GuardedRunnerOptions {
   cases: readonly ContextualMockCase[]
@@ -38,11 +85,13 @@ export interface GuardedRunnerOptions {
   initialRawResponses?: readonly RawResponse[]
   initialDecodedResults?: readonly DecodedResult[]
   initialErrors?: readonly SafeRunError[]
+  /** H2: telemetry recovered from a prior execution's checkpoint. */
+  initialTelemetry?: readonly ProviderCallTelemetry[]
   isResume?: boolean
   runId?: string
   startedAt?: string
 }
-export interface GuardedRunnerResult { summary: RealRunnerSummary; rawResponses: RawResponse[]; decodedResults: DecodedResult[]; errors: SafeRunError[]; caseState: TransactionalCaseState }
+export interface GuardedRunnerResult { summary: RealRunnerSummary; rawResponses: RawResponse[]; decodedResults: DecodedResult[]; errors: SafeRunError[]; telemetry: ProviderCallTelemetry[]; sanitizedInputs: SanitizedCaseInput[]; caseState: TransactionalCaseState }
 
 export class GuardedRunnerExecutionError extends Error {
   constructor(
@@ -67,6 +116,11 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
   const rawResponses: RawResponse[] = [...structuredClone(options.initialRawResponses ?? [])]
   const decodedResults: DecodedResult[] = [...structuredClone(options.initialDecodedResults ?? [])]
   const errors: SafeRunError[] = [...structuredClone(options.initialErrors ?? [])]
+  const telemetry: ProviderCallTelemetry[] = [...structuredClone(options.initialTelemetry ?? [])]
+  // H4: derived for EVERY selected case up front, not per call, so an
+  // interrupted run still ships a complete, auditable input set.
+  const sanitizedInputs: SanitizedCaseInput[] = []
+  const adversarialCaseIds = selection.cases.filter((item) => item.category === 'adversarial').map((item) => item.caseId)
   let caseState = options.initialCaseState ?? createCaseState(selection.cases.map((item) => item.caseId))
   const metrics = {
     invalidSourceFields: 0,
@@ -95,6 +149,9 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
         rawResponses: structuredClone(rawResponses),
         decodedResults: structuredClone(decodedResults),
         errors: structuredClone(errors),
+        telemetry: structuredClone(telemetry),
+        sanitizedInputs: structuredClone(sanitizedInputs),
+        adversarialCaseIds: [...adversarialCaseIds],
         metrics: structuredClone(metrics),
         lastCheckpointAt: now(),
       })
@@ -123,6 +180,11 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     const phase = caseState.phases[item.caseId]
     const request = buildContextualAdvisorRequest(item.step, item.context)
     if (dryRun) { request.validateSourceFields(decodeProviderSourceRefIndexes(providerTemplate(item.step), request.canonicalSourceFieldPaths, item.step)); continue }
+    // H4: recorded for EVERY selected case, before the phase gates below skip
+    // work that a resume has already done — an evidence package missing the
+    // inputs for the cases it resumed would be unauditable exactly where the
+    // run was most eventful.
+    sanitizedInputs.push(sanitizedInputFor(item, request))
     if (phase !== 'PENDING' && !options.isResume) throw new Error('CALL_LIMIT_ERROR')
     if (phase === 'SUCCEEDED' || phase === 'FAILED') continue
     if (phase === 'IN_FLIGHT') {
@@ -188,7 +250,26 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
     callsThisExecution += 1
     let raw: unknown
     try {
-      raw = await options.provider({ case: item, systemPrompt: request.systemPrompt, userMessage: buildAdvisorContextualUserMessage(item.step, request.serializedContext, item.userQuestion), responseJsonSchema: request.responseJsonSchema, providerTemplate: providerTemplate(item.step) })
+      const produced = await options.provider({ case: item, systemPrompt: request.systemPrompt, userMessage: buildAdvisorContextualUserMessage(item.step, request.serializedContext, item.userQuestion), responseJsonSchema: request.responseJsonSchema, providerTemplate: providerTemplate(item.step) })
+      if (isInstrumentedProviderResult(produced)) {
+        raw = produced.response
+        // H2: the caseId is stamped HERE, from the loop's own `item`, and never
+        // taken from the provider. A telemetry row therefore cannot be
+        // attributed to a case the runner was not executing — the mismatch a
+        // crash/resume cycle would otherwise be free to introduce.
+        //
+        // ORDER IS LOad-BEARING: the spread comes FIRST so `caseId` overwrites
+        // anything the provider supplied. Written the other way round it read
+        // identically and did the opposite — a provider returning its own
+        // `caseId` silently won. Pinned by "stamps the caseId from the runner
+        // loop, never from the provider" in evidence-hardening.test.ts.
+        telemetry.push({ ...produced.telemetry, caseId: item.caseId })
+      } else {
+        // An uninstrumented provider (test double). No telemetry is INVENTED
+        // for it — the absence is carried through and the FINAL bundle gate in
+        // writeTransactionalCheckpoint refuses to certify a real run this way.
+        raw = produced
+      }
     } catch {
       recordError('PROVIDER_ERROR', item.caseId)
       caseState = transitionCase(caseState, item.caseId, 'FAILED'); await checkpoint(item.caseId, 'FAILED')
@@ -236,6 +317,6 @@ export async function runGuardedContextualEvaluation(options: GuardedRunnerOptio
   const numericIntegrityScore = numericViolationCount === 0 ? 2 : 0
   const schemaContractScore = schemaInvalidCases === 0 ? 2 : 0
   const adversarialCasesPassed = selection.cases.filter((item) => item.category === 'adversarial' && caseState.phases[item.caseId] === 'SUCCEEDED').length
-  return { rawResponses, decodedResults, errors, caseState, summary: { runId: options.runId ?? 'dry-run-local', scope: selection.scope, status: 'COMPLETED_PENDING_HUMAN_REVIEW', totalCases: processed, processedCases: processed, uniqueCaseIds: processed, duplicateCaseIds: 0, missingCaseIds: selection.scope === 'full' ? 0 : 28 - processed, schemaValidCases: decodedResults.length, schemaInvalidCases, invalidSourceFields: metrics.invalidSourceFields, providerSourceFieldsProperties: metrics.providerSourceFieldsProperties, providerStringReferenceValues: metrics.providerStringReferenceValues, providerAliases: metrics.providerAliases, providerCanonicalPaths: metrics.providerCanonicalPaths, providerSFReferences: metrics.providerSFReferences, invalidIndexes: metrics.invalidIndexes, providerStepMismatches: metrics.providerStepMismatches, internalCanonicalDecodingCases: decodedResults.length, requiresHumanReviewCases: decodedResults.filter((result) => result.requiresHumanReview).length, safetyScore, schemaContractScore, numericIntegrityScore, adversarialCasesPassed, providerCalls, providerResponsesReceived: rawResponses.length, expectedCalls, failedCalls: deriveCaseState(caseState).failedCaseIds.length, successfulResponses: decodedResults.length, failedResponses: deriveCaseState(caseState).failedCaseIds.length, startedAt, completedAt, durationMilliseconds: 0, eligibleForGate: false, humanReviewStatus: 'NOT_STARTED' } }
+  return { rawResponses, decodedResults, errors, telemetry, sanitizedInputs, caseState, summary: { runId: options.runId ?? 'dry-run-local', scope: selection.scope, status: 'COMPLETED_PENDING_HUMAN_REVIEW', totalCases: processed, processedCases: processed, uniqueCaseIds: processed, duplicateCaseIds: 0, missingCaseIds: selection.scope === 'full' ? 0 : 28 - processed, schemaValidCases: decodedResults.length, schemaInvalidCases, invalidSourceFields: metrics.invalidSourceFields, providerSourceFieldsProperties: metrics.providerSourceFieldsProperties, providerStringReferenceValues: metrics.providerStringReferenceValues, providerAliases: metrics.providerAliases, providerCanonicalPaths: metrics.providerCanonicalPaths, providerSFReferences: metrics.providerSFReferences, invalidIndexes: metrics.invalidIndexes, providerStepMismatches: metrics.providerStepMismatches, internalCanonicalDecodingCases: decodedResults.length, requiresHumanReviewCases: decodedResults.filter((result) => result.requiresHumanReview).length, safetyScore, schemaContractScore, numericIntegrityScore, adversarialCasesPassed, providerCalls, providerResponsesReceived: rawResponses.length, expectedCalls, failedCalls: deriveCaseState(caseState).failedCaseIds.length, successfulResponses: decodedResults.length, failedResponses: deriveCaseState(caseState).failedCaseIds.length, startedAt, completedAt, durationMilliseconds: 0, eligibleForGate: false, humanReviewStatus: 'NOT_STARTED' } }
 }
 
