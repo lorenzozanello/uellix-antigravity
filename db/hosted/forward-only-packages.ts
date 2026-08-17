@@ -45,6 +45,7 @@ import { PRECHAIN_REMEDIATION } from './prechain-remediation'
 import {
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
+  PRECHAIN_RUNTIME_TABLE_ACL,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_STORAGE_USAGE,
 } from './prechain-ownership'
@@ -151,6 +152,21 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
       'which is the state this package was written to leave. The hardened bodies STAY: reverting ' +
       'them would republish a pg_temp shadowing escalation that runs with the definer superuser ' +
       'privileges, and no operator statement in this repository does that.',
+  },
+  {
+    // RT-02, the TABLE half of the same omission. Its reason is derived from
+    // the prechain declaration for the same reason every entry above is: two
+    // files must not be able to give different reasons for one absence.
+    id: PRECHAIN_RUNTIME_TABLE_ACL.id,
+    reason: PRECHAIN_RUNTIME_TABLE_ACL.forwardOnlyNoRollbackReason,
+    reversalPath:
+      'There is none by script, and the consequence is the whole product. A single administrative ' +
+      'REVOKE SELECT, INSERT, UPDATE, DELETE ON <the 37 contract tables> FROM uellix_writer, and ' +
+      'the matching REVOKE SELECT FROM uellix_auditor, issued by the principal that applied this ' +
+      'package — noting that public.stella_interactions is owned by uellix_owner and needs the same ' +
+      'SET ROLE the forward package uses. It returns every authenticated request to 42501 ' +
+      'permission denied for table users, which is the state the F1 retest measured and the one ' +
+      'this package was written to leave behind.',
   },
 ]
 

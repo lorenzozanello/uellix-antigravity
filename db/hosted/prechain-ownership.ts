@@ -307,7 +307,88 @@ export const PRECHAIN_RUNTIME_HELPER_CONTRACT: PrechainOwnershipPackage = {
 }
 
 /**
- * All four prechain administrative units, IN APPLICATION ORDER.
+ * The TABLE half of the same omission stella_hosted_0006 repaired for functions.
+ *
+ * A FIFTH package, and it exists because 0006 was NECESSARY BUT NOT SUFFICIENT.
+ * stella_0004 §6 has four parts: §6a/§6b grant table privileges to
+ * uellix_writer, §6b-bis grants EXECUTE on the three RLS helpers, and §6c gives
+ * uellix_auditor SELECT. 0006 carried §6b-bis across to hosted. The other three
+ * stayed behind, and MEASURED on the hosted project uellix_writer holds ZERO
+ * table privileges in schema public — 0 SELECT, 0 INSERT, 0 UPDATE, 0 DELETE,
+ * across all 39 tables.
+ *
+ * WHY IT WAS INVISIBLE UNTIL 0006 LANDED. The check query in
+ * db/identity-context.ts:190 calls current_user_is_super_admin() BEFORE any
+ * business statement. While the runtime lacked EXECUTE on that function every
+ * request died there, so no request ever reached a table and the table-layer
+ * 42501 could not be observed. Closing the first error is what made the second
+ * one reachable: the F1 retest then measured `42501 permission denied for table
+ * users` on both halves of the login path — the SELECT in
+ * loadCurrentUserWithinContext and the INSERT ... ON CONFLICT DO UPDATE in
+ * syncUserProfile (lib/auth/session.ts:303).
+ *
+ * IT IS NOT §6a/§6b COPIED. Two packages INSTALLED ON THE HOSTED CHAIN have
+ * superseded parts of the canon since it was written, and copying it unamended
+ * would regress both:
+ *
+ *   stella_0017 §339/§342 revokes INSERT, UPDATE, DELETE and TRUNCATE on
+ *   public.stella_interactions from uellix_writer AND uellix_app (R6-INT) — the
+ *   ledger is charged through the governed ticket protocol as
+ *   uellix_cap_stella_quota. The amended class for that table is SELECT alone.
+ *
+ *   grounding_0002 and grounding_0003 revoke ALL on evidence_document_versions
+ *   and evidence_chunks from uellix_writer BY NAME and grant SELECT to
+ *   uellix_app DIRECTLY. Both are CAPABILITY_ONLY: this package grants nothing
+ *   on them and asserts that posture instead.
+ *
+ * The rule it applies is one sentence: the hosted contract is stella_0004 §6,
+ * amended ONLY where a package installed after it says otherwise.
+ */
+export const PRECHAIN_RUNTIME_TABLE_ACL: PrechainOwnershipPackage = {
+  id: 'stella_hosted_0007_runtime_table_acl_contract',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_hosted_0007_runtime_table_acl_contract.sql',
+  sourceSha256: 'cdfab2e126ac337d91aac32b38e87ef69baaf36c821b4a3e66ae7a8ecf98cb5e',
+  purpose:
+    'Restores the runtime TABLE privilege contract of stella_0004 §6a/§6b/§6c on the hosted side, ' +
+    'amended only where a later INSTALLED package supersedes it. uellix_writer receives SELECT + ' +
+    'INSERT on 3 append-only tables, SELECT alone on public.stella_interactions (stella_0017 ' +
+    'withdrew the INSERT from every runtime principal), and SELECT + INSERT + UPDATE + DELETE on 33 ' +
+    'operational tables; uellix_auditor receives SELECT on all 37 and nothing else. It grants ' +
+    'NOTHING on public.evidence_chunks and public.evidence_document_versions, which grounding_0002 ' +
+    'and grounding_0003 make capability-only, and NOTHING directly to uellix_app, which reaches ' +
+    'every table through its inheriting membership in uellix_writer. No TRUNCATE, REFERENCES, ' +
+    'TRIGGER or MAINTAIN reaches any runtime role on any table in public; no owner moves, no policy ' +
+    'is created, dropped or altered, no RLS flag changes, no role is created and no schema privilege ' +
+    'is granted. Idempotent and post-state aware: it accepts an already-canonical database and ' +
+    'REFUSES a third state — a partial posture, an append-only widening, a structural privilege, a ' +
+    'direct uellix_app grant or a runtime-owned relation — rather than normalising it. No project ' +
+    'reference appears in it.',
+  forwardOnlyNoRollbackReason:
+    'FORWARD-ONLY, for the reason the whole prechain trio records and this one states most ' +
+    'literally: what it removes is the reason the product cannot serve a single authenticated ' +
+    'request. Reverting it is one administrative REVOKE, and the consequence is total — every ' +
+    'request returns to 42501 permission denied for table users, on the SELECT that loads the ' +
+    'current user and on the upsert that syncs the profile, which is the state the F1 retest ' +
+    'measured. "Restore the previous state" and "return the application to answering 500 for every ' +
+    'logged-in user" are therefore the same sentence, and a rollback script would be one whose only ' +
+    'effect is to reopen the outage. It is also the half that cannot be undone independently of ' +
+    'stella_hosted_0006: with the helper EXECUTE granted and the table privileges withdrawn, the ' +
+    'runtime reaches a posture neither the local model nor the hosted one produces. Deliberate ' +
+    'reversal, if it were ever wanted, is a single REVOKE by the same principal, with the ' +
+    'consequence visible at the time rather than encoded in advance.',
+  normalisedFunctions: [],
+  destinationOwner: 'postgres',
+  unblocks:
+    'The hosted runtime itself, on the layer stella_hosted_0006 could not reach. With it absent, ' +
+    'every authenticated request fails with 42501 permission denied for table users AFTER the ' +
+    'helper contract is already correct — measured on the F1 retest against ' +
+    'dpl_2DcFBXoLtJFsrrs2ruo5cn9aAERm. It also restores the auditor read surface, which has been ' +
+    'empty on hosted since the cutover.',
+}
+
+/**
+ * All five prechain administrative units, IN APPLICATION ORDER.
  *
  * Order is load-bearing and asserted by the packages themselves rather than by
  * whatever loop applies them: stella_hosted_0004 §0.4 refuses unless a SECURITY
@@ -320,6 +401,10 @@ export const PRECHAIN_ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] 
   PRECHAIN_STORAGE_USAGE,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
+  // RT-02. Last, and it must be: its §0 refuses unless the runtime can already
+  // EXECUTE the three RLS helpers — the contract RT-01 publishes — because a
+  // table grant without them buys nothing. The two are halves of one cutover.
+  PRECHAIN_RUNTIME_TABLE_ACL,
 ]
 
 export function sha256OfPreparedSql(sql: string): string {

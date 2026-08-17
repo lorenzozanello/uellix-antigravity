@@ -9,13 +9,14 @@
 // nothing else, and that the reasons it carries are reasons rather than shrugs.
 
 import { describe, it, expect } from 'vitest'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import {
   PRECHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
+  PRECHAIN_RUNTIME_TABLE_ACL,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_STORAGE_USAGE,
   sha256OfPreparedSql,
@@ -207,17 +208,22 @@ describe('the registry states reasons, not shrugs', () => {
 describe('the prechain TRIO, and the order that is load-bearing', () => {
   const usageSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_USAGE.sourceFile), 'utf8')
 
-  it('declares all four units in application order', () => {
+  it('declares all five units in application order', () => {
     expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
       PRECHAIN_OWNERSHIP.id,
       PRECHAIN_STORAGE_USAGE.id,
       PRECHAIN_STORAGE_TABLE_READ.id,
-      // RT-01. Last because it depends on nothing the other three publish and
+      // RT-01. Fourth because it depends on nothing the first three publish and
       // publishes nothing they need: it repairs the BASELINE helper contract for
       // the application runtime, where the first three repair the Storage helper
       // contract for the installer. Ordering it after them keeps the trio's own
       // argument — 0004 needs 0003, 0005 needs both — readable as a unit.
       PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
+      // RT-02. Last, and unlike RT-01 its position IS load-bearing: its §0.3b
+      // refuses unless uellix_app can already execute the three RLS helpers,
+      // because every policy on the tables it grants calls them and a table
+      // privilege without them buys nothing.
+      PRECHAIN_RUNTIME_TABLE_ACL.id,
     ])
   })
 
@@ -336,6 +342,252 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
       expect(runtimeHelperSql).toMatch(
         /GRANT EXECUTE ON FUNCTION\s+public\.current_user_org_ids\(\),\s+public\.current_user_is_super_admin\(\),\s+public\.current_user_role_in_org\(uuid\)\s+TO uellix_writer, uellix_auditor;/
       )
+    })
+  })
+
+  /**
+   * RT-02 — the TABLE half, and the CROSS-ENVIRONMENT CONTRACT.
+   *
+   * THE ASSERTION WHOSE ABSENCE LET THIS SHIP TWICE. Nothing in this repository
+   * compared the local table-privilege contract against the hosted one, so
+   * stella_0004 §6a/§6b/§6c could be — and were — omitted from hosted entirely
+   * while 7925 tests stayed green. Every test that mentioned uellix_writer
+   * asserted against the LOCAL stack, where stella_0004 is applied.
+   *
+   * The block below is that comparison, and it is deliberately an EQUALITY with
+   * a DECLARED amendment list rather than a subset check: a hosted contract that
+   * is quietly narrower is the same class of defect as one that is quietly
+   * absent, and an amendment is only legitimate when a package that is ACTUALLY
+   * INSTALLED on the hosted chain justifies it.
+   */
+  describe('RT-02 — the runtime table ACL contract, against the local canon', () => {
+    const tableAclSql = readFileSync(
+      path.join(ROOT, PRECHAIN_RUNTIME_TABLE_ACL.sourceFile),
+      'utf8'
+    )
+    const canonSql = read('stella_0004_role_separation.sql')
+
+    /** Top-level GRANTs only: $$-bodies are collapsed so the §5 conditional
+     *  literals and every refusal message inside a DO block are out of scope. */
+    const topLevelGrants = (sql: string) => {
+      const code = sql.replace(/--[^\n]*/g, '').replace(/\$(\w*)\$[\s\S]*?\$\1\$/g, '$$body$$')
+      return code
+        .split(';')
+        .map((s) => s.trim())
+        .filter((s) => /^GRANT\b/i.test(s))
+        .map((s) => /^GRANT\s+([\s\S]*?)\s+ON\s+([\s\S]*?)\s+TO\s+([\s\S]*)$/i.exec(s))
+        .filter((m): m is RegExpExecArray => m !== null)
+        .filter((m) => !/^\s*FUNCTION\b/i.test(m[2]))
+        .map((m) => ({
+          privs: m[1].split(',').map((p) => p.trim().toUpperCase()).sort(),
+          tables: [...new Set(m[2].match(/public\.[a-z_]+/g) ?? [])].sort(),
+          grantees: m[3].split(',').map((g) => g.trim()).sort(),
+        }))
+    }
+
+    /** table -> sorted privilege list, for one grantee, across every GRANT. */
+    const contractFor = (sql: string, grantee: string): Record<string, string[]> => {
+      const out: Record<string, string[]> = {}
+      for (const g of topLevelGrants(sql)) {
+        if (!g.grantees.includes(grantee)) continue
+        for (const t of g.tables) {
+          out[t] = [...new Set([...(out[t] ?? []), ...g.privs])].sort()
+        }
+      }
+      return out
+    }
+
+    const hostedWriter = contractFor(tableAclSql, 'uellix_writer')
+    const hostedAuditor = contractFor(tableAclSql, 'uellix_auditor')
+    const canonWriter = contractFor(canonSql, 'uellix_writer')
+    const canonAuditor = contractFor(canonSql, 'uellix_auditor')
+
+    /**
+     * Every deliberate difference between the two, and the INSTALLED package
+     * that makes it correct. A difference not listed here fails the equality
+     * below; a package named here that is not on the hosted chain fails too.
+     */
+    const AMENDMENTS = [
+      {
+        table: 'public.stella_interactions',
+        canon: ['INSERT', 'SELECT'],
+        hosted: ['SELECT'],
+        supersededBy: 'stella_0017_governed_stella_consumption',
+        because:
+          'R6-INT: INSERT, UPDATE, DELETE and TRUNCATE were revoked from uellix_writer AND ' +
+          'uellix_app; the ledger is charged through the governed ticket protocol.',
+      },
+      {
+        table: 'public.stella_suggestion_decisions',
+        canon: ['INSERT', 'SELECT'],
+        hosted: null, // conditional — granted by §5 only where the table exists
+        supersededBy: null,
+        because:
+          'PACKAGE_NOT_INSTALLED: no baseline unit creates it, it is absent from ' +
+          'hosted-package-manifest.ts, and stella_0003 has never been applied hosted.',
+      },
+    ] as const
+
+    it('is registered, pinned, and found on disk', () => {
+      expect(existsSync(path.join(ROOT, PRECHAIN_RUNTIME_TABLE_ACL.sourceFile))).toBe(true)
+      expect(sha256OfPreparedSql(tableAclSql)).toBe(PRECHAIN_RUNTIME_TABLE_ACL.sourceSha256)
+      expect(sha256OfPreparedSql(tableAclSql.replace(/\n/g, '\r\n'))).toBe(
+        PRECHAIN_RUNTIME_TABLE_ACL.sourceSha256
+      )
+    })
+
+    it('is NOT a chain member and takes no chain witness', () => {
+      expect(HOSTED_CHAIN).not.toContain(PRECHAIN_RUNTIME_TABLE_ACL.id)
+      expect(WITNESSED_PACKAGES).not.toContain(PRECHAIN_RUNTIME_TABLE_ACL.id)
+    })
+
+    it('every amendment is justified by a package INSTALLED on the hosted chain', () => {
+      // The load-bearing guard against "amend the contract to make it pass".
+      for (const a of AMENDMENTS) {
+        if (a.supersededBy === null) continue
+        expect(HOSTED_CHAIN, `${a.table}: ${a.supersededBy} is not on the hosted chain`).toContain(
+          a.supersededBy
+        )
+        expect(a.because.length).toBeGreaterThan(60)
+      }
+    })
+
+    it('CROSS-ENV: the hosted writer contract equals the local canon, amendments aside', () => {
+      const amended = new Map(AMENDMENTS.map((a) => [a.table as string, a.hosted]))
+      const canonTables = Object.keys(canonWriter).sort()
+      const hostedTables = Object.keys(hostedWriter).sort()
+
+      // (a) Nothing the canon grants may be silently missing, and nothing the
+      //     hosted package grants may be absent from the canon.
+      const expectedHosted = canonTables.filter((t) => !amended.has(t) || amended.get(t) !== null)
+      expect(hostedTables, 'the hosted table SET diverges from stella_0004 §6a/§6b').toEqual(
+        expectedHosted.sort()
+      )
+
+      // (b) And per table, the privilege set must match exactly — this is what
+      //     catches a missing SELECT, a missing write privilege, and an
+      //     append-only widening, in one comparison.
+      for (const t of hostedTables) {
+        const want = amended.has(t) ? (amended.get(t) as readonly string[]) : canonWriter[t]
+        expect(hostedWriter[t], `${t} diverges from the canon`).toEqual([...want].sort())
+      }
+    })
+
+    it('CROSS-ENV: the hosted auditor contract equals the local canon, amendments aside', () => {
+      const conditional = new Set(
+        AMENDMENTS.filter((a) => a.hosted === null).map((a) => a.table as string)
+      )
+      const expected = Object.keys(canonAuditor)
+        .filter((t) => !conditional.has(t))
+        .sort()
+      expect(Object.keys(hostedAuditor).sort()).toEqual(expected)
+      for (const t of expected) {
+        expect(hostedAuditor[t], `auditor ${t}`).toEqual(['SELECT'])
+      }
+    })
+
+    it('classifies every granted table exactly once, into a known class', () => {
+      const appendOnly = Object.entries(hostedWriter)
+        .filter(([, p]) => p.join() === 'INSERT,SELECT')
+        .map(([t]) => t)
+      const governedRead = Object.entries(hostedWriter)
+        .filter(([, p]) => p.join() === 'SELECT')
+        .map(([t]) => t)
+      const operational = Object.entries(hostedWriter)
+        .filter(([, p]) => p.join() === 'DELETE,INSERT,SELECT,UPDATE')
+        .map(([t]) => t)
+
+      expect(appendOnly).toHaveLength(3)
+      expect(governedRead).toEqual(['public.stella_interactions'])
+      expect(operational).toHaveLength(33)
+      // No fourth shape: every table falls in exactly one of the three.
+      expect(appendOnly.length + governedRead.length + operational.length).toBe(
+        Object.keys(hostedWriter).length
+      )
+    })
+
+    it('grants NOTHING on the two capability-only tables, and says so', () => {
+      // grounding_0002/0003 revoke ALL from uellix_writer BY NAME and grant
+      // SELECT to uellix_app directly. A GRANT here would silently reverse a
+      // governed decision.
+      for (const t of ['public.evidence_chunks', 'public.evidence_document_versions']) {
+        expect(hostedWriter[t], `${t} must not be granted to the writer`).toBeUndefined()
+        expect(hostedAuditor[t], `${t} must not be granted by THIS package`).toBeUndefined()
+      }
+      expect(tableAclSql).toContain('grounding_0002_document_versions')
+      expect(tableAclSql).toContain('grounding_0003_evidence_chunks')
+    })
+
+    it('never grants a STRUCTURAL privilege, to anyone, anywhere', () => {
+      for (const g of topLevelGrants(tableAclSql)) {
+        for (const forbidden of ['TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN', 'ALL']) {
+          expect(g.privs, `a GRANT names ${forbidden}`).not.toContain(forbidden)
+        }
+      }
+    })
+
+    it('never names uellix_app as a grantee — the runtime inherits', () => {
+      for (const g of topLevelGrants(tableAclSql)) {
+        expect(g.grantees, 'uellix_app must never be a direct grantee').not.toContain('uellix_app')
+      }
+      // ...and it asserts the EFFECTIVE privilege instead of only the grant.
+      expect(tableAclSql).toContain("has_table_privilege('uellix_app'")
+      expect(tableAclSql).toContain("pg_has_role('uellix_app', 'uellix_writer', 'USAGE')")
+    })
+
+    it('issues no REVOKE, no DDL and no policy change', () => {
+      const executableAcl = stripSqlSurface(tableAclSql).replace(/\$(\w*)\$[\s\S]*?\$\1\$/g, '$$b$$')
+      expect(executableAcl).not.toMatch(/^\s*REVOKE\b/im)
+      expect(executableAcl).not.toMatch(/^\s*(CREATE|DROP|ALTER)\s+(TABLE|POLICY|ROLE|SCHEMA|FUNCTION)\b/im)
+      expect(executableAcl).not.toMatch(/^\s*(CREATE|DROP|ALTER)\s+POLICY\b/im)
+      expect(executableAcl).not.toMatch(/ROW LEVEL SECURITY/i)
+    })
+
+    it('depends on RT-01 and enforces the order itself', () => {
+      expect(tableAclSql).toContain('Apply stella_hosted_0006_runtime_rls_helper_contract.sql first')
+      expect(tableAclSql).toContain("has_function_privilege('uellix_app'")
+      expect(PRECHAIN_ADMINISTRATIVE_UNITS.at(-1)!.id).toBe(PRECHAIN_RUNTIME_TABLE_ACL.id)
+      expect(PRECHAIN_ADMINISTRATIVE_UNITS.at(-2)!.id).toBe(PRECHAIN_RUNTIME_HELPER_CONTRACT.id)
+    })
+
+    it('classifies three prestates and refuses the third', () => {
+      expect(tableAclSql).toContain('MISSING_RUNTIME_ACL')
+      expect(tableAclSql).toContain('CANONICAL_RUNTIME_ACL')
+      expect(tableAclSql).toContain('MIXED states')
+      expect(tableAclSql).toContain('cannot account for')
+    })
+
+    it('returns the session after its SET LOCAL ROLE, and asserts it did', () => {
+      // The one grant that needs uellix_owner. A package that changed role and
+      // did not change back would measure the OWNER's privileges in §6.
+      expect(tableAclSql).toMatch(/SET LOCAL ROLE uellix_owner;/)
+      expect(tableAclSql).toMatch(/^RESET ROLE;$/m)
+      expect(tableAclSql).toContain('current_user <> session_user')
+    })
+
+    it('handles the absent fifth append-only table without failing or ignoring it', () => {
+      expect(tableAclSql).toContain('PACKAGE_NOT_INSTALLED')
+      expect(tableAclSql).toContain("to_regclass('public.stella_suggestion_decisions') IS NULL")
+      expect(tableAclSql).toContain('STELLA_DECISIONS_PERSISTENCE_ENABLED')
+      // It is NOT in db/migrations, which is what makes the absence legitimate.
+      expect(
+        readdirSync(path.join(ROOT, 'db/migrations'))
+          .filter((f) => f.endsWith('.sql'))
+          .some((f) =>
+            /CREATE TABLE\s+(IF NOT EXISTS\s+)?(public\.)?stella_suggestion_decisions/i.test(
+              readFileSync(path.join(ROOT, 'db/migrations', f), 'utf8')
+            )
+          ),
+        'a baseline migration creates it after all — the absence would then be DRIFT'
+      ).toBe(false)
+    })
+
+    it('is declared forward-only with a substantial reason', () => {
+      const entry = forwardOnlyPackage(PRECHAIN_RUNTIME_TABLE_ACL.id)
+      expect(entry).not.toBeNull()
+      expect(entry!.reason.length).toBeGreaterThan(200)
+      expect(entry!.reversalPath.length).toBeGreaterThan(40)
+      expect(existsSync(path.join(ROOT, 'db/prepared/stella_hosted_0007_rollback.sql'))).toBe(false)
     })
   })
 

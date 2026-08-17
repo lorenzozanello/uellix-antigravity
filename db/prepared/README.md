@@ -1298,6 +1298,64 @@ nunca al **runtime** (`uellix_app`).
 > grant: aserta sólo el grant pasaría en una base donde la membresía se hubiera
 > perdido, entregando un contrato que no alcanza a nadie.
 
+### RT-02 — contrato runtime de ACL de TABLA en hosted (`stella_hosted_0007`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted.** Quinta unidad prechain, y
+la **otra mitad** de RT-01: `stella_0004` §6 tiene cuatro partes y
+`stella_hosted_0006` sólo trajo una (§6b-bis, el EXECUTE de los tres helpers).
+§6a/§6b/§6c —los privilegios de **tabla**— se quedaron atrás.
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0007_runtime_table_acl_contract.sql` | **ninguno, a propósito** (`db/hosted/prechain-ownership.ts`) | **ninguno todavía**; exige los roles y la membresía `uellix_app → uellix_writer` con `INHERIT TRUE` (§0.2/§0.3), **que `stella_hosted_0006` ya esté aplicado** (§0.3b), que existan las 37 tablas del contrato (§0.4) y que el ejecutor pueda conceder sobre cada una (§0.5/§0.5b) | **Ni un objeto.** Sólo `GRANT`: `SELECT, INSERT` sobre 3 tablas append-only; `SELECT` sobre `stella_interactions`; `SELECT, INSERT, UPDATE, DELETE` sobre 33 operacionales; `SELECT` a `uellix_auditor` sobre las 37. Ningún `REVOKE`, ninguna policy, ningún rol, ningún cambio de dueño | **DISEÑO — no aplicado** |
+
+> **Por qué era invisible hasta que RT-01 aterrizó.** El check de
+> `db/identity-context.ts:190` llama a `current_user_is_super_admin()` **antes**
+> de cualquier sentencia de negocio. Mientras faltaba ese EXECUTE toda petición
+> moría ahí y **ninguna llegaba a tocar una tabla**, así que el 42501 de tabla
+> era inalcanzable detrás del 42501 de función. Cerrar el primero es lo que hizo
+> observable el segundo: el retest F1 midió entonces
+> `42501 permission denied for table users` en las dos mitades del login —el
+> SELECT de `loadCurrentUserWithinContext` y el upsert de `syncUserProfile`.
+> Medido en hosted: **`uellix_writer` tenía 0 privilegios de tabla** sobre las 39.
+
+> **NO es §6a/§6b copiado.** Dos paquetes **instalados en la cadena hospedada**
+> han superado partes del canon, y copiarlo sin enmendar los regresaría:
+> `stella_0017` §339/§342 revoca `INSERT, UPDATE, DELETE, TRUNCATE` sobre
+> `public.stella_interactions` a `uellix_writer` **y** a `uellix_app` (R6-INT) —
+> el ledger se cobra por el protocolo de tickets como `uellix_cap_stella_quota`—
+> así que su clase enmendada es **SELECT y nada más**; y `grounding_0002/0003`
+> revocan **ALL al writer por nombre** sobre `evidence_document_versions` y
+> `evidence_chunks` y conceden SELECT **directamente a `uellix_app`**, así que
+> ambas son **CAPABILITY_ONLY** y el paquete no las nombra en ningún GRANT. La
+> regla que aplica cabe en una frase: *el contrato hospedado es `stella_0004`
+> §6, enmendado sólo donde un paquete instalado después dice otra cosa.*
+
+> **Dos dueños, y por eso hay un `SET ROLE`.** Medido: 36 de las 37 tablas son de
+> `postgres` y `public.stella_interactions` es de `uellix_owner`. `postgres` no
+> puede conceder sobre ella (`pg_has_role(...,'USAGE')`=false, sin GRANT OPTION)
+> pero **sí puede `SET ROLE uellix_owner`** (`INHERIT FALSE, SET TRUE`, la misma
+> puerta que usó `stella_hosted_0003`). §4 emite ese único grant bajo
+> `SET LOCAL ROLE` y §6(1) aserta que la sesión volvió.
+
+> **`stella_suggestion_decisions`: CONDICIONAL, no ignorada.** Está en §6a del
+> canon pero **no existe en hosted**, y no por drift: ninguna unidad de
+> `db/migrations` la crea, no aparece en `baseline-manifest.ts` ni en
+> `hosted-package-manifest.ts`, y su escritor está tras
+> `STELLA_DECISIONS_PERSISTENCE_ENABLED` (default `false`). Clasificación:
+> **PACKAGE_NOT_INSTALLED**. §5 concede el par append-only **si y sólo si**
+> existe, y emite un NOTICE nombrándola cuando no.
+
+> **Rehúsa un tercer estado en vez de normalizarlo.** A diferencia de
+> `stella_0004` §6 no emite **ningún** `REVOKE` de convergencia: el prestate
+> hospedado medido está **vacío**, así que no hay nada legítimo que retirar y
+> cualquier privilegio hallado lo puso algo ajeno a este repositorio. Rehúsa
+> ante posturas parciales, widening append-only, privilegio estructural
+> (`TRUNCATE`/`REFERENCES`/`TRIGGER`/`MAINTAIN`), grant directo a `uellix_app` y
+> relación en `public` propiedad de un rol de runtime. Verificado en PG 17 por
+> `scripts/runtime-table-acl-dry-run.sh` (`pnpm dry-run:runtime-table-acl`), que
+> reproduce el 42501 previo y mide los cinco rehúses.
+
 ### M-2 — USAGE sobre el esquema `storage` en hosted (`stella_hosted_0004`)
 
 **Estado: DISEÑO. No aplicado a ninguna base hosted.** Es la **segunda mitad** del

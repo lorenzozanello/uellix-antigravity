@@ -407,6 +407,18 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // uellix_auditor — closing a 42501 on every authenticated request AND a
       // pg_temp shadowing escalation that the grant alone would have widened.
       'stella_hosted_0006_runtime_rls_helper_contract.sql',
+      // RT-02. The TABLE half of the same omission RT-01 repaired for
+      // functions, and it only became observable once RT-01 had landed: the
+      // check query in db/identity-context.ts calls a helper before any
+      // business statement, so while that EXECUTE was missing no request ever
+      // reached a table and the table-layer 42501 was unreachable behind the
+      // function-layer one. It restores stella_0004 §6a/§6b/§6c for
+      // uellix_writer and uellix_auditor, amended ONLY where a later INSTALLED
+      // package supersedes the canon — stella_0017 withdrew INSERT on
+      // stella_interactions (R6-INT), grounding_0002/0003 make the two evidence
+      // tables capability-only — and grants nothing whatsoever to uellix_app,
+      // which inherits.
+      'stella_hosted_0007_runtime_table_acl_contract.sql',
     ])
   })
 

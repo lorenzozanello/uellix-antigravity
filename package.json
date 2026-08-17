@@ -97,7 +97,8 @@
     "remediation:verify": "tsx scripts/remediation-verify.ts",
     "certify:remediation": "tsx scripts/remediation-certify.ts",
     "authority:repin": "tsx scripts/authority-repin.mts",
-    "dry-run:runtime-helper": "bash scripts/runtime-helper-contract-dry-run.sh"
+    "dry-run:runtime-helper": "bash scripts/runtime-helper-contract-dry-run.sh",
+    "dry-run:runtime-table-acl": "bash scripts/runtime-table-acl-dry-run.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
