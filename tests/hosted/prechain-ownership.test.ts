@@ -13,13 +13,21 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import {
+  ADMINISTRATIVE_UNIT_CONTRACT_VIOLATION,
+  ADMINISTRATIVE_UNITS,
+  assertAdministrativeUnitContract,
+  forwardOnlyReasonOf,
+  POSTCHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_ADMINISTRATIVE_UNITS,
+  PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY,
+  PRECHAIN_LEDGER_MODEL_DEFAULT,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
   PRECHAIN_RUNTIME_TABLE_ACL,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_STORAGE_USAGE,
   sha256OfPreparedSql,
+  type PrechainOwnershipPackage,
 } from '@/db/hosted/prechain-ownership'
 import { PRECHAIN_REMEDIATION } from '@/db/hosted/prechain-remediation'
 import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
@@ -208,8 +216,8 @@ describe('the registry states reasons, not shrugs', () => {
 describe('the prechain TRIO, and the order that is load-bearing', () => {
   const usageSql = readFileSync(path.join(ROOT, PRECHAIN_STORAGE_USAGE.sourceFile), 'utf8')
 
-  it('declares all five units in application order', () => {
-    expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
+  it('declares all seven units in application order', () => {
+    expect(ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
       PRECHAIN_OWNERSHIP.id,
       PRECHAIN_STORAGE_USAGE.id,
       PRECHAIN_STORAGE_TABLE_READ.id,
@@ -219,11 +227,18 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
       // contract for the installer. Ordering it after them keeps the trio's own
       // argument — 0004 needs 0003, 0005 needs both — readable as a unit.
       PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
-      // RT-02. Last, and unlike RT-01 its position IS load-bearing: its §0.3b
-      // refuses unless uellix_app can already execute the three RLS helpers,
-      // because every policy on the tables it grants calls them and a table
-      // privilege without them buys nothing.
+      // RT-02. Its position IS load-bearing, unlike RT-01's: its §0.3b refuses
+      // unless uellix_app can already execute the three RLS helpers, because
+      // every policy on the tables it grants calls them and a table privilege
+      // without them buys nothing.
       PRECHAIN_RUNTIME_TABLE_ACL.id,
+      // G1-B. After RT-02 and enforced by the package: its §0.3 refuses unless
+      // uellix_app already holds the INSERT privilege RT-02 grants.
+      PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY.id,
+      // G1-B. Last, and the only member whose WINDOW is postchain: its
+      // dead-default proof cannot pass until stella_0017 (T8) has withdrawn the
+      // baseline INSERT grant from authenticated and service_role.
+      PRECHAIN_LEDGER_MODEL_DEFAULT.id,
     ])
   })
 
@@ -546,8 +561,16 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
     it('depends on RT-01 and enforces the order itself', () => {
       expect(tableAclSql).toContain('Apply stella_hosted_0006_runtime_rls_helper_contract.sql first')
       expect(tableAclSql).toContain("has_function_privilege('uellix_app'")
-      expect(PRECHAIN_ADMINISTRATIVE_UNITS.at(-1)!.id).toBe(PRECHAIN_RUNTIME_TABLE_ACL.id)
-      expect(PRECHAIN_ADMINISTRATIVE_UNITS.at(-2)!.id).toBe(PRECHAIN_RUNTIME_HELPER_CONTRACT.id)
+      // Stated as a RELATIVE order rather than as "last" and "second to last".
+      // The absolute form was written when RT-02 was the final unit, and it
+      // asserted the length of the list as a side effect: G1-B appending two
+      // units broke it without weakening anything it was defending. What is
+      // load-bearing is that RT-02 follows RT-01, and it stays checked.
+      const idx = (id: string) => ADMINISTRATIVE_UNITS.findIndex((u) => u.id === id)
+      expect(idx(PRECHAIN_RUNTIME_HELPER_CONTRACT.id)).toBeGreaterThanOrEqual(0)
+      expect(idx(PRECHAIN_RUNTIME_TABLE_ACL.id)).toBeGreaterThan(
+        idx(PRECHAIN_RUNTIME_HELPER_CONTRACT.id),
+      )
     })
 
     it('classifies three prestates and refuses the third', () => {
@@ -597,7 +620,7 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
   })
 
   it('neither unit is in HOSTED_CHAIN or takes a chain witness', () => {
-    for (const unit of PRECHAIN_ADMINISTRATIVE_UNITS) {
+    for (const unit of ADMINISTRATIVE_UNITS) {
       expect(HOSTED_CHAIN, unit.id).not.toContain(unit.id)
       expect(WITNESSED_PACKAGES, unit.id).not.toContain(unit.id)
     }
@@ -624,12 +647,78 @@ describe('the prechain TRIO, and the order that is load-bearing', () => {
     expect(usageSql).toMatch(/uellix_app/)
   })
 
-  it('all three are declared forward-only with substantial reasons', () => {
-    for (const unit of PRECHAIN_ADMINISTRATIVE_UNITS) {
+  it('the reversibility contract holds for the real registry, and REFUSES the five bad shapes', () => {
+    // F-4A. TypeScript can say `string | null` on three fields; it cannot say
+    // "exactly one side of this is populated". The invariant is a function so
+    // it runs at module load over the real registry — and so the refusals can
+    // be exercised here rather than reasoned about.
+    expect(() => assertAdministrativeUnitContract(ADMINISTRATIVE_UNITS)).not.toThrow()
+
+    const withRollback = ADMINISTRATIVE_UNITS.find((u) => u.rollbackFile !== null)!
+    const forwardOnly = ADMINISTRATIVE_UNITS.find((u) => u.rollbackFile === null)!
+    const bad: readonly [string, PrechainOwnershipPackage][] = [
+      ['rollbackFile without a digest', { ...withRollback, rollbackSha256: null }],
+      ['a digest without a rollbackFile', { ...withRollback, rollbackFile: null }],
+      [
+        'forward-only carrying a rollback digest',
+        { ...forwardOnly, rollbackSha256: 'a'.repeat(64) },
+      ],
+      [
+        'all three null',
+        { ...forwardOnly, forwardOnlyNoRollbackReason: null },
+      ],
+      [
+        'all three non-null',
+        { ...withRollback, forwardOnlyNoRollbackReason: 'a reason it must not have' },
+      ],
+    ]
+    for (const [label, unit] of bad) {
+      expect(() => assertAdministrativeUnitContract([unit]), label).toThrow(
+        new RegExp(ADMINISTRATIVE_UNIT_CONTRACT_VIOLATION),
+      )
+    }
+  })
+
+  it('every unit declares EITHER a rollback OR a forward-only reason, never both', () => {
+    // The invariant that replaced "prechain implies forward-only" when G1-B
+    // added the first two units that reverse exactly. Checked in BOTH
+    // directions: a unit declaring both would be a unit whose author had not
+    // decided, and a unit declaring neither would be one nobody had asked.
+    for (const unit of ADMINISTRATIVE_UNITS) {
+      const shipsRollback = unit.rollbackFile !== null
+      const declaresReason = unit.forwardOnlyNoRollbackReason !== null
+      expect(shipsRollback !== declaresReason, `${unit.id}: exactly one of the two`).toBe(true)
+    }
+  })
+
+  it('a forward-only unit is in the forward-only registry with a substantial reason', () => {
+    for (const unit of ADMINISTRATIVE_UNITS.filter((u) => u.rollbackFile === null)) {
       const entry = forwardOnlyPackage(unit.id)
       expect(entry, unit.id).not.toBeNull()
       expect(entry!.reason.length, unit.id).toBeGreaterThan(200)
     }
+  })
+
+  it('a unit that SHIPS a rollback is absent from the forward-only registry, and the file exists', () => {
+    // The other half, and the one a copy-paste would get wrong: adding a new
+    // unit by duplicating a forward-only entry would declare "no rollback"
+    // beside a rollback script that is right there on disk.
+    const withRollback = ADMINISTRATIVE_UNITS.filter((u) => u.rollbackFile !== null)
+    expect(withRollback.length, 'G1-B added two').toBeGreaterThanOrEqual(2)
+    for (const unit of withRollback) {
+      expect(forwardOnlyPackage(unit.id), unit.id).toBeNull()
+      expect(existsSync(path.join(ROOT, unit.rollbackFile!)), unit.rollbackFile!).toBe(true)
+    }
+  })
+
+  it('forwardOnlyReasonOf REFUSES a unit that ships a rollback', () => {
+    // The derivation forward-only-packages.ts performs. It must fail loudly
+    // rather than contribute an empty reason to a registry whose whole content
+    // is reasons.
+    expect(() => forwardOnlyReasonOf(PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY)).toThrow(
+      /PRECHAIN_UNIT_SHIPS_A_ROLLBACK/,
+    )
+    expect(forwardOnlyReasonOf(PRECHAIN_OWNERSHIP).length).toBeGreaterThan(200)
   })
 })
 
@@ -763,5 +852,292 @@ describe('the prechain TABLE-READ unit grants exactly one privilege on one table
     expect(PRECHAIN_STORAGE_TABLE_READ.destinationOwner).toBe('uellix_owner')
     // It normalises no function — that was 0003's job and it says so.
     expect(PRECHAIN_STORAGE_TABLE_READ.normalisedFunctions).toHaveLength(0)
+  })
+})
+
+/**
+ * G1-B — the two units that made this registry stop meaning "forward-only".
+ *
+ * Their SQL contracts are pinned by their own suites
+ * (tests/stella-audit-log-write-capability.test.ts,
+ * tests/stella-db-model-default.test.ts). What this block pins is the thing
+ * whose ABSENCE was the finding: that they are governed at all — registered,
+ * digest-pinned to the bytes on disk, and not quietly promoted into the chain.
+ */
+describe('the G1-B prechain units are governed, pinned and outside the chain', () => {
+  const G1B_UNITS = [PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY, PRECHAIN_LEDGER_MODEL_DEFAULT] as const
+
+  it.each(G1B_UNITS.map((u) => [u.id, u] as const))(
+    '%s: exists at the path the registry names',
+    (_id, unit) => {
+      expect(existsSync(path.join(ROOT, unit.sourceFile))).toBe(true)
+    },
+  )
+
+  it.each(G1B_UNITS.map((u) => [u.id, u] as const))(
+    '%s: the pinned digest is the digest of the bytes on disk',
+    (_id, unit) => {
+      // The assertion the previous revision could not make, because nothing
+      // pinned these files at all: an operator running `pnpm artefact:verify`
+      // had no governed digest to paste, only one somebody had computed.
+      const sql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      expect(sha256OfPreparedSql(sql)).toBe(unit.sourceSha256)
+    },
+  )
+
+  it.each(G1B_UNITS.map((u) => [u.id, u] as const))(
+    '%s: normalizes line endings before hashing, so a CRLF checkout still matches',
+    (_id, unit) => {
+      const sql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      expect(sha256OfPreparedSql(sql.replace(/\n/g, '\r\n'))).toBe(unit.sourceSha256)
+    },
+  )
+
+  it.each(G1B_UNITS.map((u) => [u.id, u] as const))(
+    '%s: is NOT in HOSTED_CHAIN and takes no chain witness',
+    (_id, unit) => {
+      // stella_0020 is the one a reader will question, so the reason lives in
+      // its registry entry: HOSTED_CHAIN *is* the manifest, so a manifest entry
+      // is a governed chain link with a T-number, an authority window and
+      // `uellix_migrator` as its only applying identity — and it would move
+      // A1_EXPECTED_PACKAGE_COUNT, reclassifying an installation already
+      // certified at 11/11 as incomplete.
+      expect(HOSTED_CHAIN).not.toContain(unit.id)
+      expect(WITNESSED_PACKAGES).not.toContain(unit.id)
+    },
+  )
+
+  it('both rollbacks are PINNED to the bytes on disk', () => {
+    // F-4. The forward file was pinned from the first revision and the rollback
+    // was not, which left the reversal path — the thing an operator reaches for
+    // while something is already wrong — as the only ungoverned bytes in the
+    // unit. `pnpm artefact:verify` had no digest to compare against, so "this is
+    // the rollback that was reviewed" was a hope.
+    for (const unit of G1B_UNITS) {
+      expect(unit.rollbackSha256, unit.id).not.toBeNull()
+      const sql = readFileSync(path.join(ROOT, unit.rollbackFile!), 'utf8')
+      expect(sha256OfPreparedSql(sql), unit.rollbackFile!).toBe(unit.rollbackSha256)
+    }
+  })
+
+  it('the rollback pin is LF-normalized, so a CRLF checkout is not a different file', () => {
+    for (const unit of G1B_UNITS) {
+      const sql = readFileSync(path.join(ROOT, unit.rollbackFile!), 'utf8')
+      expect(sha256OfPreparedSql(sql.replace(/\n/g, '\r\n')), unit.rollbackFile!).toBe(
+        unit.rollbackSha256,
+      )
+    }
+  })
+
+  it('a rollback edited without re-pinning FAILS — the tripwire, exercised', () => {
+    // The property the two tests above only assert for today's bytes. Here the
+    // bytes are perturbed in memory and the pin must reject them, so "the pin
+    // would have caught it" is measured rather than assumed.
+    for (const unit of G1B_UNITS) {
+      const sql = readFileSync(path.join(ROOT, unit.rollbackFile!), 'utf8')
+      expect(sha256OfPreparedSql(`${sql}\n-- an edit nobody re-pinned\n`)).not.toBe(
+        unit.rollbackSha256,
+      )
+    }
+  })
+
+  it('both are declared with a rollback, and it is the sibling of the forward file', () => {
+    for (const unit of G1B_UNITS) {
+      expect(unit.rollbackFile, unit.id).not.toBeNull()
+      expect(unit.forwardOnlyNoRollbackReason, unit.id).toBeNull()
+      // Naming convention, asserted rather than trusted: the source-of-truth
+      // suite derives `<family>_<NNNN>_rollback.sql` from the forward name, and
+      // a registry pointing somewhere else would satisfy this registry while
+      // failing that one.
+      const family = /^(.+_\d{4})_/.exec(path.basename(unit.sourceFile))
+      expect(family, unit.sourceFile).not.toBeNull()
+      expect(unit.rollbackFile).toBe(`db/prepared/${family![1]}_rollback.sql`)
+    }
+  })
+
+  it('both registry entries state a purpose and what they unblock', () => {
+    for (const unit of G1B_UNITS) {
+      expect(unit.purpose.length, unit.id).toBeGreaterThan(200)
+      expect(unit.unblocks.length, unit.id).toBeGreaterThan(80)
+      expect(unit.unblocks, unit.id).toContain('G1-B')
+    }
+  })
+
+  it('neither declares a normalised function — neither transfers ownership', () => {
+    // The field the registry was named for. Empty here, and empty for RT-01 and
+    // RT-02 before them: the kind is the CHANNEL, not the operation.
+    for (const unit of G1B_UNITS) expect(unit.normalisedFunctions, unit.id).toEqual([])
+  })
+})
+
+/**
+ * THE APPLY WINDOW, and the measurement that forced it to exist.
+ *
+ * The first attempt at G1-B governance put stella_0020 in the prechain list.
+ * `pnpm certify:pg176` applied it there and it ABORTED, naming `authenticated`
+ * and `service_role` — Supabase default privileges on the baseline table, which
+ * stella_0017 (T8, a CHAIN link) is what withdraws. The package was right and
+ * the list was wrong, so the WINDOW became data instead of an assumption.
+ */
+describe('the apply window is recorded, and the two lists are derived from it', () => {
+  it('every unit declares a window, and the two lists partition the whole set', () => {
+    for (const unit of ADMINISTRATIVE_UNITS) {
+      expect(['prechain', 'postchain'], unit.id).toContain(unit.applyWindow)
+    }
+    expect([...PRECHAIN_ADMINISTRATIVE_UNITS, ...POSTCHAIN_ADMINISTRATIVE_UNITS]).toHaveLength(
+      ADMINISTRATIVE_UNITS.length,
+    )
+    // Derived, never transcribed: a hand-kept second list is how a unit ends up
+    // in one and not the other.
+    expect(PRECHAIN_ADMINISTRATIVE_UNITS.every((u) => u.applyWindow === 'prechain')).toBe(true)
+    expect(POSTCHAIN_ADMINISTRATIVE_UNITS.every((u) => u.applyWindow === 'postchain')).toBe(true)
+  })
+
+  it('the five installed units and stella_hosted_0008 are prechain', () => {
+    // The window PRECHAIN_CLEAN describes. stella_hosted_0008 belongs here and
+    // it is measured, not assumed: certify:pg176 applies it before T1, exit 0.
+    expect(PRECHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
+      PRECHAIN_OWNERSHIP.id,
+      PRECHAIN_STORAGE_USAGE.id,
+      PRECHAIN_STORAGE_TABLE_READ.id,
+      PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
+      PRECHAIN_RUNTIME_TABLE_ACL.id,
+      PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY.id,
+    ])
+  })
+
+  it('stella_0020 is the only postchain unit, and says why in its own type doc', () => {
+    expect(POSTCHAIN_ADMINISTRATIVE_UNITS.map((u) => u.id)).toEqual([
+      PRECHAIN_LEDGER_MODEL_DEFAULT.id,
+    ])
+    const registry = readFileSync(path.join(ROOT, 'db/hosted/prechain-ownership.ts'), 'utf8')
+    expect(registry).toMatch(/applyWindow/)
+    expect(registry).toContain('stella_0017')
+    expect(registry).toContain('authenticated, service_role')
+  })
+
+  it('the two operator runbooks name ADMINISTRATIVE_UNITS as the authoritative registry', () => {
+    // F-3. The partitions are DERIVED. A runbook that called
+    // PRECHAIN_ADMINISTRATIVE_UNITS "the authoritative registry" would send a
+    // reader to a list that is six of seven units by construction.
+    const prechainRunbook = readFileSync(
+      path.join(ROOT, 'docs/ops/staging/STELLA_PRECHAIN_OPERATOR_RUNBOOK.md'),
+      'utf8',
+    )
+    expect(prechainRunbook).toMatch(
+      /El registro autoritativo es \*\*?`?ADMINISTRATIVE_UNITS`?\*\*?|\*\*El registro autoritativo es `ADMINISTRATIVE_UNITS`\*\*/,
+    )
+    expect(prechainRunbook).toContain('particiones derivadas')
+    expect(prechainRunbook).not.toMatch(
+      /El registro autoritativo es\s*\n?`PRECHAIN_ADMINISTRATIVE_UNITS`/,
+    )
+  })
+
+  it('neither runbook calls stella_0020 a prechain unit, or puts the two in one window', () => {
+    // F-3. The family is "administrative unit"; the window is the thing that
+    // differs. A sentence that collapses the two is how an operator applies a
+    // postchain unit before T1 and gets an abort they cannot explain.
+    for (const doc of [
+      'docs/ops/staging/STELLA_PRECHAIN_OPERATOR_RUNBOOK.md',
+      'docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md',
+    ]) {
+      const text = readFileSync(path.join(ROOT, doc), 'utf8')
+      expect(text, doc).not.toMatch(/stella_0020[^\n]{0,80}sigue siendo prechain/)
+      expect(text, doc).not.toMatch(/Los dos son \*\*unidades administrativas prechain\*\*/)
+      // and where both are named together, the window distinction is present
+      if (text.includes('stella_0020') && text.includes('stella_hosted_0008')) {
+        expect(text, doc).toMatch(/applyWindow/)
+        expect(text, doc).toMatch(/postchain/)
+      }
+    }
+  })
+
+  it('R1.5 states the chain-11/11 precondition INLINE, not behind a link', () => {
+    // F-3. An operator reading R1.5 must learn that stella_0020 needs a
+    // complete chain without following a cross-reference to find out.
+    const g1b = readFileSync(
+      path.join(ROOT, 'docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md'),
+      'utf8',
+    )
+    const r15 = g1b.slice(g1b.indexOf('### R1.5'), g1b.indexOf('### R1.6'))
+    expect(r15.length).toBeGreaterThan(500)
+    expect(r15).toMatch(/11\/11/)
+    expect(r15).toMatch(/stella_0017/)
+    expect(r15).toMatch(/postchain/)
+  })
+
+  it('no operator command carries a corrupted line continuation', () => {
+    // F-2. The R1.5 block lived inside a markdown blockquote and its `\`
+    // continuation collapsed, leaving the quote marker INSIDE the command:
+    //
+    //     psql ... -v ON_ERROR_STOP=1 >      -f <file>
+    //
+    // which a shell reads as a redirect into a file named `-f`. The gate is
+    // mechanical because the corruption was invisible in review.
+    // Scanned inside FENCED BLOCKS only. The prose deliberately quotes the
+    // broken form so the next reader knows what to look for, and a scanner that
+    // could not tell an example from a command would be passed by deleting the
+    // explanation — the same trap the SQL suites already resolve this way.
+    for (const doc of [
+      'docs/ops/staging/STELLA_PRECHAIN_OPERATOR_RUNBOOK.md',
+      'docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md',
+    ]) {
+      const text = readFileSync(path.join(ROOT, doc), 'utf8')
+      const fenced = [...text.matchAll(/```[a-z]*\n([\s\S]*?)```/g)].flatMap((m) =>
+        m[1]!.split('\n'),
+      )
+      const offenders = fenced.filter(
+        (line) => /ON_ERROR_STOP=\S*\s+>\s/.test(line) || /\s>\s+-f\s/.test(line),
+      )
+      expect(offenders, `${doc}: a quote marker landed inside a command`).toEqual([])
+    }
+  })
+
+  it('the PowerShell operator blocks use backticks, never a bash backslash', () => {
+    // F-2. `\` at end of line is a bash continuation and is NOT one in
+    // PowerShell — it would run the first line alone and then fail on the rest.
+    const g1b = readFileSync(
+      path.join(ROOT, 'docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md'),
+      'utf8',
+    )
+    const blocks = [...g1b.matchAll(/```powershell\n([\s\S]*?)```/g)].map((m) => m[1]!)
+    expect(blocks.length, 'R1.5 must carry PowerShell blocks').toBeGreaterThan(0)
+    const applyBlock = blocks.find((b) => b.includes('stella_hosted_0008_audit_log_write_capability'))
+    expect(applyBlock, 'the apply block must be PowerShell').toBeDefined()
+    expect(applyBlock!).toContain('$Psql')
+    expect(applyBlock!).toContain('& $Psql')
+    expect(applyBlock!).toContain('$env:UELLIX_STAGING_ADMIN_URL')
+    for (const block of blocks) {
+      expect(block, 'a bash line continuation in a PowerShell block').not.toMatch(/\\\s*\n/)
+    }
+    // The packages manage their own identity: no SET ROLE on the command line.
+    expect(applyBlock!).not.toMatch(/SET ROLE/i)
+  })
+
+  it('the prechain runbook instructs verify-before-rollback, in order', () => {
+    // F-4B. A rollback is reached for when something has already gone wrong,
+    // which is exactly when nobody verifies. The order is the control.
+    const text = readFileSync(
+      path.join(ROOT, 'docs/ops/staging/STELLA_PRECHAIN_OPERATOR_RUNBOOK.md'),
+      'utf8',
+    )
+    const section = text.slice(text.indexOf('## 6b.'), text.indexOf('## 7. PARADA DURA'))
+    expect(section.length).toBeGreaterThan(600)
+    expect(section).toContain('ADMINISTRATIVE_UNITS')
+    expect(section).toContain('rollbackSha256')
+    expect(section).toMatch(/LF-normalizado/)
+    // and it must not turn a reversal into a reflex
+    expect(section).toMatch(/NO es la reacción por defecto|NO se recomienda por defecto/)
+    expect(section).toMatch(/NADA de esto se automatiza/)
+  })
+
+  it('both certification harnesses apply the postchain units, and pin them first', () => {
+    // The channel must have a verifier, or "governed" is a word rather than a
+    // property. Both harnesses refuse on a digest mismatch BEFORE applying.
+    for (const script of ['scripts/pg176-certify.ts', 'scripts/remediation-certify.ts']) {
+      const src = readFileSync(path.join(ROOT, script), 'utf8')
+      expect(src, script).toContain('POSTCHAIN_ADMINISTRATIVE_UNITS')
+      expect(src, script).toContain('POSTCHAIN_ADMIN_PIN_MISMATCH')
+    }
   })
 })

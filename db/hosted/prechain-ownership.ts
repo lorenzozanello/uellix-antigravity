@@ -1,6 +1,31 @@
 // db/hosted/prechain-ownership.ts
-// M-2 — the identity and pin of the forward-only prechain OWNERSHIP
-// reconciliation.
+// M-2 — the identity and pin of the prechain administrative units.
+//
+// ---------------------------------------------------------------------------
+// WHAT THE NAME SAYS AND WHAT THE REGISTRY HOLDS
+// ---------------------------------------------------------------------------
+// It was named for its first member, which transfers an owner. It has since
+// become the registry of the CHANNEL rather than of the operation: RT-01
+// publishes function bodies, RT-02 restores a table privilege contract, and
+// G1-B adds a policy and a column default. None of those transfers ownership,
+// and all five later units carry `normalisedFunctions: []` to say so.
+//
+// What every member DOES share, and what the registry actually pins:
+//
+//   * it is a governed SQL file, pinned here by SHA-256 over LF-normalized
+//     bytes, so a byte change fails the gate rather than certifying a file
+//     nobody reviewed;
+//   * it is applied by the ADMINISTRATIVE hosted session, not by
+//     `uellix_migrator` — which is precisely why it cannot be a chain link;
+//   * it is a PREREQUISITE, so it takes no chain witness and appears in no
+//     `nextChainPackage`;
+//   * both certification harnesses apply every member, in order, and refuse on
+//     PRECHAIN_ADMIN_PIN_MISMATCH before they do.
+//
+// Two things that were once true of every member and are no longer laws:
+// forward-only (see `rollbackFile`), and "transfers an owner". Renaming the
+// kind would churn two installed units' declarations to buy a better noun; the
+// honest fix is to say what the set is, here, where the reader looks.
 //
 // ---------------------------------------------------------------------------
 // WHY A SECOND PRECHAIN PACKAGE AND NOT AN EDIT TO THE FIRST
@@ -72,8 +97,69 @@ export interface PrechainOwnershipPackage {
   /** SHA-256 of the LF-normalized SQL. A byte change fails the gate. */
   readonly sourceSha256: string
   readonly purpose: string
-  /** Why no `_rollback.sql` exists. Read by the registry tripwire. */
-  readonly forwardOnlyNoRollbackReason: string
+  /**
+   * WHEN this unit is applied, relative to HOSTED_CHAIN.
+   *
+   * G1-B ADDED THIS FIELD TOO, and the certification harness is what found the
+   * need. Units 0003 to 0008 are prerequisites of T1: they are applied while
+   * every chain package still measures ABSENT, which is the window
+   * PRECHAIN_CLEAN asserts. stella_0020 cannot go there, and not as a matter of
+   * preference — MEASURED by scripts/pg176-certify.ts, it ABORTS:
+   *
+   *     stella_0020 aborted: unexpected INSERT grant on
+   *     public.stella_interactions held by [authenticated, service_role]
+   *
+   * Those grants are Supabase default privileges on the baseline table, and the
+   * package that withdraws them is stella_0017 — T8, a CHAIN link. So
+   * stella_0020's own dead-default proof is only satisfiable once the chain has
+   * run, and applying it earlier is a refusal rather than a reordering.
+   *
+   * The honest fix was to record the WINDOW rather than to weaken the proof:
+   * relaxing §0.4 so the package fits the loop would have traded a measured
+   * security precondition for a convenient position in a list.
+   */
+  readonly applyWindow: 'prechain' | 'postchain'
+  /**
+   * The rollback script, repo-relative, or `null` when the unit is
+   * forward-only.
+   *
+   * G1-B ADDED THIS FIELD, and the reason it did not exist before is worth
+   * stating rather than patching over. Units 0003 to 0007 are all forward-only,
+   * so "prechain administrative unit" and "ships no rollback" were the same set
+   * and the type encoded the coincidence as a law:
+   * `forwardOnlyNoRollbackReason` was required, so a unit WITH a rollback could
+   * not be declared at all.
+   *
+   * That was never a property of the CHANNEL. It is a property of what those
+   * five units do — transfer an owner, publish a hardened body, restore a
+   * privilege contract the product cannot serve a request without — where
+   * "restore the previous state" and "reopen the outage" are the same sentence.
+   * A unit that creates ONE policy, or drops ONE column default, reverses
+   * exactly and reviewably, so it ships the script.
+   *
+   * Exactly one of `rollbackFile` and `forwardOnlyNoRollbackReason` is non-null,
+   * and the registry tripwire in tests/hosted/prechain-ownership.test.ts asserts
+   * that — in both directions, because a unit declaring both would be a unit
+   * whose author had not decided.
+   */
+  readonly rollbackFile: string | null
+  /**
+   * SHA-256 of the LF-normalized ROLLBACK, or `null` when there is none.
+   *
+   * F-4. The forward file was pinned from the first revision and the rollback
+   * was not, which left the reversal path — the thing an operator reaches for
+   * while something is already wrong — as the only ungoverned bytes in the
+   * unit. `pnpm artefact:verify` had no digest to compare a rollback against,
+   * so "the rollback I am about to run is the one that was reviewed" was a
+   * hope rather than a check.
+   *
+   * Governed here rather than in a second registry so that one entry describes
+   * one unit completely, and so the forward/rollback pair cannot drift into
+   * being pinned by different mechanisms.
+   */
+  readonly rollbackSha256: string | null
+  /** Why no `_rollback.sql` exists, or `null` when one does. */
+  readonly forwardOnlyNoRollbackReason: string | null
   /**
    * The functions it normalises, by exact signature.
    *
@@ -101,6 +187,9 @@ export const PRECHAIN_OWNERSHIP: PrechainOwnershipPackage = {
     'GRANT or REVOKE, recreates no policy, creates no role and alters no membership. It also does ' +
     'NOT grant uellix_owner USAGE on schema storage: that is stella_0005d\'s question locally and ' +
     'remains open on the hosted side, and the package asserts the state rather than answering it.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
   forwardOnlyNoRollbackReason:
     'FORWARD-ONLY, in the same shape grounding_0005 records. What it removes is the reason a ' +
     'governed package cannot be applied, so "restore the previous owner" and "make the chain ' +
@@ -148,6 +237,9 @@ export const PRECHAIN_STORAGE_USAGE: PrechainOwnershipPackage = {
     'refused silently for every role. It is the hosted counterpart of stella_0005d and asserts '  +
     'the same three facts: the USAGE is present, storage.foldername is executable, and NO table '  +
     'privilege in storage was granted. uellix_app is compared before and after and must not move.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
   forwardOnlyNoRollbackReason:
     'FORWARD-ONLY. Revoking it re-opens the exact failure it closes — every evidence object '  +
     'operation refused, silently, for every role — on a project whose helpers uellix_owner now '  +
@@ -207,6 +299,9 @@ export const PRECHAIN_STORAGE_TABLE_READ: PrechainOwnershipPackage = {
     'and adds no INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES or TRIGGER. uellix_app and ' +
     'uellix_migrator are compared before and after and must not move, and the whole read surface ' +
     'of uellix_owner in schema public is compared as a delta that must be exactly one relation.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
   forwardOnlyNoRollbackReason:
     'FORWARD-ONLY. Revoking it re-opens the exact outage it closes — every evidence object ' +
     'operation refused, silently, for every role, on read as well as on write — on a project ' +
@@ -281,6 +376,9 @@ export const PRECHAIN_RUNTIME_HELPER_CONTRACT: PrechainOwnershipPackage = {
     'accepts an already-hardened database and REFUSES a third state rather than normalising it, ' +
     'so it can be pointed at an environment whose posture has not been measured. No project ' +
     'reference appears in it.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
   forwardOnlyNoRollbackReason:
     'FORWARD-ONLY, and for an ASYMMETRIC reason worth stating precisely, because half of this ' +
     'package is genuinely reversible. The GRANT is: one administrative REVOKE undoes it, at the ' +
@@ -364,6 +462,9 @@ export const PRECHAIN_RUNTIME_TABLE_ACL: PrechainOwnershipPackage = {
     'REFUSES a third state — a partial posture, an append-only widening, a structural privilege, a ' +
     'direct uellix_app grant or a runtime-owned relation — rather than normalising it. No project ' +
     'reference appears in it.',
+  applyWindow: 'prechain',
+  rollbackFile: null,
+  rollbackSha256: null,
   forwardOnlyNoRollbackReason:
     'FORWARD-ONLY, for the reason the whole prechain trio records and this one states most ' +
     'literally: what it removes is the reason the product cannot serve a single authenticated ' +
@@ -388,7 +489,132 @@ export const PRECHAIN_RUNTIME_TABLE_ACL: PrechainOwnershipPackage = {
 }
 
 /**
- * All five prechain administrative units, IN APPLICATION ORDER.
+ * G1-B — the POLICY layer of the same omission RT-01 repaired for functions and
+ * RT-02 for tables.
+ *
+ * A SIXTH unit, and the first in this registry that ships a rollback. It also
+ * carries the correction that produced this revision.
+ *
+ * WHAT WAS WRONG WITH ITS FIRST DRAFT. It demanded `current_user =
+ * uellix_owner` and called that role "the owner of the policies on
+ * public.audit_logs". Locally that is true, because stella_0004 transfers every
+ * relation in `public`. On the hosted project it is false, and the catalog
+ * observation the package itself quotes says so: `public.audit_logs` is owned
+ * by `postgres`, because stella_hosted_0001 §399 transfers exactly ONE relation
+ * and stella_hosted_0007 verifies that none moved afterwards. The package was
+ * therefore UNAPPLIABLE from both sides — as uellix_owner the policy DDL raises
+ * 42501, as the owner the precondition aborted — and nothing in the repository
+ * would have said so before the operator window.
+ *
+ * WHAT REPLACES IT is the shape RT-02 already proved: MEASURE pg_class.relowner,
+ * proceed directly when the administrative session IS the owner, open a
+ * tightly-scoped `SET LOCAL ROLE` window when it can assume the owner, refuse by
+ * name otherwise, and assert `current_user = session_user` at the end on both
+ * branches. MEASURED on PostgreSQL 17.6 by
+ * scripts/audit-capability-identity-dry-run.sh: both branches, the fail-closed
+ * third case, idempotence, the anti-second-write-policy refusal, and an owner
+ * and ACL that do not move.
+ *
+ * IT ALSO CARRIES A SECOND PRECONDITION THAT DRY-RUN FOUND, §0.7. `CREATE
+ * POLICY` analyses its WITH CHECK at creation time and this one names
+ * `auth.uid()`; on managed Supabase the `auth` schema is owned by
+ * supabase_admin and admits `postgres`, not the uellix_* roles. With the table
+ * moved to uellix_owner the DDL dies with `permission denied for schema auth` —
+ * a second wall behind the ownership one. The package now refuses in advance,
+ * naming the missing privilege.
+ */
+export const PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY: PrechainOwnershipPackage = {
+  id: 'stella_hosted_0008_audit_log_write_capability',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_hosted_0008_audit_log_write_capability.sql',
+  sourceSha256: '65c1605549c1bc23b9d6862fb55b7902d9a5224e60725d3850adc6c2d99bfa96',
+  purpose:
+    'Creates the ONE policy the hosted runtime is missing: audit_logs_insert_member_or_admin ON ' +
+    'public.audit_logs FOR INSERT TO uellix_app, carrying stella_0005c\'s WITH CHECK character for ' +
+    'character — the actor bound to auth.uid(), the row bound to an organization the session belongs ' +
+    'to, and a super-admin widening that does not widen the actor binding. It GRANTS NOTHING to ' +
+    'anyone: stella_hosted_0007 §1 already gives uellix_writer SELECT + INSERT on the table and ' +
+    'uellix_app inherits it, so the missing piece was only ever the policy. It creates no policy for ' +
+    'authenticated, service_role, anon or PUBLIC, does not enable, disable or force RLS, touches no ' +
+    'other table, role, trigger or policy, and TRANSFERS NO OWNERSHIP. It MEASURES the owner of ' +
+    'public.audit_logs rather than naming one, issues the policy DDL under the identity PostgreSQL ' +
+    'requires — directly when the administrative session is already the owner, inside a SET LOCAL ' +
+    'ROLE window it closes immediately when it can assume the owner — refuses fail-closed otherwise, ' +
+    'and asserts current_user = session_user, an unmoved owner and a byte-identical ACL afterwards.',
+  applyWindow: 'prechain',
+  rollbackFile: 'db/prepared/stella_hosted_0008_rollback.sql',
+  rollbackSha256: 'c950f1ac756f15d088c5ef1b67e2cc00c7e5260caa63de6f5005317319a1af53',
+  forwardOnlyNoRollbackReason: null,
+  normalisedFunctions: [],
+  destinationOwner: 'postgres',
+  unblocks:
+    'G1-B itself, at assertion R3.B of docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md §4.5: the ' +
+    'certified run must leave a public.audit_logs row for action stella.invoked, and an interaction ' +
+    'with no audit row is a FAIL with no appeal. With this absent the row is impossible — RLS refuses ' +
+    'every append from uellix_app while the table privilege is present, which is SAFE and ' +
+    'FUNCTIONALLY DEAD — and logStellaAudit is fire-and-forget by design, so the operation reports ' +
+    'success while leaving no trail.',
+}
+
+/**
+ * G1-B — the column default that made the DATABASE choose Stella's model.
+ *
+ * A SEVENTH unit, and the one whose presence here is a JUDGEMENT rather than a
+ * mechanical consequence. It is recorded because a later reader will ask why a
+ * plain schema delta is not in db/hosted/hosted-package-manifest.ts.
+ *
+ * BECAUSE THAT MANIFEST IS THE CHAIN. `HOSTED_CHAIN` is literally
+ * `HOSTED_PACKAGE_MANIFEST.map(e => e.name)` and `WITNESSED_PACKAGES` is that
+ * list minus the bootstrap, so an entry there is a governed chain LINK: it
+ * acquires a T-number in db/hosted/authority/window-plan.ts, an authority
+ * window, a witness registry entry, a `.governed.sql`, and an applying identity
+ * that is `uellix_migrator` and nothing else. It would also move
+ * `A1_EXPECTED_PACKAGE_COUNT`, which is `HOSTED_CHAIN.length - 1`, and thereby
+ * reclassify a staging project already certified and recorded at 11/11 as
+ * incomplete. None of that is a description of what this package is.
+ *
+ * WHAT IT IS: a prerequisite applied by the ADMINISTRATIVE session before the
+ * certification runs — which is the definition this registry already carries,
+ * and the definition units 0006 and 0007 already stretched past "ownership"
+ * without anyone pretending the kind name still described the operation.
+ *
+ * ITS BODY NEEDS NO DERIVATION. No `auth` schema grant, no superuser
+ * precondition, no role creation, no capability window: the canonical file IS
+ * the artefact on both targets, which is why it takes a digest pin and not a
+ * generation rule.
+ */
+export const PRECHAIN_LEDGER_MODEL_DEFAULT: PrechainOwnershipPackage = {
+  id: 'stella_0020_stella_interactions_model_default',
+  kind: 'prechain-ownership',
+  sourceFile: 'db/prepared/stella_0020_stella_interactions_model_default.sql',
+  sourceSha256: 'e19e273beffb7aab02ad0fb1d7c6bcd0517c65e95adb14989d30dca887b78ef6',
+  purpose:
+    'Drops the DEFAULT on public.stella_interactions.model_used, which db/migrations/0012 created as ' +
+    'a retired provider model id and which is therefore a SECOND and WRONG source of truth for ' +
+    'Stella\'s model target beside STELLA_DEFAULT_GEMINI_MODEL. The default is DROPPED and not ' +
+    'retargeted: model_used records WHICH MODEL ANSWERED, which is a measurement, and a column ' +
+    'default is the database inventing one. The column stays NOT NULL, so a writer that supplies no ' +
+    'model now fails with 23502 instead of silently recording a retired id. It touches no row, no ' +
+    'privilege, no policy, no trigger, no role and no owner, and it PROVES the default is unreachable ' +
+    'before removing it — stella_0017 left exactly one writer, and §0.4 aborts if a second has ' +
+    'appeared. It carries the same measured-owner identity contract as stella_hosted_0008 and ' +
+    'asserts current_user = session_user, an unmoved owner and a byte-identical ACL afterwards.',
+  applyWindow: 'postchain',
+  rollbackFile: 'db/prepared/stella_0020_rollback.sql',
+  rollbackSha256: 'f8a274475c08c9a5ca5093f2c128d315fccbbc546ae7489b6ee325e72f6e6da9',
+  forwardOnlyNoRollbackReason: null,
+  normalisedFunctions: [],
+  destinationOwner: 'uellix_owner',
+  unblocks:
+    'G1-B assertion R3.A of docs/ops/runbooks/G1_B_GOVERNED_PREVIEW_RUNBOOK.md §4.4, which requires ' +
+    'the ledger row to carry the model that actually answered. While a DEFAULT exists that value is ' +
+    'not evidence of anything: it could have come from the adapter or from the database, and nothing ' +
+    'in the row says which. Removing the default is what makes model_used a measurement the ' +
+    'certification can cite.',
+}
+
+/**
+ * All seven prechain administrative units, IN APPLICATION ORDER.
  *
  * Order is load-bearing and asserted by the packages themselves rather than by
  * whatever loop applies them: stella_hosted_0004 §0.4 refuses unless a SECURITY
@@ -396,17 +622,131 @@ export const PRECHAIN_RUNTIME_TABLE_ACL: PrechainOwnershipPackage = {
  * requires the same AND §0.4 requires the storage USAGE 0004 grants. Applying
  * any of them early is a refusal rather than a silent reordering.
  */
-export const PRECHAIN_ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] = [
+export const ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] = [
   PRECHAIN_OWNERSHIP,
   PRECHAIN_STORAGE_USAGE,
   PRECHAIN_STORAGE_TABLE_READ,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
-  // RT-02. Last, and it must be: its §0 refuses unless the runtime can already
-  // EXECUTE the three RLS helpers — the contract RT-01 publishes — because a
-  // table grant without them buys nothing. The two are halves of one cutover.
+  // RT-02. Its §0 refuses unless the runtime can already EXECUTE the three RLS
+  // helpers — the contract RT-01 publishes — because a table grant without them
+  // buys nothing. The two are halves of one cutover.
   PRECHAIN_RUNTIME_TABLE_ACL,
+  // G1-B. AFTER RT-02, and enforced by the package rather than by this list:
+  // its §0.3 refuses unless uellix_app already holds INSERT on
+  // public.audit_logs, which is the privilege RT-02 grants, and its §0.4
+  // refuses unless the runtime can EXECUTE the two helpers RT-01 publishes.
+  // Applying it early is a refusal, not a silent reordering. MEASURED
+  // pre-chain by scripts/pg176-certify.ts: exit 0.
+  PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY,
+  // G1-B, and the one whose WINDOW is not `prechain`. Its dead-default proof
+  // refuses while authenticated and service_role still hold the baseline INSERT
+  // grant on public.stella_interactions, and the package that withdraws that is
+  // stella_0017 — T8, a CHAIN link. So it is applied AFTER the chain. Ordered
+  // last here as well, because that is also the order the G1-B runbook gives.
+  PRECHAIN_LEDGER_MODEL_DEFAULT,
 ]
+
+/**
+ * The units applied BEFORE the first governed statement, in application order.
+ *
+ * This is the window `PRECHAIN_CLEAN` describes — every chain package still
+ * measuring ABSENT — so a unit whose preconditions depend on a chain package
+ * cannot be in it. Derived rather than listed a second time: a hand-kept
+ * duplicate is how a member ends up in one list and not the other.
+ */
+export const PRECHAIN_ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] =
+  ADMINISTRATIVE_UNITS.filter((u) => u.applyWindow === 'prechain')
+
+/**
+ * The units applied AFTER the chain is complete, in application order.
+ *
+ * Same principal, same pin discipline, same refusal on a digest mismatch — only
+ * the window differs, and it differs because a package said so and the
+ * certification harness measured it.
+ */
+export const POSTCHAIN_ADMINISTRATIVE_UNITS: readonly PrechainOwnershipPackage[] =
+  ADMINISTRATIVE_UNITS.filter((u) => u.applyWindow === 'postchain')
+
+// Enforced HERE, at module load, so that a wrongly-declared unit fails on the
+// first import — in a certifier, in `hosted:verify`, in any suite — rather than
+// at the moment an operator reaches for a rollback that turns out to have no
+// governed digest. Declared after the lists so the assertion covers the exact
+// array the harnesses walk.
+assertAdministrativeUnitContract(ADMINISTRATIVE_UNITS)
 
 export function sha256OfPreparedSql(sql: string): string {
   return createHash('sha256').update(sql.replace(/\r\n?/g, '\n'), 'utf8').digest('hex')
+}
+
+/** A refusal code. Stable — the tests and the runbook cite it by name. */
+export const ADMINISTRATIVE_UNIT_CONTRACT_VIOLATION = 'ADMINISTRATIVE_UNIT_CONTRACT_VIOLATION'
+
+/**
+ * The reversibility contract, enforced at run time rather than only by types.
+ *
+ * F-4A. TypeScript can express `string | null` on three fields; it cannot
+ * express "exactly one side of this is populated". A DISCRIMINATED UNION could,
+ * and was considered and rejected: it would restate all seven entries and every
+ * consumer's field access to buy a check this function makes in nine lines —
+ * turning a governance fix into a refactor, which is how a delta stops being
+ * reviewable.
+ *
+ * So the invariant is a function, and it runs where it matters: at module load
+ * over the real registry, and therefore inside both certification harnesses,
+ * `pnpm hosted:verify` and every suite that imports the registry. A unit
+ * declared wrongly fails at IMPORT, not at the moment an operator reaches for a
+ * rollback.
+ *
+ * The five refusals, all measured by tests:
+ *   rollbackFile without rollbackSha256   — an ungoverned reversal path
+ *   rollbackSha256 without rollbackFile   — a pin for a file that is not there
+ *   forward-only WITH a rollback digest   — two contradictory declarations
+ *   all three null                        — a unit nobody decided about
+ *   all three non-null                    — the same, said twice
+ */
+export function assertAdministrativeUnitContract(
+  units: readonly PrechainOwnershipPackage[],
+): void {
+  for (const u of units) {
+    const hasFile = u.rollbackFile !== null
+    const hasDigest = u.rollbackSha256 !== null
+    const hasReason = u.forwardOnlyNoRollbackReason !== null
+
+    if (hasFile !== hasDigest) {
+      throw new Error(
+        `${ADMINISTRATIVE_UNIT_CONTRACT_VIOLATION}: ${u.id} declares rollbackFile=${String(
+          u.rollbackFile,
+        )} and rollbackSha256=${String(u.rollbackSha256)}. A rollback is governed by its bytes or ` +
+          `it is not governed at all.`,
+      )
+    }
+    if (hasFile === hasReason) {
+      throw new Error(
+        `${ADMINISTRATIVE_UNIT_CONTRACT_VIOLATION}: ${u.id} ${
+          hasFile
+            ? 'ships a rollback AND declares a forward-only reason'
+            : 'declares neither a rollback nor a reason for not having one'
+        }. Exactly one of the two must be present.`,
+      )
+    }
+  }
+}
+
+/**
+ * The forward-only reason of a unit that HAS one, refusing loudly otherwise.
+ *
+ * `db/hosted/forward-only-packages.ts` derives its entries from this registry so
+ * that two files cannot give different reasons for one absence. Since G1-B a
+ * prechain unit may legitimately ship a rollback, so that derivation has to be
+ * able to fail rather than to silently carry a null into a registry whose whole
+ * purpose is "there is no rollback, and here is why".
+ */
+export function forwardOnlyReasonOf(unit: PrechainOwnershipPackage): string {
+  if (unit.forwardOnlyNoRollbackReason === null) {
+    throw new Error(
+      `PRECHAIN_UNIT_SHIPS_A_ROLLBACK: ${unit.id} declares ${unit.rollbackFile ?? '(none)'} ` +
+        `and therefore must not be declared forward-only.`,
+    )
+  }
+  return unit.forwardOnlyNoRollbackReason
 }

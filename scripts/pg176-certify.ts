@@ -66,6 +66,7 @@ import { refusalExercises } from '../db/hosted/authority/certification/refusal-e
 import {
   certificationPredicates,
   certificationVerdict,
+  postchainAdministrativeHolds,
   type CertificationEvidence,
 } from '../db/hosted/authority/certification/certification-verdict'
 import {
@@ -112,6 +113,7 @@ import {
 } from '../db/hosted/authority/certification/failure-injection'
 import { BASELINE_UNITS } from '../db/hosted/baseline-manifest'
 import {
+  POSTCHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_ADMINISTRATIVE_UNITS,
   sha256OfPreparedSql,
 } from '../db/hosted/prechain-ownership'
@@ -1138,6 +1140,63 @@ function main(): number {
     `[cert] chain ${results.filter((r) => r.stateAfter === 'INSTALLED').length}/${inputs.length} installed`,
   )
 
+  /* G1-B. THE POSTCHAIN ADMINISTRATIVE UNITS.
+   *
+   * Same principal as the prechain ones — administrative, never the installer —
+   * and the same refusal on a digest mismatch. What differs is the WINDOW, and
+   * it differs because a package said so and this harness measured it:
+   * stella_0020 proves its column default is unreachable before dropping it,
+   * and while `authenticated` and `service_role` still hold the baseline INSERT
+   * grant on public.stella_interactions that proof fails. The package that
+   * withdraws those grants is stella_0017 — T8, a CHAIN link — so the earliest
+   * point at which stella_0020 is appliable is HERE.
+   *
+   * Skipped when the chain did not complete: applying it then would measure a
+   * refusal whose cause is the incomplete chain rather than the package. */
+  const postchainAdmin: {
+    packageId: string
+    digest: string
+    exitStatus: number | null
+    error: string | null
+    inHostedChain: false
+  }[] = []
+  if (chainComplete) {
+    for (const unit of POSTCHAIN_ADMINISTRATIVE_UNITS) {
+      const unitSql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      const digest = sha256OfPreparedSql(unitSql)
+      if (digest !== unit.sourceSha256) {
+        throw new Error(
+          `POSTCHAIN_ADMIN_PIN_MISMATCH: ${unit.sourceFile} hashes to ${digest} and the ` +
+            `registry pins ${unit.sourceSha256}.`,
+        )
+      }
+      const applied = applySql(primary, unitSql)
+      postchainAdmin.push({
+        packageId: unit.id,
+        digest,
+        exitStatus: applied.status,
+        error: applied.status === 0 ? null : diagnosticLines(applied.stderr, 2),
+        inHostedChain: false,
+      })
+      console.log(
+        `[cert] postchain ${unit.id} exit=${applied.status} (applied as postgres, NOT a chain member)`,
+      )
+    }
+  }
+  /* `ran` is "the loop executed over the declared set", not "the loop was
+   * reached". A future edit that skipped a unit — or that stopped invoking the
+   * loop at all — would otherwise satisfy `every()` vacuously and pass a gate
+   * having measured nothing. */
+  const postchainRan = chainComplete && postchainAdmin.length === POSTCHAIN_ADMINISTRATIVE_UNITS.length
+  const postchainAllApplied = postchainAdmin.every((u) => u.exitStatus === 0)
+  report.postchainAdministrative = {
+    appliedAs: 'administrative (unrestricted) — NOT the chain installer',
+    ran: postchainRan,
+    allApplied: postchainAllApplied,
+    units: postchainAdmin,
+    inHostedChain: false,
+  }
+
   report.posture = {
     functionOwners: finalState.functionOwners,
     relationOwners: finalState.relationOwners,
@@ -1203,10 +1262,40 @@ function main(): number {
     console.log(`[cert]   MISMATCH ${m.caseId}.${m.operation}: expected ${m.expected}, observed ${m.observed}`)
   }
 
+  /* F-1B. `--only=chain` stops the run early, and until G1-B its verdict was a
+   * function of `chainComplete` alone.
+   *
+   * DESIGN B was chosen over "do not run postchain under this flag", and the
+   * reason is that the flag governs how much is REPORTED, never what happened
+   * to the database. The postchain apply mutates the primary container; a flag
+   * that skipped it would make `--only=chain` produce a different final shape
+   * from a full run, which is a worse property than a longer run. So the units
+   * are applied either way and the result PARTICIPATES here.
+   *
+   * The predicate is the SAME function the full conjunction uses, called by
+   * name rather than reimplemented: two gates written separately are two gates
+   * that eventually disagree, and this early return is exactly where the first
+   * one was missing. */
   if (ONLY === 'chain') {
-    report.verdict = chainComplete ? 'CHAIN_COMPLETE' : 'CHAIN_INCOMPLETE'
+    const postchainPredicate = postchainAdministrativeHolds({
+      chainComplete,
+      postchainAdministrative: { ran: postchainRan, allApplied: postchainAllApplied },
+    })
+    report.requiredPredicates = [
+      { id: 'CHAIN_COMPLETE', holds: chainComplete, detail: 'every declared package applied and measured INSTALLED' },
+      postchainPredicate,
+    ]
+    report.verdict = !chainComplete
+      ? 'CHAIN_INCOMPLETE'
+      : postchainPredicate.holds
+        ? 'CHAIN_COMPLETE'
+        : 'POSTCHAIN_ADMINISTRATIVE_UNIT_FAILED'
+    console.log(
+      `[cert] ${postchainPredicate.holds ? 'HOLDS  ' : 'FAILED '} ${postchainPredicate.id} — ${postchainPredicate.detail}`,
+    )
+    console.log(`[cert] VERDICT ${String(report.verdict)}`)
     writeReport(report)
-    return chainComplete ? 0 : 1
+    return report.verdict === 'CHAIN_COMPLETE' ? 0 : 1
   }
 
   // Injections run whether or not the chain completed. Package-level atomicity
@@ -1274,6 +1363,7 @@ function main(): number {
     prechainClean,
     prechainAuthorityGatePassed,
     chainComplete,
+    postchainAdministrative: { ran: postchainRan, allApplied: postchainAllApplied },
     storageFunctionalProbe: {
       ran: storageFunctional.ran,
       passed: storageFunctional.passed,

@@ -96,6 +96,10 @@ import {
 } from '../db/hosted/authority/certification/remediation-failure-injection'
 import { injectFailure } from '../db/hosted/authority/certification/failure-injection'
 import {
+  administrativeUnitVerdicts,
+  HARNESS_FAIL,
+} from '../db/hosted/authority/certification/certification-verdict'
+import {
   bodyDigest,
   buildRemediationSourceStateSql,
   buildRemediationWitnessSql,
@@ -133,6 +137,7 @@ import {
   verifyRemediationPin,
 } from '../db/hosted/remediation-attempt'
 import {
+  POSTCHAIN_ADMINISTRATIVE_UNITS,
   PRECHAIN_ADMINISTRATIVE_UNITS,
   sha256OfPreparedSql as sha256OfPrechainOwnershipSql,
 } from '../db/hosted/prechain-ownership'
@@ -908,8 +913,17 @@ function main(): number {
       break
     }
   }
+  /* F-1C. The prechain units were APPLIED here and gated NOTHING: the loop
+   * `break`s on the first failure, the result went into the report, and the
+   * verdict block several hundred lines below never looked at it. `allApplied`
+   * therefore requires the FULL declared set — the break makes a short array
+   * the signature of a failure, and `every()` over it would pass. */
+  const prechainAllApplied =
+    prechainAdmin.length === PRECHAIN_ADMINISTRATIVE_UNITS.length &&
+    prechainAdmin.every((u) => u.exitStatus === 0)
   report.prechainAdministrative = {
     appliedAs: 'postgres (administrative) — NOT the chain installer',
+    allApplied: prechainAllApplied,
     units: prechainAdmin,
     inHostedChain: false,
   }
@@ -1061,10 +1075,84 @@ function main(): number {
   // NOT THE SAME NINE as REMEDIATION_TRANSACTION_ROLLBACK below. That one
   // counts the R1..R9 failure-injection anchors, which are a property of the
   // remediation package and move only when an anchor is added.
+  /* G1-B. THE POSTCHAIN ADMINISTRATIVE UNITS.
+   *
+   * Same principal and the same pin refusal as the prechain ones above; only
+   * the WINDOW differs. stella_0020 proves its column default is unreachable
+   * before dropping it, and that proof fails while `authenticated` and
+   * `service_role` still hold the baseline INSERT grant on
+   * public.stella_interactions — which stella_0017 (T8, a CHAIN link) is what
+   * withdraws. The earliest appliable point is therefore after the chain, and
+   * applying it earlier is a refusal rather than a reordering. MEASURED: the
+   * first revision of this loop put it before T1 and the package aborted,
+   * naming both roles.
+   *
+   * Skipped when the chain did not complete, so a refusal here is never
+   * attributable to the incomplete chain. */
+  const postchainAdmin: Record<string, unknown>[] = []
+  if (installed === inputs.length) {
+    for (const unit of POSTCHAIN_ADMINISTRATIVE_UNITS) {
+      const unitSql = readFileSync(path.join(ROOT, unit.sourceFile), 'utf8')
+      const digest = sha256OfPrechainOwnershipSql(unitSql)
+      if (digest !== unit.sourceSha256) {
+        throw new Error(
+          `POSTCHAIN_ADMIN_PIN_MISMATCH: ${unit.sourceFile} hashes to ${digest} and the ` +
+            `registry pins ${unit.sourceSha256}.`,
+        )
+      }
+      const applied = applySql(primary, unitSql)
+      postchainAdmin.push({
+        packageId: unit.id,
+        digest,
+        exitStatus: applied.status,
+        error: applied.status === 0 ? null : diagnosticLines(applied.stderr, 2),
+        inHostedChain: false,
+      })
+      console.log(
+        `[rem] postchain ${unit.id} exit=${applied.status} (applied as postgres, NOT a chain member)`,
+      )
+    }
+  }
+  const postchainRan =
+    installed === inputs.length && postchainAdmin.length === POSTCHAIN_ADMINISTRATIVE_UNITS.length
+  const postchainAllApplied = postchainAdmin.every((u) => u.exitStatus === 0)
+  report.postchainAdministrative = {
+    appliedAs: 'administrative (unrestricted) — NOT the chain installer',
+    ran: postchainRan,
+    allApplied: postchainAllApplied,
+    units: postchainAdmin,
+    inHostedChain: false,
+  }
+
+  /* The two administrative-unit verdicts, derived by the SHARED pure function
+   * so this early return and the full verdict record below cannot judge the
+   * same two facts differently, and so the FAIL token is the one the filter
+   * matches by identity rather than by transcription. */
+  const adminVerdicts = administrativeUnitVerdicts({
+    chainComplete: installed === inputs.length,
+    prechain: { ran: prechainAllApplied, allApplied: prechainAllApplied },
+    postchain: { ran: postchainRan, allApplied: postchainAllApplied },
+  })
+
+  /* F-1B/F-1C. This early return produced its verdict from `installed` alone,
+   * AFTER both administrative windows had already been applied to the primary.
+   * A failed unit therefore exited 0 under `--only=chain`. Both now
+   * participate, in the same vocabulary, and the report carries the pair so the
+   * artefact says what the exit code meant. */
   if (ONLY === 'chain') {
-    report.verdict = installed === inputs.length ? 'CHAIN_COMPLETE' : 'CHAIN_INCOMPLETE'
+    report.administrativeUnits = adminVerdicts
+    const administrativeFailed = Object.values(adminVerdicts).includes(HARNESS_FAIL)
+    report.verdict =
+      installed !== inputs.length
+        ? 'CHAIN_INCOMPLETE'
+        : administrativeFailed
+          ? 'ADMINISTRATIVE_UNIT_FAILED'
+          : 'CHAIN_COMPLETE'
+    for (const [k, v] of Object.entries(adminVerdicts)) {
+      console.log(`[rem] ${k.padEnd(36)} ${v}`)
+    }
     writeReport(report)
-    return installed === inputs.length ? 0 : 1
+    return report.verdict === 'CHAIN_COMPLETE' ? 0 : 1
   }
 
   /* -------------------------------------------------- 7. R1..R9 ROLLBACK  */
@@ -1166,11 +1254,15 @@ function main(): number {
     REMEDIATION_PIN: pin.refused ? 'ENFORCED' : 'NOT_ENFORCED',
     T1_DEPENDENCY_MATRIX:
       matrix.rows.filter((r) => r.authorized).length === 1 ? 'ONE_OF_FOUR_AUTHORISES' : 'FAIL',
+    // G1-B. Spread rather than restated so the `--only=chain` return above and
+    // the full run below cannot drift into judging the same two facts
+    // differently.
+    ...adminVerdicts,
   }
   report.verdicts = verdicts
 
   const failed = Object.entries(verdicts).filter(
-    ([, v]) => v === 'FAIL' || v === 'INCOMPLETE' || v === 'NONZERO' || v === 'DRIFTED' ||
+    ([, v]) => v === HARNESS_FAIL || v === 'INCOMPLETE' || v === 'NONZERO' || v === 'DRIFTED' ||
       v === 'UNSAFE' || v === 'NOT_ENFORCED' || v === 'POSSIBLE',
   )
   console.log('')

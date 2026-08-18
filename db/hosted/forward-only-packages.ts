@@ -40,9 +40,22 @@
 // them produces the worst artefact of all: a `_rollback.sql` written to satisfy
 // a registry, whose correctness nobody measured, sitting next to a package
 // whose whole argument is that the state it removed should not come back.
+//
+// ---------------------------------------------------------------------------
+// A PRECHAIN UNIT IS NOT AUTOMATICALLY A MEMBER OF THIS LIST
+// ---------------------------------------------------------------------------
+// Every prechain administrative unit was forward-only until G1-B, which is a
+// fact about what those five units DO — reopening any of them reopens an outage
+// — and never a property of the channel. stella_hosted_0008 creates one policy
+// and stella_0020 drops one column default; both reverse exactly, both ship a
+// `_rollback.sql`, and neither belongs here. `forwardOnlyReasonOf` throws rather
+// than carrying a null into this registry, so a unit that gained a rollback and
+// was left declared forward-only fails loudly at import instead of contributing
+// an empty reason to a list whose entire content is reasons.
 
 import { PRECHAIN_REMEDIATION } from './prechain-remediation'
 import {
+  forwardOnlyReasonOf,
   PRECHAIN_OWNERSHIP,
   PRECHAIN_RUNTIME_HELPER_CONTRACT,
   PRECHAIN_RUNTIME_TABLE_ACL,
@@ -99,7 +112,7 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
     // the first entry is derived from the remediation one: two files must not
     // be able to give different reasons for the same absence.
     id: PRECHAIN_OWNERSHIP.id,
-    reason: PRECHAIN_OWNERSHIP.forwardOnlyNoRollbackReason,
+    reason: forwardOnlyReasonOf(PRECHAIN_OWNERSHIP),
     reversalPath:
       'There is none by script, and that is the point. A single administrative ' +
       '`ALTER FUNCTION public.can_read_evidence_object(text, uuid) OWNER TO postgres` and the same ' +
@@ -117,7 +130,7 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
     // of the artefact. Separate from the first for the same reason stella_0005d
     // is separate from stella_0004 locally.
     id: PRECHAIN_STORAGE_USAGE.id,
-    reason: PRECHAIN_STORAGE_USAGE.forwardOnlyNoRollbackReason,
+    reason: forwardOnlyReasonOf(PRECHAIN_STORAGE_USAGE),
     reversalPath:
       'There is none by script. A single administrative `REVOKE USAGE ON SCHEMA storage FROM ' +
       'uellix_owner`, issued by the principal that applied this package, undoes it — and returns ' +
@@ -129,7 +142,7 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
     // same reason they are separate from each other: a different object class,
     // and two pinned contracts that both say they do not do this.
     id: PRECHAIN_STORAGE_TABLE_READ.id,
-    reason: PRECHAIN_STORAGE_TABLE_READ.forwardOnlyNoRollbackReason,
+    reason: forwardOnlyReasonOf(PRECHAIN_STORAGE_TABLE_READ),
     reversalPath:
       'There is none by script. A single administrative `REVOKE SELECT ON TABLE ' +
       'public.organization_members FROM uellix_owner`, issued by the principal that applied this ' +
@@ -143,7 +156,7 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
     // instead of asserting irreversibility: the grant can be revoked, the
     // hardening must not be.
     id: PRECHAIN_RUNTIME_HELPER_CONTRACT.id,
-    reason: PRECHAIN_RUNTIME_HELPER_CONTRACT.forwardOnlyNoRollbackReason,
+    reason: forwardOnlyReasonOf(PRECHAIN_RUNTIME_HELPER_CONTRACT),
     reversalPath:
       'For the GRANT only, and never for the hardening: a single administrative REVOKE EXECUTE ' +
       'ON FUNCTION public.current_user_org_ids(), public.current_user_is_super_admin(), ' +
@@ -158,7 +171,7 @@ export const FORWARD_ONLY_PACKAGES: readonly ForwardOnlyPackage[] = [
     // the prechain declaration for the same reason every entry above is: two
     // files must not be able to give different reasons for one absence.
     id: PRECHAIN_RUNTIME_TABLE_ACL.id,
-    reason: PRECHAIN_RUNTIME_TABLE_ACL.forwardOnlyNoRollbackReason,
+    reason: forwardOnlyReasonOf(PRECHAIN_RUNTIME_TABLE_ACL),
     reversalPath:
       'There is none by script, and the consequence is the whole product. A single administrative ' +
       'REVOKE SELECT, INSERT, UPDATE, DELETE ON <the 37 contract tables> FROM uellix_writer, and ' +

@@ -119,6 +119,67 @@ falló.
 
 ### R1.5 — evidencia de apply-time de `stella_hosted_0008` y `stella_0020`
 
+#### CANAL, antes que nada
+
+Los dos son **unidades administrativas gobernadas** (*administrative units*),
+registradas y pinadas por SHA-256 en `db/hosted/prechain-ownership.ts`
+(`PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY`, `PRECHAIN_LEDGER_MODEL_DEFAULT`).
+**No** son eslabones de `HOSTED_CHAIN`, **no** tienen artefacto derivado
+(`.hosted.sql` / `.governed.sql`) y **no** se aplican con la conexión del
+instalador. El procedimiento es §0.0.3 de
+`docs/ops/staging/STELLA_PRECHAIN_OPERATOR_RUNBOOK.md`.
+
+**Mismo canal, VENTANAS DISTINTAS.** No comparten momento de aplicación, y
+confundirlo es un apply que aborta:
+
+| Unidad | Familia | `applyWindow` | Cuándo |
+|---|---|---|---|
+| `stella_hosted_0008_audit_log_write_capability` | administrative unit | **`prechain`** | antes del primer statement gobernado |
+| `stella_0020_stella_interactions_model_default` | administrative unit | **`postchain`** | **sólo con `chain 11/11 INSTALLED`** |
+
+> ⚠️ **`stella_0020` exige la cadena COMPLETA — 11/11 INSTALLED — antes de
+> aplicarse.** Su §0.4 demuestra que el default es inalcanzable, y esa prueba
+> falla mientras `authenticated` y `service_role` conserven el `INSERT` de
+> *default privilege* sobre `public.stella_interactions`: quien lo retira es
+> `stella_0017`, que es **T8, un eslabón de cadena**. Sobre
+> `bvyzblhqymxruxdguaee` la cadena ya está 11/11, así que la condición se
+> cumple; sobre cualquier otro objetivo, **compruébalo antes**.
+
+El checkpoint de bytes es el mismo de siempre, uno por archivo:
+
+```powershell
+pnpm artefact:verify --path=<PACKAGE_PATH> --digest=<sourceSha256 del registro>
+```
+
+Con `ARTEFACT_DIGEST = PASS` y checkpoint humano, la conexión
+**administrativa**, una transacción por archivo, `0008` antes de `0020`:
+
+```powershell
+$Psql = 'C:\Program Files\PostgreSQL\17\bin\psql.exe'
+& $Psql --version
+
+& $Psql "$env:UELLIX_STAGING_ADMIN_URL" -X -1 -v ON_ERROR_STOP=1 `
+  -f db/prepared/stella_hosted_0008_audit_log_write_capability.sql
+
+& $Psql "$env:UELLIX_STAGING_ADMIN_URL" -X -1 -v ON_ERROR_STOP=1 `
+  -f db/prepared/stella_0020_stella_interactions_model_default.sql
+```
+
+> **Por qué este bloque ya no vive dentro de una cita.** Estaba dentro de un
+> blockquote y la continuación de línea se corrompió en silencio: el `>` del
+> prefijo quedó **dentro** del comando —
+> `... ON_ERROR_STOP=1 >      -f <archivo>` — que en un shell es una
+> **redirección de salida a un fichero llamado `-f`**, no una continuación. Un
+> comando de operador no puede depender de que nadie edite el markdown que lo
+> rodea, así que va en un bloque de código de primer nivel, en PowerShell, con
+> backtick como continuación. **Nunca `\` de bash aquí.**
+
+**Sin `SET ROLE` en la línea de comandos.** Los paquetes MIDEN el dueño de su
+relación y asumen la identidad que haga falta, sólo si pueden asumirla. Una
+revisión anterior de `0008` exigía `current_user = 'uellix_owner'`, que es la
+postura **local**; en hosted `public.audit_logs` es de `postgres` y el paquete
+era inaplicable. Ver la corrección en `db/prepared/README.md`.
+
 Ambos paquetes **afirman su propia postcondición** al aplicarse y abortan la
 transacción si no se cumple. La evidencia primaria es la salida del apply
 (guardarla en `artifacts/`), donde deben aparecer:

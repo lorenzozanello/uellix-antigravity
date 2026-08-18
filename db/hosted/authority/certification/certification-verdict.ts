@@ -53,6 +53,22 @@ export interface CertificationEvidence {
    * cannot see that. COMPLETE now requires calling the thing.
    */
   readonly storageFunctionalProbe: { readonly ran: boolean; readonly passed: boolean; readonly detail: string }
+  /**
+   * G1-B. The administrative units whose apply window is POSTCHAIN.
+   *
+   * SEPARATE FROM `chainComplete`, and separate from the prechain units, for
+   * the reason the whole file exists: the harness APPLIED them and recorded the
+   * result beside a verdict that could not see it. A run where
+   * `stella_0020` aborted and every other predicate held reported COMPLETE and
+   * exited 0 — the same shape as the UNKNOWN_PACKAGE defect this module was
+   * written to close, one window later.
+   *
+   * `ran` is not redundant with `allApplied`. An empty apply set satisfies
+   * `every()` vacuously, so a future edit that stopped invoking the loop would
+   * pass `allApplied` while measuring nothing. Both are required, and only when
+   * there was a complete chain to apply them onto.
+   */
+  readonly postchainAdministrative: { readonly ran: boolean; readonly allApplied: boolean }
   readonly refusals: readonly { readonly id: string; readonly refused: boolean }[]
   readonly injections: readonly {
     readonly id: string
@@ -66,6 +82,7 @@ export type CertificationPredicateId =
   | 'PRECHAIN_CLEAN'
   | 'PRECHAIN_AUTHORITY_GATE_PASSED'
   | 'CHAIN_COMPLETE'
+  | 'POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED'
   | 'STORAGE_HELPER_FUNCTIONAL_PROBE'
   | 'ALL_REQUIRED_REFUSALS_REFUSED'
   | 'ALL_FAILURE_INJECTIONS_FAILED_AND_ROLLED_BACK'
@@ -89,6 +106,11 @@ const VERDICT_WHEN_FAILED: Readonly<Record<CertificationPredicateId, string>> = 
   PRECHAIN_CLEAN: 'PRECHAIN_INVALID',
   PRECHAIN_AUTHORITY_GATE_PASSED: 'PRECHAIN_AUTHORITY_GATE_FAILED',
   CHAIN_COMPLETE: 'CHAIN_INCOMPLETE_INJECTIONS_RUN',
+  // A NEW string, for the same reason STORAGE_HELPER_FUNCTIONAL_PROBE has one:
+  // a chain that installed and an administrative unit that refused after it are
+  // different outcomes, and reporting the second as CHAIN_INCOMPLETE would send
+  // the next reader to look at the chain, which is fine.
+  POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED: 'POSTCHAIN_ADMINISTRATIVE_UNIT_FAILED',
   // A NEW string, deliberately: a chain that installed and a surface that
   // denies everyone are different outcomes, and collapsing the second into
   // CHAIN_INCOMPLETE would say the installation failed when it did not — which
@@ -120,6 +142,111 @@ function refusalsHold(evidence: CertificationEvidence): CertificationPredicate {
       `required: ${REQUIRED_REFUSAL_IDS.join(', ')}` +
       (missing.length > 0 ? `; NOT ATTEMPTED: ${missing.join(', ')}` : '') +
       (notRefused.length > 0 ? `; RESOLVED INSTEAD OF REFUSING: ${notRefused.join(', ')}` : ''),
+  }
+}
+
+/**
+ * The token every harness in this repository reads as "this gate did not hold".
+ *
+ * Exported so that the value `administrativeUnitVerdicts()` PRODUCES and the
+ * value `scripts/remediation-certify.ts` FILTERS ON are the same constant
+ * rather than two spellings that agree today. A gate that emits `'FAILED'`
+ * into a filter looking for `'FAIL'` is silent, passes, and looks correct in
+ * review — which is the shape of the defect this whole delta is fixing.
+ */
+export const HARNESS_FAIL = 'FAIL'
+
+/** PASS, FAIL, or "the chain did not get far enough for this to mean anything". */
+export type AdministrativeUnitVerdict = 'PASS' | typeof HARNESS_FAIL | 'SKIPPED_CHAIN_INCOMPLETE'
+
+/** One window's outcome: was the whole declared set attempted, and did it apply. */
+export interface AdministrativeWindowOutcome {
+  readonly ran: boolean
+  readonly allApplied: boolean
+}
+
+export interface AdministrativeUnitEvidence {
+  readonly chainComplete: boolean
+  readonly prechain: AdministrativeWindowOutcome
+  readonly postchain: AdministrativeWindowOutcome
+}
+
+export interface AdministrativeUnitVerdicts {
+  readonly PRECHAIN_ADMINISTRATIVE_UNITS: AdministrativeUnitVerdict
+  readonly POSTCHAIN_ADMINISTRATIVE_UNITS: AdministrativeUnitVerdict
+}
+
+/**
+ * The two administrative windows, as verdict tokens the remediation harness
+ * already knows how to fail on.
+ *
+ * A PURE FUNCTION for the same reason `certificationVerdict` is one: the defect
+ * being closed is that these facts were MEASURED and then not read, and a rule
+ * living inline in a 1400-line script is a rule nobody can test in three
+ * milliseconds. `scripts/remediation-certify.ts` calls this in two places — its
+ * `--only=chain` early return and its full verdict record — so those two cannot
+ * drift into judging the same two facts differently.
+ *
+ * ASYMMETRY, and it is deliberate: PRECHAIN is unconditional because it runs
+ * BEFORE the chain, so a failure there is a failure whatever the chain then
+ * does. POSTCHAIN is conditional because it runs after, so on an incomplete
+ * chain there was nothing to apply it onto — and that is reported as SKIPPED,
+ * never as PASS. The incomplete chain is failed by the chain's own verdict.
+ */
+export function administrativeUnitVerdicts(
+  evidence: AdministrativeUnitEvidence,
+): AdministrativeUnitVerdicts {
+  const holds = (w: AdministrativeWindowOutcome): boolean => w.ran && w.allApplied
+  return {
+    PRECHAIN_ADMINISTRATIVE_UNITS: holds(evidence.prechain) ? 'PASS' : HARNESS_FAIL,
+    POSTCHAIN_ADMINISTRATIVE_UNITS: !evidence.chainComplete
+      ? 'SKIPPED_CHAIN_INCOMPLETE'
+      : holds(evidence.postchain)
+        ? 'PASS'
+        : HARNESS_FAIL,
+  }
+}
+
+/**
+ * The POSTCHAIN administrative units all applied — when there was a chain to
+ * apply them onto.
+ *
+ * EXPORTED, and that is not incidental. `scripts/pg176-certify.ts` has an
+ * early return for `--only=chain` that produces its own verdict string, and
+ * that return sits AFTER the postchain apply: a run under that flag mutates the
+ * primary and then reports on it. Rather than write a second rule there — which
+ * is how one gate becomes two that disagree — the early return calls THIS
+ * function and reports the same predicate under the same name.
+ *
+ * `chainComplete` is a parameter rather than a captured value because the
+ * conditional is the whole contract: an incomplete chain must not be turned
+ * into a postchain failure (CHAIN_COMPLETE already fails, and it is ordered
+ * first), and must not be turned into a postchain PASS either. It is NOT
+ * APPLICABLE, and the detail says so instead of pretending a measurement
+ * happened.
+ */
+export function postchainAdministrativeHolds(
+  evidence: Pick<CertificationEvidence, 'chainComplete' | 'postchainAdministrative'>,
+): CertificationPredicate {
+  const { ran, allApplied } = evidence.postchainAdministrative
+  if (!evidence.chainComplete) {
+    return {
+      id: 'POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED',
+      holds: true,
+      detail:
+        'NOT APPLICABLE: the chain did not complete, so there was no certified shape to apply a ' +
+        'postchain unit onto. CHAIN_COMPLETE is the predicate that fails here, and it is ordered ' +
+        'before this one so the verdict names the real blocker.',
+    }
+  }
+  return {
+    id: 'POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED',
+    holds: ran && allApplied,
+    detail: ran
+      ? allApplied
+        ? 'every postchain administrative unit applied cleanly after the chain'
+        : 'a postchain administrative unit did NOT apply — see postchainAdministrative.units'
+      : 'the chain completed but the postchain administrative units were NEVER RUN, so nothing was measured',
   }
 }
 
@@ -166,6 +293,11 @@ export function certificationPredicates(
       holds: evidence.chainComplete,
       detail: 'every declared package applied and measured INSTALLED',
     },
+    // Ordered immediately AFTER CHAIN_COMPLETE, and before the functional
+    // probe: the postchain units are the last thing applied to the shape the
+    // probe then drives, so a reader following the list reads the run in the
+    // order it happened.
+    postchainAdministrativeHolds(evidence),
     {
       id: 'STORAGE_HELPER_FUNCTIONAL_PROBE',
       // `ran && passed`, never `passed` alone. A probe that did not run reports

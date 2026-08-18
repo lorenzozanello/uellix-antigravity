@@ -41,7 +41,7 @@ Este runbook usaba **una sola** variable, `$UELLIX_STAGING_URL`, para todo. Hay
 |---|---|---|
 | Variable | `$UELLIX_STAGING_ADMIN_URL` | `$UELLIX_STAGING_INSTALLER_URL` |
 | Principal | `postgres` | `uellix_migrator` |
-| Aplica | PHASE_BASELINE (§1 de `STELLA_APPLY_IDENTITY_PROBE`), `stella_hosted_0001`, `stella_hosted_0002`, y las **tres unidades administrativas prechain** `stella_hosted_0003` → `0004` → `0005` (ver §0.0.3) | **T1–T11 gobernados, y sólo ellos** |
+| Aplica | PHASE_BASELINE (§1 de `STELLA_APPLY_IDENTITY_PROBE`), `stella_hosted_0001`, `stella_hosted_0002`, y **todas las unidades administrativas** de `ADMINISTRATIVE_UNITS`: ventana `prechain` — `0003` → `0004` → `0005` → `0006` → `0007` aplicadas, `stella_hosted_0008` pendiente — y ventana `postchain` — `stella_0020`, pendiente, **sólo con la cadena 11/11** (ver §0.0.3) | **T1–T11 gobernados, y sólo ellos** |
 | Modo | directo o session pooler | **directo, obligatorio** — ver 0.0.2 |
 | Por qué | `uellix_migrator` **no existe** hasta que `stella_hosted_0001` lo crea; antes de eso `postgres` es el único login administrativo | los nueve paquetes emiten `GRANT <cap> TO uellix_migrator WITH INHERIT FALSE, SET TRUE;` seguido de `SET ROLE <cap>;` |
 
@@ -131,23 +131,125 @@ Si `\password` es rechazado sobre el proyecto gestionado, **para**. Eso sería u
 hecho nuevo sobre los privilegios de `postgres` en Supabase gestionado y hay que
 medirlo y registrarlo, no rodearlo.
 
-### 0.0.3 Las tres unidades administrativas prechain (M-2)
+### 0.0.3 Las unidades administrativas gobernadas
 
 **Corrección de 2026-08-15.** La tabla de §0.0 decía «`stella_hosted_0001`,
 `stella_hosted_0002`» y «T1–T9». Ambas cosas son falsas hoy: la cadena tiene
-**once** eslabones, y la conexión administrativa aplica además **tres** unidades
-prechain que la cadena no puede aplicarse a sí misma.
+**once** eslabones, y la conexión administrativa aplica además unidades que la
+cadena no puede aplicarse a sí misma.
 
-Van **con la conexión ADMIN** (`postgres`), **en este orden**, después de
-`0001`/`0002` y **antes de T1**:
+**Corrección de 2026-08-17 (G1-B).** Esta sección decía «**tres**» y listaba
+`0003` → `0004` → `0005`. Son **siete**. `0006` y `0007` se añadieron con RT-01
+y RT-02 y ya están aplicadas; `stella_hosted_0008` y `stella_0020` son de G1-B y
+**siguen pendientes**.
+
+#### El vocabulario, porque las dos palabras no son la misma
+
+| Concepto | Qué es | Dónde vive |
+|---|---|---|
+| **Familia / canal** | *administrative unit*: archivo SQL gobernado, pinado por SHA-256, aplicado por la **sesión administrativa** y nunca por el instalador de la cadena; prerequisito, sin testigo de cadena | `ADMINISTRATIVE_UNITS` |
+| **Ventana** | `applyWindow`: **`prechain`** (antes del primer statement gobernado) o **`postchain`** (con la cadena ya completa) | campo `applyWindow` de cada unidad |
+
+**El registro autoritativo es `ADMINISTRATIVE_UNITS`** en
+`db/hosted/prechain-ownership.ts` — las siete, en orden de aplicación, pinadas
+por SHA-256. `PRECHAIN_ADMINISTRATIVE_UNITS` y
+`POSTCHAIN_ADMINISTRATIVE_UNITS` son **particiones derivadas** de esa lista por
+`applyWindow`, no fuentes: están definidas como `.filter(...)` sobre ella
+precisamente para que una unidad no pueda estar en una y faltar en la otra.
+Ambas certificaciones recorren las dos particiones, cada una en su ventana.
+Esta tabla es la lectura para el operador, no una segunda fuente.
+
+Todas van **con la conexión ADMIN** (`postgres`), cada una con
+`-1 -v ON_ERROR_STOP=1`, **una transacción por archivo**. Lo que cambia entre
+ellas es la ventana, no el canal.
+
+#### Ya aplicadas — historial, no volver a correrlas
+
+Todas ellas están **INSTALADAS** en `bvyzblhqymxruxdguaee`; se listan para que
+el orden y la autoría queden legibles, no como trabajo pendiente.
 
 ```
 stella_hosted_0003_storage_helper_ownership.sql     ALTER FUNCTION … OWNER TO uellix_owner (×2)
 stella_hosted_0004_storage_schema_usage.sql         GRANT USAGE ON SCHEMA storage TO uellix_owner
 stella_hosted_0005_storage_helper_table_read.sql    GRANT SELECT ON public.organization_members TO uellix_owner
+stella_hosted_0006_runtime_rls_helper_contract.sql  RT-01: cuerpos endurecidos + EXECUTE al writer/auditor
+stella_hosted_0007_runtime_table_acl_contract.sql   RT-02: el contrato de privilegios de TABLA del runtime
 ```
 
-Cada una con `-1 -v ON_ERROR_STOP=1`, una transacción por archivo.
+Las **cinco** son forward-only y ninguna trae `_rollback.sql`.
+
+#### Pendientes — G1-B. Mismo canal, VENTANAS DISTINTAS
+
+**No comparten ventana**, y el orden de esta lista no es una secuencia continua:
+entre las dos va, conceptualmente, la cadena entera.
+
+| Archivo | Familia | `applyWindow` | Qué hace |
+|---|---|---|---|
+| `stella_hosted_0008_audit_log_write_capability.sql` | administrative unit | **`prechain`** | la policy de INSERT de `public.audit_logs` |
+| `stella_0020_stella_interactions_model_default.sql` | administrative unit | **`postchain`** | `DROP DEFAULT` en `stella_interactions.model_used` |
+
+> **`stella_0020` va DESPUÉS de la cadena, no antes de T1.** Medido por
+> `pnpm certify:pg176`: aplicado antes de T1 sobre un proyecto recién
+> aprovisionado, **aborta** —
+> `unexpected INSERT grant on public.stella_interactions held by [authenticated,
+> service_role]` — y hace bien. Esos dos tienen `INSERT` porque Supabase
+> gestionado lo concede por *default privilege* al crear la tabla en el
+> baseline, y quien lo retira es `stella_0017` §302/§308, que es **T8, un
+> eslabón de cadena**. La prueba de default-muerto de su §0.4 sólo es
+> satisfacible con la cadena aplicada.
+>
+> Está registrado como dato, no como comentario: `applyWindow: 'postchain'` en
+> `db/hosted/prechain-ownership.ts`, que es lo que leen las dos certificaciones.
+> **Sobre `bvyzblhqymxruxdguaee` la cadena está 11/11 INSTALLED**, así que la
+> condición ya se cumple y los dos paquetes pueden aplicarse seguidos.
+
+Las **dos** traen `_rollback.sql`, y son las primeras unidades administrativas
+que lo hacen: lo que hacen se revierte **exacta y revisablemente** (una policy,
+un default), a diferencia de las cinco anteriores, donde «restaurar el estado
+anterior» y «reabrir la caída» son la misma frase. Ambos rollbacks están
+**pinados por SHA-256** en la misma entrada del registro (`rollbackSha256`) —
+ver **§6b** antes de considerar ejecutar ninguno.
+
+> **`stella_0020` no lleva prefijo `stella_hosted_` y sigue siendo una unidad
+> administrativa gobernada — con ventana `postchain`.** El prefijo describe de
+> dónde salió el archivo, no por dónde ni cuándo se aplica. Su
+> cuerpo no necesita ninguna reescritura para Supabase gestionado —ni grant
+> sobre el esquema `auth`, ni precondición de superusuario, ni creación de
+> roles— así que **el propio archivo es el artefacto**. Y **no** puede ir al
+> manifiesto hosted: `HOSTED_CHAIN` **es** ese manifiesto, de modo que una
+> entrada allí lo convertiría en eslabón gobernado (número `Tn`, ventana de
+> autoridad, testigo, `.governed.sql`, y `uellix_migrator` como única identidad
+> aplicadora) y movería `A1_EXPECTED_PACKAGE_COUNT`, reclasificando como
+> incompleta una instalación ya certificada en 11/11.
+
+##### Identidad de estas dos: el dueño se MIDE, no se nombra
+
+Ambas leen `pg_class.relowner` de su relación y admiten **exactamente dos**
+resultados, rechazando cualquier otro con el dueño medido en el mensaje:
+
+| Clasificación | Cuándo | Qué hace |
+|---|---|---|
+| `SESSION_IS_OWNER` | la sesión administrativa **ya es** el dueño | emite el DDL directamente, **sin** `SET ROLE` |
+| `OWNER_ASSUMABLE` | el dueño es `uellix_owner` y la sesión puede asumirlo | abre `SET LOCAL ROLE uellix_owner`, emite, y **cierra** |
+| cualquier otro | — | **REHÚSA**, nombrando el dueño medido |
+
+Sobre `bvyzblhqymxruxdguaee` hoy: `public.audit_logs` es de `postgres`
+⇒ `0008` toma `SESSION_IS_OWNER`; `public.stella_interactions` es de
+`uellix_owner` ⇒ `0020` toma `OWNER_ASSUMABLE`. Las dos afirman
+`current_user = session_user` al terminar, **en ambas ramas**, y comparan dueño
+y ACL contra los que midieron antes del DDL.
+
+**Medido, no afirmado:** `bash scripts/audit-capability-identity-dry-run.sh`
+recorre las dos ramas de los dos paquetes, el rechazo fail-closed de una sesión
+sin capacidad sobre el dueño, la idempotencia, el rechazo de una segunda policy
+de escritura y los dos rollbacks, sobre PostgreSQL 17.6 desechable y
+`--network none`.
+
+> **Por qué esta sección existe con este detalle.** La primera revisión de
+> `stella_hosted_0008` exigía `current_user = 'uellix_owner'` porque ésa es la
+> postura **local**. En hosted `public.audit_logs` es de `postgres`, así que el
+> paquete era inaplicable por los dos lados y nada lo habría dicho antes de la
+> ventana operativa.
 
 **No hace falta memorizar el orden: lo imponen los propios paquetes.** `0004`
 §0.4 se niega si ningún helper SECURITY DEFINER es ya de `uellix_owner`; `0005`
@@ -164,16 +266,20 @@ archivos). Lo único vinculante es que estén **antes de T1**. Las certificacion
 canónicas escriben el sentinel primero y aplican el trío después; hacerlo al
 revés produce el mismo estado final.
 
-**Ninguna de las tres es miembro de `HOSTED_CHAIN`**, ninguna toma testigo de
-cadena y ninguna cuenta para `CHAIN_INSTALLED`. Son prerequisitos, y las aplica
-un principal que no es el instalador de la cadena — que es precisamente por lo
-que existen.
+**Ninguna unidad administrativa es miembro de `HOSTED_CHAIN`** —de ninguna de
+las dos ventanas—, ninguna toma testigo de cadena y ninguna cuenta para
+`CHAIN_INSTALLED`. Son prerequisitos, y las
+aplica un principal que no es el instalador de la cadena — que es precisamente
+por lo que existen.
 
-**Las tres son forward-only y ninguna trae `_rollback.sql`.** Las razones están
-tipadas en `db/hosted/forward-only-packages.ts`; la común es que lo que quitan es
-el motivo por el que la superficie no funciona, así que «restaurar el estado
-anterior» y «devolver Storage a negar a todo el mundo sin decirlo» son la misma
-frase.
+**Las cinco aplicadas son forward-only y ninguna trae `_rollback.sql`.** Las
+razones están tipadas en `db/hosted/forward-only-packages.ts`; la común es que lo
+que quitan es el motivo por el que la superficie no funciona, así que «restaurar
+el estado anterior» y «devolver Storage a negar a todo el mundo sin decirlo» son
+la misma frase. Las **dos pendientes de G1-B sí traen rollback**: «unidad
+administrativa» y «forward-only» dejaron de ser el mismo conjunto, y el tipo del
+registro lo refleja — `rollbackFile` + `rollbackSha256` frente a
+`forwardOnlyNoRollbackReason`, exactamente uno de los dos lados no nulo.
 
 **Por qué `0005` existe, medido.** Con `0003` y `0004` aplicados y `0005`
 ausente, T11 se instala limpiamente **y todas las subidas siguen negándose**:
@@ -383,6 +489,62 @@ autoriza T1.
 Si falla: **para**. No repares automáticamente. Un gate que falla sobre una
 remediación `INSTALLED` significa que el proyecto se reconcilió y después derivó,
 o que se reconcilió contra otro contrato.
+
+---
+
+## 6b. ANTES de cualquier rollback de una unidad administrativa
+
+Sólo dos unidades tienen rollback: `stella_hosted_0008` y `stella_0020`. Las
+cinco aplicadas son forward-only y no tienen a dónde volver — para ellas esta
+sección no aplica y no hay atajo que la sustituya.
+
+**Un rollback se ejecuta cuando algo ya ha ido mal**, que es exactamente el
+momento en que menos se verifica. Por eso los bytes del rollback están
+gobernados (`rollbackSha256`) desde G1-B, y por eso el orden de abajo es
+obligatorio y no una recomendación.
+
+1. **Identificar la unidad administrativa.** Por `id` en
+   `ADMINISTRATIVE_UNITS` (`db/hosted/prechain-ownership.ts`), no por el nombre
+   del archivo que alguien recuerde.
+2. **Comprobar que declara rollback.** `rollbackFile != null`. Si es `null`, la
+   unidad es forward-only: **no hay rollback, y no se improvisa uno**.
+3. **Recalcular el SHA-256 LF-normalizado del archivo**, desde disco.
+4. **Compararlo con `rollbackSha256`** de esa misma entrada. Si no coincide,
+   **PARA**: el archivo no es el revisado, y un rollback no revisado ejecutado
+   sobre un incidente es cómo un incidente se convierte en dos.
+5. **Sólo después**, considerar la ejecución — con checkpoint humano, por la
+   conexión administrativa, `-1 -v ON_ERROR_STOP=1`, una transacción.
+
+```powershell
+$Psql = 'C:\Program Files\PostgreSQL\17\bin\psql.exe'
+
+# 3 + 4: el digest de los bytes en disco, LF-normalizado
+$Path = 'db/prepared/stella_hosted_0008_rollback.sql'
+$Lf   = [IO.File]::ReadAllText($Path) -replace "`r`n", "`n" -replace "`r", "`n"
+$Sha  = [BitConverter]::ToString(
+  [Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($Lf))
+).Replace('-', '').ToLower()
+$Sha    # comparar a ojo contra rollbackSha256 de la entrada del registro
+```
+
+> **NADA de esto se automatiza, y el paso 5 no tiene comando aquí a propósito.**
+> Un rollback disparado por un script es un rollback que nadie decidió. La
+> ejecución la escribe el operador, después de leer el estado real.
+
+> ⚠️ **El rollback de `stella_0008` NO es la reacción por defecto a un fallo de
+> G1-B.** Quitar la policy devuelve `public.audit_logs` a *SAFE y FUNCIONALMENTE
+> MUERTA* y hace que G1-B sea **imposible de pasar** (§4.5 del runbook de G1-B:
+> interaction sin fila de auditoría = FAIL). Ejecutarlo es decidir **parar la
+> certificación**, no recuperarse dentro de ella.
+
+> ⚠️ **El rollback de `stella_0020` NO se recomienda por defecto.** Restaura un
+> default de modelo **retirado** (404 en el proveedor). Es correcto como
+> rollback —restaura lo que había— y por eso mismo nunca debe leerse como una
+> recomendación de configuración.
+
+Con `-1 -v ON_ERROR_STOP=1` un fallo **no deja estado parcial**: la transacción
+revierte entera. Un rollback ejecutado «por si acaso» tras un apply que ya
+abortó revierte algo que nunca se aplicó.
 
 ---
 

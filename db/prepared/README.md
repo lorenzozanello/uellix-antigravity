@@ -1469,6 +1469,48 @@ prechain y la última prerequisito de los helpers de Storage.
 |---|---|---|---|---|
 | `stella_hosted_0008_audit_log_write_capability.sql` | `stella_hosted_0008_rollback.sql` | **ninguno todavía** | **Ni un GRANT.** Crea **una** policy: `audit_logs_insert_member_or_admin ON public.audit_logs FOR INSERT TO uellix_app`, con el `WITH CHECK` de `stella_0005c` **carácter por carácter** | **DISEÑO — no aplicado** |
 
+> **Canal:** unidad administrativa **prechain**, registrada y pinada por
+> SHA-256 en `db/hosted/prechain-ownership.ts`
+> (`PRECHAIN_AUDIT_LOG_WRITE_CAPABILITY`). **No** es eslabón de `HOSTED_CHAIN`.
+> Se aplica por la conexión **administrativa** (`$UELLIX_STAGING_ADMIN_URL`),
+> una transacción, `-1 -v ON_ERROR_STOP=1`. Procedimiento de operador:
+> `docs/ops/staging/STELLA_PRECHAIN_OPERATOR_RUNBOOK.md` §0.0.3.
+
+> ### ⚠️ Corrección de identidad (G1-B)
+>
+> La **primera** revisión de este paquete exigía `current_user = 'uellix_owner'`
+> y llamaba a ese rol «el dueño de las policies de `public.audit_logs`». Eso es
+> cierto **en local** —`stella_0004` transfiere todo `public` a `uellix_owner`—
+> y **falso en hosted**: la misma observación de catálogo que el paquete cita
+> dice `{ "relation": "public.audit_logs", "owner": "postgres" }`, porque
+> `stella_hosted_0001` §399 transfiere **una sola** relación y
+> `stella_hosted_0007` verifica que ningún dueño se movió.
+>
+> El paquete era por tanto **INAPLICABLE por los dos lados**: como
+> `uellix_owner` el DDL de policy da `42501 must be owner of relation
+> audit_logs`; como la identidad que **sí** es dueña, abortaba su propia
+> precondición.
+>
+> **Qué lo sustituye:** la forma que `stella_hosted_0007` ya probó —
+> *sesión administrativa → dueño MEDIDO (`pg_class.relowner`, nunca un literal)
+> → DDL de policy bajo la identidad que PostgreSQL exige → identidad
+> administrativa restaurada y comprobada*. Dos resultados admitidos
+> (`SESSION_IS_OWNER`, `OWNER_ASSUMABLE`) y **rechazo fail-closed** de cualquier
+> otro, nombrando el dueño medido. **No transfiere propiedad**: mover
+> `public.audit_logs` a `uellix_owner` arreglaría la aplicabilidad cambiando la
+> topología de propiedad que `stella_hosted_0007` acaba de certificar.
+>
+> **Segunda pared, encontrada por el dry-run:** `CREATE POLICY` analiza su
+> `WITH CHECK` al crearse y éste nombra `auth.uid()`. En Supabase gestionado el
+> esquema `auth` lo posee `supabase_admin` y su ACL admite a `postgres`, **no** a
+> los roles `uellix_*`. La §0.7 lo comprueba **por adelantado**, nombrando el
+> privilegio que falta, en vez de morir dentro del DDL.
+>
+> **Medido, no afirmado:** `scripts/audit-capability-identity-dry-run.sh`
+> recorre ambas ramas, el caso fail-closed, la idempotencia, el rechazo de una
+> segunda policy de escritura y los dos rollbacks, sobre PostgreSQL 17.6
+> desechable (`--network none`).
+
 > **El hallazgo, medido.** En el proyecto hosted de staging `public.audit_logs`
 > tiene RLS **habilitada** y **exactamente una** policy —
 > `audit_logs_select_member_or_admin`, de `SELECT` — según
@@ -1522,6 +1564,41 @@ prechain y la última prerequisito de los helpers de Storage.
 | Script | Rollback | Aplicado | Qué hace | Estado |
 |---|---|---|---|---|
 | `stella_0020_stella_interactions_model_default.sql` | `stella_0020_rollback.sql` | **ninguno todavía** | Una sola sentencia: `ALTER TABLE public.stella_interactions ALTER COLUMN model_used DROP DEFAULT`. La columna **sigue** `NOT NULL` | **DISEÑO — no aplicado** |
+
+> ### ⚠️ Corrección de canal (G1-B)
+>
+> La cabecera decía que la variante hosted «se genera y autoriza por el canal
+> normal (`pnpm hosted:generate` / el runbook de operador)». **Era falso y era
+> load-bearing:** el paquete no está en `db/hosted/hosted-package-manifest.ts`,
+> así que `hosted:generate` no producía artefacto y `hosted:verify` no lo
+> cubría. Un operador siguiendo esa frase no habría encontrado artefacto y
+> habría aplicado el canon directamente — un apply **no gobernado**, que es la
+> clase del incidente T1.
+>
+> **Y ese manifiesto no es el sitio.** `HOSTED_CHAIN` **es** el manifiesto
+> (`HOSTED_CHAIN = HOSTED_PACKAGE_MANIFEST.map(e => e.name)`) y
+> `WITNESSED_PACKAGES` es esa lista menos el bootstrap: una entrada allí es un
+> **eslabón gobernado de cadena** —número `Tn` en
+> `db/hosted/authority/window-plan.ts`, ventana de autoridad, testigo,
+> `.governed.sql`, y `uellix_migrator` como única identidad aplicadora— y
+> además movería `A1_EXPECTED_PACKAGE_COUNT`, que es `HOSTED_CHAIN.length - 1`,
+> reclasificando como incompleta una instalación ya certificada y registrada en
+> 11/11.
+>
+> **Canal correcto:** unidad administrativa **prechain**, registrada y pinada
+> por SHA-256 en `db/hosted/prechain-ownership.ts`
+> (`PRECHAIN_LEDGER_MODEL_DEFAULT`), aplicada por la conexión **administrativa**
+> en hosted o por `pnpm db:prepared:apply:local` en local. **El propio archivo
+> es el artefacto**: no hay nada que derivar — ni grant sobre el esquema `auth`,
+> ni precondición de superusuario, ni creación de roles.
+>
+> **Identidad:** el mismo contrato de dueño **medido** que
+> `stella_hosted_0008`, con las mismas dos ramas admitidas y el mismo rechazo
+> fail-closed. En local `scripts/db-migrate-local.ts` ya abre
+> `SET ROLE uellix_owner`, así que clasifica `SESSION_IS_OWNER`; en hosted la
+> tabla es de `uellix_owner` y la sesión administrativa la asume, así que
+> clasifica `OWNER_ASSUMABLE`. Ambas ramas están **medidas** en
+> `scripts/audit-capability-identity-dry-run.sh`.
 
 > **El hallazgo.** `db/migrations/0012_stella_interactions.sql` creó
 > `model_used varchar(100) DEFAULT 'gemini-2.0-flash' NOT NULL`.

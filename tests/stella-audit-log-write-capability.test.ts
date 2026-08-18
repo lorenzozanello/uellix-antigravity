@@ -78,6 +78,24 @@ function normalize(sql: string): string {
   return sql.replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * Comments AND single-quoted literals stripped — EXECUTABLE SQL only.
+ *
+ * The sibling hosted suites already do this, and G1-B is the revision that made
+ * it necessary here: the package's refusal messages deliberately NAME the
+ * statements it must not issue ("It issues no ALTER TABLE ... OWNER TO", "the
+ * identity that would issue the policy DDL cannot resolve auth.uid()"). A
+ * scanner that could not tell an error string from a statement would fail on
+ * the sentence that PROVES the property it is checking — and the way to pass it
+ * would be to delete the explanation.
+ *
+ * Shape assertions run on this. Assertions ABOUT the prose run on
+ * statementsOnly, where the prose still exists.
+ */
+function codeOnly(sql: string): string {
+  return statementsOnly(sql).replace(/'(?:[^']|'')*'/g, "''")
+}
+
 describe('stella_hosted_0008 closes the hosted audit_logs INSERT gap', () => {
   it('the forward package and its rollback both exist', () => {
     expect(existsSync(FORWARD)).toBe(true)
@@ -130,7 +148,7 @@ describe('stella_hosted_0008 closes the hosted audit_logs INSERT gap', () => {
   })
 
   it('touches nothing but that one policy', () => {
-    const sql = forward()
+    const sql = codeOnly(readFileSync(FORWARD, 'utf8'))
     expect(sql).not.toMatch(/\bDROP\s+TABLE\b/i)
     expect(sql).not.toMatch(/\bALTER\s+TABLE\b(?![\s\S]{0,80}ENABLE ROW LEVEL SECURITY)/i)
     expect(sql).not.toMatch(/\bDISABLE\s+ROW\s+LEVEL\s+SECURITY\b/i)
@@ -142,22 +160,198 @@ describe('stella_hosted_0008 closes the hosted audit_logs INSERT gap', () => {
     expect(sql.match(/CREATE POLICY/gi) ?? []).toHaveLength(1)
   })
 
-  it('refuses to run as the wrong identity', () => {
-    expect(forward()).toMatch(/current_user\s*<>\s*'uellix_owner'/)
-  })
-
   it('asserts the end state instead of assuming it', () => {
     const sql = forward()
     expect(sql).toMatch(/pg_policies|pg_policy/i)
     expect(sql).toMatch(/RAISE EXCEPTION/)
   })
 
-  it('the rollback drops exactly that policy and nothing else', () => {
+  it('the rollback removes exactly that policy and nothing else', () => {
     const sql = statementsOnly(readFileSync(ROLLBACK, 'utf8'))
     expect(sql).toMatch(/DROP POLICY IF EXISTS audit_logs_insert_member_or_admin ON public\.audit_logs/i)
     expect(sql.match(/DROP POLICY/gi) ?? []).toHaveLength(1)
     expect(sql).not.toMatch(/CREATE POLICY/i)
     expect(sql).not.toMatch(/\bGRANT\b/i)
+  })
+})
+
+/**
+ * THE IDENTITY CONTRACT, and the finding that produced it.
+ *
+ * The first revision demanded `current_user = 'uellix_owner'` and called that
+ * role the owner of the policies on public.audit_logs. MEASURED, in
+ * artifacts/hosted-chain-posture-observation-postcred.json — the file the
+ * package itself quotes — the hosted owner is `postgres`:
+ * stella_hosted_0001 §399 transfers exactly ONE relation to uellix_owner and
+ * stella_hosted_0007 verifies that none moved afterwards.
+ *
+ * So the package was UNAPPLIABLE from both sides. As uellix_owner the policy DDL
+ * raises 42501 `must be owner of relation audit_logs`; as the identity that IS
+ * the owner the precondition aborted. Every `it` below is a shape that would let
+ * that class of defect back in.
+ *
+ * The behavioural half is not linted, it is MEASURED:
+ * scripts/audit-capability-identity-dry-run.sh drives both branches, the
+ * fail-closed third case and both rollbacks on a disposable PostgreSQL 17.6.
+ */
+describe('stella_hosted_0008 measures the owner instead of naming one', () => {
+  const forward = () => statementsOnly(readFileSync(FORWARD, 'utf8'))
+  const rollback = () => statementsOnly(readFileSync(ROLLBACK, 'utf8'))
+
+  it.each([
+    ['forward', () => forward()],
+    ['rollback', () => rollback()],
+  ])('%s: does not gate on a hardcoded owner name', (_label, read) => {
+    const sql = read()
+    // The exact predicate that made the package unappliable, and every near
+    // neighbour of it. A gate written over a role LITERAL is the defect; a gate
+    // written over the measured owner is the fix.
+    expect(sql).not.toMatch(/current_user\s*<>\s*'uellix_owner'/)
+    expect(sql).not.toMatch(/current_user\s*<>\s*'postgres'/)
+    expect(sql).not.toMatch(/session_user\s*<>\s*'uellix_owner'/)
+  })
+
+  it.each([
+    ['forward', () => forward()],
+    ['rollback', () => rollback()],
+  ])('%s: reads the owner out of pg_class.relowner', (_label, read) => {
+    const sql = read()
+    expect(sql).toMatch(/pg_get_userbyid\(c\.relowner\)/)
+    expect(sql).toMatch(/'public\.audit_logs'::regclass/)
+    // and COMPARES it against the session rather than against a literal
+    expect(sql).toMatch(/v_owner\s*=\s*current_user/)
+  })
+
+  it('proceeds with NO role switch when the session already owns the table', () => {
+    const sql = forward()
+    // The hosted posture today. A package that issued `SET ROLE` here would
+    // teach the next reader that the window is unconditional, which is the one
+    // thing the OWNER_ASSUMABLE branch must not be confused with.
+    expect(sql).toMatch(/SESSION_IS_OWNER/)
+    expect(sql).toMatch(/set_config\('uellix\.h0008_assume_owner',\s*'no',\s*true\)/)
+    expect(sql).toMatch(/IF v_decision = 'yes' THEN\s*\n\s*SET LOCAL ROLE uellix_owner;/)
+  })
+
+  it('switches role ONLY to an owner the session can actually assume', () => {
+    const sql = forward()
+    // The anti-seizure guard. Written over pg_has_role, and admitting EITHER
+    // USAGE or SET, because on managed Supabase the membership is granted
+    // WITH INHERIT FALSE, SET TRUE — so USAGE alone would refuse the one
+    // session for which the operation is genuinely available.
+    expect(sql).toMatch(/pg_has_role\(current_user, 'uellix_owner', 'USAGE'\)/)
+    expect(sql).toMatch(/pg_has_role\(current_user, 'uellix_owner', 'SET'\)/)
+    expect(sql).toMatch(/OWNER_ASSUMABLE/)
+  })
+
+  it.each([
+    ['forward', () => forward()],
+    ['rollback', () => rollback()],
+  ])('%s: fails closed when it can neither be nor assume the owner', (_label, read) => {
+    const sql = read()
+    expect(sql).toMatch(/is neither that role nor able to assume it/)
+    // The refusal NAMES the owner it measured, so the operator learns the fact
+    // rather than being told to try again.
+    expect(sql).toMatch(/RAISE EXCEPTION[\s\S]{0,600}?v_owner, current_user/)
+  })
+
+  it('refuses in advance when the issuing identity cannot resolve auth.uid()', () => {
+    // The second wall, found by the dry-run: CREATE POLICY analyses its WITH
+    // CHECK at creation time, and on managed Supabase schema `auth` is owned by
+    // supabase_admin and admits postgres but not the uellix_* roles. Without
+    // this the OWNER_ASSUMABLE branch dies inside the DDL with `permission
+    // denied for schema auth`, hundreds of lines after every identity check
+    // passed.
+    const sql = forward()
+    expect(sql).toMatch(/has_schema_privilege\(v_issuer, 'auth', 'USAGE'\)/)
+    expect(sql).toMatch(/has_function_privilege\(v_issuer, 'auth\.uid\(\)', 'EXECUTE'\)/)
+    expect(sql).toMatch(/cannot resolve auth\.uid\(\)/)
+  })
+
+  it.each([
+    ['forward', () => forward()],
+    ['rollback', () => rollback()],
+  ])('%s: gives the session back, and asserts it did', (_label, read) => {
+    const sql = read()
+    expect(sql).toMatch(/RESET ROLE;/)
+    // Asserted on BOTH branches, not only on the one that could fail: a check
+    // that ran only where it can fail is not a guarantee anyone can read.
+    expect(sql).toMatch(/IF current_user <> session_user THEN/)
+  })
+
+  it.each([
+    ['forward', () => forward()],
+    ['rollback', () => rollback()],
+  ])('%s: never transfers ownership, and proves the owner did not move', (_label, read) => {
+    const sql = read()
+    const code = codeOnly(read())
+    // The fix this package explicitly did NOT take. Moving public.audit_logs to
+    // uellix_owner would make the package appliable by changing the hosted
+    // ownership topology stella_hosted_0007 was just certified against.
+    expect(code).not.toMatch(/OWNER\s+TO/i)
+    expect(sql).toMatch(/v_owner_now <> v_owner_pre/)
+  })
+
+  it('proves it granted nothing, by comparing the ACL rather than by claiming it', () => {
+    const sql = forward()
+    expect(sql).toMatch(/set_config\('uellix\.h0008_acl_pre'/)
+    expect(sql).toMatch(/v_acl_now IS DISTINCT FROM v_acl_pre/)
+    expect(sql).not.toMatch(/^\s*GRANT\b/im)
+    expect(sql).not.toMatch(/^\s*REVOKE\b/im)
+  })
+
+  it('keeps RLS enabled, and checks that too', () => {
+    const sql = forward()
+    expect(sql).toMatch(/v_rls_now IS DISTINCT FROM true/)
+    expect(sql).not.toMatch(/DISABLE\s+ROW\s+LEVEL\s+SECURITY/i)
+  })
+
+  it('reads an unset identity decision as a refusal, never as "no switch needed"', () => {
+    // A ROLLBACK TO SAVEPOINT between the two blocks leaves the setting as the
+    // empty string rather than as NULL — which is why NULLIF is not decoration.
+    for (const sql of [forward(), rollback()]) {
+      expect(sql).toMatch(/NULLIF\(current_setting\('uellix\.h0008r?_assume_owner', true\), ''\)/)
+      expect(sql).toMatch(/IF v_decision IS NULL THEN/)
+    }
+  })
+
+  it('composes no identifier from a variable — the decision is measured, the role is a literal', () => {
+    // The reason the fallback role is spelled statically: dynamic DDL is
+    // refused across every prepared script, and stella_hosted_0007 §0.5b
+    // resolved the same tension the same way.
+    for (const file of [FORWARD, ROLLBACK]) {
+      const code = codeOnly(readFileSync(file, 'utf8'))
+      expect(code).not.toMatch(/\bformat\s*\(/i)
+      expect(code).not.toMatch(/\bEXECUTE\b(?!\s*(?:FUNCTION\b|PROCEDURE\b|ON\b|''))/i)
+    }
+  })
+})
+
+describe('the measured dry-run that drives both identity branches exists', () => {
+  const HARNESS = path.join(ROOT, 'scripts', 'audit-capability-identity-dry-run.sh')
+
+  it('is checked in, and drives both packages', () => {
+    expect(existsSync(HARNESS)).toBe(true)
+    const sh = readFileSync(HARNESS, 'utf8')
+    expect(sh).toContain('stella_hosted_0008_audit_log_write_capability.sql')
+    expect(sh).toContain('stella_hosted_0008_rollback.sql')
+    expect(sh).toContain('stella_0020_stella_interactions_model_default.sql')
+    expect(sh).toContain('stella_0020_rollback.sql')
+  })
+
+  it('exercises both branches and the fail-closed third case', () => {
+    const sh = readFileSync(HARNESS, 'utf8')
+    expect(sh).toContain('SESSION_IS_OWNER')
+    expect(sh).toContain('OWNER_ASSUMABLE')
+    expect(sh).toContain('FAIL-CLOSED')
+  })
+
+  it('touches nothing persistent — no stack, no network, no volume', () => {
+    const sh = readFileSync(HARNESS, 'utf8')
+    expect(sh).toContain('--network none')
+    expect(sh).toMatch(/docker rm -f/)
+    expect(sh).not.toMatch(/supabase (start|db)/)
+    // No hosted target can be reached from it, by construction.
+    expect(sh).not.toContain('supabase.co')
   })
 })
 

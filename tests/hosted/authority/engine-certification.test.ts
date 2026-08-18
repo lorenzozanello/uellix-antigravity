@@ -44,8 +44,11 @@ import {
   refusalExercises,
 } from '@/db/hosted/authority/certification/refusal-exercises'
 import {
+  administrativeUnitVerdicts,
   certificationPredicates,
   certificationVerdict,
+  HARNESS_FAIL,
+  postchainAdministrativeHolds,
   type CertificationEvidence,
 } from '@/db/hosted/authority/certification/certification-verdict'
 import {
@@ -478,6 +481,7 @@ describe('COMPLETE is a conjunction, and the refusals are in it', () => {
     prechainAuthorityGatePassed: true,
     chainComplete: true,
     storageFunctionalProbe: { ran: true, passed: true, detail: '10/10 cases matched' },
+    postchainAdministrative: { ran: true, allApplied: true },
     refusals: REQUIRED_REFUSAL_IDS.map((id) => ({ id, refused: true })),
     injections: [{ id: 'F1', failed: true, rolledBack: true }],
   }
@@ -650,5 +654,182 @@ describe('two certifications can run at once without deleting each other', () =>
     expect(() =>
       assertRunNamespaceAbsent({ nested: [{ note: `started ${a}-primary` }] }, a),
     ).toThrow(/CERT_RUN_NAMESPACE_LEAKED/)
+  })
+})
+
+/**
+ * G1-B / F-1 — the POSTCHAIN window has to be able to fail the run.
+ *
+ * THE DEFECT, exactly. `scripts/pg176-certify.ts` applied the postchain
+ * administrative units, recorded `allApplied: false` when one refused, and then
+ * computed a verdict that never looked at the field. A run where stella_0020
+ * aborted and everything else held reported COMPLETE and exited 0 — the same
+ * shape as the UNKNOWN_PACKAGE defect this module exists to close, one window
+ * later.
+ *
+ * These are BEHAVIOURAL, over the pure functions, with no Docker: each case
+ * constructs the evidence a run would produce and asserts the verdict it must
+ * yield. A test that only checked the script for a substring would pass on a
+ * script that computed the value and threw it away — which is what the script
+ * did.
+ */
+describe('the postchain administrative window participates in COMPLETE', () => {
+  const passing: CertificationEvidence = {
+    provisioningComplete: true,
+    prechainClean: true,
+    prechainAuthorityGatePassed: true,
+    chainComplete: true,
+    storageFunctionalProbe: { ran: true, passed: true, detail: '10/10 cases matched' },
+    postchainAdministrative: { ran: true, allApplied: true },
+    refusals: REQUIRED_REFUSAL_IDS.map((id) => ({ id, refused: true })),
+    injections: [{ id: 'F1', failed: true, rolledBack: true }],
+  }
+
+  it('1. chain complete + postchain ran + all applied -> COMPLETE is reachable', () => {
+    expect(certificationVerdict(passing)).toBe('COMPLETE')
+    const p = certificationPredicates(passing).find(
+      (x) => x.id === 'POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED',
+    )
+    expect(p, 'the predicate must be in the conjunction at all').toBeDefined()
+    expect(p!.holds).toBe(true)
+  })
+
+  it('2. chain complete + postchain ran + a unit FAILED -> NEVER COMPLETE', () => {
+    // The exact run the defect produced: stella_0020 aborts, everything else
+    // holds, and the old code emitted COMPLETE with exit 0.
+    const failed: CertificationEvidence = {
+      ...passing,
+      postchainAdministrative: { ran: true, allApplied: false },
+    }
+    expect(certificationVerdict(failed)).not.toBe('COMPLETE')
+    expect(certificationVerdict(failed)).toBe('POSTCHAIN_ADMINISTRATIVE_UNIT_FAILED')
+  })
+
+  it('3. chain complete + postchain NEVER RAN -> NEVER COMPLETE', () => {
+    // `allApplied` is vacuously true over an empty set, so a future edit that
+    // stopped invoking the loop would pass on `allApplied` alone. It must not.
+    const skipped: CertificationEvidence = {
+      ...passing,
+      postchainAdministrative: { ran: false, allApplied: true },
+    }
+    expect(certificationVerdict(skipped)).toBe('POSTCHAIN_ADMINISTRATIVE_UNIT_FAILED')
+  })
+
+  it('4. chain INCOMPLETE -> fails on the chain, and postchain is not falsely required', () => {
+    const noChain: CertificationEvidence = {
+      ...passing,
+      chainComplete: false,
+      postchainAdministrative: { ran: false, allApplied: false },
+    }
+    // The verdict names the REAL blocker...
+    expect(certificationVerdict(noChain)).toBe('CHAIN_INCOMPLETE_INJECTIONS_RUN')
+    // ...and the postchain predicate is NOT APPLICABLE rather than a failure or
+    // an invented pass.
+    const p = certificationPredicates(noChain).find(
+      (x) => x.id === 'POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED',
+    )!
+    expect(p.holds).toBe(true)
+    expect(p.detail).toContain('NOT APPLICABLE')
+  })
+
+  it('is ordered after CHAIN_COMPLETE, so the first failure names the real blocker', () => {
+    const ids = certificationPredicates(passing).map((p) => p.id)
+    expect(ids.indexOf('POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED')).toBeGreaterThan(
+      ids.indexOf('CHAIN_COMPLETE'),
+    )
+  })
+
+  it('7. a postchain success changes no other verdict', () => {
+    // Adding a gate must not change what a previously-passing run reports, and
+    // must not rescue a run already failing for another reason.
+    expect(certificationVerdict(passing)).toBe('COMPLETE')
+    const storageDenied: CertificationEvidence = {
+      ...passing,
+      storageFunctionalProbe: { ran: true, passed: false, detail: '9 mismatch(es)' },
+    }
+    expect(certificationVerdict(storageDenied)).toBe('STORAGE_HELPER_FUNCTIONAL_PROBE_FAILED')
+    const refusalResolved: CertificationEvidence = {
+      ...passing,
+      refusals: REQUIRED_REFUSAL_IDS.map((id, i) => ({ id, refused: i !== 0 })),
+    }
+    expect(certificationVerdict(refusalResolved)).toBe('REQUIRED_REFUSAL_NOT_REFUSED')
+  })
+
+  it('the --only=chain early return can reuse the same predicate', () => {
+    // The function that early return calls. Exported precisely so the path is
+    // not a second rule: same inputs, same holds and same detail.
+    const shared = postchainAdministrativeHolds({
+      chainComplete: true,
+      postchainAdministrative: { ran: true, allApplied: false },
+    })
+    const inConjunction = certificationPredicates({
+      ...passing,
+      postchainAdministrative: { ran: true, allApplied: false },
+    }).find((p) => p.id === 'POSTCHAIN_ADMINISTRATIVE_UNITS_APPLIED')!
+    expect(shared).toEqual(inConjunction)
+  })
+})
+
+/**
+ * G1-B / F-1C — the same two windows, for the REMEDIATION harness.
+ *
+ * That script measured both and gated on neither: its prechain loop breaks on
+ * the first failure, its postchain loop runs before an early return that
+ * reported on `installed` alone, and its verdict record named neither. The rule
+ * now lives in one pure function the script calls in both places.
+ */
+describe('administrativeUnitVerdicts feeds the remediation verdict record', () => {
+  const ok = { ran: true, allApplied: true }
+  const bad = { ran: true, allApplied: false }
+
+  it('5. a prechain FAILURE is a FAIL, whatever the chain did', () => {
+    // Unconditional, because the prechain window runs BEFORE the chain: a
+    // failure there is a failure regardless of what happens next.
+    for (const chainComplete of [true, false]) {
+      const v = administrativeUnitVerdicts({ chainComplete, prechain: bad, postchain: ok })
+      expect(v.PRECHAIN_ADMINISTRATIVE_UNITS, `chainComplete=${chainComplete}`).toBe(HARNESS_FAIL)
+    }
+  })
+
+  it('5b. a prechain window that never ran its full set is a FAIL, not a vacuous pass', () => {
+    const v = administrativeUnitVerdicts({
+      chainComplete: true,
+      prechain: { ran: false, allApplied: true },
+      postchain: ok,
+    })
+    expect(v.PRECHAIN_ADMINISTRATIVE_UNITS).toBe(HARNESS_FAIL)
+  })
+
+  it('6. a postchain FAILURE on a complete chain is a FAIL', () => {
+    const v = administrativeUnitVerdicts({ chainComplete: true, prechain: ok, postchain: bad })
+    expect(v.POSTCHAIN_ADMINISTRATIVE_UNITS).toBe(HARNESS_FAIL)
+  })
+
+  it('6b. an incomplete chain SKIPS the postchain window rather than passing or failing it', () => {
+    const v = administrativeUnitVerdicts({
+      chainComplete: false,
+      prechain: ok,
+      postchain: { ran: false, allApplied: false },
+    })
+    expect(v.POSTCHAIN_ADMINISTRATIVE_UNITS).toBe('SKIPPED_CHAIN_INCOMPLETE')
+    // SKIPPED is not the failure token: an incomplete chain is failed by the
+    // chain's own verdict, which is already in that record.
+    expect(v.POSTCHAIN_ADMINISTRATIVE_UNITS).not.toBe(HARNESS_FAIL)
+  })
+
+  it('a fully clean run yields PASS on both windows', () => {
+    const v = administrativeUnitVerdicts({ chainComplete: true, prechain: ok, postchain: ok })
+    expect(v).toEqual({
+      PRECHAIN_ADMINISTRATIVE_UNITS: 'PASS',
+      POSTCHAIN_ADMINISTRATIVE_UNITS: 'PASS',
+    })
+  })
+
+  it('emits the SAME failure token the remediation filter matches on', () => {
+    // By identity, not by transcription. A gate emitting 'FAILED' into a filter
+    // looking for 'FAIL' would be silent and would look right in review.
+    const v = administrativeUnitVerdicts({ chainComplete: true, prechain: bad, postchain: bad })
+    expect(v.PRECHAIN_ADMINISTRATIVE_UNITS).toBe(HARNESS_FAIL)
+    expect(v.POSTCHAIN_ADMINISTRATIVE_UNITS).toBe(HARNESS_FAIL)
   })
 })
