@@ -12,8 +12,8 @@
 // the request lifecycle, the loading state and the human decision. It cannot
 // read `stellaConfig` (server-only) and it cannot construct a runner (that
 // would put `db/**` and `node:crypto` in the browser bundle). This wrapper is
-// the server half: it reads the flag, binds the project, and hands the client
-// exactly one prop it could not have made itself.
+// the server half: it asks the capability table, binds the project, and hands
+// the client exactly one prop it could not have made itself.
 //
 // `runStellaGroundedQueryForProject.bind(null, projectId)` is the whole trick,
 // and it is worth being precise about what it does and does not do. Next.js
@@ -36,7 +36,7 @@
 // Nothing renders this yet, on purpose. See the note below.
 
 import { StellaGroundedQueryPanel } from '@/components/stella'
-import { stellaConfig, stellaState } from '@/lib/stella/config'
+import { isStellaCapabilityReady } from '@/lib/stella/capability-readiness'
 import {
   issueStellaGroundedQueryTicketForProject,
   runStellaGroundedQueryForProject,
@@ -54,11 +54,39 @@ export interface StellaGroundedQuerySectionProps {
 }
 
 /**
- * Mirrors the server action's own flag gate, exactly as the seven pipeline
- * pages already mirror the advisor and reviewer gates. The mirror is not the
- * enforcement — `runStellaGroundedQuery` checks the flag FIRST, before auth
- * and before any database work — it only stops the panel from rendering an
- * input the server would refuse.
+ * Mirrors the server action's own readiness gate — and mirrors it by CALLING
+ * that gate, not by restating it.
+ *
+ * WHAT THIS USED TO READ, AND WHY IT WAS WRONG
+ *
+ *   stellaConfig.isEnabled && stellaConfig.isGroundedQueryEnabled
+ *     && stellaState.canUseStella
+ *
+ * — the shape the seven pipeline pages use for the advisor and reviewer
+ * gates. The third term is `GEMINI_API_KEY` presence, and `grounded_query`
+ * does not call Gemini. Both server entry points
+ * (`runStellaGroundedQuery`, `issueStellaGroundedQueryTicket`) gate on
+ * `isStellaCapabilityReady('grounded_query')`, which deliberately omits the
+ * provider requirement because this path answers through
+ * `createExtractiveAnswerProvider` — local, offline, and incapable of
+ * opening a socket. A deployment with both flags on and no key therefore had
+ * a READY server sitting behind an inert panel, and the panel is the only way
+ * a human reaches the action.
+ *
+ * The fix is NOT to drop the key term here. That would state the provider
+ * rule in a second place and leave the two free to drift apart again — the
+ * exact failure lib/stella/capability-readiness.ts was written to prevent. It
+ * is to ask the one table the actions ask.
+ *
+ * Nothing is loosened by that. `STELLA_ENABLED` and
+ * `STELLA_GROUNDED_QUERY_ENABLED` are still both required: they are the first
+ * two checks inside `stellaCapabilityBlocker`, in that order, and the
+ * capabilities that DO reach `StellaGeminiAdapter` still keep their key
+ * requirement in the same table (`GEMINI_BACKED_STELLA_CAPABILITIES`).
+ *
+ * The mirror is still not the enforcement — `runStellaGroundedQuery` checks
+ * the capability FIRST, before auth and before any database work — it only
+ * stops the panel from rendering an input the server would refuse.
  */
 export function StellaGroundedQuerySection({
   projectId,
@@ -66,8 +94,7 @@ export function StellaGroundedQuerySection({
   title,
   onNavigateCitation,
 }: StellaGroundedQuerySectionProps) {
-  const enabled =
-    stellaConfig.isEnabled && stellaConfig.isGroundedQueryEnabled && stellaState.canUseStella
+  const enabled = isStellaCapabilityReady('grounded_query')
 
   const runQuery = runStellaGroundedQueryForProject.bind(null, projectId)
 
