@@ -119,6 +119,52 @@ export interface NarrativeReferenceAuthority {
   proxyIds: readonly string[]
 }
 
+/**
+ * Report prose has a deliberately finite numeric grammar. These types keep
+ * money, percentage points, and SROI ratios from authorizing one another.
+ */
+export interface ReportMoneyAuthority {
+  kind: 'money'
+  currency: 'USD'
+  value: string
+}
+
+export interface ReportPercentAuthority {
+  kind: 'percent'
+  percentagePoints: string
+}
+
+export interface ReportSroiRatioAuthority {
+  kind: 'sroi_ratio'
+  numerator: string
+  denominator: '1'
+}
+
+export interface ReportNumericAuthority {
+  money: readonly ReportMoneyAuthority[]
+  percentages: readonly ReportPercentAuthority[]
+  sroiRatios: readonly ReportSroiRatioAuthority[]
+}
+
+export interface ReportNarrativeAuthorityInput {
+  title: string
+  content: string
+  numericAuthority: ReportNumericAuthority
+  referenceAuthority: NarrativeReferenceAuthority
+}
+
+export interface ReportNarrativeAuthorityResult {
+  ok: boolean
+  numeric: NumericGuardResult
+  references: ReferenceGuardResult
+}
+
+export interface ReportNumericAuthoritySource {
+  money?: readonly unknown[]
+  percentages?: readonly unknown[]
+  sroiRatios?: readonly unknown[]
+}
+
 /** Structural subset of StellaProjectContext the reference check needs. */
 export interface ComposerReferenceContext {
   evidenceMetadata?: readonly { id: string }[]
@@ -358,16 +404,49 @@ export function validateComposerNumbers(
   return { ok: violations.length === 0, violations }
 }
 
+const UUID_TOKEN_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi
 const NARRATIVE_REFERENCE_LABEL_RE =
-  /\b(evidence|evidencia|proxy)\s*(?:id|identificador)?\s*[:=#]\s*([A-Za-z0-9][A-Za-z0-9_-]*)\b/gi
-const NARRATIVE_REFERENCE_PREFIX_RE = /\b(ev|px)-([A-Za-z0-9][A-Za-z0-9_-]*)\b/gi
+  /\b(evidence|evidencia|proxy)\s+id\s*:\s*([^\s,.;)\]]+)/gi
+const LEGACY_NARRATIVE_REFERENCE_RE = /\b(?:ev|px)-[A-Za-z0-9][A-Za-z0-9_-]*\b/gi
+
+function isUuid(value: string): boolean {
+  UUID_TOKEN_RE.lastIndex = 0
+  return UUID_TOKEN_RE.test(value) && value.length === 36
+}
+
+function canonicalAuthorityDecimal(value: unknown): string | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null
+  if (typeof value === 'string' && value.trim() === '') return null
+  const decimal = toDecimal(value)
+  return decimal?.toFixed() ?? null
+}
 
 /**
- * Validates only the explicit citation forms Uellix actually exposes in its
- * Composer output/context: `ev-…` / `px-…`, or a labelled
- * `Evidence|Evidencia|Proxy ID: …`. This is intentionally not a generic
- * language parser: prose that merely mentions evidence or a proxy is not a
- * citation and is left to human review.
+ * Constructs typed report authority from already server-derived persisted
+ * values. Invalid, absent, and null values deliberately contribute nothing.
+ */
+export function buildReportNumericAuthority(
+  source: ReportNumericAuthoritySource,
+): ReportNumericAuthority {
+  const money = (source.money ?? []).flatMap((value) => {
+    const canonical = canonicalAuthorityDecimal(value)
+    return canonical === null ? [] : [{ kind: 'money' as const, currency: 'USD' as const, value: canonical }]
+  })
+  const percentages = (source.percentages ?? []).flatMap((value) => {
+    const canonical = canonicalAuthorityDecimal(value)
+    return canonical === null ? [] : [{ kind: 'percent' as const, percentagePoints: canonical }]
+  })
+  const sroiRatios = (source.sroiRatios ?? []).flatMap((value) => {
+    const canonical = canonicalAuthorityDecimal(value)
+    return canonical === null ? [] : [{ kind: 'sroi_ratio' as const, numerator: canonical, denominator: '1' as const }]
+  })
+  return { money, percentages, sroiRatios }
+}
+
+/**
+ * A report citation is either a UUID anywhere in prose or an exact typed
+ * label. Bare UUIDs use the evidence/proxy union; typed labels retain type.
+ * Legacy ev-/px- forms are explicit unsupported citations and fail closed.
  */
 export function validateNarrativeReferences(
   fields: readonly { field: string; text: string }[],
@@ -375,30 +454,164 @@ export function validateNarrativeReferences(
 ): ReferenceGuardResult {
   const evidenceIds = new Set(authority.evidenceIds)
   const proxyIds = new Set(authority.proxyIds)
+  const allowedIds = new Set([...authority.evidenceIds, ...authority.proxyIds])
   const violations: ReferenceViolation[] = []
   const seen = new Set<string>()
 
-  const validate = (id: string, type: 'evidence' | 'proxy', field: string) => {
-    const key = `${field}:${type}:${id}`
+  const reject = (id: string, field: string) => {
+    const key = `${field}:${id}`
     if (seen.has(key)) return
     seen.add(key)
-    if (!(type === 'evidence' ? evidenceIds : proxyIds).has(id)) {
-      violations.push({ id, field })
-    }
+    violations.push({ id, field })
   }
 
   for (const { field, text } of fields) {
+    const labelledTypes = new Map<string, 'evidence' | 'proxy'>()
+    NARRATIVE_REFERENCE_LABEL_RE.lastIndex = 0
     for (const match of text.matchAll(NARRATIVE_REFERENCE_LABEL_RE)) {
+      const id = match[2]
       const type = /^(evidence|evidencia)$/i.test(match[1]) ? 'evidence' : 'proxy'
-      validate(match[2], type, field)
+      if (!isUuid(id)) {
+        reject(id, field)
+        continue
+      }
+      labelledTypes.set(id.toLowerCase(), type)
+      if (!(type === 'evidence' ? evidenceIds : proxyIds).has(id)) reject(id, field)
     }
-    for (const match of text.matchAll(NARRATIVE_REFERENCE_PREFIX_RE)) {
-      const type = match[1].toLowerCase() === 'ev' ? 'evidence' : 'proxy'
-      validate(match[0], type, field)
+
+    LEGACY_NARRATIVE_REFERENCE_RE.lastIndex = 0
+    for (const match of text.matchAll(LEGACY_NARRATIVE_REFERENCE_RE)) reject(match[0], field)
+
+    UUID_TOKEN_RE.lastIndex = 0
+    for (const match of text.matchAll(UUID_TOKEN_RE)) {
+      const id = match[0]
+      const typed = labelledTypes.get(id.toLowerCase())
+      if (typed) {
+        if (!(typed === 'evidence' ? evidenceIds : proxyIds).has(id)) reject(id, field)
+      } else if (!allowedIds.has(id)) {
+        reject(id, field)
+      }
     }
   }
 
   return { ok: violations.length === 0, violations }
+}
+
+const REPORT_MAGNITUDE_RE = /^(?:0|[1-9]\d{0,2}(?:,\d{3})*)(?:\.\d{1,2})?$/
+const REPORT_MONEY_RE = /^(?:-?\$[\d,.]+|USD -?[\d,.]+|-?[\d,.]+ USD)$/
+const REPORT_PERCENT_RE = /^(-?[\d,.]+)\s*%$/
+const REPORT_SROI_RE = /^(-?[\d,.]+):1$/
+const REPORT_NUMERICISH_RE = /\bUSD[ \t]*-?\d[\d,]*(?:\.\d+)?|[<>][ \t]*-?\d[\d,]*(?:\.\d+)?|\([ \t]*-?\d[\d,]*(?:\.\d+)?[ \t]*\)|-?\d[\d,]*(?:\.\d+)?[ \t]*[–-][ \t]*-?\d[\d,]*(?:\.\d+)?|-?\$?\d[\d,]*(?:\.\d+)?(?:[eE][+-]?\d+)?(?:[ \t]*(?:USD|%|:\s*1)|[ \t]+(?:beneficiaries?|beneficiarios?))?/g
+const ISO_DATE_RE = /\b\d{4}-\d{2}-\d{2}\b/g
+const TECHNICAL_ID_RE = /\b(?:v\d+(?:\.\d+)*|SDG\d+)\b/gi
+const MARKDOWN_ORDINAL_RE = /^(?:\s{0,3}(?:#{1,6}\s+)?)(?:\d{1,2}(?:\.\d{1,2}){0,2}\.?)(?=\s+[A-Za-zÁÉÍÓÚÑÜ])/gm
+
+function maskMatches(text: string, re: RegExp): string {
+  const chars = text.split('')
+  re.lastIndex = 0
+  for (const match of text.matchAll(re)) {
+    const start = match.index ?? 0
+    for (let i = start; i < start + match[0].length; i++) chars[i] = ' '
+  }
+  return chars.join('')
+}
+
+function canonicalReportDecimal(value: string): Decimal | null {
+  if (!REPORT_MAGNITUDE_RE.test(value)) return null
+  const decimal = toDecimal(value.replaceAll(',', ''))
+  return decimal?.isFinite() ? decimal : null
+}
+
+function isNegativeZero(raw: string, value: Decimal): boolean {
+  return raw.startsWith('-') && value.isZero()
+}
+
+function reportValueAuthorized(
+  value: Decimal,
+  raw: string,
+  authorityValues: readonly string[],
+): boolean {
+  if (isNegativeZero(raw, value)) return false
+  return authorityValues.some((authorized) => {
+    const authorityDecimal = toDecimal(authorized)
+    return authorityDecimal !== null && value.eq(authorityDecimal.toDecimalPlaces(2, Decimal.ROUND_HALF_UP))
+  })
+}
+
+function validateCanonicalReportNumber(token: string, authority: ReportNumericAuthority): boolean {
+  if (REPORT_MONEY_RE.test(token)) {
+    const raw = token.startsWith('$') || token.startsWith('-$')
+      ? token.replace('$', '')
+      : token.startsWith('USD ')
+        ? token.slice(4)
+        : token.slice(0, -4)
+    const value = canonicalReportDecimal(raw.replace(/^-/, ''))
+    if (!value) return false
+    const signed = raw.startsWith('-') ? value.negated() : value
+    return reportValueAuthorized(signed, raw, authority.money.map((entry) => entry.value))
+  }
+
+  const percent = REPORT_PERCENT_RE.exec(token)
+  if (percent) {
+    const raw = percent[1]
+    const value = canonicalReportDecimal(raw.replace(/^-/, ''))
+    if (!value) return false
+    const signed = raw.startsWith('-') ? value.negated() : value
+    return reportValueAuthorized(signed, raw, authority.percentages.map((entry) => entry.percentagePoints))
+  }
+
+  const ratio = REPORT_SROI_RE.exec(token)
+  if (ratio) {
+    const raw = ratio[1]
+    const value = canonicalReportDecimal(raw.replace(/^-/, ''))
+    if (!value) return false
+    const signed = raw.startsWith('-') ? value.negated() : value
+    return reportValueAuthorized(signed, raw, authority.sroiRatios.map((entry) => entry.numerator))
+  }
+
+  return false
+}
+
+function validateReportNumericText(
+  field: string,
+  text: string,
+  authority: ReportNumericAuthority,
+): NumericGuardResult {
+  // UUIDs are reference candidates and must be recognized before numeric
+  // scanning so their hyphenated components cannot become numeric claims.
+  let scanText = maskMatches(text, UUID_TOKEN_RE)
+  scanText = maskMatches(scanText, ISO_DATE_RE)
+  scanText = maskMatches(scanText, TECHNICAL_ID_RE)
+  scanText = maskMatches(scanText, MARKDOWN_ORDINAL_RE)
+
+  const violations: NumericViolation[] = []
+  REPORT_NUMERICISH_RE.lastIndex = 0
+  for (const match of scanText.matchAll(REPORT_NUMERICISH_RE)) {
+    const token = match[0]
+    if (!validateCanonicalReportNumber(token, authority)) {
+      violations.push({ token, field })
+    }
+  }
+  return { ok: violations.length === 0, violations }
+}
+
+/**
+ * The one strict report-boundary validator. Save and lock call this exact
+ * primitive with authority derived only from the report's pinned server run.
+ */
+export function validateReportNarrativeAuthority(
+  input: ReportNarrativeAuthorityInput,
+): ReportNarrativeAuthorityResult {
+  const fields = [
+    { field: 'report_section.title', text: input.title },
+    { field: 'report_section.content', text: input.content },
+  ]
+  const numericViolations = fields.flatMap(({ field, text }) =>
+    validateReportNumericText(field, text, input.numericAuthority).violations,
+  )
+  const numeric = { ok: numericViolations.length === 0, violations: numericViolations }
+  const references = validateNarrativeReferences(fields, input.referenceAuthority)
+  return { ok: numeric.ok && references.ok, numeric, references }
 }
 
 /**

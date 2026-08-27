@@ -17,6 +17,8 @@ import { StellaPayloadTooLargeError } from '@/lib/stella/security/payload-limits
 import {
   validateComposerNumbers,
   validateComposerReferences,
+  buildReportNumericAuthority,
+  validateReportNarrativeAuthority,
   authorizedNumbersFromSnapshot,
   type AuthorizedNumbers,
 } from '@/lib/stella/schemas/composer-numeric-guard'
@@ -197,6 +199,40 @@ export async function getStellaComposer(
         // `db.insert` happened to sit after it. Now it is structural: the
         // driver charges nothing on an `ok: false` execution.
         const referenceCheck = validateComposerReferences(data, context)
+        const reportAuthorityCheck = validateReportNarrativeAuthority({
+          title: data.draft_title,
+          content: data.draft_content,
+          numericAuthority: buildReportNumericAuthority({
+            money: context.calculationSnapshot
+              ? [
+                  context.calculationSnapshot.totalInvestment,
+                  context.calculationSnapshot.grossSocialValue,
+                  context.calculationSnapshot.netSocialValue,
+                  context.calculationSnapshot.unattributedNsvUsd,
+                  ...(context.calculationSnapshot.fundersBreakdown ?? []).flatMap((funder) => [
+                    funder.investmentUsd,
+                    funder.attributedNsvUsd,
+                  ]),
+                ]
+              : [],
+            percentages: context.filterSetsSummary.flatMap((filter) => [
+              filter.deadweightPct,
+              filter.attributionPct,
+              filter.displacementPct,
+              filter.dropoffPct,
+            ]),
+            sroiRatios: context.calculationSnapshot
+              ? [
+                  context.calculationSnapshot.sroiRatio,
+                  ...(context.calculationSnapshot.fundersBreakdown ?? []).map((funder) => funder.sroiRatio),
+                ]
+              : [],
+          }),
+          referenceAuthority: {
+            evidenceIds: context.evidenceMetadata.map((evidence) => evidence.id),
+            proxyIds: context.proxySummary.map((proxy) => proxy.id),
+          },
+        })
         const numberCheck = context.calculationSnapshot
           ? validateComposerNumbers(
               data,
@@ -219,10 +255,12 @@ export async function getStellaComposer(
           // in the draft fails closed instead of being waved through.
           : validateComposerNumbers(data, EMPTY_AUTHORIZED_NUMBERS)
 
-        if (!referenceCheck.ok || !numberCheck.ok) {
+        if (!referenceCheck.ok || !numberCheck.ok || !reportAuthorityCheck.ok) {
           console.error('[stella] Composer integrity guard rejected draft:', {
             referenceViolations: referenceCheck.violations,
             numericViolations: numberCheck.violations,
+            reportNumericViolations: reportAuthorityCheck.numeric.violations,
+            reportReferenceViolations: reportAuthorityCheck.references.violations,
           })
           // Audit trail: violation COUNTS only — never the violating text/figures.
           await logStellaAudit({
@@ -233,8 +271,8 @@ export async function getStellaComposer(
             action: AUDIT_ACTIONS.STELLA_INTEGRITY_REJECTED,
             afterJson: {
               stellaRole: COMPOSER_CATEGORY,
-              referenceViolationCount: referenceCheck.violations.length,
-              numericViolationCount: numberCheck.violations.length,
+              referenceViolationCount: referenceCheck.violations.length + reportAuthorityCheck.references.violations.length,
+              numericViolationCount: numberCheck.violations.length + reportAuthorityCheck.numeric.violations.length,
             },
           })
           return {

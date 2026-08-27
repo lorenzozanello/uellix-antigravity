@@ -169,7 +169,7 @@ import { getStellaComposer, issueStellaComposerTicket } from '../composer'
 const VALID_COMPOSER_OUTPUT: ComposerOutput = {
   section_key: 'executive_summary',
   draft_title: 'Resumen Ejecutivo',
-  draft_content: 'Este proyecto generó un retorno social de 3.6x la inversión...',
+  draft_content: 'Este proyecto generó un retorno social de 3.6:1 sobre la inversión...',
   assumptions: ['Se asume que los beneficiarios reportados completaron el programa'],
   limitations: ['Datos de seguimiento a 12 meses aún no disponibles'],
   evidence_references: [{ evidenceId: 'ev-1', title: 'Encuesta de seguimiento', context: 'Fuente de la tasa de empleo' }],

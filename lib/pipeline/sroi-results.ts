@@ -19,13 +19,11 @@ import {
 import { z } from 'zod';
 import { getVariantSectionTypes } from '@/lib/reports/report-variants';
 import {
-  validateComposerNumbers,
-  validateNarrativeReferences,
-  authorizedNumbersFromSnapshot,
-  type AuthorizedNumbers,
+  buildReportNumericAuthority,
+  validateReportNarrativeAuthority,
+  type ReportNumericAuthority,
   type NarrativeReferenceAuthority,
 } from '@/lib/stella/schemas/composer-numeric-guard';
-import type { ComposerOutput } from '@/lib/stella/schemas/composer-output';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -110,53 +108,44 @@ async function getPinnedReportRun(
     .then((rows) => rows[0] ?? null);
 }
 
-function getReportNumericAuthority(run: PinnedReportRun | null): AuthorizedNumbers | null {
-  if (!run) return null;
-  const snapshot = run.snapshotJson as Record<string, unknown> | null;
-  const fundersBreakdownRaw = snapshot?.fundersBreakdown as
-    | Array<{ investmentUsd: string; attributedNsvUsd: string; sroiRatio: string }>
-    | undefined;
-  const unattributedNsvUsdRaw = snapshot?.unattributedNsvUsd as string | undefined;
-  const assignmentsRaw = snapshot?.assignments as
-    | Array<{
-        filters?: {
-          deadweightPct?: number;
-          attributionPct?: number;
-          displacementPct?: number;
-          dropoffPct?: number;
-          durationYears?: number;
-        };
-      }>
-    | undefined;
+function getReportNumericAuthority(run: PinnedReportRun | null): ReportNumericAuthority {
+  if (!run) return buildReportNumericAuthority({});
+  const money: unknown[] = [run.totalInvestment, run.grossSocialValue, run.netSocialValue];
+  const percentages: unknown[] = [];
+  const sroiRatios: unknown[] = [run.sroiRatio];
+  const snapshot = run.snapshotJson;
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    return buildReportNumericAuthority({ money, percentages, sroiRatios });
+  }
+  const snapshotRecord = snapshot as Record<string, unknown>;
+  money.push(snapshotRecord.unattributedNsvUsd);
 
-  // Filter percentages/durations feed the composer's own authorized set (see
-  // build-composer-context.ts) — pull them from the SAME persisted snapshot
-  // rather than re-querying sroi_filter_sets, so save/lock validation reads
-  // the exact frozen numbers the run recorded, not whatever is live now.
-  const additional: (string | number)[] = [];
-  for (const assignment of assignmentsRaw ?? []) {
-    for (const value of Object.values(assignment.filters ?? {})) {
-      if (value !== undefined) additional.push(value);
+  const funders = snapshotRecord.fundersBreakdown;
+  if (Array.isArray(funders)) {
+    for (const funder of funders) {
+      if (!funder || typeof funder !== 'object' || Array.isArray(funder)) continue;
+      const row = funder as Record<string, unknown>;
+      money.push(row.investmentUsd, row.attributedNsvUsd);
+      sroiRatios.push(row.sroiRatio);
     }
   }
 
-  return authorizedNumbersFromSnapshot(
-    {
-      totalInvestment: Number(run.totalInvestment ?? 0),
-      grossSocialValue: Number(run.grossSocialValue ?? 0),
-      netSocialValue: Number(run.netSocialValue ?? 0),
-      sroiRatio: Number(run.sroiRatio ?? 0),
-      version: run.version ?? undefined,
-      unattributedNsvUsd:
-        unattributedNsvUsdRaw !== undefined ? Number(unattributedNsvUsdRaw) : undefined,
-      fundersBreakdown: fundersBreakdownRaw?.map((row) => ({
-        investmentUsd: Number(row.investmentUsd),
-        attributedNsvUsd: Number(row.attributedNsvUsd),
-        sroiRatio: Number(row.sroiRatio),
-      })),
-    },
-    additional,
-  );
+  const assignments = snapshotRecord.assignments;
+  if (Array.isArray(assignments)) {
+    for (const assignment of assignments) {
+      if (!assignment || typeof assignment !== 'object' || Array.isArray(assignment)) continue;
+      const filters = (assignment as Record<string, unknown>).filters;
+      if (!filters || typeof filters !== 'object' || Array.isArray(filters)) continue;
+      const filterRecord = filters as Record<string, unknown>;
+      percentages.push(
+        filterRecord.deadweightPct,
+        filterRecord.attributionPct,
+        filterRecord.displacementPct,
+        filterRecord.dropoffPct,
+      );
+    }
+  }
+  return buildReportNumericAuthority({ money, percentages, sroiRatios });
 }
 
 async function getReportNarrativeReferenceAuthority(
@@ -182,39 +171,6 @@ async function getReportNarrativeReferenceAuthority(
   };
 }
 
-// Reuses the composer's own pure numeric guard against arbitrary title/
-// content text — no AI call, no network, no re-derivation of the guard logic.
-function validateSectionNumericIntegrity(
-  title: string,
-  content: string,
-  authority: AuthorizedNumbers | null,
-): ReturnType<typeof validateComposerNumbers> {
-  const guardInput: ComposerOutput = {
-    section_key: 'report_section',
-    draft_title: title,
-    draft_content: content,
-    assumptions: [],
-    limitations: [],
-    evidence_references: [],
-    proxy_references: [],
-  };
-  return validateComposerNumbers(guardInput, authority, { mode: 'report-strict' });
-}
-
-function validateSectionReferenceIntegrity(
-  title: string,
-  content: string,
-  authority: NarrativeReferenceAuthority,
-) {
-  return validateNarrativeReferences(
-    [
-      { field: 'report_section.title', text: title },
-      { field: 'report_section.content', text: content },
-    ],
-    authority,
-  );
-}
-
 /**
  * Single deterministic report-boundary decision shared by save and lock. Its
  * inputs are already derived on the server from the pinned run and project;
@@ -223,13 +179,10 @@ function validateSectionReferenceIntegrity(
 function validateSectionNarrativeIntegrity(
   title: string,
   content: string,
-  numericAuthority: AuthorizedNumbers | null,
+  numericAuthority: ReportNumericAuthority,
   referenceAuthority: NarrativeReferenceAuthority,
 ) {
-  return {
-    numeric: validateSectionNumericIntegrity(title, content, numericAuthority),
-    references: validateSectionReferenceIntegrity(title, content, referenceAuthority),
-  };
+  return validateReportNarrativeAuthority({ title, content, numericAuthority, referenceAuthority });
 }
 
 // ---------------------------------------------------------------------------

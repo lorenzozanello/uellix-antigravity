@@ -5,8 +5,11 @@ import type { ComposerOutput } from './composer-output'
 import {
   validateComposerNumbers,
   validateComposerReferences,
+  validateNarrativeReferences,
+  validateReportNarrativeAuthority,
   authorizedNumbersFromSnapshot,
   type AuthorizedNumbers,
+  type ReportNumericAuthority,
 } from './composer-numeric-guard'
 
 // Authorized set mirroring a persisted run: investment 500000, gross 2000000,
@@ -406,5 +409,149 @@ describe('authorizedNumbersFromSnapshot', () => {
     )
     expect(res.violations).toEqual([])
     expect(res.ok).toBe(true)
+  })
+})
+
+// R3-CL1 — the report boundary is deliberately more restrictive than Composer
+// drafting. These cases are the red baseline for the finite product grammar.
+describe('R3-CL1 — report authority grammar', () => {
+  const REPORT_AUTHORITY: ReportNumericAuthority = {
+    money: [
+      { kind: 'money', currency: 'USD', value: '1800.5000' },
+      { kind: 'money', currency: 'USD', value: '-1800.5000' },
+      { kind: 'money', currency: 'USD', value: '17.0000' },
+    ],
+    percentages: [{ kind: 'percent', percentagePoints: '17.0000' }],
+    sroiRatios: [{ kind: 'sroi_ratio', numerator: '2.400000', denominator: '1' }],
+  }
+
+  const validate = (content: string) => validateReportNarrativeAuthority({
+    title: 'Resultados',
+    content,
+    numericAuthority: REPORT_AUTHORITY,
+    referenceAuthority: { evidenceIds: [], proxyIds: [] },
+  })
+
+  it.each([
+    '>17',
+    '<17',
+    '1-2',
+    '1–2',
+    '1,800',
+    '1.800',
+    '(1800)',
+    '1e3',
+    'USD1,800',
+    '1800',
+    '-1800',
+    '2026 beneficiaries',
+    '-0 USD',
+  ])('refuses unsupported report numeric syntax as a complete token: %s', (claim) => {
+    const result = validate(`Resultado: ${claim}.`)
+
+    expect(result.ok).toBe(false)
+    expect(result.numeric.violations[0]?.token).toBe(claim)
+  })
+
+  it('does not let a money authority authorize a percentage or a ratio', () => {
+    const moneyOnly: ReportNumericAuthority = {
+      money: [{ kind: 'money', currency: 'USD', value: '17.0000' }],
+      percentages: [],
+      sroiRatios: [],
+    }
+    const percent = validateReportNarrativeAuthority({
+      title: 'Resultados', content: 'La atribución fue 17%.', numericAuthority: moneyOnly,
+      referenceAuthority: { evidenceIds: [], proxyIds: [] },
+    })
+    const ratio = validateReportNarrativeAuthority({
+      title: 'Resultados', content: 'El SROI fue 17:1.', numericAuthority: moneyOnly,
+      referenceAuthority: { evidenceIds: [], proxyIds: [] },
+    })
+
+    expect(percent.ok).toBe(false)
+    expect(ratio.ok).toBe(false)
+  })
+
+  it('accepts only canonical same-kind money, percent, and SROI forms', () => {
+    const result = validate('La inversión fue USD 1,800.50; la atribución fue 17 % y el SROI fue 2.4:1.')
+
+    expect(result.ok).toBe(true)
+  })
+
+  it.each([
+    '-$1,800.50',
+    '$1,800.50',
+    'USD 1,800.50',
+    '-1,800.50 USD',
+    '1,800.50 USD',
+  ])('accepts the canonical money form %s only for money authority', (money) => {
+    const result = validate(`La cifra fue ${money}.`)
+
+    expect(result.ok).toBe(true)
+  })
+
+  it('preserves an explicitly authorized negative money sign', () => {
+    const result = validate('El valor social neto fue -$1,800.50.')
+
+    expect(result.ok).toBe(true)
+  })
+
+  it('permits only established structural nonclaims', () => {
+    const result = validateReportNarrativeAuthority({
+      title: '# 2.1 Metodología',
+      content: '1. Validación\nFecha: 2026-08-27. Versión v2.3 para SDG8.',
+      numericAuthority: { money: [], percentages: [], sroiRatios: [] },
+      referenceAuthority: { evidenceIds: [], proxyIds: [] },
+    })
+
+    expect(result.ok).toBe(true)
+  })
+})
+
+describe('R3-CL1 — UUID narrative references', () => {
+  const evidenceId = '11111111-1111-4111-8111-111111111111'
+  const proxyId = '22222222-2222-4222-8222-222222222222'
+  const foreignId = '33333333-3333-4333-8333-333333333333'
+  const authority = { evidenceIds: [evidenceId], proxyIds: [proxyId] }
+
+  it('accepts valid bare, quoted, Markdown-wrapped, and labelled UUID references', () => {
+    const result = validateNarrativeReferences([
+      { field: 'content', text: `"${evidenceId}", [${proxyId}](#ref), Evidence ID: ${evidenceId}; Proxy ID: ${proxyId}.` },
+    ], authority)
+
+    expect(result.ok).toBe(true)
+  })
+
+  it.each([
+    ['bare', foreignId],
+    ['Markdown', `[${foreignId}](#ref)`],
+  ])('refuses a foreign %s UUID anywhere in prose', (_kind, citation) => {
+    const result = validateNarrativeReferences([{ field: 'content', text: `Referencia: ${citation}.` }], authority)
+
+    expect(result.ok).toBe(false)
+    expect(result.violations).toEqual([{ id: foreignId, field: 'content' }])
+  })
+
+  it('enforces exact type labels and rejects legacy citation prefixes', () => {
+    const wrongType = validateNarrativeReferences(
+      [{ field: 'content', text: `Evidence ID: ${proxyId}.` }],
+      authority,
+    )
+    const legacy = validateNarrativeReferences(
+      [{ field: 'content', text: 'La fuente cita ev-legacy y px-legacy.' }],
+      authority,
+    )
+
+    expect(wrongType.ok).toBe(false)
+    expect(legacy.ok).toBe(false)
+  })
+
+  it('keeps keyword-only proxy prose out of citation validation', () => {
+    const result = validateNarrativeReferences(
+      [{ field: 'content', text: 'proxy: costo de oportunidad' }],
+      authority,
+    )
+
+    expect(result.ok).toBe(true)
   })
 })

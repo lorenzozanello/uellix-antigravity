@@ -42,6 +42,8 @@ Write the "${sectionType}" section of the SROI impact report. Use language that 
 
 - Cite evidence explicitly (by ID when available)
 - Reference proxies with sources
+- For report figures, use only USD money with comma grouping and up to two decimals (for example, "USD 1,800.50"), percentages like "17%", and SROI ratios like "2.4:1". Do not use bare numbers, locale variants, ranges, or scientific notation.
+- When citing an identifier in narrative prose, use Evidence ID: <UUID>, Evidencia ID: <UUID>, or Proxy ID: <UUID> exactly.
 - Acknowledge assumptions
 - State limitations clearly
 - Use conditional language ("may," "suggests," "if data is complete")

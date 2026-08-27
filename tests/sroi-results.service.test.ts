@@ -372,7 +372,7 @@ describe('report foundation', () => {
 
       const updated = await updateReportSection(PROJECT_ID, 'rep-num-1', 'sec-num-1', {
         title: 'Resultados',
-        content: 'El SROI de este proyecto es 1.8:1, con un valor social neto de 1800.',
+        content: 'El SROI de este proyecto es 1.8:1, con un valor social neto de $1,800.',
       });
       expect(updated.content).toContain('1.8');
     });
@@ -470,6 +470,10 @@ describe('report foundation', () => {
   // -------------------------------------------------------------------------
   describe('R2-CL1 — strict report narrative integrity', () => {
     const RUN_ID = 'run-r2-integrity';
+    const EVIDENCE_UUID = '44444444-4444-4444-8444-444444444444';
+    const FOREIGN_EVIDENCE_UUID = '55555555-5555-4555-8555-555555555555';
+    const PROXY_UUID = '66666666-6666-4666-8666-666666666666';
+    const FOREIGN_PROXY_UUID = '77777777-7777-4777-8777-777777777777';
 
     function seedPinnedRun(overrides: Record<string, unknown> = {}) {
       mockDb.sroiCalculationRuns.push({
@@ -511,7 +515,7 @@ describe('report foundation', () => {
       ['count', 'Se alcanzaron 17 beneficiarios.'],
       ['year-shaped count', 'Se alcanzaron 2026 beneficiarios.'],
       ['negative claim', 'El valor social neto fue -1800 USD.'],
-      ['currency claim', 'La inversión fue USD 1000.'],
+      ['currency claim', 'La inversión fue USD 1,000.'],
     ])('refuses a no-snapshot %s claim', async (_name, content) => {
       const { report, section } = seedDraft(`no-snapshot-${_name}`, 'missing-run');
 
@@ -560,13 +564,26 @@ describe('report foundation', () => {
       expect(updated.content).toContain('0 USD');
     });
 
+    it('does not manufacture typed zero authority from a null persisted total', async () => {
+      seedPinnedRun({ totalInvestment: null });
+      const { report, section } = seedDraft('null-total-zero');
+
+      await expect(
+        updateReportSection(PROJECT_ID, report.id, section.id, {
+          title: 'Resultados',
+          content: 'La inversión fue $0.',
+        })
+      ).rejects.toThrow('cifras que no coinciden');
+      expect(section.content).toBe('Narrativa sin cifras.');
+    });
+
     it('accepts authorized ratio and currency values from the pinned run', async () => {
       seedPinnedRun();
       const { report, section } = seedDraft('authorized-values');
 
       const updated = await updateReportSection(PROJECT_ID, report.id, section.id, {
         title: 'Resultados',
-        content: 'El SROI es 1.8:1 y la inversión es USD 1000.',
+        content: 'El SROI es 1.8:1 y la inversión es USD 1,000.',
       });
 
       expect(updated.content).toContain('1.8:1');
@@ -580,14 +597,14 @@ describe('report foundation', () => {
       await expect(
         updateReportSection(PROJECT_ID, accepted.report.id, accepted.section.id, {
           title: 'Resultados',
-          content: 'El valor social neto fue -1800 USD.',
+          content: 'El valor social neto fue -$1,800.',
         })
-      ).resolves.toMatchObject({ content: expect.stringContaining('-1800 USD') });
+      ).resolves.toMatchObject({ content: expect.stringContaining('-$1,800') });
 
       await expect(
         updateReportSection(PROJECT_ID, rejected.report.id, rejected.section.id, {
           title: 'Resultados',
-          content: 'El valor social neto fue 1800 USD.',
+          content: 'El valor social neto fue $1,800.',
         })
       ).rejects.toThrow('cifras que no coinciden');
     });
@@ -611,49 +628,85 @@ describe('report foundation', () => {
 
     it('accepts an explicit project evidence reference and refuses a foreign one at save', async () => {
       seedPinnedRun();
-      mockDb.evidenceItems.push({ id: 'ev-1', projectId: PROJECT_ID, organizationId: ORG_ID });
+      mockDb.evidenceItems.push({ id: EVIDENCE_UUID, projectId: PROJECT_ID, organizationId: ORG_ID });
       const accepted = seedDraft('evidence-accepted');
       const rejected = seedDraft('evidence-rejected');
 
       const updated = await updateReportSection(PROJECT_ID, accepted.report.id, accepted.section.id, {
         title: 'Evidencia',
-        content: 'Evidence ID: ev-1.',
+        content: `Evidence ID: ${EVIDENCE_UUID}.`,
       });
-      expect(updated.content).toContain('ev-1');
+      expect(updated.content).toContain(EVIDENCE_UUID);
 
       await expect(
         updateReportSection(PROJECT_ID, rejected.report.id, rejected.section.id, {
           title: 'Evidencia',
-          content: 'Evidence ID: ev-999.',
-          allowedReferenceIds: ['ev-999'],
+          content: `Evidence ID: ${FOREIGN_EVIDENCE_UUID}.`,
+          allowedReferenceIds: [FOREIGN_EVIDENCE_UUID],
         } as any)
       ).rejects.toThrow('referencias que no coinciden');
       expect(rejected.section.content).toBe('Narrativa sin cifras.');
     });
 
     it('accepts a pinned-run proxy reference and refuses an unsupported one at save', async () => {
-      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: 'px-1' }] } });
+      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: PROXY_UUID }] } });
       const accepted = seedDraft('proxy-accepted');
       const rejected = seedDraft('proxy-rejected');
 
       const updated = await updateReportSection(PROJECT_ID, accepted.report.id, accepted.section.id, {
         title: 'Proxy',
-        content: 'Proxy ID: px-1.',
+        content: `Proxy ID: ${PROXY_UUID}.`,
       });
-      expect(updated.content).toContain('px-1');
+      expect(updated.content).toContain(PROXY_UUID);
 
       await expect(
         updateReportSection(PROJECT_ID, rejected.report.id, rejected.section.id, {
           title: 'Proxy',
-          content: 'Proxy ID: px-999.',
+          content: `Proxy ID: ${FOREIGN_PROXY_UUID}.`,
         })
       ).rejects.toThrow('referencias que no coinciden');
       expect(rejected.section.content).toBe('Narrativa sin cifras.');
     });
 
+    it('refuses a foreign bare UUID and preserves ordinary proxy prose at the save boundary', async () => {
+      seedPinnedRun();
+      const foreign = seedDraft('foreign-bare');
+      const prose = seedDraft('ordinary-proxy-prose');
+
+      await expect(
+        updateReportSection(PROJECT_ID, foreign.report.id, foreign.section.id, {
+          title: 'Evidencia', content: `Referencia: ${FOREIGN_EVIDENCE_UUID}.`,
+        })
+      ).rejects.toThrow('referencias que no coinciden');
+      expect(foreign.section.content).toBe('Narrativa sin cifras.');
+
+      await expect(
+        updateReportSection(PROJECT_ID, prose.report.id, prose.section.id, {
+          title: 'Metodología', content: 'proxy: costo de oportunidad',
+        })
+      ).resolves.toMatchObject({ content: 'proxy: costo de oportunidad' });
+    });
+
+    it('does not let a proxy that exists only in a different run authorize this report', async () => {
+      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: PROXY_UUID }] } });
+      mockDb.sroiCalculationRuns.push({
+        id: 'run-r2-proxy-other', projectId: PROJECT_ID, organizationId: ORG_ID,
+        totalInvestment: '1000.0000', grossSocialValue: '2000.0000', netSocialValue: '1800.0000',
+        sroiRatio: '1.800000', version: 2,
+        snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: FOREIGN_PROXY_UUID }] },
+      });
+      const { report, section } = seedDraft('pinned-proxy-only', RUN_ID);
+
+      await expect(
+        updateReportSection(PROJECT_ID, report.id, section.id, {
+          title: 'Proxy', content: `Proxy ID: ${FOREIGN_PROXY_UUID}.`,
+        })
+      ).rejects.toThrow('referencias que no coinciden');
+    });
+
     it('refuses lock with an unsupported persisted reference despite a true attestation', async () => {
       seedPinnedRun();
-      const { report } = seedDraft('lock-reference', RUN_ID, 'Evidence ID: ev-999.');
+      const { report } = seedDraft('lock-reference', RUN_ID, `Evidence ID: ${FOREIGN_EVIDENCE_UUID}.`);
       mockDb.sroiRunReviews.push({
         id: 'review-lock-reference',
         projectId: PROJECT_ID,
@@ -671,8 +724,8 @@ describe('report foundation', () => {
     });
 
     it('allows lock for an explicit reference that the same server authority permits at save', async () => {
-      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: 'px-1' }] } });
-      const { report } = seedDraft('lock-reference-valid', RUN_ID, 'Proxy ID: px-1.');
+      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: PROXY_UUID }] } });
+      const { report } = seedDraft('lock-reference-valid', RUN_ID, `Proxy ID: ${PROXY_UUID}.`);
       mockDb.sroiRunReviews.push({
         id: 'review-lock-reference-valid',
         projectId: PROJECT_ID,
