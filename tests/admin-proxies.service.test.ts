@@ -20,8 +20,8 @@ vi.mock('@/lib/audit/logger', () => ({
 }));
 
 vi.mock('@/db/client', () => {
-  return {
-    db: {
+  const database: any = {
+    transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => callback(database)),
       select: vi.fn().mockImplementation(() => ({
         from: vi.fn().mockImplementation((table) => {
           const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
@@ -31,11 +31,15 @@ vi.mock('@/db/client', () => {
               : tableName === 'financial_proxies'
                 ? mockDbData.financialProxies
                 : [];
-          return {
+          const query: any = {
             where: vi.fn().mockImplementation(() => ({
               then: vi.fn().mockImplementation((cb) => Promise.resolve(cb(data))),
             })),
           };
+          query.where.mockImplementation(() => query);
+          query.then = (cb: (rows: any[]) => unknown) => Promise.resolve(cb(data));
+          query.for = vi.fn().mockImplementation(() => query);
+          return query;
         }),
       })),
       insert: vi.fn().mockImplementation((table) => {
@@ -55,8 +59,8 @@ vi.mock('@/db/client', () => {
           })),
         })),
       })),
-    },
   };
+  return { db: database };
 });
 
 import {

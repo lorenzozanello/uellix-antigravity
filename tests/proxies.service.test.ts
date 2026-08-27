@@ -40,8 +40,8 @@ vi.mock('@/lib/audit/logger', () => ({
 
 // Mock DB client using robust builder
 vi.mock('@/db/client', () => {
-  return {
-    db: {
+  const database: any = {
+    transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => callback(database)),
       select: vi.fn().mockImplementation(() => ({
         from: vi.fn().mockImplementation((table) => {
           const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
@@ -52,19 +52,21 @@ vi.mock('@/db/client', () => {
           else if (tableName === 'projects') dataToReturn = mockDbData.projects;
           else if (tableName === 'outcomes') dataToReturn = mockDbData.outcomes;
 
-          const fromObj = {
+          const fromObj: any = {
             where: vi.fn().mockImplementation(() => {
-              const whereObj = {
+              const whereObj: any = {
                 then: vi.fn().mockImplementation((callback) => {
                   return Promise.resolve(callback(dataToReturn));
                 }),
               };
+              whereObj.for = vi.fn().mockImplementation(() => whereObj);
               return whereObj;
             }),
             then: vi.fn().mockImplementation((callback) => {
               return Promise.resolve(callback(dataToReturn));
             }),
           };
+          fromObj.for = vi.fn().mockImplementation(() => fromObj);
           return fromObj;
         }),
       })),
@@ -86,8 +88,8 @@ vi.mock('@/db/client', () => {
           };
         }),
       })),
-    },
   };
+  return { db: database };
 });
 
 import {

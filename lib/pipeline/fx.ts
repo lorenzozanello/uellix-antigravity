@@ -18,6 +18,13 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { fxRates } from '@/db/schema'
 
+/**
+ * The FX cache can be resolved through a caller-owned transaction. This keeps
+ * a proxy approval's material row lock, rate lookup/cache write, conversion,
+ * and approval update on the same database transaction when required.
+ */
+export type FxRateExecutor = Pick<typeof db, 'select' | 'insert'>
+
 // USD amounts carry 4 decimals, matching the numeric(20,4) money columns.
 const USD_DP = 4
 
@@ -107,10 +114,11 @@ export async function fetchCopTrmRate(
  */
 export async function getOrCreateSharedCopRate(
   date: Date | string,
+  executor: FxRateExecutor = db,
 ): Promise<typeof fxRates.$inferSelect | null> {
   const iso = toIsoDate(date)
 
-  const cached = await db
+  const cached = await executor
     .select()
     .from(fxRates)
     .where(and(eq(fxRates.currency, 'COP'), eq(fxRates.rateDate, iso), isNull(fxRates.organizationId)))
@@ -121,7 +129,7 @@ export async function getOrCreateSharedCopRate(
   if (!fetched) return null
 
   try {
-    const inserted = await db
+    const inserted = await executor
       .insert(fxRates)
       .values({
         currency: 'COP',
@@ -137,7 +145,7 @@ export async function getOrCreateSharedCopRate(
   } catch {
     // Lost a race to another concurrent insert (partial unique index) — the row
     // now exists, so re-read it rather than fail.
-    const raced = await db
+    const raced = await executor
       .select()
       .from(fxRates)
       .where(and(eq(fxRates.currency, 'COP'), eq(fxRates.rateDate, iso), isNull(fxRates.organizationId)))

@@ -25,7 +25,7 @@
 
 import { db } from '@/db/client'
 import { proxySources, financialProxies, fxRates } from '@/db/schema'
-import { resolveProxyValueUsd } from '@/lib/pipeline/proxies'
+import { resolveProxyValueUsd, withLockedFinancialProxy } from '@/lib/pipeline/proxies'
 import { convertToUsd } from '@/lib/pipeline/fx'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
@@ -148,25 +148,28 @@ export async function updateGlobalProxyReviewStatus(proxyId: string, newStatus: 
     throw new Error('Invalid status')
   }
 
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
-  if (!proxy) throw new Error('Proxy not found')
-  if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
+  const { proxy, updated } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+    if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
 
-  let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
-  if (newStatus === 'approved') {
-    const required = ['value', 'currency', 'unit', 'referenceYear'] as const
-    for (const f of required) {
-      if (!proxy[f]) throw new Error(`Cannot approve without ${f}`)
+    let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
+    if (newStatus === 'approved') {
+      const required = ['value', 'currency', 'unit', 'referenceYear'] as const
+      for (const f of required) {
+        if (!proxy[f]) throw new Error(`Cannot approve without ${f}`)
+      }
+      // Derive while the exact row being approved remains locked. A concurrent
+      // material writer either commits first (we derive its current state) or
+      // waits and subsequently invalidates this approval for re-review.
+      usdFields = await resolveProxyValueUsd(proxy, tx)
     }
-    // Freeze the USD equivalent on approval (required by approved_proxy_check).
-    usdFields = await resolveProxyValueUsd(proxy)
-  }
 
-  const [updated] = await db
-    .update(financialProxies)
-    .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
-    .where(eq(financialProxies.id, proxyId))
-    .returning()
+    const [updated] = await tx
+      .update(financialProxies)
+      .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
+      .where(eq(financialProxies.id, proxyId))
+      .returning()
+    return { proxy, updated }
+  })
 
   await logAuditAction({
     actorUserId: admin.id,

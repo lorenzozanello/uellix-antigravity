@@ -7,7 +7,35 @@ import { z } from 'zod';
 import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/auth/session';
 import { canApproveProxy } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
-import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx';
+import { getOrCreateSharedCopRate, convertToUsd, type FxRateExecutor } from '@/lib/pipeline/fx';
+
+type FinancialProxyRow = typeof financialProxies.$inferSelect;
+type FinancialProxyTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Serializes every material proxy lifecycle transition on the proxy row itself.
+ *
+ * A plain read followed by an update is not enough: an edit and approval can
+ * both read V1, then write different pieces of authority over the current V2
+ * row. The callback receives the exact row locked by this transaction, so a
+ * caller must derive USD/FX and commit its state transition from that same
+ * authoritative material state.
+ */
+export async function withLockedFinancialProxy<T>(
+  proxyId: string,
+  transition: (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    const proxy = await tx
+      .select()
+      .from(financialProxies)
+      .where(eq(financialProxies.id, proxyId))
+      .for('update')
+      .then((rows) => rows[0] ?? null);
+    if (!proxy) throw new Error('Proxy not found');
+    return transition(tx, proxy);
+  });
+}
 
 // Fase 1b — an approved proxy must resolve to USD (value_usd) so the calc's two
 // sides normalize. USD passes through; COP auto-fetches the TRM (Dec 31 of the
@@ -19,13 +47,13 @@ export async function resolveProxyValueUsd(proxy: {
   referenceYear: number | null
   valueUsd: string | null
   fxRateId: string | null
-}): Promise<{ valueUsd: string; fxRateId: string | null }> {
+}, executor: FxRateExecutor = db): Promise<{ valueUsd: string; fxRateId: string | null }> {
   if (proxy.valueUsd) return { valueUsd: proxy.valueUsd, fxRateId: proxy.fxRateId }
   if (!proxy.value) throw new Error('Cannot resolve USD value without a value')
   if (proxy.currency === 'USD') return { valueUsd: proxy.value, fxRateId: null }
   if (proxy.currency === 'COP') {
     const date = proxy.referenceYear ? `${proxy.referenceYear}-12-31` : new Date().toISOString().slice(0, 10)
-    const rate = await getOrCreateSharedCopRate(date)
+    const rate = await getOrCreateSharedCopRate(date, executor)
     if (!rate?.rateToUsd) throw new Error('Cannot approve: COP→USD rate unavailable for the reference year')
     return { valueUsd: convertToUsd(proxy.value, rate.rateToUsd), fxRateId: rate.id }
   }
@@ -264,39 +292,40 @@ const PROXY_USD_DERIVATION_FIELDS = ['value', 'currency', 'referenceYear'] as co
 export async function updateOrganizationFinancialProxy(proxyId: string, input: unknown) {
   const ctx = await requireOrganizationAccess();
   const data = FinancialProxyInput.partial().parse(input);
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then(r => r[0]);
-  if (!proxy) throw new Error('Proxy not found');
-  if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
-  // A partial update may repoint the proxy at another source — the same
-  // ownership gate as creation applies (RC-12).
-  if (data.sourceId !== undefined) {
-    await requireUsableProxySource(data.sourceId, ctx.organization.id);
-  }
+  const { proxy, updated, resetReview } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+    if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+    // A partial update may repoint the proxy at another source — the same
+    // ownership gate as creation applies (RC-12).
+    if (data.sourceId !== undefined) {
+      await requireUsableProxySource(data.sourceId, ctx.organization.id);
+    }
 
-  // Re-review gate: if an approved proxy's material fields change, drop it back
-  // to pending_review so no calculation uses an unreviewed value under an
-  // "approved" label.
-  const materialChange = PROXY_MATERIAL_FIELDS.some(
-    (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
-  );
-  const resetReview = proxy.reviewStatus === 'approved' && materialChange;
+    // Re-review gate: if an approved proxy's material fields change, drop it back
+    // to pending_review so no calculation uses an unreviewed value under an
+    // "approved" label.
+    const materialChange = PROXY_MATERIAL_FIELDS.some(
+      (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
+    );
+    const resetReview = proxy.reviewStatus === 'approved' && materialChange;
 
-  // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes the
-  // previously frozen valueUsd/fxRateId stale: they were derived from the OLD
-  // material state. Null them out here so resolveProxyValueUsd's short-circuit
-  // (`if (proxy.valueUsd) return ...`) cannot reuse the stale figure on the
-  // next approval — that call is forced back through the real value/currency
-  // → USD derivation with the CURRENT data instead.
-  const usdDerivationChange = PROXY_USD_DERIVATION_FIELDS.some(
-    (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
-  );
+    // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes the
+    // previously frozen valueUsd/fxRateId stale: they were derived from the OLD
+    // material state. Null them out here so resolveProxyValueUsd's short-circuit
+    // (`if (proxy.valueUsd) return ...`) cannot reuse the stale figure on the
+    // next approval — that call is forced back through the real value/currency
+    // → USD derivation with the CURRENT data instead.
+    const usdDerivationChange = PROXY_USD_DERIVATION_FIELDS.some(
+      (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
+    );
 
-  const updated = await db.update(financialProxies).set({
-    ...data,
-    ...(resetReview ? { reviewStatus: 'pending_review' as const } : {}),
-    ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}),
-    updatedAt: new Date(),
-  }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
+    const updated = await tx.update(financialProxies).set({
+      ...data,
+      ...(resetReview ? { reviewStatus: 'pending_review' as const } : {}),
+      ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}),
+      updatedAt: new Date(),
+    }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
+    return { proxy, updated, resetReview };
+  });
 
   await logAuditAction({
     organizationId: ctx.organization.id,
@@ -317,36 +346,36 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
   const ctx = await requireOrganizationAccess();
   const allowed = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'];
   if (!allowed.includes(newStatus)) throw new Error('Invalid status');
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then(r => r[0]);
-  if (!proxy) throw new Error('Proxy not found');
-  if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
-  // System proxies (organizationId: null) are reviewed/approved exclusively
-  // via lib/admin/proxies.ts — see updateOrganizationProxySource above for
-  // why an isSuperAdmin bypass here was dead code, not a working escape
-  // hatch.
-  if (!proxy.organizationId) throw new Error('Forbidden');
-  if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
-  if (newStatus === 'approved') {
-    const required = ['value', 'currency', 'unit', 'referenceYear'];
-    for (const f of required) {
-      if (!proxy[f as keyof typeof proxy]) throw new Error(`Cannot approve without ${f}`);
+  const { proxy, updated } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+    if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+    // System proxies (organizationId: null) are reviewed/approved exclusively
+    // via lib/admin/proxies.ts — see updateOrganizationProxySource above for
+    // why an isSuperAdmin bypass here was dead code, not a working escape
+    // hatch.
+    if (!proxy.organizationId) throw new Error('Forbidden');
+    if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
+    if (newStatus === 'approved') {
+      const required = ['value', 'currency', 'unit', 'referenceYear'];
+      for (const f of required) {
+        if (!proxy[f as keyof typeof proxy]) throw new Error(`Cannot approve without ${f}`);
+      }
+      // A proxy value of 0 (or non-positive / non-numeric) is methodologically
+      // invalid — it would zero out or corrupt every line item that uses it.
+      const numericValue = Number(proxy.value);
+      if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        throw new Error('Cannot approve a proxy with a non-positive value');
+      }
     }
-    // A proxy value of 0 (or non-positive / non-numeric) is methodologically
-    // invalid — it would zero out or corrupt every line item that uses it.
-    const numericValue = Number(proxy.value);
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
-      throw new Error('Cannot approve a proxy with a non-positive value');
-    }
-  }
 
-  // On approval, freeze the USD equivalent (required by approved_proxy_check).
-  const usdFields = newStatus === 'approved'
-    ? await resolveProxyValueUsd(proxy)
-    : {};
-
-  const updated = await db.update(financialProxies).set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
-    .where(eq(financialProxies.id, proxyId))
-    .returning().then(r => r[0]);
+    // Derivation and transition intentionally share the locked material row.
+    const usdFields = newStatus === 'approved'
+      ? await resolveProxyValueUsd(proxy, tx)
+      : {};
+    const updated = await tx.update(financialProxies).set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
+      .where(eq(financialProxies.id, proxyId))
+      .returning().then(r => r[0]);
+    return { proxy, updated };
+  });
 
   await logAuditAction({
     organizationId: ctx.organization.id,
