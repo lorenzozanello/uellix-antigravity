@@ -133,11 +133,11 @@ describe('updateReportSectionAction', () => {
 });
 
 describe('lockReportDraftAction', () => {
-  it('delegates to service directly', async () => {
+  it('delegates to service directly, forwarding the narrative attestation', async () => {
     vi.mocked(lockReportDraft).mockResolvedValue({ id: REPORT_ID, status: 'locked' } as any);
 
-    const result = await lockReportDraftAction(PROJECT_ID, REPORT_ID);
+    const result = await lockReportDraftAction(PROJECT_ID, REPORT_ID, { narrativeReviewed: true });
     expect(result.status).toBe('locked');
-    expect(lockReportDraft).toHaveBeenCalledWith(PROJECT_ID, REPORT_ID);
+    expect(lockReportDraft).toHaveBeenCalledWith(PROJECT_ID, REPORT_ID, { narrativeReviewed: true });
   });
 });

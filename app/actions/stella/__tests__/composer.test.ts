@@ -350,6 +350,41 @@ describe('getStellaComposer server action', () => {
       errorSpy.mockRestore()
     })
 
+    // CL-1B (MSC-02 HIGH-1) — no authoritative calculation snapshot means no
+    // authorized numeric values; a numeric-bearing claim must fail closed
+    // instead of being waved through with `{ok: true}`.
+    it('CL-1B: rejects a numeric claim when calculationSnapshot is null (fail-closed, not skipped)', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      setupSuccessfulCall()
+      mockBuildComposerContext.mockResolvedValue({ ...MOCK_CONTEXT, calculationSnapshot: null })
+      mockAdapterParseResponse.mockResolvedValue({
+        ...VALID_COMPOSER_OUTPUT,
+        draft_content: 'Este proyecto generó un retorno social de 42.5x la inversión inicial.',
+      })
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary', TICKET)
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error).toBe('PARSE_ERROR')
+      const rejected = mockLogAuditAction.mock.calls.map((c) => c[0]).find((e) => e.action === 'stella.integrity_rejected')
+      expect(rejected).toBeDefined()
+      expect(rejected.afterJson.numericViolationCount).toBeGreaterThan(0)
+      errorSpy.mockRestore()
+    })
+
+    it('CL-1B: non-numeric draft content still succeeds when calculationSnapshot is null', async () => {
+      setupSuccessfulCall()
+      mockBuildComposerContext.mockResolvedValue({ ...MOCK_CONTEXT, calculationSnapshot: null })
+      mockAdapterParseResponse.mockResolvedValue({
+        ...VALID_COMPOSER_OUTPUT,
+        draft_content: 'Este proyecto entrena a jóvenes en habilidades de empleabilidad.',
+      })
+
+      const result = await getStellaComposer('proj-uuid-001', 'report-uuid-001', 'section-1', 'executive_summary', TICKET)
+
+      expect(result.ok).toBe(true)
+    })
+
     it('denial result is unchanged when the audit write throws (fire-and-forget)', async () => {
       const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       setupSuccessfulCall()

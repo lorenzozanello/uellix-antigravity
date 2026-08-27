@@ -71,7 +71,12 @@ export async function buildComposerContext(
 
   // Report ownership check — must belong to this project and organization
   const report = await db
-    .select({ id: sroiReports.id, organizationId: sroiReports.organizationId, projectId: sroiReports.projectId })
+    .select({
+      id: sroiReports.id,
+      organizationId: sroiReports.organizationId,
+      projectId: sroiReports.projectId,
+      calculationRunId: sroiReports.calculationRunId,
+    })
     .from(sroiReports)
     .where(eq(sroiReports.id, reportId))
     .limit(1)
@@ -253,8 +258,12 @@ export async function buildComposerContext(
     durationYears: f.durationYears ?? undefined,
   }))
 
-  // Latest SROI calculation run — totals only, snapshotJson NEVER included directly
-  const latestRun = await db
+  // CL-1A (MSC-02 HIGH-1) — the numeric authority for THIS report is the run
+  // it is PINNED to (report.calculationRunId), never "whichever run happens
+  // to be latest for the project". A report must keep citing the numbers it
+  // was built from even after a newer run exists, or the guard below would
+  // authorize figures the report was never actually anchored to.
+  const pinnedRun = await db
     .select({
       id: sroiCalculationRuns.id,
       version: sroiCalculationRuns.version,
@@ -268,25 +277,24 @@ export async function buildComposerContext(
     .from(sroiCalculationRuns)
     .where(
       and(
+        eq(sroiCalculationRuns.id, report.calculationRunId),
         eq(sroiCalculationRuns.projectId, projectId),
         eq(sroiCalculationRuns.organizationId, organizationId),
-        eq(sroiCalculationRuns.status, 'calculated')
       )
     )
-    .orderBy(desc(sroiCalculationRuns.runDate))
     .limit(1)
     .then((rows) => rows[0] ?? null)
 
   let calculationSnapshot: CalculationSnapshot | null = null
 
-  if (latestRun) {
+  if (pinnedRun) {
     const lineItems = await db
       .select({ id: sroiCalculationLineItems.id })
       .from(sroiCalculationLineItems)
-      .where(eq(sroiCalculationLineItems.runId, latestRun.id))
+      .where(eq(sroiCalculationLineItems.runId, pinnedRun.id))
 
     // Extract funder breakdown from snapshotJson if available
-    const snapshot = latestRun.snapshotJson as Record<string, unknown> | null
+    const snapshot = pinnedRun.snapshotJson as Record<string, unknown> | null
     const fundersBreakdownRaw = snapshot?.fundersBreakdown as Array<{
       funderId: string
       funderName: string
@@ -311,13 +319,13 @@ export async function buildComposerContext(
     const unattributedNsvUsd = unattributedNsvUsdRaw ? parseFloat(unattributedNsvUsdRaw) : undefined
 
     calculationSnapshot = {
-      totalInvestment: parseFloat(latestRun.totalInvestment ?? '0'),
-      grossSocialValue: parseFloat(latestRun.grossSocialValue ?? '0'),
-      netSocialValue: parseFloat(latestRun.netSocialValue ?? '0'),
-      sroiRatio: parseFloat(latestRun.sroiRatio ?? '0'),
-      currency: latestRun.currency ?? 'USD',
+      totalInvestment: parseFloat(pinnedRun.totalInvestment ?? '0'),
+      grossSocialValue: parseFloat(pinnedRun.grossSocialValue ?? '0'),
+      netSocialValue: parseFloat(pinnedRun.netSocialValue ?? '0'),
+      sroiRatio: parseFloat(pinnedRun.sroiRatio ?? '0'),
+      currency: pinnedRun.currency ?? 'USD',
       lineItemCount: lineItems.length,
-      version: latestRun.version,
+      version: pinnedRun.version,
       fundersBreakdown,
       unattributedNsvUsd,
     }

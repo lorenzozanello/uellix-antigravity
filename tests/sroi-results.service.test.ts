@@ -311,9 +311,9 @@ describe('report foundation', () => {
     // Human-review gate: an approved methodological review must exist for the run.
     mockDb.sroiRunReviews.push({ id: 'rev-lock', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-1', status: 'approved' });
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'analyst' } } as any);
-    await expect(lockReportDraft(PROJECT_ID, report.id)).rejects.toThrow('Insufficient role');
+    await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true })).rejects.toThrow('Insufficient role');
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
-    const locked = await lockReportDraft(PROJECT_ID, report.id);
+    const locked = await lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true });
     expect(locked.status).toBe('locked');
     expect(locked.lockedBy).toBe(USER_ID);
   });
@@ -321,7 +321,144 @@ describe('report foundation', () => {
     const report = { id: 'rep-noreview', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-2', status: 'draft' };
     mockDb.sroiReports.push(report);
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
-    await expect(lockReportDraft(PROJECT_ID, report.id)).rejects.toThrow('no approved methodological review');
+    await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true })).rejects.toThrow('no approved methodological review');
+  });
+  // -------------------------------------------------------------------------
+  // CL-1E (MSC-02 HIGH-1/HR-01) — lockReportDraft requires an EXPLICIT human
+  // narrative-review attestation, independent of the calculation review gate.
+  // -------------------------------------------------------------------------
+  it('lockReportDraft refuses without an explicit narrativeReviewed attestation, even with an approved calculation review', async () => {
+    const report = { id: 'rep-noattest', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-attest', status: 'draft' };
+    mockDb.sroiReports.push(report);
+    mockDb.sroiRunReviews.push({ id: 'rev-attest', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: 'run-attest', status: 'approved' });
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
+
+    await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: false })).rejects.toThrow(
+      'explicit narrative review attestation is required'
+    );
+    expect(report.status).toBe('draft');
+  });
+  // -------------------------------------------------------------------------
+  // CL-1C/CL-1D (MSC-02 HIGH-1) — server-side numeric integrity, checked
+  // against the report's PINNED run (not "latest for project"), both on save
+  // and again right before lock.
+  // -------------------------------------------------------------------------
+  describe('CL-1C/CL-1D — report narrative numeric integrity', () => {
+    const RUN_ID = 'run-numeric-1';
+    const OTHER_RUN_ID = 'run-numeric-OTHER';
+
+    function seedPinnedRun() {
+      mockDb.sroiCalculationRuns.push({
+        id: RUN_ID,
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        totalInvestment: '1000.0000',
+        grossSocialValue: '2000.0000',
+        netSocialValue: '1800.0000',
+        sroiRatio: '1.800000',
+        version: 1,
+        snapshotJson: { fundersBreakdown: [], unattributedNsvUsd: '0.0000', assignments: [] },
+      });
+    }
+
+    it('accepts a save that cites a number matching the pinned run (e.g. the SROI ratio)', async () => {
+      seedPinnedRun();
+      const report = { id: 'rep-num-1', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'draft' };
+      const section = { id: 'sec-num-1', reportId: 'rep-num-1', title: 'Resultados', content: 'placeholder' };
+      mockDb.sroiReports.push(report);
+      mockDb.sroiReportSections.push(section);
+
+      const updated = await updateReportSection(PROJECT_ID, 'rep-num-1', 'sec-num-1', {
+        title: 'Resultados',
+        content: 'El SROI de este proyecto es 1.8:1, con un valor social neto de 1800.',
+      });
+      expect(updated.content).toContain('1.8');
+    });
+
+    it('refuses a save that cites a number NOT in the pinned run snapshot (fabricated claim)', async () => {
+      seedPinnedRun();
+      const report = { id: 'rep-num-2', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'draft' };
+      const section = { id: 'sec-num-2', reportId: 'rep-num-2', title: 'Resultados', content: 'placeholder' };
+      mockDb.sroiReports.push(report);
+      mockDb.sroiReportSections.push(section);
+
+      await expect(
+        updateReportSection(PROJECT_ID, 'rep-num-2', 'sec-num-2', {
+          title: 'Resultados',
+          content: 'El SROI de este proyecto es 9.9:1, una cifra excelente.',
+        })
+      ).rejects.toThrow('cifras que no coinciden');
+      // The write must be refused outright — never silently corrected.
+      expect(section.content).toBe('placeholder');
+    });
+
+    it('uses the report\'s PINNED run, not a different ("latest") run for the same project', async () => {
+      seedPinnedRun();
+      // A second, DIFFERENT run for the same project — simulates "latest run"
+      // diverging from what this particular report is anchored to.
+      mockDb.sroiCalculationRuns.push({
+        id: OTHER_RUN_ID,
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        totalInvestment: '5000.0000',
+        grossSocialValue: '9999.0000',
+        netSocialValue: '9999.0000',
+        sroiRatio: '9.900000',
+        version: 2,
+        snapshotJson: { fundersBreakdown: [], unattributedNsvUsd: '0.0000', assignments: [] },
+      });
+      const report = { id: 'rep-num-pin', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'draft' };
+      const section = { id: 'sec-num-pin', reportId: 'rep-num-pin', title: 'Resultados', content: 'placeholder' };
+      mockDb.sroiReports.push(report);
+      mockDb.sroiReportSections.push(section);
+
+      // 9.9 only exists in the OTHER run — must be refused because THIS
+      // report is pinned to RUN_ID (sroiRatio 1.8), not OTHER_RUN_ID.
+      await expect(
+        updateReportSection(PROJECT_ID, 'rep-num-pin', 'sec-num-pin', {
+          title: 'Resultados',
+          content: 'El SROI de este proyecto es 9.9:1.',
+        })
+      ).rejects.toThrow('cifras que no coinciden');
+
+      // The number that IS authorized for the pinned run still passes.
+      const updated = await updateReportSection(PROJECT_ID, 'rep-num-pin', 'sec-num-pin', {
+        title: 'Resultados',
+        content: 'El SROI de este proyecto es 1.8:1.',
+      });
+      expect(updated.content).toContain('1.8');
+    });
+
+    it('lock refuses when a persisted section contains a number outside the pinned run — even if it was valid at some earlier save', async () => {
+      seedPinnedRun();
+      const report = { id: 'rep-num-lock', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'draft' };
+      // Simulates content that bypassed updateReportSection's own guard (a
+      // direct DB fixup, a pre-CL-1C row) — the pre-lock revalidation must
+      // catch it independently of how it got there.
+      const section = { id: 'sec-num-lock', reportId: 'rep-num-lock', title: 'Resultados', content: 'El SROI es 9.9:1.' };
+      mockDb.sroiReports.push(report);
+      mockDb.sroiReportSections.push(section);
+      mockDb.sroiRunReviews.push({ id: 'rev-num-lock', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'approved' });
+      vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
+
+      await expect(
+        lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true })
+      ).rejects.toThrow('do not match');
+      expect(report.status).toBe('draft');
+    });
+
+    it('lock succeeds when every persisted section is valid, attestation is given, and the calculation review is approved', async () => {
+      seedPinnedRun();
+      const report = { id: 'rep-num-lock-ok', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'draft' };
+      const section = { id: 'sec-num-lock-ok', reportId: 'rep-num-lock-ok', title: 'Resultados', content: 'El SROI es 1.8:1.' };
+      mockDb.sroiReports.push(report);
+      mockDb.sroiReportSections.push(section);
+      mockDb.sroiRunReviews.push({ id: 'rev-num-lock-ok', projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: RUN_ID, status: 'approved' });
+      vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
+
+      const locked = await lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true });
+      expect(locked.status).toBe('locked');
+    });
   });
   it('lists project reports', async () => {
     const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID };

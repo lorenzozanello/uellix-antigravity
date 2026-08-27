@@ -17,6 +17,12 @@ import {
 } from '@/db/schema';
 import { z } from 'zod';
 import { getVariantSectionTypes } from '@/lib/reports/report-variants';
+import {
+  validateComposerNumbers,
+  authorizedNumbersFromSnapshot,
+  type AuthorizedNumbers,
+} from '@/lib/stella/schemas/composer-numeric-guard';
+import type { ComposerOutput } from '@/lib/stella/schemas/composer-output';
 
 // ---------------------------------------------------------------------------
 // Helper schemas
@@ -67,6 +73,109 @@ async function authorizeProject(projectId: string) {
     .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)));
   if (proj.length === 0) throw new Error('Project not found or not owned');
   return ctx;
+}
+
+// ---------------------------------------------------------------------------
+// CL-1 (MSC-02 HIGH-1) — report narrative numeric authority
+//
+// Every material numeric claim in persisted/locked report narrative must
+// validate server-side against the calculation snapshot belonging to THE RUN
+// THIS REPORT IS PINNED TO (report.calculationRunId) — never "whatever run
+// happens to be latest for the project", and never merely because the
+// Composer's own guard once approved a draft: a human can edit the text
+// freely (or type it from scratch) after that point. This is checked again
+// both when a section is saved and, independently, right before a report is
+// locked (content may have changed again since it was last saved-and-valid).
+// ---------------------------------------------------------------------------
+
+// No authoritative snapshot resolvable → no authorized values. Mirrors the
+// composer's own fail-closed default in app/actions/stella/composer.ts.
+const EMPTY_AUTHORIZED_NUMBERS: AuthorizedNumbers = {
+  totals: { totalInvestment: 0, grossSocialValue: 0, netSocialValue: 0 },
+  ratio: 0,
+};
+
+async function getReportNumericAuthority(
+  ctx: { organization: { id: string } },
+  report: { calculationRunId: string; projectId: string },
+): Promise<AuthorizedNumbers | null> {
+  const run = await db
+    .select()
+    .from(sroiCalculationRuns)
+    .where(
+      and(
+        eq(sroiCalculationRuns.id, report.calculationRunId),
+        eq(sroiCalculationRuns.projectId, report.projectId),
+        eq(sroiCalculationRuns.organizationId, ctx.organization.id),
+      )
+    )
+    .then((rows) => rows[0] ?? null);
+  if (!run) return null;
+
+  const snapshot = run.snapshotJson as Record<string, unknown> | null;
+  const fundersBreakdownRaw = snapshot?.fundersBreakdown as
+    | Array<{ investmentUsd: string; attributedNsvUsd: string; sroiRatio: string }>
+    | undefined;
+  const unattributedNsvUsdRaw = snapshot?.unattributedNsvUsd as string | undefined;
+  const assignmentsRaw = snapshot?.assignments as
+    | Array<{
+        filters?: {
+          deadweightPct?: number;
+          attributionPct?: number;
+          displacementPct?: number;
+          dropoffPct?: number;
+          durationYears?: number;
+        };
+      }>
+    | undefined;
+
+  // Filter percentages/durations feed the composer's own authorized set (see
+  // build-composer-context.ts) — pull them from the SAME persisted snapshot
+  // rather than re-querying sroi_filter_sets, so save/lock validation reads
+  // the exact frozen numbers the run recorded, not whatever is live now.
+  const additional: (string | number)[] = [];
+  for (const assignment of assignmentsRaw ?? []) {
+    for (const value of Object.values(assignment.filters ?? {})) {
+      if (value !== undefined) additional.push(value);
+    }
+  }
+
+  return authorizedNumbersFromSnapshot(
+    {
+      totalInvestment: Number(run.totalInvestment ?? 0),
+      grossSocialValue: Number(run.grossSocialValue ?? 0),
+      netSocialValue: Number(run.netSocialValue ?? 0),
+      sroiRatio: Number(run.sroiRatio ?? 0),
+      version: run.version ?? undefined,
+      unattributedNsvUsd:
+        unattributedNsvUsdRaw !== undefined ? Number(unattributedNsvUsdRaw) : undefined,
+      fundersBreakdown: fundersBreakdownRaw?.map((row) => ({
+        investmentUsd: Number(row.investmentUsd),
+        attributedNsvUsd: Number(row.attributedNsvUsd),
+        sroiRatio: Number(row.sroiRatio),
+      })),
+    },
+    additional,
+  );
+}
+
+// Reuses the composer's own pure numeric guard against arbitrary title/
+// content text — no AI call, no network, no re-derivation of the guard logic.
+function validateSectionNumericIntegrity(
+  title: string,
+  content: string,
+  authority: AuthorizedNumbers | null,
+): ReturnType<typeof validateComposerNumbers> {
+  const guardInput: ComposerOutput = {
+    section_key: 'report_section',
+    draft_title: title,
+    draft_content: content,
+    assumptions: [],
+    limitations: [],
+    evidence_references: [],
+    proxy_references: [],
+  };
+  return validateComposerNumbers(guardInput, authority ?? EMPTY_AUTHORIZED_NUMBERS);
 }
 
 // ---------------------------------------------------------------------------
@@ -465,6 +574,24 @@ export async function updateReportSection(projectId: string, reportId: string, s
   if (report[0].status === 'locked') throw new Error('Report is locked');
 
   const validated = ReportSectionInputSchema.parse(input);
+
+  // CL-1C — the persisted content itself must be checked against the
+  // report's PINNED run: a human can freely edit the text after any
+  // Composer-time check ran (or type it from scratch, never touching
+  // Composer at all). Pure computation only — no AI, no network, no
+  // auto-correction; a violation refuses the write outright.
+  const authority = await getReportNumericAuthority(ctx, report[0]);
+  const numericGuard = validateSectionNumericIntegrity(
+    validated.title,
+    validated.content ?? '',
+    authority,
+  );
+  if (!numericGuard.ok) {
+    throw new Error(
+      'El contenido de la sección contiene cifras que no coinciden con la corrida de cálculo del reporte.'
+    );
+  }
+
   const updated = await db
     .update(sroiReportSections)
     .set({
@@ -489,7 +616,23 @@ export async function updateReportSection(projectId: string, reportId: string, s
   return updated[0];
 }
 
-export async function lockReportDraft(projectId: string, reportId: string) {
+export interface LockReportAttestation {
+  /**
+   * CL-1E (MSC-02 HIGH-1/HR-01) — the lock action must be an explicit human
+   * attestation that the CURRENT narrative was reviewed, not an automatic
+   * consequence of the calculation review being approved. There is no
+   * separate approval entity/table for this: the durable record of a
+   * successful attested transition is the existing lockedBy/lockedAt pair
+   * this function already sets once the lock actually goes through.
+   */
+  narrativeReviewed: boolean;
+}
+
+export async function lockReportDraft(
+  projectId: string,
+  reportId: string,
+  attestation: LockReportAttestation,
+) {
   const ctx = await authorizeProject(projectId);
   const allowed = ['super_admin', 'organization_admin', 'impact_manager'];
   if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to lock report');
@@ -507,6 +650,10 @@ export async function lockReportDraft(projectId: string, reportId: string) {
   if (report.length === 0) throw new Error('Report not found');
   if (report[0].status === 'locked') throw new Error('Report already locked');
 
+  if (!attestation?.narrativeReviewed) {
+    throw new Error('Cannot lock: explicit narrative review attestation is required');
+  }
+
   // Human-review gate: a report cannot be finalized (locked/"audit-ready")
   // unless the calculation run it is built on carries an approved methodological
   // review. This makes "human review is the final step" an enforced invariant
@@ -522,6 +669,26 @@ export async function lockReportDraft(projectId: string, reportId: string) {
     .then(r => r[0]);
   if (!approvedReview) {
     throw new Error('Cannot lock: the calculation run has no approved methodological review');
+  }
+
+  // CL-1D — re-validate every CURRENTLY PERSISTED section against the
+  // report's pinned run before allowing the lock. A section may have passed
+  // updateReportSection's guard at save time and been edited again since (a
+  // second draft cycle, a direct DB fixup, a legacy row from before CL-1C
+  // existed) — the lock is the last point this can be caught before the
+  // content becomes the audit-anchored, hash-verifiable artifact.
+  const authority = await getReportNumericAuthority(ctx, report[0]);
+  const sections = await db
+    .select()
+    .from(sroiReportSections)
+    .where(eq(sroiReportSections.reportId, reportId));
+  for (const section of sections) {
+    const guard = validateSectionNumericIntegrity(section.title ?? '', section.content ?? '', authority);
+    if (!guard.ok) {
+      throw new Error(
+        `Cannot lock: section "${section.title}" contains figures that do not match the report's calculation run.`
+      );
+    }
   }
 
   const locked = await db

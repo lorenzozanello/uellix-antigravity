@@ -18,6 +18,7 @@ import {
   validateComposerNumbers,
   validateComposerReferences,
   authorizedNumbersFromSnapshot,
+  type AuthorizedNumbers,
 } from '@/lib/stella/schemas/composer-numeric-guard'
 import { nextQuotaResetIso, formatQuotaResetDate } from '@/lib/stella/quota'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
@@ -37,6 +38,18 @@ const COMPOSER_CATEGORY = 'composer' as const
 /** Square brackets, not parentheses — see the identical constant in validator.ts. */
 const GOVERNED_QUOTA_LEDGER =
   'charged via uellix_stella_ops.complete_operation_ticket -> uellix_stella.settle_reserved_quota [R6-INT closed, prepared stella_0017; reservation-aware, prepared stella_0016 / R1]'
+
+// CL-1B (MSC-02 HIGH-1) — no authoritative calculation snapshot means no
+// authorized numeric values at all. Every report is created FROM a run
+// (calculationRunId is NOT NULL), so this should not happen in practice, but
+// if the pinned run is ever unresolvable, the guard must FAIL CLOSED on any
+// numeric claim rather than skip validation entirely (`{ok: true}`). Non-
+// numeric drafting is unaffected — only tokens that look like a value claim
+// are ever flagged.
+const EMPTY_AUTHORIZED_NUMBERS: AuthorizedNumbers = {
+  totals: { totalInvestment: 0, grossSocialValue: 0, netSocialValue: 0 },
+  ratio: 0,
+}
 
 export type StellaComposerErrorCode =
   | 'DISABLED'
@@ -202,7 +215,9 @@ export async function getStellaComposer(
                   : []),
               ]),
             )
-          : { ok: true as const, violations: [] }
+          // CL-1B — no snapshot means no authorized values: any numeric claim
+          // in the draft fails closed instead of being waved through.
+          : validateComposerNumbers(data, EMPTY_AUTHORIZED_NUMBERS)
 
         if (!referenceCheck.ok || !numberCheck.ok) {
           console.error('[stella] Composer integrity guard rejected draft:', {

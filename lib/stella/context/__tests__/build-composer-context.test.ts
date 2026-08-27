@@ -30,6 +30,10 @@ const mockReport = {
   id: MOCK_REPORT_ID,
   organizationId: MOCK_ORG_ID,
   projectId: MOCK_PROJECT_ID,
+  // CL-1A — the report is pinned to a specific calculation run; the composer
+  // context builder must derive calculationSnapshot from THIS id, not from
+  // "latest calculated run for the project".
+  calculationRunId: 'run-001',
 }
 
 const mockNarrative = {
@@ -132,6 +136,29 @@ function makeChain(resolvedValue: unknown) {
     (cb: (v: unknown) => unknown) => Promise.resolve(cb(resolvedValue))
   )
   return chain
+}
+
+// Walks a drizzle-orm condition tree (eq/and/inArray) and pulls out every
+// literal value it compares against — used below (CL-1A) to prove the
+// calc-run query filters by the report's PINNED calculationRunId rather than
+// "latest for project". Same shape as the equivalent helper in
+// tests/sroi-results.service.test.ts.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractEqValues(val: any): string[] {
+  if (!val) return []
+  if (typeof val === 'string') return [val]
+  if (Array.isArray(val)) return val.flatMap(extractEqValues)
+  const res: string[] = []
+  if (val.value !== undefined) {
+    if (typeof val.value === 'string') res.push(val.value)
+    else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues))
+    else res.push(...extractEqValues(val.value))
+  }
+  if (val.right !== undefined) res.push(...extractEqValues(val.right))
+  if (val.left !== undefined) res.push(...extractEqValues(val.left))
+  if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues))
+  if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues))
+  return res
 }
 
 // ---------------------------------------------------------------------------
@@ -362,6 +389,29 @@ describe('buildComposerContext', () => {
       const json = JSON.stringify(ctx)
       expect(json).not.toContain('snapshotJson')
       expect(json).not.toContain('snapshot_json')
+    })
+
+    // -----------------------------------------------------------------------
+    // CL-1A (MSC-02 HIGH-1) — the calc-run query must filter by the report's
+    // PINNED calculationRunId, never "latest calculated run for the project".
+    // -----------------------------------------------------------------------
+    it("CL-1A: queries the calculation run by the report's pinned calculationRunId", async () => {
+      const pinnedReport = { ...mockReport, calculationRunId: 'run-PINNED-001' }
+      await setupFullMockSequence({ reportRow: pinnedReport })
+      const { db } = await import('@/db/client')
+      const selectMock = vi.mocked(db.select)
+
+      await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      // Query order (see setupFullMockSequence's numbered comment): the
+      // calc-run query is call #11 → index 10.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const calcRunChain = selectMock.mock.results[10]!.value as any
+      const whereArg = calcRunChain.where.mock.calls[0][0]
+      expect(extractEqValues(whereArg)).toContain('run-PINNED-001')
+      // No more "latest for project" ordering — filtering by a unique id
+      // already returns at most one row.
+      expect(calcRunChain.orderBy).not.toHaveBeenCalled()
     })
   })
 

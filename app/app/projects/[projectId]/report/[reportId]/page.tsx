@@ -64,9 +64,14 @@ export default async function ReportDetailPage({
     revalidatePath(`/app/projects/${projectId}/report/${reportId}`)
   }
 
-  async function handleLock() {
+  async function handleLock(formData: FormData) {
     'use server'
-    await lockReportDraftAction(projectId, reportId)
+    // CL-1E — the lock action requires an EXPLICIT human attestation that the
+    // current narrative was reviewed; it is never an automatic consequence of
+    // the calculation review being approved (enforced server-side too, in
+    // lockReportDraft — this checkbox is not the only gate).
+    const narrativeReviewed = formData.get('narrativeReviewed') === 'on'
+    await lockReportDraftAction(projectId, reportId, { narrativeReviewed })
     revalidatePath(`/app/projects/${projectId}/report/${reportId}`)
   }
 
@@ -119,7 +124,16 @@ export default async function ReportDetailPage({
               Exportar PDF
             </Link>
             {!isLocked && (
-              <form action={handleLock}>
+              <form action={handleLock} className="flex flex-col items-end gap-1.5">
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    name="narrativeReviewed"
+                    required
+                    className="h-3.5 w-3.5 rounded border-border"
+                  />
+                  Confirmo que revisé el contenido narrativo actual de este reporte
+                </label>
                 <button
                   type="submit"
                   className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
