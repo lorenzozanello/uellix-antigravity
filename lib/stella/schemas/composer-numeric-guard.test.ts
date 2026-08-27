@@ -506,6 +506,72 @@ describe('R3-CL1 — report authority grammar', () => {
 
     expect(result.ok).toBe(true)
   })
+
+  // MSC-06D — structural presentation must never erase the numeric body of a
+  // report claim before the typed-authority validator sees it.
+  it.each([
+    '17 USD',
+    '17 participants',
+    'v1700 USD',
+    '2026-99-99 USD',
+    '1.2 USD',
+    '## 17 USD',
+    '### $17',
+    'Section 17 USD',
+    'v2.3 USD',
+    'SDG8 = 17%',
+    '2026-12-01 USD',
+    '2026-02-30 USD',
+    '1.2 participants',
+    '**17 USD**',
+    '_17%_',
+    '`17 USD`',
+    '1. 17 USD',
+    '- 17 participants',
+  ])('refuses a material numeric claim wrapped in structural syntax: %s', (content) => {
+    const result = validateReportNarrativeAuthority({
+      title: 'Resultados',
+      content,
+      numericAuthority: { money: [], percentages: [], sroiRatios: [] },
+      referenceAuthority: { evidenceIds: [], proxyIds: [] },
+    })
+
+    expect(result.numeric.ok).toBe(false)
+    expect(result.ok).toBe(false)
+  })
+
+  it('keeps canonical money, percent, and SROI claims typed after structural scanning', () => {
+    const authority: ReportNumericAuthority = {
+      money: [
+        { kind: 'money', currency: 'USD', value: '17' },
+        { kind: 'money', currency: 'USD', value: '1.2' },
+      ],
+      percentages: [{ kind: 'percent', percentagePoints: '17' }],
+      sroiRatios: [{ kind: 'sroi_ratio', numerator: '2.4', denominator: '1' }],
+    }
+    const result = validateReportNarrativeAuthority({
+      title: 'Resultados',
+      content: '17 USD; 1.2 USD; 17%; 2.4:1.',
+      numericAuthority: authority,
+      referenceAuthority: { evidenceIds: [], proxyIds: [] },
+    })
+
+    expect(result.ok).toBe(true)
+  })
+
+  it.each(['## Impacto', '1. Resultados', 'v2.3', 'SDG8', '2026-12-01'])(
+    'keeps a standalone structural nonclaim valid: %s',
+    (content) => {
+      const result = validateReportNarrativeAuthority({
+        title: 'Resultados',
+        content,
+        numericAuthority: { money: [], percentages: [], sroiRatios: [] },
+        referenceAuthority: { evidenceIds: [], proxyIds: [] },
+      })
+
+      expect(result.ok).toBe(true)
+    },
+  )
 })
 
 describe('R3-CL1 — UUID narrative references', () => {
@@ -553,5 +619,30 @@ describe('R3-CL1 — UUID narrative references', () => {
     )
 
     expect(result.ok).toBe(true)
+  })
+
+  it('normalizes only UUID identity case before authority comparison', () => {
+    const alphaEvidenceId = 'a1234567-b234-4abc-8def-123456789abc'
+    const foreignId = 'b1234567-b234-4abc-8def-123456789abc'
+    const caseAuthority = { evidenceIds: [alphaEvidenceId], proxyIds: [proxyId] }
+
+    expect(
+      validateNarrativeReferences(
+        [{ field: 'content', text: `Evidence ID: ${alphaEvidenceId.toUpperCase()}` }],
+        caseAuthority,
+      ).ok,
+    ).toBe(true)
+    expect(
+      validateNarrativeReferences(
+        [{ field: 'content', text: `Evidence ID: ${foreignId.toUpperCase()}` }],
+        caseAuthority,
+      ).ok,
+    ).toBe(false)
+    expect(
+      validateNarrativeReferences(
+        [{ field: 'content', text: `Proxy ID: ${alphaEvidenceId.toUpperCase()}` }],
+        caseAuthority,
+      ).ok,
+    ).toBe(false)
   })
 })

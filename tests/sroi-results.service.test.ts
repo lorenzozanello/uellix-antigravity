@@ -740,6 +740,38 @@ describe('report foundation', () => {
       await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true }))
         .resolves.toMatchObject({ status: 'locked' });
     });
+
+    it('refuses a save when a report numeric claim is hidden behind a former heading mask', async () => {
+      seedPinnedRun();
+      const { report, section } = seedDraft('save-masking-bypass');
+
+      await expect(
+        updateReportSection(PROJECT_ID, report.id, section.id, {
+          title: 'Resultados',
+          content: '## 17 USD',
+        }),
+      ).rejects.toThrow('cifras que no coinciden');
+      expect(section.content).toBe('Narrativa sin cifras.');
+    });
+
+    it('refuses a lock when persisted content hides a claim behind a former technical-ID mask', async () => {
+      seedPinnedRun();
+      const { report } = seedDraft('lock-masking-bypass', RUN_ID, 'v1700 USD');
+      mockDb.sroiRunReviews.push({
+        id: 'review-lock-masking-bypass',
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        calculationRunId: RUN_ID,
+        status: 'approved',
+      });
+      vi.mocked(requireOrganizationAccess).mockResolvedValue({
+        organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' },
+      } as any);
+
+      await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true }))
+        .rejects.toThrow('figures that do not match');
+      expect(report.status).toBe('draft');
+    });
   });
   it('lists project reports', async () => {
     const report = { id: 'rep-1', projectId: PROJECT_ID, organizationId: ORG_ID };

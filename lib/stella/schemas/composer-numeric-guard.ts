@@ -414,6 +414,10 @@ function isUuid(value: string): boolean {
   return UUID_TOKEN_RE.test(value) && value.length === 36
 }
 
+function canonicalUuidIdentity(value: string): string {
+  return isUuid(value) ? value.toLowerCase() : value
+}
+
 function canonicalAuthorityDecimal(value: unknown): string | null {
   if (typeof value !== 'string' && typeof value !== 'number') return null
   if (typeof value === 'string' && value.trim() === '') return null
@@ -452,9 +456,9 @@ export function validateNarrativeReferences(
   fields: readonly { field: string; text: string }[],
   authority: NarrativeReferenceAuthority,
 ): ReferenceGuardResult {
-  const evidenceIds = new Set(authority.evidenceIds)
-  const proxyIds = new Set(authority.proxyIds)
-  const allowedIds = new Set([...authority.evidenceIds, ...authority.proxyIds])
+  const evidenceIds = new Set(authority.evidenceIds.map(canonicalUuidIdentity))
+  const proxyIds = new Set(authority.proxyIds.map(canonicalUuidIdentity))
+  const allowedIds = new Set([...evidenceIds, ...proxyIds])
   const violations: ReferenceViolation[] = []
   const seen = new Set<string>()
 
@@ -475,8 +479,9 @@ export function validateNarrativeReferences(
         reject(id, field)
         continue
       }
-      labelledTypes.set(id.toLowerCase(), type)
-      if (!(type === 'evidence' ? evidenceIds : proxyIds).has(id)) reject(id, field)
+      const canonicalId = canonicalUuidIdentity(id)
+      labelledTypes.set(canonicalId, type)
+      if (!(type === 'evidence' ? evidenceIds : proxyIds).has(canonicalId)) reject(id, field)
     }
 
     LEGACY_NARRATIVE_REFERENCE_RE.lastIndex = 0
@@ -485,10 +490,11 @@ export function validateNarrativeReferences(
     UUID_TOKEN_RE.lastIndex = 0
     for (const match of text.matchAll(UUID_TOKEN_RE)) {
       const id = match[0]
-      const typed = labelledTypes.get(id.toLowerCase())
+      const canonicalId = canonicalUuidIdentity(id)
+      const typed = labelledTypes.get(canonicalId)
       if (typed) {
-        if (!(typed === 'evidence' ? evidenceIds : proxyIds).has(id)) reject(id, field)
-      } else if (!allowedIds.has(id)) {
+        if (!(typed === 'evidence' ? evidenceIds : proxyIds).has(canonicalId)) reject(id, field)
+      } else if (!allowedIds.has(canonicalId)) {
         reject(id, field)
       }
     }
@@ -502,18 +508,50 @@ const REPORT_MONEY_RE = /^(?:-?\$[\d,.]+|USD -?[\d,.]+|-?[\d,.]+ USD)$/
 const REPORT_PERCENT_RE = /^(-?[\d,.]+)\s*%$/
 const REPORT_SROI_RE = /^(-?[\d,.]+):1$/
 const REPORT_NUMERICISH_RE = /\bUSD[ \t]*-?\d[\d,]*(?:\.\d+)?|[<>][ \t]*-?\d[\d,]*(?:\.\d+)?|\([ \t]*-?\d[\d,]*(?:\.\d+)?[ \t]*\)|-?\d[\d,]*(?:\.\d+)?[ \t]*[–-][ \t]*-?\d[\d,]*(?:\.\d+)?|-?\$?\d[\d,]*(?:\.\d+)?(?:[eE][+-]?\d+)?(?:[ \t]*(?:USD|%|:\s*1)|[ \t]+(?:beneficiaries?|beneficiarios?))?/g
-const ISO_DATE_RE = /\b\d{4}-\d{2}-\d{2}\b/g
+const ISO_DATE_RE = /\b(\d{4})-(\d{2})-(\d{2})\b/g
 const TECHNICAL_ID_RE = /\b(?:v\d+(?:\.\d+)*|SDG\d+)\b/gi
-const MARKDOWN_ORDINAL_RE = /^(?:\s{0,3}(?:#{1,6}\s+)?)(?:\d{1,2}(?:\.\d{1,2}){0,2}\.?)(?=\s+[A-Za-zÁÉÍÓÚÑÜ])/gm
+// An ordinal must carry structural punctuation. Bare leading numbers such as
+// `17 USD` or `17 participants` are claims, not Markdown structure. A heading
+// section number may be hierarchical (`# 2.1 Metodología`); a list ordinal is
+// always terminated by a period (`1. Resultados`).
+const MARKDOWN_ORDINAL_RE = /^(?:\s{0,3}#{1,6}\s+(?:\d{1,2}\.\d{1,2}(?:\.\d{1,2})*|\d{1,2}\.)|\s{0,3}\d{1,2}\.)(?=\s+[A-ZÁÉÍÓÚÑÜ])/gm
 
-function maskMatches(text: string, re: RegExp): string {
+function maskMatches(
+  text: string,
+  re: RegExp,
+  shouldMask: (match: RegExpMatchArray, input: string) => boolean = () => true,
+): string {
   const chars = text.split('')
   re.lastIndex = 0
   for (const match of text.matchAll(re)) {
+    if (!shouldMask(match, text)) continue
     const start = match.index ?? 0
     for (let i = start; i < start + match[0].length; i++) chars[i] = ' '
   }
   return chars.join('')
+}
+
+function isCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+}
+
+/** A structural token is never allowed to absorb a neighboring report claim. */
+function isAdjacentToNumericAuthorityMarker(match: RegExpMatchArray, text: string): boolean {
+  const start = match.index ?? 0
+  const before = text.slice(0, start)
+  const after = text.slice(start + match[0].length)
+  return /(?:USD\s*|\$)$/i.test(before) || /^[ \t]*(?:USD\b|%|:\s*1\b|\$)/i.test(after)
+}
+
+function isStandaloneValidIsoDate(match: RegExpMatchArray, text: string): boolean {
+  const [, rawYear, rawMonth, rawDay] = match
+  return !isAdjacentToNumericAuthorityMarker(match, text) && isCalendarDate(
+    Number(rawYear),
+    Number(rawMonth),
+    Number(rawDay),
+  )
 }
 
 function canonicalReportDecimal(value: string): Decimal | null {
@@ -580,9 +618,17 @@ function validateReportNumericText(
   // UUIDs are reference candidates and must be recognized before numeric
   // scanning so their hyphenated components cannot become numeric claims.
   let scanText = maskMatches(text, UUID_TOKEN_RE)
-  scanText = maskMatches(scanText, ISO_DATE_RE)
-  scanText = maskMatches(scanText, TECHNICAL_ID_RE)
-  scanText = maskMatches(scanText, MARKDOWN_ORDINAL_RE)
+  // Structural exemptions are exact and conditional: only the structural
+  // token itself is removed, and never when it touches a material numeric
+  // marker. This keeps `v2.3` and valid standalone dates readable without
+  // allowing `v2.3 USD` or `2026-12-01 USD` to hide a claim.
+  scanText = maskMatches(scanText, ISO_DATE_RE, isStandaloneValidIsoDate)
+  scanText = maskMatches(scanText, TECHNICAL_ID_RE, (match, input) =>
+    !isAdjacentToNumericAuthorityMarker(match, input),
+  )
+  scanText = maskMatches(scanText, MARKDOWN_ORDINAL_RE, (match, input) =>
+    !isAdjacentToNumericAuthorityMarker(match, input),
+  )
 
   const violations: NumericViolation[] = []
   REPORT_NUMERICISH_RE.lastIndex = 0
