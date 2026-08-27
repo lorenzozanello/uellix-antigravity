@@ -254,6 +254,13 @@ export async function createOrganizationFinancialProxy(input: unknown) {
 // the reviewer signed off on, so its review status is reset.
 const PROXY_MATERIAL_FIELDS = ['value', 'currency', 'unit', 'referenceYear'] as const;
 
+// CL-2B (PROX-01) — subset of PROXY_MATERIAL_FIELDS that resolveProxyValueUsd
+// actually derives from (value, currency, and referenceYear for the COP TRM
+// lookup date). `unit` is material to the review — it changes what the value
+// MEANS — but not to the USD figure itself, so it alone must not force a
+// pointless FX re-fetch.
+const PROXY_USD_DERIVATION_FIELDS = ['value', 'currency', 'referenceYear'] as const;
+
 export async function updateOrganizationFinancialProxy(proxyId: string, input: unknown) {
   const ctx = await requireOrganizationAccess();
   const data = FinancialProxyInput.partial().parse(input);
@@ -274,9 +281,20 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
   );
   const resetReview = proxy.reviewStatus === 'approved' && materialChange;
 
+  // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes the
+  // previously frozen valueUsd/fxRateId stale: they were derived from the OLD
+  // material state. Null them out here so resolveProxyValueUsd's short-circuit
+  // (`if (proxy.valueUsd) return ...`) cannot reuse the stale figure on the
+  // next approval — that call is forced back through the real value/currency
+  // → USD derivation with the CURRENT data instead.
+  const usdDerivationChange = PROXY_USD_DERIVATION_FIELDS.some(
+    (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
+  );
+
   const updated = await db.update(financialProxies).set({
     ...data,
     ...(resetReview ? { reviewStatus: 'pending_review' as const } : {}),
+    ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}),
     updatedAt: new Date(),
   }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
 

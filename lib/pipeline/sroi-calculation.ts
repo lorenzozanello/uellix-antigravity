@@ -257,7 +257,14 @@ export interface AssignmentData {
   outcome: typeof outcomes.$inferSelect
 }
 
-async function loadCalculationData(projectId: string, orgId: string): Promise<{
+// CL-2D (SROI-01) — `enforceApproval` defaults to false because
+// getSroiCalculationReadiness() also calls this loader (just for investments/
+// allocations) and must keep reporting an unapproved proxy as a graceful
+// `blockingReasons` entry, never as a thrown exception. The actual calculation
+// entry points (preview/scenarios/persist) opt into enforcement: THEY are the
+// boundary where a stale-but-approved-looking proxy would otherwise have its
+// value silently consumed.
+async function loadCalculationData(projectId: string, orgId: string, enforceApproval = false): Promise<{
   investments: (typeof projectInvestments.$inferSelect)[]
   assignmentData: AssignmentData[]
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[]
@@ -310,6 +317,20 @@ async function loadCalculationData(projectId: string, orgId: string): Promise<{
     const proxy = proxyById.get(a.proxyId)
     const outcome = outcomeById.get(a.outcomeId)
     if (input && filterSet && proxy && outcome) {
+      // CL-2D (SROI-01) — readiness already checked reviewStatus === 'approved',
+      // but that read and this one are two separate round trips, not one
+      // transaction: a concurrent edit/revocation between them could otherwise
+      // let a no-longer-approved proxy's value be silently consumed here. Fail
+      // the WHOLE calculation closed rather than quietly drop the line item —
+      // an SROI run that is missing a line item without saying so is exactly
+      // the silent-corruption failure mode this guards against. Only the real
+      // calculation entry points enforce this (see `enforceApproval` above) —
+      // readiness's own use of this loader must stay graceful.
+      if (enforceApproval && proxy.reviewStatus !== 'approved') {
+        throw new Error(
+          `Cannot calculate: proxy ${proxy.id} is not approved (reviewStatus=${proxy.reviewStatus})`
+        )
+      }
       assignmentData.push({ assignment: a, input, filterSet, proxy, outcome })
     }
   }
@@ -813,7 +834,7 @@ export async function calculateSroiPreview(projectId: string) {
     return { canCalculate: false, readiness, result: null }
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
@@ -861,7 +882,7 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
     return { canCalculate: false as const, readiness, scenarios: null, deltaPp }
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
@@ -899,7 +920,7 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     throw new Error(`Cannot calculate: ${readiness.blockingReasons.join('; ')}`)
   }
 
-  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id)
+  const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)

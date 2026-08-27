@@ -402,6 +402,115 @@ describe('Financial Proxies Service', () => {
 
       expect(mockDbData.lastUpdateValues.organizationId).toBeUndefined();
     });
+
+    // -------------------------------------------------------------------------
+    // CL-2B/CL-2C (PROX-01) — a material value/currency/referenceYear edit on
+    // an approved proxy must invalidate the previously frozen valueUsd/fxRateId,
+    // not just reset reviewStatus. Otherwise resolveProxyValueUsd's
+    // `if (proxy.valueUsd) return ...` short-circuit lets re-approval reuse a
+    // USD figure derived from the OLD value/currency — a deterministic SROI
+    // calculation would then silently consume a number the reviewer never saw.
+    // -------------------------------------------------------------------------
+    describe('CL-2B — material USD-derivation edits invalidate the frozen valueUsd/fxRateId', () => {
+      const frozenProxy = {
+        ...approvedProxy,
+        value: '100',
+        currency: 'USD',
+        valueUsd: '100',
+        fxRateId: null,
+      };
+
+      it('a `value` edit invalidates the frozen valueUsd and fxRateId', async () => {
+        await asCallerOrg();
+        mockDbData.financialProxies = [{ ...frozenProxy, fxRateId: 'fx-1' }];
+        mockDbData.updated = { ...frozenProxy, value: '250', reviewStatus: 'pending_review', valueUsd: null, fxRateId: null };
+
+        await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
+
+        expect(mockDbData.lastUpdateValues.valueUsd).toBeNull();
+        expect(mockDbData.lastUpdateValues.fxRateId).toBeNull();
+        expect(mockDbData.lastUpdateValues.reviewStatus).toBe('pending_review');
+      });
+
+      it('a `currency` edit invalidates the frozen valueUsd and fxRateId', async () => {
+        await asCallerOrg();
+        mockDbData.financialProxies = [{ ...frozenProxy, fxRateId: 'fx-1' }];
+        mockDbData.updated = { ...frozenProxy, currency: 'COP' };
+
+        await updateOrganizationFinancialProxy(PROXY_UUID, { currency: 'COP' });
+
+        expect(mockDbData.lastUpdateValues.valueUsd).toBeNull();
+        expect(mockDbData.lastUpdateValues.fxRateId).toBeNull();
+      });
+
+      it('a `referenceYear` edit invalidates the frozen valueUsd (COP TRM lookup date depends on it)', async () => {
+        await asCallerOrg();
+        const copProxy = { ...frozenProxy, currency: 'COP', referenceYear: 2022, fxRateId: 'fx-1' };
+        mockDbData.financialProxies = [copProxy];
+        mockDbData.updated = { ...copProxy, referenceYear: 2023 };
+
+        await updateOrganizationFinancialProxy(PROXY_UUID, { referenceYear: 2023 });
+
+        expect(mockDbData.lastUpdateValues.valueUsd).toBeNull();
+        expect(mockDbData.lastUpdateValues.fxRateId).toBeNull();
+      });
+
+      it('a `unit`-only edit does NOT invalidate valueUsd — unit does not feed the FX derivation', async () => {
+        await asCallerOrg();
+        mockDbData.financialProxies = [frozenProxy];
+        mockDbData.updated = { ...frozenProxy, unit: 'per household', reviewStatus: 'pending_review' };
+
+        await updateOrganizationFinancialProxy(PROXY_UUID, { unit: 'per household' });
+
+        // Material (resets review — unit IS in PROXY_MATERIAL_FIELDS)...
+        expect(mockDbData.lastUpdateValues.reviewStatus).toBe('pending_review');
+        // ...but not a USD-derivation field, so valueUsd/fxRateId are left alone.
+        expect(mockDbData.lastUpdateValues.valueUsd).toBeUndefined();
+        expect(mockDbData.lastUpdateValues.fxRateId).toBeUndefined();
+      });
+
+      it('re-submitting the SAME value/currency/referenceYear does not spuriously invalidate valueUsd', async () => {
+        await asCallerOrg();
+        mockDbData.financialProxies = [frozenProxy];
+        mockDbData.updated = { ...frozenProxy };
+
+        await updateOrganizationFinancialProxy(PROXY_UUID, { value: '100', currency: 'USD', referenceYear: 2023 });
+
+        expect(mockDbData.lastUpdateValues.valueUsd).toBeUndefined();
+        expect(mockDbData.lastUpdateValues.fxRateId).toBeUndefined();
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // CL-2C (PROX-01) — re-approval after a material edit must DERIVE from the
+    // CURRENT value/currency, not reuse a stale frozen figure. Once CL-2B nulls
+    // valueUsd on the material edit, resolveProxyValueUsd's short-circuit can no
+    // longer fire, so this is really a consequence test of the same fix, run
+    // through the review-status path instead of the update path.
+    // -------------------------------------------------------------------------
+    describe('CL-2C — re-approval derives the USD value from the CURRENT proxy state', () => {
+      it('re-approving a proxy whose valueUsd was invalidated by CL-2B derives fresh USD from the new value', async () => {
+        const { requireOrganizationAccess } = await import('@/lib/auth/session');
+        const { canApproveProxy } = await import('@/lib/auth/permissions');
+        const ctx = { organization: { id: 'org-3' }, user: { isSuperAdmin: false }, membership: { role: 'organization_admin' } } as any;
+        vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+        vi.mocked(canApproveProxy).mockReturnValue(true);
+
+        // Post-CL-2B state: material value edit already nulled valueUsd/fxRateId.
+        const editedProxy = {
+          id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'pending_review',
+          value: '250', currency: 'USD', unit: 'unit', referenceYear: 2023,
+          valueUsd: null, fxRateId: null,
+        };
+        mockDbData.financialProxies = [editedProxy];
+        mockDbData.updated = { ...editedProxy, reviewStatus: 'approved', valueUsd: '250' };
+
+        await updateFinancialProxyReviewStatus(PROXY_UUID, 'approved');
+
+        // USD derives from the CURRENT value (250), never the stale prior one.
+        expect(mockDbData.lastUpdateValues.valueUsd).toBe('250');
+      });
+    });
   });
 
   it('updateFinancialProxyReviewStatus only allows permitted roles', async () => {

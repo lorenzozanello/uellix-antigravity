@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db } from '@/db/client';
 import { requireOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
+import { financialProxies } from '@/db/schema';
 
 // Mock authentication/session utilities
 vi.mock('@/lib/auth/session', () => ({
@@ -421,6 +422,96 @@ describe('Readiness edge cases', () => {
     const readiness = await getSroiCalculationReadiness(PROJECT_ID);
     expect(readiness.canCalculate).toBe(false);
     expect(readiness.blockingReasons).toContain('Invalid filter values in 1 assignment(s)');
+  });
+});
+
+describe('CL-2D (SROI-01) — calculation-time approval assertion', () => {
+  it('approved proxy: calculation still succeeds normally', async () => {
+    seedHappyData();
+    const preview = await calculateSroiPreview(PROJECT_ID);
+    expect(preview.canCalculate).toBe(true);
+    expect(preview.result!.lineItems).toHaveLength(1);
+  });
+
+  // One calculateSroiPreview() call reads financial_proxies THREE times:
+  //   #1 inside getSroiCalculationReadiness's own internal loadCalculationData
+  //      call (fetches investments/allocations only, enforceApproval=false);
+  //   #2 getSroiCalculationReadiness's own dedicated proxiesRows query, which
+  //      is the check that actually populates `unapprovedProxies`;
+  //   #3 the DIRECT loadCalculationData(..., true) call made by
+  //      calculateSroiPreview itself, once readiness has already passed.
+  // This test simulates a concurrent revocation landing strictly AFTER
+  // readiness finished (reads #1 and #2 still see 'approved', so readiness
+  // reports canCalculate:true) but BEFORE the enforced load (#3) runs. Without
+  // the CL-2D assert at that #3 boundary, the stale-but-cached proxy.valueUsd
+  // would be silently consumed by the deterministic engine anyway.
+  it('refuses the WHOLE calculation when the proxy loses approval between the readiness read and the enforced load read', async () => {
+    const { proxy } = seedHappyData();
+
+    let financialProxyReads = 0;
+    const baseSelectImpl = (db.select as any).getMockImplementation();
+    (db.select as any).mockImplementation((...args: any[]) => {
+      const built = baseSelectImpl(...args);
+      const originalFrom = built.from;
+      built.from = (table: any) => {
+        const result = originalFrom(table);
+        if (table === financialProxies) {
+          financialProxyReads += 1;
+          if (financialProxyReads === 3) {
+            // The THIRD financial_proxies read = the enforced load, made
+            // AFTER readiness already passed. Simulate the row having been
+            // revoked in the interim.
+            const originalThen = result.then;
+            result.then = (cb: any) =>
+              originalThen((rows: any[]) =>
+                cb(rows.map((r: any) => (r.id === proxy.id ? { ...r, reviewStatus: 'pending_review' } : r)))
+              );
+          }
+        }
+        return result;
+      };
+      return built;
+    });
+
+    try {
+      await expect(calculateSroiPreview(PROJECT_ID)).rejects.toThrow(/not approved/i);
+      expect(financialProxyReads).toBe(3);
+    } finally {
+      (db.select as any).mockImplementation(baseSelectImpl);
+    }
+  });
+
+  it('never persists a run when the load-time approval assertion fails', async () => {
+    const { proxy } = seedHappyData();
+    let financialProxyReads = 0;
+    const baseSelectImpl = (db.select as any).getMockImplementation();
+    (db.select as any).mockImplementation((...args: any[]) => {
+      const built = baseSelectImpl(...args);
+      const originalFrom = built.from;
+      built.from = (table: any) => {
+        const result = originalFrom(table);
+        if (table === financialProxies) {
+          financialProxyReads += 1;
+          if (financialProxyReads === 3) {
+            const originalThen = result.then;
+            result.then = (cb: any) =>
+              originalThen((rows: any[]) =>
+                cb(rows.map((r: any) => (r.id === proxy.id ? { ...r, reviewStatus: 'rejected' } : r)))
+              );
+          }
+        }
+        return result;
+      };
+      return built;
+    });
+    const insertSpy = vi.spyOn(db, 'insert');
+
+    try {
+      await expect(calculateAndPersistSroiRun(PROJECT_ID)).rejects.toThrow(/not approved/i);
+      expect(insertSpy).not.toHaveBeenCalled();
+    } finally {
+      (db.select as any).mockImplementation(baseSelectImpl);
+    }
   });
 });
 
