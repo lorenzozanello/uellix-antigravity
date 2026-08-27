@@ -4,6 +4,9 @@ import { db } from '@/db/client';
 import { proxySources, financialProxies, outcomeProxyAssignments, projects, outcomes } from '@/db/schema';
 import { eq, and, or, isNull } from 'drizzle-orm';
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
+import Decimal from 'decimal.js';
+import '@/lib/pipeline/decimal-config';
 import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/auth/session';
 import { canApproveProxy } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
@@ -11,6 +14,55 @@ import { getOrCreateSharedCopRate, convertToUsd, type FxRateExecutor } from '@/l
 
 type FinancialProxyRow = typeof financialProxies.$inferSelect;
 type FinancialProxyTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+const APPROVAL_STATE_VERSION = 'financial-proxy-approval-state/v1';
+const APPROVAL_STATE_FINGERPRINT_RE = /^[a-f0-9]{64}$/;
+
+type FinancialProxyApprovalState = Pick<
+  FinancialProxyRow,
+  | 'id'
+  | 'organizationId'
+  | 'sourceId'
+  | 'value'
+  | 'currency'
+  | 'unit'
+  | 'referenceYear'
+  | 'valueUsd'
+  | 'fxRateId'
+  | 'reviewStatus'
+>;
+
+function canonicalDecimal(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  return new Decimal(value).toFixed();
+}
+
+/** A stable, approval-material-only identity for the proxy state a human saw. */
+export function fingerprintFinancialProxyApprovalState(proxy: FinancialProxyApprovalState): string {
+  const canonicalState = JSON.stringify([
+    APPROVAL_STATE_VERSION,
+    proxy.id,
+    proxy.organizationId,
+    proxy.sourceId,
+    canonicalDecimal(proxy.value),
+    proxy.currency,
+    proxy.unit,
+    proxy.referenceYear,
+    canonicalDecimal(proxy.valueUsd),
+    proxy.fxRateId,
+    proxy.reviewStatus,
+  ]);
+  return createHash('sha256').update(canonicalState, 'utf8').digest('hex');
+}
+
+function assertExpectedApprovalState(expectedApprovalState: string | undefined): asserts expectedApprovalState is string {
+  if (expectedApprovalState === undefined || expectedApprovalState.length === 0) {
+    throw new Error('Expected approval state is required');
+  }
+  if (!APPROVAL_STATE_FINGERPRINT_RE.test(expectedApprovalState)) {
+    throw new Error('Expected approval state is malformed');
+  }
+}
 
 /**
  * Serializes every material proxy lifecycle transition on the proxy row itself.
@@ -37,6 +89,27 @@ export async function withLockedFinancialProxy<T>(
   });
 }
 
+/**
+ * Locks the proxy before proving that the human-reviewed state still exists.
+ * The expected fingerprint is intentionally not an authorization credential;
+ * the caller keeps the role and tenancy checks in `authorize`.
+ */
+export async function withExpectedLockedFinancialProxy<T>(
+  proxyId: string,
+  expectedApprovalState: string | undefined,
+  authorize: (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => Promise<void> | void,
+  transition: (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => Promise<T>,
+): Promise<T> {
+  assertExpectedApprovalState(expectedApprovalState);
+  return withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+    await authorize(tx, proxy);
+    if (fingerprintFinancialProxyApprovalState(proxy) !== expectedApprovalState) {
+      throw new Error('Approval state is stale');
+    }
+    return transition(tx, proxy);
+  });
+}
+
 // Fase 1b — an approved proxy must resolve to USD (value_usd) so the calc's two
 // sides normalize. USD passes through; COP auto-fetches the TRM (Dec 31 of the
 // reference year); any other currency needs a manual rate (1c) and cannot be
@@ -58,6 +131,23 @@ export async function resolveProxyValueUsd(proxy: {
     return { valueUsd: convertToUsd(proxy.value, rate.rateToUsd), fxRateId: rate.id }
   }
   throw new Error('Cannot approve a non-USD/COP proxy without a manual USD conversion')
+}
+
+/** Validates and derives the monetary authority for a currently locked approval. */
+export async function deriveApprovedProxyAuthority(
+  tx: FinancialProxyTransaction,
+  proxy: FinancialProxyRow,
+): Promise<{ valueUsd: string; fxRateId: string | null }> {
+  const { value, currency, unit, referenceYear } = proxy;
+  if (!value) throw new Error('Cannot approve without value');
+  if (!currency) throw new Error('Cannot approve without currency');
+  if (!unit) throw new Error('Cannot approve without unit');
+  if (!referenceYear) throw new Error('Cannot approve without referenceYear');
+  const decimalValue = new Decimal(value);
+  if (!decimalValue.isFinite() || decimalValue.lte(0)) {
+    throw new Error('Cannot approve a proxy with a non-positive value');
+  }
+  return resolveProxyValueUsd(proxy, tx);
 }
 
 /*** Validation schemas ***/
@@ -280,7 +370,7 @@ export async function createOrganizationFinancialProxy(input: unknown) {
 // Fields whose change invalidates a prior human approval: an approved proxy
 // whose value/currency/unit/reference year is edited no longer reflects what
 // the reviewer signed off on, so its review status is reset.
-const PROXY_MATERIAL_FIELDS = ['value', 'currency', 'unit', 'referenceYear'] as const;
+const PROXY_MATERIAL_FIELDS = ['sourceId', 'value', 'currency', 'unit', 'referenceYear'] as const;
 
 // CL-2B (PROX-01) — subset of PROXY_MATERIAL_FIELDS that resolveProxyValueUsd
 // actually derives from (value, currency, and referenceYear for the COP TRM
@@ -342,11 +432,15 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
   return updated;
 }
 
-export async function updateFinancialProxyReviewStatus(proxyId: string, newStatus: string) {
+export async function updateFinancialProxyReviewStatus(
+  proxyId: string,
+  newStatus: string,
+  expectedApprovalState?: string,
+) {
   const ctx = await requireOrganizationAccess();
   const allowed = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'];
   if (!allowed.includes(newStatus)) throw new Error('Invalid status');
-  const { proxy, updated } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+  const transition = async (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => {
     if (proxy.organizationId && proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
     // System proxies (organizationId: null) are reviewed/approved exclusively
     // via lib/admin/proxies.ts — see updateOrganizationProxySource above for
@@ -354,28 +448,22 @@ export async function updateFinancialProxyReviewStatus(proxyId: string, newStatu
     // hatch.
     if (!proxy.organizationId) throw new Error('Forbidden');
     if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
-    if (newStatus === 'approved') {
-      const required = ['value', 'currency', 'unit', 'referenceYear'];
-      for (const f of required) {
-        if (!proxy[f as keyof typeof proxy]) throw new Error(`Cannot approve without ${f}`);
-      }
-      // A proxy value of 0 (or non-positive / non-numeric) is methodologically
-      // invalid — it would zero out or corrupt every line item that uses it.
-      const numericValue = Number(proxy.value);
-      if (!Number.isFinite(numericValue) || numericValue <= 0) {
-        throw new Error('Cannot approve a proxy with a non-positive value');
-      }
-    }
-
-    // Derivation and transition intentionally share the locked material row.
     const usdFields = newStatus === 'approved'
-      ? await resolveProxyValueUsd(proxy, tx)
+      ? await deriveApprovedProxyAuthority(tx, proxy)
       : {};
     const updated = await tx.update(financialProxies).set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
       .where(eq(financialProxies.id, proxyId))
       .returning().then(r => r[0]);
     return { proxy, updated };
-  });
+  };
+
+  const result = newStatus === 'approved'
+    ? await withExpectedLockedFinancialProxy(proxyId, expectedApprovalState, async (_tx, proxy) => {
+      if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+      if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
+    }, transition)
+    : await withLockedFinancialProxy(proxyId, transition);
+  const { proxy, updated } = result;
 
   await logAuditAction({
     organizationId: ctx.organization.id,

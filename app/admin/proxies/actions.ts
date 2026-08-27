@@ -97,14 +97,15 @@ export async function createGlobalFinancialProxyAction(formData: FormData) {
 export async function updateGlobalProxyReviewStatusAction(formData: FormData) {
   const proxyId = formData.get('proxyId') as string | null
   const status = formData.get('status') as string | null
+  const expectedApprovalState = formData.get('expectedApprovalState') as string | null
 
-  if (!proxyId || !status) redirect(`${PROXIES_PATH}?error=invalid_input`)
+  if (!proxyId || !status || (status === 'approved' && !expectedApprovalState)) redirect(`${PROXIES_PATH}?error=invalid_input`)
 
   await requireAdminAccess()
 
   try {
     await withSuperAdminDatabaseContext(() =>
-      updateGlobalProxyReviewStatus(proxyId, status)
+      updateGlobalProxyReviewStatus(proxyId, status, expectedApprovalState ?? undefined)
     )
   } catch (err) {
     // Framework control flow first: redirect() throws, and swallowing it here
@@ -125,14 +126,15 @@ export async function setGlobalProxyManualFxRateAction(formData: FormData) {
   const proxyId = formData.get('proxyId') as string | null
   const rateToUsd = (formData.get('rateToUsd') as string | null)?.trim()
   const source = (formData.get('source') as string | null)?.trim()
+  const expectedApprovalState = formData.get('expectedApprovalState') as string | null
 
-  if (!proxyId || !rateToUsd || !source) redirect(`${PROXIES_PATH}?error=invalid_input`)
+  if (!proxyId || !rateToUsd || !source || !expectedApprovalState) redirect(`${PROXIES_PATH}?error=invalid_input`)
 
   await requireAdminAccess()
 
   try {
     await withSuperAdminDatabaseContext(() =>
-      setGlobalProxyManualFxRate(proxyId, { rateToUsd, source })
+      setGlobalProxyManualFxRate(proxyId, { rateToUsd, source }, expectedApprovalState)
     )
   } catch (err) {
     // Framework control flow first: redirect() throws, and swallowing it here
@@ -151,14 +153,15 @@ export async function setGlobalProxyManualFxRateAction(formData: FormData) {
 
 export async function promoteProxyToGlobalAction(formData: FormData) {
   const proxyId = formData.get('proxyId') as string | null
+  const expectedApprovalState = formData.get('expectedApprovalState') as string | null
 
-  if (!proxyId) redirect(`${PROXIES_PATH}?error=invalid_input`)
+  if (!proxyId || !expectedApprovalState) redirect(`${PROXIES_PATH}?error=invalid_input`)
 
   await requireAdminAccess()
 
   try {
     const { promoteProxyToGlobal } = await import('@/lib/admin/proxies')
-    await withSuperAdminDatabaseContext(() => promoteProxyToGlobal(proxyId))
+    await withSuperAdminDatabaseContext(() => promoteProxyToGlobal(proxyId, expectedApprovalState))
   } catch (err) {
     // Framework control flow first: redirect() throws, and swallowing it here
     // would render "NEXT_REDIRECT" instead of navigating.

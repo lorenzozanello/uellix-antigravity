@@ -100,6 +100,7 @@ import {
   createOrganizationFinancialProxy,
   updateOrganizationFinancialProxy,
   updateFinancialProxyReviewStatus,
+  fingerprintFinancialProxyApprovalState,
   assignProxyToOutcome,
   archiveOutcomeProxyAssignment,
 } from '@/lib/pipeline/proxies';
@@ -110,6 +111,21 @@ const PROXY_UUID = '550e8400-e29b-41d4-a716-446655440002';
 const OUTCOME_UUID = '550e8400-e29b-41d4-a716-446655440003';
 const PROJECT_UUID = '550e8400-e29b-41d4-a716-446655440004';
 const ASSIGNMENT_UUID = '550e8400-e29b-41d4-a716-446655440005';
+
+function reviewedStateOf(proxy: Record<string, unknown>) {
+  return fingerprintFinancialProxyApprovalState({
+    id: String(proxy.id),
+    organizationId: (proxy.organizationId as string | null | undefined) ?? null,
+    sourceId: (proxy.sourceId as string | null | undefined) ?? null,
+    value: (proxy.value as string | null | undefined) ?? null,
+    currency: (proxy.currency as string | null | undefined) ?? null,
+    unit: (proxy.unit as string | null | undefined) ?? null,
+    referenceYear: (proxy.referenceYear as number | null | undefined) ?? null,
+    valueUsd: (proxy.valueUsd as string | null | undefined) ?? null,
+    fxRateId: (proxy.fxRateId as string | null | undefined) ?? null,
+    reviewStatus: (proxy.reviewStatus as string | null | undefined) ?? null,
+  } as any);
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -342,6 +358,18 @@ describe('Financial Proxies Service', () => {
         .resolves.toBeDefined();
     });
 
+    it('treats sourceId reattachment as material and resets an existing approval', async () => {
+      await asCallerOrg();
+      const replacementSourceId = '550e8400-e29b-41d4-a716-446655440099';
+      mockDbData.financialProxies = [approvedProxy];
+      mockDbData.proxySources = [{ id: replacementSourceId, organizationId: null, status: 'active' }];
+      mockDbData.updated = { ...approvedProxy, sourceId: replacementSourceId, reviewStatus: 'pending_review' };
+
+      await updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: replacementSourceId });
+
+      expect(mockDbData.lastUpdateValues.reviewStatus).toBe('pending_review');
+    });
+
     it('resets an APPROVED proxy to pending_review when a material field changes', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
@@ -507,7 +535,11 @@ describe('Financial Proxies Service', () => {
         mockDbData.financialProxies = [editedProxy];
         mockDbData.updated = { ...editedProxy, reviewStatus: 'approved', valueUsd: '250' };
 
-        await updateFinancialProxyReviewStatus(PROXY_UUID, 'approved');
+        await updateFinancialProxyReviewStatus(
+          PROXY_UUID,
+          'approved',
+          reviewedStateOf(editedProxy)
+        );
 
         // USD derives from the CURRENT value (250), never the stale prior one.
         expect(mockDbData.lastUpdateValues.valueUsd).toBe('250');
@@ -527,10 +559,94 @@ describe('Financial Proxies Service', () => {
     const updated = { ...proxy, reviewStatus: 'approved' };
     mockDbData.updated = updated;
 
-    const result = await updateFinancialProxyReviewStatus(PROXY_UUID, 'approved');
+    const result = await updateFinancialProxyReviewStatus(
+      PROXY_UUID,
+      'approved',
+      reviewedStateOf(proxy)
+    );
     expect(result.reviewStatus).toBe('approved');
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
+  });
+
+  describe('R3-CL2 — expected approval state', () => {
+    const approvalProxy = {
+      id: PROXY_UUID,
+      organizationId: 'org-3',
+      sourceId: SOURCE_UUID,
+      reviewStatus: 'pending_review',
+      value: '100.0000',
+      currency: 'USD',
+      unit: 'unit',
+      referenceYear: 2023,
+      valueUsd: '100.0000',
+      fxRateId: null,
+      name: 'Metadata ignored by approval fingerprint',
+      updatedAt: new Date('2025-01-01T00:00:00.000Z'),
+    };
+
+    async function asApprover() {
+      const { requireOrganizationAccess } = await import('@/lib/auth/session');
+      const { canApproveProxy } = await import('@/lib/auth/permissions');
+      vi.mocked(requireOrganizationAccess).mockResolvedValue({
+        organization: { id: 'org-3' },
+        user: { id: 'reviewer-1' },
+        membership: { role: 'organization_admin' },
+      } as any);
+      vi.mocked(canApproveProxy).mockReturnValue(true);
+    }
+
+    it('creates a deterministic material-only fingerprint', () => {
+      const first = fingerprintFinancialProxyApprovalState(approvalProxy);
+      const proxyWithMetadataOnlyChange = {
+        ...approvalProxy,
+        updatedAt: new Date('2025-02-01T00:00:00.000Z'),
+        name: 'Different display metadata',
+      };
+      const metadataOnlyChange = fingerprintFinancialProxyApprovalState(proxyWithMetadataOnlyChange);
+      const materialChange = fingerprintFinancialProxyApprovalState({ ...approvalProxy, value: '101.0000' });
+
+      expect(first).toMatch(/^[a-f0-9]{64}$/);
+      expect(metadataOnlyChange).toBe(first);
+      expect(materialChange).not.toBe(first);
+    });
+
+    it('refuses an approval request without the reviewed-state fingerprint', async () => {
+      await asApprover();
+      mockDbData.financialProxies = [approvalProxy];
+      mockDbData.updated = { ...approvalProxy, reviewStatus: 'approved' };
+
+      await expect(
+        updateFinancialProxyReviewStatus(PROXY_UUID, 'approved', undefined as never)
+      ).rejects.toThrow('Expected approval state is required');
+      expect(mockDbData.lastUpdateValues).toBeNull();
+    });
+
+    it('refuses a stale V1 fingerprint after V2 has committed', async () => {
+      await asApprover();
+      const v1 = fingerprintFinancialProxyApprovalState(approvalProxy);
+      const v2 = { ...approvalProxy, value: '200.0000', valueUsd: '200.0000' };
+      mockDbData.financialProxies = [v2];
+      mockDbData.updated = { ...v2, reviewStatus: 'approved' };
+
+      await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved', v1))
+        .rejects.toThrow('Approval state is stale');
+      expect(mockDbData.lastUpdateValues).toBeNull();
+    });
+
+    it('approves only when the current locked state matches the reviewed fingerprint', async () => {
+      await asApprover();
+      mockDbData.financialProxies = [approvalProxy];
+      mockDbData.updated = { ...approvalProxy, reviewStatus: 'approved', reviewerId: 'reviewer-1' };
+
+      const result = await updateFinancialProxyReviewStatus(
+        PROXY_UUID,
+        'approved',
+        fingerprintFinancialProxyApprovalState(approvalProxy)
+      );
+
+      expect(result.reviewStatus).toBe('approved');
+    });
   });
 
   it('updateFinancialProxyReviewStatus rejects a proxy owned by a different organization (IDOR regression)', async () => {
@@ -543,7 +659,7 @@ describe('Financial Proxies Service', () => {
     const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
 
-    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved')).rejects.toThrow('Forbidden');
+    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved', reviewedStateOf(proxy))).rejects.toThrow('Forbidden');
   });
 
   it('updateFinancialProxyReviewStatus rejects a non-super-admin acting on a system (org-less) proxy', async () => {
@@ -555,7 +671,7 @@ describe('Financial Proxies Service', () => {
     const proxy = { id: PROXY_UUID, organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
 
-    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved')).rejects.toThrow('Forbidden');
+    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved', reviewedStateOf(proxy))).rejects.toThrow('Forbidden');
   });
 
   it('updateFinancialProxyReviewStatus rejects a system (org-less) proxy even for isSuperAdmin=true (system proxies are admin-only via lib/admin/proxies.ts)', async () => {
@@ -572,7 +688,7 @@ describe('Financial Proxies Service', () => {
     const proxy = { id: PROXY_UUID, organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
 
-    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved')).rejects.toThrow('Forbidden');
+    await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved', reviewedStateOf(proxy))).rejects.toThrow('Forbidden');
   });
 });
 

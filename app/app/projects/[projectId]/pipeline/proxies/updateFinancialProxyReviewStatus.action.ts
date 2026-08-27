@@ -7,12 +7,13 @@ import { updateFinancialProxyReviewStatus } from '@/lib/pipeline/proxies';
 const reviewStatusSchema = z.object({
   proxyId: z.string().uuid(),
   newStatus: z.enum(['suggested', 'pending_review', 'approved', 'rejected', 'archived']),
+  expectedApprovalState: z.string().optional(),
 });
 
 export async function updateFinancialProxyReviewStatusAction(projectId: string, input: unknown) {
   const data = reviewStatusSchema.parse(input);
   // The underlying function checks permissions and status validity
   return runWithOrganizationAccess(() =>
-    updateFinancialProxyReviewStatus(data.proxyId, data.newStatus)
+    updateFinancialProxyReviewStatus(data.proxyId, data.newStatus, data.expectedApprovalState)
   );
 }

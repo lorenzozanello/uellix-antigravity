@@ -7,6 +7,7 @@ import {
   setGlobalProxyManualFxRateAction,
   promoteProxyToGlobalAction,
 } from './actions'
+import { fingerprintFinancialProxyApprovalState } from '@/lib/pipeline/proxies'
 
 const ERROR_MESSAGES: Record<string, string> = {
   not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
@@ -213,6 +214,7 @@ export default async function AdminProxiesPage(props: {
                   <td className="px-4 py-3 text-right">
                     <form action={promoteProxyToGlobalAction} className="inline">
                       <input type="hidden" name="proxyId" value={proxy.id} />
+                      <input type="hidden" name="expectedApprovalState" value={fingerprintFinancialProxyApprovalState(proxy)} />
                       <button
                         type="submit"
                         className="text-xs font-medium text-green-400 hover:underline transition"
@@ -278,6 +280,7 @@ export default async function AdminProxiesPage(props: {
                           <div className="text-xs text-amber-600 font-medium">Requiere tasa manual</div>
                           <form action={setGlobalProxyManualFxRateAction} className="flex flex-col gap-2">
                             <input type="hidden" name="proxyId" value={proxy.id} />
+                            <input type="hidden" name="expectedApprovalState" value={fingerprintFinancialProxyApprovalState(proxy)} />
                             <input
                               name="rateToUsd"
                               type="text"
@@ -308,6 +311,7 @@ export default async function AdminProxiesPage(props: {
                         <form action={updateGlobalProxyReviewStatusAction} className="inline">
                           <input type="hidden" name="proxyId" value={proxy.id} />
                           <input type="hidden" name="status" value="approved" />
+                          <input type="hidden" name="expectedApprovalState" value={fingerprintFinancialProxyApprovalState(proxy)} />
                           <button
                             type="submit"
                             disabled={needsManualFx}

@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 type ProxyRow = {
   id: string
   organizationId: string | null
+  sourceId: string
   reviewStatus: 'suggested' | 'pending_review' | 'approved' | 'rejected' | 'archived'
   value: string
   currency: string
@@ -125,6 +126,7 @@ vi.mock('@/lib/audit/logger', () => ({
 import { requireAdminAccess, requireOrganizationAccess } from '@/lib/auth/session'
 import { canApproveProxy } from '@/lib/auth/permissions'
 import {
+  fingerprintFinancialProxyApprovalState,
   updateFinancialProxyReviewStatus,
   updateOrganizationFinancialProxy,
 } from '@/lib/pipeline/proxies'
@@ -137,6 +139,7 @@ function seedProxy(overrides: Partial<ProxyRow> = {}) {
   state.current = {
     id: PROXY_ID,
     organizationId: ORGANIZATION.id,
+    sourceId: '550e8400-e29b-41d4-a716-446655440098',
     reviewStatus: 'suggested',
     value: '100',
     currency: 'USD',
@@ -165,6 +168,20 @@ beforeEach(() => {
 })
 
 describe('R2-CL2 — concurrency-safe proxy approval lifecycle', () => {
+  it('allows exactly one of two simultaneous requests carrying the same reviewed state', async () => {
+    seedProxy({ reviewStatus: 'pending_review', valueUsd: '100', fxRateId: null })
+    const expected = fingerprintFinancialProxyApprovalState(state.current!)
+
+    const results = await Promise.allSettled([
+      updateFinancialProxyReviewStatus(PROXY_ID, 'approved', expected),
+      updateFinancialProxyReviewStatus(PROXY_ID, 'approved', expected),
+    ])
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
+    expect(state.current?.reviewStatus).toBe('approved')
+  })
+
   it('keeps V2 pending and invalidated when a material edit wins over a stale approval read', async () => {
     // Break caught: an approval that is not guarded by the same row lock as a
     // material edit writes V1-derived approval fields over the current V2 row.
@@ -172,7 +189,11 @@ describe('R2-CL2 — concurrency-safe proxy approval lifecycle', () => {
     state.approvalCommitEntered = deferred()
     state.releaseApprovalCommit = deferred()
 
-    const approval = updateFinancialProxyReviewStatus(PROXY_ID, 'approved')
+    const approval = updateFinancialProxyReviewStatus(
+      PROXY_ID,
+      'approved',
+      fingerprintFinancialProxyApprovalState(state.current!),
+    )
     await state.approvalCommitEntered.promise
 
     const edit = updateOrganizationFinancialProxy(PROXY_ID, { value: '200' })
@@ -199,7 +220,11 @@ describe('R2-CL2 — concurrency-safe proxy approval lifecycle', () => {
     state.approvalCommitEntered = deferred()
     state.releaseApprovalCommit = deferred()
 
-    const approval = updateGlobalProxyReviewStatus(PROXY_ID, 'approved')
+    const approval = updateGlobalProxyReviewStatus(
+      PROXY_ID,
+      'approved',
+      fingerprintFinancialProxyApprovalState(state.current!),
+    )
     await state.approvalCommitEntered.promise
 
     const materialWriter = database.transaction(async (tx: typeof database) => {
