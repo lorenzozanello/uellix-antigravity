@@ -42,6 +42,7 @@ const mockDb = {
   sroiRunReviewItems: [] as any[],
   sroiReports: [] as any[],
   sroiReportSections: [] as any[],
+  evidenceItems: [] as any[],
 };
 
 function getTableData(table: any): any[] {
@@ -169,6 +170,7 @@ beforeEach(() => {
     sroiRunReviewItems: [],
     sroiReports: [],
     sroiReportSections: [],
+    evidenceItems: [],
   });
   vi.mocked(requireOrganizationAccess).mockResolvedValue({
     organization: { id: ORG_ID },
@@ -458,6 +460,232 @@ describe('report foundation', () => {
 
       const locked = await lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true });
       expect(locked.status).toBe('locked');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // R2-CL1 — report-strict numeric/reference integrity. These are service
+  // boundary tests: they exercise the same save/lock functions a direct
+  // Server Action caller reaches, with authority derived by production code.
+  // -------------------------------------------------------------------------
+  describe('R2-CL1 — strict report narrative integrity', () => {
+    const RUN_ID = 'run-r2-integrity';
+
+    function seedPinnedRun(overrides: Record<string, unknown> = {}) {
+      mockDb.sroiCalculationRuns.push({
+        id: RUN_ID,
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        totalInvestment: '1000.0000',
+        grossSocialValue: '2000.0000',
+        netSocialValue: '1800.0000',
+        sroiRatio: '1.800000',
+        version: 1,
+        snapshotJson: { fundersBreakdown: [], assignments: [] },
+        ...overrides,
+      });
+    }
+
+    function seedDraft(id: string, runId = RUN_ID, content = 'Narrativa sin cifras.') {
+      const report = { id: `report-${id}`, projectId: PROJECT_ID, organizationId: ORG_ID, calculationRunId: runId, status: 'draft' };
+      const section = { id: `section-${id}`, reportId: report.id, title: 'Resultados', content };
+      mockDb.sroiReports.push(report);
+      mockDb.sroiReportSections.push(section);
+      return { report, section };
+    }
+
+    it('allows plain nonnumeric narrative when the pinned calculation snapshot is unavailable', async () => {
+      const { report, section } = seedDraft('no-snapshot-plain', 'missing-run');
+
+      const updated = await updateReportSection(PROJECT_ID, report.id, section.id, {
+        title: 'Resultados',
+        content: 'La evidencia disponible requiere revisión metodológica humana.',
+      });
+
+      expect(updated.content).toBe('La evidencia disponible requiere revisión metodológica humana.');
+    });
+
+    it.each([
+      ['SROI zero', 'El SROI = 0.'],
+      ['percentage zero', 'La atribución es 0%.'],
+      ['count', 'Se alcanzaron 17 beneficiarios.'],
+      ['year-shaped count', 'Se alcanzaron 2026 beneficiarios.'],
+      ['negative claim', 'El valor social neto fue -1800 USD.'],
+      ['currency claim', 'La inversión fue USD 1000.'],
+    ])('refuses a no-snapshot %s claim', async (_name, content) => {
+      const { report, section } = seedDraft(`no-snapshot-${_name}`, 'missing-run');
+
+      await expect(
+        updateReportSection(PROJECT_ID, report.id, section.id, { title: 'Resultados', content })
+      ).rejects.toThrow('cifras que no coinciden');
+      expect(section.content).toBe('Narrativa sin cifras.');
+    });
+
+    it('refuses sign inversion even when the unsigned value exists in the pinned run', async () => {
+      seedPinnedRun();
+      const { report, section } = seedDraft('sign-inversion');
+
+      await expect(
+        updateReportSection(PROJECT_ID, report.id, section.id, {
+          title: 'Resultados',
+          content: 'El valor social neto fue -1800 USD.',
+        })
+      ).rejects.toThrow('cifras que no coinciden');
+      expect(section.content).toBe('Narrativa sin cifras.');
+    });
+
+    it.each([
+      ['zero percentage', 'La atribución es 0%.'],
+      ['small count', 'Se alcanzaron 17 beneficiarios.'],
+      ['year-shaped count', 'Se alcanzaron 2026 beneficiarios.'],
+    ])('refuses unsupported %s when a pinned snapshot exists', async (_name, content) => {
+      seedPinnedRun();
+      const { report, section } = seedDraft(`snapshot-${_name}`);
+
+      await expect(
+        updateReportSection(PROJECT_ID, report.id, section.id, { title: 'Resultados', content })
+      ).rejects.toThrow('cifras que no coinciden');
+      expect(section.content).toBe('Narrativa sin cifras.');
+    });
+
+    it('accepts zero only when the pinned run explicitly authorizes it', async () => {
+      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], unattributedNsvUsd: '0.0000', assignments: [] } });
+      const { report, section } = seedDraft('authorized-zero');
+
+      const updated = await updateReportSection(PROJECT_ID, report.id, section.id, {
+        title: 'Resultados',
+        content: 'El valor social no atribuido es 0 USD.',
+      });
+
+      expect(updated.content).toContain('0 USD');
+    });
+
+    it('accepts authorized ratio and currency values from the pinned run', async () => {
+      seedPinnedRun();
+      const { report, section } = seedDraft('authorized-values');
+
+      const updated = await updateReportSection(PROJECT_ID, report.id, section.id, {
+        title: 'Resultados',
+        content: 'El SROI es 1.8:1 y la inversión es USD 1000.',
+      });
+
+      expect(updated.content).toContain('1.8:1');
+    });
+
+    it('preserves sign semantics while accepting the pinned run\'s actual negative value', async () => {
+      seedPinnedRun({ netSocialValue: '-1800.0000' });
+      const accepted = seedDraft('negative-accepted');
+      const rejected = seedDraft('positive-sign-inverted');
+
+      await expect(
+        updateReportSection(PROJECT_ID, accepted.report.id, accepted.section.id, {
+          title: 'Resultados',
+          content: 'El valor social neto fue -1800 USD.',
+        })
+      ).resolves.toMatchObject({ content: expect.stringContaining('-1800 USD') });
+
+      await expect(
+        updateReportSection(PROJECT_ID, rejected.report.id, rejected.section.id, {
+          title: 'Resultados',
+          content: 'El valor social neto fue 1800 USD.',
+        })
+      ).rejects.toThrow('cifras que no coinciden');
+    });
+
+    it('accepts the pinned run\'s legitimate percent, ratio, decimal, and thousands formats', async () => {
+      seedPinnedRun({
+        snapshotJson: {
+          fundersBreakdown: [],
+          assignments: [{ filters: { attributionPct: 20 } }],
+        },
+      });
+      const { report, section } = seedDraft('report-formats');
+
+      const updated = await updateReportSection(PROJECT_ID, report.id, section.id, {
+        title: 'Resultados',
+        content: 'La inversión fue USD 1,000.00; la atribución fue 20% y el SROI 1.8:1.',
+      });
+
+      expect(updated.content).toContain('1,000.00');
+    });
+
+    it('accepts an explicit project evidence reference and refuses a foreign one at save', async () => {
+      seedPinnedRun();
+      mockDb.evidenceItems.push({ id: 'ev-1', projectId: PROJECT_ID, organizationId: ORG_ID });
+      const accepted = seedDraft('evidence-accepted');
+      const rejected = seedDraft('evidence-rejected');
+
+      const updated = await updateReportSection(PROJECT_ID, accepted.report.id, accepted.section.id, {
+        title: 'Evidencia',
+        content: 'Evidence ID: ev-1.',
+      });
+      expect(updated.content).toContain('ev-1');
+
+      await expect(
+        updateReportSection(PROJECT_ID, rejected.report.id, rejected.section.id, {
+          title: 'Evidencia',
+          content: 'Evidence ID: ev-999.',
+          allowedReferenceIds: ['ev-999'],
+        } as any)
+      ).rejects.toThrow('referencias que no coinciden');
+      expect(rejected.section.content).toBe('Narrativa sin cifras.');
+    });
+
+    it('accepts a pinned-run proxy reference and refuses an unsupported one at save', async () => {
+      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: 'px-1' }] } });
+      const accepted = seedDraft('proxy-accepted');
+      const rejected = seedDraft('proxy-rejected');
+
+      const updated = await updateReportSection(PROJECT_ID, accepted.report.id, accepted.section.id, {
+        title: 'Proxy',
+        content: 'Proxy ID: px-1.',
+      });
+      expect(updated.content).toContain('px-1');
+
+      await expect(
+        updateReportSection(PROJECT_ID, rejected.report.id, rejected.section.id, {
+          title: 'Proxy',
+          content: 'Proxy ID: px-999.',
+        })
+      ).rejects.toThrow('referencias que no coinciden');
+      expect(rejected.section.content).toBe('Narrativa sin cifras.');
+    });
+
+    it('refuses lock with an unsupported persisted reference despite a true attestation', async () => {
+      seedPinnedRun();
+      const { report } = seedDraft('lock-reference', RUN_ID, 'Evidence ID: ev-999.');
+      mockDb.sroiRunReviews.push({
+        id: 'review-lock-reference',
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        calculationRunId: RUN_ID,
+        status: 'approved',
+      });
+      vi.mocked(requireOrganizationAccess).mockResolvedValue({
+        organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' },
+      } as any);
+
+      await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true }))
+        .rejects.toThrow('references do not match');
+      expect(report.status).toBe('draft');
+    });
+
+    it('allows lock for an explicit reference that the same server authority permits at save', async () => {
+      seedPinnedRun({ snapshotJson: { fundersBreakdown: [], assignments: [{ proxyId: 'px-1' }] } });
+      const { report } = seedDraft('lock-reference-valid', RUN_ID, 'Proxy ID: px-1.');
+      mockDb.sroiRunReviews.push({
+        id: 'review-lock-reference-valid',
+        projectId: PROJECT_ID,
+        organizationId: ORG_ID,
+        calculationRunId: RUN_ID,
+        status: 'approved',
+      });
+      vi.mocked(requireOrganizationAccess).mockResolvedValue({
+        organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' },
+      } as any);
+
+      await expect(lockReportDraft(PROJECT_ID, report.id, { narrativeReviewed: true }))
+        .resolves.toMatchObject({ status: 'locked' });
     });
   });
   it('lists project reports', async () => {

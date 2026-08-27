@@ -91,6 +91,18 @@ export interface NumericGuardResult {
   violations: NumericViolation[]
 }
 
+/**
+ * `report-strict` is deliberately narrower than the Composer drafting mode:
+ * persisted report prose must not turn an otherwise ordinary year or ordinal
+ * into an untraceable outcome claim. It retains only deterministic structural
+ * tokens (technical identifiers, headings, and an explicit SROI `:1`).
+ */
+export type NumericGuardMode = 'composer' | 'report-strict'
+
+export interface NumericGuardOptions {
+  mode?: NumericGuardMode
+}
+
 export interface ReferenceViolation {
   id: string
   field: string
@@ -99,6 +111,12 @@ export interface ReferenceViolation {
 export interface ReferenceGuardResult {
   ok: boolean
   violations: ReferenceViolation[]
+}
+
+/** Server-derived ids that a persisted report is allowed to cite. */
+export interface NarrativeReferenceAuthority {
+  evidenceIds: readonly string[]
+  proxyIds: readonly string[]
 }
 
 /** Structural subset of StellaProjectContext the reference check needs. */
@@ -114,8 +132,10 @@ const YEAR_MAX = 2100
 const MAX_ALLOWED_ORDINAL = 20
 const MAX_TOLERATED_DP = 6
 
-// Digit runs with optional '.'/',' groups: 12 · 3.2 · 1,600,000.50 · 2.1.3
-const NUMBER_TOKEN_RE = /\d+(?:[.,]\d+)*/g
+// Signed digit runs with optional '.'/',' groups: -12 · 3.2 ·
+// 1,600,000.50 · 2.1.3. The lookbehind keeps the numeric suffix of a
+// technical identifier such as `ev-123` out of the claim scanner.
+const NUMBER_TOKEN_RE = /(?<![A-Za-z0-9_+/-])[+-]?\d+(?:[.,]\d+)*/g
 
 function toDecimal(v: string | number): Decimal | null {
   try {
@@ -126,7 +146,8 @@ function toDecimal(v: string | number): Decimal | null {
   }
 }
 
-function collectAuthorized(authorized: AuthorizedNumbers): Decimal[] {
+function collectAuthorized(authorized: AuthorizedNumbers | null): Decimal[] {
+  if (!authorized) return []
   const raw: (string | number)[] = [
     authorized.totals.totalInvestment,
     authorized.totals.grossSocialValue,
@@ -140,7 +161,7 @@ function collectAuthorized(authorized: AuthorizedNumbers): Decimal[] {
   const out: Decimal[] = []
   for (const v of raw) {
     const d = toDecimal(v)
-    if (d) out.push(d.abs())
+    if (d) out.push(d)
   }
   return out
 }
@@ -151,26 +172,29 @@ function collectAuthorized(authorized: AuthorizedNumbers): Decimal[] {
  */
 function normalizationCandidates(token: string): string[] {
   const candidates = new Set<string>()
-  const hasDot = token.includes('.')
-  const hasComma = token.includes(',')
+  const sign = token.startsWith('-') || token.startsWith('+') ? token[0] : ''
+  const unsignedToken = sign ? token.slice(1) : token
+  const withSign = (value: string) => `${sign}${value}`
+  const hasDot = unsignedToken.includes('.')
+  const hasComma = unsignedToken.includes(',')
 
   if (hasDot && hasComma) {
     // The LAST separator that appears is the decimal separator.
-    const lastDot = token.lastIndexOf('.')
-    const lastComma = token.lastIndexOf(',')
+    const lastDot = unsignedToken.lastIndexOf('.')
+    const lastComma = unsignedToken.lastIndexOf(',')
     const decimalSep = lastDot > lastComma ? '.' : ','
     const groupSep = decimalSep === '.' ? ',' : '.'
-    const cleaned = token.split(groupSep).join('')
-    candidates.add(decimalSep === '.' ? cleaned : cleaned.replace(',', '.'))
+    const cleaned = unsignedToken.split(groupSep).join('')
+    candidates.add(withSign(decimalSep === '.' ? cleaned : cleaned.replace(',', '.')))
   } else if (hasComma) {
-    if (/^\d{1,3}(,\d{3})+$/.test(token)) candidates.add(token.split(',').join('')) // thousands
-    if ((token.match(/,/g) ?? []).length === 1) candidates.add(token.replace(',', '.')) // decimal comma
+    if (/^\d{1,3}(,\d{3})+$/.test(unsignedToken)) candidates.add(withSign(unsignedToken.split(',').join(''))) // thousands
+    if ((unsignedToken.match(/,/g) ?? []).length === 1) candidates.add(withSign(unsignedToken.replace(',', '.'))) // decimal comma
   } else if (hasDot) {
-    if (/^\d{1,3}(\.\d{3})+$/.test(token)) candidates.add(token.split('.').join('')) // es-LA thousands
-    if ((token.match(/\./g) ?? []).length === 1) candidates.add(token) // plain decimal
+    if (/^\d{1,3}(\.\d{3})+$/.test(unsignedToken)) candidates.add(withSign(unsignedToken.split('.').join(''))) // es-LA thousands
+    if ((unsignedToken.match(/\./g) ?? []).length === 1) candidates.add(withSign(unsignedToken)) // plain decimal
     // Multi-dot non-grouped tokens ("2.1.3") have no numeric interpretation.
   } else {
-    candidates.add(token)
+    candidates.add(withSign(unsignedToken))
   }
   return [...candidates]
 }
@@ -199,8 +223,8 @@ function tokenMatchesAuthorized(
     if (!value) continue
     const dp = decimalPlaces(normalized)
     for (const authorized of authorizedValues) {
-      if (matchesAuthorizedValue(value.abs(), dp, authorized)) return true
-      if (isPercentContext && matchesAuthorizedValue(value.abs().div(100), dp + 2, authorized)) return true
+      if (matchesAuthorizedValue(value, dp, authorized)) return true
+      if (isPercentContext && matchesAuthorizedValue(value.div(100), dp + 2, authorized)) return true
     }
   }
   return false
@@ -223,7 +247,12 @@ interface TokenSite {
   allowlisted: boolean
 }
 
-function extractTokens(text: string): TokenSite[] {
+function isExplicitSroiRatioDenominator(before: string, token: string): boolean {
+  if (token !== '1') return false
+  return /\b(?:sroi|ratios?|raz[oó]n|retornos?)\b[^\n]{0,80}[+-]?\d+(?:[.,]\d+)*:\s*$/i.test(before)
+}
+
+function extractTokens(text: string, mode: NumericGuardMode): TokenSite[] {
   const sites: TokenSite[] = []
   for (const match of text.matchAll(NUMBER_TOKEN_RE)) {
     const token = match[0]
@@ -266,10 +295,16 @@ function extractTokens(text: string): TokenSite[] {
       !inValueClaim &&
       ((atLineStart && headingFollows) || SECTION_KEYWORD_RE.test(before))
 
+    const strictStructuralToken =
+      identifierAttached || isSectionNumber || isExplicitSroiRatioDenominator(before, token)
+
     sites.push({
       token,
       isPercent,
-      allowlisted: identifierAttached || isYear || isOrdinal || isSectionNumber,
+      allowlisted:
+        mode === 'report-strict'
+          ? strictStructuralToken
+          : identifierAttached || isYear || isOrdinal || isSectionNumber,
     })
   }
   return sites
@@ -304,17 +339,62 @@ function freeTextFields(output: ComposerOutput): { field: string; text: string }
  */
 export function validateComposerNumbers(
   output: ComposerOutput,
-  authorized: AuthorizedNumbers,
+  authorized: AuthorizedNumbers | null,
+  options: NumericGuardOptions = {},
 ): NumericGuardResult {
+  const mode = options.mode ?? 'composer'
   const authorizedValues = collectAuthorized(authorized)
   const violations: NumericViolation[] = []
 
   for (const { field, text } of freeTextFields(output)) {
     if (!text) continue
-    for (const site of extractTokens(text)) {
+    for (const site of extractTokens(text, mode)) {
       if (site.allowlisted) continue
       if (tokenMatchesAuthorized(site.token, site.isPercent, authorizedValues)) continue
       violations.push({ token: site.token, field })
+    }
+  }
+
+  return { ok: violations.length === 0, violations }
+}
+
+const NARRATIVE_REFERENCE_LABEL_RE =
+  /\b(evidence|evidencia|proxy)\s*(?:id|identificador)?\s*[:=#]\s*([A-Za-z0-9][A-Za-z0-9_-]*)\b/gi
+const NARRATIVE_REFERENCE_PREFIX_RE = /\b(ev|px)-([A-Za-z0-9][A-Za-z0-9_-]*)\b/gi
+
+/**
+ * Validates only the explicit citation forms Uellix actually exposes in its
+ * Composer output/context: `ev-…` / `px-…`, or a labelled
+ * `Evidence|Evidencia|Proxy ID: …`. This is intentionally not a generic
+ * language parser: prose that merely mentions evidence or a proxy is not a
+ * citation and is left to human review.
+ */
+export function validateNarrativeReferences(
+  fields: readonly { field: string; text: string }[],
+  authority: NarrativeReferenceAuthority,
+): ReferenceGuardResult {
+  const evidenceIds = new Set(authority.evidenceIds)
+  const proxyIds = new Set(authority.proxyIds)
+  const violations: ReferenceViolation[] = []
+  const seen = new Set<string>()
+
+  const validate = (id: string, type: 'evidence' | 'proxy', field: string) => {
+    const key = `${field}:${type}:${id}`
+    if (seen.has(key)) return
+    seen.add(key)
+    if (!(type === 'evidence' ? evidenceIds : proxyIds).has(id)) {
+      violations.push({ id, field })
+    }
+  }
+
+  for (const { field, text } of fields) {
+    for (const match of text.matchAll(NARRATIVE_REFERENCE_LABEL_RE)) {
+      const type = /^(evidence|evidencia)$/i.test(match[1]) ? 'evidence' : 'proxy'
+      validate(match[2], type, field)
+    }
+    for (const match of text.matchAll(NARRATIVE_REFERENCE_PREFIX_RE)) {
+      const type = match[1].toLowerCase() === 'ev' ? 'evidence' : 'proxy'
+      validate(match[0], type, field)
     }
   }
 

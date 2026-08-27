@@ -14,13 +14,16 @@ import {
   sroiReports,
   sroiReportSections,
   projects,
+  evidenceItems,
 } from '@/db/schema';
 import { z } from 'zod';
 import { getVariantSectionTypes } from '@/lib/reports/report-variants';
 import {
   validateComposerNumbers,
+  validateNarrativeReferences,
   authorizedNumbersFromSnapshot,
   type AuthorizedNumbers,
+  type NarrativeReferenceAuthority,
 } from '@/lib/stella/schemas/composer-numeric-guard';
 import type { ComposerOutput } from '@/lib/stella/schemas/composer-output';
 
@@ -88,18 +91,13 @@ async function authorizeProject(projectId: string) {
 // locked (content may have changed again since it was last saved-and-valid).
 // ---------------------------------------------------------------------------
 
-// No authoritative snapshot resolvable → no authorized values. Mirrors the
-// composer's own fail-closed default in app/actions/stella/composer.ts.
-const EMPTY_AUTHORIZED_NUMBERS: AuthorizedNumbers = {
-  totals: { totalInvestment: 0, grossSocialValue: 0, netSocialValue: 0 },
-  ratio: 0,
-};
+type PinnedReportRun = typeof sroiCalculationRuns.$inferSelect;
 
-async function getReportNumericAuthority(
+async function getPinnedReportRun(
   ctx: { organization: { id: string } },
   report: { calculationRunId: string; projectId: string },
-): Promise<AuthorizedNumbers | null> {
-  const run = await db
+): Promise<PinnedReportRun | null> {
+  return db
     .select()
     .from(sroiCalculationRuns)
     .where(
@@ -110,8 +108,10 @@ async function getReportNumericAuthority(
       )
     )
     .then((rows) => rows[0] ?? null);
-  if (!run) return null;
+}
 
+function getReportNumericAuthority(run: PinnedReportRun | null): AuthorizedNumbers | null {
+  if (!run) return null;
   const snapshot = run.snapshotJson as Record<string, unknown> | null;
   const fundersBreakdownRaw = snapshot?.fundersBreakdown as
     | Array<{ investmentUsd: string; attributedNsvUsd: string; sroiRatio: string }>
@@ -159,6 +159,29 @@ async function getReportNumericAuthority(
   );
 }
 
+async function getReportNarrativeReferenceAuthority(
+  ctx: { organization: { id: string } },
+  report: { calculationRunId: string; projectId: string },
+  pinnedRun: PinnedReportRun | null,
+): Promise<NarrativeReferenceAuthority> {
+  const evidence = await db
+    .select({ id: evidenceItems.id })
+    .from(evidenceItems)
+    .where(and(
+      eq(evidenceItems.projectId, report.projectId),
+      eq(evidenceItems.organizationId, ctx.organization.id),
+    ));
+  const snapshot = pinnedRun?.snapshotJson as Record<string, unknown> | null | undefined;
+  const assignments = snapshot?.assignments as Array<{ proxyId?: unknown }> | undefined;
+
+  return {
+    evidenceIds: evidence.map((item) => item.id),
+    proxyIds: (assignments ?? [])
+      .map((assignment) => assignment.proxyId)
+      .filter((proxyId): proxyId is string => typeof proxyId === 'string'),
+  };
+}
+
 // Reuses the composer's own pure numeric guard against arbitrary title/
 // content text — no AI call, no network, no re-derivation of the guard logic.
 function validateSectionNumericIntegrity(
@@ -175,7 +198,38 @@ function validateSectionNumericIntegrity(
     evidence_references: [],
     proxy_references: [],
   };
-  return validateComposerNumbers(guardInput, authority ?? EMPTY_AUTHORIZED_NUMBERS);
+  return validateComposerNumbers(guardInput, authority, { mode: 'report-strict' });
+}
+
+function validateSectionReferenceIntegrity(
+  title: string,
+  content: string,
+  authority: NarrativeReferenceAuthority,
+) {
+  return validateNarrativeReferences(
+    [
+      { field: 'report_section.title', text: title },
+      { field: 'report_section.content', text: content },
+    ],
+    authority,
+  );
+}
+
+/**
+ * Single deterministic report-boundary decision shared by save and lock. Its
+ * inputs are already derived on the server from the pinned run and project;
+ * callers never accept a client-provided snapshot or reference allowlist.
+ */
+function validateSectionNarrativeIntegrity(
+  title: string,
+  content: string,
+  numericAuthority: AuthorizedNumbers | null,
+  referenceAuthority: NarrativeReferenceAuthority,
+) {
+  return {
+    numeric: validateSectionNumericIntegrity(title, content, numericAuthority),
+    references: validateSectionReferenceIntegrity(title, content, referenceAuthority),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -580,15 +634,23 @@ export async function updateReportSection(projectId: string, reportId: string, s
   // Composer-time check ran (or type it from scratch, never touching
   // Composer at all). Pure computation only — no AI, no network, no
   // auto-correction; a violation refuses the write outright.
-  const authority = await getReportNumericAuthority(ctx, report[0]);
-  const numericGuard = validateSectionNumericIntegrity(
+  const pinnedRun = await getPinnedReportRun(ctx, report[0]);
+  const authority = getReportNumericAuthority(pinnedRun);
+  const referenceAuthority = await getReportNarrativeReferenceAuthority(ctx, report[0], pinnedRun);
+  const integrity = validateSectionNarrativeIntegrity(
     validated.title,
     validated.content ?? '',
     authority,
+    referenceAuthority,
   );
-  if (!numericGuard.ok) {
+  if (!integrity.numeric.ok) {
     throw new Error(
       'El contenido de la sección contiene cifras que no coinciden con la corrida de cálculo del reporte.'
+    );
+  }
+  if (!integrity.references.ok) {
+    throw new Error(
+      'El contenido de la sección contiene referencias que no coinciden con la autoridad del reporte.'
     );
   }
 
@@ -677,16 +739,28 @@ export async function lockReportDraft(
   // second draft cycle, a direct DB fixup, a legacy row from before CL-1C
   // existed) — the lock is the last point this can be caught before the
   // content becomes the audit-anchored, hash-verifiable artifact.
-  const authority = await getReportNumericAuthority(ctx, report[0]);
+  const pinnedRun = await getPinnedReportRun(ctx, report[0]);
+  const authority = getReportNumericAuthority(pinnedRun);
+  const referenceAuthority = await getReportNarrativeReferenceAuthority(ctx, report[0], pinnedRun);
   const sections = await db
     .select()
     .from(sroiReportSections)
     .where(eq(sroiReportSections.reportId, reportId));
   for (const section of sections) {
-    const guard = validateSectionNumericIntegrity(section.title ?? '', section.content ?? '', authority);
-    if (!guard.ok) {
+    const integrity = validateSectionNarrativeIntegrity(
+      section.title ?? '',
+      section.content ?? '',
+      authority,
+      referenceAuthority,
+    );
+    if (!integrity.numeric.ok) {
       throw new Error(
         `Cannot lock: section "${section.title}" contains figures that do not match the report's calculation run.`
+      );
+    }
+    if (!integrity.references.ok) {
+      throw new Error(
+        `Cannot lock: section "${section.title}" references do not match the report's authority.`
       );
     }
   }
