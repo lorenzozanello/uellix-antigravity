@@ -305,6 +305,69 @@ describe.skipIf(!LIVE)('live write paths as uellix_app (all rolled back)', () =>
     expect(ok).toBe(true)
   })
 
+  it('allows the canonical stella_0003 decision append only for the transaction organisation and actor', async () => {
+    const f = fixture!
+    const ok = await withDatabaseIdentityContext(
+      { userId: f.userId, organizationId: f.organizationId, isSuperAdmin: false },
+      async (boundDb) => {
+        const project = await boundDb.execute<{ id: string }>(
+          drizzleSql`SELECT id::text AS id FROM projects LIMIT 1`
+        )
+        const projectId = (project as unknown as { id: string }[])[0]?.id
+        if (projectId === undefined) return null
+
+        const rows = await boundDb.execute<{ ok: boolean }>(drizzleSql`
+          INSERT INTO stella_suggestion_decisions
+            (organization_id, project_id, suggestion_key, decision, decided_by)
+          VALUES (${f.organizationId}::uuid, ${projectId}::uuid,
+                  'rls-suite-decision', 'accepted', ${f.userId}::uuid)
+          RETURNING (id IS NOT NULL) AS ok
+        `)
+        const result = (rows as unknown as { ok: boolean }[])[0].ok
+        throw Object.assign(new Error('rollback'), { probeResult: result })
+      }
+    ).catch((error: unknown) => (error as { probeResult?: boolean }).probeResult ?? null)
+    expect(ok).toBe(true)
+  })
+
+  it('refuses decision inserts with a foreign organisation or forged actor', async () => {
+    const f = fixture!
+    const outcome = await withDatabaseIdentityContext(
+      { userId: f.userId, organizationId: f.organizationId, isSuperAdmin: false },
+      async (boundDb) => {
+        const project = await boundDb.execute<{ id: string }>(
+          drizzleSql`SELECT id::text AS id FROM projects LIMIT 1`
+        )
+        const projectId = (project as unknown as { id: string }[])[0]?.id
+        if (projectId === undefined) {
+          throw Object.assign(new Error('rollback'), { probeResult: 'no-fixture' })
+        }
+
+        const denied: string[] = []
+        for (const [organizationId, decidedBy] of [
+          [f.otherOrganizationId ?? '00000000-0000-4000-8000-000000000000', f.userId],
+          [f.organizationId, '00000000-0000-4000-8000-000000000000'],
+        ]) {
+          try {
+            await boundDb.execute(drizzleSql`
+              INSERT INTO stella_suggestion_decisions
+                (organization_id, project_id, suggestion_key, decision, decided_by)
+              VALUES (${organizationId}::uuid, ${projectId}::uuid,
+                      'rls-suite-forgery', 'accepted', ${decidedBy}::uuid)
+            `)
+            denied.push('ALLOWED')
+          } catch {
+            denied.push('denied')
+          }
+        }
+        // Always unwind the transaction. A regression that accidentally permits
+        // either probe must be observable without leaving a test row behind.
+        throw Object.assign(new Error('rollback'), { probeResult: denied.join(',') })
+      }
+    ).catch((error: unknown) => (error as { probeResult?: string }).probeResult ?? null)
+    expect(outcome === 'no-fixture' || outcome === 'denied,denied').toBe(true)
+  })
+
   it('refuses to attribute an append-only row to another user', async () => {
     const f = fixture!
     const outcome = await withDatabaseIdentityContext(

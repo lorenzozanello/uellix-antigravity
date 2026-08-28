@@ -238,7 +238,7 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       'stella_0005_runtime_cutover.sql',
       'stella_0005b_admin_bootstrap.sql',
       'stella_0005b_rollback.sql',
-      // 0005c rescopes the three stella_0005 INSERT policies to `uellix_app`
+      // 0005c rescopes the two stella_0005 INSERT policies to `uellix_app`
       // and revokes the pre-cutover INSERT grants of authenticated /
       // service_role on the two append-only tables (reaudit finding M1).
       'stella_0005c_rollback.sql',
@@ -689,7 +689,8 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
 
   it('is compatible with single-transaction execution (no CONCURRENTLY)', () => {
     expect(code).not.toMatch(/CONCURRENTLY/i)
-    expect(raw).toMatch(/-1 -v ON_ERROR_STOP=1/)
+    expect(raw).toMatch(/pnpm db:prepared:apply:local stella_0003_suggestion_decisions\.sql/)
+    expect(raw).toMatch(/SET LOCAL ROLE/)
   })
 
   it('points at the source-of-truth ADR instead of db/schema.ts', () => {
@@ -719,12 +720,15 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
     expect(raw).toMatch(/raw previous text is never persisted/i)
   })
 
-  it('enables RLS with a SELECT-only org policy mirroring 002_stella_interactions_rls', () => {
+  it('enables RLS with a governed read policy and one narrow runtime INSERT policy', () => {
     expect(code).toMatch(/DROP POLICY IF EXISTS "stella_suggestion_decisions_select"/i)
     expect(code).toMatch(/CREATE POLICY "stella_suggestion_decisions_select"/i)
     expect(code).toMatch(/organization_id = ANY\(public\.current_user_org_ids\(\)\)/)
-    // no client-side INSERT/UPDATE/DELETE policies at all
-    expect(code).not.toMatch(/CREATE POLICY[^;]*FOR (INSERT|UPDATE|DELETE)/i)
+    expect(raw).toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin[\s\S]*FOR INSERT\s+TO uellix_app/i)
+    expect(raw).toMatch(/organization_id = current_setting\('app\.organization_id', true\)::uuid/i)
+    expect(code).toMatch(/decided_by = auth\.uid\(\)/i)
+    expect(code).not.toMatch(/CREATE POLICY[^;]*FOR (UPDATE|DELETE)/i)
+    expect(code).not.toMatch(/WITH CHECK \(true\)/i)
   })
 
   it('revokes ALL from every role before granting anything back', () => {
@@ -740,12 +744,42 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
     }
   })
 
-  it('grants authenticated SELECT only, and service_role nothing', () => {
+  it('grants the direct append capability only to uellix_writer, never the runtime login', () => {
     expect(code).toMatch(/GRANT SELECT ON public\.stella_suggestion_decisions TO authenticated/i)
     expect(code).not.toMatch(/GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE|REFERENCES|TRIGGER|MAINTAIN|ALL)\b[^;]*TO authenticated/i)
-    // service_role gets no grant at all: the only writer is the Drizzle client,
-    // which connects as the table OWNER, whose access comes from ownership.
+    expect(code).toMatch(/GRANT SELECT, INSERT ON public\.stella_suggestion_decisions TO uellix_writer/i)
+    expect(code).not.toMatch(/GRANT[^;]*TO uellix_app/i)
     expect(code).not.toMatch(/GRANT[^;]*TO service_role/i)
+  })
+
+  it('pins the migrator -> owner -> writer -> runtime topology before creating the table', () => {
+    const createAt = raw.indexOf('CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions')
+    expect(raw.indexOf("current_user <> 'uellix_owner'")).toBeGreaterThan(-1)
+    expect(raw.indexOf("session_user <> 'uellix_migrator'")).toBeGreaterThan(-1)
+    expect(raw.indexOf("rolname = 'uellix_app'")).toBeLessThan(createAt)
+    expect(raw.indexOf("rolname = 'uellix_writer'")).toBeLessThan(createAt)
+    expect(raw).toMatch(/pg_auth_members/)
+    expect(raw).toMatch(/m\.member = app_oid[\s\S]*m\.roleid = writer_oid/)
+    expect(code).toMatch(/ALTER TABLE public\.stella_suggestion_decisions OWNER TO uellix_owner/i)
+  })
+
+  it('uses server-verified transaction identity rather than a client-selected organisation or actor', () => {
+    const decisions = readRepo('app', 'actions', 'stella', 'decisions.ts')
+    const identity = readRepo('lib', 'auth', 'identity.ts')
+    const context = readRepo('lib', 'auth', 'database-context.ts')
+    const dbContext = readRepo('db', 'identity-context.ts')
+
+    expect(decisions).toMatch(/requireOrganizationAccess\(\)/)
+    expect(decisions).toMatch(/withOrganizationDatabaseContext\(async \(\)/)
+    expect(decisions).toMatch(/\$\{ctx\.organization\.id\}/)
+    expect(decisions).toMatch(/\$\{ctx\.user\.id\}/)
+    expect(identity).toMatch(/supabase\.auth\.getUser\(\)/)
+    expect(context).toMatch(/getVerifiedAuthIdentityResult\(\)/)
+    expect(context).toMatch(/organizationId: principal\.organization\.id/)
+    expect(dbContext).toMatch(/set_config\('request\.jwt\.claims', \$\{claims\}, true\)/)
+    expect(dbContext).toMatch(/set_config\('app\.organization_id', \$\{identity\.organizationId\}, true\)/)
+    expect(dbContext).toMatch(/context_user !== identity\.userId/)
+    expect(dbContext).toMatch(/is_member !== true/)
   })
 
   it('adds both append-only triggers so the table never has the 0002b gap', () => {
@@ -1098,16 +1132,13 @@ describe('audit fixes — MAJ-01: bounded lock acquisition', () => {
   })
 })
 
-describe('audit fixes — MAJ-02: stella_0003 asserts its own write path', () => {
+describe('MSC-07B.7 R3.2 — stella_0003 asserts the mediated writer contract', () => {
   const raw = read('stella_0003_suggestion_decisions.sql')
 
-  it('aborts if the declared writer role has no working INSERT path', () => {
-    // Superseded 2026-08-01 (MAJ-A). The original assertion pinned
-    // has_table_privilege(current_user, ...), which returns true for ANY
-    // superuser and proved the installer's access rather than the
-    // application's. The replacement resolves a DECLARED writer role.
-    expect(raw).toMatch(/has no working INSERT path/)
-    expect(raw).toMatch(/stella\.writer_role/)
+  it('rejects every identity except migrator session plus owner current_user', () => {
+    expect(raw).toMatch(/current_user must be uellix_owner/)
+    expect(raw).toMatch(/session_user must be uellix_migrator/)
+    expect(raw).not.toMatch(/stella\.writer_role/)
   })
 
   it('verifies the RLS helpers are EXECUTABLE, not merely present (MIN-08)', () => {
@@ -1118,11 +1149,11 @@ describe('audit fixes — MAJ-02: stella_0003 asserts its own write path', () =>
     expect(raw).toMatch(/has_function_privilege\('authenticated', 'public\.current_user_is_super_admin\(\)', 'EXECUTE'\)/)
   })
 
-  it('no longer claims service_role bypasses RLS on this table (MIN-07)', () => {
-    // After section 4, service_role holds NO privilege here. Reads/writes work
-    // because the OWNER bypasses RLS (no FORCE ROW LEVEL SECURITY).
-    expect(raw).toMatch(/it is OWNERSHIP that bypasses RLS/i)
-    expect(raw).not.toMatch(/via the service-role\s*\n?--\s*client \(recordStellaDecision\), which bypasses RLS/i)
+  it('pins uellix_app as an inherited, non-bypass runtime rather than the owner', () => {
+    expect(raw).toMatch(/uellix_app must be LOGIN INHERIT with no BYPASSRLS/)
+    expect(raw).toMatch(/uellix_writer must be NOLOGIN and NOBYPASSRLS/)
+    expect(raw).toMatch(/rell?forcerowsecurity/)
+    expect(raw).toMatch(/GRANT SELECT, INSERT ON public\.stella_suggestion_decisions TO uellix_writer/)
   })
 })
 
@@ -1222,12 +1253,10 @@ describe('stella_0003 MAJ-A — the write-path guard is not vacuous', () => {
     expect(code).not.toMatch(/has_table_privilege\(\s*current_user/i)
   })
 
-  it('declares an explicit writer role instead of assuming the installer', () => {
-    expect(raw).toMatch(/current_setting\('stella\.writer_role', true\)/)
-    // And documents how it is set, how it fails when absent, how it is verified.
-    expect(raw).toMatch(/SET stella\.writer_role/)
-    expect(raw).toMatch(/WHEN UNSET/)
-    expect(raw).toMatch(/ASSUMPTION, not a verification/)
+  it('pins the writer role by name instead of accepting a caller-selected GUC', () => {
+    expect(raw).toMatch(/rolname = 'uellix_writer'/)
+    expect(raw).not.toMatch(/stella\.writer_role/)
+    expect(raw).toMatch(/GRANT SELECT, INSERT ON public\.stella_suggestion_decisions TO uellix_writer/)
   })
 
   it('resolves privileges through aclexplode, so inheritance cannot satisfy it', () => {
@@ -1239,37 +1268,38 @@ describe('stella_0003 MAJ-A — the write-path guard is not vacuous', () => {
     expect(raw).toMatch(/a\.grantee = writer_oid/)
   })
 
-  it('requires ownership OR (direct INSERT+SELECT AND rolbypassrls)', () => {
-    // RLS is enabled with no INSERT policy, so a bare INSERT grant is not a
-    // working write path. INSERT ... RETURNING id also needs SELECT.
-    expect(raw).toMatch(/owner_is_writer/)
-    expect(raw).toMatch(/rolbypassrls/)
-    expect(raw).toMatch(/direct_insert/)
-    expect(raw).toMatch(/direct_select/)
-    expect(raw).toMatch(/RETURNING id/)
+  it('requires direct writer ACL plus inherited runtime access, never ownership or bypass', () => {
+    expect(raw).toMatch(/a\.grantee = writer_oid/)
+    expect(raw).toMatch(/member = app_oid/)
+    expect(raw).toMatch(/has_table_privilege\('uellix_app', tbl_oid, 'INSERT'\)/)
+    expect(raw).toMatch(/uellix_app has a non-append table privilege/)
+    expect(raw).not.toMatch(/owner_is_writer/)
   })
 
-  it('refuses a PostgREST role as table owner', () => {
-    expect(raw).toMatch(/a PostgREST role/)
+  it('requires uellix_owner to own the table exactly', () => {
+    expect(raw).toMatch(/table owner is %, expected uellix_owner/)
+    expect(raw).toMatch(/OWNER TO uellix_owner/)
   })
 
-  it('tells the operator NOT to grant INSERT just to satisfy the guard', () => {
-    expect(raw).toMatch(/Do NOT grant INSERT to authenticated or service_role/)
+  it('forbids a direct runtime ACL and leaves service_role without a grant', () => {
+    expect(raw).toMatch(/REVOKE ALL ON public\.stella_suggestion_decisions FROM uellix_app/)
+    expect(raw).toMatch(/anon\/service_role\/uellix_app=none/)
   })
 
-  it('separates what SQL proves from what it cannot', () => {
-    // Structural guard / offline code test / human gate precondition.
-    expect(raw).toMatch(/STRUCTURAL GUARD/)
-    expect(raw).toMatch(/OFFLINE CODE TEST/)
-    expect(raw).toMatch(/HUMAN GATE PRECONDITION/)
+  it('records that direct ACL provenance and role membership are separately verified', () => {
+    expect(raw).toMatch(/one-hop membership/)
+    expect(raw).toMatch(/has_table_privilege\(\) is never the sole/)
   })
 })
 
 describe('stella_0003 MAJ-C — roles guard runs before anything is created', () => {
   const raw = read('stella_0003_suggestion_decisions.sql')
 
-  it('checks anon, authenticated and service_role exist', () => {
-    expect(raw).toMatch(/FROM \(VALUES \('anon'\), \('authenticated'\), \('service_role'\)\) AS r\(name\)/)
+  it('checks the complete runtime and migration role topology exists', () => {
+    expect(raw).toMatch(/\('anon'\), \('authenticated'\), \('service_role'\),/)
+    for (const role of ['uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator']) {
+      expect(raw).toContain(`'${role}'`)
+    }
     expect(raw).toMatch(/missing role\(s\)/)
   })
 
@@ -1279,16 +1309,17 @@ describe('stella_0003 MAJ-C — roles guard runs before anything is created', ()
     // header comment far above the real statement, and the guard's message
     // lives inside a string literal (blanked by stripCommentsAndStrings), so
     // neither raw-substring nor code-substring alone is reliable here.
-    const guardAt = raw.indexOf("('anon'), ('authenticated'), ('service_role')")
+    const guardAt = raw.indexOf("('anon'), ('authenticated'), ('service_role'),")
     const createAt = raw.indexOf('CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions')
     expect(guardAt, 'roles guard not found').toBeGreaterThan(-1)
     expect(createAt, 'CREATE TABLE statement not found').toBeGreaterThan(-1)
     expect(guardAt).toBeLessThan(createAt)
   })
 
-  it('does not fold the writer role into the fixed-role guard', () => {
-    // The installer is explicitly NOT assumed to be the writer.
-    expect(raw).toMatch(/installer is NOT assumed to be it/)
+  it('requires the fixed writer and explicit app-to-writer membership before DDL', () => {
+    expect(raw).toMatch(/uellix_app must inherit uellix_writer directly/)
+    expect(raw).toMatch(/m\.inherit_option/)
+    expect(raw).toMatch(/NOT m\.set_option/)
   })
 })
 
@@ -1315,7 +1346,8 @@ describe('stella_0003 MAJ-B — final self-verification', () => {
     ['decision CHECK', /decision CHECK missing or incomplete/],
     ['hash CHECK anchored', /CHECK missing or not anchored/],
     ['RLS enabled', /ROW LEVEL SECURITY is not enabled/],
-    ['exactly one policy', /expected exactly 1 RLS policy/],
+    ['exactly two policies', /expected exactly 2 RLS policies/],
+    ['narrow runtime insert policy', /transaction organisation and auth\.uid/],
     ['row trigger', /expected exactly 1 BEFORE UPDATE OR DELETE FOR EACH ROW trigger/],
     ['truncate trigger', /expected exactly 1 BEFORE TRUNCATE FOR EACH STATEMENT trigger/],
     ['both bound to the shared function', /triggers bound to public\.uellix_forbid_mutation/],
@@ -2416,12 +2448,10 @@ describe('review round 2 — stella_0003 forward', () => {
     expect(raw).toMatch(/unfalsifiable/)
   })
 
-  it('m2: requires FORCE ROW LEVEL SECURITY to be OFF, in both places', () => {
-    // The whole write path rests on the owner bypassing RLS. With FORCE ON the
-    // owner stops bypassing and, with no INSERT policy, every write fails —
-    // while the script would still report VERIFIED.
+  it('m2: requires FORCE ROW LEVEL SECURITY to be OFF', () => {
+    // The runtime is NOBYPASSRLS, so FORCE remains an explicit contract value.
     expect(code).toMatch(/relforcerowsecurity/)
-    expect([...code.matchAll(/relforcerowsecurity/g)].length).toBeGreaterThanOrEqual(2)
+    expect([...code.matchAll(/relforcerowsecurity/g)]).toHaveLength(1)
     expect(raw).toMatch(/FORCE ROW LEVEL SECURITY is ON/)
   })
 
@@ -2430,7 +2460,8 @@ describe('review round 2 — stella_0003 forward', () => {
     // unquoted input and splits on dots, so a role named "AppWriter" or
     // "app.writer" would pass the existence check and then fail resolving.
     expect(code).not.toMatch(/::regrole/)
-    expect(code).toMatch(/SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = writer/)
+    expect(code).toMatch(/INTO writer_oid, writer_canlogin, writer_bypass/)
+    expect(raw).toMatch(/FROM pg_roles WHERE rolname = 'uellix_writer'/)
     expect(code).toMatch(/a\.grantee = writer_oid/)
   })
 
@@ -2456,8 +2487,10 @@ describe('review round 2 — stella_0003 forward', () => {
     expect(raw).toMatch(/not ON DELETE NO ACTION/)
   })
 
-  it('m7: refuses a PostgREST role as the declared writer', () => {
-    expect(raw).toMatch(/declared writer role % is a PostgREST role/)
+  it('m7: never accepts a caller-declared writer or an owner runtime', () => {
+    expect(raw).not.toMatch(/stella\.writer_role/)
+    expect(raw).toMatch(/table owner is %, expected uellix_owner/)
+    expect(raw).toMatch(/runtime=uellix_app inherited-only/)
   })
 })
 
@@ -2578,9 +2611,10 @@ describe('MAJOR-1 — the write path stella_0003 §4b relies on is pinned here',
     expect(offenders.sort()).toEqual(['app/actions/stella/decisions.ts'])
   })
 
-  it('stella_0003 §4b describes this split honestly and points at a real test', () => {
+  it('stella_0003 §4b describes the canonical mediated contract and points at a real test', () => {
     const sql = read('stella_0003_suggestion_decisions.sql')
-    expect(sql).toMatch(/OFFLINE CODE TEST/)
+    expect(sql).toMatch(/Canonical writer contract/)
+    expect(sql).toMatch(/one-hop membership/)
     // The cited file must be this one, and it must actually read db/client.ts.
     expect(sql).toMatch(/tests\/prepared-stella-sql\.test\.ts/)
   })
@@ -2655,27 +2689,27 @@ describe('review round 3 — MINOR-2..7', () => {
   })
 })
 
-describe('review round 3 — documentation is in sync with the SQL', () => {
+describe('R3.2 — documentation is in sync with the canonical writer contract', () => {
   const readme = readFileSync(path.join(PREPARED, 'README.md'), 'utf8')
   const g2 = readFileSync(
     path.resolve(process.cwd(), 'docs', 'ops', 'gates', 'G2_PACKAGE.md'),
     'utf8',
   )
 
-  it('MINOR-1: the registry no longer claims the two removed checks', () => {
-    expect(readme).not.toMatch(/20 comprobaciones/)
-    expect(readme).toMatch(/18 comprobaciones/)
-    // ...and says explicitly which two went, so they are not reintroduced.
-    expect(readme).toMatch(/Dos comprobaciones fueron retiradas/)
-    expect(readme).toMatch(/infalsificable/)
+  it('records the fixed owner/writer/RLS model rather than an obsolete check count', () => {
+    expect(readme).toMatch(/Remediación R3\.2 de `stella_0003`/)
+    expect(readme).toMatch(/`uellix_migrator`/)
+    expect(readme).toMatch(/`uellix_writer`/)
+    expect(readme).toMatch(/`TO uellix_app`/)
+    expect(readme).toMatch(/105 → 107/)
   })
 
-  it('MINOR-7: every documented apply path says how to declare the writer', () => {
-    // `supabase db execute --file` and the SQL Editor cannot emit a prior SET,
-    // so without ALTER DATABASE ... SET they always land in ASSUMPTION mode.
-    expect(g2).toMatch(/ALTER DATABASE .* SET stella\.writer_role/)
-    expect(g2).toMatch(/supabase db execute --file/)
-    expect(g2).toMatch(/rama ASSUMPTION/)
+  it('documents the governed migrator path and rejects a caller-declared writer', () => {
+    expect(g2).toMatch(/Contrato R3\.2 — identidad de migración y escritor/)
+    expect(g2).toMatch(/SET LOCAL ROLE uellix_owner/)
+    expect(g2).toMatch(/`TO uellix_app`/)
+    expect(g2).not.toMatch(/ALTER DATABASE .* SET stella\.writer_role/)
+    expect(g2).not.toMatch(/rama ASSUMPTION/)
   })
 })
 

@@ -13,17 +13,21 @@ datos (`db/safety/`, documentada en
 [`docs/ops/DATABASE_TARGET_SAFETY.md`](../DATABASE_TARGET_SAFETY.md)). Qué
 significa para este gate:
 
-- **No cambia nada del procedimiento de G2.** Este paquete se sigue aplicando
-  con `psql` sobre los archivos revisados de `db/prepared/`. Ningún comando de
-  `package.json` escribe en un destino remoto, y las capacidades
-  `controlled_remote_*` de la nueva capa **no las usa ningún entry point hoy**.
+- **R3.2 endurece el procedimiento de `stella_0003`.** No se invoca por `psql`,
+  SQL Editor ni `supabase db execute`: el paquete exige la ruta gobernada que
+  abre la sesión como `uellix_migrator`, inicia una transacción y ejecuta
+  `SET LOCAL ROLE uellix_owner`. La autorización externa para un destino
+  remoto sigue siendo una decisión humana separada; este documento no la
+  concede ni la automatiza.
 - **Sí cierra el riesgo lateral** que este gate arrastraba: los comandos
   ambiguos (`db:seed:proxies`, `db:seed:taxonomies`, `db:migrate`) ya no
   pueden alcanzar un destino remoto por accidente durante la preparación del
   gate. Están bloqueados y sus reemplazos son local-only por construcción.
-- **La precondición humana del rol escritor de `stella_0003` sigue vigente
-  e inalterada** (ver la sección siguiente). La nueva capa autoriza *dónde* se
-  conecta un proceso; no puede observar *con qué rol* resuelve `DATABASE_URL`.
+- **La identidad runtime ya no es una GUC declarada por el operador.** La
+  escritura se concede indirectamente a `uellix_app` por membresía en
+  `uellix_writer`; el paquete comprueba esa topología y su ACL directa. Antes
+  de cualquier aplicación controlada todavía se debe revalidar la configuración
+  remota, las membresías, el ownership y la credencial de runtime.
 
 **Esto no declara G2 aprobado ni ejecutado.** G2 formal sigue exigiendo el
 entorno remoto autorizado y las precondiciones humanas de este documento.
@@ -36,7 +40,7 @@ Aplicar (y saber revertir) contra **staging** — nunca producción directamente
 |-------|--------|----------|----------|
 | 1 | `db/prepared/stella_0002_interactions_hardening.sql` | `db/prepared/stella_0002_rollback.sql` | Trigger append-only en `stella_interactions` + revoca `UPDATE/DELETE` de `authenticated` (bug de `0033:50`) + reconcilia el CHECK de `stella_role` al set de 6 roles |
 | 1b | `db/prepared/stella_0002b_append_only_truncate_hardening.sql` | `db/prepared/stella_0002b_rollback.sql` — **deliberadamente NO reversible** | Cierra el hueco de `TRUNCATE` en las **cuatro** tablas append-only: revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` de `authenticated` y además `UPDATE/DELETE` de `service_role`, y añade 4 triggers `BEFORE TRUNCATE FOR EACH STATEMENT` (única capa que alcanza al **owner**) |
-| 2 | `db/prepared/stella_0003_suggestion_decisions.sql` | `db/prepared/stella_0003_rollback.sql` | Crea `stella_suggestion_decisions` (decisiones humanas sobre sugerencias) con RLS SELECT-only, `REVOKE ALL` previo a los grants y sus 2 triggers append-only |
+| 2 | `db/prepared/stella_0003_suggestion_decisions.sql` | `db/prepared/stella_0003_rollback.sql` | Crea `stella_suggestion_decisions` con dueño `uellix_owner`, writer NOLOGIN, ACL directa mínima y RLS SELECT + INSERT `TO uellix_app` ligado a organización y actor; conserva sus 2 triggers append-only |
 | 3 | `db/prepared/grounding_0001_evidence_chunks.sql` | `db/prepared/grounding_0001_rollback.sql` | Ver addendum dedicado: `docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md` (tiene precondiciones propias: pgvector + decisión G5 P3) |
 | — | `db/prepared/stella_0004_role_separation.sql` | `db/prepared/stella_0004_rollback.sql` | **FUERA DEL ALCANCE DE G2 REMOTO POR AHORA** — ver la sección siguiente |
 
@@ -87,38 +91,38 @@ revertir sería reabrir el hueco en una tabla audit-ready. Ver la cabecera del
 propio archivo para las cuatro acepciones de "rollback" y la vía DBA explícita
 para los casos reales.
 
-## Precondición humana — rol escritor de `stella_0003`
+## Contrato R3.2 — identidad de migración y escritor de `stella_0003`
 
-**Esto no lo puede verificar ningún SQL.** `stella_0003` necesita saber con qué
-rol se conecta la aplicación (`DATABASE_URL`), y esa información vive en el
-entorno, no en la base. El script comprueba la parte estructural (owner, ACL
-directa, `rolbypassrls`); confirmar la correspondencia es tarea del operador.
+`stella_0003` ya no toma el writer de una variable de sesión. Antes de crear o
+reconciliar la tabla exige y después vuelve a comprobar este contrato:
 
-- [ ] Averiguar el rol de `DATABASE_URL` **sin imprimir la connection string**
-      (basta el componente de usuario; en Supabase suele ser `postgres`).
-- [ ] Declararlo al aplicar — **cómo hacerlo depende de la vía**; ver la tabla
-      justo debajo de esta checklist. No todas las vías admiten un `SET` de
-      sesión, y sin declararlo el gate **no** queda verificado.
-- [ ] Confirmar tras aplicar que el `NOTICE` dice
-      **`write path VERIFIED against declared writer role …`**.
-      Si dice `stella.writer_role is UNSET — … ASSUMPTION, not a verification`,
-      **el gate no está verificado**: se aplicó asumiendo que instalador y
-      writer coinciden. Repetir declarando la variable.
+- [ ] `session_user = uellix_migrator` y `current_user = uellix_owner`, dentro
+      de una sola transacción con `SET LOCAL ROLE uellix_owner`.
+- [ ] `uellix_owner` es NOLOGIN/NOBYPASSRLS y dueño de
+      `public.stella_suggestion_decisions`; `uellix_migrator` es LOGIN sin
+      BYPASSRLS ni CREATEROLE y sólo puede asumir al owner con `SET ROLE`.
+- [ ] `uellix_app` es LOGIN/INHERIT/NOBYPASSRLS, no puede crear en `public`,
+      hereda directamente `uellix_writer` (INHERIT, sin SET ROLE) y no puede
+      asumir al owner. `uellix_writer` es NOLOGIN/NOBYPASSRLS.
+- [ ] La ACL directa de la tabla es exactamente `authenticated: SELECT` y
+      `uellix_writer: SELECT, INSERT`; `uellix_app`, `anon`, `service_role` y
+      `PUBLIC` no tienen ACL directa. No hay UPDATE ni DELETE para el writer.
+- [ ] El INSERT es exactamente `TO uellix_app` y obliga organización del
+      contexto transaccional, membresía vigente y `decided_by = auth.uid()`.
 
-Cómo declarar `stella.writer_role` según la vía de aplicación:
+La identidad de aplicación se obtiene de `getVerifiedAuthIdentity()`
+(`supabase.auth.getUser()`) y la organización del membership resuelto por el
+servidor; `withDatabaseIdentityContext` instala ambos mediante `SET LOCAL`.
+Los clientes normales no pueden fijar estas GUC por los caminos de aplicación.
+Esto no protege una credencial SQL directa comprometida: ésa es una frontera de
+operación que debe mantenerse fuera de clientes no confiables.
 
-| Vía de aplicación | Cómo declarar el writer |
-|---|---|
-| `psql` (recomendada) | `psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -c "SET stella.writer_role='<rol>'" -f db/prepared/stella_0003_suggestion_decisions.sql` |
-| `supabase db execute --file` | **No admite un `SET` previo en la misma sesión.** Fijarlo antes a nivel de base: `ALTER DATABASE <db> SET stella.writer_role = '<rol>';` (persiste; revertir después con `ALTER DATABASE <db> RESET stella.writer_role;`) |
-| SQL Editor de Supabase | Igual: `ALTER DATABASE … SET` previo, o anteponer el `SET` como primera sentencia del mismo bloque pegado |
-
-**Sin ninguna de estas, el script cae a la rama ASSUMPTION y el gate no queda
-verificado.**
-
-Motivo: la guarda anterior usaba `has_table_privilege(current_user, …)`, que
-devuelve `true` para cualquier superusuario — era ciega justo cuando el script
-se aplicaba con tooling como `supabase_admin`.
+**Revalidación obligatoria antes de cualquier aplicación remota controlada.**
+El operador debe comprobar en el destino la versión de PostgreSQL, los cinco
+roles y sus atributos/membresías, ownership, ACL literal y policies del
+catálogo, y que la credencial runtime despliega como `uellix_app`. Un hash
+aprobado del paquete R3.2 sustituye cualquier autorización previa de otra
+versión. Nada de este documento autoriza DDL remoto por sí mismo.
 
 ## Precondiciones (todas binarias)
 
@@ -137,32 +141,37 @@ se aplicaba con tooling como `supabase_admin`.
 
 ## Aplicación (staging)
 
-**Método principal — psql con transacción única (preferido):**
+> **Método principal — wrapper gobernado con una transacción única (preferido):**
+>
+> Para `stella_0003` R3.2, el operador usa el wrapper de migración gobernado:
+> abre la sesión como `uellix_migrator`, ejecuta el paquete en una sola
+> transacción y alcanza `uellix_owner` con `SET LOCAL ROLE`. Es la garantía de
+> atomicidad que antes se expresaba con `psql -1 -v ON_ERROR_STOP=1`, sin
+> convertir `psql` en una vía válida para el artefacto actual. `uellix_owner`
+> conserva el ownership; el runtime `uellix_app` sólo hereda `SELECT, INSERT`
+> de `uellix_writer` y permanece sujeto a RLS, sin BYPASSRLS ni autoridad DDL.
+>
+> **Último recurso — no ejecutar por una vía alternativa:** `psql`, SQL Editor
+> y `supabase db execute` no establecen la identidad gobernada y no sustituyen
+> el wrapper.
+
+`stella_0003` R3.2 sólo puede ejecutarse con el wrapper de migración gobernado,
+que autentica como `uellix_migrator`, inicia la transacción y llega a
+`uellix_owner` con `SET LOCAL ROLE`. `psql`, SQL Editor y `supabase db execute`
+no son vías equivalentes ni pueden sustituir ese contrato. Este cambio no
+autoriza ningún destino remoto; cuando exista autorización explícita del gate,
+la ejecución debe usar el wrapper aprobado para ese destino y conservar el
+registro de hash, identidad y las verificaciones de catálogo.
+
+En local, la única forma documentada es:
 
 ```bash
-# con el connection string de STAGING (¡verificar dos veces el host!)
-# -1 = todo el script en UNA transacción: si algo falla no queda estado parcial
-#      (rollback automático); como además los statements son idempotentes y
-#      convergentes, re-ejecutar el script tras corregir también recupera.
-psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0002_interactions_hardening.sql
-psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/stella_0003_suggestion_decisions.sql
+pnpm db:prepared:apply:local stella_0003_suggestion_decisions.sql
+pnpm db:prepared:verify:local stella_0003_suggestion_decisions.sql
 ```
 
-**Alternativa — supabase CLI** (proyecto de staging linkeado). Verificar antes
-que el proyecto linkeado es el correcto (`supabase projects list`):
-
-```bash
-supabase db execute --file db/prepared/stella_0002_interactions_hardening.sql
-supabase db execute --file db/prepared/stella_0003_suggestion_decisions.sql
-```
-
-**Último recurso — SQL Editor de Supabase** (staging, rol admin): pegar y
-ejecutar cada script completo, en orden. Solo si las dos vías anteriores no
-están disponibles: el editor no garantiza por contrato la ejecución
-transaccional del script completo, y un fallo a mitad podría dejar una tabla
-creada con RLS aún sin habilitar. Si se usa esta vía, **verificar el estado
-parcial explícitamente** con las consultas de "Verificaciones post-aplicación"
-antes de continuar.
+La verificación usa una transacción con ROLLBACK. No sustituye la revalidación
+del destino remoto, que sigue siendo un control operativo independiente.
 
 ### Garantías de los scripts (endurecimiento pre-ejecución, 2026-07-31)
 
@@ -241,10 +250,16 @@ WHERE conrelid = 'public.stella_interactions'::regclass
 -- DELETE FROM stella_interactions
 --   WHERE id = '<id de fila de prueba>';   -- debe FALLAR
 
--- 5. La tabla de decisiones existe con RLS activo y UNA política (SELECT)
-SELECT relrowsecurity FROM pg_class WHERE relname = 'stella_suggestion_decisions'; -- t
-SELECT policyname, cmd FROM pg_policies WHERE tablename = 'stella_suggestion_decisions';
--- esperado: stella_suggestion_decisions_select | SELECT — y ninguna otra
+-- 5. La tabla de decisiones existe con RLS activo y exactamente DOS policies:
+--    SELECT de lectura y el INSERT canónico limitado a uellix_app.
+SELECT policyname, cmd, roles, with_check
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'stella_suggestion_decisions'
+ORDER BY policyname;
+-- esperado: stella_suggestion_decisions_select | SELECT
+--           stella_suggestion_decisions_insert_member_or_admin | INSERT |
+--             {uellix_app} | predicado con app.organization_id,
+--             current_user_org_ids() y decided_by = auth.uid()
 
 -- 6. Grants DIRECTOS de la tabla nueva.
 --
@@ -262,10 +277,11 @@ FROM pg_class c
 CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
 JOIN pg_roles g ON g.oid = a.grantee
 WHERE c.oid = to_regclass('public.stella_suggestion_decisions')
-  AND g.rolname IN ('anon', 'authenticated', 'service_role')
+  AND g.rolname IN ('anon', 'authenticated', 'service_role', 'uellix_app', 'uellix_writer')
 ORDER BY g.rolname, a.privilege_type;
--- esperado: EXACTAMENTE una fila -> authenticated | SELECT
---           anon y service_role: sin filas. PUBLIC no aparece (grantee = 0).
+-- esperado: authenticated | SELECT; uellix_writer | SELECT e INSERT.
+--           anon, service_role y uellix_app: sin filas. PUBLIC no aparece
+--           (grantee = 0). Ninguna fila UPDATE o DELETE.
 
 -- 6b. Y que PUBLIC no tenga nada (grantee 0 en la ACL):
 SELECT count(*) AS public_grants
@@ -384,8 +400,8 @@ autorizar con un `SET` de sesión.
 - [ ] **Precondición humana:** el `SET` de sesión lo teclea el operador en la
       sesión que ejecuta el rollback. SQL puede exigir que la autorización sea
       de sesión; **no** puede distinguir a un operador de un script envolvente.
-      Ese último tramo es responsabilidad del gate, igual que la correspondencia
-      entre `DATABASE_URL` y `stella.writer_role`.
+      Ese último tramo es responsabilidad del gate, igual que custodiar la
+      credencial de runtime fuera de clientes no confiables.
 
 **Precondiciones estructurales** (el script aborta, con mensaje prefijado, si
 alguna falla):
@@ -517,7 +533,19 @@ Solo después de: staging verde + G3 verde + decisión explícita go/no-go de
 Lorenzo, siguiendo la secuencia de `SUPABASE_MIGRATION_GATE.md` (backup, orden
 revisado, verificaciones repetidas). Este paquete no autoriza tocar producción.
 
-## STELLA FULL REBUILD — RUN 2 (2026-08-02) — evidencia local para G2
+## R3.2 sustituye el artefacto histórico de `stella_0003` (2026-08-27)
+
+El SHA-256 histórico de `stella_0003` era
+`ad22e22c18f0bfb8c03987e05b76de45efe440fd994c2ae719a55bece778fab5`.
+La remediación R3.2 cambia su contrato de owner/writer/ACL/RLS y, por tanto,
+**ninguna autorización, ensayo ni aprobación de hash anterior autoriza el
+artefacto nuevo**. Antes de una ejecución controlada se aprueba el SHA-256 R3.2
+y se repiten las verificaciones de topología, ownership, ACL literal, policies
+y ruta de identidad. Las evidencias históricas que siguen sirven para explicar
+la evolución del gate, no para aprobar la nueva versión ni para inferir estado
+remoto actual.
+
+## STELLA FULL REBUILD — RUN 2 (2026-08-02) — evidencia histórica para G2
 
 > **Esto no es la ejecución de G2.** G2 sigue **sin ejecutar** y sin aprobar.
 > RUN 2 es un segundo ensayo estructural, sobre un stack local desechable
@@ -541,11 +569,11 @@ revisado, verificaciones repetidas). Este paquete no autoriza tocar producción.
 | `stella_0002b_append_only_truncate_hardening.sql` | `781e8b58fe2f512c4214016421199c853f9ed840fde0f27f701ddf247aace550` | idéntico (archivo LF en el blob) |
 | `stella_0003_suggestion_decisions.sql` | `6caa5ca97acbc0e9b28a439a66dcfac9b0d15399e4172da886dffd9fc1d6b7d1` | `ad22e22c18f0bfb8c03987e05b76de45efe440fd994c2ae719a55bece778fab5` |
 
-`git diff HEAD` vacío sobre las tres rutas. Cada script aplicado **dos veces**,
-en una sola transacción externa (`-1`), con `ON_ERROR_STOP=1`, archivo exacto,
-sin modificaciones. `stella_0003` con el rol escritor declarado en la misma
-sesión vía `-c "SET stella.writer_role = 'postgres'"` — sin `ALTER ROLE`, sin
-`ALTER DATABASE`.
+`git diff HEAD` vacío sobre las tres rutas. Cada script se aplicó **dos veces**
+en una sola transacción externa (`-1`), con `ON_ERROR_STOP=1` y archivo exacto.
+Esta es evidencia del artefacto histórico: su uso de un rol escritor declarado
+por GUC queda sustituido por el contrato R3.2 anterior y no es una vía aprobada
+para ejecutar el fichero actual.
 
 ### Verificaciones 1–7 sobre base reconstruida
 

@@ -31,12 +31,14 @@
 -- Switching the connection role is necessary and NOT sufficient. Three gaps
 -- measured on the same stack would have turned the cutover into an outage:
 --
---   1. `stella_interactions`, `stella_suggestion_decisions` and `audit_logs`
---      carry a SELECT policy and NO INSERT policy. Every write to them
+--   1. `stella_interactions` and `audit_logs` carry a SELECT policy and NO
+--      INSERT policy. Every write to them
 --      currently succeeds only because `postgres` bypasses RLS. Under
 --      `uellix_app` the same INSERT fails with
 --      "new row violates row-level security policy" — verified, not inferred.
---      Section 1 adds the three missing INSERT policies.
+--      Section 1 adds those two missing INSERT policies. The decision-table
+--      policy is canonical in stella_0003 and is verified, never replaced,
+--      here.
 --
 --   2. `current_user_org_ids()`, `current_user_is_super_admin()` and
 --      `current_user_role_in_org()` are SECURITY DEFINER with
@@ -118,6 +120,27 @@ BEGIN
       'Some table in public is not owned by uellix_owner. Apply stella_0004_role_separation.sql first.';
   END IF;
 
+  -- 0.2b stella_0003 now owns the decision-table INSERT policy. This package
+  -- must start from that exact 105-policy state, then add only the two missing
+  -- policies for audit_logs and stella_interactions.
+  IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') <> 105 THEN
+    RAISE EXCEPTION 'Expected 105 policies in public before stella_0005 (including the two stella_0003 decision policies), found %.',
+      (SELECT count(*) FROM pg_policies WHERE schemaname = 'public');
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'stella_suggestion_decisions'
+      AND policyname = 'stella_suggestion_decisions_insert_member_or_admin'
+      AND cmd = 'INSERT'
+      AND roles = '{uellix_app}'::name[]
+      AND with_check LIKE '%app.organization_id%'
+      AND with_check LIKE '%current_user_org_ids%'
+      AND with_check LIKE '%auth.uid()%'
+  ) THEN
+    RAISE EXCEPTION 'stella_0005 requires the canonical transaction-bound stella_0003 decision INSERT policy before it runs.';
+  END IF;
+
   -- 0.3 The runtime role must already be harmless. If any of these were true
   -- the cutover would be moving traffic onto a role that is administrative
   -- under a different name.
@@ -169,11 +192,11 @@ END
 $$;
 
 -- ============================================================
--- 1. The three missing INSERT policies
+-- 1. The two missing INSERT policies
 -- ============================================================
 -- WHY EACH ONE IS SHAPED THE WAY IT IS
 --
--- All three tables are append-only: the BEFORE UPDATE/DELETE triggers from
+-- Both tables are append-only: the BEFORE UPDATE/DELETE triggers from
 -- stella_0002b already refuse mutation, and `uellix_app` holds no UPDATE,
 -- DELETE or TRUNCATE privilege on them. So an INSERT policy is the ONLY write
 -- these tables can ever accept, and it is the last place to constrain them.
@@ -213,19 +236,6 @@ CREATE POLICY stella_interactions_insert_member_or_admin
     (
       organization_id = ANY (public.current_user_org_ids())
       AND created_by = auth.uid()
-    )
-    OR public.current_user_is_super_admin()
-  );
-
-DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions;
-CREATE POLICY stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions
-  FOR INSERT
-  WITH CHECK (
-    (
-      organization_id = ANY (public.current_user_org_ids())
-      AND decided_by = auth.uid()
     )
     OR public.current_user_is_super_admin()
   );
@@ -333,10 +343,11 @@ ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner IN SCHEMA public
 
 DO $$
 BEGIN
-  -- 4.1 The three INSERT policies exist and are the only ones added.
+  -- 4.1 The two policies this script adds exist; the canonical decision policy
+  --     survives untouched, so 105 before + 2 is still 107.
   IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') <> 107 THEN
     RAISE EXCEPTION
-      'Expected 107 policies in public after this script (104 before + 3 INSERT policies), found %.',
+      'Expected 107 policies in public after this script (105 before + 2 INSERT policies), found %.',
       (SELECT count(*) FROM pg_policies WHERE schemaname = 'public');
   END IF;
 

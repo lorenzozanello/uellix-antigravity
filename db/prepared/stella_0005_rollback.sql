@@ -4,7 +4,7 @@
 -- RUN AS `uellix_owner`, REACHED BY `SET ROLE` FROM `uellix_migrator`:
 --   pnpm db:prepared:apply:local stella_0005_rollback.sql
 --
--- SCOPE. This undoes the three INSERT policies, the three pinned
+-- SCOPE. This undoes the two INSERT policies this package added, the three pinned
 -- `search_path` values and the four default-privilege entries that
 -- stella_0005 added. It does NOT undo stella_0004 — ownership stays with
 -- `uellix_owner` — and it does NOT move the runtime back to `postgres`.
@@ -13,7 +13,7 @@
 -- would let a SQL rollback silently re-privilege a running process.
 --
 -- WHAT REVERTING COSTS. After this script the runtime can no longer INSERT
--- into `stella_interactions`, `stella_suggestion_decisions` or `audit_logs`
+-- into `stella_interactions` or `audit_logs`
 -- unless it is once again a role that bypasses RLS. Rolling back the SQL
 -- WITHOUT also rolling back the connection leaves Stella able to read its
 -- interactions and unable to record new ones. Run both, or neither.
@@ -50,9 +50,6 @@ $$;
 
 DROP POLICY IF EXISTS audit_logs_insert_member_or_admin ON public.audit_logs;
 DROP POLICY IF EXISTS stella_interactions_insert_member_or_admin ON public.stella_interactions;
-DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions;
-
 -- ============================================================
 -- 2. Restore the three helpers to search_path = public
 -- ============================================================
@@ -127,10 +124,24 @@ ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner IN SCHEMA public
 
 DO $$
 BEGIN
-  IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') <> 104 THEN
+  IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') <> 105 THEN
     RAISE EXCEPTION
-      'Expected 104 policies in public after rollback, found %.',
+      'Expected 105 policies in public after rollback (including the canonical stella_0003 decision INSERT policy), found %.',
       (SELECT count(*) FROM pg_policies WHERE schemaname = 'public');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'stella_suggestion_decisions'
+      AND policyname = 'stella_suggestion_decisions_insert_member_or_admin'
+      AND cmd = 'INSERT'
+      AND roles = '{uellix_app}'::name[]
+      AND with_check LIKE '%app.organization_id%'
+      AND with_check LIKE '%current_user_org_ids%'
+      AND with_check LIKE '%auth.uid()%'
+  ) THEN
+    RAISE EXCEPTION 'stella_0005_rollback must preserve the canonical stella_0003 decision INSERT policy.';
   END IF;
 
   IF EXISTS (

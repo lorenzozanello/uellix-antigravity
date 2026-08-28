@@ -197,14 +197,14 @@ el Commit 5.1 usa este paquete, y sólo este.
 |--------|----------|------|-------------------------|--------|
 | `stella_0002_interactions_hardening.sql` | `stella_0002_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`) | trigger `trg_stella_interactions_append_only`; grants de `stella_interactions`; CHECK `stella_interactions_stella_role_check` | PREPARADO |
 | `stella_0002b_append_only_truncate_hardening.sql` | `stella_0002b_rollback.sql` (**no reversible**) | G2 (`docs/ops/gates/G2_PACKAGE.md`) | 4 triggers `*_no_truncate` (`BEFORE TRUNCATE FOR EACH STATEMENT`) sobre `stella_interactions`, `audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y además `UPDATE/DELETE` a `service_role` | PREPARADO |
-| `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** + 2 índices + 2 CHECK + `REVOKE ALL` a los 3 roles + grant SELECT a `authenticated` + RLS + política `stella_suggestion_decisions_select` + 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO |
+| `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); sólo por la ruta gobernada `uellix_migrator → SET LOCAL ROLE uellix_owner`; habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** propiedad de `uellix_owner` + 2 índices + 2 CHECK + `REVOKE ALL` + ACL directa `authenticated: SELECT` y `uellix_writer: SELECT, INSERT`; RLS con SELECT y el INSERT canónico `TO uellix_app`, ligado a `app.organization_id`, membresía vigente y `auth.uid()`; 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO — contrato R3.2 pendiente de verificación controlada |
 | `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | **SUPERSEDIDO por `grounding_0003` — NO APLICAR.** Nunca aplicado en ninguna base; se conserva byte a byte bajo su banner (ver «Disposición de `grounding_0001`») |
 | `grounding_0002_document_versions.sql` | `grounding_0002_rollback.sql` | **ninguno todavía**; requiere `stella_0004` aplicado (roles) y decisión de integración sobre GR-002 | rol `uellix_cap_grounding` (NOLOGIN, cero miembros); esquema `uellix_grounding`; **tabla `evidence_document_versions`** (14 columnas) + 2 índices + 3 UNIQUE + 5 CHECK + 3 policies (1 SELECT, 1 INSERT `TO uellix_cap_grounding`, 1 `RESTRICTIVE`) + 2 triggers append-only + `register_document_version(...)` y `claim_active_document_version(uuid)` SECURITY DEFINER | **DISEÑO — no aplicado** |
 | `grounding_0003_evidence_chunks.sql` | `grounding_0003_rollback.sql` | **ninguno todavía**; requiere `grounding_0002` aplicado **primero** | **tabla `evidence_chunks`** en la forma GR-001 (23 columnas) + 3 índices + 1 índice único **parcial** de deduplicación + 2 UNIQUE + 7 CHECK + 4 policies (1 SELECT, 1 INSERT, 1 DELETE, 1 `RESTRICTIVE`) + 2 triggers (`no_update`, `no_truncate`) + `insert_evidence_chunks(uuid, jsonb)`, `finalize_document_ingestion(uuid, integer)` y `chunks_in_scope(uuid, uuid, uuid)` SECURITY DEFINER. **Sin pgvector** | **DISEÑO — no aplicado** |
 | `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | 5 roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`); ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y `service_role` en las 38; repara `pg_default_acl` de `postgres` y `supabase_admin`; 4 entradas **globales** que suprimen `EXECUTE`/`USAGE` a `PUBLIC`; `USAGE ON SCHEMA auth` para el owner | PREPARADO — ensayado y aplicado **sólo en local** |
-| `stella_0005_runtime_cutover.sql` | `stella_0005_rollback.sql` | **local únicamente**; se aplica con `pnpm db:prepared:apply:local`, que conecta como `uellix_migrator` y hace `SET LOCAL ROLE uellix_owner`. El script **se niega** a correr con cualquier otra identidad, incluido un superusuario | 3 políticas `INSERT` (`audit_logs`, `stella_interactions`, `stella_suggestion_decisions`) → **104 → 107**; `search_path=''` en las 3 funciones SECURITY DEFINER que aún estaban en `search_path=public`; 4 entradas de `pg_default_acl` para `uellix_owner` en `public` (SELECT+INSERT a `uellix_writer`, SELECT a `uellix_auditor`; **nunca** UPDATE/DELETE) | PREPARADO — ensayado en contenedor efímero y aplicado **sólo en local** |
+| `stella_0005_runtime_cutover.sql` | `stella_0005_rollback.sql` | **local únicamente**; se aplica con `pnpm db:prepared:apply:local`, que conecta como `uellix_migrator` y hace `SET LOCAL ROLE uellix_owner`. El script **se niega** a correr con cualquier otra identidad, incluido un superusuario | Verifica que el INSERT canónico de decisiones ya existe en `0003`; añade sólo 2 políticas `INSERT` (`audit_logs`, `stella_interactions`) → **105 → 107**; `search_path=''` en las 3 funciones SECURITY DEFINER que aún estaban en `search_path=public`; 4 entradas de `pg_default_acl` para `uellix_owner` en `public` (SELECT+INSERT a `uellix_writer`, SELECT a `uellix_auditor`; **nunca** UPDATE/DELETE) | PREPARADO — ensayado en contenedor efímero y aplicado **sólo en local** |
 | `stella_0005b_admin_bootstrap.sql` | `stella_0005b_rollback.sql` | **local únicamente**; requiere **superusuario** (en local, `supabase_admin`) y se aplica **antes** de `stella_0005` | `ALTER ROLE ... SET` (search_path, statement/lock/idle timeouts) para los 3 roles LOGIN; ownership del esquema `drizzle` y de `__drizzle_migrations` → `uellix_owner` + `USAGE` para `uellix_migrator`. Sobre el default de TYPES de `postgres` en `public`: el script lo **documenta y verifica**, pero **NO ejecuta un `REVOKE USAGE ON TYPES` efectivo** — un `REVOKE` solo no almacena nada en `pg_default_acl` y la fila que un `GRANT` previo guardaría **nunca se consulta** (ver el propio script, secciones "DELIBERATELY NOT CHANGED", y `docs/ops/DATABASE_RUNTIME_CUTOVER.md`). La contención real de TYPES son las 2 entradas **globales** de `stella_0004` para `uellix_owner`/`uellix_migrator` | PREPARADO — aplicado **sólo en local** |
-| `stella_0005c_runtime_policy_scope.sql` | `stella_0005c_rollback.sql` | **local únicamente**; misma ruta que `stella_0005` (`pnpm db:prepared:apply:local`, `uellix_migrator → SET ROLE uellix_owner`) | Re-alcance de las 3 políticas `INSERT` append-only a **`TO uellix_app`** (antes `TO PUBLIC`, lo que reactivaba los grants `INSERT` pre-cutover de `authenticated`/`service_role` vía PostgREST — reauditoría M1); `REVOKE INSERT` a `authenticated` y `service_role` en `audit_logs` y `stella_interactions` (SELECT intacto); elimina la rama `actor_user_id IS NULL` y liga el actor a `auth.uid()` también para super admin. El conteo queda en **107** (3 reemplazadas, ninguna añadida) | PREPARADO — aplicado **sólo en local** (2026-08-02) |
+| `stella_0005c_runtime_policy_scope.sql` | `stella_0005c_rollback.sql` | **local únicamente**; misma ruta que `stella_0005` (`pnpm db:prepared:apply:local`, `uellix_migrator → SET ROLE uellix_owner`) | Re-alcance de las **2** políticas `INSERT` de `0005` a **`TO uellix_app`** (`audit_logs`, `stella_interactions`); preserva y verifica sin reescribir la policy canónica de decisiones creada por `0003`; `REVOKE INSERT` a `authenticated` y `service_role` en ambas tablas (SELECT intacto); elimina la rama `actor_user_id IS NULL` y liga el actor a `auth.uid()` también para super admin. El conteo queda en **107** (2 reemplazadas, ninguna añadida) | PREPARADO — aplicado **sólo en local** (2026-08-02) |
 | `stella_0005d_storage_definer_repair.sql` | `stella_0005d_rollback.sql` | **local únicamente**; requiere **superusuario** (en local, `supabase_admin`), como `0005b` | `GRANT USAGE ON SCHEMA storage TO uellix_owner` — y nada más. Repara las funciones SECURITY DEFINER `can_write_evidence_object`/`can_read_evidence_object` (propiedad de `uellix_owner` desde `stella_0004`) que fallaban dentro de `storage.foldername()` por falta de `USAGE`, con lo que su `EXCEPTION WHEN OTHERS RETURN false` negaba **toda** operación de objetos de evidencia. Medido: upload como analyst → «new row violates row-level security policy»; tras el grant, la suite de Storage pasa. Sin privilegios de tabla en `storage`; `uellix_app` no se toca | PREPARADO — aplicado **sólo en local** (2026-08-02) |
 
 > **Por qué `stella_0005` viene partido en dos.** No es estilo: `uellix_owner` no
@@ -707,51 +707,32 @@ DEFAULT), así que el tipo es indiferente para el código.
   solo verifica y explica, nunca vuelve a conceder `TRUNCATE`. Reparar los
   *default privileges* globales queda **diferido a un gate transversal** — este
   script no los toca.
-- **Endurecimiento previo a la primera aplicación de `stella_0003`
-  (2026-08-01).** Tres MAJOR de la reauditoría, cerrados antes de que el script
-  tocara ninguna base:
-  - **MAJ-A — guarda de escritura vacua.** Usaba
-    `has_table_privilege(current_user, …)`, que devuelve `true` para **cualquier
-    superusuario** y además probaba el rol *instalador*, no el de la
-    aplicación. Sustituida por una guarda basada en hechos auditables: rol
-    escritor **declarado** (`stella.writer_role`), propietario real de la tabla,
-    y ACL **directa** vía `aclexplode` (sin herencia por membresía ni atajo de
-    superusuario). Condición: *el writer es owner* **o** *tiene INSERT+SELECT
-    directos y `rolbypassrls`* — porque RLS está activo sin policy de INSERT, y
-    `INSERT … RETURNING id` también exige SELECT.
-    **Límite honesto:** ningún SQL puede observar a qué rol resuelve
-    `DATABASE_URL`. La garantía se reparte en tres: guarda estructural (el
-    script), prueba offline del camino de escritura del código (`tests/`), y
-    precondición humana del gate remoto (`G2_PACKAGE.md`). Con
-    `stella.writer_role` **sin declarar**, el script cae a `current_user` y lo
-    anuncia como **ASUNCIÓN, no verificación** — el chequeo de owner sería
-    tautológico. Declararlo es lo que lo convierte en una comprobación real.
-  - **MAJ-B — sin auto-verificación.** Añadida al final del forward, en la
-    **misma transacción**: 18 comprobaciones sobre `pg_catalog` (tabla, owner,
-    columnas/tipos/defaults/nulabilidad **y sin columnas extra**, PK, 4 FKs
-    exactas y todas `NO ACTION`, ausencia de UNIQUE **constraint e índice**,
-    ambos CHECK — el de `decision` con **exclusividad**, no solo presencia —,
-    RLS activo **y `FORCE` apagado**, 1 sola policy SELECT org-scoped, los 2
-    triggers con sus eventos exactos, y privilegios directos por `aclexplode`
-    incluyendo `PUBLIC`). Aborta ante privilegios residuales **y ante
-    sobre-revocación**.
-    **Dos comprobaciones fueron retiradas en la ronda 2 de revisión** y no
-    deben reintroducirse: `evidence_chunks` ausente (rompía la convergencia —
-    `grounding_0001` la crea legítimamente bajo su propio gate G5 P3) y
-    "default privileges intactos" (era **infalsificable**: `defaclacl` es
-    `aclitem[]` y nunca contiene nombres de tabla, así que la comprobación no
-    podía dispararse jamás mientras se contaba como verificada). Ambos
-    invariantes son **estáticos** y los fija el test offline.
-  - **MAJ-C — sin guarda de roles.** Añadida antes de crear nada.
-  - **MIN-A** — `LIKE '%''accepted_edited''%'` reemplazado por `position()`:
-    `_` es comodín de `LIKE` y habría aceptado `'acceptedXedited'`.
+- **Remediación R3.2 de `stella_0003` (2026-08-27).** La autoridad de escritura
+  no se infiere de `current_user`, de una GUC declarada por el operador ni de
+  `has_table_privilege` efectivo. El paquete exige la topología completa antes
+  de tocar objetos: sesión `uellix_migrator`, `SET LOCAL ROLE uellix_owner`,
+  aplicación LOGIN/NOBYPASSRLS que hereda directamente de `uellix_writer`, y
+  migrator que puede asumir al owner sólo mediante `SET ROLE`. El owner es
+  dueño de la tabla; el writer NOLOGIN recibe la ACL directa `SELECT, INSERT`;
+  `uellix_app` no recibe ACL directa ni puede asumir al owner.
+  La auto-verificación de la misma transacción inspecciona `pg_roles`,
+  `pg_auth_members`, `pg_class`, `pg_policy` y `aclexplode`: exige exactamente
+  SELECT de `authenticated`, SELECT+INSERT de `uellix_writer`, cero grants a
+  `uellix_app`/`anon`/`service_role`/`PUBLIC`, y prohíbe UPDATE/DELETE.
+  No afirma probar configuración remota ni credenciales: antes de cualquier
+  aplicación controlada se revalida la topología, ownership, ACL y el runtime.
 - **`stella_0003_suggestion_decisions.sql`**: crea la tabla
   `stella_suggestion_decisions` (decisiones humanas sobre sugerencias de
-  Stella) con RLS SELECT-only org-scoped. La server action que la consume
-  (`app/actions/stella/decisions.ts`) queda **dormida** detrás de
-  `STELLA_DECISIONS_PERSISTENCE_ENABLED` (default `false`) hasta que este
-  script pase G2. Invariante de privacidad: `previous_value_hash` guarda un
-  SHA-256, nunca el texto previo en crudo.
+  Stella) con RLS de lectura por organización y exactamente un INSERT
+  `TO uellix_app`. El `WITH CHECK` fija a la vez
+  `organization_id = current_setting('app.organization_id', true)::uuid`, la
+  membresía de `current_user_org_ids()` y `decided_by = auth.uid()`; no hay
+  rama de superadministrador para escribir. La server action obtiene tanto el
+  actor como la organización desde la identidad validada y abre el contexto
+  con `SET LOCAL`; no acepta esos valores del cliente. Sigue **dormida** detrás
+  de `STELLA_DECISIONS_PERSISTENCE_ENABLED` (default `false`) hasta que el
+  gate controlado la verifique. Invariante de privacidad:
+  `previous_value_hash` guarda un SHA-256, nunca texto previo en crudo.
 - **`stella_0003_rollback.sql` — endurecimiento estructural (2026-08-01).**
   **Defecto anterior:** la guarda de autorización era un bloque `DO $$ … $$;` y
   el `DROP TABLE IF EXISTS` era una **sentencia top-level posterior e
@@ -899,11 +880,13 @@ inventario), así que un futuro paquete para RK-14 sería `stella_0005`.
 
 ## Nota de compatibilidad (2026-08-02)
 
-`stella_0005` + `stella_0005b` dejaron el runtime como `uellix_app` con RLS
-activa. Las **tres policies de INSERT** que llevaron el conteo de 104 a 107
-(`audit_logs`, `stella_interactions`, `stella_suggestion_decisions`) son la
-mitad SQL de ese cambio; la mitad de aplicación —de dónde sale el `userId` que
-esas policies comparan con `auth.uid()`— se cerró después, sin SQL nuevo.
+`stella_0005` + `stella_0005b` dejan el runtime como `uellix_app` con RLS
+activa. En la forma R3.2, `stella_0003` instala el INSERT canónico de
+`stella_suggestion_decisions` y deja el catálogo en 105 policies; `stella_0005`
+añade sólo las dos restantes (`audit_logs`, `stella_interactions`) para llegar
+a 107. La mitad de aplicación —de dónde salen el `userId` y la organización
+que esas policies comparan con `auth.uid()` y `app.organization_id`— se obtiene
+de la identidad validada, no de argumentos de cliente.
 
 **Ningún script preparado se añadió ni se modificó en esa unidad.** Cinco
 caminos quedaron bloqueados por diseño (alta de organización, aceptar
@@ -916,16 +899,18 @@ revisión. Ver
 
 ## Nota del cierre de compatibilidad (2026-08-02, tarde)
 
-La reauditoría encontró que esas tres policies `INSERT`, al no llevar cláusula
-`TO`, aplicaban a `PUBLIC` y **reactivaban** los grants `INSERT` pre-cutover de
-`authenticated`/`service_role` sobre `audit_logs` y `stella_interactions`
-(escritura directa por PostgREST con un JWT válido). `stella_0005c` las
-re-alcanza a `TO uellix_app` y revoca esos dos grants; `stella_0005d` repara la
-ruta SECURITY DEFINER de Storage que `stella_0004` dejó sin `USAGE` sobre el
-esquema `storage`. Distribución medida tras el cierre: **107 policies = 101
-`{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}`**. Verificación
-ejecutable: `tests/database-insert-policy-scope.test.ts` (19 pruebas, catálogo +
-sondas en vivo con ROLLBACK).
+La reauditoría encontró que las dos policies `INSERT` creadas en `0005`, al no
+llevar cláusula `TO`, aplicaban a `PUBLIC` y **reactivaban** los grants `INSERT`
+pre-cutover de `authenticated`/`service_role` sobre `audit_logs` y
+`stella_interactions` (escritura directa por PostgREST con un JWT válido).
+`stella_0005c` re-alcanza sólo esas dos a `TO uellix_app` y revoca esos grants;
+la policy de decisiones ya nace canónica en `0003` y `0005c` la verifica sin
+reescribirla. `stella_0005d` repara la ruta SECURITY DEFINER de Storage que
+`stella_0004` dejó sin `USAGE` sobre el esquema `storage`. Distribución medida
+tras el cierre: **107 policies = 101 `{public}` + 3 `{uellix_app}` + 2
+`{authenticated}` + 1 `{anon}`**. Verificación ejecutable:
+`tests/database-insert-policy-scope.test.ts` (catálogo + sondas en vivo con
+ROLLBACK).
 
 
 ---

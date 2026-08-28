@@ -1,5 +1,5 @@
 -- db/prepared/stella_0005c_runtime_policy_scope.sql
--- Scope the three append-only INSERT policies to the runtime role, and remove
+-- Scope the two stella_0005 append-only INSERT policies to the runtime role, and remove
 -- the pre-cutover INSERT grants they were accidentally re-activating.
 --
 -- PREPARED ONLY — NOT A MIGRATION. Lives in db/prepared/ so drizzle-kit never
@@ -13,7 +13,7 @@
 -- ============================================================================
 -- WHY THIS EXISTS (reaudit finding M1)
 -- ============================================================================
--- stella_0005 created the three INSERT policies with no TO clause, which means
+-- stella_0005 created two INSERT policies with no TO clause, which means
 -- TO PUBLIC: they apply to EVERY role that holds an INSERT privilege on the
 -- table. Measured on the rehearsal stack, `authenticated` and `service_role`
 -- still hold the pre-cutover `GRANT SELECT, INSERT` on `audit_logs` and
@@ -31,7 +31,7 @@
 --
 -- The fix is two independent layers, both applied here:
 --
---   1. The INSERT policies name `TO uellix_app`. For any other role there is
+--   1. The two stella_0005 INSERT policies name `TO uellix_app`. For any other role there is
 --      then NO applicable INSERT policy, and RLS denies by default.
 --   2. The INSERT grants of `authenticated` and `service_role` on the two
 --      tables are REVOKED. `authenticated` never hits layer 1; `service_role`
@@ -90,8 +90,9 @@ BEGIN
   END IF;
 
   -- 0.2 The database must be in the post-stella_0005 state this script was
-  -- written against: 38 tables, 107 policies, 10 append-only triggers, RLS on
-  -- everywhere, and the three INSERT policies present under their names.
+-- written against: 38 tables, 107 policies, 10 append-only triggers, RLS on
+-- everywhere, two stella_0005 INSERT policies plus the canonical decision
+-- policy that stella_0003 already scoped to uellix_app.
   IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public') <> 38 THEN
     RAISE EXCEPTION 'Expected exactly 38 tables in public, found %.',
       (SELECT count(*) FROM pg_tables WHERE schemaname = 'public');
@@ -114,7 +115,21 @@ BEGIN
       )
   ) <> 3 THEN
     RAISE EXCEPTION
-      'The three stella_0005 INSERT policies are not all present. Apply stella_0005 first.';
+      'The two stella_0005 INSERT policies and the canonical stella_0003 decision policy are not all present. Apply stella_0003 then stella_0005 first.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'stella_suggestion_decisions'
+      AND policyname = 'stella_suggestion_decisions_insert_member_or_admin'
+      AND cmd = 'INSERT'
+      AND roles = '{uellix_app}'::name[]
+      AND with_check LIKE '%app.organization_id%'
+      AND with_check LIKE '%current_user_org_ids%'
+      AND with_check LIKE '%auth.uid()%'
+  ) THEN
+    RAISE EXCEPTION 'stella_0005c requires the canonical transaction-bound stella_0003 decision policy; it must never recreate or widen it.';
   END IF;
 
   IF (
@@ -174,15 +189,15 @@ REVOKE INSERT ON public.stella_interactions FROM authenticated;
 REVOKE INSERT ON public.stella_interactions FROM service_role;
 
 -- ============================================================
--- 2. Rescope the three INSERT policies to the runtime role (layer 1)
+-- 2. Rescope the two stella_0005 INSERT policies to the runtime role (layer 1)
 -- ============================================================
 -- Each policy keeps its stella_0005 shape — organisation bound to the claims,
 -- actor bound to the claims — with two deliberate changes:
 --
 --   * TO uellix_app: the policy no longer applies to whatever role happens to
---     hold an INSERT privilege. `stella_suggestion_decisions` had no stray
---     grant to activate, but it is rescoped identically so the three
---     append-only write policies stay one shape, reviewed once.
+--     hold an INSERT privilege. The decision-table policy already has this
+--     target and a stricter transaction-organisation predicate in stella_0003;
+--     it is deliberately left untouched here.
 --   * audit_logs: `actor_user_id IS NULL` is gone (see header). The actor
 --     binding now applies to the super-admin branch too — an administrator
 --     appends under their own name like everyone else.
@@ -216,20 +231,6 @@ CREATE POLICY stella_interactions_insert_member_or_admin
     )
   );
 
-DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions;
-CREATE POLICY stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions
-  FOR INSERT
-  TO uellix_app
-  WITH CHECK (
-    decided_by = auth.uid()
-    AND (
-      organization_id = ANY (public.current_user_org_ids())
-      OR public.current_user_is_super_admin()
-    )
-  );
-
 -- ============================================================
 -- 3. Postconditions — assert the end state
 -- ============================================================
@@ -238,13 +239,15 @@ DO $$
 DECLARE
   bad_row record;
 BEGIN
-  -- 3.1 Still exactly 107 policies: three were replaced, none added or lost.
+  -- 3.1 Still exactly 107 policies: two were replaced and the canonical
+  --     decision policy remained untouched.
   IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') <> 107 THEN
     RAISE EXCEPTION 'Expected 107 policies in public after the rescope, found %.',
       (SELECT count(*) FROM pg_policies WHERE schemaname = 'public');
   END IF;
 
-  -- 3.2 The three INSERT policies now apply to uellix_app and no one else.
+  -- 3.2 The two rescoped policies and the preserved decision policy apply to
+  --     uellix_app and no one else.
   FOR bad_row IN
     SELECT policyname, roles::text AS roles
     FROM pg_policies
@@ -271,7 +274,19 @@ BEGIN
         'stella_suggestion_decisions_insert_member_or_admin'
       )
   ) <> 3 THEN
-    RAISE EXCEPTION 'Not all three INSERT policies were rescoped to uellix_app.';
+    RAISE EXCEPTION 'The append-only INSERT policies are not all scoped to uellix_app.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'stella_suggestion_decisions'
+      AND policyname = 'stella_suggestion_decisions_insert_member_or_admin'
+      AND with_check LIKE '%app.organization_id%'
+      AND with_check LIKE '%current_user_org_ids%'
+      AND with_check LIKE '%auth.uid()%'
+  ) THEN
+    RAISE EXCEPTION 'stella_0005c changed or lost the canonical stella_0003 decision policy.';
   END IF;
 
   -- 3.3 The NULL-actor branch is gone from audit_logs.

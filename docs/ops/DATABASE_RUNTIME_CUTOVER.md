@@ -135,6 +135,23 @@ await withDatabaseIdentityContext(
 El paso 4 es lo que impide el IDOR clásico: un `organization_id` enviado por el
 cliente no amplía nada, porque se contrasta contra las membresías reales.
 
+### Contrato R3.2 de decisiones Stella
+
+`recordStellaDecision` no acepta del cliente ni `organization_id` ni
+`decided_by`: obtiene el usuario de `supabase.auth.getUser()` y la organización
+de la membresía resuelta por el servidor. Después abre
+`withDatabaseIdentityContext`, que instala `request.jwt.claims` y
+`app.organization_id` con `set_config(..., true)`. La policy INSERT de
+`stella_suggestion_decisions` exige ambos vínculos y además la membresía
+vigente; no ofrece una rama amplia de superadministrador.
+
+Los caminos normales de la aplicación no exponen SQL arbitrario ni aceptan esas
+GUC como entrada, por lo que un cliente no confiable no puede fijar el contexto
+autoritativo. Esto no pretende contener una credencial SQL directa comprometida:
+quien controle la credencial de `uellix_app` puede emitir `set_config`; por eso
+esa credencial permanece exclusivamente en el runtime de confianza y sin
+acceso de clientes.
+
 **Por qué transacción y no sesión.** postgres-js entrega la misma conexión
 física a la petición siguiente. Una `SET` de sesión filtraría la identidad de un
 usuario a las consultas de otro — una lectura cross-tenant sin ninguna línea de
@@ -205,29 +222,30 @@ justo la afirmación central del script. `stella_0005` **se niega** a ejecutarse
 si `current_user` no es `uellix_owner` y `session_user` no es `uellix_migrator`
 — incluido cuando quien lo aplica es un superusuario.
 
-### 104 → 107 policies
+### 105 → 107 policies
 
 El único conteo que se movió, y se movió porque tenía que hacerlo.
-`audit_logs`, `stella_interactions` y `stella_suggestion_decisions` tenían
-policy de SELECT y **ninguna de INSERT**: cada escritura funcionaba únicamente
-porque `postgres` hacía bypass de RLS. Bajo `uellix_app` el mismo INSERT falla
-con *"new row violates row-level security policy"* — medido antes del cutover.
-Sin las tres policies, Stella podría leer sus interacciones y no registrar
-ninguna más.
+R3.2 traslada la policy de decisiones al contrato que la necesita:
+`stella_0003` crea el INSERT canónico de `stella_suggestion_decisions` y deja
+el catálogo en 105. `stella_0005` añade sólo los INSERT de `audit_logs` y
+`stella_interactions` para llegar a 107. Bajo `uellix_app` cualquiera de esos
+INSERT sin su policy falla con *"new row violates row-level security policy"*.
 
-Cada policy fija **dos** cosas, no una: la organización (impide escrituras
-cross-tenant) y el actor (`created_by = auth.uid()`, impide que un miembro de la
-organización correcta forje un registro a nombre de un colega). Un audit trail
-append-only que cualquiera puede escribir con la identidad de otro no es un
-audit trail.
+Cada policy fija organización y actor. La de decisiones enlaza
+`organization_id` con `app.organization_id` y `current_user_org_ids()`, y
+`decided_by` con `auth.uid()`; las otras dos hacen lo mismo con sus columnas
+canónicas. Un audit trail append-only que cualquiera puede escribir con la
+identidad de otro no es un audit trail.
 
-**Corrección de alcance (`stella_0005c`, 2026-08-02).** Las tres policies se
-crearon sin cláusula `TO` — es decir, `TO PUBLIC` — y eso reactivó los grants
+**Corrección de alcance (`stella_0005c`, 2026-08-02; ajustada R3.2).** Las dos
+policies creadas por `0005` no llevaban cláusula `TO` — es decir, `TO PUBLIC` —
+y eso reactivó los grants
 `INSERT` pre-cutover de `authenticated`/`service_role` sobre `audit_logs` y
 `stella_interactions`: un JWT de usuario válido podía escribir en ambas tablas
 directamente por PostgREST, saltándose la aplicación (hallazgo M1 de la
-reauditoría). `stella_0005c` re-alcanza las tres a `TO uellix_app`, revoca esos
-grants (SELECT intacto), elimina la rama `actor_user_id IS NULL` de
+reauditoría). `stella_0005c` re-alcanza esas dos a `TO uellix_app`, preserva y
+verifica la policy de decisiones ya canónica de `0003`, revoca esos grants
+(SELECT intacto), elimina la rama `actor_user_id IS NULL` de
 `audit_logs` — medido: ningún llamador de producción escribe sin actor; el
 único que lo hacía es el webhook de Stripe, que está bloqueado y usará una
 identidad técnica, no `uellix_app` — y liga el actor a `auth.uid()` también en
@@ -472,10 +490,11 @@ policy, es expresar la capacidad real.
 ### `marketing_leads`: el hallazgo del `TO`
 
 Era la **única** tabla de `public` cuyas policies nombraban roles de base en
-vez de aplicar a todos. Desde `stella_0005c` (2026-08-02) también las 3
-policies `INSERT` append-only nombran rol (`TO uellix_app`); distribución
-medida: **101 `{public}` + 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}`
-= 107**. Las de `marketing_leads`:
+vez de aplicar a todos. En R3.2 también las 3 policies `INSERT` append-only
+nombran rol (`TO uellix_app`): la de decisiones nace así en `stella_0003` y
+`stella_0005c` re-alcanza las otras dos. Distribución medida: **101 `{public}`
++ 3 `{uellix_app}` + 2 `{authenticated}` + 1 `{anon}` = 107**. Las de
+`marketing_leads`:
 
 ```
 anon_insert_marketing_leads           TO anon           WITH CHECK (true)

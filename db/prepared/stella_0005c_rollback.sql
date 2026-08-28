@@ -1,6 +1,6 @@
 -- db/prepared/stella_0005c_rollback.sql
--- Rollback of stella_0005c_runtime_policy_scope.sql: restore the stella_0005
--- INSERT policies (TO PUBLIC, NULL actor accepted on audit_logs) and re-grant
+-- Rollback of stella_0005c_runtime_policy_scope.sql: restore the two
+-- stella_0005 INSERT policies (TO PUBLIC, NULL actor accepted on audit_logs) and re-grant
 -- INSERT on the two tables to `authenticated` and `service_role`.
 --
 -- THIS ROLLBACK RESTORES A KNOWN-WEAKER STATE ON PURPOSE: it exists so the
@@ -37,7 +37,7 @@ END
 $$;
 
 -- ============================================================
--- 1. Restore the stella_0005 policy shapes (TO PUBLIC)
+-- 1. Restore the two stella_0005 policy shapes (TO PUBLIC)
 -- ============================================================
 
 DROP POLICY IF EXISTS audit_logs_insert_member_or_admin ON public.audit_logs;
@@ -65,19 +65,6 @@ CREATE POLICY stella_interactions_insert_member_or_admin
     OR public.current_user_is_super_admin()
   );
 
-DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions;
-CREATE POLICY stella_suggestion_decisions_insert_member_or_admin
-  ON public.stella_suggestion_decisions
-  FOR INSERT
-  WITH CHECK (
-    (
-      organization_id = ANY (public.current_user_org_ids())
-      AND decided_by = auth.uid()
-    )
-    OR public.current_user_is_super_admin()
-  );
-
 -- ============================================================
 -- 2. Restore the pre-cutover INSERT grants
 -- ============================================================
@@ -101,14 +88,24 @@ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public'
-      AND policyname IN (
-        'audit_logs_insert_member_or_admin',
-        'stella_interactions_insert_member_or_admin',
-        'stella_suggestion_decisions_insert_member_or_admin'
-      )
+      AND policyname IN ('audit_logs_insert_member_or_admin', 'stella_interactions_insert_member_or_admin')
       AND roles <> '{public}'::name[]
   ) THEN
-    RAISE EXCEPTION 'An INSERT policy is still role-scoped after the rollback.';
+    RAISE EXCEPTION 'A stella_0005 INSERT policy is still role-scoped after the rollback.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'stella_suggestion_decisions'
+      AND policyname = 'stella_suggestion_decisions_insert_member_or_admin'
+      AND cmd = 'INSERT'
+      AND roles = '{uellix_app}'::name[]
+      AND with_check LIKE '%app.organization_id%'
+      AND with_check LIKE '%current_user_org_ids%'
+      AND with_check LIKE '%auth.uid()%'
+  ) THEN
+    RAISE EXCEPTION 'stella_0005c_rollback must preserve the canonical stella_0003 decision INSERT policy.';
   END IF;
 
   IF NOT has_table_privilege('authenticated', 'public.audit_logs', 'INSERT') THEN

@@ -2,7 +2,7 @@
 //
 // WHO CAN APPEND TO THE APPEND-ONLY TABLES? (reaudit finding M1)
 //
-// stella_0005 created the three INSERT policies with no TO clause — TO PUBLIC.
+// stella_0005 created the two INSERT policies with no TO clause — TO PUBLIC.
 // Combined with the pre-cutover `GRANT SELECT, INSERT ... TO authenticated,
 // service_role` on `audit_logs` and `stella_interactions`, that let a caller
 // holding a valid user JWT INSERT into both tables DIRECTLY through PostgREST,
@@ -60,9 +60,36 @@ describe('stella_0005c — the prepared script and its rollback exist and match'
     path.join(ROOT, 'db', 'prepared', 'stella_0005c_rollback.sql'),
     'utf8'
   )
+  const decisions = readFileSync(
+    path.join(ROOT, 'db', 'prepared', 'stella_0003_suggestion_decisions.sql'),
+    'utf8'
+  )
+  const cutover = readFileSync(
+    path.join(ROOT, 'db', 'prepared', 'stella_0005_runtime_cutover.sql'),
+    'utf8'
+  )
+  const cutoverRollback = readFileSync(
+    path.join(ROOT, 'db', 'prepared', 'stella_0005_rollback.sql'),
+    'utf8'
+  )
 
-  it('scopes all three INSERT policies TO uellix_app', () => {
-    expect(forward.match(/FOR INSERT\s+TO uellix_app/g)).toHaveLength(3)
+  it('rescopes only the two stella_0005 policies and preserves the canonical decision policy', () => {
+    expect(forward.match(/FOR INSERT\s+TO uellix_app/g)).toHaveLength(2)
+    expect(forward).not.toMatch(/DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin/)
+    expect(forward).not.toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin/)
+    expect(decisions).toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin[\s\S]*FOR INSERT\s+TO uellix_app/)
+    expect(decisions).toMatch(/current_setting\('app\.organization_id', true\)::uuid/)
+    expect(decisions).toMatch(/decided_by = auth\.uid\(\)/)
+  })
+
+  it('requires the unmodified decision contract before and after stella_0005', () => {
+    for (const script of [cutover, cutoverRollback, forward, rollback]) {
+      expect(script).toMatch(/stella_suggestion_decisions_insert_member_or_admin/)
+      expect(script).toMatch(/roles = '\{uellix_app\}'::name\[\]/)
+      expect(script).toMatch(/app\.organization_id/)
+      expect(script).toMatch(/current_user_org_ids/)
+      expect(script).toMatch(/auth\.uid\(\)/)
+    }
   })
 
   it('revokes INSERT from authenticated and service_role on both tables', () => {
@@ -85,10 +112,14 @@ describe('stella_0005c — the prepared script and its rollback exist and match'
     expect(forward).not.toMatch(/^\s*GRANT /m)
   })
 
-  it('the rollback restores the grants and the PUBLIC-scoped policies', () => {
+  it('the rollback restores only the two legacy policies and preserves the decision policy', () => {
     expect(rollback).toContain('GRANT INSERT ON public.audit_logs TO authenticated;')
     expect(rollback).toContain('GRANT INSERT ON public.stella_interactions TO service_role;')
     expect(rollback).toContain('actor_user_id IS NULL OR actor_user_id = auth.uid()')
+    expect(rollback).not.toMatch(/DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin/)
+    expect(rollback).not.toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin/)
+    expect(rollback).toMatch(/roles = '\{uellix_app\}'::name\[\]/)
+    expect(rollback).toMatch(/app\.organization_id/)
   })
 })
 

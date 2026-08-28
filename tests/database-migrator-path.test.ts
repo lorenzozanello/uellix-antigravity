@@ -106,6 +106,27 @@ describe('stella_0005 scripts refuse the wrong applying identity in SQL, not jus
   })
 })
 
+describe('stella_0003 follows the same governed migration path', () => {
+  const forward = resolve(PREPARED, 'stella_0003_suggestion_decisions.sql')
+
+  it('requires uellix_migrator as the session user and uellix_owner as the effective owner', () => {
+    const sql = readFileSync(forward, 'utf8')
+    expect(sql).toMatch(/current_user\s*<>\s*'uellix_owner'/)
+    expect(sql).toMatch(/session_user\s*<>\s*'uellix_migrator'/)
+    expect(sql).toMatch(/OWNER TO uellix_owner/)
+  })
+
+  it('checks, rather than mutates, the runtime role topology', () => {
+    const sql = readFileSync(forward, 'utf8')
+    expect(sql).toMatch(/pg_auth_members/)
+    expect(sql).toMatch(/m\.member = app_oid/)
+    expect(sql).toMatch(/m\.roleid = writer_oid/)
+    expect(sql).toMatch(/NOT m\.set_option/)
+    expect(sql).not.toMatch(/^\s*(ALTER|CREATE)\s+ROLE\b/im)
+    expect(sql).not.toMatch(/^\s*GRANT\s+uellix_writer\s+TO\s+uellix_app/im)
+  })
+})
+
 /* -------------------------------------------------------------------------- */
 /* Live                                                                       */
 /* -------------------------------------------------------------------------- */

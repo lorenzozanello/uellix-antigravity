@@ -11,8 +11,11 @@
 -- drizzle snapshot — see docs/21_DB_OBJECT_SOURCE_OF_TRUTH_ADR.md. Do not add
 -- it to schema.ts without following the promotion procedure in that ADR §7.
 --
--- RUN AS ONE TRANSACTION:
---   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- RUN AS THE GOVERNED MIGRATION PATH, IN ONE TRANSACTION:
+--   pnpm db:prepared:apply:local stella_0003_suggestion_decisions.sql
+-- The wrapper authenticates as uellix_migrator, starts the transaction and
+-- reaches uellix_owner with SET LOCAL ROLE. This package refuses every other
+-- session/current-user pair before it creates or alters an object.
 -- Idempotent AND convergent: on a database where the table already exists with
 -- the expected shape, re-running reconciles indexes, grants, RLS, the policy
 -- and the CHECK constraints. If the table exists with an INCOMPATIBLE shape the
@@ -36,8 +39,8 @@
 -- table never inherits the Supabase default-privilege surplus (`Dxtm`) that
 -- left the four pre-existing audit tables TRUNCATE-able and forced the
 -- corrective script db/prepared/stella_0002b_append_only_truncate_hardening.sql.
--- This script has never been applied to any database, so hardening it now costs
--- nothing and leaves no environment to repair later.
+-- This R3.2 revision has not been applied to any database. Its predecessor's
+-- evidence and authorization do not transfer across the changed SHA-256.
 -- Added dependency: db/migrations/0030_immutability.sql (uellix_forbid_mutation).
 
 SET search_path = public;
@@ -59,21 +62,106 @@ DO $$
 DECLARE
   mismatched   text;
   missing_roles text;
+  app_oid       oid;
+  writer_oid    oid;
+  owner_oid     oid;
+  migrator_oid  oid;
+  app_canlogin  boolean;
+  app_inherit   boolean;
+  app_bypass    boolean;
+  app_createrole boolean;
+  app_super     boolean;
+  writer_canlogin boolean;
+  writer_bypass boolean;
+  owner_canlogin boolean;
+  owner_bypass  boolean;
+  migrator_canlogin boolean;
+  migrator_bypass boolean;
+  migrator_createrole boolean;
 BEGIN
+  -- 0-pre. This package is only meaningful when DDL is reached, not held:
+  -- session_user is the LOGIN migrator and current_user is the NOLOGIN owner.
+  -- A superuser would satisfy later catalog checks while proving nothing about
+  -- the governed migration path.
+  IF current_user <> 'uellix_owner' THEN
+    RAISE EXCEPTION
+      'stella_0003 aborted: current_user must be uellix_owner, found %. Apply through the migration wrapper, which reaches the owner with SET LOCAL ROLE.',
+      current_user;
+  END IF;
+
+  IF session_user <> 'uellix_migrator' THEN
+    RAISE EXCEPTION
+      'stella_0003 aborted: session_user must be uellix_migrator, found %. The owner is NOLOGIN and must only be reached through the governed migration path.',
+      session_user;
+  END IF;
+
   -- 0-pre. The grantee roles must exist BEFORE anything is created or altered.
   --        Without this, section 4's REVOKE/GRANT and section 0b's
   --        has_function_privilege() both die on a bare
   --        'role "authenticated" does not exist', after the table already
   --        exists. Ported from stella_0002b §0-pre, whose comment notes this is
   --        otherwise the one precondition the script never states.
-  --        The writer role is checked separately in section 4b, because it is
-  --        declared, not fixed — and the installer is NOT assumed to be it.
+  --        The fixed runtime/owner/writer topology is verified below before
+  --        ACL or policy reconciliation; the installer is never the writer.
   SELECT string_agg(r.name, ', ' ORDER BY r.name) INTO missing_roles
-  FROM (VALUES ('anon'), ('authenticated'), ('service_role')) AS r(name)
+  FROM (VALUES
+    ('anon'), ('authenticated'), ('service_role'),
+    ('uellix_app'), ('uellix_writer'), ('uellix_owner'), ('uellix_migrator')
+  ) AS r(name)
   WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.name);
 
   IF missing_roles IS NOT NULL THEN
     RAISE EXCEPTION 'stella_0003 aborted: missing role(s): %. This database was not bootstrapped by Supabase; the grant model this script reconciles does not apply', missing_roles;
+  END IF;
+
+  SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolsuper
+    INTO app_oid, app_canlogin, app_inherit, app_bypass, app_createrole, app_super
+  FROM pg_roles WHERE rolname = 'uellix_app';
+  SELECT oid, rolcanlogin, rolbypassrls
+    INTO writer_oid, writer_canlogin, writer_bypass
+  FROM pg_roles WHERE rolname = 'uellix_writer';
+  SELECT oid, rolcanlogin, rolbypassrls
+    INTO owner_oid, owner_canlogin, owner_bypass
+  FROM pg_roles WHERE rolname = 'uellix_owner';
+  SELECT oid, rolcanlogin, rolbypassrls, rolcreaterole
+    INTO migrator_oid, migrator_canlogin, migrator_bypass, migrator_createrole
+  FROM pg_roles WHERE rolname = 'uellix_migrator';
+
+  IF NOT app_canlogin OR NOT app_inherit OR app_bypass OR app_createrole OR app_super THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must be LOGIN INHERIT with no BYPASSRLS, CREATEROLE or superuser attribute.';
+  END IF;
+  IF writer_canlogin OR writer_bypass THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_writer must be NOLOGIN and NOBYPASSRLS.';
+  END IF;
+  IF owner_canlogin OR owner_bypass THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_owner must be NOLOGIN and NOBYPASSRLS.';
+  END IF;
+  IF NOT migrator_canlogin OR migrator_bypass OR migrator_createrole THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must be LOGIN with no BYPASSRLS or CREATEROLE.';
+  END IF;
+  IF has_schema_privilege('uellix_app', 'public', 'CREATE') THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app holds CREATE on schema public.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.member = app_oid
+      AND m.roleid = writer_oid
+      AND m.inherit_option
+      AND NOT m.set_option
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must inherit uellix_writer directly (INHERIT TRUE, SET FALSE).';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.member = migrator_oid
+      AND m.roleid = owner_oid
+      AND NOT m.inherit_option
+      AND m.set_option
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must reach uellix_owner only through SET ROLE (INHERIT FALSE, SET TRUE).';
+  END IF;
+  IF pg_has_role(app_oid, owner_oid, 'USAGE') THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app can SET ROLE uellix_owner, which violates the runtime separation.';
   END IF;
 
   -- 0a. FK targets must exist.
@@ -112,6 +200,9 @@ BEGIN
 
   -- 0c. Shape guard — only when the table already exists.
   IF to_regclass('public.stella_suggestion_decisions') IS NOT NULL THEN
+    IF (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid = to_regclass('public.stella_suggestion_decisions')) <> 'uellix_owner' THEN
+      RAISE EXCEPTION 'stella_0003 aborted: the existing decision table is not owned by uellix_owner. Repair ownership through its authorised migration path before re-running.';
+    END IF;
     SELECT string_agg(
              format('%s (expected %s%s)', e.col, e.typ,
                     CASE WHEN e.nul = 'NO' THEN ' NOT NULL' ELSE ' NULL' END),
@@ -204,6 +295,11 @@ CREATE TABLE IF NOT EXISTS public.stella_suggestion_decisions (
   CONSTRAINT stella_suggestion_decisions_prev_hash_check
     CHECK (previous_value_hash IS NULL OR previous_value_hash ~ '^[0-9a-f]{64}$')
 );
+
+-- New tables are born owned by current_user, and section 0 requires that to
+-- be uellix_owner. State the target explicitly as well so a convergent re-run
+-- records and reasserts the canonical owner rather than relying on inference.
+ALTER TABLE public.stella_suggestion_decisions OWNER TO uellix_owner;
 
 -- ============================================================
 -- 2. CHECK reconciliation — convergent
@@ -327,6 +423,8 @@ CREATE INDEX IF NOT EXISTS idx_stella_suggestion_decisions_interaction_id
 REVOKE ALL ON public.stella_suggestion_decisions FROM anon;
 REVOKE ALL ON public.stella_suggestion_decisions FROM authenticated;
 REVOKE ALL ON public.stella_suggestion_decisions FROM service_role;
+REVOKE ALL ON public.stella_suggestion_decisions FROM uellix_app;
+REVOKE ALL ON public.stella_suggestion_decisions FROM uellix_writer;
 -- PUBLIC is a fourth grantee, and an easy one to forget: it is not a role in
 -- pg_roles (it is grantee OID 0 in the ACL), so a check that joins pg_roles
 -- cannot even see it. Revoking is cheap and closes the gap by construction.
@@ -340,158 +438,33 @@ REVOKE ALL ON public.stella_suggestion_decisions FROM PUBLIC;
 --
 --   anon -> nothing. Never reads or writes this table.
 --
---   service_role -> nothing. The only writer is recordStellaDecision
---     (app/actions/stella/decisions.ts), which goes through the Drizzle client
---     in db/client.ts. That client connects with DATABASE_URL, i.e. as the
---     table's OWNER, whose access derives from ownership and not from any
---     grant. Granting service_role here would hand out privileges that nothing
---     in this system exercises. If a deployment ever routes writes through
---     PostgREST with a service_role JWT, that deployment must add the grant
---     deliberately, through its own gate — it must not be inherited by default.
+--   uellix_writer -> SELECT + INSERT only. This NOLOGIN capability is the
+--     sole direct append authority. uellix_app reaches it through its pinned
+--     inherited membership and holds no table ACL entry of its own.
+--
+--   service_role -> nothing. A service-role/PostgREST route is not a writer
+--     contract for this table and must be authorised by a separate package if
+--     it is ever introduced.
 GRANT SELECT ON public.stella_suggestion_decisions TO authenticated;
+GRANT SELECT, INSERT ON public.stella_suggestion_decisions TO uellix_writer;
 
 -- ============================================================
--- 4b. Write-path guard — what SQL can prove, and what it cannot
+-- 4b. Canonical writer contract
 -- ============================================================
--- REPLACES an earlier guard that read `has_table_privilege(current_user, ...,
--- 'INSERT')`. That check was VACUOUS: has_table_privilege() returns true
--- unconditionally for any role with rolsuper, so it was blind precisely in the
--- scenario its own comment named — this script being applied by tooling running
--- as `supabase_admin`, which IS a superuser. It also proved the wrong thing:
--- "the role applying this script can insert", not "the role the application
--- connects as can insert". Those coincide only by operational convention, which
--- is the assumption the guard existed to stop making.
---
--- HONEST SCOPE. No SQL statement can observe which role DATABASE_URL resolves
--- to — that lives in the environment, not the database. So the assurance is
--- split into three parts, and only the first is enforced here:
---
---   1. STRUCTURAL GUARD (this block) — verifiable facts only: the writer role
---      exists, it owns the table (or holds a DIRECT, non-inherited INSERT+SELECT
---      grant AND can get past RLS), and the owner is never one of the PostgREST
---      roles.
---   2. OFFLINE CODE TEST — tests/prepared-stella-sql.test.ts asserts that the
---      application's only write path is db/client.ts (postgres-js over
---      DATABASE_URL), not a service_role/PostgREST client.
---   3. HUMAN GATE PRECONDITION — docs/ops/gates/G2_PACKAGE.md requires the
---      operator to confirm that DATABASE_URL's role equals the writer role
---      below. That step cannot be automated from inside the database.
---
--- DECLARING THE WRITER ROLE
---   Set it explicitly, e.g.:   SET stella.writer_role = 'postgres';
---   (or `psql -c "SET stella.writer_role='...'" -f this_file` / ALTER DATABASE).
---
---   WHEN UNSET the script falls back to `current_user` and says so with a
---   NOTICE, because in the documented architecture the installer IS the
---   application role. In that mode the owner check is tautological — CREATE
---   TABLE makes current_user the owner — so it verifies nothing and the script
---   reports it as an ASSUMPTION rather than pretending otherwise. Setting the
---   variable is what turns this block into a real check, which is why the
---   remote G2 checklist requires it.
---
---   Verify locally:  SHOW stella.writer_role;  -- and compare with the role in
---                    DATABASE_URL (never print the connection string itself)
---   Verify remotely: same, as step 0 of the G2 checklist.
-DO $$
-DECLARE
-  writer        name;
-  writer_oid    oid;
-  writer_declared boolean;
-  tbl_owner     name;
-  owner_is_writer boolean;
-  direct_insert boolean;
-  direct_select boolean;
-  writer_bypassrls boolean;
-  force_rls     boolean;
-BEGIN
-  writer := nullif(current_setting('stella.writer_role', true), '');
-  writer_declared := writer IS NOT NULL;
-  IF NOT writer_declared THEN
-    writer := current_user;
-  END IF;
-
-  -- Resolve the OID by exact rolname. NOT `writer::regrole`: regrolein parses
-  -- its input as an SQL identifier — it lowercases anything unquoted and splits
-  -- on dots — so a role genuinely named "AppWriter" or "app.writer" would pass
-  -- an existence check on rolname and then fail here with
-  -- 'role "appwriter" does not exist'.
-  SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = writer;
-  IF writer_oid IS NULL THEN
-    RAISE EXCEPTION 'stella_0003 aborted: declared writer role % does not exist. Set stella.writer_role to the role DATABASE_URL connects as', writer;
-  END IF;
-
-  -- The writer must not be a PostgREST-facing role. Those reach the database
-  -- from the browser through `authenticator` + SET ROLE; making one the backend
-  -- writer would give every session the backend's reach.
-  IF writer IN ('anon', 'authenticated', 'service_role') THEN
-    RAISE EXCEPTION 'stella_0003 aborted: declared writer role % is a PostgREST role. The backend writer is the role DATABASE_URL connects as, not a JWT role', writer;
-  END IF;
-
-  SELECT pg_get_userbyid(c.relowner) INTO tbl_owner
-  FROM pg_class c WHERE c.oid = to_regclass('public.stella_suggestion_decisions');
-
-  -- The owner must never be one of the PostgREST-facing roles: that would hand
-  -- every browser session implicit full access, RLS included.
-  IF tbl_owner IN ('anon', 'authenticated', 'service_role') THEN
-    RAISE EXCEPTION 'stella_0003 aborted: table owner is %, a PostgREST role. Ownership implies unrestricted access — apply this script as the backend/database role instead', tbl_owner;
-  END IF;
-
-  owner_is_writer := (tbl_owner = writer);
-
-  -- DIRECT grants only. aclexplode() over relacl reads the ACL literally, so a
-  -- privilege the writer merely INHERITS through role membership does not count
-  -- — and neither does the superuser short-circuit that broke the old guard.
-  SELECT
-    bool_or(a.privilege_type = 'INSERT'),
-    bool_or(a.privilege_type = 'SELECT')
-  INTO direct_insert, direct_select
-  FROM pg_class c
-  CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
-  WHERE c.oid = to_regclass('public.stella_suggestion_decisions')
-    AND a.grantee = writer_oid;
-
-  SELECT rolbypassrls INTO writer_bypassrls FROM pg_roles WHERE oid = writer_oid;
-  SELECT relforcerowsecurity INTO force_rls
-  FROM pg_class WHERE oid = to_regclass('public.stella_suggestion_decisions');
-
-  -- FORCE ROW LEVEL SECURITY removes the owner's RLS bypass. With no INSERT
-  -- policy (by design, section 5) that would make the owner path fail too, so
-  -- the owner branch below is only valid while FORCE is off.
-  IF COALESCE(force_rls, false) THEN
-    RAISE EXCEPTION 'stella_0003 aborted: FORCE ROW LEVEL SECURITY is ON for public.stella_suggestion_decisions. Neither the owner nor any grantee could INSERT, because there is deliberately no INSERT policy. Turn FORCE off, or add an INSERT policy through its own gate';
-  END IF;
-
-  -- Why ownership (or bypassrls) and not just an INSERT grant: section 5 enables
-  -- RLS and deliberately creates NO INSERT policy. A non-owner without
-  -- rolbypassrls would hold the grant and still be denied every row. And
-  -- recordStellaDecision issues INSERT ... RETURNING id, which PostgreSQL also
-  -- requires SELECT on the returned column for — hence direct_select too.
-  IF NOT owner_is_writer
-     AND NOT (COALESCE(direct_insert, false) AND COALESCE(direct_select, false)
-              AND COALESCE(writer_bypassrls, false)) THEN
-    RAISE EXCEPTION
-      'stella_0003 aborted: writer role % has no working INSERT path (table owner: %, direct INSERT grant: %, direct SELECT grant: %, rolbypassrls: %). RLS is enabled with no INSERT policy, so the writer must either OWN the table or hold direct INSERT+SELECT and bypass RLS. recordStellaDecision writes via db/client.ts over DATABASE_URL — apply this script AS that role. Do NOT grant INSERT to authenticated or service_role to satisfy this check',
-      writer, tbl_owner, COALESCE(direct_insert, false), COALESCE(direct_select, false), COALESCE(writer_bypassrls, false);
-  END IF;
-
-  IF writer_declared THEN
-    RAISE NOTICE 'stella_0003: write path VERIFIED against declared writer role % (owner: %, owner_is_writer: %).', writer, tbl_owner, owner_is_writer;
-  ELSE
-    RAISE NOTICE 'stella_0003: stella.writer_role is UNSET — assuming installer (%) is the application writer. This is an ASSUMPTION, not a verification: the owner check is tautological in this mode. Set stella.writer_role to have it checked (required by the remote G2 checklist).', writer;
-  END IF;
-END $$;
+-- The table owner is intentionally NOT the runtime. The runtime authenticates
+-- as uellix_app and inherits the direct SELECT+INSERT ACL of uellix_writer;
+-- owner authority remains reachable only through uellix_migrator -> SET LOCAL
+-- ROLE uellix_owner. The self-verification below reads the ACL literally and
+-- checks the one-hop membership, so has_table_privilege() is never the sole
+-- proof of this authority boundary.
 
 -- ============================================================
 -- 5. RLS (mirrors db/policies/002_stella_interactions_rls.sql posture)
 -- ============================================================
 --   - SELECT: org members read their own org's decisions; super_admin sees all
---   - No INSERT policy: inserts are strictly server-side, via recordStellaDecision
---     over the Drizzle client. NOTE (corrected 2026-08-01): that client connects
---     as the table OWNER, and it is OWNERSHIP that bypasses RLS here — there is
---     no FORCE ROW LEVEL SECURITY on this table. It is NOT `service_role` doing
---     the bypassing: after section 4, service_role holds no privilege on this
---     table at all. The earlier wording claimed the opposite and would have led
---     a reader to believe the write path depended on a grant that does not exist.
+--   - INSERT: only uellix_app may use the append capability it inherits from
+--     uellix_writer. It must write the organisation fixed by the verified,
+--     transaction-local context and attribute the decision to auth.uid().
 --   - No UPDATE policy: decisions are immutable ('undone' is a NEW row, not an
 --     update of the original decision)
 --   - No DELETE policy: audit-trail integrity
@@ -506,17 +479,29 @@ USING (
   OR public.current_user_is_super_admin()
 );
 
--- No INSERT policy -> INSERT denied via RLS (service role only)
+DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin
+  ON public.stella_suggestion_decisions;
+CREATE POLICY stella_suggestion_decisions_insert_member_or_admin
+  ON public.stella_suggestion_decisions
+  FOR INSERT
+  TO uellix_app
+  WITH CHECK (
+    organization_id = current_setting('app.organization_id', true)::uuid
+    AND organization_id = ANY(public.current_user_org_ids())
+    AND decided_by = auth.uid()
+  );
+
 -- No UPDATE policy -> UPDATE denied (immutable decisions)
 -- No DELETE policy -> DELETE denied (audit trail integrity)
 
 -- ============================================================
 -- 6. Append-only enforcement at the database level
 -- ============================================================
--- RLS and grants both stop at the table OWNER, and the only writer here IS the
--- owner (db/client.ts connects with DATABASE_URL). Triggers are the one control
--- that fires for every role, owner included, so they are what actually makes
--- "decisions are immutable" true rather than merely intended.
+-- RLS and grants do not constrain the table owner. The runtime writer is
+-- uellix_app through uellix_writer, while the owner is reached only by the
+-- governed migration path. Triggers are the one control that fires for every
+-- role, owner included, so they are what actually makes "decisions are
+-- immutable" true rather than merely intended.
 --
 -- Two triggers are required, not one, because they cover disjoint events:
 --   * FOR EACH ROW  on UPDATE/DELETE — no OLD/NEW rows exist for TRUNCATE, so a
@@ -570,6 +555,9 @@ DO $$
 DECLARE
   tbl_oid        oid;
   tbl_owner      name;
+  app_oid        oid;
+  writer_oid     oid;
+  owner_oid      oid;
   problem        text;
   def            text;
   n              int;
@@ -580,11 +568,14 @@ BEGIN
     RAISE EXCEPTION 'stella_0003 FAILED verification: public.stella_suggestion_decisions does not exist after the script ran';
   END IF;
 
-  -- (2) Owner is a real backend role, never a PostgREST role.
+  -- (2) Ownership is exact: the owner capability never belongs to runtime.
   SELECT pg_get_userbyid(relowner) INTO tbl_owner FROM pg_class WHERE oid = tbl_oid;
-  IF tbl_owner IN ('anon', 'authenticated', 'service_role') THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: table owner is %, a PostgREST role', tbl_owner;
+  IF tbl_owner <> 'uellix_owner' THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: table owner is %, expected uellix_owner.', tbl_owner;
   END IF;
+  SELECT oid INTO app_oid FROM pg_roles WHERE rolname = 'uellix_app';
+  SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = 'uellix_writer';
+  SELECT oid INTO owner_oid FROM pg_roles WHERE rolname = 'uellix_owner';
 
   -- (3) Columns: exact name, type, nullability and presence/absence of default.
   SELECT string_agg(format('%s(%s)', e.col, e.why), ', ' ORDER BY e.col) INTO problem
@@ -725,22 +716,19 @@ BEGIN
     RAISE EXCEPTION 'stella_0003 FAILED verification: previous_value_hash CHECK missing or not anchored: %', COALESCE(def, '<absent>');
   END IF;
 
-  -- (10) RLS enabled — and FORCE explicitly OFF.
-  --      FORCE matters as much as RLS itself here: the whole write path rests
-  --      on the owner bypassing row-level security. With FORCE ON the owner
-  --      stops bypassing, and since there is deliberately no INSERT policy,
-  --      every write would fail — while this script still reported success.
+  -- (10) RLS enabled — and FORCE explicitly OFF. The runtime is not the owner
+  --      and is NOBYPASSRLS, so both read and append policy expressions apply.
   IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = tbl_oid) THEN
     RAISE EXCEPTION 'stella_0003 FAILED verification: ROW LEVEL SECURITY is not enabled';
   END IF;
   IF (SELECT relforcerowsecurity FROM pg_class WHERE oid = tbl_oid) THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: FORCE ROW LEVEL SECURITY is ON. The owner would stop bypassing RLS and, with no INSERT policy, recordStellaDecision could never write. Turn it off, or add an explicit INSERT policy through its own gate';
+    RAISE EXCEPTION 'stella_0003 FAILED verification: FORCE ROW LEVEL SECURITY is ON. The canonical contract requires RLS enabled with FORCE off.';
   END IF;
 
-  -- (11) Exactly one policy: org-scoped SELECT, and nothing else.
+  -- (11) Exactly two policies: SELECT plus the one narrow runtime INSERT.
   SELECT count(*) INTO n FROM pg_policy WHERE polrelid = tbl_oid;
-  IF n <> 1 THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 1 RLS policy, found %. INSERT/UPDATE/DELETE must stay denied by absence', n;
+  IF n <> 2 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 2 RLS policies, found %. UPDATE and DELETE must stay denied by absence', n;
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM pg_policy
@@ -751,6 +739,25 @@ BEGIN
       AND position('current_user_is_super_admin' in pg_get_expr(polqual, polrelid)) > 0
   ) THEN
     RAISE EXCEPTION 'stella_0003 FAILED verification: the SELECT policy is missing, is not SELECT-only, or lost its org scoping';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = tbl_oid
+      AND polname = 'stella_suggestion_decisions_insert_member_or_admin'
+      AND polcmd = 'a'                                   -- INSERT
+      AND polroles = ARRAY[app_oid]
+      AND position('app.organization_id' in pg_get_expr(polwithcheck, polrelid)) > 0
+      AND position('current_user_org_ids' in pg_get_expr(polwithcheck, polrelid)) > 0
+      AND position('auth.uid' in pg_get_expr(polwithcheck, polrelid)) > 0
+      AND position('decided_by' in pg_get_expr(polwithcheck, polrelid)) > 0
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: the INSERT policy is not the one narrow uellix_app policy bound to transaction organisation and auth.uid().';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = tbl_oid AND polcmd IN ('w', 'd')
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: UPDATE or DELETE policy exists on an append-only decision table.';
   END IF;
 
   -- (12) Exactly one BEFORE UPDATE OR DELETE ... FOR EACH ROW trigger.
@@ -787,26 +794,24 @@ BEGIN
     RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected extra trigger(s) on the table (total %, expected 2)', n;
   END IF;
 
-  -- (15)(16)(17)(18) Privileges, read as DIRECT ACL entries only.
-  --   anon         -> nothing
-  --   authenticated-> exactly SELECT
-  --   service_role -> nothing
-  --   and no write-ish privilege for any of the three.
+  -- (15) Privileges, read as DIRECT ACL entries only. This is deliberately
+  --      stronger than an effective-privilege check: inheritance is required
+  --      for the app but forbidden as a substitute for the writer's direct
+  --      capability, and an accidental direct app grant must be visible.
   SELECT string_agg(g.rolname || ':' || a.privilege_type, ', ' ORDER BY g.rolname, a.privilege_type)
     INTO problem
   FROM pg_class c,
        aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
   JOIN pg_roles g ON g.oid = a.grantee
   WHERE c.oid = tbl_oid
-    AND g.rolname IN ('anon', 'authenticated', 'service_role')
-    -- `AND NOT a.is_grantable`: the one allowed entry is a PLAIN SELECT. A
-    -- SELECT WITH GRANT OPTION (rendered `authenticated=r*/postgres`) would
-    -- otherwise be excluded here and pass unreported, even though it lets
-    -- authenticated re-grant SELECT to anon.
-    AND NOT (g.rolname = 'authenticated' AND a.privilege_type = 'SELECT' AND NOT a.is_grantable);
+    AND g.rolname IN ('anon', 'authenticated', 'service_role', 'uellix_app', 'uellix_writer')
+    AND NOT (
+      (g.rolname = 'authenticated' AND a.privilege_type = 'SELECT' AND NOT a.is_grantable)
+      OR (g.rolname = 'uellix_writer' AND a.privilege_type IN ('SELECT', 'INSERT') AND NOT a.is_grantable)
+    );
 
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected DIRECT privilege(s) present: %. Target is: authenticated=SELECT only; anon and service_role none. A REVOKE only removes grants from the current grantor — investigate other grantors', problem;
+    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected DIRECT privilege(s) present: %. Target is authenticated=SELECT, uellix_writer=SELECT+INSERT, and anon/service_role/uellix_app=none. A REVOKE only removes grants made by the current grantor — investigate other grantors.', problem;
   END IF;
 
   -- PUBLIC separately: it is grantee OID 0 and has no pg_roles row, so the
@@ -821,15 +826,65 @@ BEGIN
     RAISE EXCEPTION 'stella_0003 FAILED verification: PUBLIC holds privilege(s): %. That reaches every role in the cluster, anon included', problem;
   END IF;
 
-  -- ...and the one privilege that must NOT have been over-revoked.
+  -- (16) Required direct entries cannot be over-revoked or made grantable.
   IF NOT EXISTS (
     SELECT 1
     FROM pg_class c,
          aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
     JOIN pg_roles g ON g.oid = a.grantee
-    WHERE c.oid = tbl_oid AND g.rolname = 'authenticated' AND a.privilege_type = 'SELECT'
+    WHERE c.oid = tbl_oid AND g.rolname = 'authenticated' AND a.privilege_type = 'SELECT' AND NOT a.is_grantable
   ) THEN
     RAISE EXCEPTION 'stella_0003 FAILED verification: authenticated LOST its direct SELECT grant — the RLS read path would deny every user';
+  END IF;
+
+  IF (
+    SELECT count(*)
+    FROM pg_class c
+    CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a
+    WHERE c.oid = tbl_oid
+      AND a.grantee = writer_oid
+      AND a.privilege_type IN ('SELECT', 'INSERT')
+      AND NOT a.is_grantable
+  ) <> 2 THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_writer must hold exactly direct SELECT and INSERT without grant option.';
+  END IF;
+
+  -- (17) The mediated path itself: app inherits writer in exactly one hop,
+  --      receives no direct ACL, cannot SET owner, and has only append rights.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.member = app_oid
+      AND m.roleid = writer_oid
+      AND m.inherit_option
+      AND NOT m.set_option
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app is not the required inheriting, non-SET member of uellix_writer.';
+  END IF;
+  IF pg_has_role(app_oid, owner_oid, 'USAGE') THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app can SET ROLE uellix_owner.';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_roles
+    WHERE oid = app_oid AND (NOT rolcanlogin OR NOT rolinherit OR rolbypassrls OR rolcreaterole OR rolsuper)
+  ) OR has_schema_privilege('uellix_app', 'public', 'CREATE') THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app role attributes or schema CREATE privilege exceed the runtime contract.';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_roles
+    WHERE oid = writer_oid AND (rolcanlogin OR rolbypassrls)
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_writer is LOGIN or BYPASSRLS.';
+  END IF;
+  IF NOT has_table_privilege('uellix_app', tbl_oid, 'SELECT')
+     OR NOT has_table_privilege('uellix_app', tbl_oid, 'INSERT') THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app does not receive SELECT+INSERT through uellix_writer.';
+  END IF;
+  IF has_table_privilege('uellix_app', tbl_oid, 'UPDATE')
+     OR has_table_privilege('uellix_app', tbl_oid, 'DELETE')
+     OR has_table_privilege('uellix_app', tbl_oid, 'TRUNCATE')
+     OR has_table_privilege('uellix_app', tbl_oid, 'REFERENCES')
+     OR has_table_privilege('uellix_app', tbl_oid, 'TRIGGER') THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app has a non-append table privilege.';
   END IF;
 
   -- (19) NOT CHECKED AT RUNTIME, deliberately.
@@ -855,5 +910,5 @@ BEGIN
   --      That this script issues no ALTER DEFAULT PRIVILEGES is, again, a
   --      static property enforced offline.
 
-  RAISE NOTICE 'stella_0003: verification passed — table owned by %, column contract exact (11 columns, no extras), PK, 4 FKs all NO ACTION, 0 UNIQUE, both CHECKs, RLS on (FORCE off) with 1 SELECT policy, 2 append-only triggers, authenticated=SELECT only (not grantable), anon/service_role=none.', tbl_owner;
+  RAISE NOTICE 'stella_0003: verification passed — owner=%, session path=uellix_migrator -> SET LOCAL ROLE uellix_owner, writer=uellix_writer direct SELECT+INSERT, runtime=uellix_app inherited-only, RLS on (FORCE off) with SELECT plus one transaction-bound INSERT policy, and append-only triggers intact.', tbl_owner;
 END $$;
