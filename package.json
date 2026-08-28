@@ -88,6 +88,7 @@
     "chain:status:write": "tsx scripts/chain-status.ts write",
     "chain:status:verify": "tsx scripts/chain-status.ts verify",
     "certify:pg176": "tsx scripts/pg176-certify.ts",
+    "certify:stella:r3-5:pg17": "tsx scripts/stella-r3-5-pg17-certify.ts",
     "certify:pg176:diagnostic": "tsx scripts/pg176-certify.ts --diagnostic",
     "m8:runtime:open": "tsx scripts/m8-runtime-attempt.ts open",
     "posture:observation": "tsx scripts/posture-observation-sql.ts",
