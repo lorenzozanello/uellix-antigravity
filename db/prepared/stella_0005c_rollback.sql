@@ -79,6 +79,8 @@ GRANT INSERT ON public.stella_interactions TO service_role;
 -- ============================================================
 
 DO $$
+DECLARE
+  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
 BEGIN
   IF (SELECT count(*) FROM pg_policies WHERE schemaname = 'public') <> 107 THEN
     RAISE EXCEPTION 'Expected 107 policies in public after rollback, found %.',
@@ -94,16 +96,28 @@ BEGIN
     RAISE EXCEPTION 'A stella_0005 INSERT policy is still role-scoped after the rollback.';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'stella_suggestion_decisions'
-      AND policyname = 'stella_suggestion_decisions_insert_member_or_admin'
-      AND cmd = 'INSERT'
-      AND roles = '{uellix_app}'::name[]
-      AND with_check LIKE '%app.organization_id%'
-      AND with_check LIKE '%current_user_org_ids%'
-      AND with_check LIKE '%auth.uid()%'
+  IF (SELECT count(*) FROM pg_policy
+      WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2
+     OR (SELECT count(*) FROM pg_policy
+         WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+           AND polcmd = 'a') <> 1
+     OR EXISTS (
+       SELECT 1 FROM pg_policy
+       WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+         AND polcmd IN ('w', 'd', '*')
+     )
+     OR NOT EXISTS (
+       SELECT 1 FROM pg_policy
+       WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+         AND polname = 'stella_suggestion_decisions_insert_member_or_admin'
+         AND polcmd = 'a'
+         AND polroles = ARRAY['uellix_app'::regrole::oid]
+         AND polpermissive
+         AND regexp_replace(
+               regexp_replace(pg_get_expr(polwithcheck, polrelid, true), 'public\.', '', 'g'),
+               '\s+', '', 'g'
+             ) = expected_decision_insert_check
+     )
   ) THEN
     RAISE EXCEPTION 'stella_0005c_rollback must preserve the canonical stella_0003 decision INSERT policy.';
   END IF;

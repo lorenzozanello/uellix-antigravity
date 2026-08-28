@@ -69,30 +69,31 @@ rollback.)
 1. **Nada de este directorio se ejecuta automáticamente.** Ni drizzle, ni CI,
    ni un agente. La aplicación es siempre manual, por Lorenzo, contra staging
    primero, siguiendo el checklist del gate.
-2. **Ejecutar siempre en una sola transacción**, tanto los scripts forward como
-   los rollbacks:
+2. **La autoridad de ejecución es específica a cada paquete; un cliente SQL
+   genérico no es una alternativa autorizada.** Para `stella_0003` R3.3 y los
+   paquetes owner-scoped que lo verifican, la única vía local documentada es:
+   ```bash
+   pnpm db:prepared:apply:local stella_0003_suggestion_decisions.sql
+   pnpm db:prepared:verify:local stella_0003_suggestion_decisions.sql
    ```
-   psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 -f db/prepared/<script>.sql
-   ```
+   El wrapper autentica como `uellix_migrator`, abre una única transacción,
+   ejecuta `SET LOCAL ROLE uellix_owner`, aplica el fichero exacto, ejecuta su
+   self-check y confirma o revierte entero. No autoriza un destino remoto. Para
+   un destino remoto hace falta una autorización humana separada y un wrapper
+   aprobado que conserve hash, identidad y verificaciones de catálogo.
 
-   > **`stella_0004` es la excepción en cuanto al ROL, no en cuanto a la
-   > transacción.** Debe ejecutarse como **superusuario** (en local,
-   > `supabase_admin` dentro del contenedor). Un rol `CREATEROLE` no
-   > superusuario recibe `ADMIN OPTION` automáticamente sobre cada rol que crea
-   > (PostgreSQL 16+, verificado en este stack), y con esa `ADMIN OPTION` puede
-   > concederse `SET` sobre el owner — la separación quedaría en el papel. El
-   > propio script lo comprueba y aborta.
+   > **`stella_0004` es la excepción en cuanto al ROL, no una excepción para
+   > usar un cliente genérico.** Requiere su procedimiento administrativo
+   > explícito como superusuario (en local, `supabase_admin` dentro del
+   > contenedor). Un rol `CREATEROLE` no superusuario recibe `ADMIN OPTION`
+   > automáticamente sobre cada rol que crea y podría concederse `SET` sobre el
+   > owner; el propio script comprueba y aborta ante esa postura.
    >
-   > **Además, después de aplicar `stella_0004`, los scripts `stella_0002`,
-   > `0002b` y `0003` ya no pueden ejecutarse como `postgres`:** emiten
-   > `REVOKE`, `GRANT`, `CREATE TRIGGER` y `ALTER TABLE`, y todo eso exige
-   > ownership. Se ejecutan como `uellix_migrator` con un `SET ROLE
-   > uellix_owner` explícito. Lo mismo vale para `pnpm db:migrate:local` sobre
-   > una base donde `0004` ya corrió; sobre una base **recién creada** el orden
-   > normal (migraciones → `0002`/`0002b`/`0003` → `0004`) no se ve afectado.
-   `-1` garantiza que un fallo no deje estado parcial. Ninguno de estos scripts
-   usa `CREATE INDEX CONCURRENTLY`, así que todos son compatibles con el modo
-   transaccional.
+   > **Después de `stella_0004`, `stella_0002`, `0002b` y `0003` deben correr
+   > por la ruta gobernada:** `uellix_migrator → SET LOCAL ROLE uellix_owner`.
+   > Emiten `REVOKE`, `GRANT`, `CREATE TRIGGER` y `ALTER TABLE`, todos sujetos a
+   > ownership. En una base recién creada, el orden normal sigue siendo
+   > migraciones → `0002`/`0002b`/`0003` → `0004`.
 3. Antes de aplicar cualquier script de grounding: **confirmar la
    disponibilidad de pgvector** en el proyecto Supabase hosted
    (Dashboard → Database → Extensions → `vector`), y **la decisión G5 P3**

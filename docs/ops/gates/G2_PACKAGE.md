@@ -313,8 +313,9 @@ resultado esperado y G3 pasa sin regresiones.
 ## Criterios de aborto
 
 **Abortar** significa: no continuar con el siguiente script, no flipear flags,
-no avanzar a G3. Si la transacción ya falló, `-1` garantiza que no quedó estado
-parcial; si se usó el SQL Editor, verificar el estado antes de reintentar.
+no avanzar a G3. Si la transacción gobernada falla, el wrapper revierte entero.
+Si alguien intentó una vía no gobernada, detener el gate, registrar el intento
+como incidente y verificar el estado antes de cualquier nuevo intento.
 
 | # | Causa de aborto | Cómo se detecta | Qué hacer |
 |---|---|---|---|
@@ -324,7 +325,7 @@ parcial; si se usó el SQL Editor, verificar el estado antes de reintentar.
 | A4 | **Feature flag encendido** — `STELLA_DECISIONS_PERSISTENCE_ENABLED` está en `true` en algún entorno apuntando a esta base | Revisar env vars en Vercel (Preview y Production) antes de ejecutar | Detener. Apagar el flag primero: la action debe seguir dormida hasta que el gate esté verificado |
 | A5 | **Forma incompatible de objetos preexistentes** — la tabla destino ya existe con columnas o tipos distintos | El script aborta con `... already exists with an INCOMPATIBLE shape. Missing or mismatched columns: ...` | Detener. **No** forzar. Investigar de dónde salió esa tabla; la resolución es manual y probablemente merece su propio gate |
 | A6 | **Fallo de cualquier verificación post-apply** — alguna de las 7 consultas no devuelve el resultado esperado | Sección "Verificaciones post-aplicación" | Detener. Evaluar rollback (ver más abajo). No avanzar a G3 con una verificación en rojo |
-| A7 | **Estado parcial detectado** — la tabla existe pero sin RLS, sin política, o con grants más amplios de lo esperado | Verificaciones 5, 6 y 2. Riesgo real solo si se usó el SQL Editor | Detener. Re-ejecutar el script completo con `psql -1` (es convergente) y volver a verificar. Si persiste, rollback |
+| A7 | **Estado parcial detectado** — la tabla existe pero sin RLS, sin política, o con grants más amplios de lo esperado | Verificaciones 5, 6 y 2. Indica un intento fuera de la ruta gobernada o una intervención ajena | Detener. No re-ejecutar mediante un cliente SQL directo. Investigar, restaurar el preestado si corresponde y usar únicamente el wrapper gobernado tras una nueva autorización |
 | A8 | **Decisión G5 P3 ausente o pgvector no disponible** — solo aplica al addendum de grounding | El script `grounding_0001` aborta con mensaje explícito | Detener **solo el addendum**. `stella_0002`/`0003` no dependen de G5 y pueden continuar |
 
 Regla transversal: ante cualquier duda sobre el destino o el estado,
@@ -378,11 +379,11 @@ que ninguna protección de base de datos puede detenerlo: los triggers prohíben
 **una o más filas** aborta salvo que el operador declare, con la cadena
 **exacta** `'true'`:
 
-```bash
-psql "$STAGING_DATABASE_URL" -1 -v ON_ERROR_STOP=1 \
-  -c "SET stella.confirm_destroy_decisions='true'" \
-  -f db/prepared/stella_0003_rollback.sql
-```
+No existe una vía remota autorizada para suministrar esa confirmación fuera del
+wrapper. Por tanto, mientras el wrapper gobernado no exponga un canal de
+confirmación auditado, un rollback con filas **no está autorizado**: detener y
+solicitar una instrucción humana específica. Nunca suplir este control con un
+cliente SQL directo.
 
 `yes`, `y`, `1`, `TRUE`, `True`, `on`, `t` y cualquier variante con espacios se
 **rechazan**: borrar un audit trail no debe depender de la coerción booleana de
@@ -444,15 +445,14 @@ revierta. Demostrado empíricamente sobre PostgreSQL 17.6 en un contenedor
 desechable: con `psql` desnudo, la forma anterior **destruyó la tabla y su fila
 pese a que la guarda lanzó la excepción**.
 
-Eso importa aquí más que en otros scripts porque este paquete admite tres vías
-de aplicación y **sólo la primera acepta esas banderas**: `psql`,
-`supabase db execute --file` y el SQL Editor de Supabase (ver *Aplicación*).
+La forma anterior admitía clientes SQL directos y dependía de convenciones del
+cliente. El contrato R3.3 no admite esas vías: la identidad, transacción,
+`SET LOCAL ROLE`, hash y self-check los impone el wrapper gobernado.
 
 Hoy guarda y `DROP` viven en **un único bloque `DO`**: un `RAISE EXCEPTION`
 termina el bloque y ninguna sentencia posterior *de ese bloque* se ejecuta —
-semántica del servidor dentro de una sola sentencia. `-1 -v ON_ERROR_STOP=1`
-siguen **recomendadas** (atomicidad y exit code no-cero para un gate que lo
-lee), pero ya **no son la única barrera**.
+semántica del servidor dentro de una sola sentencia. Es una defensa adicional,
+no una autorización para ejecutar el fichero fuera del wrapper.
 
 ### Ensayo destructivo controlado — RUN 1 (2026-08-02)
 

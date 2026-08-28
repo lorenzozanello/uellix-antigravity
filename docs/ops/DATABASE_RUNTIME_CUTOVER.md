@@ -190,6 +190,14 @@ protocolo simple (equivalente estructural de `ON_ERROR_STOP`) → **verificar
 ownership y ACL antes del `COMMIT`** → confirmar o revertir entero. Se registra
 el SHA-256 del fichero, nunca su contenido.
 
+R3.3 endurece además la prueba de topología dentro de `stella_0003`: los cuatro
+roles gobernados deben ser `NOSUPERUSER` y `NOINHERIT`; la capacidad del runtime
+se deriva exclusivamente de la fila `uellix_app → uellix_writer` con
+`INHERIT TRUE`, `SET FALSE` y `ADMIN FALSE`. La ausencia de escalación al owner
+se verifica con `pg_has_role(..., 'SET')`, no con `USAGE`. La policy INSERT de
+decisiones se compara como expresión de catálogo normalizada y exacta, por lo
+que una rama adicional como `OR true` aborta la transacción.
+
 Comandos:
 
 ```bash

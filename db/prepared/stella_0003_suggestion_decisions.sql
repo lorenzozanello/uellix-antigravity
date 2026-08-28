@@ -70,14 +70,30 @@ DECLARE
   app_inherit   boolean;
   app_bypass    boolean;
   app_createrole boolean;
+  app_createdb  boolean;
+  app_replication boolean;
   app_super     boolean;
   writer_canlogin boolean;
+  writer_inherit boolean;
   writer_bypass boolean;
+  writer_createrole boolean;
+  writer_createdb boolean;
+  writer_replication boolean;
+  writer_super boolean;
   owner_canlogin boolean;
+  owner_inherit boolean;
   owner_bypass  boolean;
+  owner_createrole boolean;
+  owner_createdb boolean;
+  owner_replication boolean;
+  owner_super boolean;
   migrator_canlogin boolean;
+  migrator_inherit boolean;
   migrator_bypass boolean;
   migrator_createrole boolean;
+  migrator_createdb boolean;
+  migrator_replication boolean;
+  migrator_super boolean;
 BEGIN
   -- 0-pre. This package is only meaningful when DDL is reached, not held:
   -- session_user is the LOGIN migrator and current_user is the NOLOGIN owner.
@@ -114,30 +130,33 @@ BEGIN
     RAISE EXCEPTION 'stella_0003 aborted: missing role(s): %. This database was not bootstrapped by Supabase; the grant model this script reconciles does not apply', missing_roles;
   END IF;
 
-  SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolsuper
-    INTO app_oid, app_canlogin, app_inherit, app_bypass, app_createrole, app_super
+  SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolsuper
+    INTO app_oid, app_canlogin, app_inherit, app_bypass, app_createrole, app_createdb, app_replication, app_super
   FROM pg_roles WHERE rolname = 'uellix_app';
-  SELECT oid, rolcanlogin, rolbypassrls
-    INTO writer_oid, writer_canlogin, writer_bypass
+  SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolsuper
+    INTO writer_oid, writer_canlogin, writer_inherit, writer_bypass, writer_createrole, writer_createdb, writer_replication, writer_super
   FROM pg_roles WHERE rolname = 'uellix_writer';
-  SELECT oid, rolcanlogin, rolbypassrls
-    INTO owner_oid, owner_canlogin, owner_bypass
+  SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolsuper
+    INTO owner_oid, owner_canlogin, owner_inherit, owner_bypass, owner_createrole, owner_createdb, owner_replication, owner_super
   FROM pg_roles WHERE rolname = 'uellix_owner';
-  SELECT oid, rolcanlogin, rolbypassrls, rolcreaterole
-    INTO migrator_oid, migrator_canlogin, migrator_bypass, migrator_createrole
+  SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolsuper
+    INTO migrator_oid, migrator_canlogin, migrator_inherit, migrator_bypass, migrator_createrole, migrator_createdb, migrator_replication, migrator_super
   FROM pg_roles WHERE rolname = 'uellix_migrator';
 
-  IF NOT app_canlogin OR NOT app_inherit OR app_bypass OR app_createrole OR app_super THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must be LOGIN INHERIT with no BYPASSRLS, CREATEROLE or superuser attribute.';
+  -- 0004 makes NOINHERIT a role-wide default and grants writer inheritance
+  -- explicitly at membership level. Requiring global INHERIT here would reject
+  -- the canonical topology before any DDL is reached.
+  IF NOT app_canlogin OR app_inherit OR app_bypass OR app_createrole OR app_createdb OR app_replication OR app_super THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must be LOGIN NOINHERIT with no BYPASSRLS, CREATEROLE, CREATEDB, REPLICATION or superuser attribute.';
   END IF;
-  IF writer_canlogin OR writer_bypass THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_writer must be NOLOGIN and NOBYPASSRLS.';
+  IF writer_canlogin OR writer_inherit OR writer_bypass OR writer_createrole OR writer_createdb OR writer_replication OR writer_super THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_writer must be NOLOGIN NOINHERIT with no BYPASSRLS, CREATEROLE, CREATEDB, REPLICATION or superuser attribute.';
   END IF;
-  IF owner_canlogin OR owner_bypass THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_owner must be NOLOGIN and NOBYPASSRLS.';
+  IF owner_canlogin OR owner_inherit OR owner_bypass OR owner_createrole OR owner_createdb OR owner_replication OR owner_super THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_owner must be NOLOGIN NOINHERIT with no BYPASSRLS, CREATEROLE, CREATEDB, REPLICATION or superuser attribute.';
   END IF;
-  IF NOT migrator_canlogin OR migrator_bypass OR migrator_createrole THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must be LOGIN with no BYPASSRLS or CREATEROLE.';
+  IF NOT migrator_canlogin OR migrator_inherit OR migrator_bypass OR migrator_createrole OR migrator_createdb OR migrator_replication OR migrator_super THEN
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must be LOGIN NOINHERIT with no BYPASSRLS, CREATEROLE, CREATEDB, REPLICATION or superuser attribute.';
   END IF;
   IF has_schema_privilege('uellix_app', 'public', 'CREATE') THEN
     RAISE EXCEPTION 'stella_0003 aborted: uellix_app holds CREATE on schema public.';
@@ -148,8 +167,9 @@ BEGIN
       AND m.roleid = writer_oid
       AND m.inherit_option
       AND NOT m.set_option
+      AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must inherit uellix_writer directly (INHERIT TRUE, SET FALSE).';
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must inherit uellix_writer directly (INHERIT TRUE, SET FALSE, ADMIN FALSE).';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM pg_auth_members m
@@ -157,10 +177,14 @@ BEGIN
       AND m.roleid = owner_oid
       AND NOT m.inherit_option
       AND m.set_option
+      AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must reach uellix_owner only through SET ROLE (INHERIT FALSE, SET TRUE).';
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must reach uellix_owner only through SET ROLE (INHERIT FALSE, SET TRUE, ADMIN FALSE).';
   END IF;
-  IF pg_has_role(app_oid, owner_oid, 'USAGE') THEN
+  -- USAGE is membership/inheritance semantics, not SET ROLE capability. SET
+  -- follows every PostgreSQL-supported membership path and therefore rejects
+  -- a direct or transitive owner escalation even where USAGE is false.
+  IF pg_has_role(app_oid, owner_oid, 'SET') THEN
     RAISE EXCEPTION 'stella_0003 aborted: uellix_app can SET ROLE uellix_owner, which violates the runtime separation.';
   END IF;
 
@@ -558,8 +582,10 @@ DECLARE
   app_oid        oid;
   writer_oid     oid;
   owner_oid      oid;
+  migrator_oid   oid;
   problem        text;
   def            text;
+  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
   n              int;
 BEGIN
   -- (1) The table exists.
@@ -576,6 +602,7 @@ BEGIN
   SELECT oid INTO app_oid FROM pg_roles WHERE rolname = 'uellix_app';
   SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = 'uellix_writer';
   SELECT oid INTO owner_oid FROM pg_roles WHERE rolname = 'uellix_owner';
+  SELECT oid INTO migrator_oid FROM pg_roles WHERE rolname = 'uellix_migrator';
 
   -- (3) Columns: exact name, type, nullability and presence/absence of default.
   SELECT string_agg(format('%s(%s)', e.col, e.why), ', ' ORDER BY e.col) INTO problem
@@ -746,12 +773,16 @@ BEGIN
       AND polname = 'stella_suggestion_decisions_insert_member_or_admin'
       AND polcmd = 'a'                                   -- INSERT
       AND polroles = ARRAY[app_oid]
-      AND position('app.organization_id' in pg_get_expr(polwithcheck, polrelid)) > 0
-      AND position('current_user_org_ids' in pg_get_expr(polwithcheck, polrelid)) > 0
-      AND position('auth.uid' in pg_get_expr(polwithcheck, polrelid)) > 0
-      AND position('decided_by' in pg_get_expr(polwithcheck, polrelid)) > 0
+      AND polpermissive
+      -- pretty_bool = true produces the canonical conjunction form; remove
+      -- whitespace and optional public qualification before exact comparison.
+      -- This rejects OR true, a missing conjunct, or any extra branch.
+      AND regexp_replace(
+            regexp_replace(pg_get_expr(polwithcheck, polrelid, true), 'public\.', '', 'g'),
+            '\s+', '', 'g'
+          ) = expected_decision_insert_check
   ) THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: the INSERT policy is not the one narrow uellix_app policy bound to transaction organisation and auth.uid().';
+    RAISE EXCEPTION 'stella_0003 FAILED verification: the INSERT policy is not the exact canonical uellix_app conjunction bound to transaction organisation and auth.uid().';
   END IF;
   IF EXISTS (
     SELECT 1 FROM pg_policy
@@ -857,23 +888,35 @@ BEGIN
       AND m.roleid = writer_oid
       AND m.inherit_option
       AND NOT m.set_option
+      AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app is not the required inheriting, non-SET member of uellix_writer.';
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app is not the required inheriting, non-SET, non-ADMIN member of uellix_writer.';
   END IF;
-  IF pg_has_role(app_oid, owner_oid, 'USAGE') THEN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    WHERE m.member = migrator_oid
+      AND m.roleid = owner_oid
+      AND NOT m.inherit_option
+      AND m.set_option
+      AND NOT m.admin_option
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_migrator is not the required non-inheriting, SET-only, non-ADMIN member of uellix_owner.';
+  END IF;
+  IF pg_has_role(app_oid, owner_oid, 'SET') THEN
     RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app can SET ROLE uellix_owner.';
   END IF;
   IF EXISTS (
     SELECT 1 FROM pg_roles
-    WHERE oid = app_oid AND (NOT rolcanlogin OR NOT rolinherit OR rolbypassrls OR rolcreaterole OR rolsuper)
+    WHERE (oid = app_oid
+             AND (NOT rolcanlogin OR rolinherit OR rolbypassrls OR rolcreaterole OR rolcreatedb OR rolreplication OR rolsuper))
+       OR (oid = writer_oid
+             AND (rolcanlogin OR rolinherit OR rolbypassrls OR rolcreaterole OR rolcreatedb OR rolreplication OR rolsuper))
+       OR (oid = owner_oid
+             AND (rolcanlogin OR rolinherit OR rolbypassrls OR rolcreaterole OR rolcreatedb OR rolreplication OR rolsuper))
+       OR (oid = migrator_oid
+             AND (NOT rolcanlogin OR rolinherit OR rolbypassrls OR rolcreaterole OR rolcreatedb OR rolreplication OR rolsuper))
   ) OR has_schema_privilege('uellix_app', 'public', 'CREATE') THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app role attributes or schema CREATE privilege exceed the runtime contract.';
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM pg_roles
-    WHERE oid = writer_oid AND (rolcanlogin OR rolbypassrls)
-  ) THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_writer is LOGIN or BYPASSRLS.';
+    RAISE EXCEPTION 'stella_0003 FAILED verification: governed role attributes or uellix_app schema CREATE privilege exceed the canonical 0004 contract.';
   END IF;
   IF NOT has_table_privilege('uellix_app', tbl_oid, 'SELECT')
      OR NOT has_table_privilege('uellix_app', tbl_oid, 'INSERT') THEN
