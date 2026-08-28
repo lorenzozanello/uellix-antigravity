@@ -315,7 +315,7 @@ describe('stella_0004 forward: allowlist integrity', () => {
 
 describe('stella_0004 rollback: authorisation and safety', () => {
   it('requires an exact confirmation token bound to the database', () => {
-    expect(rollbackCode).toMatch(/uellix_rollback_confirmation/)
+    expect(rollbackCode).toMatch(/uellix\.rollback_confirmation/)
     expect(rollbackCode).toMatch(/'rollback-0004:'\s*\|\|\s*current_database\(\)/)
     expect(rollbackCode).toMatch(/RAISE EXCEPTION[^;]*REFUSED/i)
   })
@@ -325,7 +325,7 @@ describe('stella_0004 rollback: authorisation and safety', () => {
   })
 
   it('does not restore the unsafe defaults without a second, separate opt-in', () => {
-    expect(rollbackCode).toMatch(/uellix_rollback_restore_unsafe_defaults/)
+    expect(rollbackCode).toMatch(/uellix\.rollback_restore_unsafe_defaults/)
     // The re-grant of Supabase's original default privileges must sit behind
     // the flag, not run unconditionally.
     const unsafeSection = rollbackCode.slice(

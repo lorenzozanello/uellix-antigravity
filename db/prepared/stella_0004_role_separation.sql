@@ -139,11 +139,11 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 precondition failed: R3.4 role topology is missing governed role(s): %. Apply stella_0001 first.', drift;
   END IF;
 
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   ), actual AS (
     SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
@@ -160,19 +160,20 @@ BEGIN
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND e.grantor_name = a.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   );
   IF drift IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 precondition failed: unexpected relevant membership row (wrong flags or ADMIN escalation): %', drift;
+    RAISE EXCEPTION 'stella_0004 precondition failed: unexpected relevant membership row (wrong grantor, flags or ADMIN escalation): %', drift;
   END IF;
 
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO drift
@@ -181,13 +182,15 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name AND r.rolname = e.role_name
+      AND g.rolname = e.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   ) <> 1;
   IF drift IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 precondition failed: canonical membership cardinality is not one (multiple grantor row or wrong flags): %', drift;
+    RAISE EXCEPTION 'stella_0004 precondition failed: canonical membership tuple cardinality is not one: %', drift;
   END IF;
 
   IF pg_has_role('uellix_app', 'uellix_owner', 'SET') THEN
@@ -853,14 +856,13 @@ BEGIN
     RAISE NOTICE 'stella_0004: role(s) % already carry a credential. That is an operator decision made out of band; this script neither set nor read it.', problem;
   END IF;
 
-  -- 9.4 Membership inventory: exactly three rows with exact PostgreSQL 17
-  -- options, one row per canonical pair. The grantor is included in the
-  -- diagnostic because an otherwise identical second-grantor row is unsafe.
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  -- 9.4 Membership inventory: exactly three full PostgreSQL 17 tuples,
+  -- including the named grantor, with one row per canonical pair.
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   ), actual AS (
     SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
@@ -877,19 +879,20 @@ BEGIN
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND e.grantor_name = a.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   );
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 FAILED: unexpected relevant membership row (wrong membership flags or ADMIN escalation): %', problem;
+    RAISE EXCEPTION 'stella_0004 FAILED: unexpected relevant membership row (wrong grantor, membership flags or ADMIN escalation): %', problem;
   END IF;
 
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO problem
@@ -898,13 +901,15 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name AND r.rolname = e.role_name
+      AND g.rolname = e.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   ) <> 1;
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 FAILED: canonical membership cardinality is not one (multiple grantor row or wrong membership flags): %', problem;
+    RAISE EXCEPTION 'stella_0004 FAILED: canonical membership tuple cardinality is not one: %', problem;
   END IF;
 
   -- The runtime must not be able to become the owner by a direct or transitive

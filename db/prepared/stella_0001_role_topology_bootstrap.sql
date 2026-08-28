@@ -25,8 +25,10 @@ BEGIN
       current_setting('server_version');
   END IF;
 
-  IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname = session_user) THEN
-    RAISE EXCEPTION 'stella_0001 must run through the local administrative superuser phase; session_user is %', session_user;
+  IF session_user <> 'supabase_admin' OR current_user <> 'supabase_admin'
+     OR NOT (SELECT rolsuper FROM pg_roles WHERE rolname = session_user) THEN
+    RAISE EXCEPTION 'stella_0001 must run through the fixed local supabase_admin administrative superuser phase; session_user is %, current_user is %',
+      session_user, current_user;
   END IF;
 
   SELECT string_agg(v.rolname, ', ' ORDER BY v.rolname) INTO missing_roles
@@ -86,8 +88,48 @@ COMMENT ON ROLE uellix_auditor IS
 -- ============================================================
 -- A positive EXISTS test is insufficient in PostgreSQL 17: the same logical
 -- member/role relationship can be represented by more than one grantor row.
--- Revoke the three controlled pairs before re-granting their exact options;
--- the self-check below rejects any surviving second-grantor or unexpected row.
+-- Refuse an unexpected existing row before reconciliation. A later REVOKE is
+-- not evidence that another authority's row disappeared, so it must never
+-- turn an unauthorised grantor into a false-green canonical inventory.
+DO $$
+DECLARE
+  problem text;
+BEGIN
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+    VALUES
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+  ), actual AS (
+    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+           a.inherit_option, a.set_option, a.admin_option
+    FROM pg_auth_members a
+    JOIN pg_roles m ON m.oid = a.member
+    JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
+    WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
+       OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
+  )
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name,
+                    ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
+    INTO problem
+  FROM actual a
+  WHERE NOT EXISTS (
+    SELECT 1 FROM expected e
+    WHERE e.member_name = a.member_name
+      AND e.role_name = a.role_name
+      AND e.grantor_name = a.grantor_name
+      AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
+      AND a.set_option IS NOT DISTINCT FROM e.set_option
+      AND a.admin_option IS NOT DISTINCT FROM e.admin_option
+  );
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0001 FAILED: canonical membership precondition rejected unexpected relevant membership row (wrong grantor, flags or ADMIN escalation): %', problem;
+  END IF;
+END $$;
+
+-- Revoke only after the precondition above has proved that no other grantor
+-- can be concealed by reconciliation; then re-grant the exact controlled rows.
 DO $$
 BEGIN
   IF EXISTS (
@@ -165,11 +207,11 @@ BEGIN
   -- The relevant perimeter is deliberately role-identity based. A disjoint
   -- membership is outside this controlled inventory and is not rejected merely
   -- because its name happens to contain "uellix".
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   ), actual AS (
     SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
@@ -189,19 +231,20 @@ BEGIN
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name
       AND e.role_name = a.role_name
+      AND e.grantor_name = a.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   );
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0001 FAILED: unexpected relevant membership row (including wrong membership flags or ADMIN escalation): %', problem;
+    RAISE EXCEPTION 'stella_0001 FAILED: unexpected relevant membership row (including wrong grantor, membership flags or ADMIN escalation): %', problem;
   END IF;
 
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO problem
@@ -211,14 +254,16 @@ BEGIN
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name
       AND r.rolname = e.role_name
+      AND g.rolname = e.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   ) <> 1;
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0001 FAILED: canonical membership cardinality is not exactly one row (multiple grantor row or wrong membership flags): %', problem;
+    RAISE EXCEPTION 'stella_0001 FAILED: canonical membership tuple cardinality is not exactly one row: %', problem;
   END IF;
 
   -- pg_has_role(..., 'SET') remains the final effective check. Unlike a direct
@@ -256,5 +301,5 @@ BEGIN
     RAISE EXCEPTION 'stella_0001 FAILED: global PUBLIC-suppression default privilege is absent for a governed creator role.';
   END IF;
 
-  RAISE NOTICE 'stella_0001: verification passed — five canonical role attributes, three exact controlled membership rows, no second grantor row, no ADMIN escalation, no direct/transitive app SET path to owner, and only owner CREATE on public.';
+  RAISE NOTICE 'stella_0001: verification passed — five canonical role attributes, three exact controlled membership tuples including bootstrap grantor postgres, no second grantor row, no ADMIN escalation, no direct/transitive app SET path to owner, and only owner CREATE on public.';
 END $$;

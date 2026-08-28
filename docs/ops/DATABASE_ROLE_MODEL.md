@@ -158,11 +158,17 @@ Leyenda: `S`=SELECT `I`=INSERT `U`=UPDATE `D`=DELETE `T`=TRUNCATE
 
 ### 3.2 Membresías
 
-| Miembro | De | `ADMIN` | `INHERIT` | `SET` |
-|---|---|---|---|---|
-| `uellix_migrator` | `uellix_owner` | no | **no** | **sí** |
-| `uellix_app` | `uellix_writer` | no | **sí** | **no** |
-| **`postgres`** | **`uellix_writer`** | no | **sí** | **no** |
+| Miembro | De | Grantor canónico | `ADMIN` | `INHERIT` | `SET` |
+|---|---|---|---|---|---|
+| `uellix_migrator` | `uellix_owner` | `postgres` | no | **no** | **sí** |
+| `uellix_app` | `uellix_writer` | `postgres` | no | **sí** | **no** |
+| **`postgres`** | **`uellix_writer`** | **`postgres`** | no | **sí** | **no** |
+
+El executor fijo de `0001` sigue siendo `supabase_admin`, pero PostgreSQL 17
+atribuye una membresía concedida por un superusuario al superusuario bootstrap
+`postgres`. Por eso el inventario exige la tupla completa —incluido ese
+grantor nominal— exactamente una vez y rechaza un segundo grantor, `ADMIN` o
+flags distintos.
 
 **Son tres, no dos, y la tercera es transitoria pero portante.** `db/client.ts`
 sigue conectando como `postgres`, y `ALTER TABLE … OWNER TO` **no** deja atrás
@@ -551,20 +557,42 @@ segunda pasada no emite ningún cambio.
 
 ### 7.3 Rollback
 
-`db/prepared/stella_0004_rollback.sql` exige la autorización
-destructiva exacta, ligada a **esta** base de datos:
+`db/prepared/stella_0004_rollback.sql` no se invoca manualmente. Sólo una
+**governed local administrative recovery wrapper** autorizada puede fijar su
+hash, abrir una única transacción local como el superusuario administrativo y
+pasar los dos GUC que el SQL consume. Dentro de esa misma transacción, la
+wrapper ejecuta internamente:
 
+Esta rama define solamente ese contrato de inputs: **no proporciona ni
+autoriza un rollback runner**. Si no se ha puesto a disposición una wrapper
+aprobada, la operación se detiene y se solicita autorización humana; no se
+sustituye por otra ruta.
+
+```sql
+SELECT set_config('uellix.rollback_confirmation',
+                  'rollback-0004:' || current_database(), true);
 ```
--v uellix_rollback_confirmation=rollback-0004:<nombre de la base>
+
+La restauración de defaults inseguros sigue siendo optativa y requiere una
+autorización humana adicional. Únicamente en ese caso la misma wrapper agrega:
+
+```sql
+SELECT set_config('uellix.rollback_restore_unsafe_defaults', 'yes', true);
 ```
+
+El argumento `true` hace ambos GUC transaction-local: desaparecen con
+`COMMIT` o `ROLLBACK`. El operador no ejecuta un comando SQL ni suministra
+variables de cliente. **Generic psql is not authorized** para este rollback;
+si existe bajo la wrapper, es sólo un detalle interno y no una ruta manual.
 
 **Es parcialmente NO reversor, a propósito.** Lo que sí deshace, siempre:
 
 - devuelve el ownership de las 38 tablas y las 8 funciones a `postgres`;
 - retira los grants de esquema, de tabla y de función de los 5 roles, incluido
   el `USAGE ON SCHEMA auth`;
-- retira las 3 membresías y las 4 entradas globales de `pg_default_acl`;
-- elimina los 5 roles.
+- deja intacta la topología de `stella_0001`: atributos de rol, las tres
+  membresías y las entradas globales de `pg_default_acl` siguen siendo
+  responsabilidad exclusiva de su rollback.
 
 Lo que **no** deshace por defecto:
 
@@ -578,11 +606,8 @@ un audit trail append-only, y haría que toda tabla futura creada por
 `anon`. Un rollback que reinstala una vulnerabilidad no es un rollback.
 
 Quien de verdad necesite la restauración bit a bit debe pedirla una segunda vez
-y por separado:
-
-```
--v uellix_rollback_restore_unsafe_defaults=yes
-```
+y por separado; la wrapper autorizada es la única que puede fijar el segundo
+GUC transaction-local antes de ejecutar el paquete.
 
 Y aun así, los grants `Dxtm` **por tabla** no se restauran: su forma original
 no era uniforme (28 tablas con el set completo, 6 con un subconjunto, 4 sin

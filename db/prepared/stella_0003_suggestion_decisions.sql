@@ -67,6 +67,7 @@ DECLARE
   writer_oid    oid;
   owner_oid     oid;
   migrator_oid  oid;
+  bootstrap_oid oid;
   app_canlogin  boolean;
   app_inherit   boolean;
   app_bypass    boolean;
@@ -122,7 +123,7 @@ BEGIN
   --        ACL or policy reconciliation; the installer is never the writer.
   SELECT string_agg(r.name, ', ' ORDER BY r.name) INTO missing_roles
   FROM (VALUES
-    ('anon'), ('authenticated'), ('service_role'),
+    ('anon'), ('authenticated'), ('service_role'), ('postgres'),
     ('uellix_app'), ('uellix_writer'), ('uellix_owner'), ('uellix_migrator')
   ) AS r(name)
   WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.name);
@@ -143,6 +144,7 @@ BEGIN
   SELECT oid, rolcanlogin, rolinherit, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolsuper
     INTO migrator_oid, migrator_canlogin, migrator_inherit, migrator_bypass, migrator_createrole, migrator_createdb, migrator_replication, migrator_super
   FROM pg_roles WHERE rolname = 'uellix_migrator';
+  SELECT oid INTO bootstrap_oid FROM pg_roles WHERE rolname = 'postgres';
 
   -- 0001 makes NOINHERIT a role-wide default and grants writer inheritance
   -- explicitly at membership level. Requiring global INHERIT here would reject
@@ -162,25 +164,30 @@ BEGIN
   IF has_schema_privilege('uellix_app', 'public', 'CREATE') THEN
     RAISE EXCEPTION 'stella_0003 aborted: uellix_app holds CREATE on schema public.';
   END IF;
+  -- These two direct checks are exact named-grantor slices of the canonical
+  -- inventory below. They preserve its fast, role-specific failure messages;
+  -- the complete inventory remains the sole proof of exclusivity.
   IF NOT EXISTS (
     SELECT 1 FROM pg_auth_members m
     WHERE m.member = app_oid
       AND m.roleid = writer_oid
+      AND m.grantor = bootstrap_oid
       AND m.inherit_option
       AND NOT m.set_option
       AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must inherit uellix_writer directly (INHERIT TRUE, SET FALSE, ADMIN FALSE).';
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_app must inherit uellix_writer directly from bootstrap superuser postgres (INHERIT TRUE, SET FALSE, ADMIN FALSE).';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM pg_auth_members m
     WHERE m.member = migrator_oid
       AND m.roleid = owner_oid
+      AND m.grantor = bootstrap_oid
       AND NOT m.inherit_option
       AND m.set_option
       AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must reach uellix_owner only through SET ROLE (INHERIT FALSE, SET TRUE, ADMIN FALSE).';
+    RAISE EXCEPTION 'stella_0003 aborted: uellix_migrator must reach uellix_owner from bootstrap superuser postgres only through SET ROLE (INHERIT FALSE, SET TRUE, ADMIN FALSE).';
   END IF;
   -- USAGE is membership/inheritance semantics, not SET ROLE capability. SET
   -- follows every PostgreSQL-supported membership path and therefore rejects
@@ -190,14 +197,14 @@ BEGIN
   END IF;
 
   -- PostgreSQL 17 can retain multiple logical membership rows under different
-  -- grantors. The positive checks above prove neither exclusivity nor the
-  -- absence of a SET=false/ADMIN=true owner edge, so inspect the whole
-  -- controlled perimeter and require exactly one canonical row per pair.
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  -- grantors. This single full-tuple inventory is the membership proof for
+  -- this package: it rejects every wrong grantor/flag row and requires exactly
+  -- one named-grantor canonical row per pair.
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   ), actual AS (
     SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
@@ -214,19 +221,20 @@ BEGIN
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND e.grantor_name = a.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   );
   IF missing_roles IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0003 aborted: unexpected relevant membership row (wrong membership flags or ADMIN escalation): %', missing_roles;
+    RAISE EXCEPTION 'stella_0003 aborted: unexpected relevant membership row (wrong grantor, membership flags or ADMIN escalation): %', missing_roles;
   END IF;
 
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO missing_roles
@@ -235,13 +243,15 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name AND r.rolname = e.role_name
+      AND g.rolname = e.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   ) <> 1;
   IF missing_roles IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0003 aborted: canonical membership cardinality is not one (second grantor row or wrong membership flags): %', missing_roles;
+    RAISE EXCEPTION 'stella_0003 aborted: canonical membership tuple cardinality is not one: %', missing_roles;
   END IF;
 
   -- 0a. FK targets must exist.
@@ -639,6 +649,7 @@ DECLARE
   writer_oid     oid;
   owner_oid      oid;
   migrator_oid   oid;
+  bootstrap_oid  oid;
   problem        text;
   def            text;
   expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
@@ -659,6 +670,7 @@ BEGIN
   SELECT oid INTO writer_oid FROM pg_roles WHERE rolname = 'uellix_writer';
   SELECT oid INTO owner_oid FROM pg_roles WHERE rolname = 'uellix_owner';
   SELECT oid INTO migrator_oid FROM pg_roles WHERE rolname = 'uellix_migrator';
+  SELECT oid INTO bootstrap_oid FROM pg_roles WHERE rolname = 'postgres';
 
   -- (3) Columns: exact name, type, nullability and presence/absence of default.
   SELECT string_agg(format('%s(%s)', e.col, e.why), ', ' ORDER BY e.col) INTO problem
@@ -936,39 +948,39 @@ BEGIN
     RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_writer must hold exactly direct SELECT and INSERT without grant option.';
   END IF;
 
-  -- (17) The mediated path itself: app inherits writer in exactly one hop,
-  --      receives no direct ACL, cannot SET owner, and has only append rights.
+  -- (17) Exact named-grantor slices of the full inventory below preserve
+  --       specific mediated-path diagnostics; only the full inventory proves
+  --       exclusivity and cardinality before pg_has_role(..., 'SET').
   IF NOT EXISTS (
     SELECT 1 FROM pg_auth_members m
     WHERE m.member = app_oid
       AND m.roleid = writer_oid
+      AND m.grantor = bootstrap_oid
       AND m.inherit_option
       AND NOT m.set_option
       AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app is not the required inheriting, non-SET, non-ADMIN member of uellix_writer.';
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_app is not the required inheriting, non-SET, non-ADMIN member of uellix_writer from bootstrap superuser postgres.';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM pg_auth_members m
     WHERE m.member = migrator_oid
       AND m.roleid = owner_oid
+      AND m.grantor = bootstrap_oid
       AND NOT m.inherit_option
       AND m.set_option
       AND NOT m.admin_option
   ) THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_migrator is not the required non-inheriting, SET-only, non-ADMIN member of uellix_owner.';
+    RAISE EXCEPTION 'stella_0003 FAILED verification: uellix_migrator is not the required non-inheriting, SET-only, non-ADMIN member of uellix_owner from bootstrap superuser postgres.';
   END IF;
 
-  -- The required rows above are deliberately not the proof of inventory. A
-  -- second grantor can create another canonical-looking pg_auth_members row;
-  -- count it, include its grantor in the diagnostic and reject every extra
-  -- relevant row before treating pg_has_role(..., 'SET') as the final effective
-  -- escalation check.
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  -- The full inventory proves the exact named grantor, flags and cardinality
+  -- before pg_has_role(..., 'SET') makes the final escalation check.
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   ), actual AS (
     SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
@@ -985,19 +997,20 @@ BEGIN
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND e.grantor_name = a.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   );
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected relevant membership row (wrong membership flags or ADMIN escalation): %', problem;
+    RAISE EXCEPTION 'stella_0003 FAILED verification: unexpected relevant membership row (wrong grantor, membership flags or ADMIN escalation): %', problem;
   END IF;
 
-  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', false, true, false),
-      ('uellix_app', 'uellix_writer', true, false, false),
-      ('postgres', 'uellix_writer', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
+      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
+      ('postgres', 'uellix_writer', 'postgres', true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO problem
@@ -1006,13 +1019,15 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name AND r.rolname = e.role_name
+      AND g.rolname = e.grantor_name
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
   ) <> 1;
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0003 FAILED verification: canonical membership cardinality is not one (second grantor row or wrong membership flags): %', problem;
+    RAISE EXCEPTION 'stella_0003 FAILED verification: canonical membership tuple cardinality is not one: %', problem;
   END IF;
 
   IF pg_has_role(app_oid, owner_oid, 'SET') THEN

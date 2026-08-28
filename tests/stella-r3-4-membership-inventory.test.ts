@@ -16,6 +16,81 @@ function executable(sql: string): string {
     .replace(/\s+/g, ' ')
 }
 
+type MembershipRow = {
+  memberName: string
+  roleName: string
+  grantorName: string
+  inheritOption: boolean
+  setOption: boolean
+  adminOption: boolean
+}
+
+const CANONICAL_MEMBERSHIPS: readonly MembershipRow[] = [
+  {
+    memberName: 'uellix_migrator',
+    roleName: 'uellix_owner',
+    grantorName: 'postgres',
+    inheritOption: false,
+    setOption: true,
+    adminOption: false,
+  },
+  {
+    memberName: 'uellix_app',
+    roleName: 'uellix_writer',
+    grantorName: 'postgres',
+    inheritOption: true,
+    setOption: false,
+    adminOption: false,
+  },
+  {
+    memberName: 'postgres',
+    roleName: 'uellix_writer',
+    grantorName: 'postgres',
+    inheritOption: true,
+    setOption: false,
+    adminOption: false,
+  },
+]
+
+function isControlledMembership(row: MembershipRow): boolean {
+  return (
+    ['uellix_app', 'uellix_writer', 'uellix_migrator'].includes(row.memberName) ||
+    ['uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator'].includes(row.roleName)
+  )
+}
+
+function matchesCanonicalTuple(row: MembershipRow, expected: MembershipRow): boolean {
+  return (
+    row.memberName === expected.memberName &&
+    row.roleName === expected.roleName &&
+    row.grantorName === expected.grantorName &&
+    row.inheritOption === expected.inheritOption &&
+    row.setOption === expected.setOption &&
+    row.adminOption === expected.adminOption
+  )
+}
+
+function exactInventoryAccepts(rows: readonly MembershipRow[]): boolean {
+  const controlled = rows.filter(isControlledMembership)
+
+  return (
+    controlled.every((row) => CANONICAL_MEMBERSHIPS.some((expected) => matchesCanonicalTuple(row, expected))) &&
+    CANONICAL_MEMBERSHIPS.every(
+      (expected) => controlled.filter((row) => matchesCanonicalTuple(row, expected)).length === 1,
+    )
+  )
+}
+
+function expectProductionVerifierToCompareGrantor(sql: string): void {
+  expect(sql).toMatch(
+    /expected\(member_name, role_name, grantor_name, inherit_option, set_option, admin_option\)/,
+  )
+  expect(sql).toMatch(/\('uellix_migrator', 'uellix_owner', 'postgres', false, true, false\)/)
+  expect(sql).toMatch(/\('uellix_app', 'uellix_writer', 'postgres', true, false, false\)/)
+  expect(sql).toMatch(/\('postgres', 'uellix_writer', 'postgres', true, false, false\)/)
+  expect(sql).toMatch(/(?:a\.grantor_name = e\.grantor_name|e\.grantor_name = a\.grantor_name)/)
+}
+
 describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
   const bootstrap = () => read('stella_0001_role_topology_bootstrap.sql')
   const decisions = () => read('stella_0003_suggestion_decisions.sql')
@@ -24,20 +99,49 @@ describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
   it('defines precisely the three canonical membership edges and their option flags', () => {
     const sql = executable(bootstrap())
 
-    expect(sql).toMatch(/\('uellix_migrator', 'uellix_owner', false, true, false\)/)
-    expect(sql).toMatch(/\('uellix_app', 'uellix_writer', true, false, false\)/)
-    expect(sql).toMatch(/\('postgres', 'uellix_writer', true, false, false\)/)
+    expectProductionVerifierToCompareGrantor(sql)
   })
 
-  it('rejects a second grantor row rather than treating positive membership existence as proof', () => {
-    const sql = executable(bootstrap())
+  it('rejects wrong-grantor, duplicate-grantor, ADMIN and SET attacks against the full canonical tuple', () => {
+    const canonicalRows = CANONICAL_MEMBERSHIPS.map((row) => ({ ...row }))
+    const [migratorOwner, appWriter] = canonicalRows
 
-    // A second pg_auth_members row can carry the same member, role and flags
-    // under another grantor. The verifier must read the row cardinality and its
-    // grantor, not stop at EXISTS for the canonical-looking edge.
-    expect(sql).toMatch(/pg_auth_members[\s\S]*?grantor/)
-    expect(sql).toMatch(/count\(\*\)[\s\S]*?<> 1/i)
-    expect(sql).toMatch(/multiple grantor|grantor row/i)
+    expect(exactInventoryAccepts(canonicalRows)).toBe(true)
+    expect(
+      exactInventoryAccepts([
+        ...canonicalRows.filter((row) => row !== migratorOwner),
+        { ...migratorOwner, grantorName: 'supabase_admin' },
+      ]),
+    ).toBe(false)
+    expect(exactInventoryAccepts([...canonicalRows, { ...appWriter, grantorName: 'supabase_admin' }])).toBe(false)
+    expect(
+      exactInventoryAccepts([
+        ...canonicalRows,
+        { ...appWriter, grantorName: 'supabase_admin', adminOption: true },
+      ]),
+    ).toBe(false)
+    expect(
+      exactInventoryAccepts([
+        ...canonicalRows,
+        { ...appWriter, grantorName: 'supabase_admin', setOption: true },
+      ]),
+    ).toBe(false)
+  })
+
+  it('binds every production verifier to the same full grantor-aware tuple', () => {
+    for (const sql of [executable(bootstrap()), executable(decisions()), executable(separation())]) {
+      expectProductionVerifierToCompareGrantor(sql)
+      expect(sql).toMatch(/count\(\*\)[\s\S]*?<> 1/i)
+    }
+  })
+
+  it('fails the bootstrap precondition before it can reconcile a row from the wrong grantor', () => {
+    const sql = bootstrap()
+    const precondition = sql.indexOf('canonical membership precondition')
+    const reconcile = sql.indexOf('REVOKE uellix_owner FROM uellix_migrator')
+
+    expect(precondition).toBeGreaterThan(-1)
+    expect(precondition).toBeLessThan(reconcile)
   })
 
   it('fails the SET=false ADMIN=true and SET=true ADMIN=false owner-edge attacks', () => {
@@ -71,12 +175,21 @@ describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
     expect(sql.match(/pg_auth_members/g)?.length).toBeGreaterThanOrEqual(4)
     expect(sql).toMatch(/count\(\*\)[\s\S]*?<> 1/i)
     expect(sql).toMatch(/unexpected relevant membership/i)
-    expect(sql).toMatch(/wrong membership flags/i)
+    expect(sql).toMatch(/wrong (?:grantor, )?membership flags/i)
   })
 
   it('limits the perimeter by catalogue role identity so a disjoint harmless membership is not rejected', () => {
     const sql = executable(separation())
+    const disjointMembership: MembershipRow = {
+      memberName: 'unrelated_uellix_reader',
+      roleName: 'unrelated_uellix_reporting',
+      grantorName: 'postgres',
+      inheritOption: true,
+      setOption: false,
+      adminOption: false,
+    }
 
+    expect(exactInventoryAccepts([...CANONICAL_MEMBERSHIPS, disjointMembership])).toBe(true)
     expect(sql).toMatch(/m\.rolname IN \('uellix_app', 'uellix_writer', 'uellix_migrator'\)/)
     expect(sql).toMatch(/r\.rolname IN \('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator'\)/)
     expect(sql).not.toMatch(/m\.rolname LIKE 'uellix\\_%'/)

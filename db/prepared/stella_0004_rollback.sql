@@ -1,9 +1,26 @@
 -- db/prepared/stella_0004_rollback.sql
 -- Rollback for stella_0004_role_separation.sql.
 --
--- RUN ONLY in a separately authorised local administrative transaction. The
--- transaction must set uellix.rollback_confirmation=rollback-0004:<database>.
--- This package is not a generic psql/SQL-Editor execution artefact.
+-- RUN ONLY through a separately authorised governed local administrative
+-- recovery wrapper. The wrapper pins this package, opens one transaction as
+-- the local administrative superuser and, inside that transaction, sets the
+-- inputs this SQL actually reads:
+--
+-- This package defines that input contract only; it does not provide or
+-- authorise a rollback runner. If an approved wrapper has not been provided,
+-- stop and obtain human authorisation rather than substituting another path.
+--
+--   SELECT set_config('uellix.rollback_confirmation',
+--                     'rollback-0004:' || current_database(), true);
+--
+-- Only after separate approval to restore unsafe defaults may that same
+-- wrapper additionally run:
+--
+--   SELECT set_config('uellix.rollback_restore_unsafe_defaults', 'yes', true);
+--
+-- `true` makes both inputs transaction-local. These are wrapper internals,
+-- not an operator command: generic psql and SQL Editor are not authorised
+-- execution paths for this rollback.
 --
 -- ============================================================================
 -- THIS ROLLBACK IS PARTIALLY NON-REVERSING, ON PURPOSE
@@ -34,9 +51,9 @@
 --
 -- An operator who genuinely needs bit-for-bit restoration — for example to
 -- re-run a comparison against an untouched replica — must ask for it a second
--- time and separately:
---
---   -v uellix_rollback_restore_unsafe_defaults=yes
+-- time. Only the separately authorised governed local administrative recovery
+-- wrapper may then set `uellix.rollback_restore_unsafe_defaults` to `yes` with
+-- `set_config(..., true)` in that rollback transaction.
 --
 -- ============================================================================
 -- WHAT THIS SCRIPT WILL NOT DO
@@ -68,7 +85,7 @@ BEGIN
   expected := 'rollback-0004:' || current_database();
 
   IF provided IS DISTINCT FROM expected THEN
-    RAISE EXCEPTION 'stella_0004 rollback REFUSED: destructive authorisation missing or wrong. Re-run with -v uellix_rollback_confirmation=rollback-0004:<this database name>';
+    RAISE EXCEPTION 'stella_0004 rollback REFUSED: destructive authorisation missing or wrong. The governed local administrative recovery wrapper must set transaction-local uellix.rollback_confirmation=rollback-0004:<this database name>.';
   END IF;
 
   -- Drift: the forward script's end state must still be in place.
@@ -179,14 +196,16 @@ FROM uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
 -- ============================================================
 -- 3. Optional, separately authorised: restore the unsafe original defaults
 -- ============================================================
--- Runs only with -v uellix_rollback_restore_unsafe_defaults=yes. Everything
--- here re-opens a hole that stella_0004 closed, which is why it needs its own
--- authorisation and its own warning.
+-- Runs only when the separately authorised governed local administrative
+-- recovery wrapper set transaction-local
+-- uellix.rollback_restore_unsafe_defaults=yes with set_config(..., true).
+-- Everything here re-opens a hole that stella_0004 closed, which is why it
+-- needs its own authorisation and its own warning.
 
 DO $$
 BEGIN
   IF COALESCE(current_setting('uellix.rollback_restore_unsafe_defaults', true), 'no') <> 'yes' THEN
-    RAISE NOTICE 'stella_0004 rollback: NOT restoring the unsafe original grants and default privileges (SAFE_NON_REVERSING). authenticated/service_role remain without TRUNCATE/REFERENCES/TRIGGER/MAINTAIN, and pg_default_acl in schema public stays clean. Pass -v uellix_rollback_restore_unsafe_defaults=yes to override.';
+    RAISE NOTICE 'stella_0004 rollback: NOT restoring the unsafe original grants and default privileges (SAFE_NON_REVERSING). authenticated/service_role remain without TRUNCATE/REFERENCES/TRIGGER/MAINTAIN, and pg_default_acl in schema public stays clean. A separately authorised governed local administrative recovery wrapper is required to set transaction-local uellix.rollback_restore_unsafe_defaults=yes.';
     RETURN;
   END IF;
 
