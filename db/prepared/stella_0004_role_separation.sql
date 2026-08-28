@@ -8,8 +8,9 @@
 --
 -- SOURCE OF TRUTH: docs/ops/DATABASE_ROLE_MODEL.md.
 --
--- RUN AS ONE TRANSACTION, AS A SUPERUSER:
---   psql "$URL" -1 -v ON_ERROR_STOP=1 -f <this file>
+-- RUN ONLY through scripts/stella-r3-4-local-runner.ts, in its fixed local
+-- administrative phase. Generic psql, SQL Editor and arbitrary SQL-file paths
+-- are not authorised execution routes for this package.
 --
 -- Every statement below is idempotent AND convergent: a second application
 -- produces the same state and changes nothing.
@@ -116,6 +117,7 @@ DECLARE
   ];
   all_tables text[] := operational_tables || append_only_tables;
   drift text;
+  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
 BEGIN
   IF current_setting('server_version_num')::int < 170000 THEN
     RAISE EXCEPTION 'stella_0004 requires PostgreSQL 17+ (MAINTAIN handling); this server is %',
@@ -125,6 +127,71 @@ BEGIN
   IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) THEN
     RAISE EXCEPTION 'stella_0004 must run as a superuser. Running as a CREATEROLE non-superuser would auto-grant that role ADMIN OPTION on every role created here (PostgreSQL 16+ behaviour, verified), which defeats the separation this script exists to create. Current role: %',
       current_user;
+  END IF;
+
+  -- R3.4 topology preflight. 0001 is the only package allowed to reconcile
+  -- these rows; 0004 must stop before object ownership/ACL mutation when the
+  -- PostgreSQL 17 catalogue is not the exact controlled inventory.
+  SELECT string_agg(v.rolname, ', ' ORDER BY v.rolname) INTO drift
+  FROM (VALUES ('uellix_owner'), ('uellix_migrator'), ('uellix_app'), ('uellix_writer'), ('uellix_auditor')) AS v(rolname)
+  WHERE NOT EXISTS (SELECT 1 FROM pg_roles r WHERE r.rolname = v.rolname);
+  IF drift IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: R3.4 role topology is missing governed role(s): %. Apply stella_0001 first.', drift;
+  END IF;
+
+  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+    VALUES
+      ('uellix_migrator', 'uellix_owner', false, true, false),
+      ('uellix_app', 'uellix_writer', true, false, false),
+      ('postgres', 'uellix_writer', true, false, false)
+  ), actual AS (
+    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+           a.inherit_option, a.set_option, a.admin_option
+    FROM pg_auth_members a
+    JOIN pg_roles m ON m.oid = a.member
+    JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
+    WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
+       OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
+  )
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name, ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
+    INTO drift
+  FROM actual a
+  WHERE NOT EXISTS (
+    SELECT 1 FROM expected e
+    WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
+      AND a.set_option IS NOT DISTINCT FROM e.set_option
+      AND a.admin_option IS NOT DISTINCT FROM e.admin_option
+  );
+  IF drift IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: unexpected relevant membership row (wrong flags or ADMIN escalation): %', drift;
+  END IF;
+
+  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+    VALUES
+      ('uellix_migrator', 'uellix_owner', false, true, false),
+      ('uellix_app', 'uellix_writer', true, false, false),
+      ('postgres', 'uellix_writer', true, false, false)
+  )
+  SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
+    INTO drift
+  FROM expected e
+  WHERE (
+    SELECT count(*) FROM pg_auth_members a
+    JOIN pg_roles m ON m.oid = a.member
+    JOIN pg_roles r ON r.oid = a.roleid
+    WHERE m.rolname = e.member_name AND r.rolname = e.role_name
+      AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
+      AND a.set_option IS NOT DISTINCT FROM e.set_option
+      AND a.admin_option IS NOT DISTINCT FROM e.admin_option
+  ) <> 1;
+  IF drift IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: canonical membership cardinality is not one (multiple grantor row or wrong flags): %', drift;
+  END IF;
+
+  IF pg_has_role('uellix_app', 'uellix_owner', 'SET') THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: uellix_app has a direct or transitive SET path to uellix_owner.';
   END IF;
 
   -- Every allowlisted table must exist.
@@ -173,8 +240,32 @@ BEGIN
   END IF;
 
   IF (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
-      JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') <> 104 THEN
-    RAISE EXCEPTION 'stella_0004 precondition failed: expected 104 policies in public';
+      JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') <> 105 THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: expected 105 policies in public after stella_0003';
+  END IF;
+
+  -- The post-0003 policy inventory is 103 baseline policies plus the two
+  -- decision policies. This is intentionally more than a 104 -> 105 magic
+  -- number: the additional INSERT policy must be the exact uellix_app policy
+  -- from stella_0003, and no third policy may exist on the decision table.
+  SELECT string_agg(p.polname || ':' || p.polcmd, ', ' ORDER BY p.polname) INTO drift
+  FROM pg_policy p
+  WHERE p.polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND NOT (
+      (p.polname = 'stella_suggestion_decisions_select' AND p.polcmd = 'r')
+      OR (p.polname = 'stella_suggestion_decisions_insert_member_or_admin'
+          AND p.polcmd = 'a'
+          AND p.polroles = ARRAY['uellix_app'::regrole::oid]
+          AND p.polpermissive
+          AND regexp_replace(
+                regexp_replace(pg_get_expr(p.polwithcheck, p.polrelid, true), 'public\.', '', 'g'),
+                '\s+', '', 'g'
+              ) = expected_decision_insert_check)
+    );
+  IF drift IS NOT NULL
+     OR (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2
+     OR (SELECT count(*) FROM pg_policy p WHERE p.polrelid <> 'public.stella_suggestion_decisions'::regclass) <> 103 THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: post-0003 policy inventory is not exactly 103 baseline policies plus the SELECT and stella_suggestion_decisions_insert_member_or_admin INSERT policies.';
   END IF;
 
   IF (SELECT count(*) FROM pg_trigger g JOIN pg_class c ON c.oid = g.tgrelid
@@ -256,7 +347,7 @@ BEGIN
   -- A view, materialised view or sequence therefore falls through all of them,
   -- and a `postgres`-owned view is read with ITS owner's rights — and
   -- `postgres` has rolbypassrls, so an anon-granted view in `public` is a
-  -- complete RLS bypass that the 38/104/10 fingerprint would certify as clean.
+  -- complete RLS bypass that the 38/105/10 fingerprint would certify as clean.
   -- Measured as 0/0/0 today; this makes it a checked fact rather than a
   -- comment. Added after adversarial review, 2026-08-02.
   SELECT string_agg(c.relkind::text || ':' || c.relname, ', ' ORDER BY c.relname) INTO drift
@@ -284,163 +375,16 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 precondition failed: RLS is disabled on: %', drift;
   END IF;
 
-  RAISE NOTICE 'stella_0004: preconditions passed — 38 tables (33 operational, 5 append-only), 8 functions, 104 policies, 10 triggers, RLS on 38/38.';
+  RAISE NOTICE 'stella_0004: preconditions passed — 38 tables (33 operational, 5 append-only), 8 functions, exact post-0003 105-policy inventory, 10 triggers, RLS on 38/38.';
 END $$;
 
 -- ============================================================
--- 1. Roles
+-- 1. Role topology is verified above; it is mutated only by stella_0001
 -- ============================================================
--- Created without LOGIN passwords on purpose: a LOGIN role with no password
--- cannot authenticate via scram-sha-256 or md5. That is fail-closed — the
--- roles exist and hold exactly their intended privileges, and granting
--- network access to them is a separate, explicit operational act.
-
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_owner') THEN
-    EXECUTE 'CREATE ROLE uellix_owner';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_migrator') THEN
-    EXECUTE 'CREATE ROLE uellix_migrator';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_app') THEN
-    EXECUTE 'CREATE ROLE uellix_app';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_writer') THEN
-    EXECUTE 'CREATE ROLE uellix_writer';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_auditor') THEN
-    EXECUTE 'CREATE ROLE uellix_auditor';
-  END IF;
-END $$;
-
--- Attributes are applied unconditionally so that re-running CONVERGES an
--- existing role instead of skipping it. NOINHERIT on every role: privileges
--- reached through membership must be an explicit per-grant decision
--- (section 2), never a role-wide default.
-ALTER ROLE uellix_owner    NOLOGIN NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER;
-ALTER ROLE uellix_migrator LOGIN   NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER;
-ALTER ROLE uellix_app      LOGIN   NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER;
-ALTER ROLE uellix_writer   NOLOGIN NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER;
-ALTER ROLE uellix_auditor  LOGIN   NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION NOSUPERUSER;
-
--- The auditor's read-only default. Defence in depth, NOT the barrier: any role
--- may SET default_transaction_read_only = off in its own session. The barrier
--- is that uellix_auditor holds no write privilege to activate, has no CREATE on
--- any schema, and no EXECUTE on either of the two SECURITY DEFINER functions
--- that write (section 6b-bis grants it the three read-only RLS helpers and
--- nothing else; section 9.8 asserts the exclusion by name).
---
--- It does close one real gap: PUBLIC holds TEMPORARY on the database, so the
--- auditor CAN create a temp table — except inside a read-only transaction,
--- where it fails with SQLSTATE 25006 (verified). Revoking TEMPORARY from
--- PUBLIC would reach Supabase's own roles and is out of scope (RR-06).
-ALTER ROLE uellix_auditor SET default_transaction_read_only = on;
-
-COMMENT ON ROLE uellix_owner    IS 'stella_0004: owns the Uellix objects in public. NOLOGIN. Reachable only via SET ROLE from uellix_migrator.';
-COMMENT ON ROLE uellix_migrator IS 'stella_0004: runs migrations. Holds uellix_owner with INHERIT FALSE, so it has the owner''s power only after an explicit SET ROLE.';
-COMMENT ON ROLE uellix_app      IS 'stella_0004: application runtime. Not an owner, no BYPASSRLS, no DDL. All write power is inherited from uellix_writer.';
-COMMENT ON ROLE uellix_writer   IS 'stella_0004: governed write surface. SELECT+INSERT on append-only tables, SELECT+INSERT+UPDATE+DELETE on operational tables. Never TRUNCATE/REFERENCES/TRIGGER/MAINTAIN.';
-COMMENT ON ROLE uellix_auditor  IS 'stella_0004: read-only auditor of structure and privileges. SELECT only, no memberships, and EXECUTE on nothing but the three read-only RLS helpers (without which a SELECT errors instead of filtering). Sees no rows: it is subject to RLS and the policies need a JWT.';
-
--- ============================================================
--- 2. Memberships — explicit options, and nothing implicit
--- ============================================================
--- INHERIT and SET are set per grant (PostgreSQL 16+), which is what makes the
--- separation real rather than nominal:
---
---   uellix_migrator -> uellix_owner   SET TRUE, INHERIT FALSE
---       The migrator does NOT carry the owner's privileges while it works. It
---       acquires them only for the duration of an explicit SET ROLE, which is
---       visible in the session and in the script that issues it.
---
---   uellix_app -> uellix_writer       INHERIT TRUE, SET FALSE
---       The runtime always has the writer's DML and can never SET ROLE to it,
---       so "what can the app write" is answered by reading one role's grants.
---
---   postgres -> uellix_writer         INHERIT TRUE, SET FALSE
---       TRANSITIONAL, and load-bearing. db/client.ts still connects as
---       `postgres`. Section 4 transfers ownership away from `postgres`, and
---       ALTER TABLE ... OWNER TO does not leave the old owner's ACL entry
---       behind — it transfers it. Verified empirically on public.projects:
---       after the transfer, `postgres` had NO direct privilege left. On 37 of
---       38 tables that is masked by postgres's inherited membership in
---       authenticated / service_role / pg_read_all_data, but NOT on
---       stella_suggestion_decisions, where `authenticated` holds only SELECT
---       and `service_role` holds nothing. Without this grant the application
---       would lose the ability to persist Stella decisions.
---
---       Granting the writer role rather than raw privileges is deliberate:
---       the legacy runtime ends up with EXACTLY the governed write surface,
---       defined in one place, and demonstrably without TRUNCATE, REFERENCES,
---       TRIGGER, MAINTAIN or any DDL capability.
---
--- The REVOKEs are guarded rather than unconditional: PostgreSQL emits a
--- WARNING ("role X has not been granted membership in role Y") when there is
--- nothing to revoke, and on a first application that is three warnings an
--- operator has to read past to reach the real output. They exist so the
--- options CONVERGE even if a prior run or an operator created the membership
--- with different flags.
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_auth_members a
-             JOIN pg_roles mr ON mr.oid = a.member JOIN pg_roles rr ON rr.oid = a.roleid
-             WHERE mr.rolname = 'uellix_migrator' AND rr.rolname = 'uellix_owner') THEN
-    EXECUTE 'REVOKE uellix_owner FROM uellix_migrator';
-  END IF;
-  IF EXISTS (SELECT 1 FROM pg_auth_members a
-             JOIN pg_roles mr ON mr.oid = a.member JOIN pg_roles rr ON rr.oid = a.roleid
-             WHERE mr.rolname = 'uellix_app' AND rr.rolname = 'uellix_writer') THEN
-    EXECUTE 'REVOKE uellix_writer FROM uellix_app';
-  END IF;
-  IF EXISTS (SELECT 1 FROM pg_auth_members a
-             JOIN pg_roles mr ON mr.oid = a.member JOIN pg_roles rr ON rr.oid = a.roleid
-             WHERE mr.rolname = 'postgres' AND rr.rolname = 'uellix_writer') THEN
-    EXECUTE 'REVOKE uellix_writer FROM postgres';
-  END IF;
-END $$;
-
-GRANT uellix_owner  TO uellix_migrator WITH SET TRUE,  INHERIT FALSE, ADMIN FALSE;
-GRANT uellix_writer TO uellix_app      WITH SET FALSE, INHERIT TRUE,  ADMIN FALSE;
-GRANT uellix_writer TO postgres        WITH SET FALSE, INHERIT TRUE,  ADMIN FALSE;
-
--- Nothing else. In particular uellix_app is NOT a member of uellix_owner, and
--- no Uellix role is a member of anon / authenticated / authenticator /
--- service_role. Section 9.4 asserts exactly that.
-
--- ============================================================
--- 3. Schema privileges
--- ============================================================
--- CREATE on public goes to the owner only. USAGE is the minimum needed to
--- name an object in the schema; it confers nothing by itself.
-
-GRANT USAGE  ON SCHEMA public TO uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
-GRANT CREATE ON SCHEMA public TO uellix_owner;
-
-REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
-
--- PUBLIC must not hold CREATE on public. Supabase already revokes it; this is
--- convergence, not a change, and section 9 verifies it.
-REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-
--- USAGE on schema `auth` for the new owner — a direct and unavoidable
--- consequence of section 4, not a widening.
---
--- Three of the eight functions (current_user_org_ids,
--- current_user_is_super_admin, current_user_role_in_org) are SECURITY DEFINER
--- and call auth.uid(). Transferring them to uellix_owner changes their
--- effective user, so the schema lookup is now performed as uellix_owner. Left
--- unaddressed, EVERY policy that calls them fails with "permission denied for
--- schema auth" — not "zero rows", an outright error — for every caller,
--- including `authenticated` through PostgREST. That is the whole RLS surface
--- of the product. Measured in the disposable rehearsal, 2026-08-02.
---
--- This is the minimum that closes it: auth.uid() itself already carries
--- EXECUTE for PUBLIC, so only the schema lookup is missing. No privilege on
--- any table in `auth` is granted, and section 9.13 asserts that no Uellix role
--- can read auth.users by any route.
-GRANT USAGE ON SCHEMA auth TO uellix_owner;
+-- The role attributes, comments, memberships, public/auth schema grants and
+-- role-local default privilege suppression used to be sections 1–3 and 7c of
+-- this file. They now live only in stella_0001, which precedes 0003. 0004's
+-- responsibility starts with public object ownership and ACL reconciliation.
 
 -- ============================================================
 -- 4. Ownership transfer — allowlisted objects only
@@ -731,7 +675,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
 ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
   REVOKE ALL ON FUNCTIONS FROM anon, authenticated, service_role;
 
--- 7c. Suppress the built-in PUBLIC defaults on functions and types.
+-- 7c. Verify the role-topology package's suppression of built-in PUBLIC
+-- defaults on functions and types.
 --
 -- THESE FOUR STATEMENTS ARE DELIBERATELY *NOT* SCHEMA-SCOPED, and that is the
 -- whole point. Measured on PostgreSQL 17.6, 2026-08-02:
@@ -753,7 +698,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
 -- successful ALTER as a closed hole.
 --
 -- Global here is safe precisely because it is scoped BY ROLE: uellix_owner and
--- uellix_migrator are created by this script and create nothing outside
+-- uellix_migrator are created by stella_0001 and create nothing outside
 -- `public`. The entry is also RESTRICTIVE — it removes a grant — so its blast
 -- radius is bounded even if that ever stopped being true.
 --
@@ -765,10 +710,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
 -- created by uellix_owner, and that every migration creating a function must
 -- still carry its own explicit REVOKE ... FROM PUBLIC (as the existing 8
 -- functions already do).
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    REVOKE USAGE   ON TYPES     FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator REVOKE USAGE   ON TYPES     FROM PUBLIC;
+-- Mutated only by stella_0001_role_topology_bootstrap.sql. Section 9.11b
+-- independently proves the resulting global rows and their effect.
 
 -- 7d. No positive default is granted to ANY role.
 --
@@ -782,7 +725,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator REVOKE USAGE   ON TYPES     FR
 -- 8. Documentation on the objects themselves
 -- ============================================================
 COMMENT ON SCHEMA public IS
-  'Uellix application schema. Objects are owned by uellix_owner (prepared stella_0004). Migrations run as uellix_migrator with an explicit SET ROLE uellix_owner; the application runtime holds no ownership. See docs/ops/DATABASE_ROLE_MODEL.md.';
+  'Uellix application schema. Role topology is managed by prepared stella_0001; public-object ownership and ACL reconciliation are managed by prepared stella_0004. Migrations run as uellix_migrator with an explicit SET ROLE uellix_owner; the application runtime holds no ownership. See docs/ops/DATABASE_ROLE_MODEL.md.';
 
 -- ============================================================
 -- 9. Self-verification — assert the end state, inside this transaction
@@ -819,6 +762,7 @@ DECLARE
     'stella_interactions','stella_suggestion_decisions'
   ];
   problem text;
+  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
 BEGIN
   -- 9.1 Ownership: all 38 tables and all 8 functions belong to uellix_owner.
   SELECT string_agg(c.relname, ', ' ORDER BY c.relname) INTO problem
@@ -909,30 +853,65 @@ BEGIN
     RAISE NOTICE 'stella_0004: role(s) % already carry a credential. That is an operator decision made out of band; this script neither set nor read it.', problem;
   END IF;
 
-  -- 9.4 Memberships: exactly three, with exactly these options.
-  SELECT string_agg(m.rolname || '->' || r.rolname ||
-           '(admin=' || a.admin_option || ',inherit=' || a.inherit_option || ',set=' || a.set_option || ')', ', ')
+  -- 9.4 Membership inventory: exactly three rows with exact PostgreSQL 17
+  -- options, one row per canonical pair. The grantor is included in the
+  -- diagnostic because an otherwise identical second-grantor row is unsafe.
+  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+    VALUES
+      ('uellix_migrator', 'uellix_owner', false, true, false),
+      ('uellix_app', 'uellix_writer', true, false, false),
+      ('postgres', 'uellix_writer', true, false, false)
+  ), actual AS (
+    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+           a.inherit_option, a.set_option, a.admin_option
+    FROM pg_auth_members a
+    JOIN pg_roles m ON m.oid = a.member
+    JOIN pg_roles r ON r.oid = a.roleid
+    JOIN pg_roles g ON g.oid = a.grantor
+    WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
+       OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
+  )
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name, ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
     INTO problem
-  FROM pg_auth_members a
-  JOIN pg_roles m ON m.oid = a.member
-  JOIN pg_roles r ON r.oid = a.roleid
-  WHERE (m.rolname LIKE 'uellix\_%' OR r.rolname LIKE 'uellix\_%')
-    AND NOT (
-      (m.rolname = 'uellix_migrator' AND r.rolname = 'uellix_owner'
-        AND NOT a.admin_option AND NOT a.inherit_option AND a.set_option)
-      OR (m.rolname = 'uellix_app' AND r.rolname = 'uellix_writer'
-        AND NOT a.admin_option AND a.inherit_option AND NOT a.set_option)
-      OR (m.rolname = 'postgres' AND r.rolname = 'uellix_writer'
-        AND NOT a.admin_option AND a.inherit_option AND NOT a.set_option)
-    );
+  FROM actual a
+  WHERE NOT EXISTS (
+    SELECT 1 FROM expected e
+    WHERE e.member_name = a.member_name AND e.role_name = a.role_name
+      AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
+      AND a.set_option IS NOT DISTINCT FROM e.set_option
+      AND a.admin_option IS NOT DISTINCT FROM e.admin_option
+  );
   IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 FAILED: unexpected membership(s) involving a Uellix role: %', problem;
+    RAISE EXCEPTION 'stella_0004 FAILED: unexpected relevant membership row (wrong membership flags or ADMIN escalation): %', problem;
   END IF;
 
-  -- The runtime must not be able to become the owner, by any path.
-  IF pg_has_role('uellix_app', 'uellix_owner', 'USAGE')
-     OR pg_has_role('uellix_app', 'uellix_owner', 'MEMBER') THEN
-    RAISE EXCEPTION 'stella_0004 FAILED: uellix_app can reach uellix_owner';
+  WITH expected(member_name, role_name, inherit_option, set_option, admin_option) AS (
+    VALUES
+      ('uellix_migrator', 'uellix_owner', false, true, false),
+      ('uellix_app', 'uellix_writer', true, false, false),
+      ('postgres', 'uellix_writer', true, false, false)
+  )
+  SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
+    INTO problem
+  FROM expected e
+  WHERE (
+    SELECT count(*) FROM pg_auth_members a
+    JOIN pg_roles m ON m.oid = a.member
+    JOIN pg_roles r ON r.oid = a.roleid
+    WHERE m.rolname = e.member_name AND r.rolname = e.role_name
+      AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
+      AND a.set_option IS NOT DISTINCT FROM e.set_option
+      AND a.admin_option IS NOT DISTINCT FROM e.admin_option
+  ) <> 1;
+  IF problem IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_0004 FAILED: canonical membership cardinality is not one (multiple grantor row or wrong membership flags): %', problem;
+  END IF;
+
+  -- The runtime must not be able to become the owner by a direct or transitive
+  -- SET path. This is an effective final check, not a substitute for the row
+  -- inventory above; SET=false/ADMIN=true is caught by the inventory itself.
+  IF pg_has_role('uellix_app', 'uellix_owner', 'SET') THEN
+    RAISE EXCEPTION 'stella_0004 FAILED: uellix_app has a direct or transitive SET path to uellix_owner';
   END IF;
   IF pg_has_role('postgres', 'uellix_owner', 'USAGE')
      OR pg_has_role('postgres', 'uellix_owner', 'MEMBER') THEN
@@ -1243,13 +1222,37 @@ BEGIN
   IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r','p')) <> 38
      OR (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
-         JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') <> 104
+         JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') <> 105
      OR (SELECT count(*) FROM pg_trigger g JOIN pg_class c ON c.oid = g.tgrelid
          JOIN pg_namespace n ON n.oid = c.relnamespace
          WHERE n.nspname = 'public' AND NOT g.tgisinternal) <> 10
      OR (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
          WHERE n.nspname = 'public' AND c.relkind IN ('r','p') AND NOT c.relrowsecurity) <> 0 THEN
-    RAISE EXCEPTION 'stella_0004 FAILED: structural drift — tables/policies/triggers/RLS no longer match the 38/104/10/0 fingerprint';
+    RAISE EXCEPTION 'stella_0004 FAILED: structural drift — tables/policies/triggers/RLS no longer match the post-0003 38/105/10/0 fingerprint';
+  END IF;
+
+  -- 9.12b The policy count is only a fingerprint. Re-assert the actual
+  -- decision policy identity and exact INSERT predicate after all ownership
+  -- and ACL reconciliation, so a third decision policy or a widened policy
+  -- cannot hide behind the same 105 total.
+  SELECT string_agg(p.polname || ':' || p.polcmd, ', ' ORDER BY p.polname) INTO problem
+  FROM pg_policy p
+  WHERE p.polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND NOT (
+      (p.polname = 'stella_suggestion_decisions_select' AND p.polcmd = 'r')
+      OR (p.polname = 'stella_suggestion_decisions_insert_member_or_admin'
+          AND p.polcmd = 'a'
+          AND p.polroles = ARRAY['uellix_app'::regrole::oid]
+          AND p.polpermissive
+          AND regexp_replace(
+                regexp_replace(pg_get_expr(p.polwithcheck, p.polrelid, true), 'public\.', '', 'g'),
+                '\s+', '', 'g'
+              ) = expected_decision_insert_check)
+    );
+  IF problem IS NOT NULL
+     OR (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2
+     OR (SELECT count(*) FROM pg_policy p WHERE p.polrelid <> 'public.stella_suggestion_decisions'::regclass) <> 103 THEN
+    RAISE EXCEPTION 'stella_0004 FAILED: post-0003 policy inventory is not exactly 103 baseline policies plus the SELECT and exact stella_suggestion_decisions_insert_member_or_admin INSERT policies.';
   END IF;
 
   -- Every trigger must still be enabled in origin mode.
@@ -1265,5 +1268,5 @@ BEGIN
   -- hold nothing" and "default privileges clean", both of which were true only
   -- of tables and of schema-scoped entries respectively — the kind of summary
   -- that reads as a broader guarantee than it verified.
-  RAISE NOTICE 'stella_0004: verification passed — 38 tables and 8 functions in public owned by uellix_owner; 5 roles; exactly 3 memberships; no non-owner holds TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on any of the 38; anon and PUBLIC hold no table privilege and no EXECUTE in public; no default privilege (schema-scoped OR global) reaches anon/authenticated/service_role/PUBLIC; a future table, function and type created by uellix_owner reach nobody else; 104 policies, 10 triggers and RLS on 38/38 untouched.';
+  RAISE NOTICE 'stella_0004: verification passed — 38 tables and 8 functions in public owned by uellix_owner; exact three-row membership inventory; no non-owner holds TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on any of the 38; anon and PUBLIC hold no table privilege and no EXECUTE in public; no default privilege (schema-scoped OR global) reaches anon/authenticated/service_role/PUBLIC; a future table, function and type created by uellix_owner reach nobody else; exact post-0003 policy inventory (103 baseline plus decision SELECT and stella_suggestion_decisions_insert_member_or_admin INSERT = 105), 10 triggers and RLS on 38/38 untouched.';
 END $$;

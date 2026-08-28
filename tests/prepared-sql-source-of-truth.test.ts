@@ -46,6 +46,13 @@ const GATE_MANAGED_TABLES = [
 
 const preparedSqlFiles = readdirSync(PREPARED_DIR).filter((f) => f.endsWith('.sql'))
 
+const ROLLBACK_BY_FORWARD: Readonly<Record<string, string>> = {
+  // R3.4 makes topology bootstrap a named package because its rollback is
+  // intentionally scoped to the same authority boundary, not an opaque
+  // numeric sibling of unrelated scripts.
+  'stella_0001_role_topology_bootstrap.sql': 'stella_0001_role_topology_bootstrap_rollback.sql',
+}
+
 describe('ADR 21 safeguard 1 — db/prepared is never auto-applied by drizzle', () => {
   it('drizzle.config.ts still points `out` at db/migrations, not db/prepared', () => {
     const config = readRoot('drizzle.config.ts')
@@ -196,7 +203,7 @@ describe('ADR 21 safeguard 4 — db/prepared/README.md is an accurate registry',
 
       const match = /^([a-z]+(?:_[a-z]+)*_\d+[a-z]?)_.+\.sql$/.exec(file)
       expect(match, `unexpected prepared script name: ${file}`).not.toBeNull()
-      const rollback = `${match![1]}_rollback.sql`
+      const rollback = ROLLBACK_BY_FORWARD[file] ?? `${match![1]}_rollback.sql`
       expect(existsSync(path.join(PREPARED_DIR, rollback)), `missing ${rollback}`).toBe(true)
       expect(readme).toContain(rollback)
     }

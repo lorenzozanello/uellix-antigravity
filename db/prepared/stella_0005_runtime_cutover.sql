@@ -7,7 +7,8 @@
 -- SOURCE OF TRUTH: docs/ops/DATABASE_RUNTIME_CUTOVER.md.
 --
 -- RUN AS `uellix_owner`, REACHED BY `SET ROLE` FROM `uellix_migrator`:
---   pnpm db:prepared:apply:local stella_0005_runtime_cutover.sql
+--   pnpm db:prepared:apply:local
+-- This is the fixed R3.4 chain command, not an individual-file command.
 --
 -- Section 0 REFUSES to run under any other identity, including a superuser.
 -- That refusal is the point: this script's whole subject is which role owns

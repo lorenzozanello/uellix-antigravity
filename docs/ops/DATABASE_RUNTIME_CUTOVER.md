@@ -7,6 +7,16 @@
 [`DATABASE_TARGET_SAFETY.md`](DATABASE_TARGET_SAFETY.md) (a qué base se conecta cada cosa),
 [`db/prepared/README.md`](../../db/prepared/README.md) (registro de scripts).
 
+> **R3.4 — precondición operativa vigente.** El runtime cutover ya no se
+> ejecuta como archivo elegido por el operador. Sólo corre dentro del runner
+> local cerrado: `pnpm db:prepared:plan:local` o
+> `pnpm db:prepared:apply:local`, en la secuencia fija `0002 → 0002b → 0001
+> → 0003 → 0004 → 0005b → 0005 → 0005c`. `0001` establece y verifica la
+> topología (tres membresías exactas y sin ruta `SET` de app a owner); `0004`
+> conserva esa topología y reconcilia objetos. `0005d` queda independiente.
+> Esto no autoriza SQL genérico, `psql`, SQL Editor, Supabase hosted ni un
+> cambio de credenciales remoto.
+
 ---
 
 ## 1. Qué estaba mal, medido
@@ -190,20 +200,21 @@ protocolo simple (equivalente estructural de `ON_ERROR_STOP`) → **verificar
 ownership y ACL antes del `COMMIT`** → confirmar o revertir entero. Se registra
 el SHA-256 del fichero, nunca su contenido.
 
-R3.3 endurece además la prueba de topología dentro de `stella_0003`: los cuatro
-roles gobernados deben ser `NOSUPERUSER` y `NOINHERIT`; la capacidad del runtime
-se deriva exclusivamente de la fila `uellix_app → uellix_writer` con
-`INHERIT TRUE`, `SET FALSE` y `ADMIN FALSE`. La ausencia de escalación al owner
-se verifica con `pg_has_role(..., 'SET')`, no con `USAGE`. La policy INSERT de
-decisiones se compara como expresión de catálogo normalizada y exacta, por lo
-que una rama adicional como `OR true` aborta la transacción.
+R3.4 mueve la autoridad de topología a `stella_0001`: los cinco roles deben
+ser `NOSUPERUSER` y `NOINHERIT`, las tres filas controladas de
+`pg_auth_members` deben tener cardinalidad exactamente uno y ninguna ruta
+directa o transitiva puede permitir `SET ROLE` desde `uellix_app` al owner.
+`stella_0003` y `stella_0004` verifican esa autoridad antes de trabajar sobre
+objetos. La policy INSERT de decisiones se compara como expresión de catálogo
+normalizada y exacta, por lo que una rama adicional como `OR true` aborta la
+transacción.
 
 Comandos:
 
 ```bash
 pnpm db:migrate:local                                    # cadena drizzle
-pnpm db:prepared:apply:local stella_0005_runtime_cutover.sql
-pnpm db:prepared:verify:local stella_0005_runtime_cutover.sql   # dry-run con rollback
+pnpm db:prepared:plan:local                              # manifiesto fijo + hashes
+pnpm db:prepared:apply:local                             # cadena R3.4 completa
 ```
 
 **Excepción documentada.** `pnpm db:migrate:local` usa `SET ROLE` de sesión, no

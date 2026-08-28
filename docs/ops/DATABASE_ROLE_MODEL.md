@@ -2,13 +2,24 @@
 
 **Estado:** ensayado y aplicado **sólo en el stack local** desde 2026-08-02.
 **Alcance:** los objetos Uellix del esquema `public` de este worktree.
-**Scripts:** `db/prepared/stella_0004_role_separation.sql` (+ rollback).
+**Scripts:** topología `db/prepared/stella_0001_role_topology_bootstrap.sql`
+(+ rollback); ownership/ACL/RLS
+`db/prepared/stella_0004_role_separation.sql` (+ rollback).
 **Fuente canónica de verificación:** `pg_catalog` + `aclexplode`.
 Nunca `information_schema.role_table_grants` — ver §9.
 
 > Este documento **no** aprueba G2 remoto, **no** declara producción lista y
 > **no** habilita grounding. Describe el contrato de privilegios y qué parte
 > de él es reproducible en Supabase gestionado.
+
+> **Autoridad R3.4.** `stella_0001` es la única autoridad local para crear o
+> reconciliar roles, atributos, membresías y sus opciones PostgreSQL 17.
+> `stella_0004` empieza verificando ese inventario y sólo administra objetos
+> de `public`. El runner local fijo aplica `0002 → 0002b → 0001 → 0003 → 0004
+> → 0005b → 0005 → 0005c`, con una transacción por fase: administración local
+> para `0001`/`0004`, y `uellix_migrator → SET LOCAL ROLE uellix_owner` para
+> `0003`/`0005`/`0005c`. Ninguna de estas instrucciones autoriza la cadena
+> hosted ni convierte el bootstrap hosted en equivalente del local.
 
 ---
 

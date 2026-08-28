@@ -9,6 +9,18 @@
 > `INSTALLED` no se vuelve a aplicar. Véase
 > `docs/ops/staging/STELLA_HOSTED_FORWARD_ONLY_CONTRACT.md`.
 
+> **Addendum MSC-07B.8 R3.4 — no se reescribe la evidencia anterior.** El
+> ensayo narrado abajo pertenece a la cadena histórica y conserva sus comandos
+> y resultados como evidencia. Para una nueva cadena local se usa únicamente
+> el manifiesto cerrado `0002 → 0002b → 0001 → 0003 → 0004 → 0005b → 0005 →
+> 0005c` con `pnpm db:prepared:plan:local` y
+> `pnpm db:prepared:apply:local`. El runner no acepta archivos ni SQL del
+> operador, ejecuta una transacción por fase y separa identidad administrativa
+> local de la ruta `uellix_migrator → SET LOCAL ROLE uellix_owner`. `0001`
+> es la única autoridad de roles/membresías; `0004` conserva esa topología y
+> su rollback sólo devuelve objetos. `0005d` no integra esta cadena. Ninguno
+> de estos cambios se aplicó durante esta actualización documental.
+
 > Ensayo local, completamente offline y aislado, de los gates G2 y G3 antes de
 > tocar el único proyecto Supabase remoto de Uellix (que soporta despliegue y
 > pilotos — se trata como producción). No sustituye la ejecución real de G2/G3

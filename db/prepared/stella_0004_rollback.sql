@@ -1,10 +1,9 @@
 -- db/prepared/stella_0004_rollback.sql
 -- Rollback for stella_0004_role_separation.sql.
 --
--- RUN AS ONE TRANSACTION, AS A SUPERUSER, WITH THE EXACT CONFIRMATION:
---   psql "$URL" -1 -v ON_ERROR_STOP=1 \
---        -v uellix_rollback_confirmation=rollback-0004:<project_id> \
---        -f <this file>
+-- RUN ONLY in a separately authorised local administrative transaction. The
+-- transaction must set uellix.rollback_confirmation=rollback-0004:<database>.
+-- This package is not a generic psql/SQL-Editor execution artefact.
 --
 -- ============================================================================
 -- THIS ROLLBACK IS PARTIALLY NON-REVERSING, ON PURPOSE
@@ -14,9 +13,11 @@
 --
 --   REVERSING (undone here, unconditionally):
 --     * ownership of the 38 tables and 8 functions returns to `postgres`;
---     * the schema grants, table grants and memberships stella_0004 created
---       are removed;
---     * the 5 Uellix roles are dropped.
+--     * the public-object ACLs stella_0004 created are removed.
+--
+-- PRESERVED FOR stella_0001 ROLLBACK:
+--     * governed role attributes, memberships, schema grants and role-local
+--       default privilege suppression remain owned by stella_0001.
 --
 --   NON-REVERSING BY DEFAULT (a deliberate refusal):
 --     * the REVOKE of TRUNCATE / REFERENCES / TRIGGER / MAINTAIN from
@@ -48,29 +49,6 @@
 --   * It touches no data, no policy and no trigger.
 
 SET search_path = public;
-
--- ------------------------------------------------------------------
--- Confirmation plumbing
--- ------------------------------------------------------------------
--- `:{?name}` tests whether a psql variable exists. Without this, an unset
--- variable would be left in the SQL text verbatim and produce a syntax error
--- instead of the explicit refusal an operator needs to read.
-\if :{?uellix_rollback_confirmation}
-\else
-  \set uellix_rollback_confirmation 'NOT_PROVIDED'
-\endif
-
-\if :{?uellix_rollback_restore_unsafe_defaults}
-\else
-  \set uellix_rollback_restore_unsafe_defaults 'no'
-\endif
-
--- Carried through a transaction-local GUC rather than interpolated into a DO
--- block body, so the value is a bound literal and never becomes code.
-SELECT set_config('uellix.rollback_confirmation',
-                  :'uellix_rollback_confirmation', true);
-SELECT set_config('uellix.rollback_restore_unsafe_defaults',
-                  :'uellix_rollback_restore_unsafe_defaults', true);
 
 -- ============================================================
 -- 0. Authorisation and drift check
@@ -170,11 +148,10 @@ ALTER FUNCTION public.handle_update_user() OWNER TO postgres;
 ALTER FUNCTION public.uellix_forbid_mutation() OWNER TO postgres;
 
 -- ============================================================
--- 2. Remove everything the Uellix roles hold
+-- 2. Remove only public-object ACLs owned by stella_0004
 -- ============================================================
--- DROP ROLE refuses while a role still holds a privilege anywhere, so this
--- must be exhaustive. It is written as explicit REVOKEs over the same
--- allowlist rather than DROP OWNED, which would also drop objects.
+-- Role topology remains in place so the protected 0003 rollback can run next,
+-- and stella_0001 can later remove roles only after its dependency guard.
 
 REVOKE ALL ON
   public.audit_logs, public.evidence_items, public.financial_proxies,
@@ -199,37 +176,6 @@ REVOKE ALL ON FUNCTION
   public.handle_update_user(), public.uellix_forbid_mutation()
 FROM uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
 
-REVOKE ALL ON SCHEMA public
-  FROM uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor;
-
--- The single USAGE the forward script granted on a Supabase-internal schema.
-REVOKE USAGE ON SCHEMA auth FROM uellix_owner;
-
--- The default-privilege entries the forward script created FOR the Uellix
--- creator roles. They are GLOBAL (no IN SCHEMA) — see section 7c of the
--- forward script for why the schema-scoped form does not work — so they must
--- be reversed in the same global form. Re-GRANTing what was revoked returns
--- the stored ACL to acldefault(), which deletes the pg_default_acl row, and a
--- role with no remaining catalog references is a role DROP ROLE will accept.
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    GRANT USAGE   ON TYPES     TO PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator GRANT USAGE   ON TYPES     TO PUBLIC;
-
-REVOKE uellix_owner  FROM uellix_migrator;
-REVOKE uellix_writer FROM uellix_app;
-REVOKE uellix_writer FROM postgres;
-
--- Guarded for the same reason the DROP ROLEs below carry IF EXISTS: the §0
--- drift check only proves that `uellix_owner` exists, so a partially
--- hand-dismantled state would abort here instead of finishing the cleanup.
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_auditor') THEN
-    EXECUTE 'ALTER ROLE uellix_auditor RESET default_transaction_read_only';
-  END IF;
-END $$;
-
 -- ============================================================
 -- 3. Optional, separately authorised: restore the unsafe original defaults
 -- ============================================================
@@ -239,7 +185,7 @@ END $$;
 
 DO $$
 BEGIN
-  IF current_setting('uellix.rollback_restore_unsafe_defaults', true) <> 'yes' THEN
+  IF COALESCE(current_setting('uellix.rollback_restore_unsafe_defaults', true), 'no') <> 'yes' THEN
     RAISE NOTICE 'stella_0004 rollback: NOT restoring the unsafe original grants and default privileges (SAFE_NON_REVERSING). authenticated/service_role remain without TRUNCATE/REFERENCES/TRIGGER/MAINTAIN, and pg_default_acl in schema public stays clean. Pass -v uellix_rollback_restore_unsafe_defaults=yes to override.';
     RETURN;
   END IF;
@@ -268,30 +214,21 @@ BEGIN
 END $$;
 
 -- ============================================================
--- 4. Drop the roles
--- ============================================================
-DROP ROLE IF EXISTS uellix_auditor;
-DROP ROLE IF EXISTS uellix_app;
-DROP ROLE IF EXISTS uellix_writer;
-DROP ROLE IF EXISTS uellix_migrator;
-DROP ROLE IF EXISTS uellix_owner;
-
--- ============================================================
--- 5. Restore the schema comment
+-- 4. Restore the schema comment
 -- ============================================================
 COMMENT ON SCHEMA public IS 'standard public schema';
 
 -- ============================================================
--- 6. Self-verification
+-- 5. Self-verification
 -- ============================================================
 DO $$
 DECLARE
   problem text;
 BEGIN
-  SELECT string_agg(rolname, ', ') INTO problem
-  FROM pg_roles WHERE rolname LIKE 'uellix\_%';
-  IF problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 rollback FAILED: role(s) survive: %', problem;
+  SELECT string_agg(rolname, ', ' ORDER BY rolname) INTO problem
+  FROM pg_roles WHERE rolname IN ('uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor');
+  IF problem IS DISTINCT FROM 'uellix_app, uellix_auditor, uellix_migrator, uellix_owner, uellix_writer' THEN
+    RAISE EXCEPTION 'stella_0004 rollback FAILED: governed topology drifted while ownership rollback ran: %', problem;
   END IF;
 
   SELECT string_agg(c.relname, ', ' ORDER BY c.relname) INTO problem
@@ -313,12 +250,12 @@ BEGIN
   IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r','p')) <> 38
      OR (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
-         JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') <> 104
+         JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public') <> 105
      OR (SELECT count(*) FROM pg_trigger g JOIN pg_class c ON c.oid = g.tgrelid
          JOIN pg_namespace n ON n.oid = c.relnamespace
          WHERE n.nspname = 'public' AND NOT g.tgisinternal) <> 10 THEN
-    RAISE EXCEPTION 'stella_0004 rollback FAILED: structural drift — 38/104/10 fingerprint broken';
+    RAISE EXCEPTION 'stella_0004 rollback FAILED: structural drift — post-0003 38/105/10 fingerprint broken';
   END IF;
 
-  RAISE NOTICE 'stella_0004 rollback: complete — ownership back to postgres, 5 roles dropped, structure intact.';
+  RAISE NOTICE 'stella_0004 rollback: complete — ownership back to postgres; stella_0001 remains sole authority for role-topology rollback; structure intact.';
 END $$;

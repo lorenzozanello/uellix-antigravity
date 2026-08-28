@@ -8,7 +8,8 @@
 -- SOURCE OF TRUTH: docs/ops/DATABASE_RUNTIME_CUTOVER.md.
 --
 -- RUN AS `uellix_owner`, REACHED BY `SET ROLE` FROM `uellix_migrator`:
---   pnpm db:prepared:apply:local stella_0005c_runtime_policy_scope.sql
+--   pnpm db:prepared:apply:local
+-- This is the fixed R3.4 chain command, not an individual-file command.
 --
 -- ============================================================================
 -- WHY THIS EXISTS (reaudit finding M1)

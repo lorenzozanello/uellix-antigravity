@@ -64,36 +64,58 @@ bloquearía el rollback de `0002` de forma permanente.
 arreglo estructural exigiría editar `grounding_0003` por razones ajenas a su
 rollback.)
 
+## Operación local vigente — MSC-07B.8 R3.4
+
+La autoridad local de la cadena Stella está cerrada por
+`scripts/stella-r3-4-local-runner.ts`. Los únicos comandos de preparación son:
+
+```bash
+pnpm db:prepared:plan:local
+pnpm db:prepared:apply:local
+```
+
+No aceptan nombres de archivo, rutas ni SQL arbitrario. El manifiesto fijo es:
+
+```
+0002 admin → 0002b admin → 0001 admin → 0003 migrator
+→ 0004 admin → 0005b admin → 0005 migrator → 0005c migrator
+```
+
+Cada flecha es una transacción por archivo; no existe una transacción global.
+`0001` es la única autoridad local para crear/reconciliar los cinco roles y
+las tres membresías exactas de PostgreSQL 17; `0004` sólo reconcilia ownership,
+ACL y RLS de objetos. `0003`, `0005` y `0005c` se autentican como
+`uellix_migrator` y usan `SET LOCAL ROLE uellix_owner`; las demás fases exigen
+un superusuario local, obtenido exclusivamente de
+`UELLIX_LOCAL_ADMIN_DATABASE_URL` en `.env.migration.local`.
+
+Los artefactos nuevos son `stella_0001_role_topology_bootstrap.sql` y
+`stella_0001_role_topology_bootstrap_rollback.sql`. El rollback de `0001`
+rechaza dependencias y es el único que puede retirar roles o membresías; el
+rollback de `0004` devuelve sólo ownership/ACL de objetos y deja la topología
+de `0001` intacta. `stella_0005d` es independiente y no forma parte del
+manifiesto fresco.
+
+Esta ruta es exclusivamente local. El bootstrap hosted
+`stella_hosted_0001_managed_role_bootstrap.sql` conserva un modelo de
+privilegios distinto y **no sustituye** `0001` local. Un cliente SQL genérico,
+SQL Editor, `psql` o `supabase db execute` no son rutas autorizadas para esta
+cadena.
+
 ## Reglas
 
 1. **Nada de este directorio se ejecuta automáticamente.** Ni drizzle, ni CI,
    ni un agente. La aplicación es siempre manual, por Lorenzo, contra staging
    primero, siguiendo el checklist del gate.
-2. **La autoridad de ejecución es específica a cada paquete; un cliente SQL
-   genérico no es una alternativa autorizada.** Para `stella_0003` R3.3 y los
-   paquetes owner-scoped que lo verifican, la única vía local documentada es:
-   ```bash
-   pnpm db:prepared:apply:local stella_0003_suggestion_decisions.sql
-   pnpm db:prepared:verify:local stella_0003_suggestion_decisions.sql
-   ```
-   El wrapper autentica como `uellix_migrator`, abre una única transacción,
-   ejecuta `SET LOCAL ROLE uellix_owner`, aplica el fichero exacto, ejecuta su
-   self-check y confirma o revierte entero. No autoriza un destino remoto. Para
-   un destino remoto hace falta una autorización humana separada y un wrapper
-   aprobado que conserve hash, identidad y verificaciones de catálogo.
-
-   > **`stella_0004` es la excepción en cuanto al ROL, no una excepción para
-   > usar un cliente genérico.** Requiere su procedimiento administrativo
-   > explícito como superusuario (en local, `supabase_admin` dentro del
-   > contenedor). Un rol `CREATEROLE` no superusuario recibe `ADMIN OPTION`
-   > automáticamente sobre cada rol que crea y podría concederse `SET` sobre el
-   > owner; el propio script comprueba y aborta ante esa postura.
-   >
-   > **Después de `stella_0004`, `stella_0002`, `0002b` y `0003` deben correr
-   > por la ruta gobernada:** `uellix_migrator → SET LOCAL ROLE uellix_owner`.
-   > Emiten `REVOKE`, `GRANT`, `CREATE TRIGGER` y `ALTER TABLE`, todos sujetos a
-   > ownership. En una base recién creada, el orden normal sigue siendo
-   > migraciones → `0002`/`0002b`/`0003` → `0004`.
+2. **La autoridad de ejecución es el manifiesto local R3.4, no un cliente SQL
+   genérico.** `pnpm db:prepared:plan:local` muestra hashes y fases; `pnpm
+   db:prepared:apply:local` ejecuta únicamente la secuencia fijada arriba.
+   No acepta un fichero, una ruta, una identidad ni SQL aportado por quien lo
+   invoca. Las fases administrativas exigen superusuario local; las fases
+   migrator autentican `uellix_migrator`, abren una transacción y ejecutan
+   `SET LOCAL ROLE uellix_owner`. No autoriza un destino remoto. Para remoto
+   hace falta una autorización humana separada y un procedimiento que conserve
+   hash, identidad y verificaciones de catálogo.
 3. Antes de aplicar cualquier script de grounding: **confirmar la
    disponibilidad de pgvector** en el proyecto Supabase hosted
    (Dashboard → Database → Extensions → `vector`), y **la decisión G5 P3**
@@ -196,13 +218,14 @@ el Commit 5.1 usa este paquete, y sólo este.
 
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
 |--------|----------|------|-------------------------|--------|
+| `stella_0001_role_topology_bootstrap.sql` | `stella_0001_role_topology_bootstrap_rollback.sql` | **local únicamente**, fase administrativa del manifiesto R3.4 | Autoridad exclusiva de cinco roles y tres membresías PostgreSQL 17 (`migrator → owner` SET-only; `app → writer` y `postgres → writer` INHERIT-only); verifica grantor, cardinalidad, flags y ausencia de ruta SET a owner; fija CREATE de `public`, USAGE de `auth` y default privileges globales de owner/migrator | PREPARADO — no aplicado por esta actualización |
 | `stella_0002_interactions_hardening.sql` | `stella_0002_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`) | trigger `trg_stella_interactions_append_only`; grants de `stella_interactions`; CHECK `stella_interactions_stella_role_check` | PREPARADO |
 | `stella_0002b_append_only_truncate_hardening.sql` | `stella_0002b_rollback.sql` (**no reversible**) | G2 (`docs/ops/gates/G2_PACKAGE.md`) | 4 triggers `*_no_truncate` (`BEFORE TRUNCATE FOR EACH STATEMENT`) sobre `stella_interactions`, `audit_logs`, `sroi_calculation_runs`, `sroi_calculation_line_items`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y además `UPDATE/DELETE` a `service_role` | PREPARADO |
 | `stella_0003_suggestion_decisions.sql` | `stella_0003_rollback.sql` | G2 (`docs/ops/gates/G2_PACKAGE.md`); sólo por la ruta gobernada `uellix_migrator → SET LOCAL ROLE uellix_owner`; habilita `STELLA_DECISIONS_PERSISTENCE_ENABLED` recién después de aplicarlo | **tabla `stella_suggestion_decisions`** propiedad de `uellix_owner` + 2 índices + 2 CHECK + `REVOKE ALL` + ACL directa `authenticated: SELECT` y `uellix_writer: SELECT, INSERT`; RLS con SELECT y el INSERT canónico `TO uellix_app`, ligado a `app.organization_id`, membresía vigente y `auth.uid()`; 2 triggers append-only (fila y `TRUNCATE`) | PREPARADO — contrato R3.2 pendiente de verificación controlada |
 | `grounding_0001_evidence_chunks.sql` | `grounding_0001_rollback.sql` | G2 addendum (`docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md`) **+ decisión G5 P3** | extensión `vector`; **tabla `evidence_chunks`** + 2 índices + 3 CHECK + 1 UNIQUE + grant SELECT + RLS + política `evidence_chunks_select` | **SUPERSEDIDO por `grounding_0003` — NO APLICAR.** Nunca aplicado en ninguna base; se conserva byte a byte bajo su banner (ver «Disposición de `grounding_0001`») |
 | `grounding_0002_document_versions.sql` | `grounding_0002_rollback.sql` | **ninguno todavía**; requiere `stella_0004` aplicado (roles) y decisión de integración sobre GR-002 | rol `uellix_cap_grounding` (NOLOGIN, cero miembros); esquema `uellix_grounding`; **tabla `evidence_document_versions`** (14 columnas) + 2 índices + 3 UNIQUE + 5 CHECK + 3 policies (1 SELECT, 1 INSERT `TO uellix_cap_grounding`, 1 `RESTRICTIVE`) + 2 triggers append-only + `register_document_version(...)` y `claim_active_document_version(uuid)` SECURITY DEFINER | **DISEÑO — no aplicado** |
 | `grounding_0003_evidence_chunks.sql` | `grounding_0003_rollback.sql` | **ninguno todavía**; requiere `grounding_0002` aplicado **primero** | **tabla `evidence_chunks`** en la forma GR-001 (23 columnas) + 3 índices + 1 índice único **parcial** de deduplicación + 2 UNIQUE + 7 CHECK + 4 policies (1 SELECT, 1 INSERT, 1 DELETE, 1 `RESTRICTIVE`) + 2 triggers (`no_update`, `no_truncate`) + `insert_evidence_chunks(uuid, jsonb)`, `finalize_document_ingestion(uuid, integer)` y `chunks_in_scope(uuid, uuid, uuid)` SECURITY DEFINER. **Sin pgvector** | **DISEÑO — no aplicado** |
-| `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | 5 roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`); ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` a `authenticated` y `service_role` en las 38; repara `pg_default_acl` de `postgres` y `supabase_admin`; 4 entradas **globales** que suprimen `EXECUTE`/`USAGE` a `PUBLIC`; `USAGE ON SCHEMA auth` para el owner | PREPARADO — ensayado y aplicado **sólo en local** |
+| `stella_0004_role_separation.sql` | `stella_0004_rollback.sql` | **local únicamente** por ahora; G2 remoto **bloqueado** por RR-09 (`docs/ops/DATABASE_ROLE_MODEL.md` §5) | Verifica la topología ya establecida por `0001`; ownership de las **38** tablas y **8** funciones de `public` → `uellix_owner`; reconcilia ACL/RLS y verifica el inventario post-`0003` de 103 policies base + SELECT/INSERT de decisiones = 105. No crea ni altera roles, membresías ni default privileges globales. Su rollback devuelve sólo objetos | PREPARADO — ensayado y aplicado **sólo en local** |
 | `stella_0005_runtime_cutover.sql` | `stella_0005_rollback.sql` | **local únicamente**; se aplica con `pnpm db:prepared:apply:local`, que conecta como `uellix_migrator` y hace `SET LOCAL ROLE uellix_owner`. El script **se niega** a correr con cualquier otra identidad, incluido un superusuario | Verifica que el INSERT canónico de decisiones ya existe en `0003`; añade sólo 2 políticas `INSERT` (`audit_logs`, `stella_interactions`) → **105 → 107**; `search_path=''` en las 3 funciones SECURITY DEFINER que aún estaban en `search_path=public`; 4 entradas de `pg_default_acl` para `uellix_owner` en `public` (SELECT+INSERT a `uellix_writer`, SELECT a `uellix_auditor`; **nunca** UPDATE/DELETE) | PREPARADO — ensayado en contenedor efímero y aplicado **sólo en local** |
 | `stella_0005b_admin_bootstrap.sql` | `stella_0005b_rollback.sql` | **local únicamente**; requiere **superusuario** (en local, `supabase_admin`) y se aplica **antes** de `stella_0005` | `ALTER ROLE ... SET` (search_path, statement/lock/idle timeouts) para los 3 roles LOGIN; ownership del esquema `drizzle` y de `__drizzle_migrations` → `uellix_owner` + `USAGE` para `uellix_migrator`. Sobre el default de TYPES de `postgres` en `public`: el script lo **documenta y verifica**, pero **NO ejecuta un `REVOKE USAGE ON TYPES` efectivo** — un `REVOKE` solo no almacena nada en `pg_default_acl` y la fila que un `GRANT` previo guardaría **nunca se consulta** (ver el propio script, secciones "DELIBERATELY NOT CHANGED", y `docs/ops/DATABASE_RUNTIME_CUTOVER.md`). La contención real de TYPES son las 2 entradas **globales** de `stella_0004` para `uellix_owner`/`uellix_migrator` | PREPARADO — aplicado **sólo en local** |
 | `stella_0005c_runtime_policy_scope.sql` | `stella_0005c_rollback.sql` | **local únicamente**; misma ruta que `stella_0005` (`pnpm db:prepared:apply:local`, `uellix_migrator → SET ROLE uellix_owner`) | Re-alcance de las **2** políticas `INSERT` de `0005` a **`TO uellix_app`** (`audit_logs`, `stella_interactions`); preserva y verifica sin reescribir la policy canónica de decisiones creada por `0003`; `REVOKE INSERT` a `authenticated` y `service_role` en ambas tablas (SELECT intacto); elimina la rama `actor_user_id IS NULL` y liga el actor a `auth.uid()` también para super admin. El conteo queda en **107** (2 reemplazadas, ninguna añadida) | PREPARADO — aplicado **sólo en local** (2026-08-02) |
@@ -353,7 +376,7 @@ Cierra **R2-INT** (`docs/ops/contracts/CONTRACT_LEDGER.md#r2-int`, respuesta en
 > la supersesión y `applyPreparedScript` (`db/migrator.ts`) ejecuta la sonda
 > **dentro de la transacción y antes del script**, de modo que la negativa hace
 > rollback y las firmas inseguras no llegan a publicarse ni un instante.
-> `pnpm db:prepared:apply:local stella_0014_operation_tickets.sql` sobre una base
+> aplicar `stella_0014_operation_tickets.sql` sobre una base
 > con `stella_0015` falla con `DB_MIGRATOR_PACKAGE_ORDER_VIOLATION`.
 
 > **Orden de rollback: `stella_0015` antes que `stella_0014` antes que

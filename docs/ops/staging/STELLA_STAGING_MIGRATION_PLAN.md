@@ -15,6 +15,19 @@
 > rollbacks, el contrato R6h de §3 y los seis checkpoints de §4. Lo que cambia es
 > **qué archivo se envía** y **con qué identidad**, resumido en §1.6.
 
+> **Addendum operativo R3.4 (local, vigente).** La cadena de roles local no
+> se construye por orden lexicográfico ni por archivos elegidos manualmente.
+> El único manifiesto permitido es
+> `0002 → 0002b → 0001 → 0003 → 0004 → 0005b → 0005 → 0005c`, expuesto por
+> `pnpm db:prepared:plan:local` y `pnpm db:prepared:apply:local`. Cada archivo
+> es una transacción y tiene una identidad fijada: admin local para `0002`,
+> `0002b`, `0001`, `0004`, `0005b`; migrator gobernado para `0003`, `0005`,
+> `0005c`. `0001` es autoridad exclusiva de roles/membresías; `0004` sólo
+> ownership/ACL/RLS y su rollback no elimina roles. `0005d` sigue independiente.
+> Este addendum no cambia la cadena hosted ni autoriza ejecución remota; las
+> referencias siguientes a `psql` son evidencia histórica o procedimientos
+> hosted explícitamente separados, no alternativas locales autorizadas.
+
 ---
 
 ## 1. Fase 5 — Manifiesto de paquetes

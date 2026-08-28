@@ -297,6 +297,12 @@ export interface ApplyOptions {
   /** Injected for tests. Defaults to a real migrator connection. */
   readonly client?: DatabaseClient
   readonly log?: (message: string) => void
+  /**
+   * R3.4 applies 0003 before 0004 transfers ownership of the pre-existing
+   * public objects. 0003's own SQL self-check is still mandatory, but the
+   * global ownership report becomes meaningful only after the 0004 phase.
+   */
+  readonly verifyOwnershipAndAcl?: boolean
 }
 
 /**
@@ -368,7 +374,9 @@ export async function applyPreparedScript(
         )
       }
 
-      const report = await verifyOwnershipAndAcl(tx as unknown as postgres.Sql)
+      const report = options.verifyOwnershipAndAcl === false
+        ? EMPTY_REPORT
+        : await verifyOwnershipAndAcl(tx as unknown as postgres.Sql)
       captured.report = report
 
       const problems = describeReport(report)

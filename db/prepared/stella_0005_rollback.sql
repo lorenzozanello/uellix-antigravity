@@ -2,7 +2,8 @@
 -- Reverses db/prepared/stella_0005_runtime_cutover.sql.
 --
 -- RUN AS `uellix_owner`, REACHED BY `SET ROLE` FROM `uellix_migrator`:
---   pnpm db:prepared:apply:local stella_0005_rollback.sql
+-- R3.4 deliberately exposes no generic rollback-by-filename command. This
+-- rollback requires a separately approved, package-specific recovery process.
 --
 -- SCOPE. This undoes the two INSERT policies this package added, the three pinned
 -- `search_path` values and the four default-privilege entries that

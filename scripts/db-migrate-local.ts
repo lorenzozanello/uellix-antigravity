@@ -3,8 +3,12 @@
 // The ONLY entry point that may change schema on the local stack.
 //
 //   pnpm db:migrate:local                      -- drizzle migrations
-//   pnpm db:prepared:apply:local <file.sql>    -- one prepared script
-//   pnpm db:prepared:verify:local <file.sql>   -- same, rolled back
+//   pnpm db:prepared:plan:local                 -- governed fixed manifest
+//   pnpm db:prepared:apply:local                -- governed fixed manifest
+//
+// Prepared packages deliberately do NOT accept a caller-provided SQL file.
+// The fixed R3.4 manifest and its phase identities live in
+// scripts/stella-r3-4-local-runner.ts.
 //
 // It loads `.env.migration.local` — a file Next.js does not read — and refuses
 // to start unless the credential in it authenticates as `uellix_migrator`. The
@@ -20,7 +24,6 @@ import { resolve, basename } from 'node:path'
 import { config as loadEnvFile } from 'dotenv'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import {
-  applyPreparedScript,
   assertMigratorSession,
   assertOwnerRoleActive,
   createMigratorClient,
@@ -35,7 +38,6 @@ import {
 
 const REPO_ROOT = resolve(import.meta.dirname, '..')
 const MIGRATION_ENV_FILE = resolve(REPO_ROOT, '.env.migration.local')
-const PREPARED_DIR = resolve(REPO_ROOT, 'db', 'prepared')
 const MIGRATIONS_DIR = resolve(REPO_ROOT, 'db', 'migrations')
 
 /**
@@ -61,25 +63,9 @@ function loadMigrationEnv(): void {
 function usage(): never {
   console.error(
     'Usage:\n' +
-      '  db-migrate-local.ts drizzle\n' +
-      '  db-migrate-local.ts prepared <script.sql>\n' +
-      '  db-migrate-local.ts verify   <script.sql>\n'
+      '  db-migrate-local.ts drizzle\n'
   )
   process.exit(1)
-}
-
-/** Resolve a prepared script name to a path, refusing anything outside db/prepared. */
-function resolvePreparedScript(name: string | undefined): string {
-  if (name === undefined || name.trim() === '') usage()
-  // `basename` first: a caller-supplied "../../etc/passwd" collapses to
-  // "passwd" and then fails the existence check, rather than escaping the
-  // directory this command is scoped to.
-  const file = resolve(PREPARED_DIR, basename(name.trim()))
-  if (!file.endsWith('.sql') || !existsSync(file)) {
-    console.error(`No such prepared script: ${basename(name)} (looked in db/prepared/)`)
-    process.exit(1)
-  }
-  return file
 }
 
 /**
@@ -132,27 +118,14 @@ async function runDrizzleMigrations(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const [command, argument] = process.argv.slice(2)
+  const [command, extraArgument] = process.argv.slice(2)
   loadMigrationEnv()
 
   switch (command) {
     case 'drizzle':
+      if (extraArgument !== undefined) usage()
       await runDrizzleMigrations()
       return
-
-    case 'prepared': {
-      const file = resolvePreparedScript(argument)
-      const result = await applyPreparedScript(file)
-      console.log(`[migrator] applied ${basename(result.file)} sha256=${result.sha256}`)
-      return
-    }
-
-    case 'verify': {
-      const file = resolvePreparedScript(argument)
-      const result = await applyPreparedScript(file, { dryRun: true })
-      console.log(`[migrator] verified ${basename(result.file)} sha256=${result.sha256} (rolled back)`)
-      return
-    }
 
     default:
       usage()

@@ -1,4 +1,4 @@
-// R3.3 regression: derive the runtime topology from the canonical 0004
+// R3.4 regression: derive the runtime topology from the canonical 0001
 // authority, then require the independently-applied 0003 package and every
 // later verifier to preserve it. This is deliberately source-level because
 // prepared packages are not authorised for local execution in this worktree.
@@ -12,7 +12,7 @@ const prepared = (name: string) =>
   readFileSync(resolve(REPO_ROOT, 'db', 'prepared', name), 'utf8')
 
 const decision = prepared('stella_0003_suggestion_decisions.sql')
-const authority = prepared('stella_0004_role_separation.sql')
+const authority = prepared('stella_0001_role_topology_bootstrap.sql')
 const laterVerifiers = [
   'stella_0005_runtime_cutover.sql',
   'stella_0005_rollback.sql',
@@ -33,17 +33,17 @@ function insertPolicyBody(sql: string): string {
   return policy![1]
 }
 
-describe('R3.3 Stella role-topology remediation', () => {
-  it('accepts the canonical 0004 NOINHERIT runtime topology and rejects every owner SET path', () => {
-    // 0004, not 0003, is the independently established role authority.
+describe('R3.4 Stella role-topology remediation', () => {
+  it('accepts the canonical 0001 NOINHERIT runtime topology and rejects every owner SET path', () => {
+    // 0001, not 0003 or 0004, is the independently established role authority.
     expect(authority).toMatch(
       /ALTER ROLE uellix_app\s+LOGIN\s+NOINHERIT\s+NOBYPASSRLS[\s\S]*?NOSUPERUSER;/,
     )
     expect(authority).toMatch(
-      /GRANT uellix_writer TO uellix_app\s+WITH SET FALSE,\s+INHERIT TRUE,\s+ADMIN FALSE;/,
+      /GRANT uellix_writer TO uellix_app\s+WITH INHERIT TRUE,\s+SET FALSE,\s+ADMIN FALSE;/,
     )
     expect(authority).toMatch(
-      /GRANT uellix_owner\s+TO uellix_migrator\s+WITH SET TRUE,\s+INHERIT FALSE,\s+ADMIN FALSE;/,
+      /GRANT uellix_owner\s+TO uellix_migrator\s+WITH INHERIT FALSE,\s+SET TRUE,\s+ADMIN FALSE;/,
     )
 
     // A global role attribute is only the default for future memberships in

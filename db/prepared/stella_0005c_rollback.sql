@@ -9,7 +9,8 @@
 -- state this file produces.
 --
 -- RUN AS `uellix_owner`, REACHED BY `SET ROLE` FROM `uellix_migrator`:
---   pnpm db:prepared:apply:local stella_0005c_rollback.sql
+-- R3.4 deliberately exposes no generic rollback-by-filename command. This
+-- rollback requires a separately approved, package-specific recovery process.
 
 SET search_path = public;
 

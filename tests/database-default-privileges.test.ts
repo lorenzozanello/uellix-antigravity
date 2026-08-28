@@ -1,6 +1,7 @@
 // tests/database-default-privileges.test.ts
 //
-// Coverage for the default-privilege half of prepared stella_0004: what a
+// Coverage for the default-privilege authority split between prepared
+// stella_0001 (role topology) and stella_0004 (object reconciliation): what a
 // table, sequence, function or type that does not exist yet will be born with.
 //
 // THE DEFECT CLASS THIS FILE EXISTS FOR
@@ -44,6 +45,10 @@ const forward = readFileSync(
   path.join(REPO_ROOT, 'db/prepared/stella_0004_role_separation.sql'),
   'utf8'
 )
+const topologyBootstrap = readFileSync(
+  path.join(REPO_ROOT, 'db/prepared/stella_0001_role_topology_bootstrap.sql'),
+  'utf8'
+)
 
 function code(raw: string): string {
   return raw
@@ -53,6 +58,7 @@ function code(raw: string): string {
 }
 
 const forwardCode = code(forward)
+const topologyBootstrapCode = code(topologyBootstrap)
 
 /** Grantees that must never appear in a default ACL for schema public. */
 const FORBIDDEN_DEFAULT_GRANTEES = ['anon', 'authenticated', 'service_role', 'PUBLIC']
@@ -65,7 +71,7 @@ afterAll(async () => {
 /* OFFLINE                                                                    */
 /* -------------------------------------------------------------------------- */
 
-describe('stella_0004: default-privilege statements', () => {
+describe('stella_0001 / stella_0004: default-privilege authority', () => {
   it('repairs the two creator roles Supabase configured', () => {
     for (const role of ['postgres', 'supabase_admin']) {
       for (const objs of ['TABLES', 'SEQUENCES', 'FUNCTIONS']) {
@@ -94,14 +100,14 @@ describe('stella_0004: default-privilege statements', () => {
     // A schema-scoped entry is merged ON TOP OF acldefault() and can only ADD.
     // This test fails if anyone "tidies up" the global form into the scoped one.
     for (const role of ['uellix_owner', 'uellix_migrator']) {
-      expect(forwardCode).toMatch(
+      expect(topologyBootstrapCode).toMatch(
         new RegExp(`ALTER DEFAULT PRIVILEGES FOR ROLE ${role}\\s+REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`, 'i')
       )
-      expect(forwardCode).toMatch(
+      expect(topologyBootstrapCode).toMatch(
         new RegExp(`ALTER DEFAULT PRIVILEGES FOR ROLE ${role}\\s+REVOKE USAGE\\s+ON TYPES\\s+FROM PUBLIC`, 'i')
       )
       // And explicitly NOT the inert scoped form.
-      expect(forwardCode).not.toMatch(
+      expect(topologyBootstrapCode).not.toMatch(
         new RegExp(`ALTER DEFAULT PRIVILEGES FOR ROLE ${role} IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`, 'i')
       )
     }

@@ -220,6 +220,8 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
   // close, reinstated in latent form inside its own fix.
   it('the inventory matches the directory (tripwire for a new stella_* script)', () => {
     expect(stellaScripts).toEqual([
+      'stella_0001_role_topology_bootstrap.sql',
+      'stella_0001_role_topology_bootstrap_rollback.sql',
       'stella_0002_interactions_hardening.sql',
       'stella_0002_rollback.sql',
       'stella_0002b_append_only_truncate_hardening.sql',
@@ -689,7 +691,8 @@ describe('db/prepared/stella_0003_suggestion_decisions.sql', () => {
 
   it('is compatible with single-transaction execution (no CONCURRENTLY)', () => {
     expect(code).not.toMatch(/CONCURRENTLY/i)
-    expect(raw).toMatch(/pnpm db:prepared:apply:local stella_0003_suggestion_decisions\.sql/)
+    expect(raw).toMatch(/pnpm db:prepared:apply:local/)
+    expect(raw).not.toMatch(/db:prepared:apply:local stella_0003_suggestion_decisions\.sql/)
     expect(raw).toMatch(/SET LOCAL ROLE/)
   })
 
@@ -1132,7 +1135,7 @@ describe('audit fixes — MAJ-01: bounded lock acquisition', () => {
   })
 })
 
-describe('MSC-07B.7 R3.2 — stella_0003 asserts the mediated writer contract', () => {
+describe('MSC-07B.8 R3.4 — stella_0003 asserts the mediated writer contract', () => {
   const raw = read('stella_0003_suggestion_decisions.sql')
 
   it('rejects every identity except migrator session plus owner current_user', () => {
@@ -1150,8 +1153,8 @@ describe('MSC-07B.7 R3.2 — stella_0003 asserts the mediated writer contract', 
   })
 
   it('pins uellix_app as an inherited, non-bypass runtime rather than the owner', () => {
-    expect(raw).toMatch(/uellix_app must be LOGIN INHERIT with no BYPASSRLS/)
-    expect(raw).toMatch(/uellix_writer must be NOLOGIN and NOBYPASSRLS/)
+    expect(raw).toMatch(/uellix_app must be LOGIN NOINHERIT with no BYPASSRLS/)
+    expect(raw).toMatch(/uellix_writer must be NOLOGIN NOINHERIT with no BYPASSRLS/)
     expect(raw).toMatch(/rell?forcerowsecurity/)
     expect(raw).toMatch(/GRANT SELECT, INSERT ON public\.stella_suggestion_decisions TO uellix_writer/)
   })
@@ -2460,7 +2463,7 @@ describe('review round 2 — stella_0003 forward', () => {
     // unquoted input and splits on dots, so a role named "AppWriter" or
     // "app.writer" would pass the existence check and then fail resolving.
     expect(code).not.toMatch(/::regrole/)
-    expect(code).toMatch(/INTO writer_oid, writer_canlogin, writer_bypass/)
+    expect(code).toMatch(/INTO writer_oid, writer_canlogin, writer_inherit, writer_bypass/)
     expect(raw).toMatch(/FROM pg_roles WHERE rolname = 'uellix_writer'/)
     expect(code).toMatch(/a\.grantee = writer_oid/)
   })
@@ -2689,25 +2692,28 @@ describe('review round 3 — MINOR-2..7', () => {
   })
 })
 
-describe('R3.2 — documentation is in sync with the canonical writer contract', () => {
+describe('R3.4 — documentation is in sync with the closed local chain', () => {
   const readme = readFileSync(path.join(PREPARED, 'README.md'), 'utf8')
   const g2 = readFileSync(
     path.resolve(process.cwd(), 'docs', 'ops', 'gates', 'G2_PACKAGE.md'),
     'utf8',
   )
 
-  it('records the fixed owner/writer/RLS model rather than an obsolete check count', () => {
-    expect(readme).toMatch(/Remediación R3\.2 de `stella_0003`/)
+  it('records the split topology and object authorities rather than an obsolete check count', () => {
+    expect(readme).toMatch(/Operación local vigente — MSC-07B\.8 R3\.4/)
+    expect(readme).toMatch(/stella_0001_role_topology_bootstrap\.sql/)
+    expect(readme).toMatch(/stella_0004_role_separation\.sql/)
     expect(readme).toMatch(/`uellix_migrator`/)
     expect(readme).toMatch(/`uellix_writer`/)
     expect(readme).toMatch(/`TO uellix_app`/)
-    expect(readme).toMatch(/105 → 107/)
+    expect(readme).toMatch(/0002 admin[\s\S]*0002b admin[\s\S]*0001 admin[\s\S]*0003 migrator/)
   })
 
-  it('documents the governed migrator path and rejects a caller-declared writer', () => {
-    expect(g2).toMatch(/Contrato R3\.2 — identidad de migración y escritor/)
+  it('documents the governed migrator path and rejects caller-selected SQL', () => {
+    expect(g2).toMatch(/Operación local vigente R3\.4/)
     expect(g2).toMatch(/SET LOCAL ROLE uellix_owner/)
     expect(g2).toMatch(/`TO uellix_app`/)
+    expect(g2).toMatch(/sin argumentos de archivo ni SQL/)
     expect(g2).not.toMatch(/ALTER DATABASE .* SET stella\.writer_role/)
     expect(g2).not.toMatch(/rama ASSUMPTION/)
   })

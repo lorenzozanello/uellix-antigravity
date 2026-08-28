@@ -1,6 +1,7 @@
 // tests/database-role-safety.test.ts
 //
-// Coverage for the database role separation model (prepared stella_0004).
+// Coverage for the R3.4 split role authority (stella_0001) and object
+// separation model (stella_0004).
 //
 // TWO LAYERS, AND THE BOUNDARY IS DELIBERATE:
 //
@@ -29,9 +30,19 @@ import { LIVE_CATALOG, catalogSql } from './helpers/local-catalog'
 const REPO_ROOT = path.resolve(__dirname, '..')
 const FORWARD_PATH = path.join(REPO_ROOT, 'db/prepared/stella_0004_role_separation.sql')
 const ROLLBACK_PATH = path.join(REPO_ROOT, 'db/prepared/stella_0004_rollback.sql')
+const TOPOLOGY_BOOTSTRAP_PATH = path.join(
+  REPO_ROOT,
+  'db/prepared/stella_0001_role_topology_bootstrap.sql',
+)
+const TOPOLOGY_ROLLBACK_PATH = path.join(
+  REPO_ROOT,
+  'db/prepared/stella_0001_role_topology_bootstrap_rollback.sql',
+)
 
 const forward = readFileSync(FORWARD_PATH, 'utf8')
 const rollback = readFileSync(ROLLBACK_PATH, 'utf8')
+const topologyBootstrap = readFileSync(TOPOLOGY_BOOTSTRAP_PATH, 'utf8')
+const topologyRollback = readFileSync(TOPOLOGY_ROLLBACK_PATH, 'utf8')
 
 /** SQL with `--` comments stripped, so a construct named in prose is not a hit. */
 function code(raw: string): string {
@@ -43,6 +54,8 @@ function code(raw: string): string {
 
 const forwardCode = code(forward)
 const rollbackCode = code(rollback)
+const topologyBootstrapCode = code(topologyBootstrap)
+const topologyRollbackCode = code(topologyRollback)
 
 const UELLIX_ROLES = [
   'uellix_owner',
@@ -259,7 +272,7 @@ describe('stella_0004 forward: allowlist integrity', () => {
     // Needed because three SECURITY DEFINER functions call auth.uid() and the
     // ownership transfer changes their effective user. Without it every policy
     // that calls them errors — for every caller, including PostgREST.
-    const schemaGrants = [...forwardCode.matchAll(/\b(GRANT|REVOKE)\s+[A-Z, ]+\s+ON\s+SCHEMA\s+(\w+)[^;]*;/gi)]
+    const schemaGrants = [...topologyBootstrapCode.matchAll(/\b(GRANT|REVOKE)\s+[A-Z, ]+\s+ON\s+SCHEMA\s+(\w+)[^;]*;/gi)]
     const outsidePublic = schemaGrants.filter((m) => m[2].toLowerCase() !== 'public')
     expect(outsidePublic).toHaveLength(1)
     expect(outsidePublic[0][0]).toMatch(/GRANT\s+USAGE\s+ON\s+SCHEMA\s+auth\s+TO\s+uellix_owner/i)
@@ -321,24 +334,26 @@ describe('stella_0004 rollback: authorisation and safety', () => {
     expect(unsafeSection).toMatch(/RAISE WARNING/i)
   })
 
-  it('drops every role it created', () => {
+  it('leaves topology removal exclusively to the 0001 rollback', () => {
+    expect(rollbackCode).not.toMatch(/DROP\s+ROLE\s+uellix_/i)
     for (const role of UELLIX_ROLES) {
-      expect(rollbackCode).toMatch(new RegExp(`DROP\\s+ROLE\\s+IF\\s+EXISTS\\s+${role}\\b`, 'i'))
+      expect(topologyRollbackCode).toMatch(new RegExp(`DROP\\s+ROLE\\s+${role}\\b`, 'i'))
     }
   })
 
-  it('reverses the one privilege granted outside public', () => {
-    expect(rollbackCode).toMatch(/REVOKE\s+USAGE\s+ON\s+SCHEMA\s+auth\s+FROM\s+uellix_owner/i)
+  it('keeps reversal of the topology-level auth USAGE in the 0001 rollback', () => {
+    expect(rollbackCode).not.toMatch(/REVOKE\s+USAGE\s+ON\s+SCHEMA\s+auth\s+FROM\s+uellix_owner/i)
+    expect(topologyRollbackCode).toMatch(/REVOKE\s+USAGE\s+ON\s+SCHEMA\s+auth\s+FROM\s+uellix_owner/i)
   })
 
-  it('reverses the GLOBAL default-privilege entries in their global form', () => {
+  it('keeps reversal of GLOBAL topology defaults in the 0001 rollback', () => {
     // A schema-scoped re-grant would leave the global row in place, and a role
     // with a surviving pg_default_acl row cannot be dropped.
     for (const role of ['uellix_owner', 'uellix_migrator']) {
-      expect(rollbackCode).toMatch(
+      expect(topologyRollbackCode).toMatch(
         new RegExp(`ALTER DEFAULT PRIVILEGES FOR ROLE ${role}\\s+GRANT EXECUTE ON FUNCTIONS TO PUBLIC`, 'i')
       )
-      expect(rollbackCode).toMatch(
+      expect(topologyRollbackCode).toMatch(
         new RegExp(`ALTER DEFAULT PRIVILEGES FOR ROLE ${role}\\s+GRANT USAGE\\s+ON TYPES\\s+TO PUBLIC`, 'i')
       )
     }

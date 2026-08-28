@@ -32,6 +32,35 @@ significa para este gate:
 **Esto no declara G2 aprobado ni ejecutado.** G2 formal sigue exigiendo el
 entorno remoto autorizado y las precondiciones humanas de este documento.
 
+## Operación local vigente R3.4 — cadena cerrada, no autorización remota
+
+MSC-07B.8 R3.4 sustituye el procedimiento operativo local anterior para la
+familia Stella, sin alterar su evidencia histórica. Sólo admite:
+
+```bash
+pnpm db:prepared:plan:local
+pnpm db:prepared:apply:local
+```
+
+El runner fija, sin argumentos de archivo ni SQL, el orden
+`0002 → 0002b → 0001 → 0003 → 0004 → 0005b → 0005 → 0005c`. Cada fase tiene
+su propia transacción. `0002`, `0002b`, `0001`, `0004` y `0005b` requieren
+superusuario local; `0003`, `0005` y `0005c` requieren la credencial
+gobernada `uellix_migrator` y `SET LOCAL ROLE uellix_owner`.
+
+`stella_0001_role_topology_bootstrap.sql` es la autoridad canónica de los
+roles y de las tres filas de `pg_auth_members`; verifica cardinalidad exacta,
+grantor, flags `INHERIT`/`SET`/`ADMIN` y la ausencia de una ruta `SET` al
+owner. `stella_0004_role_separation.sql` no crea ni altera roles ni
+membresías: verifica esa topología y reconcilia exclusivamente objetos,
+ownership, ACL y RLS. El rollback de `0001` es el único que puede eliminar
+roles; el de `0004` deja la topología intacta.
+
+Esto es una ruta **local** y no concede autoridad para staging hosted, SQL
+Editor, `psql`, `supabase db execute`, despliegue ni modificación remota. El
+bootstrap hosted sigue separado porque su modelo de privilegios gestionado es
+distinto.
+
 ## Alcance
 
 Aplicar (y saber revertir) contra **staging** — nunca producción directamente:
@@ -40,6 +69,7 @@ Aplicar (y saber revertir) contra **staging** — nunca producción directamente
 |-------|--------|----------|----------|
 | 1 | `db/prepared/stella_0002_interactions_hardening.sql` | `db/prepared/stella_0002_rollback.sql` | Trigger append-only en `stella_interactions` + revoca `UPDATE/DELETE` de `authenticated` (bug de `0033:50`) + reconcilia el CHECK de `stella_role` al set de 6 roles |
 | 1b | `db/prepared/stella_0002b_append_only_truncate_hardening.sql` | `db/prepared/stella_0002b_rollback.sql` — **deliberadamente NO reversible** | Cierra el hueco de `TRUNCATE` en las **cuatro** tablas append-only: revoca `TRUNCATE/REFERENCES/TRIGGER/MAINTAIN` de `authenticated` y además `UPDATE/DELETE` de `service_role`, y añade 4 triggers `BEFORE TRUNCATE FOR EACH STATEMENT` (única capa que alcanza al **owner**) |
+| 1c | `db/prepared/stella_0001_role_topology_bootstrap.sql` | `db/prepared/stella_0001_role_topology_bootstrap_rollback.sql` | Fase administrativa local: única autoridad de roles y membresías exactas; no tiene sustituto hosted |
 | 2 | `db/prepared/stella_0003_suggestion_decisions.sql` | `db/prepared/stella_0003_rollback.sql` | Crea `stella_suggestion_decisions` con dueño `uellix_owner`, writer NOLOGIN, ACL directa mínima y RLS SELECT + INSERT `TO uellix_app` ligado a organización y actor; conserva sus 2 triggers append-only |
 | 3 | `db/prepared/grounding_0001_evidence_chunks.sql` | `db/prepared/grounding_0001_rollback.sql` | Ver addendum dedicado: `docs/ops/gates/G2_PACKAGE_GROUNDING_ADDENDUM.md` (tiene precondiciones propias: pgvector + decisión G5 P3) |
 | — | `db/prepared/stella_0004_role_separation.sql` | `db/prepared/stella_0004_rollback.sql` | **FUERA DEL ALCANCE DE G2 REMOTO POR AHORA** — ver la sección siguiente |
@@ -155,23 +185,25 @@ versión. Nada de este documento autoriza DDL remoto por sí mismo.
 > y `supabase db execute` no establecen la identidad gobernada y no sustituyen
 > el wrapper.
 
-`stella_0003` R3.2 sólo puede ejecutarse con el wrapper de migración gobernado,
-que autentica como `uellix_migrator`, inicia la transacción y llega a
-`uellix_owner` con `SET LOCAL ROLE`. `psql`, SQL Editor y `supabase db execute`
-no son vías equivalentes ni pueden sustituir ese contrato. Este cambio no
-autoriza ningún destino remoto; cuando exista autorización explícita del gate,
-la ejecución debe usar el wrapper aprobado para ese destino y conservar el
-registro de hash, identidad y las verificaciones de catálogo.
+La cadena R3.4 sólo puede ejecutarse con el runner de manifiesto cerrado. Para
+las fases migrator autentica como `uellix_migrator`, inicia una transacción y
+llega a `uellix_owner` con `SET LOCAL ROLE`; para las fases administrativas
+verifica superusuario local. `psql`, SQL Editor y `supabase db execute` no son
+vías equivalentes ni pueden sustituir ese contrato. Este cambio no autoriza
+ningún destino remoto; cuando exista autorización explícita del gate, la
+ejecución debe usar el procedimiento aprobado para ese destino y conservar
+hash, identidad y verificaciones de catálogo.
 
-En local, la única forma documentada es:
+En local, las únicas formas documentadas son:
 
 ```bash
-pnpm db:prepared:apply:local stella_0003_suggestion_decisions.sql
-pnpm db:prepared:verify:local stella_0003_suggestion_decisions.sql
+pnpm db:prepared:plan:local
+pnpm db:prepared:apply:local
 ```
 
-La verificación usa una transacción con ROLLBACK. No sustituye la revalidación
-del destino remoto, que sigue siendo un control operativo independiente.
+El plan es de sólo lectura; cada fase aplicada usa una transacción propia. No
+sustituye la revalidación del destino remoto, que sigue siendo un control
+operativo independiente.
 
 ### Garantías de los scripts (endurecimiento pre-ejecución, 2026-07-31)
 

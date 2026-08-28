@@ -85,7 +85,7 @@ describe('stella_0005c — the prepared script and its rollback exist and match'
   it('requires the unmodified decision contract before and after stella_0005', () => {
     for (const script of [cutover, cutoverRollback, forward, rollback]) {
       expect(script).toMatch(/stella_suggestion_decisions_insert_member_or_admin/)
-      expect(script).toMatch(/roles = '\{uellix_app\}'::name\[\]/)
+      expect(script).toMatch(/polroles = ARRAY\['uellix_app'::regrole::oid\]/)
       expect(script).toMatch(/app\.organization_id/)
       expect(script).toMatch(/current_user_org_ids/)
       expect(script).toMatch(/auth\.uid\(\)/)
@@ -118,7 +118,7 @@ describe('stella_0005c — the prepared script and its rollback exist and match'
     expect(rollback).toContain('actor_user_id IS NULL OR actor_user_id = auth.uid()')
     expect(rollback).not.toMatch(/DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin/)
     expect(rollback).not.toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin/)
-    expect(rollback).toMatch(/roles = '\{uellix_app\}'::name\[\]/)
+    expect(rollback).toMatch(/polroles = ARRAY\['uellix_app'::regrole::oid\]/)
     expect(rollback).toMatch(/app\.organization_id/)
   })
 })
