@@ -149,6 +149,67 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     ])
   })
 
+  it('applies the storage shim as the image superuser over the container-local socket, never as a Stella phase identity', () => {
+    const plan = executor.describeR3_5Pg17CertificationPlan()
+    const shim = plan.storageShimTransport
+
+    // 2: storage shim uses supabase_admin.
+    expect(shim.role).toBe('supabase_admin')
+    // 1: not the Stella-phase admin identity (and therefore not routed through applyAdminPhase,
+    // whose only session identity is `transport.adminSession`).
+    expect(shim.role).not.toBe(plan.transport.adminSession)
+    expect(plan.transport.adminSession).toBe('postgres')
+
+    // 3: no -h argument anywhere in the shim's argv (container-local Unix socket only).
+    expect(shim.args).not.toContain('-h')
+    expect(shim.args.join(' ')).not.toMatch(/127\.0\.0\.1|host\.docker\.internal|postgresql:\/\//i)
+
+    // 4: no password requirement — no PGPASSWORD/-e in argv, and declared as such.
+    expect(shim.passwordRequired).toBe(false)
+    expect(shim.args).not.toContain('-e')
+    expect(shim.args.join(' ')).not.toMatch(/PGPASSWORD/)
+    expect(shim.hostTcpFallback).toBe(false)
+
+    // 9: `docker exec` accepts no run-time port/mount surface at all — confirm the verb
+    // is `exec` (never `run`), and that no run-only flags leaked in regardless.
+    expect(shim.args[0]).toBe('exec')
+    expect(shim.args).not.toContain('-p')
+    expect(shim.args).not.toContain('--publish')
+    expect(shim.args).not.toContain('--mount')
+    expect(shim.args).not.toContain('--volume')
+    expect(shim.args).not.toContain('--network')
+    // The one `-v` present is psql's ON_ERROR_STOP variable flag, not docker's volume flag.
+    expect(shim.args[shim.args.indexOf('-v') + 1]).toBe('ON_ERROR_STOP=1')
+
+    // The shim runs against the one fixed certification container, nothing else.
+    expect(shim.args).toContain(R3_5_PG17_CERTIFICATION_CONTAINER)
+
+    // 6/5: not part of the module's exported surface — no caller can reach the shim
+    // helper, select its role, or substitute its SQL from outside the module.
+    expect(Object.keys(executor)).not.toContain('applyLabSuperuserStorageShim')
+
+    // 7/8/10: no other phase identity drifted, and supabase_admin appears nowhere in the
+    // normal Stella phase transport or transaction list — it cannot be selected for
+    // another phase.
+    expect(plan.transport).toEqual({
+      kind: 'private-container-local-psql',
+      adminSession: 'postgres',
+      migratorSession: 'uellix_migrator',
+      migratorCurrentUser: 'uellix_owner',
+      migratorRoleStatement: 'SET LOCAL ROLE uellix_owner;',
+      transactionPerPhase: true,
+      hostTcpFallback: false,
+    })
+    expect(plan.phaseTransactions).toEqual([
+      ['stella_0002_interactions_hardening.sql', 'postgres', 'postgres', null],
+      ['stella_0002b_append_only_truncate_hardening.sql', 'postgres', 'postgres', null],
+      ['stella_0001_role_topology_bootstrap.sql', 'postgres', 'postgres', null],
+      ['stella_0003_suggestion_decisions.sql', 'uellix_migrator', 'uellix_owner', 'SET LOCAL ROLE uellix_owner;'],
+      ['stella_0004_role_separation.sql', 'postgres', 'postgres', null],
+    ])
+    expect(plan.phaseTransactions.flat()).not.toContain('supabase_admin')
+  })
+
   it('contains the whole fixed R8 matrix and exposes no generic Docker, psql, or file executor', () => {
     expect(executor.R3_5_PG17_CERTIFICATION_MATRIX_STEPS).toEqual([
       'pg17-supabase-surface',

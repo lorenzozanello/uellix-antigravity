@@ -37,6 +37,13 @@ const MIGRATOR_ROLE = 'uellix_migrator'
 const OWNER_ROLE = 'uellix_owner'
 const APP_ROLE = 'uellix_app'
 const INTERNAL_POSTGRES_HOST = '127.0.0.1'
+/**
+ * Container-local superuser identity for exactly one operation: applying the
+ * certification substrate's storage shim. Not part of the ADMIN_ROLE /
+ * MIGRATOR_ROLE / APP_ROLE union that every Stella package phase uses, and
+ * never exposed as a caller-selectable role — see applyLabSuperuserStorageShim.
+ */
+const LAB_SUPERUSER_ROLE = 'supabase_admin'
 const MATRIX_ERROR = 'R3.5 PG17 certification matrix assertion failed'
 
 type DockerCommandKind =
@@ -157,6 +164,17 @@ export function describeR3_5Pg17CertificationPlan() {
       migratorRoleStatement: `SET LOCAL ROLE ${OWNER_ROLE};`,
       transactionPerPhase: true,
       hostTcpFallback: false,
+    }),
+    /**
+     * The one exception to `transport` above: the storage shim runs before
+     * any Stella phase, as the image's real superuser, never as ADMIN_ROLE.
+     */
+    storageShimTransport: Object.freeze({
+      kind: 'container-local-superuser-psql',
+      role: LAB_SUPERUSER_ROLE,
+      args: STORAGE_SHIM_TRANSPORT_ARGS,
+      hostTcpFallback: false,
+      passwordRequired: false,
     }),
     phaseTransactions: Object.freeze(
       R3_5_PG17_CERTIFICATION_PHASES.map((phase) => [
@@ -383,6 +401,49 @@ function applyAdminPhase(source: string, postgresPassword: string, step: string)
   assertPsqlSuccess(runContainerPsql(ADMIN_ROLE, postgresPassword, adminIdentitySql(source)), step)
 }
 
+/**
+ * The exact, fixed docker/psql argv used to apply STORAGE_SHIM_SQL as the
+ * container's actual superuser: no `-h` (so psql falls back to the
+ * container-local Unix socket instead of a TCP route), and therefore no
+ * password. Exported to the static plan below so the live executor and the
+ * audited description cannot drift apart.
+ */
+const STORAGE_SHIM_TRANSPORT_ARGS: readonly string[] = Object.freeze([
+  'exec',
+  '-i',
+  R3_5_PG17_CERTIFICATION_CONTAINER,
+  'psql',
+  '-X',
+  '-U',
+  LAB_SUPERUSER_ROLE,
+  '-d',
+  DATABASE_NAME,
+  '-v',
+  'ON_ERROR_STOP=1',
+  '-1',
+  '-f',
+  '-',
+])
+
+/**
+ * Applies the certification substrate's storage shim as the image's actual
+ * superuser, over the container-local Unix socket — the identity and
+ * transport PG176 already uses for this exact SQL (scripts/pg176-certify.ts).
+ *
+ * `applyAdminPhase` cannot be reused here: schema `storage` belongs to
+ * `supabase_admin`, not to `postgres` (ADMIN_ROLE), and `adminIdentitySql`'s
+ * own guard requires `session_user = 'postgres'`, so it would refuse a
+ * `supabase_admin` session before ever reaching the shim's CREATE TABLE.
+ *
+ * Deliberately not a generic executor: it takes no parameters. The SQL, role,
+ * container, database, and connection route are all fixed — only
+ * STORAGE_SHIM_SQL, applied exactly once against the fixed certification
+ * container, over the local socket (no -h, no password).
+ */
+function applyLabSuperuserStorageShim(): void {
+  assertPsqlSuccess(runDocker(STORAGE_SHIM_TRANSPORT_ARGS, STORAGE_SHIM_SQL), 'storage shim')
+}
+
 function applyMigratorPhase(source: string, migratorPassword: string, step: string): void {
   assertPsqlSuccess(runContainerPsql(MIGRATOR_ROLE, migratorPassword, migratorIdentitySql(source)), step)
 }
@@ -564,7 +625,7 @@ function executeFixedCertification(): void {
     created = true
     waitForServingPostgres(postgresPassword)
     verifyPg17SupabaseSurface(postgresPassword)
-    applyAdminPhase(STORAGE_SHIM_SQL, postgresPassword, 'storage shim')
+    applyLabSuperuserStorageShim()
     applyBaseline(postgresPassword)
 
     const [firstAdmin, secondAdmin, topology, decision, separation] = R3_5_PG17_CERTIFICATION_PHASES
