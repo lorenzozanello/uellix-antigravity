@@ -309,17 +309,72 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     })
 
     it('rejects a missing OID 10 row (empty scalar, as psql emits for an all-NULL concatenation)', () => {
-      expect(() => assertObserved('')).toThrow(/OID 10/)
+      expect(() => assertObserved('')).toThrow(/exactly 4 pipe-delimited fields/)
     })
 
     it('rejects a missing installer row (short, pipe-delimited but incomplete)', () => {
       expect(() => assertObserved(['supabase_admin', '1'].join('|'))).toThrow(
-        /non-superuser CREATEROLE role/,
+        /exactly 4 pipe-delimited fields/,
       )
     })
 
     it('rejects malformed preflight output that is not pipe-delimited at all', () => {
-      expect(() => assertObserved('ERROR: relation "pg_roles" does not exist')).toThrow(/OID 10/)
+      expect(() => assertObserved('ERROR: relation "pg_roles" does not exist')).toThrow(
+        /exactly 4 pipe-delimited fields/,
+      )
+    })
+
+    // F-01 regression: MSC-07B.8-R8R found that `observed.split('|')` destructured into exactly
+    // four bindings without checking length, so an observation with extra fields was silently
+    // truncated instead of rejected. These cases pin exact-cardinality enforcement directly
+    // against the production assertion function — not a reimplementation of the parser.
+    describe('F-01: exact four-field cardinality (MSC-07B.8-R8R)', () => {
+      it('rejects an extra trailing field', () => {
+        expect(() => assertObserved('supabase_admin|1|0|1|EXTRA')).toThrow(
+          /exactly 4 pipe-delimited fields/,
+        )
+      })
+
+      it('rejects an extra leading field', () => {
+        expect(() => assertObserved('EXTRA|supabase_admin|1|0|1')).toThrow(
+          /exactly 4 pipe-delimited fields/,
+        )
+      })
+
+      it('rejects a short observation missing the trailing field', () => {
+        expect(() => assertObserved('supabase_admin|1|0')).toThrow(
+          /exactly 4 pipe-delimited fields/,
+        )
+      })
+
+      it('rejects multiple extra fields', () => {
+        expect(() => assertObserved('supabase_admin|1|0|1|0|1')).toThrow(
+          /exactly 4 pipe-delimited fields/,
+        )
+      })
+
+      it('rejects empty output', () => {
+        expect(() => assertObserved('')).toThrow(/exactly 4 pipe-delimited fields/)
+      })
+
+      it('rejects an extra row glued on via an embedded newline, even when it would otherwise split into exactly 4 fields', () => {
+        expect(() => assertObserved('supabase_admin|1|0|1\nsupabase_admin|1|0|1')).toThrow(
+          /embedded newline/,
+        )
+        expect(() => assertObserved('supabase_admin|1|0|1\r\nsupabase_admin|1|0|1')).toThrow(
+          /embedded newline/,
+        )
+      })
+
+      it('rejects a delimiter embedded inside a role-name-shaped field, which would otherwise pass as certified-looking values shifted into the wrong slots', () => {
+        expect(() => assertObserved('sup|abase_admin|1|0|1')).toThrow(
+          /exactly 4 pipe-delimited fields/,
+        )
+      })
+
+      it('does not silently truncate: the exact certified 4-field observation still passes', () => {
+        expect(() => assertObserved(CERTIFIED_OBSERVED)).not.toThrow()
+      })
     })
 
     it('the query text itself controls the boolean representation with CASE WHEN, never a bare ::text cast — the exact class of bug this regression closes', () => {

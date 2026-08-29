@@ -784,12 +784,28 @@ export function certifiedSubstratePreflightQuery(installerRole: string): string 
  * both the live executor and the test suite call it directly so a
  * declarative description of the contract can never silently diverge from
  * what actually gets enforced.
+ *
+ * Requires exactly four pipe-delimited fields before reading any of them —
+ * `String.prototype.split` on its own would silently truncate a fifth
+ * (or fewer than four) field via destructuring, accepting a malformed
+ * observation as long as the first four fields happened to be certified.
  */
 export function assertCertifiedSubstratePreflightObserved(
   observed: string,
   expected: { readonly oid10RoleName: string; readonly installerRole: string },
 ): void {
-  const [oid10Name, oid10Rolsuper, installerRolsuper, installerRolcreaterole] = observed.split('|')
+  if (observed.includes('\n') || observed.includes('\r')) {
+    throw new Error(
+      `${MATRIX_ERROR} at certified substrate preflight: expected exactly one output line, observed an embedded newline: ${JSON.stringify(observed)}`,
+    )
+  }
+  const fields = observed.split('|')
+  if (fields.length !== 4) {
+    throw new Error(
+      `${MATRIX_ERROR} at certified substrate preflight: expected exactly 4 pipe-delimited fields (role, OID-10 rolsuper, installer rolsuper, installer rolcreaterole), observed ${fields.length}: ${JSON.stringify(observed)}`,
+    )
+  }
+  const [oid10Name, oid10Rolsuper, installerRolsuper, installerRolcreaterole] = fields
   if (oid10Name !== expected.oid10RoleName || oid10Rolsuper !== CERTIFIED_SUBSTRATE_PREFLIGHT_TRUE) {
     throw new Error(
       `${MATRIX_ERROR} at certified substrate preflight: expected OID 10 to be the superuser role ${expected.oid10RoleName}, observed name=${oid10Name ?? '<null>'} rolsuper=${oid10Rolsuper ?? '<null>'}`,
