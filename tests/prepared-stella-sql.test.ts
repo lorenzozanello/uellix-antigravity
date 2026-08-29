@@ -3138,15 +3138,83 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R9A REFERENCES
     expect(revokes.map((m) => m[1]).sort()).toEqual(grants.map((m) => m[1]).sort())
   })
 
-  it('T10: the four REVOKEs occur strictly before every DROP ROLE uellix_owner', () => {
-    const lastRevokeIndex = Math.max(
-      ...FOUR_TARGETS.map((table) =>
-        rollbackRaw.indexOf(`REVOKE REFERENCES ON TABLE public.${table} FROM uellix_owner;`),
-      ),
+  it('T10: the four REVOKEs sit inside the section-0 DO block, strictly after the superuser/confirmation/role-existence guards and strictly before every later guard clause and DROP ROLE uellix_owner', () => {
+    // MSC-07B.8-R9C (R3.7.3-R1): the four REVOKEs were relocated from §1 into
+    // §0's DO block, after this package's own prerequisite checks but before
+    // any guard that scans for surviving external dependencies — so this
+    // package's own self-created REFERENCES authority can never mask a real
+    // one. This test binds to the real rollback SQL source, not to a copy.
+    const section0DoStart = rollbackRaw.indexOf('DO $$')
+    expect(section0DoStart).toBeGreaterThan(-1)
+    const section0DoEnd = rollbackRaw.indexOf('END $$;', section0DoStart)
+    expect(section0DoEnd).toBeGreaterThan(section0DoStart)
+
+    const superuserGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback must run through the local administrative superuser phase; session_user is %'",
     )
-    expect(lastRevokeIndex).toBeGreaterThan(-1)
+    const confirmationGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: missing transaction-local confirmation for this database.'",
+    )
+    const roleExistenceGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: governed role(s) already absent: %'",
+    )
+    const relationOwnerGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: surviving relation(s) depend on governed ownership: %'",
+    )
+    const functionOwnerGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: surviving function(s) depend on governed ownership: %'",
+    )
+    const schemaOwnerGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: surviving schema(s) depend on governed ownership: %'",
+    )
+    const pgShdependGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: pg_shdepend reports surviving dependency/dependencies: %'",
+    )
+    const membershipGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: non-canonical membership(s) still use the governed perimeter: %'",
+    )
     const dropOwnerIndex = rollbackRaw.indexOf('DROP ROLE uellix_owner;')
-    expect(dropOwnerIndex).toBeGreaterThan(lastRevokeIndex)
+
+    for (const index of [
+      superuserGuardIndex,
+      confirmationGuardIndex,
+      roleExistenceGuardIndex,
+      relationOwnerGuardIndex,
+      functionOwnerGuardIndex,
+      schemaOwnerGuardIndex,
+      pgShdependGuardIndex,
+      membershipGuardIndex,
+      dropOwnerIndex,
+    ]) {
+      expect(index).toBeGreaterThan(-1)
+    }
+
+    const revokeIndices = FOUR_TARGETS.map((table) =>
+      rollbackRaw.indexOf(`REVOKE REFERENCES ON TABLE public.${table} FROM uellix_owner;`),
+    )
+    for (const index of revokeIndices) expect(index).toBeGreaterThan(-1)
+    const firstRevokeIndex = Math.min(...revokeIndices)
+    const lastRevokeIndex = Math.max(...revokeIndices)
+
+    // Strictly inside the section-0 DO block — never spilled into §1.
+    expect(firstRevokeIndex).toBeGreaterThan(section0DoStart)
+    expect(lastRevokeIndex).toBeLessThan(section0DoEnd)
+
+    // After the superuser / confirmation / role-existence guards.
+    expect(firstRevokeIndex).toBeGreaterThan(superuserGuardIndex)
+    expect(firstRevokeIndex).toBeGreaterThan(confirmationGuardIndex)
+    expect(firstRevokeIndex).toBeGreaterThan(roleExistenceGuardIndex)
+
+    // Before every guard that scans for a surviving dependency.
+    expect(lastRevokeIndex).toBeLessThan(relationOwnerGuardIndex)
+    expect(lastRevokeIndex).toBeLessThan(functionOwnerGuardIndex)
+    expect(lastRevokeIndex).toBeLessThan(schemaOwnerGuardIndex)
+    expect(lastRevokeIndex).toBeLessThan(pgShdependGuardIndex)
+    expect(lastRevokeIndex).toBeLessThan(membershipGuardIndex)
+
+    // The pg_shdepend guard still runs before the roles are dropped.
+    expect(pgShdependGuardIndex).toBeLessThan(dropOwnerIndex)
+    expect(lastRevokeIndex).toBeLessThan(dropOwnerIndex)
   })
 
   it('T11: no unrelated rollback mutation changed — the confirmation gate, ownership/function/schema guards, canonical-membership guard and final role removal are byte-identical to the frozen parent', () => {
@@ -3158,32 +3226,52 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R9A REFERENCES
     expect(rollbackRaw).toMatch(/DROP ROLE uellix_auditor;\s*\nDROP ROLE uellix_app;\s*\nDROP ROLE uellix_writer;\s*\nDROP ROLE uellix_migrator;\s*\nDROP ROLE uellix_owner;/)
   })
 
-  it('T12: the pg_shdepend guard admits exactly the four expected REFERENCES rows on pg_class — never a blanket pg_class exclusion', () => {
-    // Quoted literals below are checked against the RAW source: the file's
-    // own stripCommentsAndStrings() helper blanks single-quoted content
-    // (needed elsewhere to ignore string data inside DO bodies), which would
-    // make every one of these regexes vacuously true against `rollbackCode`.
-    expect(rollbackRaw).toMatch(/classid NOT IN \('pg_auth_members'::regclass, 'pg_default_acl'::regclass, 'pg_namespace'::regclass\)/)
-    // The pg_class carve-out is a narrow AND NOT(...) clause scoped to
-    // uellix_owner and the exact four table oids — not an unconditional
-    // `'pg_class'::regclass` addition to the NOT IN(...) list above, which
-    // would blind the guard to any other unexpected table-level grant.
-    expect(rollbackRaw).not.toMatch(/classid NOT IN \([^)]*'pg_class'::regclass/)
-    expect(rollbackRaw).toMatch(/d\.classid = 'pg_class'::regclass/)
-    expect(rollbackRaw).toMatch(/d\.deptype = 'a'/)
-    expect(rollbackRaw).toMatch(/d\.refobjid = 'uellix_owner'::regrole/)
+  it('T12: exactly one REVOKE REFERENCES per target exists in the whole file, and none remain in §1 (the R9C relocation left no duplicate behind)', () => {
     for (const table of FOUR_TARGETS) {
-      expect(rollbackRaw).toMatch(new RegExp(`to_regclass\\('public\\.${table}'\\)`))
+      const re = new RegExp(`REVOKE\\s+REFERENCES\\s+ON\\s+TABLE\\s+public\\.${table}\\s+FROM\\s+uellix_owner\\s*;`, 'g')
+      const matches = [...rollbackRaw.matchAll(re)]
+      expect(matches, table).toHaveLength(1)
     }
+    const section1Start = rollbackRaw.indexOf('1. Remove only the topology authority this package created')
+    expect(section1Start).toBeGreaterThan(-1)
+    const section1 = rollbackRaw.slice(section1Start)
+    expect(section1).not.toMatch(
+      /REVOKE\s+REFERENCES\s+ON\s+TABLE\s+public\.(?:organizations|projects|users|stella_interactions)\s+FROM\s+uellix_owner/i,
+    )
   })
 
-  it('T13: exact byte-pinned hashes for the two repinned packages (frozen at this gate)', () => {
+  it('T13: the restored pg_shdepend guard carries the original R3.7.2 closed class allow-list byte-equivalent to commit 5388ffb, with NO pg_class carve-out of any shape', () => {
+    // Byte-equivalent to the pre-R9A predicate: exactly three excluded
+    // catalog classes, terminated directly by the guard's own closing
+    // semicolon — never chained with a further AND clause.
+    expect(rollbackRaw).toMatch(
+      /AND d\.classid NOT IN \('pg_auth_members'::regclass, 'pg_default_acl'::regclass, 'pg_namespace'::regclass\);/,
+    )
+    // No narrow, role/table-specific `AND NOT (d.classid = 'pg_class'...)` carve-out survives.
+    expect(rollbackRaw).not.toMatch(/AND NOT\s*\(\s*d\.classid = 'pg_class'::regclass/)
+    // No broadened, unconditional pg_class exclusion in the NOT IN(...) list either.
+    expect(rollbackRaw).not.toMatch(/classid NOT IN \([^)]*'pg_class'::regclass/)
+    // No executable reference to pg_class, objsubid, or a per-table to_regclass()
+    // lookup survives anywhere inside the pg_shdepend guard's FROM/WHERE clause.
+    const guardStart = rollbackRaw.indexOf('FROM pg_shdepend d')
+    const guardEnd = rollbackRaw.indexOf(
+      "RAISE EXCEPTION 'stella_0001 rollback REFUSED: pg_shdepend reports surviving dependency/dependencies: %', problem;",
+    )
+    expect(guardStart).toBeGreaterThan(-1)
+    expect(guardEnd).toBeGreaterThan(guardStart)
+    const guardBody = rollbackRaw.slice(guardStart, guardEnd)
+    expect(guardBody).not.toMatch(/pg_class/)
+    expect(guardBody).not.toMatch(/objsubid/)
+    expect(guardBody).not.toMatch(/to_regclass\(/)
+  })
+
+  it('T14: exact byte-pinned hashes for the two repinned packages (frozen at this gate)', () => {
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
     expect(sha256('stella_0001_role_topology_bootstrap.sql')).toBe(
       '58ed8550d16a9138f0bdd71e7d4ee0cbf54a2c5a6cb2afb2cb21e68498d4321a',
     )
     expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
-      '3503f02ac0ff76785ce2212bcfba28fe37575750415fadb15d5eefea985b825c',
+      'df1dbd6fac49224bea4bc88054b790e26eabf74cd10f460d61083719f5226e49',
     )
   })
 })

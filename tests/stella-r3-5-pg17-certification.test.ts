@@ -24,7 +24,7 @@ const EXPECTED_HASHES = {
   'stella_0001_role_topology_bootstrap.sql': '58ed8550d16a9138f0bdd71e7d4ee0cbf54a2c5a6cb2afb2cb21e68498d4321a',
   'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
   'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
-  'stella_0001_role_topology_bootstrap_rollback.sql': '3503f02ac0ff76785ce2212bcfba28fe37575750415fadb15d5eefea985b825c',
+  'stella_0001_role_topology_bootstrap_rollback.sql': 'df1dbd6fac49224bea4bc88054b790e26eabf74cd10f460d61083719f5226e49',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
 } as const
 
