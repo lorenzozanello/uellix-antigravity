@@ -54,9 +54,9 @@ export const R3_5_PG17_CERTIFICATION_PHASES: readonly R3_4LocalPhase[] = Object.
 export const R3_5_PG17_CERTIFICATION_PACKAGE_HASHES = Object.freeze({
   'stella_0002_interactions_hardening.sql': 'bdf5f8dc925b3ed5643262f83efc52ea2d11233f5fae05f1e948b8cf424858cd',
   'stella_0002b_append_only_truncate_hardening.sql': '781e8b58fe2f512c4214016421199c853f9ed840fde0f27f701ddf247aace550',
-  'stella_0001_role_topology_bootstrap.sql': '967a5dc8d5a35bf28a602346f6d69d63829210da5956ca4a993b00ccb4dbb32f',
-  'stella_0003_suggestion_decisions.sql': 'b9857837a9b7b39e32e23ec4bcf9e1153eff397b6a1c031ba51e7a10476a8c0f',
-  'stella_0004_role_separation.sql': 'e00987bf4620939af28d75e0aed0ee584430f602f7aaffdd33752c990da02aa1',
+  'stella_0001_role_topology_bootstrap.sql': '3f7fcfe862fb689d2b2ff96d8c7ae4a75fc7304df825eac1cbf813ee13d3512b',
+  'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
+  'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
   'stella_0001_role_topology_bootstrap_rollback.sql':
     'f2c3b59e2e37515ad85ee7f93f8ada8e34666a363c40746b2624a11f5ede7e9e',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',

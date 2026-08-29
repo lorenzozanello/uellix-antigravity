@@ -19,17 +19,28 @@ function executable(sql: string): string {
 type MembershipRow = {
   memberName: string
   roleName: string
-  grantorName: string
+  grantorOid: number
   inheritOption: boolean
   setOption: boolean
   adminOption: boolean
 }
 
+/**
+ * The canonical grantor is the PostgreSQL BOOTSTRAP SUPERUSER, asserted by its
+ * fixed oid (10) — never by a role name. PG17 attributes a membership granted
+ * by a raw superuser session to that oid regardless of what the superuser is
+ * called on a given cluster (measured directly: MSC-07B.8-R8J).
+ */
+const BOOTSTRAP_SUPERUSER_OID = 10
+
+/** The real, measured non-bootstrap oid of `postgres` on the certified image — used only to simulate a wrong-grantor attack row. */
+const MEASURED_NON_BOOTSTRAP_POSTGRES_OID = 16384
+
 const CANONICAL_MEMBERSHIPS: readonly MembershipRow[] = [
   {
     memberName: 'uellix_migrator',
     roleName: 'uellix_owner',
-    grantorName: 'postgres',
+    grantorOid: BOOTSTRAP_SUPERUSER_OID,
     inheritOption: false,
     setOption: true,
     adminOption: false,
@@ -37,7 +48,7 @@ const CANONICAL_MEMBERSHIPS: readonly MembershipRow[] = [
   {
     memberName: 'uellix_app',
     roleName: 'uellix_writer',
-    grantorName: 'postgres',
+    grantorOid: BOOTSTRAP_SUPERUSER_OID,
     inheritOption: true,
     setOption: false,
     adminOption: false,
@@ -45,7 +56,7 @@ const CANONICAL_MEMBERSHIPS: readonly MembershipRow[] = [
   {
     memberName: 'postgres',
     roleName: 'uellix_writer',
-    grantorName: 'postgres',
+    grantorOid: BOOTSTRAP_SUPERUSER_OID,
     inheritOption: true,
     setOption: false,
     adminOption: false,
@@ -63,7 +74,7 @@ function matchesCanonicalTuple(row: MembershipRow, expected: MembershipRow): boo
   return (
     row.memberName === expected.memberName &&
     row.roleName === expected.roleName &&
-    row.grantorName === expected.grantorName &&
+    row.grantorOid === expected.grantorOid &&
     row.inheritOption === expected.inheritOption &&
     row.setOption === expected.setOption &&
     row.adminOption === expected.adminOption
@@ -81,14 +92,30 @@ function exactInventoryAccepts(rows: readonly MembershipRow[]): boolean {
   )
 }
 
-function expectProductionVerifierToCompareGrantor(sql: string): void {
+/**
+ * Every production verifier must compare grantor by the fixed bootstrap
+ * oid (10) — either the literal `10::oid` (0001, 0004) or the `bootstrap_oid`
+ * variable that 0003 resolves to that same literal — and must never compare
+ * by a resolved grantor role NAME. `grantor_name` may still appear as
+ * audit/diagnostic text (e.g. inside string_agg), but never as one side of an
+ * equality test.
+ */
+function expectProductionVerifierToCompareGrantorByOid(sql: string): void {
   expect(sql).toMatch(
-    /expected\(member_name, role_name, grantor_name, inherit_option, set_option, admin_option\)/,
+    /expected\(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option\)/,
   )
-  expect(sql).toMatch(/\('uellix_migrator', 'uellix_owner', 'postgres', false, true, false\)/)
-  expect(sql).toMatch(/\('uellix_app', 'uellix_writer', 'postgres', true, false, false\)/)
-  expect(sql).toMatch(/\('postgres', 'uellix_writer', 'postgres', true, false, false\)/)
-  expect(sql).toMatch(/(?:a\.grantor_name = e\.grantor_name|e\.grantor_name = a\.grantor_name)/)
+  expect(sql).toMatch(/\('uellix_migrator', 'uellix_owner', (?:10::oid|bootstrap_oid), false, true, false\)/)
+  expect(sql).toMatch(/\('uellix_app', 'uellix_writer', (?:10::oid|bootstrap_oid), true, false, false\)/)
+  expect(sql).toMatch(/\('postgres', 'uellix_writer', (?:10::oid|bootstrap_oid), true, false, false\)/)
+  expect(sql).toMatch(/(?:a\.grantor_oid = e\.grantor_oid|e\.grantor_oid = a\.grantor_oid|a\.grantor = e\.grantor_oid)/)
+
+  // Regression guard (T15): grantor_name must never be one side of an equality
+  // test — it is display-only. A prior defect class bound the bootstrap
+  // superuser to the literal role name 'postgres', which happens to be wrong
+  // on the certified substrate (measured bootstrap oid 10 is `supabase_admin`
+  // there; `postgres` is a distinct, non-superuser, later-created role).
+  expect(sql).not.toMatch(/grantor_name\s*=(?!=)/)
+  expect(sql).not.toMatch(/=\s*[a-z]+\.grantor_name\b/)
 }
 
 describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
@@ -99,7 +126,7 @@ describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
   it('defines precisely the three canonical membership edges and their option flags', () => {
     const sql = executable(bootstrap())
 
-    expectProductionVerifierToCompareGrantor(sql)
+    expectProductionVerifierToCompareGrantorByOid(sql)
   })
 
   it('rejects wrong-grantor, duplicate-grantor, ADMIN and SET attacks against the full canonical tuple', () => {
@@ -110,27 +137,29 @@ describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
     expect(
       exactInventoryAccepts([
         ...canonicalRows.filter((row) => row !== migratorOwner),
-        { ...migratorOwner, grantorName: 'supabase_admin' },
+        { ...migratorOwner, grantorOid: MEASURED_NON_BOOTSTRAP_POSTGRES_OID },
       ]),
     ).toBe(false)
-    expect(exactInventoryAccepts([...canonicalRows, { ...appWriter, grantorName: 'supabase_admin' }])).toBe(false)
     expect(
-      exactInventoryAccepts([
-        ...canonicalRows,
-        { ...appWriter, grantorName: 'supabase_admin', adminOption: true },
-      ]),
+      exactInventoryAccepts([...canonicalRows, { ...appWriter, grantorOid: MEASURED_NON_BOOTSTRAP_POSTGRES_OID }]),
     ).toBe(false)
     expect(
       exactInventoryAccepts([
         ...canonicalRows,
-        { ...appWriter, grantorName: 'supabase_admin', setOption: true },
+        { ...appWriter, grantorOid: MEASURED_NON_BOOTSTRAP_POSTGRES_OID, adminOption: true },
+      ]),
+    ).toBe(false)
+    expect(
+      exactInventoryAccepts([
+        ...canonicalRows,
+        { ...appWriter, grantorOid: MEASURED_NON_BOOTSTRAP_POSTGRES_OID, setOption: true },
       ]),
     ).toBe(false)
   })
 
-  it('binds every production verifier to the same full grantor-aware tuple', () => {
+  it('binds every production verifier to the same full grantor-aware tuple, compared by oid', () => {
     for (const sql of [executable(bootstrap()), executable(decisions()), executable(separation())]) {
-      expectProductionVerifierToCompareGrantor(sql)
+      expectProductionVerifierToCompareGrantorByOid(sql)
       expect(sql).toMatch(/count\(\*\)[\s\S]*?<> 1/i)
     }
   })
@@ -183,7 +212,7 @@ describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
     const disjointMembership: MembershipRow = {
       memberName: 'unrelated_uellix_reader',
       roleName: 'unrelated_uellix_reporting',
-      grantorName: 'postgres',
+      grantorOid: BOOTSTRAP_SUPERUSER_OID,
       inheritOption: true,
       setOption: false,
       adminOption: false,
@@ -193,5 +222,19 @@ describe('R3.4 controlled PostgreSQL 17 membership inventory', () => {
     expect(sql).toMatch(/m\.rolname IN \('uellix_app', 'uellix_writer', 'uellix_migrator'\)/)
     expect(sql).toMatch(/r\.rolname IN \('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator'\)/)
     expect(sql).not.toMatch(/m\.rolname LIKE 'uellix\\_%'/)
+  })
+
+  it('resolves the bootstrap superuser by fixed oid, never by a role-name lookup (regression: R3.5/R3.6 named it "postgres")', () => {
+    for (const sql of [bootstrap(), decisions(), separation()]) {
+      expect(sql).not.toMatch(/bootstrap_oid[\s\S]{0,80}FROM pg_roles WHERE rolname\s*=\s*'postgres'/)
+      expect(sql).not.toMatch(/SELECT oid INTO bootstrap_oid FROM pg_roles WHERE rolname = 'postgres'/)
+    }
+    // 0003 declares and resolves bootstrap_oid explicitly to the fixed literal.
+    expect(decisions()).toMatch(/bootstrap_oid\s*:=\s*10::oid/)
+    // 0001 and 0004 assert the executor is a raw superuser session with no
+    // specific name required — the literal 'supabase_admin' executor guard
+    // this regression test exists to keep out.
+    expect(bootstrap()).not.toMatch(/session_user\s*<>\s*'supabase_admin'/)
+    expect(bootstrap()).toMatch(/session_user\s*<>\s*current_user/)
   })
 })

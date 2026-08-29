@@ -160,15 +160,34 @@ Leyenda: `S`=SELECT `I`=INSERT `U`=UPDATE `D`=DELETE `T`=TRUNCATE
 
 | Miembro | De | Grantor canónico | `ADMIN` | `INHERIT` | `SET` |
 |---|---|---|---|---|---|
-| `uellix_migrator` | `uellix_owner` | `postgres` | no | **no** | **sí** |
-| `uellix_app` | `uellix_writer` | `postgres` | no | **sí** | **no** |
-| **`postgres`** | **`uellix_writer`** | **`postgres`** | no | **sí** | **no** |
+| `uellix_migrator` | `uellix_owner` | superusuario **bootstrap** (`oid=10`) | no | **no** | **sí** |
+| `uellix_app` | `uellix_writer` | superusuario **bootstrap** (`oid=10`) | no | **sí** | **no** |
+| **`postgres`** | **`uellix_writer`** | superusuario **bootstrap** (`oid=10`) | no | **sí** | **no** |
 
-El executor fijo de `0001` sigue siendo `supabase_admin`, pero PostgreSQL 17
-atribuye una membresía concedida por un superusuario al superusuario bootstrap
-`postgres`. Por eso el inventario exige la tupla completa —incluido ese
-grantor nominal— exactamente una vez y rechaza un segundo grantor, `ADMIN` o
-flags distintos.
+El grantor canónico es el **superusuario bootstrap de PostgreSQL**, afirmado
+por su `oid` fijo (10) — nunca por un nombre de rol. PostgreSQL 17 atribuye una
+membresía concedida por una sesión superusuario cruda a ese `oid` fijo, sin
+importar cómo se llame el superusuario en un clúster concreto. El nombre
+resuelto es metadato de auditoría únicamente y jamás la autoridad de igualdad:
+`0001`/`0003`/`0004` comparan `pg_auth_members.grantor = 10::oid` y solo
+resuelven el nombre para los mensajes de `RAISE`/`RAISE NOTICE`.
+
+En la imagen certificada (`public.ecr.aws/supabase/postgres:17.6.1.143`) ese
+`oid=10` resulta llamarse `supabase_admin` — medido en vivo en
+MSC-07B.8-R8J — y `postgres` es un rol distinto, creado después, **sin**
+superusuario (`oid=16384`, `rolsuper=false`, `rolcreaterole=true`). Ese nombre
+es un hecho sobre el sustrato, nunca autoridad del paquete: `stella_0001`
+exige únicamente que el ejecutor sea una sesión superusuario cruda
+(`session_user = current_user`, `rolsuper`), sin fijar ningún nombre. El
+miembro `postgres` de la tercera fila es un rol literal distinto del grantor y
+no cambia: sigue siendo el runtime heredado que necesita `uellix_writer`.
+
+Por eso el inventario exige la tupla completa —incluido ese `oid` de
+grantor— exactamente una vez y rechaza un segundo grantor, `ADMIN` o flags
+distintos. Los paquetes hosted (`stella_hosted_0001`, etc.) permanecen un
+modelo de confianza separado: allí el ejecutor es `postgres` (CREATEROLE, no
+superusuario) y PostgreSQL atribuye la membresía a ese ejecutor, no al
+`oid=10` — ver `docs/ops/DATABASE_ROLE_MODEL.md` §5.2 más abajo.
 
 **Son tres, no dos, y la tercera es transitoria pero portante.** `db/client.ts`
 sigue conectando como `postgres`, y `ALTER TABLE … OWNER TO` **no** deja atrás

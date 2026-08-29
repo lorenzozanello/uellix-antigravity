@@ -139,13 +139,16 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 precondition failed: R3.4 role topology is missing governed role(s): %. Apply stella_0001 first.', drift;
   END IF;
 
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  -- Canonical grantor is the PostgreSQL BOOTSTRAP SUPERUSER, asserted by its
+  -- fixed oid (10) rather than any role name — see stella_0001 §2.
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   ), actual AS (
-    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+    SELECT m.rolname AS member_name, r.rolname AS role_name, a.grantor AS grantor_oid,
+           g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
@@ -154,13 +157,13 @@ BEGIN
     WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
        OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
   )
-  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name, ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name || '(oid=' || a.grantor_oid || ')', ', ' ORDER BY a.member_name, a.role_name, a.grantor_oid)
     INTO drift
   FROM actual a
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
-      AND e.grantor_name = a.grantor_name
+      AND e.grantor_oid = a.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
@@ -169,11 +172,11 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 precondition failed: unexpected relevant membership row (wrong grantor, flags or ADMIN escalation): %', drift;
   END IF;
 
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO drift
@@ -182,9 +185,8 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
-    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name AND r.rolname = e.role_name
-      AND g.rolname = e.grantor_name
+      AND a.grantor = e.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
@@ -857,14 +859,16 @@ BEGIN
   END IF;
 
   -- 9.4 Membership inventory: exactly three full PostgreSQL 17 tuples,
-  -- including the named grantor, with one row per canonical pair.
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  -- including the bootstrap-superuser grantor (asserted by oid 10, never by
+  -- role name — see stella_0001 §2), with one row per canonical pair.
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   ), actual AS (
-    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+    SELECT m.rolname AS member_name, r.rolname AS role_name, a.grantor AS grantor_oid,
+           g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
@@ -873,13 +877,13 @@ BEGIN
     WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
        OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
   )
-  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name, ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name || '(oid=' || a.grantor_oid || ')', ', ' ORDER BY a.member_name, a.role_name, a.grantor_oid)
     INTO problem
   FROM actual a
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name AND e.role_name = a.role_name
-      AND e.grantor_name = a.grantor_name
+      AND e.grantor_oid = a.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
@@ -888,11 +892,11 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 FAILED: unexpected relevant membership row (wrong grantor, membership flags or ADMIN escalation): %', problem;
   END IF;
 
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO problem
@@ -901,9 +905,8 @@ BEGIN
     SELECT count(*) FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
-    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name AND r.rolname = e.role_name
-      AND g.rolname = e.grantor_name
+      AND a.grantor = e.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option

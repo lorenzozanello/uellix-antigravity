@@ -25,9 +25,9 @@ BEGIN
       current_setting('server_version');
   END IF;
 
-  IF session_user <> 'supabase_admin' OR current_user <> 'supabase_admin'
+  IF session_user <> current_user
      OR NOT (SELECT rolsuper FROM pg_roles WHERE rolname = session_user) THEN
-    RAISE EXCEPTION 'stella_0001 must run through the fixed local supabase_admin administrative superuser phase; session_user is %, current_user is %',
+    RAISE EXCEPTION 'stella_0001 must run through a raw local administrative superuser session, with no SET ROLE in effect; session_user is %, current_user is %',
       session_user, current_user;
   END IF;
 
@@ -91,17 +91,24 @@ COMMENT ON ROLE uellix_auditor IS
 -- Refuse an unexpected existing row before reconciliation. A later REVOKE is
 -- not evidence that another authority's row disappeared, so it must never
 -- turn an unauthorised grantor into a false-green canonical inventory.
+--
+-- The canonical grantor is the PostgreSQL BOOTSTRAP SUPERUSER, asserted by its
+-- fixed oid (10) rather than any role name: PG17 attributes a membership
+-- granted by a raw superuser session to that oid regardless of what the
+-- superuser happens to be called on a given cluster. The resolved name below
+-- is audit text only and never becomes the equality authority.
 DO $$
 DECLARE
   problem text;
 BEGIN
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   ), actual AS (
-    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+    SELECT m.rolname AS member_name, r.rolname AS role_name, a.grantor AS grantor_oid,
+           g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
@@ -110,15 +117,15 @@ BEGIN
     WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
        OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
   )
-  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name,
-                    ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name || '(oid=' || a.grantor_oid || ')',
+                    ', ' ORDER BY a.member_name, a.role_name, a.grantor_oid)
     INTO problem
   FROM actual a
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name
       AND e.role_name = a.role_name
-      AND e.grantor_name = a.grantor_name
+      AND e.grantor_oid = a.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
@@ -206,14 +213,16 @@ BEGIN
 
   -- The relevant perimeter is deliberately role-identity based. A disjoint
   -- membership is outside this controlled inventory and is not rejected merely
-  -- because its name happens to contain "uellix".
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  -- because its name happens to contain "uellix". Grantor is compared by the
+  -- fixed bootstrap-superuser oid (10), never by role name — see §2.
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   ), actual AS (
-    SELECT m.rolname AS member_name, r.rolname AS role_name, g.rolname AS grantor_name,
+    SELECT m.rolname AS member_name, r.rolname AS role_name, a.grantor AS grantor_oid,
+           g.rolname AS grantor_name,
            a.inherit_option, a.set_option, a.admin_option
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
@@ -222,16 +231,16 @@ BEGIN
     WHERE m.rolname IN ('uellix_app', 'uellix_writer', 'uellix_migrator')
        OR r.rolname IN ('uellix_app', 'uellix_writer', 'uellix_owner', 'uellix_migrator')
   )
-  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name ||
+  SELECT string_agg(a.member_name || '->' || a.role_name || ' granted-by=' || a.grantor_name || '(oid=' || a.grantor_oid || ')' ||
                     '(inherit=' || a.inherit_option::text || ',set=' || a.set_option::text ||
-                    ',admin=' || a.admin_option::text || ')', ', ' ORDER BY a.member_name, a.role_name, a.grantor_name)
+                    ',admin=' || a.admin_option::text || ')', ', ' ORDER BY a.member_name, a.role_name, a.grantor_oid)
     INTO problem
   FROM actual a
   WHERE NOT EXISTS (
     SELECT 1 FROM expected e
     WHERE e.member_name = a.member_name
       AND e.role_name = a.role_name
-      AND e.grantor_name = a.grantor_name
+      AND e.grantor_oid = a.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
@@ -240,11 +249,11 @@ BEGIN
     RAISE EXCEPTION 'stella_0001 FAILED: unexpected relevant membership row (including wrong grantor, membership flags or ADMIN escalation): %', problem;
   END IF;
 
-  WITH expected(member_name, role_name, grantor_name, inherit_option, set_option, admin_option) AS (
+  WITH expected(member_name, role_name, grantor_oid, inherit_option, set_option, admin_option) AS (
     VALUES
-      ('uellix_migrator', 'uellix_owner', 'postgres', false, true, false),
-      ('uellix_app', 'uellix_writer', 'postgres', true, false, false),
-      ('postgres', 'uellix_writer', 'postgres', true, false, false)
+      ('uellix_migrator', 'uellix_owner', 10::oid, false, true, false),
+      ('uellix_app', 'uellix_writer', 10::oid, true, false, false),
+      ('postgres', 'uellix_writer', 10::oid, true, false, false)
   )
   SELECT string_agg(e.member_name || '->' || e.role_name, ', ' ORDER BY e.member_name, e.role_name)
     INTO problem
@@ -254,10 +263,9 @@ BEGIN
     FROM pg_auth_members a
     JOIN pg_roles m ON m.oid = a.member
     JOIN pg_roles r ON r.oid = a.roleid
-    JOIN pg_roles g ON g.oid = a.grantor
     WHERE m.rolname = e.member_name
       AND r.rolname = e.role_name
-      AND g.rolname = e.grantor_name
+      AND a.grantor = e.grantor_oid
       AND a.inherit_option IS NOT DISTINCT FROM e.inherit_option
       AND a.set_option IS NOT DISTINCT FROM e.set_option
       AND a.admin_option IS NOT DISTINCT FROM e.admin_option
@@ -301,5 +309,6 @@ BEGIN
     RAISE EXCEPTION 'stella_0001 FAILED: global PUBLIC-suppression default privilege is absent for a governed creator role.';
   END IF;
 
-  RAISE NOTICE 'stella_0001: verification passed — five canonical role attributes, three exact controlled membership tuples including bootstrap grantor postgres, no second grantor row, no ADMIN escalation, no direct/transitive app SET path to owner, and only owner CREATE on public.';
+  RAISE NOTICE 'stella_0001: verification passed — five canonical role attributes, three exact controlled membership tuples including bootstrap grantor % (oid=10), no second grantor row, no ADMIN escalation, no direct/transitive app SET path to owner, and only owner CREATE on public.',
+    (SELECT rolname FROM pg_roles WHERE oid = 10);
 END $$;
