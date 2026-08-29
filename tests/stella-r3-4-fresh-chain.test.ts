@@ -82,6 +82,50 @@ describe('R3.4 fresh local prepared chain', () => {
     expect(files.every((file) => existsSync(path.join(PREPARED, file)))).toBe(true)
   })
 
+  it('MSC-07B.8-R9A: 0001 materializes the FK REFERENCES prerequisite before 0003, so 0003 no longer waits for 0004 ownership', () => {
+    const bootstrapIndex = R3_4_LOCAL_PHASES.findIndex(
+      (phase) => phase.file === 'stella_0001_role_topology_bootstrap.sql',
+    )
+    const decisionIndex = R3_4_LOCAL_PHASES.findIndex(
+      (phase) => phase.file === 'stella_0003_suggestion_decisions.sql',
+    )
+    const separationIndex = R3_4_LOCAL_PHASES.findIndex(
+      (phase) => phase.file === 'stella_0004_role_separation.sql',
+    )
+
+    // 0001 before 0003, and 0004 after 0003 — the fixed chain order is
+    // unchanged by this remediation.
+    expect(bootstrapIndex).toBeGreaterThanOrEqual(0)
+    expect(decisionIndex).toBeGreaterThan(bootstrapIndex)
+    expect(separationIndex).toBeGreaterThan(decisionIndex)
+
+    const bootstrap = read('stella_0001_role_topology_bootstrap.sql')
+    const decisions = read('stella_0003_suggestion_decisions.sql')
+
+    // 0001 materializes REFERENCES on all four FK targets before 0003 runs.
+    for (const table of ['organizations', 'projects', 'users', 'stella_interactions']) {
+      expect(bootstrap).toMatch(
+        new RegExp(`GRANT REFERENCES ON TABLE public\\.${table} TO uellix_owner;`),
+      )
+    }
+
+    // 0003 (current_user = uellix_owner) creates the dependent table's FKs
+    // against exactly those four targets.
+    expect(decisions).toMatch(/organization_id uuid NOT NULL REFERENCES public\.organizations\(id\)/)
+    expect(decisions).toMatch(/project_id uuid NOT NULL REFERENCES public\.projects\(id\)/)
+    expect(decisions).toMatch(/interaction_id uuid REFERENCES public\.stella_interactions\(id\)/)
+    expect(decisions).toMatch(/decided_by uuid NOT NULL REFERENCES public\.users\(id\)/)
+
+    // The fresh-chain cycle this remediation closes: 0003 no longer needs
+    // 0004's later ownership transfer to reach REFERENCES on these tables —
+    // 0003's own preflight never asserts uellix_owner ownership of any of
+    // the four FK targets (only of the table it is itself creating/altering).
+    const decisionOwnershipChecks = [...decisions.matchAll(/pg_get_userbyid\(relowner\)[\s\S]{0,80}/g)]
+    for (const check of decisionOwnershipChecks) {
+      expect(check[0]).not.toMatch(/organizations|projects|users|stella_interactions/)
+    }
+  })
+
   it('accepts only the fixed runner modes, never an SQL filename or SQL text', () => {
     expect(parseR3_4RunnerMode(['apply'])).toBe('apply')
     expect(parseR3_4RunnerMode(['plan'])).toBe('plan')

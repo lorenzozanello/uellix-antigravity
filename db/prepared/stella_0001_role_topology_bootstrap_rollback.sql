@@ -59,13 +59,30 @@ BEGIN
   -- ownership scan cannot see. The three catalog classes below are the exact
   -- bootstrap-owned memberships, defaults and schema privileges removed later
   -- in this same transaction; every other dependency is unsafe to guess.
+  --
+  -- The four REFERENCES grants this package's forward side materializes on
+  -- organizations/projects/users/stella_interactions are ALSO self-created
+  -- authority removed later in this same transaction, but they record under
+  -- classid=pg_class (table ACL), not one of the three classes above. Admit
+  -- exactly those four expected rows here — never a blanket pg_class
+  -- exclusion — so an unrelated, unexpected table-level grant to a governed
+  -- role is still caught.
   SELECT string_agg(pg_describe_object(d.classid, d.objid, d.objsubid), ', ' ORDER BY pg_describe_object(d.classid, d.objid, d.objsubid))
     INTO problem
   FROM pg_shdepend d
   WHERE d.refclassid = 'pg_authid'::regclass
     AND d.refobjid IN ('uellix_owner'::regrole, 'uellix_migrator'::regrole,
                        'uellix_app'::regrole, 'uellix_writer'::regrole, 'uellix_auditor'::regrole)
-    AND d.classid NOT IN ('pg_auth_members'::regclass, 'pg_default_acl'::regclass, 'pg_namespace'::regclass);
+    AND d.classid NOT IN ('pg_auth_members'::regclass, 'pg_default_acl'::regclass, 'pg_namespace'::regclass)
+    AND NOT (
+      d.classid = 'pg_class'::regclass
+      AND d.deptype = 'a'
+      AND d.refobjid = 'uellix_owner'::regrole
+      AND d.objid IN (
+        to_regclass('public.organizations'), to_regclass('public.projects'),
+        to_regclass('public.users'), to_regclass('public.stella_interactions')
+      )
+    );
   IF problem IS NOT NULL THEN
     RAISE EXCEPTION 'stella_0001 rollback REFUSED: pg_shdepend reports surviving dependency/dependencies: %', problem;
   END IF;
@@ -95,6 +112,14 @@ ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    GRANT EXECUTE ON FUNCTIONS TO 
 ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    GRANT USAGE ON TYPES     TO PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE uellix_migrator GRANT USAGE ON TYPES     TO PUBLIC;
+
+-- Exact inverse of the forward structural migration prerequisite: REFERENCES
+-- only, on exactly these four objects, removed before uellix_owner is
+-- dropped below.
+REVOKE REFERENCES ON TABLE public.organizations FROM uellix_owner;
+REVOKE REFERENCES ON TABLE public.projects FROM uellix_owner;
+REVOKE REFERENCES ON TABLE public.users FROM uellix_owner;
+REVOKE REFERENCES ON TABLE public.stella_interactions FROM uellix_owner;
 
 REVOKE uellix_owner FROM uellix_migrator;
 REVOKE uellix_writer FROM uellix_app;

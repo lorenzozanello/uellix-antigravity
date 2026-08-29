@@ -180,6 +180,17 @@ REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, 
 -- whose ownership 0004 reconciles. It receives no auth table privilege.
 GRANT USAGE ON SCHEMA auth TO uellix_owner;
 
+-- The decision-audit package (identity=migrator/current_user=owner) creates
+-- FOREIGN KEY constraints against these four pre-existing tables before 0004
+-- has transferred their ownership to uellix_owner. PostgreSQL requires
+-- REFERENCES on the referenced table to create such a constraint, so this is
+-- the structural migration prerequisite: REFERENCES only, on exactly these
+-- four objects, never SELECT and never WITH GRANT OPTION.
+GRANT REFERENCES ON TABLE public.organizations TO uellix_owner;
+GRANT REFERENCES ON TABLE public.projects TO uellix_owner;
+GRANT REFERENCES ON TABLE public.users TO uellix_owner;
+GRANT REFERENCES ON TABLE public.stella_interactions TO uellix_owner;
+
 -- PostgreSQL's default EXECUTE/USAGE to PUBLIC is global. The only effective
 -- suppression is therefore global and scoped by creator role, not schema.
 ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;

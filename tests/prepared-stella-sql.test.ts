@@ -3047,14 +3047,18 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     expect(code).not.toMatch(/GRANT CREATE ON SCHEMA public TO(?!\s*uellix_owner\b)/i)
   })
 
-  it('T10: no rollback or hosted package was touched by this remediation (byte-exact)', () => {
+  it('T10: no 0003, 0004 or hosted package was touched by this remediation (byte-exact)', () => {
     // Independent of the 0001 forward hash repinned elsewhere: this pins the
-    // four packages this remediation is NOT authorized to change, so a stray
-    // edit to any of them fails here even if nobody re-derives its hash.
+    // packages this remediation is NOT authorized to change, so a stray edit
+    // to any of them fails here even if nobody re-derives its hash.
+    //
+    // MSC-07B.8-R9A (R3.7.3) deliberately supersedes the prior assumption that
+    // stella_0001_role_topology_bootstrap_rollback.sql's hash never changes:
+    // that package now also carries the REVOKE inverse of the four
+    // REFERENCES grants materialized below, so its byte-exact pin moved to
+    // the "R3.7.3 REFERENCES prerequisite" describe block instead of being
+    // silently dropped.
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
-    expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
-      'f2c3b59e2e37515ad85ee7f93f8ada8e34666a363c40746b2624a11f5ede7e9e',
-    )
     expect(sha256('stella_0004_role_separation.sql')).toBe(
       '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
     )
@@ -3063,6 +3067,123 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     )
     expect(sha256('stella_0003_suggestion_decisions.sql')).toBe(
       '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
+    )
+  })
+})
+
+// MSC-07B.8-R9A (R3.7.3): uellix_owner runs stella_0003 as current_user
+// (session_user=uellix_migrator) and creates FOREIGN KEY constraints against
+// public.organizations/projects/users/stella_interactions before stella_0004
+// has transferred their ownership to uellix_owner. PostgreSQL requires
+// REFERENCES on the referenced table to create such a constraint, so 0001
+// must materialize it structurally. These tests read the real SQL source —
+// they do not execute against a database.
+describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R9A REFERENCES prerequisite', () => {
+  const forwardRaw = read('stella_0001_role_topology_bootstrap.sql')
+  const forwardCode = stripCommentsAndStrings(forwardRaw)
+  const rollbackRaw = read('stella_0001_role_topology_bootstrap_rollback.sql')
+  const rollbackCode = stripCommentsAndStrings(rollbackRaw)
+  const FOUR_TARGETS = ['organizations', 'projects', 'users', 'stella_interactions']
+
+  it('T1/T2: exactly four literal forward REFERENCES grants, matching the FK target set exactly', () => {
+    const grants = [...forwardCode.matchAll(/GRANT\s+REFERENCES\s+ON\s+TABLE\s+public\.(\w+)\s+TO\s+uellix_owner\s*;/g)]
+    expect(grants).toHaveLength(4)
+    expect(grants.map((m) => m[1]).sort()).toEqual([...FOUR_TARGETS].sort())
+  })
+
+  it('T3: no SELECT accompanies the REFERENCES grants', () => {
+    expect(forwardCode).not.toMatch(/GRANT\s+[^;]*SELECT[^;]*ON\s+TABLE\s+public\.(?:organizations|projects|users|stella_interactions)\s+TO\s+uellix_owner/i)
+  })
+
+  it('T4: no WITH GRANT OPTION on any of the four grants', () => {
+    for (const table of FOUR_TARGETS) {
+      const re = new RegExp(`GRANT\\s+REFERENCES\\s+ON\\s+TABLE\\s+public\\.${table}\\s+TO\\s+uellix_owner\\s*(WITH GRANT OPTION)?\\s*;`, 'i')
+      const match = forwardCode.match(re)
+      expect(match, table).not.toBeNull()
+      expect(match?.[1]).toBeUndefined()
+    }
+  })
+
+  it('T5: no fifth REFERENCES target and no ALL PRIVILEGES/wildcard/default-privilege variant', () => {
+    expect(forwardCode).not.toMatch(/GRANT\s+ALL\s+PRIVILEGES\s+ON\s+TABLE\s+public\.(?:organizations|projects|users|stella_interactions)/i)
+    expect(forwardCode).not.toMatch(/GRANT\s+REFERENCES\s+ON\s+ALL\s+TABLES\s+IN\s+SCHEMA/i)
+    expect(forwardCode).not.toMatch(/ALTER\s+DEFAULT\s+PRIVILEGES[\s\S]*?GRANT\s+REFERENCES/i)
+    const grants = [...forwardCode.matchAll(/GRANT\s+REFERENCES\s+ON\s+TABLE\s+public\.(\w+)\s+TO\s+uellix_owner\s*;/g)]
+    expect(new Set(grants.map((m) => m[1])).size).toBe(4)
+  })
+
+  it('T6: no runtime/app role (uellix_app, uellix_writer, uellix_migrator, uellix_auditor) receives a new table-level privilege here', () => {
+    for (const role of ['uellix_app', 'uellix_writer', 'uellix_migrator', 'uellix_auditor']) {
+      expect(forwardCode).not.toMatch(new RegExp(`GRANT\\s+REFERENCES\\s+ON\\s+TABLE\\s+public\\.(?:organizations|projects|users|stella_interactions)\\s+TO\\s+${role}\\b`, 'i'))
+    }
+  })
+
+  it('T7: the four grants are fixed literals — no dynamic EXECUTE, format(), concatenation or loop', () => {
+    const section = forwardRaw.slice(
+      forwardRaw.indexOf('GRANT REFERENCES ON TABLE public.organizations'),
+      forwardRaw.indexOf('GRANT REFERENCES ON TABLE public.stella_interactions') + 200,
+    )
+    expect(section).not.toMatch(/EXECUTE\s+'/i)
+    expect(section).not.toMatch(/format\(/i)
+    expect(section).not.toMatch(/\|\|/)
+    expect(section).not.toMatch(/FOR\s+\w+\s+IN\b/i)
+  })
+
+  it('T8/T9: exactly four inverse rollback REVOKEs, target set equals the forward target set', () => {
+    const revokes = [...rollbackCode.matchAll(/REVOKE\s+REFERENCES\s+ON\s+TABLE\s+public\.(\w+)\s+FROM\s+uellix_owner\s*;/g)]
+    expect(revokes).toHaveLength(4)
+    expect(revokes.map((m) => m[1]).sort()).toEqual([...FOUR_TARGETS].sort())
+
+    const grants = [...forwardCode.matchAll(/GRANT\s+REFERENCES\s+ON\s+TABLE\s+public\.(\w+)\s+TO\s+uellix_owner\s*;/g)]
+    expect(revokes.map((m) => m[1]).sort()).toEqual(grants.map((m) => m[1]).sort())
+  })
+
+  it('T10: the four REVOKEs occur strictly before every DROP ROLE uellix_owner', () => {
+    const lastRevokeIndex = Math.max(
+      ...FOUR_TARGETS.map((table) =>
+        rollbackRaw.indexOf(`REVOKE REFERENCES ON TABLE public.${table} FROM uellix_owner;`),
+      ),
+    )
+    expect(lastRevokeIndex).toBeGreaterThan(-1)
+    const dropOwnerIndex = rollbackRaw.indexOf('DROP ROLE uellix_owner;')
+    expect(dropOwnerIndex).toBeGreaterThan(lastRevokeIndex)
+  })
+
+  it('T11: no unrelated rollback mutation changed — the confirmation gate, ownership/function/schema guards, canonical-membership guard and final role removal are byte-identical to the frozen parent', () => {
+    expect(rollbackRaw).toMatch(/expected_confirmation text := 'rollback-0001:' \|\| current_database\(\);/)
+    expect(rollbackRaw).toMatch(/RAISE EXCEPTION 'stella_0001 rollback REFUSED: surviving relation\(s\) depend on governed ownership: %', problem;/)
+    expect(rollbackRaw).toMatch(/RAISE EXCEPTION 'stella_0001 rollback REFUSED: surviving function\(s\) depend on governed ownership: %', problem;/)
+    expect(rollbackRaw).toMatch(/RAISE EXCEPTION 'stella_0001 rollback REFUSED: surviving schema\(s\) depend on governed ownership: %', problem;/)
+    expect(rollbackRaw).toMatch(/RAISE EXCEPTION 'stella_0001 rollback REFUSED: non-canonical membership\(s\) still use the governed perimeter: %', problem;/)
+    expect(rollbackRaw).toMatch(/DROP ROLE uellix_auditor;\s*\nDROP ROLE uellix_app;\s*\nDROP ROLE uellix_writer;\s*\nDROP ROLE uellix_migrator;\s*\nDROP ROLE uellix_owner;/)
+  })
+
+  it('T12: the pg_shdepend guard admits exactly the four expected REFERENCES rows on pg_class — never a blanket pg_class exclusion', () => {
+    // Quoted literals below are checked against the RAW source: the file's
+    // own stripCommentsAndStrings() helper blanks single-quoted content
+    // (needed elsewhere to ignore string data inside DO bodies), which would
+    // make every one of these regexes vacuously true against `rollbackCode`.
+    expect(rollbackRaw).toMatch(/classid NOT IN \('pg_auth_members'::regclass, 'pg_default_acl'::regclass, 'pg_namespace'::regclass\)/)
+    // The pg_class carve-out is a narrow AND NOT(...) clause scoped to
+    // uellix_owner and the exact four table oids — not an unconditional
+    // `'pg_class'::regclass` addition to the NOT IN(...) list above, which
+    // would blind the guard to any other unexpected table-level grant.
+    expect(rollbackRaw).not.toMatch(/classid NOT IN \([^)]*'pg_class'::regclass/)
+    expect(rollbackRaw).toMatch(/d\.classid = 'pg_class'::regclass/)
+    expect(rollbackRaw).toMatch(/d\.deptype = 'a'/)
+    expect(rollbackRaw).toMatch(/d\.refobjid = 'uellix_owner'::regrole/)
+    for (const table of FOUR_TARGETS) {
+      expect(rollbackRaw).toMatch(new RegExp(`to_regclass\\('public\\.${table}'\\)`))
+    }
+  })
+
+  it('T13: exact byte-pinned hashes for the two repinned packages (frozen at this gate)', () => {
+    const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
+    expect(sha256('stella_0001_role_topology_bootstrap.sql')).toBe(
+      '58ed8550d16a9138f0bdd71e7d4ee0cbf54a2c5a6cb2afb2cb21e68498d4321a',
+    )
+    expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
+      '3503f02ac0ff76785ce2212bcfba28fe37575750415fadb15d5eefea985b825c',
     )
   })
 })

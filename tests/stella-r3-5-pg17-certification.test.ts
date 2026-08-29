@@ -21,10 +21,10 @@ const ROOT = path.resolve(process.cwd())
 const EXPECTED_HASHES = {
   'stella_0002_interactions_hardening.sql': 'bdf5f8dc925b3ed5643262f83efc52ea2d11233f5fae05f1e948b8cf424858cd',
   'stella_0002b_append_only_truncate_hardening.sql': '781e8b58fe2f512c4214016421199c853f9ed840fde0f27f701ddf247aace550',
-  'stella_0001_role_topology_bootstrap.sql': '3a372455a24d83108bca91a81161538d1990715256b152a7fe327fad40a8cfb7',
+  'stella_0001_role_topology_bootstrap.sql': '58ed8550d16a9138f0bdd71e7d4ee0cbf54a2c5a6cb2afb2cb21e68498d4321a',
   'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
   'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
-  'stella_0001_role_topology_bootstrap_rollback.sql': 'f2c3b59e2e37515ad85ee7f93f8ada8e34666a363c40746b2624a11f5ede7e9e',
+  'stella_0001_role_topology_bootstrap_rollback.sql': '3503f02ac0ff76785ce2212bcfba28fe37575750415fadb15d5eefea985b825c',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
 } as const
 
