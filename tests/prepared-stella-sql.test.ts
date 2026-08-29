@@ -15,6 +15,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { forwardOnlyPackage } from '@/db/hosted/forward-only-packages'
 
@@ -2982,5 +2983,86 @@ describe('db/prepared/stella_0019_storage_write_roles.sql — M-2', () => {
       expect(src, `${name} misses the quoted spelling`).toMatch(/search_path=""/)
       expect(src, `${name} misses the bare spelling`).toMatch(/ARRAY\['search_path='\]/)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MSC-07B.8-R8W — stella_0001 public schema CREATE invariant remediation
+// ---------------------------------------------------------------------------
+// R8U measured that stella_0001's §4 self-verification aborted with
+// `role "PUBLIC" does not exist`: has_schema_privilege(role, schema, priv)
+// resolves its first argument as a ROLE-NAME lookup, and no role is literally
+// named PUBLIC. The pseudo-role can only be inspected structurally, so the
+// combined postcondition is split into two invariants that measure different
+// claims — effective CREATE capability of the three governed non-owner roles
+// (has_schema_privilege), and CREATE-grant provenance on the PUBLIC
+// pseudo-role (aclexplode over pg_namespace.nspacl) — each with its own
+// fail-closed message.
+describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public schema invariant', () => {
+  const raw = read('stella_0001_role_topology_bootstrap.sql')
+  const code = stripCommentsAndStrings(raw)
+
+  it('T1/T2/T3: the effective-capability check probes uellix_app, uellix_migrator and uellix_auditor', () => {
+    expect(raw).toMatch(
+      /has_schema_privilege\('uellix_app', 'public', 'CREATE'\)\s*\n\s*OR has_schema_privilege\('uellix_migrator', 'public', 'CREATE'\)\s*\n\s*OR has_schema_privilege\('uellix_auditor', 'public', 'CREATE'\)/,
+    )
+  })
+
+  it('T4: the PUBLIC ACL invariant is the approved structural predicate (aclexplode/acldefault/grantee=0/CREATE/public)', () => {
+    expect(raw).toMatch(/pg_catalog\.aclexplode\(/)
+    expect(raw).toMatch(/COALESCE\(\s*n\.nspacl,\s*pg_catalog\.acldefault\('n', n\.nspowner\)\s*\)/)
+    expect(raw).toMatch(/a\.grantee = 0/)
+    expect(raw).toMatch(/a\.privilege_type = 'CREATE'/)
+    expect(raw).toMatch(/n\.nspname = 'public'/)
+  })
+
+  it('T5: does not contain the broken uppercase role-name lookup', () => {
+    expect(raw).not.toMatch(/has_schema_privilege\('PUBLIC'/)
+  })
+
+  it('T6: does not substitute the dangerous two-argument current-user form', () => {
+    // stella_0001 executes as a raw superuser session (§0), so the two-argument
+    // has_schema_privilege('public', 'CREATE') overload would silently check
+    // current_user instead of the governed roles — never a valid substitute.
+    expect(raw).not.toMatch(/has_schema_privilege\('public',\s*'CREATE'\)/)
+  })
+
+  it('T7: the two invariants raise distinct, invariant-identifying messages', () => {
+    expect(raw).toMatch(
+      /stella_0001 FAILED: uellix_app, uellix_migrator, or uellix_auditor holds effective CREATE on schema public\./,
+    )
+    expect(raw).toMatch(
+      /stella_0001 FAILED: schema public still carries a CREATE grant whose grantee is PUBLIC\./,
+    )
+  })
+
+  it('T8: §3 still revokes CREATE on public from every non-owner role and PUBLIC, unchanged', () => {
+    expect(code).toMatch(
+      /REVOKE CREATE ON SCHEMA public FROM uellix_migrator, uellix_app, uellix_writer, uellix_auditor, PUBLIC/i,
+    )
+  })
+
+  it('T9: §3 still grants CREATE on public to uellix_owner alone, unchanged', () => {
+    expect(code).toMatch(/GRANT CREATE ON SCHEMA public TO uellix_owner/i)
+    expect(code).not.toMatch(/GRANT CREATE ON SCHEMA public TO(?!\s*uellix_owner\b)/i)
+  })
+
+  it('T10: no rollback or hosted package was touched by this remediation (byte-exact)', () => {
+    // Independent of the 0001 forward hash repinned elsewhere: this pins the
+    // four packages this remediation is NOT authorized to change, so a stray
+    // edit to any of them fails here even if nobody re-derives its hash.
+    const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
+    expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
+      'f2c3b59e2e37515ad85ee7f93f8ada8e34666a363c40746b2624a11f5ede7e9e',
+    )
+    expect(sha256('stella_0004_role_separation.sql')).toBe(
+      '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
+    )
+    expect(sha256('stella_0004_rollback.sql')).toBe(
+      '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
+    )
+    expect(sha256('stella_0003_suggestion_decisions.sql')).toBe(
+      '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
+    )
   })
 })

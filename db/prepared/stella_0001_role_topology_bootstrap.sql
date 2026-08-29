@@ -282,8 +282,29 @@ BEGIN
 
   IF has_schema_privilege('uellix_app', 'public', 'CREATE')
      OR has_schema_privilege('uellix_migrator', 'public', 'CREATE')
-     OR has_schema_privilege('PUBLIC', 'public', 'CREATE') THEN
-    RAISE EXCEPTION 'stella_0001 FAILED: non-owner CREATE privilege remains on public.';
+     OR has_schema_privilege('uellix_auditor', 'public', 'CREATE') THEN
+    RAISE EXCEPTION 'stella_0001 FAILED: uellix_app, uellix_migrator, or uellix_auditor holds effective CREATE on schema public.';
+  END IF;
+
+  -- has_schema_privilege(role, ...) resolves its first argument as a role-name
+  -- lookup, so the PostgreSQL PUBLIC pseudo-role can only be inspected
+  -- structurally: explode the namespace ACL (falling back to the catalog
+  -- default when nspacl is NULL) and look for a CREATE entry whose grantee is
+  -- the fixed pseudo-role oid 0.
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_namespace AS n
+    CROSS JOIN LATERAL pg_catalog.aclexplode(
+      COALESCE(
+        n.nspacl,
+        pg_catalog.acldefault('n', n.nspowner)
+      )
+    ) AS a
+    WHERE n.nspname = 'public'
+      AND a.grantee = 0
+      AND a.privilege_type = 'CREATE'
+  ) THEN
+    RAISE EXCEPTION 'stella_0001 FAILED: schema public still carries a CREATE grant whose grantee is PUBLIC.';
   END IF;
 
   IF has_table_privilege('uellix_owner', 'auth.users', 'SELECT')
