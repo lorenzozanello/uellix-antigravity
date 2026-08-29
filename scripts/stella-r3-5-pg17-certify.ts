@@ -747,6 +747,65 @@ function scalarAdminQuery(sql: string, postgresPassword: string, step: string): 
 }
 
 /**
+ * Explicit, query-controlled boolean representation for the certified
+ * substrate preflight. PostgreSQL's `boolean::text` cast yields `'true'` /
+ * `'false'` (the `booltext` cast function), NOT the `t`/`f` short form
+ * `psql`'s default display uses for the bare column — a spelling this
+ * harness previously got backwards, causing every live run to fail closed
+ * before any package executed. `CASE WHEN … THEN … ELSE … END` fully
+ * controls the emitted text so this contract can never depend on either
+ * spelling.
+ */
+const CERTIFIED_SUBSTRATE_PREFLIGHT_TRUE = '1'
+const CERTIFIED_SUBSTRATE_PREFLIGHT_FALSE = '0'
+
+function certifiedSubstrateBooleanCase(column: string): string {
+  return `CASE WHEN ${column} THEN '${CERTIFIED_SUBSTRATE_PREFLIGHT_TRUE}' ELSE '${CERTIFIED_SUBSTRATE_PREFLIGHT_FALSE}' END`
+}
+
+/**
+ * Pure query text for the certified substrate preflight — no Docker, no
+ * network. Exported so tests can bind directly to the exact text the
+ * executable preflight sends, instead of re-describing it separately and
+ * risking drift between the two.
+ */
+export function certifiedSubstratePreflightQuery(installerRole: string): string {
+  return `SELECT
+       (SELECT rolname FROM pg_roles WHERE oid = 10) || '|' ||
+       (SELECT ${certifiedSubstrateBooleanCase('rolsuper')} FROM pg_roles WHERE oid = 10) || '|' ||
+       (SELECT ${certifiedSubstrateBooleanCase('rolsuper')} FROM pg_roles WHERE rolname = '${installerRole}') || '|' ||
+       (SELECT ${certifiedSubstrateBooleanCase('rolcreaterole')} FROM pg_roles WHERE rolname = '${installerRole}');`
+}
+
+/**
+ * Pure parse-and-assert surface for the certified substrate preflight —
+ * takes the raw `psql -tAq` scalar line and fails closed unless it encodes
+ * exactly the certified facts. This is the ONE predicate implementation;
+ * both the live executor and the test suite call it directly so a
+ * declarative description of the contract can never silently diverge from
+ * what actually gets enforced.
+ */
+export function assertCertifiedSubstratePreflightObserved(
+  observed: string,
+  expected: { readonly oid10RoleName: string; readonly installerRole: string },
+): void {
+  const [oid10Name, oid10Rolsuper, installerRolsuper, installerRolcreaterole] = observed.split('|')
+  if (oid10Name !== expected.oid10RoleName || oid10Rolsuper !== CERTIFIED_SUBSTRATE_PREFLIGHT_TRUE) {
+    throw new Error(
+      `${MATRIX_ERROR} at certified substrate preflight: expected OID 10 to be the superuser role ${expected.oid10RoleName}, observed name=${oid10Name ?? '<null>'} rolsuper=${oid10Rolsuper ?? '<null>'}`,
+    )
+  }
+  if (
+    installerRolsuper !== CERTIFIED_SUBSTRATE_PREFLIGHT_FALSE ||
+    installerRolcreaterole !== CERTIFIED_SUBSTRATE_PREFLIGHT_TRUE
+  ) {
+    throw new Error(
+      `${MATRIX_ERROR} at certified substrate preflight: expected ${expected.installerRole} to be a non-superuser CREATEROLE role, observed rolsuper=${installerRolsuper ?? '<null>'} rolcreaterole=${installerRolcreaterole ?? '<null>'}`,
+    )
+  }
+}
+
+/**
  * Fails closed before any package or storage-shim execution unless the live
  * substrate provides exactly the certified facts: OID 10 is
  * CERTIFIED_SUBSTRATE_OID10_ROLE_NAME and is a superuser, and ADMIN_ROLE
@@ -758,25 +817,14 @@ function scalarAdminQuery(sql: string, postgresPassword: string, step: string): 
  */
 function verifyCertifiedSubstratePreflight(postgresPassword: string): void {
   const observed = scalarAdminQuery(
-    `SELECT
-       (SELECT rolname FROM pg_roles WHERE oid = 10) || '|' ||
-       (SELECT rolsuper::text FROM pg_roles WHERE oid = 10) || '|' ||
-       (SELECT rolsuper::text FROM pg_roles WHERE rolname = '${ADMIN_ROLE}') || '|' ||
-       (SELECT rolcreaterole::text FROM pg_roles WHERE rolname = '${ADMIN_ROLE}');`,
+    certifiedSubstratePreflightQuery(ADMIN_ROLE),
     postgresPassword,
     'certified substrate OID 10 preflight',
   )
-  const [oid10Name, oid10Rolsuper, installerRolsuper, installerRolcreaterole] = observed.split('|')
-  if (oid10Name !== CERTIFIED_SUBSTRATE_OID10_ROLE_NAME || oid10Rolsuper !== 't') {
-    throw new Error(
-      `${MATRIX_ERROR} at certified substrate preflight: expected OID 10 to be the superuser role ${CERTIFIED_SUBSTRATE_OID10_ROLE_NAME}, observed name=${oid10Name ?? '<null>'} rolsuper=${oid10Rolsuper ?? '<null>'}`,
-    )
-  }
-  if (installerRolsuper !== 'f' || installerRolcreaterole !== 't') {
-    throw new Error(
-      `${MATRIX_ERROR} at certified substrate preflight: expected ${ADMIN_ROLE} to be a non-superuser CREATEROLE role, observed rolsuper=${installerRolsuper ?? '<null>'} rolcreaterole=${installerRolcreaterole ?? '<null>'}`,
-    )
-  }
+  assertCertifiedSubstratePreflightObserved(observed, {
+    oid10RoleName: CERTIFIED_SUBSTRATE_OID10_ROLE_NAME,
+    installerRole: ADMIN_ROLE,
+  })
 }
 
 function verifyPg17SupabaseSurface(postgresPassword: string): void {

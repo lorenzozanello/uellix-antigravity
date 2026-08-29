@@ -232,6 +232,8 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     expect(Object.keys(executor).sort()).toEqual([
       'R3_5_PG17_CERTIFICATION_MATRIX_STEPS',
       'R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX',
+      'assertCertifiedSubstratePreflightObserved',
+      'certifiedSubstratePreflightQuery',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
@@ -257,6 +259,130 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     expect(preflightFn.length).toBeGreaterThan(0)
     expect(grantorFn.length).toBeGreaterThan(0)
     expect(grantorFn).not.toMatch(/CERTIFIED_SUBSTRATE_OID10_ROLE_NAME/)
+  })
+
+  describe('certified substrate preflight — bound to the executable query and parser, not just the declarative plan', () => {
+    const EXPECTED = { oid10RoleName: 'supabase_admin', installerRole: 'postgres' }
+    const CERTIFIED_OBSERVED = ['supabase_admin', '1', '0', '1'].join('|')
+
+    function assertObserved(observed: string): void {
+      executor.assertCertifiedSubstratePreflightObserved(observed, EXPECTED)
+    }
+
+    it('accepts exactly the certified substrate facts', () => {
+      expect(() => assertObserved(CERTIFIED_OBSERVED)).not.toThrow()
+    })
+
+    it('rejects the historical live-failure shape: PostgreSQL boolean::text emits true/false, not the query’s expected representation', () => {
+      // This is the exact defect from the R8P live run: the query cast rolsuper/rolcreaterole
+      // with `::text`, which PostgreSQL renders as 'true'/'false' — not 't'/'f' and not this
+      // harness's '1'/'0' contract. Every one of these three columns must reject that spelling.
+      expect(() => assertObserved(['supabase_admin', 'true', 'false', 'true'].join('|'))).toThrow(
+        /certified substrate preflight/,
+      )
+    })
+
+    it('rejects the t/f short form too — the contract is exactly 1/0, not any boolean spelling', () => {
+      expect(() => assertObserved(['supabase_admin', 't', 'f', 't'].join('|'))).toThrow(
+        /certified substrate preflight/,
+      )
+    })
+
+    it('rejects OID 10 rolsuper=false', () => {
+      expect(() => assertObserved(['supabase_admin', '0', '0', '1'].join('|'))).toThrow(/OID 10/)
+    })
+
+    it('rejects installer (postgres) rolsuper=true', () => {
+      expect(() => assertObserved(['supabase_admin', '1', '1', '1'].join('|'))).toThrow(
+        /non-superuser CREATEROLE role/,
+      )
+    })
+
+    it('rejects installer (postgres) rolcreaterole=false', () => {
+      expect(() => assertObserved(['supabase_admin', '1', '0', '0'].join('|'))).toThrow(
+        /non-superuser CREATEROLE role/,
+      )
+    })
+
+    it('rejects the wrong OID 10 role name even when every boolean is certified-shaped', () => {
+      expect(() => assertObserved(['postgres', '1', '0', '1'].join('|'))).toThrow(/OID 10/)
+    })
+
+    it('rejects a missing OID 10 row (empty scalar, as psql emits for an all-NULL concatenation)', () => {
+      expect(() => assertObserved('')).toThrow(/OID 10/)
+    })
+
+    it('rejects a missing installer row (short, pipe-delimited but incomplete)', () => {
+      expect(() => assertObserved(['supabase_admin', '1'].join('|'))).toThrow(
+        /non-superuser CREATEROLE role/,
+      )
+    })
+
+    it('rejects malformed preflight output that is not pipe-delimited at all', () => {
+      expect(() => assertObserved('ERROR: relation "pg_roles" does not exist')).toThrow(/OID 10/)
+    })
+
+    it('the query text itself controls the boolean representation with CASE WHEN, never a bare ::text cast — the exact class of bug this regression closes', () => {
+      const sql = executor.certifiedSubstratePreflightQuery('postgres')
+      expect(sql).not.toMatch(/::text/)
+      expect(sql).toMatch(/CASE WHEN rolsuper THEN '1' ELSE '0' END/)
+      expect(sql).toMatch(/CASE WHEN rolcreaterole THEN '1' ELSE '0' END/)
+      // Exactly four pipe-joined columns (three CASE-guarded booleans plus the role name),
+      // in the order the parser destructures them: rolname, OID-10 rolsuper, installer
+      // rolsuper, installer rolcreaterole.
+      expect(sql.match(/FROM pg_roles/g)).toHaveLength(4)
+      expect(sql.match(/CASE WHEN/g)).toHaveLength(3)
+      const oid10RolsuperIndex = sql.indexOf('WHERE oid = 10', sql.indexOf('CASE WHEN rolsuper'))
+      const installerRolsuperIndex = sql.indexOf("WHERE rolname = 'postgres'")
+      const installerRolcreateroleIndex = sql.indexOf('rolcreaterole')
+      expect(oid10RolsuperIndex).toBeGreaterThan(0)
+      expect(installerRolsuperIndex).toBeGreaterThan(oid10RolsuperIndex)
+      expect(installerRolcreateroleIndex).toBeGreaterThan(installerRolsuperIndex)
+    })
+
+    it('the declarative plan and the executable predicate agree on every certified fact — a drifted declaration cannot go undetected', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan().substratePreflight
+
+      // Re-derive the exact observed line the plan's OWN declared facts would produce on a
+      // live substrate, then run it through the SAME assertion function production calls.
+      // If someone edits the declarative plan (e.g. flips expectedRolsuper to false) without
+      // also updating the executable predicate, this test fails — the two cannot silently
+      // diverge the way plan.substratePreflight vs. the ::text bug once did.
+      const trueFalse = (value: boolean) => (value ? '1' : '0')
+      const observedFromPlan = [
+        plan.expectedRoleName,
+        trueFalse(plan.expectedRolsuper),
+        trueFalse(plan.installerExpectedRolsuper),
+        trueFalse(plan.installerExpectedRolcreaterole),
+      ].join('|')
+      expect(observedFromPlan).toBe(CERTIFIED_OBSERVED)
+      expect(() =>
+        executor.assertCertifiedSubstratePreflightObserved(observedFromPlan, {
+          oid10RoleName: plan.expectedRoleName,
+          installerRole: plan.installerRole,
+        }),
+      ).not.toThrow()
+
+      // And the inverse of each plan fact must be rejected by the same predicate.
+      expect(() =>
+        executor.assertCertifiedSubstratePreflightObserved(
+          [plan.expectedRoleName, trueFalse(!plan.expectedRolsuper), trueFalse(plan.installerExpectedRolsuper), trueFalse(plan.installerExpectedRolcreaterole)].join('|'),
+          { oid10RoleName: plan.expectedRoleName, installerRole: plan.installerRole },
+        ),
+      ).toThrow()
+      expect(() =>
+        executor.assertCertifiedSubstratePreflightObserved(
+          [plan.expectedRoleName, trueFalse(plan.expectedRolsuper), trueFalse(!plan.installerExpectedRolsuper), trueFalse(plan.installerExpectedRolcreaterole)].join('|'),
+          { oid10RoleName: plan.expectedRoleName, installerRole: plan.installerRole },
+        ),
+      ).toThrow()
+      expect(() =>
+        executor.assertCertifiedSubstratePreflightObserved(
+          [plan.expectedRoleName, trueFalse(plan.expectedRolsuper), trueFalse(plan.installerExpectedRolsuper), trueFalse(!plan.installerExpectedRolcreaterole)].join('|'),
+          { oid10RoleName: plan.expectedRoleName, installerRole: plan.installerRole },
+        ),
+      ).toThrow()
+    })
   })
 
   it('states an exact, closed per-phase identity contract — no abstract "admin" identity anywhere in it', () => {
@@ -456,6 +582,8 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
     expect(Object.keys(executor).sort()).toEqual([
       'R3_5_PG17_CERTIFICATION_MATRIX_STEPS',
       'R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX',
+      'assertCertifiedSubstratePreflightObserved',
+      'certifiedSubstratePreflightQuery',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
