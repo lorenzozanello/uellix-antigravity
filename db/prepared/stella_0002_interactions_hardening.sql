@@ -61,12 +61,42 @@ BEGIN
 END $$;
 
 -- ============================================================
--- 1. Append-only trigger (mirrors 0030_immutability.sql style)
+-- 1. Append-only trigger (mirrors 0030_immutability.sql style) — convergent
 -- ============================================================
-DROP TRIGGER IF EXISTS trg_stella_interactions_append_only ON public.stella_interactions;
-CREATE TRIGGER trg_stella_interactions_append_only
-  BEFORE UPDATE OR DELETE ON public.stella_interactions
-  FOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();
+-- Unconditional DROP TRIGGER / CREATE TRIGGER requires the executing role to
+-- own public.stella_interactions. This package runs as the raw local
+-- administrative superuser (guard 0), which owns the table before
+-- stella_0004 transfers ownership to uellix_owner. A later re-run of this
+-- convergent script under that same identity, after that transfer, is no
+-- longer the table owner, so unconditional trigger DDL would fail. Only
+-- repair the trigger when it is absent or not in the exact canonical shape;
+-- a re-run that finds it already canonical issues no owner-dependent DDL.
+DO $$
+DECLARE
+  is_canonical boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = 'public.stella_interactions'::regclass
+      AND NOT t.tgisinternal
+      AND t.tgname = 'trg_stella_interactions_append_only'
+      AND (t.tgtype & 1) = 1 AND (t.tgtype & 2) = 2   -- ROW, BEFORE
+      AND (t.tgtype & 16) = 16 AND (t.tgtype & 8) = 8 -- UPDATE, DELETE
+      AND (t.tgtype & 4) = 0                          -- never INSERT
+      AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
+      AND t.tgenabled = 'O'
+  ) INTO is_canonical;
+
+  IF NOT is_canonical THEN
+    DROP TRIGGER IF EXISTS trg_stella_interactions_append_only ON public.stella_interactions;
+    CREATE TRIGGER trg_stella_interactions_append_only
+      BEFORE UPDATE OR DELETE ON public.stella_interactions
+      FOR EACH ROW EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+    COMMENT ON TRIGGER trg_stella_interactions_append_only ON public.stella_interactions IS
+      'WS3b hardening (prepared stella_0002, gate G2): stella_interactions is an append-only AI audit trail; UPDATE/DELETE are forbidden even for the service role.';
+  END IF;
+END $$;
 
 -- ============================================================
 -- 2. Grant reconciliation (mirrors 0033 "Append-Only Tables"
@@ -112,6 +142,3 @@ BEGIN
       CHECK (stella_role IN ('advisor', 'validator', 'composer', 'proxy_reviewer', 'evidence_reviewer', 'audit_assistant'));
   END IF;
 END $$;
-
-COMMENT ON TRIGGER trg_stella_interactions_append_only ON public.stella_interactions IS
-  'WS3b hardening (prepared stella_0002, gate G2): stella_interactions is an append-only AI audit trail; UPDATE/DELETE are forbidden even for the service role.';

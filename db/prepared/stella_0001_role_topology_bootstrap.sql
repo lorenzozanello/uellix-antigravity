@@ -191,6 +191,16 @@ GRANT REFERENCES ON TABLE public.projects TO uellix_owner;
 GRANT REFERENCES ON TABLE public.users TO uellix_owner;
 GRANT REFERENCES ON TABLE public.stella_interactions TO uellix_owner;
 
+-- CREATE TRIGGER requires EXECUTE privilege on the trigger function for the
+-- role creating it. stella_0003 (and the stella_0002/0002b append-only
+-- reconciliation) attach public.uellix_forbid_mutation() to tables while
+-- current_user is uellix_owner, and that function is created by
+-- db/migrations/0030_immutability.sql, not owned by uellix_owner. Without this
+-- grant, CREATE TRIGGER ... EXECUTE FUNCTION public.uellix_forbid_mutation()
+-- fails with insufficient privilege the first time uellix_owner attaches it.
+-- EXECUTE only, this one function, no WITH GRANT OPTION, no runtime role.
+GRANT EXECUTE ON FUNCTION public.uellix_forbid_mutation() TO uellix_owner;
+
 -- PostgreSQL's default EXECUTE/USAGE to PUBLIC is global. The only effective
 -- suppression is therefore global and scoped by creator role, not schema.
 ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;

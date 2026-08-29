@@ -3268,10 +3268,389 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R9A REFERENCES
   it('T14: exact byte-pinned hashes for the two repinned packages (frozen at this gate)', () => {
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
     expect(sha256('stella_0001_role_topology_bootstrap.sql')).toBe(
-      '58ed8550d16a9138f0bdd71e7d4ee0cbf54a2c5a6cb2afb2cb21e68498d4321a',
+      '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
     )
     expect(sha256('stella_0001_role_topology_bootstrap_rollback.sql')).toBe(
-      'df1dbd6fac49224bea4bc88054b790e26eabf74cd10f460d61083719f5226e49',
+      '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MSC-07B.8-R9I — VR-01/VR-04: CREATE TRIGGER EXECUTE prerequisite on
+// public.uellix_forbid_mutation(), materialized in 0001 forward and inverted
+// in 0001 rollback. ALREADY_FROZEN_AUTHORITY_MATERIALIZATION: this closes
+// package blocker B-01 (0003's CREATE TRIGGER needs uellix_owner EXECUTE on
+// the shared trigger function it does not own).
+// ---------------------------------------------------------------------------
+describe('db/prepared/stella_0001_role_topology_bootstrap.sql — VR-01/VR-04 CREATE TRIGGER EXECUTE prerequisite', () => {
+  const forwardRaw = read('stella_0001_role_topology_bootstrap.sql')
+  const forwardCode = stripCommentsAndStrings(forwardRaw)
+  const rollbackRaw = read('stella_0001_role_topology_bootstrap_rollback.sql')
+
+  const RUNTIME_AND_OTHER_ROLES = [
+    'uellix_migrator',
+    'uellix_app',
+    'uellix_writer',
+    'uellix_auditor',
+    'anon',
+    'authenticated',
+    'service_role',
+    'postgres',
+  ]
+
+  it('VR01-T1: exactly one forward EXECUTE grant on public.uellix_forbid_mutation(), to uellix_owner, no WITH GRANT OPTION', () => {
+    const grants = [
+      ...forwardCode.matchAll(
+        /GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation\(\)\s+TO\s+uellix_owner\s*;/g,
+      ),
+    ]
+    expect(grants).toHaveLength(1)
+    // No other EXECUTE grant on this function survives anywhere in the file.
+    const anyExecuteGrant = [
+      ...forwardCode.matchAll(/GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation\(\)/g),
+    ]
+    expect(anyExecuteGrant).toHaveLength(1)
+    const withGrantOption = forwardCode.match(
+      /GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation\(\)\s+TO\s+uellix_owner\s*(WITH GRANT OPTION)?\s*;/i,
+    )
+    expect(withGrantOption?.[1]).toBeUndefined()
+  })
+
+  it('VR01-T2: no EXECUTE grant on uellix_forbid_mutation() reaches any runtime, migrator, auditor or Supabase role', () => {
+    for (const role of RUNTIME_AND_OTHER_ROLES) {
+      expect(forwardCode, role).not.toMatch(
+        new RegExp(
+          `GRANT\\s+EXECUTE\\s+ON\\s+FUNCTION\\s+public\\.uellix_forbid_mutation\\(\\)\\s+TO\\s+${role}\\b`,
+          'i',
+        ),
+      )
+    }
+  })
+
+  it('VR01-T3: no schema-wide, ALL FUNCTIONS or default-privilege variant of the EXECUTE grant', () => {
+    expect(forwardCode).not.toMatch(/GRANT\s+EXECUTE\s+ON\s+ALL\s+FUNCTIONS\s+IN\s+SCHEMA/i)
+    expect(forwardCode).not.toMatch(/ALTER\s+DEFAULT\s+PRIVILEGES[\s\S]*?GRANT\s+EXECUTE\s+ON\s+FUNCTIONS/i)
+    expect(forwardCode).not.toMatch(/GRANT\s+ALL\s+PRIVILEGES\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation/i)
+  })
+
+  it('VR01-T4: the grant sits in the same structural prerequisite area as the four REFERENCES grants, before the ALTER DEFAULT PRIVILEGES section', () => {
+    const lastReferencesIndex = forwardRaw.lastIndexOf(
+      'GRANT REFERENCES ON TABLE public.stella_interactions TO uellix_owner;',
+    )
+    const executeGrantIndex = forwardRaw.indexOf(
+      'GRANT EXECUTE ON FUNCTION public.uellix_forbid_mutation() TO uellix_owner;',
+    )
+    const defaultPrivilegesIndex = forwardRaw.indexOf(
+      "ALTER DEFAULT PRIVILEGES FOR ROLE uellix_owner    REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;",
+    )
+    expect(lastReferencesIndex).toBeGreaterThan(-1)
+    expect(executeGrantIndex).toBeGreaterThan(-1)
+    expect(defaultPrivilegesIndex).toBeGreaterThan(-1)
+    expect(executeGrantIndex).toBeGreaterThan(lastReferencesIndex)
+    expect(executeGrantIndex).toBeLessThan(defaultPrivilegesIndex)
+  })
+
+  it('VR01-T5: the grant is a fixed literal — no dynamic EXECUTE, format(), concatenation or loop', () => {
+    const section = forwardRaw.slice(
+      forwardRaw.indexOf('GRANT REFERENCES ON TABLE public.organizations'),
+      forwardRaw.indexOf('GRANT EXECUTE ON FUNCTION public.uellix_forbid_mutation()') + 120,
+    )
+    expect(section).not.toMatch(/EXECUTE\s+'/i)
+    expect(section).not.toMatch(/format\(/i)
+    expect(section).not.toMatch(/\|\|/)
+    expect(section).not.toMatch(/FOR\s+\w+\s+IN\b/i)
+  })
+
+  it('VR04-T1: exactly one inverse rollback REVOKE EXECUTE on public.uellix_forbid_mutation() from uellix_owner', () => {
+    const revokes = [
+      ...stripCommentsAndStrings(rollbackRaw).matchAll(
+        /REVOKE\s+EXECUTE\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation\(\)\s+FROM\s+uellix_owner\s*;/g,
+      ),
+    ]
+    expect(revokes).toHaveLength(1)
+  })
+
+  it('VR04-T2: the REVOKE sits inside section-0 DO block, after the superuser/confirmation/role-existence guards and before every dependency guard and DROP ROLE uellix_owner', () => {
+    const section0DoStart = rollbackRaw.indexOf('DO $$')
+    const section0DoEnd = rollbackRaw.indexOf('END $$;', section0DoStart)
+    expect(section0DoStart).toBeGreaterThan(-1)
+    expect(section0DoEnd).toBeGreaterThan(section0DoStart)
+
+    const superuserGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback must run through the local administrative superuser phase; session_user is %'",
+    )
+    const confirmationGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: missing transaction-local confirmation for this database.'",
+    )
+    const roleExistenceGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: governed role(s) already absent: %'",
+    )
+    const relationOwnerGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: surviving relation(s) depend on governed ownership: %'",
+    )
+    const functionOwnerGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: surviving function(s) depend on governed ownership: %'",
+    )
+    const schemaOwnerGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: surviving schema(s) depend on governed ownership: %'",
+    )
+    const pgShdependGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: pg_shdepend reports surviving dependency/dependencies: %'",
+    )
+    const membershipGuardIndex = rollbackRaw.indexOf(
+      "'stella_0001 rollback REFUSED: non-canonical membership(s) still use the governed perimeter: %'",
+    )
+    const dropOwnerIndex = rollbackRaw.indexOf('DROP ROLE uellix_owner;')
+    const executeRevokeIndex = rollbackRaw.indexOf(
+      'REVOKE EXECUTE ON FUNCTION public.uellix_forbid_mutation() FROM uellix_owner;',
+    )
+
+    expect(executeRevokeIndex).toBeGreaterThan(-1)
+    expect(executeRevokeIndex).toBeGreaterThan(section0DoStart)
+    expect(executeRevokeIndex).toBeLessThan(section0DoEnd)
+
+    expect(executeRevokeIndex).toBeGreaterThan(superuserGuardIndex)
+    expect(executeRevokeIndex).toBeGreaterThan(confirmationGuardIndex)
+    expect(executeRevokeIndex).toBeGreaterThan(roleExistenceGuardIndex)
+
+    expect(executeRevokeIndex).toBeLessThan(relationOwnerGuardIndex)
+    expect(executeRevokeIndex).toBeLessThan(functionOwnerGuardIndex)
+    expect(executeRevokeIndex).toBeLessThan(schemaOwnerGuardIndex)
+    expect(executeRevokeIndex).toBeLessThan(pgShdependGuardIndex)
+    expect(executeRevokeIndex).toBeLessThan(membershipGuardIndex)
+    expect(executeRevokeIndex).toBeLessThan(dropOwnerIndex)
+  })
+
+  it('VR04-T3: the REVOKE sits with the four REFERENCES withdrawals, not duplicated, and never inside §1', () => {
+    const referencesLast = rollbackRaw.indexOf('REVOKE REFERENCES ON TABLE public.stella_interactions FROM uellix_owner;')
+    const executeRevokeIndex = rollbackRaw.indexOf(
+      'REVOKE EXECUTE ON FUNCTION public.uellix_forbid_mutation() FROM uellix_owner;',
+    )
+    const ownershipCommentIndex = rollbackRaw.indexOf('Ownership is never guessed or reassigned.')
+    expect(referencesLast).toBeGreaterThan(-1)
+    expect(executeRevokeIndex).toBeGreaterThan(referencesLast)
+    expect(executeRevokeIndex).toBeLessThan(ownershipCommentIndex)
+
+    const allOccurrences = [
+      ...stripCommentsAndStrings(rollbackRaw).matchAll(
+        /REVOKE\s+EXECUTE\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation\(\)\s+FROM\s+uellix_owner\s*;/g,
+      ),
+    ]
+    expect(allOccurrences).toHaveLength(1)
+
+    const section1Start = rollbackRaw.indexOf('1. Remove only the topology authority this package created')
+    expect(section1Start).toBeGreaterThan(-1)
+    expect(rollbackRaw.slice(section1Start)).not.toMatch(/REVOKE\s+EXECUTE\s+ON\s+FUNCTION\s+public\.uellix_forbid_mutation/i)
+  })
+
+  it('VR04-T4: no pg_proc/pg_class carve-out was introduced anywhere, and the pg_shdepend guard predicate is unchanged', () => {
+    const guardStart = rollbackRaw.indexOf('FROM pg_shdepend d')
+    const guardEnd = rollbackRaw.indexOf(
+      "RAISE EXCEPTION 'stella_0001 rollback REFUSED: pg_shdepend reports surviving dependency/dependencies: %', problem;",
+    )
+    expect(guardStart).toBeGreaterThan(-1)
+    expect(guardEnd).toBeGreaterThan(guardStart)
+    const guardBody = rollbackRaw.slice(guardStart, guardEnd)
+    expect(guardBody).not.toMatch(/pg_proc/)
+    expect(guardBody).not.toMatch(/pg_class/)
+    expect(guardBody).not.toMatch(/objsubid/)
+    expect(rollbackRaw).toMatch(
+      /AND d\.classid NOT IN \('pg_auth_members'::regclass, 'pg_default_acl'::regclass, 'pg_namespace'::regclass\);/,
+    )
+    expect(rollbackRaw).not.toMatch(/classid NOT IN \([^)]*'pg_proc'::regclass/)
+    expect(rollbackRaw).not.toMatch(/AND NOT\s*\(\s*d\.classid = 'pg_proc'::regclass/)
+  })
+
+  it('VR-Q: role, membership, grantor, schema, table, runtime, RLS and phase-order authority are otherwise unchanged by this remediation', () => {
+    // The only new forward privilege is EXECUTE to NOLOGIN uellix_owner, and its
+    // exact inverse — proven above. This test proves nothing ELSE moved: no new
+    // CREATE ROLE, no role granted SUPERUSER/BYPASSRLS (only the pre-existing
+    // NOSUPERUSER/NOBYPASSRLS attributes and rolbypassrls self-verification
+    // reads survive), no RLS or policy statement, and only one EXECUTE grant
+    // total in the whole file.
+    expect(forwardCode).not.toMatch(/CREATE ROLE/i)
+    expect(forwardCode).not.toMatch(/ALTER ROLE\s+\w+[^;]*\bSUPERUSER\b/i)
+    expect(forwardCode).not.toMatch(/ALTER ROLE\s+\w+[^;]*\bBYPASSRLS\b/i)
+    expect(forwardCode).not.toMatch(/ENABLE ROW LEVEL SECURITY/i)
+    expect(forwardCode).not.toMatch(/CREATE POLICY|DROP POLICY/i)
+    expect([...forwardCode.matchAll(/GRANT\s+EXECUTE\s+ON\s+FUNCTION/gi)]).toHaveLength(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MSC-07B.8-R9I — VR-02/VR-03: convergent trigger reconciliation in 0002 and
+// 0002b. FACTUAL_SQL_IDEMPOTENCE_CORRECTION: this closes package blocker B-02
+// (postgres re-running 0002/0002b after 0004 has transferred ownership of
+// stella_interactions to uellix_owner is no longer the table owner, so the
+// old unconditional DROP/CREATE TRIGGER DDL would fail).
+// ---------------------------------------------------------------------------
+describe('db/prepared/stella_0002_interactions_hardening.sql — VR-02 convergent trigger reconciliation', () => {
+  const raw = read('stella_0002_interactions_hardening.sql')
+  const code = stripCommentsAndStrings(raw)
+  const sectionStart = raw.indexOf('-- 1. Append-only trigger')
+  const sectionEnd = raw.indexOf('-- 2. Grant reconciliation')
+  const section = raw.slice(sectionStart, sectionEnd)
+
+  it('has exactly one canonical trigger check, naming the exact relation, trigger and function', () => {
+    expect(sectionStart).toBeGreaterThan(-1)
+    expect(sectionEnd).toBeGreaterThan(sectionStart)
+    expect(section).toMatch(/t\.tgrelid = 'public\.stella_interactions'::regclass/)
+    expect(section).toMatch(/t\.tgname = 'trg_stella_interactions_append_only'/)
+    expect(section).toMatch(/t\.tgfoid = to_regprocedure\('public\.uellix_forbid_mutation\(\)'\)/)
+  })
+
+  it('the canonical predicate checks ROW+BEFORE+UPDATE+DELETE tgtype bits, NOT tgisinternal, and tgenabled = O', () => {
+    expect(section).toMatch(/AND NOT t\.tgisinternal/)
+    expect(section).toMatch(/\(t\.tgtype & 1\) = 1 AND \(t\.tgtype & 2\) = 2/)
+    expect(section).toMatch(/\(t\.tgtype & 16\) = 16 AND \(t\.tgtype & 8\) = 8/)
+    expect(section).toMatch(/AND t\.tgenabled = 'O'/)
+  })
+
+  it('DROP TRIGGER, CREATE TRIGGER and COMMENT ON TRIGGER are direct DDL, only inside the repair branch', () => {
+    const ifIndex = section.indexOf('IF NOT is_canonical THEN')
+    const endIfIndex = section.indexOf('END IF;')
+    expect(ifIndex).toBeGreaterThan(-1)
+    expect(endIfIndex).toBeGreaterThan(ifIndex)
+
+    const dropIndex = section.indexOf('DROP TRIGGER IF EXISTS trg_stella_interactions_append_only')
+    const createIndex = section.indexOf('CREATE TRIGGER trg_stella_interactions_append_only')
+    const commentIndex = section.indexOf('COMMENT ON TRIGGER trg_stella_interactions_append_only')
+    expect(dropIndex).toBeGreaterThan(ifIndex)
+    expect(dropIndex).toBeLessThan(endIfIndex)
+    expect(createIndex).toBeGreaterThan(dropIndex)
+    expect(createIndex).toBeLessThan(endIfIndex)
+    expect(commentIndex).toBeGreaterThan(createIndex)
+    expect(commentIndex).toBeLessThan(endIfIndex)
+
+    // Exactly one of each in the whole file — no duplicate repair path.
+    expect([...code.matchAll(/DROP TRIGGER IF EXISTS trg_stella_interactions_append_only/g)]).toHaveLength(1)
+    expect([...code.matchAll(/CREATE TRIGGER trg_stella_interactions_append_only/g)]).toHaveLength(1)
+    expect([...code.matchAll(/COMMENT ON TRIGGER trg_stella_interactions_append_only/g)]).toHaveLength(1)
+  })
+
+  it('the comment text is unchanged from the pre-convergence canonical text', () => {
+    expect(raw).toMatch(
+      /'WS3b hardening \(prepared stella_0002, gate G2\): stella_interactions is an append-only AI audit trail; UPDATE\/DELETE are forbidden even for the service role\.'/,
+    )
+  })
+
+  it('no dynamic EXECUTE of a DDL string anywhere in the trigger convergence block', () => {
+    expect(section).not.toMatch(/\bEXECUTE\s+'/i)
+    expect(section).not.toMatch(/\bformat\(/i)
+  })
+
+  it('search_path and the authenticated REVOKE stay top-level statements, not moved into the conditional block', () => {
+    expect(statements(raw)[0]).toMatch(/^SET search_path = public$/i)
+    const revokeStmt = statements(raw).find((s) => /^REVOKE\b/i.test(s))
+    expect(revokeStmt).toMatch(/REVOKE UPDATE, DELETE ON public\.stella_interactions FROM authenticated/i)
+    // And it is not nested inside the trigger convergence DO block's text.
+    expect(section).not.toMatch(/REVOKE UPDATE, DELETE ON public\.stella_interactions FROM authenticated/)
+  })
+
+  it('a canonical trigger short-circuits before any DDL — the IF guards the DROP/CREATE/COMMENT, not the other way round', () => {
+    // Structural proof that DDL is reachable only through the negative branch:
+    // "IF NOT is_canonical THEN" must precede the DROP inside the same DO body,
+    // and there must be no unconditional DROP/CREATE TRIGGER STATEMENT left at
+    // the section's top level (outside any IF) — the descriptive comment above
+    // the DO block legitimately mentions both keywords in prose, so comments
+    // are stripped before this check.
+    const beforeIf = stripCommentsAndStrings(section).slice(
+      0,
+      stripCommentsAndStrings(section).indexOf('IF NOT is_canonical THEN'),
+    )
+    expect(beforeIf).not.toMatch(/DROP TRIGGER|CREATE TRIGGER/)
+  })
+})
+
+describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — VR-03 convergent trigger reconciliation (4 triggers)', () => {
+  const raw = read('stella_0002b_append_only_truncate_hardening.sql')
+  const code = stripCommentsAndStrings(raw)
+  const sectionStart = raw.indexOf('-- 4. Statement-level TRUNCATE triggers')
+  const sectionEnd = raw.indexOf('-- 5. Self-verification')
+  const section = raw.slice(sectionStart, sectionEnd)
+
+  const TRIGGER_TARGETS = [
+    ['stella_interactions', 'trg_stella_interactions_no_truncate'],
+    ['audit_logs', 'trg_audit_logs_no_truncate'],
+    ['sroi_calculation_runs', 'trg_sroi_calculation_runs_no_truncate'],
+    ['sroi_calculation_line_items', 'trg_sroi_calculation_line_items_no_truncate'],
+  ] as const
+
+  it('has exactly four independent canonical checks, one per table/trigger pair', () => {
+    expect(sectionStart).toBeGreaterThan(-1)
+    expect(sectionEnd).toBeGreaterThan(sectionStart)
+    expect([...section.matchAll(/is_canonical boolean;/g)]).toHaveLength(4)
+    for (const [table, trigger] of TRIGGER_TARGETS) {
+      expect(section, trigger).toMatch(new RegExp(`t\\.tgrelid = 'public\\.${table}'::regclass`))
+      expect(section, trigger).toMatch(new RegExp(`t\\.tgname = '${trigger}'`))
+    }
+  })
+
+  it('every canonical predicate checks tgfoid, NOT tgisinternal, tgenabled = O, and the STATEMENT-level (never ROW) TRUNCATE bits', () => {
+    const perTriggerBlocks = TRIGGER_TARGETS.map(([, trigger]) => {
+      const start = section.indexOf(`t.tgname = '${trigger}'`)
+      return section.slice(start, start + 400)
+    })
+    for (const block of perTriggerBlocks) {
+      expect(block).toMatch(/\(t\.tgtype & 1\) = 0 AND \(t\.tgtype & 2\) = 2/)
+      expect(block).toMatch(/\(t\.tgtype & 32\) = 32/)
+      expect(block).toMatch(/t\.tgfoid = to_regprocedure\('public\.uellix_forbid_mutation\(\)'\)/)
+      expect(block).toMatch(/t\.tgenabled = 'O'/)
+    }
+    // NOT tgisinternal precedes tgname in every one of the four blocks.
+    expect([...section.matchAll(/AND NOT t\.tgisinternal/g)]).toHaveLength(4)
+  })
+
+  it('each DROP/CREATE/COMMENT triple sits inside its own repair branch, and nothing is unconditional', () => {
+    for (const [, trigger] of TRIGGER_TARGETS) {
+      const ifStart = section.indexOf(`t.tgname = '${trigger}'`)
+      const blockEnd = section.indexOf('END $$;', ifStart)
+      const block = section.slice(ifStart, blockEnd)
+      const ifIndex = block.indexOf('IF NOT is_canonical THEN')
+      const dropIndex = block.indexOf(`DROP TRIGGER IF EXISTS ${trigger}`)
+      const createIndex = block.indexOf(`CREATE TRIGGER ${trigger}`)
+      const commentIndex = block.indexOf(`COMMENT ON TRIGGER ${trigger}`)
+      expect(ifIndex, trigger).toBeGreaterThan(-1)
+      expect(dropIndex, trigger).toBeGreaterThan(ifIndex)
+      expect(createIndex, trigger).toBeGreaterThan(dropIndex)
+      expect(commentIndex, trigger).toBeGreaterThan(createIndex)
+    }
+
+    // Exactly 4 of each across the whole file — the count invariant the
+    // existing 'creates exactly four triggers' test also relies on.
+    expect([...code.matchAll(/CREATE TRIGGER/gi)]).toHaveLength(4)
+    expect([...code.matchAll(/DROP TRIGGER IF EXISTS/gi)]).toHaveLength(4)
+    expect([...code.matchAll(/COMMENT ON TRIGGER/gi)]).toHaveLength(4)
+  })
+
+  it('no dynamic EXECUTE of a DDL string in the TRUNCATE trigger convergence block (the version-aware MAINTAIN EXECUTE lives in section 3, outside this slice)', () => {
+    expect(section).not.toMatch(/\bEXECUTE\s+'/i)
+    expect(section).not.toMatch(/\bformat\(/i)
+  })
+
+  it('search_path and the authenticated/service_role REVOKEs stay top-level, not moved into any conditional block', () => {
+    expect(statements(raw)[0]).toMatch(/^SET search_path = public$/i)
+    const authRevoke = statements(raw).find((s) => /^REVOKE\b/i.test(s) && /FROM authenticated$/i.test(s))
+    const serviceRevoke = statements(raw).find((s) => /^REVOKE\b/i.test(s) && /FROM service_role$/i.test(s))
+    expect(authRevoke).toBeDefined()
+    expect(serviceRevoke).toBeDefined()
+    expect(section).not.toMatch(/FROM authenticated/)
+    expect(section).not.toMatch(/FROM service_role/)
+  })
+
+  it('comment texts are unchanged from the pre-convergence canonical texts', () => {
+    expect(raw).toMatch(
+      /'WS3b hardening \(prepared stella_0002b, gate G2\): TRUNCATE is forbidden on this append-only AI audit trail, including for the table owner\.'/,
+    )
+    expect(raw).toMatch(
+      /'WS3b hardening \(prepared stella_0002b, gate G2\): TRUNCATE is forbidden on this append-only audit log, including for the table owner\.'/,
+    )
+    expect(raw).toMatch(
+      /'WS3b hardening \(prepared stella_0002b, gate G2\): TRUNCATE is forbidden on these immutable calculation runs, including for the table owner\.'/,
+    )
+    expect(raw).toMatch(
+      /'WS3b hardening \(prepared stella_0002b, gate G2\): TRUNCATE is forbidden on these immutable calculation line items, including for the table owner\.'/,
     )
   })
 })

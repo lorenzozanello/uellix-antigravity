@@ -211,10 +211,11 @@ BEGIN
 END $$;
 
 -- ============================================================
--- 4. Statement-level TRUNCATE triggers — the owner-proof layer
+-- 4. Statement-level TRUNCATE triggers — the owner-proof layer, convergent
 -- ============================================================
 -- TRUNCATE triggers MUST be FOR EACH STATEMENT (PostgreSQL forbids FOR EACH ROW
--- on TRUNCATE — there are no per-row OLD/NEW records to hand to it).
+-- on TRUNCATE — there are no per-row OLD/NEW records to hand to it), so the
+-- canonical predicate below requires tgtype's ROW bit to be UNSET.
 --
 -- public.uellix_forbid_mutation() is reused unchanged: it reads only TG_OP and
 -- TG_TABLE_NAME, both populated for statement-level triggers, and raises
@@ -222,28 +223,120 @@ END $$;
 -- never returns. So the same function yields
 -- "append-only: TRUNCATE on <table> is not permitted".
 --
--- Names are fixed literals, one per table, so re-running converges instead of
--- accumulating triggers.
+-- Unconditional DROP TRIGGER / CREATE TRIGGER requires the executing role to
+-- own the target table. This package runs as the raw local administrative
+-- superuser (guard 0-pre), which owns all four tables before stella_0004
+-- transfers stella_interactions' ownership to uellix_owner. A later re-run of
+-- this convergent script under that same identity, after that transfer, is no
+-- longer the owner of stella_interactions, so unconditional trigger DDL on
+-- that one table would fail. Reconcile each trigger independently and only
+-- when it is absent or not in the exact canonical shape, so a re-run that
+-- finds all four already canonical issues no owner-dependent DDL on any of
+-- them.
 
-DROP TRIGGER IF EXISTS trg_stella_interactions_no_truncate ON public.stella_interactions;
-CREATE TRIGGER trg_stella_interactions_no_truncate
-  BEFORE TRUNCATE ON public.stella_interactions
-  FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+DO $$
+DECLARE
+  is_canonical boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = 'public.stella_interactions'::regclass
+      AND NOT t.tgisinternal
+      AND t.tgname = 'trg_stella_interactions_no_truncate'
+      AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2   -- STATEMENT, BEFORE
+      AND (t.tgtype & 32) = 32                        -- TRUNCATE
+      AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
+      AND t.tgenabled = 'O'
+  ) INTO is_canonical;
 
-DROP TRIGGER IF EXISTS trg_audit_logs_no_truncate ON public.audit_logs;
-CREATE TRIGGER trg_audit_logs_no_truncate
-  BEFORE TRUNCATE ON public.audit_logs
-  FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+  IF NOT is_canonical THEN
+    DROP TRIGGER IF EXISTS trg_stella_interactions_no_truncate ON public.stella_interactions;
+    CREATE TRIGGER trg_stella_interactions_no_truncate
+      BEFORE TRUNCATE ON public.stella_interactions
+      FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
 
-DROP TRIGGER IF EXISTS trg_sroi_calculation_runs_no_truncate ON public.sroi_calculation_runs;
-CREATE TRIGGER trg_sroi_calculation_runs_no_truncate
-  BEFORE TRUNCATE ON public.sroi_calculation_runs
-  FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+    COMMENT ON TRIGGER trg_stella_interactions_no_truncate ON public.stella_interactions IS
+      'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on this append-only AI audit trail, including for the table owner.';
+  END IF;
+END $$;
 
-DROP TRIGGER IF EXISTS trg_sroi_calculation_line_items_no_truncate ON public.sroi_calculation_line_items;
-CREATE TRIGGER trg_sroi_calculation_line_items_no_truncate
-  BEFORE TRUNCATE ON public.sroi_calculation_line_items
-  FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+DO $$
+DECLARE
+  is_canonical boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = 'public.audit_logs'::regclass
+      AND NOT t.tgisinternal
+      AND t.tgname = 'trg_audit_logs_no_truncate'
+      AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2
+      AND (t.tgtype & 32) = 32
+      AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
+      AND t.tgenabled = 'O'
+  ) INTO is_canonical;
+
+  IF NOT is_canonical THEN
+    DROP TRIGGER IF EXISTS trg_audit_logs_no_truncate ON public.audit_logs;
+    CREATE TRIGGER trg_audit_logs_no_truncate
+      BEFORE TRUNCATE ON public.audit_logs
+      FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+    COMMENT ON TRIGGER trg_audit_logs_no_truncate ON public.audit_logs IS
+      'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on this append-only audit log, including for the table owner.';
+  END IF;
+END $$;
+
+DO $$
+DECLARE
+  is_canonical boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = 'public.sroi_calculation_runs'::regclass
+      AND NOT t.tgisinternal
+      AND t.tgname = 'trg_sroi_calculation_runs_no_truncate'
+      AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2
+      AND (t.tgtype & 32) = 32
+      AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
+      AND t.tgenabled = 'O'
+  ) INTO is_canonical;
+
+  IF NOT is_canonical THEN
+    DROP TRIGGER IF EXISTS trg_sroi_calculation_runs_no_truncate ON public.sroi_calculation_runs;
+    CREATE TRIGGER trg_sroi_calculation_runs_no_truncate
+      BEFORE TRUNCATE ON public.sroi_calculation_runs
+      FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+    COMMENT ON TRIGGER trg_sroi_calculation_runs_no_truncate ON public.sroi_calculation_runs IS
+      'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on these immutable calculation runs, including for the table owner.';
+  END IF;
+END $$;
+
+DO $$
+DECLARE
+  is_canonical boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = 'public.sroi_calculation_line_items'::regclass
+      AND NOT t.tgisinternal
+      AND t.tgname = 'trg_sroi_calculation_line_items_no_truncate'
+      AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2
+      AND (t.tgtype & 32) = 32
+      AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
+      AND t.tgenabled = 'O'
+  ) INTO is_canonical;
+
+  IF NOT is_canonical THEN
+    DROP TRIGGER IF EXISTS trg_sroi_calculation_line_items_no_truncate ON public.sroi_calculation_line_items;
+    CREATE TRIGGER trg_sroi_calculation_line_items_no_truncate
+      BEFORE TRUNCATE ON public.sroi_calculation_line_items
+      FOR EACH STATEMENT EXECUTE FUNCTION public.uellix_forbid_mutation();
+
+    COMMENT ON TRIGGER trg_sroi_calculation_line_items_no_truncate ON public.sroi_calculation_line_items IS
+      'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on these immutable calculation line items, including for the table owner.';
+  END IF;
+END $$;
 
 -- ============================================================
 -- 5. Self-verification — assert the end state, inside this transaction
@@ -317,15 +410,3 @@ BEGIN
 
   RAISE NOTICE 'stella_0002b: verification passed — 4 TRUNCATE triggers attached, 0 residual dangerous grants, SELECT/INSERT preserved.';
 END $$;
-
--- ============================================================
--- 6. Documentation on the objects themselves
--- ============================================================
-COMMENT ON TRIGGER trg_stella_interactions_no_truncate ON public.stella_interactions IS
-  'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on this append-only AI audit trail, including for the table owner.';
-COMMENT ON TRIGGER trg_audit_logs_no_truncate ON public.audit_logs IS
-  'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on this append-only audit log, including for the table owner.';
-COMMENT ON TRIGGER trg_sroi_calculation_runs_no_truncate ON public.sroi_calculation_runs IS
-  'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on these immutable calculation runs, including for the table owner.';
-COMMENT ON TRIGGER trg_sroi_calculation_line_items_no_truncate ON public.sroi_calculation_line_items IS
-  'WS3b hardening (prepared stella_0002b, gate G2): TRUNCATE is forbidden on these immutable calculation line items, including for the table owner.';

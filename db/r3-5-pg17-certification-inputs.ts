@@ -52,13 +52,13 @@ export const R3_5_PG17_CERTIFICATION_PHASES: readonly R3_4LocalPhase[] = Object.
  * R8 matrix exercises those rollback packages before cleanup.
  */
 export const R3_5_PG17_CERTIFICATION_PACKAGE_HASHES = Object.freeze({
-  'stella_0002_interactions_hardening.sql': 'bdf5f8dc925b3ed5643262f83efc52ea2d11233f5fae05f1e948b8cf424858cd',
-  'stella_0002b_append_only_truncate_hardening.sql': '781e8b58fe2f512c4214016421199c853f9ed840fde0f27f701ddf247aace550',
-  'stella_0001_role_topology_bootstrap.sql': '58ed8550d16a9138f0bdd71e7d4ee0cbf54a2c5a6cb2afb2cb21e68498d4321a',
+  'stella_0002_interactions_hardening.sql': 'a7244349fe1e8e5da148d23ded086a25378999602d4dd11ac7dc1f551956ecb9',
+  'stella_0002b_append_only_truncate_hardening.sql': '229cdcf6042accd337794005d863911572c58b315848f720cee197d7fcf69561',
+  'stella_0001_role_topology_bootstrap.sql': '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
   'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
   'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
   'stella_0001_role_topology_bootstrap_rollback.sql':
-    'df1dbd6fac49224bea4bc88054b790e26eabf74cd10f460d61083719f5226e49',
+    '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
 } as const)
 

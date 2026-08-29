@@ -39,6 +39,13 @@ BEGIN
   REVOKE REFERENCES ON TABLE public.users FROM uellix_owner;
   REVOKE REFERENCES ON TABLE public.stella_interactions FROM uellix_owner;
 
+  -- Exact inverse of the forward CREATE-TRIGGER EXECUTE prerequisite.
+  -- Withdrawn here, with the REFERENCES grants, before any dependency guard
+  -- below runs, so this package's own self-created authority can never mask a
+  -- surviving external dependency on the same privilege. No pg_proc carve-out
+  -- follows: the pg_shdepend guard below keeps its original closed predicate.
+  REVOKE EXECUTE ON FUNCTION public.uellix_forbid_mutation() FROM uellix_owner;
+
   -- Ownership is never guessed or reassigned. Any surviving later package must
   -- be rolled back first, then this package can remove an unused topology.
   SELECT string_agg(n.nspname || '.' || c.relname, ', ' ORDER BY n.nspname, c.relname) INTO problem
