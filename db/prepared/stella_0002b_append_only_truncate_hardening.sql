@@ -247,6 +247,9 @@ BEGIN
       AND (t.tgtype & 32) = 32                        -- TRUNCATE
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
+      AND t.tgnargs = 0                    -- no trigger-function arguments
+      AND t.tgattr = ''::int2vector        -- no UPDATE OF column restriction
+      AND t.tgqual IS NULL                 -- no WHEN condition
   ) INTO is_canonical;
 
   IF NOT is_canonical THEN
@@ -273,6 +276,9 @@ BEGIN
       AND (t.tgtype & 32) = 32
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
+      AND t.tgnargs = 0                    -- no trigger-function arguments
+      AND t.tgattr = ''::int2vector        -- no UPDATE OF column restriction
+      AND t.tgqual IS NULL                 -- no WHEN condition
   ) INTO is_canonical;
 
   IF NOT is_canonical THEN
@@ -299,6 +305,9 @@ BEGIN
       AND (t.tgtype & 32) = 32
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
+      AND t.tgnargs = 0                    -- no trigger-function arguments
+      AND t.tgattr = ''::int2vector        -- no UPDATE OF column restriction
+      AND t.tgqual IS NULL                 -- no WHEN condition
   ) INTO is_canonical;
 
   IF NOT is_canonical THEN
@@ -325,6 +334,9 @@ BEGIN
       AND (t.tgtype & 32) = 32
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
+      AND t.tgnargs = 0                    -- no trigger-function arguments
+      AND t.tgattr = ''::int2vector        -- no UPDATE OF column restriction
+      AND t.tgqual IS NULL                 -- no WHEN condition
   ) INTO is_canonical;
 
   IF NOT is_canonical THEN

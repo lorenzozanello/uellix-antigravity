@@ -52,8 +52,8 @@ export const R3_5_PG17_CERTIFICATION_PHASES: readonly R3_4LocalPhase[] = Object.
  * R8 matrix exercises those rollback packages before cleanup.
  */
 export const R3_5_PG17_CERTIFICATION_PACKAGE_HASHES = Object.freeze({
-  'stella_0002_interactions_hardening.sql': 'a7244349fe1e8e5da148d23ded086a25378999602d4dd11ac7dc1f551956ecb9',
-  'stella_0002b_append_only_truncate_hardening.sql': '229cdcf6042accd337794005d863911572c58b315848f720cee197d7fcf69561',
+  'stella_0002_interactions_hardening.sql': 'cbf860b12d3f32205f2e0efba7c3c1c2d9a4658bafc3ab7949d2de4089e9ec9e',
+  'stella_0002b_append_only_truncate_hardening.sql': 'd4f67b086bf694d62718688230726a67f150b8cbe266f70fea323ce87afece67',
   'stella_0001_role_topology_bootstrap.sql': '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
   'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
   'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',

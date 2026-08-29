@@ -3654,3 +3654,144 @@ describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — VR-03 
     )
   })
 })
+
+// ---------------------------------------------------------------------------
+// MSC-07B.8-R9K — M-3: canonical trigger predicates in 0002/0002b did not bind
+// all load-bearing pg_trigger state. tgattr (UPDATE OF column scope), tgqual
+// (WHEN condition) and tgnargs (trigger-function arguments) were absent from
+// the is_canonical check, so a trigger degraded along any of those three axes
+// — while still matching on name/relation/tgtype/tgfoid/tgisinternal/tgenabled
+// — would be silently accepted as canonical. These tests assert the three
+// fields by SOURCE INSPECTION (not by hash pin), so removing an assertion is
+// caught even if the file's hash were repinned to match the regression.
+// ---------------------------------------------------------------------------
+
+/** The exact M-3 predicate fragments the canonical checks must contain. */
+const M3_FIELD_PATTERNS = {
+  tgnargs: /AND t\.tgnargs = 0\b/,
+  tgattr: /AND t\.tgattr = ''::int2vector\b/,
+  tgqual: /AND t\.tgqual IS NULL\b/,
+} as const
+
+function m3FieldsPresent(text: string): { tgnargs: boolean; tgattr: boolean; tgqual: boolean } {
+  return {
+    tgnargs: M3_FIELD_PATTERNS.tgnargs.test(text),
+    tgattr: M3_FIELD_PATTERNS.tgattr.test(text),
+    tgqual: M3_FIELD_PATTERNS.tgqual.test(text),
+  }
+}
+
+describe('db/prepared/stella_0002_interactions_hardening.sql — M-3 canonical predicate completion', () => {
+  const raw = read('stella_0002_interactions_hardening.sql')
+  const sectionStart = raw.indexOf('-- 1. Append-only trigger')
+  const sectionEnd = raw.indexOf('-- 2. Grant reconciliation')
+  const section = raw.slice(sectionStart, sectionEnd)
+  const predicateBlockEnd = section.indexOf(') INTO is_canonical;')
+  const predicateBlock = section.slice(0, predicateBlockEnd)
+
+  it('T1 requires tgattr = empty int2vector (no UPDATE OF column restriction)', () => {
+    expect(predicateBlock).toMatch(M3_FIELD_PATTERNS.tgattr)
+  })
+
+  it('T2 requires tgqual IS NULL (no WHEN condition)', () => {
+    expect(predicateBlock).toMatch(M3_FIELD_PATTERNS.tgqual)
+  })
+
+  it('T3 requires tgnargs = 0 (no trigger-function arguments)', () => {
+    expect(predicateBlock).toMatch(M3_FIELD_PATTERNS.tgnargs)
+  })
+
+  it('T4 removing the tgattr assertion is caught by source inspection, independent of any hash pin', () => {
+    expect(m3FieldsPresent(predicateBlock).tgattr).toBe(true)
+    const mutated = predicateBlock.replace(/\s*AND t\.tgattr = ''::int2vector[^\n]*\n/, '\n')
+    expect(m3FieldsPresent(mutated).tgattr).toBe(false)
+  })
+
+  it('T5 removing the tgqual assertion is caught by source inspection, independent of any hash pin', () => {
+    expect(m3FieldsPresent(predicateBlock).tgqual).toBe(true)
+    const mutated = predicateBlock.replace(/\s*AND t\.tgqual IS NULL[^\n]*\n/, '\n')
+    expect(m3FieldsPresent(mutated).tgqual).toBe(false)
+  })
+
+  it('T6 removing the tgnargs assertion is caught by source inspection, independent of any hash pin', () => {
+    expect(m3FieldsPresent(predicateBlock).tgnargs).toBe(true)
+    const mutated = predicateBlock.replace(/\s*AND t\.tgnargs = 0[^\n]*\n/, '\n')
+    expect(m3FieldsPresent(mutated).tgnargs).toBe(false)
+  })
+
+  it('T7 the pre-existing tgtype/tgfoid/tgisinternal/tgenabled/relation/name checks remain unmodified', () => {
+    expect(predicateBlock).toMatch(/t\.tgrelid = 'public\.stella_interactions'::regclass/)
+    expect(predicateBlock).toMatch(/t\.tgname = 'trg_stella_interactions_append_only'/)
+    expect(predicateBlock).toMatch(/AND NOT t\.tgisinternal/)
+    expect(predicateBlock).toMatch(/\(t\.tgtype & 1\) = 1 AND \(t\.tgtype & 2\) = 2/)
+    expect(predicateBlock).toMatch(/\(t\.tgtype & 16\) = 16 AND \(t\.tgtype & 8\) = 8/)
+    expect(predicateBlock).toMatch(/t\.tgfoid = to_regprocedure\('public\.uellix_forbid_mutation\(\)'\)/)
+    expect(predicateBlock).toMatch(/AND t\.tgenabled = 'O'/)
+  })
+})
+
+describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — M-3 canonical predicate completion (4 triggers)', () => {
+  const raw = read('stella_0002b_append_only_truncate_hardening.sql')
+  const sectionStart = raw.indexOf('-- 4. Statement-level TRUNCATE triggers')
+  const sectionEnd = raw.indexOf('-- 5. Self-verification')
+  const section = raw.slice(sectionStart, sectionEnd)
+
+  const TRIGGER_TARGETS = [
+    ['stella_interactions', 'trg_stella_interactions_no_truncate'],
+    ['audit_logs', 'trg_audit_logs_no_truncate'],
+    ['sroi_calculation_runs', 'trg_sroi_calculation_runs_no_truncate'],
+    ['sroi_calculation_line_items', 'trg_sroi_calculation_line_items_no_truncate'],
+  ] as const
+
+  /** Each trigger's own predicate block, isolated the same way the VR-03 tests do. */
+  const predicateBlocks = TRIGGER_TARGETS.map(([, trigger]) => {
+    const nameIdx = section.indexOf(`t.tgname = '${trigger}'`)
+    const endIdx = section.indexOf(') INTO is_canonical;', nameIdx)
+    return section.slice(nameIdx, endIdx)
+  })
+
+  it('T8 every one of the four canonical checks requires tgattr = empty int2vector', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(M3_FIELD_PATTERNS.tgattr)
+    }
+  })
+
+  it('T9 every one of the four canonical checks requires tgqual IS NULL', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(M3_FIELD_PATTERNS.tgqual)
+    }
+  })
+
+  it('T10 every one of the four canonical checks requires tgnargs = 0', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(M3_FIELD_PATTERNS.tgnargs)
+    }
+  })
+
+  it('T11 degrading exactly ONE trigger predicate is detected independently of the other three', () => {
+    // Simulate a regression that only strips the tgattr assertion from the
+    // second trigger (audit_logs) — the per-block check must isolate it
+    // without producing a false negative OR a false positive on its siblings.
+    const degradedIndex = 1
+    const results = predicateBlocks.map((block, i) =>
+      i === degradedIndex
+        ? m3FieldsPresent(block.replace(/\s*AND t\.tgattr = ''::int2vector[^\n]*\n/, '\n')).tgattr
+        : m3FieldsPresent(block).tgattr,
+    )
+    expect(results).toEqual([true, false, true, true])
+  })
+
+  it('T12 canonical rerun still skips direct owner-dependent DDL — the M-3 fields sit inside the SELECT feeding is_canonical, not the repair branch', () => {
+    for (const [, trigger] of TRIGGER_TARGETS) {
+      const ifStart = section.indexOf(`t.tgname = '${trigger}'`)
+      const selectEnd = section.indexOf(') INTO is_canonical;', ifStart)
+      const ifNotIndex = section.indexOf('IF NOT is_canonical THEN', ifStart)
+      const dropIndex = section.indexOf(`DROP TRIGGER IF EXISTS ${trigger}`, ifStart)
+      // The three M-3 fields must appear before the is_canonical assignment
+      // completes, and the DDL repair branch must start only after it.
+      expect(selectEnd, trigger).toBeGreaterThan(-1)
+      expect(ifNotIndex, trigger).toBeGreaterThan(selectEnd)
+      expect(dropIndex, trigger).toBeGreaterThan(ifNotIndex)
+    }
+  })
+})

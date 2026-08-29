@@ -85,6 +85,9 @@ BEGIN
       AND (t.tgtype & 4) = 0                          -- never INSERT
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
+      AND t.tgnargs = 0                    -- no trigger-function arguments
+      AND t.tgattr = ''::int2vector        -- no UPDATE OF column restriction
+      AND t.tgqual IS NULL                 -- no WHEN condition
   ) INTO is_canonical;
 
   IF NOT is_canonical THEN
