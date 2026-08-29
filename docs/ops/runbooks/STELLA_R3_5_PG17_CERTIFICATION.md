@@ -26,6 +26,13 @@ settings, or database URLs. Its only profile is the one implemented in
   `stella_hosted_0001_managed_role_bootstrap.sql` as local role authority.
   `stella_0001_role_topology_bootstrap.sql` remains the local authority for
   role topology and membership.
+- Package grantor authority: every package (`stella_0001`, `stella_0003`,
+  `stella_0004`) and the harness's own `verifyExactMembershipsAndGrantor`
+  compare the canonical grantor by the fixed PostgreSQL BOOTSTRAP SUPERUSER
+  OID (`10::oid`) — never by a resolved role name. The certified substrate
+  fact is that OID 10 is named `supabase_admin` there, not `postgres`; that
+  name is read only for diagnostics and for the harness's own superuser
+  transport (below), and is never compared against as grantor authority.
 
 ## Isolation and identity
 
@@ -35,20 +42,52 @@ never`. It publishes no ports, uses no host network, mount, named volume,
 Docker socket mount, remote database URL, or host TCP database target. In
 particular, it cannot use the persistent host PostgreSQL service on port 5432.
 
-The only database transport is private `docker exec` plus `psql` inside that
-isolated container. The R3.5 administrative phases assert the required
-container-local administrative identity. The 0003 phase establishes an actual
-`uellix_migrator` login session, then executes `SET LOCAL ROLE uellix_owner`
-inside its one package transaction and asserts both identities before and after
-the package.
+The harness runs a preflight before any package or storage-shim execution
+that fails closed unless the live substrate provides exactly the certified
+facts: OID 10 is `supabase_admin` and is a superuser, and `postgres` is a
+non-superuser `CREATEROLE` role. This preflight binds only the harness layer
+(which package identity to log in as); it never feeds package grantor
+authority, which stays the fixed OID.
+
+Every phase runs through one of two fixed, closed transports, by a concrete
+per-phase identity — never an inferred abstract "admin" identity:
+
+- **Existing installer transport** (`docker exec` + `psql -h 127.0.0.1`, with
+  a generated password): the 50-unit baseline, `stella_0002`, `stella_0002b`,
+  and `stella_0003`. `stella_0003` establishes an actual `uellix_migrator`
+  login session, then executes `SET LOCAL ROLE uellix_owner` inside its one
+  package transaction and asserts both identities before and after the
+  package.
+- **Closed superuser transport** (`docker exec` + `psql`, no `-h`, therefore
+  no password): the storage shim, `stella_0001`, `stella_0004`, and both
+  governed rollback phases (`stella_0004_rollback`, and the
+  `stella_0001_role_topology_bootstrap_rollback` dependency-guard negative),
+  because each of those requires an actual superuser session — `stella_0004`
+  checks `current_user` is `rolsuper`, and `stella_0001`'s own rollback checks
+  `session_user` is `rolsuper`. Logging in over the local Unix socket as
+  `supabase_admin` satisfies that without any `SET ROLE`. There is no
+  caller-reachable generic SQL/role/container executor behind this
+  transport — every call site passes only fixed, internally composed SQL.
+
+Both governed rollback phases require the exact transaction-local
+confirmation their own SQL reads via
+`current_setting('uellix.rollback_confirmation', true)` — computed in the
+same `-1` transaction as `set_config('uellix.rollback_confirmation',
+'rollback-0004:' || current_database(), true)` (or the `rollback-0001:`
+equivalent), never a caller-selectable value. The `stella_0001` rollback
+attempt is exercised as a negative case: `stella_0004_rollback` runs, then
+`stella_0004_role_separation` is reapplied so the dependency stella_0001's
+own rollback guard checks for — surviving relations owned by `uellix_owner`
+— is deliberately still present, and the harness requires the attempt to fail
+with that guard's exact, stable failure text, never a generic non-zero exit.
 
 ## Certification matrix and cleanup
 
-The fixed matrix covers the PG17/Supabase surface, storage shim, 50-unit
-baseline, 0001/0003/0004, topology and grantor checks, SET/ADMIN negative
-attacks, RLS, append-only behavior, idempotence, atomicity, 0004 rollback,
-0001 rollback guarding, and cleanup. A package failure aborts the later phases;
-there is no cross-session pseudo-transaction.
+The fixed matrix covers the certified-substrate preflight, the PG17/Supabase
+surface, storage shim, 50-unit baseline, 0001/0003/0004, topology and grantor
+checks, SET/ADMIN negative attacks, RLS, append-only behavior, idempotence,
+atomicity, 0004 rollback, 0001 rollback guarding, and cleanup. A package
+failure aborts the later phases; there is no cross-session pseudo-transaction.
 
 Cleanup verifies the harness ownership label and can remove only the exact
 container it created. It never prunes Docker resources and has no image-removal
