@@ -78,6 +78,18 @@ const CERTIFIED_SUBSTRATE_OID10_ROLE_NAME = SUPERUSER_ROLE
 const DEPENDENCY_GUARD_FAILURE_PATTERN =
   /stella_0001 rollback REFUSED: surviving relation\(s\) depend on governed ownership/
 
+/**
+ * The exact, stable PostgreSQL error text (SQLSTATE 22012) for the atomicity
+ * exercise's deliberately injected `SELECT 1 / 0;` — the one failure this
+ * witness must prove was actually reached. A non-zero exit alone is not
+ * proof: if the real decisionSource fails earlier (e.g. a permission error),
+ * the injected statement is never executed, the transaction still aborts
+ * non-zero, and the decision table still never exists — falsely satisfying
+ * both halves of verifyAtomicity's proof without the intended failure ever
+ * being reached. Never a generic non-zero exit.
+ */
+const ATOMICITY_INJECTED_FAILURE_PATTERN = /division by zero/
+
 type CertificationTransportKind = 'CONTAINER_LOCAL_SOCKET' | 'EXISTING_INSTALLER_TRANSPORT'
 
 interface CertificationPhaseIdentity {
@@ -343,6 +355,19 @@ export function describeR3_5Pg17CertificationPlan() {
         ] as const
       }),
     ),
+    /**
+     * The 0003 atomicity exercise's exact injected-failure contract, read
+     * directly from ATOMICITY_INJECTED_FAILURE_PATTERN — never invented here.
+     * Exposed declaratively so tests can bind the reason-specific proof to
+     * the same regex the live executor enforces, mirroring rollbackContracts
+     * below.
+     */
+    atomicityContract: Object.freeze({
+      injectedStatement: 'SELECT 1 / 0;',
+      expectedFailureSqlstate: '22012',
+      expectedFailurePattern: ATOMICITY_INJECTED_FAILURE_PATTERN.source,
+      genericFailureAccepted: false,
+    }),
     /**
      * The two governed rollback phases' exact confirmation contract, read
      * directly from db/prepared/stella_0004_rollback.sql and
@@ -694,7 +719,18 @@ function applySuperuserRollbackPhase(source: string, token: 'rollback-0001' | 'r
   assertPsqlSuccess(runSuperuserPsql(superuserRollbackSql(token, source)), step)
 }
 
-function assertPsqlRefusedWithReason(result: DockerResult, step: string, reasonPattern: RegExp): void {
+/**
+ * Fails closed unless the result is both a refusal AND a refusal for the
+ * expected reason — a non-zero exit alone (permission errors, missing
+ * relations, syntax errors, or any other package-level failure) is never
+ * sufficient. Exported so tests can exercise this exact production
+ * assertion against in-memory simulated process results, rather than
+ * reimplementing its two-part contract as a parallel test-only parser that
+ * could silently disagree with it. Takes only a fixed DockerResult shape and
+ * a RegExp — never SQL, a role, a container, or a database target — so
+ * exporting it does not create a caller-reachable generic executor.
+ */
+export function assertPsqlRefusedWithReason(result: DockerResult, step: string, reasonPattern: RegExp): void {
   if (result.status === 0) {
     throw new Error(`${MATRIX_ERROR} at ${step}: expected PostgreSQL refusal`)
   }
@@ -962,9 +998,10 @@ function verifyAtomicity(
   postgresPassword: string,
   migratorPassword: string,
 ): void {
-  assertPsqlRefused(
+  assertPsqlRefusedWithReason(
     runContainerPsql(MIGRATOR_ROLE, migratorPassword, migratorIdentitySql(`${decisionSource}\nSELECT 1 / 0;`)),
     '0003 injected failure',
+    ATOMICITY_INJECTED_FAILURE_PATTERN,
   )
   const absent = scalarAdminQuery(
     "SELECT to_regclass('public.stella_suggestion_decisions') IS NULL;",

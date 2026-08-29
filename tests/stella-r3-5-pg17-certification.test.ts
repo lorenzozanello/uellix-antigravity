@@ -233,6 +233,7 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       'R3_5_PG17_CERTIFICATION_MATRIX_STEPS',
       'R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX',
       'assertCertifiedSubstratePreflightObserved',
+      'assertPsqlRefusedWithReason',
       'certifiedSubstratePreflightQuery',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
@@ -638,9 +639,131 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       'R3_5_PG17_CERTIFICATION_MATRIX_STEPS',
       'R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX',
       'assertCertifiedSubstratePreflightObserved',
+      'assertPsqlRefusedWithReason',
       'certifiedSubstratePreflightQuery',
       'describeR3_5Pg17CertificationPlan',
       'parseR3_5Pg17CertificationArguments',
     ])
+  })
+
+  describe('atomicity witness — the injected 0003 failure must be reason-specific, never a generic non-zero exit (MSC-07B.8-R9E)', () => {
+    function dockerResult(status: number, stderr: string) {
+      return { status, stdout: '', stderr }
+    }
+
+    it('declares the exact injected-failure contract, sourced from the same regex the live executor enforces', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const contract = plan.atomicityContract
+
+      expect(contract.injectedStatement).toBe('SELECT 1 / 0;')
+      expect(contract.genericFailureAccepted).toBe(false)
+      expect(contract.expectedFailureSqlstate).toBe('22012')
+
+      const pattern = new RegExp(contract.expectedFailurePattern)
+      // Narrow, stable matcher — not a bare "ERROR" / non-zero-exit catch-all.
+      expect(contract.expectedFailurePattern).not.toBe('ERROR')
+      expect(contract.expectedFailurePattern.length).toBeGreaterThan('ERROR'.length)
+      expect(pattern.test('psql:<stdin>:405: ERROR:  division by zero')).toBe(true)
+    })
+
+    it('verifyAtomicity no longer relies on the generic refusal helper for the injected 0003 failure — it requires the reason-specific one (T1, T8)', () => {
+      const src = readHarnessSource()
+      const fn = extractFunctionSource(src, 'verifyAtomicity')
+      expect(fn.length).toBeGreaterThan(0)
+
+      // T8: reuses the canonical reason-aware helper already used by the 0001 rollback
+      // dependency guard — no duplicate refusal helper was introduced for this.
+      expect(fn).toMatch(/assertPsqlRefusedWithReason\(/)
+      // T1: the plain, reason-blind refusal check is gone from this function.
+      expect(fn).not.toMatch(/assertPsqlRefused\(/)
+      // T2: the reason is pinned via the named pattern, not inlined or invented ad hoc.
+      expect(fn).toMatch(/ATOMICITY_INJECTED_FAILURE_PATTERN/)
+
+      // T7: the table-absence rollback proof remains, and remains AFTER the
+      // reason-specific refusal — this is not a replacement for atomicity, only an addition.
+      const refusalIndex = fn.indexOf('assertPsqlRefusedWithReason(')
+      const rollbackIndex = fn.indexOf("to_regclass('public.stella_suggestion_decisions')")
+      expect(refusalIndex).toBeGreaterThan(-1)
+      expect(rollbackIndex).toBeGreaterThan(refusalIndex)
+
+      // T9: the injected statement and the real decisionSource concatenation are unchanged —
+      // this remediation only changes how the refusal is *verified*, not what runs.
+      expect(fn).toMatch(/\$\{decisionSource\}\\nSELECT 1 \/ 0;/)
+    })
+
+    it('only one production assertion function implements reason-matching — no parallel test-only parser was introduced', () => {
+      const src = readHarnessSource()
+      const definedFunctionNames = Array.from(src.matchAll(/^(?:export )?function (\w+)\(/gm)).map((m) => m[1])
+      const refusalHelpers = definedFunctionNames.filter((name) => /Refus/i.test(name))
+      expect(refusalHelpers.sort()).toEqual(['assertPsqlRefused', 'assertPsqlRefusedWithReason'])
+    })
+
+    describe('reason-specific refusal matcher, exercised against the real exported production assertion with in-memory simulated process results', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.atomicityContract.expectedFailurePattern)
+
+      function assertAtomicityWitness(result: { status: number; stdout: string; stderr: string }) {
+        executor.assertPsqlRefusedWithReason(result, '0003 injected failure', pattern)
+      }
+
+      it('CASE 1 — accepts a refusal for the exact injected division-by-zero reason', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(1, 'psql:<stdin>:406: ERROR:  division by zero')),
+        ).not.toThrow()
+      })
+
+      it('CASE 2 — rejects the historical R8Y false-green: permission denied for table organizations (42501)', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(1, 'psql:<stdin>:405: ERROR:  permission denied for table organizations')),
+        ).toThrow(/expected dependency-guard reason|not for the expected/i)
+      })
+
+      it('CASE 3 — rejects a missing-relation failure', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(1, 'psql:<stdin>:12: ERROR:  relation "does_not_exist" does not exist')),
+        ).toThrow()
+      })
+
+      it('CASE 4 — rejects a syntax-error failure', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(1, 'psql:<stdin>:1: ERROR:  syntax error at or near "SELECT"')),
+        ).toThrow()
+      })
+
+      it('CASE 4b — rejects an RLS-policy refusal', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(1, 'ERROR:  new row violates row-level security policy for table "stella_suggestion_decisions"')),
+        ).toThrow()
+      })
+
+      it('CASE 4c — rejects an ownership/grant refusal', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(1, 'ERROR:  must be owner of table stella_suggestion_decisions')),
+        ).toThrow()
+      })
+
+      it('CASE 5 — rejects a zero (successful) exit even if stderr happens to contain the reason text', () => {
+        expect(() =>
+          assertAtomicityWitness(dockerResult(0, 'division by zero')),
+        ).toThrow(/expected PostgreSQL refusal/i)
+      })
+
+      it('CASE 6 — rejects a non-zero exit with empty stderr', () => {
+        expect(() => assertAtomicityWitness(dockerResult(1, ''))).toThrow()
+      })
+
+      it('rejects a bare "ERROR" match attempt and a merely-broad regex — the contract itself is narrow, not just this one instance', () => {
+        expect(() => assertAtomicityWitness(dockerResult(1, 'ERROR:  something else entirely'))).toThrow()
+        expect(/^ERROR$/.test(plan.atomicityContract.expectedFailurePattern)).toBe(false)
+      })
+
+      it('regression (Part J): the exact R8Y 42501 failure text is rejected, and the deliberate 22012 injected failure is accepted', () => {
+        const r8y = dockerResult(1, 'psql:<stdin>:405:\nERROR: permission denied for table organizations')
+        expect(() => assertAtomicityWitness(r8y)).toThrow()
+
+        const injected = dockerResult(1, 'psql:<stdin>:406: ERROR:  division by zero')
+        expect(() => assertAtomicityWitness(injected)).not.toThrow()
+      })
+    })
   })
 })
