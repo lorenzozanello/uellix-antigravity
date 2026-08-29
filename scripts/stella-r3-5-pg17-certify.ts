@@ -90,6 +90,53 @@ const DEPENDENCY_GUARD_FAILURE_PATTERN =
  */
 const ATOMICITY_INJECTED_FAILURE_PATTERN = /division by zero/
 
+/**
+ * The append-only TRUNCATE witness's non-shadowed target (MSC-07B.8-R9O H-01).
+ * `public.stella_interactions` was the pre-remediation target, but by the time
+ * this witness runs, stella_0003 has already created
+ * `stella_suggestion_decisions.interaction_id REFERENCES
+ * stella_interactions(id)` — an inbound FK that makes PostgreSQL refuse the
+ * bare TRUNCATE ("cannot truncate a table referenced in a foreign key
+ * constraint") before the statement-level append-only trigger is ever
+ * reached, independent of whether that trigger would also have rejected it.
+ * `audit_logs` carries the same canonical trg_audit_logs_no_truncate trigger
+ * (stella_0002b) and has zero inbound FK references anywhere in the applied
+ * baseline or Stella packages (verified by exhaustive repository search), so
+ * a refusal here can only be the trigger.
+ */
+const APPEND_ONLY_TRUNCATE_WITNESS_TARGET = 'public.audit_logs'
+
+/**
+ * The exact, stable failure text public.uellix_forbid_mutation() raises
+ * (db/migrations/0030_immutability.sql: `RAISE EXCEPTION 'append-only: % on
+ * % is not permitted', TG_OP, TG_TABLE_NAME`) for TG_OP=TRUNCATE,
+ * TG_TABLE_NAME=audit_logs. Binds the specific trigger-function rejection —
+ * never a generic ACL ("permission denied for table"), FK ("cannot truncate
+ * a table referenced in a foreign key constraint"), ownership, syntax,
+ * missing-relation or connection failure.
+ */
+const APPEND_ONLY_TRUNCATE_WITNESS_REASON_PATTERN = /append-only: TRUNCATE on audit_logs is not permitted/
+
+/**
+ * PostgreSQL's own fixed message (guc.c / acl.c, `has_privs_of_role`) for a
+ * session issuing `SET ROLE` to a role it has no privilege to become. Used
+ * for both uellix_app's and postgres's SET ROLE owner negative witnesses
+ * (MSC-07B.8-R9O H-02, M-01) — never a generic non-zero exit, connection
+ * failure, authentication failure, or unrelated permission error.
+ */
+const SET_ROLE_OWNER_DENIED_PATTERN = /permission denied to set role "uellix_owner"/
+
+/**
+ * PostgreSQL's own fixed message for `GRANT role TO member WITH ADMIN
+ * OPTION` issued by a session that does not itself hold ADMIN OPTION on the
+ * granted role. Used for uellix_app's ADMIN OPTION negative witness
+ * (MSC-07B.8-R9O H-02) — never a generic non-zero exit.
+ */
+const ADMIN_OPTION_OWNER_DENIED_PATTERN = /must have admin option on role "uellix_owner"/
+
+/** The harmless, read-only identity query for H-02's positive uellix_app session control — never a value derived from data, catalogs, or caller input. */
+const APP_POSITIVE_IDENTITY_QUERY = 'SELECT current_user;'
+
 type CertificationTransportKind = 'CONTAINER_LOCAL_SOCKET' | 'EXISTING_INSTALLER_TRANSPORT'
 
 interface CertificationPhaseIdentity {
@@ -393,6 +440,61 @@ export function describeR3_5Pg17CertificationPlan() {
         genericFailureAccepted: false,
       }),
     }),
+    /**
+     * The append-only TRUNCATE witness's exact contract (MSC-07B.8-R9O H-01),
+     * read directly from APPEND_ONLY_TRUNCATE_WITNESS_TARGET/_REASON_PATTERN
+     * — never invented here. `executor`/`roleStatement` mirror the same
+     * migrator/SET LOCAL ROLE transport phaseTransactions already declares
+     * for stella_0003, reused rather than a second identity path.
+     */
+    appendOnlyContract: Object.freeze({
+      target: APPEND_ONLY_TRUNCATE_WITNESS_TARGET,
+      statement: `TRUNCATE TABLE ${APPEND_ONLY_TRUNCATE_WITNESS_TARGET};`,
+      executor: MIGRATOR_ROLE,
+      effectiveRole: OWNER_ROLE,
+      roleStatement: `SET LOCAL ROLE ${OWNER_ROLE};`,
+      expectedFailurePattern: APPEND_ONLY_TRUNCATE_WITNESS_REASON_PATTERN.source,
+      genericFailureAccepted: false,
+    }),
+    /**
+     * H-02's positive uellix_app session control: proves the exact same
+     * connection parameters (role, password, container, transport) used by
+     * the two negatives below actually establish a session, before either
+     * negative is trusted to mean anything beyond "the process exited
+     * non-zero for some reason."
+     */
+    appPositiveIdentityControl: Object.freeze({
+      role: APP_ROLE,
+      query: APP_POSITIVE_IDENTITY_QUERY,
+      expectedIdentity: APP_ROLE,
+    }),
+    /**
+     * The three SET ROLE / ADMIN OPTION authority negatives' exact contracts
+     * (MSC-07B.8-R9O H-02, M-01), read directly from
+     * SET_ROLE_OWNER_DENIED_PATTERN / ADMIN_OPTION_OWNER_DENIED_PATTERN —
+     * PostgreSQL's own fixed messages for these two authority refusals, never
+     * invented here or accepted as a bare non-zero exit.
+     */
+    negativeAuthorityContracts: Object.freeze({
+      appSetRoleOwner: Object.freeze({
+        role: APP_ROLE,
+        statement: `SET ROLE ${OWNER_ROLE};`,
+        expectedFailurePattern: SET_ROLE_OWNER_DENIED_PATTERN.source,
+        genericFailureAccepted: false,
+      }),
+      appAdminOptionOwner: Object.freeze({
+        role: APP_ROLE,
+        statement: `GRANT ${OWNER_ROLE} TO ${APP_ROLE} WITH ADMIN OPTION;`,
+        expectedFailurePattern: ADMIN_OPTION_OWNER_DENIED_PATTERN.source,
+        genericFailureAccepted: false,
+      }),
+      adminSetRoleOwner: Object.freeze({
+        role: ADMIN_ROLE,
+        statement: `SET ROLE ${OWNER_ROLE};`,
+        expectedFailurePattern: SET_ROLE_OWNER_DENIED_PATTERN.source,
+        genericFailureAccepted: false,
+      }),
+    }),
   })
 }
 
@@ -553,12 +655,6 @@ function runContainerPsql(
 function assertPsqlSuccess(result: DockerResult, step: string): void {
   if (result.status !== 0) {
     throw new Error(`${MATRIX_ERROR} at ${step}: ${result.stderr.trim()}`)
-  }
-}
-
-function assertPsqlRefused(result: DockerResult, step: string): void {
-  if (result.status === 0) {
-    throw new Error(`${MATRIX_ERROR} at ${step}: expected PostgreSQL refusal`)
   }
 }
 
@@ -776,10 +872,19 @@ function provisionFixedLogin(role: typeof MIGRATOR_ROLE | typeof APP_ROLE, passw
   applyAdminPhase(`ALTER ROLE ${role} PASSWORD '${password}';`, postgresPassword, `provision ${role} login`)
 }
 
-function scalarAdminQuery(sql: string, postgresPassword: string, step: string): string {
-  const result = runContainerPsql(ADMIN_ROLE, postgresPassword, sql, { tuplesOnly: true })
+function scalarQuery(
+  role: typeof ADMIN_ROLE | typeof MIGRATOR_ROLE | typeof APP_ROLE,
+  password: string,
+  sql: string,
+  step: string,
+): string {
+  const result = runContainerPsql(role, password, sql, { tuplesOnly: true })
   assertPsqlSuccess(result, step)
   return result.stdout.trim()
+}
+
+function scalarAdminQuery(sql: string, postgresPassword: string, step: string): string {
+  return scalarQuery(ADMIN_ROLE, postgresPassword, sql, step)
 }
 
 /**
@@ -959,21 +1064,46 @@ WHERE m.rolname IN ('uellix_migrator', 'uellix_app', 'postgres')
   }
 }
 
-function verifySetAndAdminNegativeAttacks(
-  postgresPassword: string,
-  appPassword: string,
-): void {
-  assertPsqlRefused(
+/**
+ * H-02's positive uellix_app session control (MSC-07B.8-R9O): proves, using
+ * the exact same role/password/container/transport as the two negatives
+ * below, that a uellix_app login genuinely succeeds — so neither negative can
+ * be satisfied by an authentication or transport failure that never reached
+ * an authority decision at all.
+ */
+function verifyAppPositiveIdentityControl(appPassword: string): void {
+  const observed = scalarQuery(APP_ROLE, appPassword, APP_POSITIVE_IDENTITY_QUERY, 'uellix_app positive identity control')
+  if (observed !== APP_ROLE) {
+    throw new Error(
+      `${MATRIX_ERROR} at uellix_app positive identity control: expected current_user=${APP_ROLE}, observed ${JSON.stringify(observed)}`,
+    )
+  }
+}
+
+/** Reason-aware (MSC-07B.8-R9O H-02): fails closed unless refused for PostgreSQL's own SET ROLE authority-denial text — a connection failure, auth failure, or unrelated permission error can no longer satisfy this witness. */
+function verifyAppSetRoleNegative(appPassword: string): void {
+  assertPsqlRefusedWithReason(
     runContainerPsql(APP_ROLE, appPassword, `SET ROLE ${OWNER_ROLE};`),
     'app SET ROLE owner negative attack',
+    SET_ROLE_OWNER_DENIED_PATTERN,
   )
-  assertPsqlRefused(
-    runContainerPsql(ADMIN_ROLE, postgresPassword, `SET ROLE ${OWNER_ROLE};`),
-    'admin SET ROLE owner negative attack',
-  )
-  assertPsqlRefused(
+}
+
+/** Reason-aware (MSC-07B.8-R9O H-02): fails closed unless refused for PostgreSQL's own ADMIN OPTION authority-denial text. */
+function verifyAppAdminOptionNegative(appPassword: string): void {
+  assertPsqlRefusedWithReason(
     runContainerPsql(APP_ROLE, appPassword, `GRANT ${OWNER_ROLE} TO ${APP_ROLE} WITH ADMIN OPTION;`),
     'app ADMIN OPTION negative attack',
+    ADMIN_OPTION_OWNER_DENIED_PATTERN,
+  )
+}
+
+/** Reason-aware (MSC-07B.8-R9O M-01): same SET ROLE authority-denial text as verifyAppSetRoleNegative, for the postgres installer identity — resolved from ADMIN_ROLE, never assumed. */
+function verifyAdminSetRoleNegative(postgresPassword: string): void {
+  assertPsqlRefusedWithReason(
+    runContainerPsql(ADMIN_ROLE, postgresPassword, `SET ROLE ${OWNER_ROLE};`),
+    'admin SET ROLE owner negative attack',
+    SET_ROLE_OWNER_DENIED_PATTERN,
   )
 }
 
@@ -986,10 +1116,24 @@ function verifyRls(postgresPassword: string): void {
   if (rls !== 't') throw new Error(`${MATRIX_ERROR} at decision RLS`)
 }
 
-function verifyAppendOnly(postgresPassword: string): void {
-  assertPsqlRefused(
-    runContainerPsql(ADMIN_ROLE, postgresPassword, 'TRUNCATE TABLE public.stella_interactions;'),
+/**
+ * Reason-aware append-only TRUNCATE witness (MSC-07B.8-R9O H-01). Runs as
+ * uellix_migrator with `SET LOCAL ROLE uellix_owner` — the same identity
+ * path stella_0003 already uses — so the TRUNCATE reaches
+ * APPEND_ONLY_TRUNCATE_WITNESS_TARGET with full owner-implicit privilege
+ * (never shadowed by an ACL refusal for a non-owner) and with no inbound FK
+ * (never shadowed by a foreign-key refusal), and can only be rejected by the
+ * statement-level append-only trigger itself.
+ */
+function verifyAppendOnly(migratorPassword: string): void {
+  assertPsqlRefusedWithReason(
+    runContainerPsql(
+      MIGRATOR_ROLE,
+      migratorPassword,
+      migratorIdentitySql(`TRUNCATE TABLE ${APPEND_ONLY_TRUNCATE_WITNESS_TARGET};`),
+    ),
     'append-only truncate negative attack',
+    APPEND_ONLY_TRUNCATE_WITNESS_REASON_PATTERN,
   )
 }
 
@@ -1097,9 +1241,12 @@ function executeFixedCertification(): void {
     applyCertificationPhase(separation, sources, postgresPassword, migratorPassword)
 
     verifyExactMembershipsAndGrantor(postgresPassword)
-    verifySetAndAdminNegativeAttacks(postgresPassword, appPassword)
+    verifyAppPositiveIdentityControl(appPassword)
+    verifyAppSetRoleNegative(appPassword)
+    verifyAppAdminOptionNegative(appPassword)
+    verifyAdminSetRoleNegative(postgresPassword)
     verifyRls(postgresPassword)
-    verifyAppendOnly(postgresPassword)
+    verifyAppendOnly(migratorPassword)
     verifyIdempotence(sources, postgresPassword, migratorPassword)
     verifyRollbacks(sources)
     console.log('MSC-07B R3.5 PG17 certification passed inside the disposable, network-isolated container.')

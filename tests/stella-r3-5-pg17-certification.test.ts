@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
@@ -691,11 +691,15 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       expect(fn).toMatch(/\$\{decisionSource\}\\nSELECT 1 \/ 0;/)
     })
 
-    it('only one production assertion function implements reason-matching — no parallel test-only parser was introduced', () => {
+    it('only one production assertion function implements reason-matching — no parallel test-only parser was introduced, and the reason-blind helper is gone (MSC-07B.8-R9O)', () => {
       const src = readHarnessSource()
       const definedFunctionNames = Array.from(src.matchAll(/^(?:export )?function (\w+)\(/gm)).map((m) => m[1])
       const refusalHelpers = definedFunctionNames.filter((name) => /Refus/i.test(name))
-      expect(refusalHelpers.sort()).toEqual(['assertPsqlRefused', 'assertPsqlRefusedWithReason'])
+      // R9O removed the last three call sites of the reason-blind assertPsqlRefused (the two
+      // uellix_app negatives, the admin negative, and the append-only witness), leaving it
+      // unused — so it was deleted rather than left as dead code.
+      expect(refusalHelpers.sort()).toEqual(['assertPsqlRefusedWithReason'])
+      expect(src).not.toMatch(/function assertPsqlRefused\(/)
     })
 
     describe('reason-specific refusal matcher, exercised against the real exported production assertion with in-memory simulated process results', () => {
@@ -764,6 +768,354 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
         const injected = dockerResult(1, 'psql:<stdin>:406: ERROR:  division by zero')
         expect(() => assertAtomicityWitness(injected)).not.toThrow()
       })
+    })
+  })
+
+  /** Every `.sql` file under `dir`, recursively — used to prove the absence of an inbound FK, not just its absence from one hand-picked file. */
+  function collectSqlFiles(dir: string): string[] {
+    const entries = readdirSync(dir, { withFileTypes: true })
+    const files: string[] = []
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) files.push(...collectSqlFiles(full))
+      else if (entry.isFile() && entry.name.endsWith('.sql')) files.push(full)
+    }
+    return files
+  }
+
+  describe('H-01: append-only TRUNCATE witness — reason-aware, non-shadowed target (MSC-07B.8-R9O)', () => {
+    it('H01-T1/T2/T3: the old shadowed stella_interactions witness is gone; the new witness targets audit_logs as uellix_migrator/SET LOCAL ROLE uellix_owner', () => {
+      const src = readHarnessSource()
+      const fn = extractFunctionSource(src, 'verifyAppendOnly')
+      expect(fn.length).toBeGreaterThan(0)
+
+      // T1: old shadowed target/executor gone.
+      expect(fn).not.toMatch(/stella_interactions/)
+      expect(fn).not.toMatch(/runContainerPsql\(\s*ADMIN_ROLE/)
+
+      // T2/T3: exact selected target and executor.
+      expect(fn).toMatch(/APPEND_ONLY_TRUNCATE_WITNESS_TARGET/)
+      expect(fn).toMatch(/MIGRATOR_ROLE/)
+      expect(fn).toMatch(/migratorIdentitySql\(/)
+
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      expect(plan.appendOnlyContract.target).toBe('public.audit_logs')
+      expect(plan.appendOnlyContract.executor).toBe('uellix_migrator')
+      expect(plan.appendOnlyContract.effectiveRole).toBe('uellix_owner')
+      expect(plan.appendOnlyContract.roleStatement).toBe('SET LOCAL ROLE uellix_owner;')
+      expect(plan.appendOnlyContract.statement).toBe('TRUNCATE TABLE public.audit_logs;')
+      expect(plan.appendOnlyContract.genericFailureAccepted).toBe(false)
+    })
+
+    it('H01-T4: the witness requires the exact trigger-function reason pattern, read from public.uellix_forbid_mutation()\'s own RAISE EXCEPTION text', () => {
+      const immutability = readFileSync(path.join(ROOT, 'db', 'migrations', '0030_immutability.sql'), 'utf8')
+      expect(immutability).toMatch(/RAISE EXCEPTION 'append-only: % on % is not permitted', TG_OP, TG_TABLE_NAME/)
+
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.appendOnlyContract.expectedFailurePattern)
+      expect(pattern.test('psql:<stdin>:12: ERROR:  append-only: TRUNCATE on audit_logs is not permitted')).toBe(true)
+      // Narrow, not a bare "ERROR" / "append-only" catch-all.
+      expect(plan.appendOnlyContract.expectedFailurePattern).not.toBe('ERROR')
+      expect(plan.appendOnlyContract.expectedFailurePattern).not.toBe('append-only')
+    })
+
+    it('H01-T5: no table anywhere under db/ holds a foreign key referencing audit_logs — the FK shadow this remediation exists to avoid (and stella_suggestion_decisions DOES reference the old, shadowed target)', () => {
+      const fkReferencesAuditLogs = /REFERENCES\s+(?:public\.)?audit_logs\s*\(/i
+      const sqlFiles = collectSqlFiles(path.join(ROOT, 'db'))
+      expect(sqlFiles.length).toBeGreaterThan(50)
+
+      const offenders = sqlFiles.filter((file) => fkReferencesAuditLogs.test(readFileSync(file, 'utf8')))
+      expect(offenders).toEqual([])
+
+      // Regression control: prove this scan actually finds a real FK when one exists, by
+      // confirming it against the DOCUMENTED shadow on the OLD target.
+      const decisions = readPrepared('stella_0003_suggestion_decisions.sql')
+      expect(decisions).toMatch(/REFERENCES public\.stella_interactions\(id\)/)
+      expect(/REFERENCES\s+(?:public\.)?stella_interactions\s*\(/i.test(decisions)).toBe(true)
+    })
+
+    it('H01-T6/T7/T8: an ACL, FK, or connection-failure refusal cannot satisfy the witness', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.appendOnlyContract.expectedFailurePattern)
+
+      // T6: generic ACL "permission denied"
+      expect(pattern.test('ERROR:  permission denied for table audit_logs')).toBe(false)
+      // T5 (FK): the exact shadow the old stella_interactions target suffered from.
+      expect(pattern.test('ERROR:  cannot truncate a table referenced in a foreign key constraint')).toBe(false)
+      // T7: connection failure
+      expect(pattern.test('psql: error: connection to server was lost')).toBe(false)
+      expect(pattern.test('psql: error: connection refused')).toBe(false)
+    })
+
+    it('H01-T8b/T9: a syntax error cannot pass, but the exact intended trigger error does', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.appendOnlyContract.expectedFailurePattern)
+
+      expect(pattern.test('psql:<stdin>:1: ERROR:  syntax error at or near "TRUNCATE"')).toBe(false)
+      expect(pattern.test('ERROR:  relation "does_not_exist" does not exist')).toBe(false)
+      expect(pattern.test('psql:<stdin>:9: ERROR:  append-only: TRUNCATE on audit_logs is not permitted')).toBe(true)
+    })
+
+    it('H01-T9b: a wrong-table or wrong-operation trigger reason (same function, different call site) does not satisfy this witness', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.appendOnlyContract.expectedFailurePattern)
+
+      // Same message shape, wrong table — must not be confused with a different protected table.
+      expect(pattern.test('ERROR:  append-only: TRUNCATE on stella_interactions is not permitted')).toBe(false)
+      expect(pattern.test('ERROR:  append-only: TRUNCATE on sroi_calculation_runs is not permitted')).toBe(false)
+      // Same table, wrong operation — must not be confused with the row-level UPDATE/DELETE trigger.
+      expect(pattern.test('ERROR:  append-only: UPDATE on audit_logs is not permitted')).toBe(false)
+      expect(pattern.test('ERROR:  append-only: DELETE on audit_logs is not permitted')).toBe(false)
+    })
+
+    it('H01-T10: broadening the matcher to a bare "ERROR" or "append-only" would defeat the whole point — the contract must never regress to that', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      expect(/^ERROR$/.test(plan.appendOnlyContract.expectedFailurePattern)).toBe(false)
+      expect(/^append-only$/.test(plan.appendOnlyContract.expectedFailurePattern)).toBe(false)
+      expect(plan.appendOnlyContract.expectedFailurePattern).toContain('audit_logs')
+      expect(plan.appendOnlyContract.expectedFailurePattern).toContain('TRUNCATE')
+    })
+  })
+
+  describe('H-02: uellix_app positive session control + reason-aware SET ROLE / ADMIN OPTION negatives (MSC-07B.8-R9O)', () => {
+    it('H02-T1: a positive uellix_app identity control exists and runs before both app negatives', () => {
+      const src = readHarnessSource()
+      const orderIndex = (needle: string) => src.indexOf(needle)
+
+      const executeFn = extractFunctionSource(src, 'executeFixedCertification')
+      const positiveCall = orderIndex('verifyAppPositiveIdentityControl(appPassword)')
+      const setRoleCall = orderIndex('verifyAppSetRoleNegative(appPassword)')
+      const adminOptionCall = orderIndex('verifyAppAdminOptionNegative(appPassword)')
+
+      expect(executeFn).toMatch(/verifyAppPositiveIdentityControl\(appPassword\)/)
+      expect(positiveCall).toBeGreaterThan(-1)
+      expect(setRoleCall).toBeGreaterThan(positiveCall)
+      expect(adminOptionCall).toBeGreaterThan(positiveCall)
+    })
+
+    it('H02-T2/T3: the positive control requires psql exit success AND the exact uellix_app identity — declared via the plan contract', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      expect(plan.appPositiveIdentityControl.role).toBe('uellix_app')
+      expect(plan.appPositiveIdentityControl.query).toBe('SELECT current_user;')
+      expect(plan.appPositiveIdentityControl.expectedIdentity).toBe('uellix_app')
+
+      const fn = extractFunctionSource(readHarnessSource(), 'verifyAppPositiveIdentityControl')
+      expect(fn).toMatch(/scalarQuery\(/)
+      expect(fn).toMatch(/APP_ROLE/)
+      expect(fn).toMatch(/observed !== APP_ROLE/)
+    })
+
+    it('H02-T4/T5: the positive control does not merely check exit success — it compares the observed identity exactly', () => {
+      // scalarQuery (which the positive control calls) itself throws on any non-zero exit
+      // (auth failure, connection failure) via assertPsqlSuccess before the identity comparison
+      // ever runs, and the comparison is a strict `!==`, not a substring/includes check — so
+      // neither an auth failure nor a wrong current_user (e.g. "postgres") can satisfy it.
+      const fn = extractFunctionSource(readHarnessSource(), 'verifyAppPositiveIdentityControl')
+      expect(fn).not.toMatch(/\.includes\(/)
+      expect(fn).not.toMatch(/status\s*===\s*0/)
+      const scalarQueryFn = extractFunctionSource(readHarnessSource(), 'scalarQuery')
+      expect(scalarQueryFn).toMatch(/assertPsqlSuccess\(/)
+    })
+
+    it('H02-T6/T7/T8/T9: app SET ROLE negative accepts only the exact SET ROLE authority-denial text', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.negativeAuthorityContracts.appSetRoleOwner.expectedFailurePattern)
+
+      expect(plan.negativeAuthorityContracts.appSetRoleOwner.role).toBe('uellix_app')
+      expect(plan.negativeAuthorityContracts.appSetRoleOwner.statement).toBe('SET ROLE uellix_owner;')
+      expect(plan.negativeAuthorityContracts.appSetRoleOwner.genericFailureAccepted).toBe(false)
+
+      // T6: the correct reason passes.
+      expect(pattern.test('ERROR:  permission denied to set role "uellix_owner"')).toBe(true)
+      // T7: generic nonzero / unrelated permission error cannot pass.
+      expect(pattern.test('ERROR:  permission denied for table audit_logs')).toBe(false)
+      expect(pattern.test('ERROR:  syntax error at or near "SET"')).toBe(false)
+      // T8: connection failure cannot pass.
+      expect(pattern.test('psql: error: connection to server was lost')).toBe(false)
+      // T9: unrelated permission failure / wrong role name cannot pass.
+      expect(pattern.test('ERROR:  permission denied to set role "uellix_writer"')).toBe(false)
+      expect(pattern.test('ERROR:  role "uellix_owner" does not exist')).toBe(false)
+      expect(pattern.test('psql: error: password authentication failed for user "uellix_app"')).toBe(false)
+    })
+
+    it('H02-T10/T11/T12: app ADMIN OPTION negative accepts only the exact admin-option authority-denial text', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern)
+
+      expect(plan.negativeAuthorityContracts.appAdminOptionOwner.role).toBe('uellix_app')
+      expect(plan.negativeAuthorityContracts.appAdminOptionOwner.statement).toBe(
+        'GRANT uellix_owner TO uellix_app WITH ADMIN OPTION;',
+      )
+
+      // T10: correct reason passes.
+      expect(pattern.test('ERROR:  must have admin option on role "uellix_owner"')).toBe(true)
+      // T11: generic nonzero cannot pass.
+      expect(pattern.test('ERROR:  permission denied for table audit_logs')).toBe(false)
+      // T12: wrong-authority error (SET ROLE text, not GRANT/ADMIN OPTION text) cannot pass.
+      expect(pattern.test('ERROR:  permission denied to set role "uellix_owner"')).toBe(false)
+      expect(pattern.test('ERROR:  role "uellix_app" is not permitted to log in')).toBe(false)
+    })
+
+    it('no credential value is ever logged, printed, or embedded in the positive control or either negative', () => {
+      const src = readHarnessSource()
+      const positiveFn = extractFunctionSource(src, 'verifyAppPositiveIdentityControl')
+      const setRoleFn = extractFunctionSource(src, 'verifyAppSetRoleNegative')
+      const adminOptionFn = extractFunctionSource(src, 'verifyAppAdminOptionNegative')
+      for (const fn of [positiveFn, setRoleFn, adminOptionFn]) {
+        expect(fn).not.toMatch(/console\.(log|error|warn|info)/)
+        expect(fn).not.toMatch(/DATABASE_URL|postgresql:\/\//)
+      }
+    })
+  })
+
+  describe('M-01: admin/postgres SET ROLE owner negative — reason-aware, resolved (not assumed) identity (MSC-07B.8-R9O)', () => {
+    it('M01-T1/T2: the exact negative statement and executor identity are pinned — resolved from ADMIN_ROLE, never an assumed abstract "admin"', () => {
+      const fn = extractFunctionSource(readHarnessSource(), 'verifyAdminSetRoleNegative')
+      expect(fn.length).toBeGreaterThan(0)
+      expect(fn).toMatch(/runContainerPsql\(ADMIN_ROLE, postgresPassword, `SET ROLE \$\{OWNER_ROLE\};`\)/)
+
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      expect(plan.negativeAuthorityContracts.adminSetRoleOwner.role).toBe('postgres')
+      expect(plan.negativeAuthorityContracts.adminSetRoleOwner.statement).toBe('SET ROLE uellix_owner;')
+      // ADMIN_ROLE ('postgres') is confirmed non-superuser and not a member of uellix_owner by
+      // the substrate preflight and the exact membership matrix elsewhere in this file — so the
+      // resolved executor is legitimately expected to be refused (not an inconsistent assumption).
+      expect(plan.substratePreflight.installerExpectedRolsuper).toBe(false)
+    })
+
+    it('M01-T3: the expected authority-refusal reason is pinned to PostgreSQL\'s own fixed SET ROLE message', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      expect(plan.negativeAuthorityContracts.adminSetRoleOwner.expectedFailurePattern).toBe(
+        plan.negativeAuthorityContracts.appSetRoleOwner.expectedFailurePattern,
+      )
+      expect(plan.negativeAuthorityContracts.adminSetRoleOwner.genericFailureAccepted).toBe(false)
+    })
+
+    it('M01-T4/T5/T6: generic nonzero, connection/auth failure, and unrelated permission errors are all rejected', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.negativeAuthorityContracts.adminSetRoleOwner.expectedFailurePattern)
+
+      expect(pattern.test('ERROR:  permission denied for table audit_logs')).toBe(false)
+      expect(pattern.test('psql: error: connection refused')).toBe(false)
+      expect(pattern.test('psql: error: password authentication failed for user "postgres"')).toBe(false)
+      expect(pattern.test('ERROR:  role "uellix_owner" does not exist')).toBe(false)
+    })
+
+    it('M01-T7: the correct reason is accepted', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.negativeAuthorityContracts.adminSetRoleOwner.expectedFailurePattern)
+      expect(pattern.test('ERROR:  permission denied to set role "uellix_owner"')).toBe(true)
+    })
+  })
+
+  describe('Helper behavior matrix — every reason-aware witness touched by R9O accepts only its own exact reason, exercised against the real exported production assertion (Section T)', () => {
+    const plan = executor.describeR3_5Pg17CertificationPlan()
+
+    const witnesses: Array<{ readonly name: string; readonly pattern: RegExp; readonly acceptedText: string }> = [
+      {
+        name: 'append-only TRUNCATE (H-01)',
+        pattern: new RegExp(plan.appendOnlyContract.expectedFailurePattern),
+        acceptedText: 'ERROR:  append-only: TRUNCATE on audit_logs is not permitted',
+      },
+      {
+        name: 'app SET ROLE (H-02)',
+        pattern: new RegExp(plan.negativeAuthorityContracts.appSetRoleOwner.expectedFailurePattern),
+        acceptedText: 'ERROR:  permission denied to set role "uellix_owner"',
+      },
+      {
+        name: 'app ADMIN OPTION (H-02)',
+        pattern: new RegExp(plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern),
+        acceptedText: 'ERROR:  must have admin option on role "uellix_owner"',
+      },
+      {
+        name: 'admin SET ROLE (M-01)',
+        pattern: new RegExp(plan.negativeAuthorityContracts.adminSetRoleOwner.expectedFailurePattern),
+        acceptedText: 'ERROR:  permission denied to set role "uellix_owner"',
+      },
+    ]
+
+    const attackShapes: Array<{ readonly label: string; readonly status: number; readonly stderr: string; readonly acceptedOnly: boolean }> = [
+      { label: 'exit 0 + expected text (never a pass, even if stderr happens to contain it)', status: 0, stderr: '', acceptedOnly: false },
+      { label: 'exit nonzero + wrong text', status: 1, stderr: 'ERROR:  something else entirely', acceptedOnly: false },
+      { label: 'exit nonzero + empty stderr', status: 1, stderr: '', acceptedOnly: false },
+      { label: 'connection refused', status: 1, stderr: 'psql: error: connection to server at "127.0.0.1" failed: Connection refused', acceptedOnly: false },
+      { label: 'authentication failed', status: 1, stderr: 'psql: error: connection to server failed: FATAL:  password authentication failed for user "x"', acceptedOnly: false },
+      { label: 'syntax error', status: 1, stderr: 'ERROR:  syntax error at or near "SELECT"', acceptedOnly: false },
+      { label: 'missing relation', status: 1, stderr: 'ERROR:  relation "does_not_exist" does not exist', acceptedOnly: false },
+      { label: 'missing role', status: 1, stderr: 'ERROR:  role "uellix_ghost" does not exist', acceptedOnly: false },
+      { label: 'generic permission denied', status: 1, stderr: 'ERROR:  permission denied for table audit_logs', acceptedOnly: false },
+    ]
+
+    for (const witness of witnesses) {
+      describe(witness.name, () => {
+        it('accepts exactly its own reason', () => {
+          expect(() =>
+            executor.assertPsqlRefusedWithReason({ status: 1, stdout: '', stderr: witness.acceptedText }, witness.name, witness.pattern),
+          ).not.toThrow()
+        })
+
+        for (const attack of attackShapes) {
+          it(`rejects: ${attack.label}`, () => {
+            expect(() =>
+              executor.assertPsqlRefusedWithReason(
+                { status: attack.status, stdout: '', stderr: attack.stderr },
+                witness.name,
+                witness.pattern,
+              ),
+            ).toThrow()
+          })
+        }
+      })
+    }
+  })
+
+  describe('HIGH-2 atomicity witness is unregressed by the R9O harness remediation', () => {
+    it('the atomicity contract and pattern are unchanged from before this remediation', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      expect(plan.atomicityContract.injectedStatement).toBe('SELECT 1 / 0;')
+      expect(plan.atomicityContract.expectedFailureSqlstate).toBe('22012')
+      expect(plan.atomicityContract.expectedFailurePattern).toBe('division by zero')
+      expect(plan.atomicityContract.genericFailureAccepted).toBe(false)
+    })
+  })
+
+  describe('transport, phase order, and package freeze non-regression (MSC-07B.8-R9O Sections N/O/Y)', () => {
+    it('no Docker invocation mechanism, credential handling, or phase order changed — only assertion/target logic', () => {
+      const src = readHarnessSource()
+      // The three remediated call sites still use runContainerPsql / runSuperuserPsql — no new
+      // transport function, no shell interpolation of a password into a command string.
+      expect(src).toMatch(/function runContainerPsql\(/)
+      expect(src).toMatch(/function runSuperuserPsql\(/)
+      expect(src).not.toMatch(/execSync\(/) // only execFileSync is used anywhere in this file
+      expect(src.match(/function runDocker\(/g)).toHaveLength(1)
+    })
+
+    it('R3_5_PG17_CERTIFICATION_MATRIX_STEPS order is unchanged', () => {
+      expect(executor.R3_5_PG17_CERTIFICATION_MATRIX_STEPS).toEqual([
+        'certified-substrate-preflight',
+        'pg17-supabase-surface',
+        'storage-shim',
+        'baseline-50',
+        'stella-0001-topology',
+        'stella-0003-migrator-owner',
+        'stella-0004-separation',
+        'exact-memberships-and-grantor',
+        'set-and-admin-negative-attacks',
+        'rls',
+        'append-only',
+        'idempotence',
+        'atomicity',
+        'stella-0004-rollback',
+        'stella-0001-rollback',
+        'cleanup',
+      ])
+    })
+
+    it('the seven governed SQL package hashes are unchanged by this harness-only remediation', () => {
+      for (const [file, expected] of Object.entries(EXPECTED_HASHES)) {
+        const actual = createHash('sha256').update(readFileSync(path.join(ROOT, 'db', 'prepared', file))).digest('hex')
+        expect(actual, file).toBe(expected)
+      }
     })
   })
 })
