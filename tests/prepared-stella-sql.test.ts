@@ -3590,7 +3590,11 @@ describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — VR-03 
   it('every canonical predicate checks tgfoid, NOT tgisinternal, tgenabled = O, and the STATEMENT-level (never ROW) TRUNCATE bits', () => {
     const perTriggerBlocks = TRIGGER_TARGETS.map(([, trigger]) => {
       const start = section.indexOf(`t.tgname = '${trigger}'`)
-      return section.slice(start, start + 400)
+      // Window sized to the whole is_canonical SELECT (longest block is ~731
+      // chars as of the M-4 event-set exclusions), not a byte count that
+      // predates them.
+      const end = section.indexOf('INTO is_canonical;', start)
+      return section.slice(start, end)
     })
     for (const block of perTriggerBlocks) {
       expect(block).toMatch(/\(t\.tgtype & 1\) = 0 AND \(t\.tgtype & 2\) = 2/)
@@ -3792,6 +3796,188 @@ describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — M-3 ca
       expect(selectEnd, trigger).toBeGreaterThan(-1)
       expect(ifNotIndex, trigger).toBeGreaterThan(selectEnd)
       expect(dropIndex, trigger).toBeGreaterThan(ifNotIndex)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MSC-07B.8-R9M — M-4: the four 0002b canonical predicates bound the TRUNCATE
+// bit but never excluded INSERT/DELETE/UPDATE, so a trigger such as
+// `BEFORE INSERT OR TRUNCATE FOR EACH STATEMENT EXECUTE FUNCTION
+// public.uellix_forbid_mutation()` would satisfy every previously-bound field
+// and be classified canonical. These tests evaluate the predicate's tgtype
+// bitmask logic directly from SOURCE (not by hash pin, not by connecting to
+// PostgreSQL), so a regression is caught even if the file's hash were repinned
+// to hide it.
+// ---------------------------------------------------------------------------
+
+/** PostgreSQL pg_trigger.tgtype bit values (see stella_0002b's own comments). */
+const TGTYPE_BITS = {
+  ROW: 1,
+  BEFORE: 2,
+  INSERT: 4,
+  DELETE: 8,
+  UPDATE: 16,
+  TRUNCATE: 32,
+} as const
+
+const CANONICAL_TGTYPE = TGTYPE_BITS.BEFORE | TGTYPE_BITS.TRUNCATE // statement-level, BEFORE TRUNCATE only
+
+/** Every event-set false-green case M-4 must reject, keyed by description. */
+const FALSE_GREEN_EVENT_SETS: Record<string, number> = {
+  'TRUNCATE OR INSERT': CANONICAL_TGTYPE | TGTYPE_BITS.INSERT,
+  'TRUNCATE OR DELETE': CANONICAL_TGTYPE | TGTYPE_BITS.DELETE,
+  'TRUNCATE OR UPDATE': CANONICAL_TGTYPE | TGTYPE_BITS.UPDATE,
+  'TRUNCATE OR INSERT OR DELETE': CANONICAL_TGTYPE | TGTYPE_BITS.INSERT | TGTYPE_BITS.DELETE,
+  'TRUNCATE OR INSERT OR UPDATE': CANONICAL_TGTYPE | TGTYPE_BITS.INSERT | TGTYPE_BITS.UPDATE,
+  'TRUNCATE OR DELETE OR UPDATE': CANONICAL_TGTYPE | TGTYPE_BITS.DELETE | TGTYPE_BITS.UPDATE,
+  'TRUNCATE OR INSERT OR DELETE OR UPDATE':
+    CANONICAL_TGTYPE | TGTYPE_BITS.INSERT | TGTYPE_BITS.DELETE | TGTYPE_BITS.UPDATE,
+}
+
+/**
+ * Parse every `(t.tgtype & N) = M` constraint out of a predicate block and
+ * evaluate them against a candidate tgtype value. This is pure catalog
+ * semantics — the same bitmask arithmetic PostgreSQL itself would apply to
+ * pg_trigger.tgtype — reproduced in source so it can be asserted without a
+ * database connection.
+ */
+function tgTypeConstraints(block: string): Array<{ mask: number; expected: number }> {
+  const out: Array<{ mask: number; expected: number }> = []
+  const re = /\(t\.tgtype & (\d+)\) = (\d+)/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(block))) {
+    out.push({ mask: Number(m[1]), expected: Number(m[2]) })
+  }
+  return out
+}
+
+function satisfiesTgType(block: string, tgtype: number): boolean {
+  const constraints = tgTypeConstraints(block)
+  return constraints.length > 0 && constraints.every(({ mask, expected }) => (tgtype & mask) === expected)
+}
+
+describe('db/prepared/stella_0002b_append_only_truncate_hardening.sql — M-4 exact event-set completion (4 triggers)', () => {
+  const raw = read('stella_0002b_append_only_truncate_hardening.sql')
+  const sectionStart = raw.indexOf('-- 4. Statement-level TRUNCATE triggers')
+  const sectionEnd = raw.indexOf('-- 5. Self-verification')
+  const section = raw.slice(sectionStart, sectionEnd)
+
+  const M4_TRIGGER_TARGETS = [
+    ['stella_interactions', 'trg_stella_interactions_no_truncate'],
+    ['audit_logs', 'trg_audit_logs_no_truncate'],
+    ['sroi_calculation_runs', 'trg_sroi_calculation_runs_no_truncate'],
+    ['sroi_calculation_line_items', 'trg_sroi_calculation_line_items_no_truncate'],
+  ] as const
+
+  const predicateBlocks = M4_TRIGGER_TARGETS.map(([, trigger]) => {
+    const nameIdx = section.indexOf(`t.tgname = '${trigger}'`)
+    const endIdx = section.indexOf(') INTO is_canonical;', nameIdx)
+    return section.slice(nameIdx, endIdx)
+  })
+
+  it('M4-1 the canonical TRUNCATE-only tgtype satisfies every one of the four predicates', () => {
+    for (const block of predicateBlocks) {
+      expect(satisfiesTgType(block, CANONICAL_TGTYPE)).toBe(true)
+    }
+  })
+
+  it('M4-2 every one of the four canonical checks requires the TRUNCATE bit', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(/AND \(t\.tgtype & 32\) = 32/)
+      expect(satisfiesTgType(block, CANONICAL_TGTYPE & ~TGTYPE_BITS.TRUNCATE)).toBe(false)
+    }
+  })
+
+  it('M4-3 every one of the four canonical checks explicitly zero-binds INSERT (bit 4)', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(/AND \(t\.tgtype & 4\) = 0\b/)
+    }
+  })
+
+  it('M4-4 every one of the four canonical checks explicitly zero-binds DELETE (bit 8)', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(/AND \(t\.tgtype & 8\) = 0\b/)
+    }
+  })
+
+  it('M4-5 every one of the four canonical checks explicitly zero-binds UPDATE (bit 16)', () => {
+    for (const block of predicateBlocks) {
+      expect(block).toMatch(/AND \(t\.tgtype & 16\) = 0\b/)
+    }
+  })
+
+  it('M4-6 every one of the four predicates rejects every event-set false-green case (TRUNCATE combined with INSERT/DELETE/UPDATE in any combination)', () => {
+    for (const [label, tgtype] of Object.entries(FALSE_GREEN_EVENT_SETS)) {
+      for (const block of predicateBlocks) {
+        expect(satisfiesTgType(block, tgtype), label).toBe(false)
+      }
+    }
+  })
+
+  it('M4-7 removing the INSERT exclusion from trigger 1 (stella_interactions) alone lets "TRUNCATE OR INSERT" pass, independent of any hash pin', () => {
+    const target = CANONICAL_TGTYPE | TGTYPE_BITS.INSERT
+    expect(satisfiesTgType(predicateBlocks[0], target)).toBe(false)
+    const mutated = predicateBlocks[0].replace(/\s*AND \(t\.tgtype & 4\) = 0[^\n]*\n/, '\n')
+    expect(satisfiesTgType(mutated, target)).toBe(true)
+    // siblings are untouched by this mutation
+    expect(satisfiesTgType(predicateBlocks[1], target)).toBe(false)
+    expect(satisfiesTgType(predicateBlocks[2], target)).toBe(false)
+    expect(satisfiesTgType(predicateBlocks[3], target)).toBe(false)
+  })
+
+  it('M4-8 removing the DELETE exclusion from trigger 2 (audit_logs) alone lets "TRUNCATE OR DELETE" pass, independent of any hash pin', () => {
+    const target = CANONICAL_TGTYPE | TGTYPE_BITS.DELETE
+    expect(satisfiesTgType(predicateBlocks[1], target)).toBe(false)
+    const mutated = predicateBlocks[1].replace(/\s*AND \(t\.tgtype & 8\) = 0[^\n]*\n/, '\n')
+    expect(satisfiesTgType(mutated, target)).toBe(true)
+    expect(satisfiesTgType(predicateBlocks[0], target)).toBe(false)
+    expect(satisfiesTgType(predicateBlocks[2], target)).toBe(false)
+    expect(satisfiesTgType(predicateBlocks[3], target)).toBe(false)
+  })
+
+  it('M4-9 removing the UPDATE exclusion from trigger 3 (sroi_calculation_runs) alone lets "TRUNCATE OR UPDATE" pass, independent of any hash pin', () => {
+    const target = CANONICAL_TGTYPE | TGTYPE_BITS.UPDATE
+    expect(satisfiesTgType(predicateBlocks[2], target)).toBe(false)
+    const mutated = predicateBlocks[2].replace(/\s*AND \(t\.tgtype & 16\) = 0[^\n]*\n/, '\n')
+    expect(satisfiesTgType(mutated, target)).toBe(true)
+    expect(satisfiesTgType(predicateBlocks[0], target)).toBe(false)
+    expect(satisfiesTgType(predicateBlocks[1], target)).toBe(false)
+    expect(satisfiesTgType(predicateBlocks[3], target)).toBe(false)
+  })
+
+  it('M4-10 removing all three exclusions from trigger 4 (sroi_calculation_line_items) lets the full INSERT+DELETE+UPDATE+TRUNCATE event set pass, independent of any hash pin', () => {
+    const target = CANONICAL_TGTYPE | TGTYPE_BITS.INSERT | TGTYPE_BITS.DELETE | TGTYPE_BITS.UPDATE
+    expect(satisfiesTgType(predicateBlocks[3], target)).toBe(false)
+    let mutated = predicateBlocks[3]
+    mutated = mutated.replace(/\s*AND \(t\.tgtype & 4\) = 0[^\n]*\n/, '\n')
+    mutated = mutated.replace(/\s*AND \(t\.tgtype & 8\) = 0[^\n]*\n/, '\n')
+    mutated = mutated.replace(/\s*AND \(t\.tgtype & 16\) = 0[^\n]*\n/, '\n')
+    expect(satisfiesTgType(mutated, target)).toBe(true)
+  })
+
+  it('M4-11 TRUNCATE safety is preserved: the canonical event set is exactly TRUNCATE at statement level, unaffected by the new exclusions', () => {
+    for (const block of predicateBlocks) {
+      expect(satisfiesTgType(block, CANONICAL_TGTYPE)).toBe(true)
+      expect(block).toMatch(/AND \(t\.tgtype & 1\) = 0 AND \(t\.tgtype & 2\) = 2/)
+    }
+  })
+
+  it('M4-12 canonical rerun still skips direct owner-dependent DDL — the M-4 fields sit inside the SELECT feeding is_canonical, not the repair branch', () => {
+    for (const [, trigger] of M4_TRIGGER_TARGETS) {
+      const ifStart = section.indexOf(`t.tgname = '${trigger}'`)
+      const selectEnd = section.indexOf(') INTO is_canonical;', ifStart)
+      const ifNotIndex = section.indexOf('IF NOT is_canonical THEN', ifStart)
+      const dropIndex = section.indexOf(`DROP TRIGGER IF EXISTS ${trigger}`, ifStart)
+      expect(selectEnd, trigger).toBeGreaterThan(-1)
+      expect(ifNotIndex, trigger).toBeGreaterThan(selectEnd)
+      expect(dropIndex, trigger).toBeGreaterThan(ifNotIndex)
+    }
+  })
+
+  it('M4-13 these checks evaluate the raw SQL source read from disk — no hash literal appears inside the predicate blocks, so a hash repin elsewhere cannot suppress them', () => {
+    for (const block of predicateBlocks) {
+      expect(block).not.toMatch(/[0-9a-f]{64}/i)
     }
   })
 })

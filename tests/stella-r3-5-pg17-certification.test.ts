@@ -20,7 +20,7 @@ const ROOT = path.resolve(process.cwd())
 
 const EXPECTED_HASHES = {
   'stella_0002_interactions_hardening.sql': 'cbf860b12d3f32205f2e0efba7c3c1c2d9a4658bafc3ab7949d2de4089e9ec9e',
-  'stella_0002b_append_only_truncate_hardening.sql': 'd4f67b086bf694d62718688230726a67f150b8cbe266f70fea323ce87afece67',
+  'stella_0002b_append_only_truncate_hardening.sql': '3fda2dfd117616e09b86da45b75e6f070bcc7a857e5a1c2da752670a83ac47b5',
   'stella_0001_role_topology_bootstrap.sql': '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
   'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
   'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',

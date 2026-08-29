@@ -245,6 +245,9 @@ BEGIN
       AND t.tgname = 'trg_stella_interactions_no_truncate'
       AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2   -- STATEMENT, BEFORE
       AND (t.tgtype & 32) = 32                        -- TRUNCATE
+      AND (t.tgtype & 4) = 0                          -- INSERT excluded
+      AND (t.tgtype & 8) = 0                          -- DELETE excluded
+      AND (t.tgtype & 16) = 0                         -- UPDATE excluded
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
       AND t.tgnargs = 0                    -- no trigger-function arguments
@@ -274,6 +277,9 @@ BEGIN
       AND t.tgname = 'trg_audit_logs_no_truncate'
       AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2
       AND (t.tgtype & 32) = 32
+      AND (t.tgtype & 4) = 0                          -- INSERT excluded
+      AND (t.tgtype & 8) = 0                          -- DELETE excluded
+      AND (t.tgtype & 16) = 0                         -- UPDATE excluded
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
       AND t.tgnargs = 0                    -- no trigger-function arguments
@@ -303,6 +309,9 @@ BEGIN
       AND t.tgname = 'trg_sroi_calculation_runs_no_truncate'
       AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2
       AND (t.tgtype & 32) = 32
+      AND (t.tgtype & 4) = 0                          -- INSERT excluded
+      AND (t.tgtype & 8) = 0                          -- DELETE excluded
+      AND (t.tgtype & 16) = 0                         -- UPDATE excluded
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
       AND t.tgnargs = 0                    -- no trigger-function arguments
@@ -332,6 +341,9 @@ BEGIN
       AND t.tgname = 'trg_sroi_calculation_line_items_no_truncate'
       AND (t.tgtype & 1) = 0 AND (t.tgtype & 2) = 2
       AND (t.tgtype & 32) = 32
+      AND (t.tgtype & 4) = 0                          -- INSERT excluded
+      AND (t.tgtype & 8) = 0                          -- DELETE excluded
+      AND (t.tgtype & 16) = 0                         -- UPDATE excluded
       AND t.tgfoid = to_regprocedure('public.uellix_forbid_mutation()')
       AND t.tgenabled = 'O'
       AND t.tgnargs = 0                    -- no trigger-function arguments
