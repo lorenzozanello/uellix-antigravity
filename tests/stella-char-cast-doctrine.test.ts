@@ -57,6 +57,16 @@ const read = (name: string) => readFileSync(path.join(PREPARED, name), 'utf8')
 // touching the working tree or requiring a checkout — no network, no Docker.
 const PARENT_HEAD = '97272d038eec4970008f8dbf635b4fff1ee53f8e'
 
+// MSC-07B.8-R10J rebaseline: T11/T12 below must keep describing R10D's own
+// diff-shape (public-scoping only, no authority change) regardless of what
+// lands in stella_0004 afterward. Pinning the diff's second endpoint to the
+// mutable working tree (git's default when only one ref is given) would
+// silently absorb R10J's own, separately authorized
+// `REVOKE ... FROM service_role` addition. Pinning it instead to 113e857 —
+// the exact commit R10D produced, and this package's own frozen pre-R10J
+// parent HEAD — keeps the comparison scoped to precisely the R10D delta.
+const R10D_HEAD = '113e857fc1ed9016fe0aeb0215d4c54fddb60640'
+
 function gitShowAtParent(relPath: string): string {
   return execFileSync('git', ['show', `${PARENT_HEAD}:${relPath}`], {
     cwd: ROOT,
@@ -65,7 +75,7 @@ function gitShowAtParent(relPath: string): string {
 }
 
 function gitDiffAgainstParent(relPath: string): string {
-  return execFileSync('git', ['diff', PARENT_HEAD, '--', relPath], {
+  return execFileSync('git', ['diff', PARENT_HEAD, R10D_HEAD, '--', relPath], {
     cwd: ROOT,
     encoding: 'utf8',
   })

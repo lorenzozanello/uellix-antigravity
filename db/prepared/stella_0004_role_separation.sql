@@ -381,8 +381,20 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 precondition failed: anon or PUBLIC already hold privileges on table(s) in public: %. This script narrows authenticated/service_role; it does not decide what the anonymous role may do. Resolve that first', drift;
   END IF;
 
-  -- `anon` and `service_role` must already hold no EXECUTE on any function in
-  -- `public`, and PUBLIC likewise.
+  -- `anon` must already hold no EXECUTE on any function in `public`, and
+  -- PUBLIC likewise.
+  --
+  -- `service_role` is deliberately NOT part of this entry guard. Measured
+  -- (MSC-07B.8-R10I): `service_role` arrives on these functions as a direct
+  -- ACL entry born the instant `postgres` creates them, from a managed
+  -- default privilege this script does not own — see section 7's
+  -- `pg_default_acl` commentary. No baseline statement and no earlier
+  -- prepared package ever revokes it, so requiring it absent here would make
+  -- this precondition permanently unsatisfiable on every database this
+  -- script is meant to harden. Section 5a-bis below is the explicit producer
+  -- that revokes it, and postcondition 9.10 still requires it absent at the
+  -- end — this guard narrows to the two roles that must already, correctly,
+  -- hold nothing before this script runs.
   --
   -- This matters more than it looks. Seven of the eight functions are SECURITY
   -- DEFINER and, after section 4, run as uellix_owner — the RLS-exempt object
@@ -400,10 +412,10 @@ BEGIN
     JOIN pg_namespace n ON n.oid = p.pronamespace,
     LATERAL aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
     WHERE n.nspname = 'public'
-      AND (a.grantee = 0 OR a.grantee IN ('anon'::regrole::oid, 'service_role'::regrole::oid))
+      AND (a.grantee = 0 OR a.grantee = 'anon'::regrole::oid)
   ) x;
   IF drift IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_0004 precondition failed: anon, service_role or PUBLIC already hold EXECUTE on function(s) in public: %. After the ownership transfer those functions run as uellix_owner, which is exempt from RLS. Resolve that first', drift;
+    RAISE EXCEPTION 'stella_0004 precondition failed: anon or PUBLIC already hold EXECUTE on function(s) in public: %. After the ownership transfer those functions run as uellix_owner, which is exempt from RLS. Resolve that first', drift;
   END IF;
 
   -- No GLOBAL default privilege may already grant anything to a third party.
@@ -558,6 +570,34 @@ REVOKE EXECUTE ON FUNCTION
   public.handle_update_user(),
   public.uellix_forbid_mutation()
 FROM PUBLIC;
+
+-- 5a-bis. Revoke the substrate-granted EXECUTE from `service_role`.
+--
+-- MSC-07B.8-R10I/R10J: `service_role` is never granted EXECUTE on these
+-- eight functions by any GRANT statement in this repository or its
+-- baseline. It arrives instead as a direct ACL entry born the instant
+-- `postgres` creates each function, from a managed default privilege this
+-- script does not own (see section 7's `pg_default_acl` commentary).
+-- Neither the baseline provisioning, stella_0003, nor the ownership
+-- transfer in section 4 revokes it — ALTER FUNCTION ... OWNER TO carries an
+-- object's existing ACL forward unchanged; it does not strip an unrelated
+-- grantee's entry, only consume the previous owner's own (restored to
+-- `postgres` above). Left alone, `service_role` keeps EXECUTE on functions
+-- that, after section 4, run as `uellix_owner` with SECURITY DEFINER,
+-- RLS-exempt semantics for seven of the eight. This is the explicit
+-- producer that postcondition 9.10 has always required but that nothing
+-- before this section supplied. Convergent: a database where this entry is
+-- already absent leaves REVOKE nothing to do.
+REVOKE EXECUTE ON FUNCTION
+  public.can_read_evidence_object(text,uuid),
+  public.can_write_evidence_object(text,uuid),
+  public.current_user_is_super_admin(),
+  public.current_user_org_ids(),
+  public.current_user_role_in_org(uuid),
+  public.handle_new_user(),
+  public.handle_update_user(),
+  public.uellix_forbid_mutation()
+FROM service_role;
 
 -- 5b. Revoke the undeclared surplus from `authenticated` and `service_role`
 -- on ALL 38 tables.

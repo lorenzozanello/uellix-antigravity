@@ -243,8 +243,15 @@ describe('stella_0004 forward: allowlist integrity', () => {
     // rather than proceeding on a database it does not recognise.
     expect(forwardCode, 'anon/PUBLIC table privileges')
       .toMatch(/precondition failed: anon or PUBLIC already hold privileges/i)
-    expect(forwardCode, 'anon/service_role EXECUTE on public functions')
-      .toMatch(/precondition failed: anon, service_role or PUBLIC already hold EXECUTE/i)
+    // MSC-07B.8-R10J: service_role is deliberately no longer part of THIS
+    // entry guard (it is substrate-granted from birth and nothing before
+    // this script ever revoked it — R10I); the guard now narrows to the two
+    // roles that must already, correctly, hold nothing. service_role's
+    // EXECUTE is instead removed by an explicit new REVOKE producer, and
+    // postcondition 9.10 (asserted elsewhere in this suite) still requires
+    // it absent at the end.
+    expect(forwardCode, 'anon/PUBLIC EXECUTE on public functions')
+      .toMatch(/precondition failed: anon or PUBLIC already hold EXECUTE/i)
     expect(forwardCode, 'pre-existing GLOBAL default privilege')
       .toMatch(/precondition failed: a GLOBAL default privilege already grants/i)
   })

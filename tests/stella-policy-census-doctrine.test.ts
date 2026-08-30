@@ -46,8 +46,20 @@ const read = (name: string) => readFileSync(path.join(PREPARED, name), 'utf8')
 // AT that commit without touching the working tree or requiring a checkout.
 const PARENT_HEAD = '97272d038eec4970008f8dbf635b4fff1ee53f8e'
 
+// MSC-07B.8-R10J rebaseline: the R10D diff-shape assertion below (T20) must
+// keep describing R10D's own delta — that it changed count SCOPE only, never
+// authority — regardless of what lands in this file afterward. Pinned to a
+// mutable second endpoint (the working tree, git's default when only one ref
+// is given), it would silently absorb R10J's own, separately authorized
+// `REVOKE ... FROM service_role` addition and misreport it as an R10D
+// authority regression. Pinning the endpoint to the exact commit R10D
+// produced — 113e857, this package's own frozen pre-R10J parent HEAD — keeps
+// the comparison scoped to precisely the R10D delta, unaffected by any
+// later, independently authorized change.
+const R10D_HEAD = '113e857fc1ed9016fe0aeb0215d4c54fddb60640'
+
 function gitDiffAgainstParent(relPath: string): string {
-  return execFileSync('git', ['diff', PARENT_HEAD, '--', relPath], {
+  return execFileSync('git', ['diff', PARENT_HEAD, R10D_HEAD, '--', relPath], {
     cwd: ROOT,
     encoding: 'utf8',
   })

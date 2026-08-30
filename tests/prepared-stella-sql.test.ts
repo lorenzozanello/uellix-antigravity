@@ -3067,12 +3067,14 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     // test's claim is unchanged — R9A touched neither package — it is R9T,
     // a later and separately authorized remediation, that legitimately did.
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
-    // Repinned MSC-07B.8-R10D: off-target policy-count verifier predicates
-    // (precondition + postcondition) now scoped to schema public instead of
-    // counting pg_policy cluster-wide. Diagnostic variables only; no
-    // WHERE/authority change.
+    // Repinned MSC-07B.8-R10J: the ENTRY EXECUTE guard no longer requires
+    // `service_role` already absent (substrate-granted from birth, never
+    // revoked before this script — MSC-07B.8-R10I); new governed section
+    // 5a-bis explicitly REVOKEs EXECUTE on the eight canonical functions
+    // FROM service_role; postcondition 9.10 is unchanged and still requires
+    // PUBLIC, anon and service_role all absent at the end.
     expect(sha256('stella_0004_role_separation.sql')).toBe(
-      '7e5c48f32f487edd83dcd2ab40a0b172a1c75662398f29143d13e4b1e7de0792',
+      '28646bff5f068b7b6676d9c03ddcd69c4d248869549425497c6514459e7d7b5a',
     )
     expect(sha256('stella_0004_rollback.sql')).toBe(
       '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
