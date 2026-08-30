@@ -18,6 +18,17 @@
 // reasons about it structurally. It never connects to Postgres, never invokes
 // Docker, and never uses the network.
 //
+// MSC-07B.8-R10D rebaseline: stella_0004 has since gained a second,
+// independently authorized verifier-only change — the off-target
+// policy-count predicates (precondition + postcondition) are now scoped to
+// schema public (tests/stella-policy-census-doctrine.test.ts owns proving
+// THAT change is correct and scoped). This file's frozen parent moves
+// forward to the R10D-authorized boundary so its own diff-shape assertions
+// (T11/T12) describe reality; its job stays exactly what it always was —
+// proving the polcmd::text cast is present, safe and untouched. The R9Y
+// hash (2230980c...) that PARENT_HEAD used to sit one commit past is now
+// itself retired — see the retirement check in the T13 block below.
+//
 // The quote/comment-aware scanner below is deliberately NOT a general SQL
 // parser — see "narrow, auditable" in the module doctrine this file
 // implements. It recognizes exactly: qualified/quoted/case-varied references
@@ -28,6 +39,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 
 const ROOT = path.resolve(process.cwd())
@@ -36,10 +48,14 @@ const DB_ROOT = path.join(ROOT, 'db')
 const TARGET_FILE = 'stella_0004_role_separation.sql'
 const read = (name: string) => readFileSync(path.join(PREPARED, name), 'utf8')
 
-// The frozen parent this remediation (MSC-07B.8-R9Y) branched from.
+// The frozen parent this remediation's diff-shape assertions (T11/T12) are
+// measured against. Rebaselined MSC-07B.8-R10D to the commit that already
+// carries the R9Y polcmd::text cast (hash 2230980c...) — the boundary the
+// R10D public-scoping remediation itself branched from — so T11/T12 describe
+// the cast's non-regression under R10D, not R9Y's own now-historical delta.
 // `git show <ref>:<path>` reads a file's content AT that commit without
 // touching the working tree or requiring a checkout — no network, no Docker.
-const PARENT_HEAD = '3ecbd2918bd15edf1fb52b5fdd3f438876a2116d'
+const PARENT_HEAD = '97272d038eec4970008f8dbf635b4fff1ee53f8e'
 
 function gitShowAtParent(relPath: string): string {
   return execFileSync('git', ['show', `${PARENT_HEAD}:${relPath}`], {
@@ -312,15 +328,23 @@ describe('T03/T04/F — no executable raw polcmd concatenation (either operand o
 })
 
 // -----------------------------------------------------------------------
-// T11 — the two diagnostic statements preserve their WHERE predicates,
-// policy-identity checks, and NULL-test control flow from the frozen parent
+// T11 — the two diagnostic statements (the polcmd::text cast, their WHERE
+// predicates, policy-identity checks, and NULL-test control flow) are
+// completely untouched by the R10D off-target-count remediation
 // -----------------------------------------------------------------------
 
-describe('T11/H — the diagnostic cast changes only the SELECT target list, nothing else', () => {
-  it('every 0004 diagnostic statement is byte-identical to its frozen-parent counterpart once the added `::text` is removed', () => {
+describe('T11/H — R10D touches only off-target-count logic; the diagnostic cast statement itself is byte-identical to the frozen parent', () => {
+  it('every 0004 diagnostic string_agg statement is byte-identical to its frozen-parent counterpart', () => {
     // stripComments (T09): a comment-only edit inside either statement must
     // not register as a semantic difference here — that is T30's job
     // (dated-evidence/prose immutability), not this control-flow proof.
+    //
+    // Unlike the original R9Y-era version of this test, no `::text` stripping
+    // happens here: PARENT_HEAD (rebaselined R10D) already carries the cast,
+    // and R10D's own diff never touches these two statements at all — it
+    // only adds code AFTER them (the off-target count/IF/RAISE block that
+    // tests/stella-policy-census-doctrine.test.ts governs). A genuinely
+    // byte-identical comparison is therefore the correct, stronger claim.
     const parentSql = stripComments(gitShowAtParent(`db/prepared/${TARGET_FILE}`))
     const currentSql = stripComments(read(TARGET_FILE))
 
@@ -330,8 +354,7 @@ describe('T11/H — the diagnostic cast changes only the SELECT target list, not
     expect(currentStatements.length).toBe(2)
 
     for (let i = 0; i < 2; i += 1) {
-      const currentWithoutCast = currentStatements[i]!.replace('p.polcmd::text', 'p.polcmd')
-      expect(currentWithoutCast, `statement ${i}: only the ::text cast may differ from the frozen parent`).toBe(
+      expect(currentStatements[i], `statement ${i}: must be byte-identical to the frozen parent`).toBe(
         parentStatements[i],
       )
     }
@@ -348,7 +371,7 @@ describe('T11/H — the diagnostic cast changes only the SELECT target list, not
 const AUTHORITY_STATEMENT =
   /\b(GRANT|REVOKE|CREATE\s+ROLE|ALTER\s+ROLE|CREATE\s+TABLE|DROP\s+TABLE|CREATE\s+TRIGGER|DROP\s+TRIGGER|CREATE\s+FUNCTION|ALTER\s+FUNCTION|DROP\s+FUNCTION|ALTER\s+TABLE|OWNER\s+TO|ALTER\s+DEFAULT\s+PRIVILEGES|CREATE\s+POLICY|DROP\s+POLICY|ALTER\s+POLICY)\b/
 
-describe('T12/G — the diff against the frozen R9Y parent touches no authority statement anywhere in stella_0004', () => {
+describe('T12/G — the diff against the frozen R10D parent touches no authority statement anywhere in stella_0004', () => {
   it('removes and adds no GRANT/REVOKE/role/ownership/table/trigger/function/policy-DDL statement', () => {
     const diffText = gitDiffAgainstParent(`db/prepared/${TARGET_FILE}`)
     const removedAuthority = diffLines(diffText, '-').filter((l) => AUTHORITY_STATEMENT.test(l))
@@ -357,15 +380,25 @@ describe('T12/G — the diff against the frozen R9Y parent touches no authority 
     expect(addedAuthority, 'added authority line').toEqual([])
   })
 
-  it('the diff touches exactly two lines, both inside a string_agg diagnostic target list', () => {
+  // The R9Y-era version of this test pinned "exactly two lines, both inside
+  // a string_agg diagnostic target list" — a claim specific to R9Y's own
+  // one-token-per-site delta. R10D's authorized delta is a different shape
+  // (new DECLARE entries plus an off-target-count/IF/RAISE block at each
+  // site); tests/stella-policy-census-doctrine.test.ts owns proving THAT
+  // shape is correct and minimal. This doctrine's own narrow claim is that
+  // none of it reaches into the string_agg diagnostic statements this file
+  // protects — T11 above proves that directly by byte-identity, and this
+  // is the same claim restated from the diff side, independently.
+  it('no added or removed line touches a string_agg diagnostic target list', () => {
     const diffText = gitDiffAgainstParent(`db/prepared/${TARGET_FILE}`)
     const removed = diffLines(diffText, '-')
     const added = diffLines(diffText, '+')
-    expect(removed.length).toBe(2)
-    expect(added.length).toBe(2)
-    for (const line of [...removed, ...added]) {
-      expect(line).toMatch(/string_agg\(p\.polname/)
-    }
+    const touchedRemoved = removed.filter((l) => l.includes('string_agg(p.polname'))
+    const touchedAdded = added.filter((l) => l.includes('string_agg(p.polname'))
+    expect(touchedRemoved, 'removed string_agg diagnostic line').toEqual([])
+    expect(touchedAdded, 'added string_agg diagnostic line').toEqual([])
+    // And the diff is not accidentally empty — R10D really did change this file.
+    expect(removed.length + added.length).toBeGreaterThan(0)
   })
 })
 
@@ -405,6 +438,25 @@ describe('T13 — active 0004 hash witnesses are exact and mutually consistent',
     expect(inputsTs).not.toContain(RETIRED)
     expect(certTest).not.toContain(RETIRED)
     expect(preparedTest).not.toContain(RETIRED)
+  })
+
+  it('the retired R9Y-era hash (superseded by R10D) is gone from every active witness and from the live file', () => {
+    // 2230980c... was the live 0004 hash from R9Y (polcmd::text cast, no
+    // scope fix) through the end of R9Y/R9S-X/R9T's tenure as frozen parent.
+    // R10D's public-scoping fix moved the live bytes — and every active
+    // witness — past it. It remains a valid `git show` target (PARENT_HEAD
+    // above resolves to the commit that produced it) but must never again
+    // appear as a live expectation.
+    const RETIRED_R9Y = '2230980c23aa3a15aa2029b626fdd9f3d6dc40ea370f0169a579da9704c16650'
+    const inputsTs = readFileSync(path.join(ROOT, 'db', 'r3-5-pg17-certification-inputs.ts'), 'utf8')
+    const certTest = readFileSync(path.join(ROOT, 'tests', 'stella-r3-5-pg17-certification.test.ts'), 'utf8')
+    const preparedTest = readFileSync(path.join(ROOT, 'tests', 'prepared-stella-sql.test.ts'), 'utf8')
+    expect(inputsTs).not.toContain(RETIRED_R9Y)
+    expect(certTest).not.toContain(RETIRED_R9Y)
+    expect(preparedTest).not.toContain(RETIRED_R9Y)
+
+    const live = createHash('sha256').update(read(TARGET_FILE)).digest('hex')
+    expect(live).not.toBe(RETIRED_R9Y)
   })
 })
 
@@ -512,7 +564,10 @@ describe('Section P — adversarial matrix', () => {
     expect(findAllHazards(orderByMutated).filter((h) => h.attr === 'polcmd')).toEqual([])
     const mutatedStatement = [...orderByMutated.matchAll(/SELECT string_agg\(p\.polname[^;]+;/g)][0]![0]
     const parentStatement = [...parentSql.matchAll(/SELECT string_agg\(p\.polname[^;]+;/g)][0]![0]
-    expect(mutatedStatement.replace('p.polcmd::text', 'p.polcmd')).not.toBe(parentStatement)
+    // New T11 mechanism (post-R10D rebaseline): direct byte-identity, no
+    // cast-stripping — the frozen parent already carries the cast, so an
+    // ORDER BY mutation is caught by simple inequality.
+    expect(mutatedStatement).not.toBe(parentStatement)
   })
 
   it('A25: the current worktree already reflects a fully coordinated repin — no stray old hash anywhere active', () => {

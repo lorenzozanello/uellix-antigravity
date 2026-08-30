@@ -125,6 +125,9 @@ DECLARE
   drift text;
   decision_insert_check_actual text;
   decision_insert_check_probe  text;
+  target_count integer;
+  off_target_public_count integer;
+  off_target_total_count integer;
 BEGIN
   IF current_setting('server_version_num')::int < 170000 THEN
     RAISE EXCEPTION 'stella_0004 requires PostgreSQL 17+ (MAINTAIN handling); this server is %',
@@ -318,10 +321,31 @@ BEGIN
           AND p.polpermissive
           AND decision_insert_check_actual = decision_insert_check_probe)
     );
+
+  -- MSC-07B.8-R10D: the off-target count must be scoped to schema public.
+  -- storage.objects alone carries 3 policies (unit 41/50 of the baseline
+  -- journal); an unscoped count(*) over pg_policy sums the target-excluded
+  -- rows across EVERY schema in the cluster, not just public. Both the
+  -- public-scoped and whole-cluster counts are captured so a failure names
+  -- which universe actually drifted.
+  SELECT count(*) INTO target_count
+  FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass;
+
+  SELECT count(*) INTO off_target_public_count
+  FROM pg_policy p
+  JOIN pg_class c ON c.oid = p.polrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND p.polrelid <> 'public.stella_suggestion_decisions'::regclass;
+
+  SELECT count(*) INTO off_target_total_count
+  FROM pg_policy p WHERE p.polrelid <> 'public.stella_suggestion_decisions'::regclass;
+
   IF drift IS NOT NULL
-     OR (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2
-     OR (SELECT count(*) FROM pg_policy p WHERE p.polrelid <> 'public.stella_suggestion_decisions'::regclass) <> 103 THEN
-    RAISE EXCEPTION 'stella_0004 precondition failed: post-0003 policy inventory is not exactly 103 baseline policies plus the SELECT and stella_suggestion_decisions_insert_member_or_admin INSERT policies.';
+     OR target_count <> 2
+     OR off_target_public_count <> 103 THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: post-0003 policy inventory is not exactly 103 baseline policies plus the SELECT and stella_suggestion_decisions_insert_member_or_admin INSERT policies. drift=%, target_count=%, off_target_public_count=%, off_target_total_count=%',
+      COALESCE(drift, '<none>'), target_count, off_target_public_count, off_target_total_count;
   END IF;
 
   IF (SELECT count(*) FROM pg_trigger g JOIN pg_class c ON c.oid = g.tgrelid
@@ -820,6 +844,9 @@ DECLARE
   problem text;
   decision_insert_check_actual text;
   decision_insert_check_probe  text;
+  target_count integer;
+  off_target_public_count integer;
+  off_target_total_count integer;
 BEGIN
   -- 9.1 Ownership: all 38 tables and all 8 functions belong to uellix_owner.
   SELECT string_agg(c.relname, ', ' ORDER BY c.relname) INTO problem
@@ -1348,10 +1375,28 @@ BEGIN
           AND p.polpermissive
           AND decision_insert_check_actual = decision_insert_check_probe)
     );
+
+  -- MSC-07B.8-R10D: same public-scoping correction as the precondition
+  -- above — see that comment for why an unscoped count(*) over pg_policy
+  -- is wrong (storage.objects alone carries 3 policies).
+  SELECT count(*) INTO target_count
+  FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass;
+
+  SELECT count(*) INTO off_target_public_count
+  FROM pg_policy p
+  JOIN pg_class c ON c.oid = p.polrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND p.polrelid <> 'public.stella_suggestion_decisions'::regclass;
+
+  SELECT count(*) INTO off_target_total_count
+  FROM pg_policy p WHERE p.polrelid <> 'public.stella_suggestion_decisions'::regclass;
+
   IF problem IS NOT NULL
-     OR (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2
-     OR (SELECT count(*) FROM pg_policy p WHERE p.polrelid <> 'public.stella_suggestion_decisions'::regclass) <> 103 THEN
-    RAISE EXCEPTION 'stella_0004 FAILED: post-0003 policy inventory is not exactly 103 baseline policies plus the SELECT and exact stella_suggestion_decisions_insert_member_or_admin INSERT policies.';
+     OR target_count <> 2
+     OR off_target_public_count <> 103 THEN
+    RAISE EXCEPTION 'stella_0004 FAILED: post-0003 policy inventory is not exactly 103 baseline policies plus the SELECT and exact stella_suggestion_decisions_insert_member_or_admin INSERT policies. problem=%, target_count=%, off_target_public_count=%, off_target_total_count=%',
+      COALESCE(problem, '<none>'), target_count, off_target_public_count, off_target_total_count;
   END IF;
 
   -- Every trigger must still be enabled in origin mode.

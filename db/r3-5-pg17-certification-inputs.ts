@@ -61,11 +61,12 @@ export const R3_5_PG17_CERTIFICATION_PACKAGE_HASHES = Object.freeze({
   // comparing pg_get_expr(..., true) to a handwritten predicted deparse
   // literal (R9S-X root cause B). CREATE POLICY authority is unchanged.
   'stella_0003_suggestion_decisions.sql': '33bed52967ecdd0f92bc8d5bc804136c709a5485e463167d6597fcd3602e088e',
-  // Repinned MSC-07B.8-R9Y: the two policy-command diagnostic string_agg
-  // expressions now cast p.polcmd to text before concatenation, resolving
-  // the text || "char" operator ambiguity (R9W-B1 live failure). No
-  // WHERE/predicate/authority change.
-  'stella_0004_role_separation.sql': '2230980c23aa3a15aa2029b626fdd9f3d6dc40ea370f0169a579da9704c16650',
+  // Repinned MSC-07B.8-R10D: the two off-target policy-count verifier
+  // predicates (precondition + postcondition) are now scoped to schema
+  // public via pg_policy -> pg_class -> pg_namespace, instead of counting
+  // pg_policy cluster-wide (which silently included storage.objects'
+  // policies). Diagnostic variables only; no WHERE/authority change.
+  'stella_0004_role_separation.sql': '7e5c48f32f487edd83dcd2ab40a0b172a1c75662398f29143d13e4b1e7de0792',
   'stella_0001_role_topology_bootstrap_rollback.sql':
     '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',

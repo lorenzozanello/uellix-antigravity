@@ -27,9 +27,11 @@ const EXPECTED_HASHES = {
   // handwritten-literal INSERT-policy verifier at 1 site here and 2 in
   // stella_0004; CREATE POLICY authority is unchanged.
   'stella_0003_suggestion_decisions.sql': '33bed52967ecdd0f92bc8d5bc804136c709a5485e463167d6597fcd3602e088e',
-  // Repinned MSC-07B.8-R9Y: p.polcmd::text cast at the two diagnostic
-  // string_agg sites (text || "char" operator-resolution ambiguity).
-  'stella_0004_role_separation.sql': '2230980c23aa3a15aa2029b626fdd9f3d6dc40ea370f0169a579da9704c16650',
+  // Repinned MSC-07B.8-R10D: off-target policy-count verifier predicates
+  // (precondition + postcondition) now scoped to schema public instead of
+  // counting pg_policy cluster-wide. Diagnostic variables only; no
+  // WHERE/authority change.
+  'stella_0004_role_separation.sql': '7e5c48f32f487edd83dcd2ab40a0b172a1c75662398f29143d13e4b1e7de0792',
   'stella_0001_role_topology_bootstrap_rollback.sql': '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
 } as const
