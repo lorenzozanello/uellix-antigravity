@@ -127,12 +127,19 @@ const APPEND_ONLY_TRUNCATE_WITNESS_REASON_PATTERN = /append-only: TRUNCATE on au
 const SET_ROLE_OWNER_DENIED_PATTERN = /permission denied to set role "uellix_owner"/
 
 /**
- * PostgreSQL's own fixed message for `GRANT role TO member WITH ADMIN
- * OPTION` issued by a session that does not itself hold ADMIN OPTION on the
- * granted role. Used for uellix_app's ADMIN OPTION negative witness
- * (MSC-07B.8-R9O H-02) — never a generic non-zero exit.
+ * PostgreSQL 17's own fixed two-line refusal for `GRANT role TO member WITH
+ * ADMIN OPTION` issued by a session that does not itself hold ADMIN OPTION
+ * on the granted role: an ERROR line naming the denied GRANT plus a DETAIL
+ * line explaining the missing ADMIN option, both anchored to uellix_owner so
+ * neither line alone — nor the same wording for a different target role —
+ * can satisfy this pattern. Confirmed against live PG17 output
+ * (MSC-07B.8-R10M/R10N-X); replaces the stale pre-PG16 single-line wording
+ * ("must have admin option on role ...") this harness previously matched.
+ * Used for uellix_app's ADMIN OPTION negative witness (MSC-07B.8-R9O H-02)
+ * — never a generic non-zero exit.
  */
-const ADMIN_OPTION_OWNER_DENIED_PATTERN = /must have admin option on role "uellix_owner"/
+const ADMIN_OPTION_OWNER_DENIED_PATTERN =
+  /permission denied to grant role "uellix_owner"[\s\S]*Only roles with the ADMIN option on role "uellix_owner" may grant this role/
 
 /** The harmless, read-only identity query for H-02's positive uellix_app session control — never a value derived from data, catalogs, or caller input. */
 const APP_POSITIVE_IDENTITY_QUERY = 'SELECT current_user;'

@@ -46,12 +46,46 @@ function readHarnessSource(): string {
   return readFileSync(path.join(ROOT, 'scripts', 'stella-r3-5-pg17-certify.ts'), 'utf8')
 }
 
-/** Extracts one top-level `function <name>(...) { ... }` body by counting braces, so a nested `if`/`DO $$` block's own `}` cannot truncate the match early. */
+/**
+ * Extracts one top-level `function <name>(...) { ... }` body by counting
+ * braces, so a nested `if`/`DO $$` block's own `}` cannot truncate the match
+ * early.
+ *
+ * MSC-07B.8-R10O hardening: the previous implementation located the function
+ * with a bare `source.indexOf('function name(')`, which is satisfiable by a
+ * commented-out decoy definition, a string literal containing a fake body,
+ * or (picking the FIRST match) any earlier duplicate — silently binding a
+ * source-based test to the wrong text instead of the real implementation.
+ * This version requires the declaration keyword to actually start its own
+ * source line (only leading whitespace before `function`/`export function`),
+ * which a `//` line comment, a ` * ` doc-comment line, or a string/template
+ * literal continuation can never do since none of those lines begin with
+ * `function`/`export function` in this codebase's style — and then requires
+ * EXACTLY ONE such anchored declaration in the whole file. Zero or more than
+ * one is treated as ambiguous and fails closed (throws) rather than
+ * guessing, so a duplicate/decoy definition can never be silently preferred
+ * over — or silently substituted for — the real one.
+ */
 function extractFunctionSource(source: string, functionName: string): string {
-  const start = source.indexOf(`function ${functionName}(`)
-  if (start < 0) return ''
+  const declarationPattern = new RegExp(`^[ \\t]*(?:export\\s+)?function\\s+${functionName}\\s*\\(`, 'gm')
+  const matches = Array.from(source.matchAll(declarationPattern))
+  if (matches.length === 0) {
+    throw new Error(`extractFunctionSource: no top-level declaration of ${functionName} found (fails closed)`)
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      `extractFunctionSource: ${matches.length} top-level declarations of ${functionName} found — ambiguous, refusing to guess (fails closed)`,
+    )
+  }
+  const match = matches[0]
+  if (match === undefined || match.index === undefined) {
+    throw new Error(`extractFunctionSource: internal match failure for ${functionName}`)
+  }
+  const start = match.index
   const bodyStart = source.indexOf('{', start)
-  if (bodyStart < 0) return ''
+  if (bodyStart < 0) {
+    throw new Error(`extractFunctionSource: ${functionName} declaration has no opening brace (fails closed)`)
+  }
   let depth = 0
   for (let i = bodyStart; i < source.length; i += 1) {
     if (source[i] === '{') depth += 1
@@ -60,8 +94,31 @@ function extractFunctionSource(source: string, functionName: string): string {
       if (depth === 0) return source.slice(start, i + 1)
     }
   }
-  return ''
+  throw new Error(`extractFunctionSource: ${functionName} body never closes (fails closed)`)
 }
+
+/**
+ * Realistic PG17 stderr fixture builder for H-02's ADMIN OPTION witness
+ * (MSC-07B.8-R10M/R10N-X live wording): an ERROR line naming the denied
+ * GRANT, followed by a DETAIL line explaining the missing ADMIN option.
+ * Options let individual tests exercise psql line-number prefixes, a
+ * harmless leading NOTICE, and CRLF line endings without duplicating the
+ * two-line text at every call site.
+ */
+function pg17AdminOptionRefusalStderr(
+  options: { readonly psqlPrefix?: boolean; readonly notice?: boolean; readonly crlf?: boolean } = {},
+): string {
+  const lines: string[] = []
+  if (options.notice) lines.push('NOTICE:  some harmless notice unrelated to this refusal')
+  const errorPrefix = options.psqlPrefix ? 'psql:<stdin>:12: ' : ''
+  lines.push(`${errorPrefix}ERROR:  permission denied to grant role "uellix_owner"`)
+  lines.push('DETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.')
+  const text = lines.join('\n')
+  return options.crlf ? text.replace(/\n/g, '\r\n') : text
+}
+
+/** The stale pre-PG16 single-line wording this harness's matcher previously (incorrectly) required — used only as a negative control proving the new matcher does NOT accept it alone. */
+const PRE_PG16_ADMIN_OPTION_WORDING = 'ERROR:  must have admin option on role "uellix_owner"'
 
 describe('MSC-07B R3.6 closed PG17 certification profile', () => {
   it('derives its fixed R8 prefix from the sole R3.4 package-order authority', () => {
@@ -957,8 +1014,14 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
         'GRANT uellix_owner TO uellix_app WITH ADMIN OPTION;',
       )
 
-      // T10: correct reason passes.
-      expect(pattern.test('ERROR:  must have admin option on role "uellix_owner"')).toBe(true)
+      // T10: correct reason passes — the live PG17 two-line ERROR+DETAIL wording
+      // (MSC-07B.8-R10M/R10N-X), not the stale pre-PG16 single-line text.
+      expect(pattern.test(pg17AdminOptionRefusalStderr())).toBe(true)
+      expect(pattern.test(pg17AdminOptionRefusalStderr({ psqlPrefix: true }))).toBe(true)
+      expect(pattern.test(pg17AdminOptionRefusalStderr({ notice: true }))).toBe(true)
+      expect(pattern.test(pg17AdminOptionRefusalStderr({ crlf: true }))).toBe(true)
+      // The stale pre-PG16 single-line wording alone must NOT satisfy the PG17 matcher.
+      expect(pattern.test(PRE_PG16_ADMIN_OPTION_WORDING)).toBe(false)
       // T11: generic nonzero cannot pass.
       expect(pattern.test('ERROR:  permission denied for table audit_logs')).toBe(false)
       // T12: wrong-authority error (SET ROLE text, not GRANT/ADMIN OPTION text) cannot pass.
@@ -1035,7 +1098,7 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
       {
         name: 'app ADMIN OPTION (H-02)',
         pattern: new RegExp(plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern),
-        acceptedText: 'ERROR:  must have admin option on role "uellix_owner"',
+        acceptedText: pg17AdminOptionRefusalStderr(),
       },
       {
         name: 'admin SET ROLE (M-01)',
@@ -1126,6 +1189,534 @@ describe('MSC-07B R3.6 closed PG17 certification profile', () => {
         const actual = createHash('sha256').update(readFileSync(path.join(ROOT, 'db', 'prepared', file))).digest('hex')
         expect(actual, file).toBe(expected)
       }
+    })
+  })
+
+  describe('MSC-07B.8-R10O: PG17 H02 ADMIN matcher — reason-aware, adversarially sound; downstream call-order/body bindings hardened', () => {
+    it('the ADMIN OPTION pattern binds both the ERROR denial and the DETAIL reason, spanning a newline, never the stale pre-PG16 single-line wording', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const source = plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern
+      expect(source).toContain('permission denied to grant role "uellix_owner"')
+      expect(source).toContain('Only roles with the ADMIN option on role "uellix_owner" may grant this role')
+      expect(source).toContain('[\\s\\S]*')
+      expect(source).not.toBe('must have admin option on role "uellix_owner"')
+    })
+
+    describe('Section H/V: negative + positive matcher matrix — >=32 DB-free cases against the actual candidate matcher', () => {
+      const plan = executor.describeR3_5Pg17CertificationPlan()
+      const pattern = new RegExp(plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern)
+
+      const negativeCases: ReadonlyArray<readonly [string, string]> = [
+        ['1. old pre-PG16 wording only', PRE_PG16_ADMIN_OPTION_WORDING],
+        [
+          '2. wrong target role: uellix_writer',
+          'ERROR:  permission denied to grant role "uellix_writer"\nDETAIL:  Only roles with the ADMIN option on role "uellix_writer" may grant this role.',
+        ],
+        [
+          '3. wrong target role: uellix_app',
+          'ERROR:  permission denied to grant role "uellix_app"\nDETAIL:  Only roles with the ADMIN option on role "uellix_app" may grant this role.',
+        ],
+        ['4. ERROR line only, missing DETAIL', 'ERROR:  permission denied to grant role "uellix_owner"'],
+        [
+          '5. DETAIL line only, missing ERROR',
+          'DETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+        ],
+        ['6. generic permission denied', 'ERROR:  permission denied'],
+        ['7. SET ROLE denial', 'ERROR:  permission denied to set role "uellix_owner"'],
+        [
+          '8. CREATEROLE variant DETAIL',
+          'ERROR:  permission denied to grant role "uellix_owner"\nDETAIL:  Only roles with the CREATEROLE attribute may grant this role.',
+        ],
+        ['9. permission denied to relation', 'ERROR:  permission denied for relation audit_logs'],
+        ['10. permission denied to function', 'ERROR:  permission denied for function uellix_forbid_mutation'],
+        ['11. permission denied to schema', 'ERROR:  permission denied for schema public'],
+        ['12. syntax error', 'ERROR:  syntax error at or near "GRANT"'],
+        ['13. role does not exist', 'ERROR:  role "uellix_owner" does not exist'],
+        ['14. database does not exist', 'psql: error: FATAL:  database "postgres" does not exist'],
+        ['15. connection refused', 'psql: error: connection to server at "127.0.0.1" failed: Connection refused'],
+        [
+          '16. authentication failure',
+          'psql: error: connection to server failed: FATAL:  password authentication failed for user "uellix_app"',
+        ],
+        ['17. timeout', 'psql: error: connection to server timed out'],
+        ['18. successful GRANT output', 'GRANT ROLE'],
+        ['19. uellix_owner text with no ADMIN OPTION reason', 'ERROR:  role "uellix_owner" is reserved'],
+        [
+          '20. ADMIN OPTION over another role (uellix_auditor)',
+          'ERROR:  permission denied to grant role "uellix_auditor"\nDETAIL:  Only roles with the ADMIN option on role "uellix_auditor" may grant this role.',
+        ],
+      ]
+
+      it.each(negativeCases as unknown as [string, string][])('rejects: %s', (_label, text) => {
+        expect(pattern.test(text)).toBe(false)
+      })
+
+      const positiveControls: ReadonlyArray<readonly [string, string]> = [
+        ['exact R10M live stderr', pg17AdminOptionRefusalStderr()],
+        ['with psql line-number prefix noise', pg17AdminOptionRefusalStderr({ psqlPrefix: true })],
+        ['CRLF line endings', pg17AdminOptionRefusalStderr({ crlf: true })],
+        ['harmless NOTICE before ERROR', pg17AdminOptionRefusalStderr({ notice: true })],
+      ]
+
+      it.each(positiveControls as unknown as [string, string][])('accepts: %s', (_label, text) => {
+        expect(pattern.test(text)).toBe(true)
+      })
+
+      const extraCases: ReadonlyArray<{ readonly label: string; readonly text: string; readonly expected: boolean }> = [
+        {
+          label: 'DETAIL appears before ERROR (reversed order) must NOT match',
+          text:
+            'DETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.\nERROR:  permission denied to grant role "uellix_owner"',
+          expected: false,
+        },
+        {
+          label: 'multiple blank lines between ERROR and DETAIL still matches',
+          text: 'ERROR:  permission denied to grant role "uellix_owner"\n\n\n\nDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+          expected: true,
+        },
+        {
+          label: 'extra tabs/whitespace around DETAIL still matches',
+          text: 'ERROR:  permission denied to grant role "uellix_owner"\n\t\tDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+          expected: true,
+        },
+        {
+          label: 'lowercase error/detail prefixes still match (prefixes are not part of the bound anchors)',
+          text: 'error:  permission denied to grant role "uellix_owner"\ndetail:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+          expected: true,
+        },
+        {
+          label: 'garbled/ANSI noise prefix before ERROR still matches',
+          text: '[31mnoise[0m\nERROR:  permission denied to grant role "uellix_owner"\nDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+          expected: true,
+        },
+        {
+          label: 'large volume of unrelated noise between ERROR and DETAIL still matches',
+          text: `ERROR:  permission denied to grant role "uellix_owner"\n${'x'.repeat(2000)}\nDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.`,
+          expected: true,
+        },
+        {
+          label: 'DETAIL names the wrong role while ERROR is correct (mixed) must NOT match',
+          text: 'ERROR:  permission denied to grant role "uellix_owner"\nDETAIL:  Only roles with the ADMIN option on role "uellix_writer" may grant this role.',
+          expected: false,
+        },
+        {
+          label: 'ERROR names the wrong role while DETAIL is correct (mixed) must NOT match',
+          text: 'ERROR:  permission denied to grant role "uellix_writer"\nDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+          expected: false,
+        },
+        {
+          label: 'DETAIL truncated before "may grant this role" must NOT match',
+          text: 'ERROR:  permission denied to grant role "uellix_owner"\nDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may gr',
+          expected: false,
+        },
+        {
+          label: 'ERROR truncated before the closing quote of the role name must NOT match',
+          text: 'ERROR:  permission denied to grant role "uellix_own\nDETAIL:  Only roles with the ADMIN option on role "uellix_owner" may grant this role.',
+          expected: false,
+        },
+      ]
+
+      for (const c of extraCases) {
+        it(`${c.expected ? 'accepts' : 'rejects'}: ${c.label}`, () => {
+          expect(pattern.test(c.text)).toBe(c.expected)
+        })
+      }
+
+      it('summary: zero false positives across the negative matrix, zero false negatives across the positive/extra matrix', () => {
+        const falsePositives = negativeCases.filter(([, text]) => pattern.test(text)).length
+        const falseNegatives =
+          positiveControls.filter(([, text]) => !pattern.test(text)).length +
+          extraCases.filter((c) => c.expected !== pattern.test(c.text)).length
+        expect(falsePositives).toBe(0)
+        expect(falseNegatives).toBe(0)
+        expect(negativeCases.length + positiveControls.length + extraCases.length).toBeGreaterThanOrEqual(32)
+      })
+    })
+
+    describe('Section I: reason-awareness bindings — each witness passes its OWN named pattern constant to assertPsqlRefusedWithReason', () => {
+      const src = readHarnessSource()
+
+      const bindings: ReadonlyArray<{ readonly fnName: string; readonly patternConstant: string }> = [
+        { fnName: 'verifyAppSetRoleNegative', patternConstant: 'SET_ROLE_OWNER_DENIED_PATTERN' },
+        { fnName: 'verifyAppAdminOptionNegative', patternConstant: 'ADMIN_OPTION_OWNER_DENIED_PATTERN' },
+        { fnName: 'verifyAdminSetRoleNegative', patternConstant: 'SET_ROLE_OWNER_DENIED_PATTERN' },
+        { fnName: 'verifyAppendOnly', patternConstant: 'APPEND_ONLY_TRUNCATE_WITNESS_REASON_PATTERN' },
+        { fnName: 'verifyAtomicity', patternConstant: 'ATOMICITY_INJECTED_FAILURE_PATTERN' },
+      ]
+
+      for (const { fnName, patternConstant } of bindings) {
+        it(`${fnName} calls assertPsqlRefusedWithReason with the named ${patternConstant} constant — never a local shadow, inline literal, or generic check`, () => {
+          const fn = extractFunctionSource(src, fnName)
+          expect(fn).toMatch(/assertPsqlRefusedWithReason\(/)
+          expect(fn).toContain(patternConstant)
+          expect(fn).not.toMatch(new RegExp(`const ${patternConstant}\\s*=`))
+          expect(fn).not.toMatch(/status\s*!==\s*0/)
+        })
+      }
+
+      it('M01 and H02 SET ROLE witnesses deliberately share the SAME pattern object (M-01 is not a re-derivation)', () => {
+        const setRoleFn = extractFunctionSource(src, 'verifyAppSetRoleNegative')
+        const adminSetRoleFn = extractFunctionSource(src, 'verifyAdminSetRoleNegative')
+        expect(setRoleFn).toContain('SET_ROLE_OWNER_DENIED_PATTERN')
+        expect(adminSetRoleFn).toContain('SET_ROLE_OWNER_DENIED_PATTERN')
+      })
+    })
+
+    describe('Section J: extractFunctionSource fails closed against comment/string decoys, duplicates, and ambiguous matches', () => {
+      it('COMMENT_FUNCTION_DECOY_REJECTED: commented-out decoy definitions preceding the real one do not shadow it', () => {
+        const decoySource = [
+          '// function verifyRls(postgresPassword) { return "decoy" }',
+          '/**',
+          ' * function verifyRls(postgresPassword) { return "decoy2" }',
+          ' */',
+          'function verifyRls(postgresPassword) {',
+          '  return "real"',
+          '}',
+        ].join('\n')
+        expect(extractFunctionSource(decoySource, 'verifyRls')).toContain('return "real"')
+      })
+
+      it('STRING_FUNCTION_DECOY_REJECTED: a template-literal line containing a fake body is not silently preferred — it is treated as an ambiguous second match and fails closed', () => {
+        const decoySource = [
+          'const decoy = `',
+          'function verifyRls(postgresPassword) { return "decoy" }',
+          '`',
+          'function verifyRls(postgresPassword) {',
+          '  return "real"',
+          '}',
+        ].join('\n')
+        expect(() => extractFunctionSource(decoySource, 'verifyRls')).toThrow(/ambiguous/i)
+      })
+
+      it('DUPLICATE_FUNCTION_SOURCE_DETECTED: two genuine top-level declarations of the same name are refused rather than silently picking the first', () => {
+        const duplicateSource = [
+          'function verifyRls(postgresPassword) {',
+          '  return "first"',
+          '}',
+          'function verifyRls(postgresPassword) {',
+          '  return "second"',
+          '}',
+        ].join('\n')
+        expect(() => extractFunctionSource(duplicateSource, 'verifyRls')).toThrow(/ambiguous/i)
+      })
+
+      it('SOURCE_EXTRACTION_FAILS_CLOSED: a missing declaration throws rather than returning an empty string a caller could mistake for "found, but empty"', () => {
+        expect(() => extractFunctionSource('const x = 1;', 'verifyRls')).toThrow(/no top-level declaration/i)
+      })
+
+      it('AMBIGUOUS_INDEXOF_REMOVED_OR_GUARDED: extraction against the real harness source is unambiguous for every function this suite binds', () => {
+        const src = readHarnessSource()
+        const names = [
+          'verifyRls',
+          'verifyIdempotence',
+          'verifyRollbacks',
+          'verifyAppendOnly',
+          'verifyAtomicity',
+          'verifyAppSetRoleNegative',
+          'verifyAppAdminOptionNegative',
+          'verifyAdminSetRoleNegative',
+          'executeFixedCertification',
+          'applyR3CertificationPhases',
+          'applyCertificationPhase',
+        ]
+        for (const name of names) {
+          expect(() => extractFunctionSource(src, name), name).not.toThrow()
+        }
+      })
+    })
+
+    describe('Section K: executeFixedCertification call order is source-bound end-to-end', () => {
+      const REQUIRED_ORDER: readonly string[] = [
+        'verifyCertifiedSubstratePreflight(',
+        'verifyPg17SupabaseSurface(',
+        'applyLabSuperuserStorageShim(',
+        'applyBaseline(',
+        'applyCertificationPhase(firstAdmin',
+        'applyCertificationPhase(secondAdmin',
+        'applyCertificationPhase(topology',
+        'provisionFixedLogin(MIGRATOR_ROLE',
+        'provisionFixedLogin(APP_ROLE',
+        'verifyAtomicity(',
+        'applyCertificationPhase(decision',
+        'applyCertificationPhase(separation',
+        'verifyExactMembershipsAndGrantor(',
+        'verifyAppPositiveIdentityControl(',
+        'verifyAppSetRoleNegative(',
+        'verifyAppAdminOptionNegative(',
+        'verifyAdminSetRoleNegative(',
+        'verifyRls(',
+        'verifyAppendOnly(',
+        'verifyIdempotence(',
+        'verifyRollbacks(',
+      ]
+
+      function orderedIndices(text: string, markers: readonly string[]): number[] {
+        const indices: number[] = []
+        let cursor = 0
+        for (const marker of markers) {
+          const idx = text.indexOf(marker, cursor)
+          if (idx < 0) throw new Error(`missing required call in order: ${marker}`)
+          indices.push(idx)
+          cursor = idx + marker.length
+        }
+        return indices
+      }
+
+      it('the real executeFixedCertification body contains every required call, strictly in the specified order', () => {
+        const fn = extractFunctionSource(readHarnessSource(), 'executeFixedCertification')
+        const indices = orderedIndices(fn, REQUIRED_ORDER)
+        expect(indices).toHaveLength(REQUIRED_ORDER.length)
+        for (let i = 1; i < indices.length; i += 1) {
+          expect(indices[i]).toBeGreaterThan(indices[i - 1] as number)
+        }
+      })
+
+      it('cleanup runs inside a finally block, guarded on `created`, after every required call above', () => {
+        const fn = extractFunctionSource(readHarnessSource(), 'executeFixedCertification')
+        const finallyIndex = fn.indexOf('} finally {')
+        expect(finallyIndex).toBeGreaterThan(-1)
+        expect(fn.slice(finallyIndex)).toMatch(/if \(created\) cleanupOwnedCertificationContainer\(\)/)
+        const indices = orderedIndices(fn, REQUIRED_ORDER)
+        expect(finallyIndex).toBeGreaterThan(indices.at(-1) as number)
+      })
+
+      describe('adversarial (A01-A10, A17-A20, A28-A34): orderedIndices() correctly refuses common mutations of the real body', () => {
+        const REAL_BODY = extractFunctionSource(readHarnessSource(), 'executeFixedCertification')
+
+        it('A01-A06: deleting any single required call is detected', () => {
+          for (const marker of [
+            'verifyAppAdminOptionNegative(',
+            'verifyAdminSetRoleNegative(',
+            'verifyRls(',
+            'verifyAppendOnly(',
+            'verifyIdempotence(',
+            'verifyRollbacks(',
+          ]) {
+            const mutated = REAL_BODY.replace(marker, '/* removed */')
+            expect(mutated, marker).not.toBe(REAL_BODY)
+            expect(() => orderedIndices(mutated, REQUIRED_ORDER), marker).toThrow()
+          }
+        })
+
+        it('A07-A09: reordering two required calls is detected', () => {
+          const mutated = REAL_BODY
+            .replace('verifyRls(postgresPassword)', '__RLS_PLACEHOLDER__')
+            .replace('verifyAppendOnly(migratorPassword)', 'verifyRls(postgresPassword)')
+            .replace('__RLS_PLACEHOLDER__', 'verifyAppendOnly(migratorPassword)')
+          expect(mutated).not.toBe(REAL_BODY)
+          expect(() => orderedIndices(mutated, REQUIRED_ORDER)).toThrow()
+        })
+
+        it('A17-A20: replacing a required call with a generic status check is detected (the required marker text disappears)', () => {
+          const mutated = REAL_BODY.replace('verifyAppAdminOptionNegative(appPassword)', 'if (status !== 0) throw new Error()')
+          expect(mutated).not.toBe(REAL_BODY)
+          expect(() => orderedIndices(mutated, REQUIRED_ORDER)).toThrow()
+        })
+      })
+    })
+
+    describe('Section L: verifyRls body binding — frozen current semantics', () => {
+      it('targets the exact catalog expression, compares the scalar strictly to the \'t\' literal, and never accepts \'true\' or a bare truthy check', () => {
+        const fn = extractFunctionSource(readHarnessSource(), 'verifyRls')
+        expect(fn).toMatch(/relrowsecurity FROM pg_class WHERE oid = 'public\.stella_suggestion_decisions'::regclass/)
+        expect(fn).toMatch(/rls !== 't'/)
+        expect(fn).not.toMatch(/'true'/)
+        expect(fn).not.toMatch(/if \(rls\)/)
+        expect(fn).not.toMatch(/Boolean\(rls\)/)
+        expect(fn).toMatch(/scalarAdminQuery\(/)
+        expect(fn).toMatch(/throw new Error/)
+      })
+
+      it('adversarial (A25-A27): a mutant accepting \'true\' instead of \'t\', or dropping the failure branch, diverges from this exact binding', () => {
+        const real = extractFunctionSource(readHarnessSource(), 'verifyRls')
+
+        const trueLiteralMutant = real.replace("rls !== 't'", "rls !== 'true'")
+        expect(trueLiteralMutant).not.toBe(real)
+        expect(trueLiteralMutant).not.toMatch(/rls !== 't'/)
+
+        const droppedFailureMutant = real.replace(/if \(rls !== 't'\) throw new Error\(`\$\{MATRIX_ERROR\} at decision RLS`\)/, '/* dropped */')
+        expect(droppedFailureMutant).not.toBe(real)
+        expect(droppedFailureMutant).not.toMatch(/throw new Error/)
+      })
+    })
+
+    describe('Section M: verifyIdempotence dispatches the exact five governed reapply phases, in order, through the single dispatcher', () => {
+      it('verifyIdempotence delegates to applyR3CertificationPhases with the same arguments it received — no independent reapply path', () => {
+        const fn = extractFunctionSource(readHarnessSource(), 'verifyIdempotence')
+        expect(fn).toMatch(/applyR3CertificationPhases\(sources, postgresPassword, migratorPassword\)/)
+      })
+
+      it('applyR3CertificationPhases iterates R3_5_PG17_CERTIFICATION_PHASES through the single applyCertificationPhase dispatcher — no phase-specific shortcut', () => {
+        const fn = extractFunctionSource(readHarnessSource(), 'applyR3CertificationPhases')
+        expect(fn).toMatch(/for \(const phase of R3_5_PG17_CERTIFICATION_PHASES\)/)
+        expect(fn).toMatch(/applyCertificationPhase\(phase, sources, postgresPassword, migratorPassword\)/)
+      })
+
+      it('the five governed phases are exactly 0002, 0002b, 0001, 0003, 0004 in that order', () => {
+        expect(R3_5_PG17_CERTIFICATION_PHASES.map((phase) => phase.file)).toEqual([
+          'stella_0002_interactions_hardening.sql',
+          'stella_0002b_append_only_truncate_hardening.sql',
+          'stella_0001_role_topology_bootstrap.sql',
+          'stella_0003_suggestion_decisions.sql',
+          'stella_0004_role_separation.sql',
+        ])
+      })
+
+      it('adversarial (A28-A34): omitting a phase, or duplicating one while dropping another, is detectable against this exact five-file list', () => {
+        const files = R3_5_PG17_CERTIFICATION_PHASES.map((phase) => phase.file)
+        const omittedOne = files.filter((f) => f !== 'stella_0004_role_separation.sql')
+        expect(omittedOne).toHaveLength(4)
+
+        const duplicatedWhileOmitting = [files[0], files[0], files[2], files[3]]
+        expect(new Set(duplicatedWhileOmitting).size).toBeLessThan(files.length)
+        expect(duplicatedWhileOmitting).not.toContain('stella_0004_role_separation.sql')
+
+        const identityMatrix = executor.R3_5_PG17_CERTIFICATION_PHASE_IDENTITY_MATRIX
+        const topologyRow = identityMatrix.find((row) => row.phaseId === '0001')
+        expect(topologyRow?.transport).toBe('CONTAINER_LOCAL_SOCKET')
+      })
+    })
+
+    describe('Section N: verifyRollbacks body/sequence binding — 0004 rollback -> 0004 reapply -> 0001 rollback REQUIRED refusal', () => {
+      const REAL = extractFunctionSource(readHarnessSource(), 'verifyRollbacks')
+
+      it('the required calls appear, strictly in order, using the frozen GUC tokens and the named dependency-guard pattern, with no swallowed refusal', () => {
+        const rollback0004Index = REAL.indexOf('stella_0004_rollback.sql')
+        const reapplyIndex = REAL.indexOf('stella_0004_role_separation.sql')
+        const refusalIndex = REAL.indexOf('assertPsqlRefusedWithReason(')
+        const rollback0001Index = REAL.indexOf('stella_0001_role_topology_bootstrap_rollback.sql')
+        const guardPatternIndex = REAL.indexOf('DEPENDENCY_GUARD_FAILURE_PATTERN')
+
+        expect(rollback0004Index).toBeGreaterThan(-1)
+        expect(reapplyIndex).toBeGreaterThan(rollback0004Index)
+        expect(refusalIndex).toBeGreaterThan(reapplyIndex)
+        expect(rollback0001Index).toBeGreaterThan(reapplyIndex)
+        expect(guardPatternIndex).toBeGreaterThan(refusalIndex)
+
+        expect(REAL).toMatch(/'rollback-0004'/)
+        expect(REAL).toMatch(/'rollback-0001'/)
+        expect(REAL).not.toMatch(/try\s*{/)
+        expect(REAL).not.toMatch(/\.catch\(/)
+      })
+
+      it('adversarial (A35-A40): removing the 0004 rollback call, the reapply call, or the dependency-guard pattern is detectable against the real body', () => {
+        const removedRollback0004 = REAL.replace(/applySuperuserRollbackPhase\([^\n]*\n/, '')
+        expect(removedRollback0004).not.toBe(REAL)
+        expect(removedRollback0004).not.toMatch(/stella_0004_rollback\.sql/)
+
+        const removedReapply = REAL.replace(/applySuperuserPhase\([^\n]*\n/, '')
+        expect(removedReapply).not.toBe(REAL)
+        expect(removedReapply).not.toMatch(/stella_0004_role_separation\.sql.*rollback reapply/)
+
+        const removedGuardPattern = REAL.replace('DEPENDENCY_GUARD_FAILURE_PATTERN', '/* removed */')
+        expect(removedGuardPattern).not.toBe(REAL)
+        expect(removedGuardPattern).not.toMatch(/DEPENDENCY_GUARD_FAILURE_PATTERN/)
+
+        const removedRefusalWrapper = REAL.replace(/assertPsqlRefusedWithReason\(\r?\n/, '')
+        expect(removedRefusalWrapper).not.toBe(REAL)
+      })
+    })
+
+    describe('Section O: rollback SQL static binding (TEST ONLY) — owner-restore sets and postconditions derived from the governed source', () => {
+      const rollback0004 = readPrepared('stella_0004_rollback.sql')
+      const rollback0001 = readPrepared('stella_0001_role_topology_bootstrap_rollback.sql')
+
+      function extractOwnerRestoreTargets(sql: string, kind: 'TABLE' | 'FUNCTION'): string[] {
+        const pattern =
+          kind === 'TABLE'
+            ? /ALTER TABLE public\.(\w+) OWNER TO postgres;/g
+            : /ALTER FUNCTION public\.([\w.]+\([^)]*\)) OWNER TO postgres;/g
+        return Array.from(sql.matchAll(pattern)).map((m) => m[1] as string)
+      }
+
+      it('restores exactly the 38 governed tables and 8 governed functions to postgres ownership, bound bidirectionally against the governed source', () => {
+        const tables = extractOwnerRestoreTargets(rollback0004, 'TABLE')
+        const functions = extractOwnerRestoreTargets(rollback0004, 'FUNCTION')
+
+        expect(tables).toHaveLength(38)
+        expect(functions).toHaveLength(8)
+        expect(new Set(tables).size).toBe(38)
+        expect(new Set(functions).size).toBe(8)
+
+        expect(rollback0004).toMatch(/relkind IN \('r','p'\)\) <> 38/)
+        expect(rollback0004).toMatch(/proowner <> 'postgres'::regrole/)
+      })
+
+      it('§5 required postconditions remain present: role topology intact, all tables/functions back to postgres, structural 38/105/10 fingerprint unbroken', () => {
+        expect(rollback0004).toMatch(/uellix_app, uellix_auditor, uellix_migrator, uellix_owner, uellix_writer/)
+        expect(rollback0004).toMatch(/table\(s\) not returned to postgres/)
+        expect(rollback0004).toMatch(/function\(s\) not returned to postgres/)
+        expect(rollback0004).toMatch(/structural drift — post-0003 38\/105\/10 fingerprint broken/)
+      })
+
+      it('adversarial (A41-A44): a rollback fixture that silently drops or adds a restore target diverges from the derived count this binding enforces', () => {
+        const tables = extractOwnerRestoreTargets(rollback0004, 'TABLE')
+        expect(tables.slice(0, -1)).toHaveLength(37)
+        expect([...tables, 'a_39th_table']).toHaveLength(39)
+
+        const functions = extractOwnerRestoreTargets(rollback0004, 'FUNCTION')
+        expect(functions.slice(0, -1)).toHaveLength(7)
+        expect([...functions, 'a_9th_function()']).toHaveLength(9)
+      })
+
+      it('binds the 0001 rollback dependency-guard predicate to the actual five governed role casts in its relation-ownership scan, not merely the canonical error text', () => {
+        const guardBlock = rollback0001.slice(
+          rollback0001.indexOf('-- Ownership is never guessed or reassigned'),
+          rollback0001.indexOf(
+            "RAISE EXCEPTION 'stella_0001 rollback REFUSED: surviving relation(s) depend on governed ownership",
+          ),
+        )
+        expect(guardBlock.length).toBeGreaterThan(0)
+        for (const role of ['uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor']) {
+          expect(guardBlock).toContain(`'${role}'::regrole`)
+        }
+        expect(guardBlock).toMatch(/c\.relowner IN \(/)
+      })
+
+      it('adversarial (A45-A46): stubbing the guard predicate to always-true, or removing one of the three IN(...) role-scans, is detectable', () => {
+        const stubbed = rollback0001.replace(/c\.relowner IN \([^)]*\)/, 'TRUE')
+        expect(stubbed).not.toBe(rollback0001)
+        expect(stubbed).not.toContain("c.relowner IN ('uellix_owner'::regrole")
+
+        const predicateMarkers = ['c.relowner IN (', 'p.proowner IN (', 'n.nspowner IN (']
+        expect(predicateMarkers.filter((m) => rollback0001.includes(m))).toHaveLength(3)
+        const withOneRemoved = rollback0001.split('n.nspowner IN (').join('/* removed */')
+        expect(predicateMarkers.filter((m) => withOneRemoved.includes(m))).toHaveLength(2)
+      })
+    })
+
+    describe('Section P: do-not-reopen regression bindings — this two-file batch cannot alter any frozen SQL byte', () => {
+      it('0003, 0004, and the 0004 rollback package bytes are unchanged by this harness-only remediation', () => {
+        for (const file of [
+          'stella_0003_suggestion_decisions.sql',
+          'stella_0004_role_separation.sql',
+          'stella_0004_rollback.sql',
+        ] as const) {
+          const actual = createHash('sha256').update(readFileSync(path.join(ROOT, 'db', 'prepared', file))).digest('hex')
+          expect(actual, file).toBe(EXPECTED_HASHES[file])
+        }
+      })
+    })
+
+    describe('Section W: coordinated-mutation and anchor-laundering controls (A47-A48)', () => {
+      it('A47: the tested pattern is derived live from the executor\'s own exported plan, never a hardcoded duplicate that could silently drift from a coordinated source+test mutation', () => {
+        const plan = executor.describeR3_5Pg17CertificationPlan()
+        const liveSource = readHarnessSource()
+        const declared = liveSource.match(
+          /const ADMIN_OPTION_OWNER_DENIED_PATTERN =[\s\S]*?(\/permission denied[\s\S]*?may grant this role\/)/,
+        )
+        expect(declared).not.toBeNull()
+        const constantRegexSource = (declared as RegExpMatchArray)[1]!.slice(1, -1)
+        expect(plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern).toBe(constantRegexSource)
+      })
+
+      it('A48: anchor bindings are verified against the executable regex object\'s actual matching behavior, not a text search for anchor substrings anywhere in the file — a decoy comment elsewhere cannot influence this', () => {
+        const plan = executor.describeR3_5Pg17CertificationPlan()
+        const pattern = new RegExp(plan.negativeAuthorityContracts.appAdminOptionOwner.expectedFailurePattern)
+        expect(pattern.test('ERROR:  connection refused')).toBe(false)
+        expect(pattern.source).toContain('permission denied to grant role "uellix_owner"')
+        expect(pattern.source).toContain('Only roles with the ADMIN option on role "uellix_owner" may grant this role')
+      })
     })
   })
 })
