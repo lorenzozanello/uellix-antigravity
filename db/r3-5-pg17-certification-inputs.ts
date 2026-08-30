@@ -61,7 +61,11 @@ export const R3_5_PG17_CERTIFICATION_PACKAGE_HASHES = Object.freeze({
   // comparing pg_get_expr(..., true) to a handwritten predicted deparse
   // literal (R9S-X root cause B). CREATE POLICY authority is unchanged.
   'stella_0003_suggestion_decisions.sql': '33bed52967ecdd0f92bc8d5bc804136c709a5485e463167d6597fcd3602e088e',
-  'stella_0004_role_separation.sql': 'e73f255cc3eea748db3642b8087bcb553488dab82d6d6e612195d6fdba50a789',
+  // Repinned MSC-07B.8-R9Y: the two policy-command diagnostic string_agg
+  // expressions now cast p.polcmd to text before concatenation, resolving
+  // the text || "char" operator ambiguity (R9W-B1 live failure). No
+  // WHERE/predicate/authority change.
+  'stella_0004_role_separation.sql': '2230980c23aa3a15aa2029b626fdd9f3d6dc40ea370f0169a579da9704c16650',
   'stella_0001_role_topology_bootstrap_rollback.sql':
     '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',

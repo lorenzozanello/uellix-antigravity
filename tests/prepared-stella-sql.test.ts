@@ -3067,8 +3067,10 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     // test's claim is unchanged — R9A touched neither package — it is R9T,
     // a later and separately authorized remediation, that legitimately did.
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
+    // Repinned MSC-07B.8-R9Y: p.polcmd::text cast at the two diagnostic
+    // string_agg sites (text || "char" operator-resolution ambiguity).
     expect(sha256('stella_0004_role_separation.sql')).toBe(
-      'e73f255cc3eea748db3642b8087bcb553488dab82d6d6e612195d6fdba50a789',
+      '2230980c23aa3a15aa2029b626fdd9f3d6dc40ea370f0169a579da9704c16650',
     )
     expect(sha256('stella_0004_rollback.sql')).toBe(
       '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',

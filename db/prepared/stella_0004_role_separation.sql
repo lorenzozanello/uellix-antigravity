@@ -307,7 +307,7 @@ BEGIN
   -- decision policies. This is intentionally more than a 104 -> 105 magic
   -- number: the additional INSERT policy must be the exact uellix_app policy
   -- from stella_0003, and no third policy may exist on the decision table.
-  SELECT string_agg(p.polname || ':' || p.polcmd, ', ' ORDER BY p.polname) INTO drift
+  SELECT string_agg(p.polname || ':' || p.polcmd::text, ', ' ORDER BY p.polname) INTO drift
   FROM pg_policy p
   WHERE p.polrelid = 'public.stella_suggestion_decisions'::regclass
     AND NOT (
@@ -1337,7 +1337,7 @@ BEGIN
   -- decision policy identity and exact INSERT predicate after all ownership
   -- and ACL reconciliation, so a third decision policy or a widened policy
   -- cannot hide behind the same 105 total.
-  SELECT string_agg(p.polname || ':' || p.polcmd, ', ' ORDER BY p.polname) INTO problem
+  SELECT string_agg(p.polname || ':' || p.polcmd::text, ', ' ORDER BY p.polname) INTO problem
   FROM pg_policy p
   WHERE p.polrelid = 'public.stella_suggestion_decisions'::regclass
     AND NOT (
