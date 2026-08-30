@@ -3058,15 +3058,23 @@ describe('db/prepared/stella_0001_role_topology_bootstrap.sql — R8W public sch
     // REFERENCES grants materialized below, so its byte-exact pin moved to
     // the "R3.7.3 REFERENCES prerequisite" describe block instead of being
     // silently dropped.
+    //
+    // MSC-07B.8-R9T repins the 0003 and 0004 hashes below (0004_rollback is
+    // untouched and stays pinned to its R9A value): both packages' INSERT-
+    // policy verifier now proves the canonical WITH CHECK by an
+    // observed-vs-observed same-session probe instead of a handwritten
+    // predicted pg_get_expr(..., true) literal (R9S-X root cause B). This
+    // test's claim is unchanged — R9A touched neither package — it is R9T,
+    // a later and separately authorized remediation, that legitimately did.
     const sha256 = (name: string) => createHash('sha256').update(read(name)).digest('hex')
     expect(sha256('stella_0004_role_separation.sql')).toBe(
-      '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
+      'e73f255cc3eea748db3642b8087bcb553488dab82d6d6e612195d6fdba50a789',
     )
     expect(sha256('stella_0004_rollback.sql')).toBe(
       '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
     )
     expect(sha256('stella_0003_suggestion_decisions.sql')).toBe(
-      '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
+      '33bed52967ecdd0f92bc8d5bc804136c709a5485e463167d6597fcd3602e088e',
     )
   })
 })

@@ -25,6 +25,16 @@ function compact(sql: string): string {
   return sql.replace(/\s+/g, '')
 }
 
+/**
+ * Strips `--` line comments before a structural match. Without this, prose
+ * that NAMES the retired doctrine (e.g. this file's own MSC-07B.8-R9T
+ * comments, which say "pg_get_expr(..., true)" to explain what was removed)
+ * would false-positive a raw-text `not.toMatch()` against live code.
+ */
+function stripLineComments(sql: string): string {
+  return sql.replace(/--[^\n]*/g, '')
+}
+
 function insertPolicyBody(sql: string): string {
   const policy = sql.match(
     /CREATE POLICY stella_suggestion_decisions_insert_member_or_admin[\s\S]*?WITH CHECK\s*\(([^;]+)\);/,
@@ -76,12 +86,25 @@ describe('R3.4 Stella role-topology remediation', () => {
     )
 
     for (const verifier of [decision, ...laterVerifiers]) {
-      // A rendered expression compared to the normalized canonical predicate
-      // rejects OR true, missing identity conjuncts, and extra alternatives.
-      expect(verifier).toMatch(/expected_decision_insert_check/)
-      expect(verifier).toMatch(/pg_get_expr\(polwithcheck,\s*polrelid,\s*true\)/)
-      expect(verifier).toMatch(/polpermissive/)
-      expect(verifier).not.toMatch(/position\('app\.organization_id'/)
+      // MSC-07B.8-R9T: the handwritten predicted-literal comparison
+      // (regexp_replace(...pg_get_expr(polwithcheck, polrelid, true)...) =
+      // expected_decision_insert_check) was replaced by an observed-vs-
+      // observed same-session probe — a disjoint temporary policy carrying
+      // the identical WITH CHECK source, compared via the 2-arg
+      // pg_get_expr(polwithcheck, polrelid) form used for both sides.
+      // Checked on the COMMENT-STRIPPED source: this file's own prose (like
+      // the line above) names the retired doctrine to explain what changed,
+      // and a raw-text match would false-positive on that explanation.
+      const live = stripLineComments(verifier)
+      expect(live).toMatch(/stella_decision_canonical_insert_probe/)
+      expect(live).toMatch(/decision_insert_check_actual/)
+      expect(live).toMatch(/decision_insert_check_probe/)
+      expect(live).toMatch(/pg_get_expr\(polwithcheck,\s*polrelid\)/)
+      expect(live).toMatch(/polpermissive/)
+      expect(live).not.toMatch(/position\('app\.organization_id'/)
+      expect(live).not.toMatch(/expected_decision_insert_check/)
+      expect(live).not.toMatch(/pg_get_expr\([^)]*,\s*true\)/)
+      expect(live).not.toMatch(/regexp_replace\(\s*regexp_replace\(pg_get_expr/)
     }
   })
 

@@ -656,7 +656,8 @@ DECLARE
   bootstrap_oid  oid;
   problem        text;
   def            text;
-  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
+  decision_insert_check_actual text;
+  decision_insert_check_probe  text;
   n              int;
 BEGIN
   -- (1) The table exists.
@@ -830,6 +831,52 @@ BEGIN
   IF n <> 2 THEN
     RAISE EXCEPTION 'stella_0003 FAILED verification: expected exactly 2 RLS policies, found %. UPDATE and DELETE must stay denied by absence', n;
   END IF;
+
+  -- (11b) Observed-vs-observed same-session probe (MSC-07B.8-R9T remediation
+  -- of R9S-X root cause B: the previous verifier compared
+  -- pg_get_expr(..., true) against a handwritten predicted deparse literal
+  -- that was never validated live against a real PostgreSQL deparser). A
+  -- disjoint, temporary policy carrying the identical WITH CHECK source is
+  -- created on this table in this session; its pg_get_expr(polwithcheck,
+  -- polrelid) — the 2-arg form, the SAME form used to observe the real
+  -- policy below — is compared to the canonical policy's own observation
+  -- instead of to a prediction. The probe is dropped before the policy
+  -- count above is trusted to still mean "2" and before any further
+  -- inventory check runs.
+  IF EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = tbl_oid AND polname = 'stella_decision_canonical_insert_probe'
+  ) THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: probe policy stella_decision_canonical_insert_probe already exists on public.stella_suggestion_decisions — refusing to trust unexpected pre-existing state';
+  END IF;
+
+  CREATE POLICY stella_decision_canonical_insert_probe
+    ON public.stella_suggestion_decisions
+    FOR INSERT
+    TO uellix_app
+    WITH CHECK (
+      organization_id = current_setting('app.organization_id', true)::uuid
+      AND organization_id = ANY(public.current_user_org_ids())
+      AND decided_by = auth.uid()
+    );
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_actual
+  FROM pg_policy
+  WHERE polrelid = tbl_oid AND polname = 'stella_suggestion_decisions_insert_member_or_admin';
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_probe
+  FROM pg_policy
+  WHERE polrelid = tbl_oid AND polname = 'stella_decision_canonical_insert_probe';
+
+  DROP POLICY stella_decision_canonical_insert_probe ON public.stella_suggestion_decisions;
+
+  IF decision_insert_check_actual IS NULL
+     OR decision_insert_check_probe IS NULL
+     OR decision_insert_check_actual <> decision_insert_check_probe THEN
+    RAISE EXCEPTION 'stella_0003 FAILED verification: canonical INSERT policy WITH CHECK does not match the same-session probe. actual=%, probe=%',
+      COALESCE(decision_insert_check_actual, '<absent>'), COALESCE(decision_insert_check_probe, '<absent>');
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM pg_policy
     WHERE polrelid = tbl_oid
@@ -847,13 +894,10 @@ BEGIN
       AND polcmd = 'a'                                   -- INSERT
       AND polroles = ARRAY[app_oid]
       AND polpermissive
-      -- pretty_bool = true produces the canonical conjunction form; remove
-      -- whitespace and optional public qualification before exact comparison.
-      -- This rejects OR true, a missing conjunct, or any extra branch.
-      AND regexp_replace(
-            regexp_replace(pg_get_expr(polwithcheck, polrelid, true), 'public\.', '', 'g'),
-            '\s+', '', 'g'
-          ) = expected_decision_insert_check
+      -- The WITH CHECK body itself was already proven identical to the
+      -- probe's above; this repeats it as a structural conjunct (defence in
+      -- depth) rather than relying solely on the earlier RAISE.
+      AND decision_insert_check_actual = decision_insert_check_probe
   ) THEN
     RAISE EXCEPTION 'stella_0003 FAILED verification: the INSERT policy is not the exact canonical uellix_app conjunction bound to transaction organisation and auth.uid().';
   END IF;

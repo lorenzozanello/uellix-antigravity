@@ -83,6 +83,12 @@
 
 SET search_path = public;
 
+-- CREATE/DROP POLICY (including the same-session probe in sections 0 and 9)
+-- takes ACCESS EXCLUSIVE on the target table. Bound the wait, the same 5s
+-- doctrine stella_0003 already uses, so a long reader turns this script into
+-- a clean abort instead of an indefinite stall. (MSC-07B.8-R9T.)
+SET lock_timeout = '5s';
+
 -- ============================================================
 -- 0. Preconditions — abort before touching anything
 -- ============================================================
@@ -117,7 +123,8 @@ DECLARE
   ];
   all_tables text[] := operational_tables || append_only_tables;
   drift text;
-  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
+  decision_insert_check_actual text;
+  decision_insert_check_probe  text;
 BEGIN
   IF current_setting('server_version_num')::int < 170000 THEN
     RAISE EXCEPTION 'stella_0004 requires PostgreSQL 17+ (MAINTAIN handling); this server is %',
@@ -237,6 +244,53 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 precondition failed: unclassified function(s) in public: %', drift;
   END IF;
 
+  -- Observed-vs-observed same-session probe (MSC-07B.8-R9T remediation of
+  -- R9S-X root cause B: the previous verifier compared pg_get_expr(...,
+  -- true) against a handwritten predicted deparse literal that was never
+  -- validated live against a real PostgreSQL deparser). A disjoint,
+  -- temporary policy carrying the identical WITH CHECK source is created on
+  -- the decision table in this session; its pg_get_expr(polwithcheck,
+  -- polrelid) — the 2-arg form, the SAME form used to observe the real
+  -- policy below — is compared to the canonical policy's own observation
+  -- instead of to a prediction. The probe is dropped before the policy
+  -- counts below (which run over ALL of public) are trusted.
+  IF EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+      AND polname = 'stella_decision_canonical_insert_probe'
+  ) THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: probe policy stella_decision_canonical_insert_probe already exists on public.stella_suggestion_decisions — refusing to trust unexpected pre-existing state';
+  END IF;
+
+  CREATE POLICY stella_decision_canonical_insert_probe
+    ON public.stella_suggestion_decisions
+    FOR INSERT
+    TO uellix_app
+    WITH CHECK (
+      organization_id = current_setting('app.organization_id', true)::uuid
+      AND organization_id = ANY(public.current_user_org_ids())
+      AND decided_by = auth.uid()
+    );
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_actual
+  FROM pg_policy
+  WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND polname = 'stella_suggestion_decisions_insert_member_or_admin';
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_probe
+  FROM pg_policy
+  WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND polname = 'stella_decision_canonical_insert_probe';
+
+  DROP POLICY stella_decision_canonical_insert_probe ON public.stella_suggestion_decisions;
+
+  IF decision_insert_check_actual IS NULL
+     OR decision_insert_check_probe IS NULL
+     OR decision_insert_check_actual <> decision_insert_check_probe THEN
+    RAISE EXCEPTION 'stella_0004 precondition failed: canonical INSERT policy WITH CHECK does not match the same-session probe. actual=%, probe=%',
+      COALESCE(decision_insert_check_actual, '<absent>'), COALESCE(decision_insert_check_probe, '<absent>');
+  END IF;
+
   -- Structural fingerprint. These numbers are the state this script was
   -- designed against; a mismatch means the database is not the one reviewed.
   IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -262,10 +316,7 @@ BEGIN
           AND p.polcmd = 'a'
           AND p.polroles = ARRAY['uellix_app'::regrole::oid]
           AND p.polpermissive
-          AND regexp_replace(
-                regexp_replace(pg_get_expr(p.polwithcheck, p.polrelid, true), 'public\.', '', 'g'),
-                '\s+', '', 'g'
-              ) = expected_decision_insert_check)
+          AND decision_insert_check_actual = decision_insert_check_probe)
     );
   IF drift IS NOT NULL
      OR (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2
@@ -767,7 +818,8 @@ DECLARE
     'stella_interactions','stella_suggestion_decisions'
   ];
   problem text;
-  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
+  decision_insert_check_actual text;
+  decision_insert_check_probe  text;
 BEGIN
   -- 9.1 Ownership: all 38 tables and all 8 functions belong to uellix_owner.
   SELECT string_agg(c.relname, ', ' ORDER BY c.relname) INTO problem
@@ -1226,6 +1278,48 @@ BEGIN
     RAISE EXCEPTION 'stella_0004 FAILED: the SECURITY DEFINER RLS helpers do not execute under the new owner (%). Every policy that calls them would error rather than filter', SQLERRM;
   END;
 
+  -- Observed-vs-observed same-session probe (MSC-07B.8-R9T remediation of
+  -- R9S-X root cause B), run here — after the RESET ROLE above restores the
+  -- superuser session and before the structural counts below are trusted —
+  -- so the probe never inflates the "9.12" policy count and is always gone
+  -- before "9.12b" re-derives the exact decision predicate from it.
+  IF EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+      AND polname = 'stella_decision_canonical_insert_probe'
+  ) THEN
+    RAISE EXCEPTION 'stella_0004 FAILED: probe policy stella_decision_canonical_insert_probe already exists on public.stella_suggestion_decisions — refusing to trust unexpected pre-existing state';
+  END IF;
+
+  CREATE POLICY stella_decision_canonical_insert_probe
+    ON public.stella_suggestion_decisions
+    FOR INSERT
+    TO uellix_app
+    WITH CHECK (
+      organization_id = current_setting('app.organization_id', true)::uuid
+      AND organization_id = ANY(public.current_user_org_ids())
+      AND decided_by = auth.uid()
+    );
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_actual
+  FROM pg_policy
+  WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND polname = 'stella_suggestion_decisions_insert_member_or_admin';
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_probe
+  FROM pg_policy
+  WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND polname = 'stella_decision_canonical_insert_probe';
+
+  DROP POLICY stella_decision_canonical_insert_probe ON public.stella_suggestion_decisions;
+
+  IF decision_insert_check_actual IS NULL
+     OR decision_insert_check_probe IS NULL
+     OR decision_insert_check_actual <> decision_insert_check_probe THEN
+    RAISE EXCEPTION 'stella_0004 FAILED: canonical INSERT policy WITH CHECK does not match the same-session probe. actual=%, probe=%',
+      COALESCE(decision_insert_check_actual, '<absent>'), COALESCE(decision_insert_check_probe, '<absent>');
+  END IF;
+
   -- 9.12 Nothing structural moved.
   IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r','p')) <> 38
@@ -1252,10 +1346,7 @@ BEGIN
           AND p.polcmd = 'a'
           AND p.polroles = ARRAY['uellix_app'::regrole::oid]
           AND p.polpermissive
-          AND regexp_replace(
-                regexp_replace(pg_get_expr(p.polwithcheck, p.polrelid, true), 'public\.', '', 'g'),
-                '\s+', '', 'g'
-              ) = expected_decision_insert_check)
+          AND decision_insert_check_actual = decision_insert_check_probe)
     );
   IF problem IS NOT NULL
      OR (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.stella_suggestion_decisions'::regclass) <> 2

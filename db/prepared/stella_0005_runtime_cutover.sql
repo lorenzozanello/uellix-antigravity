@@ -78,13 +78,20 @@
 
 SET search_path = public;
 
+-- CREATE/DROP POLICY (including the same-session probe in section 0) takes
+-- ACCESS EXCLUSIVE on the target table. Bound the wait, the same 5s doctrine
+-- stella_0003 already uses, so a long reader turns this script into a clean
+-- abort instead of an indefinite stall. (MSC-07B.8-R9T.)
+SET lock_timeout = '5s';
+
 -- ============================================================
 -- 0. Preconditions — abort before touching anything
 -- ============================================================
 
 DO $$
 DECLARE
-  expected_decision_insert_check text := 'organization_id=current_setting(''app.organization_id''::text,true)::uuidANDorganization_id=ANY(current_user_org_ids())ANDdecided_by=auth.uid()';
+  decision_insert_check_actual text;
+  decision_insert_check_probe  text;
 BEGIN
   -- 0.1 The applying identity. `session_user` must still be the migrator and
   -- `current_user` must be the owner: that pair is only reachable by
@@ -123,6 +130,53 @@ BEGIN
       'Some table in public is not owned by uellix_owner. Apply stella_0004_role_separation.sql first.';
   END IF;
 
+  -- Observed-vs-observed same-session probe (MSC-07B.8-R9T remediation of
+  -- R9S-X root cause B: the previous verifier compared pg_get_expr(...,
+  -- true) against a handwritten predicted deparse literal that was never
+  -- validated live against a real PostgreSQL deparser). A disjoint,
+  -- temporary policy carrying the identical WITH CHECK source is created on
+  -- the decision table in this session; its pg_get_expr(polwithcheck,
+  -- polrelid) — the 2-arg form, the SAME form used to observe the real
+  -- policy below — is compared to the canonical policy's own observation
+  -- instead of to a prediction. The probe is dropped before the 105-policy
+  -- count below is trusted.
+  IF EXISTS (
+    SELECT 1 FROM pg_policy
+    WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+      AND polname = 'stella_decision_canonical_insert_probe'
+  ) THEN
+    RAISE EXCEPTION 'stella_0005 aborted: probe policy stella_decision_canonical_insert_probe already exists on public.stella_suggestion_decisions — refusing to trust unexpected pre-existing state';
+  END IF;
+
+  CREATE POLICY stella_decision_canonical_insert_probe
+    ON public.stella_suggestion_decisions
+    FOR INSERT
+    TO uellix_app
+    WITH CHECK (
+      organization_id = current_setting('app.organization_id', true)::uuid
+      AND organization_id = ANY(public.current_user_org_ids())
+      AND decided_by = auth.uid()
+    );
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_actual
+  FROM pg_policy
+  WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND polname = 'stella_suggestion_decisions_insert_member_or_admin';
+
+  SELECT pg_get_expr(polwithcheck, polrelid) INTO decision_insert_check_probe
+  FROM pg_policy
+  WHERE polrelid = 'public.stella_suggestion_decisions'::regclass
+    AND polname = 'stella_decision_canonical_insert_probe';
+
+  DROP POLICY stella_decision_canonical_insert_probe ON public.stella_suggestion_decisions;
+
+  IF decision_insert_check_actual IS NULL
+     OR decision_insert_check_probe IS NULL
+     OR decision_insert_check_actual <> decision_insert_check_probe THEN
+    RAISE EXCEPTION 'stella_0005 aborted: canonical INSERT policy WITH CHECK does not match the same-session probe. actual=%, probe=%',
+      COALESCE(decision_insert_check_actual, '<absent>'), COALESCE(decision_insert_check_probe, '<absent>');
+  END IF;
+
   -- 0.2b stella_0003 now owns the decision-table INSERT policy. This package
   -- must start from that exact 105-policy state, then add only the two missing
   -- policies for audit_logs and stella_interactions.
@@ -147,10 +201,7 @@ BEGIN
          AND polcmd = 'a'
          AND polroles = ARRAY['uellix_app'::regrole::oid]
          AND polpermissive
-         AND regexp_replace(
-               regexp_replace(pg_get_expr(polwithcheck, polrelid, true), 'public\.', '', 'g'),
-               '\s+', '', 'g'
-             ) = expected_decision_insert_check
+         AND decision_insert_check_actual = decision_insert_check_probe
      )
   ) THEN
     RAISE EXCEPTION 'stella_0005 requires the canonical transaction-bound stella_0003 decision INSERT policy before it runs.';

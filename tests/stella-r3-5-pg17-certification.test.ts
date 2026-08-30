@@ -22,8 +22,12 @@ const EXPECTED_HASHES = {
   'stella_0002_interactions_hardening.sql': 'cbf860b12d3f32205f2e0efba7c3c1c2d9a4658bafc3ab7949d2de4089e9ec9e',
   'stella_0002b_append_only_truncate_hardening.sql': '3fda2dfd117616e09b86da45b75e6f070bcc7a857e5a1c2da752670a83ac47b5',
   'stella_0001_role_topology_bootstrap.sql': '9f21955e505e5c2a5212fabcb683f7e1e514c6665fbc8726041a1cc631e4f7b3',
-  'stella_0003_suggestion_decisions.sql': '353925466c7c88210d5cae0705450af6aae7d582227d28c8f0aa63874c3af974',
-  'stella_0004_role_separation.sql': '3436925c44f3e5185391ba975b9c60d743df3ce33d5efcb4e531ced4f07285cd',
+  // Repinned MSC-07B.8-R9T alongside db/r3-5-pg17-certification-inputs.ts —
+  // see its comment for why: the same-session probe doctrine replaced the
+  // handwritten-literal INSERT-policy verifier at 1 site here and 2 in
+  // stella_0004; CREATE POLICY authority is unchanged.
+  'stella_0003_suggestion_decisions.sql': '33bed52967ecdd0f92bc8d5bc804136c709a5485e463167d6597fcd3602e088e',
+  'stella_0004_role_separation.sql': 'e73f255cc3eea748db3642b8087bcb553488dab82d6d6e612195d6fdba50a789',
   'stella_0001_role_topology_bootstrap_rollback.sql': '7db648d44a93abd3bfe545b7301b436303a51d07148c69e07b1c8b1f35154f96',
   'stella_0004_rollback.sql': '22afa4cfddfe407abc6171b452659bf56d2a833663a818bfd55c6fab002f7cb6',
 } as const
