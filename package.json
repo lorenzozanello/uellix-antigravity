@@ -103,7 +103,8 @@
   "dry-run:audit-capability-identity": "bash scripts/audit-capability-identity-dry-run.sh",
     "authority:seal:verify": "tsx scripts/authority-seal-verify.ts",
     "ods:prestate": "tsx scripts/ods-prestate.ts",
-    "ods:scope": "tsx scripts/ods-scope.ts"
+    "ods:scope": "tsx scripts/ods-scope.ts",
+    "ods:poststate": "tsx scripts/ods-poststate.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
