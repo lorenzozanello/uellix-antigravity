@@ -1,0 +1,188 @@
+{
+  "package_id": "FIB_IMPLEMENTATION_BASELINE",
+  "version": "1.0.0",
+  "artifact_id": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure",
+  "authority_class": "IMPLEMENTATION_WAVE_CLOSURE_RECORD",
+  "supersedes": null,
+
+  "purpose": "Materialize, append-only and prospectively, the human-product-owner acceptance of the W1-07 independent adversarial re-audit of the Wave 1 remediated tree. This artifact records a closure that was adjudicated elsewhere; it implements nothing, remediates nothing, and modifies no sealed artifact.",
+
+  "wave": 1,
+  "closure_class": "ADVERSARIAL",
+  "closure_audit": "W1-07",
+  "closure_status": "CLOSED",
+  "closure_authority": "HUMAN_PRODUCT_OWNER_ACCEPTANCE_OF_W1_07",
+
+  "authority_commit": "8ae297cd228a79d3fd7f598532e43e456f0aef5e",
+  "implementation_commits": [
+    "bac1a39381374d7f685cb9ff687c798cf48c3b5b",
+    "1f15c148f2df0d5fd7664c170926c97781cecc9a",
+    "303b2bbaa29520a9be3cd0efcdd453123544aa8e",
+    "5739ada4c46478cf63d198de0303e3ff2e033937",
+    "6944a618b70c0ac0436a915fa0a52af24a16a5dc"
+  ],
+  "audited_head": "6944a618b70c0ac0436a915fa0a52af24a16a5dc",
+  "audited_tree": "80915e1608725351a9b7ad9772bdc595af679767",
+  "audited_branch": "codex/w1-integration-closure-r1",
+
+  "authority_chain_at_closure": {
+    "baseline_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+    "baseline_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
+    "index_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+    "index_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
+    "manifest_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.manifest.json",
+    "ratification_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.ratification.json",
+    "seal_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json",
+    "seal_state": "FORMALLY_SEALED",
+    "pc01b_authority_file": "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.md",
+    "pc01b_authority_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+    "im01b_authority_file": "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.md",
+    "im01b_authority_sha256": "3b7e696cda64a28f155d740812f601eb20fabb40104ce4581a0568467ee026b4",
+    "addendum_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.addendum-w1rm2.json",
+    "addendum_id": "W1-05-RM2",
+    "addendum_status": "RATIFIED",
+    "addendum_sha256": "ec614e409fe96394f1e13f0f0a9e875bce81d8de76e8c253ed73911a3ada8c2f",
+    "addendum_git_blob": "e8ba9ef7154e4196d59e54b4193d0deb5d368e9f",
+    "addendum_decisions_implemented": ["HPO-DEC-1", "HPO-DEC-2", "HPO-DEC-3"]
+  },
+
+  "w1_07_result": {
+    "verdict": "WAVE1_ADVERSARIALLY_CLOSED_READY_FOR_ODS",
+    "remediation_items": {
+      "R-1": "PASS",
+      "R-2": "PASS",
+      "R-3": "PASS",
+      "R-4": "PASS",
+      "R-5": "PASS",
+      "R-6": "PASS",
+      "R-7": "PASS"
+    },
+    "gates": { "G-1": "PASS", "G-2": "PASS" },
+    "blocking_findings": 0,
+    "material_non_blocking_findings": 1,
+    "bookkeeping_findings": 4,
+    "new_authority_gaps": 0,
+    "ts_no_emit": "PASS",
+    "wave1_static_safe_tests": "PASS",
+    "hosted_baseline_gate_failure_count": 2,
+    "hosted_baseline_gate_failure_identity": "UNCHANGED_PREEXISTING_FRESHNESS_ONLY",
+    "new_hosted_baseline_failures": 0,
+    "sealed_authority_bytes_changed": 0,
+    "files_written_during_audit": 0,
+    "remote_db_connections": 0,
+    "production_connections": 0
+  },
+
+  "hosted_baseline_deferral": {
+    "condition": "PRE_EXISTING_DEFERRED",
+    "failure_count": 2,
+    "introduced_by_wave_1_remediation": false,
+    "note": "Both failures reduce to hosted-baseline-rehearsal-ready. The recorded rehearsal artefact (artifacts/baseline-rehearsal/latest.json) reports manifestApplied=50 against a 50-unit-era manifest digest, so rehearsalFresh and rehearsalAppliedAll were already false at the authority commit, when the corpus already held 58 units. The 58 to 59 expansion did not create them. Rehearsal deferment is unchanged by this closure."
+  },
+
+  "material_non_blocking_findings": [
+    {
+      "id": "MNB-1",
+      "status": "DEFERRED_NON_BLOCKING",
+      "surface": "lib/admin/proxies.ts",
+      "measured_sites": [104, 142, 185, 252],
+      "measured_site_form": "action: AUDIT_ACTIONS.ORGANIZATION_UPDATED",
+      "issue": "ORGANIZATION_UPDATED is emitted prospectively for proxy_source / financial_proxy methodological operations, where FIBC-040 requires domain-proper semantic correspondence between the verb and the object and transition actually performed.",
+      "w1_07_adjudication": "Outside the declared FIBIU-28 FILES_OR_DOMAINS and outside the frozen R-1 site set; pre-existing and untouched by the Wave 1 remediation. Does not block Wave 1 closure.",
+      "additional_measured_fact": "The R-1 correspondence contract test scans lib/pipeline, lib/projects/service.ts and lib/portfolios/service.ts only, so lib/admin is not covered by the new scan.",
+      "minimum_future_remediation": [
+        "Emit prospective domain-proper verbs: proxy_source.created, financial_proxy.created, financial_proxy.updated, as applicable.",
+        "Extend the correspondence scan root set to include lib/admin."
+      ],
+      "historical_rows_rewritten": false,
+      "migration_impact": false,
+      "authority_change_required": false,
+      "remediated_in_this_closure": false
+    }
+  ],
+
+  "bookkeeping_findings": [
+    {
+      "id": "BK-1",
+      "status": "DEFERRED",
+      "surface": "db/hosted/baseline-apply-authorization.ts",
+      "measured_site": 1097,
+      "issue": "The manifest-hashes-and-order criterion requirement prose still reads 'The 58-unit manifest' after the corpus moved to 59 units.",
+      "executable_impact": "none - evaluate() derives the count from BASELINE_UNITS.length; the sibling sourceArtifact field already reads 59.",
+      "remediated_in_this_closure": false
+    },
+    {
+      "id": "BK-2",
+      "status": "DEFERRED",
+      "surface": "tests/audit-action-contract.test.ts",
+      "issue": "CORRESPONDENCE_EXCEPTIONS carries three plural-entityType exceptions beyond the methodology_review naming exception: project_investments, sroi_assignment_inputs, sroi_filter_sets.",
+      "w1_07_adjudication": "Semantically valid - each pairs a plural table-name entityType with the correct singular verb prefix, not a wrong-object verb - and each is disclosed in code as a deferred gap rather than silently hidden. Not a FIBC-040 defect.",
+      "executable_impact": "none",
+      "remediated_in_this_closure": false
+    },
+    {
+      "id": "BK-3",
+      "status": "DEFERRED",
+      "surface": "in-code W1-05-RM1 remediation labels",
+      "issue": "The label R-6 is used both for the FIBIU-03 lineage work and for the regime remediation recorded as R-6/G-1. W1-05-RM1 itself is not materialized in the repository, so the R-1..R-7 label mapping is not independently verifiable from repository state; W1-07 verified the remediation set against its own enumeration and the RM2 addendum.",
+      "executable_impact": "none",
+      "pre_existing": true,
+      "remediated_in_this_closure": false
+    },
+    {
+      "id": "BK-4",
+      "status": "DEFERRED_FUTURE_REVIEW",
+      "surface": "lib/pipeline/confidence-score.ts",
+      "measured_site": 81,
+      "issue": "A pre-existing best-effort catch wraps the whole recalculation including logAuditAction, so a content-modifying audit event can be lost while the underlying mutation persists.",
+      "w1_07_adjudication": "Documented as best-effort by design and outside the frozen R-2 remediation scope, which added contentModifying and beforeJson only.",
+      "preserve_as": "EXPLICIT_FUTURE_REVIEW_ITEM",
+      "remediated_in_this_closure": false
+    }
+  ],
+
+  "audit_notes_false_positives": [
+    {
+      "note": "Input-version fingerprint object types",
+      "detail": "The fingerprint records project_investment, outcome and sroi_assignment_input. indicator and stakeholder_group are versioned by FIBIU-03 but are not read by loadCalculationData, so they do not participate in a run and recording them would fabricate participation. Not a defect."
+    },
+    {
+      "note": "Atomicity of createDomainObjectVersion",
+      "detail": "FIBC-002, FIBC-045, FIBDB-004 and FIBIU-03 impose no transactionality requirement between a primary-object mutation and its version append. The absence of a shared transaction is therefore not a defect against frozen authority."
+    }
+  ],
+
+  "invariants_preserved": {
+    "sealed_artifacts_byte_identical": true,
+    "sealed_artifacts_verified_byte_identical": [
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.manifest.json",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.ratification.json",
+      "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.seal.json",
+      "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.md",
+      "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.md"
+    ],
+    "rm2_addendum_byte_identical": true,
+    "historical_evidence_immutable": true,
+    "historical_audit_rows_never_rewritten": true,
+    "append_only_protections_never_suspended": true,
+    "no_new_frozen_identifier_created": true,
+    "no_runtime_test_schema_migration_manifest_journal_or_config_change_in_this_closure": true
+  },
+
+  "state_after_closure": {
+    "frozen_implementation_baseline": true,
+    "implementation_open": true,
+    "document_grounding_activated": false,
+    "stella_pilot_core_frozen": false,
+    "wave1_formally_closed": true,
+    "ready_for_ods": true,
+    "ready_for_wave2": false,
+    "next_gate": "ODS_V1"
+  },
+
+  "sequencing_note": "ready_for_wave2=false records an operational development-sequencing decision by the HPO: ODS v1 is the next mandatory development-process gate before Wave 2 begins. It does NOT alter the technical FIB dependency graph, and it is not a statement that any Wave 2 technical dependency is unmet.",
+
+  "scope_note": "This artifact records closure only. It implements nothing, remediates nothing, and reopens nothing. MNB-1 and BK-1 through BK-4 are preserved unremediated and remain open for a future authorized round. Historical evidence remains immutable."
+}
