@@ -1,0 +1,45 @@
+{
+  "seal_id": "PC01B_HUMAN_METHODOLOGY_AUTHORITY_FORMAL_SEAL",
+  "seal_version": "1.0.0",
+  "package_id": "PC01B_HUMAN_METHODOLOGY_AUTHORITY",
+  "package_version": "1.0.0",
+  "phase": "POST_MSC07B_PILOT_CORE_CLOSEOUT",
+
+  "canonical_authority_file": "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.md",
+  "canonical_authority_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+
+  "candidate_manifest_file": "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.manifest.json",
+
+  "ratification_file": "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.ratification.md",
+  "ratification_file_sha256": "3188d7272f18c2d20765d0890d348ee1fba7c3525dac30cb47de143203cac5bc",
+
+  "candidate_commit": "02a7221238f87591efd97fc090aed8be83d87506",
+  "candidate_tree": "af349a31402e606c14455618af14232c64d6b9e8",
+  "source_base_commit": "668de7343b74ffc6fb40d2a793c2ecd6e6f6a439",
+  "source_base_tree": "da201674fea1c0a383df91a8b8971c8720d371dc",
+
+  "m2_independent_verdict": "PASS",
+  "m2_ready_for_formal_seal": true,
+  "m2_v_authorities_found": 32,
+  "m2_f_authorities_found": 16,
+  "m2_total_authorities_found": 48,
+  "m2_authority_duplications": 0,
+  "m2_authority_omissions": 0,
+  "m2_extra_normative_authority_found": false,
+  "m2_precedence_correct": true,
+  "m2_g5_scope_exclusion_correct": true,
+
+  "human_ratification_complete": true,
+
+  "pc01b_human_authority_frozen": true,
+  "methodology_validated": true,
+
+  "implementation_open": false,
+  "document_grounding_g5_in_scope": false,
+  "document_grounding_activated": false,
+  "stella_pilot_core_frozen": false,
+
+  "ready_for_implementation_mapping": true,
+
+  "seal_status": "FORMALLY_SEALED"
+}
