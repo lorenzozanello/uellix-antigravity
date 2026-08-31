@@ -12,10 +12,10 @@
   "im01b_authority_sha256": "3b7e696cda64a28f155d740812f601eb20fabb40104ce4581a0568467ee026b4",
 
   "baseline_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
-  "baseline_file_sha256": "855aeda03ccb11a028261c2e9efd35f408d4fa55c835702b755548a809a5688d",
+  "baseline_file_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
 
   "index_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
-  "index_file_sha256": "bb8ce7acc34f4973d9b28ebc6e7a8702646f55ddacdf7cbf7c73e28395a2429a",
+  "index_file_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
 
   "total_human_authorities": 55,
   "total_fib_contracts": 45,
