@@ -72,7 +72,7 @@ export async function createStakeholderForProject(
     actorUserId: ctx.user.id,
     entityType: 'stakeholder_group',
     entityId: created.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_CREATED,
+    action: AUDIT_ACTIONS.STAKEHOLDER_GROUP_CREATED,
     afterJson: created,
   });
   return created;

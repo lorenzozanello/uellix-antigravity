@@ -124,7 +124,15 @@ export const AUDIT_ACTIONS = {
   SROI_REPORT_LOCKED: 'sroi_report.locked',
 
   // SROI calculation pipeline (lib/pipeline/sroi-calculation.ts, investments.ts)
-  SROI_CALCULATION_RUN_CREATED: 'sroi_calculation_run.created',
+  //
+  // W1-05-RM2 (HPO-DEC-3) — the sealed FIBC-001 literal 'sroi_run.calculated'
+  // named a table that does not exist ('sroi_run'); this action's own table
+  // is sroi_calculation_runs. Superseded prospectively as a naming/
+  // correspondence correction only — the substantive requirement that a
+  // successful calculation emits a governed calculation event is unchanged.
+  // Historical audit rows under the earlier constant name are immutable and
+  // are never rewritten.
+  SROI_CALCULATION_RUN_CALCULATED: 'sroi_calculation_run.calculated',
   PROJECT_INVESTMENT_CREATED: 'project_investment.created',
   PROJECT_INVESTMENT_UPDATED: 'project_investment.updated',
   PROJECT_INVESTMENT_ARCHIVED: 'project_investment.archived',
@@ -156,6 +164,32 @@ export const AUDIT_ACTIONS = {
   // ---------------------------------------------------------------------
   INDICATOR_ARCHIVED: 'indicator.archived',
   STAKEHOLDER_GROUP_ARCHIVED: 'stakeholder_group.archived',
+
+  // ---------------------------------------------------------------------
+  // W1-05-RM1 R-1 (FIBC-040) — verb/object correspondence correction.
+  // ---------------------------------------------------------------------
+  // indicators.ts, outcomes.ts, stakeholders.ts and narratives.ts recorded
+  // their own object's creation/update under the unrelated organization.*
+  // verb — a governed vocabulary value, but not the domain-correct one for
+  // the transition actually performed, exactly the defect FIBC-040 names.
+  // Corrected prospectively; the historical organization.* rows those
+  // services wrote are never rewritten.
+  INDICATOR_CREATED: 'indicator.created',
+  OUTCOME_CREATED: 'outcome.created',
+  STAKEHOLDER_GROUP_CREATED: 'stakeholder_group.created',
+  IMPACT_NARRATIVE_CREATED: 'impact_narrative.created',
+  IMPACT_NARRATIVE_UPDATED: 'impact_narrative.updated',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-29 (FIBC-041) — governed permission-denial event.
+  // ---------------------------------------------------------------------
+  // The single Wave 1 denial event: FIBIU-29 hard-depends on FIBIU-28
+  // because "denial events need governed verbs" (FIB §12). Wave 1's only
+  // consumer of that dependency is canApproveRunMethodology's segregation-
+  // of-duties enforcement (V-04) — the other five discrete permissions have
+  // no Wave 1 caller, so no generic "audit every denial" vocabulary is
+  // introduced here.
+  SROI_CALCULATION_RUN_METHODOLOGY_APPROVAL_DENIED: 'sroi_calculation_run.methodology_approval_denied',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

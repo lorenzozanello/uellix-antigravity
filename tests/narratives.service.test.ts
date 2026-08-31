@@ -17,6 +17,8 @@ vi.mock('@/lib/audit/logger', () => ({
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
     ORGANIZATION_UPDATED: 'organization_updated',
+    IMPACT_NARRATIVE_CREATED: 'impact_narrative.created',
+    IMPACT_NARRATIVE_UPDATED: 'impact_narrative.updated',
   },
 }));
 
@@ -115,6 +117,28 @@ describe('Narrative service', () => {
 
     const input = { version: 'v2' };
     await expect(upsertNarrativeForProject('proj-1', input)).rejects.toThrow('Insufficient permissions');
+  });
+
+  it('W1-05-RM1 R-2: records a content-modifying update with real prior state when a narrative already exists', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'user-1', email: 'u@test.com', isSuperAdmin: false },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.entities = [
+      { id: 'narr-1', projectId: 'proj-1', version: 'v1', narrativeText: 'old text' },
+    ];
+
+    await upsertNarrativeForProject('proj-1', { version: 'v2', narrativeText: 'new text' });
+
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'impact_narrative.updated',
+        contentModifying: true,
+        beforeJson: { id: 'narr-1', projectId: 'proj-1', version: 'v1', narrativeText: 'old text' },
+      })
+    );
   });
 
   it('fails validation on bad input', async () => {

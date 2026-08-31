@@ -87,7 +87,8 @@ export async function upsertNarrativeForProject(
       actorUserId: ctx.user.id,
       entityType: 'impact_narrative',
       entityId: existing.id,
-      action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+      action: AUDIT_ACTIONS.IMPACT_NARRATIVE_UPDATED,
+      contentModifying: true,
       beforeJson: before,
       afterJson: { ...existing, ...parsed },
     });
@@ -114,7 +115,7 @@ export async function upsertNarrativeForProject(
       actorUserId: ctx.user.id,
       entityType: 'impact_narrative',
       entityId: created.id,
-      action: AUDIT_ACTIONS.ORGANIZATION_CREATED,
+      action: AUDIT_ACTIONS.IMPACT_NARRATIVE_CREATED,
       afterJson: created,
     });
     return created;

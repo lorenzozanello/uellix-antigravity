@@ -1099,9 +1099,11 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     organizationId: ctx.organization.id,
     projectId,
     actorUserId: ctx.user.id,
-    entityType: 'sroi_calculation_runs',
+    // W1-05-RM2 (HPO-DEC-3): 'sroi_calculation_run' — singular, matching the
+    // AUDIT_ACTIONS verb's own object prefix.
+    entityType: 'sroi_calculation_run',
     entityId: run.id,
-    action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_CREATED,
+    action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_CALCULATED,
     afterJson: { runId: run.id, version: run.version, sroiRatio: result.sroiRatio } as Record<string, unknown>,
   })
 

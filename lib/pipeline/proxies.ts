@@ -248,6 +248,7 @@ export async function updateOrganizationProxySource(sourceId: string, input: unk
     entityType: 'proxy_source',
     entityId: sourceId,
     action: AUDIT_ACTIONS.PROXY_SOURCE_UPDATED,
+    contentModifying: true,
     beforeJson: source,
     afterJson: updated,
   });
@@ -426,6 +427,7 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
       ? AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED
       : AUDIT_ACTIONS.FINANCIAL_PROXY_UPDATED,
     reason: resetReview ? 'Approval reset: material field changed after approval' : undefined,
+    contentModifying: true,
     beforeJson: proxy,
     afterJson: updated,
   });

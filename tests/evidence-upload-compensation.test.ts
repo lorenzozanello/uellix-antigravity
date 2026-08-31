@@ -268,8 +268,12 @@ describe('a failed storage upload withdraws its row', () => {
       organizationId: ORG,
       projectId: PROJECT,
       actorUserId: USER,
+      contentModifying: true,
       afterJson: { stage: 'upload', compensated: true, status: 'archived' },
     })
+    // W1-05-RM1 R-2: beforeJson is real (a read, not fabricated) — this
+    // driver reports no prior row, so it is honestly null, never invented.
+    expect(uploadFailedEntry()).toHaveProperty('beforeJson')
   })
 
   it('does not score the withdrawn row', async () => {

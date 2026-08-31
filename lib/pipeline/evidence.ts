@@ -208,6 +208,25 @@ async function compensateFailedFileUpload(params: {
 }): Promise<void> {
   const { evidenceId, projectId, organizationId, actorUserId, stage } = params
 
+  // Real prior state for the audit record's beforeJson (FIBC-040) — read
+  // before the compensation UPDATE runs, never fabricated. Best-effort: a
+  // failed read here must not block the compensation itself, so it falls
+  // back to null rather than throwing.
+  const priorStatus = await withOrganizationDatabaseContext(async () => {
+    const rows = await db
+      .select({ status: evidenceItems.status })
+      .from(evidenceItems)
+      .where(
+        and(
+          eq(evidenceItems.id, evidenceId),
+          eq(evidenceItems.projectId, projectId),
+          eq(evidenceItems.organizationId, organizationId)
+        )
+      )
+      .limit(1)
+    return rows[0]?.status ?? null
+  }).catch(() => null)
+
   // RETURNING, not a bare UPDATE: the row count IS the outcome. This is the
   // check whose absence was the defect, so it is read here and nowhere else.
   const compensated = await withOrganizationDatabaseContext(async () => {
@@ -244,7 +263,9 @@ async function compensateFailedFileUpload(params: {
           stage === 'upload'
             ? 'The storage upload failed; no bytes were stored for this evidence row.'
             : 'The upload was stored but finalisation failed; the row never recorded its file path.',
-        afterJson: { stage, compensated: applied, status: applied ? 'archived' : null },
+        contentModifying: true,
+        beforeJson: { status: priorStatus },
+        afterJson: { stage, compensated: applied, status: applied ? 'archived' : priorStatus },
       })
     })
   } catch (auditError) {

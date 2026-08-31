@@ -296,6 +296,9 @@ export async function upsertMethodologyReviewItem(
     entityType: 'methodology_review_matrix_item',
     entityId: item.id,
     action: AUDIT_ACTIONS.METHODOLOGY_REVIEW_ITEM_UPSERTED,
+    ...(existing.length > 0
+      ? { contentModifying: true, beforeJson: existing[0] as unknown as Record<string, unknown> }
+      : {}),
     afterJson: item as unknown as Record<string, unknown>,
   })
   return item
@@ -364,6 +367,8 @@ export async function updateMethodologyReview(
     entityType: 'methodology_review_matrix',
     entityId: matrix.id,
     action: AUDIT_ACTIONS.METHODOLOGY_REVIEW_UPDATED,
+    contentModifying: true,
+    beforeJson: matrix as unknown as Record<string, unknown>,
     afterJson: updated as unknown as Record<string, unknown>,
   })
   return updated

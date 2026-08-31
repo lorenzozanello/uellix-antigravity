@@ -16,6 +16,8 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    STAKEHOLDER_GROUP_CREATED: 'stakeholder_group.created',
+    STAKEHOLDER_GROUP_ARCHIVED: 'stakeholder_group.archived',
   },
 }));
 

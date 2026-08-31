@@ -285,6 +285,7 @@ export async function deleteAllocation(allocationId: string): Promise<void> {
     entityType: 'outcome_funder_allocation',
     entityId: allocationId,
     action: AUDIT_ACTIONS.OUTCOME_FUNDER_ALLOCATION_DELETED,
+    contentModifying: true,
     beforeJson: { allocationPct: deletedPct },
   })
 }

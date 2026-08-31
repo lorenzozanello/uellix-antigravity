@@ -16,6 +16,7 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    OUTCOME_CREATED: 'outcome.created',
     OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
   },
 }));
@@ -335,6 +336,7 @@ describe('Outcome service', () => {
     expect(result.materialityRationale).toBe('Highest-priority outcome for this cohort.');
     expect(logAuditAction).toHaveBeenCalledWith(
       expect.objectContaining({
+        contentModifying: true,
         beforeJson: { materialityScore: null, materialityRationale: null },
         afterJson: { materialityScore: 5, materialityRationale: 'Highest-priority outcome for this cohort.' },
       })

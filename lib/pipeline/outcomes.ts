@@ -94,7 +94,7 @@ export async function createOutcomeForProject(
     actorUserId: ctx.user.id,
     entityType: 'outcome',
     entityId: created.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_CREATED,
+    action: AUDIT_ACTIONS.OUTCOME_CREATED,
     afterJson: created,
   });
   return created;
@@ -167,6 +167,7 @@ export async function setOutcomeMateriality(projectId: string, outcomeId: string
     entityType: 'outcome',
     entityId: outcomeId,
     action: AUDIT_ACTIONS.OUTCOME_MATERIALITY_UPDATED,
+    contentModifying: true,
     beforeJson: { materialityScore: previousScore, materialityRationale: previousRationale },
     afterJson: { materialityScore: after?.materialityScore ?? null, materialityRationale: after?.materialityRationale ?? null },
   })

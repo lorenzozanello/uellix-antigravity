@@ -95,6 +95,7 @@ vi.mock('@/db/client', () => {
 import {
   listProxySources,
   createOrganizationProxySource,
+  updateOrganizationProxySource,
   archiveProxySource,
   listFinancialProxies,
   createOrganizationFinancialProxy,
@@ -164,6 +165,25 @@ describe('Proxy Sources Service', () => {
     expect(logAuditAction).toHaveBeenCalled();
   });
 
+  it('W1-05-RM1 R-2: updateOrganizationProxySource records a content-modifying update with real prior state', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-1' }, user: { id: 'user-2' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    const source = { id: SOURCE_UUID, organizationId: 'org-1', status: 'active', name: 'Old name' };
+    mockDbData.proxySources = [source];
+    mockDbData.updated = { ...source, name: 'New name' };
+
+    await updateOrganizationProxySource(SOURCE_UUID, { name: 'New name' });
+
+    const { logAuditAction } = await import('@/lib/audit/logger');
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentModifying: true,
+        beforeJson: source,
+      })
+    );
+  });
+
   it('archiveProxySource performs logical archive and logs audit', async () => {
     const { requireOrganizationAccess } = await import('@/lib/auth/session');
     const ctx = { organization: { id: 'org-1' }, user: { id: 'user-2' } } as any;
@@ -215,6 +235,35 @@ describe('Financial Proxies Service', () => {
     expect(result.reviewStatus).toBe('suggested');
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
+  });
+
+  it('W1-05-RM1 R-2: updateOrganizationFinancialProxy records a content-modifying update with real prior state', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-2' }, user: { id: 'user-3' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    const proxy = {
+      id: PROXY_UUID,
+      organizationId: 'org-2',
+      sourceId: SOURCE_UUID,
+      name: 'Old name',
+      currency: 'USD',
+      value: '100',
+      unit: 'units',
+      referenceYear: 2023,
+      reviewStatus: 'suggested',
+    };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.updated = { ...proxy, name: 'New name' };
+
+    await updateOrganizationFinancialProxy(PROXY_UUID, { name: 'New name' });
+
+    const { logAuditAction } = await import('@/lib/audit/logger');
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentModifying: true,
+        beforeJson: proxy,
+      })
+    );
   });
 
   // -------------------------------------------------------------------------

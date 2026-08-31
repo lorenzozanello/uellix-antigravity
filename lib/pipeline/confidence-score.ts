@@ -74,6 +74,7 @@ export async function recalculateConfidenceScore(projectId: string, evidenceId: 
       entityType: 'evidence_item',
       entityId: evidenceId,
       action: AUDIT_ACTIONS.EVIDENCE_CONFIDENCE_SCORE_UPDATED,
+      contentModifying: true,
       beforeJson: { confidenceScore: previousScore },
       afterJson: { confidenceScore: newScore },
     })

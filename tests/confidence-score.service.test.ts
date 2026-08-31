@@ -127,6 +127,7 @@ describe('recalculateConfidenceScore', () => {
     expect(logAuditAction).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'evidence_item.confidence_score_updated',
+        contentModifying: true,
         beforeJson: { confidenceScore: null },
         afterJson: { confidenceScore: 40 },
       })

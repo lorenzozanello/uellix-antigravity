@@ -97,7 +97,7 @@ export async function createIndicatorForProject(
     actorUserId: ctx.user.id,
     entityType: 'indicator',
     entityId: created.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_CREATED,
+    action: AUDIT_ACTIONS.INDICATOR_CREATED,
     afterJson: created,
   });
   return created;

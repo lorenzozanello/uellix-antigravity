@@ -16,6 +16,8 @@ vi.mock('@/lib/audit/logger', () => ({
   logAuditAction: vi.fn(),
   AUDIT_ACTIONS: {
     ORGANIZATION_CREATED: 'organization_created',
+    INDICATOR_CREATED: 'indicator.created',
+    INDICATOR_ARCHIVED: 'indicator.archived',
   },
 }));
 
