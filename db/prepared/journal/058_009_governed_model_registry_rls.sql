@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 32/58: 0031_rls_core.sql
+-- GENERATED — DO NOT EDIT. Unit 58/58: 009_governed_model_registry_rls.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0031_rls_core.sql
--- Source SHA256: e525b1eefa723bb38db5121a08b5cc416126f64c0563687ada6fcc2a7cc054ef
+-- Includes:      db/policies/009_governed_model_registry_rls.sql
+-- Source SHA256: 0b63ac513205f3ac1020fc7e0d0869f277a4597a126656e9dd12d1b424260a4b
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/032_0031_rls_core.sql
+--        -f db/prepared/journal/058_009_governed_model_registry_rls.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0031_rls_core.sql
+\ir ../../../db/policies/009_governed_model_registry_rls.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0031_rls_core.sql', 'PHASE_BASELINE',
-   'e525b1eefa723bb38db5121a08b5cc416126f64c0563687ada6fcc2a7cc054ef', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '009_governed_model_registry_rls.sql', 'PHASE_BASELINE',
+   '0b63ac513205f3ac1020fc7e0d0869f277a4597a126656e9dd12d1b424260a4b', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

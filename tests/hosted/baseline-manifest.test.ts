@@ -75,20 +75,20 @@ describe('the baseline manifest describes the corpus that is actually checked in
     expect([...BASELINE_UNITS].map((u) => u.file).sort()).toEqual(discovered().sort())
   })
 
-  it('has 50 units: 40 Drizzle, 2 Supabase, 8 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(50)
+  it('has 58 units: 47 Drizzle, 2 Supabase, 9 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(58)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(40)
+    expect(byKind('drizzle-migration')).toBe(47)
     expect(byKind('supabase-migration')).toBe(2)
-    expect(byKind('policy')).toBe(8)
+    expect(byKind('policy')).toBe(9)
   })
 
-  it('numbers ordinals 1..50 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..58 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 50 }, (_, i) => i + 1),
+      Array.from({ length: 58 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(50)
+    expect(new Set(BASELINE_ORDER).size).toBe(58)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -207,7 +207,7 @@ describe('A2 is almost entirely a re-application of A1', () => {
     expect(m32.filter((s) => !policies.has(s))).toEqual([])
   })
 
-  it('policy 008 is the ONLY one carrying content the migration chain never applies', () => {
+  it('008 and 009 are the only policies carrying content the migration chain never applies', () => {
     const chain = new Set(
       BASELINE_UNITS.filter((u) => u.kind !== 'policy').flatMap((u) => statementSet(readOrThrow(u.file))),
     )
@@ -215,8 +215,15 @@ describe('A2 is almost entirely a re-application of A1', () => {
       .map((u) => [u.id, statementSet(readOrThrow(u.file)).filter((s) => !chain.has(s))] as const)
       .filter(([, s]) => s.length > 0)
 
-    expect(novel.map(([id]) => id)).toEqual(['008_marketing_leads_rls.sql'])
+    // 001…007 duplicate the Drizzle chain (equivalentTo); 008 and 009 are the
+    // two independent A2-only policies — 008 pre-dates Wave 1, 009 is the one
+    // Wave-1 policy claim (governed_model_registry, no Drizzle equivalent).
+    expect(novel.map(([id]) => id)).toEqual([
+      '008_marketing_leads_rls.sql',
+      '009_governed_model_registry_rls.sql',
+    ])
     expect(novel[0][1]).toHaveLength(4)
+    expect(novel[1][1]).toHaveLength(3)
   })
 
   it('re-applying 001..007 is safe because every CREATE POLICY is guarded — and 008 is not', () => {
@@ -281,18 +288,34 @@ describe('Phase 6 — managed-Supabase compatibility, measured not assumed', () 
 })
 
 describe('Phase 5 — data', () => {
-  it('0018 is the only unit with DML, and none of it comes from a literal VALUES list', () => {
+  it('0018, 0040 and 0041 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
-    expect(withDml.map((u) => u.id)).toEqual(['0018_redundant_firebird.sql'])
+    expect(withDml.map((u) => u.id)).toEqual([
+      '0018_redundant_firebird.sql',
+      '0040_governed_model_registry.sql',
+      '0041_pc01b_regime_boundary_backfill.sql',
+    ])
 
-    const facts = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))
-    expect(facts.dmlStatements).toHaveLength(4)
-    // The whole "zero production data" claim reduces to this assertion: every
-    // row the baseline could write is SELECTed from a table that is empty.
-    expect(facts.literalRowSources).toEqual([])
+    const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))
+    expect(facts0018.dmlStatements).toHaveLength(4)
+    // The "zero production/tenant data" claim reduces to this assertion for the
+    // two structural-backfill units: every row they could write is SELECTed
+    // from a table that is empty on a fresh database.
+    expect(facts0018.literalRowSources).toEqual([])
     expect(baselineUnit('0018_redundant_firebird.sql').dml).toBe('structural-backfill')
+
+    const facts0041 = scanBaselineSql(readOrThrow('db/migrations/0041_pc01b_regime_boundary_backfill.sql'))
+    expect(facts0041.literalRowSources).toEqual([])
+    expect(baselineUnit('0041_pc01b_regime_boundary_backfill.sql').dml).toBe('structural-backfill')
+
+    // 0040 is the one deliberate exception: a literal, deploy-time seed of 8
+    // fixed universal-reference rows (FIBC-003) — global-catalog, not tenant
+    // data, and not one of the three forbidden DML classes checked below.
+    const facts0040 = scanBaselineSql(readOrThrow('db/migrations/0040_governed_model_registry.sql'))
+    expect(facts0040.literalRowSources).toHaveLength(1)
+    expect(baselineUnit('0040_governed_model_registry.sql').dml).toBe('global-catalog')
   })
 
   it('no unit is classified as carrying production data, a fixture or a development seed', () => {

@@ -43,11 +43,15 @@ describe('the six baseline gates', () => {
   })
 
   it('measures the corpus rather than restating the manifest', () => {
-    expect(evidence.unitCount).toBe(50)
-    expect(evidence.superuserFreeUnits).toBe(50)
+    expect(evidence.unitCount).toBe(58)
+    expect(evidence.superuserFreeUnits).toBe(58)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
-    expect(evidence.dmlUnits).toEqual(['0018_redundant_firebird.sql'])
-    expect(evidence.literalRowSources).toBe(0)
+    expect(evidence.dmlUnits).toEqual([
+      '0018_redundant_firebird.sql',
+      '0040_governed_model_registry.sql',
+      '0041_pc01b_regime_boundary_backfill.sql',
+    ])
+    expect(evidence.literalRowSources).toBe(1)
     expect(evidence.mustNotRunUnits).toEqual([])
   })
 })

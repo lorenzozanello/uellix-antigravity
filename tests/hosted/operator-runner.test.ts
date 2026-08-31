@@ -220,8 +220,8 @@ describe('unit source verification', () => {
 
   it('holds for every unit in the real manifest', () => {
     // A corrupt manifest entry must not be able to hide behind a hand-picked
-    // fixture: the pin and the hash function have to agree on all fifty.
-    expect(BASELINE_UNITS).toHaveLength(50)
+    // fixture: the pin and the hash function have to agree on every unit.
+    expect(BASELINE_UNITS).toHaveLength(58)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })
@@ -381,14 +381,14 @@ describe('next unit derivation', () => {
     const v = deriveNextUnit({
       rows,
       expectedProjectRef: STAGING,
-      observedTables: observedFor(50),
+      observedTables: observedFor(BASELINE_UNITS.length),
       tablesCreatedByUnit: tablesByUnit,
       storageBoundaryVerified: true,
     })
     expect(codeOf(v)).toBe('OK')
     if (v.ok) {
       expect(v.nextUnit).toBeNull()
-      expect(v.journalCount).toBe(50)
+      expect(v.journalCount).toBe(BASELINE_UNITS.length)
     }
   })
 })
@@ -884,13 +884,13 @@ describe('storage boundary cannot be crossed by a journal row', () => {
     if (v.ok) expect(v.nextUnit?.ordinal).toBe(33)
   })
 
-  it('refuses completion while the boundary is unverified, even with all fifty rows', () => {
+  it('refuses completion while the boundary is unverified, even with every row', () => {
     expect(
       codeOf(
         evaluateCompletion({
-          rows: through(50),
+          rows: through(BASELINE_UNITS.length),
           expectedProjectRef: STAGING,
-          observedTables: observedFor(50),
+          observedTables: observedFor(BASELINE_UNITS.length),
           tablesCreatedByUnit: tablesByUnit,
           storageBoundaryVerified: false,
         }),
@@ -1428,20 +1428,20 @@ describe('completion', () => {
     evaluateCompletion({
       rows: complete,
       expectedProjectRef: STAGING,
-      observedTables: observedFor(50),
+      observedTables: observedFor(BASELINE_UNITS.length),
       tablesCreatedByUnit: tablesByUnit,
       storageBoundaryVerified: true,
       ...patch,
     })
 
-  it('reports baselineApplied only when all fifty reconcile and the boundary is verified', () => {
+  it('reports baselineApplied only when every unit reconciles and the boundary is verified', () => {
     const v = full()
     expect(codeOf(v)).toBe('OK')
     if (v.ok) expect(v.baselineApplied).toBe(true)
   })
 
   it('refuses when a unit is missing, however many others are recorded', () => {
-    expect(codeOf(full({ rows: complete.slice(0, 49) }))).toBe('OPERATOR_JOURNAL_UNRECONCILED')
+    expect(codeOf(full({ rows: complete.slice(0, BASELINE_UNITS.length - 1) }))).toBe('OPERATOR_JOURNAL_UNRECONCILED')
   })
 
   it('refuses to call the baseline applied while the storage boundary is unverified', () => {

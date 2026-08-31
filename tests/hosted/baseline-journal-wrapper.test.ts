@@ -445,20 +445,20 @@ describe('the generated set is closed', () => {
   })
 })
 
-describe('51 operational steps = unit ZERO + the 50 manifest units', () => {
-  // NOMENCLATURE, PINNED BEFORE THE APPLY. "50 baseline units" and "51
+describe('operational steps = unit ZERO + every manifest unit', () => {
+  // NOMENCLATURE, PINNED BEFORE THE APPLY. "N baseline units" and "N+1
   // operational steps" are both correct and describe different things, and a
-  // reader meeting them a week apart would reasonably suspect a 51st unit
+  // reader meeting them a week apart would reasonably suspect an extra unit
   // appeared. It did not: step 0 creates the ledger and is NOT a baseline unit.
   const generated = buildAllJournalWrappers(read)
 
-  it('has exactly 50 units in the manifest, which is the source of order', () => {
-    expect(BASELINE_UNITS).toHaveLength(50)
-    expect(BASELINE_ORDER).toHaveLength(50)
+  it('the manifest is the source of order', () => {
+    expect(BASELINE_UNITS).toHaveLength(58)
+    expect(BASELINE_ORDER).toHaveLength(58)
   })
 
-  it('emits 51 apply commands: one bootstrap plus the fifty', () => {
-    expect(generated.commands).toHaveLength(51)
+  it('emits one bootstrap command plus one per manifest unit', () => {
+    expect(generated.commands).toHaveLength(BASELINE_UNITS.length + 1)
     expect(generated.commands[0]).toContain(JOURNAL_BOOTSTRAP_FILE)
   })
 

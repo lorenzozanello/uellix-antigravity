@@ -632,6 +632,187 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       unguardedPolicyCreateCount: 3,
     },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * WAVE 1 — the five sealed FIB implementation units (FIBIU-01, FIBIU-28,   *
+   * FIBIU-03, FIBIU-02; FIBIU-29 adds no SQL). Appended after the original   *
+   * 50-unit baseline rather than interleaved into it, so no existing        *
+   * ordinal changes meaning. The seven new files are later files in the     *
+   * same forward-only Drizzle chain (0040…0046 come after 0039 at ordinal   *
+   * 42), and the one new A2 policy runs last because A2 is documented above *
+   * as the step that runs after all of A1 completes.                        *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 51,
+    id: '0040_governed_model_registry.sql',
+    kind: D,
+    file: 'db/migrations/0040_governed_model_registry.sql',
+    sha256: '269a354c4cc487eb506b88313e7077f265530fb1464fc3e93e2e0f221430c48f',
+    dependsOn: ['0039_grant_rls_helper_execution.sql'],
+    dml: 'global-catalog',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-01 stage A (FIBC-003/FIBDB-002, FIBC-004/FIBDB-003/FIBDB-042). CREATE TABLE ' +
+      'governed_model_registry, GRANT SELECT to authenticated (requires that role to exist, hence B not ' +
+      'A), and an idempotent ON CONFLICT DO NOTHING seed of 8 literal universal-reference rows (governed ' +
+      'model/engine/methodology identities — not tenant data). Also adds projects.governance_regime ' +
+      '(nullable, stage A) with a CHECK constraint.',
+    rollback:
+      'Applied with psql -1; a mid-unit failure rolls back whole. The seed INSERT is idempotent ' +
+      '(ON CONFLICT DO NOTHING) but the CREATE TABLE and ADD CONSTRAINT are not — no reverse script, ' +
+      'forward-only chain, recovered by DESTROY_AND_REPROVISION like the rest of A1.',
+    expect: { usesAuthenticated: true, dmlStatementCount: 1, literalRowSourceCount: 1 },
+  },
+  {
+    ordinal: 52,
+    id: '0041_pc01b_regime_boundary_backfill.sql',
+    kind: D,
+    file: 'db/migrations/0041_pc01b_regime_boundary_backfill.sql',
+    sha256: '941e960859fdebcd5922fc06f69d5ec400b78b0d4e5e4448fa4de29190cae1c5',
+    dependsOn: ['0040_governed_model_registry.sql'],
+    dml: 'structural-backfill',
+    managed: 'A-hosted-compatible',
+    reapply: 'idempotent',
+    managedNote:
+      "FIBIU-01 stage B (FIBDB-003/FIBC-004). UPDATE projects SET governance_regime = 'pre_pc01b' WHERE " +
+      'governance_regime IS NULL — the row set is derived from existing content, so on an empty database ' +
+      'it affects zero rows, the same class as unit 19 (0018_redundant_firebird.sql).',
+    rollback: 'A single UPDATE guarded by WHERE … IS NULL; re-running converges on zero affected rows.',
+    expect: { dmlStatementCount: 1 },
+  },
+  {
+    ordinal: 53,
+    id: '0042_fib_audit_insert_policy.sql',
+    kind: D,
+    file: 'db/migrations/0042_fib_audit_insert_policy.sql',
+    sha256: '5812a4ee760c7a68c4f0e0828cd37050efd728166eb950c58839e07bf911a9f5',
+    dependsOn: ['0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'idempotent',
+    managedNote:
+      'FIBIU-28 stage A (FIBC-029/FIBC-040/FIBDB-035). DROP POLICY IF EXISTS / CREATE POLICY on ' +
+      'audit_logs, following the 0031_rls_core.sql pattern and reusing its current_user_org_ids() / ' +
+      'current_user_is_super_admin() SECURITY DEFINER helpers plus auth.uid(). MEASURED STATE ' +
+      'CORRECTION: supersedes the policy clause already applied in G2 by db/prepared/stella_0005c — see ' +
+      'db/prepared/README.md and db/prepared-package-order.ts for the full disposition record.',
+    rollback: 'One guarded DROP POLICY IF EXISTS ahead of one CREATE POLICY. Converges.',
+    expect: {
+      referencesAuthSchema: true,
+      policiesCreatedCount: 1,
+      securitySurfaceDigest: '610f7a42d7d76840b572e356839460da7dc73dfdfe62056a9a823cb6811eb46b',
+    },
+  },
+  {
+    ordinal: 54,
+    id: '0043_fib_audit_project_id_fk.sql',
+    kind: D,
+    file: 'db/migrations/0043_fib_audit_project_id_fk.sql',
+    sha256: '6c063adbf293b60fda8c143b44ff2386975c37a8273e1dbc59da75beacf06907',
+    // Stage B after stage A of the same FIBIU-28 unit.
+    dependsOn: ['0042_fib_audit_insert_policy.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-28 stage B (FIBC-040/FIBDB-036). ALTER TABLE audit_logs ADD CONSTRAINT … FOREIGN KEY ' +
+      '(project_id) REFERENCES projects(id) NOT VALID — validate-then-add; VALIDATE CONSTRAINT against ' +
+      'historical rows is stage-E hardening, deferred to a later unit. Pure DDL on schema public.',
+    expect: {},
+  },
+  {
+    ordinal: 55,
+    id: '0044_fib_audit_hardening_supersession.sql',
+    kind: D,
+    file: 'db/migrations/0044_fib_audit_hardening_supersession.sql',
+    sha256: '14149207639bb976105481db045b36ff0e8979a7d11cbf259210ac87929fdf4b',
+    // Stage E after stage B of the same FIBIU-28 unit, plus the function it reuses.
+    dependsOn: ['0030_immutability.sql', '0043_fib_audit_project_id_fk.sql'],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'idempotent',
+    managedNote:
+      'FIBIU-28 stage E (FIBC-029/FIBC-040/FIBDB-034). STAGE=E, EXECUTED=NO: baseline-managed does not ' +
+      'mean applied. Six DROP TRIGGER IF EXISTS / CREATE TRIGGER pairs reusing ' +
+      'public.uellix_forbid_mutation() from 0030_immutability.sql unchanged — no new function, no ' +
+      'privileged surface. MEASURED STATE CORRECTION: supersedes trigger objects already applied in G2 ' +
+      'by the retired prepared units stella_0002 / stella_0002b (and, for one trigger, stella_0003, ' +
+      'which itself remains NO_COLLISION and untouched).',
+    rollback: 'Six DROP TRIGGER IF EXISTS ahead of six CREATE TRIGGER. Converges; dropping is safe.',
+    expect: { triggersCreatedCount: 6 },
+  },
+  {
+    ordinal: 56,
+    id: '0045_fib_domain_object_version_lineage.sql',
+    kind: D,
+    file: 'db/migrations/0045_fib_domain_object_version_lineage.sql',
+    sha256: 'a29aa402ff58eee4b885bb563e938138564a0412cb6b723f727fb441921f6c06',
+    dependsOn: ['0030_immutability.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-03 stage A/B (FIBC-002/FIBC-045/FIBDB-004), plus the indicators/stakeholder_groups archive ' +
+      'columns their exit gate requires. CREATE TABLE domain_object_versions (self-referencing FK, hand- ' +
+      'added), an append-only trigger reusing uellix_forbid_mutation() (0030), and RLS mirroring ' +
+      'audit_logs (org-scoped SELECT via current_user_org_ids()/current_user_is_super_admin() from 0031, ' +
+      'actor+org-scoped INSERT, no UPDATE/DELETE policy — denied by omission).',
+    rollback:
+      "The CREATE TABLE / ADD COLUMN / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS " +
+      "guard; the trailing trigger and two policies are guarded but do not change the unit's overall " +
+      'class. No reverse script — forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      triggersCreatedCount: 1,
+      securitySurfaceDigest: '82244ec10e01ea1a696d3b9577be53e83c98300fa6a57c4d6c12f24f607c2141',
+    },
+  },
+  {
+    ordinal: 57,
+    id: '0046_fib_run_version_identity.sql',
+    kind: D,
+    file: 'db/migrations/0046_fib_run_version_identity.sql',
+    sha256: 'c9b177a99be45abda9369a04e3052a9c5159a5a1c35892a3450ebfb1abcc9b03',
+    dependsOn: ['0009_motionless_peter_parker.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-02 stage A (FIBC-001/FIBDB-001). Adds three nullable columns to sroi_calculation_runs ' +
+      '(methodology_version, calculation_engine_version, build_identity) — no CHECK constraint; the ' +
+      'fail-closed guarantee is enforced in the service layer (lib/pipeline/run-version-identity.ts), ' +
+      'not the schema. Write-once via the existing 0030_immutability.sql trigger on this table.',
+    expect: {},
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * The one new A2 unit Wave 1 adds. Unlike 001…007 it duplicates no        *
+   * existing Drizzle migration — equivalentTo does not apply — and unlike   *
+   * 008 its CREATE POLICY is guarded, so it is idempotent.                  *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 58,
+    id: '009_governed_model_registry_rls.sql',
+    kind: P,
+    file: 'db/policies/009_governed_model_registry_rls.sql',
+    sha256: '0b63ac513205f3ac1020fc7e0d0869f277a4597a126656e9dd12d1b424260a4b',
+    dependsOn: ['0040_governed_model_registry.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'idempotent',
+    managedNote:
+      'RLS for governed_model_registry (FIBIU-01/FIBDB-002): read for any authenticated user via ' +
+      'auth.uid() IS NOT NULL — a global, org-agnostic registry with no organization_id to scope by. No ' +
+      'INSERT/UPDATE/DELETE policy; writes are structurally immutable outside the seed path in unit 51.',
+    rollback:
+      'One guarded DROP POLICY IF EXISTS ahead of one CREATE POLICY; ENABLE ROW LEVEL SECURITY is a ' +
+      'no-op when already on. Converges.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 1,
+      securitySurfaceDigest: '14910e3f962c7a93766ec4a1e8fbe82dc4aa6bf32730fbbcc9bb70f937dca85d',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

@@ -1092,9 +1092,9 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'manifest-hashes-and-order',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'db/hosted/baseline-manifest.ts + the 50-unit corpus',
+    sourceArtifact: 'db/hosted/baseline-manifest.ts + the 58-unit corpus',
     requirement:
-      'The 50-unit manifest verifies against the corpus: hashes, derived scan, equivalences, order and orphans.',
+      'The 58-unit manifest verifies against the corpus: hashes, derived scan, equivalences, order and orphans.',
     evaluate(inputs) {
       const id = 'manifest-hashes-and-order'
       const problems = verifyBaselineManifest(
@@ -1162,26 +1162,36 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'zero-production-data',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json + the 50-unit corpus',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json + the 58-unit corpus',
     observe: (i) => (i.checkpointA0 === null ? 'CHECKPOINT A0: no attestation on record, so emptiness rests on nothing' : `A0 projectIsNew=${i.checkpointA0.value.projectIsNew}, stellaSurfaceAbsent=${i.checkpointA0.value.stellaSurfaceAbsent}`),
     requirement:
       'The corpus writes zero rows to an empty database, and A0 confirmed the target holds no Stella surface.',
     evaluate(inputs) {
       const id = 'zero-production-data'
-      // Measured from the corpus, not asserted: every DML statement must derive
-      // its rows by SELECT. A single VALUES list would mean the baseline itself
-      // seeds data into a project that is supposed to receive schema only.
+      // Measured from the corpus, not asserted: every DML statement must either
+      // derive its rows by SELECT, or belong to a unit classified `global-catalog`
+      // — universal reference data (FIBC-003's 8 governed-model identities),
+      // never tenant/production data. Any OTHER unit drawing rows from a literal
+      // VALUES list means the baseline would seed real data into a new project.
       let literals = 0
       let dmlUnits = 0
+      const unexpectedLiteralUnits: string[] = []
       for (const unit of BASELINE_UNITS) {
         const sql = inputs.readBaselineSql(unit.file)
         if (sql === null) return no(id, `cannot read ${unit.file}, so the DML claim cannot be re-derived.`)
         const facts = scanBaselineSql(sql)
         if (facts.dmlStatements.length > 0) dmlUnits += 1
         literals += facts.literalRowSources.length
+        if (facts.literalRowSources.length > 0 && unit.dml !== 'global-catalog') {
+          unexpectedLiteralUnits.push(unit.id)
+        }
       }
-      if (literals > 0) {
-        return no(id, `${literals} DML statement(s) now insert literal rows. The baseline would seed data into a new project.`)
+      if (unexpectedLiteralUnits.length > 0) {
+        return no(
+          id,
+          `${unexpectedLiteralUnits.join(', ')} draw row(s) from a literal VALUES list without being ` +
+            `classified global-catalog. The baseline would seed non-reference data into a new project.`,
+        )
       }
       // THE SAME PROVENANCE THE A0 CRITERION DEMANDS.
       //
@@ -1220,7 +1230,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
         )
       }
       const probed = deriveEmptinessProbes(inputs.readBaselineSql).length
-      return yes(id, `${dmlUnits} unit carries DML, 0 statements draw from a literal VALUES list, and the ${probed}-table emptiness set is derived from the corpus rather than hand-listed`)
+      return yes(id, `${dmlUnits} units carry DML, ${literals} statement(s) draw from a literal VALUES list (all classified global-catalog — universal reference data, not tenant data), and the ${probed}-table emptiness set is derived from the corpus rather than hand-listed`)
     },
     negativeControl: {
       description: 'a unit that gains a literal VALUES insert must fail',
@@ -1239,7 +1249,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'no-service-role-widening',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'the 50-unit corpus, scanned on every evaluation',
+    sourceArtifact: 'the 58-unit corpus, scanned on every evaluation',
     requirement:
       'Exactly one unit names service_role as a grantee, and it is the known one (0033).',
     evaluate(inputs) {

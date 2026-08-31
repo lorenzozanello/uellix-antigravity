@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 44/50: 002_stella_interactions_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 44/58: 002_stella_interactions_rls.sql
 -- ============================================================================
 --
 -- Includes:      db/policies/002_stella_interactions_rls.sql
