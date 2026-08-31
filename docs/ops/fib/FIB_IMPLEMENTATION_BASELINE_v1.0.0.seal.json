@@ -1,0 +1,27 @@
+{
+  "package_id": "FIB_IMPLEMENTATION_BASELINE",
+  "version": "1.0.0",
+  "authority_class": "FORMAL_IMPLEMENTATION_BASELINE_SEAL",
+  "seal_state": "FORMALLY_SEALED",
+
+  "baseline_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
+  "index_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
+
+  "ratified_head": "86c8a9876498896925f8a789991a15d33bf1ff4e",
+  "ratification_commit": "da5c2891c8b1c1454a954eb33f7f7c1f2bd4c9d8",
+  "ratification_file": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.ratification.json",
+
+  "independent_audit_gate": "FIB01C_R1_INDEPENDENT_REMEDIATED_BASELINE_AUDIT_PASS",
+
+  "human_product_owner_ratification": true,
+  "pc01b_human_authority_frozen": true,
+  "methodology_validated": true,
+  "human_product_authority_frozen": true,
+
+  "frozen_implementation_baseline": true,
+  "implementation_open": true,
+  "document_grounding_activated": false,
+  "stella_pilot_core_frozen": false,
+
+  "implementation_authority_scope": "FIB_IMPLEMENTATION_BASELINE_v1.0.0"
+}
