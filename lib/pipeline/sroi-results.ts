@@ -5,7 +5,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
-import { requireOrganizationAccess } from '@/lib/auth/session';
+import { requireOrganizationAccess, type OrganizationContext } from '@/lib/auth/session';
 import { isInReviewSet, canApproveRunMethodology, type Role } from '@/lib/auth/permissions';
 import {
   sroiCalculationRuns,
@@ -284,6 +284,83 @@ export async function compareCalculationRuns(projectId: string, runIdA: string, 
 // 3. Methodological Reviews
 // ---------------------------------------------------------------------------
 
+/**
+ * FIBIU-29 (FIBC-041) / W1-05-RM1 R-5 — the single shared segregation-of-duties
+ * enforcement point for both the CREATE and UPDATE paths into an 'approved'
+ * review, so the invariant cannot drift between the two call sites the way it
+ * did before this remediation (createSroiRunReview never checked it at all).
+ *
+ * No-op unless targetStatus === 'approved'. Evaluates two DISTINCT invariants:
+ *
+ *   I1 — canApproveRunMethodology(actorRole, actorIsRunAuthor) must be true.
+ *        The ACTOR performing this call must not be the run's own author.
+ *   I2 — the resulting row must never have reviewer_id = run.calculated_by.
+ *        The REVIEW's own reviewerId field (who it is attributed to as
+ *        reviewer) must not equal the run's author, independent of who the
+ *        current actor is — updateSroiRunReview lets any review-set member
+ *        approve a review row that was created (and reviewer-attributed) by
+ *        someone else, so I1 alone cannot see this case.
+ *
+ * On denial, the FIBIU-29→FIBIU-28 governed denial event is written and
+ * awaited BEFORE the throw (FIBC-040 fail-closed): if the audit write itself
+ * fails, that exception propagates and the approval is rejected regardless.
+ */
+async function assertRunMethodologyApprovalAllowed(params: {
+  ctx: OrganizationContext
+  projectId: string
+  calculationRunId: string
+  targetStatus: string | undefined
+  reviewerId: string | undefined
+  path: 'create' | 'update'
+  beforeJson?: Record<string, unknown>
+}): Promise<void> {
+  const { ctx, projectId, calculationRunId, targetStatus, reviewerId, path, beforeJson } = params
+  if (targetStatus !== 'approved') return
+
+  const run = await db
+    .select({ calculatedBy: sroiCalculationRuns.calculatedBy })
+    .from(sroiCalculationRuns)
+    .where(
+      and(
+        eq(sroiCalculationRuns.id, calculationRunId),
+        eq(sroiCalculationRuns.projectId, projectId),
+        eq(sroiCalculationRuns.organizationId, ctx.organization.id)
+      )
+    );
+  const runAuthorUserId = run[0]?.calculatedBy ?? null;
+  const actorIsRunAuthor = runAuthorUserId !== null && runAuthorUserId === ctx.user.id;
+  const actorRole = ctx.membership.role as Role;
+
+  const i1Ok = canApproveRunMethodology(actorRole, actorIsRunAuthor);
+  const i2Ok = reviewerId === undefined || runAuthorUserId === null || reviewerId !== runAuthorUserId;
+  if (i1Ok && i2Ok) return;
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'sroi_calculation_run',
+    entityId: calculationRunId,
+    action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_METHODOLOGY_APPROVAL_DENIED,
+    contentModifying: false,
+    reason:
+      'canApproveRunMethodology denegado (FIBC-041 / V-04): el aprobador no puede ser el autor de la corrida',
+    ...(beforeJson ? { beforeJson } : {}),
+    afterJson: {
+      deniedPermission: 'canApproveRunMethodology',
+      attemptedStatus: 'approved',
+      calculationRunId,
+      runAuthorUserId,
+      attemptedReviewerId: reviewerId ?? null,
+      actorRole,
+      path,
+      violatedInvariant: !i1Ok ? 'I1' : 'I2',
+    },
+  });
+
+  throw new Error('A reviewer cannot approve the methodology of their own run');
+}
+
 export async function createSroiRunReview(projectId: string, runId: string, input: ReviewInput) {
   const ctx = await authorizeProject(projectId);
   if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to create review');
@@ -301,6 +378,16 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
   if (run.length === 0) throw new Error('Run not found');
 
   const validated = ReviewInputSchema.parse(input);
+
+  await assertRunMethodologyApprovalAllowed({
+    ctx,
+    projectId,
+    calculationRunId: runId,
+    targetStatus: validated.status,
+    reviewerId: ctx.user.id,
+    path: 'create',
+  });
+
   const inserted = await db
     .insert(sroiRunReviews)
     .values({
@@ -348,20 +435,16 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
 
   const validated = ReviewInputSchema.parse(input);
 
-  // FIBIU-29 (FIBC-041) — canApproveRunMethodology: the review set MINUS the
-  // run's own author. Only checked on the transition into 'approved' — a
-  // server-authoritative comparison against the run row's calculated_by,
-  // never a client-supplied flag.
-  if (validated.status === 'approved') {
-    const run = await db
-      .select({ calculatedBy: sroiCalculationRuns.calculatedBy })
-      .from(sroiCalculationRuns)
-      .where(eq(sroiCalculationRuns.id, review[0].calculationRunId));
-    const isRunAuthor = run[0]?.calculatedBy === ctx.user.id;
-    if (!canApproveRunMethodology(ctx.membership.role as Role, isRunAuthor)) {
-      throw new Error('A reviewer cannot approve the methodology of their own run');
-    }
-  }
+  await assertRunMethodologyApprovalAllowed({
+    ctx,
+    projectId,
+    calculationRunId: review[0].calculationRunId,
+    targetStatus: validated.status,
+    reviewerId: review[0].reviewerId,
+    path: 'update',
+    beforeJson: { id: review[0].id, status: review[0].status, reviewerId: review[0].reviewerId },
+  });
+
   const updated = await db
     .update(sroiRunReviews)
     .set({

@@ -62,12 +62,17 @@ export default async function RunDetailPage({
     return {
       detail,
       canReview: isInReviewSet(ctx.membership.role),
+      // FIBIU-29 (FIBC-041) / W1-05-RM1 R-5 — the author never sees the
+      // approve action, in addition to the server-side enforcement in
+      // assertRunMethodologyApprovalAllowed (lib/pipeline/sroi-results.ts),
+      // which remains authoritative regardless of what the UI renders.
+      canApproveThisRun: isInReviewSet(ctx.membership.role) && detail.run.calculatedBy !== ctx.user.id,
       reviews: await listSroiRunReviews(projectId, runId),
     };
   });
 
   if (!loaded) notFound();
-  const { detail, canReview, reviews } = loaded;
+  const { detail, canReview, canApproveThisRun, reviews } = loaded;
 
   const { run, lineItems, snapshotJson } = detail;
 
@@ -420,7 +425,7 @@ export default async function RunDetailPage({
                   <select id="review-status" name="status" className={INPUT_CLASS}>
                     <option value="draft">Borrador</option>
                     <option value="reviewed">Revisado</option>
-                    <option value="approved">Aprobado</option>
+                    {canApproveThisRun && <option value="approved">Aprobado</option>}
                     <option value="flagged">Marcado</option>
                   </select>
                 </div>

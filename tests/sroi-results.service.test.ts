@@ -269,6 +269,74 @@ describe('review services', () => {
     expect(updated.status).toBe('approved');
   });
 
+  // -------------------------------------------------------------------------
+  // W1-05-RM1 R-5 (B-1 remediation) — the invariant is enforced on BOTH the
+  // CREATE and UPDATE paths into 'approved', and I1/I2 are distinct checks.
+  // -------------------------------------------------------------------------
+
+  it('R-5 (A): rejects self-approval reached via CREATE, not only UPDATE', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
+    const run = { id: 'run-create-self', projectId: PROJECT_ID, organizationId: ORG_ID, calculatedBy: USER_ID };
+    mockDb.sroiCalculationRuns.push(run);
+
+    await expect(
+      createSroiRunReview(PROJECT_ID, 'run-create-self', { status: 'approved' } as any)
+    ).rejects.toThrow('cannot approve the methodology of their own run');
+    expect(mockDb.sroiRunReviews).toHaveLength(0); // no row was ever persisted
+  });
+
+  it('R-5 (B): allows creating a draft review as the run\'s own author (no approval attempted)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'impact_manager' } } as any);
+    const run = { id: 'run-create-draft', projectId: PROJECT_ID, organizationId: ORG_ID, calculatedBy: USER_ID };
+    mockDb.sroiCalculationRuns.push(run);
+
+    const rev = await createSroiRunReview(PROJECT_ID, 'run-create-draft', { status: 'draft' } as any);
+    expect(rev.status).toBe('draft');
+  });
+
+  it('R-5 (C): rejects via I2 when the acting reviewer differs from the run author but the REVIEW is attributed to the author', async () => {
+    // Actor is NOT the run's author (I1 alone would pass) — but the review
+    // row's own reviewerId already equals the run's author, so approving it
+    // would still persist reviewer_id = calculated_by.
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: 'other-reviewer' }, membership: { role: 'reviewer' } } as any);
+    const run = { id: 'run-i2', projectId: PROJECT_ID, organizationId: ORG_ID, calculatedBy: USER_ID };
+    mockDb.sroiCalculationRuns.push(run);
+    const rev = { id: 'rev-i2', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft', calculationRunId: run.id, reviewerId: USER_ID };
+    mockDb.sroiRunReviews.push(rev);
+
+    await expect(
+      updateSroiRunReview(PROJECT_ID, 'rev-i2', { status: 'approved' })
+    ).rejects.toThrow('cannot approve the methodology of their own run');
+  });
+
+  it('R-5 (D): the denial event is written before the rejection, on both I1 and I2', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
+    const run = { id: 'run-audit-self', projectId: PROJECT_ID, organizationId: ORG_ID, calculatedBy: USER_ID };
+    mockDb.sroiCalculationRuns.push(run);
+    const rev = { id: 'rev-audit-self', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft', calculationRunId: run.id };
+    mockDb.sroiRunReviews.push(rev);
+
+    await expect(
+      updateSroiRunReview(PROJECT_ID, 'rev-audit-self', { status: 'approved' })
+    ).rejects.toThrow();
+
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'sroi_calculation_run.methodology_approval_denied',
+        entityType: 'sroi_calculation_run',
+        entityId: run.id,
+        contentModifying: false,
+        afterJson: expect.objectContaining({
+          deniedPermission: 'canApproveRunMethodology',
+          attemptedStatus: 'approved',
+          runAuthorUserId: USER_ID,
+          path: 'update',
+          violatedInvariant: 'I1',
+        }),
+      })
+    );
+  });
+
   it('upserts review item (create then update)', async () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
     const rev = { id: 'rev-1', projectId: PROJECT_ID, organizationId: ORG_ID };
