@@ -60,7 +60,7 @@ pnpm ods:poststate -- --base <sha> --allow <pattern> [--test <path>] [--clean]
 ## 6. Model / executor routing
 
 - **A** — new authority, architecture, material conflicts, adversarial audit → highest-reasoning model justified.
-- **B** — frozen, well-specified implementation → Sonnet-class; not yet empirically validated as sufficient — don't assert it as proven.
+- **B** — frozen, well-specified implementation → Sonnet-class preferred, empirically validated by ODS v1's own implementation evidence (see `docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json`, benchmark G); machine gates (prestate/scope/poststate/authority) remain mandatory regardless, and model economy alone is never proof of adequacy on its own.
 - **C** — mechanical, bounded, low-risk work → cheapest reliable model, or a script.
 - **D** — deterministic facts (branch/HEAD/tree/hashes/scope) → machine gate, **no LLM**.
 
