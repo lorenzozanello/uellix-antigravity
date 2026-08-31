@@ -1,0 +1,30 @@
+{
+  "package_id": "PC01B_HUMAN_METHODOLOGY_AUTHORITY",
+  "version": "1.0.0",
+  "authority_class": "HUMAN_PRODUCT_OWNER_AUTHORITY",
+  "phase": "POST_MSC07B_PILOT_CORE_CLOSEOUT",
+  "human_adjudication_complete": true,
+  "authority_count": 48,
+  "v_authority_count": 32,
+  "f_authority_count": 16,
+  "v_ids": [
+    "V-01", "V-02", "V-03", "V-04", "V-05", "V-06", "V-07", "V-08",
+    "V-09", "V-10", "V-11", "V-12", "V-13", "V-14", "V-15", "V-16",
+    "V-17", "V-18", "V-19", "V-20", "V-21", "V-22", "V-23", "V-24",
+    "V-25", "V-26", "V-27", "V-28", "V-29", "V-30", "V-31", "V-32"
+  ],
+  "f_ids": [
+    "F-01", "F-02", "F-03", "F-04", "F-05", "F-06", "F-07", "F-08",
+    "F-09", "F-10", "F-11", "F-12", "F-13", "F-14", "F-15", "F-16"
+  ],
+  "document_grounding_g5_in_scope": false,
+  "implementation_open": false,
+  "methodology_validated": false,
+  "stella_pilot_core_frozen": false,
+  "source_base_branch": "codex/msc-pilot-core-r3-7-9-h02-admin-matcher",
+  "source_base_head": "668de7343b74ffc6fb40d2a793c2ecd6e6f6a439",
+  "source_base_tree": "da201674fea1c0a383df91a8b8971c8720d371dc",
+  "authority_file": "docs/ops/pc01b/PC01B_HUMAN_METHODOLOGY_AUTHORITY_v1.0.0.md",
+  "authority_file_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+  "materialization_status": "CANDIDATE_REQUIRES_INDEPENDENT_SEAL"
+}
