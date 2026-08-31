@@ -159,4 +159,72 @@ describe('ods:prestate — real CLI, POSITIVE integration control against the ac
     expect(res.status).toBe(2)
     expect(res.stdout).toContain('ODS_PRESTATE=USAGE_ERROR')
   })
+
+  // ODS-05 independent audit: `--head <valid-sha> --branch` (a trailing
+  // flag with no operand) previously left expected.branch === undefined,
+  // which evaluatePrestate cannot distinguish from "branch was never
+  // asked to be checked" — so a real prestate call with a genuinely
+  // malformed --branch could still print ODS_PRESTATE=PASS. Reproduced
+  // here exactly as measured, then proven fixed.
+  describe('malformed trailing-operand invocations MUST NOT silently pass (ODS-05)', () => {
+    const tsxCli = require.resolve('tsx/cli')
+    const run = (args: string[]) =>
+      spawnSync(process.execPath, [tsxCli, 'scripts/ods-prestate.ts', ...args], { cwd: REPO_ROOT, encoding: 'utf8' })
+
+    it("reproduces the auditor's exact case: --head <valid-sha> --branch (trailing, no operand)", () => {
+      const res = run(['--head', git(REPO_ROOT, ['rev-parse', 'HEAD']), '--branch'])
+      expect(res.status).not.toBe(0)
+      expect(res.stdout).not.toContain('ODS_PRESTATE=PASS')
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--branch requires a value')
+    })
+
+    it('MALFORMED CONTROL: trailing --branch with nothing after it exits 2', () => {
+      const res = run(['--branch'])
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--branch requires a value')
+    })
+
+    it('MALFORMED CONTROL: trailing --head with nothing after it exits 2', () => {
+      const res = run(['--head'])
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--head requires a value')
+    })
+
+    it('MALFORMED CONTROL: trailing --tree with nothing after it exits 2', () => {
+      const res = run(['--tree'])
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--tree requires a value')
+    })
+
+    it('a value flag immediately followed by another recognized flag is rejected, not misparsed as a value', () => {
+      const res = run(['--branch', '--head', '0000000000000000000000000000000000000000'])
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--branch requires a value')
+    })
+
+    it('a value flag immediately followed by --clean is rejected, not misparsed as a value', () => {
+      const res = run(['--head', '--clean'])
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--head requires a value')
+    })
+
+    it('a value flag immediately followed by the pnpm "--" separator is rejected', () => {
+      const res = run(['--head', '--'])
+      expect(res.status).toBe(2)
+      expect(res.stderr).toContain('--head requires a value')
+    })
+
+    it('CONTROL: a valid complete invocation (branch/head/tree) still PASSES', () => {
+      // Deliberately omits --clean: this suite runs mid-development, when
+      // the real worktree legitimately has uncommitted changes (see the
+      // equivalent choice in the ODS-02 positive control above).
+      const branch = git(REPO_ROOT, ['rev-parse', '--abbrev-ref', 'HEAD'])
+      const head = git(REPO_ROOT, ['rev-parse', 'HEAD'])
+      const tree = git(REPO_ROOT, ['rev-parse', 'HEAD^{tree}'])
+      const res = run(['--branch', branch, '--head', head, '--tree', tree])
+      expect(res.status).toBe(0)
+      expect(res.stdout).toContain('ODS_PRESTATE=PASS')
+    })
+  })
 })

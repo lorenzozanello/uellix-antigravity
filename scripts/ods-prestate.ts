@@ -114,6 +114,20 @@ export function fetchActual(cwd: string): PrestateActual {
 // CLI
 // ---------------------------------------------------------------------------
 
+/** Flags whose value slot must never silently swallow another flag or the pnpm "--" separator. */
+const VALUE_FLAGS = new Set(['--branch', '--head', '--tree'])
+const BOOLEAN_FLAGS = new Set(['--clean'])
+
+/**
+ * True if `token` cannot be a legitimate operand for a value flag: absent
+ * (past the end of argv), the pnpm "--" separator, or another recognized
+ * flag. A branch/HEAD/tree value is never any of these, so rejecting them
+ * cannot break a valid invocation.
+ */
+function looksLikeMissingOperand(token: string | undefined): boolean {
+  return token === undefined || token === '--' || VALUE_FLAGS.has(token) || BOOLEAN_FLAGS.has(token)
+}
+
 function parseArgs(argv: string[]): PrestateExpectations {
   const expected: PrestateExpectations = {}
   for (let i = 0; i < argv.length; i++) {
@@ -122,11 +136,25 @@ function parseArgs(argv: string[]): PrestateExpectations {
     // pnpm version (`pnpm run ods:prestate -- --head X` puts "--" itself in
     // argv, unlike plain npm). Skip it rather than treat it as unrecognized.
     if (arg === '--') continue
-    if (arg === '--branch') expected.branch = argv[++i]
-    else if (arg === '--head') expected.head = argv[++i]
-    else if (arg === '--tree') expected.tree = argv[++i]
-    else if (arg === '--clean') expected.requireClean = true
-    else {
+    if (VALUE_FLAGS.has(arg)) {
+      const value = argv[i + 1]
+      // ODS-05: a trailing or otherwise incomplete value flag (e.g. `--head
+      // <sha> --branch` with nothing after it) previously left the field
+      // `undefined`, which evaluatePrestate treats identically to "this
+      // assertion was never requested" — the caller's intent to check it
+      // was silently dropped instead of failing. A malformed invocation
+      // must be a usage error, never a quietly-narrower PASS.
+      if (looksLikeMissingOperand(value)) {
+        console.error(`ods:prestate: ${arg} requires a value`)
+        process.exit(2)
+      }
+      i++
+      if (arg === '--branch') expected.branch = value
+      else if (arg === '--head') expected.head = value
+      else expected.tree = value
+    } else if (arg === '--clean') {
+      expected.requireClean = true
+    } else {
       console.error(`ods:prestate: unrecognized argument "${arg}"`)
       process.exit(2)
     }
