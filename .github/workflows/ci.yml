@@ -11,8 +11,17 @@ jobs:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 (full history) rather than actions/checkout@v4's
+      # default shallow clone. authority:seal:verify resolves historical
+      # blobs at the ODS-01 freeze commit and the certified Wave 1 commit
+      # (see scripts/authority-seal-verify.ts, ODS_AUTHORITY_FROZEN_COMMIT
+      # and authority_corpus.anchor_commit) — a depth-1 checkout cannot
+      # reach either, so the gate would fail closed for an infrastructure
+      # reason indistinguishable in the log from real authority drift.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

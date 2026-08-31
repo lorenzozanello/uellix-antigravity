@@ -53,6 +53,29 @@ describe('CI integrates the deterministic authority integrity gate', () => {
     expect(installIndex).toBeGreaterThan(-1)
     expect(authorityIndex).toBeGreaterThan(installIndex)
   })
+
+  // MNB-CI-1 (ODS-05): actions/checkout@v4 defaults to a shallow (depth-1)
+  // clone, which cannot resolve the historical blobs authority:seal:verify
+  // requires at its frozen anchor commits — the gate would fail closed for
+  // an infrastructure reason indistinguishable in the CI log from real
+  // authority drift. Tests the semantic requirement (full history is
+  // requested on the checkout step that runs before the authority gate),
+  // not YAML formatting.
+  it('the checkout step preceding the authority gate requests full history (fetch-depth: 0)', () => {
+    const ci = readCiYaml()
+    const authorityIndex = ci.indexOf('pnpm authority:seal:verify')
+    const checkoutIndex = ci.indexOf('uses: actions/checkout@v4')
+    expect(checkoutIndex).toBeGreaterThan(-1)
+    expect(checkoutIndex).toBeLessThan(authorityIndex)
+
+    // Slice the checkout step's own block only (to its own "- name:" start
+    // through the next "- name:"), so a fetch-depth on some unrelated step
+    // can't produce a false pass here.
+    const blockStart = ci.lastIndexOf('- name:', checkoutIndex)
+    const blockEnd = ci.indexOf('- name:', checkoutIndex + 1)
+    const block = ci.slice(blockStart, blockEnd === -1 ? undefined : blockEnd)
+    expect(block).toMatch(/fetch-depth:\s*0\b/)
+  })
 })
 
 describe('CI already collects tests/ods/** via the existing Test step (no duplicate invocation needed)', () => {
