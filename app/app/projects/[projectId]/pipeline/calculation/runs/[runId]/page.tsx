@@ -206,6 +206,45 @@ export default async function RunDetailPage({
         </CardContent>
       </Card>
 
+      {/* Run version identity triple (FIBIU-02 / FIBC-001) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Identidad de Versión de Corrida</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Identidades resueltas por el sistema al momento del cálculo — nunca editables.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground block text-xs">Metodología</span>
+            <span
+              className="font-medium text-foreground tabular-nums"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.methodologyVersion ?? '— (corrida heredada, anterior al versionado)'}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs">Motor de Cálculo</span>
+            <span
+              className="font-medium text-foreground tabular-nums"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.calculationEngineVersion ?? '— (corrida heredada, anterior al versionado)'}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-xs">Identidad de Build</span>
+            <span
+              className="font-medium text-foreground tabular-nums break-all"
+              style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {run.buildIdentity ?? '— (corrida heredada, anterior al versionado)'}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Line items */}
       <Card>
         <CardHeader>

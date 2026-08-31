@@ -4,6 +4,7 @@
 // INSERT exactly; a test cross-checks the two never drift apart.
 
 import { createHash } from 'node:crypto'
+import { desc, eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import { governedModelRegistry } from '@/db/schema'
 
@@ -48,6 +49,23 @@ export const GOVERNED_MODEL_REGISTRY_SEED: readonly GovernedModelSeed[] = [
 /** Read the full governed model registry. */
 export async function listGovernedModels() {
   return db.select().from(governedModelRegistry)
+}
+
+/**
+ * The current (most recently registered) version row for a governed model,
+ * or null if it has never been registered. FIBIU-02 resolves
+ * methodology_version and calculation_engine_version through this — a
+ * live read, not the TS seed constants, so a newly registered version is
+ * picked up without a redeploy.
+ */
+export async function getCurrentGovernedModelVersion(modelId: string) {
+  const rows = await db
+    .select()
+    .from(governedModelRegistry)
+    .where(eq(governedModelRegistry.modelId, modelId))
+    .orderBy(desc(governedModelRegistry.effectiveFrom))
+    .limit(1)
+  return rows[0] ?? null
 }
 
 /**

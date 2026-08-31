@@ -1,6 +1,6 @@
 // tests/sroi-calculation.service.test.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db } from '@/db/client';
 import { requireOrganizationAccess } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
@@ -39,6 +39,15 @@ const mockDb = {
   evidenceItems: [] as any[],
   funders: [] as any[],
   outcomeFunderAllocations: [] as any[],
+  // FIBIU-02 — calculateAndPersistSroiRun resolves the run version identity
+  // triple from this registry before persisting; seeded with the same two
+  // rows the real deploy-time seed (0040_governed_model_registry.sql)
+  // carries, so the happy path resolves without every test having to know
+  // about FIBIU-02.
+  governedModelRegistry: [
+    { modelId: 'PC01B_HUMAN_METHODOLOGY_AUTHORITY', version: '1.0.0', effectiveFrom: new Date('2026-01-01') },
+    { modelId: 'SROI_CALCULATION_ENGINE', version: '1.0.0', effectiveFrom: new Date('2026-01-01') },
+  ] as any[],
 };
 
 function getTableData(table: any): any[] {
@@ -56,6 +65,7 @@ vi.mock('@/db/client', () => {
         const queryResult = {
           where: vi.fn().mockImplementation(() => queryResult),
           limit: vi.fn().mockImplementation(() => queryResult),
+          orderBy: vi.fn().mockImplementation(() => queryResult),
           then: (cb: any) => Promise.resolve(cb(data)),
         };
         return queryResult;
@@ -105,6 +115,7 @@ import {
   getSroiCalculationReadiness,
   calculateSroiScenarios,
   runDeterministicCalc,
+  listSroiCalculationRuns,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -114,6 +125,11 @@ const ASSIGNMENT_ID = '44444444-4444-4444-8444-444444444444';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // FIBIU-02 — the run version identity triple's third leg (build_identity)
+  // is resolved from the environment; stub it so calculateAndPersistSroiRun
+  // resolves the full triple in these tests without depending on a real
+  // Vercel deployment.
+  vi.stubEnv('BUILD_IDENTITY', 'test-build-identity');
   Object.assign(mockDb, {
     projects: [{ id: PROJECT_ID, organizationId: ORG_ID }],
     outcomes: [],
@@ -127,6 +143,10 @@ beforeEach(() => {
     evidenceItems: [],
     funders: [],
     outcomeFunderAllocations: [],
+    governedModelRegistry: [
+      { modelId: 'PC01B_HUMAN_METHODOLOGY_AUTHORITY', version: '1.0.0', effectiveFrom: new Date('2026-01-01') },
+      { modelId: 'SROI_CALCULATION_ENGINE', version: '1.0.0', effectiveFrom: new Date('2026-01-01') },
+    ],
   });
   vi.mocked(requireOrganizationAccess).mockResolvedValue({
     organization: { id: ORG_ID },
@@ -134,6 +154,10 @@ beforeEach(() => {
     membership: { role: 'analyst' },
   } as any);
   vi.mocked(hasRole).mockReturnValue(true);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assignment: any; input: any; filter: any }>) {
@@ -567,6 +591,70 @@ describe('Skipped assignments are reported, never silently dropped (U3)', () => 
     seedHappyData();
     const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
     expect((run.snapshotJson as any).skippedAssignments).toEqual([]);
+  });
+});
+
+describe('FIBIU-02 — run version identity triple', () => {
+  it('every new run carries all three identities on the row and in the snapshot', async () => {
+    seedHappyData();
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+    expect(run.methodologyVersion).toBe('1.0.0');
+    expect(run.calculationEngineVersion).toBe('1.0.0');
+    expect(run.buildIdentity).toBe('test-build-identity');
+    expect((run.snapshotJson as any).methodologyVersion).toBe('1.0.0');
+    expect((run.snapshotJson as any).calculationEngineVersion).toBe('1.0.0');
+    expect((run.snapshotJson as any).buildIdentity).toBe('test-build-identity');
+  });
+
+  it('rejects persisting a run when the governed model registry cannot resolve the identity (fail closed)', async () => {
+    // The shared query-builder mock in this file does not filter by WHERE
+    // predicate (see getTableData), so it cannot isolate "methodology row
+    // missing" from "engine row missing" — that per-model granularity is
+    // covered directly, with a real per-modelId mock, in
+    // lib/pipeline/run-version-identity.test.ts. Here it is enough to prove
+    // that an unresolvable registry blocks persistence end to end.
+    seedHappyData();
+    mockDb.governedModelRegistry = [];
+    await expect(calculateAndPersistSroiRun(PROJECT_ID)).rejects.toThrow(
+      /Cannot persist a calculation run/
+    );
+    expect(mockDb.sroiCalculationRuns).toHaveLength(0);
+  });
+
+  it('rejects persisting a run when build_identity cannot be resolved (fail closed)', async () => {
+    seedHappyData();
+    vi.unstubAllEnvs();
+    vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
+    vi.stubEnv('BUILD_IDENTITY', '');
+    await expect(calculateAndPersistSroiRun(PROJECT_ID)).rejects.toThrow(
+      /Cannot persist a calculation run/
+    );
+    expect(mockDb.sroiCalculationRuns).toHaveLength(0);
+  });
+
+  it('a legacy run (predating FIBIU-02) keeps a permanent NULL identity — it is never backfilled', async () => {
+    const legacyRun = {
+      id: 'legacy-run-1',
+      projectId: PROJECT_ID,
+      organizationId: ORG_ID,
+      version: 1,
+      methodologyVersion: null,
+      calculationEngineVersion: null,
+      buildIdentity: null,
+      status: 'calculated',
+    };
+    mockDb.sroiCalculationRuns.push(legacyRun);
+    const runs = await listSroiCalculationRuns(PROJECT_ID);
+    const found = runs.find((r: any) => r.id === 'legacy-run-1');
+    expect(found?.methodologyVersion).toBeNull();
+    expect(found?.calculationEngineVersion).toBeNull();
+    expect(found?.buildIdentity).toBeNull();
+  });
+
+  it('exposes no update function for a persisted run — the append-only trigger has no service-layer counterpart to bypass', async () => {
+    const mod = await import('@/lib/pipeline/sroi-calculation');
+    const updateLike = Object.keys(mod).filter((name) => /^update.*run/i.test(name));
+    expect(updateLike).toEqual([]);
   });
 });
 

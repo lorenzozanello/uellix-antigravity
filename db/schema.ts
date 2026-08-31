@@ -475,6 +475,14 @@ export const sroiCalculationRuns = pgTable('sroi_calculation_runs', {
   snapshotJson: jsonb('snapshot_json'),
   runDate: timestamp('run_date').defaultNow().notNull(),
   status: varchar('status', { length: 50 }).default('calculated').notNull(),
+  // FIBIU-02 (FIBC-001/FIBDB-001) — the run version identity triple. Written
+  // once at INSERT (the existing 0030_immutability.sql trigger already
+  // forbids UPDATE on this table) and mirrored into snapshot_json. NULL on
+  // every run created before this unit — that NULL is permanent and means
+  // "predates versioning", never backfilled (IMPOSSIBLE_TO_BACKFILL).
+  methodologyVersion: varchar('methodology_version', { length: 20 }),
+  calculationEngineVersion: varchar('calculation_engine_version', { length: 20 }),
+  buildIdentity: varchar('build_identity', { length: 100 }),
   calculatedBy: uuid('calculated_by').references(() => users.id).notNull(),
   calculatedAt: timestamp('calculated_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -31,6 +31,7 @@ import { computeFundersBreakdown, type FunderBreakdownRow } from '@/lib/pipeline
 import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
 import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
+import { resolveRunVersionIdentity } from '@/lib/pipeline/run-version-identity'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -968,6 +969,10 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     throw new Error(`Cannot calculate: ${readiness.blockingReasons.join('; ')}`)
   }
 
+  // FIBIU-02 (FIBC-001) — resolved before any DB write: refuse to persist a
+  // run if any of the three run version identities cannot be resolved.
+  const runVersionIdentity = await resolveRunVersionIdentity()
+
   const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
@@ -992,6 +997,11 @@ export async function calculateAndPersistSroiRun(projectId: string) {
 
     const snapshotJson = {
       version,
+      // FIBIU-02 (FIBC-001) — the run version identity triple, mirrored from
+      // the run row into the snapshot.
+      methodologyVersion: runVersionIdentity.methodologyVersion,
+      calculationEngineVersion: runVersionIdentity.calculationEngineVersion,
+      buildIdentity: runVersionIdentity.buildIdentity,
       currency: result.currency,
       totalInvestment: result.totalInvestmentExact,
       grossSocialValue: result.grossSocialValueExact,
@@ -1049,6 +1059,9 @@ export async function calculateAndPersistSroiRun(projectId: string) {
         sroiRatio: result.sroiRatioExact,
         snapshotJson,
         status: 'calculated',
+        methodologyVersion: runVersionIdentity.methodologyVersion,
+        calculationEngineVersion: runVersionIdentity.calculationEngineVersion,
+        buildIdentity: runVersionIdentity.buildIdentity,
         calculatedBy: ctx.user.id,
         calculatedAt,
       })
