@@ -172,7 +172,7 @@ describe('collectChangedPaths + classifyPaths — real temporary git repo, POSIT
 })
 
 describe('ods:scope — real CLI, POSITIVE integration control against the actual ODS worktree', () => {
-  it('PASS when the real change since the ODS-01 authority-freeze commit is confined to the ODS-02 surface so far', () => {
+  it('PASS when the real change since the ODS-01 authority-freeze commit is confined to the ODS-02/ODS-03 surface so far', () => {
     const tsxCli = require.resolve('tsx/cli')
     const res = spawnSync(
       process.execPath,
@@ -193,6 +193,14 @@ describe('ods:scope — real CLI, POSITIVE integration control against the actua
         'tests/ods/**',
         '--allow',
         'package.json',
+        '--allow',
+        'CLAUDE.md',
+        '--allow',
+        'AGENTS.md',
+        '--allow',
+        'docs/ops/ods/ODS_CONTEXT_CHECKPOINT_STANDARD_v1.0.0.md',
+        '--allow',
+        '.github/workflows/ci.yml',
       ],
       { cwd: REPO_ROOT, encoding: 'utf8' },
     )

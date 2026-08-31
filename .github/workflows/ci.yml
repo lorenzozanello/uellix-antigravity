@@ -37,6 +37,15 @@ jobs:
       - name: Scan for credentials
         run: pnpm secrets:scan
 
+      # Fails fast, before the expensive test/build stages, if the frozen
+      # FIB/PC-01B/IM-01B authority corpus or the ODS v1 authority artifact
+      # that reads it has drifted. See scripts/authority-seal-verify.ts and
+      # docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json (HPO-ODS-03). This was
+      # previously established by hand every certification round; this step
+      # is the deterministic replacement, not an addition alongside it.
+      - name: Verify ODS authority
+        run: pnpm authority:seal:verify
+
       - name: Lint
         run: pnpm lint
 
