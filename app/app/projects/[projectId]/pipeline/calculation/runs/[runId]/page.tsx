@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { runWithOrganizationAccess } from '@/lib/auth/session';
+import { isInReviewSet } from '@/lib/auth/permissions';
 import {
   getCalculationRunDetail,
   listSroiRunReviews,
@@ -21,8 +22,6 @@ import { CalculationResultsCard } from '@/components/calculation-results/Calcula
 import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
-
-const REVIEW_ROLES = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
 
 const RUN_STATUS_BADGE: Record<string, { variant: 'success' | 'warning' | 'danger' | 'neutral'; label: string }> = {
   calculated: { variant: 'success', label: 'Calculado' },
@@ -62,7 +61,7 @@ export default async function RunDetailPage({
     }
     return {
       detail,
-      canReview: REVIEW_ROLES.includes(ctx.membership.role),
+      canReview: isInReviewSet(ctx.membership.role),
       reviews: await listSroiRunReviews(projectId, runId),
     };
   });

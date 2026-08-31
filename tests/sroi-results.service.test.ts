@@ -24,8 +24,16 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 
 // Mock permission checks
+// FIBIU-29 — isInReviewSet/canApproveRunMethodology are real logic (not
+// vi.fn() stubs) so the pre-existing role pass/reject assertions below keep
+// exercising actual review-set membership, exactly as they did against the
+// old inline REVIEW_ROLES array this replaced.
+const REVIEW_SET = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
 vi.mock('@/lib/auth/permissions', () => ({
   hasRole: vi.fn(),
+  isInReviewSet: (role: string) => REVIEW_SET.includes(role),
+  canApproveRunMethodology: (role: string, isRunAuthor: boolean) =>
+    REVIEW_SET.includes(role) && !isRunAuthor,
 }));
 
 // Mock audit logger
@@ -240,6 +248,27 @@ describe('review services', () => {
     updated.status = 'archived';
     await expect(updateSroiRunReview(PROJECT_ID, 'rev-1', { status: 'approved' })).rejects.toThrow('Cannot modify archived review');
   });
+  it('FIBIU-29: rejects a reviewer approving the methodology of their own run (self-approval)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
+    const run = { id: 'run-self-1', projectId: PROJECT_ID, organizationId: ORG_ID, calculatedBy: USER_ID };
+    mockDb.sroiCalculationRuns.push(run);
+    const rev = { id: 'rev-self-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft', calculationRunId: run.id };
+    mockDb.sroiRunReviews.push(rev);
+    await expect(
+      updateSroiRunReview(PROJECT_ID, 'rev-self-1', { status: 'approved' })
+    ).rejects.toThrow('cannot approve the methodology of their own run');
+  });
+
+  it('FIBIU-29: allows a different reviewer to approve the run (unauthorized action fails closed, authorized succeeds)', async () => {
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
+    const run = { id: 'run-other-1', projectId: PROJECT_ID, organizationId: ORG_ID, calculatedBy: 'someone-else' };
+    mockDb.sroiCalculationRuns.push(run);
+    const rev = { id: 'rev-other-1', projectId: PROJECT_ID, organizationId: ORG_ID, status: 'draft', calculationRunId: run.id };
+    mockDb.sroiRunReviews.push(rev);
+    const updated = await updateSroiRunReview(PROJECT_ID, 'rev-other-1', { status: 'approved' });
+    expect(updated.status).toBe('approved');
+  });
+
   it('upserts review item (create then update)', async () => {
     vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: ORG_ID }, user: { id: USER_ID }, membership: { role: 'reviewer' } } as any);
     const rev = { id: 'rev-1', projectId: PROJECT_ID, organizationId: ORG_ID };

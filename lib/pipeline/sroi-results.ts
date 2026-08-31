@@ -6,6 +6,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { requireOrganizationAccess } from '@/lib/auth/session';
+import { isInReviewSet, canApproveRunMethodology, type Role } from '@/lib/auth/permissions';
 import {
   sroiCalculationRuns,
   sroiCalculationLineItems,
@@ -285,8 +286,7 @@ export async function compareCalculationRuns(projectId: string, runIdA: string, 
 
 export async function createSroiRunReview(projectId: string, runId: string, input: ReviewInput) {
   const ctx = await authorizeProject(projectId);
-  const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
-  if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to create review');
+  if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to create review');
 
   const run = await db
     .select()
@@ -331,8 +331,7 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
 
 export async function updateSroiRunReview(projectId: string, reviewId: string, input: ReviewInput) {
   const ctx = await authorizeProject(projectId);
-  const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
-  if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to update review');
+  if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to update review');
 
   const review = await db
     .select()
@@ -348,6 +347,21 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
   if (review[0].status === 'archived') throw new Error('Cannot modify archived review');
 
   const validated = ReviewInputSchema.parse(input);
+
+  // FIBIU-29 (FIBC-041) — canApproveRunMethodology: the review set MINUS the
+  // run's own author. Only checked on the transition into 'approved' — a
+  // server-authoritative comparison against the run row's calculated_by,
+  // never a client-supplied flag.
+  if (validated.status === 'approved') {
+    const run = await db
+      .select({ calculatedBy: sroiCalculationRuns.calculatedBy })
+      .from(sroiCalculationRuns)
+      .where(eq(sroiCalculationRuns.id, review[0].calculationRunId));
+    const isRunAuthor = run[0]?.calculatedBy === ctx.user.id;
+    if (!canApproveRunMethodology(ctx.membership.role as Role, isRunAuthor)) {
+      throw new Error('A reviewer cannot approve the methodology of their own run');
+    }
+  }
   const updated = await db
     .update(sroiRunReviews)
     .set({
@@ -377,8 +391,7 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
 
 export async function upsertSroiRunReviewItem(projectId: string, reviewId: string, input: ReviewItemInput) {
   const ctx = await authorizeProject(projectId);
-  const allowed = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer'];
-  if (!allowed.includes(ctx.membership.role)) throw new Error('Insufficient role to upsert review item');
+  if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to upsert review item');
 
   const review = await db
     .select()

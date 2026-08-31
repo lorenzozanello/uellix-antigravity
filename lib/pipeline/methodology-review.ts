@@ -14,6 +14,7 @@ import {
 } from '@/db/schema'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
+import { isInReviewSet, type Role } from '@/lib/auth/permissions'
 
 export type ReviewItemStatus = 'pass' | 'warning' | 'fail' | 'not_applicable'
 export type ReviewItemSeverity = 'low' | 'medium' | 'high'
@@ -92,17 +93,15 @@ export function getReviewChecklistTemplate(step: PipelineReviewStep): ChecklistI
 // Service layer (authorized + audited)
 // ---------------------------------------------------------------------------
 
-// Roles allowed to create/modify a methodology review — matches the reviewing
-// roles enforced by upsertSroiRunReviewItem and the RLS policy (006_*). Note
-// this is NOT a strict hierarchy level: 'reviewer' is a dedicated role that
-// ranks below 'analyst' in ROLE_HIERARCHY yet is explicitly a reviewing role,
-// while 'analyst' is not — so membership must be checked by set inclusion.
-const REVIEW_ROLES = ['super_admin', 'organization_admin', 'impact_manager', 'reviewer']
-
-/** Whether a role may create/modify a methodology review. Single source of truth
- *  for both the service guard and UI visibility. */
+/**
+ * Whether a role may create/modify a methodology review. Single source of
+ * truth for both the service guard and UI visibility — re-exports the
+ * canonical "review set" permission (FIBIU-29 / FIBC-041,
+ * lib/auth/permissions.ts isInReviewSet) so this module's existing callers
+ * (six pipeline step pages) don't need to change their import path.
+ */
 export function canReviewMethodology(role: string): boolean {
-  return REVIEW_ROLES.includes(role)
+  return isInReviewSet(role as Role)
 }
 
 function isReviewStep(step: string): step is PipelineReviewStep {
