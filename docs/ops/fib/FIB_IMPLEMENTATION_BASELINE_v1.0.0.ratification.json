@@ -1,0 +1,16 @@
+{
+  "package_id": "FIB_IMPLEMENTATION_BASELINE",
+  "version": "1.0.0",
+  "authority_class": "HUMAN_PRODUCT_OWNER_RATIFICATION",
+  "ratification_status": "APPROVED",
+  "baseline_sha256": "5db735e572cee2aada48d22caa40b2fbfb172c58bda58875074fe8a6ec490d86",
+  "index_sha256": "55177a953b7e7705fe56317a4912eabb668d41e6473cdd0e0ec4c6f868d345b6",
+  "ratified_head": "86c8a9876498896925f8a789991a15d33bf1ff4e",
+  "human_product_owner_ratification": true,
+  "independent_audit_gate": "FIB01C_R1_INDEPENDENT_REMEDIATED_BASELINE_AUDIT_PASS",
+  "ready_for_formal_seal": true,
+  "frozen_implementation_baseline": false,
+  "implementation_open": false,
+  "document_grounding_activated": false,
+  "stella_pilot_core_frozen": false
+}
