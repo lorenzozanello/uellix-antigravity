@@ -171,44 +171,110 @@ describe('collectChangedPaths + classifyPaths — real temporary git repo, POSIT
   })
 })
 
-describe('ods:scope — real CLI, POSITIVE integration control against the actual ODS worktree', () => {
-  it('PASS when the real change since the ODS-01 authority-freeze commit is confined to the ODS-02/ODS-03 surface so far', () => {
-    const tsxCli = require.resolve('tsx/cli')
-    const res = spawnSync(
-      process.execPath,
-      [
-        tsxCli,
-        'scripts/ods-scope.ts',
-        '--base',
-        '2aecf625a49ec673fd4185052e71ec6e5c750edf',
-        '--allow',
-        'scripts/authority-seal-verify.ts',
-        '--allow',
-        'scripts/ods-prestate.ts',
-        '--allow',
-        'scripts/ods-scope.ts',
-        '--allow',
-        'scripts/ods-poststate.ts',
-        '--allow',
-        'tests/ods/**',
-        '--allow',
-        'package.json',
-        '--allow',
-        'CLAUDE.md',
-        '--allow',
-        'AGENTS.md',
-        '--allow',
-        'docs/ops/ods/ODS_CONTEXT_CHECKPOINT_STANDARD_v1.0.0.md',
-        '--allow',
-        '.github/workflows/ci.yml',
-      ],
-      { cwd: REPO_ROOT, encoding: 'utf8' },
-    )
+// NC-3 (see docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json,
+// benchmark_f_negative_control_value): the previous positive control here
+// pinned --base to the ODS-01 freeze commit and ran against REPO_ROOT — the
+// REAL, still-evolving ods/v1 branch. Every later authorized commit (a new
+// script, CLAUDE.md, the checkpoint standard, ci.yml, the efficiency
+// artifact...) grew the real diff, so the hand-maintained --allow list had
+// to be updated by hand each time or the test went stale — four times
+// across ODS-02/03/04. That coupling is the defect; scripts/ods-scope.ts
+// itself was correct every time.
+//
+// Fixed by exercising the real CLI against a disposable temporary git
+// repository instead of REPO_ROOT. These fixtures create every file they
+// reference and never read the real ods/v1 working tree, so a completely
+// unrelated file landing on that branch in some future authorized task
+// cannot make any test below stale — there is nothing for it to enumerate.
+// The real branch's actual authorized surface is still verified, per task,
+// by running `pnpm ods:scope --base <task-base> --allow <task-surface>`
+// directly (see e.g. the ODS-04 final-validation commands) — that is a
+// task-time check, not something a permanent unit test should encode.
+describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoupled from the evolving real ODS branch)', () => {
+  let dir: string
 
-    expect(res.status).toBe(0)
-    expect(res.stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
-    expect(res.stdout).toContain('UNAUTHORIZED_PATHS=0')
-    expect(res.stdout).toContain('ODS_SCOPE=PASS')
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  function runRealCli(cwd: string, args: string[]): { status: number | null; stdout: string } {
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  it('POSITIVE: PASS when a self-contained fixture change is confined to an allowed path', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'scripts/allowed.ts', 'export {}\n')
+    commitFile(dir, 'scripts/allowed.ts', 'export const x = 1\n')
+
+    const { status, stdout } = runRealCli(dir, ['--base', base, '--allow', 'scripts/allowed.ts'])
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
+    expect(stdout).toContain('UNAUTHORIZED_PATHS=0')
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+  })
+
+  it('REGRESSION GUARD: this fixture never reads REPO_ROOT, so a new file on the real ods/v1 branch cannot make it stale', () => {
+    // The property NC-3 violated, made explicit and checkable: the temp
+    // repo is a different directory than REPO_ROOT, and the only path ever
+    // referenced anywhere in this describe block is 'scripts/allowed.ts' —
+    // a path this test creates itself, not one read from the real branch.
+    dir = makeTempGitRepo()
+    expect(dir).not.toBe(REPO_ROOT)
+    const base = commitFile(dir, 'scripts/allowed.ts', 'export {}\n')
+    const { status } = runRealCli(dir, ['--base', base, '--allow', 'scripts/allowed.ts'])
+    expect(status).toBe(0)
+  })
+
+  it('NEGATIVE: an unauthorized untracked file FAILS', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'scripts/allowed.ts', 'export {}\n')
+    mkdirSync(path.join(dir, 'lib'), { recursive: true })
+    writeFileSync(path.join(dir, 'lib', 'unexpected.ts'), 'export {}\n')
+
+    const { status, stdout } = runRealCli(dir, ['--base', base, '--allow', 'scripts/allowed.ts'])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('UNAUTHORIZED_PATH=lib/unexpected.ts')
+  })
+
+  it('NEGATIVE: a protected db/prepared/** path FAILS even when named in --allow', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'scripts/allowed.ts', 'export {}\n')
+    commitFile(dir, 'db/prepared/change.sql', 'select 1;\n')
+
+    // Naming the protected path explicitly in --allow must not override
+    // DEFAULT_PROTECTED_PATTERNS — protection here is unconditional.
+    const { status, stdout } = runRealCli(dir, ['--base', base, '--allow', 'scripts/allowed.ts', '--allow', 'db/prepared/change.sql'])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/change.sql')
+  })
+
+  it('NEGATIVE: a rename crossing into a protected surface FAILS on the new path', () => {
+    dir = makeTempGitRepo()
+    mkdirSync(path.join(dir, 'db', 'prepared'), { recursive: true })
+    const base = commitFile(dir, 'scripts/allowed.ts', 'export {}\n')
+    git(dir, ['mv', 'scripts/allowed.ts', 'db/prepared/smuggled.sql'])
+    git(dir, ['commit', '-q', '-m', 'rename into protected surface'])
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      base,
+      '--allow',
+      'scripts/allowed.ts',
+      '--allow',
+      'db/prepared/smuggled.sql',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/smuggled.sql')
   })
 
   it('NEGATIVE CONTROL: real CLI FAILS when the allowlist omits a real changed file', () => {
