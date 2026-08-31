@@ -1,0 +1,50 @@
+{
+  "seal_id": "IM01B_HUMAN_PRODUCT_AUTHORITY_FORMAL_SEAL",
+  "seal_version": "1.0.0",
+
+  "package_id": "IM01B_HUMAN_PRODUCT_AUTHORITY",
+  "package_version": "1.0.0",
+
+  "phase": "POST_MSC07B_PILOT_CORE_CLOSEOUT",
+  "source_gate": "IM01A_IMPLEMENTATION_MAPPING",
+
+  "canonical_authority_file": "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.md",
+  "canonical_authority_sha256": "3b7e696cda64a28f155d740812f601eb20fabb40104ce4581a0568467ee026b4",
+
+  "candidate_manifest_file": "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.manifest.json",
+
+  "ratification_file": "docs/ops/im01b/IM01B_HUMAN_PRODUCT_AUTHORITY_v1.0.0.ratification.md",
+  "ratification_file_sha256": "ec615fa99d00a34262e729fa8a40d019d28fa0c26d84452c303d43da9966329b",
+
+  "candidate_commit": "d91e0009df4d9a699683d78fa2369ccc8a7ee937",
+  "candidate_tree": "4a23801f6ecb8ed7d2feaace5625037d7e89f529",
+
+  "source_head": "c46caa83b780bf38a535244b490c277228e7760d",
+  "source_tree": "82f3e2fa10270dc34d79991d7913cdca7ed350ec",
+
+  "pc01b_authority_sha256": "03212c661f07200d128c2374173f7bbd996b8eab0f3eb1b59cd517187f159938",
+
+  "m2_r1_independent_verdict": "PASS",
+  "m2_r1_semantic_integrity": "PASS",
+  "m2_r1_cross_authority_consistency": "PASS",
+  "m2_r1_npdd_count": 7,
+  "m2_r1_npdd_duplications": 0,
+  "m2_r1_npdd_omissions": 0,
+  "m2_r1_extra_normative_authority_found": false,
+  "m2_r1_files_written": 0,
+
+  "human_ratification_complete": true,
+  "human_product_design_decisions_complete": true,
+
+  "pc01b_human_authority_frozen": true,
+  "methodology_validated": true,
+
+  "human_product_authority_frozen": true,
+  "ready_for_frozen_implementation_baseline": true,
+
+  "implementation_open": false,
+  "document_grounding_activated": false,
+  "stella_pilot_core_frozen": false,
+
+  "seal_status": "FORMALLY_SEALED"
+}
