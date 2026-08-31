@@ -125,3 +125,61 @@ describe('FIBIU-01 non-regression — 0040/0041 migrations untouched by FIBIU-28
     expect(sql).toContain("UPDATE \"projects\" SET \"governance_regime\" = 'pre_pc01b'")
   })
 })
+
+describe('W1-05-RM1 R-6/G-1 (HPO-DEC-1) — governance_regime extended to outcome_taxonomy_mappings', () => {
+  const sql = readMigration('0047_fib_taxonomy_mapping_governance_regime.sql')
+
+  it('adds the additive column and its closed CHECK vocabulary (stage A)', () => {
+    expect(sql).toContain('ALTER TABLE "outcome_taxonomy_mappings" ADD COLUMN "governance_regime" varchar(20)')
+    expect(sql).toContain(
+      'CHECK ("outcome_taxonomy_mappings"."governance_regime" IN (\'pre_pc01b\', \'pc01b\'))'
+    )
+  })
+
+  it('backfills existing rows to pre_pc01b, derived from existing content only (stage B)', () => {
+    expect(sql).toContain(
+      'UPDATE "outcome_taxonomy_mappings" SET "governance_regime" = \'pre_pc01b\' WHERE "governance_regime" IS NULL'
+    )
+  })
+
+  // Comment-stripped view: the header prose intentionally NAMES
+  // stella_interactions/model_used to explain why the drizzle-kit-proposed
+  // DROP DEFAULT statement was removed (same precedent as 0043/0045's own
+  // headers) — these structural assertions must scan executable SQL only.
+  const executableSql = sql
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n');
+
+  it('touches only outcome_taxonomy_mappings — no other table is altered by this unit', () => {
+    const alteredTables = new Set(
+      Array.from(executableSql.matchAll(/ALTER TABLE "([^"]+)"/g)).map((m) => m[1])
+    );
+    const updatedTables = new Set(
+      Array.from(executableSql.matchAll(/UPDATE "([^"]+)"/g)).map((m) => m[1])
+    );
+    expect(alteredTables).toEqual(new Set(['outcome_taxonomy_mappings']))
+    expect(updatedTables).toEqual(new Set(['outcome_taxonomy_mappings']))
+  })
+
+  it('does not opportunistically extend governance_regime to later-wave objects', () => {
+    const LATER_WAVE_TABLES = [
+      'outcomes', 'indicators', 'stakeholder_groups', 'evidence_items',
+      'financial_proxies', 'proxy_sources', 'outcome_proxy_assignments',
+      'sroi_filter_sets', 'project_investments', 'sroi_run_reviews',
+      'sroi_reports', 'impact_narratives',
+    ]
+    for (const table of LATER_WAVE_TABLES) {
+      expect(executableSql).not.toContain(`ALTER TABLE "${table}"`)
+    }
+  })
+
+  it('does not re-add the pre-existing, out-of-scope stella_interactions.model_used drift as an executable statement', () => {
+    expect(executableSql).not.toContain('model_used')
+  })
+
+  it('0040/0041 remain untouched by this extension (append-only migration chain)', () => {
+    const sql0040 = readMigration('0040_governed_model_registry.sql')
+    expect(sql0040).not.toContain('outcome_taxonomy_mappings')
+  })
+})

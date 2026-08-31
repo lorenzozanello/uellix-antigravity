@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 5/59: 0004_thick_mentor.sql
+-- GENERATED — DO NOT EDIT. Unit 59/59: 0047_fib_taxonomy_mapping_governance_regime.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0004_thick_mentor.sql
--- Source SHA256: 71313051a29a52a80b1d8690531644877683662bf107c4e0f1a0beee313abc0b
+-- Includes:      db/migrations/0047_fib_taxonomy_mapping_governance_regime.sql
+-- Source SHA256: 39c8346666378a8899330124939a0178786a799cfe6d73adf006d549a1ad6d67
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/005_0004_thick_mentor.sql
+--        -f db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0004_thick_mentor.sql
+\ir ../../../db/migrations/0047_fib_taxonomy_mapping_governance_regime.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0004_thick_mentor.sql', 'PHASE_BASELINE',
-   '71313051a29a52a80b1d8690531644877683662bf107c4e0f1a0beee313abc0b', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0047_fib_taxonomy_mapping_governance_regime.sql', 'PHASE_BASELINE',
+   '39c8346666378a8899330124939a0178786a799cfe6d73adf006d549a1ad6d67', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

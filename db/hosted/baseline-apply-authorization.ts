@@ -1092,7 +1092,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'manifest-hashes-and-order',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'db/hosted/baseline-manifest.ts + the 58-unit corpus',
+    sourceArtifact: 'db/hosted/baseline-manifest.ts + the 59-unit corpus',
     requirement:
       'The 58-unit manifest verifies against the corpus: hashes, derived scan, equivalences, order and orphans.',
     evaluate(inputs) {
@@ -1162,7 +1162,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'zero-production-data',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json + the 58-unit corpus',
+    sourceArtifact: 'artifacts/class-c-probes/2026-08-07-checkpoint-a0.json + the 59-unit corpus',
     observe: (i) => (i.checkpointA0 === null ? 'CHECKPOINT A0: no attestation on record, so emptiness rests on nothing' : `A0 projectIsNew=${i.checkpointA0.value.projectIsNew}, stellaSurfaceAbsent=${i.checkpointA0.value.stellaSurfaceAbsent}`),
     requirement:
       'The corpus writes zero rows to an empty database, and A0 confirmed the target holds no Stella surface.',
@@ -1249,7 +1249,7 @@ export const APPLY_AUTHORIZATION_CRITERIA: readonly Criterion[] = [
     id: 'no-service-role-widening',
     gate: 'baseline-start',
     dependsOnPhase: 'pre-baseline',
-    sourceArtifact: 'the 58-unit corpus, scanned on every evaluation',
+    sourceArtifact: 'the 59-unit corpus, scanned on every evaluation',
     requirement:
       'Exactly one unit names service_role as a grantee, and it is the known one (0033).',
     evaluate(inputs) {

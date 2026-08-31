@@ -813,6 +813,33 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: '14910e3f962c7a93766ec4a1e8fbe82dc4aa6bf32730fbbcc9bb70f937dca85d',
     },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W1-05-RM1 R-6/G-1 (HPO-DEC-1) — FIBIU-01's regime boundary extended to  *
+   * outcome_taxonomy_mappings, authorized by the RM2 addendum. Appended     *
+   * after the Wave-1 corpus above rather than interleaved, for the same     *
+   * reason unit 51 was appended after the original 50-unit baseline.        *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 59,
+    id: '0047_fib_taxonomy_mapping_governance_regime.sql',
+    kind: D,
+    file: 'db/migrations/0047_fib_taxonomy_mapping_governance_regime.sql',
+    sha256: '39c8346666378a8899330124939a0178786a799cfe6d73adf006d549a1ad6d67',
+    dependsOn: ['0026_violet_selene.sql'],
+    dml: 'structural-backfill',
+    managed: 'A-hosted-compatible',
+    reapply: 'idempotent',
+    managedNote:
+      'FIBIU-01 regime boundary extended (FIBC-004/FIBDB-003/FIBDB-042/FIBDB-054), stage A/B. Adds ' +
+      'governance_regime (nullable, CHECK) to outcome_taxonomy_mappings, then UPDATE … SET ' +
+      '\'pre_pc01b\' WHERE governance_regime IS NULL — derived from existing content, so on an empty ' +
+      'database the backfill affects zero rows, the same class as unit 19 (0018) and unit 52 (0041).',
+    rollback:
+      'The ADD COLUMN/ADD CONSTRAINT have no reverse script — forward-only, recovered by ' +
+      'DESTROY_AND_REPROVISION. The UPDATE re-runs to zero affected rows.',
+    expect: { dmlStatementCount: 1 },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

@@ -75,20 +75,20 @@ describe('the baseline manifest describes the corpus that is actually checked in
     expect([...BASELINE_UNITS].map((u) => u.file).sort()).toEqual(discovered().sort())
   })
 
-  it('has 58 units: 47 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(58)
+  it('has 59 units: 48 Drizzle, 2 Supabase, 9 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(59)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(47)
+    expect(byKind('drizzle-migration')).toBe(48)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(9)
   })
 
-  it('numbers ordinals 1..58 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..59 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 58 }, (_, i) => i + 1),
+      Array.from({ length: 59 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(58)
+    expect(new Set(BASELINE_ORDER).size).toBe(59)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -288,7 +288,7 @@ describe('Phase 6 — managed-Supabase compatibility, measured not assumed', () 
 })
 
 describe('Phase 5 — data', () => {
-  it('0018, 0040 and 0041 are the only units with DML', () => {
+  it('0018, 0040, 0041 and 0047 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
@@ -296,6 +296,7 @@ describe('Phase 5 — data', () => {
       '0018_redundant_firebird.sql',
       '0040_governed_model_registry.sql',
       '0041_pc01b_regime_boundary_backfill.sql',
+      '0047_fib_taxonomy_mapping_governance_regime.sql',
     ])
 
     const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))
@@ -309,6 +310,10 @@ describe('Phase 5 — data', () => {
     const facts0041 = scanBaselineSql(readOrThrow('db/migrations/0041_pc01b_regime_boundary_backfill.sql'))
     expect(facts0041.literalRowSources).toEqual([])
     expect(baselineUnit('0041_pc01b_regime_boundary_backfill.sql').dml).toBe('structural-backfill')
+
+    const facts0047 = scanBaselineSql(readOrThrow('db/migrations/0047_fib_taxonomy_mapping_governance_regime.sql'))
+    expect(facts0047.literalRowSources).toEqual([])
+    expect(baselineUnit('0047_fib_taxonomy_mapping_governance_regime.sql').dml).toBe('structural-backfill')
 
     // 0040 is the one deliberate exception: a literal, deploy-time seed of 8
     // fixed universal-reference rows (FIBC-003) — global-catalog, not tenant

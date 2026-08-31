@@ -330,6 +330,13 @@
       "when": 1788199000000,
       "tag": "0046_fib_run_version_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788208588130,
+      "tag": "0047_fib_taxonomy_mapping_governance_regime",
+      "breakpoints": true
     }
   ]
 }

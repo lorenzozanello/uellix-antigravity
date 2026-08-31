@@ -76,7 +76,7 @@ export interface HostedBaselineGateEvidence {
   readonly rehearsalFresh: boolean
   /** That run watched the naive order abort at 0039. */
   readonly rehearsalReproducedDefect: boolean
-  /** That run applied all 58 units in manifest order. */
+  /** That run applied all 59 units in manifest order. */
   readonly rehearsalAppliedAll: boolean
   /** That run's CHECKPOINT B0 was clean. */
   readonly rehearsalPostconditionsClean: boolean
@@ -371,13 +371,13 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    // 59, NOT 58: unit ZERO creates the journal table, and it is a planned step
+    // 60, NOT 59: unit ZERO creates the journal table, and it is a planned step
     // rather than setup because a prerequisite nobody plans is one somebody
-    // skips. The count is asserted rather than loosened to `>= 58` — a plan that
+    // skips. The count is asserted rather than loosened to `>= 59` — a plan that
     // silently grew or shrank is exactly what this evidence exists to notice.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 59 &&
+      firstProvisioning.steps.length === 60 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -388,7 +388,7 @@ export function evaluateHostedBaselineGates(
   const gates: HostedBaselineGate[] = []
 
   /* 1 ---------------------------------------------------------------- */
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 58
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 59
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
@@ -421,6 +421,7 @@ export function evaluateHostedBaselineGates(
     '0018_redundant_firebird.sql',
     '0040_governed_model_registry.sql',
     '0041_pc01b_regime_boundary_backfill.sql',
+    '0047_fib_taxonomy_mapping_governance_regime.sql',
   ]
   if (
     evidence.dmlUnits.length !== EXPECTED_DML_UNITS.length ||
@@ -430,9 +431,10 @@ export function evaluateHostedBaselineGates(
   }
   // Exactly 1, not 0: unit 51 (0040) carries a deliberate, literal, deploy-time
   // seed of 8 fixed global-catalog rows (FIBC-003) — universal reference data,
-  // not tenant/production data. 0018 and 0041 still write zero rows on an
-  // empty database; a THIRD literal source, or a changed count, means either
-  // the seed grew or a new unit started writing literal rows unannounced.
+  // not tenant/production data. 0018, 0041 and 0047 still write zero rows on
+  // an empty database; a SECOND literal source, or a changed count, means
+  // either the seed grew or a new unit started writing literal rows
+  // unannounced.
   if (evidence.literalRowSources !== 1) {
     managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 1 (unit 51's global-catalog seed)`)
   }
@@ -444,7 +446,7 @@ export function evaluateHostedBaselineGates(
     passed: managedProblems.length === 0,
     detail:
       managedProblems.length === 0
-        ? `all ${evidence.unitCount} units are free of superuser dependencies, role statements, ownership transfers and extensions; exactly one (0033) grants to service_role and it is recorded rather than hidden; three units (0018, 0040, 0041) carry DML — 0018 and 0041 write zero rows on an empty database, and 0040 writes exactly one literal deploy-time seed of 8 global-catalog rows (not tenant data)`
+        ? `all ${evidence.unitCount} units are free of superuser dependencies, role statements, ownership transfers and extensions; exactly one (0033) grants to service_role and it is recorded rather than hidden; four units (0018, 0040, 0041, 0047) carry DML — 0018, 0041 and 0047 write zero rows on an empty database, and 0040 writes exactly one literal deploy-time seed of 8 global-catalog rows (not tenant data)`
         : `managed compatibility broken: ${managedProblems.join('; ')}`,
   })
 
@@ -460,7 +462,7 @@ export function evaluateHostedBaselineGates(
     id: 'hosted-baseline-rehearsal-ready',
     passed: rehearsalOk,
     detail: rehearsalOk
-      ? 'a rehearsal was EXECUTED against this exact manifest (digest matches): it watched the naive 0000…0039 order abort at 0039 with 42883, then applied all 58 units in manifest order, then passed every CHECKPOINT B0 postcondition. The phased planner separately produces a complete 58-unit PHASE_BASELINE plan and refuses PHASE_STELLA_CHAIN against a virgin target. LIMIT, and it is not a formality: the local Supabase stack applies supabase/migrations at container start and the rehearsal shims auth and storage as OUR objects, so this is a REGRESSION test and a DEFECT REPRODUCTION — never evidence of managed-Supabase compatibility'
+      ? 'a rehearsal was EXECUTED against this exact manifest (digest matches): it watched the naive 0000…0039 order abort at 0039 with 42883, then applied all 59 units in manifest order, then passed every CHECKPOINT B0 postcondition. The phased planner separately produces a complete 59-unit PHASE_BASELINE plan and refuses PHASE_STELLA_CHAIN against a virgin target. LIMIT, and it is not a formality: the local Supabase stack applies supabase/migrations at container start and the rehearsal shims auth and storage as OUR objects, so this is a REGRESSION test and a DEFECT REPRODUCTION — never evidence of managed-Supabase compatibility'
       : `rehearsalFresh=${evidence.rehearsalFresh} (a stale or absent artefact means no rehearsal has run against the CURRENT manifest), reproducedDefect=${evidence.rehearsalReproducedDefect}, appliedAll=${evidence.rehearsalAppliedAll}, postconditionsClean=${evidence.rehearsalPostconditionsClean}, firstProvisioningPlannable=${evidence.firstProvisioningPlannable}, phaseSkipRefused=${evidence.phaseSkipRefused}. Run \`pnpm baseline:rehearsal:local\`.`,
   })
 
@@ -486,7 +488,7 @@ export function evaluateHostedBaselineGates(
     id: 'hosted-baseline-recovery-ready',
     passed: recoveryOk,
     detail: recoveryOk
-      ? 'a mid-baseline statement error answers DESTROY_AND_REPROVISION, not hand-repair — the baseline has zero rollback scripts and 37 of 47 Drizzle units cannot be re-applied, so resuming would mean trusting a ledger about a database whose last operation failed. A unit applied without psql -1 halts instead of guessing, and the runner refuses to write the sentinel under any circumstances'
+      ? 'a mid-baseline statement error answers DESTROY_AND_REPROVISION, not hand-repair — the baseline has zero rollback scripts and 37 of 48 Drizzle units cannot be re-applied, so resuming would mean trusting a ledger about a database whose last operation failed. A unit applied without psql -1 halts instead of guessing, and the runner refuses to write the sentinel under any circumstances'
       : `defaultsToDestroy=${evidence.recoveryDefaultsToDestroy}, refusesWithoutAtomicity=${evidence.recoveryRefusesWithoutAtomicity}, sentinelAutomationRefused=${evidence.sentinelAutomationRefused}`,
   })
 

@@ -453,8 +453,8 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
   const generated = buildAllJournalWrappers(read)
 
   it('the manifest is the source of order', () => {
-    expect(BASELINE_UNITS).toHaveLength(58)
-    expect(BASELINE_ORDER).toHaveLength(58)
+    expect(BASELINE_UNITS).toHaveLength(59)
+    expect(BASELINE_ORDER).toHaveLength(59)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {

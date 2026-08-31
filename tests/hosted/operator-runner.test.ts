@@ -221,7 +221,7 @@ describe('unit source verification', () => {
   it('holds for every unit in the real manifest', () => {
     // A corrupt manifest entry must not be able to hide behind a hand-picked
     // fixture: the pin and the hash function have to agree on every unit.
-    expect(BASELINE_UNITS).toHaveLength(58)
+    expect(BASELINE_UNITS).toHaveLength(59)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })

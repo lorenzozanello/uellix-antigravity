@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 2/58: 0001_noisy_chameleon.sql
+-- GENERATED — DO NOT EDIT. Unit 2/59: 0001_noisy_chameleon.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0001_noisy_chameleon.sql

@@ -642,11 +642,18 @@ export const outcomeTaxonomyMappings = pgTable('outcome_taxonomy_mappings', {
   taxonomyCodeId: uuid('taxonomy_code_id').references(() => taxonomyCodes.id).notNull(),
   mappingConfidence: varchar('mapping_confidence', { length: 20 }).default('medium').notNull(),
   rationale: text('rationale'),
+  // W1-05-RM2 (HPO-DEC-1, owner-unit incremental regime activation) —
+  // FIBIU-01's regime boundary, extended to this object: FIBDB-054 requires
+  // the column to exist because it carries the mapping's governance fact
+  // with no separate field invented. Nullable at stage A — NOT NULL is
+  // stage-E hardening, same pattern as projects.governanceRegime.
+  governanceRegime: varchar('governance_regime', { length: 20 }),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('outcome_taxonomy_mappings_confidence_check', sql`${table.mappingConfidence} IN ('low', 'medium', 'high')`),
+  check('outcome_taxonomy_mappings_governance_regime_check', sql`${table.governanceRegime} IN ('pre_pc01b', 'pc01b')`),
   unique('outcome_taxonomy_mappings_outcome_code_unique').on(table.outcomeId, table.taxonomyCodeId),
   index('idx_outcome_taxonomy_mappings_outcome_id').on(table.outcomeId),
   index('idx_outcome_taxonomy_mappings_organization_id').on(table.organizationId),
