@@ -16,3 +16,11 @@ db/prepared/** text eol=lf
 
 # bash no ejecuta un script con CRLF: falla con «\r: command not found».
 *.sh text eol=lf
+
+# Esta baseline y las autoridades PC-01B/IM-01B se verifican por SHA-256
+# contra el .md y .index.json sellados (docs/ops/fib, docs/ops/pc01b,
+# docs/ops/im01b). Con core.autocrlf=true un checkout en Windows los
+# reescribiría a CRLF y esos hashes dejarían de cuadrar contra los valores
+# congelados en los .seal.json/.manifest.json — el final de línea queda
+# fijado a LF en toda plataforma (FIB §16).
+docs/** text eol=lf

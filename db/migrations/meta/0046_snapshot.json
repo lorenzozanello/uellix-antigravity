@@ -5818,7 +5818,8 @@
           "name": "model_used",
           "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'gemini-2.0-flash'"
         },
         "tokens_used": {
           "name": "tokens_used",
