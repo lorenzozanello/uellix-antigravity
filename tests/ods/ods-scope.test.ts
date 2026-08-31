@@ -188,6 +188,8 @@ describe('ods:scope — real CLI, POSITIVE integration control against the actua
         '--allow',
         'scripts/ods-scope.ts',
         '--allow',
+        'scripts/ods-poststate.ts',
+        '--allow',
         'tests/ods/**',
         '--allow',
         'package.json',
