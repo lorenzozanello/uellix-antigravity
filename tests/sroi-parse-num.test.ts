@@ -11,7 +11,10 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/db/client', () => ({ db: {} }))
 vi.mock('@/lib/auth/session', () => ({ requireOrganizationAccess: vi.fn() }))
 vi.mock('@/lib/auth/permissions', () => ({ hasRole: vi.fn() }))
-vi.mock('@/lib/audit/logger', () => ({ logAuditAction: vi.fn() }))
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+})
 
 import { parseNum } from '@/lib/pipeline/sroi-calculation'
 

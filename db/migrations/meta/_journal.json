@@ -295,6 +295,27 @@
       "when": 1788193000000,
       "tag": "0041_pc01b_regime_boundary_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1788193100000,
+      "tag": "0042_fib_audit_insert_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1788194421538,
+      "tag": "0043_fib_audit_project_id_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1788194500000,
+      "tag": "0044_fib_audit_hardening_supersession",
+      "breakpoints": true
     }
   ]
 }

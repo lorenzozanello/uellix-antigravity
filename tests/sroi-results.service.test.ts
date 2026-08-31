@@ -29,9 +29,10 @@ vi.mock('@/lib/auth/permissions', () => ({
 }));
 
 // Mock audit logger
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-}));
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>();
+  return { ...actual, logAuditAction: vi.fn() };
+});
 
 // Mock DB client with simple in‑memory structures
 const mockDb = {

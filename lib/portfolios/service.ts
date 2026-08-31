@@ -2,7 +2,7 @@ import { db } from '@/db/client';
 import { portfolios } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
-import { logAuditAction } from '@/lib/audit/logger';
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { z } from 'zod';
 import type { Role } from '@/lib/auth/roles';
 
@@ -61,7 +61,7 @@ export async function createPortfolioForCurrentOrganization(input: PortfolioInpu
     actorUserId: ctx.user.id,
     entityType: 'portfolio',
     entityId: newRecord.id,
-    action: 'create',
+    action: AUDIT_ACTIONS.PORTFOLIO_CREATED,
     afterJson: data,
   });
 

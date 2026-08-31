@@ -65,7 +65,10 @@ export const organizationMembers = pgTable('organization_members', {
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id),
-  projectId: uuid('project_id'), // Will reference projects.id later
+  // FIBDB-036 — FK added validate-then-add (stage B, NOT VALID in
+  // db/migrations/0043_fib_audit_project_id_fk.sql; VALIDATE CONSTRAINT is
+  // stage-E hardening, deferred to a later unit per FIB §6.2).
+  projectId: uuid('project_id').references(() => projects.id),
   actorUserId: uuid('actor_user_id').references(() => users.id),
   entityType: varchar('entity_type', { length: 100 }).notNull(),
   entityId: uuid('entity_id').notNull(),

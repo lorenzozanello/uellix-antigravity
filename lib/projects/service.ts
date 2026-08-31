@@ -12,7 +12,7 @@ import {
 } from '@/db/schema';
 import { eq, and, isNotNull, isNull } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
-import { logAuditAction } from '@/lib/audit/logger';
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { currentGovernanceRegime } from '@/lib/pipeline/governance-regime';
 import { z } from 'zod';
 import type { Role } from '@/lib/auth/roles';
@@ -104,10 +104,11 @@ export async function createProjectForCurrentOrganization(input: ProjectInput) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId: newRecord.id,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: newRecord.id,
-    action: 'create',
+    action: AUDIT_ACTIONS.PROJECT_CREATED,
     afterJson: data,
   });
 
@@ -271,10 +272,11 @@ export async function requestProjectDeletion(
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'request_deletion',
+    action: AUDIT_ACTIONS.PROJECT_DELETION_REQUESTED,
     reason,
     afterJson: { deletionRequestedAt: updated[0].deletionRequestedAt, deletionReason: reason },
   });
@@ -321,10 +323,11 @@ export async function approveProjectDeletion(
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'approve_deletion',
+    action: AUDIT_ACTIONS.PROJECT_DELETION_APPROVED,
     reason: deleteReason,
     afterJson: { deletedAt: deleted[0].deletedAt, deleteReason: deleteReason },
   });
@@ -362,10 +365,11 @@ export async function pauseProject(projectId: string) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'pause',
+    action: AUDIT_ACTIONS.PROJECT_PAUSED,
     afterJson: { status: 'paused' },
   });
 
@@ -402,10 +406,11 @@ export async function resumeProject(projectId: string) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'resume',
+    action: AUDIT_ACTIONS.PROJECT_RESUMED,
     afterJson: { status: 'active' },
   });
 
@@ -442,10 +447,11 @@ export async function archiveProject(projectId: string) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'archive',
+    action: AUDIT_ACTIONS.PROJECT_ARCHIVED,
     afterJson: { status: 'archived' },
   });
 

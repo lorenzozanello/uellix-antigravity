@@ -3,5 +3,5 @@
  * Barrel export for audit logging utilities.
  */
 
-export { logAuditAction, AUDIT_ACTIONS } from './logger'
-export type { AuditAction, AuditLogEntry } from './logger'
+export { logAuditAction, AUDIT_ACTIONS, AuditContractViolationError, recordAuditCorrection } from './logger'
+export type { AuditAction, AuditLogEntry, AuditCorrectionInput } from './logger'

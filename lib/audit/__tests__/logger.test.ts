@@ -12,7 +12,7 @@ vi.mock('@/db/client', () => ({
   },
 }))
 
-import { AUDIT_ACTIONS, logAuditAction } from '../logger'
+import { AUDIT_ACTIONS, logAuditAction, recordAuditCorrection, AuditContractViolationError } from '../logger'
 
 describe('AUDIT_ACTIONS — Stella runtime vocabulary (WS3b)', () => {
   it('defines the three Stella runtime actions with entity.verb naming', () => {
@@ -68,14 +68,12 @@ describe('logAuditAction', () => {
     expect(payload.afterJson).toEqual({ stellaRole: 'advisor', pipelineStep: 'narrative', tokensUsed: 42 })
   })
 
-  it('skips the insert (with a warning) when required fields are missing', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
-    await logAuditAction({ entityType: '', entityId: 'x', action: AUDIT_ACTIONS.STELLA_DENIED })
+  it('fails closed (FIBC-040) instead of silently skipping when required fields are missing', async () => {
+    await expect(
+      logAuditAction({ entityType: '', entityId: 'x', action: AUDIT_ACTIONS.STELLA_DENIED }),
+    ).rejects.toThrow(AuditContractViolationError)
 
     expect(mockDbInsert).not.toHaveBeenCalled()
-    expect(warnSpy).toHaveBeenCalled()
-    warnSpy.mockRestore()
   })
 
   it('propagates DB failures to the caller (callers decide whether to swallow)', async () => {
@@ -84,5 +82,99 @@ describe('logAuditAction', () => {
     await expect(
       logAuditAction({ entityType: 'project', entityId: 'p1', action: AUDIT_ACTIONS.STELLA_DENIED }),
     ).rejects.toThrow('db down')
+  })
+
+  it('persists projectId when supplied (FIBDB-036)', async () => {
+    await logAuditAction({
+      organizationId: 'org-1',
+      projectId: 'proj-1',
+      actorUserId: 'user-1',
+      entityType: 'project',
+      entityId: 'proj-1',
+      action: AUDIT_ACTIONS.PROJECT_PAUSED,
+      afterJson: { status: 'paused' },
+    })
+
+    const payload = mockInsertValues.mock.calls[0][0]
+    expect(payload.projectId).toBe('proj-1')
+  })
+
+  it('leaves projectId undefined when not supplied', async () => {
+    await logAuditAction({
+      organizationId: 'org-1',
+      entityType: 'funder',
+      entityId: 'funder-1',
+      action: AUDIT_ACTIONS.FUNDER_CREATED,
+      afterJson: {},
+    })
+
+    const payload = mockInsertValues.mock.calls[0][0]
+    expect(payload.projectId).toBeUndefined()
+  })
+
+  it('fails closed when contentModifying is set but beforeJson is missing', async () => {
+    await expect(
+      logAuditAction({
+        entityType: 'sroi_run_review',
+        entityId: 'review-1',
+        action: AUDIT_ACTIONS.SROI_RUN_REVIEW_UPDATED,
+        contentModifying: true,
+        afterJson: { status: 'approved' },
+      }),
+    ).rejects.toThrow(AuditContractViolationError)
+
+    expect(mockDbInsert).not.toHaveBeenCalled()
+  })
+
+  it('accepts a contentModifying transition once beforeJson is supplied', async () => {
+    await logAuditAction({
+      entityType: 'sroi_run_review',
+      entityId: 'review-1',
+      action: AUDIT_ACTIONS.SROI_RUN_REVIEW_UPDATED,
+      contentModifying: true,
+      beforeJson: { status: 'pending' },
+      afterJson: { status: 'approved' },
+    })
+
+    expect(mockDbInsert).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('recordAuditCorrection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockInsertValues.mockResolvedValue([])
+    mockDbInsert.mockReturnValue({ values: mockInsertValues })
+  })
+
+  it('inserts a NEW row referencing the original event, never an update', async () => {
+    await recordAuditCorrection({
+      organizationId: 'org-1',
+      actorUserId: 'user-1',
+      correctedEventId: 'audit-row-original',
+      correctedAction: AUDIT_ACTIONS.PROJECT_PAUSED,
+      reason: 'Original event used a bare verb with no object correspondence',
+    })
+
+    expect(mockDbInsert).toHaveBeenCalledTimes(1)
+    const payload = mockInsertValues.mock.calls[0][0]
+    expect(payload.entityType).toBe('audit_log_entry')
+    expect(payload.entityId).toBe('audit-row-original')
+    expect(payload.action).toBe(AUDIT_ACTIONS.AUDIT_CORRECTION_RECORDED)
+    expect(payload.afterJson).toEqual(
+      expect.objectContaining({
+        correctedEventId: 'audit-row-original',
+        correctedAction: AUDIT_ACTIONS.PROJECT_PAUSED,
+      }),
+    )
+  })
+
+  it('requires a reason and a correctedEventId', async () => {
+    await expect(
+      recordAuditCorrection({
+        correctedEventId: '',
+        reason: 'x',
+      } as Parameters<typeof recordAuditCorrection>[0]),
+    ).rejects.toThrow(AuditContractViolationError)
   })
 })

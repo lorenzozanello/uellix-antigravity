@@ -16,7 +16,10 @@ import Decimal from 'decimal.js'
 vi.mock('@/db/client', () => ({ db: {} }))
 vi.mock('@/lib/auth/session', () => ({ requireOrganizationAccess: vi.fn() }))
 vi.mock('@/lib/auth/permissions', () => ({ hasRole: vi.fn() }))
-vi.mock('@/lib/audit/logger', () => ({ logAuditAction: vi.fn() }))
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+})
 
 import { runDeterministicCalc, parseNum } from '@/lib/pipeline/sroi-calculation'
 import { convertToUsd } from '@/lib/pipeline/fx-math'

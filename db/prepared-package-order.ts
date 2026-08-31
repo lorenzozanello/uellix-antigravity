@@ -478,6 +478,59 @@ export const PREPARED_PACKAGE_SUPERSESSIONS: readonly PreparedPackageSupersessio
  * without extension and is exact — a prefix match would make `stella_0014b`
  * inherit `stella_0014`'s rules silently.
  */
+/**
+ * FIBIU-28 (FIBC-040) — prepared packages retired by the FIB's collision
+ * reconciliation (FIB §5.2), because the logical objects they installed are
+ * now canonical in the Drizzle chain instead.
+ *
+ * Deliberately NOT a `PreparedPackageSupersession` entry and NOT consulted by
+ * `assertPreparedPackageOrder`/`applyPreparedScript`. Every existing rule
+ * above answers "does the DATABASE already show the successor installed?" —
+ * exactly the wrong question here: `stella_0002`/`stella_0002b`'s triggers and
+ * `stella_hosted_0008`'s policy converge to the SAME catalog shape whether
+ * installed by the prepared script or by the Drizzle migration that
+ * supersedes them (both are `DROP ... IF EXISTS` + `CREATE ...`), so a
+ * catalog-shape probe could never distinguish "superseded, refuse" from
+ * "this is exactly what the prepared script itself would produce, allow" —
+ * and `stella_0002`/`stella_0002b` are still real steps of the FIXED local
+ * bootstrap manifest in `scripts/stella-r3-4-local-runner.ts`, which this
+ * registry must not silently start refusing on a database it has never
+ * consulted. The record here is the repository-level disposition the sealed
+ * FIB requires — see db/prepared/README.md's Inventario for the same fact
+ * and each retired file's own banner for the full reasoning.
+ */
+export const FIB_RETIRED_PREPARED_PACKAGES = [
+  {
+    packageName: 'stella_0002_interactions_hardening',
+    supersededByMigration: 'db/migrations/0044_fib_audit_hardening_supersession.sql',
+    fibItem: 'FIBDB-034',
+    why:
+      'trg_stella_interactions_append_only is now created by an idempotent Drizzle migration. ' +
+      'Only that trigger is retired here — the grant and stella_role CHECK reconciliation this ' +
+      'package also performs are untouched (FIBDB-034 names NEW_TRIGGER only).',
+  },
+  {
+    packageName: 'stella_0002b_append_only_truncate_hardening',
+    supersededByMigration: 'db/migrations/0044_fib_audit_hardening_supersession.sql',
+    fibItem: 'FIBDB-034',
+    why:
+      'Its four trg_*_no_truncate triggers are now created by the same idempotent Drizzle ' +
+      'migration, which also adds the fifth sibling (stella_suggestion_decisions, installed ' +
+      'separately by stella_0003). Only the triggers are retired here — the grant ' +
+      'reconciliation (REVOKE TRUNCATE/REFERENCES/TRIGGER/MAINTAIN) is untouched.',
+  },
+  {
+    packageName: 'stella_hosted_0008_audit_log_write_capability',
+    supersededByMigration: 'db/migrations/0042_fib_audit_insert_policy.sql',
+    fibItem: 'FIBDB-035',
+    why:
+      'The audit_logs_insert_member_or_admin policy this hosted twin would install is now ' +
+      'created by an idempotent Drizzle migration. Never applied to any database; a genuine ' +
+      'hosted role-topology divergence, if discovered, becomes a hosted addendum to that ' +
+      'migration — never a second creation of this object via the prepared track.',
+  },
+] as const
+
 export function supersessionsFor(file: string): readonly PreparedPackageSupersession[] {
   const base = file
     .split(/[\\/]/)

@@ -26,7 +26,7 @@ import {
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 import { computeFundersBreakdown, type FunderBreakdownRow } from '@/lib/pipeline/sroi-funders'
 import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
@@ -158,10 +158,13 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
     const updated = await db.select().from(projectInvestments).where(eq(projectInvestments.id, existing[0].id))
     await logAuditAction({
       organizationId: ctx.organization.id,
+      projectId,
       actorUserId: ctx.user.id,
       entityType: 'project_investments',
       entityId: existing[0].id,
-      action: 'project_investment.updated',
+      action: AUDIT_ACTIONS.PROJECT_INVESTMENT_UPDATED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
       afterJson: updated[0] as unknown as Record<string, unknown>,
     })
     return updated[0]
@@ -170,10 +173,11 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
   const inserted = await db.insert(projectInvestments).values({ ...values, projectId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project_investments',
     entityId: inserted[0].id,
-    action: 'project_investment.created',
+    action: AUDIT_ACTIONS.PROJECT_INVESTMENT_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
@@ -189,6 +193,11 @@ export async function setProjectDiscountRate(projectId: string, discountRatePct:
     if (isNaN(n) || n < 0 || n > 100) throw new Error('La tasa de descuento debe estar entre 0 y 100%')
     value = String(n)
   }
+  const existing = await db
+    .select({ discountRatePct: projects.discountRatePct })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organization.id)))
+
   await db
     .update(projects)
     .set({ discountRatePct: value, updatedAt: new Date() })
@@ -196,10 +205,13 @@ export async function setProjectDiscountRate(projectId: string, discountRatePct:
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'project',
     entityId: projectId,
-    action: 'project.discount_rate_updated',
+    action: AUDIT_ACTIONS.PROJECT_DISCOUNT_RATE_UPDATED,
+    contentModifying: true,
+    beforeJson: { discountRatePct: existing[0]?.discountRatePct ?? null },
     afterJson: { discountRatePct: value },
   })
   return { discountRatePct: value }
@@ -217,12 +229,30 @@ export async function upsertSroiAssignmentInput(projectId: string, assignmentId:
   if (existing.length > 0) {
     await db.update(sroiAssignmentInputs).set({ ...validated, updatedAt: new Date() }).where(eq(sroiAssignmentInputs.id, existing[0].id))
     const updated = await db.select().from(sroiAssignmentInputs).where(eq(sroiAssignmentInputs.id, existing[0].id))
-    await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_assignment_inputs', entityId: existing[0].id, action: 'sroi_assignment_input.updated', afterJson: updated[0] as unknown as Record<string, unknown> })
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'sroi_assignment_inputs',
+      entityId: existing[0].id,
+      action: AUDIT_ACTIONS.SROI_ASSIGNMENT_INPUT_UPDATED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
+      afterJson: updated[0] as unknown as Record<string, unknown>,
+    })
     return updated[0]
   }
 
   const inserted = await db.insert(sroiAssignmentInputs).values({ ...validated, assignmentId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
-  await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_assignment_inputs', entityId: inserted[0].id, action: 'sroi_assignment_input.created', afterJson: inserted[0] as unknown as Record<string, unknown> })
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'sroi_assignment_inputs',
+    entityId: inserted[0].id,
+    action: AUDIT_ACTIONS.SROI_ASSIGNMENT_INPUT_CREATED,
+    afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
   return inserted[0]
 }
 
@@ -238,12 +268,30 @@ export async function upsertSroiFilterSet(projectId: string, assignmentId: strin
   if (existing.length > 0) {
     await db.update(sroiFilterSets).set({ ...validated, updatedAt: new Date() }).where(eq(sroiFilterSets.id, existing[0].id))
     const updated = await db.select().from(sroiFilterSets).where(eq(sroiFilterSets.id, existing[0].id))
-    await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_filter_sets', entityId: existing[0].id, action: 'sroi_filter_set.updated', afterJson: updated[0] as unknown as Record<string, unknown> })
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      projectId,
+      actorUserId: ctx.user.id,
+      entityType: 'sroi_filter_sets',
+      entityId: existing[0].id,
+      action: AUDIT_ACTIONS.SROI_FILTER_SET_UPDATED,
+      contentModifying: true,
+      beforeJson: existing[0] as unknown as Record<string, unknown>,
+      afterJson: updated[0] as unknown as Record<string, unknown>,
+    })
     return updated[0]
   }
 
   const inserted = await db.insert(sroiFilterSets).values({ ...validated, assignmentId, organizationId: ctx.organization.id, createdBy: ctx.user.id }).returning()
-  await logAuditAction({ organizationId: ctx.organization.id, actorUserId: ctx.user.id, entityType: 'sroi_filter_sets', entityId: inserted[0].id, action: 'sroi_filter_set.created', afterJson: inserted[0] as unknown as Record<string, unknown> })
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'sroi_filter_sets',
+    entityId: inserted[0].id,
+    action: AUDIT_ACTIONS.SROI_FILTER_SET_CREATED,
+    afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
   return inserted[0]
 }
 
@@ -1036,10 +1084,11 @@ export async function calculateAndPersistSroiRun(projectId: string) {
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_calculation_runs',
     entityId: run.id,
-    action: 'sroi_calculation_run.created',
+    action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_CREATED,
     afterJson: { runId: run.id, version: run.version, sroiRatio: result.sroiRatio } as Record<string, unknown>,
   })
 

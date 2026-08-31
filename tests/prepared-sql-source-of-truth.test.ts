@@ -79,11 +79,33 @@ describe('ADR 21 safeguard 1 — db/prepared is never auto-applied by drizzle', 
     // containing `CREATE TABLE "evidence_chunks"` plus a journal entry would slip
     // past every name-based check and then blow up `pnpm db:migrate` against a
     // database where G2 already ran. Grep the contents.
+    //
+    // FIBIU-28 (FIBDB-034) exception: the sealed FIB implementation baseline
+    // promotes exactly ONE trigger on `stella_suggestion_decisions` into the
+    // Drizzle chain — `trg_stella_suggestion_decisions_no_truncate`, an
+    // idempotent DROP TRIGGER IF EXISTS / CREATE TRIGGER supersession of the
+    // prepared unit that installed it. The TABLE itself — its creation, its
+    // other objects, and every other prepared package's semantics — remains
+    // exclusively gate-managed; only that one trigger moves. This is a named,
+    // narrow carve-out verified below to be TRIGGER-only, never a competing
+    // CREATE/ALTER TABLE — not a relaxation of the guard for anything else.
+    const FIB_TRIGGER_ONLY_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
+      '0044_fib_audit_hardening_supersession.sql': ['stella_suggestion_decisions'],
+    }
+
     const migrationFiles = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql'))
     expect(migrationFiles.length).toBeGreaterThan(0)
     for (const file of migrationFiles) {
       const content = readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8')
+      const triggerOnlyTables = FIB_TRIGGER_ONLY_EXCEPTIONS[file] ?? []
       for (const table of GATE_MANAGED_TABLES) {
+        if (triggerOnlyTables.includes(table)) {
+          expect(
+            content,
+            `${file} must not CREATE/ALTER the gate-managed table ${table} — only its trigger is promoted`,
+          ).not.toMatch(new RegExp(`(CREATE|ALTER)\\s+TABLE[^;]*${table}`, 'i'))
+          continue
+        }
         expect(content, `${file} references gate-managed table ${table}`).not.toContain(table)
       }
     }

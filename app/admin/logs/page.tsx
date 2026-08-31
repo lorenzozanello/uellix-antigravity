@@ -22,12 +22,13 @@ export default async function AdminLogsPage() {
               <th className="text-left px-4 py-3 font-medium">Actor</th>
               <th className="text-left px-4 py-3 font-medium">Acción</th>
               <th className="text-left px-4 py-3 font-medium">Entidad</th>
+              <th className="text-left px-4 py-3 font-medium">Proyecto</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                   Sin eventos registrados todavía.
                 </td>
               </tr>
@@ -42,6 +43,9 @@ export default async function AdminLogsPage() {
                   <td className="px-4 py-3 text-white font-mono text-xs">{log.action}</td>
                   <td className="px-4 py-3 text-slate-400 font-mono text-xs">
                     {log.entityType}:{log.entityId.slice(0, 8)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-400 font-mono text-xs">
+                    {log.projectId ? log.projectId.slice(0, 8) : '—'}
                   </td>
                 </tr>
               ))

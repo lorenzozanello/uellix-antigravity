@@ -93,6 +93,63 @@ export const AUDIT_ACTIONS = {
   // Interoperability — outcome ↔ standard taxonomy crosswalks
   TAXONOMY_MAPPING_CREATED: 'outcome_taxonomy_mapping.created',
   TAXONOMY_MAPPING_DELETED: 'outcome_taxonomy_mapping.deleted',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-28 (FIBC-040) — governed audit event contract.
+  // ---------------------------------------------------------------------
+  // Narrowing AuditLogEntry.action below from `AuditAction | string` to the
+  // closed union exposed every raw literal call site that used to typecheck
+  // only because the union collapsed to `string`. Each entry here replaces
+  // exactly one such literal with a domain-correct entity.verb — see FIB
+  // §12 FIBIU-28 RISK note ("~30 sites emitting raw literals today").
+
+  // Projects lifecycle (lib/projects/service.ts)
+  PROJECT_CREATED: 'project.created',
+  PROJECT_DELETION_REQUESTED: 'project.deletion_requested',
+  PROJECT_DELETION_APPROVED: 'project.deletion_approved',
+  PROJECT_PAUSED: 'project.paused',
+  PROJECT_RESUMED: 'project.resumed',
+  PROJECT_ARCHIVED: 'project.archived',
+  PROJECT_DISCOUNT_RATE_UPDATED: 'project.discount_rate_updated',
+
+  // Portfolios (lib/portfolios/service.ts)
+  PORTFOLIO_CREATED: 'portfolio.created',
+
+  // SROI run reviews and reports (lib/pipeline/sroi-results.ts)
+  SROI_RUN_REVIEW_CREATED: 'sroi_run_review.created',
+  SROI_RUN_REVIEW_UPDATED: 'sroi_run_review.updated',
+  SROI_RUN_REVIEW_ITEM_UPSERTED: 'sroi_run_review_item.upserted',
+  SROI_REPORT_CREATED: 'sroi_report.created',
+  SROI_REPORT_SECTION_UPDATED: 'sroi_report_section.updated',
+  SROI_REPORT_LOCKED: 'sroi_report.locked',
+
+  // SROI calculation pipeline (lib/pipeline/sroi-calculation.ts, investments.ts)
+  SROI_CALCULATION_RUN_CREATED: 'sroi_calculation_run.created',
+  PROJECT_INVESTMENT_CREATED: 'project_investment.created',
+  PROJECT_INVESTMENT_UPDATED: 'project_investment.updated',
+  PROJECT_INVESTMENT_ARCHIVED: 'project_investment.archived',
+  SROI_ASSIGNMENT_INPUT_CREATED: 'sroi_assignment_input.created',
+  SROI_ASSIGNMENT_INPUT_UPDATED: 'sroi_assignment_input.updated',
+  SROI_FILTER_SET_CREATED: 'sroi_filter_set.created',
+  SROI_FILTER_SET_UPDATED: 'sroi_filter_set.updated',
+
+  // Funders (lib/pipeline/funders.ts)
+  FUNDER_CREATED: 'funder.created',
+
+  // Outcome-funder allocations. Two pre-existing services (allocations.ts,
+  // outcome-funder-allocations.ts) write the same entityType
+  // ('outcome_funder_allocation') under two different verb prefixes
+  // ('outcome_funder_allocation.*' and 'allocation.*') — a verb/object
+  // mismatch of exactly the kind FIBC-040 names as a defect. Both are
+  // reconciled onto the single family below.
+  OUTCOME_FUNDER_ALLOCATION_CREATED: 'outcome_funder_allocation.created',
+  OUTCOME_FUNDER_ALLOCATION_UPDATED: 'outcome_funder_allocation.updated',
+  OUTCOME_FUNDER_ALLOCATION_DELETED: 'outcome_funder_allocation.deleted',
+  OUTCOME_FUNDER_ALLOCATION_ARCHIVED: 'outcome_funder_allocation.archived',
+
+  // Corrective annotation — a NEW event referencing a historical audit_logs
+  // row without altering it (FIBC-040). See recordAuditCorrection below.
+  AUDIT_CORRECTION_RECORDED: 'audit_entry.correction_recorded',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -107,12 +164,40 @@ export interface AuditLogEntry {
   actorUserId?: string
   entityType: string
   entityId: string
-  action: AuditAction | string
+  action: AuditAction
   beforeJson?: Record<string, unknown>
   afterJson?: Record<string, unknown>
   reason?: string
   ipAddress?: string
   userAgent?: string
+  /**
+   * FIBC-040 — set on a transition that MODIFIES existing methodological
+   * content (never on a creation, and never on a pure status/lifecycle
+   * transition that carries no reconstructable prior content). When true,
+   * `beforeJson` becomes mandatory and logAuditAction fails closed if it is
+   * absent, rather than recording a content change with nothing to
+   * reconstruct the transition against.
+   */
+  contentModifying?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Fail-closed contract errors
+// ---------------------------------------------------------------------------
+
+/**
+ * FIBC-040 — a governed audit write that does not satisfy the contract must
+ * never appear to have succeeded. Thrown, never swallowed, by
+ * logAuditAction. Callers that treat audit persistence as a precondition of
+ * delivery (FIBC-029) are expected to let this propagate; callers that log
+ * fire-and-forget (e.g. Stella's logStellaAudit) already catch and report
+ * every error this function can throw, this one included.
+ */
+export class AuditContractViolationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AuditContractViolationError'
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -157,14 +242,25 @@ export interface AuditLogEntry {
  * All sensitive fields should be passed explicitly; never log plaintext secrets.
  */
 export async function logAuditAction(entry: AuditLogEntry): Promise<void> {
-  // Basic validation
+  // Fail-closed validation (FIBC-040): a governed methodological transition
+  // must not appear successful if the required audit contract was not
+  // satisfied. This used to console.warn and silently return — the audit
+  // trail would then not be written and NOTHING said so.
   if (!entry.entityType || !entry.entityId || !entry.action) {
-    console.warn('[audit] logAuditAction called with missing required fields', entry)
-    return
+    throw new AuditContractViolationError(
+      'logAuditAction requires entityType, entityId and action; refusing to record an incomplete governed audit event.'
+    )
+  }
+  if (entry.contentModifying && !entry.beforeJson) {
+    throw new AuditContractViolationError(
+      `logAuditAction: action "${entry.action}" modifies existing content but supplies no beforeJson — ` +
+        'FIBC-040 requires enough prior state to reconstruct the transition.'
+    )
   }
 
   await db.insert(auditLogs).values({
     organizationId: entry.organizationId,
+    projectId: entry.projectId,
     actorUserId: entry.actorUserId,
     entityType: entry.entityType,
     entityId: entry.entityId,
@@ -174,5 +270,51 @@ export async function logAuditAction(entry: AuditLogEntry): Promise<void> {
     reason: entry.reason,
     ipAddress: entry.ipAddress,
     userAgent: entry.userAgent,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Corrective annotation (FIBC-040)
+// ---------------------------------------------------------------------------
+
+export interface AuditCorrectionInput {
+  organizationId?: string
+  projectId?: string
+  actorUserId?: string
+  /** The audit_logs.id of the historical event this correction concerns. */
+  correctedEventId: string
+  /** What the action should have been, when the original verb was wrong. */
+  correctedAction?: AuditAction
+  /** Why this correction is being recorded. */
+  reason: string
+  /** Any additional structured context for the correction. */
+  details?: Record<string, unknown>
+}
+
+/**
+ * Records a correction for a historical audit_logs row WITHOUT modifying it.
+ *
+ * FIBC-040: "historically misclassified events are preserved as originals
+ * and may be complemented by a traceable corrective annotation without
+ * altering the source event." This INSERTs a new row — entityType
+ * 'audit_log_entry', entityId set to the corrected row's id — so the
+ * reference is queryable through the same audit_logs table with no new
+ * schema object. The original row is never UPDATEd (the append-only trigger
+ * would reject that regardless).
+ */
+export async function recordAuditCorrection(input: AuditCorrectionInput): Promise<void> {
+  await logAuditAction({
+    organizationId: input.organizationId,
+    projectId: input.projectId,
+    actorUserId: input.actorUserId,
+    entityType: 'audit_log_entry',
+    entityId: input.correctedEventId,
+    action: AUDIT_ACTIONS.AUDIT_CORRECTION_RECORDED,
+    reason: input.reason,
+    afterJson: {
+      correctedEventId: input.correctedEventId,
+      correctedAction: input.correctedAction,
+      ...input.details,
+    },
   })
 }

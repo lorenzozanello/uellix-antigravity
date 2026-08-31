@@ -26,9 +26,10 @@ vi.mock('@/db/client', () => ({
   },
 }));
 
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-}));
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>();
+  return { ...actual, logAuditAction: vi.fn() };
+});
 
 import { createProjectForCurrentOrganization, listProjectsForPortfolio } from '@/lib/projects/service';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';

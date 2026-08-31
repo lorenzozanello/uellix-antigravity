@@ -12,7 +12,7 @@ import Decimal from 'decimal.js'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/permissions'
 import { type Role } from '@/lib/auth/roles'
-import { logAuditAction } from '@/lib/audit/logger'
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
 
 const PCT_DP = 4
 
@@ -113,7 +113,7 @@ export async function addOutcomeFunderAllocation(projectId: string, input: AddAl
     actorUserId: ctx.user.id,
     entityType: 'outcome_funder_allocation',
     entityId: inserted[0].id,
-    action: 'outcome_funder_allocation.created',
+    action: AUDIT_ACTIONS.OUTCOME_FUNDER_ALLOCATION_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
@@ -139,7 +139,7 @@ export async function archiveOutcomeFunderAllocation(projectId: string, allocati
     actorUserId: ctx.user.id,
     entityType: 'outcome_funder_allocation',
     entityId: allocationId,
-    action: 'outcome_funder_allocation.archived',
+    action: AUDIT_ACTIONS.OUTCOME_FUNDER_ALLOCATION_ARCHIVED,
     beforeJson: existing as unknown as Record<string, unknown>,
   })
   return { id: allocationId, status: 'archived' as const }

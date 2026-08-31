@@ -1,0 +1,22 @@
+-- FIBIU-28 — governed audit event contract, stage B (FIBC-040/FIBDB-036).
+--
+-- Hand-edited from the generated schema diff (db/schema.ts's audit_logs.projectId
+-- now carries .references(() => projects.id)) to add NOT VALID, matching the
+-- validate-then-add pattern the FIB requires for this item.
+--
+-- `lib/audit/logger.ts` accepts `projectId` today and silently discarded it —
+-- FIBIU-28 fixes that in the same unit, so validating existing rows against
+-- this FK is meaningful going forward. Validating HISTORICAL rows (VALIDATE
+-- CONSTRAINT) is stage-E hardening, deferred to a later unit per FIB §6.2 —
+-- adding it here, ahead of that stage, would be premature stage-E hardening.
+--
+-- drizzle-kit generate also proposed, unrelated to this unit:
+--   ALTER TABLE "stella_interactions" ALTER COLUMN "model_used" DROP DEFAULT;
+-- This is the pre-existing stella_interactions.model_used DEFAULT drift noted
+-- in the FIB (out of scope for FIBIU-28 and FIBIU-01 alike). It has been
+-- removed from this file; db/migrations/meta/0043_snapshot.json was patched
+-- to keep tracking that column's stale default so the drift resurfaces for
+-- reconciliation at the appropriate integration gate instead of being
+-- silently absorbed here.
+
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action NOT VALID;

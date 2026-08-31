@@ -4,7 +4,7 @@
 
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { logAuditAction } from '@/lib/audit/logger';
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { requireOrganizationAccess } from '@/lib/auth/session';
 import {
   sroiCalculationRuns,
@@ -319,10 +319,11 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_run_review',
     entityId: inserted[0].id,
-    action: 'sroi_run_review.created',
+    action: AUDIT_ACTIONS.SROI_RUN_REVIEW_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   });
   return inserted[0];
@@ -362,10 +363,13 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_run_review',
     entityId: reviewId,
-    action: 'sroi_run_review.updated',
+    action: AUDIT_ACTIONS.SROI_RUN_REVIEW_UPDATED,
+    contentModifying: true,
+    beforeJson: review[0] as unknown as Record<string, unknown>,
     afterJson: updated[0] as unknown as Record<string, unknown>,
   });
   return updated[0];
@@ -431,10 +435,14 @@ export async function upsertSroiRunReviewItem(projectId: string, reviewId: strin
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_run_review_item',
     entityId: result[0].id,
-    action: 'sroi_run_review_item.upserted',
+    action: AUDIT_ACTIONS.SROI_RUN_REVIEW_ITEM_UPSERTED,
+    ...(existing.length > 0
+      ? { contentModifying: true, beforeJson: existing[0] as unknown as Record<string, unknown> }
+      : {}),
     afterJson: result[0] as unknown as Record<string, unknown>,
   });
   return result[0];
@@ -521,10 +529,11 @@ export async function createReportDraftFromRun(projectId: string, runId: string,
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_report',
     entityId: report[0].id,
-    action: 'sroi_report.created',
+    action: AUDIT_ACTIONS.SROI_REPORT_CREATED,
     afterJson: report[0] as unknown as Record<string, unknown>,
   });
   return report[0];
@@ -607,6 +616,14 @@ export async function updateReportSection(projectId: string, reportId: string, s
     );
   }
 
+  // FIBC-040 — the prior section state must be retained so the update can be
+  // reconstructed; this SELECT existed nowhere in this function before.
+  const existingSection = await db
+    .select()
+    .from(sroiReportSections)
+    .where(and(eq(sroiReportSections.id, sectionId), eq(sroiReportSections.reportId, reportId)));
+  if (existingSection.length === 0) throw new Error('Report section not found for this report');
+
   const updated = await db
     .update(sroiReportSections)
     .set({
@@ -622,10 +639,13 @@ export async function updateReportSection(projectId: string, reportId: string, s
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_report_section',
     entityId: sectionId,
-    action: 'sroi_report_section.updated',
+    action: AUDIT_ACTIONS.SROI_REPORT_SECTION_UPDATED,
+    contentModifying: true,
+    beforeJson: existingSection[0] as unknown as Record<string, unknown>,
     afterJson: updated[0] as unknown as Record<string, unknown>,
   });
   return updated[0];
@@ -733,10 +753,12 @@ export async function lockReportDraft(
 
   await logAuditAction({
     organizationId: ctx.organization.id,
+    projectId,
     actorUserId: ctx.user.id,
     entityType: 'sroi_report',
     entityId: reportId,
-    action: 'sroi_report.locked',
+    action: AUDIT_ACTIONS.SROI_REPORT_LOCKED,
+    beforeJson: report[0] as unknown as Record<string, unknown>,
     afterJson: locked[0] as unknown as Record<string, unknown>,
   });
   return locked[0];

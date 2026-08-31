@@ -18,6 +18,7 @@ export async function listRecentAuditLogs(limit: number = DEFAULT_LIMIT) {
       action: auditLogs.action,
       entityType: auditLogs.entityType,
       entityId: auditLogs.entityId,
+      projectId: auditLogs.projectId,
       reason: auditLogs.reason,
       createdAt: auditLogs.createdAt,
       organizationName: organizations.name,
