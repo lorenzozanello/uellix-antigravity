@@ -150,6 +150,12 @@ export const AUDIT_ACTIONS = {
   // Corrective annotation — a NEW event referencing a historical audit_logs
   // row without altering it (FIBC-040). See recordAuditCorrection below.
   AUDIT_CORRECTION_RECORDED: 'audit_entry.correction_recorded',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-03 (FIBC-002/FIBC-045) — generic domain-object version lineage.
+  // ---------------------------------------------------------------------
+  INDICATOR_ARCHIVED: 'indicator.archived',
+  STAKEHOLDER_GROUP_ARCHIVED: 'stakeholder_group.archived',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

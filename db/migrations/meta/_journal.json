@@ -316,6 +316,13 @@
       "when": 1788194500000,
       "tag": "0044_fib_audit_hardening_supersession",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788195000000,
+      "tag": "0045_fib_domain_object_version_lineage",
+      "breakpoints": true
     }
   ]
 }

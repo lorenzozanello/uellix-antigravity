@@ -1,5 +1,5 @@
 // app/app/projects/[projectId]/pipeline/indicators.actions.ts
-import { createIndicatorForProject, listIndicatorsForProject } from '@/lib/pipeline/indicators';
+import { archiveIndicatorForProject, createIndicatorForProject, listIndicatorsForProject } from '@/lib/pipeline/indicators';
 import { runWithOrganizationAccess } from '@/lib/auth/session';
 import { z } from 'zod';
 
@@ -26,4 +26,9 @@ export async function addIndicator(projectId: string, input: unknown) {
   'use server';
   const parsed = indicatorSchema.parse(input);
   return runWithOrganizationAccess(() => createIndicatorForProject(projectId, parsed));
+}
+
+export async function archiveIndicator(projectId: string, indicatorId: string) {
+  'use server';
+  return runWithOrganizationAccess(() => archiveIndicatorForProject(projectId, indicatorId));
 }

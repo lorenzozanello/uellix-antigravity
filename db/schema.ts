@@ -131,6 +131,31 @@ export const governedModelRegistry = pgTable('governed_model_registry', {
   unique('governed_model_registry_model_version_unique').on(table.modelId, table.version),
 ])
 
+// FIBIU-03 — generic domain-object version lineage (FIBDB-004/FIBC-002/
+// FIBC-045). Append-only: a row is never updated once written (see the
+// uellix_forbid_mutation trigger reused from 0030_immutability.sql), so
+// history for a versioned object can never be silently rewritten. Ordinal +
+// supersedes_version_id together give a deterministic, walkable lineage per
+// (object_type, object_id) — the generic substrate FIBIU-04 (evidence) and
+// FIBIU-08 (proxies) specialize later; indicators and stakeholder_groups use
+// it directly (see lib/pipeline/domain-object-versions.ts).
+export const domainObjectVersions = pgTable('domain_object_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  objectType: varchar('object_type', { length: 100 }).notNull(),
+  objectId: uuid('object_id').notNull(),
+  ordinal: integer('ordinal').notNull(),
+  payloadJson: jsonb('payload_json').notNull(),
+  contentHash: varchar('content_hash', { length: 64 }).notNull(),
+  supersedesVersionId: uuid('supersedes_version_id'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('domain_object_versions_object_ordinal_unique').on(table.objectType, table.objectId, table.ordinal),
+  index('idx_domain_object_versions_object').on(table.objectType, table.objectId),
+  index('idx_domain_object_versions_organization_id').on(table.organizationId),
+])
+
 export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
@@ -195,9 +220,16 @@ export const stakeholderGroups = pgTable('stakeholder_groups', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   type: varchar('type', { length: 100 }),
+  // FIBIU-03 (FIBC-002/FIBC-045) — lifecycle state stakeholder groups lacked
+  // entirely: archiving excludes a group from future work without touching
+  // any history that already referenced it.
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  archivedBy: uuid('archived_by').references(() => users.id),
+  archivedAt: timestamp('archived_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
+  check('stakeholder_groups_status_check', sql`${table.status} IN ('active', 'archived')`),
   index('idx_stakeholder_groups_project_id').on(table.projectId),
 ])
 
@@ -236,10 +268,17 @@ export const indicators = pgTable('indicators', {
   dataSource: text('data_source'),
   measurementPeriod: varchar('measurement_period', { length: 100 }),
   confidenceLevel: varchar('confidence_level', { length: 50 }),
+  // FIBIU-03 (FIBC-002/FIBC-045) — lifecycle state indicators lacked
+  // entirely: archiving excludes an indicator from future work without
+  // touching any history that already referenced it.
+  status: varchar('status', { length: 20 }).default('active').notNull(),
+  archivedBy: uuid('archived_by').references(() => users.id),
+  archivedAt: timestamp('archived_at'),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
+  check('indicators_status_check', sql`${table.status} IN ('active', 'archived')`),
   index('idx_indicators_project_id').on(table.projectId),
   index('idx_indicators_outcome_id').on(table.outcomeId),
 ])

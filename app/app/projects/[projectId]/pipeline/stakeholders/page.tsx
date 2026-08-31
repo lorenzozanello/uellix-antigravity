@@ -6,11 +6,18 @@ import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { runWithOrganizationAccess } from '@/lib/auth/session';
-import { fetchStakeholders, addStakeholder } from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
+import { hasRole } from '@/lib/auth/permissions';
+import {
+  fetchStakeholders,
+  addStakeholder,
+  archiveStakeholder,
+} from '@/app/app/projects/[projectId]/pipeline/stakeholders.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { z } from 'zod';
 import { EmptyState } from '@/components/states/EmptyState';
 import { Users } from 'lucide-react';
+import { revalidatePath } from 'next/cache';
 
 const stakeholderSchema = z.object({
   name: z.string().min(1),
@@ -39,6 +46,7 @@ interface StakeholderRow {
   name: string;
   type: string | null;
   description: string | null;
+  status: string;
 }
 
 export default async function StakeholdersPage({ params }: { params: Promise<{ projectId: string }> }) {
@@ -50,6 +58,18 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
   // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
   const stellaAdvisorEnabled =
     stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
+  // FIBIU-03 — lifecycle state: archived groups stay visible (history is
+  // never hidden) but are visually distinguished and excluded from the
+  // archive action.
+  const canArchive = hasRole(membership.role, 'analyst');
+
+  async function handleArchiveStakeholder(formData: FormData) {
+    'use server';
+    const stakeholderGroupId = formData.get('stakeholderGroupId') as string;
+    await archiveStakeholder(projectId, stakeholderGroupId);
+    revalidatePath(`/app/projects/${projectId}/pipeline/stakeholders`);
+  }
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
@@ -78,14 +98,31 @@ export default async function StakeholdersPage({ params }: { params: Promise<{ p
           <CardContent>
             <div className="space-y-3">
               {stakeholders.map((s) => (
-                <div key={s.id} className="rounded-lg border border-border bg-card p-3">
+                <div
+                  key={s.id}
+                  className={`rounded-lg border border-border bg-card p-3 ${s.status === 'archived' ? 'opacity-60' : ''}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">{s.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{s.name}</p>
+                        {s.status === 'archived' && <Badge variant="neutral">Archivado</Badge>}
+                      </div>
                       {s.type && (
                         <p className="mt-0.5 text-xs text-muted-foreground">Tipo: {s.type}</p>
                       )}
                     </div>
+                    {canArchive && s.status !== 'archived' && (
+                      <form action={handleArchiveStakeholder}>
+                        <input type="hidden" name="stakeholderGroupId" value={s.id} />
+                        <button
+                          type="submit"
+                          className="shrink-0 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        >
+                          Archivar
+                        </button>
+                      </form>
+                    )}
                   </div>
                   {s.description && (
                     <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>

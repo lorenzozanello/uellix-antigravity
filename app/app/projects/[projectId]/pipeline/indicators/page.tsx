@@ -6,11 +6,18 @@ import { stellaConfig, stellaState } from '@/lib/stella/config';
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel';
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review';
 import { runWithOrganizationAccess } from '@/lib/auth/session';
-import { fetchIndicators, addIndicator } from '@/app/app/projects/[projectId]/pipeline/indicators.actions';
+import { hasRole } from '@/lib/auth/permissions';
+import {
+  fetchIndicators,
+  addIndicator,
+  archiveIndicator,
+} from '@/app/app/projects/[projectId]/pipeline/indicators.actions';
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/states/EmptyState';
+import { Badge } from '@/components/ui/badge';
 import { Activity } from 'lucide-react';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const indicatorSchema = z.object({
@@ -54,6 +61,7 @@ interface IndicatorRow {
   targetValue: string | null;
   actualValue: string | null;
   description: string | null;
+  status: string;
 }
 
 interface OutcomeRow {
@@ -78,6 +86,17 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
   // Mirrors the getStellaContextualAdvisor feature-flag gate (app/actions/stella/advisor.ts).
   const stellaAdvisorEnabled =
     stellaConfig.isEnabled && stellaConfig.isAdvisorEnabled && stellaState.canUseStella;
+  // FIBIU-03 — lifecycle state: archived indicators stay visible (history is
+  // never hidden) but are visually distinguished and excluded from the
+  // archive action.
+  const canArchive = hasRole(membership.role, 'analyst');
+
+  async function handleArchiveIndicator(formData: FormData) {
+    'use server';
+    const indicatorId = formData.get('indicatorId') as string;
+    await archiveIndicator(projectId, indicatorId);
+    revalidatePath(`/app/projects/${projectId}/pipeline/indicators`);
+  }
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -108,14 +127,31 @@ export default async function IndicatorsPage({ params }: { params: Promise<{ pro
           <CardContent>
             <div className="space-y-3">
               {indicators.map((i) => (
-                <div key={i.id} className="rounded-lg border border-border bg-card p-3">
+                <div
+                  key={i.id}
+                  className={`rounded-lg border border-border bg-card p-3 ${i.status === 'archived' ? 'opacity-60' : ''}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">{i.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{i.name}</p>
+                        {i.status === 'archived' && <Badge variant="neutral">Archivado</Badge>}
+                      </div>
                       {i.unit && (
                         <p className="mt-0.5 text-xs text-muted-foreground">Unidad: {i.unit}</p>
                       )}
                     </div>
+                    {canArchive && i.status !== 'archived' && (
+                      <form action={handleArchiveIndicator}>
+                        <input type="hidden" name="indicatorId" value={i.id} />
+                        <button
+                          type="submit"
+                          className="shrink-0 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        >
+                          Archivar
+                        </button>
+                      </form>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
                     <span>
