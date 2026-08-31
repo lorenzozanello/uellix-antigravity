@@ -6,6 +6,7 @@ import {
   getCalculationRunDetail,
   listSroiRunReviews,
 } from '@/lib/pipeline/sroi-results';
+import { detectRunInputDrift } from '@/lib/pipeline/sroi-calculation';
 import { createSroiRunReviewAction } from '../createSroiRunReview.action';
 import { revalidatePath } from 'next/cache';
 import { Badge } from '@/components/ui/badge';
@@ -68,11 +69,16 @@ export default async function RunDetailPage({
       // which remains authoritative regardless of what the UI renders.
       canApproveThisRun: isInReviewSet(ctx.membership.role) && detail.run.calculatedBy !== ctx.user.id,
       reviews: await listSroiRunReviews(projectId, runId),
+      // FIBIU-03 (FIBC-002/FIBC-045) / W1-05-RM1 R-6 — computed from the
+      // run's own frozen fingerprint (FIBC-023: never persisted, never
+      // mutates the immutable run); a legacy run with no fingerprint reads
+      // as no drift, never fabricated either way.
+      inputDrift: await detectRunInputDrift(detail.run),
     };
   });
 
   if (!loaded) notFound();
-  const { detail, canReview, canApproveThisRun, reviews } = loaded;
+  const { detail, canReview, canApproveThisRun, reviews, inputDrift } = loaded;
 
   const { run, lineItems, snapshotJson } = detail;
 
@@ -209,6 +215,23 @@ export default async function RunDetailPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* Input drift (FIBIU-03 / FIBC-045) — never a mutation, never an error state. */}
+      {inputDrift.hasDrift && (
+        <div className="rounded-md border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-100">
+          <p className="font-medium">Esta corrida dejó de ser elegible; genere una nueva.</p>
+          <p className="mt-1 text-xs text-yellow-800 dark:text-yellow-200">
+            Los siguientes datos usados en este cálculo cambiaron desde entonces:
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-xs">
+            {inputDrift.driftedObjects.map((o) => (
+              <li key={`${o.objectType}:${o.objectId}`}>
+                {o.objectType} ({o.objectId})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Run version identity triple (FIBIU-02 / FIBC-001) */}
       <Card>

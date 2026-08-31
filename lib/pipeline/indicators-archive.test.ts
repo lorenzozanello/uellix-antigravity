@@ -32,9 +32,14 @@ vi.mock('@/lib/audit/logger', async () => {
   return { ...actual, logAuditAction: vi.fn() }
 })
 
+vi.mock('@/lib/pipeline/domain-object-versions', () => ({
+  createDomainObjectVersion: vi.fn(),
+}))
+
 import { archiveIndicator } from './indicators'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { logAuditAction } from '@/lib/audit/logger'
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions'
 
 const CTX = {
   user: { id: 'user-1' },
@@ -84,6 +89,19 @@ describe('archiveIndicator', () => {
     await archiveIndicator('proj-1', 'ind-1')
     expect(logAuditAction).toHaveBeenCalledWith(
       expect.objectContaining({ entityType: 'indicator', action: 'indicator.archived' })
+    )
+  })
+
+  it('W1-05-RM1 R-6: appends a governed domain-object version alongside the archive', async () => {
+    await archiveIndicator('proj-1', 'ind-1')
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'org-1',
+        objectType: 'indicator',
+        objectId: 'ind-1',
+        actorId: 'user-1',
+        payload: expect.objectContaining({ status: 'archived' }),
+      })
     )
   })
 

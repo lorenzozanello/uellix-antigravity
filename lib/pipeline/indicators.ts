@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions';
 import { z } from 'zod';
 
 const indicatorInputSchema = z.object({
@@ -100,6 +101,14 @@ export async function createIndicatorForProject(
     action: AUDIT_ACTIONS.INDICATOR_CREATED,
     afterJson: created,
   });
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'indicator',
+    objectId: created.id,
+    payload: created as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
+  });
   return created;
 }
 
@@ -154,6 +163,19 @@ export async function archiveIndicatorForProject(projectId: string, indicatorId:
     beforeJson: { status: existing.status },
     afterJson: { status: after?.status ?? 'archived' },
   });
+
+  // HPO-DEC-2 (W1-05-RM2, FORM_ALPHA): archive preserves BOTH the
+  // operational status/archivedBy/archivedAt projection above AND the
+  // governed append-only lineage — one does not replace the other.
+  if (after) {
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'indicator',
+      objectId: indicatorId,
+      payload: after as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    });
+  }
 
   return after;
 }

@@ -32,6 +32,10 @@ import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
 import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
 import { resolveRunVersionIdentity } from '@/lib/pipeline/run-version-identity'
+import {
+  createDomainObjectVersion,
+  getLatestDomainObjectVersion,
+} from '@/lib/pipeline/domain-object-versions'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -168,6 +172,15 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
       beforeJson: existing[0] as unknown as Record<string, unknown>,
       afterJson: updated[0] as unknown as Record<string, unknown>,
     })
+    // FIBIU-03 (FIBC-002/FIBC-045) — a new version, never a rewrite of the
+    // one an already-calculated run's input fingerprint may point to.
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'project_investment',
+      objectId: existing[0].id,
+      payload: updated[0] as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    })
     return updated[0]
   }
 
@@ -180,6 +193,14 @@ export async function upsertProjectInvestment(projectId: string, input: ProjectI
     entityId: inserted[0].id,
     action: AUDIT_ACTIONS.PROJECT_INVESTMENT_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'project_investment',
+    objectId: inserted[0].id,
+    payload: inserted[0] as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
   })
   return inserted[0]
 }
@@ -241,6 +262,15 @@ export async function upsertSroiAssignmentInput(projectId: string, assignmentId:
       beforeJson: existing[0] as unknown as Record<string, unknown>,
       afterJson: updated[0] as unknown as Record<string, unknown>,
     })
+    // FIBIU-03 (FIBC-002/FIBC-045) — a new version, never a rewrite of the
+    // one an already-calculated run's input fingerprint may point to.
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'sroi_assignment_input',
+      objectId: existing[0].id,
+      payload: updated[0] as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    })
     return updated[0]
   }
 
@@ -253,6 +283,14 @@ export async function upsertSroiAssignmentInput(projectId: string, assignmentId:
     entityId: inserted[0].id,
     action: AUDIT_ACTIONS.SROI_ASSIGNMENT_INPUT_CREATED,
     afterJson: inserted[0] as unknown as Record<string, unknown>,
+  })
+  // FIBIU-03 (FIBC-002/FIBC-045) — first version of this object's lineage.
+  await createDomainObjectVersion({
+    organizationId: ctx.organization.id,
+    objectType: 'sroi_assignment_input',
+    objectId: inserted[0].id,
+    payload: inserted[0] as unknown as Record<string, unknown>,
+    actorId: ctx.user.id,
   })
   return inserted[0]
 }
@@ -959,6 +997,84 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
   return { canCalculate: true as const, readiness, scenarios, deltaPp }
 }
 
+// ─── Input version fingerprint (FIBIU-03 / FIBC-002 / FIBC-045) ────────────
+
+/**
+ * One entry of a run's frozen input-version fingerprint (FIBIU-03). Recorded
+ * once, at calculation time, into snapshotJson.inputVersions — never
+ * persisted as a separate column or table (FIBC-023: eligibility-relevant
+ * facts are computed, not persisted as new state).
+ */
+export interface RunInputVersionFingerprintEntry {
+  objectType: string
+  objectId: string
+  /** null for a legacy object that has never been versioned through FIBIU-03 — never a synthesized v1. */
+  versionId: string | null
+  ordinal: number | null
+  contentHash: string | null
+}
+
+/**
+ * Resolves the CURRENT domain_object_versions row for each distinct
+ * (objectType, objectId) pair that actually participates in a run's inputs,
+ * sorted deterministically by (objectType, objectId) so the fingerprint is
+ * stable regardless of call-site ordering.
+ */
+async function buildRunInputVersionFingerprint(
+  objects: { objectType: string; objectId: string }[]
+): Promise<RunInputVersionFingerprintEntry[]> {
+  const uniqueByKey = new Map<string, { objectType: string; objectId: string }>()
+  for (const o of objects) uniqueByKey.set(`${o.objectType}:${o.objectId}`, o)
+  const sorted = Array.from(uniqueByKey.values()).sort((a, b) =>
+    a.objectType === b.objectType ? a.objectId.localeCompare(b.objectId) : a.objectType.localeCompare(b.objectType)
+  )
+  return Promise.all(
+    sorted.map(async (o) => {
+      const version = await getLatestDomainObjectVersion(o.objectType, o.objectId)
+      return {
+        objectType: o.objectType,
+        objectId: o.objectId,
+        versionId: version?.id ?? null,
+        ordinal: version?.ordinal ?? null,
+        contentHash: version?.contentHash ?? null,
+      }
+    })
+  )
+}
+
+/**
+ * FIBC-023: "computed from live governed state without mutating the
+ * immutable run" — this reads the run's OWN frozen fingerprint (never
+ * recomputes it) and compares each entry against the object's CURRENT
+ * governed version. An object created after the run was calculated was
+ * never in that fingerprint, so it can never itself cause drift — only a
+ * NEW version of an object the run actually depended on can. No eligibility
+ * reason set is assigned here (FIBIU-19, Wave 3, owns INPUTS_CHANGED_SINCE_RUN);
+ * this is the detection primitive that reason will consume.
+ */
+export async function detectRunInputDrift(run: {
+  snapshotJson: unknown
+}): Promise<{ hasDrift: boolean; driftedObjects: { objectType: string; objectId: string }[] }> {
+  const snapshot = run.snapshotJson as { inputVersions?: RunInputVersionFingerprintEntry[] } | null | undefined
+  const inputVersions = snapshot?.inputVersions
+  if (!inputVersions || inputVersions.length === 0) {
+    // A run predating this fingerprint (or one with no versioned inputs at
+    // all) has nothing recorded to compare against — never fabricated as
+    // drift, and never as "clean" beyond what is actually knowable.
+    return { hasDrift: false, driftedObjects: [] }
+  }
+
+  const driftedObjects: { objectType: string; objectId: string }[] = []
+  for (const entry of inputVersions) {
+    const current = await getLatestDomainObjectVersion(entry.objectType, entry.objectId)
+    const currentVersionId = current?.id ?? null
+    if (currentVersionId !== entry.versionId) {
+      driftedObjects.push({ objectType: entry.objectType, objectId: entry.objectId })
+    }
+  }
+  return { hasDrift: driftedObjects.length > 0, driftedObjects }
+}
+
 // ─── Persist calculation run ──────────────────────────────────────────────────
 
 export async function calculateAndPersistSroiRun(projectId: string) {
@@ -977,6 +1093,18 @@ export async function calculateAndPersistSroiRun(projectId: string) {
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
   const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
+
+  // FIBIU-03 (FIBC-002/FIBC-045) — the frozen input-version fingerprint,
+  // resolved before any DB write, same as the FIBIU-02 identity triple above.
+  // Only the objects that actually fed this calculation: investments,
+  // outcomes and assignment inputs reached through the loaded assignments.
+  // Indicators and stakeholder_groups are versioned by FIBIU-03 but are not
+  // themselves calculation inputs, so they carry no fingerprint entry here.
+  const inputVersions = await buildRunInputVersionFingerprint([
+    ...investments.map((inv) => ({ objectType: 'project_investment', objectId: inv.id })),
+    ...assignmentData.map((d) => ({ objectType: 'outcome', objectId: d.outcome.id })),
+    ...assignmentData.map((d) => ({ objectType: 'sroi_assignment_input', objectId: d.input.id })),
+  ])
 
   const calculatedAt = new Date()
 
@@ -1002,6 +1130,9 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       methodologyVersion: runVersionIdentity.methodologyVersion,
       calculationEngineVersion: runVersionIdentity.calculationEngineVersion,
       buildIdentity: runVersionIdentity.buildIdentity,
+      // FIBIU-03 (FIBC-002/FIBC-045) — the frozen input-version fingerprint.
+      // Read back by detectRunInputDrift; never mutated after this write.
+      inputVersions,
       currency: result.currency,
       totalInvestment: result.totalInvestmentExact,
       grossSocialValue: result.grossSocialValueExact,

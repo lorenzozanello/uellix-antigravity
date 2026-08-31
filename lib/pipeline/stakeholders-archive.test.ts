@@ -32,9 +32,14 @@ vi.mock('@/lib/audit/logger', async () => {
   return { ...actual, logAuditAction: vi.fn() }
 })
 
+vi.mock('@/lib/pipeline/domain-object-versions', () => ({
+  createDomainObjectVersion: vi.fn(),
+}))
+
 import { archiveStakeholderGroup } from './stakeholders'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import { logAuditAction } from '@/lib/audit/logger'
+import { createDomainObjectVersion } from '@/lib/pipeline/domain-object-versions'
 
 const CTX = {
   user: { id: 'user-1' },
@@ -75,6 +80,19 @@ describe('archiveStakeholderGroup', () => {
     await archiveStakeholderGroup('proj-1', 'sg-1')
     expect(logAuditAction).toHaveBeenCalledWith(
       expect.objectContaining({ entityType: 'stakeholder_group', action: 'stakeholder_group.archived' })
+    )
+  })
+
+  it('W1-05-RM1 R-6: appends a governed domain-object version alongside the archive', async () => {
+    await archiveStakeholderGroup('proj-1', 'sg-1')
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'org-1',
+        objectType: 'stakeholder_group',
+        objectId: 'sg-1',
+        actorId: 'user-1',
+        payload: expect.objectContaining({ status: 'archived' }),
+      })
     )
   })
 

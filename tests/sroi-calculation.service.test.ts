@@ -39,6 +39,7 @@ const mockDb = {
   evidenceItems: [] as any[],
   funders: [] as any[],
   outcomeFunderAllocations: [] as any[],
+  domainObjectVersions: [] as any[],
   // FIBIU-02 — calculateAndPersistSroiRun resolves the run version identity
   // triple from this registry before persisting; seeded with the same two
   // rows the real deploy-time seed (0040_governed_model_registry.sql)
@@ -57,15 +58,52 @@ function getTableData(table: any): any[] {
   return (mockDb as any)[camelName] ?? (mockDb as any)[pgName] ?? [];
 }
 
+// getLatestDomainObjectVersion (used by both the fingerprint builder and
+// detectRunInputDrift) depends on a REAL where()-filter and a real
+// most-recent-ordinal ordering — every other table's mock below is a
+// permissive passthrough (`where`/`orderBy`/`limit` are no-ops), which would
+// make every domain_object_versions lookup collapse to "whatever was pushed
+// first", indistinguishable across different (objectType, objectId) pairs.
+// This extracts the two eq() values from FIBIU-03's exact query shape
+// (and(eq(objectType, x), eq(objectId, y))) and filters/sorts for real.
+function extractEqValues(val: any): string[] {
+  if (!val) return [];
+  if (typeof val === 'string') return [val];
+  if (Array.isArray(val)) return val.flatMap(extractEqValues);
+  const res: string[] = [];
+  if (val.value !== undefined) {
+    if (typeof val.value === 'string') res.push(val.value);
+    else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues));
+    else res.push(...extractEqValues(val.value));
+  }
+  if (val.right !== undefined) res.push(...extractEqValues(val.right));
+  if (val.left !== undefined) res.push(...extractEqValues(val.left));
+  if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues));
+  if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues));
+  return res;
+}
+
 vi.mock('@/db/client', () => {
   const dbMock: any = {
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockImplementation((table) => {
-        const data = getTableData(table);
+        const pgName = (table as any)?._?.name || (table as any)[Symbol.for('drizzle:Name')];
+        let data = getTableData(table);
         const queryResult = {
-          where: vi.fn().mockImplementation(() => queryResult),
+          where: vi.fn().mockImplementation((cond: any) => {
+            if (pgName === 'domain_object_versions' && cond) {
+              const eqValues = extractEqValues(cond);
+              data = data.filter((row: any) => eqValues.includes(row.objectType) && eqValues.includes(row.objectId));
+            }
+            return queryResult;
+          }),
           limit: vi.fn().mockImplementation(() => queryResult),
-          orderBy: vi.fn().mockImplementation(() => queryResult),
+          orderBy: vi.fn().mockImplementation(() => {
+            if (pgName === 'domain_object_versions') {
+              data = [...data].sort((a: any, b: any) => b.ordinal - a.ordinal);
+            }
+            return queryResult;
+          }),
           then: (cb: any) => Promise.resolve(cb(data)),
         };
         return queryResult;
@@ -116,6 +154,9 @@ import {
   calculateSroiScenarios,
   runDeterministicCalc,
   listSroiCalculationRuns,
+  detectRunInputDrift,
+  upsertProjectInvestment,
+  upsertSroiAssignmentInput,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -143,6 +184,7 @@ beforeEach(() => {
     evidenceItems: [],
     funders: [],
     outcomeFunderAllocations: [],
+    domainObjectVersions: [],
     governedModelRegistry: [
       { modelId: 'PC01B_HUMAN_METHODOLOGY_AUTHORITY', version: '1.0.0', effectiveFrom: new Date('2026-01-01') },
       { modelId: 'SROI_CALCULATION_ENGINE', version: '1.0.0', effectiveFrom: new Date('2026-01-01') },
@@ -655,6 +697,146 @@ describe('FIBIU-02 — run version identity triple', () => {
     const mod = await import('@/lib/pipeline/sroi-calculation');
     const updateLike = Object.keys(mod).filter((name) => /^update.*run/i.test(name));
     expect(updateLike).toEqual([]);
+  });
+});
+
+describe('W1-05-RM1 R-6 (FIBIU-03) — investment/assignment-input lineage wiring', () => {
+  it('upsertProjectInvestment versions the first (create) row', async () => {
+    seedHappyData();
+    mockDb.projectInvestments = []; // no existing investment — force the create branch
+    await upsertProjectInvestment(PROJECT_ID, {
+      amount: '500', currency: 'USD', funderId: '55555555-5555-4555-8555-555555555555',
+    } as any);
+    const created = mockDb.projectInvestments[0];
+    expect(mockDb.domainObjectVersions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ objectType: 'project_investment', objectId: created.id, ordinal: 1 }),
+      ])
+    );
+  });
+
+  it('upsertProjectInvestment versions the row again on update — appends, never rewrites', async () => {
+    const { investment } = seedHappyData();
+    await upsertProjectInvestment(PROJECT_ID, {
+      amount: '750', currency: 'USD', funderId: '55555555-5555-4555-8555-555555555555',
+    } as any);
+    const versionsForInvestment = mockDb.domainObjectVersions.filter(
+      (v: any) => v.objectType === 'project_investment' && v.objectId === investment.id
+    );
+    expect(versionsForInvestment).toHaveLength(1);
+    expect(versionsForInvestment[0].ordinal).toBe(1);
+  });
+
+  it('upsertSroiAssignmentInput versions the first (create) row', async () => {
+    seedHappyData();
+    mockDb.sroiAssignmentInputs = []; // force the create branch
+    await upsertSroiAssignmentInput(PROJECT_ID, ASSIGNMENT_ID, { quantity: '20', unit: 'units' } as any);
+    const created = mockDb.sroiAssignmentInputs[0];
+    expect(mockDb.domainObjectVersions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ objectType: 'sroi_assignment_input', objectId: created.id, ordinal: 1 }),
+      ])
+    );
+  });
+
+  it('upsertSroiAssignmentInput versions the row again on update', async () => {
+    const { input } = seedHappyData();
+    await upsertSroiAssignmentInput(PROJECT_ID, ASSIGNMENT_ID, { quantity: '99', unit: 'units' } as any);
+    const versionsForInput = mockDb.domainObjectVersions.filter(
+      (v: any) => v.objectType === 'sroi_assignment_input' && v.objectId === input.id
+    );
+    expect(versionsForInput).toHaveLength(1);
+  });
+});
+
+describe('W1-05-RM1 R-6 (FIBIU-03) — run input version fingerprint and drift', () => {
+  it('a new run freezes the CURRENT version of every participating investment/outcome/assignment-input', async () => {
+    const { investment, assignment, input } = seedHappyData();
+    mockDb.domainObjectVersions.push(
+      { id: 'v-inv-1', objectType: 'project_investment', objectId: investment.id, ordinal: 1, contentHash: 'h-inv-1' },
+      { id: 'v-out-1', objectType: 'outcome', objectId: assignment.outcomeId, ordinal: 1, contentHash: 'h-out-1' },
+      { id: 'v-input-1', objectType: 'sroi_assignment_input', objectId: input.id, ordinal: 1, contentHash: 'h-input-1' },
+    );
+
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+    const inputVersions = (run.snapshotJson as any).inputVersions;
+
+    expect(inputVersions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ objectType: 'project_investment', objectId: investment.id, versionId: 'v-inv-1', ordinal: 1 }),
+        expect.objectContaining({ objectType: 'outcome', objectId: assignment.outcomeId, versionId: 'v-out-1', ordinal: 1 }),
+        expect.objectContaining({ objectType: 'sroi_assignment_input', objectId: input.id, versionId: 'v-input-1', ordinal: 1 }),
+      ])
+    );
+  });
+
+  it('a legacy participating object with no version ever recorded fingerprints as versionId: null — never a fabricated v1', async () => {
+    seedHappyData();
+    // mockDb.domainObjectVersions stays empty — none of the three
+    // participating objects has ever been versioned through FIBIU-03.
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+    const inputVersions = (run.snapshotJson as any).inputVersions;
+    expect(inputVersions.length).toBeGreaterThan(0);
+    expect(inputVersions.every((v: any) => v.versionId === null)).toBe(true);
+  });
+
+  it('detects drift when a participating object gains a newer version after the run', async () => {
+    const { investment, assignment, input } = seedHappyData();
+    mockDb.domainObjectVersions.push(
+      { id: 'v-inv-1', objectType: 'project_investment', objectId: investment.id, ordinal: 1, contentHash: 'h1' },
+      { id: 'v-out-1', objectType: 'outcome', objectId: assignment.outcomeId, ordinal: 1, contentHash: 'h1' },
+      { id: 'v-input-1', objectType: 'sroi_assignment_input', objectId: input.id, ordinal: 1, contentHash: 'h1' },
+    );
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+
+    // The investment gets a new version AFTER the run was calculated.
+    mockDb.domainObjectVersions.push(
+      { id: 'v-inv-2', objectType: 'project_investment', objectId: investment.id, ordinal: 2, contentHash: 'h2' }
+    );
+
+    const drift = await detectRunInputDrift(run);
+    expect(drift.hasDrift).toBe(true);
+    expect(drift.driftedObjects).toEqual([{ objectType: 'project_investment', objectId: investment.id }]);
+  });
+
+  it('reports no drift when nothing participating in the run has changed', async () => {
+    const { investment, assignment, input } = seedHappyData();
+    mockDb.domainObjectVersions.push(
+      { id: 'v-inv-1', objectType: 'project_investment', objectId: investment.id, ordinal: 1, contentHash: 'h1' },
+      { id: 'v-out-1', objectType: 'outcome', objectId: assignment.outcomeId, ordinal: 1, contentHash: 'h1' },
+      { id: 'v-input-1', objectType: 'sroi_assignment_input', objectId: input.id, ordinal: 1, contentHash: 'h1' },
+    );
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+
+    const drift = await detectRunInputDrift(run);
+    expect(drift.hasDrift).toBe(false);
+    expect(drift.driftedObjects).toEqual([]);
+  });
+
+  it('a BRAND NEW object created after the run never causes drift by itself — it was never in the run\'s fingerprint', async () => {
+    const { investment, assignment, input } = seedHappyData();
+    mockDb.domainObjectVersions.push(
+      { id: 'v-inv-1', objectType: 'project_investment', objectId: investment.id, ordinal: 1, contentHash: 'h1' },
+      { id: 'v-out-1', objectType: 'outcome', objectId: assignment.outcomeId, ordinal: 1, contentHash: 'h1' },
+      { id: 'v-input-1', objectType: 'sroi_assignment_input', objectId: input.id, ordinal: 1, contentHash: 'h1' },
+    );
+    const { run } = await calculateAndPersistSroiRun(PROJECT_ID);
+
+    // A completely unrelated object versioned after the run — never part of
+    // this run's fingerprint, so it must never register as drift.
+    mockDb.domainObjectVersions.push(
+      { id: 'v-new-1', objectType: 'outcome', objectId: 'out-never-part-of-this-run', ordinal: 1, contentHash: 'hx' }
+    );
+
+    const drift = await detectRunInputDrift(run);
+    expect(drift.hasDrift).toBe(false);
+  });
+
+  it('a run predating this fingerprint (no inputVersions in its snapshot) reads as no drift — never fabricated', async () => {
+    const legacyRun = { snapshotJson: { version: 1 } }; // no inputVersions key at all
+    const drift = await detectRunInputDrift(legacyRun as any);
+    expect(drift.hasDrift).toBe(false);
+    expect(drift.driftedObjects).toEqual([]);
   });
 });
 
