@@ -100,7 +100,8 @@
     "authority:repin": "tsx scripts/authority-repin.mts",
     "dry-run:runtime-helper": "bash scripts/runtime-helper-contract-dry-run.sh",
     "dry-run:runtime-table-acl": "bash scripts/runtime-table-acl-dry-run.sh",
-  "dry-run:audit-capability-identity": "bash scripts/audit-capability-identity-dry-run.sh"
+  "dry-run:audit-capability-identity": "bash scripts/audit-capability-identity-dry-run.sh",
+    "authority:seal:verify": "tsx scripts/authority-seal-verify.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
