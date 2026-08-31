@@ -115,6 +115,19 @@ export const portfolios = pgTable('portfolios', {
   index('idx_portfolios_organization_id').on(table.organizationId),
 ])
 
+// FIBIU-01 — governed model registry (FIBDB-002 / FIBC-003). One immutable row
+// per governed model version; a semantic change is a new row, never an update.
+// Seeded at deploy (see db/migrations for the seed INSERT), never backfilled.
+export const governedModelRegistry = pgTable('governed_model_registry', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  modelId: varchar('model_id', { length: 100 }).notNull(),
+  version: varchar('version', { length: 20 }).notNull(),
+  effectiveFrom: timestamp('effective_from').defaultNow().notNull(),
+  definitionHash: varchar('definition_hash', { length: 64 }).notNull(),
+}, (table) => [
+  unique('governed_model_registry_model_version_unique').on(table.modelId, table.version),
+])
+
 export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
@@ -132,6 +145,10 @@ export const projects = pgTable('projects', {
   // apply to prod any time; pre-1e code simply ignores it.
   discountRatePct: numeric('discount_rate_pct', { precision: 5, scale: 2 }),
   status: varchar('status', { length: 50 }).default('draft').notNull(),
+  // PC-01B governance regime boundary (FIBDB-003/FIBC-004). Stamped at INSERT
+  // by the authoritative creation path, never updated. Nullable at stage A —
+  // NOT NULL is stage-E hardening, owned by a later unit.
+  governanceRegime: varchar('governance_regime', { length: 20 }),
   // Soft delete fields: tracks deletion requests and deletions with full audit trail
   deletionRequestedAt: timestamp('deletion_requested_at'),
   deletionRequestedBy: uuid('deletion_requested_by').references(() => users.id),
@@ -144,6 +161,7 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   check('status_check', sql`${table.status} IN ('draft', 'active', 'paused', 'completed', 'archived')`),
+  check('projects_governance_regime_check', sql`${table.governanceRegime} IN ('pre_pc01b', 'pc01b')`),
   check('projects_discount_rate_check', sql`${table.discountRatePct} IS NULL OR (${table.discountRatePct} >= 0 AND ${table.discountRatePct} <= 100)`),
   check('deletion_request_consistency_check', sql`(${table.deletionRequestedAt} IS NULL AND ${table.deletionRequestedBy} IS NULL AND ${table.deletionReason} IS NULL) OR (${table.deletionRequestedAt} IS NOT NULL AND ${table.deletionRequestedBy} IS NOT NULL AND ${table.deletionReason} IS NOT NULL)`),
   check('deletion_consistency_check', sql`(${table.deletedAt} IS NULL AND ${table.deletedBy} IS NULL AND ${table.deleteReason} IS NULL) OR (${table.deletedAt} IS NOT NULL AND ${table.deletedBy} IS NOT NULL AND ${table.deleteReason} IS NOT NULL)`),

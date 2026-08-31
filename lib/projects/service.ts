@@ -13,6 +13,7 @@ import {
 import { eq, and, isNotNull, isNull } from 'drizzle-orm';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { logAuditAction } from '@/lib/audit/logger';
+import { currentGovernanceRegime } from '@/lib/pipeline/governance-regime';
 import { z } from 'zod';
 import type { Role } from '@/lib/auth/roles';
 
@@ -97,6 +98,7 @@ export async function createProjectForCurrentOrganization(input: ProjectInput) {
       targetPopulationDescription: data.targetPopulationDescription ?? null,
       status: data.status,
       createdBy: ctx.user.id,
+      governanceRegime: currentGovernanceRegime(),
     })
     .returning();
 

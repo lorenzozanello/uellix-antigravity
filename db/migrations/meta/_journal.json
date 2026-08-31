@@ -281,6 +281,20 @@
       "when": 1784676746081,
       "tag": "0039_grant_rls_helper_execution",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1788191517267,
+      "tag": "0040_governed_model_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1788193000000,
+      "tag": "0041_pc01b_regime_boundary_backfill",
+      "breakpoints": true
     }
   ]
 }
