@@ -469,7 +469,10 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       />
 
       {/* Investment — Multi-row form (Task 11) */}
-      <Card>
+      {/* RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix: canonical scroll target
+          for the missing_investment / invalid_investment_amount /
+          investments_missing_usd readiness blockers (#investment). */}
+      <Card id="investment">
         <CardHeader>
           <CardTitle>Inversión del proyecto</CardTitle>
           <CardDescription>
@@ -549,7 +552,9 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
       </Card>
 
       {/* Fase 1c — Funder attribution */}
-      <Card>
+      {/* RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix: canonical scroll target
+          for the over_allocated_outcomes readiness blocker (#funder-attribution). */}
+      <Card id="funder-attribution">
         <CardHeader>
           <CardTitle>Atribución por financiador</CardTitle>
           <CardDescription>
@@ -654,9 +659,16 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
           />
         ) : (
           <div className="space-y-4">
-            {assignmentsData.map(({ assignment, outcome, proxy }) => {
+            {assignmentsData.map(({ assignment, outcome, proxy }, index) => {
               const currentInput  = inputMap.get(assignment.id)
               const currentFilter = filterSetMap.get(assignment.id)
+              // RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix: quantities and
+              // filter sets repeat per assignment with no single wrapping
+              // section for "all inputs" vs "all filters" — the canonical
+              // scroll targets (#sroi-inputs, #sroi-filters) anchor to the
+              // first assignment card, which is visible together with every
+              // other card in this list.
+              const isFirstAssignment = index === 0
 
               return (
                 <Card key={assignment.id}>
@@ -671,7 +683,11 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                   <CardContent>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Quantities & Inputs */}
-                      <form action={handleUpsertAssignmentInput} className="space-y-3">
+                      <form
+                        id={isFirstAssignment ? 'sroi-inputs' : undefined}
+                        action={handleUpsertAssignmentInput}
+                        className="space-y-3"
+                      >
                         <p className="text-sm font-semibold text-foreground">Cantidades e insumos</p>
                         <input type="hidden" name="projectId" value={projectId} />
                         <input type="hidden" name="assignmentId" value={assignment.id} />
@@ -758,7 +774,11 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                       </form>
 
                       {/* SROI Filters */}
-                      <form action={handleUpsertFilterSet} className="space-y-3">
+                      <form
+                        id={isFirstAssignment ? 'sroi-filters' : undefined}
+                        action={handleUpsertFilterSet}
+                        className="space-y-3"
+                      >
                         <p className="text-sm font-semibold text-foreground">Filtros de impacto SROI</p>
                         <p className="text-xs text-muted-foreground">
                           Ajustes porcentuales que reflejan supuestos metodológicos sobre atribución de impacto.

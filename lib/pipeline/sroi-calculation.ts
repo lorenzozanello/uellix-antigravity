@@ -447,6 +447,194 @@ export interface ReadinessIssue {
   actionLabel?: string
 }
 
+/**
+ * Pure input for `buildReadinessIssues`, factored out of
+ * `getSroiCalculationReadiness` so the fail-closed blocker -> remediation-CTA
+ * contract (RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix) can be unit tested
+ * without a database. Every field here is already computed by
+ * `getSroiCalculationReadiness` before the issues array is built — this
+ * extraction changes nothing about WHAT is computed, only where the
+ * CTA-attachment logic lives.
+ */
+export interface ReadinessIssueInput {
+  projectId: string
+  hasInvestment: boolean
+  zeroOrInvalidInvestment: boolean
+  invalidInvestmentIds: string[]
+  investmentsMissingUsd: string[]
+  activeAssignmentsCount: number
+  missingInputs: string[]
+  missingFilterSets: string[]
+  unapprovedProxies: string[]
+  outcomesWithoutEvidence: string[]
+  invalidQuantities: string[]
+  invalidFilters: string[]
+  proxiesMissingUsd: string[]
+  overAllocatedOutcomes: string[]
+}
+
+/**
+ * Builds the fail-closed readiness issue list, each with the canonical
+ * remediation CTA frozen in RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json ::
+ * sroi_remediation_matrix. Project-scoped destinations use the REAL
+ * `/app/projects/${projectId}/pipeline/*` routes (never a hardcoded
+ * projectId, never an invented top-level `/app/proxies`); same-page
+ * destinations use the stable DOM anchors added to
+ * app/app/projects/[projectId]/pipeline/calculation/page.tsx (#investment,
+ * #sroi-inputs, #sroi-filters, #funder-attribution).
+ */
+export function buildReadinessIssues(input: ReadinessIssueInput): ReadinessIssue[] {
+  const {
+    projectId,
+    hasInvestment,
+    zeroOrInvalidInvestment,
+    invalidInvestmentIds,
+    investmentsMissingUsd,
+    missingInputs,
+    missingFilterSets,
+    unapprovedProxies,
+    outcomesWithoutEvidence,
+    invalidQuantities,
+    invalidFilters,
+    proxiesMissingUsd,
+    overAllocatedOutcomes,
+  } = input
+
+  const issues: ReadinessIssue[] = []
+
+  if (!hasInvestment) {
+    issues.push({
+      type: 'error',
+      messageKey: 'missing_investment',
+      message: 'El proyecto requiere al menos una inversión. Agrega un aporte en la sección "Inversión del proyecto".',
+      actionPath: `#investment`,
+      actionLabel: 'Ir a inversiones',
+    })
+  }
+
+  if (zeroOrInvalidInvestment && hasInvestment) {
+    issues.push({
+      type: 'error',
+      messageKey: 'invalid_investment_amount',
+      message: `El monto de la inversión debe ser mayor a 0. Revisa y actualiza los aportes.`,
+      itemIds: invalidInvestmentIds,
+      actionPath: `#investment`,
+      actionLabel: 'Ir a inversiones',
+    })
+  }
+
+  if (investmentsMissingUsd.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'investments_missing_usd',
+      message: `${investmentsMissingUsd.length} aporte(s) falta(n) conversión a USD. Verifica que las inversiones en monedas no-USD tengan tipos de cambio válidos.`,
+      itemIds: investmentsMissingUsd,
+      actionPath: `#investment`,
+      actionLabel: 'Revisar aportes',
+    })
+  }
+
+  if (input.activeAssignmentsCount === 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'no_proxy_assignments',
+      message: 'No hay asignaciones de proxy activas. Define resultados (outcomes) y vincula proxies financieros en el paso anterior.',
+      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
+      actionLabel: 'Ir a evidencia',
+    })
+  }
+
+  if (missingInputs.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'missing_inputs',
+      message: `${missingInputs.length} asignación(es) falta(n) información de cantidad. Define la cantidad de beneficiarios o unidades para cada resultado.`,
+      itemIds: missingInputs,
+      actionPath: `#sroi-inputs`,
+      actionLabel: 'Completar información',
+    })
+  }
+
+  if (missingFilterSets.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'missing_filter_sets',
+      message: `${missingFilterSets.length} asignación(es) falta(n) filtros SROI (deadweight, displacement, etc). Define los supuestos metodológicos para cada resultado.`,
+      itemIds: missingFilterSets,
+      actionPath: `#sroi-filters`,
+      actionLabel: 'Configurar filtros',
+    })
+  }
+
+  if (unapprovedProxies.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'unapproved_proxies',
+      message: `${unapprovedProxies.length} proxy(ies) no aprobado(s). Todo proxy debe ser revisado y aprobado antes del cálculo. Accede a Proxies para revisar.`,
+      itemIds: unapprovedProxies,
+      actionPath: `/app/projects/${projectId}/pipeline/proxies`,
+      actionLabel: 'Revisar proxies',
+    })
+  }
+
+  if (outcomesWithoutEvidence.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'outcomes_without_evidence',
+      message: `${outcomesWithoutEvidence.length} resultado(s) sin evidencia vinculada. Toda variable que alimenta el cálculo SROI debe estar respaldada por evidencia verificable.`,
+      itemIds: outcomesWithoutEvidence,
+      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
+      actionLabel: 'Agregar evidencia',
+    })
+  }
+
+  if (invalidQuantities.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'invalid_quantities',
+      message: `${invalidQuantities.length} elemento(s) con cantidad inválida (≤0). Las cantidades deben ser positivas.`,
+      itemIds: invalidQuantities,
+      actionPath: `#sroi-inputs`,
+      actionLabel: 'Revisar cantidades',
+    })
+  }
+
+  if (invalidFilters.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'invalid_filters',
+      message: `${invalidFilters.length} filtro(s) con valor(es) inválido(s). Los porcentajes deben estar entre 0-100, y la duración entre 1-50 años.`,
+      itemIds: invalidFilters,
+      actionPath: `#sroi-filters`,
+      actionLabel: 'Revisar filtros',
+    })
+  }
+
+  if (proxiesMissingUsd.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'proxies_missing_usd',
+      message: `${proxiesMissingUsd.length} proxy(ies) falta(n) conversión a USD. Verifica que los proxies tengan valores en USD.`,
+      itemIds: proxiesMissingUsd,
+      actionPath: `/app/projects/${projectId}/pipeline/proxies`,
+      actionLabel: 'Revisar proxies',
+    })
+  }
+
+  if (overAllocatedOutcomes.length > 0) {
+    issues.push({
+      type: 'error',
+      messageKey: 'over_allocated_outcomes',
+      message: `${overAllocatedOutcomes.length} resultado(s) tiene(n) atribución de financiadores > 100%. Verifica que la suma de aportes por resultado no exceda 100%.`,
+      itemIds: overAllocatedOutcomes,
+      actionPath: `#funder-attribution`,
+      actionLabel: 'Revisar atribución',
+    })
+  }
+
+  return issues
+}
+
 export interface SroiReadiness {
   hasInvestment: boolean
   zeroOrInvalidInvestment: boolean
@@ -578,134 +766,25 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
 
   const canCalculate = blockingReasons.length === 0
 
-  // Build detailed issues with actionable information
-  const issues: ReadinessIssue[] = []
-
-  if (!hasInvestment) {
-    issues.push({
-      type: 'error',
-      messageKey: 'missing_investment',
-      message: 'El proyecto requiere al menos una inversión. Agrega un aporte en la sección "Inversión del proyecto".',
-      actionPath: `#investment`,
-      actionLabel: 'Ir a inversiones',
-    })
-  }
-
-  if (zeroOrInvalidInvestment && hasInvestment) {
-    issues.push({
-      type: 'error',
-      messageKey: 'invalid_investment_amount',
-      message: `El monto de la inversión debe ser mayor a 0. Revisa y actualiza los aportes.`,
-      itemIds: investments.filter(i => parseNum(i.amount) <= 0).map(i => i.id),
-      actionPath: `#investment`,
-      actionLabel: 'Ir a inversiones',
-    })
-  }
-
-  if (investmentsMissingUsd.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'investments_missing_usd',
-      message: `${investmentsMissingUsd.length} aporte(s) falta(n) conversión a USD. Verifica que las inversiones en monedas no-USD tengan tipos de cambio válidos.`,
-      itemIds: investmentsMissingUsd,
-      actionPath: `#investment`,
-      actionLabel: 'Revisar aportes',
-    })
-  }
-
-  if (allAssignments.length === 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'no_proxy_assignments',
-      message: 'No hay asignaciones de proxy activas. Define resultados (outcomes) y vincula proxies financieros en el paso anterior.',
-      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
-      actionLabel: 'Ir a evidencia',
-    })
-  }
-
-  if (missingInputs.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'missing_inputs',
-      message: `${missingInputs.length} asignación(es) falta(n) información de cantidad. Define la cantidad de beneficiarios o unidades para cada resultado.`,
-      itemIds: missingInputs,
-      actionPath: `#sroi-inputs`,
-      actionLabel: 'Completar información',
-    })
-  }
-
-  if (missingFilterSets.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'missing_filter_sets',
-      message: `${missingFilterSets.length} asignación(es) falta(n) filtros SROI (deadweight, displacement, etc). Define los supuestos metodológicos para cada resultado.`,
-      itemIds: missingFilterSets,
-      actionPath: `#sroi-filters`,
-      actionLabel: 'Configurar filtros',
-    })
-  }
-
-  if (unapprovedProxies.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'unapproved_proxies',
-      message: `${unapprovedProxies.length} proxy(ies) no aprobado(s). Todo proxy debe ser revisado y aprobado antes del cálculo. Accede a Proxies para revisar.`,
-      itemIds: unapprovedProxies,
-      actionPath: `/app/proxies`,
-      actionLabel: 'Revisar proxies',
-    })
-  }
-
-  if (outcomesWithoutEvidence.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'outcomes_without_evidence',
-      message: `${outcomesWithoutEvidence.length} resultado(s) sin evidencia vinculada. Toda variable que alimenta el cálculo SROI debe estar respaldada por evidencia verificable.`,
-      itemIds: outcomesWithoutEvidence,
-      actionPath: `/app/projects/${projectId}/pipeline/evidence`,
-      actionLabel: 'Agregar evidencia',
-    })
-  }
-
-  if (invalidQuantities.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'invalid_quantities',
-      message: `${invalidQuantities.length} elemento(s) con cantidad inválida (≤0). Las cantidades deben ser positivas.`,
-      itemIds: invalidQuantities,
-    })
-  }
-
-  if (invalidFilters.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'invalid_filters',
-      message: `${invalidFilters.length} filtro(s) con valor(es) inválido(s). Los porcentajes deben estar entre 0-100, y la duración entre 1-50 años.`,
-      itemIds: invalidFilters,
-    })
-  }
-
-  if (proxiesMissingUsd.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'proxies_missing_usd',
-      message: `${proxiesMissingUsd.length} proxy(ies) falta(n) conversión a USD. Verifica que los proxies tengan valores en USD.`,
-      itemIds: proxiesMissingUsd,
-      actionPath: `/app/proxies`,
-      actionLabel: 'Revisar proxies',
-    })
-  }
-
-  if (overAllocatedOutcomes.length > 0) {
-    issues.push({
-      type: 'error',
-      messageKey: 'over_allocated_outcomes',
-      message: `${overAllocatedOutcomes.length} resultado(s) tiene(n) atribución de financiadores > 100%. Verifica que la suma de aportes por resultado no exceda 100%.`,
-      itemIds: overAllocatedOutcomes,
-      actionPath: `#funder-attribution`,
-      actionLabel: 'Revisar atribución',
-    })
-  }
+  // Fail-closed blocker -> remediation-CTA attachment lives in the pure,
+  // independently-unit-tested buildReadinessIssues (RE-U1 U1-F04 / RE-U4
+  // sroi_remediation_matrix). This computation above is unchanged.
+  const issues = buildReadinessIssues({
+    projectId,
+    hasInvestment,
+    zeroOrInvalidInvestment,
+    invalidInvestmentIds: investments.filter(i => parseNum(i.amount) <= 0).map(i => i.id),
+    investmentsMissingUsd,
+    activeAssignmentsCount: allAssignments.length,
+    missingInputs,
+    missingFilterSets,
+    unapprovedProxies,
+    outcomesWithoutEvidence,
+    invalidQuantities,
+    invalidFilters,
+    proxiesMissingUsd,
+    overAllocatedOutcomes,
+  })
 
   return {
     hasInvestment,
