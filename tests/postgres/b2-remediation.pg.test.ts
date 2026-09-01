@@ -24,7 +24,9 @@ import {
 const container = PG_TESTS_ENABLED ? resolveContainer() : null
 const RUN = PG_TESTS_ENABLED && container !== null
 
-describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', () => {
+// Every probe is several docker-exec round trips; vitest's 5 s default is
+// for in-process tests.
+describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', { timeout: 120_000 }, () => {
   const db = new DisposableDb(container ?? 'none', 'b2_remediation')
 
   beforeAll(() => {
@@ -164,6 +166,41 @@ describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', () => {
       // The unique (proxy, ordinal) constraint refuses a second "current".
       const dup = db.expectError(`INSERT INTO public.financial_proxy_versions (financial_proxy_id, ordinal, source_id, review_status, created_by) VALUES ('${f.proxyId}', 2, '${f.sourceId}', 'under_review', '${f.userId}')`)
       expect(dup).toContain('financial_proxy_versions_proxy_ordinal_unique')
+    })
+
+    it('NC-9 (R-B2-07, real RLS): SELECT works for an authenticated user with a claim and returns nothing without one; a fully-GRANTed non-owner role still cannot INSERT/UPDATE/DELETE (RLS, not grants, blocks it)', () => {
+      const claim = deterministicUuid('r7:claimant')
+      // RLS is ON and NOT FORCED (the migration owner must keep seeding).
+      expect(db.query(`SELECT relrowsecurity::text, relforcerowsecurity::text FROM pg_class WHERE oid = 'public.proxy_material_fields_registry'::regclass`)).toEqual([['true', 'false']])
+      expect(db.query(`SELECT policyname, cmd FROM pg_policies WHERE tablename = 'proxy_material_fields_registry' ORDER BY policyname`)).toEqual([['proxy_material_fields_registry_select', 'SELECT']])
+
+      // authenticated + claim => reads the catalog (read-all members). The
+      // claim is set inside a DO block so only the final SELECT returns rows
+      // (psql -c runs the whole string in one implicit transaction, and
+      // set_config(..., true) is transaction-local).
+      const withClaim = `SET ROLE authenticated; DO $$ BEGIN PERFORM set_config('request.jwt.claim.sub', '${claim}', true); END $$; SELECT count(*) FROM public.proxy_material_fields_registry`
+      expect(Number(db.scalar(withClaim))).toBeGreaterThanOrEqual(109)
+      // authenticated without a claim => RLS filters everything out.
+      const withoutClaim = `SET ROLE authenticated; DO $$ BEGIN PERFORM set_config('request.jwt.claim.sub', '', true); END $$; SELECT count(*) FROM public.proxy_material_fields_registry`
+      expect(db.scalar(withoutClaim)).toBe('0')
+
+      // A non-owner role holding EVERY table privilege is still blocked by RLS
+      // (no write policy exists) — this isolates RLS from the GRANT layer.
+      // Supabase's `postgres` is not a superuser: SET ROLE needs membership,
+      // which it can grant to a role it created (CREATEROLE).
+      db.exec(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_rehearsal_pgtest_probe') THEN CREATE ROLE uellix_rehearsal_pgtest_probe NOLOGIN; END IF; END $$;
+        GRANT uellix_rehearsal_pgtest_probe TO postgres;
+        GRANT USAGE ON SCHEMA public TO uellix_rehearsal_pgtest_probe;
+        GRANT ALL ON public.proxy_material_fields_registry TO uellix_rehearsal_pgtest_probe;`)
+      const insert = db.expectError(`SET ROLE uellix_rehearsal_pgtest_probe; INSERT INTO public.proxy_material_fields_registry (registry_version, table_name, field_name, category, editability) VALUES ('9.9.9','financial_proxies','id','non_material','system_sealed')`)
+      expect(insert).toMatch(/row-level security policy/)
+      // UPDATE/DELETE without a policy affect 0 rows for the non-owner (RLS hides every row from them).
+      expect(db.scalar(`SET ROLE uellix_rehearsal_pgtest_probe; WITH u AS (UPDATE public.proxy_material_fields_registry SET category = 'non_material' WHERE registry_version = '1.1.0' RETURNING 1) SELECT count(*) FROM u`)).toBe('0')
+      expect(db.scalar(`SET ROLE uellix_rehearsal_pgtest_probe; WITH d AS (DELETE FROM public.proxy_material_fields_registry WHERE registry_version = '1.1.0' RETURNING 1) SELECT count(*) FROM d`)).toBe('0')
+      // …and the rows are all still there for the owner.
+      expect(db.scalar(`SELECT count(*) FROM public.proxy_material_fields_registry WHERE registry_version = '1.1.0'`)).toBe('70')
+      // Nothing outlives the probe: privileges and the cluster role itself.
+      db.exec(`DROP OWNED BY uellix_rehearsal_pgtest_probe; REVOKE uellix_rehearsal_pgtest_probe FROM postgres; DROP ROLE IF EXISTS uellix_rehearsal_pgtest_probe;`)
     })
 
     it('governed_model_registry resolves PROXY_MATERIAL_FIELDS 1.1.0 as current and still holds 1.0.0', () => {

@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 15/69: 0014_fine_blade.sql
+-- GENERATED — DO NOT EDIT. Unit 69/69: 010_proxy_material_fields_registry_rls.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0014_fine_blade.sql
--- Source SHA256: fbc231b673c803b0eefd110c589ad7f4c4d5b2398945d4f8036792df1373b209
+-- Includes:      db/policies/010_proxy_material_fields_registry_rls.sql
+-- Source SHA256: 1778707b22e83dad7046ae013bb58bf8c5f3faadd1d0183bcbd1d41799b43c03
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/015_0014_fine_blade.sql
+--        -f db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0014_fine_blade.sql
+\ir ../../../db/policies/010_proxy_material_fields_registry_rls.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0014_fine_blade.sql', 'PHASE_BASELINE',
-   'fbc231b673c803b0eefd110c589ad7f4c4d5b2398945d4f8036792df1373b209', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '010_proxy_material_fields_registry_rls.sql', 'PHASE_BASELINE',
+   '1778707b22e83dad7046ae013bb58bf8c5f3faadd1d0183bcbd1d41799b43c03', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

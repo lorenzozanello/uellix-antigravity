@@ -51,8 +51,9 @@ describe('the six baseline gates', () => {
   it('measures the corpus rather than restating the manifest', () => {
     // W2-B2-R1 (R-B2-03): + 0056 (two literal global-catalog seeds) = 68 units,
     // 4 literal row sources (0040:1, 0055:1, 0056:2).
-    expect(evidence.unitCount).toBe(68)
-    expect(evidence.superuserFreeUnits).toBe(68)
+    // (R-B2-07): + policies unit 010 (registry RLS) = 69.
+    expect(evidence.unitCount).toBe(69)
+    expect(evidence.superuserFreeUnits).toBe(69)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

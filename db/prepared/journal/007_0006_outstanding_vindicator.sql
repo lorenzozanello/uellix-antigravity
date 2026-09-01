@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 7/68: 0006_outstanding_vindicator.sql
+-- GENERATED — DO NOT EDIT. Unit 7/69: 0006_outstanding_vindicator.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0006_outstanding_vindicator.sql

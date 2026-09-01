@@ -82,20 +82,22 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // W2-B2-R1 (R-B2-03) — re-derived: 67 at the audited B2 head + 0056
   // (registry editability + 1.1.0 seed) = 68; 57 Drizzle. Supabase and
   // policy counts unchanged (R-B2-07 adds policy 010 next).
-  it('has 68 units: 57 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(68)
+  // W2-B2-R1 (R-B2-07) — + policies unit 010 (registry RLS, AG-B2-2) = 69
+  // units, 10 policies.
+  it('has 69 units: 57 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(69)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
     expect(byKind('drizzle-migration')).toBe(57)
     expect(byKind('supabase-migration')).toBe(2)
-    expect(byKind('policy')).toBe(9)
+    expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..68 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..69 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 68 }, (_, i) => i + 1),
+      Array.from({ length: 69 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(68)
+    expect(new Set(BASELINE_ORDER).size).toBe(69)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -214,7 +216,7 @@ describe('A2 is almost entirely a re-application of A1', () => {
     expect(m32.filter((s) => !policies.has(s))).toEqual([])
   })
 
-  it('008 and 009 are the only policies carrying content the migration chain never applies', () => {
+  it('008, 009 and 010 are the only policies carrying content the migration chain never applies', () => {
     const chain = new Set(
       BASELINE_UNITS.filter((u) => u.kind !== 'policy').flatMap((u) => statementSet(readOrThrow(u.file))),
     )
@@ -225,12 +227,17 @@ describe('A2 is almost entirely a re-application of A1', () => {
     // 001…007 duplicate the Drizzle chain (equivalentTo); 008 and 009 are the
     // two independent A2-only policies — 008 pre-dates Wave 1, 009 is the one
     // Wave-1 policy claim (governed_model_registry, no Drizzle equivalent).
+    // W2-B2-R1 (R-B2-07): 010 is the third — RLS for
+    // proxy_material_fields_registry (AG-B2-2, stage A), the same three-
+    // statement shape as 009 and likewise with no Drizzle equivalent.
     expect(novel.map(([id]) => id)).toEqual([
       '008_marketing_leads_rls.sql',
       '009_governed_model_registry_rls.sql',
+      '010_proxy_material_fields_registry_rls.sql',
     ])
     expect(novel[0][1]).toHaveLength(4)
     expect(novel[1][1]).toHaveLength(3)
+    expect(novel[2][1]).toHaveLength(3)
   })
 
   it('re-applying 001..007 is safe because every CREATE POLICY is guarded — and 008 is not', () => {

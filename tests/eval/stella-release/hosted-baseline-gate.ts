@@ -379,10 +379,10 @@ export function buildHostedBaselineGateEvidence(
     // change_registry.sql) + 1 journal bootstrap step. The count is
     // asserted rather than loosened to `>= 67` — a plan that silently grew
     // or shrank is exactly what this evidence exists to notice.
-    // W2-B2-R1 (R-B2-03): 68 baseline units + 1 journal bootstrap step = 69.
+    // W2-B2-R1 (R-B2-03/07): 69 baseline units + 1 journal bootstrap step = 70.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 69 &&
+      firstProvisioning.steps.length === 70 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -397,8 +397,8 @@ export function evaluateHostedBaselineGates(
   // units; this batch adds three Drizzle migrations (0053_fib_proxy_versions_
   // provenance.sql, 0054_fib_proxy_rubric_constraints.sql,
   // 0055_fib_proxy_material_change_registry.sql). 64 + 3 = 67.
-  // W2-B2-R1 (R-B2-03): + 0056_fib_proxy_material_fields_editability.sql = 68.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 68
+  // W2-B2-R1 (R-B2-03): + 0056 = 68; (R-B2-07): + policies unit 010 = 69.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 69
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

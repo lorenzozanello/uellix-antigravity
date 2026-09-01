@@ -1032,9 +1032,12 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'to authenticated (requires that role to exist, hence B not A — same reasoning as unit 51\'s ' +
       'governed_model_registry), and an idempotent ON CONFLICT DO NOTHING seed of 39 literal field-> ' +
       'category rows (universal reference data, not tenant data) for registry_version 1.0.0, matching ' +
-      'the PROXY_MATERIAL_FIELDS row already seeded in governed_model_registry (unit 51). No RLS enabled ' +
-      'yet — same stage-A treatment 0040 itself received; a dedicated RLS-policy unit (mirroring unit 58 ' +
-      'for governed_model_registry) is stage-B/E hardening, deferred.',
+      'the PROXY_MATERIAL_FIELDS row already seeded in governed_model_registry (unit 51). RLS is NOT ' +
+      'enabled by this unit; it arrives as policies unit 69 (010_proxy_material_fields_registry_rls.sql), ' +
+      'exactly as unit 58 supplies it for governed_model_registry. CORRECTION (W2-B2-R1 / R-B2-07, ' +
+      'AG-B2-2): an earlier form of this note called that a stage-B/E deferral — FIBDB-007 declares ' +
+      'migration_stage [A] only and "RLS: read-all members", so RLS is a stage-A requirement, not a ' +
+      'deferrable one. Description-only edit; the SQL file and its sha256 are untouched.',
     rollback:
       'Applied with psql -1; a mid-unit failure rolls back whole. The seed INSERT is idempotent ' +
       '(ON CONFLICT DO NOTHING); the CREATE TABLE is not, so a partial re-apply after a table already ' +
@@ -1071,6 +1074,32 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'COLUMN / ADD CONSTRAINT are not, so a partial re-apply fails loudly. No reverse script — ' +
       'forward-only, recovered by DESTROY_AND_REPROVISION.',
     expect: { dmlStatementCount: 2, literalRowSourceCount: 2 },
+  },
+  {
+    ordinal: 69,
+    id: '010_proxy_material_fields_registry_rls.sql',
+    kind: P,
+    file: 'db/policies/010_proxy_material_fields_registry_rls.sql',
+    sha256: '1778707b22e83dad7046ae013bb58bf8c5f3faadd1d0183bcbd1d41799b43c03',
+    dependsOn: ['0056_fib_proxy_material_fields_editability.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'idempotent',
+    managedNote:
+      'R-B2-07 (AG-B2-2 A_RLS_REQUIRED_IN_STAGE_A; FIBDB-007 "RLS: read-all members", migration_stage [A] ' +
+      'only). RLS for proxy_material_fields_registry: ENABLE (never FORCE — the seed is migration-owner ' +
+      'DML), one SELECT policy USING auth.uid() IS NOT NULL, no INSERT/UPDATE/DELETE policy, so rows are ' +
+      'structurally immutable to every non-owner role. Same shape as unit 58 for governed_model_registry. ' +
+      'The 0055 GRANT SELECT TO authenticated is retained unchanged; no new grant.',
+    rollback:
+      'One guarded DROP POLICY IF EXISTS ahead of one CREATE POLICY; ENABLE ROW LEVEL SECURITY is a ' +
+      'no-op when already on. Converges.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 1,
+      securitySurfaceDigest: 'a1122391d6d558216fdf7ce14398c6e06ed504b818b7d5b1964d5845eb276785',
+    },
   },
 ]
 
