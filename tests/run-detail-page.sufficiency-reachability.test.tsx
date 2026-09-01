@@ -1,5 +1,5 @@
 // tests/run-detail-page.sufficiency-reachability.test.tsx
-// W2-B1-R4 (R-B2-05, FIBIU-06) — proves the run-bound sufficiency
+// W2-B1-R4 (R-B1-02, FIBIU-06) — proves the run-bound sufficiency
 // determination is reachable through the ACTUAL route/component tree: the
 // panel renders only for canDetermineEvidenceSufficiency, the outcomes
 // listed are exactly the ones monetized BY THIS RUN's own line items, and

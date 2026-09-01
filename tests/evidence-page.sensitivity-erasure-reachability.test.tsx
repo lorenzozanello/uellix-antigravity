@@ -1,5 +1,5 @@
 // tests/evidence-page.sensitivity-erasure-reachability.test.tsx
-// W2-B1-R4 (R-B2-05) — proves the two governed remedies FIBIU-05 and
+// W2-B1-R4 (R-B1-02) — proves the two governed remedies FIBIU-05 and
 // FIBIU-07 are reachable through the ACTUAL route/component tree, not just
 // as direct server-action imports: the evidence page renders the
 // affordance only for an authorized role, an unauthorized role never sees

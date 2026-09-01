@@ -132,7 +132,7 @@ export const verifyIntegrityAction = async (formData: FormData) => {
   revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
-// R4 (R-B2-05, FIBIU-05) — governed human sensitivity classification. The
+// R4 (R-B1-02, FIBIU-05) — governed human sensitivity classification. The
 // service (lib/pipeline/evidence.ts:classifyEvidenceSensitivity) is the only
 // write path and owns the fail-closed permission check; this action is pure
 // FormData plumbing to it, exactly like updateStatusAction above.
@@ -150,7 +150,7 @@ export const classifySensitivityAction = async (formData: FormData) => {
   revalidatePath(`/app/projects/${projectId}/pipeline/evidence`)
 }
 
-// R4 (R-B2-05, FIBIU-07) — governed, exceptional, irreversible content
+// R4 (R-B1-02, FIBIU-07) — governed, exceptional, irreversible content
 // erasure. NOT a substitute for the ordinary evidence_items DELETE path
 // (unchanged, stage-E deferred) — a distinct, explicitly-reasoned route that
 // only sweeps the content this repository actually stores, never the row or
@@ -279,7 +279,7 @@ export default async function EvidencePage({ params }: { params: Promise<{ proje
   const canClassifySensitivity = canClassifyEvidenceSensitivity(membership.role)
   const canErase = canEraseEvidenceContent(membership.role)
 
-  // R4 (R-B2-05, FIBIU-05/07) — the current version's sensitivity
+  // R4 (R-B1-02, FIBIU-05/07) — the current version's sensitivity
   // classification and erasure state, read the same way every other
   // governed exposure surface reads it (getLatestEvidenceVersionsByEvidenceIds),
   // never a second, independent notion of "current".

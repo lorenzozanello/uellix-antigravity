@@ -296,8 +296,8 @@ describe('M-3 — durable governance record BEFORE the external/content operatio
 });
 
 describe('AC-1 — the erasure_requested audit entry names the entity it actually describes', () => {
-  it('entityType is evidence_item and entityId is the evidence id — no tombstone exists yet at this point', async () => {
-    await requestGovernedEvidenceErasure('proj-1', 'ev-1', REQUEST);
+  it('entityType stays evidence_tombstone (matching its governed action prefix, FIBC-040) but entityId now names a REAL tombstone, never a borrowed evidence_items id', async () => {
+    const tombstone = await requestGovernedEvidenceErasure('proj-1', 'ev-1', REQUEST);
 
     const requestedCall = vi
       .mocked(logAuditAction)
@@ -305,8 +305,24 @@ describe('AC-1 — the erasure_requested audit entry names the entity it actuall
       .find((c) => c.action === 'evidence_tombstone.erasure_requested');
 
     expect(requestedCall).toBeDefined();
-    expect(requestedCall!.entityType).toBe('evidence_item');
-    expect(requestedCall!.entityId).toBe('ev-1');
+    expect(requestedCall!.entityType).toBe('evidence_tombstone');
+    expect(requestedCall!.entityId).toBe(tombstone.id);
+    // The original defect: entityId was the evidence_items id, a
+    // different table entirely, and no tombstone existed yet to name.
+    expect(requestedCall!.entityId).not.toBe('ev-1');
+  });
+
+  it('the durable crash-recovery record (evidence_versions.erasure_state) is written before storage is touched, independent of when the audit LOG line fires', async () => {
+    mockDbData.evidence = { id: 'ev-1', projectId: 'proj-1', organizationId: 'org-1', status: 'approved', type: 'file', filePath: 'proj-1/ev-1/file.pdf' };
+    let sawRequestedBeforeExternal = false;
+    mockStorageRemove.mockImplementationOnce(async () => {
+      sawRequestedBeforeExternal = mockDbData.evidenceVersions.every((v) => v.erasureState === 'erasure_requested');
+      return { error: null };
+    });
+
+    await requestGovernedEvidenceErasure('proj-1', 'ev-1', REQUEST);
+
+    expect(sawRequestedBeforeExternal).toBe(true);
   });
 
   it('the erasure_completed audit entry DOES name the tombstone, once it exists', async () => {

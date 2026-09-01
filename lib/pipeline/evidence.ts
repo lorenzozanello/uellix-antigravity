@@ -910,6 +910,20 @@ const RequestErasureSchema = z.object({
  * exactly as much the evidence item's history as the current version's —
  * FIBC-009 does not say "erase the current version's content."
  *
+ * AC-1: the `erasure_requested` AUDIT LOG ENTRY (as opposed to the durable
+ * STATE write above, which is what M-3 actually needs) is deliberately
+ * logged only once the evidence_tombstones row exists — evidence_
+ * tombstones.erasure_state's own CHECK constraint accepts only a terminal
+ * value (erasure_complete/erasure_partial/erasure_blocked), so a tombstone
+ * literally cannot be created any earlier. Logging entityType
+ * 'evidence_tombstone' before that row exists (the original defect) named
+ * an entity of a class that did not yet exist; logging it against
+ * entityId <evidenceId> instead would satisfy AC-1's "identify the correct
+ * entity" but breaks FIBC-040's action/entityType correspondence contract,
+ * since the action's own object prefix (evidence_tombstone.*) has been
+ * governed vocabulary since B1. Waiting for the real tombstone costs
+ * nothing here — it exists a few statements later in the same call.
+ *
  * `erasure_blocked` (AC-3) is representable in the schema (FIBDB-031's
  * CHECK) and in AUDIT_ACTIONS for governed-vocabulary completeness, but
  * still has NO reachable trigger at stage A: the one real "conflict with an
@@ -940,22 +954,11 @@ export async function requestGovernedEvidenceErasure(projectId: string, evidence
   const versionsToSweep = allVersions.filter((v) => v.erasureState !== 'erasure_complete')
 
   // STEP 1 — DURABLE GOVERNANCE RECORD FIRST, before any external or
-  // content-mutating operation.
+  // content-mutating operation. This is the actual crash-recovery guarantee
+  // M-3 requires: a process death right after this line still leaves a
+  // durable, queryable trace ("erasure was requested for these versions"),
+  // never an external delete with nothing to show it was ever asked for.
   await markEvidenceVersionsErasureState(versionsToSweep.map((v) => v.id), 'erasure_requested')
-
-  // AC-1 — at THIS point no tombstone exists yet; the entity this action is
-  // actually about is the evidence item, not a tombstone row that has not
-  // been created. entityType now matches entityId's real referent.
-  await logAuditAction({
-    organizationId: organization.id,
-    projectId,
-    actorUserId: user.id,
-    entityType: 'evidence_item',
-    entityId: evidenceId,
-    action: AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_REQUESTED,
-    reason: parsed.rationale,
-    afterJson: { evidenceId, erasureReason: parsed.erasureReason, versionsRequested: versionsToSweep.length },
-  })
 
   // STEP 2 — the external/content operation. Sweeps every Uellix-controlled
   // derivative this repository actually has: the storage object (file
@@ -1002,6 +1005,25 @@ export async function requestGovernedEvidenceErasure(projectId: string, evidence
       actorUserId: user.id,
     })
     .returning()
+
+  // AC-1 — logged only NOW, because only now does a real evidence_tombstone
+  // row exist for entityId to name. Logging this against the tombstone
+  // BEFORE one was created (the original defect: entityType
+  // 'evidence_tombstone' with entityId set to an evidence_items id) named a
+  // governed entity of a class that did not yet exist. The durable
+  // crash-recovery record for "requested" already happened at STEP 1, on
+  // evidence_versions — this is the narrative audit trail, not the recovery
+  // mechanism, so waiting for a real referent costs nothing.
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_tombstone',
+    entityId: tombstone.id,
+    action: AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_REQUESTED,
+    reason: parsed.rationale,
+    afterJson: { evidenceId, erasureReason: parsed.erasureReason, versionsRequested: versionsToSweep.length },
+  })
 
   await logAuditAction({
     organizationId: organization.id,

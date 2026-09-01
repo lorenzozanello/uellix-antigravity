@@ -71,7 +71,7 @@ export default async function RunDetailPage({
     } catch {
       return null;
     }
-    // R4 (R-B2-05, FIBIU-06) — the outcomes actually monetized BY THIS RUN,
+    // R4 (R-B1-02, FIBIU-06) — the outcomes actually monetized BY THIS RUN,
     // read from its own immutable line items rather than the project's
     // current (possibly since-changed) proxy assignments. This is the
     // run-unambiguous signal the sufficiency panel below is bound to.
