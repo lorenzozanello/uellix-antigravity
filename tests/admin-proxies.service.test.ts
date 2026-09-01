@@ -121,7 +121,11 @@ vi.mock('@/db/client', () => {
           return ({
           where: vi.fn().mockImplementation(() => ({
             returning: vi.fn().mockImplementation(() =>
-              Promise.resolve([tableName === 'financial_proxy_versions' ? { ...mockDbData.updatedVersion, ...values } : mockDbData.updated])
+              // A real RETURNING echoes the FULL row (the stored current
+              // version, with the written values on top), not just the patch.
+              Promise.resolve([tableName === 'financial_proxy_versions'
+                ? { ...([...mockDbData.financialProxyVersions].sort((a: any, b: any) => (b.ordinal ?? 0) - (a.ordinal ?? 0))[0] ?? {}), ...mockDbData.updatedVersion, ...values }
+                : mockDbData.updated])
             ),
           })),
           });
@@ -142,7 +146,7 @@ import {
   promoteProxyToGlobal,
 } from '@/lib/admin/proxies';
 import { requireAdminAccess } from '@/lib/auth/session';
-import { logAuditAction } from '@/lib/audit/logger';
+import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { fingerprintFinancialProxyApprovalState } from '@/lib/pipeline/proxies';
 
 const ADMIN = { id: 'admin-1', email: 'admin@uellix.com', fullName: null, avatarUrl: null, isSuperAdmin: true } as any;
@@ -324,16 +328,55 @@ describe('setGlobalProxyManualFxRate', () => {
     expect(logAuditAction).toHaveBeenCalled();
   });
 
-  it('invalidates a prior approval when manual FX changes monetary authority', async () => {
+  // R-B2-04 (closes B2-AR-B3) / NC-4 — manual FX on an APPROVED proxy is an
+  // atomic material change: V1 is never written to; V2 opens as
+  // 'under_review' carrying the new fx_rate_id/value_usd; the live row
+  // takes 'pending_review' (the inverse image); both version audit events
+  // are emitted.
+  it('NC-4: forks an APPROVED version — V1 byte-unchanged and still approved, V2 under_review with the new fx_rate_id/value_usd', async () => {
     vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
     const proxy = { id: 'proxy-1', organizationId: null, sourceId: 'source-1', reviewStatus: 'approved', value: '92', currency: 'EUR', unit: 'mes', referenceYear: 2024, valueUsd: '100.0000', fxRateId: 'old-fx' };
     mockDbData.financialProxies = [proxy];
+    const v1 = { id: 'version-approved', financialProxyId: 'proxy-1', ordinal: 1, reviewStatus: 'approved', reviewerId: 'reviewer-1', reviewedAt: new Date('2026-01-01'), valueUsd: '100.0000', fxRateId: 'old-fx', ...FULL_PROVENANCE, ...FULL_RUBRIC };
+    const v1Before = { ...v1 };
+    mockDbData.financialProxyVersions = [v1];
     mockDbData.insertedFxRate = { id: 'fxrate-2', currency: 'EUR', rateDate: '2024-12-31', rateToUsd: '0.90', source: 'ECB', sourceType: 'manual' };
+    mockDbData.insertedVersion = { id: 'version-forked' };
     mockDbData.updated = { ...proxy, valueUsd: '102.2222', fxRateId: 'fxrate-2', reviewStatus: 'pending_review' };
 
     await setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0.90', source: 'ECB' }, reviewedStateOf(proxy));
 
-    expect(mockDbData.lastUpdateValues.reviewStatus).toBe('pending_review');
+    // V1 was never written to.
+    expect(mockDbData.lastVersionUpdateValues).toBeNull();
+    expect(mockDbData.financialProxyVersions[0]).toEqual(v1Before);
+    // V2 was inserted with the new monetary state and the mapped status.
+    const fork = mockDbData.insertedRows.find((r: any) => r.tableName === 'financial_proxy_versions');
+    expect(fork).toBeDefined();
+    expect(fork.values).toMatchObject({ reviewStatus: 'under_review', fxRateId: 'fxrate-2', valueUsd: '102.2222', supersedesVersionId: 'version-approved' });
+    expect(fork.values.reviewerId).toBeUndefined();
+    expect(fork.values.c1SourceQualityVerifiability).toBeNull();
+    // The live row takes the inverse image of V2's status.
+    expect(mockDbData.lastUpdateValues).toMatchObject({ reviewStatus: 'pending_review', valueUsd: '102.2222', fxRateId: 'fxrate-2' });
+    // Both version audit events, plus the reset on the live row.
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ entityId: 'version-approved', action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE }));
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED }));
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ entityType: 'financial_proxy', action: AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED }));
+  });
+
+  it('updates a NOT-yet-approved version in place (no fork, status unchanged) — the manual-FX path does not special-case it', async () => {
+    vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
+    const proxy = { id: 'proxy-1', organizationId: null, sourceId: 'source-1', reviewStatus: 'pending_review', value: '92', currency: 'EUR', unit: 'mes', referenceYear: 2024, valueUsd: null, fxRateId: null };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [{ id: 'version-1', financialProxyId: 'proxy-1', ordinal: 1, reviewStatus: 'under_review' }];
+    mockDbData.insertedFxRate = { id: 'fxrate-3', currency: 'EUR', rateDate: '2024-12-31', rateToUsd: '0.92', source: 'ECB', sourceType: 'manual' };
+    mockDbData.updated = { ...proxy, valueUsd: '100.0000', fxRateId: 'fxrate-3' };
+
+    await setGlobalProxyManualFxRate('proxy-1', { rateToUsd: '0.92', source: 'ECB' }, reviewedStateOf(proxy));
+
+    expect(mockDbData.insertedRows.find((r: any) => r.tableName === 'financial_proxy_versions')).toBeUndefined();
+    expect(mockDbData.lastVersionUpdateValues).toMatchObject({ valueUsd: '100.0000', fxRateId: 'fxrate-3' });
+    expect(mockDbData.lastUpdateValues).toMatchObject({ reviewStatus: 'pending_review', valueUsd: '100.0000', fxRateId: 'fxrate-3' });
+    expect(logAuditAction).not.toHaveBeenCalledWith(expect.objectContaining({ action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE }));
   });
 });
 

@@ -36,9 +36,20 @@ import {
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
   toVersionReviewStatus,
+  toLiveReviewStatus,
   assertLiveVersionStatusCoupling,
 } from '@/lib/pipeline/financial-proxy-versions'
 import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric'
+import { applyMaterialChange, MATERIAL_CATEGORY_LABELS, registryRow, type MaterialCategory } from '@/lib/pipeline/proxy-material-change'
+
+// R-B2-04 — the material categories a manual FX transformation invalidates,
+// read from the registry (R-B2-03 adjudication: value_usd is
+// identity_economic_value, fx_rate_id is transformations), never restated.
+const MANUAL_FX_MATERIAL_CATEGORIES: readonly string[] = ['value_usd', 'fx_rate_id'].map((column) => {
+  const row = registryRow('financial_proxy_versions', column)
+  if (!row || row.category === 'non_material') throw new Error(`manual FX touches unregistered or non-material column ${column}`)
+  return MATERIAL_CATEGORY_LABELS[row.category as MaterialCategory]
+})
 import { convertToUsd } from '@/lib/pipeline/fx'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
@@ -302,7 +313,7 @@ export async function setGlobalProxyManualFxRate(
 
   const rateNum = Number(validated.rateToUsd)
   if (!Number.isFinite(rateNum) || rateNum <= 0) throw new Error('La tasa debe ser un número mayor a 0')
-  const { proxy, updated } = await withExpectedLockedFinancialProxy(
+  const { proxy, updated, forked, supersededVersion, newVersion } = await withExpectedLockedFinancialProxy(
     proxyId,
     expectedApprovalState,
     (_tx, proxy) => {
@@ -325,17 +336,51 @@ export async function setGlobalProxyManualFxRate(
         })
         .returning()
       const valueUsd = convertToUsd(proxy.value!, validated.rateToUsd)
+
+      // W2-B2-R1 / R-B2-04 (closes B2-AR-B3; manual_fx_material_change_
+      // disposition). A manual FX transformation changes value_usd
+      // (identity_economic_value) and fx_rate_id (transformations) — both
+      // governed material fields. It therefore executes through the SAME
+      // atomic primitive as every other material change, in this one
+      // transaction: if the current version is approved, V1 is never
+      // written to — V2 opens as 'under_review' carrying the new fx_rate_id
+      // and value_usd; if not approved, the current version is updated in
+      // place. Either way the live row takes the inverse image of the
+      // current version's status and the coupling is asserted before commit.
+      const currentVersion = await getLatestFinancialProxyVersion(proxyId, tx)
+      let forked = false
+      let supersededVersion: typeof currentVersion = null
+      let newVersion: typeof currentVersion = null
+      if (currentVersion) {
+        const result = await applyMaterialChange(
+          proxyId,
+          null,
+          currentVersion,
+          { valueUsd, fxRateId: fxRate.id },
+          admin.id,
+          tx,
+        )
+        forked = result.forked
+        if (result.forked) {
+          supersededVersion = result.supersededVersion
+          newVersion = result.version
+        } else {
+          newVersion = await updateCurrentFinancialProxyVersion(proxyId, { valueUsd, fxRateId: fxRate.id }, tx)
+        }
+      }
+
       const [updated] = await tx
         .update(financialProxies)
         .set({
           valueUsd,
           fxRateId: fxRate.id,
-          ...(proxy.reviewStatus === 'approved' ? { reviewStatus: 'pending_review' as const } : {}),
+          ...(newVersion ? { reviewStatus: toLiveReviewStatus(newVersion.reviewStatus) } : {}),
           updatedAt: new Date(),
         })
         .where(eq(financialProxies.id, proxyId))
         .returning()
-      return { proxy, updated }
+      if (newVersion) assertLiveVersionStatusCoupling(updated.reviewStatus, newVersion.reviewStatus)
+      return { proxy, updated, forked, supersededVersion, newVersion }
     },
   )
 
@@ -344,10 +389,34 @@ export async function setGlobalProxyManualFxRate(
     actorUserId: admin.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: AUDIT_ACTIONS.FINANCIAL_PROXY_UPDATED,
+    action: forked ? AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED : AUDIT_ACTIONS.FINANCIAL_PROXY_UPDATED,
+    reason: forked
+      ? `Approval reset: manual FX transformation (material change in ${MANUAL_FX_MATERIAL_CATEGORIES.join(', ')})`
+      : undefined,
     beforeJson: proxy,
     afterJson: updated,
   })
+
+  // R-B2-04 — the same two version audit events the org-side path emits.
+  if (forked && supersededVersion && newVersion) {
+    await logAuditAction({
+      actorUserId: admin.id,
+      entityType: 'financial_proxy_version',
+      entityId: supersededVersion.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE,
+      reason: `Material change in ${MANUAL_FX_MATERIAL_CATEGORIES.join(', ')} (manual FX transformation)`,
+      beforeJson: { reviewStatus: supersededVersion.reviewStatus, valueUsd: supersededVersion.valueUsd, fxRateId: supersededVersion.fxRateId },
+      afterJson: { supersededBy: newVersion.id },
+    })
+    await logAuditAction({
+      actorUserId: admin.id,
+      entityType: 'financial_proxy_version',
+      entityId: newVersion.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED,
+      reason: 'Opened by material change (manual FX transformation)',
+      afterJson: newVersion,
+    })
+  }
 
   return updated
 }

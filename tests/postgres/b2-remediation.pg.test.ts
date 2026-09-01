@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   DisposableDb,
   PG_TESTS_ENABLED,
+  deterministicUuid,
   resolveContainer,
   seedProxyFixture,
 } from './disposable-db'
@@ -133,6 +134,36 @@ describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', () => {
     it('NEGATIVE: the category CHECK is unchanged — an eleventh material category is still rejected', () => {
       const error = db.expectError(`INSERT INTO public.proxy_material_fields_registry (registry_version, table_name, field_name, category, editability) VALUES ('9.9.9','financial_proxies','id','governance_metadata','system_sealed')`)
       expect(error).toContain('proxy_material_fields_registry_category_check')
+    })
+
+    it('manual-FX successor shape (R-B2-04, DB-relevant half): an approved V1 and its under_review V2 coexist, V2 carries its own fx_rate_id/value_usd, V1 keeps its own', () => {
+      const f = seedProxyFixture(db, 'r4')
+      const fxOld = deterministicUuid('r4:fx:old')
+      const fxNew = deterministicUuid('r4:fx:new')
+      // MEASURED on real PostgreSQL while writing this probe: shared fx_rates
+      // rows (organization_id IS NULL) are unique per (currency, rate_date)
+      // regardless of source_type (0017 fx_rates_shared_currency_date_unique).
+      // Two manual entries for the same currency/reference year therefore
+      // collide — a pre-existing property of the manual-FX path, outside this
+      // remediation's nodes; recorded, not repaired. Distinct dates here.
+      db.exec(`
+        INSERT INTO public.fx_rates (id, currency, rate_date, rate_to_usd, source, source_type, organization_id, created_by)
+          VALUES ('${fxOld}', 'EUR', '2023-12-31', '0.92', 'ECB', 'manual', NULL, '${f.userId}'),
+                 ('${fxNew}', 'EUR', '2024-12-31', '0.90', 'ECB', 'manual', NULL, '${f.userId}')
+          ON CONFLICT (id) DO NOTHING;
+        INSERT INTO public.financial_proxy_versions (id, financial_proxy_id, ordinal, source_id, review_status, value_usd, fx_rate_id, reviewer_id, reviewed_at, created_by)
+          VALUES ('${deterministicUuid('r4:v1')}', '${f.proxyId}', 1, '${f.sourceId}', 'approved', '100.0000', '${fxOld}', '${f.userId}', now(), '${f.userId}');
+        INSERT INTO public.financial_proxy_versions (id, financial_proxy_id, ordinal, source_id, review_status, value_usd, fx_rate_id, supersedes_version_id, created_by)
+          VALUES ('${deterministicUuid('r4:v2')}', '${f.proxyId}', 2, '${f.sourceId}', 'under_review', '102.2222', '${fxNew}', '${deterministicUuid('r4:v1')}', '${f.userId}');
+      `)
+      const rows = db.query(`SELECT ordinal, review_status, value_usd, fx_rate_id, supersedes_version_id IS NOT NULL FROM public.financial_proxy_versions WHERE financial_proxy_id = '${f.proxyId}' ORDER BY ordinal`)
+      expect(rows).toEqual([
+        ['1', 'approved', '100.0000', fxOld, 'f'],
+        ['2', 'under_review', '102.2222', fxNew, 't'],
+      ])
+      // The unique (proxy, ordinal) constraint refuses a second "current".
+      const dup = db.expectError(`INSERT INTO public.financial_proxy_versions (financial_proxy_id, ordinal, source_id, review_status, created_by) VALUES ('${f.proxyId}', 2, '${f.sourceId}', 'under_review', '${f.userId}')`)
+      expect(dup).toContain('financial_proxy_versions_proxy_ordinal_unique')
     })
 
     it('governed_model_registry resolves PROXY_MATERIAL_FIELDS 1.1.0 as current and still holds 1.0.0', () => {
