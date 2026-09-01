@@ -1,4 +1,3 @@
-import React from 'react'
 import { render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,15 +11,15 @@ vi.mock('@/app/actions/onboarding', () => ({
   completeOnboarding: vi.fn(),
 }))
 
-import OnboardingPage from '@/app/app/organization/onboarding/page'
+import { OrganizationOnboardingForm } from '@/components/onboarding/OrganizationOnboardingForm'
 
-describe('OnboardingPage', () => {
+describe('OrganizationOnboardingForm', () => {
   beforeEach(() => {
     push.mockReset()
   })
 
   it('uses a valid two-letter fallback country code for Otro', () => {
-    render(<OnboardingPage />)
+    render(<OrganizationOnboardingForm />)
 
     const [country] = screen.getAllByRole('combobox')
     expect(within(country).getByRole('option', { name: 'Otro' })).toHaveValue('ZZ')

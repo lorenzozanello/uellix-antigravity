@@ -5,7 +5,7 @@ import { db } from '@/db/client'
 import { organizations } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireOrganizationAccess, runWithOrganizationAccess } from '@/lib/auth/session'
-import { ROLES } from '@/lib/auth/roles'
+import { canEditOrganization } from '@/lib/auth/permissions'
 
 const onboardingSchema = z.object({
   country: z.string().min(2).max(2).regex(/^[A-Z]{2}$/, 'Country must be a 2-letter ISO code'),
@@ -16,8 +16,8 @@ const onboardingSchema = z.object({
 export async function completeOnboarding(formData: FormData) {
   const ctx = await requireOrganizationAccess()
 
-  if (ctx.membership.role !== ROLES.SUPER_ADMIN && ctx.membership.role !== ROLES.ORGANIZATION_ADMIN) {
-    throw new Error('Only organization admins can complete onboarding')
+  if (!canEditOrganization(ctx.membership.role)) {
+    throw new Error('Solo un administrador de la organización puede completar la configuración inicial.')
   }
 
   const parsed = onboardingSchema.safeParse({
