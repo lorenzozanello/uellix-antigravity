@@ -20,7 +20,7 @@
 // success.
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 // ---------------------------------------------------------------------------
@@ -96,54 +96,100 @@ function quoteShellArg(arg: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// HPO-ODS-TOOLCHAIN-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json).
+// HPO-ODS-TOOLCHAIN-02 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json).
+// Refines HPO-ODS-TOOLCHAIN-01 (v1.0.1); does not revoke it.
 //
-// Measured directly: `pnpm run typecheck` (this project's own "tsc
-// --noEmit" script) returns exit 0 via a GLOBALLY installed tsc even in a
-// directory with node_modules entirely absent — pnpm's own script
-// execution does not fail closed here. A governed poststate that trusted
-// that exit code would report a green typecheck for a worktree whose
-// project dependencies do not exist.
+// v1.0.1 proved only that node_modules/typescript/package.json exists and
+// declares name "typescript", then still ran the governed typecheck via
+// `pnpm run typecheck` (PATH/bin-shim resolution). Measured directly
+// before this refinement: a fixture with that exact genuine-looking
+// package.json but NO compiler entry at all (neither node_modules/.bin/tsc
+// nor node_modules/typescript/bin/tsc) still passed the v1.0.1 check, and
+// `pnpm run typecheck` in that same directory returned exit 0 via an
+// ambient global tsc. Proving the PACKAGE exists is not proving the
+// COMPILER THAT RAN was local.
 //
-// require.resolve('typescript', {paths:[repoRoot]}) was tried first and
-// rejected: measured, under this project's tsx runtime, to resolve into
-// an entirely unrelated sibling project's node_modules instead of
-// failing — a worse false positive than the bug it would guard against.
-// Direct filesystem inspection has no module-resolution algorithm and no
-// PATH lookup to go wrong.
+// Fix: resolve the local compiler ENTRY explicitly (not the .bin shim,
+// which may legitimately be absent even with a valid local package), and
+// execute it directly via the current Node runtime — no shell, no PATH,
+// no bin-shim resolution, nothing left to fool it.
 // ---------------------------------------------------------------------------
 
-export interface ToolchainCheckResult {
+const LOCAL_TYPESCRIPT_PACKAGE_RELATIVE = 'node_modules/typescript/package.json'
+const LOCAL_TYPESCRIPT_COMPILER_RELATIVE = 'node_modules/typescript/bin/tsc'
+
+export interface LocalCompilerResolution {
   present: boolean
   reason?: string
+  packagePath?: string
+  version?: string
+  compilerEntry?: string
 }
 
-/** Pure (aside from the fs reads): proves the local project's own TypeScript package is installed, by identity, not merely by a directory existing. */
-export function checkLocalProjectToolchain(repoRoot: string): ToolchainCheckResult {
-  const marker = path.join(repoRoot, 'node_modules', 'typescript', 'package.json')
-  if (!existsSync(marker)) {
-    return { present: false, reason: `local TypeScript toolchain not found at ${marker} — run: pnpm install --frozen-lockfile` }
+/**
+ * Pure (aside from the fs reads): proves the local TypeScript package's
+ * identity AND that its compiler entry exists as a file — not merely that
+ * a directory or package.json exists. Repo-relative paths are returned
+ * (never absolute) to avoid leaking host-specific noise into evidence.
+ */
+export function resolveLocalCompiler(repoRoot: string): LocalCompilerResolution {
+  const packageAbsolute = path.join(repoRoot, LOCAL_TYPESCRIPT_PACKAGE_RELATIVE)
+  if (!existsSync(packageAbsolute)) {
+    return { present: false, reason: `${LOCAL_TYPESCRIPT_PACKAGE_RELATIVE} not found — run: pnpm install --frozen-lockfile` }
   }
   let pkg: unknown
   try {
-    pkg = JSON.parse(readFileSync(marker, 'utf8'))
+    pkg = JSON.parse(readFileSync(packageAbsolute, 'utf8'))
   } catch {
-    return { present: false, reason: `${marker} exists but is not valid JSON` }
+    return { present: false, reason: `${LOCAL_TYPESCRIPT_PACKAGE_RELATIVE} exists but is not valid JSON` }
   }
   const name = (pkg as { name?: unknown } | null)?.name
   if (name !== 'typescript') {
-    return { present: false, reason: `${marker} does not declare package name "typescript" (found: ${JSON.stringify(name)})` }
+    return { present: false, reason: `${LOCAL_TYPESCRIPT_PACKAGE_RELATIVE} does not declare package name "typescript" (found: ${JSON.stringify(name)})` }
   }
-  return { present: true }
+  const version = (pkg as { version?: unknown } | null)?.version
+  if (typeof version !== 'string' || version.length === 0) {
+    return { present: false, reason: `${LOCAL_TYPESCRIPT_PACKAGE_RELATIVE} does not declare a non-empty string version (found: ${JSON.stringify(version)})` }
+  }
+  const compilerAbsolute = path.join(repoRoot, LOCAL_TYPESCRIPT_COMPILER_RELATIVE)
+  let compilerIsFile = false
+  try {
+    compilerIsFile = statSync(compilerAbsolute).isFile()
+  } catch {
+    compilerIsFile = false
+  }
+  if (!compilerIsFile) {
+    return {
+      present: false,
+      reason: `${LOCAL_TYPESCRIPT_COMPILER_RELATIVE} not found as a file — the local TypeScript package is present but its compiler entry is not`,
+    }
+  }
+  return { present: true, packagePath: LOCAL_TYPESCRIPT_PACKAGE_RELATIVE, version, compilerEntry: LOCAL_TYPESCRIPT_COMPILER_RELATIVE }
+}
+
+/** Executes the resolved local compiler entry explicitly via the current Node runtime. No shell, no PATH, no bin shim. */
+export function runLocalTypecheck(repoRoot: string, compilerEntryRelative: string): number {
+  const compilerAbsolute = path.join(repoRoot, compilerEntryRelative)
+  const res = spawnSync(process.execPath, [compilerAbsolute, '--noEmit'], { cwd: repoRoot, stdio: 'inherit' })
+  return res.status ?? 1
+}
+
+/** Resolves then runs the governed typecheck: fails closed before spawning anything if the local compiler cannot be proven, and reports stable local-identity evidence on success. */
+export function runGovernedTypecheck(repoRoot: string): number {
+  const compiler = resolveLocalCompiler(repoRoot)
+  if (!compiler.present) {
+    console.error(`ods:poststate: local TypeScript compiler prerequisite failed — ${compiler.reason}`)
+    return 1
+  }
+  console.log(`LOCAL_TYPESCRIPT_PACKAGE=${compiler.packagePath}`)
+  console.log(`LOCAL_TYPESCRIPT_VERSION=${compiler.version}`)
+  console.log(`LOCAL_TYPESCRIPT_COMPILER=${compiler.compilerEntry}`)
+  return runLocalTypecheck(repoRoot, compiler.compilerEntry as string)
 }
 
 export function realRunner(pnpmArgs: string[], cwd: string): number {
   if (pnpmArgs[0] === 'run' && pnpmArgs[1] === 'typecheck') {
-    const toolchain = checkLocalProjectToolchain(cwd)
-    if (!toolchain.present) {
-      console.error(`ods:poststate: local project toolchain prerequisite failed — ${toolchain.reason}`)
-      return 1
-    }
+    return runGovernedTypecheck(cwd)
   }
   const command = ['pnpm', ...pnpmArgs].map(quoteShellArg).join(' ')
   const res = spawnSync(command, { cwd, stdio: 'inherit', shell: true })
