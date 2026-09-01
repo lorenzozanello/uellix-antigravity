@@ -1,0 +1,228 @@
+{
+  "package_id": "RE_SAFE_NOW_CLOSURE",
+  "version": "1.0.0",
+  "artifact_id": "RE_SAFE_NOW_CLOSURE_v1.0.0",
+  "authority_class": "DERIVED_INDEPENDENTLY_VALIDATED_CLOSURE_RECORD",
+  "materialization_step": "RE-SAFE-NOW-CM",
+  "materialization_date": "2026-09-01",
+  "class": "B",
+  "mode": "DERIVED_CLOSURE_MATERIALIZATION",
+  "supersedes": null,
+
+  "purpose": "Materialize, as a repository-native record, the independently validated SAFE-NOW closure of the product-reengineering lineage (U3, U4, U5, U6, U1-F04) at the audited HEAD/TREE, per RE_SAFE_NOW_INTEGRATION_REVIEW = PASS_WITH_MATERIAL_FINDINGS.",
+
+  "scope_note": "DERIVED TRACKING RECORD. Creates no new product authority, implements no runtime change, modifies no frozen FIB/PC-01B/IM-01B authority, and does not authorize U7 globally or implement onboarding hardening. Preserves the exact nuance of the independent review verdict: PASS_WITH_MATERIAL_FINDINGS, not an unconditional PASS.",
+
+  "authority_boundary": {
+    "creates_new_product_authority": false,
+    "reopens_frozen_decisions": false,
+    "reopens_q1_q6": false,
+    "modifies_frozen_fib_authority": false,
+    "implements_u7": false,
+    "implements_onboarding_hardening": false,
+    "governing_lane": "ODS_V1_AUTHORITY_v1.0.0.json :: product_and_wave_handoff.lane_b (Uellix product reengineering)"
+  },
+
+  "closure_identity": {
+    "audited_head": "f282039391f1050ca7276b3579854e8a638db92e",
+    "audited_tree": "80eae8bf34ddd68d0d2c84a85b11831b066c4666",
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "independent_review_result": "RE_SAFE_NOW_INTEGRATION_REVIEW = PASS_WITH_MATERIAL_FINDINGS",
+    "ready_for_safe_now_closure_materialization": true,
+    "closure_preserves_exact_nuance": "PASS_WITH_MATERIAL_FINDINGS is NOT rewritten into an unconditional PASS anywhere in this record"
+  },
+
+  "source_artifacts": [
+    { "path": "docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json", "role": "Q1-Q6 adjudication, parallelism classes" },
+    { "path": "docs/ops/reeng/RE_U1_UX_UI_DELTA_AUDIT_v1.0.0.json", "role": "measured findings U1-F01..F21, execution disposition" },
+    { "path": "docs/ops/reeng/RE_U3_INFORMATION_ARCHITECTURE_DELTA_v1.0.0.json", "role": "context model, onboarding two-phase disposition, IA node classifications" },
+    { "path": "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json", "role": "Commercial V1 golden journey, actors, fail-closed matrix, SROI remediation matrix" },
+    { "path": "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.1_ADDENDUM.json", "role": "RE-U4-CF-01 correction, this session" }
+  ],
+
+  "lineage_stages": {
+    "RE_U5_STATUS": "CLOSED",
+    "RE_U6_STATUS": "CLOSED",
+    "RE_U3_STATUS": "CLOSED",
+    "RE_U4_STATUS": "CLOSED_WITH_CF_01_ROUTED",
+    "U1_F04_STATUS": "CLOSED",
+    "note_on_u5_u6": "No individual RE_U5_*.json or RE_U6_*.json artifact exists or is created by this closure — intentional, per instruction. RE-U5/RE-U6 closure is evidenced by measured runtime state (nav-links.ts, not-found.tsx, OnboardingCheck sign-out header, skip link) and by the RE-U6-V independent gate re-verification referenced in RE_U3/RE_U4, not by a standalone JSON record. This artifact is the repo-native consolidation of their independently validated closure."
+  },
+
+  "closed_findings": [
+    { "finding": "U1-F01 onboarding dead-end / exit", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5 (nav sign-out/support header)" },
+    { "finding": "U1-F02 Portfolio nav reachability", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5 (NAV_LINKS)" },
+    { "finding": "U1-F04 dead SROI remediation anchors / /app/proxies", "status": "CLOSED", "closed_by": "RE_U1_F04_REMEDIATION_LINK_REPAIR (prior commit f282039)" },
+    { "finding": "U1-F05 Organization Settings reachability", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5" },
+    { "finding": "U1-F06 loading-state coverage", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5/U7" },
+    { "finding": "U1-F07 skip link authenticated shell", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5" },
+    { "finding": "U1-F08 breadcrumb 404 link", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5" },
+    { "finding": "U1-F09 governed metadata typography (font-mono)", "status": "CLOSED", "closed_by": "RE-U6" },
+    { "finding": "U1-F10 NAV_LINKS duplication", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5" },
+    { "finding": "U1-F11 hardcoded Navy literals", "status": "CLOSED", "closed_by": "RE-U6" },
+    { "finding": "U1-F12 aria-describedby form a11y", "status": "CLOSED", "closed_by": "RE-U6" },
+    { "finding": "U1-F13 Stella entry-verb consistency", "status": "CLOSED", "closed_by": "RE-U6, independently re-verified (RE-U6-V)" },
+    { "finding": "U1-F14 breadcrumb segment labels", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5" },
+    { "finding": "U1-F16 not-found explanation surface", "status": "CLOSED_SAFE_NOW", "closed_by": "RE-U5 (app/not-found.tsx); functional public verification remains WAIT_FOR_LATER_FIB" },
+    { "finding": "U1-F18 onboarding copy register", "status": "CLOSED", "closed_by": "RE-U6" },
+    { "finding": "U1-F19 Stella copy gender agreement", "status": "CLOSED", "closed_by": "RE-U6" },
+    { "finding": "IA: Evaluate reservation", "status": "CLOSED_BY_RE_U3", "closed_by": "RE-U3 (naming/position only, no runtime route)" },
+    { "finding": "IA: onboarding two-surface distinction", "status": "CLOSED_BY_RE_U3", "closed_by": "RE-U3 (CONFIRMED_TWO_PHASE_SEPARATION)" }
+  ],
+
+  "remaining_findings": [
+    { "finding": "U1-F03 self-service signup", "status": "OPEN_RUNTIME_SELF_SERVICE_SIGNUP", "reason": "no public signup route exists; journey design SAFE_NOW-closed by RE-U4, runtime not implemented" },
+    { "finding": "U1-F15 Evaluate structured surface", "status": "OPEN_WAIT_FOR_WAVE3_EVALUATE", "reason": "IA reservation closed; runtime WAIT_FOR_WAVE3_CONTRACT (FIBIU-19/20)" },
+    { "finding": "U1-F17 public hero exact copy", "status": "WAIT_FOR_VISUAL_EVIDENCE", "reason": "Q5 PUBLIC family not_recovered" },
+    { "finding": "U1-F20 orphan color literals", "status": "PARTIAL_DEFERRED_VISUAL_TOKEN_MAPPING", "reason": "token folding partially deferred pending visual evidence recovery for exact mapping" },
+    { "finding": "U1-F21 verify banner exact treatment", "status": "WAIT_FOR_VISUAL_EVIDENCE", "reason": "Q5 TRUST family not_recovered" },
+    { "finding": "RE-U4-CF-01 non-admin Phase-2 onboarding trap", "status": "CURRENTLY_REACHABLE_DEFECT_MATERIAL_NON_BLOCKING", "reason": "reachable remediation/dead-end defect for non-admin members of an uncalibrated organization; NOT an authorization weakening; owner RE_U4_HARDENING" }
+  ],
+
+  "u1_finding_reclassification": {
+    "U1-F01": "CLOSED_SAFE_NOW",
+    "U1-F02": "CLOSED_REACHABILITY_ONLY",
+    "U1-F03": "OPEN_RUNTIME_SELF_SERVICE_SIGNUP",
+    "U1-F04": "CLOSED",
+    "U1-F05": "CLOSED_SAFE_NOW",
+    "U1-F06": "CLOSED_SAFE_NOW",
+    "U1-F07": "CLOSED_SAFE_NOW",
+    "U1-F08": "CLOSED_SAFE_NOW",
+    "U1-F09": "CLOSED",
+    "U1-F10": "CLOSED_SAFE_NOW",
+    "U1-F11": "CLOSED",
+    "U1-F12": "CLOSED",
+    "U1-F13": "CLOSED",
+    "U1-F14": "CLOSED_SAFE_NOW",
+    "U1-F15": "OPEN_WAIT_FOR_WAVE3_EVALUATE",
+    "U1-F16": "SAFE_NOW_EXPLANATION_CLOSED_FUNCTIONALITY_WAIT_LATER_FIB",
+    "U1-F17": "WAIT_FOR_VISUAL_EVIDENCE",
+    "U1-F18": "CLOSED",
+    "U1-F19": "FALSE_POSITIVE_NO_CHANGE_REQUIRED",
+    "U1-F20": "PARTIAL_DEFERRED_VISUAL_TOKEN_MAPPING",
+    "U1-F21": "WAIT_FOR_VISUAL_EVIDENCE",
+    "note": "Statuses reproduced verbatim from the task's independently reviewed disposition set. Where a status differs from an earlier RE-U1/RE-U3/RE-U4 record's own phrasing (e.g. U1-F19 here recorded as a false positive rather than 'CLOSED' as in RE-U6 evidence), the earlier record and this reclassification are not in conflict: U1-F19 (Stella copy gender agreement) was measured and addressed by RE-U6; 'FALSE_POSITIVE_NO_CHANGE_REQUIRED' is preserved here exactly as specified by the independent integration review and is not overridden by this closure."
+  },
+
+  "material_carry_forwards": {
+    "RE_U4_CF_01": {
+      "status": "CURRENTLY_REACHABLE_DEFECT",
+      "next_owner": "RE_U4_HARDENING",
+      "addendum": "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.1_ADDENDUM.json"
+    },
+    "SEC_DEV_01": {
+      "canonical_name": "AMBIENT_SECRET_ASSERTION_CAN_DISCLOSE_VALUE_ON_FAILURE",
+      "status": "DEFERRED_DEVELOPMENT_ENV_HARDENING",
+      "independent_review_measured_scope": { "assertion_count": 11, "file_count": 8 },
+      "preexisting": true,
+      "caused_by_safe_now": false,
+      "statement": "Pre-existing development-environment assertion pattern measured by the independent integration review, not introduced by SAFE-NOW work. No secret value is recorded, read, or printed by this closure artifact or its materialization."
+    },
+    "U1_F20_DEFERRED": {
+      "topic": "exact color mapping / visual authority for orphan literals",
+      "status": "PARTIAL_DEFERRED_VISUAL_TOKEN_MAPPING",
+      "dependency": "VISUAL_EVIDENCE_RECOVERY pending (RE-U0 Q5 backlog)"
+    },
+    "VISUAL_EVIDENCE_RECOVERY": { "status": "PENDING" },
+    "U1_F03_SELF_SERVICE_SIGNUP": { "status": "OPEN_RUNTIME_SELF_SERVICE_SIGNUP", "dependency": "NONE (product/runtime decision, not FIB-owned); journey design closed by RE-U4" },
+    "U1_F16_PUBLIC_VERIFICATION": { "status": "SAFE_NOW_EXPLANATION_CLOSED_FUNCTIONALITY_WAIT_LATER_FIB", "dependency": "WAIT_FOR_LATER_FIB" },
+    "EVALUATE_RUNTIME": { "status": "WAIT_FOR_WAVE3_CONTRACT", "fib_refs": ["FIBIU-19", "FIBIU-20"] },
+    "PORTFOLIO_GOVERNED_AGGREGATION": { "status": "WAIT_FOR_LATER_FIB", "fib_refs": ["FIBIU-27 (Wave 5)", "FIBIU-30 (Wave 6)"] },
+    "REPORT_VERSION_TRUST_PUBLIC_DISCLOSURE": { "status": "WAIT_FOR_LATER_FIB", "fib_refs": ["FIBIU-22..25 (Wave 4+)", "FIBIU-26/31 (Wave 5)"] }
+  },
+
+  "safe_now_status": {
+    "RE_SAFE_NOW_STATUS": "CLOSED_WITH_MATERIAL_NON_BLOCKING_CARRY_FORWARD",
+    "does_not_mean": [
+      "Commercial V1 complete",
+      "U0-U9 complete",
+      "Evaluate complete",
+      "signup complete",
+      "public verification complete",
+      "visual freeze recovered"
+    ]
+  },
+
+  "confirmed_invariants": {
+    "SERVER_AUTHORIZATION_CHANGED": "NO",
+    "RLS_CHANGED": "NO",
+    "DATABASE_CHANGED": "NO",
+    "STELLA_CONTEXTUAL_ONLY": "YES",
+    "STANDALONE_STELLA_ROUTE": "NO",
+    "EVALUATE_FIRST_CLASS_TARGET_NODE": "YES",
+    "EVALUATE_RUNTIME_COMPLETE": "NO",
+    "PORTFOLIO_REACHABLE": "YES",
+    "PORTFOLIO_COMMERCIAL_V1_COMPLETE": "NO",
+    "SROI_BLOCKERS_MAPPED": 12,
+    "SROI_DEAD_DESTINATIONS": 0,
+    "SROI_CTA_GAPS": 0,
+    "APP_PROXIES_LIVE_REFERENCES": 0,
+    "SROI_CALCULATION_SEMANTICS_CHANGED": "NO",
+    "VISUAL_HPO_READJUDICATED": "NO"
+  },
+
+  "test_gate_evidence": {
+    "TARGETED_TEST_FILES": 23,
+    "TARGETED_TESTS": 411,
+    "TARGETED_TEST_RESULT": "PASS",
+    "TYPECHECK": "PASS",
+    "SECRETS_SCAN": "PASS",
+    "AUTHORITY_SEAL_VERIFY": "PASS",
+    "BUILD": "PASS",
+    "ODS_POSTSTATE": "PASS",
+    "ods_poststate_details": {
+      "base": "a7abe94a5da3d3b9d5ca2a11788a952750e151fb",
+      "changed_files": 55,
+      "unauthorized_paths": 0,
+      "protected_authority": "NONE"
+    },
+    "statement": "These figures reproduce the independent integration review's measurements verbatim. This materialization does NOT rerun the 411-test independent audit; the audit result is already established and is not re-derived here."
+  },
+
+  "environment_record": {
+    "historical_audit_gemini_env_present": "YES",
+    "historical_audit_env_scope": { "user_scope_set": "NO", "machine_scope_set": "NO" },
+    "historical_audit_conclusion": "stale inherited process environment, not a repository secret exposure",
+    "current_process_gemini_env_present_at_this_prestate": "YES",
+    "note": "Measured this session via presence-only check (no value read or printed). This is audit-environment metadata only, distinct from the historical audit fact recorded above, and is not treated as a repository secret exposure."
+  },
+
+  "next_product_order": {
+    "sequence": [
+      { "order": 1, "gate": "RE_U4_HARDENING", "objective": "close RE-U4-CF-01 with minimal runtime remediation" },
+      { "order": 2, "gate": "NEXT_SAFE_PRODUCT_IMPLEMENTATION_SLICE", "objective": "determined after RE_U4_HARDENING closes" }
+    ],
+    "u7_authorization": "NOT_AUTHORIZED_GLOBALLY_BY_THIS_CLOSURE",
+    "gating_rule": "Page/template work remains gated by corresponding FIB contract availability: Measure -> per closed Wave 2 contracts; Evaluate -> Wave 3; Reports/Stella trust -> Wave 4; Portfolio aggregation/public -> Wave 5/6."
+  },
+
+  "no_retroactive_u5_u6_files": {
+    "statement": "This closure intentionally does not create individual historical RE_U5_*.json or RE_U6_*.json files. This artifact is the repo-native record that consolidates their independently validated closure.",
+    "intentional": true
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "files_changed_by_this_step": 2,
+    "executable_surface_changed": false,
+    "product_runtime_changes": 0,
+    "database_changes": 0,
+    "dependencies_added": 0,
+    "lockfile_changed": false,
+    "sealed_authority_bytes_changed": 0,
+    "protected_corpus_changed": false,
+    "new_product_authority_created": false,
+    "fib_owned_contracts_invented": 0,
+    "q1_q6_reopened": false,
+    "original_re_u4_artifact_edited": false
+  },
+
+  "state_after_this_artifact": {
+    "closure_artifact_created": true,
+    "ready_for_re_u4_hardening": true,
+    "u7_globally_authorized": false,
+    "next_gate": "RE_U4_HARDENING_CF_01"
+  },
+
+  "final_state": "SAFE_NOW_REENGINEERING_CLOSED_WITH_CF_01_ROUTED_TO_HARDENING"
+}
