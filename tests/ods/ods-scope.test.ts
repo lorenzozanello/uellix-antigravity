@@ -7,6 +7,7 @@ import path from 'node:path'
 import {
   matchesPattern,
   matchesAnyPattern,
+  matchesAnyPatternCaseInsensitive,
   DEFAULT_PROTECTED_PATTERNS,
   classifyPaths,
   parseDiffNameStatusZ,
@@ -605,5 +606,229 @@ describe('ods:scope --protected-authority — real CLI, temporary-repo fixtures,
     expect(failResult.status).toBe(1)
     expect(failResult.stdout).toContain('ODS_SCOPE=FAIL')
     expect(failResult.stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/sibling.sql')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-C4-CASE-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json).
+//
+// Measured before implementing: matchesAnyPattern(path, DEFAULT_PROTECTED_PATTERNS)
+// returned NOT-PROTECTED for DB/migrations/x.sql, db/Migrations/x.sql,
+// DB/prepared/journal/x.sql and DB/baseline/x.sql — a case-variant path
+// could avoid every protected classifier on a case-sensitive host, and the
+// bypass is not limited to migrations: db/baseline/**, a surface no
+// authority grants, was equally reachable via DB/baseline/. Detection
+// becomes case-insensitive below; authorization stays bound to canonical
+// concrete paths only — a non-canonical protected path FAILs even under a
+// valid grant.
+// ---------------------------------------------------------------------------
+
+describe('case-insensitive protected-surface detection — pure, covers ALL DEFAULT_PROTECTED_PATTERNS', () => {
+  // One representative non-canonical variant per pattern, matching the
+  // exact 7 entries in DEFAULT_PROTECTED_PATTERNS at the time of writing.
+  const NON_CANONICAL_CASES: Array<{ pattern: string; canonical: string; nonCanonical: string }> = [
+    { pattern: 'docs/ops/fib/**', canonical: 'docs/ops/fib/x.md', nonCanonical: 'docs/OPS/fib/x.md' },
+    { pattern: 'docs/ops/pc01b/**', canonical: 'docs/ops/pc01b/x.md', nonCanonical: 'docs/ops/PC01B/x.md' },
+    { pattern: 'docs/ops/im01b/**', canonical: 'docs/ops/im01b/x.md', nonCanonical: 'docs/ops/IM01B/x.md' },
+    { pattern: 'db/migrations/**', canonical: 'db/migrations/x.sql', nonCanonical: 'DB/migrations/x.sql' },
+    { pattern: 'db/prepared/**', canonical: 'db/prepared/x.sql', nonCanonical: 'db/Prepared/x.sql' },
+    { pattern: 'db/baseline/**', canonical: 'db/baseline/x.sql', nonCanonical: 'DB/baseline/x.sql' },
+    {
+      pattern: 'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
+      canonical: 'docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json',
+      nonCanonical: 'docs/ops/ods/ods_v1_authority_v1.0.0.json',
+    },
+  ]
+
+  it('DEFAULT_PROTECTED_PATTERNS has exactly the 7 patterns this suite exercises (guards against a silently added/removed surface)', () => {
+    expect(DEFAULT_PROTECTED_PATTERNS).toEqual(NON_CANONICAL_CASES.map((c) => c.pattern))
+  })
+
+  it.each(NON_CANONICAL_CASES)('$pattern: canonical path is case-sensitively protected, non-canonical variant is not (raw matchesAnyPattern)', ({ canonical, nonCanonical }) => {
+    expect(matchesAnyPattern(canonical, DEFAULT_PROTECTED_PATTERNS)).toBe(true)
+    expect(matchesAnyPattern(nonCanonical, DEFAULT_PROTECTED_PATTERNS)).toBe(false)
+  })
+
+  it.each(NON_CANONICAL_CASES)('$pattern: the non-canonical variant IS caught case-insensitively', ({ nonCanonical }) => {
+    expect(matchesAnyPatternCaseInsensitive(nonCanonical, DEFAULT_PROTECTED_PATTERNS)).toBe(true)
+  })
+
+  it.each(NON_CANONICAL_CASES)('$pattern: classifyPaths puts the non-canonical variant in nonCanonicalProtectedPaths, unconditionally', ({ nonCanonical }) => {
+    const result = classifyPaths([nonCanonical], DEFAULT_PROTECTED_PATTERNS, [nonCanonical])
+    expect(result.nonCanonicalProtectedPaths).toEqual([nonCanonical])
+    expect(result.protectedViolations).toEqual([])
+    expect(result.unauthorized).toEqual([])
+    expect(result.ok).toEqual([])
+  })
+})
+
+describe('classifyPaths — canonical casing vs authorization, CASE-1..CASE-6', () => {
+  const grant: ProtectedGrant = {
+    authorityId: 'HPO-ODS-W2-01',
+    branch: 'codex/w2-methodology-objects-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  }
+
+  it('CASE-1: DB/migrations/file.sql FAILs (non-canonical), even with a matching --allow', () => {
+    const result = classifyPaths(['DB/migrations/file.sql'], DEFAULT_PROTECTED_PATTERNS, ['DB/migrations/file.sql'])
+    expect(result.nonCanonicalProtectedPaths).toEqual(['DB/migrations/file.sql'])
+  })
+
+  it('CASE-2: db/Migrations/file.sql FAILs (non-canonical)', () => {
+    const result = classifyPaths(['db/Migrations/file.sql'], DEFAULT_PROTECTED_PATTERNS, ['db/Migrations/file.sql'])
+    expect(result.nonCanonicalProtectedPaths).toEqual(['db/Migrations/file.sql'])
+  })
+
+  it('CASE-3: DB/prepared/journal/file.sql FAILs even with a VALID grant + matching ordinary --allow — the security-critical case', () => {
+    const result = classifyPaths(
+      ['DB/prepared/journal/file.sql'],
+      DEFAULT_PROTECTED_PATTERNS,
+      ['DB/prepared/journal/file.sql'],
+      grant, // a genuinely valid, correctly-scoped grant
+    )
+    expect(result.nonCanonicalProtectedPaths).toEqual(['DB/prepared/journal/file.sql'])
+    expect(result.grantAuthorized).toEqual([]) // never reaches grant authorization
+    expect(result.ok).toEqual([])
+  })
+
+  it('CASE-4 (from the addendum, generalized to db/baseline/**): DB/baseline/file.sql FAILs — a surface NO authority grants, equally bypassable by case variant', () => {
+    const result = classifyPaths(['DB/baseline/file.sql'], DEFAULT_PROTECTED_PATTERNS, ['DB/baseline/file.sql'], grant)
+    expect(result.nonCanonicalProtectedPaths).toEqual(['DB/baseline/file.sql'])
+  })
+
+  it('CASE-5: canonical db/migrations/file.sql + valid authority + ordinary allow => PASS', () => {
+    const result = classifyPaths(['db/migrations/file.sql'], DEFAULT_PROTECTED_PATTERNS, ['db/migrations/file.sql'], grant)
+    expect(result.nonCanonicalProtectedPaths).toEqual([])
+    expect(result.protectedViolations).toEqual([])
+    expect(result.grantAuthorized).toEqual(['db/migrations/file.sql'])
+    expect(result.ok).toEqual(['db/migrations/file.sql'])
+  })
+
+  it('CASE-6: canonical unprotected paths retain existing behavior (unaffected by the casing check)', () => {
+    const allowed = classifyPaths(['lib/admin/x.ts'], DEFAULT_PROTECTED_PATTERNS, ['lib/admin/x.ts'])
+    expect(allowed.ok).toEqual(['lib/admin/x.ts'])
+    expect(allowed.nonCanonicalProtectedPaths).toEqual([])
+
+    const unauthorized = classifyPaths(['lib/admin/x.ts'], DEFAULT_PROTECTED_PATTERNS, [])
+    expect(unauthorized.unauthorized).toEqual(['lib/admin/x.ts'])
+    expect(unauthorized.nonCanonicalProtectedPaths).toEqual([])
+  })
+})
+
+describe('CASE-7: case-canonical enforcement does not weaken rename handling — real temporary git repo', () => {
+  let dir: string
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  it('a real git rename INTO a non-canonical-cased protected path is still caught, on the new path', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'scripts/allowed.ts', 'export {}\n')
+    mkdirSync(path.join(dir, 'DB', 'migrations'), { recursive: true })
+    git(dir, ['mv', 'scripts/allowed.ts', 'DB/migrations/smuggled.sql'])
+    git(dir, ['commit', '-q', '-m', 'rename into non-canonical protected path'])
+
+    const changed = collectChangedPaths(dir, base)
+    const result = classifyPaths(changed, DEFAULT_PROTECTED_PATTERNS, ['scripts/allowed.ts', 'DB/migrations/smuggled.sql'])
+    expect(result.nonCanonicalProtectedPaths).toContain('DB/migrations/smuggled.sql')
+    expect(result.ok).not.toContain('DB/migrations/smuggled.sql')
+  })
+
+  it('a real git rename OUT OF a canonical protected surface into a non-canonical variant of another is still caught on both endpoints', () => {
+    dir = makeTempGitRepo()
+    mkdirSync(path.join(dir, 'db', 'baseline'), { recursive: true })
+    const base = commitFile(dir, 'db/baseline/original.sql', 'select 1;\n')
+    mkdirSync(path.join(dir, 'DB', 'migrations'), { recursive: true })
+    git(dir, ['mv', 'db/baseline/original.sql', 'DB/migrations/renamed.sql'])
+    git(dir, ['commit', '-q', '-m', 'rename across canonical/non-canonical protected surfaces'])
+
+    const changed = collectChangedPaths(dir, base)
+    const result = classifyPaths(changed, DEFAULT_PROTECTED_PATTERNS, ['db/baseline/original.sql', 'DB/migrations/renamed.sql'])
+    // Old path: canonical protected, no grant -> protectedViolations.
+    expect(result.protectedViolations).toContain('db/baseline/original.sql')
+    // New path: non-canonical -> nonCanonicalProtectedPaths, never authorized.
+    expect(result.nonCanonicalProtectedPaths).toContain('DB/migrations/renamed.sql')
+  })
+})
+
+describe('ods:scope --protected-authority — missing-operand hardening (mechanical CLI hygiene)', () => {
+  const tsxCli = require.resolve('tsx/cli')
+  const run = (args: string[]) => spawnSync(process.execPath, [tsxCli, 'scripts/ods-scope.ts', ...args], { cwd: REPO_ROOT, encoding: 'utf8' })
+
+  it('trailing --protected-authority with nothing after it is a usage error, not silently NONE', () => {
+    const res = run(['--base', 'deadbeef', '--allow', 'x', '--protected-authority'])
+    expect(res.status).toBe(2)
+    expect(res.stderr).toContain('--protected-authority requires a value')
+    expect(res.stdout).not.toContain('PROTECTED_AUTHORITY=NONE')
+  })
+
+  it('--protected-authority immediately followed by another recognized flag is rejected, not misparsed as a value', () => {
+    const res = run(['--protected-authority', '--base', 'deadbeef'])
+    expect(res.status).toBe(2)
+    expect(res.stderr).toContain('--protected-authority requires a value')
+  })
+
+  it('valid usage is preserved: a real identifier still resolves normally', () => {
+    const res = run(['--base', 'deadbeef', '--allow', 'x', '--protected-authority', 'HPO-ODS-W2-01'])
+    // Fails for an unrelated reason (base sha doesn't exist in REPO_ROOT),
+    // but must reach that failure via normal resolution, not a usage error.
+    expect(res.status).not.toBe(2)
+  })
+})
+
+describe('ods:scope real CLI — NON_CANONICAL_PROTECTED_PATH output and overall FAIL, temp repo', () => {
+  let dir: string
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  function runRealCli(cwd: string, args: string[]): { status: number | null; stdout: string } {
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  it('CASE-3 as a real end-to-end CLI run: valid grant + branch + non-canonical path => FAIL, NON_CANONICAL_PROTECTED_PATH reported', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    git(dir, ['checkout', '-b', 'codex/w2-methodology-objects-r1'])
+    mkdirSync(path.join(dir, 'DB', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'DB/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      base,
+      '--allow',
+      'DB/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATH=DB/prepared/journal/fixture.sql')
+    expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATHS=1')
+  })
+
+  it('CASE-5 as a real end-to-end CLI run: the canonical path (correct casing) PASSes under the same grant', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    git(dir, ['checkout', '-b', 'codex/w2-methodology-objects-r1'])
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      base,
+      '--allow',
+      'db/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+    expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATHS=0')
   })
 })

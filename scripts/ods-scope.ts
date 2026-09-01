@@ -51,6 +51,19 @@ export function matchesAnyPattern(filePath: string, patterns: string[]): boolean
   return patterns.some((p) => matchesPattern(filePath, p))
 }
 
+// HPO-ODS-C4-CASE-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json):
+// case-insensitive DETECTION only, used to catch a path that is trying to
+// enter a protected surface via a non-canonical casing on a case-sensitive
+// host (e.g. DB/migrations/x.sql vs the canonical db/migrations/**).
+// Authorization is never derived from this — see classifyPaths below.
+export function matchesPatternCaseInsensitive(filePath: string, pattern: string): boolean {
+  return new RegExp(patternToRegExp(pattern).source, 'i').test(filePath)
+}
+
+export function matchesAnyPatternCaseInsensitive(filePath: string, patterns: string[]): boolean {
+  return patterns.some((p) => matchesPatternCaseInsensitive(filePath, p))
+}
+
 /**
  * Default-protected, high-risk surfaces. Unconditional: no --allow pattern
  * in this version of the gate can authorize a change here.
@@ -71,6 +84,13 @@ export interface ScopeClassification {
   ok: string[]
   /** Subset of `ok` that was protected by default and authorized only via a resolved grant. */
   grantAuthorized: string[]
+  /**
+   * Case-insensitively inside a protected surface but NOT using its
+   * canonical casing (e.g. DB/migrations/x.sql). Always a failure,
+   * unconditionally — never authorizable, even under a valid grant. See
+   * HPO-ODS-C4-CASE-01.
+   */
+  nonCanonicalProtectedPaths: string[]
 }
 
 /**
@@ -85,6 +105,13 @@ export interface ScopeClassification {
  * from ever authorizing db/prepared/sibling.sql: the sibling matches
  * DEFAULT_PROTECTED_PATTERNS' db/prepared/** but not the grant's own
  * narrower db/prepared/journal/**.
+ *
+ * Casing: a path that only enters a protected surface case-insensitively
+ * (not via its canonical declared casing) is classified as
+ * nonCanonicalProtectedPaths and fails unconditionally — checked BEFORE
+ * the ordinary --allow branch, so it can never be authorized by any
+ * combination of grant or --allow. Detection is case-insensitive;
+ * authorization stays bound to the canonical concrete path only.
  */
 export function classifyPaths(
   paths: string[],
@@ -96,12 +123,14 @@ export function classifyPaths(
   const unauthorized: string[] = []
   const ok: string[] = []
   const grantAuthorized: string[] = []
+  const nonCanonicalProtectedPaths: string[] = []
 
   for (const p of new Set(paths)) {
     if (matchesAnyPattern(p, protectedPatterns)) {
-      // Protected by default. Authorized ONLY if the grant's own (narrower)
-      // patterns cover this exact path AND the ordinary task --allow also
-      // covers it — both mandatory, neither can stand in for the other.
+      // Protected by default (canonical casing). Authorized ONLY if the
+      // grant's own (narrower) patterns cover this exact path AND the
+      // ordinary task --allow also covers it — both mandatory, neither
+      // can stand in for the other.
       const grantCovers = grant !== undefined && matchesAnyPattern(p, grant.patterns)
       const taskAllows = matchesAnyPattern(p, allowedPatterns)
       if (grantCovers && taskAllows) {
@@ -110,6 +139,10 @@ export function classifyPaths(
       } else {
         protectedViolations.push(p)
       }
+    } else if (matchesAnyPatternCaseInsensitive(p, protectedPatterns)) {
+      // Case-insensitively protected but not canonically. Unconditional
+      // failure — never reaches the grant/--allow branch below.
+      nonCanonicalProtectedPaths.push(p)
     } else if (!matchesAnyPattern(p, allowedPatterns)) {
       unauthorized.push(p)
     } else {
@@ -117,7 +150,7 @@ export function classifyPaths(
     }
   }
 
-  return { protectedViolations, unauthorized, ok, grantAuthorized }
+  return { protectedViolations, unauthorized, ok, grantAuthorized, nonCanonicalProtectedPaths }
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +308,17 @@ interface ScopeArgs {
   protectedAuthority?: string
 }
 
+// HPO-ODS-M1D CLI hygiene: recognized flags, used only to detect whether a
+// --protected-authority operand slot was actually consumed by another flag
+// rather than a real identifier. Scoped narrowly to this one flag per the
+// authorizing addendum — --base/--allow's existing (weaker) operand
+// handling is explicitly out of scope for this remediation.
+const SCOPE_RECOGNIZED_FLAGS = new Set(['--base', '--allow', '--protected-authority'])
+
+function looksLikeMissingProtectedAuthorityOperand(token: string | undefined): boolean {
+  return token === undefined || token === '--' || SCOPE_RECOGNIZED_FLAGS.has(token)
+}
+
 function parseArgs(argv: string[]): ScopeArgs {
   const result: ScopeArgs = { allow: [] }
   for (let i = 0; i < argv.length; i++) {
@@ -282,8 +326,15 @@ function parseArgs(argv: string[]): ScopeArgs {
     if (arg === '--') continue // see scripts/ods-prestate.ts for why
     if (arg === '--base') result.base = argv[++i]
     else if (arg === '--allow') result.allow.push(argv[++i])
-    else if (arg === '--protected-authority') result.protectedAuthority = argv[++i]
-    else {
+    else if (arg === '--protected-authority') {
+      const value = argv[i + 1]
+      if (looksLikeMissingProtectedAuthorityOperand(value)) {
+        console.error('ods:scope: --protected-authority requires a value')
+        process.exit(2)
+      }
+      i++
+      result.protectedAuthority = value
+    } else {
       console.error(`ods:scope: unrecognized argument "${arg}"`)
       process.exit(2)
     }
@@ -314,11 +365,14 @@ function main(): void {
   if (args.protectedAuthority) lines.push(`  ${grantResolution.reason}`)
   lines.push(`PROTECTED_AUTHORIZED_PATH_COUNT=${result.grantAuthorized.length}`)
   for (const p of result.protectedViolations) lines.push(`PROTECTED_PATH_VIOLATION=${p}`)
+  for (const p of result.nonCanonicalProtectedPaths) lines.push(`NON_CANONICAL_PROTECTED_PATH=${p}`)
   for (const p of result.unauthorized) lines.push(`UNAUTHORIZED_PATH=${p}`)
   lines.push(`PROTECTED_PATH_VIOLATIONS=${result.protectedViolations.length}`)
+  lines.push(`NON_CANONICAL_PROTECTED_PATHS=${result.nonCanonicalProtectedPaths.length}`)
   lines.push(`UNAUTHORIZED_PATHS=${result.unauthorized.length}`)
 
-  const pass = result.protectedViolations.length === 0 && result.unauthorized.length === 0
+  const pass =
+    result.protectedViolations.length === 0 && result.nonCanonicalProtectedPaths.length === 0 && result.unauthorized.length === 0
   lines.push(`ODS_SCOPE=${pass ? 'PASS' : 'FAIL'}`)
   console.log(lines.join('\n'))
   process.exit(pass ? 0 : 1)
