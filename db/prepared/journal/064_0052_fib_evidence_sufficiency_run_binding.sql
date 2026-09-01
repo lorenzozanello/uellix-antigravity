@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 43/64: 001_initial_auth_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 64/64: 0052_fib_evidence_sufficiency_run_binding.sql
 -- ============================================================================
 --
--- Includes:      db/policies/001_initial_auth_rls.sql
--- Source SHA256: e525b1eefa723bb38db5121a08b5cc416126f64c0563687ada6fcc2a7cc054ef
+-- Includes:      db/migrations/0052_fib_evidence_sufficiency_run_binding.sql
+-- Source SHA256: 3fc4df227c7e128058573498f0dd53ce1219b93126c937cbb1e96b400c3ea541
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/043_001_initial_auth_rls.sql
+--        -f db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/policies/001_initial_auth_rls.sql
+\ir ../../../db/migrations/0052_fib_evidence_sufficiency_run_binding.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '001_initial_auth_rls.sql', 'PHASE_BASELINE',
-   'e525b1eefa723bb38db5121a08b5cc416126f64c0563687ada6fcc2a7cc054ef', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0052_fib_evidence_sufficiency_run_binding.sql', 'PHASE_BASELINE',
+   '3fc4df227c7e128058573498f0dd53ce1219b93126c937cbb1e96b400c3ea541', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

@@ -365,6 +365,13 @@
       "when": 1788262029098,
       "tag": "0051_fib_evidence_erasure_substrate",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1788270743733,
+      "tag": "0052_fib_evidence_sufficiency_run_binding",
+      "breakpoints": true
     }
   ]
 }

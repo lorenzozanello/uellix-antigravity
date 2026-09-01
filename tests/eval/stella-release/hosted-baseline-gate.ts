@@ -371,15 +371,15 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    // W2-B1-R1 (R-B1-03) — 64, NOT 63: unit ZERO creates the journal table,
-    // and it is a planned step rather than setup because a prerequisite
-    // nobody plans is one somebody skips. 63 baseline units + 1 journal
-    // bootstrap step. The count is asserted rather than loosened to `>= 63`
-    // — a plan that silently grew or shrank is exactly what this evidence
-    // exists to notice.
+    // W2-B1-R1/R3 (R-B1-03/R-B1-04) — 65, NOT 64: unit ZERO creates the
+    // journal table, and it is a planned step rather than setup because a
+    // prerequisite nobody plans is one somebody skips. 64 baseline units +
+    // 1 journal bootstrap step. The count is asserted rather than loosened
+    // to `>= 64` — a plan that silently grew or shrank is exactly what
+    // this evidence exists to notice.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 64 &&
+      firstProvisioning.steps.length === 65 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -390,10 +390,11 @@ export function evaluateHostedBaselineGates(
   const gates: HostedBaselineGate[] = []
 
   /* 1 ---------------------------------------------------------------- */
-  // W2-B1-R1 (R-B1-03) — 63, re-derived: FIB Wave 2 B1 added exactly four
-  // Drizzle migrations (0048-0051), one per B1 commit (FIBIU-04/05/06/07).
-  // 59 + 4 = 63.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 63
+  // W2-B1-R1/R3 (R-B1-03/R-B1-04) — 64, re-derived: FIB Wave 2 B1 added
+  // exactly four Drizzle migrations (0048-0051), one per B1 commit
+  // (FIBIU-04/05/06/07), plus W2-B1-R3's run-binding remediation added one
+  // more (0052). 59 + 4 + 1 = 64.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 64
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
@@ -472,7 +473,7 @@ export function evaluateHostedBaselineGates(
     id: 'hosted-baseline-rehearsal-ready',
     passed: rehearsalOk,
     detail: rehearsalOk
-      ? 'a rehearsal was EXECUTED against this exact manifest (digest matches): it watched the naive 0000…0039 order abort at 0039 with 42883, then applied all 63 units in manifest order, then passed every CHECKPOINT B0 postcondition. The phased planner separately produces a complete 63-unit PHASE_BASELINE plan and refuses PHASE_STELLA_CHAIN against a virgin target. LIMIT, and it is not a formality: the local Supabase stack applies supabase/migrations at container start and the rehearsal shims auth and storage as OUR objects, so this is a REGRESSION test and a DEFECT REPRODUCTION — never evidence of managed-Supabase compatibility'
+      ? 'a rehearsal was EXECUTED against this exact manifest (digest matches): it watched the naive 0000…0039 order abort at 0039 with 42883, then applied all 64 units in manifest order, then passed every CHECKPOINT B0 postcondition. The phased planner separately produces a complete 64-unit PHASE_BASELINE plan and refuses PHASE_STELLA_CHAIN against a virgin target. LIMIT, and it is not a formality: the local Supabase stack applies supabase/migrations at container start and the rehearsal shims auth and storage as OUR objects, so this is a REGRESSION test and a DEFECT REPRODUCTION — never evidence of managed-Supabase compatibility'
       : `rehearsalFresh=${evidence.rehearsalFresh} (a stale or absent artefact means no rehearsal has run against the CURRENT manifest), reproducedDefect=${evidence.rehearsalReproducedDefect}, appliedAll=${evidence.rehearsalAppliedAll}, postconditionsClean=${evidence.rehearsalPostconditionsClean}, firstProvisioningPlannable=${evidence.firstProvisioningPlannable}, phaseSkipRefused=${evidence.phaseSkipRefused}. Run \`pnpm baseline:rehearsal:local\`.`,
   })
 

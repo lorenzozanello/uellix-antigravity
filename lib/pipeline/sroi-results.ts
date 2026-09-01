@@ -374,12 +374,19 @@ async function assertRunMethodologyApprovalAllowed(params: {
  * by an active proxy assignment — FIBIU-12's formal monetization
  * disposition (FIBDB-009) is a later Wave 2 unit this one hard-depends on
  * FIBIU-04 only, not FIBIU-12.
+ *
+ * W2-B1-R3 (R-B1-04, M-1) — FIBDB-014: "Per monetized outcome per run".
+ * calculationRunId is REQUIRED and is the run actually being approved
+ * (the review's own calculationRunId, never inferred). The lookup below is
+ * bound to that exact run — a determination made for a different run can
+ * never satisfy this approval, even for the same outcome.
  */
 async function assertEvidenceSufficiencyForApproval(params: {
   projectId: string;
+  calculationRunId: string;
   targetStatus: string | undefined;
 }): Promise<void> {
-  const { projectId, targetStatus } = params;
+  const { projectId, calculationRunId, targetStatus } = params;
   if (targetStatus !== 'approved') return;
 
   const assignments = await db
@@ -396,7 +403,7 @@ async function assertEvidenceSufficiencyForApproval(params: {
       .select({ outcomeId: evidenceItems.outcomeId })
       .from(evidenceItems)
       .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.status, 'approved'), inArray(evidenceItems.outcomeId, activeOutcomeIds))),
-    getLatestSufficiencyDeterminationsByOutcomeIds(activeOutcomeIds),
+    getLatestSufficiencyDeterminationsByOutcomeIds(activeOutcomeIds, calculationRunId),
   ]);
   const outcomesWithApprovedEvidence = new Set(approvedEvidenceRows.map((r) => r.outcomeId));
 
@@ -442,7 +449,7 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
     reviewerId: ctx.user.id,
     path: 'create',
   });
-  await assertEvidenceSufficiencyForApproval({ projectId, targetStatus: validated.status });
+  await assertEvidenceSufficiencyForApproval({ projectId, calculationRunId: runId, targetStatus: validated.status });
 
   const inserted = await db
     .insert(sroiRunReviews)
@@ -500,7 +507,11 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
     path: 'update',
     beforeJson: { id: review[0].id, status: review[0].status, reviewerId: review[0].reviewerId },
   });
-  await assertEvidenceSufficiencyForApproval({ projectId, targetStatus: validated.status });
+  await assertEvidenceSufficiencyForApproval({
+    projectId,
+    calculationRunId: review[0].calculationRunId,
+    targetStatus: validated.status,
+  });
 
   const updated = await db
     .update(sroiRunReviews)

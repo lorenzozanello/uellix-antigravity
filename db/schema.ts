@@ -375,6 +375,12 @@ export const evidenceSufficiencyDeterminations = pgTable('evidence_sufficiency_d
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  // W2-B1-R3 (R-B1-04, M-1) — FIBDB-014 verbatim: "Per monetized outcome per
+  // run". A determination is bound to the exact calculation run it was made
+  // for; a determination recorded for run R1 must never satisfy approval of
+  // run R2 merely because outcomeId matches. Same FK convention as
+  // sroiRunReviews.calculationRunId / sroiReports.calculationRunId.
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
   ordinal: integer('ordinal').notNull(),
   determination: varchar('determination', { length: 20 }).notNull(),
   rationale: text('rationale').notNull(),
@@ -382,10 +388,14 @@ export const evidenceSufficiencyDeterminations = pgTable('evidence_sufficiency_d
   determinedAt: timestamp('determined_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
-  unique('evidence_sufficiency_determinations_outcome_ordinal_unique').on(table.outcomeId, table.ordinal),
+  // Re-determination is ordinal+1 WITHIN the same (outcome, run) pair — a
+  // new run starts its own ordinal sequence for that outcome, never
+  // continuing a prior run's.
+  unique('evidence_sufficiency_determinations_outcome_run_ordinal_unique').on(table.outcomeId, table.calculationRunId, table.ordinal),
   check('evidence_sufficiency_determinations_determination_check', sql`${table.determination} IN ('sufficient', 'insufficient')`),
   index('idx_evidence_sufficiency_determinations_outcome_id').on(table.outcomeId),
   index('idx_evidence_sufficiency_determinations_project_id').on(table.projectId),
+  index('idx_evidence_sufficiency_determinations_outcome_run').on(table.outcomeId, table.calculationRunId),
 ])
 
 // FIBIU-07 — evidence tombstones (FIBDB-031/FIBC-009). Append-only record of

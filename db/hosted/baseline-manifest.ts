@@ -945,6 +945,28 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: '848b68d6467753f23b25e5601c49c1a62480f24c6053d81fef14320478e10515',
     },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B1-R3 (R-B1-04, M-1 remediation). Appended after the B1 corpus, same *
+   * convention unit 60-63 themselves followed for unit 59.                  *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 64,
+    id: '0052_fib_evidence_sufficiency_run_binding.sql',
+    kind: D,
+    file: 'db/migrations/0052_fib_evidence_sufficiency_run_binding.sql',
+    sha256: '3fc4df227c7e128058573498f0dd53ce1219b93126c937cbb1e96b400c3ea541',
+    dependsOn: ['0050_fib_evidence_sufficiency_determinations.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'W2-B1-R3 remediation (R-B1-04/M-1, FIBDB-014: "Per monetized outcome per run"). Adds ' +
+      'calculation_run_id (NOT NULL, FK to sroi_calculation_runs) to evidence_sufficiency_determinations ' +
+      'and re-scopes the ordinal uniqueness from (outcome_id, ordinal) to (outcome_id, ' +
+      'calculation_run_id, ordinal). Safe as NOT NULL with no default: this table was created in the ' +
+      'same Wave 2 batch (unit 62) and has never been applied to any hosted database, so there is no ' +
+      'historical row to violate the new constraint.',
+    expect: {},
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */
