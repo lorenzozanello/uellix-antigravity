@@ -1,0 +1,405 @@
+{
+  "package_id": "RE_U3_INFORMATION_ARCHITECTURE_DELTA",
+  "version": "1.0.0",
+  "artifact_id": "RE_U3_INFORMATION_ARCHITECTURE_DELTA_v1.0.0",
+  "authority_class": "DERIVED_INFORMATION_ARCHITECTURE_RECORD",
+  "materialization_step": "RE-U3-M",
+  "materialization_date": "2026-09-01",
+  "class": "B",
+  "mode": "IA_RECONCILIATION_AND_MATERIALIZATION",
+  "supersedes": null,
+
+  "purpose": "Materialize, as a repository-native record, the corrected Commercial V1 information architecture as a delta over the current repository: what exists, where it belongs, how users reach it, how GLOBAL/ORGANIZATION/PROJECT contexts relate, and which future product areas reserve an IA position without pretending their runtime is complete.",
+
+  "scope_note": "DERIVED TRACKING RECORD. This artifact creates NO new product authority, implements nothing, remediates nothing and reopens nothing (Q1-Q6 stay resolved as RE-U0 left them). It does not rewrite, supersede, reinterpret or restate any FIB, PC-01B, IM-01B, ODS, RE_U0 or RE_U1 artifact; those remain byte-identical and controlling. Where this record and any of them appear to disagree, they control.",
+
+  "authority_boundary": {
+    "creates_new_product_authority": false,
+    "reopens_frozen_decisions": false,
+    "reopens_q1_q6": false,
+    "decisions_readjudicated": 0,
+    "invents_fib_owned_technical_contracts": false,
+    "restarts_ia_discovery": false,
+    "governing_lane": "ODS_V1_AUTHORITY_v1.0.0.json :: product_and_wave_handoff.lane_b (Uellix product reengineering)",
+    "source_reconciliation": "docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json",
+    "source_audit": "docs/ops/reeng/RE_U1_UX_UI_DELTA_AUDIT_v1.0.0.json"
+  },
+
+  "anchors": {
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "base_sha": "698ee493c77dd7000ee75f62e2014cfefa8f6347",
+    "base_tree": "f2c92bf539a0982b27dcadfd2f8dd140d40bc20a",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS"
+  },
+
+  "source_artifacts": [
+    { "path": "docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json", "role": "Q1-Q6 coordinator adjudication, parallelism/dependency classes" },
+    { "path": "docs/ops/reeng/RE_U1_UX_UI_DELTA_AUDIT_v1.0.0.json", "role": "measured surface inventory, findings U1-F01..F21, execution disposition" },
+    { "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json", "role": "wave -> FIBIU-id mapping, spot-checked to ground dependency classifications below" }
+  ],
+
+  "re_u5_re_u6_closure_evidence_note": "No docs/ops/reeng/RE_U5_*.json or RE_U6_*.json artifact exists in this lineage (only RE_U0 and RE_U1 do). RE-U5/RE-U6 closure is therefore evidenced here by direct measurement of the current runtime and by the independently re-verified RE-U6 gate (RE-U6-V, this session, same base_sha/base_tree), not by a JSON record. Measured: components/layout/nav-links.ts (single NAV_LINKS source, Portfolio + Organization Settings present, U1-F02/F05/F10 closed), app/not-found.tsx (U1-F16 explanation surface closed), app/app/layout.tsx#main-content skip link (U1-F07 closed), app/(authenticated)/app/onboarding/page.tsx sign-out/support header (U1-F01 closed), 4 RE-U1 U6 commits (887ee59/c5a0ca2/51c2037/698ee49) closing U1-F09/F11/F12/F13/F18/F19/F20.",
+
+  "context_model": {
+    "GLOBAL_ACCOUNT_ENTRY": {
+      "definition": "Everything reachable before an authenticated user has a resolved Organization membership: public marketing, authentication, invitation acceptance, and the pre-tenant organization-creation step.",
+      "surfaces": ["/", "/demo", "/privacidad", "/privacy", "/terminos", "/terms", "/login", "/forgot-password", "/reset-password", "/auth/callback", "/auth/signout", "/invite/accept", "/app/onboarding"],
+      "not": "not an authorization boundary by itself; requireAuth()/requireOrganizationAccess() remain the actual server-side gates"
+    },
+    "ORGANIZATION": {
+      "definition": "The tenant-scoped context. Everything under an existing Organization + membership: workspace home, multi-project management, portfolio, trust center, and organization administration, including the post-provisioning calibration step.",
+      "surfaces": ["/app/dashboard", "/app/projects (+ new)", "/app/portfolios (+ new, [id])", "/app/trust-center", "/app/organization/members", "/app/organization/billing", "/app/organization/settings", "/app/organization/onboarding"],
+      "invariant_preserved": "Organization is tenant root. CommercialAccount != Organization (RE-U0 Q6) — billing surfaces here remain organization-scoped in current implementation; a future CommercialAccount governing relationship across organizations is a target-architecture reservation, not implemented in this delta."
+    },
+    "PROJECT": {
+      "definition": "A single SROI project within an Organization: its Measure pipeline, its reports, and its contextual Stella actions.",
+      "surfaces": ["/app/projects/[projectId]", "/app/projects/[projectId]/pipeline/* (7 steps)", "/app/projects/[projectId]/report/*"],
+      "not": "not a separate authorization root — project access is still Organization-membership-scoped"
+    },
+    "authorization_boundary_statement": "This context model is a navigational/discoverability grouping only. It does not collapse commercial/account context into tenant/org authorization, and it does not substitute for RLS or server-side role checks (see role_authorization_ia below)."
+  },
+
+  "primary_product_ia": {
+    "target_areas": [
+      { "id": "HOME_DASHBOARD", "status": "ACTIVE", "route": "/app/dashboard" },
+      { "id": "PROJECTS", "status": "ACTIVE", "route": "/app/projects" },
+      { "id": "MEASURE", "status": "ACTIVE", "route": "/app/projects/[projectId]/pipeline/*", "position": "project sub-area, not a primary-nav destination" },
+      { "id": "PORTFOLIO", "status": "ACTIVE", "route": "/app/portfolios" },
+      { "id": "EVALUATE", "status": "RESERVED_TARGET_NODE", "route": null, "note": "first-class target product area; no runtime route yet, see evaluate_ia below" },
+      { "id": "TRUST_REPORTS", "status": "SPLIT", "note": "Trust Center is a primary-nav global evidence ledger (/app/trust-center); per-project Reports are a PROJECT sub-area (/app/projects/[projectId]/report). See report_trust_ia below for why these are not merged." },
+      { "id": "ORGANIZATION", "status": "ACTIVE", "route": "/app/organization/*" },
+      { "id": "STELLA_CONTEXTUAL_CAPABILITY", "status": "TRANSVERSAL", "route": null, "note": "not a primary product area with its own destination; hosted inside other areas, see stella_contextual_ia below" }
+    ],
+    "trust_center_disposition": {
+      "question": "first-class primary destination vs governed sub-area of Reports/Trust",
+      "answer": "FIRST_CLASS_PRIMARY_DESTINATION",
+      "evidence": "components/layout/nav-links.ts already lists it as a flat top-level entry ('Centro de confianza', /app/trust-center), reachable with 6 inbound links per RE-U1's navigation_reachability_matrix; it is the cross-project evidence ledger (SHA-256/type/state), a materially different object than a single project's Report drafts.",
+      "no_new_label_invented": true
+    }
+  },
+
+  "primary_navigation_disposition": {
+    "source_of_truth": "components/layout/nav-links.ts (single NAV_LINKS array, consumed identically by Sidebar.tsx and MobileNav.tsx — RE-U1 U1-F10 dedup closed)",
+    "measured_current_entries": [
+      { "href": "/app/dashboard", "label": "Panel" },
+      { "href": "/app/projects", "label": "Proyectos SROI" },
+      { "href": "/app/portfolios", "label": "Portafolios" },
+      { "href": "/app/trust-center", "label": "Centro de confianza" },
+      { "href": "/app/organization/members", "label": "Miembros" },
+      { "href": "/app/organization/billing", "label": "Facturación" },
+      { "href": "/app/organization/settings", "label": "Configuración" }
+    ],
+    "classification": {
+      "DASHBOARD_NAV_STATUS": "NAV_ACTIVE_NOW",
+      "PROJECTS_NAV_STATUS": "NAV_ACTIVE_NOW",
+      "MEASURE_NAV_STATUS": "SUBNAV_ONLY",
+      "PORTFOLIO_NAV_STATUS": "NAV_ACTIVE_NOW",
+      "EVALUATE_NAV_STATUS": "NAV_RESERVED_FOR_FUTURE_RUNTIME",
+      "TRUST_NAV_STATUS": "NAV_ACTIVE_NOW",
+      "ORGANIZATION_NAV_STATUS": "NAV_ACTIVE_NOW",
+      "STELLA_NAV_STATUS": "CONTEXTUAL_ONLY",
+      "REPORTS_NAV_STATUS": "SUBNAV_ONLY"
+    },
+    "classification_notes": {
+      "MEASURE_NAV_STATUS": "reached via Project detail -> pipeline sub-navigation, not a top-level nav entry",
+      "EVALUATE_NAV_STATUS": "reserved in target IA only; NOT added to runtime NAV_LINKS in this delta, per instruction not to mechanically expose a future-only section",
+      "ORGANIZATION_NAV_STATUS": "materialized as 3 flat top-level entries (Members/Billing/Settings) rather than one grouped 'Organization' nav node — see ia_consolidation_debts[1]; not fixed here, not a functional bug",
+      "REPORTS_NAV_STATUS": "reached from within a Project, not from primary nav; distinct from Trust Center (global ledger)"
+    },
+    "dead_placeholder_links": "NONE added; EVALUATE and MEASURE intentionally have no top-level nav entry rather than a disabled/placeholder one"
+  },
+
+  "organization_sub_ia": {
+    "members": { "route": "/app/organization/members", "status": "MATERIALIZED", "nav": "NAV_ACTIVE_NOW", "role_gating": "in-page, INVITABLE_ROLES for invite form" },
+    "roles_permissions": { "surface": "lib/auth/roles.ts (6 roles), lib/auth/permissions.ts (20 canX predicates)", "product_visibility": "in-page only (e.g. members invite form), not IA-level today", "status": "STILL_VALID per RE-U0 domain matrix" },
+    "settings": { "route": "/app/organization/settings", "status": "MATERIALIZED", "nav": "NAV_ACTIVE_NOW (closed by RE-U5)", "role_gating": "canEdit = hasRole(role, 'organization_admin'), in-page" },
+    "billing_commercial_administration": { "route": "/app/organization/billing", "status": "MATERIALIZED, organization-scoped", "target_note": "RE-U0 Q6: a future CommercialAccount may govern billing across organizations; current implementation correctly keeps billing coupled to Organization and is STILL_VALID for Commercial V1's committed scope — CommercialAccount is a later reservation, not a defect to fix now." },
+    "onboarding_two_phase": { "see": "onboarding_surface_disposition below" }
+  },
+
+  "onboarding_surface_disposition": {
+    "question": "Are /app/onboarding and /app/organization/onboarding duplicated semantics or a genuine two-phase separation?",
+    "measured_behavior": {
+      "app_onboarding": {
+        "route": "app/(authenticated)/app/onboarding/page.tsx",
+        "precondition": "requireAuth(); redirects to /app/dashboard if getCurrentMembership() already resolves",
+        "function": "creates the Organization row itself (name, slug, legalName, country, sector) via createFirstOrganization, gated by lib/admin/signup-allowlist.ts (RE-U0 Q4)",
+        "phase": "PRE_TENANT — organization does not exist yet"
+      },
+      "app_organization_onboarding": {
+        "route": "app/app/organization/onboarding/page.tsx",
+        "precondition": "requireOrganizationAccess() inside completeOnboarding (app/actions/onboarding.ts) — an Organization and membership already exist",
+        "function": "sets operating parameters (country, sector, baseCurrency) and flips organizations.onboardingCompleted (default false) to true",
+        "enforcement": "components/auth/OnboardingCheck.tsx, mounted in app/app/layout.tsx, hard-redirects every /app/** request to this route while onboardingCompleted is false, and away from it once true",
+        "phase": "POST_PROVISIONING — organization exists, is not yet operationally calibrated"
+      }
+    },
+    "disposition": "CONFIRMED_TWO_PHASE_SEPARATION — NOT_DUPLICATED",
+    "rationale": "The repository behavior actually supports the hypothesized split: phase 1 (tenant does not exist, allowlist-gated creation) is structurally distinct from phase 2 (tenant exists, mandatory calibration enforced by a layout-level redirect guard). This is grounded in code (requireAuth+no-membership vs requireOrganizationAccess+existing-membership, plus the OnboardingCheck enforcement path), not asserted from naming similarity.",
+    "not_classified_as": "IA_CONSOLIDATION_DEBT_FOR_U4",
+    "residual_debt": "Both routes are colloquially named 'onboarding', which is mildly confusable in code/docs despite being semantically distinct at runtime. Recorded as a LOW-severity naming-clarity item (see ia_consolidation_debts[2]), not a route consolidation.",
+    "no_routes_deleted": true
+  },
+
+  "project_measure_sub_ia": {
+    "project_overview": { "route": "/app/projects/[projectId]", "status": "MATERIALIZED", "hosts_stella": true },
+    "measure_pipeline_steps": {
+      "outcomes": { "route": ".../pipeline/outcomes", "node_class": "SEMANTIC_NODE_STABLE" },
+      "evidence": { "route": ".../pipeline/evidence", "node_class": "TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB", "reason": "EvidenceVersion / sensitivity / sufficiency / erasure objects are Wave 2 (FIBIU-04..18) and W2-B1 is under remediation/review; current page is the CURRENT_IMPLEMENTATION_SUBSET, not the future page template" },
+      "proxies": { "route": ".../pipeline/proxies", "node_class": "TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB", "reason": "proxy reference/use and proxy governance are Wave 2 objects; W2-B2+ not yet closed" },
+      "indicators": { "route": ".../pipeline/indicators", "node_class": "SEMANTIC_NODE_STABLE" },
+      "stakeholders": { "route": ".../pipeline/stakeholders", "node_class": "SEMANTIC_NODE_STABLE" },
+      "calculation_sroi": { "route": ".../pipeline/calculation", "node_class": "SEMANTIC_NODE_STABLE", "note": "SROI calculation engine itself is materialized; future assumptions/causality objects (Wave 2) that feed it are TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB" },
+      "narrative": { "route": ".../pipeline/narrative", "node_class": "SEMANTIC_NODE_STABLE" },
+      "review_approval": { "surface": "lib/pipeline/methodology-review.ts, sroi run reviews", "node_class": "SEMANTIC_NODE_STABLE (CURRENT_IMPLEMENTATION_SUBSET of the future Evaluate area — see evaluate_ia)" }
+    },
+    "no_routes_invented_for_domain_object_exposure": true,
+    "reports": { "route": "/app/projects/[projectId]/report(/[reportId])", "node_class": "SEMANTIC_NODE_STABLE for internal workspace; version lineage is TECHNICAL_PAGE_BINDING_WAIT_FOR_FIB — see report_trust_ia" },
+    "stella_contextual_actions": { "mounted_at": ["project overview", "pipeline/calculation", "pipeline/evidence", "pipeline/indicators", "pipeline/outcomes", "pipeline/proxies", "pipeline/stakeholders"], "not_mounted_at": ["report/*", "portfolios/*", "trust-center"], "note": "matches CURRENT REALITY: 'some later Stella/report integrations' are still lacking (Wave 4, FIBIU-21/22)" }
+  },
+
+  "portfolio_ia": {
+    "current_ia_position": "First-class primary navigation destination (NAV_ACTIVE_NOW), closed by RE-U5 (U1-F02).",
+    "current_route_family": ["/app/portfolios", "/app/portfolios/new", "/app/portfolios/[portfolioId]"],
+    "current_route_status": "index and /new fully reachable from primary nav; detail additionally reachable conditionally from app/app/projects/[projectId]/page.tsx:103 when a portfolioId already exists",
+    "future_committed_v1_responsibilities": [
+      "multiple portfolios per organization (current/frozen architecture allows this — no single-portfolio constraint measured)",
+      "project membership in a portfolio",
+      "cross-project comparison",
+      "cross-project transversal intelligence"
+    ],
+    "not_implemented_in_u3": ["governed aggregation", "transversal intelligence computation"],
+    "PORTFOLIO_TARGET_IA_STATUS": "FIRST_CLASS_TARGET_NODE",
+    "PORTFOLIO_RUNTIME_STATUS": "PARTIAL — reachable CRUD shell present; governed aggregation WAIT_FOR_LATER_FIB",
+    "later_technical_dependency": "Wave 5 (FIBIU-27) and Wave 6 (FIBIU-30), per RE-U0 parallelism.WAIT_FOR_LATER_FIB and FIB index waves[4]/[5]",
+    "sequencing_note_preserved": "Portfolio does not precede Evaluate technically — Evaluate rests on Wave 3, Portfolio governed aggregation rests on Wave 5/6 (RE-U1 sequencing note), even though Portfolio's IA/nav position is already ahead of Evaluate's."
+  },
+
+  "evaluate_ia": {
+    "target_model_preserved_verbatim": [
+      "Evaluation", "AssessmentTemplateVersion", "Dimensions", "Criteria", "Inputs", "Evidence",
+      "Reviewer Assessments", "deterministic Score", "Divergence", "Stella Analysis", "Recommendation",
+      "DecisionPolicy", "Human Decision"
+    ],
+    "preserved_invariant": "INPUT != SCORE != RECOMMENDATION != DECISION",
+    "current_implementation_subset": {
+      "surface": "lib/pipeline/methodology-review.ts, db/policies/006_methodology_review_rls.sql",
+      "status": "CURRENT_IMPLEMENTATION_SUBSET, not the complete Evaluate product",
+      "embedded_in": "Measure pipeline review/approval step, not a standalone product area"
+    },
+    "zero_files_named_evaluate": true,
+    "EVALUATE_TARGET_IA_STATUS": "FIRST_CLASS_TARGET_NODE",
+    "EVALUATE_RUNTIME_STATUS": "WAIT_FOR_WAVE3_CONTRACT",
+    "wave_dependency": "Wave 3 = FIBIU-19, FIBIU-20 (spot-checked against docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json waves[2])",
+    "u3_action_taken": "IA reservation only — Evaluate is recorded in primary_product_ia as a RESERVED_TARGET_NODE with no runtime route and NAV_RESERVED_FOR_FUTURE_RUNTIME nav status. No placeholder route, no placeholder nav entry, no functional page created.",
+    "prohibition_observed": "Did not invent a technical contract for Dimensions/Criteria/Score/Divergence storage; did not rename or relocate lib/pipeline/methodology-review.ts."
+  },
+
+  "report_trust_ia": {
+    "internal_report_workspace": { "route": "/app/projects/[projectId]/report(/[reportId], /print, /pdf)", "status": "MATERIALIZED", "dependency": "NONE (SAFE_NOW)" },
+    "immutable_versioned_report_target": { "object": "ReportVersion lineage", "status": "DESIGNED_NOT_IMPLEMENTED", "evidence": "sroi_reports.snapshot_json present; no version lineage table", "dependency": "WAIT_FOR_LATER_FIB (Wave 4+, FIBIU-22..25)" },
+    "verification_trust": {
+      "internal": { "surface": "/app/trust-center", "status": "MATERIALIZED, NAV_ACTIVE_NOW" },
+      "public": {
+        "route": "/app/(public)/verify/[hash] (+ /pdf)",
+        "functional_status": "fail-closed by design after the runtime cutover (RE-U0-F1) — correct default, not a defect",
+        "explanation_surface_status": "CLOSED by RE-U5 — app/not-found.tsx now exists and is reached via notFound()",
+        "functional_completeness": "WAIT_FOR_LATER_FIB",
+        "binding_rule_preserved": "The RE-U5 not-found.tsx improvement does NOT restore public verification functionality; that remains FIB-dependent."
+      }
+    },
+    "public_disclosure": { "object": "report_disclosures / locator_token", "status": "MISSING", "dependency": "WAIT_FOR_LATER_FIB (Wave 5, FIBIU-26/31)" },
+    "PUBLIC_VERIFICATION_IA_STATUS": "TARGET_NODE_PRESENT_RUNTIME_FUNCTIONALITY_WAIT_FOR_LATER_FIB",
+    "invariant_preserved": "reports != certification of impact — no rendered copy claims otherwise (RE-U1 trust_traceability_ux_matrix: certification overclaim NOT PRESENT)."
+  },
+
+  "stella_contextual_ia": {
+    "materialized_families": [
+      { "verb": "Analizar con Stella", "component": "StellaContextualAdvisorPanel", "function": "examines existing content, returns findings + suggestions with full accept/edit/reject/undo lifecycle", "governed_contextual_action": true, "generic_chat": false },
+      { "verb": "Consultar a Stella", "component": "StellaGroundedQueryPanel / StellaGroundedQuerySection", "function": "poses a question, requires a caller-supplied evidence-backed runQuery seam with citations (grounding-adapter.ts), no free-form model call", "governed_contextual_action": true, "generic_chat": false },
+      { "verb": "Revisar con Stella", "component": "StellaValidatorPanel", "function": "reviews an SROI calculation for risk (evidence gaps, proxy risk, attribution risk, claim risk)", "governed_contextual_action": true, "generic_chat": false }
+    ],
+    "current_hosting_contexts": ["Project overview", "Measure (all 6 mounted pipeline steps)"],
+    "reserved_future_hosting_contexts": [
+      { "context": "Evaluate", "role": "Stella Analysis / Recommendation step of the target Evaluate model (Q1)", "dependency": "WAIT_FOR_WAVE3_CONTRACT" },
+      { "context": "Reports / Trust", "dependency": "Wave 4 (FIBIU-21, FIBIU-22)" },
+      { "context": "Portfolio", "dependency": "later Stella/report surfaces tied to Wave 4, per RE-U1 parallelism domains" }
+    ],
+    "STELLA_CONTEXTUAL_IA_STATUS": "TRANSVERSAL_CONTEXTUAL",
+    "STANDALONE_STELLA_ROUTE_REQUIRED": "NO",
+    "prohibition_observed": "No /app/stella, no 'Chat with Stella', no general AI assistant hub added."
+  },
+
+  "public_auth_commercial_entry_ia": {
+    "public_marketing": { "routes": ["/", "/demo", "/privacidad", "/privacy", "/terminos", "/terms"], "status": "MATERIALIZED" },
+    "login_authentication": { "routes": ["/login", "/forgot-password", "/reset-password", "/auth/callback", "/auth/signout"], "status": "MATERIALIZED" },
+    "future_self_service_signup": {
+      "status": "MISSING (target-reserved only)",
+      "commercial_v1_requirement": "signup, onboarding and organization provisioning/autoprovisioning without manual technical intervention (RE-U0 Q4)",
+      "current_constraint": "SuperAdmin allowlist (lib/admin/signup-allowlist.ts) gates /app/onboarding's createFirstOrganization; PRE_V1_OR_CURRENT_IMPLEMENTATION_CONSTRAINT per Q4, must not become the final V1 mandatory journey",
+      "u3_reservation": "A future public entry point (e.g. a '/signup' or equivalent public route) feeding into the existing two-phase onboarding (organization provisioning -> organization setup) is reserved as the target IA slot. No runtime route created in this delta.",
+      "u3_action_taken": "IA_SLOT_RESERVED_ONLY"
+    },
+    "invitation_acceptance": { "route": "/invite/accept", "status": "MATERIALIZED", "note": "bypasses the allowlist via a separate acceptInvitation path, correctly, per Q4" },
+    "organization_provisioning": { "see": "onboarding_surface_disposition (phase 1)" },
+    "application_entry": { "route": "/app/dashboard", "reached_after": "auth -> (org creation if none) -> (mandatory calibration if incomplete) -> dashboard" }
+  },
+
+  "route_to_semantic_node_mapping": [
+    { "route": "/", "node": "PUBLIC_MARKETING_HOME" },
+    { "route": "/demo", "node": "PUBLIC_MARKETING_DEMO_REQUEST" },
+    { "route": "/privacidad, /privacy, /terminos, /terms", "node": "PUBLIC_LEGAL" },
+    { "route": "/login, /forgot-password, /reset-password", "node": "GLOBAL_AUTH" },
+    { "route": "/auth/callback, /auth/signout", "node": "GLOBAL_AUTH_SYSTEM" },
+    { "route": "/invite/accept", "node": "GLOBAL_INVITATION_ACCEPTANCE" },
+    { "route": "/app/onboarding", "node": "GLOBAL_ORGANIZATION_PROVISIONING (phase 1)" },
+    { "route": "/app/organization/onboarding", "node": "ORGANIZATION_SETUP_CALIBRATION (phase 2)" },
+    { "route": "/app/dashboard", "node": "HOME_DASHBOARD" },
+    { "route": "/app/projects, /new, /[id]", "node": "PROJECTS" },
+    { "route": "/app/projects/[id]/pipeline/*", "node": "MEASURE" },
+    { "route": "/app/projects/[id]/report/*", "node": "PROJECT_REPORT_WORKSPACE" },
+    { "route": "/app/portfolios, /new, /[id]", "node": "PORTFOLIO" },
+    { "route": "/app/trust-center", "node": "TRUST_CENTER" },
+    { "route": "/app/organization/members", "node": "ORGANIZATION_MEMBERS" },
+    { "route": "/app/organization/billing", "node": "ORGANIZATION_BILLING" },
+    { "route": "/app/organization/settings", "node": "ORGANIZATION_SETTINGS" },
+    { "route": "/(public)/verify/[hash] (+/pdf)", "node": "PUBLIC_VERIFICATION (functional WAIT_FOR_LATER_FIB)" },
+    { "route": "/admin/*", "node": "SUPERADMIN_CONSOLE (out of Commercial V1 primary IA)" }
+  ],
+
+  "semantic_node_to_route_mapping": [
+    { "node": "EVALUATE", "route": null, "status": "RESERVED_TARGET_NODE, no route" },
+    { "node": "STELLA_CONTEXTUAL_CAPABILITY", "route": null, "status": "hosted inside Project/Measure routes, no dedicated route" },
+    { "node": "COMMERCIAL_ACCOUNT", "route": null, "status": "not materialized; billing remains Organization-scoped (Q6)" },
+    { "node": "PUBLIC_SELF_SERVICE_SIGNUP", "route": null, "status": "reserved target slot, no route" }
+  ],
+
+  "delta_matrix": [
+    { "ia_node": "Portfolio nav reachability", "prior_finding": "U1-F02 (P0)", "current_status": "CLOSED (RE-U5)" },
+    { "ia_node": "Organization Settings nav reachability", "prior_finding": "U1-F05 (P1)", "current_status": "CLOSED (RE-U5)" },
+    { "ia_node": "Onboarding dead-end / exit", "prior_finding": "U1-F01 (P0)", "current_status": "CLOSED (RE-U5)" },
+    { "ia_node": "NAV_LINKS duplication", "prior_finding": "U1-F10 (P2)", "current_status": "CLOSED (RE-U5, nav-links.ts)" },
+    { "ia_node": "Breadcrumb missing segment labels", "prior_finding": "U1-F14 (P2)", "current_status": "CLOSED (RE-U5, org/settings/members/billing/verify present in SEGMENT_LABELS)" },
+    { "ia_node": "Skip link in authenticated shell", "prior_finding": "U1-F07 (P1)", "current_status": "CLOSED (RE-U5)" },
+    { "ia_node": "/verify/[hash] not-found explanation", "prior_finding": "U1-F16 (P0 for explanation surface)", "current_status": "CLOSED (RE-U5, app/not-found.tsx); functional completeness still WAIT_FOR_LATER_FIB" },
+    { "ia_node": "Stella entry-verb consistency", "prior_finding": "U1-F13 (P2)", "current_status": "CLOSED (RE-U6, independently re-verified this session)" },
+    { "ia_node": "Navy token / typography / form a11y / color orphans", "prior_finding": "U1-F09, F11, F12, F18, F19, F20", "current_status": "CLOSED (RE-U6)" },
+    { "ia_node": "Evaluate IA position", "prior_finding": "U1-F15 (P2, IA reservation SAFE_NOW)", "current_status": "CLOSED_BY_THIS_ARTIFACT (reserved as target node; no runtime change)" },
+    { "ia_node": "Onboarding two-surface semantic distinction", "prior_finding": "flagged in RE-U0/RE-U1 as needing U3 disposition", "current_status": "CLOSED_BY_THIS_ARTIFACT (confirmed two-phase, not duplication)" },
+    { "ia_node": "Dead remediation-link anchors / /app/proxies 404", "prior_finding": "U1-F04 (P1)", "current_status": "STILL_OPEN — explicitly out of U3 scope, owned by RE_U1_F04_REMEDIATION_LINK_REPAIR gate" },
+    { "ia_node": "Loading-state coverage", "prior_finding": "U1-F06 (P1)", "current_status": "STILL_OPEN — U5/U7 scope, not IA" },
+    { "ia_node": "Public hero copy / verify banner ambiguity", "prior_finding": "U1-F17, U1-F21 (P3)", "current_status": "STILL_OPEN — WAIT_FOR_VISUAL_EVIDENCE (Q5), out of U3 scope" }
+  ],
+
+  "dependency_classifications": {
+    "SAFE_NOW": [
+      "GLOBAL/ORGANIZATION/PROJECT context model definition",
+      "Primary product IA tree and navigation disposition classification",
+      "Trust Center first-class-nav determination",
+      "Onboarding two-phase disposition",
+      "Evaluate IA reservation (naming/position only)",
+      "Portfolio current IA position and route-family documentation",
+      "Stella contextual hosting map",
+      "Report/Trust layer separation documentation",
+      "Public/auth/commercial-entry IA mapping",
+      "Role-awareness implications documentation (no permission invention)"
+    ],
+    "WAIT_FOR_WAVE2": [
+      "Measure page/template architecture for evidence/proxies pages (FIBIU-04..18); W2-B1 under remediation, B2+ not closed"
+    ],
+    "WAIT_FOR_WAVE3": [
+      "Evaluate runtime implementation (FIBIU-19, FIBIU-20)"
+    ],
+    "WAIT_FOR_LATER_FIB": [
+      "ReportVersion / trust lineage (Wave 4+, FIBIU-22..25)",
+      "Later Stella/report integrations in Portfolio, Reports/Trust, Evaluate (Wave 4, FIBIU-21/22)",
+      "Portfolio governed aggregation / transversal intelligence (Wave 5 FIBIU-27, Wave 6 FIBIU-30)",
+      "Public disclosure (Wave 5, FIBIU-26/31)",
+      "Public verification functional completeness"
+    ],
+    "WAIT_FOR_VISUAL_EVIDENCE": [
+      "U1-F17 (public hero copy)",
+      "U1-F21 (verify banner ambiguity)",
+      "Any exact screen treatment depending on the Q5 backlog (16 not_recovered / 1 partially_identified)"
+    ],
+    "counts": {
+      "SAFE_NOW_COUNT": 10,
+      "WAIT_FOR_WAVE2_COUNT": 1,
+      "WAIT_FOR_WAVE3_COUNT": 1,
+      "WAIT_FOR_LATER_FIB_COUNT": 5,
+      "WAIT_FOR_VISUAL_EVIDENCE_COUNT": 3
+    }
+  },
+
+  "ia_consolidation_debts": [
+    {
+      "id": "U3-DEBT-01",
+      "topic": "Organization nav is 3 flat top-level entries, not one grouped node",
+      "severity": "LOW",
+      "owner_stage": "U5 / U7",
+      "action_in_u3": "documented only, no runtime change"
+    },
+    {
+      "id": "U3-DEBT-02",
+      "topic": "Two onboarding routes share the colloquial 'onboarding' name despite distinct phases",
+      "severity": "LOW",
+      "owner_stage": "U4 / U6 (copy/doc clarity, not route consolidation)",
+      "action_in_u3": "documented only, no runtime change"
+    }
+  ],
+
+  "role_authorization_ia": {
+    "statement": "IA is not authorization. Server-side/RLS enforcement (lib/auth/roles.ts six-role hierarchy, lib/auth/permissions.ts twenty canX predicates, RLS policies) is untouched by this artifact and remains the sole authorization boundary.",
+    "measured_current_state": "Primary navigation is role-blind: NAV_LINKS renders identically for all six roles; privileged actions (edit settings, invite members, admin billing) are gated in-page (hasRole/ROLES checks) and server-side, not by hiding nav entries.",
+    "future_implication_for_u4_u7": "Role-aware discoverability (e.g. narrowing Billing/Settings visibility for lower-privilege roles) is a legitimate future IA/UX improvement, but MUST remain additive to existing RLS/server checks, never a substitute for them.",
+    "no_new_permissions_invented": true
+  },
+
+  "u4_journey_implications": [
+    "Self-service signup/autoprovisioning journey design (Q4) must build on top of the confirmed two-phase onboarding (provisioning -> setup), not replace or merge its phases.",
+    "U1-F04 dead remediation-link repair remains a separate, already-named next gate (RE_U1_F04_REMEDIATION_LINK_REPAIR) and is not resolved by this IA delta.",
+    "Role-aware nav discoverability is deferred to U4/U7 and must not weaken existing authorization.",
+    "Evaluate and Portfolio-aggregation journeys stay journey-reserved, not journey-implemented, until Wave 3 / Wave 5-6 land respectively."
+  ],
+
+  "u5_u6_closure_references": {
+    "u5_shell_reachability_commits": "evidenced by measured runtime state only (see re_u5_re_u6_closure_evidence_note); no RE_U5 JSON artifact exists in this lineage",
+    "u6_design_system_commits": ["887ee59 refactor(ui): adopt governed brand tokens", "c5a0ca2 fix(ui): reconcile canonical brand typography and navy", "51c2037 fix(ui): improve form accessibility semantics", "698ee49 fix(ui): normalize product language and residual tokens"],
+    "u6_independent_gate_validation": "RE-U6-V performed this session at identical base_sha/base_tree: no RE-U6 causal regression, 134/134 targeted tests PASS, typecheck/secrets/authority/poststate PASS, Stella terminology confirmed governed contextual (not generic chat)."
+  },
+
+  "new_hpo_questions": {
+    "count": 0,
+    "statement": "No two controlling frozen authorities were found in genuine conflict during this materialization. Every classification above resolves by citing an existing RE-U0/RE-U1/FIB fact; none required a new adjudication."
+  },
+
+  "minimal_safe_runtime_change": {
+    "runtime_files_changed": 0,
+    "statement": "No existing navigation bug introduced or exposed by RE-U5 was found during this audit that was both small and already fully authorized to fix. All RE-U1 navigation findings this artifact could act on (U1-F01/F02/F05/F07/F10/F14/F16-explanation) were already closed by RE-U5 prior to this task."
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "files_changed_by_this_step": 1,
+    "executable_surface_changed": false,
+    "product_runtime_changes": 0,
+    "database_changes": 0,
+    "dependencies_added": 0,
+    "lockfile_changed": false,
+    "sealed_authority_bytes_changed": 0,
+    "protected_corpus_changed": false,
+    "new_product_authority_created": false,
+    "fib_owned_contracts_invented": 0,
+    "q1_q6_reopened": false
+  },
+
+  "state_after_this_artifact": {
+    "ia_delta_artifact_created": true,
+    "ready_for_re_u4": true,
+    "lanes_started_by_this_step": "NONE",
+    "next_gate": "RE_U4_COMMERCIAL_V1_JOURNEY_DELTA"
+  },
+
+  "final_state": "INFORMATION_ARCHITECTURE_DELTA_MATERIALIZED_READY_FOR_JOURNEY_RECONCILIATION"
+}
