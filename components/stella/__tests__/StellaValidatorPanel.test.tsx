@@ -666,11 +666,11 @@ describe('StellaValidatorPanel', () => {
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
     it('does not read GEMINI_API_KEY env var', () => {
-      expect(process.env.GEMINI_API_KEY).toBeUndefined()
+      expect('GEMINI_API_KEY' in process.env).toBe(false)
     })
 
     it('does not read NEXT_PUBLIC_GEMINI_API_KEY env var', () => {
-      expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
+      expect('NEXT_PUBLIC_GEMINI_API_KEY' in process.env).toBe(false)
     })
 
     it('does not claim certification in rendered content', async () => {

@@ -756,7 +756,7 @@ afterEach(async () => {
 
 describe('0. El entorno', () => {
   it('no hay clave de proveedor en el proceso', () => {
-    expect(process.env.GEMINI_API_KEY).toBeUndefined()
+    expect('GEMINI_API_KEY' in process.env).toBe(false)
   })
 
   it('la cadena 0013…0018 está instalada, comprobada por sus objetos', async () => {

@@ -862,7 +862,7 @@ describe('getStellaComposer server action', () => {
   // -------------------------------------------------------------------------
   describe('Security invariants', () => {
     it('does NOT expose GEMINI_API_KEY', () => {
-      expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
+      expect('NEXT_PUBLIC_GEMINI_API_KEY' in process.env).toBe(false)
     })
 
     it('does NOT save draft automatically (exactly one DB insert on success)', async () => {

@@ -313,7 +313,7 @@ describe('Stella Anti-Regression: Critical Guardrails', () => {
   describe('NEVER: Use prohibited NEXT_PUBLIC_ environment variables', () => {
     it('should not have NEXT_PUBLIC_GEMINI_API_KEY', () => {
       // This is checked at build time by the adapter
-      expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
+      expect('NEXT_PUBLIC_GEMINI_API_KEY' in process.env).toBe(false)
     })
   })
 

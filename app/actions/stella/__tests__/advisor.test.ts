@@ -881,7 +881,7 @@ describe('getStellaAdvisor server action', () => {
     })
 
     it('does NOT use NEXT_PUBLIC_GEMINI env var', () => {
-      expect(process.env.NEXT_PUBLIC_GEMINI_API_KEY).toBeUndefined()
+      expect('NEXT_PUBLIC_GEMINI_API_KEY' in process.env).toBe(false)
     })
 
     it('writes only the audit insert to DB on a successful call (no pipeline writes)', async () => {

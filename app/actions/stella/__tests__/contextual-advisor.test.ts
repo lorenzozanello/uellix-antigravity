@@ -595,7 +595,7 @@ describe('getStellaContextualAdvisor server action', () => {
       await getStellaContextualAdvisor('proj-1', 'narrative', TICKET)
 
       expect(mockGetGeminiAdapter).toHaveBeenCalled()
-      expect(process.env.GEMINI_API_KEY).toBeUndefined()
+      expect('GEMINI_API_KEY' in process.env).toBe(false)
     })
   })
 

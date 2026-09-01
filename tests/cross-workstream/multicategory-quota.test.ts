@@ -244,7 +244,7 @@ describe('E2E: la batería multicategoría conduce el runtime, no un modelo', ()
 
   it('el proveedor externo no está en el entorno del proceso hijo', () => {
     expect(E2E_SH).toContain('env -u MSYS_NO_PATHCONV -u GEMINI_API_KEY')
-    expect(E2E_TS).toContain('expect(process.env.GEMINI_API_KEY).toBeUndefined()')
+    expect(E2E_TS).toContain("expect('GEMINI_API_KEY' in process.env).toBe(false)")
   })
 })
 

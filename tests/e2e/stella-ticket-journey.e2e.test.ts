@@ -599,7 +599,7 @@ async function issued(projectId = PROJECT_A1): Promise<string> {
 
 describe('0. El entorno es el que la batería declara', () => {
   it('no hay clave de proveedor en el proceso', () => {
-    expect(process.env.GEMINI_API_KEY).toBeUndefined()
+    expect('GEMINI_API_KEY' in process.env).toBe(false)
   })
 
   it('la cadena preparada COMPLETA está instalada, y se comprueba por sus objetos', async () => {

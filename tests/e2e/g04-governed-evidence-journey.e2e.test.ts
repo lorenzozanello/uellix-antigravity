@@ -786,7 +786,7 @@ async function phaseOf(projectId: string, evidenceId: string): Promise<string | 
 
 describe('0. The environment is the one this battery declares', () => {
   it('carries no provider key in the process', () => {
-    expect(process.env.GEMINI_API_KEY).toBeUndefined()
+    expect('GEMINI_API_KEY' in process.env).toBe(false)
   })
 
   it('addresses a LOCAL disposable database, and says so from the connection itself', async () => {
@@ -1983,7 +1983,7 @@ describe('S. The provider boundary, instrumented', () => {
       providerConstructions.length - constructionsBefore,
       'the real provider client was constructed',
     ).toBe(0)
-    expect(process.env.GEMINI_API_KEY).toBeUndefined()
+    expect('GEMINI_API_KEY' in process.env).toBe(false)
 
     // And the generator that DID answer names itself.
     expect(result.answerStrategy!.generatorId.startsWith('grounding-local-extractive/')).toBe(true)
