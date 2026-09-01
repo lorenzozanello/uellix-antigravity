@@ -32,6 +32,7 @@ import { getOrCreateSharedCopRate, convertToUsd } from '@/lib/pipeline/fx'
 import { getOrCreatePlaceholderFunder } from '@/lib/pipeline/funders'
 import { scenarioFilterPct, SCENARIO_DELTA_PP, type Scenario } from '@/lib/pipeline/sroi-sensitivity'
 import { resolveRunVersionIdentity } from '@/lib/pipeline/run-version-identity'
+import { getLatestSufficiencyDeterminationsByOutcomeIds } from '@/lib/pipeline/evidence-sufficiency'
 import {
   createDomainObjectVersion,
   getLatestDomainObjectVersion,
@@ -461,6 +462,12 @@ export interface SroiReadiness {
   proxiesMissingUsd: string[]
   overAllocatedOutcomes: string[]
   outcomesWithoutEvidence: string[]
+  // FIBIU-06 (FIBC-008) — informational only at readiness/preliminary stage;
+  // the existing ≥1-non-rejected-evidence gate above is retained unchanged
+  // as the minimum for preliminary work. The hard block on this signal
+  // lives at approval eligibility (lib/pipeline/sroi-results.ts,
+  // assertEvidenceSufficiencyForApproval), not here.
+  outcomesMissingSufficiencyDetermination: string[]
   canCalculate: boolean
   blockingReasons: string[]
   issues: ReadinessIssue[]
@@ -568,6 +575,22 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
       if (!outcomesWithEvidence.has(outcomeId)) outcomesWithoutEvidence.push(outcomeId)
     }
   }
+  // FIBIU-06 (FIBC-008) — informational signal only (see the interface
+  // field's own comment): every outcome that feeds the calculation and
+  // lacks a 'sufficient' human determination. Never inferred from count,
+  // status, or confidence_score; a missing or 'insufficient' determination
+  // both count as missing here.
+  const outcomesMissingSufficiencyDetermination: string[] = []
+  if (activeOutcomeIds.length > 0) {
+    const determinationsByOutcome = await getLatestSufficiencyDeterminationsByOutcomeIds(activeOutcomeIds)
+    for (const outcomeId of activeOutcomeIds) {
+      const determination = determinationsByOutcome.get(outcomeId)
+      if (!determination || determination.determination !== 'sufficient') {
+        outcomesMissingSufficiencyDetermination.push(outcomeId)
+      }
+    }
+  }
+
   if (outcomesWithoutEvidence.length > 0) {
     blockingReasons.push(`${outcomesWithoutEvidence.length} outcome(s) with no supporting evidence`)
   }
@@ -721,6 +744,7 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     proxiesMissingUsd,
     overAllocatedOutcomes,
     outcomesWithoutEvidence,
+    outcomesMissingSufficiencyDetermination,
     canCalculate,
     blockingReasons,
     issues,

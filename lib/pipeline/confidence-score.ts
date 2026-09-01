@@ -30,6 +30,13 @@ const STATUS_POINTS: Record<EvidenceStatus, number> = {
 const LINKAGE_POINTS = 10
 const INTEGRITY_VERIFIED_POINTS = 20
 
+// FIBIU-06 (FIBC-008) — this score is a completeness signal only, never a
+// substitute for the governed human sufficiency determination
+// (lib/pipeline/evidence-sufficiency.ts). No consumer of this function may
+// treat a high score as sufficiency; that invariant lives at the two call
+// sites that actually gate approval (lib/pipeline/evidence.ts's
+// updateEvidenceReviewStatus, lib/pipeline/sroi-results.ts's
+// assertEvidenceSufficiencyForApproval), not here.
 export function computeConfidenceScore(input: ConfidenceScoreInput): number {
   if (input.type === 'file' && input.integrityVerified === false) return 0
 

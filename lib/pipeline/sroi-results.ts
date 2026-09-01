@@ -16,7 +16,9 @@ import {
   sroiReportSections,
   projects,
   evidenceItems,
+  outcomeProxyAssignments,
 } from '@/db/schema';
+import { getLatestSufficiencyDeterminationsByOutcomeIds } from '@/lib/pipeline/evidence-sufficiency';
 import { z } from 'zod';
 import { getVariantSectionTypes } from '@/lib/reports/report-variants';
 import {
@@ -361,6 +363,59 @@ async function assertRunMethodologyApprovalAllowed(params: {
   throw new Error('A reviewer cannot approve the methodology of their own run');
 }
 
+/**
+ * FIBIU-06 (FIBC-008) — "approval eligibility additionally requires ... an
+ * explicit human determination per monetized outcome". The existing
+ * "≥1 non-rejected evidence" gate (lib/pipeline/sroi-calculation.ts) is
+ * retained unchanged as the minimum for preliminary work; THIS is the hard
+ * block, at run-review approval, the same call-site shape as
+ * assertRunMethodologyApprovalAllowed. No-op unless targetStatus ===
+ * 'approved'. "Monetized" is approximated, as it already is at readiness,
+ * by an active proxy assignment — FIBIU-12's formal monetization
+ * disposition (FIBDB-009) is a later Wave 2 unit this one hard-depends on
+ * FIBIU-04 only, not FIBIU-12.
+ */
+async function assertEvidenceSufficiencyForApproval(params: {
+  projectId: string;
+  targetStatus: string | undefined;
+}): Promise<void> {
+  const { projectId, targetStatus } = params;
+  if (targetStatus !== 'approved') return;
+
+  const assignments = await db
+    .select({ outcomeId: outcomeProxyAssignments.outcomeId })
+    .from(outcomeProxyAssignments)
+    .where(
+      and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.assignmentStatus, 'active'))
+    );
+  const activeOutcomeIds = [...new Set(assignments.map((a) => a.outcomeId))];
+  if (activeOutcomeIds.length === 0) return;
+
+  const [approvedEvidenceRows, determinationsByOutcome] = await Promise.all([
+    db
+      .select({ outcomeId: evidenceItems.outcomeId })
+      .from(evidenceItems)
+      .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.status, 'approved'), inArray(evidenceItems.outcomeId, activeOutcomeIds))),
+    getLatestSufficiencyDeterminationsByOutcomeIds(activeOutcomeIds),
+  ]);
+  const outcomesWithApprovedEvidence = new Set(approvedEvidenceRows.map((r) => r.outcomeId));
+
+  const undetermined: string[] = [];
+  for (const outcomeId of activeOutcomeIds) {
+    const determination = determinationsByOutcome.get(outcomeId);
+    const hasApprovedEvidence = outcomesWithApprovedEvidence.has(outcomeId);
+    if (!hasApprovedEvidence || !determination || determination.determination !== 'sufficient') {
+      undetermined.push(outcomeId);
+    }
+  }
+
+  if (undetermined.length > 0) {
+    throw new Error(
+      `EVIDENCE_SUFFICIENCY_UNDETERMINED: ${undetermined.length} monetized outcome(s) lack ≥1 approved evidence and/or a sufficient human determination`
+    );
+  }
+}
+
 export async function createSroiRunReview(projectId: string, runId: string, input: ReviewInput) {
   const ctx = await authorizeProject(projectId);
   if (!isInReviewSet(ctx.membership.role as Role)) throw new Error('Insufficient role to create review');
@@ -387,6 +442,7 @@ export async function createSroiRunReview(projectId: string, runId: string, inpu
     reviewerId: ctx.user.id,
     path: 'create',
   });
+  await assertEvidenceSufficiencyForApproval({ projectId, targetStatus: validated.status });
 
   const inserted = await db
     .insert(sroiRunReviews)
@@ -444,6 +500,7 @@ export async function updateSroiRunReview(projectId: string, reviewId: string, i
     path: 'update',
     beforeJson: { id: review[0].id, status: review[0].status, reviewerId: review[0].reviewerId },
   });
+  await assertEvidenceSufficiencyForApproval({ projectId, targetStatus: validated.status });
 
   const updated = await db
     .update(sroiRunReviews)
