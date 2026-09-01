@@ -32,6 +32,7 @@ vi.mock('@/db/client', () => ({
 
 import {
   GOVERNED_MODEL_REGISTRY_SEED,
+  GOVERNED_MODEL_REGISTRY_APPENDS,
   computeGovernedModelIdentityHash,
   listGovernedModels,
   registerGovernedModelVersion,
@@ -141,6 +142,35 @@ describe('listGovernedModels', () => {
     expect(selectMock).toHaveBeenCalled()
     expect(fromMock).toHaveBeenCalled()
     expect(insertMock).not.toHaveBeenCalled()
+  })
+})
+
+// W2-B2-R1 / R-B2-03 — versions appended AFTER the 0040 seed follow the same
+// append-only convention and are cross-checked against their own migration.
+// The 0040 seed and its eight-row pin above are deliberately untouched.
+describe('append-only governed model versions stay in sync with their own migrations', () => {
+  it('registers PROXY_MATERIAL_FIELDS 1.1.0 via db/migrations/0056, mirrored exactly, with the 1.0.0 row left in 0040', () => {
+    expect(GOVERNED_MODEL_REGISTRY_APPENDS).toHaveLength(1)
+    const [append] = GOVERNED_MODEL_REGISTRY_APPENDS
+    expect(append).toMatchObject({ modelId: 'PROXY_MATERIAL_FIELDS', version: '1.1.0' })
+    expect(append.definitionHash).toBe(computeGovernedModelIdentityHash('PROXY_MATERIAL_FIELDS', '1.1.0'))
+
+    const sql = readFileSync(path.resolve(process.cwd(), append.migration), 'utf8')
+    const block = sql.slice(sql.indexOf('INSERT INTO "governed_model_registry"'))
+    const tupleRe = /\('([^']+)',\s*'([^']+)',\s*'([^']+)'\)/g
+    const found: { modelId: string; version: string; definitionHash: string }[] = []
+    let match: RegExpExecArray | null
+    while ((match = tupleRe.exec(block)) !== null) {
+      found.push({ modelId: match[1], version: match[2], definitionHash: match[3] })
+    }
+    expect(found).toEqual([{ modelId: append.modelId, version: append.version, definitionHash: append.definitionHash }])
+    expect(block).toContain('ON CONFLICT ("model_id", "version") DO NOTHING')
+    expect(sql).not.toMatch(/UPDATE\s+"?governed_model_registry/i)
+  })
+
+  it('never re-registers a (model_id, version) that the 0040 seed already holds', () => {
+    const seeded = new Set(GOVERNED_MODEL_REGISTRY_SEED.map((m) => `${m.modelId}:${m.version}`))
+    for (const a of GOVERNED_MODEL_REGISTRY_APPENDS) expect(seeded.has(`${a.modelId}:${a.version}`)).toBe(false)
   })
 })
 

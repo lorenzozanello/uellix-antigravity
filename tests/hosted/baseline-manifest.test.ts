@@ -79,20 +79,23 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // left 53 Drizzle units; FIBIU-08 added 0053 (53+1=54), FIBIU-09 added
   // 0054's rubric CHECK constraints (54+1=55), FIBIU-10 added 0055's
   // material-fields registry (55+1=56). Supabase and policy counts unchanged.
-  it('has 67 units: 56 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(67)
+  // W2-B2-R1 (R-B2-03) — re-derived: 67 at the audited B2 head + 0056
+  // (registry editability + 1.1.0 seed) = 68; 57 Drizzle. Supabase and
+  // policy counts unchanged (R-B2-07 adds policy 010 next).
+  it('has 68 units: 57 Drizzle, 2 Supabase, 9 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(68)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(56)
+    expect(byKind('drizzle-migration')).toBe(57)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(9)
   })
 
-  it('numbers ordinals 1..67 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..68 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 67 }, (_, i) => i + 1),
+      Array.from({ length: 68 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(67)
+    expect(new Set(BASELINE_ORDER).size).toBe(68)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -302,7 +305,10 @@ describe('Phase 5 — data', () => {
   // material_change_registry.sql's literal 39-row field->category seed,
   // mirroring 0040's own global-catalog-seed treatment exactly (same
   // governance whitelist reasoning as the 0048 entry above).
-  it('0018, 0040, 0041, 0047, 0048 and 0055 are the only units with DML', () => {
+  // W2-B2-R1 (R-B2-03) — 0056 genuinely added: two literal global-catalog
+  // seeds (70 registry rows as registry_version 1.1.0 + the governed model
+  // append), same class as 0040 and 0055.
+  it('0018, 0040, 0041, 0047, 0048, 0055 and 0056 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
@@ -313,6 +319,7 @@ describe('Phase 5 — data', () => {
       '0047_fib_taxonomy_mapping_governance_regime.sql',
       '0048_fib_evidence_versions.sql',
       '0055_fib_proxy_material_change_registry.sql',
+      '0056_fib_proxy_material_fields_editability.sql',
     ])
 
     const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))

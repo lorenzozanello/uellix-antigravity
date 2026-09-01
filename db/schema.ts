@@ -659,10 +659,20 @@ export const proxyMaterialFieldsRegistry = pgTable('proxy_material_fields_regist
   tableName: varchar('table_name', { length: 60 }).notNull(),
   fieldName: varchar('field_name', { length: 100 }).notNull(),
   category: varchar('category', { length: 60 }).notNull(),
+  // W2-B2-R1 / R-B2-03 (AG-B2-3-DERIVED, ORTHOGONAL_EDITABILITY_DIMENSION):
+  // materiality and editability are orthogonal. NULLable with no default so
+  // registry_version 1.0.0 rows keep NULL — that version never classified
+  // this dimension, and FIBDB-007's "immutable per version" forbids
+  // rewriting it. The ten sealed FIBC-013 categories are NOT extended.
+  editability: varchar('editability', { length: 20 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   unique('proxy_material_fields_registry_version_table_field_unique').on(
     table.registryVersion, table.tableName, table.fieldName
+  ),
+  check(
+    'proxy_material_fields_registry_editability_check',
+    sql`${table.editability} IS NULL OR ${table.editability} IN ('user_editable','system_derived','system_sealed')`
   ),
   check(
     'proxy_material_fields_registry_category_check',

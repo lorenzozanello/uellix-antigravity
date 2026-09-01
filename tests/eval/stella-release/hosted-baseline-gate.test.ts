@@ -49,8 +49,10 @@ describe('the six baseline gates', () => {
   // seed INSERT — mirroring 0040_governed_model_registry.sql's own
   // treatment). 64+3=67.
   it('measures the corpus rather than restating the manifest', () => {
-    expect(evidence.unitCount).toBe(67)
-    expect(evidence.superuserFreeUnits).toBe(67)
+    // W2-B2-R1 (R-B2-03): + 0056 (two literal global-catalog seeds) = 68 units,
+    // 4 literal row sources (0040:1, 0055:1, 0056:2).
+    expect(evidence.unitCount).toBe(68)
+    expect(evidence.superuserFreeUnits).toBe(68)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',
@@ -59,8 +61,9 @@ describe('the six baseline gates', () => {
       '0047_fib_taxonomy_mapping_governance_regime.sql',
       '0048_fib_evidence_versions.sql',
       '0055_fib_proxy_material_change_registry.sql',
+      '0056_fib_proxy_material_fields_editability.sql',
     ])
-    expect(evidence.literalRowSources).toBe(2)
+    expect(evidence.literalRowSources).toBe(4)
     expect(evidence.mustNotRunUnits).toEqual([])
   })
 })

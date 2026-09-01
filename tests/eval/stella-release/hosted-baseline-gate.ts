@@ -379,9 +379,10 @@ export function buildHostedBaselineGateEvidence(
     // change_registry.sql) + 1 journal bootstrap step. The count is
     // asserted rather than loosened to `>= 67` — a plan that silently grew
     // or shrank is exactly what this evidence exists to notice.
+    // W2-B2-R1 (R-B2-03): 68 baseline units + 1 journal bootstrap step = 69.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 68 &&
+      firstProvisioning.steps.length === 69 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -396,7 +397,8 @@ export function evaluateHostedBaselineGates(
   // units; this batch adds three Drizzle migrations (0053_fib_proxy_versions_
   // provenance.sql, 0054_fib_proxy_rubric_constraints.sql,
   // 0055_fib_proxy_material_change_registry.sql). 64 + 3 = 67.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 67
+  // W2-B2-R1 (R-B2-03): + 0056_fib_proxy_material_fields_editability.sql = 68.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 68
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
@@ -439,6 +441,10 @@ export function evaluateHostedBaselineGates(
     '0047_fib_taxonomy_mapping_governance_regime.sql',
     '0048_fib_evidence_versions.sql',
     '0055_fib_proxy_material_change_registry.sql',
+    // W2-B2-R1 (R-B2-03) — 0056: two literal global-catalog seeds (registry
+    // 1.1.0 rows + the governed model append), verified in
+    // tests/hosted/baseline-manifest.test.ts.
+    '0056_fib_proxy_material_fields_editability.sql',
   ]
   if (
     evidence.dmlUnits.length !== EXPECTED_DML_UNITS.length ||
@@ -453,8 +459,11 @@ export function evaluateHostedBaselineGates(
   // 0041 and 0047 still write zero rows on an empty database; a THIRD
   // literal source, or a changed count, means either a seed grew or a new
   // unit started writing literal rows unannounced.
-  if (evidence.literalRowSources !== 2) {
-    managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 2 (units 51 and 67's global-catalog seeds)`)
+  // W2-B2-R1 (R-B2-03): unit 68 (0056) carries TWO further literal seeds —
+  // the 70-row registry_version 1.1.0 classification and the governed-model
+  // append — so exactly 4: 0040:1, 0055:1, 0056:2.
+  if (evidence.literalRowSources !== 4) {
+    managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 4 (units 51, 67 and 68's global-catalog seeds)`)
   }
   if (evidence.mustNotRunUnits.length > 0) {
     managedProblems.push(`units classified must-not-run: ${evidence.mustNotRunUnits.join(', ')}`)

@@ -225,7 +225,8 @@ describe('unit source verification', () => {
     // (0053_fib_proxy_versions_provenance.sql, 0054_fib_proxy_rubric_
     // constraints.sql, 0055_fib_proxy_material_change_registry.sql) = 67.
     // Same derivation as tests/hosted/baseline-journal-wrapper.test.ts.
-    expect(BASELINE_UNITS).toHaveLength(67)
+    // W2-B2-R1 (R-B2-03): + 0056_fib_proxy_material_fields_editability.sql = 68.
+    expect(BASELINE_UNITS).toHaveLength(68)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })

@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 33/68: 0032_rls_specialized.sql
+-- GENERATED — DO NOT EDIT. Unit 68/68: 0056_fib_proxy_material_fields_editability.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0032_rls_specialized.sql
--- Source SHA256: 935037d43e3c196b4e17afbc46974059de493b130d285770f713ca46ec1d94b6
+-- Includes:      db/migrations/0056_fib_proxy_material_fields_editability.sql
+-- Source SHA256: 86d7d22347425aa02678a7aeb1ebf185f0febcd014bc994d238df88bd9f34557
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/033_0032_rls_specialized.sql
+--        -f db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0032_rls_specialized.sql
+\ir ../../../db/migrations/0056_fib_proxy_material_fields_editability.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0032_rls_specialized.sql', 'PHASE_BASELINE',
-   '935037d43e3c196b4e17afbc46974059de493b130d285770f713ca46ec1d94b6', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0056_fib_proxy_material_fields_editability.sql', 'PHASE_BASELINE',
+   '86d7d22347425aa02678a7aeb1ebf185f0febcd014bc994d238df88bd9f34557', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

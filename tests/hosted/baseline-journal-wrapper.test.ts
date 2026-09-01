@@ -460,8 +460,9 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
     // tests/hosted/baseline-manifest.test.ts and
     // tests/eval/stella-release/hosted-baseline-gate.test.ts for the same
     // derivation, independently re-verified there.
-    expect(BASELINE_UNITS).toHaveLength(67)
-    expect(BASELINE_ORDER).toHaveLength(67)
+    // W2-B2-R1 (R-B2-03): + 0056_fib_proxy_material_fields_editability.sql = 68.
+    expect(BASELINE_UNITS).toHaveLength(68)
+    expect(BASELINE_ORDER).toHaveLength(68)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {

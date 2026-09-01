@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 58/67: 009_governed_model_registry_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 58/68: 009_governed_model_registry_rls.sql
 -- ============================================================================
 --
 -- Includes:      db/policies/009_governed_model_registry_rls.sql

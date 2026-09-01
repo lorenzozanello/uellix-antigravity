@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 1/67: 0000_quick_husk.sql
+-- GENERATED — DO NOT EDIT. Unit 1/68: 0000_quick_husk.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0000_quick_husk.sql

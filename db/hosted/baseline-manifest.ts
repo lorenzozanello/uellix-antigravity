@@ -1042,6 +1042,36 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'by DESTROY_AND_REPROVISION.',
     expect: { usesAuthenticated: true, dmlStatementCount: 1, literalRowSourceCount: 1 },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B2-R1 (B2 remediation, W2_B2_REMEDIATION_AUTHORITY_v1.0.0).          *
+   * Forward-only correction units; 0053/0054/0055 are journaled, hashed and  *
+   * untouched.                                                               *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 68,
+    id: '0056_fib_proxy_material_fields_editability.sql',
+    kind: D,
+    file: 'db/migrations/0056_fib_proxy_material_fields_editability.sql',
+    sha256: '86d7d22347425aa02678a7aeb1ebf185f0febcd014bc994d238df88bd9f34557',
+    dependsOn: ['0055_fib_proxy_material_change_registry.sql', '0040_governed_model_registry.sql'],
+    dml: 'global-catalog',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'R-B2-03 (FIBC-013/FIBDB-007; closes M4 and AG-B2-3-DERIVED). ADD COLUMN editability (NULLable, ' +
+      'no default, CHECK over user_editable/system_derived/system_sealed) on proxy_material_fields_registry; ' +
+      'an idempotent ON CONFLICT DO NOTHING seed of 70 literal rows — one per persisted column of ' +
+      'financial_proxies (24) and financial_proxy_versions (46) — as NEW registry_version 1.1.0 (the 39 ' +
+      'rows of 1.0.0 are historical record, untouched: FIBDB-007 immutable per version); and the ' +
+      'append-only governed_model_registry row (PROXY_MATERIAL_FIELDS, 1.1.0), same convention as unit 51. ' +
+      'Universal reference data, not tenant data. No grant, no RLS change (RLS for this table is unit 69).',
+    rollback:
+      'Applied with psql -1; a mid-unit failure rolls back whole. Both INSERTs are idempotent; ADD ' +
+      'COLUMN / ADD CONSTRAINT are not, so a partial re-apply fails loudly. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: { dmlStatementCount: 2, literalRowSourceCount: 2 },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

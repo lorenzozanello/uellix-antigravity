@@ -87,4 +87,58 @@ describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', () => {
       expect([...shared].sort()).toEqual(['approved', 'archived', 'rejected'])
     })
   })
+
+  // -------------------------------------------------------------------------
+  // R-B2-03 — migration 0056 applied as part of the provision: the
+  // editability column and CHECK exist, registry_version 1.1.0 is exhaustive
+  // (70 rows) and 1.0.0 is byte-for-byte historical (39 rows, NULL
+  // editability), and the governed model resolves 1.1.0 as current.
+  // -------------------------------------------------------------------------
+  describe('R-B2-03 — registry editability + 1.1.0 seed (real PostgreSQL)', () => {
+    it('registry_version 1.1.0 holds exactly 70 rows, one per persisted column, every row classified on both dimensions', () => {
+      expect(db.scalar(`SELECT count(*) FROM public.proxy_material_fields_registry WHERE registry_version = '1.1.0'`)).toBe('70')
+      expect(db.scalar(`SELECT count(*) FROM public.proxy_material_fields_registry WHERE registry_version = '1.1.0' AND editability IS NULL`)).toBe('0')
+      // Reflected from the live catalog, not from a list.
+      const live = db.scalar(`SELECT count(*) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'financial_proxies'`)
+      const ver = db.scalar(`SELECT count(*) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'financial_proxy_versions'`)
+      expect(Number(live) + Number(ver)).toBe(70)
+      const unregistered = db.query(`
+        SELECT c.table_name || '.' || c.column_name
+        FROM information_schema.columns c
+        WHERE c.table_schema = 'public' AND c.table_name IN ('financial_proxies','financial_proxy_versions')
+          AND NOT EXISTS (SELECT 1 FROM public.proxy_material_fields_registry r
+                          WHERE r.registry_version = '1.1.0' AND r.table_name = c.table_name AND r.field_name = c.column_name)`)
+      expect(unregistered).toEqual([])
+      const phantom = db.query(`
+        SELECT r.table_name || '.' || r.field_name FROM public.proxy_material_fields_registry r
+        WHERE r.registry_version = '1.1.0' AND NOT EXISTS (
+          SELECT 1 FROM information_schema.columns c WHERE c.table_schema = 'public' AND c.table_name = r.table_name AND c.column_name = r.field_name)`)
+      expect(phantom).toEqual([])
+    })
+
+    it('registry_version 1.0.0 is untouched: 39 rows, all with NULL editability', () => {
+      expect(db.scalar(`SELECT count(*) FROM public.proxy_material_fields_registry WHERE registry_version = '1.0.0'`)).toBe('39')
+      expect(db.scalar(`SELECT count(*) FROM public.proxy_material_fields_registry WHERE registry_version = '1.0.0' AND editability IS NOT NULL`)).toBe('0')
+    })
+
+    it('NC-7 (DB): no approval/audit metadata row is user_editable', () => {
+      expect(db.scalar(`SELECT count(*) FROM public.proxy_material_fields_registry WHERE registry_version = '1.1.0' AND editability = 'user_editable' AND field_name IN ('review_status','reviewer_id','reviewed_at','created_by','created_at','updated_at','id','organization_id','financial_proxy_id','ordinal','supersedes_version_id')`)).toBe('0')
+    })
+
+    it('NEGATIVE: the editability CHECK rejects a value outside the frozen three', () => {
+      const error = db.expectError(`INSERT INTO public.proxy_material_fields_registry (registry_version, table_name, field_name, category, editability) VALUES ('9.9.9','financial_proxies','id','non_material','anything_goes')`)
+      expect(error).toContain('proxy_material_fields_registry_editability_check')
+    })
+
+    it('NEGATIVE: the category CHECK is unchanged — an eleventh material category is still rejected', () => {
+      const error = db.expectError(`INSERT INTO public.proxy_material_fields_registry (registry_version, table_name, field_name, category, editability) VALUES ('9.9.9','financial_proxies','id','governance_metadata','system_sealed')`)
+      expect(error).toContain('proxy_material_fields_registry_category_check')
+    })
+
+    it('governed_model_registry resolves PROXY_MATERIAL_FIELDS 1.1.0 as current and still holds 1.0.0', () => {
+      const versions = db.query(`SELECT version FROM public.governed_model_registry WHERE model_id = 'PROXY_MATERIAL_FIELDS' ORDER BY version`).map((r) => r[0])
+      expect(versions).toEqual(['1.0.0', '1.1.0'])
+      expect(db.scalar(`SELECT version FROM public.governed_model_registry WHERE model_id = 'PROXY_MATERIAL_FIELDS' ORDER BY effective_from DESC LIMIT 1`)).toBe('1.1.0')
+    })
+  })
 })

@@ -393,6 +393,13 @@
       "when": 1788283820236,
       "tag": "0055_fib_proxy_material_change_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1788294184119,
+      "tag": "0056_fib_proxy_material_fields_editability",
+      "breakpoints": true
     }
   ]
 }
