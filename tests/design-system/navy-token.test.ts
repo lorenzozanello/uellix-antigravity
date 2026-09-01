@@ -1,9 +1,10 @@
 // tests/design-system/navy-token.test.ts
 //
-// RE-U1 U1-F11 (RE-U6-A, Phase 1 — token adoption). 88 literal `#0F172A`
-// occurrences across 17 implementation files bypassed the existing
-// `--color-uellix-deep` / `--uellix-deep` tokens (app/globals.css:26/238),
-// which exist for exactly this purpose (see the comment at globals.css:20-22).
+// RE-U1 U1-F11 (RE-U6-A, Phase 1 — token adoption; RE-U6-B, Phase 2 — value
+// reconciliation). 88 literal `#0F172A` occurrences across 17 implementation
+// files bypassed the existing `--color-uellix-deep` / `--uellix-deep` tokens
+// (app/globals.css), which exist for exactly this purpose (see the comment
+// at globals.css:21-23).
 // This suite is the regression gate: it fails the moment a NEW literal
 // `#0F172A` consumer appears anywhere in app/, components/ or lib/, outside
 // the two explicitly authorized locations.
@@ -15,9 +16,7 @@
 // files, not 86 across ~17. That site is now the third authorized exception.
 //
 // The three authorized exceptions:
-//   1. app/globals.css itself — the token DEFINITION sites. Their value is
-//      still #0F172A after Phase 1 by design; Phase 2 (RE-U6-B) changes it to
-//      the canonical #172B49 and this file's Phase-2 suite pins that.
+//   1. app/globals.css itself — the token DEFINITION sites.
 //   2. lib/email/templates/invitation.ts — raw HTML email markup. CSS custom
 //      properties (`var(--uellix-deep)`) are unreliably supported across
 //      email clients (notably Outlook's Word rendering engine), so email
@@ -28,11 +27,18 @@
 //      StyleSheet.create() is a flat JS style-object system for its own PDF
 //      layout engine (like React Native's StyleSheet), not CSS: it has no
 //      cascade and does not resolve `var(--x)`. Same category as the email
-//      exception, same handling — literal hex, updated by hand at Phase 2.
+//      exception, same handling.
 //
-// docs/design/INTERNAL_BRAND_TOKENS.md is documentation, not implementation
-// code, so it is out of this scan's scope — but it must stay in sync with the
-// canonical value, which the Phase-2 suite below checks separately.
+// RE-U6-B (Phase 2 — canonical value reconciliation) changed the token's
+// VALUE from #0F172A to the canonical #172B49 (RE-U0 Q2), and hand-updated
+// both exception files to match. The suite below pins that.
+//
+// docs/design/INTERNAL_BRAND_TOKENS.md is a dated Sprint-11A design log, not
+// a live spec — it correctly records what the token's value WAS at that
+// sprint. Rewriting its historical entries to the new value would misrepresent
+// what Sprint 11A actually shipped, which CLAUDE.md's fail-closed rules treat
+// as rewriting evidence. It is deliberately left untouched and out of scope
+// for both this scan and the Phase-2 value assertions below.
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -92,7 +98,7 @@ describe('Phase 1 — Navy literal consumers are migrated to the governed token'
     ).toEqual([])
   })
 
-  it('the two authorized exception files still exist at their expected paths', () => {
+  it('the authorized exception files still exist at their expected paths', () => {
     for (const relFile of AUTHORIZED_LITERAL_FILES) {
       expect(statSync(path.join(ROOT, relFile), { throwIfNoEntry: false })).toBeTruthy()
     }
@@ -122,5 +128,37 @@ describe('the governed token utility is in place for consumers to adopt', () => 
     )
     expect(svgConsumer).toMatch(/stroke="var\(--uellix-deep\)"/)
     expect(svgConsumer).toMatch(/fill="var\(--uellix-deep\)"/)
+  })
+})
+
+describe('Phase 2 — canonical Navy value reconciliation (RE-U0 Q2)', () => {
+  it('the governed token resolves to the canonical #172B49, not the stale #0F172A', () => {
+    const css = readFileSync(path.join(ROOT, 'app', 'globals.css'), 'utf8')
+    expect(css).toMatch(/--color-uellix-deep:\s*#172B49;/)
+    expect(css).toMatch(/--uellix-deep:\s*#172B49;/)
+    expect(css).not.toMatch(/--color-uellix-deep:\s*#0F172A/i)
+    expect(css).not.toMatch(/[^-]--uellix-deep:\s*#0F172A/i)
+  })
+
+  it('both non-CSS exception files were hand-updated to the canonical value', () => {
+    const email = readFileSync(
+      path.join(ROOT, 'lib', 'email', 'templates', 'invitation.ts'),
+      'utf8'
+    )
+    expect(email).toMatch(/#172B49/)
+    expect(email).not.toMatch(/#0F172A/i)
+
+    const pdf = readFileSync(
+      path.join(ROOT, 'lib', 'reports', 'pdf', 'ReportPdfDocument.tsx'),
+      'utf8'
+    )
+    expect(pdf).toMatch(/#172b49/)
+    expect(pdf).not.toMatch(/#0f172a/i)
+  })
+
+  it('canonical Orange and Slate are unchanged by this reconciliation', () => {
+    const css = readFileSync(path.join(ROOT, 'app', 'globals.css'), 'utf8')
+    expect(css).toMatch(/--color-uellix-orange:\s*#FF6A00;/)
+    expect(css).toMatch(/--uellix-gray-mid:\s*#64748B;/)
   })
 })

@@ -16,14 +16,27 @@
      sans-serif (see app/(public)/layout.tsx, app/app/layout.tsx), so it's
      the correct default here too. */
   --font-sans: var(--font-manrope);
-  --font-mono: var(--font-geist-mono);
+  /* RE-U1 U1-F09 / RE-U6-B: governed metadata (hashes, IDs, version
+     identifiers, timestamps, provenance/audit metadata — see every
+     `font-mono` consumer in app/ and components/) was rendering in Geist
+     Mono, an otherwise-unused fourth font family, instead of the brand's
+     designated governed-metadata face. IBM Plex Mono is already loaded
+     (see app/layout.tsx) and already has its own explicit
+     `.font-ibm-plex-mono` utility below; this makes the GENERIC `font-mono`
+     utility resolve to the same family, so every existing consumer is
+     correct without a per-call-site rename. */
+  --font-mono: var(--font-ibm-plex-mono);
   --font-heading: var(--font-sans);
   /* Brand palette as theme tokens — generates bg/text/border/from/via/outline
      -uellix-* utilities (with opacity modifiers), so components stop hardcoding
      hex. Values mirror the :root brand tokens defined lower in this file. */
   --color-uellix-orange: #FF6A00;
   --color-uellix-orange-strong: #e05e00;
-  --color-uellix-deep: #0F172A;
+  /* RE-U1 Q2 / RE-U6-B: canonical Navy per the frozen brand HPO is #172B49,
+     not the #0F172A this had drifted to. Every consumer was migrated to this
+     token in RE-U6-A (Phase 1) first, so this is the only place the actual
+     visual value changes. */
+  --color-uellix-deep: #172B49;
   --color-uellix-carbon: #0A101E;
   --color-uellix-copper: #C2703F;
   --color-uellix-ink: #14181F;
@@ -235,7 +248,7 @@
 
 /* ─── Uellix Brand Tokens ─── */
 :root {
-  --uellix-deep:        #0F172A;
+  --uellix-deep:        #172B49;  /* RE-U6-B: canonical Navy, was #0F172A */
   --uellix-carbon:      #0A101E;  /* deeper carbon for dossier backgrounds */
   --uellix-orange:      #FF6A00;
   --uellix-copper:      #C2703F;  /* editorial copper accent (secondary) */

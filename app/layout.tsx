@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Sora, Manrope, IBM_Plex_Mono } from "next/font/google";
+import { Sora, Manrope, IBM_Plex_Mono } from "next/font/google";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const sora = Sora({
   variable: "--font-sora",
@@ -85,7 +80,7 @@ export default function RootLayout({
     <html
       lang="es"
       data-scroll-behavior="smooth"
-      className={`${geistMono.variable} ${sora.variable} ${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${sora.variable} ${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
