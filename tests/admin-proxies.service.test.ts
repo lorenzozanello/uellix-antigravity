@@ -395,41 +395,55 @@ describe('promoteProxyToGlobal', () => {
     expect(mockDbData.lastUpdateValues).toBeNull();
   });
 
-  it('clones the reviewed source and proxy, then approves the original in the same transaction', async () => {
+  // R-B2-08 (closes M6) / NC-10 — the clone carries the FACTUAL provenance of
+  // the figure and NOTHING of the organization's governance: created
+  // 'suggested' (version 'draft'), no reviewer/moment, no derived USD, all
+  // thirteen rubric factors, the derived levels, rubric_version and the
+  // exceptional determination NULL, legacy live-row rubric fields cleared.
+  // The ORIGINAL proxy's approval in the same transaction is unchanged.
+  it('NC-10: clones source and proxy with a governance RESET — suggested/draft, no inherited rating, no inherited determination — and still approves the original', async () => {
     vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
     const proxy = {
       id: 'proxy-1', organizationId: 'org-1', sourceId: 'source-1', reviewStatus: 'pending_review',
       name: 'Costo mensual', description: null, proxyType: 'cost', country: 'CO', territory: null,
       value: '100', currency: 'USD', unit: 'mes', referenceYear: 2024, valueUsd: '100', fxRateId: null,
-      thematicArea: null, methodology: null, confidenceLevel: null, methodologicalRisk: null,
+      thematicArea: null, methodology: null, confidenceLevel: 'high', methodologicalRisk: 'low',
     };
     mockDbData.financialProxies = [proxy];
     mockDbData.financialProxyVersions = [
-      { id: 'version-1', financialProxyId: 'proxy-1', reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
+      { id: 'version-1', financialProxyId: 'proxy-1', ordinal: 1, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC, confidenceScore: 100, confidenceLevel: 'high', methodologicalRiskScore: 0, methodologicalRisk: 'low', rubricVersion: '1.0.0', exceptionalDefendibilityDetermination: 'Tenant-private text that must not leak' },
     ];
     mockDbData.proxySources = [{ id: 'source-1', organizationId: 'org-1', name: 'DANE', description: null, url: null, status: 'active' }];
     mockDbData.insertedGlobalSource = { id: 'global-source-1' };
-    mockDbData.inserted = { id: 'global-proxy-1', reviewStatus: 'approved' };
+    mockDbData.inserted = { id: 'global-proxy-1', reviewStatus: 'suggested' };
 
     const promoted = await promoteProxyToGlobal('proxy-1', reviewedStateOf(proxy));
 
-    expect(promoted).toEqual({ id: 'global-proxy-1', reviewStatus: 'approved' });
-    // FIBIU-08 — a third insert now lands here too: the clone's own
-    // financial_proxy_versions row (FIBC-002/FIBC-010), sealed approved on
-    // creation alongside the clone itself.
+    expect(promoted).toEqual({ id: 'global-proxy-1', reviewStatus: 'suggested' });
     expect(mockDbData.insertedRows).toHaveLength(3);
     expect(mockDbData.insertedRows[0]).toMatchObject({
       tableName: 'proxy_sources',
       values: { organizationId: null, name: 'DANE', status: 'active' },
     });
-    expect(mockDbData.insertedRows[1]).toMatchObject({
-      tableName: 'financial_proxies',
-      values: { organizationId: null, sourceId: 'global-source-1', reviewStatus: 'approved', valueUsd: '100' },
-    });
-    expect(mockDbData.insertedRows[2]).toMatchObject({
-      tableName: 'financial_proxy_versions',
-      values: { organizationId: null, financialProxyId: 'global-proxy-1', reviewStatus: 'approved', valueUsd: '100' },
-    });
+    // Clone live row: factual figure copied, governance reset.
+    const cloneLive = mockDbData.insertedRows[1];
+    expect(cloneLive.tableName).toBe('financial_proxies');
+    expect(cloneLive.values).toMatchObject({ organizationId: null, sourceId: 'global-source-1', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'mes', referenceYear: 2024, reviewerId: null, reviewedAt: null, confidenceLevel: null, methodologicalRisk: null });
+    expect(cloneLive.values.valueUsd).toBeUndefined();
+    // Clone version 1: factual provenance copied, every governance field NULL.
+    const cloneVersion = mockDbData.insertedRows[2];
+    expect(cloneVersion.tableName).toBe('financial_proxy_versions');
+    expect(cloneVersion.values).toMatchObject({ organizationId: null, financialProxyId: 'global-proxy-1', reviewStatus: 'draft', valueUsd: null, fxRateId: null, recoverableReference: 'https://example.org/proof', geographicContextualScope: 'Nacional', documentedTransformations: 'none' });
+    for (const factor of Object.keys(FULL_RUBRIC)) expect(cloneVersion.values[factor], factor).toBeNull();
+    for (const derived of ['confidenceScore', 'confidenceLevel', 'methodologicalRiskScore', 'methodologicalRisk', 'rubricVersion', 'exceptionalDefendibilityDetermination']) {
+      expect(cloneVersion.values[derived], derived).toBeNull();
+    }
+    expect(cloneVersion.values.reviewerId).toBeUndefined();
+    expect(cloneVersion.values.reviewedAt).toBeUndefined();
+    // The clone's version is never sealed with a reviewer; the only version
+    // write is the ORIGINAL's own approval seal.
+    expect(mockDbData.lastVersionUpdateValues).toMatchObject({ reviewStatus: 'approved', reviewerId: ADMIN.id });
+    // The original proxy is approved exactly as before.
     expect(mockDbData.lastUpdateValues).toMatchObject({ reviewStatus: 'approved', valueUsd: '100' });
   });
 });

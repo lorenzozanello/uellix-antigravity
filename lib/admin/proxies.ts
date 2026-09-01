@@ -24,7 +24,7 @@
 // Manual entry persists every rate in fx_rates for audit trail (no dedup)
 
 import { db } from '@/db/client'
-import { proxySources, financialProxies, financialProxyVersions, fxRates } from '@/db/schema'
+import { proxySources, financialProxies, fxRates } from '@/db/schema'
 import {
   deriveApprovedProxyAuthority,
   withExpectedLockedFinancialProxy,
@@ -468,6 +468,18 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
         }).returning()
         globalSourceId = clonedSource.id
       }
+      // W2-B2-R1 / R-B2-08 (closes M6; global_promotion_exceptional_
+      // determination_disposition RESET_GLOBAL_GOVERNANCE_AND_REQUIRE_NEW_
+      // DETERMINATION). The global catalog is a different governance domain
+      // from the tenant that authored the ratings: the FACTUAL provenance of
+      // the figure is copied, every governance judgement is reset. The clone
+      // is created 'suggested' (the image of its version's 'draft'), with no
+      // reviewer/moment, no derived USD authority, and the legacy live-row
+      // rubric fields cleared — it becomes an approved global reference only
+      // after an administrator independently rates and approves it through
+      // updateGlobalProxyReviewStatus. Consumers never see it before then
+      // (listFinancialProxies lists global proxies only when approved).
+      const cloneLiveStatus = 'suggested' as const
       const [clonedProxy] = await tx.insert(financialProxies).values({
         organizationId: null,
         sourceId: globalSourceId,
@@ -478,26 +490,35 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
         territory: proxy.territory,
         currency: proxy.currency,
         value: proxy.value,
-        ...usdFields,
         unit: proxy.unit,
         referenceYear: proxy.referenceYear,
         thematicArea: proxy.thematicArea,
         methodology: proxy.methodology,
-        confidenceLevel: proxy.confidenceLevel,
-        methodologicalRisk: proxy.methodologicalRisk,
-        reviewStatus: 'approved',
-        reviewerId: admin.id,
-        reviewedAt: now,
+        confidenceLevel: null,
+        methodologicalRisk: null,
+        reviewStatus: cloneLiveStatus,
+        reviewerId: null,
+        reviewedAt: null,
         createdBy: admin.id,
       }).returning()
       await tx.update(financialProxies)
         .set({ reviewStatus: 'approved', ...usdFields, reviewerId: admin.id, reviewedAt: now, updatedAt: now })
         .where(eq(financialProxies.id, proxyId))
 
-      // FIBIU-08 (FIBC-002/FIBC-010/FIBC-012) — carry the original's current
-      // provenance into the clone's own version 1, sealed approved on
-      // creation; seal the original's own current version approved too, in
-      // the same transaction as the live-row transitions above.
+      // FIBIU-08 (FIBC-002/FIBC-010) — the clone's own version 1 carries the
+      // FACTUAL provenance of the figure (a property of the figure, not a
+      // governance judgement). R-B2-08 (M6): every governance judgement is
+      // RESET — the thirteen rubric factors, the four derived score/level
+      // fields, rubric_version and the exceptional-defendibility
+      // determination start NULL (createFinancialProxyVersion defaults every
+      // omitted rubric field to null), reviewer_id/reviewed_at stay NULL,
+      // value_usd/fx_rate_id are derived only at the clone's own approval,
+      // and the version opens as 'draft' — the image of the live 'suggested'.
+      // C3/C4/R4 are population-fit, geography-fit and transfer-risk
+      // judgements by construction; a tenant reviewer's free-text
+      // determination must not become readable by every other tenant; and
+      // the admin never made those ratings, so sealing them under admin.id
+      // would falsify provenance (FIBC-011).
       const clonedVersion = await createFinancialProxyVersion(
         {
           organizationId: null,
@@ -507,8 +528,8 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
           currency: proxy.currency,
           unit: proxy.unit,
           referenceYear: proxy.referenceYear,
-          valueUsd: usdFields.valueUsd ?? null,
-          fxRateId: usdFields.fxRateId ?? null,
+          valueUsd: null,
+          fxRateId: null,
           country: proxy.country,
           territory: proxy.territory,
           thematicArea: proxy.thematicArea,
@@ -519,40 +540,12 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
           relevanceJustification: sourceVersion?.relevanceJustification ?? null,
           documentedTransformations: sourceVersion?.documentedTransformations ?? null,
           consultationDate: sourceVersion?.consultationDate ?? null,
-          // FIBIU-09 — the clone carries the ALREADY-EVALUATED (and just
-          // gate-checked via assertRubricApprovable above) source rubric
-          // across, rather than starting the promoted proxy back at
-          // unrated: promotion changes no underlying evidence, so re-rating
-          // it from scratch would be governance theater, not a real check.
-          c1SourceQualityVerifiability: sourceVersion?.c1SourceQualityVerifiability ?? null,
-          c2OutcomeCorrespondence: sourceVersion?.c2OutcomeCorrespondence ?? null,
-          c3StakeholderPopulationFit: sourceVersion?.c3StakeholderPopulationFit ?? null,
-          c4GeographicContextFit: sourceVersion?.c4GeographicContextFit ?? null,
-          c5TemporalFit: sourceVersion?.c5TemporalFit ?? null,
-          c6MethodologicalUnitComparability: sourceVersion?.c6MethodologicalUnitComparability ?? null,
-          r1ProvenanceRisk: sourceVersion?.r1ProvenanceRisk ?? null,
-          r2SourceLimitationRisk: sourceVersion?.r2SourceLimitationRisk ?? null,
-          r3ConceptualFitRisk: sourceVersion?.r3ConceptualFitRisk ?? null,
-          r4GeographicPopulationTransferRisk: sourceVersion?.r4GeographicPopulationTransferRisk ?? null,
-          r5TemporalObsolescenceRisk: sourceVersion?.r5TemporalObsolescenceRisk ?? null,
-          r6TransformationRisk: sourceVersion?.r6TransformationRisk ?? null,
-          r7MethodologicalUncertaintyRisk: sourceVersion?.r7MethodologicalUncertaintyRisk ?? null,
-          confidenceScore: sourceVersion?.confidenceScore ?? null,
-          confidenceLevel: sourceVersion?.confidenceLevel ?? null,
-          methodologicalRiskScore: sourceVersion?.methodologicalRiskScore ?? null,
-          methodologicalRisk: sourceVersion?.methodologicalRisk ?? null,
-          rubricVersion: sourceVersion?.rubricVersion ?? null,
-          exceptionalDefendibilityDetermination: sourceVersion?.exceptionalDefendibilityDetermination ?? null,
           // R-B2-01 — version token is the image of the clone's live token.
           reviewStatus: toVersionReviewStatus(clonedProxy.reviewStatus),
           createdBy: admin.id,
         },
         tx
       )
-      await tx
-        .update(financialProxyVersions)
-        .set({ reviewerId: admin.id, reviewedAt: now })
-        .where(eq(financialProxyVersions.id, clonedVersion.id))
       assertLiveVersionStatusCoupling(clonedProxy.reviewStatus, clonedVersion.reviewStatus)
       // R-B2-01 — the original's live row was set to 'approved' above; its
       // version takes that token's image, never the literal.

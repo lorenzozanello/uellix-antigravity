@@ -121,6 +121,20 @@ vi.mock('@/db/client', () => {
                   (statusFilter.length === 0 || statusFilter.includes(r.reviewStatus))
                 );
               }
+              // R-B2-08 / NC-10 — listFinancialProxies' consumer visibility:
+              // `or(and(isNull(org), eq(status,'approved')), eq(org, caller))`.
+              // Emulated only when the condition carries the 'approved' token
+              // (the listing shape); id lookups keep returning all rows.
+              if (tableName === 'financial_proxies') {
+                const wanted = extractEqValues(cond);
+                if (wanted.includes('approved')) {
+                  const orgs = wanted.filter((w) => w !== 'approved');
+                  rows = dataToReturn.filter((r) =>
+                    (r.organizationId == null && r.reviewStatus === 'approved') ||
+                    (r.organizationId != null && orgs.includes(r.organizationId))
+                  );
+                }
+              }
               return fromObj;
             }),
             orderBy: vi.fn().mockImplementation((orderExpr: any) => {
@@ -309,6 +323,22 @@ describe('Financial Proxies Service', () => {
     mockDbData.financialProxies = [];
     const result = await listFinancialProxies();
     expect(result).toEqual([]);
+  });
+
+  // R-B2-08 / NC-10 — a promoted global clone is created 'suggested' and is
+  // NOT listed to consumers until an administrator independently rates and
+  // approves it; an approved global proxy and the caller's own proxies are.
+  it('NC-10: a suggested (freshly promoted) global proxy is invisible to consumers; approved global and own-org proxies are listed', async () => {
+    const { getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({ organization: { id: 'org-consumer' }, user: { id: 'u' } } as any);
+    mockDbData.financialProxies = [
+      { id: 'global-suggested', organizationId: null, reviewStatus: 'suggested' },
+      { id: 'global-approved', organizationId: null, reviewStatus: 'approved' },
+      { id: 'own-draft', organizationId: 'org-consumer', reviewStatus: 'suggested' },
+      { id: 'other-org-approved', organizationId: 'org-other', reviewStatus: 'approved' },
+    ];
+    const listed = (await listFinancialProxies()).map((p: any) => p.id).sort();
+    expect(listed).toEqual(['global-approved', 'own-draft']);
   });
 
   it('createOrganizationFinancialProxy sets status to suggested and logs audit', async () => {
