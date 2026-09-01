@@ -264,28 +264,32 @@ const FILE_INPUT_CLASS =
 
 export default async function EvidencePage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
-  const { membership, evidences, outcomes, indicators } = await runWithOrganizationAccess(
-    async ({ membership }) => ({
-      membership,
-      evidences: await listEvidenceForProject(projectId),
-      outcomes: await fetchOutcomes(projectId),
-      indicators: await fetchIndicators(projectId),
+  const { membership, evidences, outcomes, indicators, latestVersionByEvidenceId } =
+    await runWithOrganizationAccess(async ({ membership }) => {
+      const evidences = await listEvidenceForProject(projectId)
+      return {
+        membership,
+        evidences,
+        outcomes: await fetchOutcomes(projectId),
+        indicators: await fetchIndicators(projectId),
+        // R4 (R-B1-02, FIBIU-05/07) — the current version's sensitivity
+        // classification and erasure state, read the same way every other
+        // governed exposure surface reads it
+        // (getLatestEvidenceVersionsByEvidenceIds), never a second,
+        // independent notion of "current". MUST stay inside this identity
+        // context: as uellix_app, a query issued outside it returns zero
+        // rows silently (tests/database-runtime-entrypoints.test.ts).
+        latestVersionByEvidenceId: await getLatestEvidenceVersionsByEvidenceIds(
+          evidences.map((ev) => ev.id)
+        ),
+      }
     })
-  )
 
   const canCreate = canUploadEvidence(membership.role)
   const canArchive = hasRole(membership.role, 'analyst')
   const canReview = hasRole(membership.role, 'impact_manager')
   const canClassifySensitivity = canClassifyEvidenceSensitivity(membership.role)
   const canErase = canEraseEvidenceContent(membership.role)
-
-  // R4 (R-B1-02, FIBIU-05/07) — the current version's sensitivity
-  // classification and erasure state, read the same way every other
-  // governed exposure surface reads it (getLatestEvidenceVersionsByEvidenceIds),
-  // never a second, independent notion of "current".
-  const latestVersionByEvidenceId = await getLatestEvidenceVersionsByEvidenceIds(
-    evidences.map((ev) => ev.id)
-  )
 
   // G-01. Read OUTSIDE the block above: the action authenticates and opens its
   // own identity context, exactly as it does when a form calls it. The

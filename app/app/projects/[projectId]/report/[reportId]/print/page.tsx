@@ -23,18 +23,6 @@ const STATUS_LABEL: Record<string, string> = {
   archived: 'Archivado',
 }
 
-// FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed REPORT/ANNEX
-// surface. Only evidence explicitly classified 'non_sensitive' may reach the
-// printable evidence manifest; unclassified (never-evaluated) evidence is
-// excluded the same as classified-sensitive evidence, never an implicit pass.
-async function loadNonSensitiveEvidenceForProject(projectId: string) {
-  const evidenceUnfiltered = await listEvidenceForProject(projectId).catch(() => [])
-  const versionsById = await getLatestEvidenceVersionsByEvidenceIds(evidenceUnfiltered.map((e) => e.id))
-  return evidenceUnfiltered.filter(
-    (e) => versionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
-  )
-}
-
 function fmt(value: string | null | undefined, currency?: string | null): string {
   if (!value) return '—'
   const n = parseFloat(value)
@@ -81,8 +69,26 @@ export default async function ReportPrintPage({
       methodologyReviews: annexes.methodologyReadiness
         ? await listMethodologyReviewsForProject(projectId).catch(() => [])
         : [],
+      // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed
+      // REPORT/ANNEX surface. Only evidence explicitly classified
+      // 'non_sensitive' may reach the printable evidence manifest;
+      // unclassified (never-evaluated) evidence is excluded the same as
+      // classified-sensitive evidence, never an implicit pass. Inlined
+      // here (rather than a separate helper function) so both DB calls
+      // stay lexically inside this identity context —
+      // tests/database-runtime-entrypoints.test.ts's AST scanner does not
+      // trace calls across a function boundary to see that a helper is
+      // only ever invoked from inside a runWith* callback.
       evidence: annexes.evidenceManifest
-        ? await loadNonSensitiveEvidenceForProject(projectId)
+        ? await (async () => {
+            const evidenceUnfiltered = await listEvidenceForProject(projectId).catch(() => [])
+            const versionsById = await getLatestEvidenceVersionsByEvidenceIds(
+              evidenceUnfiltered.map((e) => e.id)
+            )
+            return evidenceUnfiltered.filter(
+              (e) => versionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
+            )
+          })()
         : [],
     }
   })

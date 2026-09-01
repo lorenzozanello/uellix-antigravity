@@ -453,8 +453,15 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
   const generated = buildAllJournalWrappers(read)
 
   it('the manifest is the source of order', () => {
-    expect(BASELINE_UNITS).toHaveLength(59)
-    expect(BASELINE_ORDER).toHaveLength(59)
+    // W2-B1-R1/R3 (R-B1-03/R-B1-04) — re-derived alongside every other 59-
+    // pin this repository carries: FIB Wave 2 B1 (FIBIU-04/05/06/07) added
+    // four migrations (0048-0051), and W2-B1-R3's run-binding remediation
+    // added one more (0052). 59+4+1=64 — see
+    // tests/hosted/baseline-manifest.test.ts and
+    // tests/eval/stella-release/hosted-baseline-gate.test.ts for the same
+    // derivation, independently re-verified there.
+    expect(BASELINE_UNITS).toHaveLength(64)
+    expect(BASELINE_ORDER).toHaveLength(64)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {
