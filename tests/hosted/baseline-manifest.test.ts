@@ -75,20 +75,23 @@ describe('the baseline manifest describes the corpus that is actually checked in
     expect([...BASELINE_UNITS].map((u) => u.file).sort()).toEqual(discovered().sort())
   })
 
-  it('has 59 units: 48 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(59)
+  // W2-B1-R1 (R-B1-03) — re-derived, not fitted: FIB Wave 2 B1 (FIBIU-04/05/
+  // 06/07) added exactly four Drizzle migrations (0048-0051), one per B1
+  // commit. 48+4=52 Drizzle; Supabase and policy counts are unchanged by B1.
+  it('has 63 units: 52 Drizzle, 2 Supabase, 9 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(63)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(48)
+    expect(byKind('drizzle-migration')).toBe(52)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(9)
   })
 
-  it('numbers ordinals 1..59 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..63 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 59 }, (_, i) => i + 1),
+      Array.from({ length: 63 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(59)
+    expect(new Set(BASELINE_ORDER).size).toBe(63)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -288,7 +291,13 @@ describe('Phase 6 — managed-Supabase compatibility, measured not assumed', () 
 })
 
 describe('Phase 5 — data', () => {
-  it('0018, 0040, 0041 and 0047 are the only units with DML', () => {
+  // W2-B1-R1 (R-B1-03) — 0048 genuinely added: db/migrations/0048_fib_
+  // evidence_versions.sql's stage-B backfill (one v1 shell row per existing
+  // evidence_items row) is real INSERT DML, verified below, not asserted on
+  // the manifest's say-so. This is the explicit governance whitelist of
+  // which migrations are PERMITTED to carry DML — extending it is a
+  // statement about the corpus, never a number chased to pass.
+  it('0018, 0040, 0041, 0047 and 0048 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
@@ -297,6 +306,7 @@ describe('Phase 5 — data', () => {
       '0040_governed_model_registry.sql',
       '0041_pc01b_regime_boundary_backfill.sql',
       '0047_fib_taxonomy_mapping_governance_regime.sql',
+      '0048_fib_evidence_versions.sql',
     ])
 
     const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))
@@ -314,6 +324,12 @@ describe('Phase 5 — data', () => {
     const facts0047 = scanBaselineSql(readOrThrow('db/migrations/0047_fib_taxonomy_mapping_governance_regime.sql'))
     expect(facts0047.literalRowSources).toEqual([])
     expect(baselineUnit('0047_fib_taxonomy_mapping_governance_regime.sql').dml).toBe('structural-backfill')
+
+    const facts0048 = scanBaselineSql(readOrThrow('db/migrations/0048_fib_evidence_versions.sql'))
+    // Same class as 0018/0041/0047: the backfill SELECTs from evidence_items
+    // (a table that is empty on a fresh database) — no literal row source.
+    expect(facts0048.literalRowSources).toEqual([])
+    expect(baselineUnit('0048_fib_evidence_versions.sql').dml).toBe('structural-backfill')
 
     // 0040 is the one deliberate exception: a literal, deploy-time seed of 8
     // fixed universal-reference rows (FIBC-003) — global-catalog, not tenant
