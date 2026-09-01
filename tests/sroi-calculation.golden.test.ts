@@ -56,7 +56,11 @@ function line(opts: LineOpts = {}) {
       dropoffPct: opts.dropoffPct ?? null,
       durationYears: opts.durationYears ?? 1,
     },
-    proxy: { id: `proxy-${id}`, valueUsd: opts.proxyUsd ?? '100' },
+    // R-B2-05 (AG-B2-1) — the engine reads value_usd from the BOUND version
+    // only. The live row deliberately carries a different figure so a
+    // fallback to it would break every pinned golden string.
+    proxy: { id: `proxy-${id}`, valueUsd: '999999' },
+    proxyVersion: { id: `version-${id}`, financialProxyId: `proxy-${id}`, reviewStatus: 'approved', valueUsd: opts.proxyUsd ?? '100' },
     outcome: { id: opts.outcomeId ?? 'out-1' },
   } as any
 }

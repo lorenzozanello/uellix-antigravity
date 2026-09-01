@@ -556,7 +556,9 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     if (input && parseNum(input.quantity) <= 0) invalidQuantities.push(a.id)
     if (proxy?.value && parseNum(proxy.value) <= 0) invalidQuantities.push(`proxy:${proxy.id}`)
     // Approved proxies must resolve to USD (the calc uses value_usd).
-    if (proxy && proxy.reviewStatus === 'approved' && (proxy.valueUsd === null || proxy.valueUsd === undefined)) proxiesMissingUsd.push(proxy.id)
+    // R-B2-05 (AG-B2-1): the BOUND version is the monetary source, so USD
+    // presence is measured there, never on the mutable live row.
+    if (proxy && proxyVersion && proxyVersion.reviewStatus === 'approved' && (proxyVersion.valueUsd === null || proxyVersion.valueUsd === undefined)) proxiesMissingUsd.push(proxy.id)
 
     if (filterSet) {
       const duration = filterSet.durationYears ?? 1
@@ -873,9 +875,29 @@ export function runDeterministicCalc(
   const lineItems: LineItemCalc[] = []
   const skippedAssignments: SkippedAssignment[] = []
 
-  for (const { assignment, input, filterSet, proxy } of assignmentData) {
+  for (const { assignment, input, filterSet, proxy, proxyVersion } of assignmentData) {
     const quantity = dec(input.quantity)
-    const proxyValue = dec(proxy.valueUsd ?? '0') // USD-normalized proxy value
+    // W2-B2-R1 / R-B2-05 (AG-B2-1, VERSION_BOUND_MONETARY_RESOLUTION_REQUIRED):
+    // the bound financial_proxy_versions row is the SOLE monetary source for
+    // a deterministic run. financial_proxies stays the governance/discovery
+    // surface (and part of the double-assertion guard in the loader) but is
+    // NEVER read for value here — that is what makes "historical runs keep
+    // their exact version" true rather than decorative. A missing binding,
+    // or an approved bound version with no value_usd, aborts the whole run
+    // with a named error: it must NOT degrade to '?? 0' and be reported as a
+    // non_positive_proxy_value skip, which would silently drop a line the
+    // engine was required to monetise.
+    if (!proxyVersion) {
+      throw new Error(
+        `Cannot calculate: assignment ${assignment.id} (proxy ${proxy.id}) has no bound proxy version (FIBC-012 — eligibility binds to the exact approved version)`
+      )
+    }
+    if (proxyVersion.valueUsd === null || proxyVersion.valueUsd === undefined) {
+      throw new Error(
+        `Cannot calculate: bound proxy version ${proxyVersion.id} (proxy ${proxy.id}) carries no USD value — refusing to substitute zero (AG-B2-1 FAIL CLOSED)`
+      )
+    }
+    const proxyValue = dec(proxyVersion.valueUsd) // USD-normalized proxy value, from the BOUND version
     if (quantity.lte(0) || proxyValue.lte(0)) {
       // Report — never silently drop — a line the engine cannot monetise.
       skippedAssignments.push({

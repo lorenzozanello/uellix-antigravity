@@ -237,11 +237,16 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; proxyV
   // every existing `{ proxy: { reviewStatus: ... } }` override keeps working
   // unchanged — override `proxyVersion` directly only when a test needs the
   // version's state to diverge from the live proxy's.
+  // R-B2-05 (AG-B2-1) — the bound version is the SOLE monetary source, so
+  // it mirrors the proxy's valueUsd by default (override `proxyVersion`
+  // when a test needs the two to diverge — that divergence is exactly what
+  // the historical-stability controls exercise).
   const proxyVersion = {
     id: 'proxy-version-1',
     financialProxyId: proxy.id,
     ordinal: 1,
     reviewStatus: proxy.reviewStatus,
+    valueUsd: proxy.valueUsd,
     ...overrides?.proxyVersion,
   } as any;
   const assignment = {
@@ -644,11 +649,15 @@ describe('CL-2D (SROI-01) — calculation-time approval assertion', () => {
 
 describe('Skipped assignments are reported, never silently dropped (U3)', () => {
   const investment = [{ amountUsd: '1000', funderId: 'funder-1' }] as any;
+  // R-B2-05 (AG-B2-1) — the engine reads monetary state from the BOUND
+  // version only; the live proxy row carries a deliberately DIFFERENT figure
+  // here so any fallback to it would change the pinned results.
   const goodLine = (id: string, outcomeId: string, quantity: string, valueUsd: string) => ({
-    assignment: { id, outcomeId, proxyId: `proxy-${id}` },
+    assignment: { id, outcomeId, proxyId: `proxy-${id}`, financialProxyVersionId: `version-${id}` },
     input: { quantity, unit: 'units' },
     filterSet: { deadweightPct: null, attributionPct: null, displacementPct: null, dropoffPct: null, durationYears: 1 },
-    proxy: { id: `proxy-${id}`, valueUsd },
+    proxy: { id: `proxy-${id}`, valueUsd: '999999' },
+    proxyVersion: { id: `version-${id}`, financialProxyId: `proxy-${id}`, reviewStatus: 'approved', valueUsd },
     outcome: { id: outcomeId },
   }) as any;
 
@@ -680,6 +689,66 @@ describe('Skipped assignments are reported, never silently dropped (U3)', () => 
   it('reports an empty list when nothing is skipped', () => {
     const result = runDeterministicCalc(investment, [goodLine('a1', 'out-1', '10', '100')], [], [], null);
     expect(result.skippedAssignments).toEqual([]);
+  });
+
+  // -------------------------------------------------------------------------
+  // W2-B2-R1 / R-B2-05 — AG-B2-1 VERSION_BOUND_MONETARY_RESOLUTION_REQUIRED
+  // and HISTORICAL_PROJECTUSE_VERSION_STABILITY (NC-5). The bound version is
+  // the SOLE monetary source; a NULL value_usd on an approved bound version
+  // fails closed with a named error, never a zero substitution.
+  // -------------------------------------------------------------------------
+  it('AG-B2-1: the engine reads value_usd from the BOUND version, never from the live proxy row', () => {
+    const line = goodLine('a1', 'out-1', '10', '100');
+    line.proxy.valueUsd = '5'; // mutable live row disagrees
+    const result = runDeterministicCalc(investment, [line], [], [], null);
+    expect(result.netSocialValueExact).toBe('1000.0000');
+  });
+
+  it('AG-B2-1 FAIL CLOSED: an approved bound version with NULL value_usd aborts the run with a named error — no zero substitution, no skip', () => {
+    const line = goodLine('a1', 'out-1', '10', '100');
+    line.proxyVersion.valueUsd = null;
+    line.proxy.valueUsd = '100'; // the live row would have "rescued" it — it must not
+    expect(() => runDeterministicCalc(investment, [line], [], [], null)).toThrow(/carries no USD value — refusing to substitute zero/);
+  });
+
+  it('AG-B2-1 FAIL CLOSED: an assignment with no bound version aborts the run with a named error', () => {
+    const line = goodLine('a1', 'out-1', '10', '100');
+    line.proxyVersion = null;
+    expect(() => runDeterministicCalc(investment, [line], [], [], null)).toThrow(/has no bound proxy version/);
+  });
+
+  it('NC-5: an assignment bound to approved V1 yields identical monetary output after V2 is created, after V2 is approved, and after the live row value_usd changes', async () => {
+    // V1 approved with monetary state A (100), bound.
+    seedHappyData({ proxy: { value: '100', valueUsd: '100' } });
+    const before = await calculateSroiPreview(PROJECT_ID);
+    expect(before.canCalculate).toBe(true);
+    const nsvA = before.result!.netSocialValue;
+
+    // Later material change opens V2 (under_review) with monetary state B.
+    mockDb.financialProxyVersions.push({ id: 'proxy-version-2', financialProxyId: 'proxy-1', ordinal: 2, reviewStatus: 'under_review', supersedesVersionId: 'proxy-version-1', valueUsd: null });
+    const afterV2 = await calculateSroiPreview(PROJECT_ID);
+    expect(afterV2.result!.netSocialValue).toBe(nsvA);
+
+    // V2 becomes current/approved with state B (250) and the live row follows.
+    mockDb.financialProxyVersions[1].reviewStatus = 'approved';
+    mockDb.financialProxyVersions[1].valueUsd = '250';
+    mockDb.financialProxies[0].valueUsd = '250';
+    mockDb.financialProxies[0].value = '250';
+    const afterApproval = await calculateSroiPreview(PROJECT_ID);
+    expect(afterApproval.result!.netSocialValue).toBe(nsvA);
+
+    // Any authorised live-row monetary change (e.g. manual FX) still cannot touch it.
+    mockDb.financialProxies[0].valueUsd = '9999';
+    const afterLiveChange = await calculateSroiPreview(PROJECT_ID);
+    expect(afterLiveChange.result!.netSocialValue).toBe(nsvA);
+    expect(nsvA).toBe(1000);
+  });
+
+  it('readiness measures USD presence on the BOUND version, not the live row', async () => {
+    seedHappyData({ proxy: { valueUsd: '100' }, proxyVersion: { valueUsd: null } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.proxiesMissingUsd).toContain('proxy-1');
   });
 
   it('surfaces skippedAssignments through the preview result (additive field)', async () => {

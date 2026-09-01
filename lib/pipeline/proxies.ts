@@ -14,6 +14,7 @@ import { getOrCreateSharedCopRate, convertToUsd, type FxRateExecutor } from '@/l
 import {
   createFinancialProxyVersion,
   getLatestFinancialProxyVersion,
+  getCurrentApprovedFinancialProxyVersion,
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
   toVersionReviewStatus,
@@ -749,19 +750,28 @@ export async function assignProxyToOutcome(projectId: string, input: unknown) {
     .then(r => r[0]);
   if (duplicate) throw new Error('This proxy is already assigned to this outcome');
 
-  // FIBIU-08 (FIBDB-039) — bind to the CURRENT version at assignment time.
-  // Immutable per run: this assignment keeps pointing at exactly this
-  // version even if the proxy is later re-approved under a newer one. NULL
-  // (no version exists) is deliberately left NULL rather than fabricated —
-  // the calculation engine reads NULL as ineligible.
-  const version = await getLatestFinancialProxyVersion(data.proxyId);
+  // FIBIU-08 (FIBDB-039) — bind to a version at assignment time. Immutable
+  // per run: this assignment keeps pointing at exactly this version even if
+  // the proxy is later re-approved under a newer one (financial_proxy_
+  // version_id is written ONCE, here, and never updated — a committed static
+  // control proves no code path updates it).
+  //
+  // W2-B2-R1 / R-B2-05 (M7-DERIVED): bind the current APPROVED version, per
+  // FIBC-012's literal "eligibility binds to the exact approved version" —
+  // never the latest version regardless of status, which bound a fresh
+  // 'under_review' fork and left the assignment permanently ineligible. When
+  // no approved version exists, REFUSE: never bind NULL, never bind a draft.
+  const version = await getCurrentApprovedFinancialProxyVersion(data.proxyId);
+  if (!version) {
+    throw new Error('Cannot assign: proxy has no approved version to bind (FIBC-012 — eligibility binds to the exact approved version)');
+  }
 
   const row = await db.insert(outcomeProxyAssignments).values({
     projectId,
     organizationId: ctx.organization.id,
     outcomeId: data.outcomeId,
     proxyId: data.proxyId,
-    financialProxyVersionId: version?.id ?? null,
+    financialProxyVersionId: version.id,
     justification: data.justification,
     territorialAdjustmentNotes: data.territorialAdjustmentNotes,
     assignedBy: ctx.user.id,

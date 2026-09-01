@@ -226,6 +226,28 @@ export async function getLatestFinancialProxyVersion(
 }
 
 /**
+ * W2-B2-R1 / R-B2-05 (M7-DERIVED) — the current APPROVED version: the
+ * highest-ordinal version whose review_status is 'approved'. FIBC-012:
+ * "Eligibility binds to the exact approved version." Binding the latest
+ * version regardless of status (the pre-remediation shape) silently bound a
+ * fresh 'under_review' fork and left the assignment permanently ineligible.
+ * Null when the proxy has no approved version at all — the caller must
+ * refuse, never bind NULL or a draft.
+ */
+export async function getCurrentApprovedFinancialProxyVersion(
+  financialProxyId: string,
+  executor: FinancialProxyVersionExecutor = db
+): Promise<FinancialProxyVersion | null> {
+  const rows = await executor
+    .select()
+    .from(financialProxyVersions)
+    .where(and(eq(financialProxyVersions.financialProxyId, financialProxyId), eq(financialProxyVersions.reviewStatus, 'approved')))
+    .orderBy(desc(financialProxyVersions.ordinal))
+    .limit(1)
+  return rows[0] ?? null
+}
+
+/**
  * Batch form of getLatestFinancialProxyVersion, keyed by financialProxyId.
  * Used by the calculation engine's approval-eligibility check across many
  * proxies at once.
