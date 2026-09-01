@@ -24,6 +24,7 @@ import {
   updateCurrentFinancialProxyVersion,
   type FinancialProxyVersion,
 } from '@/lib/pipeline/financial-proxy-versions'
+import { applyMaterialChange } from '@/lib/pipeline/proxy-material-change'
 
 export const CONFIDENCE_FACTOR_KEYS = [
   'c1SourceQualityVerifiability',
@@ -153,13 +154,6 @@ export async function recordProxyRubricEvaluation(proxyId: string, input: unknow
   }
   const parsed = RubricEvaluationInput.parse(input)
 
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then((r) => r[0])
-  if (!proxy) throw new Error('Proxy not found')
-  if (proxy.organizationId && proxy.organizationId !== organization.id) throw new Error('Forbidden')
-
-  const current = await getLatestFinancialProxyVersion(proxyId)
-  if (!current) throw new Error('Proxy has no version to evaluate')
-
   const factors: RubricFactors = {
     c1SourceQualityVerifiability: parsed.c1SourceQualityVerifiability,
     c2OutcomeCorrespondence: parsed.c2OutcomeCorrespondence,
@@ -193,8 +187,7 @@ export async function recordProxyRubricEvaluation(proxyId: string, input: unknow
   const rubricVersion = await getCurrentGovernedModelVersion('PROXY_DEFENDIBILITY_RUBRIC')
   if (!rubricVersion) throw new Error('No governed PROXY_DEFENDIBILITY_RUBRIC version is registered')
 
-  const before = current
-  const updated = await updateCurrentFinancialProxyVersion(proxyId, {
+  const rubricPatch = {
     ...factors,
     confidenceScore: classification.confidenceScore,
     confidenceLevel: classification.confidenceLevel,
@@ -204,8 +197,38 @@ export async function recordProxyRubricEvaluation(proxyId: string, input: unknow
     exceptionalDefendibilityDetermination: classification.requiresExceptionalDetermination
       ? parsed.exceptionalDefendibilityDetermination
       : null,
+  }
+
+  // FIBIU-10 (FIBC-013) — rubric ratings are material category 9. A
+  // re-evaluation of an ALREADY-approved version must not silently mutate
+  // the version the human approved; it forks first, exactly like any other
+  // material edit, in the SAME transaction that then writes the new rubric
+  // — the fork-then-write pair is the atomicity "no window may exist in
+  // which approved survives" actually depends on.
+  const { before, updated, forked, supersededVersion } = await db.transaction(async (tx) => {
+    const proxy = await tx
+      .select()
+      .from(financialProxies)
+      .where(eq(financialProxies.id, proxyId))
+      .for('update')
+      .then((rows) => rows[0] ?? null)
+    if (!proxy) throw new Error('Proxy not found')
+    if (proxy.organizationId && proxy.organizationId !== organization.id) throw new Error('Forbidden')
+
+    const current = await getLatestFinancialProxyVersion(proxyId, tx)
+    if (!current) throw new Error('Proxy has no version to evaluate')
+
+    const result = await applyMaterialChange(proxyId, proxy.organizationId, current, {}, user.id, tx)
+
+    if (result.forked) {
+      await tx.update(financialProxies).set({ reviewStatus: 'pending_review', updatedAt: new Date() }).where(eq(financialProxies.id, proxyId))
+    }
+
+    const updated = await updateCurrentFinancialProxyVersion(proxyId, rubricPatch, tx)
+    if (!updated) throw new Error('Proxy has no version to evaluate')
+
+    return { before: current, updated, forked: result.forked, supersededVersion: result.supersededVersion }
   })
-  if (!updated) throw new Error('Proxy has no version to evaluate')
 
   await logAuditAction({
     organizationId: organization.id,
@@ -227,6 +250,28 @@ export async function recordProxyRubricEvaluation(proxyId: string, input: unknow
       entityId: updated.id,
       action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_EXCEPTIONAL_DETERMINATION_RECORDED,
       afterJson: { exceptionalDefendibilityDetermination: updated.exceptionalDefendibilityDetermination },
+    })
+  }
+
+  if (forked && supersededVersion) {
+    await logAuditAction({
+      organizationId: organization.id,
+      actorUserId: user.id,
+      entityType: 'financial_proxy_version',
+      entityId: supersededVersion.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE,
+      reason: 'Material change in rubric ratings/derivations',
+      beforeJson: { reviewStatus: supersededVersion.reviewStatus },
+      afterJson: { supersededBy: updated.id },
+    })
+    await logAuditAction({
+      organizationId: organization.id,
+      actorUserId: user.id,
+      entityType: 'financial_proxy_version',
+      entityId: updated.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED,
+      reason: 'Opened by material change (rubric re-evaluation)',
+      afterJson: updated,
     })
   }
 

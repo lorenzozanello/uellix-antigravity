@@ -1,7 +1,7 @@
 {
   "description": "Versioned inventory of every checked server module that can reach the database, classified by tests/database-runtime-entrypoints.test.ts (AST scanner section). A new database-reaching module must be added here DELIBERATELY after wiring its identity context (or allowlisting it with a reason in the test).",
-  "checkedModules": 129,
-  "databaseReaching": 106,
+  "checkedModules": 130,
+  "databaseReaching": 107,
   "modules": {
     "app/(authenticated)/app/onboarding/actions.ts": "contextualized",
     "app/(authenticated)/app/onboarding/page.tsx": "allowlisted",
@@ -90,6 +90,7 @@
     "app/app/projects/[projectId]/pipeline/proxies/createProxySource.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/evaluateProxyRubric.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/page.tsx": "contextualized",
+    "app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxy.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxyReviewStatus.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/stakeholders.actions.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/stakeholders/page.tsx": "contextualized",

@@ -644,6 +644,38 @@ export const financialProxyVersions = pgTable('financial_proxy_versions', {
   index('idx_financial_proxy_versions_organization_id').on(table.organizationId),
 ])
 
+// FIBIU-10 (FIBC-013/FIBDB-007) — the versioned field->category map
+// PROXY_MATERIAL_FIELDS references (via getCurrentGovernedModelVersion) to
+// know its own current registryVersion. Read-only reference data, seeded by
+// migration DML exactly like governed_model_registry — immutable per
+// version, so there is no UPDATE/DELETE path, only INSERT ... ON CONFLICT
+// DO NOTHING at seed time. tableName disambiguates the two tables that
+// happen to share a column name (financial_proxies.methodological_risk, the
+// pre-FIBIU-09 legacy field, vs financial_proxy_versions.methodological_risk,
+// the FIBC-011 system-derived one).
+export const proxyMaterialFieldsRegistry = pgTable('proxy_material_fields_registry', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  registryVersion: varchar('registry_version', { length: 20 }).notNull(),
+  tableName: varchar('table_name', { length: 60 }).notNull(),
+  fieldName: varchar('field_name', { length: 100 }).notNull(),
+  category: varchar('category', { length: 60 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('proxy_material_fields_registry_version_table_field_unique').on(
+    table.registryVersion, table.tableName, table.fieldName
+  ),
+  check(
+    'proxy_material_fields_registry_category_check',
+    sql`${table.category} IN (
+      'identity_economic_value','source_provenance','outcome_stakeholder_correspondence',
+      'geographic_institutional_context','temporal_context','methodology_comparability',
+      'transformations','provenance_rationale','rubric_ratings_derivations',
+      'exceptional_defendibility_determination','non_material'
+    )`
+  ),
+  index('idx_proxy_material_fields_registry_version').on(table.registryVersion),
+])
+
 export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),

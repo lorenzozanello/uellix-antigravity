@@ -42,12 +42,15 @@ describe('the six baseline gates', () => {
     expect(evidence.firstProvisioningPlannable).toBe(true)
   })
 
-  // W2-B2 (FIBIU-08/09) — re-derived: FIB Wave 2 B1 closure left 64 units;
-  // this batch adds two Drizzle migrations (0053_fib_proxy_versions_
-  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql), no DML. 64+2=66.
+  // W2-B2 (FIBIU-08/09/10) — re-derived: FIB Wave 2 B1 closure left 64
+  // units; this batch adds three Drizzle migrations (0053_fib_proxy_versions_
+  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql, no DML;
+  // 0055_fib_proxy_material_change_registry.sql, one literal-row-source
+  // seed INSERT — mirroring 0040_governed_model_registry.sql's own
+  // treatment). 64+3=67.
   it('measures the corpus rather than restating the manifest', () => {
-    expect(evidence.unitCount).toBe(66)
-    expect(evidence.superuserFreeUnits).toBe(66)
+    expect(evidence.unitCount).toBe(67)
+    expect(evidence.superuserFreeUnits).toBe(67)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',
@@ -55,8 +58,9 @@ describe('the six baseline gates', () => {
       '0041_pc01b_regime_boundary_backfill.sql',
       '0047_fib_taxonomy_mapping_governance_regime.sql',
       '0048_fib_evidence_versions.sql',
+      '0055_fib_proxy_material_change_registry.sql',
     ])
-    expect(evidence.literalRowSources).toBe(1)
+    expect(evidence.literalRowSources).toBe(2)
     expect(evidence.mustNotRunUnits).toEqual([])
   })
 })

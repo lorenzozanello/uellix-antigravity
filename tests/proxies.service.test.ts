@@ -398,6 +398,20 @@ describe('Financial Proxies Service', () => {
       name: 'Proxy U',
       sourceId: SOURCE_UUID,
     };
+    // FIBIU-10 — the fork-on-material-change decision reads the VERSION's
+    // reviewStatus (getLatestFinancialProxyVersion), not the live row's; a
+    // test that wants the "approved -> fork" path exercised must seed this.
+    const approvedVersion = {
+      id: 'version-approved-1',
+      financialProxyId: PROXY_UUID,
+      ordinal: 1,
+      reviewStatus: 'approved',
+      sourceId: SOURCE_UUID,
+      value: '100',
+      currency: 'USD',
+      unit: 'units',
+      referenceYear: 2023,
+    };
 
     async function asCallerOrg() {
       const { requireOrganizationAccess } = await import('@/lib/auth/session');
@@ -443,6 +457,7 @@ describe('Financial Proxies Service', () => {
       await asCallerOrg();
       const replacementSourceId = '550e8400-e29b-41d4-a716-446655440099';
       mockDbData.financialProxies = [approvedProxy];
+      mockDbData.financialProxyVersions = [{ ...approvedVersion }];
       mockDbData.proxySources = [{ id: replacementSourceId, organizationId: null, status: 'active' }];
       mockDbData.updated = { ...approvedProxy, sourceId: replacementSourceId, reviewStatus: 'pending_review' };
 
@@ -454,6 +469,7 @@ describe('Financial Proxies Service', () => {
     it('resets an APPROVED proxy to pending_review when a material field changes', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
+      mockDbData.financialProxyVersions = [{ ...approvedVersion }];
       mockDbData.updated = { ...approvedProxy, value: '250', reviewStatus: 'pending_review' };
 
       await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
@@ -534,6 +550,7 @@ describe('Financial Proxies Service', () => {
       it('a `value` edit invalidates the frozen valueUsd and fxRateId', async () => {
         await asCallerOrg();
         mockDbData.financialProxies = [{ ...frozenProxy, fxRateId: 'fx-1' }];
+        mockDbData.financialProxyVersions = [{ ...approvedVersion, value: '100', currency: 'USD' }];
         mockDbData.updated = { ...frozenProxy, value: '250', reviewStatus: 'pending_review', valueUsd: null, fxRateId: null };
 
         await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
@@ -569,6 +586,7 @@ describe('Financial Proxies Service', () => {
       it('a `unit`-only edit does NOT invalidate valueUsd — unit does not feed the FX derivation', async () => {
         await asCallerOrg();
         mockDbData.financialProxies = [frozenProxy];
+        mockDbData.financialProxyVersions = [{ ...approvedVersion, value: '100', currency: 'USD', unit: frozenProxy.unit }];
         mockDbData.updated = { ...frozenProxy, unit: 'per household', reviewStatus: 'pending_review' };
 
         await updateOrganizationFinancialProxy(PROXY_UUID, { unit: 'per household' });

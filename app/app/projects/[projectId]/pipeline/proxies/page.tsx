@@ -24,6 +24,8 @@ import { assignProxyToOutcomeAction } from '@/app/app/projects/[projectId]/pipel
 import { archiveOutcomeProxyAssignmentAction } from '@/app/app/projects/[projectId]/pipeline/proxies/archiveOutcomeProxyAssignment.action'
 import { updateFinancialProxyReviewStatusAction } from '@/app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxyReviewStatus.action'
 import { evaluateProxyRubricAction } from '@/app/app/projects/[projectId]/pipeline/proxies/evaluateProxyRubric.action'
+import { updateFinancialProxyAction } from '@/app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxy.action'
+import { MATERIAL_CATEGORY_LABELS } from '@/lib/pipeline/proxy-material-change'
 import { revalidatePath } from 'next/cache'
 import { Archive, BookOpen, DollarSign, GitMerge } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -225,6 +227,23 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
 
     await archiveOutcomeProxyAssignmentAction(projectId, {
       assignmentId,
+    })
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
+  }
+
+  async function handleUpdateProxy(formData: FormData) {
+    'use server'
+    const proxyId = formData.get('proxyId') as string
+    const value = formData.get('value') as string
+    const currency = formData.get('currency') as string
+    const unit = formData.get('unit') as string
+    const referenceYearStr = formData.get('referenceYear') as string
+
+    await updateFinancialProxyAction(projectId, proxyId, {
+      value: value || undefined,
+      currency: currency || undefined,
+      unit: unit || undefined,
+      referenceYear: referenceYearStr ? Number(referenceYearStr) : undefined,
     })
     revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
@@ -542,6 +561,65 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                             className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                           >
                             Registrar evaluación
+                          </button>
+                        </form>
+                      </details>
+                    </CardContent>
+                  )}
+                  {/* FIBIU-10 (FIBC-013) — the pre-edit invalidation notice
+                      naming the material category affected, before any edit
+                      is submitted. */}
+                  {canEdit && (
+                    <CardContent>
+                      <details>
+                        <summary className="cursor-pointer text-xs font-medium text-foreground">
+                          Editar campos materiales
+                        </summary>
+                        <form action={handleUpdateProxy} className="mt-3 space-y-3">
+                          <input type="hidden" name="proxyId" value={p.id} />
+                          {p.reviewStatus === 'approved' && (
+                            <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
+                              Este proxy está <strong>aprobado</strong>. Editar cualquiera de los campos
+                              siguientes es un cambio material — invalidará la aprobación actual y abrirá
+                              una nueva versión sin calificar para revisión. Los categorías afectadas son:{' '}
+                              {MATERIAL_CATEGORY_LABELS.identity_economic_value} (valor/moneda/unidad/año) y{' '}
+                              {MATERIAL_CATEGORY_LABELS.source_provenance} (fuente). La versión aprobada
+                              anterior se conserva intacta para los cálculos históricos que ya la usan.
+                            </p>
+                          )}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label htmlFor={`${p.id}-edit-value`} className="block text-xs font-medium text-foreground">
+                                Valor ({MATERIAL_CATEGORY_LABELS.identity_economic_value})
+                              </label>
+                              <input id={`${p.id}-edit-value`} name="value" type="text" defaultValue={p.value ?? ''} className={INPUT_CLASS} />
+                            </div>
+                            <div>
+                              <label htmlFor={`${p.id}-edit-currency`} className="block text-xs font-medium text-foreground">
+                                Moneda ({MATERIAL_CATEGORY_LABELS.identity_economic_value})
+                              </label>
+                              <input id={`${p.id}-edit-currency`} name="currency" type="text" defaultValue={p.currency ?? ''} className={INPUT_CLASS} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label htmlFor={`${p.id}-edit-unit`} className="block text-xs font-medium text-foreground">
+                                Unidad ({MATERIAL_CATEGORY_LABELS.identity_economic_value})
+                              </label>
+                              <input id={`${p.id}-edit-unit`} name="unit" type="text" defaultValue={p.unit ?? ''} className={INPUT_CLASS} />
+                            </div>
+                            <div>
+                              <label htmlFor={`${p.id}-edit-year`} className="block text-xs font-medium text-foreground">
+                                Año de referencia ({MATERIAL_CATEGORY_LABELS.identity_economic_value})
+                              </label>
+                              <input id={`${p.id}-edit-year`} name="referenceYear" type="number" defaultValue={p.referenceYear ?? ''} className={INPUT_CLASS} />
+                            </div>
+                          </div>
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                          >
+                            Guardar cambios
                           </button>
                         </form>
                       </details>

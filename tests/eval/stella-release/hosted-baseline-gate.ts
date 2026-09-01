@@ -371,17 +371,17 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    // W2-B2 (FIBIU-08/09) — 67, NOT 66: unit ZERO creates the journal table,
-    // and it is a planned step rather than setup because a prerequisite
-    // nobody plans is one somebody skips. 66 baseline units (64 + 1 for
-    // 0053_fib_proxy_versions_provenance.sql + 1 for
-    // 0054_fib_proxy_rubric_constraints.sql) + 1 journal bootstrap step.
-    // The count is asserted rather than loosened to `>= 66` — a plan that
-    // silently grew or shrank is exactly what this evidence exists to
-    // notice.
+    // W2-B2 (FIBIU-08/09/10) — 68, NOT 67: unit ZERO creates the journal
+    // table, and it is a planned step rather than setup because a
+    // prerequisite nobody plans is one somebody skips. 67 baseline units
+    // (64 + 1 for 0053_fib_proxy_versions_provenance.sql + 1 for
+    // 0054_fib_proxy_rubric_constraints.sql + 1 for 0055_fib_proxy_material_
+    // change_registry.sql) + 1 journal bootstrap step. The count is
+    // asserted rather than loosened to `>= 67` — a plan that silently grew
+    // or shrank is exactly what this evidence exists to notice.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 67 &&
+      firstProvisioning.steps.length === 68 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -392,10 +392,11 @@ export function evaluateHostedBaselineGates(
   const gates: HostedBaselineGate[] = []
 
   /* 1 ---------------------------------------------------------------- */
-  // W2-B2 (FIBIU-08/09) — 66, re-derived: FIB Wave 2 B1 closure left 64
-  // units; this batch adds two Drizzle migrations (0053_fib_proxy_versions_
-  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql). 64 + 2 = 66.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 66
+  // W2-B2 (FIBIU-08/09/10) — 67, re-derived: FIB Wave 2 B1 closure left 64
+  // units; this batch adds three Drizzle migrations (0053_fib_proxy_versions_
+  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql,
+  // 0055_fib_proxy_material_change_registry.sql). 64 + 3 = 67.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 67
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,
@@ -428,12 +429,16 @@ export function evaluateHostedBaselineGates(
   // versions.sql's stage-B backfill (one v1 shell row per existing
   // evidence_items row, FIBIU-04) is genuine INSERT DML, verified in
   // tests/hosted/baseline-manifest.test.ts, not asserted here on trust.
+  // W2-B2 (FIBIU-10) — 0055 added: db/migrations/0055_fib_proxy_material_
+  // change_registry.sql's literal 39-row field->category seed, the SAME
+  // global-catalog-seed class as unit 51 (0040), also verified there.
   const EXPECTED_DML_UNITS = [
     '0018_redundant_firebird.sql',
     '0040_governed_model_registry.sql',
     '0041_pc01b_regime_boundary_backfill.sql',
     '0047_fib_taxonomy_mapping_governance_regime.sql',
     '0048_fib_evidence_versions.sql',
+    '0055_fib_proxy_material_change_registry.sql',
   ]
   if (
     evidence.dmlUnits.length !== EXPECTED_DML_UNITS.length ||
@@ -441,14 +446,15 @@ export function evaluateHostedBaselineGates(
   ) {
     managedProblems.push(`DML units changed: ${evidence.dmlUnits.join(', ') || 'none'}`)
   }
-  // Exactly 1, not 0: unit 51 (0040) carries a deliberate, literal, deploy-time
-  // seed of 8 fixed global-catalog rows (FIBC-003) — universal reference data,
-  // not tenant/production data. 0018, 0041 and 0047 still write zero rows on
-  // an empty database; a SECOND literal source, or a changed count, means
-  // either the seed grew or a new unit started writing literal rows
-  // unannounced.
-  if (evidence.literalRowSources !== 1) {
-    managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 1 (unit 51's global-catalog seed)`)
+  // Exactly 2, not 0 or 1: unit 51 (0040) carries a deliberate, literal,
+  // deploy-time seed of 8 fixed global-catalog rows (FIBC-003); unit 67
+  // (0055) carries a second — 39 fixed field->category rows (FIBC-013) —
+  // universal reference data, not tenant/production data, same class. 0018,
+  // 0041 and 0047 still write zero rows on an empty database; a THIRD
+  // literal source, or a changed count, means either a seed grew or a new
+  // unit started writing literal rows unannounced.
+  if (evidence.literalRowSources !== 2) {
+    managedProblems.push(`${evidence.literalRowSources} DML statement(s) now insert literal rows, expected exactly 2 (units 51 and 67's global-catalog seeds)`)
   }
   if (evidence.mustNotRunUnits.length > 0) {
     managedProblems.push(`units classified must-not-run: ${evidence.mustNotRunUnits.join(', ')}`)

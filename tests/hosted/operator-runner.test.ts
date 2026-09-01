@@ -221,11 +221,11 @@ describe('unit source verification', () => {
   it('holds for every unit in the real manifest', () => {
     // A corrupt manifest entry must not be able to hide behind a hand-picked
     // fixture: the pin and the hash function have to agree on every unit.
-    // W2-B2 (FIBIU-08/09) — re-derived: 64 (FIB Wave 2 B1 closure) + 2
+    // W2-B2 (FIBIU-08/09/10) — re-derived: 64 (FIB Wave 2 B1 closure) + 3
     // (0053_fib_proxy_versions_provenance.sql, 0054_fib_proxy_rubric_
-    // constraints.sql) = 66. Same derivation as
-    // tests/hosted/baseline-journal-wrapper.test.ts.
-    expect(BASELINE_UNITS).toHaveLength(66)
+    // constraints.sql, 0055_fib_proxy_material_change_registry.sql) = 67.
+    // Same derivation as tests/hosted/baseline-journal-wrapper.test.ts.
+    expect(BASELINE_UNITS).toHaveLength(67)
     for (const u of BASELINE_UNITS) expect(u.sha256).toMatch(/^[0-9a-f]{64}$/)
   })
 })

@@ -20,6 +20,7 @@ const mockDbData = vi.hoisted(() => ({
 
 vi.mock('@/db/client', () => {
   const database: any = {
+    transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => callback(database)),
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockImplementation((table: any) => {
         const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')]
@@ -35,14 +36,34 @@ vi.mock('@/db/client', () => {
             query.__sorted = (query.__sorted ?? data).slice(0, n)
             return query
           }),
+          for: vi.fn().mockImplementation(() => query),
           then: (cb: (rows: any[]) => unknown) => Promise.resolve(cb(query.__sorted ?? data)),
         }
         return query
       }),
     })),
-    update: vi.fn().mockImplementation(() => ({
+    insert: vi.fn().mockImplementation((table: any) => ({
+      values: vi.fn().mockImplementation((vals: any) => ({
+        returning: vi.fn().mockImplementation(() => {
+          const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')]
+          if (tableName === 'financial_proxy_versions') {
+            const row = { id: `ver-${mockDbData.financialProxyVersions.length + 1}`, createdAt: new Date(), ...vals }
+            mockDbData.financialProxyVersions.push(row)
+            return Promise.resolve([row])
+          }
+          return Promise.resolve([vals])
+        }),
+      })),
+    })),
+    update: vi.fn().mockImplementation((table: any) => ({
       set: vi.fn().mockImplementation((values: any) => ({
         where: vi.fn().mockImplementation(() => {
+          const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')]
+          if (tableName === 'financial_proxies') {
+            const proxy = mockDbData.financialProxies[0]
+            if (proxy) Object.assign(proxy, values)
+            return { returning: vi.fn().mockImplementation(() => Promise.resolve(proxy ? [proxy] : [])) }
+          }
           const current = [...mockDbData.financialProxyVersions].sort((a, b) => b.ordinal - a.ordinal)[0]
           if (current) Object.assign(current, values)
           return { returning: vi.fn().mockImplementation(() => Promise.resolve(current ? [current] : [])) }
@@ -400,6 +421,37 @@ describe('recordProxyRubricEvaluation — governed write path', () => {
     const { recordProxyRubricEvaluation } = await import('@/lib/pipeline/financial-proxy-rubric')
     await expect(recordProxyRubricEvaluation(PROXY_ID, VALID_EVALUATION)).rejects.toThrow(
       'No governed PROXY_DEFENDIBILITY_RUBRIC version'
+    )
+  })
+
+  // FIBIU-10 (FIBC-013) — rubric ratings are material category 9. A
+  // re-evaluation of an ALREADY-approved version must fork, exactly like
+  // any other material change, never silently overwrite the sealed rubric
+  // a human approved.
+  it('FIBIU-10: re-evaluating an APPROVED version forks — the approved rubric is untouched, a new draft version carries the new rating', async () => {
+    mockDbData.financialProxyVersions = [
+      { id: 'ver-approved', financialProxyId: PROXY_ID, ordinal: 1, reviewStatus: 'approved', recoverableReference: 'https://x', ...ALL_HIGH_CONFIDENCE_NO_RISK },
+    ]
+    const before = { ...mockDbData.financialProxyVersions[0] }
+
+    const { recordProxyRubricEvaluation } = await import('@/lib/pipeline/financial-proxy-rubric')
+    await recordProxyRubricEvaluation(PROXY_ID, VALID_EVALUATION)
+
+    const approvedAfter = mockDbData.financialProxyVersions.find((v: any) => v.id === 'ver-approved')
+    expect(approvedAfter).toEqual(before)
+    expect(mockDbData.financialProxyVersions).toHaveLength(2)
+    const forked = mockDbData.financialProxyVersions.find((v: any) => v.id !== 'ver-approved')
+    expect(forked.reviewStatus).toBe('draft')
+    expect(forked.confidenceScore).toBe(100)
+
+    expect(mockDbData.financialProxies[0].reviewStatus).toBe('pending_review')
+
+    const { logAuditAction, AUDIT_ACTIONS } = await import('@/lib/audit/logger')
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityId: 'ver-approved',
+        action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE,
+      })
     )
   })
 })

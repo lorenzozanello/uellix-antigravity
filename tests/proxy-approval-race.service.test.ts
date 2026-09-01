@@ -109,6 +109,17 @@ const mocks = vi.hoisted(() => {
         })),
       })),
     })),
+    // FIBIU-10 — a material edit that finds the current version already
+    // approved now forks (createFinancialProxyVersion's own INSERT). This
+    // single-shared-row model doesn't model the fork as a real second row
+    // (that would defeat the point of proving the financial_proxies lock),
+    // it just returns a plausible new version so the caller doesn't crash;
+    // the assertions below check state.current (the LIVE row), unaffected.
+    insert: vi.fn(() => ({
+      values: vi.fn((vals: Record<string, unknown>) => ({
+        returning: vi.fn(async () => [{ id: 'forked-version', ordinal: (state.current?.ordinal ?? 1) + 1, ...vals }]),
+      })),
+    })),
   }
   db.transaction = vi.fn(async (callback: (tx: typeof db) => Promise<unknown>) => {
     const previous = state.transactionTail

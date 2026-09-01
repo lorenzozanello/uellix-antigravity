@@ -386,6 +386,13 @@
       "when": 1788281657191,
       "tag": "0054_fib_proxy_rubric_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1788283820236,
+      "tag": "0055_fib_proxy_material_change_registry",
+      "breakpoints": true
     }
   ]
 }

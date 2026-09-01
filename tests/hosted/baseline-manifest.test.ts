@@ -75,23 +75,24 @@ describe('the baseline manifest describes the corpus that is actually checked in
     expect([...BASELINE_UNITS].map((u) => u.file).sort()).toEqual(discovered().sort())
   })
 
-  // W2-B2 (FIBIU-08/09) — re-derived, not fitted: FIB Wave 2 B1 closure left
-  // 53 Drizzle units; FIBIU-08 added 0053 (53+1=54), FIBIU-09 added 0054's
-  // rubric CHECK constraints (54+1=55). Supabase and policy counts unchanged.
-  it('has 66 units: 55 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(66)
+  // W2-B2 (FIBIU-08/09/10) — re-derived, not fitted: FIB Wave 2 B1 closure
+  // left 53 Drizzle units; FIBIU-08 added 0053 (53+1=54), FIBIU-09 added
+  // 0054's rubric CHECK constraints (54+1=55), FIBIU-10 added 0055's
+  // material-fields registry (55+1=56). Supabase and policy counts unchanged.
+  it('has 67 units: 56 Drizzle, 2 Supabase, 9 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(67)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(55)
+    expect(byKind('drizzle-migration')).toBe(56)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(9)
   })
 
-  it('numbers ordinals 1..66 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..67 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 66 }, (_, i) => i + 1),
+      Array.from({ length: 67 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(66)
+    expect(new Set(BASELINE_ORDER).size).toBe(67)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {
@@ -297,7 +298,11 @@ describe('Phase 5 — data', () => {
   // the manifest's say-so. This is the explicit governance whitelist of
   // which migrations are PERMITTED to carry DML — extending it is a
   // statement about the corpus, never a number chased to pass.
-  it('0018, 0040, 0041, 0047 and 0048 are the only units with DML', () => {
+  // W2-B2 (FIBIU-10) — 0055 genuinely added: db/migrations/0055_fib_proxy_
+  // material_change_registry.sql's literal 39-row field->category seed,
+  // mirroring 0040's own global-catalog-seed treatment exactly (same
+  // governance whitelist reasoning as the 0048 entry above).
+  it('0018, 0040, 0041, 0047, 0048 and 0055 are the only units with DML', () => {
     const withDml = BASELINE_UNITS.filter(
       (u) => scanBaselineSql(readOrThrow(u.file)).dmlStatements.length > 0,
     )
@@ -307,6 +312,7 @@ describe('Phase 5 — data', () => {
       '0041_pc01b_regime_boundary_backfill.sql',
       '0047_fib_taxonomy_mapping_governance_regime.sql',
       '0048_fib_evidence_versions.sql',
+      '0055_fib_proxy_material_change_registry.sql',
     ])
 
     const facts0018 = scanBaselineSql(readOrThrow('db/migrations/0018_redundant_firebird.sql'))

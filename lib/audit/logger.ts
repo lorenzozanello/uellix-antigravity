@@ -61,6 +61,9 @@ export const AUDIT_ACTIONS = {
   FINANCIAL_PROXY_VERSION_RUBRIC_EVALUATED: 'financial_proxy_version.rubric_evaluated',
   FINANCIAL_PROXY_VERSION_EXCEPTIONAL_DETERMINATION_RECORDED: 'financial_proxy_version.exceptional_determination_recorded',
 
+  // Financial proxy versions — material change policy (FIBIU-10 — FIBC-013)
+  FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE: 'financial_proxy_version.invalidated_by_material_change',
+
   // Proxy assignments
   PROXY_ASSIGNMENT_CREATED: 'proxy_assignment.created',
   PROXY_ASSIGNMENT_ARCHIVED: 'proxy_assignment.archived',

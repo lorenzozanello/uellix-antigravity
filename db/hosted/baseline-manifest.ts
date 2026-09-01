@@ -1017,6 +1017,31 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'repository and are flagged here for adversarial review rather than claimed as proven.',
     expect: {},
   },
+  {
+    ordinal: 67,
+    id: '0055_fib_proxy_material_change_registry.sql',
+    kind: D,
+    file: 'db/migrations/0055_fib_proxy_material_change_registry.sql',
+    sha256: '58924853da26b4c1fcd5ac0af00bade9a8fa5d3fe4977d84b7032e8c4e7ea0ce',
+    dependsOn: ['0053_fib_proxy_versions_provenance.sql'],
+    dml: 'global-catalog',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-10 stage A (FIBC-013/FIBDB-007). CREATE TABLE proxy_material_fields_registry, GRANT SELECT ' +
+      'to authenticated (requires that role to exist, hence B not A — same reasoning as unit 51\'s ' +
+      'governed_model_registry), and an idempotent ON CONFLICT DO NOTHING seed of 39 literal field-> ' +
+      'category rows (universal reference data, not tenant data) for registry_version 1.0.0, matching ' +
+      'the PROXY_MATERIAL_FIELDS row already seeded in governed_model_registry (unit 51). No RLS enabled ' +
+      'yet — same stage-A treatment 0040 itself received; a dedicated RLS-policy unit (mirroring unit 58 ' +
+      'for governed_model_registry) is stage-B/E hardening, deferred.',
+    rollback:
+      'Applied with psql -1; a mid-unit failure rolls back whole. The seed INSERT is idempotent ' +
+      '(ON CONFLICT DO NOTHING); the CREATE TABLE is not, so a partial re-apply after a table already ' +
+      'exists fails loudly rather than silently diverging. No reverse script — forward-only, recovered ' +
+      'by DESTROY_AND_REPROVISION.',
+    expect: { usesAuthenticated: true, dmlStatementCount: 1, literalRowSourceCount: 1 },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

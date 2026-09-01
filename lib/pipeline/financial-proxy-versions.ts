@@ -213,6 +213,26 @@ export async function updateCurrentFinancialProxyVersion(
       | 'reviewedAt'
       | 'valueUsd'
       | 'fxRateId'
+      // FIBIU-10 (FIBC-013) — a material edit to a version that is NOT yet
+      // approved rides the SAME version in place (no fork needed; there is
+      // no approval to protect). Added here rather than left version-stale,
+      // which would have let the version silently diverge from the live
+      // financial_proxies row on every non-approved edit.
+      | 'sourceId'
+      | 'value'
+      | 'currency'
+      | 'unit'
+      | 'referenceYear'
+      | 'country'
+      | 'territory'
+      | 'thematicArea'
+      | 'methodology'
+      | 'geographicContextualScope'
+      | 'linkedOutcomeContext'
+      | 'recoverableReference'
+      | 'relevanceJustification'
+      | 'documentedTransformations'
+      | 'consultationDate'
       | 'c1SourceQualityVerifiability'
       | 'c2OutcomeCorrespondence'
       | 'c3StakeholderPopulationFit'

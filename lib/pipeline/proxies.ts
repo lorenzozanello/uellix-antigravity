@@ -18,6 +18,7 @@ import {
   assertApprovableProvenance,
 } from '@/lib/pipeline/financial-proxy-versions';
 import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric';
+import { applyMaterialChange, materialCategoriesTouched, MATERIAL_CATEGORY_LABELS } from '@/lib/pipeline/proxy-material-change';
 
 type FinancialProxyRow = typeof financialProxies.$inferSelect;
 type FinancialProxyTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -420,22 +421,48 @@ export async function createOrganizationFinancialProxy(input: unknown) {
   return row;
 }
 
-// Fields whose change invalidates a prior human approval: an approved proxy
-// whose value/currency/unit/reference year is edited no longer reflects what
-// the reviewer signed off on, so its review status is reset.
-const PROXY_MATERIAL_FIELDS = ['sourceId', 'value', 'currency', 'unit', 'referenceYear'] as const;
-
-// CL-2B (PROX-01) — subset of PROXY_MATERIAL_FIELDS that resolveProxyValueUsd
+// CL-2B (PROX-01) — subset of the material fields that resolveProxyValueUsd
 // actually derives from (value, currency, and referenceYear for the COP TRM
 // lookup date). `unit` is material to the review — it changes what the value
 // MEANS — but not to the USD figure itself, so it alone must not force a
 // pointless FX re-fetch.
 const PROXY_USD_DERIVATION_FIELDS = ['value', 'currency', 'referenceYear'] as const;
 
+// Keys of FinancialProxyInput that are also persisted on financial_proxy_versions
+// (name/description/proxyType/confidenceLevel/methodologicalRisk live only
+// on the live financialProxies row — see MATERIAL_FIELD_CATEGORY_BY_INPUT_KEY).
+const VERSION_MIRRORED_KEYS = [
+  'sourceId', 'value', 'currency', 'unit', 'referenceYear', 'country', 'territory',
+  'thematicArea', 'methodology', 'geographicContextualScope', 'linkedOutcomeContext',
+  'recoverableReference', 'relevanceJustification', 'documentedTransformations', 'consultationDate',
+] as const;
+
+function versionFieldPatchFrom(data: Partial<z.infer<typeof FinancialProxyInput>>) {
+  const patch: Record<string, unknown> = {};
+  for (const key of VERSION_MIRRORED_KEYS) {
+    if (data[key] === undefined) continue;
+    patch[key] = key === 'consultationDate' ? new Date(data[key] as string) : data[key];
+  }
+  return patch;
+}
+
+/**
+ * FIBIU-10 (FIBC-013) — every material edit, whatever its category, must be
+ * reflected in the version record: EITHER in place (version not yet
+ * approved — no approval to protect) OR via an atomic fork that leaves the
+ * approved version untouched (see lib/pipeline/proxy-material-change.ts).
+ * Editing name/description/proxyType-only ("non_material") never touches
+ * the version or resets review status — that is the negative control
+ * FIBIU-10's own EXIT_GATE names ("an editorial change does not
+ * invalidate").
+ */
 export async function updateOrganizationFinancialProxy(proxyId: string, input: unknown) {
   const ctx = await requireOrganizationAccess();
   const data = FinancialProxyInput.partial().parse(input);
-  const { proxy, updated, resetReview } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+  const touchedCategories = materialCategoriesTouched(Object.keys(data));
+  const isMaterial = touchedCategories.length > 0;
+
+  const { proxy, updated, forked, supersededVersion, newVersion } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
     if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
     // A partial update may repoint the proxy at another source — the same
     // ownership gate as creation applies (RC-12).
@@ -443,20 +470,51 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
       await requireUsableProxySource(data.sourceId, ctx.organization.id);
     }
 
-    // Re-review gate: if an approved proxy's material fields change, drop it back
-    // to pending_review so no calculation uses an unreviewed value under an
-    // "approved" label.
-    const materialChange = PROXY_MATERIAL_FIELDS.some(
-      (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
-    );
-    const resetReview = proxy.reviewStatus === 'approved' && materialChange;
+    const currentVersion = isMaterial ? await getLatestFinancialProxyVersion(proxyId, tx) : null;
+    let forked = false;
+    let supersededVersion: Awaited<ReturnType<typeof getLatestFinancialProxyVersion>> = null;
+    let newVersion: Awaited<ReturnType<typeof getLatestFinancialProxyVersion>> = null;
 
-    // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes the
-    // previously frozen valueUsd/fxRateId stale: they were derived from the OLD
-    // material state. Null them out here so resolveProxyValueUsd's short-circuit
-    // (`if (proxy.valueUsd) return ...`) cannot reuse the stale figure on the
-    // next approval — that call is forced back through the real value/currency
-    // → USD derivation with the CURRENT data instead.
+    if (isMaterial && currentVersion) {
+      const versionPatch = versionFieldPatchFrom(data);
+      const result = await applyMaterialChange(
+        proxyId,
+        proxy.organizationId,
+        currentVersion,
+        versionPatch,
+        ctx.user.id,
+        tx,
+      );
+      forked = result.forked;
+      if (result.forked) {
+        supersededVersion = result.supersededVersion;
+        newVersion = result.version;
+      } else {
+        // Not yet approved — no approval to protect; the SAME version is
+        // edited in place, mirroring the live row (existing FIBC-002
+        // behavior for a pre-approval edit).
+        const usdDerivationChangeOnVersion = PROXY_USD_DERIVATION_FIELDS.some((f) => data[f] !== undefined);
+        newVersion = await updateCurrentFinancialProxyVersion(
+          proxyId,
+          { ...versionPatch, ...(usdDerivationChangeOnVersion ? { valueUsd: null, fxRateId: null } : {}) },
+          tx
+        );
+      }
+    }
+
+    // Re-review gate: an approved proxy whose material fields change drops
+    // back to pending_review so no calculation uses an unreviewed value
+    // under an "approved" label. `forked` IS this condition now (a fork
+    // only ever happens when the current version was approved and the
+    // change is material) — never a separately re-derived boolean that
+    // could drift from it.
+    const resetReview = forked;
+
+    // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes
+    // the previously frozen valueUsd/fxRateId stale: they were derived from
+    // the OLD material state. Null them out here so resolveProxyValueUsd's
+    // short-circuit (`if (proxy.valueUsd) return ...`) cannot reuse the
+    // stale figure on the next approval.
     const usdDerivationChange = PROXY_USD_DERIVATION_FIELDS.some(
       (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
     );
@@ -467,7 +525,7 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
       ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}),
       updatedAt: new Date(),
     }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
-    return { proxy, updated, resetReview };
+    return { proxy, updated, forked, supersededVersion, newVersion };
   });
 
   await logAuditAction({
@@ -475,14 +533,39 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
     actorUserId: ctx.user.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: resetReview
+    action: forked
       ? AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED
       : AUDIT_ACTIONS.FINANCIAL_PROXY_UPDATED,
-    reason: resetReview ? 'Approval reset: material field changed after approval' : undefined,
+    reason: forked
+      ? `Approval reset: material change in ${touchedCategories.map((c) => MATERIAL_CATEGORY_LABELS[c]).join(', ')}`
+      : undefined,
     contentModifying: true,
     beforeJson: proxy,
     afterJson: updated,
   });
+
+  if (forked && supersededVersion && newVersion) {
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'financial_proxy_version',
+      entityId: supersededVersion.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE,
+      reason: `Material change in ${touchedCategories.map((c) => MATERIAL_CATEGORY_LABELS[c]).join(', ')}`,
+      beforeJson: { reviewStatus: supersededVersion.reviewStatus },
+      afterJson: { supersededBy: newVersion.id },
+    });
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'financial_proxy_version',
+      entityId: newVersion.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED,
+      reason: 'Opened by material change',
+      afterJson: newVersion,
+    });
+  }
+
   return updated;
 }
 
