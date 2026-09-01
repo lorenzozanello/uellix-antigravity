@@ -312,10 +312,19 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant', () => {
-    expect(PROTECTED_GRANTS).toEqual([
-      { authorityId: 'HPO-ODS-W2-01', branch: AUTHORIZED_BRANCH, patterns: ['db/migrations/**', 'db/prepared/journal/**'] },
-    ])
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(2)
+    expect(PROTECTED_GRANTS[0]).toEqual({
+      authorityId: 'HPO-ODS-W2-01',
+      branch: AUTHORIZED_BRANCH,
+      patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+    })
+    const w2_02 = PROTECTED_GRANTS[1]
+    expect(w2_02.authorityId).toBe('HPO-ODS-W2-02')
+    expect(w2_02.branch).toBe('codex/u0-u9-reengineering-resume-r1')
+    expect(w2_02.patterns.length).toBe(75)
+    // No glob syntax anywhere in the W2-02 grant — every entry is an exact literal path.
+    expect(w2_02.patterns.every((p) => !p.includes('*'))).toBe(true)
   })
 
   it('resolves the known authority on its granted branch', () => {
@@ -830,5 +839,218 @@ describe('ods:scope real CLI — NON_CANONICAL_PROTECTED_PATH output and overall
     expect(status).toBe(0)
     expect(stdout).toContain('ODS_SCOPE=PASS')
     expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATHS=0')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-W2-02 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json).
+//
+// A successor, additive grant transporting the already-closed final
+// Wave2-B1 state onto codex/u0-u9-reengineering-resume-r1. Authorizes ONLY
+// the 75 exact literal protected paths of that closed B1 state — no glob,
+// no subset widening, no wildcard. Does not modify HPO-ODS-W2-01.
+// ---------------------------------------------------------------------------
+
+describe('ods:scope --protected-authority HPO-ODS-W2-02 — real CLI, temporary-repo fixtures', () => {
+  let dir: string
+
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  const w2_02 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-02')!
+  const TARGET_BRANCH = 'codex/u0-u9-reengineering-resume-r1'
+
+  function runRealCli(cwd: string, args: string[]): { status: number | null; stdout: string } {
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  /** A temp repo checked out to the W2-02 target branch, with one base commit. */
+  function makeTargetBranchRepo(): { dir: string; base: string } {
+    const d = makeTempGitRepo()
+    const base = commitFile(d, 'README.md', 'seed\n')
+    git(d, ['checkout', '-b', TARGET_BRANCH])
+    return { dir: d, base }
+  }
+
+  it('sanity: the frozen W2-02 grant is exactly 75 exact literal paths under db/migrations/** or db/prepared/journal/**', () => {
+    expect(w2_02.patterns.length).toBe(75)
+    for (const p of w2_02.patterns) {
+      expect(p.startsWith('db/migrations/') || p.startsWith('db/prepared/journal/')).toBe(true)
+      expect(p.includes('*')).toBe(false)
+    }
+  })
+
+  it(
+    'POSITIVE: all 75 granted B1 paths, changed together on the target branch, PASS under HPO-ODS-W2-02',
+    () => {
+      const g = makeTargetBranchRepo()
+      dir = g.dir
+      for (const p of w2_02.patterns) {
+        mkdirSync(path.join(dir, path.dirname(p)), { recursive: true })
+        writeFileSync(path.join(dir, p), `-- fixture for ${p}\n`)
+      }
+      git(dir, ['add', '-A'])
+      git(dir, ['commit', '-q', '-m', 'materialize all 75 granted B1 fixture paths in one commit'])
+
+      const args = ['--base', g.base, '--protected-authority', 'HPO-ODS-W2-02']
+      for (const p of w2_02.patterns) args.push('--allow', p)
+
+      const { status, stdout } = runRealCli(dir, args)
+
+      expect(status).toBe(0)
+      expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-02')
+      expect(stdout).toContain('CHANGED_FILE_COUNT=75')
+      expect(stdout).toContain('PROTECTED_AUTHORIZED_PATH_COUNT=75')
+      expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
+      expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATHS=0')
+      expect(stdout).toContain('UNAUTHORIZED_PATHS=0')
+      expect(stdout).toContain('ODS_SCOPE=PASS')
+    },
+    20000,
+  )
+
+  it('NEGATIVE (ungranted sibling migration): a migration path not in the 75 FAILs even with the correct authority + branch', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/9999_ungranted.sql', 'create table x();\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/migrations/9999_ungranted.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-02',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/migrations/9999_ungranted.sql')
+  })
+
+  it('NEGATIVE (ungranted db/prepared sibling outside exact journal grants): FAILs — grant does not widen to a directory pattern', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    // Not one of the 75 exact granted journal filenames.
+    commitFile(dir, 'db/prepared/journal/999_ungranted.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/prepared/journal/999_ungranted.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-02',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/journal/999_ungranted.sql')
+  })
+
+  it('NEGATIVE (noncanonical casing): a case variant of a genuinely granted path still FAILs, unconditionally', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'DB', 'migrations'), { recursive: true })
+    commitFile(dir, 'DB/migrations/0048_fib_evidence_versions.sql', 'create table x();\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'DB/migrations/0048_fib_evidence_versions.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-02',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATH=DB/migrations/0048_fib_evidence_versions.sql')
+  })
+
+  it('NEGATIVE (wrong branch): HPO-ODS-W2-02 on any branch other than codex/u0-u9-reengineering-resume-r1 FAILs', () => {
+    dir = makeTempGitRepo() // default branch, not the W2-02 target branch
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0048_fib_evidence_versions.sql', 'create table x();\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      base,
+      '--allow',
+      'db/migrations/0048_fib_evidence_versions.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-02',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('NEGATIVE (future B2 path): a hypothetical future migration not among the 75 named B1 paths FAILs', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    // A plausible-looking future Wave-2-B2 migration filename, never granted.
+    commitFile(dir, 'db/migrations/0053_fib_evidence_b2_future.sql', 'create table y();\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/migrations/0053_fib_evidence_b2_future.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-02',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/migrations/0053_fib_evidence_b2_future.sql')
+  })
+
+  it('REGRESSION: HPO-ODS-W2-01 still works exactly as before, unaffected by the HPO-ODS-W2-02 addition', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    git(dir, ['checkout', '-b', 'codex/w2-methodology-objects-r1'])
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      base,
+      '--allow',
+      'db/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-01')
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+  })
+
+  it('REGRESSION: HPO-ODS-W2-01 identifier is refused on the HPO-ODS-W2-02 target branch (grants are not interchangeable across branches)', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
   })
 })

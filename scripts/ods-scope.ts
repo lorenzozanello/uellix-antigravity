@@ -173,12 +173,103 @@ export interface ProtectedGrant {
  * HPO-ODS-W2-01. Exists only to permit FIB Wave 2 governed migration and
  * journal materialization. Future waves require their own explicit entry
  * here via a new HPO authority update — never a broadened existing one.
+ *
+ * HPO-ODS-W2-02 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json):
+ * a successor, additive grant. It does not modify or widen HPO-ODS-W2-01
+ * above. It exists ONLY to permit transporting the already-closed final
+ * Wave2-B1 state at d058b36007e584f48d8f3f860c532924229c636a onto
+ * codex/u0-u9-reengineering-resume-r1. Its patterns are the 75 exact
+ * literal protected paths of that closed B1 state — no glob, no
+ * subset/wildcard widening. It does not authorize B2, B3, any future
+ * migration/journal file, or generic db/migrations/**, db/prepared/**, or
+ * db/baseline/** on this branch.
  */
 export const PROTECTED_GRANTS: ProtectedGrant[] = [
   {
     authorityId: 'HPO-ODS-W2-01',
     branch: 'codex/w2-methodology-objects-r1',
     patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  },
+  {
+    authorityId: 'HPO-ODS-W2-02',
+    branch: 'codex/u0-u9-reengineering-resume-r1',
+    patterns: [
+      'db/migrations/0048_fib_evidence_versions.sql',
+      'db/migrations/0049_fib_evidence_sensitivity_vocabulary.sql',
+      'db/migrations/0050_fib_evidence_sufficiency_determinations.sql',
+      'db/migrations/0051_fib_evidence_erasure_substrate.sql',
+      'db/migrations/0052_fib_evidence_sufficiency_run_binding.sql',
+      'db/migrations/meta/0048_snapshot.json',
+      'db/migrations/meta/0049_snapshot.json',
+      'db/migrations/meta/0050_snapshot.json',
+      'db/migrations/meta/0051_snapshot.json',
+      'db/migrations/meta/0052_snapshot.json',
+      'db/migrations/meta/_journal.json',
+      'db/prepared/journal/001_0000_quick_husk.sql',
+      'db/prepared/journal/002_0001_noisy_chameleon.sql',
+      'db/prepared/journal/003_0002_huge_namorita.sql',
+      'db/prepared/journal/004_0003_curvy_tempest.sql',
+      'db/prepared/journal/005_0004_thick_mentor.sql',
+      'db/prepared/journal/006_0005_daffy_dreaming_celestial.sql',
+      'db/prepared/journal/007_0006_outstanding_vindicator.sql',
+      'db/prepared/journal/008_0007_black_imperial_guard.sql',
+      'db/prepared/journal/009_0008_bored_pretty_boy.sql',
+      'db/prepared/journal/010_0009_motionless_peter_parker.sql',
+      'db/prepared/journal/011_0010_crazy_warhawk.sql',
+      'db/prepared/journal/012_0011_sroi_results_report_foundation.sql',
+      'db/prepared/journal/013_0012_stella_interactions.sql',
+      'db/prepared/journal/014_0013_performance_indexes.sql',
+      'db/prepared/journal/015_0014_fine_blade.sql',
+      'db/prepared/journal/016_0015_misty_lorna_dane.sql',
+      'db/prepared/journal/017_0016_fat_mac_gargan.sql',
+      'db/prepared/journal/018_0017_striped_legion.sql',
+      'db/prepared/journal/019_0018_redundant_firebird.sql',
+      'db/prepared/journal/020_0019_lazy_overlord.sql',
+      'db/prepared/journal/021_0020_long_squadron_supreme.sql',
+      'db/prepared/journal/022_0021_glorious_sandman.sql',
+      'db/prepared/journal/023_0022_abandoned_karma.sql',
+      'db/prepared/journal/024_0023_faulty_silver_sable.sql',
+      'db/prepared/journal/025_0024_outstanding_enchantress.sql',
+      'db/prepared/journal/026_0025_shallow_mattie_franklin.sql',
+      'db/prepared/journal/027_0026_violet_selene.sql',
+      'db/prepared/journal/028_0027_little_midnight.sql',
+      'db/prepared/journal/029_0028_keen_iron_patriot.sql',
+      'db/prepared/journal/030_0029_integrity.sql',
+      'db/prepared/journal/031_0030_immutability.sql',
+      'db/prepared/journal/032_0031_rls_core.sql',
+      'db/prepared/journal/033_0032_rls_specialized.sql',
+      'db/prepared/journal/034_0033_public_api_grants.sql',
+      'db/prepared/journal/035_0034_phase3_white_label.sql',
+      'db/prepared/journal/036_0035_phase5_marketing_leads.sql',
+      'db/prepared/journal/037_0036_phase2_onboarding.sql',
+      'db/prepared/journal/038_0037_phase1_stripe.sql',
+      'db/prepared/journal/039_0038_sprint_a_gdpr_users.sql',
+      'db/prepared/journal/040_20260716000000_auth_trigger.sql',
+      'db/prepared/journal/041_20260716000001_storage_policies.sql',
+      'db/prepared/journal/042_0039_grant_rls_helper_execution.sql',
+      'db/prepared/journal/043_001_initial_auth_rls.sql',
+      'db/prepared/journal/044_002_stella_interactions_rls.sql',
+      'db/prepared/journal/045_003_signup_allowlist_rls.sql',
+      'db/prepared/journal/046_004_fx_tables_rls.sql',
+      'db/prepared/journal/047_005_theory_of_change_rls.sql',
+      'db/prepared/journal/048_006_methodology_review_rls.sql',
+      'db/prepared/journal/049_007_taxonomy_rls.sql',
+      'db/prepared/journal/050_008_marketing_leads_rls.sql',
+      'db/prepared/journal/051_0040_governed_model_registry.sql',
+      'db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql',
+      'db/prepared/journal/053_0042_fib_audit_insert_policy.sql',
+      'db/prepared/journal/054_0043_fib_audit_project_id_fk.sql',
+      'db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql',
+      'db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql',
+      'db/prepared/journal/057_0046_fib_run_version_identity.sql',
+      'db/prepared/journal/058_009_governed_model_registry_rls.sql',
+      'db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql',
+      'db/prepared/journal/060_0048_fib_evidence_versions.sql',
+      'db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql',
+      'db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql',
+      'db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql',
+      'db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql',
+    ],
   },
 ]
 
