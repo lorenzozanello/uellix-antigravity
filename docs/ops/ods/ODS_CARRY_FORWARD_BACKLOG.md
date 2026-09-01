@@ -50,17 +50,64 @@ JSON each time.
 - **Issue:** confidence-score best-effort audit catch.
 - **Status:** `DEFERRED_FUTURE_REVIEW`
 
+## ODS maintenance findings
+
+Findings from the ODS development-process track itself (distinct from
+the Wave 1 product findings above). Anchored to their own source audit,
+not to the Wave 1 closure artifact. Recorded here for the same reason:
+so a future session does not have to rediscover that they exist.
+
+### AG-1
+
+- **Surface:** `scripts/ods-scope.ts` (`DEFAULT_PROTECTED_PATTERNS`) and
+  `docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json` (`authority_corpus`, the C2
+  protected corpus).
+- **Source:** ODS-M1F (final independent maintenance re-audit).
+- **Issue:** four post-v1.0 ODS artifacts are textually immutable/
+  prohibited by process convention but are not mechanically protected by
+  either `DEFAULT_PROTECTED_PATTERNS` or the C2 protected corpus:
+
+  - `docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json`
+  - `docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json`
+  - `docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json`
+  - `docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json`
+
+  Independently confirmed at POST-MAINT-00 (not merely transcribed from
+  the audit): `classifyPaths` returns `ok` for
+  `ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json` when it is named in an
+  ordinary `--allow` — an unprotected default-classification, not a
+  granted exception — while `docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json`
+  (the one ODS artifact that IS a literal `DEFAULT_PROTECTED_PATTERNS`
+  entry) correctly still classifies as a protected violation under the
+  same call shape.
+- **Status:** `DEFERRED`
+- **Authority change required:** `YES` — closing this requires an
+  explicit HPO decision, not an implementation choice, since it changes
+  what `ods:scope`/C2 treat as protected/anchored.
+- **Lane A blocking:** `NO`
+- **Lane B blocking:** `NO`
+- **Does not affect:** Wave 2 authorized surfaces, Lane B toolchain,
+  current C1–C6 operational readiness, or ODS v1 operational status.
+- **Future minimum decision (not made here):** whether these four
+  artifacts should be added to the protected-path gate
+  (`DEFAULT_PROTECTED_PATTERNS`), incorporated into C2 external
+  anchoring (the protected corpus), or both.
+
 ## Source of truth
 
-All five findings, their measured sites, and their adjudications are
-recorded in full in
+The five Wave 1 findings above, their measured sites, and their
+adjudications are recorded in full in
 `docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json`. If
 this backlog and that artifact ever appear to disagree, the closure
 artifact controls.
 
+AG-1's source is the ODS-M1F audit record; if this backlog and that
+record ever appear to disagree, the audit record controls.
+
 ## Non-goals
 
 This backlog does not fix, remediate, re-scope, or re-prioritize any of
-the five findings. It does not create new authority. It exists only so a
-future Wave 2 or maintenance session does not have to rediscover that
-these five items exist and remain open.
+the six findings above (five Wave 1, one ODS maintenance). It does not
+create new authority and does not decide AG-1's future minimum decision.
+It exists only so a future Wave 2, reengineering, or maintenance session
+does not have to rediscover that these six items exist and remain open.
