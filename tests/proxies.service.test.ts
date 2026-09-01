@@ -495,8 +495,11 @@ describe('Financial Proxies Service', () => {
     it('rejects re-pointing at another organisation\'s source (RC-12 applies on update, not only on create)', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
-      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: 'other-org', status: 'active' }];
-      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: SOURCE_UUID }))
+      // R-B2-06 — a re-point is a semantic CHANGE of sourceId; re-submitting
+      // the current source is a no-op and never reaches the gate.
+      const foreignSourceId = '550e8400-e29b-41d4-a716-446655440077';
+      mockDbData.proxySources = [{ id: foreignSourceId, organizationId: 'other-org', status: 'active' }];
+      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: foreignSourceId }))
         .rejects.toThrow('Source not found');
       // The refusal happens BEFORE any write.
       expect(mockDbData.lastUpdateValues).toBeNull();
@@ -573,19 +576,32 @@ describe('Financial Proxies Service', () => {
 
       await updateOrganizationFinancialProxy(PROXY_UUID, { value: '100', referenceYear: 2023 });
 
-      expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
+      // R-B2-06 — a semantic no-op writes NOTHING: no reset, no row update.
+      expect(mockDbData.lastUpdateValues).toBeNull();
     });
 
-    it('a client-supplied organizationId cannot move the row to another tenant', async () => {
+    it('a client-supplied organizationId cannot move the row to another tenant — REJECTED by name, never silently dropped (R-B2-06 / AG-B2-3-DERIVED)', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
       mockDbData.updated = { ...approvedProxy };
 
-      // Not in the Zod schema — partial().parse() drops it, so it never
-      // reaches the SET clause.
-      await updateOrganizationFinancialProxy(PROXY_UUID, { name: 'X', organizationId: 'attacker-org' });
+      // organization_id is a registered system_sealed column: a patch that
+      // NAMES it is refused before parsing could strip it, so the attempt
+      // is visible rather than silently ignored.
+      await expect(
+        updateOrganizationFinancialProxy(PROXY_UUID, { name: 'X', organizationId: 'attacker-org' })
+      ).rejects.toThrow(/"organizationId" \(financial_proxies\.organization_id\) is system_sealed/);
 
-      expect(mockDbData.lastUpdateValues.organizationId).toBeUndefined();
+      expect(mockDbData.lastUpdateValues).toBeNull();
+    });
+
+    it('a patch naming reviewStatus / reviewerId / reviewedAt / valueUsd is rejected by name (NC-7, service layer)', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      for (const [key, editability] of [['reviewStatus', 'system_sealed'], ['reviewerId', 'system_sealed'], ['reviewedAt', 'system_sealed'], ['valueUsd', 'system_derived']] as const) {
+        await expect(updateOrganizationFinancialProxy(PROXY_UUID, { [key]: 'x' })).rejects.toThrow(new RegExp(`"${key}" .* is ${editability}`));
+      }
+      expect(mockDbData.lastUpdateValues).toBeNull();
     });
 
     // -------------------------------------------------------------------------
@@ -663,8 +679,8 @@ describe('Financial Proxies Service', () => {
 
         await updateOrganizationFinancialProxy(PROXY_UUID, { value: '100', currency: 'USD', referenceYear: 2023 });
 
-        expect(mockDbData.lastUpdateValues.valueUsd).toBeUndefined();
-        expect(mockDbData.lastUpdateValues.fxRateId).toBeUndefined();
+        // R-B2-06 — a semantic no-op writes NOTHING, so valueUsd/fxRateId cannot be nulled.
+        expect(mockDbData.lastUpdateValues).toBeNull();
       });
     });
 

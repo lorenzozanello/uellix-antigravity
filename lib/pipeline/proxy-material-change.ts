@@ -241,6 +241,47 @@ export function classifyMaterialField(inputKey: string): RegistryCategory {
   return row.category
 }
 
+const camel = (snake: string) => snake.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+
+/**
+ * Every registered column that is NOT user_editable, keyed by the camelCase
+ * name a payload would use for it — derived from the registry, never
+ * hand-kept.
+ */
+export const PATCH_REJECTED_INPUT_KEYS: Readonly<Record<string, RegistryRow>> = (() => {
+  const out: Record<string, RegistryRow> = {}
+  for (const r of PROXY_MATERIAL_FIELDS_REGISTRY) {
+    if (r.editability === 'user_editable') continue
+    // Both tables register some columns (organization_id, review_status, ...);
+    // the patch targets the proxy entity, so the first — live-table — row names it.
+    const key = camel(r.fieldName)
+    if (!(key in out)) out[key] = r
+  }
+  return out
+})()
+
+/**
+ * R-B2-06 / AG-B2-3-DERIVED rejection_rule — a patch that NAMES a field whose
+ * editability is not user_editable MUST be rejected with a named error, never
+ * silently dropped (which is what schema stripping would otherwise do). A
+ * key that is neither a known input key nor a registered non-editable column
+ * is unclassified and fails closed too.
+ */
+export function assertPatchKeysEditable(rawKeys: readonly string[]): void {
+  for (const key of rawKeys) {
+    if (INPUT_KEY_TO_PERSISTED_FIELD[key]) continue
+    const sealed = PATCH_REJECTED_INPUT_KEYS[key]
+    if (sealed) {
+      throw new Error(
+        `Field "${key}" (${sealed.tableName}.${sealed.fieldName}) is ${sealed.editability} and cannot be patched (FIBC-013 — audit/approval metadata are never editable).`
+      )
+    }
+    throw new Error(
+      `Unclassified proxy field "${key}": every field must be classified in the material-field registry before it can be edited (FIBC-013 — ambiguous ⇒ material; unclassified is not the same as non-material).`
+    )
+  }
+}
+
 /**
  * Given the keys that ACTUALLY CHANGED (R-B2-06: semantic change, not key
  * presence — the caller decides that), returns the material categories they

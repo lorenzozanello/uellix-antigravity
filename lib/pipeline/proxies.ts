@@ -22,7 +22,13 @@ import {
   assertLiveVersionStatusCoupling,
 } from '@/lib/pipeline/financial-proxy-versions';
 import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric';
-import { applyMaterialChange, materialCategoriesTouched, MATERIAL_CATEGORY_LABELS } from '@/lib/pipeline/proxy-material-change';
+import {
+  applyMaterialChange,
+  materialCategoriesTouched,
+  assertPatchKeysEditable,
+  INPUT_KEY_TO_PERSISTED_FIELD,
+  MATERIAL_CATEGORY_LABELS,
+} from '@/lib/pipeline/proxy-material-change';
 
 type FinancialProxyRow = typeof financialProxies.$inferSelect;
 type FinancialProxyTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -464,27 +470,116 @@ function versionFieldPatchFrom(data: Partial<z.infer<typeof FinancialProxyInput>
  * FIBIU-10's own EXIT_GATE names ("an editorial change does not
  * invalidate").
  */
+// W2-B2-R1 / R-B2-06 (closes M2; editorial_noop_patch_disposition, FROZEN).
+// A field counts as materially changed IF AND ONLY IF the AUTHORITATIVE
+// PERSISTED SEMANTIC VALUE of that field actually changes. Key presence in a
+// payload is not evidence of change — zod's `.partial()` reports a key whose
+// value is `undefined` in Object.keys() while JSON.stringify hides it, which
+// is exactly how a blank form submission destroyed approvals (M2).
+//
+//   ABSENT / UNDEFINED : not a change ('no value supplied', never 'clear').
+//   NULL               : a change iff the persisted value is not already
+//                        semantically absent — the only form that may clear.
+//   EMPTY_STRING       : for nullable text, '' and NULL are the same absence.
+//   UNCHANGED_VALUE    : equal after canonicalisation — not a change.
+//   CHANGED_VALUE      : differs after canonicalisation — a change.
+// Canonicalisation: numerics by decimal value (canonicalDecimal, so '100'
+// equals '100.0000'), integers by numeric value, dates by instant, text
+// exactly (no trimming/case-folding — that would hide a real edit).
+// Comparison target: the row that authoritatively persists the field
+// (registry table_name) — the CURRENT version for version-mirrored fields,
+// the live row for live-only fields; a never-versioned legacy proxy has only
+// its live row to compare against.
+const INTEGER_INPUT_KEYS: readonly string[] = ['referenceYear'];
+const NUMERIC_INPUT_KEYS: readonly string[] = ['value'];
+const DATE_INPUT_KEYS: readonly string[] = ['consultationDate'];
+
+function semanticallyAbsent(v: unknown): boolean {
+  return v === null || v === undefined || (typeof v === 'string' && v.length === 0);
+}
+
+/** True iff `incoming` (present in the payload) differs semantically from `persisted`. */
+export function isSemanticProxyFieldChange(key: string, incoming: unknown, persisted: unknown): boolean {
+  if (incoming === undefined) return false; // UNDEFINED — no value supplied
+  if (incoming === null) return !semanticallyAbsent(persisted); // NULL — clear iff something is there
+  if (NUMERIC_INPUT_KEYS.includes(key)) {
+    return canonicalDecimal(String(incoming)) !== (semanticallyAbsent(persisted) ? null : canonicalDecimal(String(persisted)));
+  }
+  if (INTEGER_INPUT_KEYS.includes(key)) {
+    return semanticallyAbsent(persisted) ? true : Number(incoming) !== Number(persisted);
+  }
+  if (DATE_INPUT_KEYS.includes(key)) {
+    if (semanticallyAbsent(persisted)) return true;
+    const p = persisted instanceof Date ? persisted.getTime() : new Date(String(persisted)).getTime();
+    return new Date(String(incoming)).getTime() !== p;
+  }
+  // text: EMPTY_STRING ≡ NULL, otherwise exact
+  if (typeof incoming === 'string' && incoming.length === 0) return !semanticallyAbsent(persisted);
+  return semanticallyAbsent(persisted) ? true : String(incoming) !== String(persisted);
+}
+
+function semanticallyChangedKeys(
+  data: Partial<z.infer<typeof FinancialProxyInput>>,
+  live: FinancialProxyRow,
+  version: Awaited<ReturnType<typeof getLatestFinancialProxyVersion>>,
+): string[] {
+  const changed: string[] = [];
+  for (const key of Object.keys(data) as (keyof typeof data)[]) {
+    const incoming = data[key];
+    if (incoming === undefined) continue;
+    const ref = INPUT_KEY_TO_PERSISTED_FIELD[key];
+    const persisted = ref?.table === 'financial_proxy_versions' && version
+      ? (version as Record<string, unknown>)[key]
+      : (live as Record<string, unknown>)[key];
+    if (isSemanticProxyFieldChange(key, incoming, persisted)) changed.push(key);
+  }
+  return changed;
+}
+
 export async function updateOrganizationFinancialProxy(proxyId: string, input: unknown) {
   const ctx = await requireOrganizationAccess();
+  // R-B2-06 / AG-B2-3-DERIVED rejection_rule — a patch that NAMES a field
+  // whose registry editability is not user_editable is rejected by name,
+  // before parsing could strip it, so an approval-metadata write attempt
+  // can never pass unnoticed.
+  if (input && typeof input === 'object' && !Array.isArray(input)) {
+    assertPatchKeysEditable(Object.keys(input as Record<string, unknown>));
+  }
   const data = FinancialProxyInput.partial().parse(input);
-  const touchedCategories = materialCategoriesTouched(Object.keys(data));
-  const isMaterial = touchedCategories.length > 0;
 
-  const { proxy, updated, forked, supersededVersion, newVersion } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+  const { proxy, updated, forked, supersededVersion, newVersion, changedKeys, touchedCategories } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
     if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+
+    // Materiality is decided against the persisted rows, inside the lock.
+    const currentVersion = await getLatestFinancialProxyVersion(proxyId, tx);
+    const changedKeys = semanticallyChangedKeys(data, proxy, currentVersion);
+    const touchedCategories = materialCategoriesTouched(changedKeys);
+    const isMaterial = touchedCategories.length > 0;
+
+    // A semantic no-op: nothing persisted changes, so nothing is written —
+    // no fork, no status change, no value_usd null-out, no audit event.
+    if (changedKeys.length === 0) {
+      return { proxy, updated: proxy, forked: false, supersededVersion: null, newVersion: null, changedKeys, touchedCategories };
+    }
+
     // A partial update may repoint the proxy at another source — the same
     // ownership gate as creation applies (RC-12).
-    if (data.sourceId !== undefined) {
+    if (changedKeys.includes('sourceId') && data.sourceId !== undefined) {
       await requireUsableProxySource(data.sourceId, ctx.organization.id);
     }
 
-    const currentVersion = isMaterial ? await getLatestFinancialProxyVersion(proxyId, tx) : null;
+    const changedData = Object.fromEntries(changedKeys.map((k) => [k, (data as Record<string, unknown>)[k]])) as Partial<z.infer<typeof FinancialProxyInput>>;
     let forked = false;
     let supersededVersion: Awaited<ReturnType<typeof getLatestFinancialProxyVersion>> = null;
     let newVersion: Awaited<ReturnType<typeof getLatestFinancialProxyVersion>> = null;
 
+    // CL-2B/CL-2C (PROX-01) — a REAL change to value/currency/referenceYear
+    // makes the previously frozen valueUsd/fxRateId stale. Same semantic
+    // comparator as materiality, never String(...) identity.
+    const usdDerivationChange = PROXY_USD_DERIVATION_FIELDS.some((f) => changedKeys.includes(f));
+
     if (isMaterial && currentVersion) {
-      const versionPatch = versionFieldPatchFrom(data);
+      const versionPatch = versionFieldPatchFrom(changedData);
       const result = await applyMaterialChange(
         proxyId,
         proxy.organizationId,
@@ -501,42 +596,31 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
         // Not yet approved — no approval to protect; the SAME version is
         // edited in place, mirroring the live row (existing FIBC-002
         // behavior for a pre-approval edit).
-        const usdDerivationChangeOnVersion = PROXY_USD_DERIVATION_FIELDS.some((f) => data[f] !== undefined);
         newVersion = await updateCurrentFinancialProxyVersion(
           proxyId,
-          { ...versionPatch, ...(usdDerivationChangeOnVersion ? { valueUsd: null, fxRateId: null } : {}) },
+          { ...versionPatch, ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}) },
           tx
         );
       }
     }
 
     // Re-review gate: an approved proxy whose material fields change drops
-    // back into the review queue so no calculation uses an unreviewed value
-    // under an "approved" label. `forked` IS this condition (a fork only
-    // ever happens when the current version was approved and the change is
-    // material). R-B2-01: the live token is the INVERSE IMAGE of the fork's
-    // version status under the frozen mapping ('under_review' ->
-    // 'pending_review'), never a literal that merely happens to coincide.
+    // back into the review queue. `forked` IS this condition. R-B2-01: the
+    // live token is the INVERSE IMAGE of the fork's version status under
+    // the frozen mapping, never a coincident literal.
     const resetReview = forked;
 
-    // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes
-    // the previously frozen valueUsd/fxRateId stale: they were derived from
-    // the OLD material state. Null them out here so resolveProxyValueUsd's
-    // short-circuit (`if (proxy.valueUsd) return ...`) cannot reuse the
-    // stale figure on the next approval.
-    const usdDerivationChange = PROXY_USD_DERIVATION_FIELDS.some(
-      (f) => data[f] !== undefined && String(data[f]) !== String(proxy[f] ?? '')
-    );
-
     const updated = await tx.update(financialProxies).set({
-      ...data,
+      ...changedData,
       ...(resetReview && newVersion ? { reviewStatus: toLiveReviewStatus(newVersion.reviewStatus) } : {}),
       ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}),
       updatedAt: new Date(),
     }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
     if (newVersion) assertLiveVersionStatusCoupling(updated.reviewStatus, newVersion.reviewStatus);
-    return { proxy, updated, forked, supersededVersion, newVersion };
+    return { proxy, updated, forked, supersededVersion, newVersion, changedKeys, touchedCategories };
   });
+
+  if (changedKeys.length === 0) return updated;
 
   await logAuditAction({
     organizationId: ctx.organization.id,
