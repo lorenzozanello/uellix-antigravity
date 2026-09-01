@@ -190,6 +190,38 @@ export const AUDIT_ACTIONS = {
   // no Wave 1 caller, so no generic "audit every denial" vocabulary is
   // introduced here.
   SROI_CALCULATION_RUN_METHODOLOGY_APPROVAL_DENIED: 'sroi_calculation_run.methodology_approval_denied',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-04 (FIBC-005/FIBC-006) — evidence version lineage and content
+  // persistence.
+  // ---------------------------------------------------------------------
+  EVIDENCE_VERSION_CREATED: 'evidence_version.created',
+  EVIDENCE_VERSION_INTEGRITY_VERIFIED: 'evidence_version.integrity_verified',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-05 (FIBC-007) — evidence sensitivity and treatment. Both are
+  // contentModifying: they change what a version's classification/treatment
+  // fields say the evidence IS, and every output surface (report, export,
+  // public, Stella) governs exposure on the resulting value.
+  // ---------------------------------------------------------------------
+  EVIDENCE_VERSION_SENSITIVITY_CLASSIFIED: 'evidence_version.sensitivity_classified',
+  EVIDENCE_VERSION_TREATMENT_RECORDED: 'evidence_version.treatment_recorded',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-06 (FIBC-008) — human evidence sufficiency determination.
+  // ---------------------------------------------------------------------
+  EVIDENCE_SUFFICIENCY_DETERMINATION_RECORDED: 'evidence_sufficiency_determination.recorded',
+
+  // ---------------------------------------------------------------------
+  // FIBIU-07 (FIBC-009) — governed evidence content erasure. Three families
+  // for the operation's request and its two possible outcomes; `completed`
+  // covers both erasure_complete and erasure_partial (afterJson.erasureState
+  // disambiguates) since both are "the operation ran and reached a terminal
+  // state", as opposed to `blocked`, where nothing was erased at all.
+  // ---------------------------------------------------------------------
+  EVIDENCE_TOMBSTONE_ERASURE_REQUESTED: 'evidence_tombstone.erasure_requested',
+  EVIDENCE_TOMBSTONE_ERASURE_COMPLETED: 'evidence_tombstone.erasure_completed',
+  EVIDENCE_TOMBSTONE_ERASURE_BLOCKED: 'evidence_tombstone.erasure_blocked',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

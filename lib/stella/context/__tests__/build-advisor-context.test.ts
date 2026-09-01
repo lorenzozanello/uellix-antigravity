@@ -69,6 +69,16 @@ const mockEvidenceItems = [
   },
 ]
 
+// FIBIU-05 (FIBC-007) — buildAdvisorContext now looks up each evidence
+// item's current sensitivity classification and excludes anything not
+// explicitly 'non_sensitive'. Both fixture items are classified here so
+// existing assertions about evidence count/metadata keep exercising the
+// same pre-FIBIU-05 behavior; a dedicated test below covers exclusion.
+const mockEvidenceVersions = [
+  { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+  { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+]
+
 const mockAssignments = [
   {
     assignmentId: 'asgn-1',
@@ -111,6 +121,7 @@ async function setupFullMockSequence(
     stakeholderRows?: Array<{ id: string; name: string; type: string | null }>
     narrativeRow?: typeof mockNarrative
     outcomeRows?: typeof mockOutcomes
+    evidenceVersionRows?: typeof mockEvidenceVersions
   } = {}
 ) {
   const { db } = await import('@/db/client')
@@ -123,6 +134,7 @@ async function setupFullMockSequence(
   // 4. outcomes → array
   // 5. indicators → array
   // 6. evidence → array
+  // 6b. evidence sensitivity lookup (FIBIU-05, getLatestEvidenceVersionsByEvidenceIds) → array
   // 7. proxy assignments (innerJoin) → array
   // 8. source lookup → .then((rows) => rows[0] ?? null) → needs array
   // 9. ToC activities → array
@@ -137,6 +149,7 @@ async function setupFullMockSequence(
     .mockReturnValueOnce(makeChain(opts.outcomeRows ?? mockOutcomes) as never) // outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                 // indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)              // evidence
+    .mockReturnValueOnce(makeChain(opts.evidenceVersionRows ?? mockEvidenceVersions) as never) // evidence sensitivity (FIBIU-05)
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                // proxy assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'HACT Database' }]) as never) // source
     .mockReturnValueOnce(makeChain([]) as never)                             // activities
@@ -291,6 +304,33 @@ describe('buildAdvisorContext', () => {
           expect(ev.contentHashTruncated.length).toBeLessThanOrEqual(8)
         }
       }
+    })
+
+    // FIBIU-05 (FIBC-007) — "sensitive evidence never enters context by the
+    // mere fact of being linked". Two exclusion causes: an explicit
+    // non-non_sensitive classification, and no classification at all
+    // (unclassified is excluded the same as classified-sensitive, never
+    // treated as an implicit pass).
+    it('excludes evidence classified as sensitive from evidenceMetadata and evidenceTotal', async () => {
+      await setupFullMockSequence(mockProject, {
+        evidenceVersionRows: [
+          { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'personal_data' },
+          { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+        ],
+      })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'evidence')
+
+      expect(ctx.evidenceTotal).toBe(1)
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-1')).toBeUndefined()
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-2')).toBeDefined()
+    })
+
+    it('excludes unclassified evidence — no version row is never treated as an implicit pass', async () => {
+      await setupFullMockSequence(mockProject, { evidenceVersionRows: [] })
+      const ctx = await buildAdvisorContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'evidence')
+
+      expect(ctx.evidenceTotal).toBe(0)
+      expect(ctx.evidenceMetadata).toHaveLength(0)
     })
   })
 

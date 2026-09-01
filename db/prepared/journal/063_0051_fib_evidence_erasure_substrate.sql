@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 17/63: 0016_fat_mac_gargan.sql
+-- GENERATED — DO NOT EDIT. Unit 63/63: 0051_fib_evidence_erasure_substrate.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0016_fat_mac_gargan.sql
--- Source SHA256: feaaf18afcea0e8310dd9dae82faf87d1f84bbd0c9a4f62d5663558ae95d4e39
+-- Includes:      db/migrations/0051_fib_evidence_erasure_substrate.sql
+-- Source SHA256: a2c73abf3a4aeae988df3315e4d274a23598da7513d47008ed9a99a999291eff
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/017_0016_fat_mac_gargan.sql
+--        -f db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0016_fat_mac_gargan.sql
+\ir ../../../db/migrations/0051_fib_evidence_erasure_substrate.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0016_fat_mac_gargan.sql', 'PHASE_BASELINE',
-   'feaaf18afcea0e8310dd9dae82faf87d1f84bbd0c9a4f62d5663558ae95d4e39', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0051_fib_evidence_erasure_substrate.sql', 'PHASE_BASELINE',
+   'a2c73abf3a4aeae988df3315e4d274a23598da7513d47008ed9a99a999291eff', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

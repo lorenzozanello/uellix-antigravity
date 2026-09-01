@@ -1,16 +1,21 @@
 // lib/pipeline/evidence.ts
 
 import { db } from '@/db/client'
-import { evidenceItems, projects, outcomes, indicators } from '@/db/schema'
+import { evidenceItems, projects, outcomes, indicators, evidenceTombstones } from '@/db/schema'
 import { eq, and, isNull } from 'drizzle-orm'
 import { createClient } from '@/lib/supabase/server'
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger'
-import { hasRole } from '@/lib/auth/permissions'
+import { hasRole, canClassifyEvidenceSensitivity, canEraseEvidenceContent } from '@/lib/auth/permissions'
 import { requireOrganizationAccess } from '@/lib/auth/session'
 import { withOrganizationDatabaseContext } from '@/lib/auth/database-context'
 import { z } from 'zod'
 import crypto from 'crypto'
 import { recalculateConfidenceScore } from '@/lib/pipeline/confidence-score'
+import {
+  createEvidenceVersion,
+  getLatestEvidenceVersion,
+  updateCurrentEvidenceVersion,
+} from '@/lib/pipeline/evidence-versions'
 
 // Types
 export type EvidenceStatus = 'draft' | 'under_review' | 'approved' | 'rejected' | 'archived'
@@ -400,6 +405,29 @@ export async function createFileEvidenceForProject(projectId: string, input: unk
         afterJson: { type: 'file', title: parsed.title, sha256 },
       })
 
+      // FIBIU-04 (FIBC-002/FIBC-006) — first version of this evidence
+      // item's dedicated lineage. content stays NULL: file evidence keeps
+      // hashing the storage object (verifyFileEvidenceIntegrity), it is
+      // never duplicated into the database.
+      const version = await createEvidenceVersion({
+        organizationId: organization.id,
+        evidenceId: evidence.id,
+        content: null,
+        contentHash: sha256,
+        reviewStatus: 'draft',
+        legacyContentUnverifiable: false,
+        createdBy: user.id,
+      })
+      await logAuditAction({
+        organizationId: organization.id,
+        projectId,
+        actorUserId: user.id,
+        entityType: 'evidence_version',
+        entityId: version.id,
+        action: AUDIT_ACTIONS.EVIDENCE_VERSION_CREATED,
+        afterJson: { evidenceId: evidence.id, ordinal: version.ordinal },
+      })
+
       await recalculateConfidenceScore(projectId, evidence.id)
     })
   } catch (finalizeError) {
@@ -467,6 +495,27 @@ export async function createUrlEvidenceForProject(projectId: string, input: unkn
     afterJson: { type: 'url', title: parsed.title, sha256 },
   })
 
+  // FIBIU-04 — content stays NULL: url evidence hashes the normalized
+  // reference (already contentHash above), not remote content.
+  const version = await createEvidenceVersion({
+    organizationId: organization.id,
+    evidenceId: evidence.id,
+    content: null,
+    contentHash: sha256,
+    reviewStatus: 'draft',
+    legacyContentUnverifiable: false,
+    createdBy: user.id,
+  })
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_version',
+    entityId: version.id,
+    action: AUDIT_ACTIONS.EVIDENCE_VERSION_CREATED,
+    afterJson: { evidenceId: evidence.id, ordinal: version.ordinal },
+  })
+
   await recalculateConfidenceScore(projectId, evidence.id)
 
   return evidence
@@ -510,9 +559,91 @@ export async function createTextEvidenceForProject(projectId: string, input: unk
     afterJson: { type: 'text', title: parsed.title, sha256 },
   })
 
+  // FIBIU-04 (FIBC-006) — THE fix: content is now actually persisted, so
+  // content_hash becomes re-verifiable rather than an orphan hash over text
+  // nothing retained. sha256 is computed over exactly this persisted value.
+  const version = await createEvidenceVersion({
+    organizationId: organization.id,
+    evidenceId: evidence.id,
+    content: normalizedText,
+    contentHash: sha256,
+    reviewStatus: 'draft',
+    legacyContentUnverifiable: false,
+    createdBy: user.id,
+  })
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_version',
+    entityId: version.id,
+    action: AUDIT_ACTIONS.EVIDENCE_VERSION_CREATED,
+    afterJson: { evidenceId: evidence.id, ordinal: version.ordinal },
+  })
+
   await recalculateConfidenceScore(projectId, evidence.id)
 
   return evidence
+}
+
+/**
+ * FIBIU-04 (FIBC-009 consumer) — erased evidence can never return to
+ * `approved`/`under_review`. Guards both transitions, not only approval:
+ * FIBC-009 names both states explicitly, and `under_review` is the
+ * re-entry point that would otherwise let erased evidence reach `approved`
+ * on a later call.
+ */
+function assertNotErased(version: { erasureState: string | null } | null, targetStatus: string) {
+  if (targetStatus !== 'approved' && targetStatus !== 'under_review') return
+  if (version?.erasureState === 'erasure_complete' || version?.erasureState === 'erasure_partial') {
+    throw new Error('Erased evidence cannot return to under_review or approved')
+  }
+}
+
+/**
+ * FIBIU-04 (FIBC-006) — refuse to approve a version whose stored content
+ * does not re-hash to its recorded hash. Text only: file evidence verifies
+ * against the storage object via verifyFileEvidenceIntegrity, url evidence
+ * hashes a reference, not content. A legacy version with no persisted
+ * content (legacy_content_unverifiable) can never satisfy this — there is
+ * nothing to re-hash, and no reconstruction is ever attempted.
+ */
+function assertTextContentVerifiable(
+  evidenceType: string,
+  version: { content: string | null; contentHash: string | null; legacyContentUnverifiable: boolean } | null,
+  targetStatus: string
+) {
+  if (targetStatus !== 'approved' || evidenceType !== 'text') return
+  if (!version || version.legacyContentUnverifiable) {
+    throw new Error('EVIDENCE_CONTENT_UNVERIFIABLE: legacy text evidence has no persisted content to re-hash and cannot be approved')
+  }
+  if (version.content === null || version.contentHash === null) {
+    throw new Error('EVIDENCE_CONTENT_UNVERIFIABLE: no persisted content or hash to verify')
+  }
+  const recomputed = crypto.createHash('sha256').update(version.content).digest('hex')
+  if (recomputed !== version.contentHash) {
+    throw new Error('EVIDENCE_CONTENT_UNVERIFIABLE: stored content does not re-hash to its recorded hash')
+  }
+}
+
+/**
+ * FIBIU-05 (FIBC-007) — evidence cannot reach `approved` without an
+ * explicit sensitivity evaluation and, where applicable, a documented
+ * treatment. Automatic detection may recommend but never declare
+ * non-sensitive, so an unclassified (NULL) version always blocks here —
+ * there is no default that counts as evaluated.
+ */
+function assertSensitivityEvaluated(
+  version: { sensitivityClassification: string | null; treatment: string | null } | null,
+  targetStatus: string
+) {
+  if (targetStatus !== 'approved') return
+  if (!version || version.sensitivityClassification === null) {
+    throw new Error('EVIDENCE_SENSITIVITY_UNEVALUATED: evidence cannot be approved without an explicit sensitivity classification')
+  }
+  if (version.sensitivityClassification !== 'non_sensitive' && version.treatment === null) {
+    throw new Error('EVIDENCE_TREATMENT_UNDETERMINED: a documented treatment is required for classified sensitive evidence')
+  }
 }
 
 export async function updateEvidenceReviewStatus(projectId: string, evidenceId: string, input: unknown) {
@@ -524,6 +655,11 @@ export async function updateEvidenceReviewStatus(projectId: string, evidenceId: 
   await verifyProjectOwnership(projectId, organization.id)
 
   const before = await getEvidenceByIdForProject(projectId, evidenceId)
+  const currentVersion = await getLatestEvidenceVersion(evidenceId)
+
+  assertNotErased(currentVersion, parsed.status)
+  assertTextContentVerifiable(before.type, currentVersion, parsed.status)
+  assertSensitivityEvaluated(currentVersion, parsed.status)
 
   await db
     .update(evidenceItems)
@@ -531,6 +667,10 @@ export async function updateEvidenceReviewStatus(projectId: string, evidenceId: 
     .where(and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.id, evidenceId)))
 
   const after = await getEvidenceByIdForProject(projectId, evidenceId)
+
+  // FIBIU-04/05 — the version row tracks its own reviewStatus per FIBDB-005's
+  // field list, independent of (but kept in sync with) evidence_items.status.
+  await updateCurrentEvidenceVersion(evidenceId, { reviewStatus: parsed.status })
 
   await logAuditAction({
     organizationId: organization.id,
@@ -543,9 +683,93 @@ export async function updateEvidenceReviewStatus(projectId: string, evidenceId: 
     afterJson: after,
   })
 
+  if (parsed.status === 'approved' && before.type === 'text' && currentVersion) {
+    await logAuditAction({
+      organizationId: organization.id,
+      projectId,
+      actorUserId: user.id,
+      entityType: 'evidence_version',
+      entityId: currentVersion.id,
+      action: AUDIT_ACTIONS.EVIDENCE_VERSION_INTEGRITY_VERIFIED,
+      afterJson: { evidenceId, verified: true, contentHash: currentVersion.contentHash },
+    })
+  }
+
   await recalculateConfidenceScore(projectId, evidenceId)
 
   return after
+}
+
+const ClassifySensitivitySchema = z
+  .object({
+    sensitivityClassification: z.enum([
+      'non_sensitive',
+      'personal_data',
+      'identifiable_restricted',
+      'confidential_third_party',
+      'special_category',
+    ] as const),
+    treatment: z
+      .enum(['not_required', 'anonymized', 'pseudonymized', 'identifiable_restricted_access'] as const)
+      .optional(),
+  })
+  .refine((data) => data.sensitivityClassification === 'non_sensitive' || data.treatment !== undefined, {
+    message: 'treatment is required when sensitivityClassification is not non_sensitive',
+    path: ['treatment'],
+  })
+
+/**
+ * FIBIU-05 (FIBC-007) — governed human sensitivity classification and, where
+ * applicable, treatment/access determination for the current version of an
+ * evidence item. Never automatic: this is the only write path for these two
+ * fields, and it always records an explicit human actor.
+ */
+export async function classifyEvidenceSensitivity(projectId: string, evidenceId: string, input: unknown) {
+  const { membership, organization, user } = await requireOrganizationAccess()
+  if (!canClassifyEvidenceSensitivity(membership.role)) {
+    throw new Error('Insufficient permissions to classify evidence sensitivity')
+  }
+  const parsed = ClassifySensitivitySchema.parse(input)
+  await verifyProjectOwnership(projectId, organization.id)
+  await getEvidenceByIdForProject(projectId, evidenceId)
+
+  const before = await getLatestEvidenceVersion(evidenceId)
+  const beforeSensitivity = before?.sensitivityClassification ?? null
+  const beforeTreatment = before?.treatment ?? null
+
+  const version = await updateCurrentEvidenceVersion(evidenceId, {
+    sensitivityClassification: parsed.sensitivityClassification,
+    treatment: parsed.treatment ?? null,
+  })
+  if (!version) throw new Error('Evidence has no version to classify')
+
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_version',
+    entityId: version.id,
+    action: AUDIT_ACTIONS.EVIDENCE_VERSION_SENSITIVITY_CLASSIFIED,
+    contentModifying: true,
+    beforeJson: { sensitivityClassification: beforeSensitivity },
+    afterJson: { sensitivityClassification: version.sensitivityClassification },
+  })
+
+  if (parsed.treatment !== undefined) {
+    await logAuditAction({
+      organizationId: organization.id,
+      projectId,
+      actorUserId: user.id,
+      entityType: 'evidence_version',
+      entityId: version.id,
+      action: AUDIT_ACTIONS.EVIDENCE_VERSION_TREATMENT_RECORDED,
+      contentModifying: true,
+      beforeJson: { treatment: beforeTreatment },
+      afterJson: { treatment: version.treatment },
+    })
+  }
+
+  return version
 }
 
 export async function archiveEvidenceForProject(projectId: string, evidenceId: string) {
@@ -636,6 +860,116 @@ export async function verifyFileEvidenceIntegrity(
   })
 
   return { verified, storedHash: evidence.contentHash, computedHash }
+}
+
+const ERASURE_REASONS = [
+  'privacy_or_data_subject_request',
+  'retention_policy',
+  'unauthorized_or_erroneous_upload',
+  'confidentiality_or_access_violation',
+  'legal_or_contractual_requirement',
+  'other_governed_reason',
+] as const
+
+const RequestErasureSchema = z.object({
+  erasureReason: z.enum(ERASURE_REASONS),
+  rationale: z.string().min(1),
+})
+
+/**
+ * FIBIU-07 (FIBC-009) — governed, exceptional, irreversible content
+ * erasure. NOT a conventional DELETE — the row and its lineage stay, only
+ * the content is swept and a permanent tombstone records what happened.
+ *
+ * STAGE A ONLY (see 0051_fib_evidence_erasure_substrate.sql): the ambiguous
+ * ordinary evidence_items DELETE path (0033:35 grant, 0031:418-419 absent
+ * policy) is UNCHANGED by this function — revoking it is FIBDB-032/033,
+ * explicit stage-E hardening, deliberately not executed in Wave 2 B1. This
+ * function is an ALTERNATIVE governed route, not a repair of that one.
+ *
+ * Synchronous by design: this repository has no background job runner, so
+ * `erasure_requested`/`erasure_in_progress` are logged but not persisted as
+ * an intermediate evidence_versions.erasure_state — the operation resolves
+ * to a terminal state (erasure_complete/erasure_partial) in the same call.
+ * `erasure_blocked` is representable in the schema (FIBDB-031's CHECK) and
+ * in AUDIT_ACTIONS for governed-vocabulary completeness, but has no
+ * reachable trigger at stage A: the one real "conflict with an immutable
+ * artifact" this baseline names — stage-E approved/used-version immutability
+ * — is not yet enforced (deferred, same stage rule as FIBDB-032/033), and no
+ * grounding derivatives exist in this repository (docs/19 not activated) to
+ * conflict with either. It becomes reachable once either substrate lands.
+ */
+export async function requestGovernedEvidenceErasure(projectId: string, evidenceId: string, input: unknown) {
+  const { membership, organization, user } = await requireOrganizationAccess()
+  if (!canEraseEvidenceContent(membership.role)) {
+    throw new Error('Insufficient permissions to erase evidence content')
+  }
+  const parsed = RequestErasureSchema.parse(input)
+  await verifyProjectOwnership(projectId, organization.id)
+  const evidence = await getEvidenceByIdForProject(projectId, evidenceId)
+
+  const version = await getLatestEvidenceVersion(evidenceId)
+  if (!version) throw new Error('Evidence has no version to erase')
+  if (version.erasureState === 'erasure_complete' || version.erasureState === 'erasure_partial') {
+    throw new Error('Evidence content has already been erased')
+  }
+
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_tombstone',
+    entityId: evidenceId,
+    action: AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_REQUESTED,
+    reason: parsed.rationale,
+    afterJson: { evidenceId, erasureReason: parsed.erasureReason },
+  })
+
+  // Sweep every Uellix-controlled derivative this repository actually has:
+  // the storage object (file evidence) and the persisted text (evidence_
+  // versions.content). No grounding derivatives (OCR/chunks/embeddings/
+  // indices/caches) exist to sweep — docs/19 is not activated, so this
+  // clause of FIBC-009 is satisfied vacuously, not skipped.
+  let partial = false
+  if (evidence.type === 'file' && evidence.filePath) {
+    const supabase = await createClient()
+    const { error } = await supabase.storage.from('uellix-evidence').remove([evidence.filePath])
+    if (error) partial = true
+  }
+
+  const finalErasureState = partial ? 'erasure_partial' : 'erasure_complete'
+
+  await updateCurrentEvidenceVersion(evidenceId, {
+    content: null,
+    erasureState: finalErasureState,
+  })
+
+  const [tombstone] = await db
+    .insert(evidenceTombstones)
+    .values({
+      organizationId: organization.id,
+      evidenceId,
+      evidenceVersionId: version.id,
+      erasureState: finalErasureState,
+      erasureReason: parsed.erasureReason,
+      rationale: parsed.rationale,
+      contentHashPreserved: true,
+      contentHash: version.contentHash,
+      actorUserId: user.id,
+    })
+    .returning()
+
+  await logAuditAction({
+    organizationId: organization.id,
+    projectId,
+    actorUserId: user.id,
+    entityType: 'evidence_tombstone',
+    entityId: tombstone.id,
+    action: AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_COMPLETED,
+    afterJson: { evidenceId, erasureState: finalErasureState },
+  })
+
+  return tombstone
 }
 
 export async function listEvidenceForOrganizationWithProject() {

@@ -24,6 +24,7 @@ import {
   sroiReportSections,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { sanitizeNarrative, sanitizeUntrustedText } from './sanitize'
 import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
@@ -190,7 +191,7 @@ export async function buildAdvisorContext(
 
   // Fetch evidence metadata — NO filePath, NO raw content, NO storage paths.
   // Outcome/indicator linkage (ids + resolved titles) IS metadata and is kept.
-  const rawEvidence = await db
+  const rawEvidenceUnfiltered = await db
     .select({
       id: evidenceItems.id,
       type: evidenceItems.type,
@@ -209,6 +210,19 @@ export async function buildAdvisorContext(
         eq(evidenceItems.organizationId, organizationId)
       )
     )
+
+  // FIBIU-05 (FIBC-007) — "sensitive evidence never enters context by the
+  // mere fact of being linked". Complements, does not replace, the existing
+  // PII redaction below: this excludes the item entirely by classification,
+  // before any per-field sanitization runs. Only an explicit 'non_sensitive'
+  // classification clears an item; unclassified (never-evaluated) evidence
+  // is excluded the same as classified-sensitive evidence.
+  const evidenceVersionsById = await getLatestEvidenceVersionsByEvidenceIds(
+    rawEvidenceUnfiltered.map((ev) => ev.id)
+  )
+  const rawEvidence = rawEvidenceUnfiltered.filter(
+    (ev) => evidenceVersionsById.get(ev.id)?.sensitivityClassification === 'non_sensitive'
+  )
 
   const evidenceMetadata: EvidenceMeta[] = rawEvidence.map((ev) => {
     const safeTitle = sanitizeUntrustedText(ev.title, 150, '[Evidence item]')

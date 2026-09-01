@@ -337,6 +337,34 @@
       "when": 1788208588130,
       "tag": "0047_fib_taxonomy_mapping_governance_regime",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788261865674,
+      "tag": "0048_fib_evidence_versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788261938597,
+      "tag": "0049_fib_evidence_sensitivity_vocabulary",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1788261976446,
+      "tag": "0050_fib_evidence_sufficiency_determinations",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1788262029098,
+      "tag": "0051_fib_evidence_erasure_substrate",
+      "breakpoints": true
     }
   ]
 }

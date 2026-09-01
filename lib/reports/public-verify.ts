@@ -10,6 +10,7 @@ import {
   sroiReportSections,
 } from '@/db/schema';
 import { listOutcomeMappingsForProject } from '@/lib/taxonomies/service';
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions';
 
 /**
  * PUBLIC VERIFICATION READ — BLOCKED BY DESIGN AFTER THE RUNTIME CUTOVER.
@@ -64,10 +65,19 @@ export async function getPublicVerifiedReport(verificationHash: string) {
       .where(eq(sroiReportSections.reportId, result.report.id))
       .orderBy(sroiReportSections.sortOrder),
 
+    // FIBIU-05 (FIBC-007) — "sensitive evidence is absent from ... the
+    // public surface". Every output surface governs exposure on the
+    // classification value; an unclassified (never-evaluated) item is
+    // treated the same as a classified-sensitive one — only an explicit
+    // 'non_sensitive' classification clears an item for this surface.
     db
       .select()
       .from(evidenceItems)
-      .where(eq(evidenceItems.projectId, result.project.id)),
+      .where(eq(evidenceItems.projectId, result.project.id))
+      .then(async (rows) => {
+        const versions = await getLatestEvidenceVersionsByEvidenceIds(rows.map((r) => r.id));
+        return rows.filter((r) => versions.get(r.id)?.sensitivityClassification === 'non_sensitive');
+      }),
 
     db
       .select({

@@ -91,6 +91,8 @@ vi.mock('@/lib/audit/logger', () => ({
     EVIDENCE_UPLOAD_FAILED: 'evidence_item.upload_failed',
     EVIDENCE_ARCHIVED: 'evidence_item.archived',
     EVIDENCE_REVIEW_STATUS_CHANGED: 'evidence_item.review_status_changed',
+    EVIDENCE_VERSION_CREATED: 'evidence_version.created',
+    EVIDENCE_VERSION_INTEGRITY_VERIFIED: 'evidence_version.integrity_verified',
   },
 }))
 
@@ -115,17 +117,29 @@ vi.mock('@/db/client', () => {
   return {
     db: {
       select: () => ({
-        from: (table: unknown) => ({
-          where: () => ({
-            limit: async () => (tableName(table) === 'projects' && h.state.project ? [h.state.project] : []),
-          }),
-        }),
+        from: (table: unknown) => {
+          // FIBIU-04 — getLatestEvidenceVersion (lib/pipeline/evidence-versions.ts)
+          // reads .where().orderBy().limit(); evidence_versions has no rows in
+          // this fake driver (M2-COMP-01 is about the evidence_items row, not
+          // version lineage), so it always returns [] — createEvidenceVersion
+          // then computes ordinal=1, exactly the first-version case.
+          const limitEmpty = { limit: async () => [] }
+          return {
+            where: () => ({
+              limit: async () => (tableName(table) === 'projects' && h.state.project ? [h.state.project] : []),
+              orderBy: () => limitEmpty,
+            }),
+          }
+        },
       }),
 
-      insert: () => ({
-        values: () => ({
+      insert: (table: unknown) => ({
+        values: (vals: Record<string, unknown>) => ({
           returning: async () => {
             if (h.state.insertThrows) throw new Error('insert failed')
+            if (tableName(table) === 'evidence_versions') {
+              return [{ id: 'ver-1', ordinal: 1, supersedesVersionId: null, ...vals }]
+            }
             return [{ id: EVIDENCE, projectId: PROJECT, organizationId: ORG, filePath: null }]
           },
         }),
@@ -217,7 +231,10 @@ describe('a stored upload still finalises and is still indexable', () => {
     expect(h.calls.finalizeUpdates).toHaveLength(1)
     expect(h.calls.finalizeUpdates[0].values.filePath).toBe(`${PROJECT}/${EVIDENCE}/encuesta.txt`)
     expect(h.calls.compensationUpdates).toHaveLength(0)
-    expect(auditEntries().map((e) => e.action)).toEqual(['evidence_item.created'])
+    // FIBIU-04 (FIBC-006) — createFileEvidenceForProject now also creates the
+    // evidence item's first dedicated version row (evidence_version.created),
+    // alongside the pre-existing evidence_item.created event.
+    expect(auditEntries().map((e) => e.action)).toEqual(['evidence_item.created', 'evidence_version.created'])
   })
 
   it('never issues a DELETE against evidence_items', async () => {
