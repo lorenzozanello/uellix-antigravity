@@ -29,13 +29,28 @@ export default async function PrivateLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-background font-manrope print:block print:h-auto print:overflow-visible">
+      {/* Skip link — visible on focus. Mirrors app/(public)/layout.tsx: the
+          authenticated shell had no bypass affordance at all (RE-U1 U1-F07),
+          so a keyboard user had to tab through the sidebar's five links on
+          every single page navigation. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-[#0F172A] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#FF6A00]"
+      >
+        Saltar al contenido
+      </a>
+
       <Sidebar />
 
       <OnboardingCheck onboardingCompleted={Boolean(organization.onboardingCompleted)} />
 
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:overflow-visible">
         <TopBar orgName={organization.name} roleLabel={roleLabel} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 print:overflow-visible print:p-0">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 overflow-y-auto p-4 md:p-8 print:overflow-visible print:p-0"
+        >
           {children}
         </main>
       </div>
