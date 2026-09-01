@@ -11,7 +11,7 @@ type FormState =
   | { status: "error"; message: string }
 
 const inputClass =
-  "w-full rounded-lg border border-[#0F172A]/12 bg-white/80 px-4 py-3 text-sm text-[#0F172A] placeholder:text-[#5B6472] transition-premium focus:outline-none focus:border-uellix-orange/50 focus:ring-2 focus:ring-uellix-orange/15 font-manrope"
+  "w-full rounded-lg border border-uellix-deep/12 bg-white/80 px-4 py-3 text-sm text-uellix-deep placeholder:text-[#5B6472] transition-premium focus:outline-none focus:border-uellix-orange/50 focus:ring-2 focus:ring-uellix-orange/15 font-manrope"
 
 export function DemoRequestForm() {
   const [state, setState] = useState<FormState>({ status: "idle" })
@@ -46,7 +46,7 @@ export function DemoRequestForm() {
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 border border-emerald-200">
           <CheckCircle2 className="h-6 w-6 text-emerald-600" aria-hidden="true" />
         </span>
-        <p className="font-sora text-lg font-semibold text-[#0F172A]">Solicitud enviada</p>
+        <p className="font-sora text-lg font-semibold text-uellix-deep">Solicitud enviada</p>
         <p className="text-sm text-[#475569] leading-relaxed font-manrope max-w-sm">
           Gracias por tu interés. Nuestro equipo te va a contactar en las próximas 24-48 horas hábiles.
         </p>
@@ -65,28 +65,28 @@ export function DemoRequestForm() {
       </div>
 
       <div>
-        <label htmlFor="name" className="block text-xs font-semibold text-[#0F172A] mb-1.5 font-manrope">
+        <label htmlFor="name" className="block text-xs font-semibold text-uellix-deep mb-1.5 font-manrope">
           Nombre
         </label>
         <input id="name" name="name" type="text" required maxLength={200} className={inputClass} placeholder="Tu nombre completo" />
       </div>
 
       <div>
-        <label htmlFor="organization" className="block text-xs font-semibold text-[#0F172A] mb-1.5 font-manrope">
+        <label htmlFor="organization" className="block text-xs font-semibold text-uellix-deep mb-1.5 font-manrope">
           Organización
         </label>
         <input id="organization" name="organization" type="text" required maxLength={200} className={inputClass} placeholder="Fundación, empresa, universidad…" />
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-xs font-semibold text-[#0F172A] mb-1.5 font-manrope">
+        <label htmlFor="email" className="block text-xs font-semibold text-uellix-deep mb-1.5 font-manrope">
           Email
         </label>
         <input id="email" name="email" type="email" required maxLength={320} className={inputClass} placeholder="tu@organizacion.org" />
       </div>
 
       <div>
-        <label htmlFor="message" className="block text-xs font-semibold text-[#0F172A] mb-1.5 font-manrope">
+        <label htmlFor="message" className="block text-xs font-semibold text-uellix-deep mb-1.5 font-manrope">
           Contanos brevemente tu caso <span className="text-[#5B6472] font-normal">(opcional)</span>
         </label>
         <textarea id="message" name="message" rows={4} maxLength={2000} className={inputClass} placeholder="¿Qué proyecto o programa querés medir?" />

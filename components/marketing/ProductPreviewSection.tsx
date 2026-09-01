@@ -21,7 +21,7 @@ export function ProductPreviewSection() {
             <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
             Vistazo al producto
           </span>
-          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+          <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-uellix-deep">
             La trazabilidad, dentro del producto.
           </h2>
         </div>
@@ -30,11 +30,11 @@ export function ProductPreviewSection() {
           {productShots.map(({ src, alt, caption, width, height }) => (
             <figure key={src} className="flex flex-col">
               {/* Browser-chrome frame */}
-              <div className="overflow-hidden rounded-2xl border border-[#0F172A]/12 bg-white shadow-[0_32px_80px_-32px_rgba(15,23,42,0.35)]">
-                <div className="flex items-center gap-1.5 border-b border-[#0F172A]/8 bg-[var(--uellix-paper)] px-4 py-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#0F172A]/15" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#0F172A]/15" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#0F172A]/15" />
+              <div className="overflow-hidden rounded-2xl border border-uellix-deep/12 bg-white shadow-[0_32px_80px_-32px_rgba(15,23,42,0.35)]">
+                <div className="flex items-center gap-1.5 border-b border-uellix-deep/8 bg-[var(--uellix-paper)] px-4 py-2.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-uellix-deep/15" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-uellix-deep/15" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-uellix-deep/15" />
                   <span className="ml-3 font-ibm-plex-mono text-[10px] tracking-wide text-[#5B6472] lowercase">
                     app.uellix.com
                   </span>

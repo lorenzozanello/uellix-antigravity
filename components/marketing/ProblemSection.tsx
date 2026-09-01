@@ -38,7 +38,7 @@ export function ProblemSection() {
                 <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
                 El desafío
               </span>
-              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-uellix-deep">
                 La evidencia está dispersa. El impacto es difícil de defender.
               </h2>
               <p className="mt-6 text-base text-[#475569] max-w-md leading-relaxed font-manrope">
@@ -56,17 +56,17 @@ export function ProblemSection() {
                 <div
                   key={n}
                   className={`group grid grid-cols-[auto_1fr] gap-6 py-8 ${
-                    i !== 0 ? "border-t border-[#0F172A]/10" : ""
+                    i !== 0 ? "border-t border-uellix-deep/10" : ""
                   }`}
                 >
                   <span
                     aria-hidden="true"
-                    className="font-sora text-4xl sm:text-5xl font-semibold text-[#0F172A]/12 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60"
+                    className="font-sora text-4xl sm:text-5xl font-semibold text-uellix-deep/12 tabular-nums leading-none transition-premium group-hover:text-uellix-orange/60"
                   >
                     {n}
                   </span>
                   <div>
-                    <h3 className="font-sora text-xl font-semibold text-[#0F172A] mb-2">
+                    <h3 className="font-sora text-xl font-semibold text-uellix-deep mb-2">
                       {title}
                     </h3>
                     <p className="text-[15px] text-[#5B6472] leading-relaxed font-manrope max-w-lg">

@@ -51,7 +51,7 @@ export function TrustLayerSection() {
                 <span className="h-px w-8 bg-uellix-orange/30" aria-hidden="true" />
                 Centro de confianza
               </span>
-              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-[#0F172A]">
+              <h2 className="font-sora text-[clamp(2rem,4vw,3.1rem)] font-bold leading-[1.05] tracking-[-0.015em] text-uellix-deep">
                 Cada dato tiene origen, huella y contexto.
               </h2>
               <p className="mt-6 text-base text-[#475569] max-w-md leading-relaxed font-manrope">
@@ -59,12 +59,12 @@ export function TrustLayerSection() {
                 Uellix construye ese rastro en cada paso, no al final.
               </p>
 
-              <div className="mt-8 inline-flex items-center gap-3 rounded-xl border border-[#0F172A]/10 bg-white/70 backdrop-blur-sm px-4 py-3 shadow-sm">
+              <div className="mt-8 inline-flex items-center gap-3 rounded-xl border border-uellix-deep/10 bg-white/70 backdrop-blur-sm px-4 py-3 shadow-sm">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 border border-emerald-200">
                   <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-[#0F172A] font-sora">Listo para revisión</p>
+                  <p className="text-sm font-semibold text-uellix-deep font-sora">Listo para revisión</p>
                   <p className="font-ibm-plex-mono text-[10px] text-[#5B6472] tracking-wide uppercase">audit-ready · trazable</p>
                 </div>
               </div>
@@ -79,22 +79,22 @@ export function TrustLayerSection() {
               viewBox="0 0 120 120"
               className="pointer-events-none absolute -right-2 -top-12 z-0 hidden h-32 w-32 -rotate-[9deg] opacity-[0.08] sm:block lg:-right-6 lg:h-36 lg:w-36"
             >
-              <circle cx="60" cy="60" r="56" fill="none" stroke="#0F172A" strokeWidth="1.5" />
-              <circle cx="60" cy="60" r="47" fill="none" stroke="#0F172A" strokeWidth="1" strokeDasharray="2 4" />
+              <circle cx="60" cy="60" r="56" fill="none" stroke="var(--uellix-deep)" strokeWidth="1.5" />
+              <circle cx="60" cy="60" r="47" fill="none" stroke="var(--uellix-deep)" strokeWidth="1" strokeDasharray="2 4" />
               <path id="seal-arc-path" fill="none" d="M 60 13 A 47 47 0 0 1 107 60" />
-              <text fontSize="7" letterSpacing="2.5" fill="#0F172A" className="font-ibm-plex-mono">
+              <text fontSize="7" letterSpacing="2.5" fill="var(--uellix-deep)" className="font-ibm-plex-mono">
                 <textPath href="#seal-arc-path" startOffset="1">
                   AUDIT · READY
                 </textPath>
               </text>
-              <path d="M60 42 l7 14 15 2-11 10 3 15-14-7-14 7 3-15-11-10 15-2z" fill="#0F172A" opacity="0.5" />
+              <path d="M60 42 l7 14 15 2-11 10 3 15-14-7-14 7 3-15-11-10 15-2z" fill="var(--uellix-deep)" opacity="0.5" />
             </svg>
 
             <ol className="relative flex flex-col">
               {layers.map(({ icon: Icon, tag, title, description }, i) => (
                 <li
                   key={tag}
-                  className="group relative flex gap-5 rounded-xl border border-[#0F172A]/10 bg-white/80 backdrop-blur-sm p-5 sm:p-6 card-lift"
+                  className="group relative flex gap-5 rounded-xl border border-uellix-deep/10 bg-white/80 backdrop-blur-sm p-5 sm:p-6 card-lift"
                   style={{
                     marginTop: i === 0 ? 0 : "-0.5rem",
                     zIndex: i + 1,
@@ -103,8 +103,8 @@ export function TrustLayerSection() {
                 >
                   {/* copper index */}
                   <div className="flex shrink-0 flex-col items-center gap-2">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0F172A]/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-uellix-orange/40 group-hover:bg-uellix-orange/5">
-                      <Icon className="h-4 w-4 text-[#0F172A] transition-premium group-hover:text-uellix-orange" aria-hidden="true" />
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-uellix-deep/10 bg-[var(--uellix-paper)] transition-premium group-hover:border-uellix-orange/40 group-hover:bg-uellix-orange/5">
+                      <Icon className="h-4 w-4 text-uellix-deep transition-premium group-hover:text-uellix-orange" aria-hidden="true" />
                     </span>
                     <span className="font-ibm-plex-mono text-[9px] font-bold text-[#CBD5E1] tabular-nums" aria-hidden="true">
                       0{i + 1}
@@ -112,10 +112,10 @@ export function TrustLayerSection() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <span className="inline-flex items-center rounded border border-[#0F172A]/10 bg-[var(--uellix-paper)] px-2 py-0.5 font-ibm-plex-mono text-[9px] text-[#5B6472] tracking-[0.14em] uppercase mb-2">
+                    <span className="inline-flex items-center rounded border border-uellix-deep/10 bg-[var(--uellix-paper)] px-2 py-0.5 font-ibm-plex-mono text-[9px] text-[#5B6472] tracking-[0.14em] uppercase mb-2">
                       {tag}
                     </span>
-                    <h3 className="text-base font-semibold text-[#0F172A] font-sora">{title}</h3>
+                    <h3 className="text-base font-semibold text-uellix-deep font-sora">{title}</h3>
                     <p className="mt-1 text-sm text-[#5B6472] leading-relaxed font-manrope">{description}</p>
                   </div>
                 </li>

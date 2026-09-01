@@ -34,7 +34,7 @@ export default function DemoRequestPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF6A00] shrink-0" aria-hidden="true" />
             Demo privada
           </span>
-          <h1 className="font-sora font-semibold tracking-[-0.02em] text-[#0F172A] mb-6 text-[clamp(2.2rem,4.5vw,3.2rem)] leading-[1.05]">
+          <h1 className="font-sora font-semibold tracking-[-0.02em] text-uellix-deep mb-6 text-[clamp(2.2rem,4.5vw,3.2rem)] leading-[1.05]">
             Trae un proyecto. Te mostramos cómo se convierte en un{" "}
             <span className="text-[#FF6A00]">análisis defendible.</span>
           </h1>
@@ -44,7 +44,7 @@ export default function DemoRequestPage() {
           </p>
           <ul aria-label="Incluido con Uellix" className="flex flex-col gap-2.5 mb-8">
             {benefits.map((benefit) => (
-              <li key={benefit} className="flex items-center gap-2.5 text-sm text-[#0F172A] font-manrope">
+              <li key={benefit} className="flex items-center gap-2.5 text-sm text-uellix-deep font-manrope">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#FF6A00]" aria-hidden="true" />
                 {benefit}
               </li>
@@ -57,7 +57,7 @@ export default function DemoRequestPage() {
         </div>
 
         {/* Right — form panel */}
-        <div className="rounded-2xl border border-[#0F172A]/10 bg-white/70 backdrop-blur-sm shadow-[0_24px_60px_-24px_rgba(15,23,42,0.20)] p-6 sm:p-8">
+        <div className="rounded-2xl border border-uellix-deep/10 bg-white/70 backdrop-blur-sm shadow-[0_24px_60px_-24px_rgba(15,23,42,0.20)] p-6 sm:p-8">
           <DemoRequestForm />
         </div>
       </div>

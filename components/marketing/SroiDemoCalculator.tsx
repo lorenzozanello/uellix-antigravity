@@ -49,7 +49,7 @@ export function SroiDemoCalculator() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-3xl bg-[#0F172A]/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+    <div className="w-full max-w-4xl mx-auto rounded-3xl bg-uellix-deep/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
       <div className="grid md:grid-cols-2">
         {/* Left: Inputs */}
         <div className="p-8 md:p-10 border-b md:border-b-0 md:border-r border-white/10">
@@ -128,7 +128,7 @@ export function SroiDemoCalculator() {
                 <input
                   type="email" required placeholder="Tu correo corporativo"
                   value={email} onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-uellix-orange/50 focus:ring-1 focus:ring-uellix-orange/50 transition-colors"
+                  className="w-full bg-uellix-deep border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-uellix-orange/50 focus:ring-1 focus:ring-uellix-orange/50 transition-colors"
                 />
                 <button
                   type="submit" disabled={isSubmitting}

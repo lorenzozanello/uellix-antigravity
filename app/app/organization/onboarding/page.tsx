@@ -28,7 +28,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--uellix-paper)] flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-[#0F172A]/10 p-8 md:p-12">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-uellix-deep/10 p-8 md:p-12">
         <div className="flex justify-center mb-6">
           <div className="h-12 w-12 rounded-xl bg-uellix-orange/10 flex items-center justify-center">
             <Activity className="h-6 w-6 text-uellix-orange" />
@@ -36,7 +36,7 @@ export default function OnboardingPage() {
         </div>
 
         <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold font-sora text-[#0F172A] mb-2">Bienvenido a Uellix</h1>
+          <h1 className="text-2xl font-bold font-sora text-uellix-deep mb-2">Bienvenido a Uellix</h1>
           <p className="text-[#475569] text-sm">Completa el perfil de tu organización para calibrar la Inteligencia de Impacto.</p>
         </div>
 
@@ -48,7 +48,7 @@ export default function OnboardingPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-[#0F172A] mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-uellix-deep mb-2 flex items-center gap-2">
               <Globe className="w-4 h-4 text-slate-400" />
               País de Operación Principal
             </label>
@@ -66,7 +66,7 @@ export default function OnboardingPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-[#0F172A] mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-uellix-deep mb-2 flex items-center gap-2">
               <Building className="w-4 h-4 text-slate-400" />
               Sector Principal
             </label>
@@ -84,7 +84,7 @@ export default function OnboardingPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-[#0F172A] mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-uellix-deep mb-2 flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-slate-400" />
               Moneda Base (para cálculos SROI)
             </label>
@@ -105,7 +105,7 @@ export default function OnboardingPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold h-11 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 bg-uellix-deep hover:bg-[#1E293B] text-white font-semibold h-11 rounded-lg transition-colors disabled:opacity-50"
             >
               {isSubmitting ? 'Configurando...' : 'Comenzar a usar Uellix'}
               <ArrowRight className="w-4 h-4" />
