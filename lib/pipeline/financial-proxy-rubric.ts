@@ -22,6 +22,8 @@ import { getCurrentGovernedModelVersion } from '@/lib/pipeline/governed-model-re
 import {
   getLatestFinancialProxyVersion,
   updateCurrentFinancialProxyVersion,
+  toLiveReviewStatus,
+  assertLiveVersionStatusCoupling,
   type FinancialProxyVersion,
 } from '@/lib/pipeline/financial-proxy-versions'
 import { applyMaterialChange } from '@/lib/pipeline/proxy-material-change'
@@ -220,12 +222,18 @@ export async function recordProxyRubricEvaluation(proxyId: string, input: unknow
 
     const result = await applyMaterialChange(proxyId, proxy.organizationId, current, {}, user.id, tx)
 
+    // R-B2-01 (bounded FIBIU-09 integration only — no rubric math touched):
+    // the live token is the inverse image of the fork's version status
+    // under the single frozen mapping, never a coincident literal.
+    let liveReviewStatus = proxy.reviewStatus
     if (result.forked) {
-      await tx.update(financialProxies).set({ reviewStatus: 'pending_review', updatedAt: new Date() }).where(eq(financialProxies.id, proxyId))
+      liveReviewStatus = toLiveReviewStatus(result.version.reviewStatus)
+      await tx.update(financialProxies).set({ reviewStatus: liveReviewStatus, updatedAt: new Date() }).where(eq(financialProxies.id, proxyId))
     }
 
     const updated = await updateCurrentFinancialProxyVersion(proxyId, rubricPatch, tx)
     if (!updated) throw new Error('Proxy has no version to evaluate')
+    assertLiveVersionStatusCoupling(liveReviewStatus, updated.reviewStatus)
 
     return { before: current, updated, forked: result.forked, supersededVersion: result.supersededVersion }
   })

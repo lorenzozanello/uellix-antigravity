@@ -84,7 +84,9 @@ vi.mock('@/db/client', () => {
                     ? mockDbData.insertedGlobalSource
                     : mockDbData.inserted
                   : tableName === 'financial_proxy_versions'
-                    ? mockDbData.insertedVersion
+                    // A real RETURNING echoes the written values (R-B2-01's
+                    // coupling assertion reads the written reviewStatus back).
+                    ? { ...mockDbData.insertedVersion, ...values }
                     : mockDbData.inserted])
             ),
             });
@@ -103,7 +105,7 @@ vi.mock('@/db/client', () => {
           return ({
           where: vi.fn().mockImplementation(() => ({
             returning: vi.fn().mockImplementation(() =>
-              Promise.resolve([tableName === 'financial_proxy_versions' ? mockDbData.updatedVersion : mockDbData.updated])
+              Promise.resolve([tableName === 'financial_proxy_versions' ? { ...mockDbData.updatedVersion, ...values } : mockDbData.updated])
             ),
           })),
           });

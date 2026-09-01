@@ -35,6 +35,8 @@ import {
   getLatestFinancialProxyVersion,
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
+  toVersionReviewStatus,
+  assertLiveVersionStatusCoupling,
 } from '@/lib/pipeline/financial-proxy-versions'
 import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric'
 import { convertToUsd } from '@/lib/pipeline/fx'
@@ -132,6 +134,9 @@ export async function createGlobalFinancialProxy(input: unknown) {
   const admin = await requireAdminAccess()
   const data = FinancialProxyInput.parse(input)
 
+  // R-B2-01 — live token is the source of truth at creation; the version
+  // token is its image under the single frozen mapping.
+  const initialLiveStatus = 'suggested' as const
   const [row] = await db
     .insert(financialProxies)
     .values({
@@ -150,7 +155,7 @@ export async function createGlobalFinancialProxy(input: unknown) {
       methodology: data.methodology,
       confidenceLevel: data.confidenceLevel,
       methodologicalRisk: data.methodologicalRisk,
-      reviewStatus: 'suggested',
+      reviewStatus: initialLiveStatus,
       createdBy: admin.id,
     })
     .returning()
@@ -177,9 +182,10 @@ export async function createGlobalFinancialProxy(input: unknown) {
     relevanceJustification: data.relevanceJustification ?? null,
     documentedTransformations: data.documentedTransformations ?? null,
     consultationDate: data.consultationDate ? new Date(data.consultationDate) : null,
-    reviewStatus: 'draft',
+    reviewStatus: toVersionReviewStatus(initialLiveStatus),
     createdBy: admin.id,
   })
+  assertLiveVersionStatusCoupling(row.reviewStatus, version.reviewStatus)
 
   await logAuditAction({
     actorUserId: admin.id,
@@ -233,16 +239,19 @@ export async function updateGlobalProxyReviewStatus(
 
     // FIBIU-08 (FIBC-012) — sealed on the version, in the same transaction,
     // exactly like the org-scoped path (lib/pipeline/proxies.ts).
+    // R-B2-01 — live token crosses into the version write ONLY through the
+    // frozen mapping; coupling asserted inside the same transaction.
     const version = await updateCurrentFinancialProxyVersion(
       proxyId,
       {
-        reviewStatus: newStatus,
+        reviewStatus: toVersionReviewStatus(newStatus),
         ...(newStatus === 'approved'
           ? { reviewerId: admin.id, reviewedAt: new Date(), ...usdFields }
           : {}),
       },
       tx
     )
+    if (version) assertLiveVersionStatusCoupling(updated.reviewStatus, version.reviewStatus)
     return { proxy, updated, version }
   }
 
@@ -465,7 +474,8 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
           methodologicalRisk: sourceVersion?.methodologicalRisk ?? null,
           rubricVersion: sourceVersion?.rubricVersion ?? null,
           exceptionalDefendibilityDetermination: sourceVersion?.exceptionalDefendibilityDetermination ?? null,
-          reviewStatus: 'approved',
+          // R-B2-01 — version token is the image of the clone's live token.
+          reviewStatus: toVersionReviewStatus(clonedProxy.reviewStatus),
           createdBy: admin.id,
         },
         tx
@@ -474,11 +484,16 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
         .update(financialProxyVersions)
         .set({ reviewerId: admin.id, reviewedAt: now })
         .where(eq(financialProxyVersions.id, clonedVersion.id))
+      assertLiveVersionStatusCoupling(clonedProxy.reviewStatus, clonedVersion.reviewStatus)
+      // R-B2-01 — the original's live row was set to 'approved' above; its
+      // version takes that token's image, never the literal.
+      const originalLiveStatus = 'approved' as const
       const originalVersion = await updateCurrentFinancialProxyVersion(
         proxyId,
-        { reviewStatus: 'approved', reviewerId: admin.id, reviewedAt: now, ...usdFields },
+        { reviewStatus: toVersionReviewStatus(originalLiveStatus), reviewerId: admin.id, reviewedAt: now, ...usdFields },
         tx
       )
+      if (originalVersion) assertLiveVersionStatusCoupling(originalLiveStatus, originalVersion.reviewStatus)
 
       return { clonedSource, clonedProxy, clonedVersion, originalVersion }
     },

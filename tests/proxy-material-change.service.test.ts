@@ -245,7 +245,9 @@ describe('updateOrganizationFinancialProxy — atomic fork on material change (F
     // rubric ratings, nor the exceptional determination.
     expect(mockDbData.financialProxyVersions).toHaveLength(2)
     const forked = mockDbData.financialProxyVersions.find((v) => v.id !== 'version-approved-1')
-    expect(forked.reviewStatus).toBe('draft')
+    // R-B2-01 — the successor opens as 'under_review', the mapped image of
+    // the live row's 'pending_review' (LIVE_VERSION_STATUS_COUPLING).
+    expect(forked.reviewStatus).toBe('under_review')
     expect(forked.reviewerId).toBeUndefined()
     expect(forked.reviewedAt).toBeUndefined()
     expect(forked.c1SourceQualityVerifiability).toBeNull()

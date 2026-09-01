@@ -17,6 +17,78 @@ import { financialProxyVersions } from '@/db/schema'
 
 export type FinancialProxyVersion = typeof financialProxyVersions.$inferSelect
 
+// ---------------------------------------------------------------------------
+// W2-B2-R1 / R-B2-01 — the SINGLE crossing point between the two review-status
+// vocabularies (W2_B2_REMEDIATION_AUTHORITY_v1.0.0
+// live_to_version_review_status_mapping, FROZEN).
+//
+// financial_proxies.review_status is the pre-existing LIVE vocabulary;
+// financial_proxy_versions.review_status is the authority-derived VERSION
+// vocabulary (FIBC-013 / FIBIU-10 name 'draft'/'under_review' literally). The
+// map is total, injective and onto — a bijection — so it has a well-defined
+// inverse. No call site may pass a token across the boundary by any other
+// means; a verbatim copy is prohibited even where the two tokens coincide
+// (approved/rejected/archived), because a coincidental match is not a mapping
+// and would silently break if either vocabulary changed.
+// ---------------------------------------------------------------------------
+
+export const LIVE_REVIEW_STATUSES = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'] as const
+export type LiveReviewStatus = (typeof LIVE_REVIEW_STATUSES)[number]
+
+export const VERSION_REVIEW_STATUSES = ['draft', 'under_review', 'approved', 'rejected', 'archived'] as const
+export type VersionReviewStatus = (typeof VERSION_REVIEW_STATUSES)[number]
+
+const LIVE_TO_VERSION: Readonly<Record<LiveReviewStatus, VersionReviewStatus>> = {
+  suggested: 'draft',
+  pending_review: 'under_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  archived: 'archived',
+}
+
+const VERSION_TO_LIVE: Readonly<Record<VersionReviewStatus, LiveReviewStatus>> = {
+  draft: 'suggested',
+  under_review: 'pending_review',
+  approved: 'approved',
+  rejected: 'rejected',
+  archived: 'archived',
+}
+
+/** live -> version. Throws on any token outside the live vocabulary (fail closed). */
+export function toVersionReviewStatus(live: string): VersionReviewStatus {
+  const mapped = (LIVE_TO_VERSION as Record<string, VersionReviewStatus | undefined>)[live]
+  if (!mapped) throw new Error(`Unmapped live review status "${live}" — not a financial_proxies.review_status token`)
+  return mapped
+}
+
+/** version -> live (the inverse image). Throws on any token outside the version vocabulary. */
+export function toLiveReviewStatus(version: string): LiveReviewStatus {
+  const mapped = (VERSION_TO_LIVE as Record<string, LiveReviewStatus | undefined>)[version]
+  if (!mapped) throw new Error(`Unmapped version review status "${version}" — not a financial_proxy_versions.review_status token`)
+  return mapped
+}
+
+/**
+ * LIVE_VERSION_STATUS_COUPLING (frozen): at every transaction commit boundary
+ * the live row's review_status MUST equal the inverse image of the CURRENT
+ * version's review_status. Superseded versions keep their own sealed status
+ * and are NOT constrained — that is what lets an approved V1 survive beside a
+ * pending V2. Called at every transition site rather than trusting call-site
+ * discipline; a violation is a bug in the transition, so it throws and the
+ * enclosing transaction rolls back.
+ */
+export function assertLiveVersionStatusCoupling(
+  liveReviewStatus: string,
+  currentVersionReviewStatus: string,
+): void {
+  const expectedVersion = toVersionReviewStatus(liveReviewStatus)
+  if (expectedVersion !== currentVersionReviewStatus) {
+    throw new Error(
+      `LIVE_VERSION_STATUS_COUPLING violated: live "${liveReviewStatus}" maps to version "${expectedVersion}" but the current version is "${currentVersionReviewStatus}"`
+    )
+  }
+}
+
 /**
  * Same shape as lib/pipeline/fx.ts's FxRateExecutor — a `db`-or-transaction
  * handle. Approval sealing (FIBC-012) must commit atomically with the

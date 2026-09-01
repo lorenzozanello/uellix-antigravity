@@ -16,6 +16,9 @@ import {
   getLatestFinancialProxyVersion,
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
+  toVersionReviewStatus,
+  toLiveReviewStatus,
+  assertLiveVersionStatusCoupling,
 } from '@/lib/pipeline/financial-proxy-versions';
 import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric';
 import { applyMaterialChange, materialCategoriesTouched, MATERIAL_CATEGORY_LABELS } from '@/lib/pipeline/proxy-material-change';
@@ -353,6 +356,9 @@ export async function createOrganizationFinancialProxy(input: unknown) {
   // The organisation NEVER comes from the input — only from the session — and
   // the named source must be usable by that organisation.
   await requireUsableProxySource(data.sourceId, ctx.organization.id);
+  // R-B2-01 — the live token is the source of truth at creation; the version
+  // token is its image under the single frozen mapping, never a literal.
+  const initialLiveStatus = 'suggested' as const;
   const row = await db.insert(financialProxies).values({
     organizationId: ctx.organization.id,
     sourceId: data.sourceId,
@@ -369,7 +375,7 @@ export async function createOrganizationFinancialProxy(input: unknown) {
     methodology: data.methodology,
     confidenceLevel: data.confidenceLevel,
     methodologicalRisk: data.methodologicalRisk,
-    reviewStatus: 'suggested',
+    reviewStatus: initialLiveStatus,
     createdBy: ctx.user.id,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -397,9 +403,10 @@ export async function createOrganizationFinancialProxy(input: unknown) {
     relevanceJustification: data.relevanceJustification ?? null,
     documentedTransformations: data.documentedTransformations ?? null,
     consultationDate: data.consultationDate ? new Date(data.consultationDate) : null,
-    reviewStatus: 'draft',
+    reviewStatus: toVersionReviewStatus(initialLiveStatus),
     createdBy: ctx.user.id,
   });
+  assertLiveVersionStatusCoupling(row.reviewStatus, version.reviewStatus);
 
   await logAuditAction({
     organizationId: ctx.organization.id,
@@ -503,11 +510,12 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
     }
 
     // Re-review gate: an approved proxy whose material fields change drops
-    // back to pending_review so no calculation uses an unreviewed value
-    // under an "approved" label. `forked` IS this condition now (a fork
-    // only ever happens when the current version was approved and the
-    // change is material) — never a separately re-derived boolean that
-    // could drift from it.
+    // back into the review queue so no calculation uses an unreviewed value
+    // under an "approved" label. `forked` IS this condition (a fork only
+    // ever happens when the current version was approved and the change is
+    // material). R-B2-01: the live token is the INVERSE IMAGE of the fork's
+    // version status under the frozen mapping ('under_review' ->
+    // 'pending_review'), never a literal that merely happens to coincide.
     const resetReview = forked;
 
     // CL-2B/CL-2C (PROX-01) — a change to value/currency/referenceYear makes
@@ -521,10 +529,11 @@ export async function updateOrganizationFinancialProxy(proxyId: string, input: u
 
     const updated = await tx.update(financialProxies).set({
       ...data,
-      ...(resetReview ? { reviewStatus: 'pending_review' as const } : {}),
+      ...(resetReview && newVersion ? { reviewStatus: toLiveReviewStatus(newVersion.reviewStatus) } : {}),
       ...(usdDerivationChange ? { valueUsd: null, fxRateId: null } : {}),
       updatedAt: new Date(),
     }).where(eq(financialProxies.id, proxyId)).returning().then(r => r[0]);
+    if (newVersion) assertLiveVersionStatusCoupling(updated.reviewStatus, newVersion.reviewStatus);
     return { proxy, updated, forked, supersededVersion, newVersion };
   });
 
@@ -606,16 +615,21 @@ export async function updateFinancialProxyReviewStatus(
     // the proxy row's own status change — never a separate later write that
     // could observe a torn state between "proxy says approved" and "no
     // version records who approved it or when."
+    // R-B2-01 — the live token crosses into the version write ONLY through
+    // the frozen mapping (B2-AR-B1: 'suggested'/'pending_review' violated the
+    // version CHECK when copied verbatim), and the coupling invariant is
+    // asserted inside the same transaction so a violation rolls it back.
     const version = await updateCurrentFinancialProxyVersion(
       proxyId,
       {
-        reviewStatus: newStatus,
+        reviewStatus: toVersionReviewStatus(newStatus),
         ...(newStatus === 'approved'
           ? { reviewerId: ctx.user.id, reviewedAt: new Date(), ...usdFields }
           : {}),
       },
       tx
     );
+    if (version) assertLiveVersionStatusCoupling(updated.reviewStatus, version.reviewStatus);
     return { proxy, updated, version };
   };
 
@@ -652,12 +666,36 @@ export async function updateFinancialProxyReviewStatus(
 
 export async function archiveFinancialProxy(proxyId: string) {
   const ctx = await requireOrganizationAccess();
-  const proxy = await db.select().from(financialProxies).where(eq(financialProxies.id, proxyId)).then(r => r[0]);
-  if (!proxy) throw new Error('Proxy not found');
-  if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
-  const updated = await db.update(financialProxies).set({ reviewStatus: 'archived', updatedAt: new Date() })
-    .where(eq(financialProxies.id, proxyId))
-    .returning().then(r => r[0]);
+  // R-B2-01 — archive is the fourth transition site. It previously updated
+  // only the live row and left the current version 'approved', breaking the
+  // coupling invariant and leaving an approved version reachable by binding.
+  // Now the current version transitions in the SAME transaction, through
+  // the same mapping, with the coupling asserted before commit.
+  const archivedLiveStatus = 'archived' as const;
+  const { proxy, updated, version } = await withLockedFinancialProxy(proxyId, async (tx, proxy) => {
+    if (proxy.organizationId !== ctx.organization.id) throw new Error('Forbidden');
+    const updated = await tx.update(financialProxies).set({ reviewStatus: archivedLiveStatus, updatedAt: new Date() })
+      .where(eq(financialProxies.id, proxyId))
+      .returning().then(r => r[0]);
+    const version = await updateCurrentFinancialProxyVersion(
+      proxyId,
+      { reviewStatus: toVersionReviewStatus(archivedLiveStatus) },
+      tx
+    );
+    if (version) assertLiveVersionStatusCoupling(updated.reviewStatus, version.reviewStatus);
+    return { proxy, updated, version };
+  });
+
+  if (version) {
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'financial_proxy_version',
+      entityId: version.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED,
+      afterJson: version,
+    });
+  }
 
   await logAuditAction({
     organizationId: ctx.organization.id,

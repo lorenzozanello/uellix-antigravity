@@ -12,6 +12,7 @@
 
 import {
   createFinancialProxyVersion,
+  toVersionReviewStatus,
   type FinancialProxyVersion,
   type FinancialProxyVersionExecutor,
   type CreateFinancialProxyVersionInput,
@@ -171,7 +172,13 @@ export async function applyMaterialChange(
       relevanceJustification: versionPatch.relevanceJustification ?? currentVersion.relevanceJustification,
       documentedTransformations: versionPatch.documentedTransformations ?? currentVersion.documentedTransformations,
       consultationDate: versionPatch.consultationDate ?? currentVersion.consultationDate,
-      reviewStatus: 'draft',
+      // R-B2-01 (LIVE_VERSION_STATUS_COUPLING consequence_for_fork) — every
+      // fork site sets the live row back into the review queue
+      // ('pending_review'), so the successor opens as that token's image,
+      // 'under_review'. FIBC-013/FIBIU-10 permit either 'draft' or
+      // 'under_review'; 'under_review' is the one the coupling invariant
+      // admits, derived through the mapping, never a literal.
+      reviewStatus: toVersionReviewStatus('pending_review'),
       createdBy: actorId,
     },
     executor,

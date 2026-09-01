@@ -90,8 +90,10 @@ vi.mock('@/db/client', () => {
           values: vi.fn().mockImplementation((values) => {
             mockDbData.lastInsertValues = values;
             return {
+              // A real RETURNING echoes the written values (R-B2-01's
+              // coupling assertion reads the written reviewStatus back).
               returning: vi.fn().mockImplementation(() =>
-                Promise.resolve([tableName === 'financial_proxy_versions' ? mockDbData.insertedVersion : mockDbData.inserted])
+                Promise.resolve([tableName === 'financial_proxy_versions' ? { ...mockDbData.insertedVersion, ...values } : mockDbData.inserted])
               ),
             };
           }),
@@ -109,7 +111,7 @@ vi.mock('@/db/client', () => {
           return {
             where: vi.fn().mockImplementation(() => ({
               returning: vi.fn().mockImplementation(() =>
-                Promise.resolve([tableName === 'financial_proxy_versions' ? mockDbData.updatedVersion : mockDbData.updated])
+                Promise.resolve([tableName === 'financial_proxy_versions' ? { ...mockDbData.updatedVersion, ...values } : mockDbData.updated])
               ),
             })),
           };
@@ -129,6 +131,7 @@ import {
   createOrganizationFinancialProxy,
   updateOrganizationFinancialProxy,
   updateFinancialProxyReviewStatus,
+  archiveFinancialProxy,
   fingerprintFinancialProxyApprovalState,
   assignProxyToOutcome,
   archiveOutcomeProxyAssignment,
@@ -797,6 +800,50 @@ describe('Financial Proxies Service', () => {
     mockDbData.financialProxies = [proxy];
 
     await expect(updateFinancialProxyReviewStatus(PROXY_UUID, 'approved', reviewedStateOf(proxy))).rejects.toThrow('Forbidden');
+  });
+});
+
+/*** R-B2-01 — archive is the fourth transition site ***/
+describe('archiveFinancialProxy — LIVE_VERSION_STATUS_COUPLING at the archive site (R-B2-01)', () => {
+  it('transitions the CURRENT version to archived in the same transaction as the live row, through the mapping', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: 'org-3' }, user: { id: 'user-3' }, membership: { role: 'organization_admin' } } as any);
+    const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'approved', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [{ id: 'version-1', financialProxyId: PROXY_UUID, ordinal: 1, reviewStatus: 'approved' }];
+    mockDbData.updated = { ...proxy, reviewStatus: 'archived' };
+    mockDbData.updatedVersion = { id: 'version-1', reviewStatus: 'archived' };
+
+    await archiveFinancialProxy(PROXY_UUID);
+
+    expect(mockDbData.lastUpdateValues.reviewStatus).toBe('archived');
+    // The version is written 'archived' — the mapped image — never left 'approved'.
+    expect(mockDbData.lastVersionUpdateValues.reviewStatus).toBe('archived');
+    const { logAuditAction } = await import('@/lib/audit/logger');
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'financial_proxy_version.review_status_changed' }));
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'financial_proxy.archived' }));
+  });
+
+  it('IDOR: refuses to archive a proxy owned by another organization', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: 'org-99' }, user: { id: 'user-99' }, membership: { role: 'organization_admin' } } as any);
+    mockDbData.financialProxies = [{ id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'approved' }];
+
+    await expect(archiveFinancialProxy(PROXY_UUID)).rejects.toThrow('Forbidden');
+    expect(mockDbData.lastUpdateValues).toBeNull();
+  });
+
+  it('a never-versioned legacy proxy still archives its live row (no version to couple to)', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: 'org-3' }, user: { id: 'user-3' }, membership: { role: 'organization_admin' } } as any);
+    const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'approved' };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [];
+    mockDbData.updated = { ...proxy, reviewStatus: 'archived' };
+
+    const result = await archiveFinancialProxy(PROXY_UUID);
+    expect(result.reviewStatus).toBe('archived');
+    expect(mockDbData.lastVersionUpdateValues).toBeNull();
   });
 });
 

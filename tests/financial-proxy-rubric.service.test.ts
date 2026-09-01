@@ -318,8 +318,9 @@ describe('recordProxyRubricEvaluation — governed write path', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    mockDbData.financialProxies = [{ id: PROXY_ID, organizationId: ORG.id }]
-    mockDbData.financialProxyVersions = [{ id: 'ver-1', financialProxyId: PROXY_ID, ordinal: 1 }]
+    // R-B2-01 — realistic coupled statuses (live 'suggested' <-> version 'draft').
+    mockDbData.financialProxies = [{ id: PROXY_ID, organizationId: ORG.id, reviewStatus: 'suggested' }]
+    mockDbData.financialProxyVersions = [{ id: 'ver-1', financialProxyId: PROXY_ID, ordinal: 1, reviewStatus: 'draft' }]
 
     const { requireOrganizationAccess } = await import('@/lib/auth/session')
     vi.mocked(requireOrganizationAccess).mockResolvedValue({
@@ -441,7 +442,8 @@ describe('recordProxyRubricEvaluation — governed write path', () => {
     expect(approvedAfter).toEqual(before)
     expect(mockDbData.financialProxyVersions).toHaveLength(2)
     const forked = mockDbData.financialProxyVersions.find((v: any) => v.id !== 'ver-approved')
-    expect(forked.reviewStatus).toBe('draft')
+    // R-B2-01 — fork opens as 'under_review' (mapped image of live 'pending_review').
+    expect(forked.reviewStatus).toBe('under_review')
     expect(forked.confidenceScore).toBe(100)
 
     expect(mockDbData.financialProxies[0].reviewStatus).toBe('pending_review')
