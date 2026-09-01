@@ -20,6 +20,8 @@
 // success.
 
 import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 
 // ---------------------------------------------------------------------------
 // Pure composition logic — testable without spawning real processes.
@@ -93,7 +95,56 @@ function quoteShellArg(arg: string): string {
   return `"${arg}"`
 }
 
+// ---------------------------------------------------------------------------
+// HPO-ODS-TOOLCHAIN-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json).
+//
+// Measured directly: `pnpm run typecheck` (this project's own "tsc
+// --noEmit" script) returns exit 0 via a GLOBALLY installed tsc even in a
+// directory with node_modules entirely absent — pnpm's own script
+// execution does not fail closed here. A governed poststate that trusted
+// that exit code would report a green typecheck for a worktree whose
+// project dependencies do not exist.
+//
+// require.resolve('typescript', {paths:[repoRoot]}) was tried first and
+// rejected: measured, under this project's tsx runtime, to resolve into
+// an entirely unrelated sibling project's node_modules instead of
+// failing — a worse false positive than the bug it would guard against.
+// Direct filesystem inspection has no module-resolution algorithm and no
+// PATH lookup to go wrong.
+// ---------------------------------------------------------------------------
+
+export interface ToolchainCheckResult {
+  present: boolean
+  reason?: string
+}
+
+/** Pure (aside from the fs reads): proves the local project's own TypeScript package is installed, by identity, not merely by a directory existing. */
+export function checkLocalProjectToolchain(repoRoot: string): ToolchainCheckResult {
+  const marker = path.join(repoRoot, 'node_modules', 'typescript', 'package.json')
+  if (!existsSync(marker)) {
+    return { present: false, reason: `local TypeScript toolchain not found at ${marker} — run: pnpm install --frozen-lockfile` }
+  }
+  let pkg: unknown
+  try {
+    pkg = JSON.parse(readFileSync(marker, 'utf8'))
+  } catch {
+    return { present: false, reason: `${marker} exists but is not valid JSON` }
+  }
+  const name = (pkg as { name?: unknown } | null)?.name
+  if (name !== 'typescript') {
+    return { present: false, reason: `${marker} does not declare package name "typescript" (found: ${JSON.stringify(name)})` }
+  }
+  return { present: true }
+}
+
 export function realRunner(pnpmArgs: string[], cwd: string): number {
+  if (pnpmArgs[0] === 'run' && pnpmArgs[1] === 'typecheck') {
+    const toolchain = checkLocalProjectToolchain(cwd)
+    if (!toolchain.present) {
+      console.error(`ods:poststate: local project toolchain prerequisite failed — ${toolchain.reason}`)
+      return 1
+    }
+  }
   const command = ['pnpm', ...pnpmArgs].map(quoteShellArg).join(' ')
   const res = spawnSync(command, { cwd, stdio: 'inherit', shell: true })
   return res.status ?? 1

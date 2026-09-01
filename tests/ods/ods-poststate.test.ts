@@ -6,10 +6,18 @@
 // and dependency-injected is for). The real subprocess path (quoting,
 // pnpm-shim invocation) is proven separately with one real, cheap command.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { spawnSync } from 'node:child_process'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { composeSteps, runComposedSteps, realRunner, type StepRunner } from '../../scripts/ods-poststate'
+import {
+  composeSteps,
+  runComposedSteps,
+  realRunner,
+  checkLocalProjectToolchain,
+  type StepRunner,
+} from '../../scripts/ods-poststate'
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..')
 
@@ -144,5 +152,118 @@ describe('realRunner — real subprocess, pnpm-shim + quoting proof', () => {
   it('realRunner returns 0 for a real passing pnpm script', () => {
     const exitCode = realRunner(['run', 'authority:seal:verify'], REPO_ROOT)
     expect(exitCode).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-TOOLCHAIN-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json).
+//
+// Measured directly before implementing: a fixture directory with a
+// package.json "typecheck": "tsc --noEmit" script and NO node_modules
+// still returned exit 0 from `pnpm run typecheck` alone, via a globally
+// installed tsc on PATH. That is the false-PASS these tests prove closed.
+// ---------------------------------------------------------------------------
+
+/** A disposable fixture that reproduces "a fresh worktree with no `pnpm install` yet run" — a real package.json + tsconfig + source file, deliberately no node_modules. */
+function makeToolchainAbsentFixture(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), 'ods-toolchain-fixture-'))
+  writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'probe', version: '1.0.0', scripts: { typecheck: 'tsc --noEmit' } }))
+  writeFileSync(path.join(dir, 'tsconfig.json'), JSON.stringify({ compilerOptions: { noEmit: true, strict: true } }))
+  writeFileSync(path.join(dir, 'a.ts'), 'export const x: number = 1\n')
+  return dir
+}
+
+describe('checkLocalProjectToolchain — pure filesystem check', () => {
+  let dir: string
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('POSITIVE: present=true for the real ODS project (typescript is a real devDependency here)', () => {
+    const result = checkLocalProjectToolchain(REPO_ROOT)
+    expect(result.present).toBe(true)
+  })
+
+  it('NEGATIVE (TC-1 basis): present=false when node_modules/typescript is entirely absent', () => {
+    dir = mkdtempSync(path.join(tmpdir(), 'ods-toolchain-empty-'))
+    const result = checkLocalProjectToolchain(dir)
+    expect(result.present).toBe(false)
+    expect(result.reason).toContain('node_modules')
+    expect(result.reason).toContain('pnpm install --frozen-lockfile')
+  })
+
+  it('NEGATIVE: present=false when the marker file exists but is not valid JSON', () => {
+    dir = mkdtempSync(path.join(tmpdir(), 'ods-toolchain-badjson-'))
+    const nm = path.join(dir, 'node_modules', 'typescript')
+    mkdirSync(nm, { recursive: true })
+    writeFileSync(path.join(nm, 'package.json'), 'not json')
+    const result = checkLocalProjectToolchain(dir)
+    expect(result.present).toBe(false)
+    expect(result.reason).toContain('not valid JSON')
+  })
+
+  it('NEGATIVE: present=false when the marker declares a different package name', () => {
+    dir = mkdtempSync(path.join(tmpdir(), 'ods-toolchain-wrongname-'))
+    const nm = path.join(dir, 'node_modules', 'typescript')
+    mkdirSync(nm, { recursive: true })
+    writeFileSync(path.join(nm, 'package.json'), JSON.stringify({ name: 'not-typescript' }))
+    const result = checkLocalProjectToolchain(dir)
+    expect(result.present).toBe(false)
+    expect(result.reason).toContain('not-typescript')
+  })
+})
+
+describe('realRunner + checkLocalProjectToolchain — TC-1/TC-2/GLOBAL_TSC_FALSE_PASS_BLOCKED', () => {
+  let dir: string
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('GLOBAL_TSC_FALSE_PASS_BLOCKED: confirms the bug this guards against is real, then confirms the guard blocks it', () => {
+    dir = makeToolchainAbsentFixture()
+
+    // Reproduce the measured bug directly: `pnpm run typecheck` alone,
+    // with no guard, returns 0 here via a global tsc on PATH.
+    const unguarded = spawnSync('pnpm run typecheck', { cwd: dir, encoding: 'utf8', shell: true })
+    expect(unguarded.status).toBe(0) // the false PASS, reproduced
+
+    // The same fixture, through realRunner's guard, must NOT return 0.
+    const guarded = realRunner(['run', 'typecheck'], dir)
+    expect(guarded).not.toBe(0)
+  })
+
+  it('TC-1 (NEGATIVE): realRunner fails the typecheck step when the local toolchain is absent', () => {
+    dir = makeToolchainAbsentFixture()
+    const exitCode = realRunner(['run', 'typecheck'], dir)
+    expect(exitCode).toBe(1)
+  })
+
+  it('TC-2 (POSITIVE): realRunner executes the real local typecheck when the toolchain is present', () => {
+    const exitCode = realRunner(['run', 'typecheck'], REPO_ROOT)
+    expect(exitCode).toBe(0)
+  }, 60_000)
+
+  it('the toolchain guard is scoped to the typecheck step only — other steps are unaffected', () => {
+    dir = makeToolchainAbsentFixture()
+    // ods:scope isn't gated by this guard at all; it simply isn't a
+    // resolvable script in this bare fixture, which is a DIFFERENT,
+    // unrelated failure mode (pnpm script-not-found) than the toolchain
+    // guard's own reason string.
+    const exitCode = realRunner(['run', 'ods:scope'], dir)
+    expect(exitCode).not.toBe(0)
+  })
+})
+
+describe('TC-4: local-toolchain prerequisite failure propagates to overall pass=false', () => {
+  let dir: string
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('a single-step composition using the REAL runner against a toolchain-absent fixture fails overall', () => {
+    dir = makeToolchainAbsentFixture()
+    const { pass, results } = runComposedSteps([{ name: 'typecheck', pnpmArgs: ['run', 'typecheck'] }], realRunner, dir)
+    expect(pass).toBe(false)
+    expect(results[0].exitCode).not.toBe(0)
   })
 })
