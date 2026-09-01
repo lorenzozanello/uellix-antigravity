@@ -15,6 +15,9 @@ import {
   createEvidenceVersion,
   getLatestEvidenceVersion,
   updateCurrentEvidenceVersion,
+  listEvidenceVersions,
+  markEvidenceVersionsErasureState,
+  eraseEvidenceVersionContent,
 } from '@/lib/pipeline/evidence-versions'
 
 // Types
@@ -887,17 +890,34 @@ const RequestErasureSchema = z.object({
  * explicit stage-E hardening, deliberately not executed in Wave 2 B1. This
  * function is an ALTERNATIVE governed route, not a repair of that one.
  *
- * Synchronous by design: this repository has no background job runner, so
- * `erasure_requested`/`erasure_in_progress` are logged but not persisted as
- * an intermediate evidence_versions.erasure_state — the operation resolves
- * to a terminal state (erasure_complete/erasure_partial) in the same call.
- * `erasure_blocked` is representable in the schema (FIBDB-031's CHECK) and
- * in AUDIT_ACTIONS for governed-vocabulary completeness, but has no
- * reachable trigger at stage A: the one real "conflict with an immutable
- * artifact" this baseline names — stage-E approved/used-version immutability
- * — is not yet enforced (deferred, same stage rule as FIBDB-032/033), and no
- * grounding derivatives exist in this repository (docs/19 not activated) to
- * conflict with either. It becomes reachable once either substrate lands.
+ * W2-B1-R5 (M-3, M-4) — sequencing and coverage:
+ *
+ *   DURABLE GOVERNANCE RECORD FIRST -> external/content operation ->
+ *   DURABLE terminal/partial update
+ *
+ * Every version is marked `erasure_requested` (a real evidence_versions row
+ * write, not just a log line) BEFORE the storage object is touched. If the
+ * process died between those two steps, the durable record already shows
+ * an erasure was requested and in progress for every version it names —
+ * never the reverse (an external delete that already happened with no
+ * durable trace of it). This is still synchronous, single-call, no new
+ * saga framework: the "before" write and the "after" write are two
+ * ordinary awaited statements around the one external operation this
+ * function performs, not a resumable multi-step workflow.
+ *
+ * COVERAGE (M-4): sweeps every evidence_versions row for this evidence
+ * item, not only the current one. An older version's persisted content is
+ * exactly as much the evidence item's history as the current version's —
+ * FIBC-009 does not say "erase the current version's content."
+ *
+ * `erasure_blocked` (AC-3) is representable in the schema (FIBDB-031's
+ * CHECK) and in AUDIT_ACTIONS for governed-vocabulary completeness, but
+ * still has NO reachable trigger at stage A: the one real "conflict with an
+ * immutable artifact" this baseline names — stage-E approved/used-version
+ * immutability — is not yet enforced (deferred, same stage rule as
+ * FIBDB-032/033), and no grounding derivatives exist in this repository
+ * (docs/19 not activated) to conflict with either. Nothing below emits it;
+ * it becomes reachable once either substrate lands, not before.
  */
 export async function requestGovernedEvidenceErasure(projectId: string, evidenceId: string, input: unknown) {
   const { membership, organization, user } = await requireOrganizationAccess()
@@ -908,27 +928,40 @@ export async function requestGovernedEvidenceErasure(projectId: string, evidence
   await verifyProjectOwnership(projectId, organization.id)
   const evidence = await getEvidenceByIdForProject(projectId, evidenceId)
 
-  const version = await getLatestEvidenceVersion(evidenceId)
-  if (!version) throw new Error('Evidence has no version to erase')
-  if (version.erasureState === 'erasure_complete' || version.erasureState === 'erasure_partial') {
+  const allVersions = await listEvidenceVersions(evidenceId)
+  if (!allVersions.length) throw new Error('Evidence has no version to erase')
+  const current = allVersions[allVersions.length - 1]
+  if (current.erasureState === 'erasure_complete' || current.erasureState === 'erasure_partial') {
     throw new Error('Evidence content has already been erased')
   }
+  // Forward-only (schema invariant, evidence_versions_erasure_state_check
+  // comment): a version already at the terminal erasure_complete state from
+  // an earlier sweep is never regressed to erasure_requested by this one.
+  const versionsToSweep = allVersions.filter((v) => v.erasureState !== 'erasure_complete')
 
+  // STEP 1 — DURABLE GOVERNANCE RECORD FIRST, before any external or
+  // content-mutating operation.
+  await markEvidenceVersionsErasureState(versionsToSweep.map((v) => v.id), 'erasure_requested')
+
+  // AC-1 — at THIS point no tombstone exists yet; the entity this action is
+  // actually about is the evidence item, not a tombstone row that has not
+  // been created. entityType now matches entityId's real referent.
   await logAuditAction({
     organizationId: organization.id,
     projectId,
     actorUserId: user.id,
-    entityType: 'evidence_tombstone',
+    entityType: 'evidence_item',
     entityId: evidenceId,
     action: AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_REQUESTED,
     reason: parsed.rationale,
-    afterJson: { evidenceId, erasureReason: parsed.erasureReason },
+    afterJson: { evidenceId, erasureReason: parsed.erasureReason, versionsRequested: versionsToSweep.length },
   })
 
-  // Sweep every Uellix-controlled derivative this repository actually has:
-  // the storage object (file evidence) and the persisted text (evidence_
+  // STEP 2 — the external/content operation. Sweeps every Uellix-controlled
+  // derivative this repository actually has: the storage object (file
+  // evidence, once) and the persisted text of EVERY version (evidence_
   // versions.content). No grounding derivatives (OCR/chunks/embeddings/
-  // indices/caches) exist to sweep — docs/19 is not activated, so this
+  // indices/caches) exist to sweep — docs/19 is not activated, so that
   // clause of FIBC-009 is satisfied vacuously, not skipped.
   let partial = false
   if (evidence.type === 'file' && evidence.filePath) {
@@ -936,25 +969,36 @@ export async function requestGovernedEvidenceErasure(projectId: string, evidence
     const { error } = await supabase.storage.from('uellix-evidence').remove([evidence.filePath])
     if (error) partial = true
   }
+  for (const v of versionsToSweep) {
+    if (v.content === null) continue
+    try {
+      await eraseEvidenceVersionContent(v.id)
+    } catch {
+      partial = true
+    }
+  }
 
   const finalErasureState = partial ? 'erasure_partial' : 'erasure_complete'
 
-  await updateCurrentEvidenceVersion(evidenceId, {
-    content: null,
-    erasureState: finalErasureState,
-  })
+  // STEP 3 — DURABLE terminal/partial update, across every version swept.
+  await markEvidenceVersionsErasureState(versionsToSweep.map((v) => v.id), finalErasureState)
+
+  // AC-2 — reflects what is actually true of the version being tombstoned,
+  // never a hardcoded claim: there is nothing to "preserve" when the
+  // version never had a real, verifiable hash to begin with.
+  const contentHashPreserved = Boolean(current.contentHash) && !current.legacyContentUnverifiable
 
   const [tombstone] = await db
     .insert(evidenceTombstones)
     .values({
       organizationId: organization.id,
       evidenceId,
-      evidenceVersionId: version.id,
+      evidenceVersionId: current.id,
       erasureState: finalErasureState,
       erasureReason: parsed.erasureReason,
       rationale: parsed.rationale,
-      contentHashPreserved: true,
-      contentHash: version.contentHash,
+      contentHashPreserved,
+      contentHash: current.contentHash,
       actorUserId: user.id,
     })
     .returning()
@@ -966,7 +1010,7 @@ export async function requestGovernedEvidenceErasure(projectId: string, evidence
     entityType: 'evidence_tombstone',
     entityId: tombstone.id,
     action: AUDIT_ACTIONS.EVIDENCE_TOMBSTONE_ERASURE_COMPLETED,
-    afterJson: { evidenceId, erasureState: finalErasureState },
+    afterJson: { evidenceId, erasureState: finalErasureState, versionsSwept: versionsToSweep.length },
   })
 
   return tombstone

@@ -125,3 +125,36 @@ export async function updateCurrentEvidenceVersion(
 
   return updated ?? null
 }
+
+/**
+ * Advance the erasure_state of SPECIFIC version rows, named by id — unlike
+ * updateCurrentEvidenceVersion, not limited to the current (latest-ordinal)
+ * row. FIBIU-07 (W2-B1-R5, M-4) governed erasure must durably record its
+ * progress across EVERY version of an evidence item's content, not only the
+ * one that happened to be current when erasure was requested — an older
+ * version's content is exactly as much the evidence item's history as the
+ * current one, and the same erasure must cover it.
+ */
+export async function markEvidenceVersionsErasureState(
+  versionIds: readonly string[],
+  erasureState: string
+): Promise<void> {
+  if (versionIds.length === 0) return
+  await db
+    .update(evidenceVersions)
+    .set({ erasureState })
+    .where(inArray(evidenceVersions.id, versionIds))
+}
+
+/**
+ * Null the content of ONE specific version row, by id — the actual sweep
+ * for a single version. `contentHash` is deliberately left untouched: it
+ * remains the permanent, re-verifiable proof of what was erased (FIBC-009),
+ * even once the content itself is gone.
+ */
+export async function eraseEvidenceVersionContent(versionId: string): Promise<void> {
+  await db
+    .update(evidenceVersions)
+    .set({ content: null })
+    .where(eq(evidenceVersions.id, versionId))
+}
