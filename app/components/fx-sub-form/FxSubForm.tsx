@@ -178,10 +178,12 @@ export function FxSubForm({
             disabled={disabled}
             placeholder="0"
             step="0.0001"
+            aria-describedby={localAmount ? 'fx-amount-feedback' : undefined}
+            aria-invalid={localAmount ? !new Decimal(localAmount).gt(0) : undefined}
             className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {localAmount && (
-            <div className="text-xs text-slate-500 mt-1">
+            <div id="fx-amount-feedback" className="text-xs text-slate-500 mt-1">
               {new Decimal(localAmount).gt(0) ? (
                 <span className="text-green-600">✓ Válido</span>
               ) : (
@@ -238,10 +240,12 @@ export function FxSubForm({
               disabled={disabled || rateFetched}
               placeholder="Ej: 4150.25"
               step="0.0001"
+              aria-describedby={localRate ? 'fx-rate-feedback' : undefined}
+              aria-invalid={localRate ? !new Decimal(localRate).gt(0) : undefined}
               className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             {localRate && (
-              <div className="text-xs text-slate-500 mt-1">
+              <div id="fx-rate-feedback" className="text-xs text-slate-500 mt-1">
                 {new Decimal(localRate).gt(0) ? (
                   <span className="text-green-600">✓ Válido</span>
                 ) : (
@@ -263,10 +267,12 @@ export function FxSubForm({
               onChange={(e) => setLocalSource(e.target.value)}
               disabled={disabled || rateFetched}
               placeholder="Ej: Banco de la República, ECB, etc."
+              aria-describedby={!rateFetched && !localSource && localRate ? 'fx-source-feedback' : undefined}
+              aria-invalid={!rateFetched && !localSource && Boolean(localRate)}
               className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             {!rateFetched && !localSource && localRate && (
-              <div className="text-xs text-red-600 mt-1">Requerida si se ingresa tasa manual</div>
+              <div id="fx-source-feedback" className="text-xs text-red-600 mt-1">Requerida si se ingresa tasa manual</div>
             )}
           </div>
         </>

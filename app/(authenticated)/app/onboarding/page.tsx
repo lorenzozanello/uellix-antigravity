@@ -16,6 +16,19 @@ const ERROR_MESSAGES: Record<string, string> = {
   not_allowlisted: 'Uellix está en acceso controlado. Tu cuenta todavía no está habilitada para crear una organización nueva. Si esperás una invitación, pedile a quien te invitó que la reenvíe; si no, contactá al equipo de Uellix para solicitar acceso.',
 }
 
+// RE-U1 U1-F12: which field, if any, an error key is actually about. Errors
+// with no entry here (e.g. not_allowlisted, an account-level allowlist
+// rejection — see feedback rules against converting a server authorization
+// failure into field validation) are shown by ErrorState alone, without
+// being pointed at a specific input.
+const ERROR_FIELD: Record<string, 'name' | 'slug'> = {
+  invalid_name: 'name',
+  invalid_slug: 'slug',
+  slug_taken: 'slug',
+}
+
+const ERROR_ID = 'org-creation-error'
+
 export default async function OnboardingPage(props: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireAuth()
 
@@ -26,7 +39,9 @@ export default async function OnboardingPage(props: { searchParams: Promise<{ er
   }
 
   const searchParams = await props.searchParams
-  const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? 'Ocurrió un error. Intenta de nuevo.' : null
+  const errorKey = searchParams?.error
+  const errorMessage = errorKey ? ERROR_MESSAGES[errorKey] ?? 'Ocurrió un error. Intenta de nuevo.' : null
+  const errorField = errorKey ? ERROR_FIELD[errorKey] : undefined
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -75,7 +90,12 @@ export default async function OnboardingPage(props: { searchParams: Promise<{ er
             </CardHeader>
             <CardContent>
               {errorMessage && (
-                <ErrorState title="No se pudo crear la organización" message={errorMessage} className="mb-5" />
+                <ErrorState
+                  id={ERROR_ID}
+                  title="No se pudo crear la organización"
+                  message={errorMessage}
+                  className="mb-5"
+                />
               )}
 
               <form action={createFirstOrganization} className="space-y-5">
@@ -90,6 +110,8 @@ export default async function OnboardingPage(props: { searchParams: Promise<{ er
                     required
                     maxLength={255}
                     placeholder="Ej: Fundación Impacto Positivo"
+                    aria-describedby={errorField === 'name' ? ERROR_ID : undefined}
+                    aria-invalid={errorField === 'name' ? true : undefined}
                     className="mt-1.5"
                   />
                 </div>
@@ -106,9 +128,11 @@ export default async function OnboardingPage(props: { searchParams: Promise<{ er
                     maxLength={255}
                     pattern="[a-z0-9-]+"
                     placeholder="Ej: fundacion-impacto"
+                    aria-describedby={errorField === 'slug' ? `slug-hint ${ERROR_ID}` : 'slug-hint'}
+                    aria-invalid={errorField === 'slug' ? true : undefined}
                     className="mt-1.5"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">Solo minúsculas, números y guiones.</p>
+                  <p id="slug-hint" className="mt-1 text-xs text-muted-foreground">Solo minúsculas, números y guiones.</p>
                 </div>
 
                 <div>

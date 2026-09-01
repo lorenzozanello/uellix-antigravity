@@ -114,10 +114,14 @@ export function SettingsForm({
                     onChange={(e) => setFormData(s => ({ ...s, brandColor: e.target.value }))}
                     pattern="^#[0-9a-fA-F]{6}$"
                     placeholder="#FFFFFF"
+                    aria-describedby="brandColor-hint"
+                    aria-invalid={
+                      formData.brandColor.length > 0 && !/^#[0-9a-fA-F]{6}$/.test(formData.brandColor)
+                    }
                     className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                   />
                 </div>
-                <p className="text-xs text-slate-500">Color en formato Hex (ej. #1e293b)</p>
+                <p id="brandColor-hint" className="text-xs text-slate-500">Color en formato Hex (ej. #1e293b)</p>
               </div>
 
               <div className="space-y-2">
@@ -132,9 +136,10 @@ export function SettingsForm({
                   value={formData.logoUrl}
                   onChange={(e) => setFormData(s => ({ ...s, logoUrl: e.target.value }))}
                   placeholder="https://tu-proyecto.supabase.co/storage/v1/object/public/branding/logo.png"
+                  aria-describedby="logoUrl-hint"
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                 />
-                <p className="text-xs text-slate-500">Debe ser un enlace HTTPS público del Supabase Storage configurado para Uellix.</p>
+                <p id="logoUrl-hint" className="text-xs text-slate-500">Debe ser un enlace HTTPS público del Supabase Storage configurado para Uellix.</p>
               </div>
             </div>
           )}
