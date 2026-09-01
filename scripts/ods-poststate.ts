@@ -32,6 +32,14 @@ export interface PoststateInput {
   allow: string[]
   tests: string[]
   requireClean: boolean
+  /**
+   * HPO-ODS-POSTSTATE-01: a bare identifier forwarded verbatim to the
+   * composed ods:scope step. poststate never interprets or expands it —
+   * ods:scope remains the sole adjudicator of authority validity, branch
+   * binding, protected-pattern binding, the concrete changed path, and
+   * ordinary task --allow.
+   */
+  protectedAuthority?: string
 }
 
 export interface ComposedStep {
@@ -56,6 +64,9 @@ export function composeSteps(input: PoststateInput): ComposedStep[] {
   if (input.base) {
     const scopeArgs = ['run', 'ods:scope', '--', '--base', input.base]
     for (const pattern of input.allow) scopeArgs.push('--allow', pattern)
+    // Forwarded verbatim, only here — never to typecheck, tests, the
+    // secrets scan, the authority verifier, or the clean-state step.
+    if (input.protectedAuthority) scopeArgs.push('--protected-authority', input.protectedAuthority)
     steps.push({ name: 'ods-scope', pnpmArgs: scopeArgs })
   }
 
@@ -200,6 +211,17 @@ export function realRunner(pnpmArgs: string[], cwd: string): number {
 // CLI
 // ---------------------------------------------------------------------------
 
+// HPO-ODS-M1D CLI hygiene: recognized poststate flags, used only to detect
+// whether a --protected-authority operand slot was actually consumed by
+// another flag rather than a real identifier. Scoped narrowly to this one
+// flag per the authorizing addendum — --base/--allow/--test's existing
+// (weaker) operand handling is explicitly out of scope for this remediation.
+const POSTSTATE_RECOGNIZED_FLAGS = new Set(['--base', '--allow', '--test', '--clean', '--protected-authority'])
+
+function looksLikeMissingProtectedAuthorityOperand(token: string | undefined): boolean {
+  return token === undefined || token === '--' || POSTSTATE_RECOGNIZED_FLAGS.has(token)
+}
+
 function parseArgs(argv: string[]): PoststateInput {
   const input: PoststateInput = { allow: [], tests: [], requireClean: false }
   for (let i = 0; i < argv.length; i++) {
@@ -209,7 +231,15 @@ function parseArgs(argv: string[]): PoststateInput {
     else if (arg === '--allow') input.allow.push(argv[++i])
     else if (arg === '--test') input.tests.push(argv[++i])
     else if (arg === '--clean') input.requireClean = true
-    else {
+    else if (arg === '--protected-authority') {
+      const value = argv[i + 1]
+      if (looksLikeMissingProtectedAuthorityOperand(value)) {
+        console.error('ods:poststate: --protected-authority requires a value')
+        process.exit(2)
+      }
+      i++
+      input.protectedAuthority = value
+    } else {
       console.error(`ods:poststate: unrecognized argument "${arg}"`)
       process.exit(2)
     }
@@ -219,6 +249,13 @@ function parseArgs(argv: string[]): PoststateInput {
 
 function main(): void {
   const input = parseArgs(process.argv.slice(2))
+
+  if (input.protectedAuthority && !input.base) {
+    console.error('ods:poststate: --protected-authority requires --base (it configures the composed ods:scope step, which only runs when --base is supplied)')
+    console.log('ODS_POSTSTATE=USAGE_ERROR')
+    process.exit(2)
+  }
+
   const steps = composeSteps(input)
   const cwd = process.cwd()
 

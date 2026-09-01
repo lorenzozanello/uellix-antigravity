@@ -19,7 +19,9 @@ import {
   runLocalTypecheck,
   runGovernedTypecheck,
   type StepRunner,
+  type PoststateInput,
 } from '../../scripts/ods-poststate'
+import { git, makeTempGitRepo, commitFile, cleanupTempGitRepo } from './git-fixture-helpers'
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..')
 
@@ -359,5 +361,226 @@ describe('local-compiler prerequisite failure propagates to overall pass=false',
     const { pass, results } = runComposedSteps([{ name: 'typecheck', pnpmArgs: ['run', 'typecheck'] }], realRunner, dir)
     expect(pass).toBe(false)
     expect(results[0].exitCode).not.toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-POSTSTATE-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json).
+//
+// ods:poststate never adjudicates the grant itself — it only forwards the
+// exact --protected-authority identifier to its composed ods:scope step.
+// A disposable temp-git-repo fixture (never the real Lane A worktree —
+// no Wave 2 write is authorized) proves the EXACT args composeSteps
+// produces, when actually given to the real ods:scope gate, behave
+// correctly — not merely that the args look right in isolation.
+// ---------------------------------------------------------------------------
+
+describe('composeSteps — --protected-authority passthrough, pure', () => {
+  it('forwards the exact identifier onto the composed ods-scope step only when supplied', () => {
+    const steps = composeSteps({ base: 'deadbeef', allow: ['db/migrations/x.sql'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' })
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    expect(scopeStep?.pnpmArgs).toEqual([
+      'run',
+      'ods:scope',
+      '--',
+      '--base',
+      'deadbeef',
+      '--allow',
+      'db/migrations/x.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+  })
+
+  it('omits --protected-authority from the ods-scope step when not supplied (preserves current behavior)', () => {
+    const steps = composeSteps({ base: 'deadbeef', allow: ['x'], tests: [], requireClean: false })
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    expect(scopeStep?.pnpmArgs).not.toContain('--protected-authority')
+  })
+
+  it('never forwards the identifier to any OTHER composed step', () => {
+    const steps = composeSteps({
+      base: 'deadbeef',
+      allow: ['db/migrations/x.sql'],
+      tests: ['t.ts'],
+      requireClean: true,
+      protectedAuthority: 'HPO-ODS-W2-01',
+    })
+    for (const step of steps) {
+      if (step.name === 'ods-scope') continue
+      expect(step.pnpmArgs).not.toContain('--protected-authority')
+      expect(step.pnpmArgs).not.toContain('HPO-ODS-W2-01')
+    }
+  })
+})
+
+describe('poststate --protected-authority CLI — missing-operand hardening', () => {
+  const tsxCli = require.resolve('tsx/cli')
+  const run = (args: string[]) => spawnSync(process.execPath, [tsxCli, 'scripts/ods-poststate.ts', ...args], { cwd: REPO_ROOT, encoding: 'utf8' })
+
+  it('trailing --protected-authority with nothing after it is a usage error, not silently NONE', () => {
+    const res = run(['--base', 'deadbeef', '--allow', 'x', '--protected-authority'])
+    expect(res.status).toBe(2)
+    expect(res.stderr).toContain('--protected-authority requires a value')
+  })
+
+  it('--protected-authority immediately followed by another recognized flag is rejected, not misparsed as a value', () => {
+    const res = run(['--protected-authority', '--clean'])
+    expect(res.status).toBe(2)
+    expect(res.stderr).toContain('--protected-authority requires a value')
+  })
+
+  it('--protected-authority without --base is a usage error (nothing to attach it to)', () => {
+    const res = run(['--protected-authority', 'HPO-ODS-W2-01'])
+    expect(res.status).toBe(2)
+    expect(res.stdout).toContain('ODS_POSTSTATE=USAGE_ERROR')
+  })
+})
+
+describe('poststate protected-authority passthrough — real integration, disposable Wave-2-shaped fixture, PSA-1..PSA-5, PSA-P1..P3', () => {
+  let dir: string
+
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  /** Extracts the args a would compose for the ods-scope step, strips the 'run ods:scope --' wrapper, and runs the REAL ods-scope.ts against `cwd` — proving the exact composed args, not just their shape. */
+  function runComposedOdsScopeDirectly(input: PoststateInput, cwd: string): { status: number | null; stdout: string } {
+    const steps = composeSteps(input)
+    const scopeStep = steps.find((s) => s.name === 'ods-scope')
+    if (!scopeStep) throw new Error('composeSteps produced no ods-scope step for this input')
+    const args = scopeStep.pnpmArgs.slice(3) // drop ['run', 'ods:scope', '--']
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  function makeGrantedBranchRepo(): { dir: string; base: string } {
+    const d = makeTempGitRepo()
+    const base = commitFile(d, 'README.md', 'seed\n')
+    git(d, ['checkout', '-b', 'codex/w2-methodology-objects-r1'])
+    return { dir: d, base }
+  }
+
+  it('PSA-1: protected migration + ordinary allow but NO protected authority => scope sub-step FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base: g.base, allow: ['db/migrations/0100_fixture.sql'], tests: [], requireClean: false },
+      dir,
+    )
+    expect(status).not.toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('PSA-2: unknown protected authority => scope sub-step FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base: g.base, allow: ['db/migrations/0100_fixture.sql'], tests: [], requireClean: false, protectedAuthority: 'NOT-REAL' },
+      dir,
+    )
+    expect(status).not.toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('PSA-3: correct authority on the wrong branch => scope sub-step FAIL', () => {
+    dir = makeTempGitRepo() // NOT checked out to codex/w2-methodology-objects-r1
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base, allow: ['db/migrations/0100_fixture.sql'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' },
+      dir,
+    )
+    expect(status).not.toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('PSA-4: correct authority but an ungranted protected path (db/prepared/ sibling) => scope sub-step FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared'), { recursive: true })
+    commitFile(dir, 'db/prepared/sibling.sql', 'select 1;\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base: g.base, allow: ['db/prepared/sibling.sql'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' },
+      dir,
+    )
+    expect(status).not.toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/sibling.sql')
+  })
+
+  it('PSA-5: correct authority + granted path but missing ordinary task allow => scope sub-step FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base: g.base, allow: ['README.md'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' },
+      dir,
+    )
+    expect(status).not.toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('PSA-P1: correct branch + HPO-ODS-W2-01 + db/migrations/<fixture> + ordinary allow => scope sub-step PASS', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base: g.base, allow: ['db/migrations/0100_fixture.sql'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' },
+      dir,
+    )
+    expect(status).toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+  })
+
+  it('PSA-P2: same for db/prepared/journal/<fixture> => scope sub-step PASS', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/003_fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      { base: g.base, allow: ['db/prepared/journal/003_fixture.sql'], tests: [], requireClean: false, protectedAuthority: 'HPO-ODS-W2-01' },
+      dir,
+    )
+    expect(status).toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+  })
+
+  it('PSA-P3: both granted surfaces together with exact task allows => scope sub-step PASS', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+    commitFile(dir, 'db/prepared/journal/003_fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runComposedOdsScopeDirectly(
+      {
+        base: g.base,
+        allow: ['db/migrations/0100_fixture.sql', 'db/prepared/journal/003_fixture.sql'],
+        tests: [],
+        requireClean: false,
+        protectedAuthority: 'HPO-ODS-W2-01',
+      },
+      dir,
+    )
+    expect(status).toBe(0)
+    expect(stdout).toContain('ODS_SCOPE=PASS')
   })
 })
