@@ -1,0 +1,198 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.1",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1",
+  "authority_class": "ODS_MAINTENANCE_AUTHORITY_ADDENDUM",
+  "materialization_step": "ODS-M1A",
+  "materialization_date": "2026-08-31",
+  "supersedes": null,
+
+  "purpose": "Freeze, append-only and prospectively, two HPO maintenance decisions for ODS v1.0.1 discovered after ODS v1 operational closure. This artifact ADDS authority; it implements nothing, remediates nothing, revokes nothing, and modifies no sealed or frozen artifact.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. This addendum does not rewrite, supersede, reinterpret or restate docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, or any Wave 1 / FIB / PC-01B / IM-01B authority or evidence artifact. Those remain byte-identical and controlling. Where this addendum and any of them appear to disagree, they control. No runtime, product, database or FIB authority is changed by this artifact.",
+
+  "anchors": {
+    "source_operational_closure": "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+    "source_operational_head": "d00743d7785a754d0d21862a6aeaf66b4944e6d4",
+    "source_operational_tree": "1100a3bf37c753f48dc06f1951238b9d3dcf5a7d",
+    "source_branch": "ods/v1-development-operating-system-r1",
+    "base_authority": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+    "certified_wave1_anchor_commit": "ff2ab23fbf2178a8b4930bd3943d3c53bc84a1dc",
+    "note": "This addendum is committed on top of the operational-closure HEAD named above."
+  },
+
+  "does_not_revoke": {
+    "ODS_V1_OPERATIONAL": true,
+    "statement": "ODS v1 remains operational. This is maintenance authority for a v1.0.1 increment, not a reopening of the ODS-05-R2 clean-room adjudication recorded in the operational closure."
+  },
+
+  "hpo_decisions": {
+    "HPO-ODS-W2-01": {
+      "title": "PROTECTED_SURFACE_EXPLICIT_GRANT",
+      "status": "FROZEN",
+      "component_affected": "ODS-C4 (pnpm ods:scope)",
+
+      "measured_problem": {
+        "statement": "ODS-C4 correctly protects db/migrations/**, db/prepared/** and db/baseline/**, but its implementation provides no explicit authorization mechanism, even though frozen ODS authority states a protected surface may be changed under explicit scoped authority.",
+        "verified_at_ods_m1a": {
+          "frozen_authority_says": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json, ods_v1_frozen_scope.components[ODS-C4].authorization_rule: 'Allowing a protected surface requires an explicit scoped authorization. Permission must NEVER be inferred from the fact that a file changed.'",
+          "implementation_says": "scripts/ods-scope.ts header (lines 12-16): the protected set is unconditional, 'no --allow pattern can override them', and changing that 'requires a future explicit HPO authority update to this script, not a flag'.",
+          "conclusion": "The gap is real and was confirmed by direct inspection of both artifacts at ODS-M1A, not assumed from the problem statement. The implementation is not wrong against v1.0.0 — it deliberately deferred the mechanism. This addendum is the explicit HPO authority update that implementation comment anticipated."
+        }
+      },
+
+      "required_future_behavior": [
+        "Default protected behavior remains FAIL.",
+        "An ordinary --allow never overrides protected classification by itself.",
+        "An explicit protected-surface grant requires a known authority ID.",
+        "A grant is restricted by branch AND by exact protected pattern.",
+        "Normal task-specific --allow remains additionally mandatory for any granted path.",
+        "Wrong or missing authority ID, wrong branch, a non-granted pattern, or a missing normal allowlist entry => FAIL.",
+        "Unknown conditions fail closed.",
+        "No dynamic 'allow whatever changed' behavior is authorized, in any form."
+      ],
+
+      "initial_grant": {
+        "authority_id": "HPO-ODS-W2-01",
+        "authorized_branch": "codex/w2-methodology-objects-r1",
+        "authorized_protected_patterns": [
+          "db/migrations/**",
+          "db/prepared/journal/**"
+        ],
+        "not_authorized": [
+          "db/baseline/**",
+          "db/prepared/** generally",
+          "docs/ops/fib/**",
+          "docs/ops/pc01b/**",
+          "docs/ops/im01b/**",
+          "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+          "any other protected surface"
+        ],
+        "purpose": "This authority exists ONLY to permit FIB Wave 2 governed migration and journal materialization.",
+        "future_waves": "Future waves require their own explicit authority. This grant is not extensible by analogy, inheritance, or precedent."
+      },
+
+      "implementation_notes_measured_at_ods_m1a": {
+        "subset_grant_hazard": "db/prepared/journal/** is a STRICT SUBSET of the protected pattern db/prepared/**, and db/prepared/journal/ is a real populated directory in the tree (verified at ODS-M1A). An implementation that only matches a grant against whole protected patterns would either refuse the granted subset or, worse, widen it to all of db/prepared/**. The grant must be evaluated on the concrete changed path, and a path granted by db/prepared/journal/** must not thereby authorize any sibling under db/prepared/.",
+        "grant_is_narrowing_only": "A grant may only narrow what a protected classification refuses. It must never widen the effective allowlist beyond the intersection of (granted protected pattern) AND (normal --allow), on the granted branch, under the named authority ID.",
+        "branch_binding": "codex/w2-methodology-objects-r1 exists at d00743d7785a754d0d21862a6aeaf66b4944e6d4 (verified at ODS-M1A). Branch binding must be evaluated against actual current branch, not a caller-supplied claim."
+      },
+
+      "negative_control_requirements": [
+        { "id": "NC-W2-01-1", "condition": "protected mutation with normal --allow only", "required_result": "FAIL" },
+        { "id": "NC-W2-01-2", "condition": "unknown authority ID", "required_result": "FAIL" },
+        { "id": "NC-W2-01-3", "condition": "correct authority on wrong branch", "required_result": "FAIL" },
+        { "id": "NC-W2-01-4", "condition": "authority requesting an ungranted protected pattern", "required_result": "FAIL" },
+        { "id": "NC-W2-01-5", "condition": "protected authorization without normal task allow", "required_result": "FAIL" },
+        { "id": "NC-W2-01-6", "condition": "correct authority + correct branch + granted protected pattern + normal task allow", "required_result": "PASS" }
+      ],
+
+      "doctrine_binding": "The frozen ODS v1 negative-control doctrine applies unchanged: this mechanism may not be accepted as operational until its positive path is demonstrated AND every negative condition above has been deliberately exercised and shown to FAIL as intended, on fixtures rather than real protected artifacts."
+    },
+
+    "HPO-ODS-TOOLCHAIN-01": {
+      "title": "LOCAL_PROJECT_TOOLCHAIN_REQUIRED",
+      "status": "FROZEN",
+      "component_affected": "ODS-C3 (pnpm ods:poststate), typecheck prerequisite",
+
+      "measured_issue": {
+        "reported": "A fresh product-lane worktree without node_modules allowed a globally installed tsc to return exit 0 during a direct/sibling-tool invocation, even though project dependencies were absent.",
+        "independently_corroborated_at_ods_m1a": {
+          "global_tsc_present": "/c/Users/Lorenzo/AppData/Roaming/npm/tsc resolves on PATH on this machine.",
+          "empirical_probe": "In a disposable temporary directory containing only a minimal tsconfig.json and one .ts file, with node_modules verifiably ABSENT, `tsc --noEmit` exited 0.",
+          "conclusion": "The fail-open condition is real and reproducible on this machine, verified at ODS-M1A rather than accepted on report. A governed poststate that shelled out to an ambient tsc would report a green typecheck for a worktree whose project dependencies do not exist."
+        },
+        "failure_class": "Fail-open by absence: the check does not fail, it silently is not the check it claims to be — the same class as the two defects remediated in ODS-05-RM1."
+      },
+
+      "frozen_requirements": [
+        "The official worktree bootstrap, when dependencies are absent, is: pnpm install --frozen-lockfile",
+        "ODS poststate MUST fail closed if the local project toolchain required for its governed checks is absent.",
+        "Global tsc/tsx binaries MUST NOT substitute for the repository-local toolchain for a governed typecheck.",
+        "The implementation may choose the smallest cross-platform mechanism that proves local-toolchain identity/availability.",
+        "No dependency additions are authorized by this decision."
+      ],
+
+      "negative_control_requirement": {
+        "id": "NC-TOOLCHAIN-01-1",
+        "condition": "local project toolchain absent",
+        "required_result": "poststate/typecheck prerequisite FAIL"
+      },
+
+      "positive_control_requirement": {
+        "id": "PC-TOOLCHAIN-01-1",
+        "condition": "frozen-lockfile local installation present",
+        "required_result": "governed typecheck executes using the local project toolchain"
+      },
+
+      "non_goals": [
+        "Does not authorize adding any dependency.",
+        "Does not change what the typecheck asserts, only that it is genuinely the project's own typecheck.",
+        "Does not modify CI, whose checkout/install ordering already installs before any governed check runs."
+      ]
+    }
+  },
+
+  "lane_gating": {
+    "rule": "ODS v1 remains operational, but the two maintenance decisions above are gating for LANE WRITES specifically, because both govern the gates that would police those writes.",
+    "READY_FOR_LANE_A_WRITES": false,
+    "READY_FOR_LANE_B_WRITES": false,
+    "until": "The v1.0.1 maintenance is implemented AND independently audited.",
+    "existing_lane_evidence": "Existing Lane A and Lane B read-only mappings remain valid evidence and are not invalidated by this addendum.",
+    "lane_a": {
+      "branch": "codex/w2-methodology-objects-r1",
+      "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-wave2"
+    },
+    "lane_b": {
+      "branch": "codex/u0-u9-reengineering-resume-r1",
+      "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1"
+    }
+  },
+
+  "authorized_implementation_surfaces_for_v1_0_1": {
+    "rule": "Indicative, not self-authorizing. The implementation step receives its own explicit authorized surface; nothing here grants write permission by itself.",
+    "expected": [
+      "scripts/ods-scope.ts",
+      "scripts/ods-poststate.ts",
+      "tests/ods/**",
+      "docs/ops/ods/**"
+    ]
+  },
+
+  "prohibited_by_this_addendum": [
+    "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json",
+    "docs/ops/ods/ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json",
+    "docs/ops/fib/**",
+    "docs/ops/pc01b/**",
+    "docs/ops/im01b/**",
+    "db/**",
+    "lib/**",
+    "app/**",
+    "components/**"
+  ],
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "protected_corpus_integrity": "PASS",
+    "transitive_attestation_count": 4,
+    "native_relationships": "PASS",
+    "files_changed_by_this_step": 1,
+    "implementation_performed": false,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "wave1_authority_modified": false,
+    "runtime_product_or_database_modified": false
+  },
+
+  "state_after_this_artifact": {
+    "ods_v1_operational": true,
+    "ready_for_maintenance_implementation": true,
+    "ready_for_lane_a_writes": false,
+    "ready_for_lane_b_writes": false,
+    "next_gate": "ODS_V1_0_1_MAINTENANCE_IMPLEMENTATION"
+  },
+
+  "final_state": "ODS_V1_0_1_MAINTENANCE_AUTHORITY_FROZEN_READY_FOR_IMPLEMENTATION"
+}
