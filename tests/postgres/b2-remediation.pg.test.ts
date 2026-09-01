@@ -92,6 +92,49 @@ describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', { timeout: 120_000 }
   })
 
   // -------------------------------------------------------------------------
+  // W2-B2-R3-NARROW-REMEDIATION / R-B2-10 (PG1) — the suggest route was the
+  // fifth reachable live/version transition site (W2-B2-R2-AR). This section
+  // proves two things against real PostgreSQL that NC-3 above does not: (1)
+  // the exact pair this route now writes (live pending_review / version
+  // under_review) commits together in one transaction, and (2) the CHECK
+  // constraints alone do NOT prevent the coupling-violation shape — each
+  // side is independently valid, so LIVE_VERSION_STATUS_COUPLING can only be
+  // an application-enforced invariant, which is exactly why R-B2-10 was a
+  // code fix and not a schema fix.
+  // -------------------------------------------------------------------------
+  describe('R-B2-10 — suggest-route transition, real PostgreSQL (PG1)', () => {
+    it('POSITIVE: live suggested->pending_review and the current version draft->under_review commit together in one transaction', () => {
+      const f = seedProxyFixture(db, 'b10pos')
+      db.exec(`
+        INSERT INTO public.financial_proxy_versions (financial_proxy_id, ordinal, source_id, review_status, created_by)
+          VALUES ('${f.proxyId}', 1, '${f.sourceId}', 'draft', '${f.userId}');
+        UPDATE public.financial_proxies SET review_status = 'pending_review' WHERE id = '${f.proxyId}';
+        UPDATE public.financial_proxy_versions SET review_status = 'under_review'
+          WHERE financial_proxy_id = '${f.proxyId}' AND ordinal = 1;
+      `)
+      expect(db.scalar(`SELECT review_status FROM public.financial_proxies WHERE id = '${f.proxyId}'`)).toBe('pending_review')
+      expect(db.scalar(`SELECT review_status FROM public.financial_proxy_versions WHERE financial_proxy_id = '${f.proxyId}' AND ordinal = 1`)).toBe('under_review')
+    })
+
+    it('NEGATIVE (measures why an application invariant is required): the pre-R-B2-10 defect shape — live pending_review beside a version LEFT AT draft — is accepted by the schema; no CHECK constraint alone catches it', () => {
+      const f = seedProxyFixture(db, 'b10neg')
+      db.exec(`
+        INSERT INTO public.financial_proxy_versions (financial_proxy_id, ordinal, source_id, review_status, created_by)
+          VALUES ('${f.proxyId}', 1, '${f.sourceId}', 'draft', '${f.userId}');
+        UPDATE public.financial_proxies SET review_status = 'pending_review' WHERE id = '${f.proxyId}';
+      `)
+      // Both sides are individually well-formed per their own CHECK — the
+      // divergence is invisible to the schema. lib/pipeline/proxies.ts
+      // updateFinancialProxyReviewStatusForContext's assertLiveVersionStatusCoupling
+      // is what refuses to let this pair reach a commit in application code
+      // (see tests/proxy-suggest-route.test.ts M1 and
+      // tests/review-status-mapping.test.ts for the in-process proof).
+      expect(db.scalar(`SELECT review_status FROM public.financial_proxies WHERE id = '${f.proxyId}'`)).toBe('pending_review')
+      expect(db.scalar(`SELECT review_status FROM public.financial_proxy_versions WHERE financial_proxy_id = '${f.proxyId}' AND ordinal = 1`)).toBe('draft')
+    })
+  })
+
+  // -------------------------------------------------------------------------
   // R-B2-03 — migration 0056 applied as part of the provision: the
   // editability column and CHECK exist, registry_version 1.1.0 is exhaustive
   // (70 rows) and 1.0.0 is byte-for-byte historical (39 rows, NULL

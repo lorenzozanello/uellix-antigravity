@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import Decimal from 'decimal.js';
 import '@/lib/pipeline/decimal-config';
-import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/auth/session';
+import { requireOrganizationAccess, getCurrentOrganizationContext, type OrganizationContext } from '@/lib/auth/session';
 import { canApproveProxy } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { getOrCreateSharedCopRate, convertToUsd, type FxRateExecutor } from '@/lib/pipeline/fx';
@@ -669,6 +669,31 @@ export async function updateFinancialProxyReviewStatus(
   expectedApprovalState?: string,
 ) {
   const ctx = await requireOrganizationAccess();
+  return updateFinancialProxyReviewStatusForContext(ctx, proxyId, newStatus, expectedApprovalState);
+}
+
+/**
+ * Same governed transition as {@link updateFinancialProxyReviewStatus}, for a
+ * caller that already holds a non-redirecting {@link OrganizationContext} —
+ * e.g. a Route Handler using `getCurrentOrganizationContext`, which must
+ * control its own HTTP response on an auth failure rather than trigger
+ * `requireOrganizationAccess`'s redirect.
+ *
+ * W2-B2-R3-NARROW-REMEDIATION / R-B2-10 — the fifth reachable transition site
+ * (app/api/proxies/[id]/suggest/route.ts) previously wrote the live row
+ * directly, bypassing both this governed permission gate and the
+ * LIVE_VERSION_STATUS_COUPLING mapping. `requireFromStatus`, when given, is
+ * checked against the CURRENT live review_status inside the SAME locked
+ * transaction as the write — never as a separate pre-read — so a concurrent
+ * status change cannot race between the check and the mutation.
+ */
+export async function updateFinancialProxyReviewStatusForContext(
+  ctx: OrganizationContext,
+  proxyId: string,
+  newStatus: string,
+  expectedApprovalState?: string,
+  requireFromStatus?: string,
+) {
   const allowed = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'];
   if (!allowed.includes(newStatus)) throw new Error('Invalid status');
   const transition = async (tx: FinancialProxyTransaction, proxy: FinancialProxyRow) => {
@@ -679,6 +704,9 @@ export async function updateFinancialProxyReviewStatus(
     // hatch.
     if (!proxy.organizationId) throw new Error('Forbidden');
     if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
+    if (requireFromStatus !== undefined && proxy.reviewStatus !== requireFromStatus) {
+      throw new Error('Unexpected current status');
+    }
     // FIBIU-08 (FIBC-010/FIBC-012) — the EXIT_GATE's two named blocking
     // conditions: a recordable actor+moment (this function supplies it
     // below) and a recoverable reference, checked here against the CURRENT
