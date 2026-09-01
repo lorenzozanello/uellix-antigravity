@@ -203,6 +203,23 @@ describe.skipIf(!RUN)('B2 remediation — real PostgreSQL', { timeout: 120_000 }
       db.exec(`DROP OWNED BY uellix_rehearsal_pgtest_probe; REVOKE uellix_rehearsal_pgtest_probe FROM postgres; DROP ROLE IF EXISTS uellix_rehearsal_pgtest_probe;`)
     })
 
+    it('FIBIU-09 constraints remain valid on real PostgreSQL (sentinel): a consistent full rubric is accepted, an all-NULL legacy row is accepted, a ceiling breach and a derivation mismatch are rejected', () => {
+      const f = seedProxyFixture(db, 'r9')
+      const cols = 'c1_source_quality_verifiability, c2_outcome_correspondence, c3_stakeholder_population_fit, c4_geographic_context_fit, c5_temporal_fit, c6_methodological_unit_comparability, r1_provenance_risk, r2_source_limitation_risk, r3_conceptual_fit_risk, r4_geographic_population_transfer_risk, r5_temporal_obsolescence_risk, r6_transformation_risk, r7_methodological_uncertainty_risk, confidence_score, confidence_level, methodological_risk_score, methodological_risk'
+      const insert = (ordinal: number, values: string) =>
+        `INSERT INTO public.financial_proxy_versions (financial_proxy_id, ordinal, source_id, review_status, created_by, ${cols}) VALUES ('${f.proxyId}', ${ordinal}, '${f.sourceId}', 'draft', '${f.userId}', ${values})`
+      // all 3s / all 0s => 100 high / 0 low — accepted.
+      db.exec(`${insert(1, "3,3,3,3,3,3, 0,0,0,0,0,0,0, 100,'high', 0,'low'")}; DELETE FROM public.financial_proxy_versions WHERE financial_proxy_id = '${f.proxyId}' AND ordinal = 1;`)
+      // legacy / unrated: every rubric column NULL — accepted.
+      db.exec(`INSERT INTO public.financial_proxy_versions (financial_proxy_id, ordinal, source_id, review_status, created_by) VALUES ('${f.proxyId}', 2, '${f.sourceId}', 'draft', '${f.userId}'); DELETE FROM public.financial_proxy_versions WHERE financial_proxy_id = '${f.proxyId}' AND ordinal = 2;`)
+      // ceiling breach: c1 = 0 with confidence_level 'high' — rejected.
+      expect(db.expectError(insert(3, "0,3,3,3,3,3, 0,0,0,0,0,0,0, 83,'high', 0,'low'"))).toContain('financial_proxy_versions_confidence_ceiling_check')
+      // derivation mismatch: sum 18 but confidence_score 50 — rejected.
+      expect(db.expectError(insert(4, "3,3,3,3,3,3, 0,0,0,0,0,0,0, 50,'high', 0,'low'"))).toContain('financial_proxy_versions_confidence_derivation_check')
+      // floor breach: r6 = 3 with methodological_risk 'low' — rejected.
+      expect(db.expectError(insert(5, "3,3,3,3,3,3, 0,0,0,0,0,3,0, 100,'high', 14,'low'"))).toContain('financial_proxy_versions_risk_floor_check')
+    })
+
     it('governed_model_registry resolves PROXY_MATERIAL_FIELDS 1.1.0 as current and still holds 1.0.0', () => {
       const versions = db.query(`SELECT version FROM public.governed_model_registry WHERE model_id = 'PROXY_MATERIAL_FIELDS' ORDER BY version`).map((r) => r[0])
       expect(versions).toEqual(['1.0.0', '1.1.0'])
