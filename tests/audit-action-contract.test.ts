@@ -88,6 +88,14 @@ const CORRESPONDENCE_SCAN_ROOTS = [
   'lib/pipeline',
   'lib/projects/service.ts',
   'lib/portfolios/service.ts',
+  // W2-B2 (FIBIU-08, MNB-1) — lib/admin/proxies.ts's four measured sites
+  // (createGlobalProxySource, createGlobalFinancialProxy,
+  // updateGlobalProxyReviewStatus, setGlobalProxyManualFxRate) logged every
+  // write as ORGANIZATION_UPDATED regardless of what actually changed; this
+  // scan previously never covered lib/admin at all, so the mismatch went
+  // undetected. Per W2_EXECUTION_MAPPING_v1.0.0.json's mnb1_ownership.
+  // scan_extension_required.
+  'lib/admin',
 ]
 
 // entityType -> allowed action object prefix, where they diverge by name.

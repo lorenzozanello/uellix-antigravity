@@ -34,6 +34,7 @@ const mockDb = {
   sroiAssignmentInputs: [] as any[],
   sroiFilterSets: [] as any[],
   financialProxies: [] as any[],
+  financialProxyVersions: [] as any[],
   sroiCalculationRuns: [] as any[],
   sroiCalculationLineItems: [] as any[],
   evidenceItems: [] as any[],
@@ -179,6 +180,7 @@ beforeEach(() => {
     sroiAssignmentInputs: [],
     sroiFilterSets: [],
     financialProxies: [],
+    financialProxyVersions: [],
     sroiCalculationRuns: [],
     sroiCalculationLineItems: [],
     evidenceItems: [],
@@ -202,7 +204,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assignment: any; input: any; filter: any }>) {
+function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; proxyVersion: any; assignment: any; input: any; filter: any }>) {
   const investment = {
     id: 'inv-1',
     projectId: PROJECT_ID,
@@ -229,12 +231,26 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
   if (proxy.valueUsd === undefined) {
     proxy.valueUsd = proxy.currency === 'USD' ? proxy.value : null;
   }
+  // FIBIU-08 (FIBDB-039) — the assignment binds to a proxy VERSION, not just
+  // the live proxy row; a NULL/unapproved version is exactly as ineligible
+  // as an unapproved live proxy. Mirrors proxy.reviewStatus by default so
+  // every existing `{ proxy: { reviewStatus: ... } }` override keeps working
+  // unchanged — override `proxyVersion` directly only when a test needs the
+  // version's state to diverge from the live proxy's.
+  const proxyVersion = {
+    id: 'proxy-version-1',
+    financialProxyId: proxy.id,
+    ordinal: 1,
+    reviewStatus: proxy.reviewStatus,
+    ...overrides?.proxyVersion,
+  } as any;
   const assignment = {
     id: ASSIGNMENT_ID,
     projectId: PROJECT_ID,
     organizationId: ORG_ID,
     outcomeId: 'out-1',
     proxyId: proxy.id,
+    financialProxyVersionId: proxyVersion.id,
     assignmentStatus: 'active',
     ...overrides?.assignment,
   };
@@ -260,6 +276,7 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
   mockDb.funders.push({ id: 'funder-1', organizationId: ORG_ID, name: 'Fundación Test', funderType: 'foundation' });
   mockDb.projectInvestments.push(investment);
   mockDb.financialProxies.push(proxy);
+  mockDb.financialProxyVersions.push(proxyVersion);
   mockDb.outcomeProxyAssignments.push(assignment);
   mockDb.sroiAssignmentInputs.push(input);
   mockDb.sroiFilterSets.push(filter);
@@ -272,7 +289,7 @@ function seedHappyData(overrides?: Partial<{ investment: any; proxy: any; assign
     outcomeId: assignment.outcomeId,
     status: 'approved',
   });
-  return { investment, proxy, assignment, input, filter };
+  return { investment, proxy, proxyVersion, assignment, input, filter };
 }
 
 describe('Base formula happy path', () => {
@@ -402,6 +419,49 @@ describe('Readiness edge cases', () => {
 
   it('fails when proxy not approved', async () => {
     seedHappyData({ proxy: { reviewStatus: 'suggested' } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.blockingReasons).toContain('1 unapproved proxy(ies)');
+  });
+
+  // FIBIU-08 (FIBC-012) — "eligibility binds to the exact reviewed version",
+  // not merely to what the live proxy row currently claims. These three
+  // prove the binding is load-bearing, not decorative: a divergent or
+  // absent BOUND version fails closed even when the live proxy row alone
+  // would look fully approved.
+  it('fails when the assignment has NO bound version, even though the live proxy is approved', async () => {
+    seedHappyData({ assignment: { financialProxyVersionId: null } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.blockingReasons).toContain('1 unapproved proxy(ies)');
+    // calculateAndPersistSroiRun checks readiness first, so the generic
+    // aggregate rejection is what surfaces — the more specific
+    // "assigned version is not approved" message lives one layer deeper,
+    // in loadCalculationData's own enforceApproval path, and is exercised
+    // directly by the two enforceApproval-path tests below.
+    await expect(calculateAndPersistSroiRun(PROJECT_ID)).rejects.toThrow(
+      /Cannot calculate: 1 unapproved proxy\(ies\)/
+    );
+  });
+
+  it('fails when the BOUND version is not approved, even though the live proxy row says approved', async () => {
+    // Models a proxy that moved on to a newer, still-unapproved version
+    // after this assignment was frozen against an older one — the exact
+    // "stale binding" scenario FIBDB-039's immutable-per-run design exists
+    // to catch.
+    seedHappyData({ proxyVersion: { reviewStatus: 'pending_review' } });
+    const readiness = await getSroiCalculationReadiness(PROJECT_ID);
+    expect(readiness.canCalculate).toBe(false);
+    expect(readiness.blockingReasons).toContain('1 unapproved proxy(ies)');
+    await expect(calculateAndPersistSroiRun(PROJECT_ID)).rejects.toThrow(
+      /Cannot calculate: 1 unapproved proxy\(ies\)/
+    );
+  });
+
+  it('the double-assertion is preserved: BOTH the live proxy AND its bound version must independently read approved', async () => {
+    // A stale proxy.reviewStatus with a freshly-approved version is exactly
+    // as ineligible as the reverse — neither check alone is trusted.
+    seedHappyData({ proxy: { reviewStatus: 'pending_review' }, proxyVersion: { reviewStatus: 'approved' } });
     const readiness = await getSroiCalculationReadiness(PROJECT_ID);
     expect(readiness.canCalculate).toBe(false);
     expect(readiness.blockingReasons).toContain('1 unapproved proxy(ies)');

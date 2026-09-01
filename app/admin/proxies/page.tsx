@@ -8,6 +8,7 @@ import {
   promoteProxyToGlobalAction,
 } from './actions'
 import { fingerprintFinancialProxyApprovalState } from '@/lib/pipeline/proxies'
+import { getLatestFinancialProxyVersionsByProxyIds } from '@/lib/pipeline/financial-proxy-versions'
 
 const ERROR_MESSAGES: Record<string, string> = {
   not_authorized: 'No tenés permiso para esta operación, o tu sesión ya no es válida.',
@@ -19,6 +20,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   fx_not_needed: 'Los proxies en USD no necesitan una tasa de conversión.',
   invalid_rate: 'La tasa debe ser un número mayor a 0.',
   fx_rate_missing: 'No se puede aprobar: falta la conversión a USD para este proxy.',
+  // FIBIU-08 (FIBC-010) — the recoverable-reference EXIT_GATE.
+  missing_recoverable_reference: 'No se puede aprobar: falta una referencia recuperable (URL, DOI, dataset o documento vinculado).',
   unknown_error: 'Ocurrió un error. Intenta de nuevo.',
 }
 
@@ -40,6 +43,12 @@ export default async function AdminProxiesPage(props: {
       listGlobalFinancialProxies(),
       listPendingReviewProxies(),
     ])
+  )
+  // FIBIU-08 (FIBC-012) — "approval visible with actor and date." Approval
+  // is sealed on the VERSION (lib/pipeline/financial-proxy-versions.ts), not
+  // the live proxy row, so the actor/moment shown here is read from there.
+  const currentVersionByProxyId = await runWithAdminAccess(() =>
+    getLatestFinancialProxyVersionsByProxyIds(proxies.map((p) => p.id))
   )
 
   const errorMessage = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? ERROR_MESSAGES.unknown_error : null
@@ -160,6 +169,61 @@ export default async function AdminProxiesPage(props: {
                       type="number"
                       required
                       placeholder="2024"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-slate-700 pt-4">
+                <h4 className="text-xs font-semibold text-slate-300 mb-3">Procedencia (FIBC-010)</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Referencia recuperable <span className="text-red-400">*para aprobar</span>
+                    </label>
+                    <input
+                      name="recoverableReference"
+                      type="text"
+                      placeholder="URL, DOI, dataset o documento vinculado"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Un nombre de institución sin más no basta — se necesita un enlace o identificador recuperable.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Alcance geográfico/contextual</label>
+                    <input
+                      name="geographicContextualScope"
+                      type="text"
+                      placeholder="Ej: nacional, urbano, población rural andina…"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Contexto de resultado vinculado</label>
+                    <input
+                      name="linkedOutcomeContext"
+                      type="text"
+                      placeholder="Resultado o contexto para el que se sustentó este valor"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Justificación de relevancia</label>
+                    <textarea
+                      name="relevanceJustification"
+                      rows={2}
+                      placeholder="Por qué esta fuente es pertinente para este proxy"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Transformaciones documentadas</label>
+                    <textarea
+                      name="documentedTransformations"
+                      rows={2}
+                      placeholder="FX, inflación, PPP, adaptación temporal/geográfica/metodológica (si aplica)"
                       className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500"
                     />
                   </div>
@@ -304,7 +368,19 @@ export default async function AdminProxiesPage(props: {
                     </td>
                     <td className="px-4 py-3 text-slate-400">{proxy.referenceYear ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-400">
-                      {REVIEW_STATUS_LABEL[proxy.reviewStatus] ?? proxy.reviewStatus}
+                      <div>{REVIEW_STATUS_LABEL[proxy.reviewStatus] ?? proxy.reviewStatus}</div>
+                      {/* FIBIU-08 (FIBC-012) — "approval visible with actor and date," read
+                          from the VERSION (the version's own reviewer_id/reviewed_at is the
+                          sealed fact; the live row no longer carries it — see FIBC-012). */}
+                      {proxy.reviewStatus === 'approved' && currentVersionByProxyId.get(proxy.id)?.reviewedAt && (
+                        <div className="text-xs text-slate-600 mt-0.5">
+                          {new Date(currentVersionByProxyId.get(proxy.id)!.reviewedAt!).toLocaleDateString('es-MX', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right space-x-3">
                       {proxy.reviewStatus !== 'approved' && (

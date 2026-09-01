@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 62/65: 0050_fib_evidence_sufficiency_determinations.sql
+-- GENERATED — DO NOT EDIT. Unit 65/65: 0053_fib_proxy_versions_provenance.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0050_fib_evidence_sufficiency_determinations.sql
--- Source SHA256: 4ef9a6ac9e930691db62b36ce65c1f000d727b3f967f9329d3ef68de01817952
+-- Includes:      db/migrations/0053_fib_proxy_versions_provenance.sql
+-- Source SHA256: 5778f649a09b48092436385c9642cefbf6e2f6773d357a361489f8a6c17836c5
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql
+--        -f db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0050_fib_evidence_sufficiency_determinations.sql
+\ir ../../../db/migrations/0053_fib_proxy_versions_provenance.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0050_fib_evidence_sufficiency_determinations.sql', 'PHASE_BASELINE',
-   '4ef9a6ac9e930691db62b36ce65c1f000d727b3f967f9329d3ef68de01817952', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0053_fib_proxy_versions_provenance.sql', 'PHASE_BASELINE',
+   '5778f649a09b48092436385c9642cefbf6e2f6773d357a361489f8a6c17836c5', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

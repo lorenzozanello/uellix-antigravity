@@ -7,13 +7,17 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mockDbData = vi.hoisted(() => ({
   proxySources: [] as any[],
   financialProxies: [] as any[],
+  financialProxyVersions: [] as any[],
   outcomeProxyAssignments: [] as any[],
   projects: [] as any[],
   outcomes: [] as any[],
   inserted: {} as any,
+  insertedVersion: { id: 'version-1', recoverableReference: 'https://example.org/proof' } as any,
   updated: {} as any,
+  updatedVersion: { id: 'version-1' } as any,
   lastInsertValues: null as any,
   lastUpdateValues: null as any,
+  lastVersionUpdateValues: null as any,
 }));
 
 // Mock authentication/session utilities
@@ -28,15 +32,10 @@ vi.mock('@/lib/auth/permissions', () => ({
 }));
 
 // Mock audit logger
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-  AUDIT_ACTIONS: {
-    ORGANIZATION_UPDATED: 'organization_updated',
-    FINANCIAL_PROXY_CREATED: 'financial_proxy_created',
-    FINANCIAL_PROXY_UPDATED: 'financial_proxy_updated',
-    FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy_review_status_changed',
-  },
-}));
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+});
 
 // Mock DB client using robust builder
 vi.mock('@/db/client', () => {
@@ -48,20 +47,15 @@ vi.mock('@/db/client', () => {
           let dataToReturn: any[] = [];
           if (tableName === 'proxy_sources') dataToReturn = mockDbData.proxySources;
           else if (tableName === 'financial_proxies') dataToReturn = mockDbData.financialProxies;
+          else if (tableName === 'financial_proxy_versions') dataToReturn = mockDbData.financialProxyVersions;
           else if (tableName === 'outcome_proxy_assignments') dataToReturn = mockDbData.outcomeProxyAssignments;
           else if (tableName === 'projects') dataToReturn = mockDbData.projects;
           else if (tableName === 'outcomes') dataToReturn = mockDbData.outcomes;
 
           const fromObj: any = {
-            where: vi.fn().mockImplementation(() => {
-              const whereObj: any = {
-                then: vi.fn().mockImplementation((callback) => {
-                  return Promise.resolve(callback(dataToReturn));
-                }),
-              };
-              whereObj.for = vi.fn().mockImplementation(() => whereObj);
-              return whereObj;
-            }),
+            where: vi.fn().mockImplementation(() => fromObj),
+            orderBy: vi.fn().mockImplementation(() => fromObj),
+            limit: vi.fn().mockImplementation(() => fromObj),
             then: vi.fn().mockImplementation((callback) => {
               return Promise.resolve(callback(dataToReturn));
             }),
@@ -70,24 +64,38 @@ vi.mock('@/db/client', () => {
           return fromObj;
         }),
       })),
-      insert: vi.fn().mockImplementation(() => ({
-        values: vi.fn().mockImplementation((values) => {
-          mockDbData.lastInsertValues = values;
-          return {
-            returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.inserted])),
-          };
-        }),
-      })),
-      update: vi.fn().mockImplementation(() => ({
+      insert: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
+        return {
+          values: vi.fn().mockImplementation((values) => {
+            mockDbData.lastInsertValues = values;
+            return {
+              returning: vi.fn().mockImplementation(() =>
+                Promise.resolve([tableName === 'financial_proxy_versions' ? mockDbData.insertedVersion : mockDbData.inserted])
+              ),
+            };
+          }),
+        };
+      }),
+      update: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
+        return {
         set: vi.fn().mockImplementation((values) => {
-          mockDbData.lastUpdateValues = values;
+          if (tableName === 'financial_proxy_versions') {
+            mockDbData.lastVersionUpdateValues = values;
+          } else {
+            mockDbData.lastUpdateValues = values;
+          }
           return {
             where: vi.fn().mockImplementation(() => ({
-              returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.updated])),
+              returning: vi.fn().mockImplementation(() =>
+                Promise.resolve([tableName === 'financial_proxy_versions' ? mockDbData.updatedVersion : mockDbData.updated])
+              ),
             })),
           };
         }),
-      })),
+        };
+      }),
   };
   return { db: database };
 });
@@ -132,13 +140,17 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockDbData.proxySources = [];
   mockDbData.financialProxies = [];
+  mockDbData.financialProxyVersions = [];
   mockDbData.outcomeProxyAssignments = [];
   mockDbData.projects = [];
   mockDbData.outcomes = [];
   mockDbData.inserted = {};
+  mockDbData.insertedVersion = { id: 'version-1', recoverableReference: 'https://example.org/proof' };
   mockDbData.updated = {};
+  mockDbData.updatedVersion = { id: 'version-1' };
   mockDbData.lastInsertValues = null;
   mockDbData.lastUpdateValues = null;
+  mockDbData.lastVersionUpdateValues = null;
 });
 
 /*** Proxy Sources ***/
@@ -430,7 +442,7 @@ describe('Financial Proxies Service', () => {
       const { logAuditAction } = await import('@/lib/audit/logger');
       expect(logAuditAction).toHaveBeenCalledWith(
         expect.objectContaining({
-          action: 'financial_proxy_review_status_changed',
+          action: 'financial_proxy.review_status_changed',
           reason: expect.stringContaining('Approval reset'),
         })
       );
@@ -446,7 +458,7 @@ describe('Financial Proxies Service', () => {
       expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
       const { logAuditAction } = await import('@/lib/audit/logger');
       expect(logAuditAction).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'financial_proxy_updated' })
+        expect.objectContaining({ action: 'financial_proxy.updated' })
       );
     });
 
@@ -582,6 +594,9 @@ describe('Financial Proxies Service', () => {
           valueUsd: null, fxRateId: null,
         };
         mockDbData.financialProxies = [editedProxy];
+        mockDbData.financialProxyVersions = [
+          { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof' },
+        ];
         mockDbData.updated = { ...editedProxy, reviewStatus: 'approved', valueUsd: '250' };
 
         await updateFinancialProxyReviewStatus(
@@ -604,6 +619,9 @@ describe('Financial Proxies Service', () => {
     vi.mocked(canApproveProxy).mockReturnValue(true);
     const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof' },
+    ];
 
     const updated = { ...proxy, reviewStatus: 'approved' };
     mockDbData.updated = updated;
@@ -686,6 +704,9 @@ describe('Financial Proxies Service', () => {
     it('approves only when the current locked state matches the reviewed fingerprint', async () => {
       await asApprover();
       mockDbData.financialProxies = [approvalProxy];
+      mockDbData.financialProxyVersions = [
+        { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof' },
+      ];
       mockDbData.updated = { ...approvalProxy, reviewStatus: 'approved', reviewerId: 'reviewer-1' };
 
       const result = await updateFinancialProxyReviewStatus(
@@ -765,6 +786,49 @@ describe('Proxy Assignment Service', () => {
     expect(result).toMatchObject(inserted);
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
+  });
+
+  // FIBIU-08 (FIBDB-039) — an assignment binds the CURRENT version at
+  // assignment time; NULL when none exists is deliberate, never a silent
+  // fallback to "whatever the proxy currently says".
+  it('binds financialProxyVersionId to the proxy\'s current version at assignment time', async () => {
+    const { requireOrganizationAccess, getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-4' }, user: { id: 'user-4' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctx);
+
+    mockDbData.projects = [{ id: PROJECT_UUID, organizationId: 'org-4' }];
+    mockDbData.outcomes = [{ id: OUTCOME_UUID, projectId: PROJECT_UUID }];
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: null, reviewStatus: 'approved', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 },
+    ];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-current', financialProxyId: PROXY_UUID, ordinal: 3, reviewStatus: 'approved' },
+    ];
+
+    const input = { outcomeId: OUTCOME_UUID, proxyId: PROXY_UUID, justification: 'test' };
+    await assignProxyToOutcome(PROJECT_UUID, input);
+
+    expect(mockDbData.lastInsertValues.financialProxyVersionId).toBe('version-current');
+  });
+
+  it('binds financialProxyVersionId to NULL when the proxy has never been versioned — never fabricated', async () => {
+    const { requireOrganizationAccess, getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-4' }, user: { id: 'user-4' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctx);
+
+    mockDbData.projects = [{ id: PROJECT_UUID, organizationId: 'org-4' }];
+    mockDbData.outcomes = [{ id: OUTCOME_UUID, projectId: PROJECT_UUID }];
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: null, reviewStatus: 'approved', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 },
+    ];
+    mockDbData.financialProxyVersions = [];
+
+    const input = { outcomeId: OUTCOME_UUID, proxyId: PROXY_UUID, justification: 'test' };
+    await assignProxyToOutcome(PROJECT_UUID, input);
+
+    expect(mockDbData.lastInsertValues.financialProxyVersionId).toBeNull();
   });
 
   it('archiveOutcomeProxyAssignment performs logical archive', async () => {

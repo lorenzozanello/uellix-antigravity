@@ -53,6 +53,10 @@ export const AUDIT_ACTIONS = {
   FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy.review_status_changed',
   FINANCIAL_PROXY_ARCHIVED: 'financial_proxy.archived',
 
+  // Financial proxy versions (FIBIU-08 — FIBC-002/010/012)
+  FINANCIAL_PROXY_VERSION_CREATED: 'financial_proxy_version.created',
+  FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED: 'financial_proxy_version.review_status_changed',
+
   // Proxy assignments
   PROXY_ASSIGNMENT_CREATED: 'proxy_assignment.created',
   PROXY_ASSIGNMENT_ARCHIVED: 'proxy_assignment.archived',

@@ -967,6 +967,39 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'historical row to violate the new constraint.',
     expect: {},
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B2 (FIBIU-08). Proxy batch, following the same append convention     *
+   * unit 64 (W2-B1-R3) established.                                         *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 65,
+    id: '0053_fib_proxy_versions_provenance.sql',
+    kind: D,
+    file: 'db/migrations/0053_fib_proxy_versions_provenance.sql',
+    sha256: '5778f649a09b48092436385c9642cefbf6e2f6773d357a361489f8a6c17836c5',
+    dependsOn: ['0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-08 stage A (FIBC-010/FIBC-012/FIBDB-006/FIBDB-039). CREATE TABLE financial_proxy_versions ' +
+      '(the FIBC-002 specialization for proxies, mirroring evidence_versions\' treatment) plus ' +
+      'outcome_proxy_assignments.financial_proxy_version_id. Rubric factor columns (FIBDB-006 field ' +
+      'list) land here with no CHECK yet — FIBDB-044\'s range/derived-consistency CHECKs are FIBIU-09\'s ' +
+      'own migration. RLS mirrors financial_proxies exactly: org-scoped or approved-global SELECT, ' +
+      'INSERT/UPDATE at the same role floor as financial_proxies/proxy_sources, no DELETE policy.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing three policies are guarded but do not change the unit\'s overall class. No reverse ' +
+      'script — forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 3,
+      securitySurfaceDigest: '1fb6e2415a9a69dd82c9763caf068039a631b0e7f708d1b9d824ff2e92a7d901',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

@@ -11,6 +11,12 @@ import { requireOrganizationAccess, getCurrentOrganizationContext } from '@/lib/
 import { canApproveProxy } from '@/lib/auth/permissions';
 import { logAuditAction, AUDIT_ACTIONS } from '@/lib/audit/logger';
 import { getOrCreateSharedCopRate, convertToUsd, type FxRateExecutor } from '@/lib/pipeline/fx';
+import {
+  createFinancialProxyVersion,
+  getLatestFinancialProxyVersion,
+  updateCurrentFinancialProxyVersion,
+  assertApprovableProvenance,
+} from '@/lib/pipeline/financial-proxy-versions';
 
 type FinancialProxyRow = typeof financialProxies.$inferSelect;
 type FinancialProxyTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -172,6 +178,16 @@ const FinancialProxyInput = z.object({
   methodology: z.string().optional(),
   confidenceLevel: z.enum(['high', 'medium', 'low']).optional(),
   methodologicalRisk: z.enum(['low', 'medium', 'high']).optional(),
+  // FIBIU-08 (FIBC-010) — full-provenance fields, recorded on the version,
+  // never on the live financial_proxies row. Optional at stage A: creation
+  // (`suggested`) is still allowed with incomplete provenance; only
+  // *approval* requires them (see requireApprovableProvenance below).
+  geographicContextualScope: z.string().optional(),
+  linkedOutcomeContext: z.string().optional(),
+  recoverableReference: z.string().optional(),
+  relevanceJustification: z.string().optional(),
+  documentedTransformations: z.string().optional(),
+  consultationDate: z.string().optional(),
 });
 
 const ProxyAssignmentInput = z.object({
@@ -357,6 +373,41 @@ export async function createOrganizationFinancialProxy(input: unknown) {
     updatedAt: new Date(),
   }).returning().then(r => r[0]);
 
+  // FIBIU-08 (FIBC-002/FIBC-010) — every financial proxy is versioned from
+  // creation; there is no pre-versioning state to backfill for a NEW row.
+  const version = await createFinancialProxyVersion({
+    organizationId: ctx.organization.id,
+    financialProxyId: row.id,
+    sourceId: data.sourceId,
+    value: data.value,
+    currency: data.currency,
+    unit: data.unit,
+    referenceYear: data.referenceYear,
+    valueUsd: null,
+    fxRateId: null,
+    country: data.country ?? null,
+    territory: data.territory ?? null,
+    thematicArea: data.thematicArea ?? null,
+    methodology: data.methodology ?? null,
+    geographicContextualScope: data.geographicContextualScope ?? null,
+    linkedOutcomeContext: data.linkedOutcomeContext ?? null,
+    recoverableReference: data.recoverableReference ?? null,
+    relevanceJustification: data.relevanceJustification ?? null,
+    documentedTransformations: data.documentedTransformations ?? null,
+    consultationDate: data.consultationDate ? new Date(data.consultationDate) : null,
+    reviewStatus: 'draft',
+    createdBy: ctx.user.id,
+  });
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    actorUserId: ctx.user.id,
+    entityType: 'financial_proxy_version',
+    entityId: version.id,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED,
+    afterJson: version,
+  });
+
   await logAuditAction({
     organizationId: ctx.organization.id,
     actorUserId: ctx.user.id,
@@ -450,13 +501,37 @@ export async function updateFinancialProxyReviewStatus(
     // hatch.
     if (!proxy.organizationId) throw new Error('Forbidden');
     if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
+    // FIBIU-08 (FIBC-010/FIBC-012) — the EXIT_GATE's two named blocking
+    // conditions: a recordable actor+moment (this function supplies it
+    // below) and a recoverable reference, checked here against the CURRENT
+    // version, in the SAME locked transaction as the rest of the approval.
+    if (newStatus === 'approved') {
+      const currentVersion = await getLatestFinancialProxyVersion(proxyId, tx)
+      assertApprovableProvenance(currentVersion)
+    }
     const usdFields = newStatus === 'approved'
       ? await deriveApprovedProxyAuthority(tx, proxy)
       : {};
     const updated = await tx.update(financialProxies).set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
       .where(eq(financialProxies.id, proxyId))
       .returning().then(r => r[0]);
-    return { proxy, updated };
+
+    // FIBIU-08 (FIBC-012) — THE fix: reviewer_id/reviewed_at are actually
+    // written now, sealed on the CURRENT version, in the SAME transaction as
+    // the proxy row's own status change — never a separate later write that
+    // could observe a torn state between "proxy says approved" and "no
+    // version records who approved it or when."
+    const version = await updateCurrentFinancialProxyVersion(
+      proxyId,
+      {
+        reviewStatus: newStatus,
+        ...(newStatus === 'approved'
+          ? { reviewerId: ctx.user.id, reviewedAt: new Date(), ...usdFields }
+          : {}),
+      },
+      tx
+    );
+    return { proxy, updated, version };
   };
 
   const result = newStatus === 'approved'
@@ -465,7 +540,7 @@ export async function updateFinancialProxyReviewStatus(
       if (!canApproveProxy(ctx.membership.role)) throw new Error('Forbidden');
     }, transition)
     : await withLockedFinancialProxy(proxyId, transition);
-  const { proxy, updated } = result;
+  const { proxy, updated, version } = result;
 
   await logAuditAction({
     organizationId: ctx.organization.id,
@@ -476,6 +551,17 @@ export async function updateFinancialProxyReviewStatus(
     beforeJson: proxy,
     afterJson: updated,
   });
+
+  if (version) {
+    await logAuditAction({
+      organizationId: ctx.organization.id,
+      actorUserId: ctx.user.id,
+      entityType: 'financial_proxy_version',
+      entityId: version.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED,
+      afterJson: version,
+    });
+  }
   return updated;
 }
 
@@ -540,11 +626,19 @@ export async function assignProxyToOutcome(projectId: string, input: unknown) {
     .then(r => r[0]);
   if (duplicate) throw new Error('This proxy is already assigned to this outcome');
 
+  // FIBIU-08 (FIBDB-039) — bind to the CURRENT version at assignment time.
+  // Immutable per run: this assignment keeps pointing at exactly this
+  // version even if the proxy is later re-approved under a newer one. NULL
+  // (no version exists) is deliberately left NULL rather than fabricated —
+  // the calculation engine reads NULL as ineligible.
+  const version = await getLatestFinancialProxyVersion(data.proxyId);
+
   const row = await db.insert(outcomeProxyAssignments).values({
     projectId,
     organizationId: ctx.organization.id,
     outcomeId: data.outcomeId,
     proxyId: data.proxyId,
+    financialProxyVersionId: version?.id ?? null,
     justification: data.justification,
     territorialAdjustmentNotes: data.territorialAdjustmentNotes,
     assignedBy: ctx.user.id,

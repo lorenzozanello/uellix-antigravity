@@ -480,12 +480,104 @@ export const financialProxies = pgTable('financial_proxies', {
   index('idx_financial_proxies_source_id').on(table.sourceId),
 ])
 
+// FIBIU-08 — proxy version lineage (FIBDB-006/FIBC-002/FIBC-010/FIBC-012),
+// the dedicated FIBC-002 specialization for financial proxies, following the
+// same ordinal + supersedes_version_id lineage shape as evidence_versions/
+// domain_object_versions. Approval is sealed HERE (reviewer_id/reviewed_at),
+// on the version — not only on the live financial_proxies row — per FIBC-012:
+// "Approval is sealed on the proxy version with approver identity and
+// timestamp." Full provenance (FIBC-010) lives here too: geographic/
+// contextual scope, linked-outcome context, a recoverable reference distinct
+// from the bare proxy_sources link, relevance justification, and documented
+// transformations — none of which financial_proxies itself ever carried.
+//
+// Rubric factors (C1-C6/R1-R7) and derived confidence/risk scores are FIBDB-
+// 006 field-list items (OWNING UNIT: FIBIU-08) and land as columns now; their
+// FIBDB-044 range/derived-consistency CHECK constraints are FIBIU-09's own
+// migration — substrate now, hardening owned by the unit whose contract it
+// is. rubric_version is a value-reference to governed_model_registry
+// (modelId='PROXY_DEFENDIBILITY_RUBRIC'), the same varchar-not-FK convention
+// sroi_calculation_runs.methodologyVersion already uses, since the registry
+// is keyed by (model_id, version), not a single-column id.
+//
+// Stage A: mutable in place for status/provenance-sealing transitions on the
+// CURRENT version, matching evidence_versions' stage-A/stage-E split — true
+// post-approval immutability is FIBDB-006's declared hardening stage E, not
+// enforced here.
+export const financialProxyVersions = pgTable('financial_proxy_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
+  financialProxyId: uuid('financial_proxy_id').references(() => financialProxies.id).notNull(),
+  ordinal: integer('ordinal').notNull(),
+  // Material provenance snapshot (FIBC-010) — present at every version.
+  sourceId: uuid('source_id').references(() => proxySources.id).notNull(),
+  value: numeric('value', { precision: 20, scale: 4 }),
+  currency: varchar('currency', { length: 10 }),
+  unit: varchar('unit', { length: 50 }),
+  referenceYear: integer('reference_year'),
+  valueUsd: numeric('value_usd', { precision: 20, scale: 4 }),
+  fxRateId: uuid('fx_rate_id').references(() => fxRates.id),
+  country: varchar('country', { length: 2 }),
+  territory: varchar('territory', { length: 255 }),
+  thematicArea: varchar('thematic_area', { length: 255 }),
+  methodology: text('methodology'),
+  // FIBC-010 fields no prior table ever persisted.
+  geographicContextualScope: text('geographic_contextual_scope'),
+  linkedOutcomeContext: text('linked_outcome_context'),
+  recoverableReference: text('recoverable_reference'),
+  relevanceJustification: text('relevance_justification'),
+  documentedTransformations: text('documented_transformations'),
+  consultationDate: timestamp('consultation_date'),
+  // FIBC-011/FIBDB-044 rubric factors — columns owned by FIBIU-08 (FIBDB-006
+  // field list), CHECK constraints owned by FIBIU-09 (FIBDB-044).
+  c1SourceQualityVerifiability: integer('c1_source_quality_verifiability'),
+  c2OutcomeCorrespondence: integer('c2_outcome_correspondence'),
+  c3StakeholderPopulationFit: integer('c3_stakeholder_population_fit'),
+  c4GeographicContextFit: integer('c4_geographic_context_fit'),
+  c5TemporalFit: integer('c5_temporal_fit'),
+  c6MethodologicalUnitComparability: integer('c6_methodological_unit_comparability'),
+  r1ProvenanceRisk: integer('r1_provenance_risk'),
+  r2SourceLimitationRisk: integer('r2_source_limitation_risk'),
+  r3ConceptualFitRisk: integer('r3_conceptual_fit_risk'),
+  r4GeographicPopulationTransferRisk: integer('r4_geographic_population_transfer_risk'),
+  r5TemporalObsolescenceRisk: integer('r5_temporal_obsolescence_risk'),
+  r6TransformationRisk: integer('r6_transformation_risk'),
+  r7MethodologicalUncertaintyRisk: integer('r7_methodological_uncertainty_risk'),
+  confidenceScore: integer('confidence_score'),
+  confidenceLevel: varchar('confidence_level', { length: 20 }),
+  methodologicalRiskScore: integer('methodological_risk_score'),
+  methodologicalRisk: varchar('methodological_risk', { length: 20 }),
+  rubricVersion: varchar('rubric_version', { length: 20 }),
+  exceptionalDefendibilityDetermination: text('exceptional_defendibility_determination'),
+  // FIBC-012 approval sealing — the actual fix this unit exists to make.
+  reviewStatus: varchar('review_status', { length: 50 }).default('draft').notNull(),
+  reviewerId: uuid('reviewer_id').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  supersedesVersionId: uuid('supersedes_version_id'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('financial_proxy_versions_proxy_ordinal_unique').on(table.financialProxyId, table.ordinal),
+  check('financial_proxy_versions_review_status_check', sql`${table.reviewStatus} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+  check('financial_proxy_versions_confidence_level_check', sql`${table.confidenceLevel} IS NULL OR ${table.confidenceLevel} IN ('high', 'medium', 'low')`),
+  check('financial_proxy_versions_methodological_risk_check', sql`${table.methodologicalRisk} IS NULL OR ${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
+  index('idx_financial_proxy_versions_proxy_id').on(table.financialProxyId),
+  index('idx_financial_proxy_versions_organization_id').on(table.organizationId),
+])
+
 export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
   outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
   proxyId: uuid('proxy_id').references(() => financialProxies.id).notNull(),
+  // FIBIU-08 (FIBDB-039) — binds this assignment to the exact proxy VERSION
+  // in effect when it was made. Immutable per run: never repointed to a
+  // later version by this module. NULL means "no version was ever bound"
+  // (legacy assignments predating this column, or a defensive gap) and is
+  // read as ineligible for the calculation engine, never as "use whatever
+  // the live proxy currently says" — see lib/pipeline/sroi-calculation.ts.
+  financialProxyVersionId: uuid('financial_proxy_version_id').references(() => financialProxyVersions.id),
   justification: text('justification'),
   territorialAdjustmentNotes: text('territorial_adjustment_notes'),
   assignedBy: uuid('assigned_by').references(() => users.id).notNull(),
@@ -498,6 +590,7 @@ export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   index('idx_opa_organization_id').on(table.organizationId),
   index('idx_opa_outcome_id').on(table.outcomeId),
   index('idx_opa_proxy_id').on(table.proxyId),
+  index('idx_opa_proxy_version_id').on(table.financialProxyVersionId),
 ])
 
 export const projectInvestments = pgTable('project_investments', {

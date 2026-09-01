@@ -75,24 +75,24 @@ describe('the baseline manifest describes the corpus that is actually checked in
     expect([...BASELINE_UNITS].map((u) => u.file).sort()).toEqual(discovered().sort())
   })
 
-  // W2-B1-R1/R3 (R-B1-03/R-B1-04) — re-derived, not fitted: FIB Wave 2 B1
-  // (FIBIU-04/05/06/07) added exactly four Drizzle migrations (0048-0051),
-  // one per B1 commit, and W2-B1-R3's run-binding remediation added one
-  // more (0052). 48+4+1=53 Drizzle; Supabase and policy counts unchanged.
-  it('has 64 units: 53 Drizzle, 2 Supabase, 9 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(64)
+  // W2-B2 (FIBIU-08) — re-derived, not fitted: FIB Wave 2 B1 closure left
+  // 53 Drizzle units; this batch's first unit adds exactly one more
+  // (0053_fib_proxy_versions_provenance.sql). 53+1=54 Drizzle; Supabase and
+  // policy counts unchanged.
+  it('has 65 units: 54 Drizzle, 2 Supabase, 9 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(65)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(53)
+    expect(byKind('drizzle-migration')).toBe(54)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(9)
   })
 
-  it('numbers ordinals 1..64 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..65 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 64 }, (_, i) => i + 1),
+      Array.from({ length: 65 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(64)
+    expect(new Set(BASELINE_ORDER).size).toBe(65)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {

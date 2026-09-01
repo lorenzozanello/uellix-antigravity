@@ -24,12 +24,18 @@
 // Manual entry persists every rate in fx_rates for audit trail (no dedup)
 
 import { db } from '@/db/client'
-import { proxySources, financialProxies, fxRates } from '@/db/schema'
+import { proxySources, financialProxies, financialProxyVersions, fxRates } from '@/db/schema'
 import {
   deriveApprovedProxyAuthority,
   withExpectedLockedFinancialProxy,
   withLockedFinancialProxy,
 } from '@/lib/pipeline/proxies'
+import {
+  createFinancialProxyVersion,
+  getLatestFinancialProxyVersion,
+  updateCurrentFinancialProxyVersion,
+  assertApprovableProvenance,
+} from '@/lib/pipeline/financial-proxy-versions'
 import { convertToUsd } from '@/lib/pipeline/fx'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
@@ -57,6 +63,15 @@ const FinancialProxyInput = z.object({
   methodology: z.string().optional(),
   confidenceLevel: z.enum(['high', 'medium', 'low']).optional(),
   methodologicalRisk: z.enum(['low', 'medium', 'high']).optional(),
+  // FIBIU-08 (FIBC-010) — full-provenance fields, recorded on the version.
+  // Optional at creation (`suggested`); recoverableReference specifically is
+  // required at approval time (assertApprovableProvenance).
+  geographicContextualScope: z.string().optional(),
+  linkedOutcomeContext: z.string().optional(),
+  recoverableReference: z.string().optional(),
+  relevanceJustification: z.string().optional(),
+  documentedTransformations: z.string().optional(),
+  consultationDate: z.string().optional(),
 })
 
 const REVIEW_STATUSES = ['suggested', 'pending_review', 'approved', 'rejected', 'archived'] as const
@@ -97,11 +112,15 @@ export async function createGlobalProxySource(input: unknown) {
     })
     .returning()
 
+  // MNB-1 — this created a proxy_source, not an organization; the correct,
+  // already-governed verb for that entity has existed in AUDIT_ACTIONS since
+  // before this fix (see lib/pipeline/proxies.ts:createOrganizationProxySource,
+  // the org-scoped sibling of this admin-only path).
   await logAuditAction({
     actorUserId: admin.id,
     entityType: 'proxy_source',
     entityId: row.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.PROXY_SOURCE_CREATED,
     afterJson: row,
   })
 
@@ -135,11 +154,46 @@ export async function createGlobalFinancialProxy(input: unknown) {
     })
     .returning()
 
+  // FIBIU-08 (FIBC-002/FIBC-010) — same versioning substrate as the
+  // org-scoped path: every financial proxy is versioned from creation.
+  const version = await createFinancialProxyVersion({
+    organizationId: null,
+    financialProxyId: row.id,
+    sourceId: data.sourceId,
+    value: data.value,
+    currency: data.currency,
+    unit: data.unit,
+    referenceYear: data.referenceYear,
+    valueUsd: null,
+    fxRateId: null,
+    country: data.country ?? null,
+    territory: data.territory ?? null,
+    thematicArea: data.thematicArea ?? null,
+    methodology: data.methodology ?? null,
+    geographicContextualScope: data.geographicContextualScope ?? null,
+    linkedOutcomeContext: data.linkedOutcomeContext ?? null,
+    recoverableReference: data.recoverableReference ?? null,
+    relevanceJustification: data.relevanceJustification ?? null,
+    documentedTransformations: data.documentedTransformations ?? null,
+    consultationDate: data.consultationDate ? new Date(data.consultationDate) : null,
+    reviewStatus: 'draft',
+    createdBy: admin.id,
+  })
+
+  await logAuditAction({
+    actorUserId: admin.id,
+    entityType: 'financial_proxy_version',
+    entityId: version.id,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED,
+    afterJson: version,
+  })
+
+  // MNB-1 — this created a financial_proxy, not an organization.
   await logAuditAction({
     actorUserId: admin.id,
     entityType: 'financial_proxy',
     entityId: row.id,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_CREATED,
     afterJson: row,
   })
 
@@ -161,6 +215,11 @@ export async function updateGlobalProxyReviewStatus(
 
     let usdFields: { valueUsd: string; fxRateId: string | null } | Record<string, never> = {}
     if (newStatus === 'approved') {
+      // FIBIU-08 (FIBC-010/FIBC-012) — the EXIT_GATE's recoverable-reference
+      // gate, checked against the CURRENT version in the same locked
+      // transaction, exactly like the org-scoped path.
+      const currentVersion = await getLatestFinancialProxyVersion(proxyId, tx)
+      assertApprovableProvenance(currentVersion)
       usdFields = await deriveApprovedProxyAuthority(tx, proxy)
     }
 
@@ -169,23 +228,47 @@ export async function updateGlobalProxyReviewStatus(
       .set({ reviewStatus: newStatus, ...usdFields, updatedAt: new Date() })
       .where(eq(financialProxies.id, proxyId))
       .returning()
-    return { proxy, updated }
+
+    // FIBIU-08 (FIBC-012) — sealed on the version, in the same transaction,
+    // exactly like the org-scoped path (lib/pipeline/proxies.ts).
+    const version = await updateCurrentFinancialProxyVersion(
+      proxyId,
+      {
+        reviewStatus: newStatus,
+        ...(newStatus === 'approved'
+          ? { reviewerId: admin.id, reviewedAt: new Date(), ...usdFields }
+          : {}),
+      },
+      tx
+    )
+    return { proxy, updated, version }
   }
 
-  const { proxy, updated } = newStatus === 'approved'
+  const { proxy, updated, version } = newStatus === 'approved'
     ? await withExpectedLockedFinancialProxy(proxyId, expectedApprovalState, (_tx, proxy) => {
       if (proxy.organizationId) throw new Error('Not a global proxy — manage it from the owning organization')
     }, transition)
     : await withLockedFinancialProxy(proxyId, transition)
 
+  // MNB-1 — this changed a financial_proxy's review status, not an organization.
   await logAuditAction({
     actorUserId: admin.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED,
     beforeJson: proxy,
     afterJson: updated,
   })
+
+  if (version) {
+    await logAuditAction({
+      actorUserId: admin.id,
+      entityType: 'financial_proxy_version',
+      entityId: version.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED,
+      afterJson: version,
+    })
+  }
 
   return updated
 }
@@ -245,11 +328,12 @@ export async function setGlobalProxyManualFxRate(
     },
   )
 
+  // MNB-1 — this changed a financial_proxy's FX/valueUsd fields, not an organization.
   await logAuditAction({
     actorUserId: admin.id,
     entityType: 'financial_proxy',
     entityId: proxyId,
-    action: AUDIT_ACTIONS.ORGANIZATION_UPDATED,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_UPDATED,
     beforeJson: proxy,
     afterJson: updated,
   })
@@ -268,7 +352,8 @@ export async function listPendingReviewProxies() {
 
 export async function promoteProxyToGlobal(proxyId: string, expectedApprovalState: string) {
   const admin = await requireAdminAccess()
-  return withExpectedLockedFinancialProxy(
+  const now = new Date()
+  const { clonedSource, clonedProxy, clonedVersion, originalVersion } = await withExpectedLockedFinancialProxy(
     proxyId,
     expectedApprovalState,
     (_tx, proxy) => {
@@ -276,6 +361,12 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
       if (proxy.reviewStatus !== 'pending_review') throw new Error('Proxy is not pending review')
     },
     async (tx, proxy) => {
+      // FIBIU-08 (FIBC-010/FIBC-012) — this transition also approves the
+      // ORIGINAL proxy (reviewStatus -> 'approved' below), so the same
+      // recoverable-reference gate applies here too. Fetched once, reused
+      // below for the clone's own provenance copy.
+      const sourceVersion = await getLatestFinancialProxyVersion(proxyId, tx)
+      assertApprovableProvenance(sourceVersion)
       const usdFields = await deriveApprovedProxyAuthority(tx, proxy)
       const source = await tx
         .select()
@@ -284,8 +375,9 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
         .for('update')
         .then((rows) => rows[0] ?? null)
       let globalSourceId = proxy.sourceId
+      let clonedSource: typeof proxySources.$inferSelect | null = null
       if (source?.organizationId) {
-        const [clonedSource] = await tx.insert(proxySources).values({
+        ;[clonedSource] = await tx.insert(proxySources).values({
           organizationId: null,
           name: source.name,
           description: source.description,
@@ -314,13 +406,96 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
         methodologicalRisk: proxy.methodologicalRisk,
         reviewStatus: 'approved',
         reviewerId: admin.id,
-        reviewedAt: new Date(),
+        reviewedAt: now,
         createdBy: admin.id,
       }).returning()
       await tx.update(financialProxies)
-        .set({ reviewStatus: 'approved', ...usdFields, reviewerId: admin.id, reviewedAt: new Date(), updatedAt: new Date() })
+        .set({ reviewStatus: 'approved', ...usdFields, reviewerId: admin.id, reviewedAt: now, updatedAt: now })
         .where(eq(financialProxies.id, proxyId))
-      return clonedProxy
+
+      // FIBIU-08 (FIBC-002/FIBC-010/FIBC-012) — carry the original's current
+      // provenance into the clone's own version 1, sealed approved on
+      // creation; seal the original's own current version approved too, in
+      // the same transaction as the live-row transitions above.
+      const clonedVersion = await createFinancialProxyVersion(
+        {
+          organizationId: null,
+          financialProxyId: clonedProxy.id,
+          sourceId: globalSourceId,
+          value: proxy.value,
+          currency: proxy.currency,
+          unit: proxy.unit,
+          referenceYear: proxy.referenceYear,
+          valueUsd: usdFields.valueUsd ?? null,
+          fxRateId: usdFields.fxRateId ?? null,
+          country: proxy.country,
+          territory: proxy.territory,
+          thematicArea: proxy.thematicArea,
+          methodology: proxy.methodology,
+          geographicContextualScope: sourceVersion?.geographicContextualScope ?? null,
+          linkedOutcomeContext: sourceVersion?.linkedOutcomeContext ?? null,
+          recoverableReference: sourceVersion?.recoverableReference ?? null,
+          relevanceJustification: sourceVersion?.relevanceJustification ?? null,
+          documentedTransformations: sourceVersion?.documentedTransformations ?? null,
+          consultationDate: sourceVersion?.consultationDate ?? null,
+          reviewStatus: 'approved',
+          createdBy: admin.id,
+        },
+        tx
+      )
+      await tx
+        .update(financialProxyVersions)
+        .set({ reviewerId: admin.id, reviewedAt: now })
+        .where(eq(financialProxyVersions.id, clonedVersion.id))
+      const originalVersion = await updateCurrentFinancialProxyVersion(
+        proxyId,
+        { reviewStatus: 'approved', reviewerId: admin.id, reviewedAt: now, ...usdFields },
+        tx
+      )
+
+      return { clonedSource, clonedProxy, clonedVersion, originalVersion }
     },
   )
+
+  if (clonedSource) {
+    await logAuditAction({
+      actorUserId: admin.id,
+      entityType: 'proxy_source',
+      entityId: clonedSource.id,
+      action: AUDIT_ACTIONS.PROXY_SOURCE_CREATED,
+      afterJson: clonedSource,
+    })
+  }
+  await logAuditAction({
+    actorUserId: admin.id,
+    entityType: 'financial_proxy_version',
+    entityId: clonedVersion.id,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_CREATED,
+    afterJson: clonedVersion,
+  })
+  await logAuditAction({
+    actorUserId: admin.id,
+    entityType: 'financial_proxy',
+    entityId: clonedProxy.id,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_CREATED,
+    afterJson: clonedProxy,
+  })
+  if (originalVersion) {
+    await logAuditAction({
+      actorUserId: admin.id,
+      entityType: 'financial_proxy_version',
+      entityId: originalVersion.id,
+      action: AUDIT_ACTIONS.FINANCIAL_PROXY_VERSION_REVIEW_STATUS_CHANGED,
+      afterJson: originalVersion,
+    })
+  }
+  await logAuditAction({
+    actorUserId: admin.id,
+    entityType: 'financial_proxy',
+    entityId: proxyId,
+    action: AUDIT_ACTIONS.FINANCIAL_PROXY_REVIEW_STATUS_CHANGED,
+    afterJson: { id: proxyId, reviewStatus: 'approved' },
+  })
+
+  return clonedProxy
 }

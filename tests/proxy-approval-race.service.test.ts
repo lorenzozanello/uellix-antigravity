@@ -16,6 +16,11 @@ type ProxyRow = {
   referenceYear: number
   valueUsd: string | null
   fxRateId: string | null
+  // FIBIU-08 (FIBC-010) — this fixture's single shared object stands in for
+  // BOTH financial_proxies and financial_proxy_versions (the mock does not
+  // discriminate by table — see the `select`/`update` mocks below), so the
+  // recoverable-reference field the approval gate reads lives here too.
+  recoverableReference: string
 }
 
 function deferred<T = void>() {
@@ -65,6 +70,12 @@ const mocks = vi.hoisted(() => {
         const query: any = {
           where: vi.fn(() => query),
           for: vi.fn(() => query),
+          // FIBIU-08 — updateCurrentFinancialProxyVersion's lookup chain adds
+          // .orderBy()/.limit(); this test's single-shared-row model doesn't
+          // discriminate by table (proving the financial_proxies row-lock
+          // race is the whole point here), so these stay no-ops like `where`.
+          orderBy: vi.fn(() => query),
+          limit: vi.fn(() => query),
           then: (callback: (rows: any[]) => unknown) => Promise.resolve(callback(state.current ? [state.current] : [])),
         }
         return query
@@ -114,14 +125,10 @@ vi.mock('@/lib/auth/session', () => ({
   getCurrentOrganizationContext: vi.fn(),
 }))
 vi.mock('@/lib/auth/permissions', () => ({ canApproveProxy: vi.fn() }))
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-  AUDIT_ACTIONS: {
-    FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy_review_status_changed',
-    FINANCIAL_PROXY_UPDATED: 'financial_proxy_updated',
-    ORGANIZATION_UPDATED: 'organization_updated',
-  },
-}))
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+})
 
 import { requireAdminAccess, requireOrganizationAccess } from '@/lib/auth/session'
 import { canApproveProxy } from '@/lib/auth/permissions'
@@ -147,6 +154,7 @@ function seedProxy(overrides: Partial<ProxyRow> = {}) {
     referenceYear: 2025,
     valueUsd: null,
     fxRateId: null,
+    recoverableReference: 'https://example.org/proof',
     ...overrides,
   }
 }

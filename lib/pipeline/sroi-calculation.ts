@@ -17,6 +17,7 @@ import {
   sroiCalculationLineItems,
   outcomeProxyAssignments,
   financialProxies,
+  financialProxyVersions,
   outcomes,
   projects,
   evidenceItems,
@@ -341,6 +342,11 @@ export interface AssignmentData {
   input: typeof sroiAssignmentInputs.$inferSelect
   filterSet: typeof sroiFilterSets.$inferSelect
   proxy: typeof financialProxies.$inferSelect
+  // FIBIU-08 (FIBC-012) — the exact version this assignment was bound to at
+  // assignment time, never re-derived from the proxy's CURRENT state. Null
+  // when the assignment predates FIBDB-039 or was never bound — read as
+  // ineligible, the same as any other missing required field here.
+  proxyVersion: typeof financialProxyVersions.$inferSelect | null
   outcome: typeof outcomes.$inferSelect
 }
 
@@ -383,18 +389,23 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
   const assignmentIds = assignments.map(a => a.id)
   const proxyIds = assignments.map(a => a.proxyId)
   const outcomeIds = assignments.map(a => a.outcomeId)
+  const proxyVersionIds = assignments
+    .map(a => a.financialProxyVersionId)
+    .filter((id): id is string => id !== null)
 
   // Load all related data in parallel
-  const [inputs, filters, proxiesRows, outcomesRows] = await Promise.all([
+  const [inputs, filters, proxiesRows, proxyVersionRows, outcomesRows] = await Promise.all([
     db.select().from(sroiAssignmentInputs).where(and(inArray(sroiAssignmentInputs.assignmentId, assignmentIds), eq(sroiAssignmentInputs.organizationId, orgId))),
     db.select().from(sroiFilterSets).where(and(inArray(sroiFilterSets.assignmentId, assignmentIds), eq(sroiFilterSets.organizationId, orgId))),
     db.select().from(financialProxies).where(inArray(financialProxies.id, proxyIds)),
+    proxyVersionIds.length > 0 ? db.select().from(financialProxyVersions).where(inArray(financialProxyVersions.id, proxyVersionIds)) : Promise.resolve([]),
     db.select().from(outcomes).where(and(inArray(outcomes.id, outcomeIds), eq(outcomes.projectId, projectId))),
   ])
 
   const inputByAssignment = new Map(inputs.map(i => [i.assignmentId, i]))
   const filterByAssignment = new Map(filters.map(f => [f.assignmentId, f]))
   const proxyById = new Map(proxiesRows.map(p => [p.id, p]))
+  const proxyVersionById = new Map(proxyVersionRows.map(v => [v.id, v]))
   const outcomeById = new Map(outcomesRows.map(o => [o.id, o]))
 
   const assignmentData: AssignmentData[] = []
@@ -402,6 +413,7 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
     const input = inputByAssignment.get(a.id)
     const filterSet = filterByAssignment.get(a.id)
     const proxy = proxyById.get(a.proxyId)
+    const proxyVersion = a.financialProxyVersionId ? proxyVersionById.get(a.financialProxyVersionId) ?? null : null
     const outcome = outcomeById.get(a.outcomeId)
     if (input && filterSet && proxy && outcome) {
       // CL-2D (SROI-01) — readiness already checked reviewStatus === 'approved',
@@ -413,12 +425,26 @@ async function loadCalculationData(projectId: string, orgId: string, enforceAppr
       // the silent-corruption failure mode this guards against. Only the real
       // calculation entry points enforce this (see `enforceApproval` above) —
       // readiness's own use of this loader must stay graceful.
+      //
+      // FIBIU-08 (FIBC-012) — "eligibility binds to the exact reviewed
+      // version": the live proxy row can drift forward (a later edit could
+      // reset reviewStatus, or a later version could exist) without this
+      // assignment's own frozen version ever changing, so BOTH must be
+      // approved — the live check preserved as the double-assertion the
+      // FIB's own TESTS clause requires, the version check as the new,
+      // actually-binding one. A NULL financialProxyVersionId (no version was
+      // ever bound) is exactly as fatal as an unapproved one.
       if (enforceApproval && proxy.reviewStatus !== 'approved') {
         throw new Error(
           `Cannot calculate: proxy ${proxy.id} is not approved (reviewStatus=${proxy.reviewStatus})`
         )
       }
-      assignmentData.push({ assignment: a, input, filterSet, proxy, outcome })
+      if (enforceApproval && (!proxyVersion || proxyVersion.reviewStatus !== 'approved')) {
+        throw new Error(
+          `Cannot calculate: proxy ${proxy.id}'s assigned version is not approved (financialProxyVersionId=${a.financialProxyVersionId ?? 'null'})`
+        )
+      }
+      assignmentData.push({ assignment: a, input, filterSet, proxy, proxyVersion, outcome })
     }
   }
 
@@ -488,16 +514,21 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
 
   const assignmentIds = allAssignments.map(a => a.id)
   const proxyIds = allAssignments.map(a => a.proxyId)
+  const proxyVersionIds = allAssignments
+    .map(a => a.financialProxyVersionId)
+    .filter((id): id is string => id !== null)
 
-  const [inputs, filters, proxiesRows] = await Promise.all([
+  const [inputs, filters, proxiesRows, proxyVersionRows] = await Promise.all([
     assignmentIds.length > 0 ? db.select().from(sroiAssignmentInputs).where(and(inArray(sroiAssignmentInputs.assignmentId, assignmentIds), eq(sroiAssignmentInputs.organizationId, ctx.organization.id))) : Promise.resolve([]),
     assignmentIds.length > 0 ? db.select().from(sroiFilterSets).where(and(inArray(sroiFilterSets.assignmentId, assignmentIds), eq(sroiFilterSets.organizationId, ctx.organization.id))) : Promise.resolve([]),
     proxyIds.length > 0 ? db.select().from(financialProxies).where(inArray(financialProxies.id, proxyIds)) : Promise.resolve([]),
+    proxyVersionIds.length > 0 ? db.select().from(financialProxyVersions).where(inArray(financialProxyVersions.id, proxyVersionIds)) : Promise.resolve([]),
   ])
 
   const inputByAssignment = new Map(inputs.map(i => [i.assignmentId, i]))
   const filterByAssignment = new Map(filters.map(f => [f.assignmentId, f]))
   const proxyById = new Map(proxiesRows.map(p => [p.id, p]))
+  const proxyVersionById = new Map(proxyVersionRows.map(v => [v.id, v]))
 
   const missingInputs: string[] = []
   const missingFilterSets: string[] = []
@@ -510,10 +541,17 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
     const input = inputByAssignment.get(a.id)
     const filterSet = filterByAssignment.get(a.id)
     const proxy = proxyById.get(a.proxyId)
+    const proxyVersion = a.financialProxyVersionId ? proxyVersionById.get(a.financialProxyVersionId) ?? null : null
 
     if (!input) missingInputs.push(a.id)
     if (!filterSet) missingFilterSets.push(a.id)
-    if (!proxy || proxy.reviewStatus !== 'approved') unapprovedProxies.push(a.proxyId)
+    // FIBIU-08 (FIBC-012) — an assignment with no bound version, or one bound
+    // to a version that is not itself approved, is exactly as unready as an
+    // unapproved live proxy row (see loadCalculationData's enforceApproval
+    // path, which is the actual gate — this is only the graceful preview).
+    if (!proxy || proxy.reviewStatus !== 'approved' || !proxyVersion || proxyVersion.reviewStatus !== 'approved') {
+      unapprovedProxies.push(a.proxyId)
+    }
 
     if (input && parseNum(input.quantity) <= 0) invalidQuantities.push(a.id)
     if (proxy?.value && parseNum(proxy.value) <= 0) invalidQuantities.push(`proxy:${proxy.id}`)

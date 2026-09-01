@@ -371,15 +371,16 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    // W2-B1-R1/R3 (R-B1-03/R-B1-04) — 65, NOT 64: unit ZERO creates the
-    // journal table, and it is a planned step rather than setup because a
-    // prerequisite nobody plans is one somebody skips. 64 baseline units +
-    // 1 journal bootstrap step. The count is asserted rather than loosened
-    // to `>= 64` — a plan that silently grew or shrank is exactly what
-    // this evidence exists to notice.
+    // W2-B2 (FIBIU-08) — 66, NOT 65: unit ZERO creates the journal table,
+    // and it is a planned step rather than setup because a prerequisite
+    // nobody plans is one somebody skips. 65 baseline units (64 + 1 for
+    // 0053_fib_proxy_versions_provenance.sql) + 1 journal bootstrap step.
+    // The count is asserted rather than loosened to `>= 65` — a plan that
+    // silently grew or shrank is exactly what this evidence exists to
+    // notice.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 65 &&
+      firstProvisioning.steps.length === 66 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -390,11 +391,10 @@ export function evaluateHostedBaselineGates(
   const gates: HostedBaselineGate[] = []
 
   /* 1 ---------------------------------------------------------------- */
-  // W2-B1-R1/R3 (R-B1-03/R-B1-04) — 64, re-derived: FIB Wave 2 B1 added
-  // exactly four Drizzle migrations (0048-0051), one per B1 commit
-  // (FIBIU-04/05/06/07), plus W2-B1-R3's run-binding remediation added one
-  // more (0052). 59 + 4 + 1 = 64.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 64
+  // W2-B2 (FIBIU-08) — 65, re-derived: FIB Wave 2 B1 closure left 64 units;
+  // this batch's first unit adds exactly one Drizzle migration
+  // (0053_fib_proxy_versions_provenance.sql). 64 + 1 = 65.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 65
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

@@ -5,22 +5,26 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const mockDbData = vi.hoisted(() => ({
   proxySources: [] as any[],
   financialProxies: [] as any[],
+  financialProxyVersions: [] as any[],
   inserted: {} as any,
   insertedGlobalSource: {} as any,
+  insertedVersion: {} as any,
   insertedRows: [] as any[],
   updated: {} as any,
+  updatedVersion: {} as any,
   insertedFxRate: {} as any,
   lastUpdateValues: null as any,
+  lastVersionUpdateValues: null as any,
 }));
 
 vi.mock('@/lib/auth/session', () => ({
   requireAdminAccess: vi.fn(),
 }));
 
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-  AUDIT_ACTIONS: { ORGANIZATION_UPDATED: 'organization_updated' },
-}));
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+});
 
 vi.mock('@/db/client', () => {
   const database: any = {
@@ -33,15 +37,16 @@ vi.mock('@/db/client', () => {
               ? mockDbData.proxySources
               : tableName === 'financial_proxies'
                 ? mockDbData.financialProxies
-                : [];
+                : tableName === 'financial_proxy_versions'
+                  ? mockDbData.financialProxyVersions
+                  : [];
           const query: any = {
-            where: vi.fn().mockImplementation(() => ({
-              then: vi.fn().mockImplementation((cb) => Promise.resolve(cb(data))),
-            })),
+            where: vi.fn().mockImplementation(() => query),
+            orderBy: vi.fn().mockImplementation(() => query),
+            limit: vi.fn().mockImplementation(() => query),
+            then: (cb: (rows: any[]) => unknown) => Promise.resolve(cb(data)),
+            for: vi.fn().mockImplementation(() => query),
           };
-          query.where.mockImplementation(() => query);
-          query.then = (cb: (rows: any[]) => unknown) => Promise.resolve(cb(data));
-          query.for = vi.fn().mockImplementation(() => query);
           return query;
         }),
       })),
@@ -58,22 +63,33 @@ vi.mock('@/db/client', () => {
                   ? Object.keys(mockDbData.insertedGlobalSource).length > 0
                     ? mockDbData.insertedGlobalSource
                     : mockDbData.inserted
-                  : mockDbData.inserted])
+                  : tableName === 'financial_proxy_versions'
+                    ? mockDbData.insertedVersion
+                    : mockDbData.inserted])
             ),
             });
           }),
         };
       }),
-      update: vi.fn().mockImplementation(() => ({
+      update: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
+        return {
         set: vi.fn().mockImplementation((values) => {
-          mockDbData.lastUpdateValues = values;
+          if (tableName === 'financial_proxy_versions') {
+            mockDbData.lastVersionUpdateValues = values;
+          } else {
+            mockDbData.lastUpdateValues = values;
+          }
           return ({
           where: vi.fn().mockImplementation(() => ({
-            returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.updated])),
+            returning: vi.fn().mockImplementation(() =>
+              Promise.resolve([tableName === 'financial_proxy_versions' ? mockDbData.updatedVersion : mockDbData.updated])
+            ),
           })),
           });
         }),
-      })),
+        };
+      }),
   };
   return { db: database };
 });
@@ -112,12 +128,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockDbData.proxySources = [];
   mockDbData.financialProxies = [];
+  mockDbData.financialProxyVersions = [];
   mockDbData.inserted = {};
   mockDbData.insertedGlobalSource = {};
+  mockDbData.insertedVersion = { id: 'version-1' };
   mockDbData.insertedRows = [];
   mockDbData.updated = {};
+  mockDbData.updatedVersion = { id: 'version-1' };
   mockDbData.insertedFxRate = {};
   mockDbData.lastUpdateValues = null;
+  mockDbData.lastVersionUpdateValues = null;
 });
 
 describe('listGlobalProxySources / listGlobalFinancialProxies', () => {
@@ -188,6 +208,12 @@ describe('updateGlobalProxyReviewStatus', () => {
     mockDbData.financialProxies = [
       { id: 'proxy-1', organizationId: null, reviewStatus: 'suggested', value: null, currency: 'USD', unit: 'mes', referenceYear: 2024 },
     ];
+    // FIBIU-08 — a real recoverable reference must be present so THIS test
+    // still isolates the value-check it names, not the (separately tested)
+    // recoverable-reference gate.
+    mockDbData.financialProxyVersions = [
+      { id: 'version-1', financialProxyId: 'proxy-1', recoverableReference: 'https://example.org/proof' },
+    ];
 
     await expect(updateGlobalProxyReviewStatus('proxy-1', 'approved', reviewedStateOf(mockDbData.financialProxies[0]))).rejects.toThrow(
       'Cannot approve without value'
@@ -198,6 +224,9 @@ describe('updateGlobalProxyReviewStatus', () => {
     vi.mocked(requireAdminAccess).mockResolvedValue(ADMIN);
     const proxy = { id: 'proxy-1', organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'mes', referenceYear: 2024 };
     mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-1', financialProxyId: 'proxy-1', recoverableReference: 'https://example.org/proof' },
+    ];
     mockDbData.updated = { ...proxy, reviewStatus: 'approved' };
 
     const result = await updateGlobalProxyReviewStatus('proxy-1', 'approved', reviewedStateOf(proxy));
@@ -294,6 +323,9 @@ describe('promoteProxyToGlobal', () => {
       thematicArea: null, methodology: null, confidenceLevel: null, methodologicalRisk: null,
     };
     mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-1', financialProxyId: 'proxy-1', recoverableReference: 'https://example.org/proof' },
+    ];
     mockDbData.proxySources = [{ id: 'source-1', organizationId: 'org-1', name: 'DANE', description: null, url: null, status: 'active' }];
     mockDbData.insertedGlobalSource = { id: 'global-source-1' };
     mockDbData.inserted = { id: 'global-proxy-1', reviewStatus: 'approved' };
@@ -301,7 +333,10 @@ describe('promoteProxyToGlobal', () => {
     const promoted = await promoteProxyToGlobal('proxy-1', reviewedStateOf(proxy));
 
     expect(promoted).toEqual({ id: 'global-proxy-1', reviewStatus: 'approved' });
-    expect(mockDbData.insertedRows).toHaveLength(2);
+    // FIBIU-08 — a third insert now lands here too: the clone's own
+    // financial_proxy_versions row (FIBC-002/FIBC-010), sealed approved on
+    // creation alongside the clone itself.
+    expect(mockDbData.insertedRows).toHaveLength(3);
     expect(mockDbData.insertedRows[0]).toMatchObject({
       tableName: 'proxy_sources',
       values: { organizationId: null, name: 'DANE', status: 'active' },
@@ -309,6 +344,10 @@ describe('promoteProxyToGlobal', () => {
     expect(mockDbData.insertedRows[1]).toMatchObject({
       tableName: 'financial_proxies',
       values: { organizationId: null, sourceId: 'global-source-1', reviewStatus: 'approved', valueUsd: '100' },
+    });
+    expect(mockDbData.insertedRows[2]).toMatchObject({
+      tableName: 'financial_proxy_versions',
+      values: { organizationId: null, financialProxyId: 'global-proxy-1', reviewStatus: 'approved', valueUsd: '100' },
     });
     expect(mockDbData.lastUpdateValues).toMatchObject({ reviewStatus: 'approved', valueUsd: '100' });
   });
