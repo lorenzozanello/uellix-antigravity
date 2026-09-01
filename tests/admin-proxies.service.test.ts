@@ -6,6 +6,22 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // approval. All-high-confidence/no-risk so these pre-existing approval tests
 // (written for FIBIU-08's gate) don't also trip the exceptional-
 // determination requirement, which is tested separately.
+// R-B2-02 — assertApprovableProvenance now gates FIBC-010's ten items, so
+// every approval fixture carries all of them (NC-6 itself lives in
+// tests/financial-proxy-versions.service.test.ts).
+const FULL_PROVENANCE = {
+  value: '100',
+  unit: 'mes',
+  currency: 'USD',
+  referenceYear: 2024,
+  sourceId: 'source-1',
+  geographicContextualScope: 'Nacional',
+  linkedOutcomeContext: 'Ingreso mensual',
+  recoverableReference: 'https://example.org/proof',
+  relevanceJustification: 'Misma población',
+  documentedTransformations: 'none',
+};
+
 const FULL_RUBRIC = {
   c1SourceQualityVerifiability: 3,
   c2OutcomeCorrespondence: 3,
@@ -234,7 +250,7 @@ describe('updateGlobalProxyReviewStatus', () => {
     // still isolates the value-check it names, not the (separately tested)
     // recoverable-reference gate.
     mockDbData.financialProxyVersions = [
-      { id: 'version-1', financialProxyId: 'proxy-1', recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
+      { id: 'version-1', financialProxyId: 'proxy-1', reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
     ];
 
     await expect(updateGlobalProxyReviewStatus('proxy-1', 'approved', reviewedStateOf(mockDbData.financialProxies[0]))).rejects.toThrow(
@@ -247,7 +263,7 @@ describe('updateGlobalProxyReviewStatus', () => {
     const proxy = { id: 'proxy-1', organizationId: null, reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'mes', referenceYear: 2024 };
     mockDbData.financialProxies = [proxy];
     mockDbData.financialProxyVersions = [
-      { id: 'version-1', financialProxyId: 'proxy-1', recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
+      { id: 'version-1', financialProxyId: 'proxy-1', reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
     ];
     mockDbData.updated = { ...proxy, reviewStatus: 'approved' };
 
@@ -346,7 +362,7 @@ describe('promoteProxyToGlobal', () => {
     };
     mockDbData.financialProxies = [proxy];
     mockDbData.financialProxyVersions = [
-      { id: 'version-1', financialProxyId: 'proxy-1', recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
+      { id: 'version-1', financialProxyId: 'proxy-1', reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
     ];
     mockDbData.proxySources = [{ id: 'source-1', organizationId: 'org-1', name: 'DANE', description: null, url: null, status: 'active' }];
     mockDbData.insertedGlobalSource = { id: 'global-source-1' };

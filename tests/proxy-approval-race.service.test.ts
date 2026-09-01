@@ -21,6 +21,12 @@ type ProxyRow = {
   // discriminate by table — see the `select`/`update` mocks below), so the
   // recoverable-reference field the approval gate reads lives here too.
   recoverableReference: string
+  // R-B2-02 — assertApprovableProvenance now gates FIBC-010's ten items,
+  // read off this same shared object.
+  geographicContextualScope: string
+  linkedOutcomeContext: string
+  relevanceJustification: string
+  documentedTransformations: string
   // FIBIU-09 (FIBC-011) — same reasoning: assertRubricApprovable reads its
   // thirteen factors off this same shared object.
   c1SourceQualityVerifiability: number
@@ -181,6 +187,10 @@ function seedProxy(overrides: Partial<ProxyRow> = {}) {
     valueUsd: null,
     fxRateId: null,
     recoverableReference: 'https://example.org/proof',
+    geographicContextualScope: 'Nacional',
+    linkedOutcomeContext: 'Ingreso',
+    relevanceJustification: 'Misma población',
+    documentedTransformations: 'none',
     c1SourceQualityVerifiability: 3,
     c2OutcomeCorrespondence: 3,
     c3StakeholderPopulationFit: 3,

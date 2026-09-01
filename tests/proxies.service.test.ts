@@ -7,6 +7,21 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // approval. All-high-confidence/no-risk so these pre-existing approval tests
 // (written for FIBIU-08's gate) don't also trip the exceptional-
 // determination requirement, which is tested separately.
+// R-B2-02 — assertApprovableProvenance gates FIBC-010's ten items; every
+// approval fixture carries all of them.
+const FULL_PROVENANCE = {
+  value: '100',
+  unit: 'unit',
+  currency: 'USD',
+  referenceYear: 2023,
+  sourceId: '550e8400-e29b-41d4-a716-446655440002',
+  geographicContextualScope: 'Nacional',
+  linkedOutcomeContext: 'Ingreso',
+  recoverableReference: 'https://example.org/proof',
+  relevanceJustification: 'Misma población',
+  documentedTransformations: 'none',
+};
+
 const FULL_RUBRIC = {
   c1SourceQualityVerifiability: 3,
   c2OutcomeCorrespondence: 3,
@@ -636,7 +651,7 @@ describe('Financial Proxies Service', () => {
         };
         mockDbData.financialProxies = [editedProxy];
         mockDbData.financialProxyVersions = [
-          { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
+          { id: 'version-1', financialProxyId: PROXY_UUID, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
         ];
         mockDbData.updated = { ...editedProxy, reviewStatus: 'approved', valueUsd: '250' };
 
@@ -661,7 +676,7 @@ describe('Financial Proxies Service', () => {
     const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
     mockDbData.financialProxyVersions = [
-      { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
+      { id: 'version-1', financialProxyId: PROXY_UUID, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
     ];
 
     const updated = { ...proxy, reviewStatus: 'approved' };
@@ -746,7 +761,7 @@ describe('Financial Proxies Service', () => {
       await asApprover();
       mockDbData.financialProxies = [approvalProxy];
       mockDbData.financialProxyVersions = [
-        { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
+        { id: 'version-1', financialProxyId: PROXY_UUID, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
       ];
       mockDbData.updated = { ...approvalProxy, reviewStatus: 'approved', reviewerId: 'reviewer-1' };
 

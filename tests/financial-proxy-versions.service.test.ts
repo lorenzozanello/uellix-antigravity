@@ -95,6 +95,7 @@ import {
   listFinancialProxyVersions,
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
+  APPROVAL_BLOCKING_PROVENANCE_ITEMS,
 } from '@/lib/pipeline/financial-proxy-versions'
 
 const PROXY_A = 'proxy-a'
@@ -186,24 +187,51 @@ describe('updateCurrentFinancialProxyVersion — seals onto the CURRENT version 
   })
 })
 
-describe('assertApprovableProvenance — FIBIU-08 EXIT_GATE: approval is impossible without a recoverable reference', () => {
+// R-B2-02 (B2-AR-B2) / NC-6 — FIBC-010's ten approval-blocking items, each
+// refused with an error naming that item. consultation_date (item 8) is
+// recordable-required but conditional ('where relevant') and MUST NOT block.
+const FULL_PROVENANCE = {
+  value: '100',
+  unit: 'person',
+  currency: 'USD',
+  referenceYear: 2025,
+  geographicContextualScope: 'Nacional, población urbana',
+  linkedOutcomeContext: 'Reducción de ingresos perdidos por enfermedad',
+  sourceId: 'source-1',
+  recoverableReference: 'https://data.worldbank.org/indicator/x',
+  relevanceJustification: 'Misma población y periodo que el proyecto',
+  documentedTransformations: 'none',
+}
+
+describe('assertApprovableProvenance — FIBC-010 ten-item approval gate (R-B2-02 / NC-6)', () => {
   it('throws when there is no version at all', () => {
     expect(() => assertApprovableProvenance(null)).toThrow('no version to approve')
   })
 
-  it('throws when recoverableReference is null', () => {
-    expect(() => assertApprovableProvenance({ recoverableReference: null })).toThrow(
-      'Cannot approve without a recoverable reference'
+  it('passes when all ten approval-blocking items are present', () => {
+    expect(() => assertApprovableProvenance(FULL_PROVENANCE)).not.toThrow()
+  })
+
+  it('does NOT gate consultation_date (FIBC-010 item 8, "where relevant")', () => {
+    expect(() => assertApprovableProvenance({ ...FULL_PROVENANCE, consultationDate: null } as never)).not.toThrow()
+  })
+
+  it.each(APPROVAL_BLOCKING_PROVENANCE_ITEMS)('NC-6: refuses approval naming item $item when $column is NULL', ({ column, item }) => {
+    expect(() => assertApprovableProvenance({ ...FULL_PROVENANCE, [column]: null })).toThrow(
+      new RegExp(`FIBC-010 item ${item}: ${column}`)
     )
   })
 
-  it('throws when recoverableReference is empty/whitespace-only — a bare institution name is insufficient (FIBC-010)', () => {
-    expect(() => assertApprovableProvenance({ recoverableReference: '   ' })).toThrow(
-      'Cannot approve without a recoverable reference'
-    )
-  })
+  it.each(APPROVAL_BLOCKING_PROVENANCE_ITEMS.filter((i) => typeof FULL_PROVENANCE[i.column] === 'string'))(
+    'NC-6: refuses approval naming item $item when $column is whitespace-only',
+    ({ column, item }) => {
+      expect(() => assertApprovableProvenance({ ...FULL_PROVENANCE, [column]: '   ' })).toThrow(
+        new RegExp(`FIBC-010 item ${item}: ${column}`)
+      )
+    }
+  )
 
-  it('passes when a real recoverable reference is present', () => {
-    expect(() => assertApprovableProvenance({ recoverableReference: 'https://data.worldbank.org/indicator/x' })).not.toThrow()
+  it('covers exactly the ten frozen items — 1..7 and 9..11, never 8', () => {
+    expect(APPROVAL_BLOCKING_PROVENANCE_ITEMS.map((i) => i.item)).toEqual([1, 2, 3, 4, 5, 6, 7, 9, 10, 11])
   })
 })

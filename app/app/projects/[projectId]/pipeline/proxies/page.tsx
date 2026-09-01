@@ -99,6 +99,49 @@ const RISK_FACTOR_LABELS: Record<string, string> = {
   r7MethodologicalUncertaintyRisk: 'R7 — Riesgo de incertidumbre metodológica',
 }
 
+// R-B2-02 (B2-AR-B2) — the six FIBC-010 provenance controls the organization
+// surface renders (items 5, 6, 8, 9, 10, 11; items 1-4 and 7 are the value /
+// unit / currency / reference-year / source controls the form already had).
+// Empty submissions map to `undefined` (no value supplied) — never to '' —
+// so a blank optional field is "absent", not "cleared" (editorial_noop_patch_
+// disposition ABSENT/UNDEFINED semantics).
+const PROVENANCE_FORM_FIELDS = [
+  { name: 'geographicContextualScope', label: 'Alcance geográfico / contextual', item: 5, placeholder: 'Ej: nacional, urbano, población rural andina…', blocking: true },
+  { name: 'linkedOutcomeContext', label: 'Resultado vinculado', item: 6, placeholder: 'Qué resultado/cambio monetiza este proxy', blocking: true },
+  { name: 'recoverableReference', label: 'Referencia recuperable', item: 9, placeholder: 'URL, DOI, dataset o documento vinculado', blocking: true },
+  { name: 'relevanceJustification', label: 'Justificación de relevancia', item: 10, placeholder: 'Por qué esta cifra es pertinente para este contexto', blocking: true },
+  { name: 'documentedTransformations', label: 'Transformaciones documentadas', item: 11, placeholder: 'FX, inflación, PPP, adaptación temporal/geográfica — o "ninguna"', blocking: true },
+  { name: 'consultationDate', label: 'Fecha de consulta', item: 8, placeholder: 'AAAA-MM-DD', blocking: false },
+] as const
+
+// The FIBC-013 material category each provenance control belongs to (mirrors
+// lib/pipeline/proxy-material-change.ts MATERIAL_FIELD_CATEGORY_BY_INPUT_KEY),
+// so the pre-edit notice can name the category an edit would invalidate.
+const PROVENANCE_CATEGORY = {
+  geographicContextualScope: 'geographic_institutional_context',
+  linkedOutcomeContext: 'outcome_stakeholder_correspondence',
+  recoverableReference: 'source_provenance',
+  relevanceJustification: 'provenance_rationale',
+  documentedTransformations: 'transformations',
+  consultationDate: 'temporal_context',
+} as const
+
+function readProvenanceFields(formData: FormData) {
+  const out: Record<string, string | undefined> = {}
+  for (const f of PROVENANCE_FORM_FIELDS) {
+    const raw = formData.get(f.name)
+    out[f.name] = typeof raw === 'string' && raw.length > 0 ? raw : undefined
+  }
+  return out as {
+    geographicContextualScope?: string
+    linkedOutcomeContext?: string
+    recoverableReference?: string
+    relevanceJustification?: string
+    documentedTransformations?: string
+    consultationDate?: string
+  }
+}
+
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 const TEXTAREA_CLASS =
@@ -188,6 +231,9 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
     const referenceYearStr = formData.get('referenceYear') as string
     const confidenceLevel = formData.get('confidenceLevel') as string
     const methodologicalRisk = formData.get('methodologicalRisk') as string
+    // R-B2-02 (B2-AR-B2) — the FIBC-010 provenance items, recordable from
+    // creation on the organization surface.
+    const provenance = readProvenanceFields(formData)
 
     await createFinancialProxyAction(projectId, {
       sourceId,
@@ -199,6 +245,7 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
       referenceYear: Number(referenceYearStr),
       confidenceLevel: confidenceLevel || undefined,
       methodologicalRisk: methodologicalRisk || undefined,
+      ...provenance,
     })
     revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
@@ -234,16 +281,21 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
   async function handleUpdateProxy(formData: FormData) {
     'use server'
     const proxyId = formData.get('proxyId') as string
+    const sourceId = formData.get('sourceId') as string
     const value = formData.get('value') as string
     const currency = formData.get('currency') as string
     const unit = formData.get('unit') as string
     const referenceYearStr = formData.get('referenceYear') as string
+    // R-B2-02 — all eleven FIBC-010 items are patchable from the org surface.
+    const provenance = readProvenanceFields(formData)
 
     await updateFinancialProxyAction(projectId, proxyId, {
+      sourceId: sourceId || undefined,
       value: value || undefined,
       currency: currency || undefined,
       unit: unit || undefined,
       referenceYear: referenceYearStr ? Number(referenceYearStr) : undefined,
+      ...provenance,
     })
     revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
@@ -480,6 +532,33 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                           : 'Confianza baja o riesgo alto — requiere una determinación excepcional explícita antes de poder aprobarse.'}
                       </p>
                     )}
+                    {/* R-B2-02 (FIBIU-08 UI_CHANGES on the ORGANIZATION surface):
+                        the recorded provenance and, once approved, the sealed
+                        actor and moment — read from the CURRENT VERSION, the
+                        row that persists them (FIBC-012). */}
+                    <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2" data-testid={`provenance-${p.id}`}>
+                      {PROVENANCE_FORM_FIELDS.map((f) => {
+                        const raw = version ? (version as Record<string, unknown>)[f.name] : null
+                        const text = raw instanceof Date ? raw.toLocaleDateString('es-MX') : raw == null || raw === '' ? null : String(raw)
+                        return (
+                          <div key={f.name}>
+                            <dt className="font-medium text-muted-foreground">{f.label}</dt>
+                            <dd className={text ? 'text-foreground' : 'text-muted-foreground/60'}>
+                              {text ?? (f.blocking ? 'Sin registrar — bloquea la aprobación' : 'Sin registrar')}
+                            </dd>
+                          </div>
+                        )
+                      })}
+                      {p.reviewStatus === 'approved' && version?.reviewedAt && (
+                        <div className="sm:col-span-2">
+                          <dt className="font-medium text-muted-foreground">Aprobación sellada</dt>
+                          <dd className="text-foreground" data-testid={`sealed-approval-${p.id}`}>
+                            {new Date(version.reviewedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {version.reviewerId ? ` · revisor ${version.reviewerId.slice(0, 8)}…` : ''}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
                   </CardHeader>
                   {canEvaluateRubric && (
                     <CardContent>
@@ -581,10 +660,10 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                             <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
                               Este proxy está <strong>aprobado</strong>. Editar cualquiera de los campos
                               siguientes es un cambio material — invalidará la aprobación actual y abrirá
-                              una nueva versión sin calificar para revisión. Los categorías afectadas son:{' '}
-                              {MATERIAL_CATEGORY_LABELS.identity_economic_value} (valor/moneda/unidad/año) y{' '}
-                              {MATERIAL_CATEGORY_LABELS.source_provenance} (fuente). La versión aprobada
-                              anterior se conserva intacta para los cálculos históricos que ya la usan.
+                              una nueva versión sin calificar para revisión. Cada control indica entre
+                              paréntesis la categoría material (FIBC-013) que afecta. Un envío sin cambios
+                              reales no invalida nada. La versión aprobada anterior se conserva intacta para
+                              los cálculos históricos que ya la usan.
                             </p>
                           )}
                           <div className="grid grid-cols-2 gap-2">
@@ -615,6 +694,40 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                               <input id={`${p.id}-edit-year`} name="referenceYear" type="number" defaultValue={p.referenceYear ?? ''} className={INPUT_CLASS} />
                             </div>
                           </div>
+                          <div>
+                            <label htmlFor={`${p.id}-edit-source`} className="block text-xs font-medium text-foreground">
+                              Fuente ({MATERIAL_CATEGORY_LABELS.source_provenance})
+                            </label>
+                            <Select id={`${p.id}-edit-source`} name="sourceId" defaultValue={p.sourceId ?? ''} className="mt-1">
+                              <option value="">— Sin cambio —</option>
+                              {proxySources.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                              ))}
+                            </Select>
+                          </div>
+                          {/* R-B2-02 (B2-AR-B2) — every FIBC-010 item is patchable
+                              on the organization surface, pre-filled from the
+                              CURRENT version (the row that persists it). A blank
+                              control is "no value supplied", never "clear". */}
+                          {PROVENANCE_FORM_FIELDS.map((f) => {
+                            const current = version ? (version as Record<string, unknown>)[f.name] : null
+                            const currentText = current instanceof Date
+                              ? current.toISOString().slice(0, 10)
+                              : current == null ? '' : String(current)
+                            return (
+                              <div key={f.name}>
+                                <label htmlFor={`${p.id}-edit-${f.name}`} className="block text-xs font-medium text-foreground">
+                                  {f.label} ({MATERIAL_CATEGORY_LABELS[PROVENANCE_CATEGORY[f.name]]})
+                                  {f.blocking ? ' — requerido para aprobar' : ' — cuando aplique'}
+                                </label>
+                                {f.name === 'consultationDate' ? (
+                                  <input id={`${p.id}-edit-${f.name}`} name={f.name} type="date" defaultValue={currentText} className={INPUT_CLASS} />
+                                ) : (
+                                  <textarea id={`${p.id}-edit-${f.name}`} name={f.name} rows={2} defaultValue={currentText} placeholder={f.placeholder} className={TEXTAREA_CLASS} />
+                                )}
+                              </div>
+                            )
+                          })}
                           <button
                             type="submit"
                             className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
@@ -910,6 +1023,38 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
                       </Select>
                     </div>
                   </div>
+
+                  {/* R-B2-02 (B2-AR-B2 / FIBC-010) — the full-provenance form,
+                      on the ORGANIZATION surface. Ten of the eleven items block
+                      approval; the consultation date is recordable-required
+                      but conditional ('where relevant') and never gated. */}
+                  <fieldset className="space-y-3 border-t border-border pt-3" aria-labelledby="proxy-provenance-heading">
+                    <legend id="proxy-provenance-heading" className="text-xs font-semibold text-foreground">
+                      Procedencia (FIBC-010)
+                    </legend>
+                    <p className="text-xs text-muted-foreground">
+                      Se puede crear sin completar estos campos; para <strong>aprobar</strong> se exigen todos
+                      salvo la fecha de consulta. Un nombre de institución sin más no basta — se necesita un
+                      enlace o identificador recuperable.
+                    </p>
+                    {PROVENANCE_FORM_FIELDS.map((f) => (
+                      <div key={f.name}>
+                        <label htmlFor={`proxy-${f.name}`} className="block text-xs font-medium text-foreground">
+                          {f.label}{' '}
+                          {f.blocking ? (
+                            <span className="text-danger" aria-hidden="true">*para aprobar</span>
+                          ) : (
+                            <span className="text-muted-foreground">(cuando aplique)</span>
+                          )}
+                        </label>
+                        {f.name === 'consultationDate' ? (
+                          <input id={`proxy-${f.name}`} name={f.name} type="date" className={INPUT_CLASS} />
+                        ) : (
+                          <textarea id={`proxy-${f.name}`} name={f.name} rows={2} placeholder={f.placeholder} className={TEXTAREA_CLASS} />
+                        )}
+                      </div>
+                    ))}
+                  </fieldset>
 
                   <button
                     type="submit"

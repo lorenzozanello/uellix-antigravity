@@ -341,27 +341,47 @@ export async function updateCurrentFinancialProxyVersion(
 }
 
 /**
- * FIBIU-08's own EXIT_GATE/TESTS clause names exactly two conditions
- * `approved` is impossible without: "a recordable actor and moment" (the
- * caller's own identity — always available, enforced by writing reviewer_id
- * /reviewed_at, not by this function) and "a recoverable reference". This
- * is the second half: a bare institution name or domain is insufficient
- * (FIBC-010's own words), so the version being approved must carry a real
- * recoverable_reference (URL/DOI/dataset id/linked document) before
- * `updateCurrentFinancialProxyVersion` is ever asked to seal it approved.
+ * W2-B2-R1 / R-B2-02 — FIBC-010's approval gate, widened from the single
+ * recoverable-reference check to the TEN approval-blocking items frozen in
+ * W2_B2_REMEDIATION_AUTHORITY_v1.0.0 organization_provenance_requirements
+ * (closes B2-AR-B2's gate half). Each item has its own named error so a
+ * rejection says which item is missing. Ordered as FIBC-010 enumerates
+ * them; item 8 (consultation_date) is the ONLY item FIBC-010 qualifies
+ * ('where relevant') and is therefore RECORDABLE-REQUIRED but NOT
+ * approval-blocking — it is deliberately absent from this list.
  *
- * Deliberately does NOT block on the other FIBC-010 provenance fields
- * (geographic/contextual scope, linked-outcome context, relevance
- * justification, documented transformations) — the sealed unit's TESTS
- * clause names only these two as gated conditions; the rest are recordable
- * fields on the full-provenance form, not additional invented approval
- * gates.
+ * The actor and moment (reviewer_id/reviewed_at) are system-recorded at
+ * the approval transition by the caller, never user-supplied, so they are
+ * not gated here either.
  */
+export const APPROVAL_BLOCKING_PROVENANCE_ITEMS = [
+  { item: 1, column: 'value', label: 'value' },
+  { item: 2, column: 'unit', label: 'unit' },
+  { item: 3, column: 'currency', label: 'currency' },
+  { item: 4, column: 'referenceYear', label: 'reference year' },
+  { item: 5, column: 'geographicContextualScope', label: 'geographic/contextual scope' },
+  { item: 6, column: 'linkedOutcomeContext', label: 'linked outcome' },
+  { item: 7, column: 'sourceId', label: 'identifiable source' },
+  { item: 9, column: 'recoverableReference', label: 'recoverable reference (URL/DOI/dataset id/linked document)' },
+  { item: 10, column: 'relevanceJustification', label: 'relevance justification' },
+  { item: 11, column: 'documentedTransformations', label: 'documented transformations (an explicit "none" is a valid recorded value)' },
+] as const
+
+export type ApprovalBlockingProvenanceColumn = (typeof APPROVAL_BLOCKING_PROVENANCE_ITEMS)[number]['column']
+
+function provenanceItemPresent(value: unknown): boolean {
+  if (value === null || value === undefined) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  return true
+}
+
 export function assertApprovableProvenance(
-  version: Pick<FinancialProxyVersion, 'recoverableReference'> | null
+  version: Pick<FinancialProxyVersion, ApprovalBlockingProvenanceColumn> | null
 ): asserts version is NonNullable<typeof version> {
   if (!version) throw new Error('Cannot approve: proxy has no version to approve')
-  if (!version.recoverableReference || version.recoverableReference.trim().length === 0) {
-    throw new Error('Cannot approve without a recoverable reference (URL/DOI/dataset id/linked document)')
+  for (const { item, column, label } of APPROVAL_BLOCKING_PROVENANCE_ITEMS) {
+    if (!provenanceItemPresent(version[column])) {
+      throw new Error(`Cannot approve without ${label} (FIBC-010 item ${item}: ${column})`)
+    }
   }
 }
