@@ -10,10 +10,18 @@
 // Governance rule: a changed file is authorized ONLY if the caller
 // explicitly allowed its path. Being changed is never itself permission.
 // A fixed set of high-risk surfaces (authority documents, migrations,
-// prepared SQL, the frozen ODS authority artifact) is protected
-// unconditionally — no --allow pattern can override them in this version.
-// Authorizing a change to one of them requires a future explicit HPO
-// authority update to this script, not a flag.
+// prepared SQL, the frozen ODS authority artifact) is protected by
+// default — an ordinary --allow can never override that classification by
+// itself.
+//
+// HPO-ODS-W2-01 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json):
+// a protected path may be authorized ONLY via a --protected-authority id
+// resolved against the repository-local PROTECTED_GRANTS registry below —
+// never from a user-supplied pattern, an env var, a branch name alone, or
+// the fact that a path was named in --allow. A grant is scoped to one
+// branch and an exact set of protected patterns; the ordinary --allow
+// list remains additionally mandatory for every granted path. Future
+// waves require their own explicit HPO grant entry, not a broader one.
 
 import { spawnSync } from 'node:child_process'
 
@@ -61,17 +69,47 @@ export interface ScopeClassification {
   protectedViolations: string[]
   unauthorized: string[]
   ok: string[]
+  /** Subset of `ok` that was protected by default and authorized only via a resolved grant. */
+  grantAuthorized: string[]
 }
 
-/** Pure: classifies a deduplicated path list against protected + allowed patterns. */
-export function classifyPaths(paths: string[], protectedPatterns: string[], allowedPatterns: string[]): ScopeClassification {
+/**
+ * Pure: classifies a deduplicated path list against protected + allowed
+ * patterns, and an optional already-resolved protected-surface grant.
+ *
+ * `grant` must already be branch-validated by the caller (see
+ * `resolveProtectedGrant`) — this function only checks whether the
+ * CONCRETE path matches one of the grant's own patterns, never the
+ * broader default protected pattern that made the path protected in the
+ * first place. That is what keeps a grant for db/prepared/journal/**
+ * from ever authorizing db/prepared/sibling.sql: the sibling matches
+ * DEFAULT_PROTECTED_PATTERNS' db/prepared/** but not the grant's own
+ * narrower db/prepared/journal/**.
+ */
+export function classifyPaths(
+  paths: string[],
+  protectedPatterns: string[],
+  allowedPatterns: string[],
+  grant?: ProtectedGrant,
+): ScopeClassification {
   const protectedViolations: string[] = []
   const unauthorized: string[] = []
   const ok: string[] = []
+  const grantAuthorized: string[] = []
 
   for (const p of new Set(paths)) {
     if (matchesAnyPattern(p, protectedPatterns)) {
-      protectedViolations.push(p)
+      // Protected by default. Authorized ONLY if the grant's own (narrower)
+      // patterns cover this exact path AND the ordinary task --allow also
+      // covers it — both mandatory, neither can stand in for the other.
+      const grantCovers = grant !== undefined && matchesAnyPattern(p, grant.patterns)
+      const taskAllows = matchesAnyPattern(p, allowedPatterns)
+      if (grantCovers && taskAllows) {
+        ok.push(p)
+        grantAuthorized.push(p)
+      } else {
+        protectedViolations.push(p)
+      }
     } else if (!matchesAnyPattern(p, allowedPatterns)) {
       unauthorized.push(p)
     } else {
@@ -79,7 +117,63 @@ export function classifyPaths(paths: string[], protectedPatterns: string[], allo
     }
   }
 
-  return { protectedViolations, unauthorized, ok }
+  return { protectedViolations, unauthorized, ok, grantAuthorized }
+}
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-W2-01 — protected-surface explicit grants.
+//
+// A repository-local STATIC registry. No user-supplied arbitrary pattern
+// can become authoritative: the only inputs a caller controls are which
+// authority id to name and which branch they happen to be on, and both
+// are checked against this fixed table, never trusted directly.
+// ---------------------------------------------------------------------------
+
+export interface ProtectedGrant {
+  authorityId: string
+  branch: string
+  patterns: string[]
+}
+
+/**
+ * Frozen by docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json,
+ * HPO-ODS-W2-01. Exists only to permit FIB Wave 2 governed migration and
+ * journal materialization. Future waves require their own explicit entry
+ * here via a new HPO authority update — never a broadened existing one.
+ */
+export const PROTECTED_GRANTS: ProtectedGrant[] = [
+  {
+    authorityId: 'HPO-ODS-W2-01',
+    branch: 'codex/w2-methodology-objects-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  },
+]
+
+export interface ProtectedGrantResolution {
+  grant?: ProtectedGrant
+  authorityId?: string
+  reason: string
+}
+
+/**
+ * Pure: resolves a --protected-authority id against PROTECTED_GRANTS and
+ * the caller's already-known current branch. Returns `grant: undefined`
+ * for every failure mode (absent, unknown, or branch-mismatched id) —
+ * callers must not distinguish these for authorization purposes, only for
+ * diagnostics, so a wrong-branch attempt fails exactly like no id at all.
+ */
+export function resolveProtectedGrant(authorityId: string | undefined, currentBranch: string): ProtectedGrantResolution {
+  if (!authorityId) {
+    return { reason: 'no --protected-authority supplied' }
+  }
+  const grant = PROTECTED_GRANTS.find((g) => g.authorityId === authorityId)
+  if (!grant) {
+    return { authorityId, reason: `unknown protected authority "${authorityId}"` }
+  }
+  if (grant.branch !== currentBranch) {
+    return { authorityId, reason: `"${authorityId}" is granted on branch "${grant.branch}", not current branch "${currentBranch}"` }
+  }
+  return { grant, authorityId, reason: `"${authorityId}" resolved on branch "${currentBranch}"` }
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +244,13 @@ function git(cwd: string, args: string[]): { code: number; stdout: string; stder
   return { code: res.status ?? 1, stdout: res.stdout ?? '', stderr: res.stderr ?? '' }
 }
 
+/** Current branch, read fresh from git — never trusted from a caller-supplied claim. */
+export function getCurrentBranch(cwd: string): string {
+  const res = git(cwd, ['rev-parse', '--abbrev-ref', 'HEAD'])
+  if (res.code !== 0) throw new Error(`git rev-parse --abbrev-ref HEAD failed: ${res.stderr}`)
+  return res.stdout.trim()
+}
+
 /** All paths touched since `base`: committed (base..HEAD), staged, unstaged, and untracked. */
 export function collectChangedPaths(cwd: string, base: string): string[] {
   const committed = git(cwd, ['diff', '--name-status', '--find-renames', '-z', base, 'HEAD'])
@@ -171,6 +272,7 @@ export function collectChangedPaths(cwd: string, base: string): string[] {
 interface ScopeArgs {
   base?: string
   allow: string[]
+  protectedAuthority?: string
 }
 
 function parseArgs(argv: string[]): ScopeArgs {
@@ -180,6 +282,7 @@ function parseArgs(argv: string[]): ScopeArgs {
     if (arg === '--') continue // see scripts/ods-prestate.ts for why
     if (arg === '--base') result.base = argv[++i]
     else if (arg === '--allow') result.allow.push(argv[++i])
+    else if (arg === '--protected-authority') result.protectedAuthority = argv[++i]
     else {
       console.error(`ods:scope: unrecognized argument "${arg}"`)
       process.exit(2)
@@ -197,13 +300,19 @@ function main(): void {
   }
 
   const cwd = process.cwd()
+  const currentBranch = getCurrentBranch(cwd)
+  const grantResolution = resolveProtectedGrant(args.protectedAuthority, currentBranch)
+
   const changed = collectChangedPaths(cwd, args.base)
   const unique = [...new Set(changed)]
-  const result = classifyPaths(unique, DEFAULT_PROTECTED_PATTERNS, args.allow)
+  const result = classifyPaths(unique, DEFAULT_PROTECTED_PATTERNS, args.allow, grantResolution.grant)
 
   const lines: string[] = []
   lines.push(`SCOPE_BASE=${args.base}`)
   lines.push(`CHANGED_FILE_COUNT=${unique.length}`)
+  lines.push(`PROTECTED_AUTHORITY=${grantResolution.authorityId ?? 'NONE'}`)
+  if (args.protectedAuthority) lines.push(`  ${grantResolution.reason}`)
+  lines.push(`PROTECTED_AUTHORIZED_PATH_COUNT=${result.grantAuthorized.length}`)
   for (const p of result.protectedViolations) lines.push(`PROTECTED_PATH_VIOLATION=${p}`)
   for (const p of result.unauthorized) lines.push(`UNAUTHORIZED_PATH=${p}`)
   lines.push(`PROTECTED_PATH_VIOLATIONS=${result.protectedViolations.length}`)

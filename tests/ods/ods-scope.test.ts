@@ -13,6 +13,10 @@ import {
   parseStatusPorcelainZ,
   allTouchedPaths,
   collectChangedPaths,
+  resolveProtectedGrant,
+  getCurrentBranch,
+  PROTECTED_GRANTS,
+  type ProtectedGrant,
 } from '../../scripts/ods-scope'
 import { makeTempGitRepo, commitFile, cleanupTempGitRepo, git } from './git-fixture-helpers'
 
@@ -296,5 +300,310 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
       encoding: 'utf8',
     })
     expect(res.status).toBe(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-W2-01 — protected-surface explicit grants
+// (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json).
+// ---------------------------------------------------------------------------
+
+describe('resolveProtectedGrant — pure', () => {
+  const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
+
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant', () => {
+    expect(PROTECTED_GRANTS).toEqual([
+      { authorityId: 'HPO-ODS-W2-01', branch: AUTHORIZED_BRANCH, patterns: ['db/migrations/**', 'db/prepared/journal/**'] },
+    ])
+  })
+
+  it('resolves the known authority on its granted branch', () => {
+    const result = resolveProtectedGrant('HPO-ODS-W2-01', AUTHORIZED_BRANCH)
+    expect(result.grant).toBeDefined()
+    expect(result.grant?.patterns).toEqual(['db/migrations/**', 'db/prepared/journal/**'])
+  })
+
+  it('NEGATIVE (PG-2 basis): an unknown authority id resolves to no grant', () => {
+    const result = resolveProtectedGrant('NOT-A-REAL-AUTHORITY', AUTHORIZED_BRANCH)
+    expect(result.grant).toBeUndefined()
+  })
+
+  it('NEGATIVE (PG-3 basis): the known authority on the wrong branch resolves to no grant', () => {
+    const result = resolveProtectedGrant('HPO-ODS-W2-01', 'main')
+    expect(result.grant).toBeUndefined()
+  })
+
+  it('no authority supplied resolves to no grant', () => {
+    const result = resolveProtectedGrant(undefined, AUTHORIZED_BRANCH)
+    expect(result.grant).toBeUndefined()
+  })
+})
+
+describe('classifyPaths with a resolved grant — pure', () => {
+  const grant: ProtectedGrant = {
+    authorityId: 'HPO-ODS-W2-01',
+    branch: 'codex/w2-methodology-objects-r1',
+    patterns: ['db/migrations/**', 'db/prepared/journal/**'],
+  }
+  const taskAllow = ['db/migrations/0099_x.sql', 'db/prepared/journal/x.sql']
+
+  it('PG-P: grant covers the path AND ordinary --allow covers it => authorized', () => {
+    const result = classifyPaths(['db/prepared/journal/x.sql'], DEFAULT_PROTECTED_PATTERNS, taskAllow, grant)
+    expect(result.protectedViolations).toEqual([])
+    expect(result.grantAuthorized).toEqual(['db/prepared/journal/x.sql'])
+    expect(result.ok).toContain('db/prepared/journal/x.sql')
+  })
+
+  it('PG-1: no grant at all, even with a matching ordinary --allow => violation', () => {
+    const result = classifyPaths(['db/prepared/journal/x.sql'], DEFAULT_PROTECTED_PATTERNS, taskAllow, undefined)
+    expect(result.protectedViolations).toEqual(['db/prepared/journal/x.sql'])
+    expect(result.grantAuthorized).toEqual([])
+  })
+
+  it('PG-5: grant covers the path but ordinary --allow does NOT => violation', () => {
+    const result = classifyPaths(['db/prepared/journal/x.sql'], DEFAULT_PROTECTED_PATTERNS, ['db/migrations/0099_x.sql'], grant)
+    expect(result.protectedViolations).toEqual(['db/prepared/journal/x.sql'])
+  })
+
+  it('PG-6 (subset escape): a grant for db/prepared/journal/** must NOT authorize a db/prepared/ sibling', () => {
+    const result = classifyPaths(['db/prepared/sibling.sql'], DEFAULT_PROTECTED_PATTERNS, [...taskAllow, 'db/prepared/sibling.sql'], grant)
+    expect(result.protectedViolations).toEqual(['db/prepared/sibling.sql'])
+    expect(result.grantAuthorized).toEqual([])
+  })
+
+  it('PG-7: the grant must NOT authorize db/baseline/**', () => {
+    const result = classifyPaths(['db/baseline/x.sql'], DEFAULT_PROTECTED_PATTERNS, [...taskAllow, 'db/baseline/x.sql'], grant)
+    expect(result.protectedViolations).toEqual(['db/baseline/x.sql'])
+  })
+
+  it('PG-4: an ungranted protected pattern (docs/ops/fib/**) is refused even with this grant active', () => {
+    const result = classifyPaths(
+      ['docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md'],
+      DEFAULT_PROTECTED_PATTERNS,
+      [...taskAllow, 'docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md'],
+      grant,
+    )
+    expect(result.protectedViolations).toEqual(['docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md'])
+  })
+})
+
+describe('getCurrentBranch — real temp repo', () => {
+  let dir: string
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  it('reads the actual current branch, never a caller-supplied claim', () => {
+    dir = makeTempGitRepo()
+    commitFile(dir, 'a.txt', 'x\n')
+    git(dir, ['checkout', '-b', 'codex/w2-methodology-objects-r1'])
+    expect(getCurrentBranch(dir)).toBe('codex/w2-methodology-objects-r1')
+  })
+})
+
+describe('ods:scope --protected-authority — real CLI, temporary-repo fixtures, PG-1..PG-7 and PG-P', () => {
+  let dir: string
+
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  function runRealCli(cwd: string, args: string[]): { status: number | null; stdout: string } {
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  /** A temp repo already checked out to the grant's authorized branch, with one base commit. */
+  function makeGrantedBranchRepo(): { dir: string; base: string } {
+    const d = makeTempGitRepo()
+    const base = commitFile(d, 'README.md', 'seed\n')
+    git(d, ['checkout', '-b', 'codex/w2-methodology-objects-r1'])
+    return { dir: d, base }
+  }
+
+  it('PG-P (POSITIVE): correct authority + correct branch + granted protected subset + ordinary --allow => PASS', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-01')
+    expect(stdout).toContain('PROTECTED_AUTHORIZED_PATH_COUNT=1')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+  })
+
+  it('PG-1 (NEGATIVE): protected path + normal --allow only (no --protected-authority) => FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, ['--base', g.base, '--allow', 'db/prepared/journal/fixture.sql'])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=NONE')
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/journal/fixture.sql')
+  })
+
+  it('PG-2 (NEGATIVE): unknown protected authority => FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'NOT-A-REAL-AUTHORITY',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('PG-3 (NEGATIVE): correct authority on the wrong branch => FAIL', () => {
+    dir = makeTempGitRepo() // default branch, NOT codex/w2-methodology-objects-r1
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      base,
+      '--allow',
+      'db/prepared/journal/fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it('PG-4 (NEGATIVE): correct authority attempts an ungranted protected path (db/migrations vs a fib doc) => FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'docs', 'ops', 'fib'), { recursive: true })
+    commitFile(dir, 'docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md', 'x\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md')
+  })
+
+  it('PG-5 (NEGATIVE): correct authority/grant but the protected path is missing from ordinary --allow => FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/prepared/journal/fixture.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'README.md', // does NOT cover the changed protected path
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/journal/fixture.sql')
+  })
+
+  it('PG-6 (NEGATIVE, subset escape): grant for db/prepared/journal/** must NOT authorize db/prepared/sibling.sql', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'prepared'), { recursive: true })
+    commitFile(dir, 'db/prepared/sibling.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/prepared/sibling.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/sibling.sql')
+  })
+
+  it('PG-7 (NEGATIVE): the grant must NOT authorize db/baseline/**', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'baseline'), { recursive: true })
+    commitFile(dir, 'db/baseline/x.sql', 'select 1;\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base',
+      g.base,
+      '--allow',
+      'db/baseline/x.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ])
+
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/baseline/x.sql')
+  })
+
+  it('realistic Wave-2-style control: db/migrations + db/prepared/journal together => PASS; adding a sibling => FAIL', () => {
+    const g = makeGrantedBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    mkdirSync(path.join(dir, 'db', 'prepared', 'journal'), { recursive: true })
+    commitFile(dir, 'db/migrations/0100_fixture.sql', 'create table x();\n')
+    commitFile(dir, 'db/prepared/journal/003_fixture.sql', 'select 1;\n')
+
+    const passArgs = [
+      '--base',
+      g.base,
+      '--allow',
+      'db/migrations/0100_fixture.sql',
+      '--allow',
+      'db/prepared/journal/003_fixture.sql',
+      '--protected-authority',
+      'HPO-ODS-W2-01',
+    ]
+    const passResult = runRealCli(dir, passArgs)
+    expect(passResult.status).toBe(0)
+    expect(passResult.stdout).toContain('ODS_SCOPE=PASS')
+
+    // Now add an ungranted sibling under db/prepared/ (outside journal/).
+    commitFile(dir, 'db/prepared/sibling.sql', 'select 2;\n')
+    const failResult = runRealCli(dir, [...passArgs, '--allow', 'db/prepared/sibling.sql'])
+    expect(failResult.status).toBe(1)
+    expect(failResult.stdout).toContain('ODS_SCOPE=FAIL')
+    expect(failResult.stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/sibling.sql')
   })
 })
