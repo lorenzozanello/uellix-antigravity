@@ -2,7 +2,7 @@
 // components/stella/StellaContextualAdvisorPanel.tsx
 // WS2 (Moonshot) — on-demand contextual advisor panel (U1/U2/U5/U6).
 //
-// - Never auto-invokes: the user triggers via "Consultar a Stella".
+// - Never auto-invokes: the user triggers via "Analizar con Stella".
 // - Renders summary, findings grouped by severity, suggestions with a full
 //   client-side lifecycle (preview / accept / edit / reject / undo) and the
 //   uncertainty surface (limitations + clarifying questions).
@@ -374,7 +374,7 @@ export function StellaContextualAdvisorPanel({
           disabled={isLoading || isInertDisabled}
           className={cn(ACTION_BUTTON_CLASS, 'shrink-0 px-3 py-1.5 text-sm')}
         >
-          {isLoading ? 'Analizando…' : 'Consultar a Stella'}
+          {isLoading ? 'Analizando…' : 'Analizar con Stella'}
         </button>
       </div>
 

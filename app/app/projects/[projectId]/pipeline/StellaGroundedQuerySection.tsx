@@ -114,7 +114,7 @@ export function StellaGroundedQuerySection({
       runQuery={runQuery}
       issueTicket={issueTicket}
       enabled={enabled}
-      title={title ?? 'Preguntar a Stella (respuesta fundamentada)'}
+      title={title ?? 'Consultar a Stella (respuesta fundamentada)'}
       onNavigateCitation={onNavigateCitation}
       // `onDecision` is deliberately NOT wired. There is no canonical decision
       // key for a grounded answer: `recordStellaDecision` keys on

@@ -176,7 +176,7 @@ describe('NarrativePage × StellaContextualAdvisorPanel (integration-style)', ()
     mockGetStellaContextualAdvisor.mockResolvedValue({ ok: true, data: OUTPUT })
     await renderNarrativePage()
 
-    fireEvent.click(screen.getByText(/consultar a stella/i))
+    fireEvent.click(screen.getByText(/analizar con stella/i))
 
     await waitFor(() => {
       expect(mockGetStellaContextualAdvisor).toHaveBeenCalledWith('proj-1', 'narrative', 'a'.repeat(64))
@@ -192,7 +192,7 @@ describe('NarrativePage × StellaContextualAdvisorPanel (integration-style)', ()
     expect(textarea.value).toBe('Texto narrativo original.')
     expect(textarea.getAttribute('name')).toBe('narrativeText')
 
-    fireEvent.click(screen.getByText(/consultar a stella/i))
+    fireEvent.click(screen.getByText(/analizar con stella/i))
     await waitFor(() => {
       expect(screen.queryByText('Aceptar')).not.toBeNull()
     })

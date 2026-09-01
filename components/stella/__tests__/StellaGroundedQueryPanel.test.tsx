@@ -28,7 +28,7 @@ import {
 async function ask(query = '¿Cuántos beneficiarios reporta el informe?') {
   const textbox = screen.getByRole('textbox', { name: 'Pregunta para Stella' })
   fireEvent.change(textbox, { target: { value: query } })
-  fireEvent.click(screen.getByRole('button', { name: /Preguntar a Stella/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Consultar a Stella/ }))
 }
 
 /**
@@ -187,11 +187,11 @@ describe('StellaGroundedQueryPanel — availability, permission, quota, provider
     const runQuery: StellaGroundedQueryRunner = vi.fn()
     render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} enabled={false} />)
     expect(screen.getByTestId('stella-grounded-query-disabled')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Preguntar a Stella/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Consultar a Stella/ })).toBeDisabled()
     fireEvent.change(screen.getByRole('textbox', { name: 'Pregunta para Stella' }), {
       target: { value: 'hola' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /Preguntar a Stella/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Consultar a Stella/ }))
     expect(runQuery).not.toHaveBeenCalled()
   })
 })
@@ -471,7 +471,7 @@ describe('StellaGroundedQueryPanel — no decision is emitted while the backend 
     expect(onDecision).toHaveBeenCalledTimes(1)
 
     // The second call fails: the accepted answer is gone, and so is its decision.
-    fireEvent.click(screen.getByRole('button', { name: /Preguntar a Stella/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Consultar a Stella/ }))
     await screen.findByTestId('stella-error-notice')
     expect(screen.queryByTestId('stella-grounded-query-decision-actions')).not.toBeInTheDocument()
     expect(onDecision).toHaveBeenCalledTimes(1)
@@ -544,7 +544,7 @@ describe('StellaGroundedQueryPanel — accessibility', () => {
   it('is a labelled landmark region with live regions for loading/result and errors', () => {
     const runQuery: StellaGroundedQueryRunner = vi.fn().mockResolvedValue(okResult())
     render(<StellaGroundedQueryPanel issueTicket={makeIssuer()} step="evidence" runQuery={runQuery} />)
-    expect(screen.getByRole('region', { name: 'Preguntar a Stella' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Consultar a Stella' })).toBeInTheDocument()
     expect(screen.getByTestId('stella-grounded-query-live-polite')).toHaveAttribute('aria-live', 'polite')
     expect(screen.getByTestId('stella-grounded-query-live-assertive')).toHaveAttribute('aria-live', 'assertive')
   })

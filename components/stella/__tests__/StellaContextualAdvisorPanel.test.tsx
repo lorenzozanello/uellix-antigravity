@@ -151,7 +151,7 @@ function failure(error: string, message: string) {
 }
 
 function askStella() {
-  fireEvent.click(screen.getByText(/consultar a stella/i))
+  fireEvent.click(screen.getByText(/analizar con stella/i))
 }
 
 async function renderSuccess(
@@ -671,9 +671,9 @@ describe('StellaContextualAdvisorPanel', () => {
     it('renders an inert informative state when enabled={false} and never calls the action', () => {
       render(<StellaContextualAdvisorPanel projectId="proj-1" step="narrative" enabled={false} />)
       expect(screen.queryByTestId('stella-contextual-disabled')).not.toBeNull()
-      const btn = screen.getByText(/consultar a stella/i).closest('button')
+      const btn = screen.getByText(/analizar con stella/i).closest('button')
       expect(btn?.disabled).toBe(true)
-      fireEvent.click(screen.getByText(/consultar a stella/i))
+      fireEvent.click(screen.getByText(/analizar con stella/i))
       expect(mockGetStellaContextualAdvisor).not.toHaveBeenCalled()
     })
 
@@ -756,7 +756,7 @@ describe('StellaContextualAdvisorPanel', () => {
 
     it('does not tie grounded evidence to the advisor request — it does not come from that action', () => {
       // The contextual advisor action does not consume retrieval. Showing the
-      // grounded panel only after "Consultar a Stella" would imply it did.
+      // grounded panel only after "Analizar con Stella" would imply it did.
       render(
         <StellaContextualAdvisorPanel
           projectId="proj-1"

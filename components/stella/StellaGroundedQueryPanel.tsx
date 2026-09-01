@@ -132,7 +132,7 @@ export function StellaGroundedQueryPanel({
   const idPrefix = useId()
 
   const HeadingTag = `h${headingLevel}` as 'h2' | 'h3' | 'h4'
-  const panelTitle = title ?? 'Preguntar a Stella'
+  const panelTitle = title ?? 'Consultar a Stella'
   const isLoading = panelState.status === 'loading'
   const isInertDisabled = !enabled || panelState.status === 'disabled'
 
@@ -291,7 +291,7 @@ export function StellaGroundedQueryPanel({
           disabled={isLoading || isInertDisabled || queryDraft.trim().length === 0}
           className={cn(PRIMARY_ACTION_BUTTON_CLASS, 'px-3 py-1.5 text-sm')}
         >
-          {isLoading ? 'Consultando…' : 'Preguntar a Stella'}
+          {isLoading ? 'Consultando…' : 'Consultar a Stella'}
         </button>
       </div>
 

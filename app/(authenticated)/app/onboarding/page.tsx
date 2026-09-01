@@ -13,7 +13,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_name: 'El nombre de la organización debe tener al menos 2 caracteres.',
   invalid_slug: 'El identificador solo puede contener minúsculas, números y guiones.',
   slug_taken: 'Ese identificador ya está en uso. Prueba con otro.',
-  not_allowlisted: 'Uellix está en acceso controlado. Tu cuenta todavía no está habilitada para crear una organización nueva. Si esperás una invitación, pedile a quien te invitó que la reenvíe; si no, contactá al equipo de Uellix para solicitar acceso.',
+  not_allowlisted: 'Uellix está en acceso controlado. Tu cuenta todavía no está habilitada para crear una organización nueva. Si esperas una invitación, pídele a quien te invitó que la reenvíe; si no, contacta al equipo de Uellix para solicitar acceso.',
 }
 
 // RE-U1 U1-F12: which field, if any, an error key is actually about. Errors

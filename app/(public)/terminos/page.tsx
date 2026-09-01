@@ -34,7 +34,7 @@ export default function TerminosPage() {
         className="mt-10 max-w-none space-y-5 text-[15px] leading-relaxed text-[#334155]
           [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:font-sora [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-uellix-deep [&_h2]:first:mt-0
           [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1.5 [&_strong]:font-semibold [&_strong]:text-uellix-deep
-          [&_a]:text-[#FF6A00] [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-[#e05e00]"
+          [&_a]:text-[#FF6A00] [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-uellix-orange-strong"
       >
         <h2>1. Quiénes somos</h2>
         <p>
