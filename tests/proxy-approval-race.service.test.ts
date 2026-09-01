@@ -21,6 +21,21 @@ type ProxyRow = {
   // discriminate by table — see the `select`/`update` mocks below), so the
   // recoverable-reference field the approval gate reads lives here too.
   recoverableReference: string
+  // FIBIU-09 (FIBC-011) — same reasoning: assertRubricApprovable reads its
+  // thirteen factors off this same shared object.
+  c1SourceQualityVerifiability: number
+  c2OutcomeCorrespondence: number
+  c3StakeholderPopulationFit: number
+  c4GeographicContextFit: number
+  c5TemporalFit: number
+  c6MethodologicalUnitComparability: number
+  r1ProvenanceRisk: number
+  r2SourceLimitationRisk: number
+  r3ConceptualFitRisk: number
+  r4GeographicPopulationTransferRisk: number
+  r5TemporalObsolescenceRisk: number
+  r6TransformationRisk: number
+  r7MethodologicalUncertaintyRisk: number
 }
 
 function deferred<T = void>() {
@@ -155,8 +170,21 @@ function seedProxy(overrides: Partial<ProxyRow> = {}) {
     valueUsd: null,
     fxRateId: null,
     recoverableReference: 'https://example.org/proof',
+    c1SourceQualityVerifiability: 3,
+    c2OutcomeCorrespondence: 3,
+    c3StakeholderPopulationFit: 3,
+    c4GeographicContextFit: 3,
+    c5TemporalFit: 3,
+    c6MethodologicalUnitComparability: 3,
+    r1ProvenanceRisk: 0,
+    r2SourceLimitationRisk: 0,
+    r3ConceptualFitRisk: 0,
+    r4GeographicPopulationTransferRisk: 0,
+    r5TemporalObsolescenceRisk: 0,
+    r6TransformationRisk: 0,
+    r7MethodologicalUncertaintyRisk: 0,
     ...overrides,
-  }
+  } as ProxyRow
 }
 
 beforeEach(() => {

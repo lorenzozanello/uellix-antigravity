@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 51/65: 0040_governed_model_registry.sql
+-- GENERATED — DO NOT EDIT. Unit 51/66: 0040_governed_model_registry.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0040_governed_model_registry.sql

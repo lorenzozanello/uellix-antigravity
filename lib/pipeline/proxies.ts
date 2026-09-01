@@ -17,6 +17,7 @@ import {
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
 } from '@/lib/pipeline/financial-proxy-versions';
+import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric';
 
 type FinancialProxyRow = typeof financialProxies.$inferSelect;
 type FinancialProxyTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -508,6 +509,7 @@ export async function updateFinancialProxyReviewStatus(
     if (newStatus === 'approved') {
       const currentVersion = await getLatestFinancialProxyVersion(proxyId, tx)
       assertApprovableProvenance(currentVersion)
+      assertRubricApprovable(currentVersion)
     }
     const usdFields = newStatus === 'approved'
       ? await deriveApprovedProxyAuthority(tx, proxy)

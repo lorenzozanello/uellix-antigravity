@@ -36,6 +36,7 @@ import {
   updateCurrentFinancialProxyVersion,
   assertApprovableProvenance,
 } from '@/lib/pipeline/financial-proxy-versions'
+import { assertRubricApprovable } from '@/lib/pipeline/financial-proxy-rubric'
 import { convertToUsd } from '@/lib/pipeline/fx'
 import { eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
@@ -220,6 +221,7 @@ export async function updateGlobalProxyReviewStatus(
       // transaction, exactly like the org-scoped path.
       const currentVersion = await getLatestFinancialProxyVersion(proxyId, tx)
       assertApprovableProvenance(currentVersion)
+      assertRubricApprovable(currentVersion)
       usdFields = await deriveApprovedProxyAuthority(tx, proxy)
     }
 
@@ -367,6 +369,7 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
       // below for the clone's own provenance copy.
       const sourceVersion = await getLatestFinancialProxyVersion(proxyId, tx)
       assertApprovableProvenance(sourceVersion)
+      assertRubricApprovable(sourceVersion)
       const usdFields = await deriveApprovedProxyAuthority(tx, proxy)
       const source = await tx
         .select()
@@ -438,6 +441,30 @@ export async function promoteProxyToGlobal(proxyId: string, expectedApprovalStat
           relevanceJustification: sourceVersion?.relevanceJustification ?? null,
           documentedTransformations: sourceVersion?.documentedTransformations ?? null,
           consultationDate: sourceVersion?.consultationDate ?? null,
+          // FIBIU-09 — the clone carries the ALREADY-EVALUATED (and just
+          // gate-checked via assertRubricApprovable above) source rubric
+          // across, rather than starting the promoted proxy back at
+          // unrated: promotion changes no underlying evidence, so re-rating
+          // it from scratch would be governance theater, not a real check.
+          c1SourceQualityVerifiability: sourceVersion?.c1SourceQualityVerifiability ?? null,
+          c2OutcomeCorrespondence: sourceVersion?.c2OutcomeCorrespondence ?? null,
+          c3StakeholderPopulationFit: sourceVersion?.c3StakeholderPopulationFit ?? null,
+          c4GeographicContextFit: sourceVersion?.c4GeographicContextFit ?? null,
+          c5TemporalFit: sourceVersion?.c5TemporalFit ?? null,
+          c6MethodologicalUnitComparability: sourceVersion?.c6MethodologicalUnitComparability ?? null,
+          r1ProvenanceRisk: sourceVersion?.r1ProvenanceRisk ?? null,
+          r2SourceLimitationRisk: sourceVersion?.r2SourceLimitationRisk ?? null,
+          r3ConceptualFitRisk: sourceVersion?.r3ConceptualFitRisk ?? null,
+          r4GeographicPopulationTransferRisk: sourceVersion?.r4GeographicPopulationTransferRisk ?? null,
+          r5TemporalObsolescenceRisk: sourceVersion?.r5TemporalObsolescenceRisk ?? null,
+          r6TransformationRisk: sourceVersion?.r6TransformationRisk ?? null,
+          r7MethodologicalUncertaintyRisk: sourceVersion?.r7MethodologicalUncertaintyRisk ?? null,
+          confidenceScore: sourceVersion?.confidenceScore ?? null,
+          confidenceLevel: sourceVersion?.confidenceLevel ?? null,
+          methodologicalRiskScore: sourceVersion?.methodologicalRiskScore ?? null,
+          methodologicalRisk: sourceVersion?.methodologicalRisk ?? null,
+          rubricVersion: sourceVersion?.rubricVersion ?? null,
+          exceptionalDefendibilityDetermination: sourceVersion?.exceptionalDefendibilityDetermination ?? null,
           reviewStatus: 'approved',
           createdBy: admin.id,
         },

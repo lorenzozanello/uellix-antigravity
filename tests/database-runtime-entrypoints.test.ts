@@ -708,7 +708,14 @@ describe('every entry point that can reach the database opens an identity contex
     // three call runWithOrganizationAccess around their one governed write,
     // exactly like their sibling actions in the same directories, so all
     // three are `contextualized`, not allowlisted.
-    }).toEqual({ inventoried: 127, reaching: 102, contextualized: 86, allowlisted: 16 })
+    //
+    // 127 -> 128 / 102 -> 103 / contextualized 86 -> 87, allowlisted
+    // UNCHANGED at 16: W2-B2 (FIBIU-09/FIBC-011) adds one new .action.ts
+    // entry point — evaluateProxyRubric.action.ts, under pipeline/proxies/.
+    // It calls runWithOrganizationAccess around its one governed write,
+    // exactly like its sibling updateFinancialProxyReviewStatus.action.ts,
+    // so it is `contextualized`, not allowlisted.
+    }).toEqual({ inventoried: 128, reaching: 103, contextualized: 87, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

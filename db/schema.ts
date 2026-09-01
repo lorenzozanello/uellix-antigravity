@@ -561,6 +561,85 @@ export const financialProxyVersions = pgTable('financial_proxy_versions', {
   check('financial_proxy_versions_review_status_check', sql`${table.reviewStatus} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
   check('financial_proxy_versions_confidence_level_check', sql`${table.confidenceLevel} IS NULL OR ${table.confidenceLevel} IN ('high', 'medium', 'low')`),
   check('financial_proxy_versions_methodological_risk_check', sql`${table.methodologicalRisk} IS NULL OR ${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
+  // FIBIU-09 (FIBC-011/FIBDB-044). These five constraints are best-effort,
+  // defense-in-depth SQL — they cannot reconstruct the full base-score
+  // threshold logic (that would require the ROUND(100*sum/N) computation to
+  // agree bit-for-bit with lib/pipeline/financial-proxy-rubric.ts's
+  // deriveRubricClassification, which is the sole AUTHORITATIVE
+  // implementation and is fully unit-tested). They catch range violations,
+  // derivation-formula mismatches, and ceiling/floor implication breaches,
+  // but have never been executed against a live Postgres instance in this
+  // DB-free-test repository — flagged here explicitly for adversarial
+  // review rather than claimed as proven.
+  check(
+    'financial_proxy_versions_rubric_factor_range_check',
+    sql`(${table.c1SourceQualityVerifiability} IS NULL OR ${table.c1SourceQualityVerifiability} BETWEEN 0 AND 3)
+      AND (${table.c2OutcomeCorrespondence} IS NULL OR ${table.c2OutcomeCorrespondence} BETWEEN 0 AND 3)
+      AND (${table.c3StakeholderPopulationFit} IS NULL OR ${table.c3StakeholderPopulationFit} BETWEEN 0 AND 3)
+      AND (${table.c4GeographicContextFit} IS NULL OR ${table.c4GeographicContextFit} BETWEEN 0 AND 3)
+      AND (${table.c5TemporalFit} IS NULL OR ${table.c5TemporalFit} BETWEEN 0 AND 3)
+      AND (${table.c6MethodologicalUnitComparability} IS NULL OR ${table.c6MethodologicalUnitComparability} BETWEEN 0 AND 3)
+      AND (${table.r1ProvenanceRisk} IS NULL OR ${table.r1ProvenanceRisk} BETWEEN 0 AND 3)
+      AND (${table.r2SourceLimitationRisk} IS NULL OR ${table.r2SourceLimitationRisk} BETWEEN 0 AND 3)
+      AND (${table.r3ConceptualFitRisk} IS NULL OR ${table.r3ConceptualFitRisk} BETWEEN 0 AND 3)
+      AND (${table.r4GeographicPopulationTransferRisk} IS NULL OR ${table.r4GeographicPopulationTransferRisk} BETWEEN 0 AND 3)
+      AND (${table.r5TemporalObsolescenceRisk} IS NULL OR ${table.r5TemporalObsolescenceRisk} BETWEEN 0 AND 3)
+      AND (${table.r6TransformationRisk} IS NULL OR ${table.r6TransformationRisk} BETWEEN 0 AND 3)
+      AND (${table.r7MethodologicalUncertaintyRisk} IS NULL OR ${table.r7MethodologicalUncertaintyRisk} BETWEEN 0 AND 3)`
+  ),
+  check(
+    'financial_proxy_versions_confidence_derivation_check',
+    sql`${table.confidenceScore} IS NULL OR (
+      ${table.c1SourceQualityVerifiability} IS NOT NULL AND ${table.c2OutcomeCorrespondence} IS NOT NULL
+      AND ${table.c3StakeholderPopulationFit} IS NOT NULL AND ${table.c4GeographicContextFit} IS NOT NULL
+      AND ${table.c5TemporalFit} IS NOT NULL AND ${table.c6MethodologicalUnitComparability} IS NOT NULL
+      AND ${table.confidenceScore} = ROUND(100.0 * (
+        ${table.c1SourceQualityVerifiability} + ${table.c2OutcomeCorrespondence} + ${table.c3StakeholderPopulationFit}
+        + ${table.c4GeographicContextFit} + ${table.c5TemporalFit} + ${table.c6MethodologicalUnitComparability}
+      ) / 18)
+    )`
+  ),
+  check(
+    'financial_proxy_versions_risk_derivation_check',
+    sql`${table.methodologicalRiskScore} IS NULL OR (
+      ${table.r1ProvenanceRisk} IS NOT NULL AND ${table.r2SourceLimitationRisk} IS NOT NULL
+      AND ${table.r3ConceptualFitRisk} IS NOT NULL AND ${table.r4GeographicPopulationTransferRisk} IS NOT NULL
+      AND ${table.r5TemporalObsolescenceRisk} IS NOT NULL AND ${table.r6TransformationRisk} IS NOT NULL
+      AND ${table.r7MethodologicalUncertaintyRisk} IS NOT NULL
+      AND ${table.methodologicalRiskScore} = ROUND(100.0 * (
+        ${table.r1ProvenanceRisk} + ${table.r2SourceLimitationRisk} + ${table.r3ConceptualFitRisk}
+        + ${table.r4GeographicPopulationTransferRisk} + ${table.r5TemporalObsolescenceRisk}
+        + ${table.r6TransformationRisk} + ${table.r7MethodologicalUncertaintyRisk}
+      ) / 21)
+    )`
+  ),
+  // Ceiling: C1=0 OR C2=0 forces 'low' (stronger); any Ci=0 forbids 'high'.
+  check(
+    'financial_proxy_versions_confidence_ceiling_check',
+    sql`${table.confidenceLevel} IS NULL OR (
+      (NOT (${table.c1SourceQualityVerifiability} = 0 OR ${table.c2OutcomeCorrespondence} = 0) OR ${table.confidenceLevel} = 'low')
+      AND (NOT (
+        ${table.c1SourceQualityVerifiability} = 0 OR ${table.c2OutcomeCorrespondence} = 0 OR ${table.c3StakeholderPopulationFit} = 0
+        OR ${table.c4GeographicContextFit} = 0 OR ${table.c5TemporalFit} = 0 OR ${table.c6MethodologicalUnitComparability} = 0
+      ) OR ${table.confidenceLevel} != 'high')
+    )`
+  ),
+  // Floor: any Ri=3 forces 'high' (stronger); any Ri>=2 forbids 'low'.
+  check(
+    'financial_proxy_versions_risk_floor_check',
+    sql`${table.methodologicalRisk} IS NULL OR (
+      (NOT (
+        ${table.r1ProvenanceRisk} = 3 OR ${table.r2SourceLimitationRisk} = 3 OR ${table.r3ConceptualFitRisk} = 3
+        OR ${table.r4GeographicPopulationTransferRisk} = 3 OR ${table.r5TemporalObsolescenceRisk} = 3
+        OR ${table.r6TransformationRisk} = 3 OR ${table.r7MethodologicalUncertaintyRisk} = 3
+      ) OR ${table.methodologicalRisk} = 'high')
+      AND (NOT (
+        ${table.r1ProvenanceRisk} >= 2 OR ${table.r2SourceLimitationRisk} >= 2 OR ${table.r3ConceptualFitRisk} >= 2
+        OR ${table.r4GeographicPopulationTransferRisk} >= 2 OR ${table.r5TemporalObsolescenceRisk} >= 2
+        OR ${table.r6TransformationRisk} >= 2 OR ${table.r7MethodologicalUncertaintyRisk} >= 2
+      ) OR ${table.methodologicalRisk} != 'low')
+    )`
+  ),
   index('idx_financial_proxy_versions_proxy_id').on(table.financialProxyId),
   index('idx_financial_proxy_versions_organization_id').on(table.organizationId),
 ])

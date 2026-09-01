@@ -379,6 +379,13 @@
       "when": 1788279703850,
       "tag": "0053_fib_proxy_versions_provenance",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788281657191,
+      "tag": "0054_fib_proxy_rubric_constraints",
+      "breakpoints": true
     }
   ]
 }

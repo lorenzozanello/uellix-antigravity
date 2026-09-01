@@ -8,18 +8,22 @@ import { stellaConfig, stellaState } from '@/lib/stella/config'
 import { MethodologyReviewPanel } from '@/components/methodology/MethodologyReviewPanel'
 import { ProxyBankSearch } from '@/app/components/proxy-bank-search/ProxyBankSearch'
 import { canReviewMethodology } from '@/lib/pipeline/methodology-review'
+import { canEvaluateProxyRubric } from '@/lib/auth/permissions'
 import { runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 import {
   listFinancialProxies,
   listProxySources,
   listProxyAssignmentsForProject,
 } from '@/lib/pipeline/proxies'
+import { getLatestFinancialProxyVersionsByProxyIds } from '@/lib/pipeline/financial-proxy-versions'
+import { CONFIDENCE_FACTOR_KEYS, RISK_FACTOR_KEYS } from '@/lib/pipeline/financial-proxy-rubric'
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions'
 import { createProxySourceAction } from '@/app/app/projects/[projectId]/pipeline/proxies/createProxySource.action'
 import { createFinancialProxyAction } from '@/app/app/projects/[projectId]/pipeline/proxies/createFinancialProxy.action'
 import { assignProxyToOutcomeAction } from '@/app/app/projects/[projectId]/pipeline/proxies/assignProxyToOutcome.action'
 import { archiveOutcomeProxyAssignmentAction } from '@/app/app/projects/[projectId]/pipeline/proxies/archiveOutcomeProxyAssignment.action'
 import { updateFinancialProxyReviewStatusAction } from '@/app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxyReviewStatus.action'
+import { evaluateProxyRubricAction } from '@/app/app/projects/[projectId]/pipeline/proxies/evaluateProxyRubric.action'
 import { revalidatePath } from 'next/cache'
 import { Archive, BookOpen, DollarSign, GitMerge } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -73,6 +77,26 @@ const ASSIGNMENT_STATUS: Record<
   archived: { variant: 'neutral', label: 'Archivado' },
 }
 
+// FIBIU-09 (FIBC-011) — the thirteen rubric factor labels, in the exact
+// order deriveRubricClassification reads them.
+const CONFIDENCE_FACTOR_LABELS: Record<string, string> = {
+  c1SourceQualityVerifiability: 'C1 — Calidad y verificabilidad de la fuente',
+  c2OutcomeCorrespondence: 'C2 — Correspondencia con el resultado',
+  c3StakeholderPopulationFit: 'C3 — Ajuste a la población de stakeholders',
+  c4GeographicContextFit: 'C4 — Ajuste al contexto geográfico',
+  c5TemporalFit: 'C5 — Ajuste temporal',
+  c6MethodologicalUnitComparability: 'C6 — Comparabilidad metodológica de la unidad',
+}
+const RISK_FACTOR_LABELS: Record<string, string> = {
+  r1ProvenanceRisk: 'R1 — Riesgo de procedencia',
+  r2SourceLimitationRisk: 'R2 — Riesgo de limitación de la fuente',
+  r3ConceptualFitRisk: 'R3 — Riesgo de ajuste conceptual',
+  r4GeographicPopulationTransferRisk: 'R4 — Riesgo de transferencia geográfica/poblacional',
+  r5TemporalObsolescenceRisk: 'R5 — Riesgo de obsolescencia temporal',
+  r6TransformationRisk: 'R6 — Riesgo de transformación',
+  r7MethodologicalUncertaintyRisk: 'R7 — Riesgo de incertidumbre metodológica',
+}
+
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 const TEXTAREA_CLASS =
@@ -82,20 +106,24 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
   const { projectId } = await params
   const {
     canEdit,
+    canEvaluateRubric,
     canReviewMethodologyHere,
     financialProxies,
     proxySources,
     assignments,
     outcomes,
+    proxyVersionsById,
   } = await runWithOptionalOrganizationAccess(async (ctx) => {
       if (!ctx) {
         return {
           canEdit: false,
+          canEvaluateRubric: false,
           canReviewMethodologyHere: false,
           financialProxies: [],
           proxySources: [],
           assignments: [],
           outcomes: [],
+          proxyVersionsById: new Map(),
         } as const
       }
       const [financialProxies, proxySources, assignments, outcomes] = await Promise.all([
@@ -104,15 +132,20 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
         listProxyAssignmentsForProject(projectId),
         fetchOutcomes(projectId),
       ])
+      const proxyVersionsById = await getLatestFinancialProxyVersionsByProxyIds(
+        financialProxies.map((p) => p.id)
+      )
       return {
         canEdit: ['organization_admin', 'impact_manager', 'analyst'].includes(
           ctx.membership.role
         ),
+        canEvaluateRubric: canEvaluateProxyRubric(ctx.membership.role),
         canReviewMethodologyHere: canReviewMethodology(ctx.membership.role),
         financialProxies,
         proxySources,
         assignments,
         outcomes,
+        proxyVersionsById,
       }
     })
 
@@ -202,6 +235,25 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
     await updateFinancialProxyReviewStatusAction(projectId, {
       proxyId,
       newStatus: 'pending_review'
+    })
+    revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
+  }
+
+  async function handleEvaluateRubric(formData: FormData) {
+    'use server'
+    const proxyId = formData.get('proxyId') as string
+    const rationale = formData.get('rationale') as string
+    const exceptionalDefendibilityDetermination = formData.get(
+      'exceptionalDefendibilityDetermination'
+    ) as string
+    const factors = Object.fromEntries(
+      [...CONFIDENCE_FACTOR_KEYS, ...RISK_FACTOR_KEYS].map((key) => [key, formData.get(key)])
+    )
+    await evaluateProxyRubricAction(projectId, {
+      proxyId,
+      ...factors,
+      rationale,
+      exceptionalDefendibilityDetermination: exceptionalDefendibilityDetermination || undefined,
     })
     revalidatePath(`/app/projects/${projectId}/pipeline/proxies`)
   }
@@ -349,6 +401,158 @@ export default async function ProxiesPage({ params }: { params: Promise<{ projec
           </Table>
         )}
       </section>
+
+      {/* Defendibility rubric — FIBIU-09 (FIBC-011). The confidence and risk
+          levels shown here are SYSTEM-DERIVED from the thirteen factors
+          below; there is no field to type a level directly. */}
+      {financialProxies.length > 0 && (
+        <section aria-labelledby="rubric-heading">
+          <h2
+            id="rubric-heading"
+            className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+          >
+            Rúbrica de defendibilidad (FIBC-011)
+          </h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            La confianza y el riesgo metodológico se calculan a partir de estos trece factores — no
+            se establecen directamente. Un factor sin calificar bloquea la aprobación del proxy.
+          </p>
+          <div className="space-y-3">
+            {financialProxies.map((p) => {
+              const version = proxyVersionsById.get(p.id)
+              const confidenceConfig = version?.confidenceLevel
+                ? CONFIDENCE_BADGE[version.confidenceLevel]
+                : null
+              const riskConfig = version?.methodologicalRisk
+                ? RISK_BADGE[version.methodologicalRisk]
+                : null
+              const allFactorsRated = version
+                ? [...CONFIDENCE_FACTOR_KEYS, ...RISK_FACTOR_KEYS].every(
+                    (key) => (version as Record<string, unknown>)[key] != null
+                  )
+                : false
+              const needsExceptionalDetermination =
+                version?.confidenceLevel === 'low' || version?.methodologicalRisk === 'high'
+
+              return (
+                <Card key={p.id}>
+                  <CardHeader>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle className="text-sm">{p.name}</CardTitle>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {confidenceConfig ? (
+                          <Badge variant={confidenceConfig.variant}>
+                            Confianza: {confidenceConfig.label} ({version?.confidenceScore ?? '—'})
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/60">Rúbrica sin calificar</span>
+                        )}
+                        {riskConfig && (
+                          <Badge variant={riskConfig.variant}>
+                            {riskConfig.label} ({version?.methodologicalRiskScore ?? '—'})
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {allFactorsRated && needsExceptionalDetermination && (
+                      <p className="mt-1 text-xs text-amber-700">
+                        {version?.exceptionalDefendibilityDetermination
+                          ? 'Confianza baja o riesgo alto — el techo/piso de la rúbrica lo determinó; hay una determinación excepcional registrada.'
+                          : 'Confianza baja o riesgo alto — requiere una determinación excepcional explícita antes de poder aprobarse.'}
+                      </p>
+                    )}
+                  </CardHeader>
+                  {canEvaluateRubric && (
+                    <CardContent>
+                      <details>
+                        <summary className="cursor-pointer text-xs font-medium text-foreground">
+                          {allFactorsRated ? 'Volver a calificar' : 'Calificar los trece factores'}
+                        </summary>
+                        <form action={handleEvaluateRubric} className="mt-3 space-y-3">
+                          <input type="hidden" name="proxyId" value={p.id} />
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {[...CONFIDENCE_FACTOR_KEYS, ...RISK_FACTOR_KEYS].map((key) => {
+                              const label =
+                                CONFIDENCE_FACTOR_LABELS[key] ?? RISK_FACTOR_LABELS[key] ?? key
+                              const current = version
+                                ? (version as Record<string, unknown>)[key]
+                                : null
+                              return (
+                                <div key={key}>
+                                  <label
+                                    htmlFor={`${p.id}-${key}`}
+                                    className="block text-xs font-medium text-foreground"
+                                  >
+                                    {label}
+                                  </label>
+                                  <Select
+                                    id={`${p.id}-${key}`}
+                                    name={key}
+                                    required
+                                    defaultValue={current != null ? String(current) : ''}
+                                    className="mt-1"
+                                  >
+                                    <option value="">— Sin calificar —</option>
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                  </Select>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`${p.id}-rationale`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Justificación{' '}
+                              <span className="text-danger" aria-hidden="true">
+                                *
+                              </span>
+                            </label>
+                            <textarea
+                              id={`${p.id}-rationale`}
+                              name="rationale"
+                              rows={2}
+                              required
+                              placeholder="Motivo de estas calificaciones, con referencias"
+                              className={TEXTAREA_CLASS}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`${p.id}-exceptional`}
+                              className="block text-xs font-medium text-foreground"
+                            >
+                              Determinación excepcional de defendibilidad
+                            </label>
+                            <textarea
+                              id={`${p.id}-exceptional`}
+                              name="exceptionalDefendibilityDetermination"
+                              rows={2}
+                              defaultValue={version?.exceptionalDefendibilityDetermination ?? ''}
+                              placeholder="Requerida solo si la confianza resulta baja o el riesgo resulta alto"
+                              className={TEXTAREA_CLASS}
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+                          >
+                            Registrar evaluación
+                          </button>
+                        </form>
+                      </details>
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Creation forms — restricted to permitted roles */}
       {canEdit && (

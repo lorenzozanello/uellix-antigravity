@@ -46,6 +46,30 @@ export interface CreateFinancialProxyVersionInput {
   relevanceJustification: string | null
   documentedTransformations: string | null
   consultationDate: Date | null
+  // FIBIU-09 (FIBC-011) — optional at creation (a fresh version's rubric is
+  // unrated until a human evaluates it via recordProxyRubricEvaluation).
+  // The one exception is promoteProxyToGlobal's clone, which carries an
+  // already-rated source version's rubric across rather than resetting it
+  // to unrated on an operation that changes no underlying evidence.
+  c1SourceQualityVerifiability?: number | null
+  c2OutcomeCorrespondence?: number | null
+  c3StakeholderPopulationFit?: number | null
+  c4GeographicContextFit?: number | null
+  c5TemporalFit?: number | null
+  c6MethodologicalUnitComparability?: number | null
+  r1ProvenanceRisk?: number | null
+  r2SourceLimitationRisk?: number | null
+  r3ConceptualFitRisk?: number | null
+  r4GeographicPopulationTransferRisk?: number | null
+  r5TemporalObsolescenceRisk?: number | null
+  r6TransformationRisk?: number | null
+  r7MethodologicalUncertaintyRisk?: number | null
+  confidenceScore?: number | null
+  confidenceLevel?: string | null
+  methodologicalRiskScore?: number | null
+  methodologicalRisk?: string | null
+  rubricVersion?: string | null
+  exceptionalDefendibilityDetermination?: string | null
   reviewStatus: string
   createdBy: string
 }
@@ -87,6 +111,25 @@ export async function createFinancialProxyVersion(
       relevanceJustification: input.relevanceJustification,
       documentedTransformations: input.documentedTransformations,
       consultationDate: input.consultationDate,
+      c1SourceQualityVerifiability: input.c1SourceQualityVerifiability ?? null,
+      c2OutcomeCorrespondence: input.c2OutcomeCorrespondence ?? null,
+      c3StakeholderPopulationFit: input.c3StakeholderPopulationFit ?? null,
+      c4GeographicContextFit: input.c4GeographicContextFit ?? null,
+      c5TemporalFit: input.c5TemporalFit ?? null,
+      c6MethodologicalUnitComparability: input.c6MethodologicalUnitComparability ?? null,
+      r1ProvenanceRisk: input.r1ProvenanceRisk ?? null,
+      r2SourceLimitationRisk: input.r2SourceLimitationRisk ?? null,
+      r3ConceptualFitRisk: input.r3ConceptualFitRisk ?? null,
+      r4GeographicPopulationTransferRisk: input.r4GeographicPopulationTransferRisk ?? null,
+      r5TemporalObsolescenceRisk: input.r5TemporalObsolescenceRisk ?? null,
+      r6TransformationRisk: input.r6TransformationRisk ?? null,
+      r7MethodologicalUncertaintyRisk: input.r7MethodologicalUncertaintyRisk ?? null,
+      confidenceScore: input.confidenceScore ?? null,
+      confidenceLevel: input.confidenceLevel ?? null,
+      methodologicalRiskScore: input.methodologicalRiskScore ?? null,
+      methodologicalRisk: input.methodologicalRisk ?? null,
+      rubricVersion: input.rubricVersion ?? null,
+      exceptionalDefendibilityDetermination: input.exceptionalDefendibilityDetermination ?? null,
       reviewStatus: input.reviewStatus,
       supersedesVersionId: current?.id ?? null,
       createdBy: input.createdBy,

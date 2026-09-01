@@ -42,12 +42,12 @@ describe('the six baseline gates', () => {
     expect(evidence.firstProvisioningPlannable).toBe(true)
   })
 
-  // W2-B2 (FIBIU-08) — re-derived: FIB Wave 2 B1 closure left 64 units; this
-  // batch's first unit adds exactly one Drizzle migration
-  // (0053_fib_proxy_versions_provenance.sql), no DML. 64+1=65.
+  // W2-B2 (FIBIU-08/09) — re-derived: FIB Wave 2 B1 closure left 64 units;
+  // this batch adds two Drizzle migrations (0053_fib_proxy_versions_
+  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql), no DML. 64+2=66.
   it('measures the corpus rather than restating the manifest', () => {
-    expect(evidence.unitCount).toBe(65)
-    expect(evidence.superuserFreeUnits).toBe(65)
+    expect(evidence.unitCount).toBe(66)
+    expect(evidence.superuserFreeUnits).toBe(66)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',

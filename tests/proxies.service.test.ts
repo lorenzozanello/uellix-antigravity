@@ -3,6 +3,26 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// FIBIU-09 — assertRubricApprovable requires all 13 factors rated before
+// approval. All-high-confidence/no-risk so these pre-existing approval tests
+// (written for FIBIU-08's gate) don't also trip the exceptional-
+// determination requirement, which is tested separately.
+const FULL_RUBRIC = {
+  c1SourceQualityVerifiability: 3,
+  c2OutcomeCorrespondence: 3,
+  c3StakeholderPopulationFit: 3,
+  c4GeographicContextFit: 3,
+  c5TemporalFit: 3,
+  c6MethodologicalUnitComparability: 3,
+  r1ProvenanceRisk: 0,
+  r2SourceLimitationRisk: 0,
+  r3ConceptualFitRisk: 0,
+  r4GeographicPopulationTransferRisk: 0,
+  r5TemporalObsolescenceRisk: 0,
+  r6TransformationRisk: 0,
+  r7MethodologicalUncertaintyRisk: 0,
+};
+
 // Use vi.hoisted to define mockDbData before vi.mock hoisting
 const mockDbData = vi.hoisted(() => ({
   proxySources: [] as any[],
@@ -595,7 +615,7 @@ describe('Financial Proxies Service', () => {
         };
         mockDbData.financialProxies = [editedProxy];
         mockDbData.financialProxyVersions = [
-          { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof' },
+          { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
         ];
         mockDbData.updated = { ...editedProxy, reviewStatus: 'approved', valueUsd: '250' };
 
@@ -620,7 +640,7 @@ describe('Financial Proxies Service', () => {
     const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
     mockDbData.financialProxyVersions = [
-      { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof' },
+      { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
     ];
 
     const updated = { ...proxy, reviewStatus: 'approved' };
@@ -705,7 +725,7 @@ describe('Financial Proxies Service', () => {
       await asApprover();
       mockDbData.financialProxies = [approvalProxy];
       mockDbData.financialProxyVersions = [
-        { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof' },
+        { id: 'version-1', financialProxyId: PROXY_UUID, recoverableReference: 'https://example.org/proof', ...FULL_RUBRIC },
       ];
       mockDbData.updated = { ...approvalProxy, reviewStatus: 'approved', reviewerId: 'reviewer-1' };
 

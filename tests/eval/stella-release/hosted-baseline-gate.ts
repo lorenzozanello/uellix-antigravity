@@ -371,16 +371,17 @@ export function buildHostedBaselineGateEvidence(
     phaseSkipRefused: !skipped.ok && skipped.code === 'PROVISIONING_BASELINE_INCOMPLETE',
     sentinelAutomationRefused:
       !sentinelAutomated.ok && sentinelAutomated.code === 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION',
-    // W2-B2 (FIBIU-08) — 66, NOT 65: unit ZERO creates the journal table,
+    // W2-B2 (FIBIU-08/09) — 67, NOT 66: unit ZERO creates the journal table,
     // and it is a planned step rather than setup because a prerequisite
-    // nobody plans is one somebody skips. 65 baseline units (64 + 1 for
-    // 0053_fib_proxy_versions_provenance.sql) + 1 journal bootstrap step.
-    // The count is asserted rather than loosened to `>= 65` — a plan that
+    // nobody plans is one somebody skips. 66 baseline units (64 + 1 for
+    // 0053_fib_proxy_versions_provenance.sql + 1 for
+    // 0054_fib_proxy_rubric_constraints.sql) + 1 journal bootstrap step.
+    // The count is asserted rather than loosened to `>= 66` — a plan that
     // silently grew or shrank is exactly what this evidence exists to
     // notice.
     firstProvisioningPlannable:
       firstProvisioning.ok &&
-      firstProvisioning.steps.length === 66 &&
+      firstProvisioning.steps.length === 67 &&
       firstProvisioning.steps[0].id === '000_journal_bootstrap',
   }
 }
@@ -391,10 +392,10 @@ export function evaluateHostedBaselineGates(
   const gates: HostedBaselineGate[] = []
 
   /* 1 ---------------------------------------------------------------- */
-  // W2-B2 (FIBIU-08) — 65, re-derived: FIB Wave 2 B1 closure left 64 units;
-  // this batch's first unit adds exactly one Drizzle migration
-  // (0053_fib_proxy_versions_provenance.sql). 64 + 1 = 65.
-  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 65
+  // W2-B2 (FIBIU-08/09) — 66, re-derived: FIB Wave 2 B1 closure left 64
+  // units; this batch adds two Drizzle migrations (0053_fib_proxy_versions_
+  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql). 64 + 2 = 66.
+  const manifestOk = evidence.manifestProblems.length === 0 && evidence.unitCount === 66
   gates.push({
     id: 'hosted-baseline-manifest-ready',
     passed: manifestOk,

@@ -1000,6 +1000,23 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: '1fb6e2415a9a69dd82c9763caf068039a631b0e7f708d1b9d824ff2e92a7d901',
     },
   },
+  {
+    ordinal: 66,
+    id: '0054_fib_proxy_rubric_constraints.sql',
+    kind: D,
+    file: 'db/migrations/0054_fib_proxy_rubric_constraints.sql',
+    sha256: '2237b3247cdb22f792f30e83b24edfc202abfd9b59918be272116014ffa67ae7',
+    dependsOn: ['0053_fib_proxy_versions_provenance.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-09 (FIBC-011/FIBDB-044). Five ADD CONSTRAINT CHECKs on financial_proxy_versions: rubric ' +
+      'factor range (0-3), confidence/risk derived-score-formula consistency, and confidence-ceiling/ ' +
+      'risk-floor implications. Defense-in-depth only — lib/pipeline/financial-proxy-rubric.ts\'s ' +
+      'deriveRubricClassification() is the sole AUTHORITATIVE, fully-tested derivation; these five ' +
+      'CHECKs have never been executed against a live Postgres instance in this DB-free-test ' +
+      'repository and are flagged here for adversarial review rather than claimed as proven.',
+    expect: {},
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

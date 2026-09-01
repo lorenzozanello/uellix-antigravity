@@ -453,14 +453,14 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
   const generated = buildAllJournalWrappers(read)
 
   it('the manifest is the source of order', () => {
-    // W2-B2 (FIBIU-08) — re-derived: FIB Wave 2 B1 closure left 64 units;
-    // this batch's first unit adds exactly one more
-    // (0053_fib_proxy_versions_provenance.sql). 64+1=65 — see
+    // W2-B2 (FIBIU-08/09) — re-derived: FIB Wave 2 B1 closure left 64 units;
+    // this batch adds two more (0053_fib_proxy_versions_provenance.sql,
+    // 0054_fib_proxy_rubric_constraints.sql). 64+2=66 — see
     // tests/hosted/baseline-manifest.test.ts and
     // tests/eval/stella-release/hosted-baseline-gate.test.ts for the same
     // derivation, independently re-verified there.
-    expect(BASELINE_UNITS).toHaveLength(65)
-    expect(BASELINE_ORDER).toHaveLength(65)
+    expect(BASELINE_UNITS).toHaveLength(66)
+    expect(BASELINE_ORDER).toHaveLength(66)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {
