@@ -3,20 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, LayoutDashboard, FolderKanban, ShieldCheck, Users, CreditCard } from 'lucide-react'
-
-const NAV_LINKS = [
-  { href: '/app/dashboard', label: 'Panel', icon: LayoutDashboard },
-  { href: '/app/projects', label: 'Proyectos SROI', icon: FolderKanban },
-  { href: '/app/trust-center', label: 'Centro de confianza', icon: ShieldCheck },
-  { href: '/app/organization/members', label: 'Miembros', icon: Users },
-  { href: '/app/organization/billing', label: 'Facturación', icon: CreditCard },
-]
-
-function isActive(href: string, path: string) {
-  if (href === '/app/dashboard') return path === '/app/dashboard'
-  return path.startsWith(href)
-}
+import { Menu, X } from 'lucide-react'
+import { NAV_LINKS, isNavLinkActive } from './nav-links'
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
@@ -82,7 +70,7 @@ export function MobileNav() {
             {/* Nav links */}
             <nav aria-label="Navegación principal" className="flex-1 px-3 py-4 space-y-1">
               {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-                const active = isActive(href, pathname)
+                const active = isNavLinkActive(href, pathname)
                 return (
                   <Link
                     key={href}
