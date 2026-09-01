@@ -21,6 +21,7 @@ import {
   sroiReportSections,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
 import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
@@ -151,7 +152,7 @@ export async function buildComposerContext(
   }))
 
   // Evidence metadata — filePath excluded, hash truncated to 8 chars
-  const rawEvidence = await db
+  const rawEvidenceUnfiltered = await db
     .select({
       id: evidenceItems.id,
       type: evidenceItems.type,
@@ -170,6 +171,17 @@ export async function buildComposerContext(
         eq(evidenceItems.organizationId, organizationId)
       )
     )
+
+  // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — same exclusion rule as
+  // buildValidatorContext/buildAdvisorContext: only an explicit
+  // 'non_sensitive' classification clears an item for this external model
+  // context; unclassified evidence is excluded, not implicitly safe.
+  const evidenceVersionsById = await getLatestEvidenceVersionsByEvidenceIds(
+    rawEvidenceUnfiltered.map((ev) => ev.id)
+  )
+  const rawEvidence = rawEvidenceUnfiltered.filter(
+    (ev) => evidenceVersionsById.get(ev.id)?.sensitivityClassification === 'non_sensitive'
+  )
 
   const evidenceMetadata: EvidenceMeta[] = rawEvidence.map((ev) => ({
     id: ev.id,

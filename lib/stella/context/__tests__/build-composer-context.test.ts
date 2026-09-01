@@ -80,6 +80,16 @@ const mockEvidenceItems = [
   },
 ]
 
+// FIBIU-05 (FIBC-007, W2-B1-R2) — buildComposerContext now looks up each
+// evidence item's current sensitivity classification and excludes anything
+// not explicitly 'non_sensitive'. Both classified here so existing
+// assertions keep exercising the same pre-R2 behavior; a dedicated test
+// below covers exclusion.
+const mockEvidenceVersions = [
+  { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+  { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+]
+
 const mockAssignments = [
   {
     assignmentId: 'asgn-1',
@@ -187,6 +197,7 @@ async function setupFullMockSequence(opts: {
   sectionsRows?: typeof mockSections
   stakeholderRows?: Array<{ id: string; type?: string | null }>
   narrativeRow?: typeof mockNarrative
+  evidenceVersionRows?: typeof mockEvidenceVersions
 } = {}) {
   const {
     projectRow = mockProject,
@@ -196,6 +207,7 @@ async function setupFullMockSequence(opts: {
     sectionsRows = mockSections,
     stakeholderRows = mockStakeholders,
     narrativeRow = mockNarrative,
+    evidenceVersionRows = mockEvidenceVersions,
   } = opts
 
   const { db } = await import('@/db/client')
@@ -209,6 +221,7 @@ async function setupFullMockSequence(opts: {
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                                       // 5. outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                                     // 6. indicators
     .mockReturnValueOnce(makeChain(mockEvidenceItems) as never)                                  // 7. evidence
+    .mockReturnValueOnce(makeChain(evidenceVersionRows) as never)                                // 7b. evidence sensitivity (FIBIU-05)
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                                    // 8. proxy assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'HACT Database' }]) as never)          // 9. source
     .mockReturnValueOnce(makeChain(mockFilterSets) as never)                                     // 10. filter sets
@@ -404,9 +417,10 @@ describe('buildComposerContext', () => {
       await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
 
       // Query order (see setupFullMockSequence's numbered comment): the
-      // calc-run query is call #11 → index 10.
+      // calc-run query is call #12 → index 11 (shifted by one since the
+      // FIBIU-05 evidence-sensitivity lookup was inserted as step 7b).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const calcRunChain = selectMock.mock.results[10]!.value as any
+      const calcRunChain = selectMock.mock.results[11]!.value as any
       const whereArg = calcRunChain.where.mock.calls[0][0]
       expect(extractEqValues(whereArg)).toContain('run-PINNED-001')
       // No more "latest for project" ordering — filtering by a unique id
@@ -464,6 +478,31 @@ describe('buildComposerContext', () => {
       const ev = ctx.evidenceMetadata.find((e) => e.contentHashTruncated)
       expect(ev?.contentHashTruncated).toBe('abcdef12')
       expect(ev?.contentHashTruncated?.length).toBe(8)
+    })
+
+    // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01, NC-1/NC-3) — sensitive evidence
+    // must never enter the composer's Stella context by the mere fact of
+    // being linked; unclassified evidence is excluded the same way.
+    it('excludes evidence classified as sensitive from evidenceMetadata and evidenceTotal', async () => {
+      await setupFullMockSequence({
+        evidenceVersionRows: [
+          { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'personal_data' },
+          { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+        ],
+      })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      expect(ctx.evidenceTotal).toBe(1)
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-1')).toBeUndefined()
+      expect(ctx.evidenceMetadata.find((e) => e.id === 'ev-2')).toBeDefined()
+    })
+
+    it('excludes unclassified evidence — no version row is never treated as an implicit pass', async () => {
+      await setupFullMockSequence({ evidenceVersionRows: [] })
+      const ctx = await buildComposerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, MOCK_REPORT_ID)
+
+      expect(ctx.evidenceTotal).toBe(0)
+      expect(ctx.evidenceMetadata).toHaveLength(0)
     })
 
     it('includes readinessScore from latest review', async () => {

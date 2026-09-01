@@ -9,6 +9,7 @@ import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { buildEvidenceManifest, extractFxTrail, extractLineItems, buildMethodologyReadiness } from '@/lib/reports/pdf/report-data'
 import { listMethodologyReviewsForProject } from '@/lib/pipeline/methodology-review'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
@@ -20,6 +21,18 @@ const STATUS_LABEL: Record<string, string> = {
   under_review: 'En revisión',
   locked: 'Bloqueado',
   archived: 'Archivado',
+}
+
+// FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed REPORT/ANNEX
+// surface. Only evidence explicitly classified 'non_sensitive' may reach the
+// printable evidence manifest; unclassified (never-evaluated) evidence is
+// excluded the same as classified-sensitive evidence, never an implicit pass.
+async function loadNonSensitiveEvidenceForProject(projectId: string) {
+  const evidenceUnfiltered = await listEvidenceForProject(projectId).catch(() => [])
+  const versionsById = await getLatestEvidenceVersionsByEvidenceIds(evidenceUnfiltered.map((e) => e.id))
+  return evidenceUnfiltered.filter(
+    (e) => versionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
+  )
 }
 
 function fmt(value: string | null | undefined, currency?: string | null): string {
@@ -69,7 +82,7 @@ export default async function ReportPrintPage({
         ? await listMethodologyReviewsForProject(projectId).catch(() => [])
         : [],
       evidence: annexes.evidenceManifest
-        ? await listEvidenceForProject(projectId).catch(() => [])
+        ? await loadNonSensitiveEvidenceForProject(projectId)
         : [],
     }
   })

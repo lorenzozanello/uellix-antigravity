@@ -27,6 +27,7 @@ import {
   sroiRunReviews,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { sanitizeString, hasForbiddenPattern } from './sanitize'
 import { buildValidatorContext, StellaBuildValidatorContextError } from './build-validator-context'
 import type { StellaProjectContext } from './types'
@@ -181,7 +182,7 @@ async function buildEvidenceDetails(
   projectId: string,
   organizationId: string
 ): Promise<ReviewerEvidenceDetail[]> {
-  const rows = await db
+  const rowsUnfiltered = await db
     .select({
       id: evidenceItems.id,
       title: evidenceItems.title,
@@ -201,6 +202,15 @@ async function buildEvidenceDetails(
     .where(
       and(eq(evidenceItems.projectId, projectId), eq(evidenceItems.organizationId, organizationId))
     )
+
+  // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — same exclusion rule as
+  // buildValidatorContext/buildAdvisorContext: only an explicit
+  // 'non_sensitive' classification clears an item for this external model
+  // context; unclassified evidence is excluded, not implicitly safe.
+  const versionsById = await getLatestEvidenceVersionsByEvidenceIds(rowsUnfiltered.map((r) => r.id))
+  const rows = rowsUnfiltered.filter(
+    (r) => versionsById.get(r.id)?.sensitivityClassification === 'non_sensitive'
+  )
 
   return rows.map((row) => ({
     id: row.id,
