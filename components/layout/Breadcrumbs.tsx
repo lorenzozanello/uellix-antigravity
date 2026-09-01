@@ -6,8 +6,12 @@ import { ChevronRight } from 'lucide-react'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Segments that are purely structural — collapsed in the breadcrumb trail
-const SKIP_SEGMENTS = new Set(['app', 'runs'])
+// Segments that are purely structural — collapsed in the breadcrumb trail.
+// 'organization' has no route of its own (only its children — members,
+// billing, settings, onboarding — do), so linking it produces a dead
+// /app/organization href (RE-U1 U1-F08). Its accumulated href is still used
+// for its children, which are pushed normally.
+const SKIP_SEGMENTS = new Set(['app', 'runs', 'organization'])
 
 const SEGMENT_LABELS: Record<string, string> = {
   dashboard: 'Panel',
@@ -26,6 +30,9 @@ const SEGMENT_LABELS: Record<string, string> = {
   portfolios: 'Portafolios',
   new: 'Nuevo',
   onboarding: 'Configuración inicial',
+  members: 'Miembros',
+  billing: 'Facturación',
+  settings: 'Configuración',
 }
 
 /** Returns a human label for a UUID segment, based on the preceding segment. */
