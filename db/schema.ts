@@ -312,10 +312,119 @@ export const evidenceItems = pgTable('evidence_items', {
   check('evidence_items_type_check', sql`${table.type} IN ('file', 'url', 'text')`),
   check('evidence_items_status_check', sql`${table.status} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
   check('evidence_items_confidence_score_check', sql`${table.confidenceScore} IS NULL OR (${table.confidenceScore} >= 0 AND ${table.confidenceScore} <= 100)`),
+  // FIBIU-04 (FIBC-006/FIBDB-037) — SHA-256 hex format, added NOT VALID in
+  // migration (stage A): legacy rows are exempt, new writes are checked.
+  check('evidence_items_content_hash_format_check', sql`${table.contentHash} IS NULL OR ${table.contentHash} ~ '^[0-9a-f]{64}$'`),
   index('idx_evidence_items_project_id').on(table.projectId),
   index('idx_evidence_items_organization_id').on(table.organizationId),
   index('idx_evidence_items_outcome_id').on(table.outcomeId),
   index('idx_evidence_items_indicator_id').on(table.indicatorId),
+])
+
+// FIBIU-04 — evidence version lineage (FIBDB-005/FIBC-002/FIBC-006), the
+// dedicated FIBC-002 specialization for evidence — its own table, following
+// the same ordinal + supersedes_version_id lineage shape as
+// domain_object_versions, not a row inside that generic table. `content` is
+// populated only for text evidence (file keeps hashing the storage object;
+// url hashes the normalized reference — see lib/pipeline/evidence.ts), so
+// content_hash becomes re-verifiable exactly where it previously was not.
+// `sensitivity_classification`/`treatment` (FIBIU-05) and `erasure_state`
+// (FIBIU-07) are columns on this same physical table per FIBDB-005's field
+// list, but their vocabulary CHECKs and write paths are owned by those later
+// units — see 0049_fib_evidence_sensitivity_vocabulary.sql and
+// 0051_fib_evidence_erasure_substrate.sql. Stage-E approved/used-version
+// immutability is deferred (FIBDB-005 IMMUTABILITY note); this table is
+// mutable at stage A the same way evidence_items itself is.
+export const evidenceVersions = pgTable('evidence_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  evidenceId: uuid('evidence_id').references(() => evidenceItems.id).notNull(),
+  ordinal: integer('ordinal').notNull(),
+  content: text('content'),
+  contentHash: varchar('content_hash', { length: 64 }),
+  sensitivityClassification: varchar('sensitivity_classification', { length: 50 }),
+  treatment: varchar('treatment', { length: 50 }),
+  reviewStatus: varchar('review_status', { length: 50 }).default('draft').notNull(),
+  legacyContentUnverifiable: boolean('legacy_content_unverifiable').default(false).notNull(),
+  erasureState: varchar('erasure_state', { length: 50 }),
+  supersedesVersionId: uuid('supersedes_version_id'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('evidence_versions_evidence_ordinal_unique').on(table.evidenceId, table.ordinal),
+  check('evidence_versions_review_status_check', sql`${table.reviewStatus} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+  // FIBIU-05 (FIBC-007/FIBDB-043) — sensitivity/treatment vocabulary.
+  check('evidence_versions_sensitivity_classification_check', sql`${table.sensitivityClassification} IS NULL OR ${table.sensitivityClassification} IN ('non_sensitive', 'personal_data', 'identifiable_restricted', 'confidential_third_party', 'special_category')`),
+  check('evidence_versions_treatment_check', sql`${table.treatment} IS NULL OR ${table.treatment} IN ('not_required', 'anonymized', 'pseudonymized', 'identifiable_restricted_access')`),
+  check('evidence_versions_treatment_required_check', sql`${table.sensitivityClassification} IS NULL OR ${table.sensitivityClassification} = 'non_sensitive' OR ${table.treatment} IS NOT NULL`),
+  // FIBIU-07 (FIBC-009/FIBDB-043) — erasure vocabulary. Forward-only
+  // advancement (never regressing from erasure_complete) is a service-layer
+  // invariant (lib/pipeline/evidence.ts), not expressible as a CHECK.
+  check('evidence_versions_erasure_state_check', sql`${table.erasureState} IS NULL OR ${table.erasureState} IN ('erasure_requested', 'erasure_in_progress', 'erasure_complete', 'erasure_partial', 'erasure_blocked')`),
+  index('idx_evidence_versions_evidence_id').on(table.evidenceId),
+  index('idx_evidence_versions_organization_id').on(table.organizationId),
+])
+
+// FIBIU-06 — evidence sufficiency determinations (FIBDB-014/FIBC-008). One
+// append-only row per governed human determination over an outcome's
+// evidence SET (never per evidence item) — count, individual status and
+// confidence_score are explicitly never a substitute (FIBC-008). A
+// re-determination is a new row (ordinal+1); this table has no UPDATE path.
+export const evidenceSufficiencyDeterminations = pgTable('evidence_sufficiency_determinations', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  // W2-B1-R3 (R-B1-04, M-1) — FIBDB-014 verbatim: "Per monetized outcome per
+  // run". A determination is bound to the exact calculation run it was made
+  // for; a determination recorded for run R1 must never satisfy approval of
+  // run R2 merely because outcomeId matches. Same FK convention as
+  // sroiRunReviews.calculationRunId / sroiReports.calculationRunId.
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  ordinal: integer('ordinal').notNull(),
+  determination: varchar('determination', { length: 20 }).notNull(),
+  rationale: text('rationale').notNull(),
+  actorUserId: uuid('actor_user_id').references(() => users.id).notNull(),
+  determinedAt: timestamp('determined_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  // Re-determination is ordinal+1 WITHIN the same (outcome, run) pair — a
+  // new run starts its own ordinal sequence for that outcome, never
+  // continuing a prior run's.
+  unique('evidence_sufficiency_determinations_outcome_run_ordinal_unique').on(table.outcomeId, table.calculationRunId, table.ordinal),
+  check('evidence_sufficiency_determinations_determination_check', sql`${table.determination} IN ('sufficient', 'insufficient')`),
+  index('idx_evidence_sufficiency_determinations_outcome_id').on(table.outcomeId),
+  index('idx_evidence_sufficiency_determinations_project_id').on(table.projectId),
+  index('idx_evidence_sufficiency_determinations_outcome_run').on(table.outcomeId, table.calculationRunId),
+])
+
+// FIBIU-07 — evidence tombstones (FIBDB-031/FIBC-009). Append-only record of
+// a governed, exceptional, irreversible erasure operation's terminal outcome
+// — distinct from `archived` and never a conventional DELETE. Transient
+// progress (erasure_requested/erasure_in_progress) lives on
+// evidence_versions.erasure_state; this table records only the terminal
+// state (erasure_complete/erasure_partial/erasure_blocked) an erasure
+// actually reached. Stage-A substrate only: the grant revocation and
+// DELETE-rejection trigger this vocabulary anticipates (FIBDB-032/
+// FIBDB-033) are Wave-2-deferred stage-E hardening, not created here.
+export const evidenceTombstones = pgTable('evidence_tombstones', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  evidenceId: uuid('evidence_id').references(() => evidenceItems.id).notNull(),
+  evidenceVersionId: uuid('evidence_version_id').references(() => evidenceVersions.id).notNull(),
+  erasureState: varchar('erasure_state', { length: 50 }).notNull(),
+  erasureReason: varchar('erasure_reason', { length: 50 }).notNull(),
+  rationale: text('rationale').notNull(),
+  contentHashPreserved: boolean('content_hash_preserved').default(true).notNull(),
+  contentHash: varchar('content_hash', { length: 64 }),
+  actorUserId: uuid('actor_user_id').references(() => users.id).notNull(),
+  occurredAt: timestamp('occurred_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('evidence_tombstones_erasure_state_check', sql`${table.erasureState} IN ('erasure_complete', 'erasure_partial', 'erasure_blocked')`),
+  check('evidence_tombstones_erasure_reason_check', sql`${table.erasureReason} IN ('privacy_or_data_subject_request', 'retention_policy', 'unauthorized_or_erroneous_upload', 'confidentiality_or_access_violation', 'legal_or_contractual_requirement', 'other_governed_reason')`),
+  index('idx_evidence_tombstones_evidence_id').on(table.evidenceId),
+  index('idx_evidence_tombstones_organization_id').on(table.organizationId),
 ])
 
 export const proxySources = pgTable('proxy_sources', {

@@ -840,6 +840,133 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'DESTROY_AND_REPROVISION. The UPDATE re-runs to zero affected rows.',
     expect: { dmlStatementCount: 1 },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B1 (Wave 2, Batch 1 — Evidence). FIBIU-04/05/06/07. Appended after   *
+   * the Wave-1 corpus + unit 59, same convention unit 59 itself followed.   *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 60,
+    id: '0048_fib_evidence_versions.sql',
+    kind: D,
+    file: 'db/migrations/0048_fib_evidence_versions.sql',
+    sha256: 'dc3c978b48338dc8e76886882a2a97405068aba8183c0019716385b8cffe9dac',
+    dependsOn: ['0030_immutability.sql', '0031_rls_core.sql'],
+    dml: 'structural-backfill',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-04 stage A/B (FIBC-005/FIBC-006/FIBDB-005/FIBDB-037). CREATE TABLE evidence_versions ' +
+      '(self-referencing supersedes_version_id FK, hand-added, same gap 0045 hand-filled), a NOT VALID ' +
+      'SHA-256 format CHECK on the pre-existing evidence_items.content_hash, a stage-B backfill (one v1 ' +
+      'shell row per existing evidence_items row, content NULL, legacy_content_unverifiable true only ' +
+      'for type=text), and RLS mirroring evidence_items (0031_rls_core.sql): org-scoped SELECT, INSERT/ ' +
+      'UPDATE restricted to the same role floor, no DELETE policy.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing INSERT backfill and two policies are guarded/idempotent but do not change the unit\'s ' +
+      'overall class. No reverse script — forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: false,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 3,
+      dmlStatementCount: 1,
+      securitySurfaceDigest: '446acc6cf990c9cf8f5fa82c2b64907ffd1749057d333ae006fd67bdc7dc6767',
+    },
+  },
+  {
+    ordinal: 61,
+    id: '0049_fib_evidence_sensitivity_vocabulary.sql',
+    kind: D,
+    file: 'db/migrations/0049_fib_evidence_sensitivity_vocabulary.sql',
+    sha256: '3fcec066bdca95b6428641ca4cb22b9057fcea8ccc890b3fc70ffbb366256af5',
+    dependsOn: ['0048_fib_evidence_versions.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-05 stage A (FIBC-007), FIBDB-043\'s evidence_versions slice only (FIBIU-07 owns the ' +
+      'erasure_state slice, unit 63). Three ADD CONSTRAINT statements on columns FIBIU-04 already ' +
+      'created — sensitivity_classification vocabulary, treatment vocabulary, and the pairing rule ' +
+      '(treatment required when classification is set and not non_sensitive). No new table, no RLS.',
+    expect: {},
+  },
+  {
+    ordinal: 62,
+    id: '0050_fib_evidence_sufficiency_determinations.sql',
+    kind: D,
+    file: 'db/migrations/0050_fib_evidence_sufficiency_determinations.sql',
+    sha256: '4ef9a6ac9e930691db62b36ce65c1f000d727b3f967f9329d3ef68de01817952',
+    dependsOn: ['0030_immutability.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-06 stage A (FIBC-008/FIBDB-014). CREATE TABLE evidence_sufficiency_determinations — one ' +
+      'append-only row per governed human determination over an outcome\'s evidence set, never per ' +
+      'evidence item. RLS: org-scoped SELECT, INSERT restricted to impact_manager+ (actor_user_id = ' +
+      'auth.uid(), matching FIBC-008\'s "impact_manager+ determines"), no UPDATE/DELETE policy.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing two policies are guarded but do not change the unit\'s overall class. No reverse script ' +
+      '— forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      securitySurfaceDigest: '405f3dc246667d012a5c73f4de5c32109b86bf316307bc182a4f87b4bd9d96f6',
+    },
+  },
+  {
+    ordinal: 63,
+    id: '0051_fib_evidence_erasure_substrate.sql',
+    kind: D,
+    file: 'db/migrations/0051_fib_evidence_erasure_substrate.sql',
+    sha256: 'a2c73abf3a4aeae988df3315e4d274a23598da7513d47008ed9a99a999291eff',
+    dependsOn: ['0030_immutability.sql', '0031_rls_core.sql', '0048_fib_evidence_versions.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-07 stage A ONLY (FIBC-009/FIBDB-031, plus the erasure_state slice of FIBDB-043 on ' +
+      'evidence_versions). CREATE TABLE evidence_tombstones (append-only terminal-outcome record) and ' +
+      'the erasure_state vocabulary CHECK. STAGE RULE: FIBDB-032 (revoke evidence_items DELETE from ' +
+      'authenticated) and FIBDB-033 (explicit DELETE-rejection trigger) are stage-E hardening that must ' +
+      'ship together per FIB §4 — deliberately NOT executed here; today\'s ambiguous DELETE path ' +
+      '(0033:35 grant / 0031:418-419 absent policy) is unchanged. RLS: org-scoped SELECT, INSERT ' +
+      'restricted to organization_admin+ (FIBC-009: "canEraseEvidenceContent, organization_admin+"), no ' +
+      'UPDATE/DELETE policy.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing two policies are guarded but do not change the unit\'s overall class. No reverse script ' +
+      '— forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      securitySurfaceDigest: '848b68d6467753f23b25e5601c49c1a62480f24c6053d81fef14320478e10515',
+    },
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B1-R3 (R-B1-04, M-1 remediation). Appended after the B1 corpus, same *
+   * convention unit 60-63 themselves followed for unit 59.                  *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 64,
+    id: '0052_fib_evidence_sufficiency_run_binding.sql',
+    kind: D,
+    file: 'db/migrations/0052_fib_evidence_sufficiency_run_binding.sql',
+    sha256: '3fc4df227c7e128058573498f0dd53ce1219b93126c937cbb1e96b400c3ea541',
+    dependsOn: ['0050_fib_evidence_sufficiency_determinations.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'W2-B1-R3 remediation (R-B1-04/M-1, FIBDB-014: "Per monetized outcome per run"). Adds ' +
+      'calculation_run_id (NOT NULL, FK to sroi_calculation_runs) to evidence_sufficiency_determinations ' +
+      'and re-scopes the ordinal uniqueness from (outcome_id, ordinal) to (outcome_id, ' +
+      'calculation_run_id, ordinal). Safe as NOT NULL with no default: this table was created in the ' +
+      'same Wave 2 batch (unit 62) and has never been applied to any hosted database, so there is no ' +
+      'historical row to violate the new constraint.',
+    expect: {},
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

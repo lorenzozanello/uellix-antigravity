@@ -10,6 +10,7 @@ import { getProjectByIdForCurrentOrganization } from '@/lib/projects/service'
 import { getCurrentOrganizationContext, runWithOptionalOrganizationAccess } from '@/lib/auth/session'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import {
   extractFunderBreakdown,
   buildEvidenceManifest,
@@ -65,13 +66,25 @@ export async function GET(
       return null
     }
 
-    const [project, runDetail, mappings, evidence, methodologyReviews] = await Promise.all([
+    const [project, runDetail, mappings, evidenceUnfiltered, methodologyReviews] = await Promise.all([
       getProjectByIdForCurrentOrganization(projectId),
       getCalculationRunDetail(projectId, report.calculationRunId).catch(() => null),
       listOutcomeMappingsForProject(projectId).catch(() => []),
       listEvidenceForProject(projectId).catch(() => []),
       listMethodologyReviewsForProject(projectId).catch(() => []),
     ])
+
+    // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed EXPORT
+    // surface. Only evidence explicitly classified 'non_sensitive' may reach
+    // the PDF annex; unclassified (never-evaluated) evidence is excluded the
+    // same as classified-sensitive evidence, never treated as an implicit
+    // pass.
+    const evidenceVersionsById = await getLatestEvidenceVersionsByEvidenceIds(
+      evidenceUnfiltered.map((e) => e.id)
+    )
+    const evidence = evidenceUnfiltered.filter(
+      (e) => evidenceVersionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
+    )
 
     return { report, project, runDetail, mappings, evidence, methodologyReviews }
   })

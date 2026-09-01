@@ -756,6 +756,18 @@ export async function getSroiCalculationReadiness(projectId: string): Promise<Sr
       if (!outcomesWithEvidence.has(outcomeId)) outcomesWithoutEvidence.push(outcomeId)
     }
   }
+  // W2-B1-R3 (R-B1-04, M-1) — the informational
+  // outcomesMissingSufficiencyDetermination signal B1 added here was
+  // removed: FIBDB-014 now binds every determination to an explicit
+  // calculationRunId, and readiness/preliminary work runs BEFORE a
+  // calculation run exists, so there is no run identity to check a
+  // determination against at this point without inventing one — exactly
+  // the "heuristic freshness" R-B1-04 forbids. The existing >=1-non-
+  // rejected-evidence gate above is untouched and remains the minimum for
+  // preliminary work, per FIBC-008's own text. The real, run-bound
+  // sufficiency check lives where a concrete run actually exists:
+  // lib/pipeline/sroi-results.ts's assertEvidenceSufficiencyForApproval.
+
   if (outcomesWithoutEvidence.length > 0) {
     blockingReasons.push(`${outcomesWithoutEvidence.length} outcome(s) with no supporting evidence`)
   }

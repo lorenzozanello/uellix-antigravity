@@ -1,0 +1,750 @@
+{
+  "package_id": "W2_B1_REMEDIATION_AUTHORITY",
+  "version": "1.0.0",
+  "artifact_id": "W2_B1_REMEDIATION_AUTHORITY_v1.0.0",
+  "authority_class": "DERIVED_TECHNICAL_REMEDIATION_AUTHORITY",
+  "supersedes": null,
+  "purpose": "Freeze the technical remediation authority for Wave 2 batch B1 (FIBIU-04/05/06/07) in response to the W2-B1-AR independent adversarial review. This artifact adjudicates AG-W2-B1-1, freezes decisions R-B1-01..06, and enumerates authorized remediation surfaces, prohibited surfaces, required negative controls, and required closure tests. It does NOT modify frozen FIB authority, does NOT implement remediation, and does NOT reopen product architecture.",
+
+  "identity": {
+    "task": "W2-B1-R0",
+    "class": "A",
+    "mode": "TECHNICAL_REMEDIATION_AUTHORITY_FREEZE",
+    "branch": "codex/w2-methodology-objects-r1",
+    "base_sha": "9709e03371b4310a24374f4004992c22f48d0913",
+    "base_tree": "116c0ad8f1bf49e33ddb5178cb9a0429357a3a69",
+    "predecessor_task": "W2-B1-AR (independent adversarial review of B1)",
+    "source_execution_mapping": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json"
+  },
+
+  "source_audit_state": {
+    "audit_id": "W2-B1-AR",
+    "audit_class": "INDEPENDENT_ADVERSARIAL_REVIEW",
+    "audited_head": "9709e03371b4310a24374f4004992c22f48d0913",
+    "audited_tree": "116c0ad8f1bf49e33ddb5178cb9a0429357a3a69",
+    "audited_b1_commits": [
+      "eb62e7a feat(fib): implement evidence version persistence (FIBIU-04)",
+      "faf6bf8 feat(fib): implement evidence sensitivity governance (FIBIU-05)",
+      "4f82cc9 feat(fib): implement evidence sufficiency determinations (FIBIU-06)",
+      "9709e03 feat(fib): implement governed evidence erasure substrate (FIBIU-07)"
+    ],
+    "adjudication_rule_applied": "The audit is accepted as the remediation input unless direct frozen authority contradicts the measured fact. Every finding below was independently re-verified in this task against sealed FIB authority and against the measured repository state; none was accepted on the audit's assertion alone.",
+    "verdict": "ACCEPTED"
+  },
+
+  "prestate_gate": {
+    "current_branch": "codex/w2-methodology-objects-r1",
+    "current_head": "9709e03371b4310a24374f4004992c22f48d0913",
+    "current_tree": "116c0ad8f1bf49e33ddb5178cb9a0429357a3a69",
+    "prestate_branch": "PASS",
+    "prestate_head": "PASS",
+    "prestate_tree": "PASS",
+    "prestate_clean": "PASS",
+    "ods_prestate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "transitive_attestation_count": 4
+  },
+
+  "authority_references": {
+    "fib_baseline": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+    "fib_index": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+    "fibc_007": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:81-82 (Evidence Sensitivity & Treatment)",
+    "fibc_008": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:84-85 (Evidence Sufficiency Determination)",
+    "fibc_009": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:87-88 (Evidence Content Erasure)",
+    "fibdb_014": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:307",
+    "fibdb_031": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:341",
+    "fibdb_032": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:343",
+    "fibdb_033": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:345",
+    "fibdb_043": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:365",
+    "fibiu_04": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:736-737",
+    "fibiu_05": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:739-740",
+    "fibiu_06": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:742-743",
+    "fibiu_07": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:745-746",
+    "fibiu_29": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:811-812 (canEraseEvidenceContent, canClassifyEvidenceSensitivity, canDetermineEvidenceSufficiency)",
+    "wave2_execution_mapping": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json (recommended_implementation_batches[batch_id=B1])",
+    "ods_carry_forward_backlog": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md (MNB-1, BK-1..BK-4, AG-1)"
+  },
+
+  "blocking_findings": [
+    {
+      "id": "B-1",
+      "statement": "Sensitive evidence filtering does not cover all governed exposure paths.",
+      "disposition": "ACCEPTED_MUST_REMEDIATE",
+      "authority_basis": "FIBC-007 FC clause: 'Governs exposure in reports, annexes, exports, public surfaces, and Stella context.' FIBIU-05 SERVICE_CHANGES: 'an exposure filter across every output surface -- report, annex, export, public surface, and Stella context.' FIBIU-05 EXIT_GATE: 'approval is blocked without classification and no output surface exposes classified content.'",
+      "independent_verification": "Measured at base tree: files carrying any sensitivity_classification reference are exactly lib/pipeline/evidence-versions.ts, lib/pipeline/evidence.ts, lib/reports/public-verify.ts, lib/stella/context/build-advisor-context.ts (plus advisor tests). lib/stella/context/build-validator-context.ts:149, build-reviewer-context.ts:187 and build-composer-context.ts:158 each select evidenceItems.title into external model context with no sensitivity filter. lib/pipeline/evidence.ts:295 listEvidenceForProject applies no sensitivity filter, and is the loader consumed by both the PDF export route and the print/report-annex page.",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "B-2",
+      "statement": "Fail-closed sensitivity/sufficiency/erasure capabilities have no reachable user-facing remedy despite B1 declaring UI changes.",
+      "disposition": "ACCEPTED_MUST_REMEDIATE",
+      "authority_basis": "FIBIU-05 UI_CHANGES: 'sensitivity evaluation as a step preceding approval; visible access restrictions.' FIBIU-06 UI_CHANGES: 'a sufficiency panel per outcome in the evidence or calculation step.' FIBIU-07 UI_CHANGES: 'an administrative flow with explicit confirmation and a categorized reason; operational states visible and separate from V-25 methodological states.'",
+      "independent_verification": "Measured at base tree: zero references anywhere under app/ to classifyEvidenceSensitivity, requestGovernedEvidenceErasure, or any sufficiency-determination verb. lib/pipeline/evidence.ts:636-647 assertSensitivityEvaluated throws EVIDENCE_SENSITIVITY_UNEVALUATED and blocks approval, with no reachable caller of lib/pipeline/evidence.ts:727 classifyEvidenceSensitivity that could satisfy it. The evidence UI directory app/app/projects/[projectId]/pipeline/evidence/ carries one .action.ts per governed verb (archiveEvidence, createFileEvidence, createTextEvidence, createUrlEvidence, indexEvidence, updateEvidenceReviewStatus, verifyEvidenceIntegrity) -- FIBIU-04's verifyEvidenceIntegrity action is present, and no sensitivity, sufficiency, or erasure action exists.",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "B-3",
+      "statement": "Seven B1-caused deterministic governance/baseline regressions exist and were incorrectly classified as environmental.",
+      "disposition": "ACCEPTED_MUST_REMEDIATE",
+      "authority_basis": "CLAUDE.md section 5 fail-closed rules: no silent authority expansion, never weaken a test or a gate to obtain a PASS. Deterministic governance assertions are the regression harness for the remainder of Wave 2.",
+      "independent_verification": "Executed at base tree: tests/hosted/baseline-manifest.test.ts and tests/eval/stella-release/hosted-baseline-gate.test.ts -> 7 failed, 28 passed (35). Every failure is a concrete assertion diff with no network, credential, or environment dependency: expected length 59 got 63; expected ordinal array of 59 got 63; DML unit inventory expected 4 entries got 5; three baseline gates non-empty/false; corpus measurement expected 63 to be 59. Zero environmental causes present.",
+      "measured_state": "CONFIRMED",
+      "classification_correction": "DETERMINISTIC_B1_CAUSED -- not environmental."
+    }
+  ],
+
+  "material_findings": [
+    {
+      "id": "M-1",
+      "statement": "Evidence sufficiency is specified per monetized outcome per run, but the implementation binds only to outcome.",
+      "disposition": "ACCEPTED_MUST_REMEDIATE",
+      "authority_basis": "FIBDB-014 verbatim: 'Per monetized outcome per run: actor, timestamp, rationale. IMMUTABILITY: immutable.' FIBC-008 FC clause: 'run not eligible for approval while any monetized outcome lacks it.'",
+      "independent_verification": "Measured at base tree: db/schema.ts:373-389 evidenceSufficiencyDeterminations declares organizationId, projectId, outcomeId, ordinal, determination, rationale, actorUserId, determinedAt, createdAt -- and no run or run-version column. Uniqueness is unique(outcomeId, ordinal); indexes are on outcomeId and projectId only. lib/pipeline/evidence-sufficiency.ts:28-53 resolves the governing determination by outcomeId and highest ordinal, with no run predicate.",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "M-2",
+      "statement": "Commits 04/05/06 do not independently typecheck because shared schema and audit vocabulary were deferred to commit 07.",
+      "disposition": "RECORDED_NO_REMEDIATION_BY_HISTORY_REWRITE",
+      "classification": "PROCESS_TRACEABILITY_DEBT",
+      "history_rewrite_authorized": false,
+      "authority_basis": "CLAUDE.md section 5: no historical evidence rewriting. The four commits are historical evidence of what was executed and remain immutable.",
+      "independent_verification": "The condition is self-documented in the B1 history: commit faf6bf8's own message states 'This commit contains only the migration exclusive to FIBIU-05. The rest of this unit's surface -- classifyEvidenceSensitivity and the approval gate in lib/pipeline/evidence.ts, the exposure filter added to lib/reports/public-verify.ts and lib/stella/context/build-advisor-context.ts ... and their tests -- lands in the W2-B1-07 commit alongside the shared evidence.ts rewrite.'",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "M-3",
+      "statement": "Governed erasure performs irreversible external deletion before durable completion of the database-side governance record.",
+      "disposition": "ACCEPTED_MUST_REMEDIATE",
+      "authority_basis": "FIBC-009 FC clause: 'erasure cannot be declared complete unless every identified payload/derivative was treated.' FIBC-009: 'A conflict with an immutable artifact yields erasure_partial/erasure_blocked and escalation -- never a false erasure_complete.' FIBC-009: 'Produces an evidence_tombstone preserving identity, version, actor, date, reason, and structural references.' FIBDB-043: 'erasure_state only advances forward, never regresses from erasure_complete.'",
+      "independent_verification": "Measured at lib/pipeline/evidence.ts:902-971: supabase.storage.remove() executes the irreversible object deletion, then updateCurrentEvidenceVersion sets the terminal erasure_state, then the evidenceTombstones row is inserted. No durable governance state is written between the permission check and the destructive act -- erasure_state is never set to erasure_requested or erasure_in_progress before deletion, and the pre-act record is an audit event, not the governed tombstone. A failure after storage removal and before the tombstone insert yields erased content with no tombstone.",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "M-4",
+      "statement": "Governed erasure currently processes only the latest evidence version, while FIBC-009 refers to derived versions.",
+      "disposition": "ACCEPTED_MUST_REMEDIATE",
+      "authority_basis": "FIBC-009 verbatim: 'Erases every Uellix-controlled derivative -- stored object, persisted text, derived versions, OCR, thumbnails, chunks, embeddings, search indices, caches.' FIBIU-07 SERVICE_CHANGES repeats 'sweeps every Uellix-controlled derivative -- stored object, persisted text, derived versions, OCR, thumbnails, chunks, embeddings, indices, caches.'",
+      "independent_verification": "Measured at lib/pipeline/evidence.ts:911 getLatestEvidenceVersion(evidenceId) resolves a single version, and line 941 updateCurrentEvidenceVersion nulls content on the current version only. Persisted content on prior/superseded evidence_versions rows is not swept. The docs/19 grounding-derivative clause is separately satisfied vacuously and is not the defect.",
+      "measured_state": "CONFIRMED"
+    }
+  ],
+
+  "audit_correctness_items": [
+    {
+      "id": "AC-1",
+      "statement": "entityId for evidence_tombstone audit events must identify the correct governed entity.",
+      "disposition": "REMEDIATE_IN_SAME_REMEDIATION",
+      "authority_unambiguous": true,
+      "authority_basis": "FIBDB-031 declares the tombstone's identity fields (evidence_id, version_id, erasure_state, actor, date, reason category, rationale, hash-or-hash-existed). An audit event whose entityType names one entity class and whose entityId carries an identifier of a different table is an incorrect governed record.",
+      "independent_verification": "Measured at lib/pipeline/evidence.ts:916-925: the erasure_requested event declares entityType 'evidence_tombstone' with entityId set to evidenceId (an evidence_items identifier). The erasure_completed event at lines 966-974 correctly uses tombstone.id. The two events disagree on what an evidence_tombstone entityId denotes.",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "AC-2",
+      "statement": "contentHashPreserved must reflect actual truth and must not be hardcoded true when no hash exists.",
+      "disposition": "REMEDIATE_IN_SAME_REMEDIATION",
+      "authority_unambiguous": true,
+      "authority_basis": "FIBC-009 verbatim: 'content_hash is retained unless governance forbids it, in which case only the existence of a hash is recorded, never its value.' FIBDB-031 names the field 'hash-or-hash-existed'. The flag is a truth claim about whether a hash value was preserved, not a constant.",
+      "independent_verification": "Measured at lib/pipeline/evidence.ts:955-956: contentHashPreserved is written as the literal true while contentHash is written as version.contentHash, which is nullable. FIBIU-04 establishes legacy_content_unverifiable as a real state in which no verifiable hash exists, so the null case is reachable and the hardcoded true is falsifiable.",
+      "measured_state": "CONFIRMED"
+    },
+    {
+      "id": "AC-3",
+      "statement": "erasure_blocked must not be emitted merely to exercise a vocabulary literal if no Stage-A blocking condition is reachable.",
+      "disposition": "CONSTRAINT_ON_REMEDIATION",
+      "authority_basis": "FIBC-009 restricts erasure_partial/erasure_blocked to a genuine 'conflict with an immutable artifact ... and escalation'. Emitting a governed terminal state with no reachable triggering condition would be fabricated governance evidence.",
+      "independent_verification": "Measured: lib/audit/logger.ts:224 defines EVIDENCE_TOMBSTONE_ERASURE_BLOCKED ('evidence_tombstone.erasure_blocked') and it is never emitted by lib/pipeline/evidence.ts. Remediation may leave it unemitted; it must not be emitted synthetically to satisfy vocabulary coverage.",
+      "measured_state": "CONFIRMED_AS_CONSTRAINT"
+    }
+  ],
+
+  "ag_w2_b1_1_adjudication": {
+    "gap_id": "AG-W2-B1-1",
+    "question": "Does FIBIU-05's FILES_OR_DOMAINS enumeration exhaustively bound the FIBC-007 exposure filter, or is the controlling FIBC-007 safety property plus FIBIU-05's EXIT_GATE broader than that list?",
+    "disposition": "RESOLVED_CONTRACT_AND_EXIT_GATE_CONTROL",
+    "frozen_interpretation": "FILES_OR_DOMAINS is an implementation locator and minimum expected surface list. It is NOT an exhaustive waiver from the controlling FIBC-007 safety property or from FIBIU-05's EXIT_GATE. Where the enumerated list and the exit gate differ, the contract safety invariant and the exit gate control.",
+    "supported_by_sealed_record": true,
+    "evidence_from_sealed_record": [
+      "FIBIU-05's own SERVICE_CHANGES field requires 'an exposure filter across every output surface -- report, annex, export, public surface, and Stella context'. The universal quantifier is internal to the same unit that carries the narrower file list, so the narrow reading contradicts the unit against itself, not merely against FIBC-007.",
+      "FIBIU-05's own EXIT_GATE requires that 'no output surface exposes classified content'. An exit gate stated over all output surfaces cannot be satisfied by filtering a subset of them.",
+      "FIBC-007 states the governed exposure domains as a closed list of five kinds -- reports, annexes, exports, public surfaces, and Stella context -- not as a list of files.",
+      "FIBIU-05's FILES_OR_DOMAINS entries include line ranges (lib/reports/public-verify.ts:67-70, lib/stella/context/build-advisor-context.ts:191). A line-range entry is a pointer to a known defect site; it is a locator idiom and cannot coherently be read as a scope boundary, since a safety property is not confined to four lines of a file.",
+      "Independent corroboration from the derived layer: the W2 execution mapping's B1 authorized_surface omits lib/reports/public-verify.ts and lib/stella/context/build-advisor-context.ts entirely, although FIBIU-05 explicitly names both. A surface enumeration that omits paths its own sealed unit names is demonstrably non-exhaustive, which independently defeats the exhaustive-waiver reading at the derived layer as well."
+    ],
+    "explicit_limits": [
+      "This does NOT create permission to edit arbitrary repository files.",
+      "Implementation may touch only additional concrete exposure surfaces demonstrably required to satisfy FIBC-007.",
+      "The remediation implementer MUST enumerate each added path and state its causal relation to the contract.",
+      "No sensitivity classification may be inferred. Automatic detection may recommend but never declare non-sensitive (FIBC-007).",
+      "Evidence must NOT be blindly hidden from authorized internal users where the contract permits retention."
+    ],
+    "fail_closed_rule": "Any content sent to external model context, public output, report annex, or export MUST fail closed under the exact sensitivity contract.",
+    "measured_path_classifications": [
+      {
+        "path": "lib/stella/context/build-validator-context.ts",
+        "classification": "GOVERNED_EXPOSURE_REQUIRES_FILTER",
+        "causal_relation": "Selects evidenceItems.title (line 149) into Stella validator context, which is an external model context. FIBC-007 governs Stella context; FIBIU-05 STELLA_CHANGES requires that 'sensitive evidence never enters context by the mere fact of being linked'. No sensitivity predicate present."
+      },
+      {
+        "path": "lib/stella/context/build-reviewer-context.ts",
+        "classification": "GOVERNED_EXPOSURE_REQUIRES_FILTER",
+        "causal_relation": "Selects evidenceItems.title (line 187) and builds evidenceDetails (line 281) into Stella reviewer context. Same contract basis as the validator builder. No sensitivity predicate present."
+      },
+      {
+        "path": "lib/stella/context/build-composer-context.ts",
+        "classification": "GOVERNED_EXPOSURE_REQUIRES_FILTER",
+        "causal_relation": "Selects evidenceItems.title (line 158) into Stella composer context. Same contract basis. No sensitivity predicate present."
+      },
+      {
+        "path": "lib/stella/context/build-advisor-context.ts",
+        "classification": "ALREADY_COMPLIANT",
+        "causal_relation": "Carries the FIBIU-05 exposure filter at line 214 with the FIBC-007 citation, and already excludes filePath, raw content, and storage paths (line 192). This is the reference implementation the three sibling builders must match."
+      },
+      {
+        "path": "lib/reports/public-verify.ts",
+        "classification": "ALREADY_COMPLIANT",
+        "causal_relation": "Public surface named directly in FIBIU-05 FILES_OR_DOMAINS; the exposure filter was materialized here in B1. Remediation must not regress it. FIBIU-26 consumes the same precedence ('V-26 classification has absolute precedence, evaluated fail-closed before activation or modification')."
+      },
+      {
+        "path": "app/app/projects/[projectId]/report/[reportId]/pdf/route.ts",
+        "classification": "GOVERNED_EXPOSURE_REQUIRES_FILTER",
+        "causal_relation": "An export surface. Loads evidence via lib/pipeline/evidence.ts listEvidenceForProject (line 72) and renders it through buildEvidenceManifest into a PDF annex (lines 91-92). FIBC-007 governs exports and annexes. listEvidenceForProject applies no sensitivity filter, so classified content reaches the exported artifact."
+      },
+      {
+        "path": "app/app/projects/[projectId]/report/[reportId]/print/page.tsx",
+        "classification": "GOVERNED_EXPOSURE_REQUIRES_FILTER",
+        "causal_relation": "A report/annex rendering surface producing the printable artifact. Loads evidence via the same unfiltered listEvidenceForProject (line 72) and renders buildEvidenceManifest (lines 98-100). FIBC-007 governs reports and annexes."
+      },
+      {
+        "path": "app/app/trust-center/page.tsx",
+        "classification": "INTERNAL_AUTHORIZED_LEDGER_CAN_RETAIN",
+        "causal_relation": "An authenticated, organization-scoped internal evidence inventory reached through runWithOrganizationAccess, rendering status and type metadata. It is none of FIBC-007's five governed exposure kinds -- not a report, annex, export, public surface, or Stella context. FIBC-007 permits identity, version, hash, classification and treatment to be carried; only the sensitive payload is forbidden. Per the explicit limit above, evidence must not be blindly hidden from authorized internal users. CONSTRAINT: it must continue to expose no sensitive payload, and if it is ever extended to emit an export or a public surface, that extension re-enters GOVERNED_EXPOSURE_REQUIRES_FILTER."
+      }
+    ],
+    "enumeration_is_minimum_not_maximum": "These eight are the paths this task adjudicated because the audit measured them. The remediation implementer remains obligated by FIBIU-05's EXIT_GATE to sweep for any further governed output surface and to enumerate each added path with its causal relation to FIBC-007. Finding none beyond this list must itself be an evidenced result, not an assumption."
+  },
+
+  "decisions": {
+    "R-B1-01": {
+      "title": "FIBC-007 EXPOSURE CONTRACT PRECEDENCE",
+      "status": "FROZEN",
+      "authority_supported": true,
+      "content": "The FIBC-007 contract safety invariant and the FIBIU-05 EXIT_GATE control over the narrower FIBIU-05 FILES_OR_DOMAINS enumeration. FILES_OR_DOMAINS is an implementation locator and minimum expected surface list, not an exhaustive waiver. Implementation may touch only additional concrete exposure surfaces demonstrably required to satisfy FIBC-007, and must enumerate each added path with its causal relation to the contract. See ag_w2_b1_1_adjudication for the frozen interpretation, the sealed-record evidence, the explicit limits, and the eight adjudicated path classifications.",
+      "closes": ["B-1"]
+    },
+    "R-B1-02": {
+      "title": "REACHABLE GOVERNED REMEDIES",
+      "status": "FROZEN",
+      "authority_supported": true,
+      "ui_changes_are_b1_stage_a": true,
+      "confirmation_basis": "FIBIU-05, FIBIU-06 and FIBIU-07 each declare a UI_CHANGES field in the sealed baseline, and all three units are inside batch B1 per W2_EXECUTION_MAPPING_v1.0.0.json recommended_implementation_batches[batch_id=B1].fibius = [FIBIU-04, FIBIU-05, FIBIU-06, FIBIU-07]. The B1 authorized_surface already enumerates app/app/projects/[projectId]/pipeline/evidence/**, which is the UI surface named by both FIBIU-05 and FIBIU-06 FILES_OR_DOMAINS.",
+      "authorized_minimum_materialization": [
+        {
+          "unit": "FIBIU-05",
+          "requirement": "Human sensitivity evaluation before approval, plus visible access restrictions.",
+          "authority": "FIBIU-05 UI_CHANGES: 'sensitivity evaluation as a step preceding approval; visible access restrictions.'",
+          "surface": "app/app/projects/[projectId]/pipeline/evidence/**",
+          "convention": "One .action.ts per governed verb, matching the existing sibling actions in that directory (archiveEvidence, updateEvidenceReviewStatus, verifyEvidenceIntegrity)."
+        },
+        {
+          "unit": "FIBIU-06",
+          "requirement": "Human evidence sufficiency determination per monetized outcome per run.",
+          "authority": "FIBIU-06 UI_CHANGES: 'a sufficiency panel per outcome in the evidence or calculation step; confidence_score is presented as a completeness signal, never as methodological sufficiency.'",
+          "surface": "app/app/projects/[projectId]/pipeline/evidence/** and/or app/app/projects/[projectId]/pipeline/calculation/**",
+          "constraint": "confidence_score must never be presented as methodological sufficiency."
+        },
+        {
+          "unit": "FIBIU-07",
+          "requirement": "Governed evidence-erasure request with explicit confirmation, categorized reason, and fail-closed result state.",
+          "authority": "FIBIU-07 UI_CHANGES: 'an administrative flow with explicit confirmation and a categorized reason; operational states visible and separate from V-25 methodological states.'",
+          "surface": "app/admin/**",
+          "surface_extension_note": "app/admin/** is named literally in FIBIU-07's sealed FILES_OR_DOMAINS but is NOT enumerated in the W2 execution mapping's B1 authorized_surface. Per CLAUDE.md section 2, sealed FIB authority (level 1) outranks the derived execution mapping (level 2), and the mapping's authorized_surface is independently shown non-exhaustive in ag_w2_b1_1_adjudication. app/admin/** is therefore authorized for B1 remediation as an explicit, recorded surface extension limited to the FIBIU-07 erasure flow. It authorizes nothing else under app/admin/**."
+        }
+      ],
+      "constraints": [
+        "Use existing product and component conventions.",
+        "No HPO or visual redesign is authorized. This is functional reachability, not high-fidelity screen design.",
+        "The current fail-closed approval gate MUST NOT remain without an authorized path to satisfy it.",
+        "Do NOT remove or weaken the gate. Reachability is achieved by adding the governed remedy, never by relaxing assertSensitivityEvaluated or any sibling gate.",
+        "Every governed action must remain permission-gated server-side via FIBIU-29's canClassifyEvidenceSensitivity, canDetermineEvidenceSufficiency and canEraseEvidenceContent; no client-side authorization."
+      ],
+      "closes": ["B-2"]
+    },
+    "R-B1-03": {
+      "title": "BASELINE GOVERNANCE REGRESSION REPAIR",
+      "status": "FROZEN",
+      "authority_supported": true,
+      "content": "Remediation of exactly the B1-caused deterministic regressions identified by base-vs-head comparison is authorized. Manifest facts must be re-derived from current B1 state, never adjusted until tests turn green.",
+      "measured_regressions": {
+        "count": 7,
+        "suites": [
+          "tests/hosted/baseline-manifest.test.ts",
+          "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+        ],
+        "measured_result_at_base": "7 failed | 28 passed (35)",
+        "failures": [
+          "baseline-manifest > has 59 units: 48 Drizzle, 2 Supabase, 9 policies -- expected length 59, got 63",
+          "baseline-manifest > numbers ordinals 1..59 contiguously, and BASELINE_ORDER is derived from them -- expected 59-element array, got 63",
+          "baseline-manifest > Phase 5 -- data > 0018, 0040, 0041 and 0047 are the only units with DML -- expected 4 entries, got 5",
+          "hosted-baseline-gate > the six baseline gates > all pass -- expected empty failure list, got 3",
+          "hosted-baseline-gate > the six baseline gates > are not tautological: each rests on evidence gathered by doing the work -- expected true, got false",
+          "hosted-baseline-gate > the six baseline gates > measures the corpus rather than restating the manifest -- expected 63 to be 59",
+          "hosted-baseline-gate > the four words this report may not say > reports baselineApplied, stagingApplied, hostedReady and providerReady as false unconditionally -- expected true, got false"
+        ],
+        "environmental_causes_present": false
+      },
+      "authorized_semantic_consequences": [
+        {
+          "fact": "baseline unit count 59 -> 63",
+          "re_derivation": "B1 added exactly four migrations -- 0048_fib_evidence_versions.sql (FIBIU-04), 0049_fib_evidence_sensitivity_vocabulary.sql (FIBIU-05), 0050_fib_evidence_sufficiency_determinations.sql (FIBIU-06), 0051_fib_evidence_erasure_substrate.sql (FIBIU-07) -- one per B1 commit. db/hosted/baseline-manifest.ts already carries ordinals through 63. 59 + 4 = 63 is derived from the corpus, not fitted to the assertion."
+        },
+        {
+          "fact": "ordinal range 1..59 -> 1..63",
+          "re_derivation": "Measured: baseline-manifest.ts maximum ordinal is 63 and the ordinal sequence is contiguous."
+        },
+        {
+          "fact": "DML inventory must acknowledge 0048",
+          "re_derivation": "VERIFIED GENUINE, not number-chasing: db/migrations/0048_fib_evidence_versions.sql line 75 contains INSERT INTO evidence_versions, under the comment block at lines 63-66 'Stage B -- structural backfill. One v1 shell row per existing evidence_items'. The migration therefore genuinely contains the authorized stage-B backfill, so extending the DML inventory from {0018, 0040, 0041, 0047} to include 0048 is a true statement about the corpus. Had 0048 contained no DML, the correct action would have been the reverse -- remove the stray DML, not widen the assertion.",
+          "condition_satisfied": true
+        },
+        {
+          "fact": "db/hosted/baseline-apply-authorization.ts descriptive corpus labels",
+          "re_derivation": "Lines 1095, 1165 and 1252 carry the literal string 'the 59-unit corpus' in sourceArtifact fields. These must be re-derived from BASELINE_UNITS.length rather than restated as a new hardcoded literal wherever the surrounding code permits."
+        }
+      ],
+      "prohibitions": [
+        "Do NOT hide B1 effects by removing governance assertions.",
+        "Do NOT weaken, skip, or delete any governance assertion to obtain a PASS.",
+        "Do NOT alter unrelated pre-existing failures.",
+        "Do NOT change a number without re-deriving the underlying corpus fact and recording the derivation."
+      ],
+      "required_proof": "A BASE-vs-remediated-HEAD comparison proving the seven B1-caused regressions are gone and that any remaining failures are exactly pre-existing.",
+      "harness_requirement": "The affected governance/baseline tests MUST be added to the B1 closure test set so this class of regression cannot again be hidden by targeted-test scope.",
+      "relationship_to_BK_1": "BK-1 (db/hosted/baseline-apply-authorization.ts:1097, disposition 'correct once at wave close, not per batch') is NOT superseded, reopened, or changed by this decision. BK-1 governs the closure-level Class C re-ratification of that bookkeeping line. R-B1-03 governs deterministic test regressions that fail today. Remediation must repair the failing deterministic assertions without consuming or altering BK-1's carry-forward disposition; BK1_CHANGED remains NO.",
+      "closes": ["B-3"]
+    },
+    "R-B1-04": {
+      "title": "SUFFICIENCY MUST BE RUN-BOUND",
+      "status": "FROZEN",
+      "authority_supported": true,
+      "direct_authority_confirmed": true,
+      "authority_quote": "FIBDB-014: 'Per monetized outcome per run: actor, timestamp, rationale. IMMUTABILITY: immutable.'",
+      "frozen_rule": "A sufficiency determination used to approve run R1 MUST NOT satisfy run R2 merely because outcome_id matches.",
+      "requirements": [
+        "Implement explicit run binding in the governed data model and service.",
+        "Use current repository naming conventions and the existing SROI run identity.",
+        "Do NOT invent heuristic freshness.",
+        "The approval lookup must select the governing determination for the actual run being approved, not the highest-ordinal determination for the outcome."
+      ],
+      "current_defect": "db/schema.ts:373-389 evidenceSufficiencyDeterminations has no run column; uniqueness is unique(outcomeId, ordinal). lib/pipeline/evidence-sufficiency.ts:28-53 resolves by outcomeId and highest ordinal.",
+      "remediate_now_rationale": "The table is new in B1 and Stage-E hardening has not occurred, so the key can still be corrected in place rather than carrying an incorrect key into Wave 3. FIBDB-014's BACKFILL_CLASS is HUMAN_COMPLETION_REQUIRED and PROSPECTIVE in effect (absent for historical runs), so no historical determination corpus is invalidated by adding the run binding.",
+      "closes": ["M-1"]
+    },
+    "R-B1-05": {
+      "title": "ERASURE DURABILITY / DERIVED VERSIONS",
+      "status": "FROZEN",
+      "authority_supported": true,
+      "semantics_confirmed_directly": true,
+      "frozen_rules": [
+        {
+          "rule": 1,
+          "statement": "No irreversible content deletion may happen before sufficient durable governance state exists to avoid an erased-with-no-tombstone outcome.",
+          "authority_basis": "FIBC-009 requires the operation to produce an evidence_tombstone preserving identity, version, actor, date, reason and structural references, and declares operational states erasure_requested|erasure_in_progress|erasure_complete|erasure_partial|erasure_blocked. FIBDB-043 constrains erasure_state to advance forward only. A vocabulary that begins at erasure_requested and passes through erasure_in_progress is ordered with respect to the destructive act; the destructive act cannot precede the state that represents having requested it."
+        },
+        {
+          "rule": 2,
+          "statement": "Storage/database partial failure must produce an explicit governed non-complete state.",
+          "authority_basis": "FIBC-009: 'A conflict with an immutable artifact yields erasure_partial/erasure_blocked and escalation.' FIBC-009 FC clause: 'erasure cannot be declared complete unless every identified payload/derivative was treated.'"
+        },
+        {
+          "rule": 3,
+          "statement": "A partial operation must never be represented as completed.",
+          "authority_basis": "FIBC-009: 'never a false erasure_complete.'"
+        },
+        {
+          "rule": 4,
+          "statement": "Erasure must account for every evidence version and derived version in scope under FIBC-009, not silently only the latest, where such versions exist.",
+          "authority_basis": "FIBC-009 verbatim: 'Erases every Uellix-controlled derivative -- stored object, persisted text, derived versions, OCR, thumbnails, chunks, embeddings, search indices, caches.' Where such versions do not exist the clause is satisfied vacuously, exactly as FIBC-009 already provides for docs/19 grounding derivatives ('if grounding derivatives do not exist for an evidence item, none are created; if they exist, they must participate before erasure_complete')."
+        },
+        {
+          "rule": 5,
+          "statement": "Stage-E FIBDB-032/033 enforcement remains deferred.",
+          "authority_basis": "FIBDB-032 BACKFILL_CLASS: 'SCHEMA_ONLY, behavioral -- hardening stage E only.' FIBDB-033 BACKFILL_CLASS: 'SCHEMA_ONLY, behavioral -- must ship together with FIBDB-032 ... hardening stage E.' W2_EXECUTION_MAPPING B1 expected_output: 'FIBDB-005/037/043/014/031 materialized; 032/033 deferred to stage E.'"
+        }
+      ],
+      "must_not_activate_early": [
+        "DELETE revoke (FIBDB-032)",
+        "Stage-E rejection trigger (FIBDB-033)",
+        "immutable-artifact blocking enforcement"
+      ],
+      "early_activation_additional_hazard": "FIBDB-033 states the pair must ship together: 'revoking privilege without the trigger leaves a privilege-error path with no guidance; the trigger without the revoke leaves the silent 0-row path open.' Activating either alone in Stage A would create a defect authority already anticipated.",
+      "authority_gap_assessment": {
+        "stage_a_schema_can_represent_sequencing": true,
+        "stop_condition_triggered": false,
+        "basis": "The frozen Stage-A schema CAN safely represent durable request / partial / completed sequencing without new authority. FIBDB-043 already provides all five erasure_state values on evidence_versions, including erasure_requested and erasure_in_progress. db/schema.ts records the intended split directly: 'Transient progress (erasure_requested/erasure_in_progress) lives on evidence_versions.erasure_state; this table records only the terminal state (erasure_complete/erasure_partial/erasure_blocked) an erasure actually reached.' No new workflow needs to be invented and no authority gap is reported."
+      },
+      "included_audit_correctness_items": ["AC-1", "AC-2", "AC-3"],
+      "closes": ["M-3", "M-4"]
+    },
+    "R-B1-06": {
+      "title": "COMMIT HISTORY / M-2",
+      "status": "FROZEN",
+      "authority_supported": true,
+      "history_rewrite_authorized": false,
+      "rules": [
+        "Do NOT rewrite or squash B1 history.",
+        "Do NOT amend commits 04-07.",
+        "The four existing commits remain historical evidence."
+      ],
+      "m2_record": {
+        "classification": "PROCESS_TRACEABILITY_DEBT",
+        "action": "NO_HISTORY_REWRITE"
+      },
+      "forward_obligation": "Every remediation commit must individually satisfy, at the time it is created: targeted tests, typecheck, authority seal, and ods:scope.",
+      "closure_evaluation_basis": "The eventual B1 closure audit must evaluate the final corrected state.",
+      "closes": []
+    }
+  },
+
+  "authorized_remediation_surfaces": {
+    "basis": "B1 authorized_surface from W2_EXECUTION_MAPPING_v1.0.0.json, extended only where sealed FIB authority names a surface the derived mapping omits, per ag_w2_b1_1_adjudication and R-B1-02.",
+    "from_w2_mapping_b1": [
+      "db/schema.ts",
+      "db/migrations/0048-005x",
+      "db/prepared/journal/060-06x",
+      "lib/pipeline/evidence.ts",
+      "lib/pipeline/confidence-score.ts",
+      "app/app/projects/[projectId]/pipeline/evidence/**",
+      "lib/audit/logger.ts",
+      "targeted tests"
+    ],
+    "extensions_authorized_by_sealed_fib_authority": [
+      {
+        "path": "lib/pipeline/evidence-versions.ts",
+        "authority": "FIBIU-04/05/07 -- the evidence_versions access layer materialized by B1; required for run-bound and multi-version corrections.",
+        "decision": "R-B1-04, R-B1-05"
+      },
+      {
+        "path": "lib/pipeline/evidence-sufficiency.ts",
+        "authority": "FIBIU-06 service surface materialized by B1; the determination lookup that must become run-bound.",
+        "decision": "R-B1-04"
+      },
+      {
+        "path": "lib/reports/public-verify.ts",
+        "authority": "Named literally in FIBIU-05 FILES_OR_DOMAINS (line range 67-70). Already compliant; listed so non-regression may be proven.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "lib/stella/context/build-validator-context.ts",
+        "authority": "FIBC-007 governed Stella context; FIBIU-05 EXIT_GATE 'no output surface exposes classified content'.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "lib/stella/context/build-reviewer-context.ts",
+        "authority": "FIBC-007 governed Stella context; FIBIU-05 EXIT_GATE.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "lib/stella/context/build-composer-context.ts",
+        "authority": "FIBC-007 governed Stella context; FIBIU-05 EXIT_GATE.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "lib/stella/context/build-advisor-context.ts",
+        "authority": "Named literally in FIBIU-05 FILES_OR_DOMAINS (line 191). Already compliant; listed so non-regression may be proven.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "app/app/projects/[projectId]/report/[reportId]/pdf/route.ts",
+        "authority": "FIBC-007 governed export surface.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "app/app/projects/[projectId]/report/[reportId]/print/page.tsx",
+        "authority": "FIBC-007 governed report/annex surface.",
+        "decision": "R-B1-01"
+      },
+      {
+        "path": "app/app/projects/[projectId]/pipeline/calculation/**",
+        "authority": "FIBIU-06 UI_CHANGES permits the sufficiency panel in 'the evidence or calculation step'. Authorized only for the sufficiency panel.",
+        "decision": "R-B1-02"
+      },
+      {
+        "path": "app/admin/**",
+        "authority": "Named literally in FIBIU-07 FILES_OR_DOMAINS. Authorized only for the FIBIU-07 governed erasure administrative flow.",
+        "decision": "R-B1-02"
+      },
+      {
+        "path": "db/hosted/baseline-manifest.ts, db/hosted/baseline-apply-authorization.ts",
+        "authority": "R-B1-03 deterministic governance regression repair, limited to re-derivation of corpus facts changed by B1.",
+        "decision": "R-B1-03"
+      },
+      {
+        "path": "tests/hosted/baseline-manifest.test.ts, tests/eval/stella-release/hosted-baseline-gate.test.ts, tests/eval/stella-release/hosted-baseline-gate.ts",
+        "authority": "R-B1-03 -- re-derivation of expected corpus facts only; never assertion removal or weakening.",
+        "decision": "R-B1-03"
+      }
+    ],
+    "protected_authority_grant": "HPO-ODS-W2-01 (branch codex/w2-methodology-objects-r1; patterns db/migrations/**, db/prepared/journal/**) must be supplied via --protected-authority for any remediation touching those two protected patterns."
+  },
+
+  "explicitly_prohibited_surfaces": [
+    {
+      "surface": "docs/ops/fib/**",
+      "reason": "Frozen/sealed FIB authority. This artifact does not modify it. No editing of sealed or certified artifacts (CLAUDE.md section 5)."
+    },
+    {
+      "surface": "docs/ops/pc01b/**, docs/ops/im01b/**",
+      "reason": "Sealed/frozen certified authority."
+    },
+    {
+      "surface": "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json and the protected ODS corpus",
+      "reason": "Protected authority corpus; verified by pnpm authority:seal:verify (PROTECTED_CORPUS_COUNT=9)."
+    },
+    {
+      "surface": "lib/admin/proxies.ts",
+      "reason": "MNB-1 surface, owned by FIBIU-08 in batch B2. Out of B1 scope."
+    },
+    {
+      "surface": "tests/audit-action-contract.test.ts CORRESPONDENCE_EXCEPTIONS",
+      "reason": "BK-2: adjudicated semantically valid at Wave 1 closure, not a FIBC-040 defect. Explicitly 'do not modify'. Shares a file with MNB-1."
+    },
+    {
+      "surface": "lib/pipeline/confidence-score.ts:81",
+      "reason": "BK-4: outside FIBIU-06's declared line surface (22-40); no Wave 2 ownership; must not be absorbed."
+    },
+    {
+      "surface": "FIBDB-032 grant revocation and FIBDB-033 DELETE-rejection trigger",
+      "reason": "R-B1-05 rule 5 -- Stage-E hardening, explicitly deferred; must ship as a pair, never early or alone."
+    },
+    {
+      "surface": "docs/19 grounding activation",
+      "reason": "FIBC-009: 'Does not activate docs/19.'"
+    },
+    {
+      "surface": "Any FIBIU outside FIBIU-04/05/06/07",
+      "reason": "B2 and later batches are not authorized by this artifact. Do not implement B2."
+    },
+    {
+      "surface": "Product architecture / HPO visual redesign",
+      "reason": "R-B1-02 -- functional reachability only; no HPO or visual redesign is authorized."
+    }
+  ],
+
+  "required_negative_controls": [
+    {
+      "id": "NC-1",
+      "decision": "R-B1-01",
+      "control": "For EVERY governed output path -- each of the four Stella context builders, the public verify surface, the PDF export route, and the print/report-annex page -- a classified (non non_sensitive) evidence version must be provably absent from the emitted payload. One negative control per governed output path; a single shared control does not satisfy this."
+    },
+    {
+      "id": "NC-2",
+      "decision": "R-B1-01",
+      "control": "Sensitive evidence must not enter Stella context by the mere fact of being linked to the project (FIBIU-05 STELLA_CHANGES). Existing PII redaction at the provider boundary must be shown preserved, not replaced."
+    },
+    {
+      "id": "NC-3",
+      "decision": "R-B1-01",
+      "control": "No sensitivity classification may be inferred: an automatic detector must never be able to drive a version to non_sensitive. Approval must remain impossible without an explicit human classification (EVIDENCE_SENSITIVITY_UNEVALUATED)."
+    },
+    {
+      "id": "NC-4",
+      "decision": "R-B1-04",
+      "control": "PRIMARY RUN-BINDING CONTROL: a sufficiency determination recorded for run R1 with outcome O MUST NOT satisfy approval of run R2 with the same outcome O."
+    },
+    {
+      "id": "NC-5",
+      "decision": "R-B1-04",
+      "control": "None of the following may substitute for the correct explicit run-bound human determination: an old or superseded determination; a large number of evidence rows; a high confidence_score. Sufficiency is never inferred from count, individual status, confidence_score, or Stella (FIBC-008)."
+    },
+    {
+      "id": "NC-6",
+      "decision": "R-B1-05",
+      "control": "An induced failure of the storage removal, and an induced failure of the database write, must each leave an explicit governed non-complete state and must never yield erased content with no durable governance record, nor a false erasure_complete."
+    },
+    {
+      "id": "NC-7",
+      "decision": "R-B1-05",
+      "control": "Multiple evidence versions: an evidence item with more than one version must have every in-scope version treated, or the operation must block explicitly and safely. Silent latest-only treatment must fail the control."
+    },
+    {
+      "id": "NC-8",
+      "decision": "R-B1-05 / AC-2",
+      "control": "contentHashPreserved must be false when no hash value is preserved (including the FIBIU-04 legacy_content_unverifiable case), and must never be hardcoded."
+    },
+    {
+      "id": "NC-9",
+      "decision": "R-B1-05 / AC-1",
+      "control": "Every evidence_tombstone audit event's entityId must denote the entity its entityType names."
+    },
+    {
+      "id": "NC-10",
+      "decision": "R-B1-02",
+      "control": "Each governed action must be denied server-side for a role below its FIBIU-29 permission floor -- canClassifyEvidenceSensitivity (impact_manager+), canDetermineEvidenceSufficiency (impact_manager+), canEraseEvidenceContent (organization_admin+) -- with no client-side authorization and no service_role client on a user path."
+    },
+    {
+      "id": "NC-11",
+      "decision": "R-B1-03",
+      "control": "The governance/baseline assertions must remain genuinely falsifiable after re-derivation: a deliberate corpus mutation must still fail them. Re-derivation must not convert an assertion into a tautology."
+    }
+  ],
+
+  "required_closure_tests": {
+    "must_all_pass": [
+      "pnpm journal:verify",
+      "pnpm baseline:verify",
+      "typecheck",
+      "secrets",
+      "pnpm authority:seal:verify",
+      "pnpm ods:poststate"
+    ],
+    "targeted_test_set_from_b1": [
+      "tests/evidence.service.test.ts",
+      "tests/audit-action-contract.test.ts",
+      "tests/append-only-error.test.ts",
+      "tests/confidence-score.service.test.ts"
+    ],
+    "added_to_b1_closure_test_set_by_R_B1_03": [
+      "tests/hosted/baseline-manifest.test.ts",
+      "tests/eval/stella-release/hosted-baseline-gate.test.ts"
+    ],
+    "harness_rationale": "R-B1-03 requires these governance/baseline suites to join the B1 closure test set so this class of regression cannot again be hidden by targeted-test scope.",
+    "regression_proof_required": "A BASE-vs-remediated-HEAD comparison proving the seven B1-caused regressions are absent and that any remaining failures are exactly the pre-existing set. No new regressions beyond the pre-existing baseline failure set."
+  },
+
+  "remediation_closure_requirements": [
+    "B-1 CLOSED",
+    "B-2 CLOSED",
+    "B-3 CLOSED",
+    "M-1 CLOSED",
+    "M-3 CLOSED",
+    "M-4 CLOSED",
+    "M-2 recorded without history rewrite",
+    "FIBIU-04 contract remains non-regressed",
+    "Sensitive exposure negative controls cover every governed output path",
+    "Run-bound sufficiency negative controls exist",
+    "Governed UI actions are actually reachable through the running application route/component tree",
+    "Erasure failure ordering cannot leave erased content with no durable governance record",
+    "Multiple evidence versions are covered or explicit safe blocking occurs",
+    "The seven B1-caused governance regressions are absent",
+    "No new regressions beyond the pre-existing baseline failure set"
+  ],
+
+  "carry_forward_preservation": {
+    "principle": "These items remain untouched by B1 remediation. This artifact changes none of them.",
+    "items": [
+      {
+        "id": "MNB-1",
+        "status": "UNCHANGED",
+        "owner": "FIBIU-08",
+        "batch": "B2",
+        "surface": "lib/admin/proxies.ts",
+        "note": "Remains FIBIU-08/B2. Not in B1 remediation scope."
+      },
+      {
+        "id": "BK-1",
+        "status": "UNCHANGED",
+        "surface": "db/hosted/baseline-apply-authorization.ts:1097",
+        "disposition": "closure-level Class C candidate; correct once at wave close, not per batch",
+        "note": "R-B1-03 repairs failing deterministic assertions only and does not consume, supersede, or alter BK-1's carry-forward disposition."
+      },
+      {
+        "id": "BK-2",
+        "status": "UNCHANGED",
+        "surface": "tests/audit-action-contract.test.ts (CORRESPONDENCE_EXCEPTIONS)",
+        "disposition": "valid correspondence exceptions -- do not modify"
+      },
+      {
+        "id": "BK-3",
+        "status": "UNCHANGED",
+        "surface": "in-code W1-05-RM1 remediation labels",
+        "disposition": "Class C, no Wave 2 owning unit"
+      },
+      {
+        "id": "BK-4",
+        "status": "UNCHANGED",
+        "surface": "lib/pipeline/confidence-score.ts:81",
+        "disposition": "outside FIBIU-06 declared line surface (22-40), no Wave 2 ownership; not absorbed"
+      }
+    ],
+    "w2_gap_2": {
+      "status": "DEFERRED_NOT_BLOCKING_STAGE_A",
+      "affected": "FIBIU-04 (FIBDB-037); shared with FIBIU-24 (FIBDB-038, Wave 4)",
+      "unchanged": true
+    },
+    "stage_e_deferral": {
+      "status": "REMAINS_DEFERRED",
+      "items": ["FIBDB-032", "FIBDB-033"],
+      "basis": "Both carry BACKFILL_CLASS 'SCHEMA_ONLY, behavioral -- hardening stage E' in the sealed baseline."
+    },
+    "b2_scope": {
+      "status": "NOT_AUTHORIZED_BY_THIS_ARTIFACT",
+      "note": "Do not implement B2."
+    }
+  },
+
+  "recommended_remediation_order": {
+    "rationale": "Restore deterministic governance tests first so later remediation is measured under a trustworthy regression harness.",
+    "steps": [
+      {
+        "step": "R1",
+        "name": "Baseline/governance regression repair",
+        "decision": "R-B1-03",
+        "closes": ["B-3"]
+      },
+      {
+        "step": "R2",
+        "name": "Sensitivity exposure closure",
+        "decision": "R-B1-01",
+        "closes": ["B-1"]
+      },
+      {
+        "step": "R3",
+        "name": "Run-bound sufficiency correction",
+        "decision": "R-B1-04",
+        "closes": ["M-1"]
+      },
+      {
+        "step": "R4",
+        "name": "Reachable UI/remedy paths",
+        "decision": "R-B1-02",
+        "closes": ["B-2"]
+      },
+      {
+        "step": "R5",
+        "name": "Erasure durability / version coverage",
+        "decision": "R-B1-05",
+        "closes": ["M-3", "M-4", "AC-1", "AC-2"]
+      }
+    ],
+    "permitted_combination": "R3 and R4 may be combined where exact schema/UI dependencies make that materially cleaner, but traceability must remain explicit.",
+    "per_commit_obligation": "Each remediation commit must individually satisfy targeted tests, typecheck, authority seal, and ods:scope at the time it is created (R-B1-06)."
+  },
+
+  "no_implementation_validation": {
+    "no_remediation_implemented": true,
+    "no_fib_authority_modified": true,
+    "no_product_architecture_reopened": true,
+    "no_b2_work_performed": true,
+    "no_migration_created": true,
+    "no_history_rewritten": true,
+    "files_changed": 1,
+    "changed_file": "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json"
+  },
+
+  "state_after_this_artifact": {
+    "b1_ar_verdict": "ACCEPTED",
+    "decisions_frozen": ["R-B1-01", "R-B1-02", "R-B1-03", "R-B1-04", "R-B1-05", "R-B1-06"],
+    "blocking_findings_to_remediate": 3,
+    "material_findings_to_remediate": 3,
+    "m2_history_rewrite_authorized": false,
+    "stage_e_remains_deferred": true,
+    "ready_for_w2_b1_remediation": true,
+    "ready_for_w2_b2": false,
+    "next_gate": "W2_B1_REMEDIATION_IMPLEMENTATION"
+  },
+
+  "final_state": "W2_B1_REMEDIATION_AUTHORITY_FROZEN_READY_FOR_IMPLEMENTATION"
+}

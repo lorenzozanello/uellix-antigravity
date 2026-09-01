@@ -699,7 +699,16 @@ describe('every entry point that can reach the database opens an identity contex
     // without moving `reaching` is the assertion — a health route that had
     // quietly started touching tenant data would move both, and would need an
     // ALLOWLIST row it does not have.
-    }).toEqual({ inventoried: 124, reaching: 99, contextualized: 83, allowlisted: 16 })
+    //
+    // 124 -> 127 / 99 -> 102 / contextualized 83 -> 86, allowlisted UNCHANGED
+    // at 16: W2-B1-R4 (FIBIU-05/06/07 reachable governed remedies) adds three
+    // new .action.ts entry points — classifyEvidenceSensitivity.action.ts,
+    // requestEvidenceErasure.action.ts (both under pipeline/evidence/), and
+    // calculation/runs/recordEvidenceSufficiencyDetermination.action.ts. All
+    // three call runWithOrganizationAccess around their one governed write,
+    // exactly like their sibling actions in the same directories, so all
+    // three are `contextualized`, not allowlisted.
+    }).toEqual({ inventoried: 127, reaching: 102, contextualized: 86, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

@@ -106,6 +106,13 @@ const sectionRows = [
   { id: 'sec-1', sectionType: 'executive_summary', title: 'Resumen ejecutivo', content: 'Borrador del resumen.' },
 ]
 
+// FIBIU-05 (FIBC-007) — buildAdvisorContext now looks up each evidence
+// item's current sensitivity classification via a full-row select (no
+// projection object), so it is keyed by the empty string below. Classified
+// 'non_sensitive' here so the parity assertions below keep covering the
+// same pre-FIBIU-05 evidenceMetadata/evidenceTotal fields.
+const evidenceVersionRows = [{ evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' }]
+
 // ---------------------------------------------------------------------------
 // Key-based db.select mock: each query is identified by the sorted keys of
 // its projection, so the mock is insensitive to query ordering.
@@ -121,6 +128,7 @@ function defaultFixtures(): QueryFixtures {
     'id,outcomeType,stakeholderGroupId,status,title': outcomeRows,
     'id,name,outcomeId,unit': indicatorRows,
     'contentHash,createdAt,id,indicatorId,outcomeId,status,title,type': evidenceRows,
+    '': evidenceVersionRows, // FIBIU-05 — full-row select, no projection object
     'assignmentId,confidenceLevel,currency,methodologicalRisk,proxyId,proxyName,sourceId,value': assignmentRows,
     'id,name': sourceRows,
     'id,title': activityRows,

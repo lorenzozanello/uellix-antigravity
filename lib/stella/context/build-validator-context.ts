@@ -19,6 +19,7 @@ import {
   sroiRunReviews,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { sanitizeString, sanitizeNarrative, hasForbiddenPattern } from './sanitize'
 import { detectSensitivePopulations } from '../security/sensitive-populations'
 import type {
@@ -142,7 +143,7 @@ export async function buildValidatorContext(
   }))
 
   // Evidence metadata — filePath excluded, hash truncated to 8 chars
-  const rawEvidence = await db
+  const rawEvidenceUnfiltered = await db
     .select({
       id: evidenceItems.id,
       type: evidenceItems.type,
@@ -161,6 +162,20 @@ export async function buildValidatorContext(
         eq(evidenceItems.organizationId, organizationId)
       )
     )
+
+  // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — "sensitive evidence never enters
+  // context by the mere fact of being linked". Complements, does not
+  // replace, the PII redaction below: excludes the item entirely by
+  // classification before any per-field sanitization runs. Only an
+  // explicit 'non_sensitive' classification clears an item; unclassified
+  // (never-evaluated) evidence is excluded the same as classified-sensitive
+  // evidence. Matches lib/stella/context/build-advisor-context.ts.
+  const evidenceVersionsById = await getLatestEvidenceVersionsByEvidenceIds(
+    rawEvidenceUnfiltered.map((ev) => ev.id)
+  )
+  const rawEvidence = rawEvidenceUnfiltered.filter(
+    (ev) => evidenceVersionsById.get(ev.id)?.sensitivityClassification === 'non_sensitive'
+  )
 
   const evidenceMetadata: EvidenceMeta[] = rawEvidence.map((ev) => ({
     id: ev.id,

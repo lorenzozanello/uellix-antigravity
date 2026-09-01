@@ -9,6 +9,7 @@ import { PrintButton } from './PrintButton'
 import { ReportSectionRenderer } from '@/components/report/ReportSectionRenderer'
 import { listOutcomeMappingsForProject, groupMappingsByCatalog } from '@/lib/taxonomies/service'
 import { listEvidenceForProject } from '@/lib/pipeline/evidence'
+import { getLatestEvidenceVersionsByEvidenceIds } from '@/lib/pipeline/evidence-versions'
 import { buildEvidenceManifest, extractFxTrail, extractLineItems, buildMethodologyReadiness } from '@/lib/reports/pdf/report-data'
 import { listMethodologyReviewsForProject } from '@/lib/pipeline/methodology-review'
 import { getVariantAnnexes, REPORT_VARIANT_LABEL, isReportVariant } from '@/lib/reports/report-variants'
@@ -68,8 +69,26 @@ export default async function ReportPrintPage({
       methodologyReviews: annexes.methodologyReadiness
         ? await listMethodologyReviewsForProject(projectId).catch(() => [])
         : [],
+      // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01) — this is a governed
+      // REPORT/ANNEX surface. Only evidence explicitly classified
+      // 'non_sensitive' may reach the printable evidence manifest;
+      // unclassified (never-evaluated) evidence is excluded the same as
+      // classified-sensitive evidence, never an implicit pass. Inlined
+      // here (rather than a separate helper function) so both DB calls
+      // stay lexically inside this identity context —
+      // tests/database-runtime-entrypoints.test.ts's AST scanner does not
+      // trace calls across a function boundary to see that a helper is
+      // only ever invoked from inside a runWith* callback.
       evidence: annexes.evidenceManifest
-        ? await listEvidenceForProject(projectId).catch(() => [])
+        ? await (async () => {
+            const evidenceUnfiltered = await listEvidenceForProject(projectId).catch(() => [])
+            const versionsById = await getLatestEvidenceVersionsByEvidenceIds(
+              evidenceUnfiltered.map((e) => e.id)
+            )
+            return evidenceUnfiltered.filter(
+              (e) => versionsById.get(e.id)?.sensitivityClassification === 'non_sensitive'
+            )
+          })()
         : [],
     }
   })

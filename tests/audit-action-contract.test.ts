@@ -199,6 +199,11 @@ const CONTENT_MODIFYING_SITES = [
   { file: 'lib/pipeline/outcomes.ts', action: 'outcome.materiality_updated' },
   { file: 'lib/pipeline/proxies.ts', action: 'proxy_source.updated' },
   { file: 'lib/pipeline/proxies.ts', action: 'financial_proxy.updated' }, // resetReview site — shares one call across both outcomes
+  // FIBIU-05 (FIBC-007) — both change what a version's classification/
+  // treatment fields say the evidence IS, and every output surface governs
+  // exposure on the resulting value.
+  { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.sensitivity_classified' },
+  { file: 'lib/pipeline/evidence.ts', action: 'evidence_version.treatment_recorded' },
 ]
 
 describe('content-modifying audit coverage (FIBC-040)', () => {

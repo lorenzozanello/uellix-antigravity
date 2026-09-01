@@ -54,6 +54,17 @@ const mockEvidenceBase = [
     indicatorId: 'ind-1',
   },
 ]
+// FIBIU-05 (FIBC-007, W2-B1-R2) — buildValidatorContext (the reviewer's base)
+// and buildReviewerContext's own buildEvidenceDetails each look up current
+// sensitivity classification and exclude anything not explicitly
+// 'non_sensitive'. Classified here so existing assertions keep exercising
+// the same pre-R2 behavior; dedicated tests below cover exclusion.
+const mockEvidenceVersionsBase = [{ evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' }]
+const mockEvidenceDetailVersions = [
+  { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+  { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+]
+
 const mockAssignments = [
   {
     assignmentId: 'asgn-1',
@@ -204,6 +215,8 @@ async function setupMockSequence(
   opts: {
     projectRow?: typeof mockProject
     stakeholderRows?: Array<{ id: string; type?: string | null }>
+    evidenceVersionRowsBase?: typeof mockEvidenceVersionsBase
+    evidenceDetailVersionRows?: typeof mockEvidenceDetailVersions
   } = {}
 ) {
   const { db } = await import('@/db/client')
@@ -216,6 +229,7 @@ async function setupMockSequence(
     .mockReturnValueOnce(makeChain(mockOutcomes) as never)                             // 4 outcomes
     .mockReturnValueOnce(makeChain(mockIndicators) as never)                           // 5 indicators
     .mockReturnValueOnce(makeChain(mockEvidenceBase) as never)                         // 6 evidence
+    .mockReturnValueOnce(makeChain(opts.evidenceVersionRowsBase ?? mockEvidenceVersionsBase) as never) // 6b evidence sensitivity (FIBIU-05, base)
     .mockReturnValueOnce(makeChain(mockAssignments) as never)                          // 7 assignments
     .mockReturnValueOnce(makeChain([{ id: 'src-1', name: 'DANE' }]) as never)          // 8 source
     .mockReturnValueOnce(makeChain(mockFilterSets) as never)                           // 9 filter sets
@@ -228,6 +242,7 @@ async function setupMockSequence(
   }
   if (!role || role === 'evidence_reviewer') {
     chain.mockReturnValueOnce(makeChain(mockEvidenceDetailRows) as never)
+    chain.mockReturnValueOnce(makeChain(opts.evidenceDetailVersionRows ?? mockEvidenceDetailVersions) as never) // evidence sensitivity (FIBIU-05, reviewer detail)
   }
   if (!role || role === 'audit_assistant') {
     chain.mockReturnValueOnce(makeChain(mockRunReviewRows) as never)
@@ -375,6 +390,30 @@ describe('buildReviewerContext', () => {
 
       expect(ctx.proxyDetails).toBeUndefined()
       expect(ctx.runReviewSummary).toBeUndefined()
+    })
+
+    // FIBIU-05 (FIBC-007, W2-B1-R2/R-B1-01, NC-1/NC-3) — sensitive evidence
+    // must never enter the reviewer's Stella context by the mere fact of
+    // being linked; unclassified evidence is excluded the same way.
+    it('excludes evidence classified as sensitive from evidenceDetails', async () => {
+      await setupMockSequence('evidence_reviewer', {
+        evidenceDetailVersionRows: [
+          { evidenceId: 'ev-1', ordinal: 1, sensitivityClassification: 'personal_data' },
+          { evidenceId: 'ev-2', ordinal: 1, sensitivityClassification: 'non_sensitive' },
+        ],
+      })
+      const ctx = await buildReviewerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'evidence_reviewer')
+
+      expect(ctx.evidenceDetails).toHaveLength(1)
+      expect(ctx.evidenceDetails!.find((e) => e.id === 'ev-1')).toBeUndefined()
+      expect(ctx.evidenceDetails!.find((e) => e.id === 'ev-2')).toBeDefined()
+    })
+
+    it('excludes unclassified evidence — no version row is never treated as an implicit pass', async () => {
+      await setupMockSequence('evidence_reviewer', { evidenceDetailVersionRows: [] })
+      const ctx = await buildReviewerContext(MOCK_PROJECT_ID, MOCK_ORG_ID, 'evidence_reviewer')
+
+      expect(ctx.evidenceDetails).toHaveLength(0)
     })
   })
 
