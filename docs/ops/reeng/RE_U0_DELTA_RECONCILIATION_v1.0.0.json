@@ -1,0 +1,561 @@
+{
+  "package_id": "RE_U0_DELTA_RECONCILIATION",
+  "version": "1.0.0",
+  "artifact_id": "RE_U0_DELTA_RECONCILIATION_v1.0.0",
+  "authority_class": "DERIVED_REENGINEERING_RECONCILIATION_RECORD",
+  "materialization_step": "RE-U0-M",
+  "materialization_date": "2026-09-01",
+  "class": "C",
+  "mode": "DERIVED_RECONCILIATION_MATERIALIZATION",
+  "supersedes": null,
+
+  "purpose": "Materialize, as a repository-native record, the RE-U0 delta reconciliation between the previously established Uellix product reengineering decisions and the current materialized FIB/ODS repository reality, corrected by coordinator adjudication of the six questions RE-U0 incorrectly raised as open HPO decisions.",
+
+  "scope_note": "DERIVED TRACKING RECORD. This artifact creates NO new product authority, implements nothing, remediates nothing and reopens nothing. It does not rewrite, supersede, reinterpret or restate any FIB, PC-01B, IM-01B or ODS artifact; those remain byte-identical and controlling. Where this record and any of them appear to disagree, they control. It records reconciliation state and evidence-recovery status only.",
+
+  "authority_boundary": {
+    "creates_new_product_authority": false,
+    "reopens_frozen_decisions": false,
+    "decisions_readjudicated": 0,
+    "invents_fib_owned_technical_contracts": false,
+    "governing_lane": "ODS_V1_AUTHORITY_v1.0.0.json :: product_and_wave_handoff.lane_b (Uellix product reengineering)",
+    "lane_method": "DELTA_RECONCILIATION",
+    "lane_boundary_rule_observed": "Lane B may not introduce new authority over objects already frozen by FIB, PC-01B or IM-01B. Where it collides, it produces a delta for HPO adjudication."
+  },
+
+  "anchors": {
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "base_sha": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "base_tree": "15715174aa1ce8eb8f726b8b73816cd2d15b7a96",
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "re_u0_measurement_base_sha": "d00743d7785a754d0d21862a6aeaf66b4944e6d4",
+    "re_u0_measurement_base_tree": "1100a3bf37c753f48dc06f1951238b9d3dcf5a7d",
+    "historical_evidence_source_worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-staging",
+    "historical_evidence_source_head": "4a085d689452947d73c253fd0996a2cb781e01be",
+    "historical_evidence_source_tree": "48e030c84ca740b25948218924eb9759ecd1735f",
+    "historical_worktree_mutated": false
+  },
+
+  "measurement_base_reconciliation": {
+    "statement": "RE-U0 measured the repository at d00743d. This record is anchored at ba2f5fd. The RE-U0 measured product findings are carried forward unchanged because the intervening range touched no product, runtime, schema, component or test-of-product surface.",
+    "range": "d00743d7785a754d0d21862a6aeaf66b4944e6d4..ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "commit_count": 8,
+    "changed_file_count": 7,
+    "changed_files": [
+      "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json",
+      "scripts/ods-poststate.ts",
+      "scripts/ods-scope.ts",
+      "tests/ods/ods-poststate.test.ts",
+      "tests/ods/ods-scope.test.ts"
+    ],
+    "product_runtime_database_component_files_changed": 0,
+    "conclusion": "MEASURED_PRODUCT_FACTS_REMAIN_VALID_AT_BASE_SHA"
+  },
+
+  "source": {
+    "step": "RE-U0",
+    "task_id": "RE-U0",
+    "mode": "READ_ONLY",
+    "final_state": "REENGINEERING_DELTA_RECONCILED_READY_FOR_NEXT_GOVERNED_STAGE",
+    "files_written": 0,
+    "commits_created": 0,
+    "prestate_gate": "PASS",
+    "authority_gate": "PASS",
+    "scope_gate": "PASS",
+    "secrets_scan": "PASS",
+    "discovery_repeated_in_this_step": false
+  },
+
+  "current_repository_findings": {
+    "reengineering_artifacts_in_current_lineage": {
+      "count": 0,
+      "statement": "No U0-U9, AS-IS, architecture-diff, IA, journey, shell, page/template-architecture, hi-fi, HPO or VECP artifact exists in the current lineage.",
+      "probes": [
+        { "probe": "tracked filenames matching U-stage / reengineering / IA / journey / shell / hi-fi patterns", "result": "0 real matches" },
+        { "probe": "content grep for reingenier|reengineer across docs, app, lib, components", "result": "3 ODS JSON files only, and only as the name of lane_b" },
+        { "probe": "git log --all over paths *VECP*, *HPO*, *REENG*", "result": "0 commits in the entire repository history" },
+        { "probe": "content grep for named decision ids (02-01-C, 03-05, S1-1-03-B, VECP-04-03, CAP-SCR-REP-002, PUB-541) across docs", "result": "0 matches" }
+      ],
+      "known_false_positive": "docs/ops/gates/G1_PACKAGE.md:84 uses the token U9 to reference a detector; unrelated to the U-stage process."
+    },
+    "historical_worktree_recovery": {
+      "inspected_read_only": true,
+      "mutated": false,
+      "reengineering_artifacts_found": 0,
+      "statement": "The authorized HISTORICAL_EVIDENCE_SOURCE worktree also contains no U0-U9, VECP, HPO or sealed design-system artifact. Its tree is clean and its artifacts/ directory holds only database probes."
+    },
+    "measured_technical_findings": [
+      {
+        "id": "RE-U0-F1",
+        "surface": "app/(public)/verify/[hash], lib/reports/public-verify.ts",
+        "finding": "Public report verification is fail-closed after the runtime cutover. The hash-capability model was enforced only in the application over a connection that bypassed RLS; as uellix_app with no claims the query returns zero rows and both callers answer 404.",
+        "interpretation": "This is the correct default, not a live contradiction of default-off public disclosure policy.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F2",
+        "surface": "components/layout/Sidebar.tsx, components/layout/MobileNav.tsx",
+        "finding": "Portfolio (/app/portfolios) and Organization Settings (/app/organization/settings) are built but absent from primary navigation.",
+        "corroboration": "FIB_IMPLEMENTATION_BASELINE_v1.0.0.md section 7 PORTFOLIO already declares this journey gap.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F3",
+        "surface": "db/schema.ts",
+        "finding": "Wave 1 objects present (governed_model_registry, domain_object_versions). All eight probed Wave 2 methodology objects absent (evidence_versions, financial_proxy_versions, readiness_assessments, counterfactual_assessments, methodological_assumptions, sensitivity_candidates, evidence_sufficiency_determinations, outcome_monetization_dispositions).",
+        "interpretation": "Consistent with ready_for_wave2 = true and lanes_started_by_this_step = NONE.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F4",
+        "surface": "lib/auth/roles.ts, lib/auth/permissions.ts",
+        "finding": "Six-role hierarchy materialized exactly; twenty canX predicates including the six discrete permissions named by FIB; enforcement via RLS plus server actions, not button hiding.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F5",
+        "surface": "lib, db/schema.ts, app",
+        "finding": "Zero occurrences of entitlement. Zero occurrences of commercial_account / commercialAccount. Billing is coupled to organization.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F6",
+        "surface": "components/stella/**",
+        "finding": "Stella is materialized exclusively as contextual panels (Consultar a Stella, Revisar con Stella, Stella - Asesoria contextual). No global assistant or avatar metaphor exists.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F7",
+        "surface": "app/layout.tsx, docs/design/INTERNAL_BRAND_TOKENS.md",
+        "finding": "Sora, Manrope and IBM Plex Mono all configured. Source Serif retired (0 occurrences). Geist_Mono still loaded alongside IBM Plex Mono.",
+        "status": "MEASURED_CURRENT_STATE"
+      },
+      {
+        "id": "RE-U0-F8",
+        "surface": "app/(public)/page.tsx",
+        "finding": "Public landing composes Hero plus eleven sections, i.e. the twelve-section public architecture. Two sections are explicitly dormant pending real captures and real logos/quotes.",
+        "status": "MEASURED_CURRENT_STATE"
+      }
+    ],
+    "process_findings_since_remediated_by_ods_maintenance": [
+      {
+        "id": "RE-U0-F9",
+        "finding": "pnpm ods:poststate failed in a worktree without a repository-local toolchain, and its typecheck step reported PASS by resolving an ambient global compiler.",
+        "same_defect_class_as": "ODS-M1C B-1 (BLOCKING)",
+        "remediated_by": [
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json :: HPO-ODS-TOOLCHAIN-01",
+          "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.2.json :: HPO-ODS-TOOLCHAIN-02"
+        ],
+        "status": "CLOSED_BY_ODS_MAINTENANCE_TRAIN",
+        "note": "Recorded for lineage completeness only. This record does not re-adjudicate that remediation."
+      }
+    ],
+    "carry_forward_findings_still_open": ["MNB-1", "BK-1", "BK-2", "BK-3", "BK-4"],
+    "carry_forward_owner": "docs/ops/ods/ODS_CARRY_FORWARD_BACKLOG.md"
+  },
+
+  "u_stage_status": {
+    "note": "MEASURED status is the RE-U0 observation of the current repository. RESUME is the coordinator-adjudicated disposition for continuing the process.",
+    "U0": {
+      "name": "Repository Baseline",
+      "measured": "SUPERSEDED",
+      "superseding_authority": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md plus the ODS v1 deterministic gates",
+      "resume": "CAN_REUSE_CURRENT_FIB_ODS_BASELINE",
+      "rerun": "NO",
+      "reason": "The function of U0 - fixing the technical baseline and the AS-IS register - is discharged by a later sealed, machine-verifiable authority. The historical 65-row / 59 ACCEPTED / 6 UNKNOWN register is EVIDENCE_MISSING but is not required to resume."
+    },
+    "U1": {
+      "name": "UX/UI Audit",
+      "measured": "MISSING",
+      "superseding_authority": null,
+      "resume": "READY_FOR_DELTA_AUDIT",
+      "reason": "No artifact and no superseding authority. FIB section 7 declares itself functional contract only, with no layouts, components or visual decisions."
+    },
+    "U2": {
+      "name": "Architecture Reconciliation",
+      "measured": "SUPERSEDED",
+      "superseding_authority": "FIB sections 2 (invariants), 7 (product contract map), 12-13 (FIBIU registry and dependency DAG/waves)",
+      "resume": "DELTA_ONLY",
+      "master_architecture_reopen": "NO"
+    },
+    "U3": {
+      "name": "Information Architecture",
+      "measured": "PARTIAL",
+      "resume": "DELTA_UPDATE_REQUIRED",
+      "parallelism": "SAFE_NOW"
+    },
+    "U4": {
+      "name": "Journeys",
+      "measured": "PARTIAL",
+      "resume": "DELTA_UPDATE_REQUIRED",
+      "parallelism": "PARTIALLY_SAFE_NOW"
+    },
+    "U5": {
+      "name": "Shells",
+      "measured": "MISSING",
+      "resume": "NOT_STARTED",
+      "parallelism": "SAFE_NOW"
+    },
+    "U6": {
+      "name": "Design-System Reconciliation",
+      "measured": "PARTIAL",
+      "resume": "DELTA_UPDATE_REQUIRED",
+      "parallelism": "SAFE_NOW_FOR_TOKEN_BRAND_SYSTEM_RECONCILIATION",
+      "constraint": "VISUAL_ARTIFACT_DEPENDENT_PARTS_RECOVERY_PENDING"
+    },
+    "U7": {
+      "name": "Page / Template Architecture",
+      "measured": "BLOCKED_PARTIAL",
+      "resume": "PARTIAL_BLOCKED",
+      "blocked_by": "WAVE2_AND_LATER_FIB_PLUS_VISUAL_EVIDENCE_RECOVERY"
+    },
+    "U8": {
+      "name": "Hi-Fi Specification",
+      "measured": "MISSING",
+      "resume": "NOT_STARTED",
+      "constraint": "WAIT_FOR_UPSTREAM_FREEZE"
+    },
+    "U9": {
+      "name": "Independent Audit",
+      "measured": "NOT_STARTED",
+      "resume": "NOT_STARTED"
+    }
+  },
+
+  "original_measured_reconciliation_matrix_summary": {
+    "layer": "MEASURED_CURRENT_REPO_STATE",
+    "preservation_rule": "These are RE-U0 observations of real current code. They are NOT overwritten by the coordinator adjudication layer. Target authority and current implementation reality remain distinct.",
+    "measured_at_sha": "d00743d7785a754d0d21862a6aeaf66b4944e6d4",
+    "still_valid_at_base_sha": true,
+    "evidence_source_for_all_rows": "RE-U0 brief sections 3-13 (prior product/architecture alignment)",
+    "total_items": 45,
+    "counts": {
+      "MATERIALIZED": 19,
+      "STILL_VALID": 2,
+      "PARTIAL": 14,
+      "SUPERSEDED": 0,
+      "MISSING": 5,
+      "CONFLICT": 5
+    },
+    "stage_level_supersessions": { "count": 2, "stages": ["U0", "U2"] },
+    "groups": {
+      "architecture_invariants": {
+        "items": 15,
+        "MATERIALIZED": 9,
+        "PARTIAL": 5,
+        "MISSING": 1,
+        "materialized_ids": ["RD-ARCH-01", "RD-ARCH-02", "RD-ARCH-04", "RD-ARCH-05", "RD-ARCH-06", "RD-ARCH-09", "RD-ARCH-10", "RD-ARCH-11", "RD-ARCH-12"],
+        "partial_ids": ["RD-ARCH-03", "RD-ARCH-07", "RD-ARCH-08", "RD-ARCH-13", "RD-ARCH-15"],
+        "missing_ids": ["RD-ARCH-14"]
+      },
+      "product_trust_public_visual": {
+        "items": 30,
+        "MATERIALIZED": 10,
+        "STILL_VALID": 2,
+        "PARTIAL": 9,
+        "MISSING": 4,
+        "CONFLICT": 5,
+        "conflict_ids": ["RD-POR-02", "RD-EVA-02", "RD-VIS-02", "RD-PUBC-03", "RD-COM-01"],
+        "missing_ids": ["RD-PUB-01", "RD-HPO-01", "RD-HPO-02", "RD-HPO-03"]
+      }
+    },
+    "classification_discipline": {
+      "no_superseded_without_named_superseding_authority": true,
+      "silent_truncation": false,
+      "note": "No row was classified SUPERSEDED without naming the newer authority that superseded it."
+    }
+  },
+
+  "commercial_v1_gap_matrix": {
+    "layer_note": "measured_state is MEASURED_CURRENT_REPO_STATE. target_state is PRESERVED_PRODUCT_TARGET and is not an assertion about current code.",
+    "controlling_product_target": {
+      "product_class": "REAL_SELLABLE_B2B_PRODUCT",
+      "not": "ASSISTED_DEMO",
+      "requires": [
+        "self-service signup, onboarding and organization provisioning/autoprovisioning without manual technical intervention by the Uellix team",
+        "roles with differentiated read/edit/review/approve capabilities enforced server-side and in the database",
+        "multiple active projects per organization",
+        "Measure V1 complete for the committed journey",
+        "Portfolio V1 complete for the committed comparison and transversal intelligence",
+        "Evaluate V1 complete for the committed structured evaluation journey",
+        "Stella governed and transversal"
+      ],
+      "scope_discipline": "'Complete' means the committed V1 journey, NOT the entire future product vision."
+    },
+    "domains": [
+      { "domain": "signup / authentication", "measured_state": "PARTIAL", "evidence": "login, forgot-password, reset-password, auth/callback, auth/signout materialized; no public signup route", "target_state": "SELF_SERVICE_REQUIRED", "adjudication_ref": "Q4" },
+      { "domain": "organization provisioning", "measured_state": "MATERIALIZED", "evidence": "app/actions/onboarding.ts, db/hosted/hosted-provisioning-runner.ts, migration 0036_phase2_onboarding", "target_state": "AUTOPROVISIONING_REQUIRED", "adjudication_ref": "Q4" },
+      { "domain": "onboarding", "measured_state": "MATERIALIZED", "evidence": "two onboarding surfaces plus components/auth/OnboardingCheck.tsx", "target_state": "STILL_VALID" },
+      { "domain": "invitations", "measured_state": "MATERIALIZED", "evidence": "lib/invitations/service.ts, email template, /invite/accept, docs/ops/capabilities/CAP_01_INVITATIONS.md", "target_state": "STILL_VALID" },
+      { "domain": "roles", "measured_state": "MATERIALIZED", "evidence": "six roles in lib/auth/roles.ts", "target_state": "STILL_VALID" },
+      { "domain": "permissions", "measured_state": "MATERIALIZED", "evidence": "twenty canX predicates including the six discrete FIB permissions; RLS plus server actions", "target_state": "STILL_VALID" },
+      { "domain": "multi-project", "measured_state": "MATERIALIZED", "evidence": "projects, projects/new, projects/[projectId], portfolios", "target_state": "STILL_VALID" },
+      { "domain": "Measure", "measured_state": "PARTIAL", "evidence": "eight pipeline routes live; zero of eight probed Wave 2 methodology tables present", "target_state": "COMPLETE_FOR_COMMITTED_JOURNEY", "blocked_by": "WAIT_FOR_WAVE2_OBJECT_AUTHORITY" },
+      { "domain": "Portfolio", "measured_state": "PARTIAL", "evidence": "three portfolio routes built but unreachable from navigation; aggregation contract awaits FIBIU-27/30", "target_state": "COMPLETE_FOR_COMMITTED_COMPARISON_AND_TRANSVERSAL_INTELLIGENCE", "blocked_by": "WAIT_FOR_LATER_FIB" },
+      { "domain": "Evaluate", "measured_state": "PARTIAL", "evidence": "methodology review implemented (lib/pipeline/methodology-review.ts, db/policies/006_methodology_review_rls.sql); zero files named evaluate; no structured evaluation surface", "target_state": "COMPLETE_FOR_COMMITTED_STRUCTURED_EVALUATION_JOURNEY", "adjudication_ref": "Q1", "blocked_by": "WAIT_FOR_LATER_FIB" },
+      { "domain": "Stella governed interaction", "measured_state": "MATERIALIZED", "evidence": "twelve contextual panels, operation tickets, provider adapter, guardrails", "target_state": "STILL_VALID", "later_wave_units": ["FIBIU-21", "FIBIU-22"] },
+      { "domain": "Report / ReportVersion", "measured_state": "DESIGNED_NOT_IMPLEMENTED", "evidence": "sroi_reports.snapshot_json present; no version lineage table", "target_state": "STILL_VALID", "blocked_by": "WAIT_FOR_LATER_FIB" },
+      { "domain": "public disclosure", "measured_state": "BLOCKED_BY_TECHNICAL_DEPENDENCY", "evidence": "verify route fail-closed by RLS; zero occurrences of report_disclosures or locator_token", "target_state": "GOVERNED_DEFAULT_OFF", "blocked_by": "WAIT_FOR_LATER_FIB" },
+      { "domain": "entitlements", "measured_state": "MISSING_IMPLEMENTATION", "evidence": "zero occurrences of entitlement", "target_state": "ENTITLEMENT_GRANT_DISTINCT_FROM_AUTHORIZATION", "adjudication_ref": "Q6" },
+      { "domain": "organization settings", "measured_state": "PARTIAL", "evidence": "route exists, absent from navigation", "target_state": "STILL_VALID" },
+      { "domain": "commercial account relationship", "measured_state": "MISSING_IMPLEMENTATION", "evidence": "zero occurrences of commercial_account; billing coupled to organization", "target_state": "COMMERCIAL_ACCOUNT_DISTINCT_FROM_ORGANIZATION", "adjudication_ref": "Q6" },
+      { "domain": "operational support", "measured_state": "PARTIAL", "evidence": "three health routes, six-section admin console, admin/logs", "target_state": "STILL_VALID" }
+    ]
+  },
+
+  "coordinator_adjudication_layer": {
+    "statement": "RE-U0 proposed six HPO questions. They are NOT six open product decisions. Each is resolved below by prior frozen product/brand/commercial authority or reclassified as an evidence-recovery obligation. No decision is re-adjudicated by this record.",
+    "original_hpo_question_count": 6,
+    "final_hpo_question_count": 0,
+    "decisions_readjudicated": 0,
+    "layer_definitions": {
+      "MEASURED_CURRENT_REPO_STATE": "What RE-U0 observed in current code at the measurement base.",
+      "PRESERVED_PRODUCT_TARGET": "The prior frozen product/brand/commercial decision that remains controlling as the target.",
+      "EVIDENCE_RECOVERY_STATUS": "Whether the controlling artifact is locally present, and if not, what must be recovered before dependent implementation."
+    },
+    "questions": {
+      "Q1": {
+        "topic": "EVALUATE",
+        "original_re_u0_framing": "Conflict between the structured evaluation model and FIB section 7 EVALUATE, raised as an open HPO decision.",
+        "coordinator_status": "RESOLVED_BY_PRIOR_FROZEN_PRODUCT_ARCHITECTURE",
+        "measured_current_repo_state": "PARTIAL",
+        "preserved_product_target": "STILL_VALID",
+        "evidence_recovery_status": "NOT_REQUIRED",
+        "target_model": [
+          "Evaluation",
+          "AssessmentTemplateVersion",
+          "Dimensions",
+          "Criteria",
+          "Inputs",
+          "Evidence",
+          "deterministic Score",
+          "Reviewer Analysis",
+          "Stella Analysis/Recommendation",
+          "DecisionPolicy",
+          "Human Decision"
+        ],
+        "preserved_invariant": "INPUT != SCORE != RECOMMENDATION != DECISION",
+        "clarification": "Evaluate Commercial V1 is not limited to FIB methodology-run review. The current FIB materialization may implement only part of that future Commercial V1 surface; FIB's narrower EVALUATE scope note describes what FIB froze, not the ceiling of the product target.",
+        "implementation_gap": true,
+        "hpo_question_required": false,
+        "prohibition": "Do not invent missing technical contracts in this step.",
+        "affected_matrix_rows": ["RD-EVA-01", "RD-EVA-02", "RD-EVA-03"],
+        "target_u_stage": "U2-delta / U7"
+      },
+      "Q2": {
+        "topic": "NAVY",
+        "original_re_u0_framing": "Conflict between #172B49 and the materialized #0F172A, raised as an open colour decision.",
+        "coordinator_status": "RESOLVED_BY_PRIOR_BRAND_HPO",
+        "canonical_value": "#172B49",
+        "measured_current_repo_state": "#0F172A materialized in docs/design/INTERNAL_BRAND_TOKENS.md and app/globals.css; #172B49 has zero occurrences in the repository",
+        "preserved_product_target": "STILL_VALID",
+        "evidence_recovery_status": "NOT_REQUIRED",
+        "reclassification": "DESIGN_SYSTEM_RECONCILIATION_DEBT",
+        "not": "OPEN_COLOUR_DECISION",
+        "implementation_gap": true,
+        "hpo_question_required": false,
+        "affected_matrix_rows": ["RD-VIS-02"],
+        "target_u_stage": "U6"
+      },
+      "Q3": {
+        "topic": "PUBLIC_PROFILES",
+        "original_re_u0_framing": "Absence of the three public profile objects from all frozen authority, raised as an open HPO decision.",
+        "coordinator_status": "RESOLVED_BY_PRIOR_PRODUCT_HPO",
+        "preserved_objects": [
+          "OrganizationPublicProfile",
+          "ProjectPublicProfile",
+          "PartnerPublicProfile"
+        ],
+        "object_class": "DISTINCT_GOVERNED_PUBLIC_READ_MODEL_OBJECT_CONCEPTS",
+        "preserved_decision": "PD-U2C-001 OPTION_A",
+        "current_target_behavior": "EMBEDDED_ONLY",
+        "prohibition": "No standalone public profile routes should be invented.",
+        "explicit_non_category": "Project geography/context is not an independent public-profile category.",
+        "measured_current_repo_state": "zero occurrences of the three objects; zero standalone public profile routes, which is consistent with EMBEDDED_ONLY",
+        "preserved_product_target": "STILL_VALID",
+        "evidence_recovery_status": "NOT_REQUIRED",
+        "reclassification": "MISSING_IMPLEMENTATION_OR_LATER_WAVE_DEPENDENCY",
+        "not": "OPEN_HPO_DECISION",
+        "hpo_question_required": false,
+        "affected_matrix_rows": ["RD-PUB-01", "RD-PUB-02", "RD-PUB-03"],
+        "target_u_stage": "U7"
+      },
+      "Q4": {
+        "topic": "SELF_SERVICE_SIGNUP_AUTOPROVISIONING",
+        "original_re_u0_framing": "The SuperAdmin signup allowlist and absent public signup route, raised as an open HPO decision.",
+        "coordinator_status": "RESOLVED_BY_COMMERCIAL_V1_HPO",
+        "commercial_v1_requirement": "signup, onboarding and organization provisioning/autoprovisioning without manual technical intervention by the Uellix team",
+        "measured_current_repo_state": "PARTIAL / CONFLICT_WITH_TARGET",
+        "measured_evidence": "no public signup route; self-serve organization creation gated by a SuperAdmin allowlist (lib/admin/signup-allowlist.ts); invited users bypass the allowlist via a separate acceptInvitation path",
+        "preserved_product_target": "STILL_VALID",
+        "evidence_recovery_status": "NOT_REQUIRED",
+        "reclassification": "PRE_V1_OR_CURRENT_IMPLEMENTATION_CONSTRAINT",
+        "constraint_rule": "The allowlist may not become the final Commercial V1 mandatory journey.",
+        "implementation_gap": true,
+        "hpo_question_required": false,
+        "affected_matrix_rows": ["RD-COM-01"],
+        "target_u_stage": "U4"
+      },
+      "Q5": {
+        "topic": "MISSING_VISUAL_AUTHORITY_ARTIFACTS",
+        "original_re_u0_framing": "Sixteen named prior decisions whose controlling artifacts were not recovered, raised as candidates for re-adjudication.",
+        "coordinator_status": "EVIDENCE_RECOVERY_REQUIRED_NOT_READJUDICATION",
+        "rule": "Missing local artifacts MUST NOT be converted into open product decisions.",
+        "decision_reopened": false,
+        "hpo_question_required": false,
+        "local_authority_artifact_recovery_pending": true,
+        "root_human_visual_freeze": "PD_VECP_B2_HUMAN_VISUAL_FREEZE_001",
+        "resolved_decision_families": {
+          "PUBLIC": ["02-01-C", "02-02 B", "02-03 B", "02-04 B"],
+          "PRODUCT": ["03-01-A", "03-02 A", "03-03 A", "03-04 B", "03-05 A"],
+          "TRUST": ["S1-1-03-B", "S1-1-05", "S1-1-06"],
+          "LATER": ["VECP-04-03 B/DRAWER", "CAP-SCR-REP-002", "ReportVersion authority", "PUB-541"]
+        },
+        "measured_current_repo_state": "None of these artifacts was recovered from the current repository or from the authorized historical evidence source during RE-U0.",
+        "preserved_product_target": "STILL_VALID (decisions stand as previously resolved at project level)",
+        "evidence_recovery_status": "PENDING",
+        "gating_rule": "Any U6/U7/U8 work that depends materially on exact visual details must recover or re-materialize the controlling evidence before implementation.",
+        "prohibition": "Do NOT reconstruct exact missing screen details from memory.",
+        "affected_matrix_rows": ["RD-HPO-01", "RD-HPO-02", "RD-HPO-03", "RD-HPO-04", "RD-HPO-05"],
+        "target_u_stage": "U6 / U7 / U8"
+      },
+      "Q6": {
+        "topic": "ENTITLEMENT_AND_COMMERCIAL_ACCOUNT",
+        "original_re_u0_framing": "Absence of entitlement and commercial account objects from both code and frozen authority, raised as an open HPO decision.",
+        "coordinator_status": "RESOLVED_BY_FROZEN_TARGET_ARCHITECTURE",
+        "preserved_invariants": [
+          "Release Flag != Entitlement != Authorization",
+          "CommercialAccount != Organization"
+        ],
+        "preserved_semantics": [
+          "CommercialAccount may govern commercial relationships across one or more Organizations.",
+          "EntitlementGrant is distinct from Authorization."
+        ],
+        "measured_current_repo_state": "zero occurrences of entitlement; zero occurrences of commercial_account; billing coupled to organization",
+        "preserved_product_target": "STILL_VALID",
+        "evidence_recovery_status": "NOT_REQUIRED",
+        "reclassification": "MISSING_IMPLEMENTATION",
+        "not": ["OUT_OF_SCOPE", "OPEN_PRODUCT_DECISION"],
+        "implementation_gap": true,
+        "hpo_question_required": false,
+        "affected_matrix_rows": ["RD-ARCH-03", "RD-ARCH-14", "RD-ARCH-15"],
+        "target_u_stage": "U2-delta"
+      }
+    }
+  },
+
+  "local_visual_authority_evidence_recovery_backlog": {
+    "status": "OPEN",
+    "recovery_pending": true,
+    "readjudication_authorized": false,
+    "reconstruction_from_memory_prohibited": true,
+    "searched_and_not_found_in": [
+      "current lineage at base_sha (tracked files, full content grep, git log --all over VECP/HPO/REENG paths)",
+      "authorized HISTORICAL_EVIDENCE_SOURCE worktree at 4a085d6"
+    ],
+    "items": [
+      { "id": "PD_VECP_B2_HUMAN_VISUAL_FREEZE_001", "kind": "ROOT_HUMAN_VISUAL_FREEZE", "recovery_status": "NOT_RECOVERED", "recovered_detail": "Identified as the root artifact whose human_selections[id] adjudicated the VECP decision families.", "blocks": ["U6", "U7", "U8"] },
+      { "id": "02-01-C", "kind": "PUBLIC_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "02-02 B", "kind": "PUBLIC_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "02-03 B", "kind": "PUBLIC_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "02-04 B", "kind": "PUBLIC_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "03-01-A", "kind": "PRODUCT_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "03-02 A", "kind": "PRODUCT_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "03-03 A", "kind": "PRODUCT_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "03-04 B", "kind": "PRODUCT_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "03-05 A", "kind": "PRODUCT_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "S1-1-03-B", "kind": "TRUST_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "S1-1-05", "kind": "TRUST_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "S1-1-06", "kind": "TRUST_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "VECP-04-03 B/DRAWER", "kind": "SCREEN_INTERACTION_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "CAP-SCR-REP-002", "kind": "REPORT_SCREEN_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "ReportVersion authority", "kind": "REPORT_VERSION_DECISION", "recovery_status": "NOT_RECOVERED", "decision_stands": true },
+      { "id": "PUB-541", "kind": "PUBLIC_PAGE_DECISION", "recovery_status": "PARTIALLY_IDENTIFIED", "recovered_detail": "Identified as PUBLIC_PAGE 'Public report' with a SUPERSEDED lifecycle state case; the frozen HTML artifact was not recovered.", "decision_stands": true }
+    ],
+    "total_items": 17,
+    "not_recovered": 16,
+    "partially_identified": 1
+  },
+
+  "parallelism": {
+    "basis": "FIB implementation unit waves per docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json and the surface dependencies declared in FIB section 7.",
+    "product_lane_constraint": "The product lane must not invent technical contracts that Wave 2 / FIB owns.",
+    "SAFE_NOW": {
+      "count": 7,
+      "domains": [
+        "U1 UX/UI audit by delta",
+        "U3 IA and navigation delta",
+        "U4 onboarding, organization, invitation, roles and already-frozen journey deltas",
+        "U5 shells",
+        "U6 brand, token, type and accessibility reconciliation that does not depend on missing exact screen artifacts",
+        "contextual Stella interaction reconciliation already governed",
+        "closing the measured navigation gaps for Portfolio and Organization Settings"
+      ]
+    },
+    "WAIT_FOR_WAVE2_OBJECT_AUTHORITY": {
+      "count": 1,
+      "domains": [
+        "Measure page/template architecture involving the FIBIU-04..18 methodology objects (evidence versions, proxy versions, materiality, monetization disposition, evidence sufficiency, counterfactual, assumptions, sensitivity, readiness)"
+      ]
+    },
+    "WAIT_FOR_LATER_FIB": {
+      "count": 5,
+      "domains": [
+        { "domain": "Evaluate implementation surfaces", "requires": "Wave 3 contracts (FIBIU-19, FIBIU-20)" },
+        { "domain": "Report / ReportVersion / Trust", "requires": "Wave 4+ (FIBIU-22..25) and Wave 6 (FIBIU-30)" },
+        { "domain": "Portfolio governed aggregation", "requires": "Wave 5 (FIBIU-27) and Wave 6 (FIBIU-30)" },
+        { "domain": "Public disclosure", "requires": "Wave 5 (FIBIU-26, FIBIU-31)" },
+        { "domain": "Later Stella and report surfaces tied to those waves", "requires": "Wave 4 (FIBIU-21, FIBIU-22)" }
+      ]
+    },
+    "EVIDENCE_RECOVERY_PENDING": {
+      "count": 1,
+      "domains": [
+        "Exact HPO/VECP screen decisions whose controlling artifacts are absent locally"
+      ]
+    },
+    "sequencing_note": "Portfolio does not precede Evaluate technically. By FIB dependencies Evaluate rests on Wave 3 units while Portfolio rests on Wave 5/6 units, so the technical order is the reverse.",
+    "parallel_execution_rule": "Parallel SAFE_NOW domain work MAY proceed without waiting for U1 completion where its dependencies are already frozen. U1 is the next gate, not a serial precondition for every safe domain."
+  },
+
+  "resume": {
+    "ACTUAL_U0_U9_RESUME_POINT": "U1_DELTA_AUDIT_WITH_PARALLEL_SAFE_U3_U4_U5_U6_RECONCILIATION",
+    "NEXT_REENGINEERING_GATE": "RE_U1_UX_UI_DELTA_AUDIT",
+    "u0_rerun": false,
+    "master_architecture_reopened": false,
+    "broad_rediscovery_authorized": false
+  },
+
+  "hpo_state": {
+    "HPO_QUESTION_COUNT": 0,
+    "ORIGINAL_HPO_QUESTION_COUNT": 6,
+    "DECISIONS_READJUDICATED": 0,
+    "VISUAL_AUTHORITY_RECOVERY_PENDING": true
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "files_changed_by_this_step": 1,
+    "executable_surface_changed": false,
+    "product_runtime_changes": 0,
+    "database_changes": 0,
+    "dependencies_added": 0,
+    "lockfile_changed": false,
+    "sealed_authority_bytes_changed": 0,
+    "protected_corpus_changed": false,
+    "historical_evidence_rewritten": false,
+    "historical_worktree_mutated": false,
+    "new_product_authority_created": false,
+    "fib_owned_contracts_invented": 0
+  },
+
+  "state_after_this_artifact": {
+    "reconciliation_artifact_created": true,
+    "ready_for_reengineering_writes": true,
+    "lanes_started_by_this_step": "NONE",
+    "next_gate": "RE_U1_UX_UI_DELTA_AUDIT"
+  },
+
+  "final_state": "CORRECTED_REENGINEERING_DELTA_MATERIALIZED_READY_FOR_PARALLEL_PRODUCT_WORK"
+}
