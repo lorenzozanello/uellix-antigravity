@@ -28,13 +28,13 @@
     },
     {
       "id": "P-3",
-      "description": "FIBIU-12: recording disposition='monetized' for an outcome on a run-version persists and is readable; recording disposition='not_monetized' requires and persists reason + justification, and the outcome retains materiality/evidence/traceability without contributing to the numerator.",
+      "description": "FIBIU-12 (scope-corrected during mission-loop cycle 3 -- the numerator-exclusion claim below was dropped from the original wording; wiring dispositions into the calculation engine's own sum is not implemented this cycle, see N-2's correction): recordOutcomeMonetizationDisposition persists disposition='monetized' for an outcome on a calculation run with no reason/justification required, and persists disposition='not_monetized' only when both reason and justification are supplied; re-recording the same (outcome, run) updates the existing row (REUSE_EXISTING_VERSIONING via domain_object_versions) rather than duplicating it.",
       "test_file": "tests/sroi-calculation.service.test.ts"
     },
     {
       "id": "P-4",
-      "description": "FIBIU-12: the coverage view (monetized / material-not-monetized / not-yet-eligible / other, each with a distinct reason) is computable and visible before run approval.",
-      "test_file": "tests/sroi-calculation.golden.test.ts"
+      "description": "FIBIU-12: getMonetizationCoverage() buckets a run's recorded dispositions into monetized / material-not-monetized (crossing FIBIU-11's outcomes.materialityClassification) / not-yet-eligible / other-excluded, each outcome counted exactly once, with hasDefensibleMonetization exposed as the pure signal for a caller-side no-ratio decision.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
     },
     {
       "id": "P-5",
@@ -50,8 +50,8 @@
     },
     {
       "id": "N-2",
-      "description": "FIBIU-12: when no outcome on a run has a defensible/monetized disposition, no SROI ratio is emitted (the no-ratio path), while results reporting remains permitted; upstream silent-drop paths (loadCalculationData discarding an assignment lacking input/filter/proxy/outcome) are itemized as a distinct exclusion reason rather than silently vanishing.",
-      "test_file": "tests/sroi-calculation.golden.test.ts"
+      "description": "FIBIU-12 (scope-corrected during mission-loop cycle 3): the loadCalculationData upstream silent-drop defect named in FIBIU-12's own SERVICE_CHANGES text (an assignment lacking input/filterSet/proxy/outcome, dropped with no `else` branch and no record) is fixed -- every missing piece is itemized in loadSkipped, merged into calculateSroiPreview's and calculateAndPersistSroiRun's skippedAssignments. FIBC-016's literal 'if no outcome has defensible monetization, no SROI ratio is emitted' is NOT wired this cycle: sroiRatio is read directly (parseFloat/.toFixed with no null-guard in several call sites) from ~15 files outside sroi-calculation.ts (Stella prompt/context builders, PDF/report renderers, portfolio analytics, the public verify page, the run-comparison UI) -- making it nullable correctly requires auditing all of them, a genuine scope expansion beyond this node's own file. getMonetizationCoverage's hasDefensibleMonetization is the primitive a follow-up node would consume to wire this.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
     },
     {
       "id": "N-3",
@@ -77,7 +77,7 @@
     },
     {
       "id": "M-2",
-      "description": "Deleting the 'reason NOT NULL when disposition=not_monetized' / 'justification NOT NULL with reason' guard on outcome_monetization_dispositions is caught: a not_monetized row missing reason or justification fails to persist.",
+      "description": "Deleting the 'reason required when disposition=not_monetized' / 'justification required when reason is set' guard is caught at the OutcomeMonetizationDispositionSchema zod-refine level (which mirrors the DB's own outcome_monetization_dispositions_reason_required_check / _justification_pair_check exactly): a not_monetized write with no reason, or a reason with no justification, is rejected before any insert/update. DB-CHECK-level proof against live PostgreSQL not available this cycle (see M-1's same caveat).",
       "test_file": "tests/sroi-calculation.service.test.ts"
     },
     {
