@@ -1,0 +1,76 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.8",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8",
+  "authority_class": "GENERATED_ARTIFACT_DRIFT_REPAIR",
+  "materialization_step": "HPO-ODS-W2-07",
+  "materialization_date": "2026-09-02",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Freeze, append-only, the narrow authority to run the repository's own canonical generator (pnpm b0:observation:generate, scripts/b0-observation-sql.ts) and commit its output for the single protected path db/prepared/checkpoint-b0/observation.sql, on the new successor branch codex/product-commercial-v1-pr-r1, pinned to source checkpoint 8ef40792b77b36e2688f4f00aaa16ba606f11628 (codex/product-main-integration-r1). This closes a proven-preexisting deterministic CI failure identified by the focused delta audit of that checkpoint: db/prepared/checkpoint-b0/observation.sql was hand-frozen before migration 0045_fib_domain_object_version_lineage.sql added public.domain_object_versions to the corpus, so the generator (which derives one row-count arm per table via deriveExpectedBaselineState) now produces byte-different output than the committed file. pnpm b0:observation:verify fails with 'DIVERGED from the corpus', and tests/hosted/checkpoint-b0.test.ts fails its two assertions that the committed SQL equals the freshly-built SQL and contains one row-count arm per expected table (2 of 31 tests). This addendum authorizes closing that drift by regeneration only.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.7, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through W2-06 are FROZEN_UNCHANGED. Touches exactly one generated file inside db/prepared/** (db/prepared/checkpoint-b0/observation.sql) plus two mechanically-required companion changes: (1) registering the new grant in scripts/ods-scope.ts's PROTECTED_GRANTS registry (the pre-existing gate mechanism established by HPO-ODS-W2-01; adding an entry there is how any protected-path authority becomes machine-enforceable, not a widening of what that mechanism does), and (2) extending the closed-world enumeration assertion in tests/ods/ods-scope.test.ts ('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants') to also describe the now-real fourth entry — every existing assertion in that test is preserved byte-for-byte; only a new block mirroring the existing per-grant assertion shape is appended and the total-count expectation is updated from 3 to 4, matching the same pattern used when HPO-ODS-W2-02 and HPO-ODS-W2-03 were themselves added to this same enumeration. This is not test weakening: no assertion is deleted, loosened, or skipped, and the test continues to fail if any grant's shape drifts undetected. No runtime code, no db/migrations/**, no db/baseline/**, and no schema is touched.",
+
+  "predecessor_authorities": {
+    "ods_v1_0_7": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.7.json",
+    "hpo_ods_w2_01_through_06": "FROZEN_UNCHANGED",
+    "source_closure": "Product/main integration branch codex/product-main-integration-r1 formally closed by HPO-ODS-W2-06 — audited HEAD 8ef40792b77b36e2688f4f00aaa16ba606f11628, tree 79cdc2211a343758179fa9a3d7c1daaffb1b1926, verified clean prior to this artifact; the focused delta audit of that lineage found exactly this observation.sql divergence, proven preexisting (introduced by an earlier commit that added migration 0045 without regenerating the probe), and not introduced by the Product/main reconciliation itself"
+  },
+
+  "anchors": {
+    "source_worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "source_branch": "codex/product-main-integration-r1",
+    "source_head": "8ef40792b77b36e2688f4f00aaa16ba606f11628",
+    "source_tree": "79cdc2211a343758179fa9a3d7c1daaffb1b1926",
+    "successor_worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-product-commercial-v1-pr-r1",
+    "new_branch": "codex/product-commercial-v1-pr-r1",
+    "new_branch_base": "8ef40792b77b36e2688f4f00aaa16ba606f11628",
+    "prestate_gate": "PASS — source branch/HEAD/tree/clean all verified exact against the task's expected values before any write; reproduced the known failure (checkpoint-b0.test.ts: 2 failed / 31; pnpm b0:observation:verify: DIVERGED) before creating this authority or the successor branch"
+  },
+
+  "phase_1_read_only_fact_derivation": {
+    "method": "Read scripts/b0-observation-sql.ts (the generator itself documents that db/prepared/checkpoint-b0/observation.sql is GENERATED rather than hand-written specifically because rowCounts needs one arm per table the corpus creates, and a hand-maintained list drifts the first time a unit is added). Ran pnpm b0:observation:verify and vitest on tests/hosted/checkpoint-b0.test.ts to reproduce the exact failure before any change. Grepped db/migrations/** and confirmed migration 0045_fib_domain_object_version_lineage.sql (carried forward through 0048-0052) adds public.domain_object_versions to the corpus that deriveExpectedBaselineState(...) walks; the currently-committed observation.sql predates that table and is missing its row-count arm, which is exactly the failure the test names.",
+    "confirmed_generator_is_canonical": "scripts/b0-observation-sql.ts is the sole repository-native writer of db/prepared/checkpoint-b0/observation.sql (via `pnpm b0:observation:generate`) and the sole verifier of it (via `pnpm b0:observation:verify`); no other script or manual process is authorized to produce this file.",
+    "confirmed_change_is_regeneration_only": "buildB0ObservationSql(deriveExpectedBaselineState(read).tables) is a pure function of the already-committed migration corpus; running the generator changes no runtime behavior, no migration, no schema, and asserts nothing new about the database that the corpus does not already define."
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-07": {
+      "title": "GOVERN_B0_OBSERVATION_PROBE_CANONICAL_REGENERATION",
+      "status": "FROZEN",
+      "rule": "On branch codex/product-commercial-v1-pr-r1 only, running `pnpm b0:observation:generate` and committing its output to db/prepared/checkpoint-b0/observation.sql is authorized. The regeneration must be produced solely by the canonical generator (scripts/b0-observation-sql.ts) — no hand-edit of the SQL file. Exactly one path is authorized under this grant: db/prepared/checkpoint-b0/observation.sql. Two mechanically-required companion changes follow from registering that grant: (1) an entry in scripts/ods-scope.ts's PROTECTED_GRANTS array (branch-scoped to codex/product-commercial-v1-pr-r1, pattern db/prepared/checkpoint-b0/observation.sql), since that file is otherwise unconditionally protected by DEFAULT_PROTECTED_PATTERNS' db/prepared/**; and (2) the additive update to tests/ods/ods-scope.test.ts's closed-world PROTECTED_GRANTS-enumeration test described in scope_note, purely to keep that test's own claim (\"the registry contains exactly N grants\") true rather than falsified by the new, legitimately-authorized entry.",
+      "non_vacuity_requirement": "Post-regeneration, pnpm b0:observation:verify must exit 0 (byte-identical regeneration), tests/hosted/checkpoint-b0.test.ts must go from 2 failed / 31 to 0 failed / 31, and a disposable mutation that removes or corrupts the newly-required public.domain_object_versions row-count arm must cause b0:observation:verify or the checkpoint test to fail again for that specific reason (proving the fix is real and not a vacuous pass) — the mutation must not be committed.",
+      "not_authorized": [
+        "any change to db/migrations/**, db/baseline/**, or any prepared SQL other than db/prepared/checkpoint-b0/observation.sql",
+        "any change to HPO-ODS-W2-01 through W2-06 decisions or their implementation surfaces",
+        "any change to role topology, provisioning, or the 64-unit baseline rehearsal",
+        "any change to runtime application code",
+        "any hand-edit of db/prepared/checkpoint-b0/observation.sql outside the canonical generator's output",
+        "weakening, removing, or skipping any assertion in tests/hosted/checkpoint-b0.test.ts or any other test",
+        "widening the new PROTECTED_GRANTS entry beyond the single named path, or beyond the single named branch",
+        "a squash, rebase, amend, or force-push of codex/product-main-integration-r1, main, integration/commercial-v1, or codex/product-commercial-v1-pr-r1",
+        "opening a pull request or merging"
+      ]
+    }
+  },
+
+  "protected_grant_required": true,
+  "protected_grant_rationale": "db/prepared/checkpoint-b0/observation.sql matches DEFAULT_PROTECTED_PATTERNS' db/prepared/** in scripts/ods-scope.ts and is therefore unconditionally protected absent a resolved grant. This addendum is the authority; the companion PROTECTED_GRANTS entry (authorityId HPO-ODS-W2-07, branch codex/product-commercial-v1-pr-r1, pattern db/prepared/checkpoint-b0/observation.sql — exact literal, no wildcard) is the mechanical registration that makes it machine-checkable by pnpm ods:scope.",
+
+  "test_manifest": {
+    "positive": {
+      "P1": "pnpm b0:observation:verify exits 0 after regeneration",
+      "P2": "tests/hosted/checkpoint-b0.test.ts passes 31/31 (currently 29/31)",
+      "P3": "the regenerated db/prepared/checkpoint-b0/observation.sql contains a row-count arm for public.domain_object_versions"
+    },
+    "negative": {
+      "N1": "no path other than db/prepared/checkpoint-b0/observation.sql and scripts/ods-scope.ts (PROTECTED_GRANTS registration only) is changed under this authority",
+      "N2": "no db/migrations/**, db/baseline/**, or runtime file is changed under this authority",
+      "N3": "no assertion in tests/hosted/checkpoint-b0.test.ts is deleted, skipped, or weakened"
+    },
+    "mutation": {
+      "M1": "a disposable in-memory/temp corruption of the generated observation output that removes the public.domain_object_versions row-count arm must cause pnpm b0:observation:verify or tests/hosted/checkpoint-b0.test.ts to fail for that specific reason; the mutation is never committed"
+    }
+  }
+}
