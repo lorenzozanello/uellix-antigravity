@@ -1,0 +1,104 @@
+{
+  "package_id": "ODS_V1_MAINTENANCE_ADDENDUM",
+  "version": "1.0.6",
+  "artifact_id": "ODS_V1_MAINTENANCE_ADDENDUM_v1.0.6",
+  "authority_class": "SUCCESSOR_STATIC_RELEASE_GATE_CORRECTION",
+  "materialization_step": "HPO-ODS-W2-05",
+  "materialization_date": "2026-09-01",
+  "supersedes": null,
+  "refines": null,
+
+  "purpose": "Freeze, append-only, the correction to the ONE blocker the W2-03/W2-04 focused adversarial closure audit found (CONDITIONAL_PASS): the static 'managed-role-bootstrap-ready' release gate in tests/eval/stella-release/hosted-release-gate.ts became vacuous after HPO-ODS-W2-03 moved every executable CREATE/ALTER ROLE statement out of stella_hosted_0001_managed_role_bootstrap.sql into stella_hosted_0000_managed_role_identity_bootstrap.sql. The gate still read only stella_hosted_0001, so its role-attribute scan (BYPASSRLS/SUPERUSER/CREATEROLE-on-statement) iterates zero statements and can no longer catch anything. This is purely a STATIC TEST-INFRASTRUCTURE correction: no provisioning, runtime, role-topology, migration or B1-Evidence semantics are touched, and neither the 64-unit rehearsal nor the B1 semantic audit is reopened.",
+
+  "scope_note": "APPEND-ONLY AUTHORITY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1 through v1.0.5, ODS_V1_OPERATIONAL_CLOSURE_v1.0.0.json, ODS_V1_EFFICIENCY_VALIDATION_v1.0.0.json, or any FIB/PC-01B/IM-01B artifact. HPO-ODS-W2-01 through W2-04 are FROZEN_UNCHANGED.",
+
+  "predecessor_authorities": {
+    "ods_v1_0_5": "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.5.json",
+    "hpo_ods_w2_01_through_04": "FROZEN_UNCHANGED",
+    "source_audit": "W2-03-W2-04-FOCUSED-ADVERSARIAL-CLOSURE-AUDIT, result CONDITIONAL_PASS, sole blocker: managed-role-bootstrap-ready static release gate vacuity"
+  },
+
+  "anchors": {
+    "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-u0-u9-reengineering-r1",
+    "branch": "codex/u0-u9-reengineering-resume-r1",
+    "audited_head": "52cf1d907c603a8a915103cd179ec4c9ae989dd9",
+    "audited_tree": "b237327ad48286ac044b75ddda983f437eb2b4d4"
+  },
+
+  "phase_1_read_only_fact_derivation": {
+    "gate_implementation_file": "tests/eval/stella-release/hosted-release-gate.ts",
+    "gate_id": "managed-role-bootstrap-ready",
+    "evidence_builder": "buildHostedGateEvidence (same file)",
+    "prior_read_surface": "buildHostedGateEvidence read ONLY db/prepared/stella_hosted_0001_managed_role_bootstrap.sql into a single `bootstrapSql` field; the gate's ROLE_STATEMENT scan (/\\b(CREATE|ALTER)\\s+ROLE\\b[^;]*/gi) ran exclusively against that field's executable (comment-stripped) text.",
+    "SOURCE_0000_EXECUTABLE_ROLE_STATEMENT_COUNT": 10,
+    "SOURCE_0000_EXECUTABLE_NOBYPASSRLS_COUNT": 10,
+    "SOURCE_0001_EXECUTABLE_ROLE_STATEMENT_COUNT": 0,
+    "derivation_method": "comment-stripped text (same executableLines discipline the gate itself and tests/hosted/managed-compatibility.test.ts already use), matched against the gate's own ROLE_STATEMENT regex, counted independently outside any test file.",
+    "PRIOR_GATE_VACUITY_CONFIRMED": true,
+    "vacuity_live_reproduction": "npx vitest run tests/eval/stella-release/hosted-release-gate.test.ts — 1 of 30 tests fails: 'managed-role-bootstrap-ready FAILS if the bootstrap would grant BYPASSRLS'. Root cause: the mutation's global regex replace touches a single stray comment occurrence of the literal token NOBYPASSRLS at line 942 of stella_hosted_0001 (unrelated prose), which the executable-line filter then strips before the ROLE_STATEMENT scan ever runs — so the mutated evidence is indistinguishable from the unmutated evidence by the time the gate inspects it, and the gate PASSES when the test requires FAIL.",
+    "runtime_enforcement_confirmed_present_elsewhere": [
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql §5 (Self-verification) — refuses any of the five roles holding a dangerous attribute, at APPLY time, in the transaction that creates them",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql §0 (E0) — refuses, at APPLY time, if the five identities are absent or their attributes/memberships have drifted from the canonical shape",
+      "db/hosted/baseline-postconditions.ts B0-09-roles — refuses, at CHECKPOINT B0 time, any uellix_* role beyond the exact five canonical identities"
+    ],
+    "conclusion": "The static release gate is the ONLY place this property was checked WITHOUT ever running Postgres — a repository-only signal for CI/pre-flight. Its vacuity does not weaken any live enforcement (all three runtime checks above remain intact and were exercised by the real isolated-cluster rehearsal), but it does mean a future edit to stella_hosted_0000 that reintroduced BYPASSRLS would ship past this specific gate undetected until a real apply. That is the narrow gap this authority closes."
+  },
+
+  "hpo_decision": {
+    "HPO-ODS-W2-05": {
+      "title": "REPOINT_MANAGED_ROLE_RELEASE_GATE_TO_CANONICAL_IDENTITY_SOURCE",
+      "status": "FROZEN",
+      "rule": "buildHostedGateEvidence must read role-definition/attribute evidence from db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql (the canonical single source of role identity, per HPO-ODS-W2-03) as its own distinct evidence field, separate from stella_hosted_0001's post-baseline bootstrap/verifier text. The gate must attribute each piece of evidence to the source responsible for it: role-definition statements (CREATE/ALTER ROLE, and the BYPASSRLS/SUPERUSER/CREATEROLE-per-statement scan) come from 0000; the superuser-refusal and post-baseline assertion text remain 0001's own concern; the service_role-as-grantee sweep covers both sources, since either could in principle name it. The gate must also positively assert 0001 contains ZERO executable CREATE/ALTER ROLE statements — role identity has exactly one source, and reintroducing a role definition into 0001 is itself a gate failure, not merely a redundancy.",
+      "non_vacuity_requirement": "Every control this authority requires must be demonstrated non-vacuous: a positive count of executable role statements discovered from 0000, a positive count of executable NOBYPASSRLS evidence discovered from 0000, and an explicit test proving that pointing the evidence builder back at 0001-only (the pre-fix shape) makes the SAME tests fail — i.e. the test suite itself would have caught the regression this authority fixes, not merely re-implemented it with different plumbing.",
+      "not_authorized": [
+        "any change to db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql or stella_hosted_0001_managed_role_bootstrap.sql content",
+        "any change to role topology, attributes, or memberships",
+        "any change to provisioning phase order or db/hosted/hosted-provisioning-runner.ts",
+        "any change to migrations (0040..0052 or any other)",
+        "any change to B1 Evidence files or a rerun of the B1 semantic audit",
+        "a rehearsal artifact refresh (no runtime/provisioning SQL changes, so artifacts/baseline-rehearsal/latest.json is untouched)",
+        "rewriting ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json or v1.0.5.json"
+      ]
+    }
+  },
+
+  "protected_grant_required": false,
+  "protected_grant_rationale": "The only implementation surface is tests/eval/stella-release/hosted-release-gate.ts and tests/eval/stella-release/hosted-release-gate.test.ts, both outside every DEFAULT_PROTECTED_PATTERN in scripts/ods-scope.ts. No HPO-ODS-W2-05 grant is registered.",
+
+  "test_manifest": {
+    "positive": {
+      "P1": "the current 0000 + 0001 pair, unmodified — managed-role-bootstrap-ready PASSES",
+      "P2": "role-statement discovery is sourced from EXECUTABLE statements in 0000; a comment-only occurrence of the same text does not satisfy it",
+      "P3": "0001 is positively asserted to contain zero executable CREATE/ALTER ROLE statements"
+    },
+    "negative": {
+      "N1": "mutate an executable NOBYPASSRLS in 0000 to BYPASSRLS — gate FAILS",
+      "N2": "remove one of the five expected executable CREATE ROLE statements from 0000 — gate FAILS, naming the missing role",
+      "N3": "the real CREATE ROLE statements in 0000 are commented out while an identical-looking statement exists ONLY as a comment elsewhere — gate FAILS (comments never satisfy evidence)",
+      "N4": "reintroduce an executable CREATE ROLE statement into 0001 — single-source assertion FAILS, independent of 0000's own state"
+    },
+    "mutation": {
+      "M1": "point the evidence builder's role-identity source back at 0001 (the pre-fix, vacuous shape) — the SAME P1/N1/N2 tests must now fail, proving the test suite itself detects the regression rather than merely re-testing new plumbing"
+    }
+  },
+
+  "integrity_assertions_at_this_freeze": {
+    "prestate_gate": "PASS",
+    "authority_seal_verify": "PASS",
+    "protected_corpus_count": 9,
+    "sealed_or_frozen_artifacts_modified": 0,
+    "hpo_ods_w2_01_through_04_changed": false,
+    "provisioning_runtime_changed": false,
+    "migrations_changed": false,
+    "b1_evidence_files_changed": false,
+    "rehearsal_artifact_changed": false,
+    "wildcard_grants_added": 0
+  },
+
+  "state_after_this_artifact": {
+    "next_gate": "IMPLEMENTATION_THEN_W2_05_DELTA_CLOSURE_AUDIT",
+    "final_state_target": "MANAGED_ROLE_RELEASE_GATE_RESTORED_READY_FOR_DELTA_AUDIT"
+  },
+
+  "final_state": "HPO_ODS_W2_05_FROZEN_READY_FOR_IMPLEMENTATION"
+}
