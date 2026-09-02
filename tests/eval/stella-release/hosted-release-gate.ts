@@ -50,6 +50,19 @@ export interface HostedGate {
 
 export interface HostedGateEvidence {
   readonly bootstrapSql: string
+  /**
+   * HPO-ODS-W2-05. The canonical role-IDENTITY source: db/prepared/
+   * stella_hosted_0000_managed_role_identity_bootstrap.sql. HPO-ODS-W2-03
+   * moved every executable CREATE/ALTER ROLE statement here, out of
+   * `bootstrapSql` (which is now the POST-BASELINE bootstrap/verifier —
+   * it asserts the identities, it does not define them). Kept as a
+   * separate field, never concatenated with `bootstrapSql`, so the gate
+   * always knows which source owns which evidence: role-definition
+   * statements are read from here, and 0001's own concerns (the
+   * superuser refusal, the post-baseline assertions) are read from
+   * `bootstrapSql` unchanged.
+   */
+  readonly roleIdentitySql: string
   readonly artefactsVerified: boolean
   readonly supersessionRuleCount: number
   readonly productionHostRefused: boolean
@@ -82,6 +95,13 @@ const REF = 'bvyzblhqymxruxdguaee'
 export function buildHostedGateEvidence(root: string = process.cwd()): HostedGateEvidence {
   const bootstrapSql = readFileSync(
     path.join(root, 'db', 'prepared', 'stella_hosted_0001_managed_role_bootstrap.sql'),
+    'utf8',
+  ).replace(/\r\n?/g, '\n')
+
+  // HPO-ODS-W2-05. Read separately from `bootstrapSql` — see the field's own
+  // doc comment on HostedGateEvidence for why the two must never be merged.
+  const roleIdentitySql = readFileSync(
+    path.join(root, 'db', 'prepared', 'stella_hosted_0000_managed_role_identity_bootstrap.sql'),
     'utf8',
   ).replace(/\r\n?/g, '\n')
 
@@ -154,6 +174,7 @@ export function buildHostedGateEvidence(root: string = process.cwd()): HostedGat
 
   return {
     bootstrapSql,
+    roleIdentitySql,
     artefactsVerified,
     supersessionRuleCount: PREPARED_PACKAGE_SUPERSESSIONS.length,
     productionHostRefused: !productionVerdict.ok && productionVerdict.code === 'HOSTED_TARGET_IS_PRODUCTION',
@@ -244,12 +265,36 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
     .filter((line) => !/^\s*--/.test(line))
     .join('\n')
 
+  // HPO-ODS-W2-05. Role IDENTITY (the CREATE/ALTER ROLE statements themselves)
+  // moved to stella_hosted_0000 under HPO-ODS-W2-03; `evidence.bootstrapSql`
+  // (0001) is now the POST-BASELINE bootstrap/verifier and defines no role.
+  // Scanning `bootstrapStatements` for role statements would silently iterate
+  // zero of them forever — exactly the vacuity this authority exists to close.
+  // So the attribute scan runs against the IDENTITY source, comment-stripped
+  // the same way.
+  const roleIdentityStatements = evidence.roleIdentitySql
+    .split('\n')
+    .filter((line) => !/^\s*--/.test(line))
+    .join('\n')
+
   const ROLE_STATEMENT = /\b(CREATE|ALTER)\s+ROLE\b[^;]*/gi
-  for (const statement of bootstrapStatements.match(ROLE_STATEMENT) ?? []) {
-    if (/(?<!NO)BYPASSRLS/.test(statement)) bootstrapProblems.push('grants BYPASSRLS')
-    if (/(?<!NO)SUPERUSER/.test(statement)) bootstrapProblems.push('grants SUPERUSER')
-    // CREATEROLE: forbidden for every role the bootstrap creates EXCEPT the
-    // installer, and the exemption is narrow enough to name.
+  const roleStatements = roleIdentityStatements.match(ROLE_STATEMENT) ?? []
+
+  // A scan that finds nothing to iterate is indistinguishable from a scan that
+  // found everything clean — the exact failure mode this whole gate exists to
+  // close. So "the identity source declares at least one role statement" is
+  // itself a requirement, not an assumption.
+  if (roleStatements.length === 0) {
+    bootstrapProblems.push(
+      'the role identity source (stella_hosted_0000) declares no executable CREATE/ALTER ROLE statement — there is nothing here for this gate to verify',
+    )
+  }
+
+  for (const statement of roleStatements) {
+    if (/(?<!NO)BYPASSRLS/.test(statement)) bootstrapProblems.push('role identity grants BYPASSRLS')
+    if (/(?<!NO)SUPERUSER/.test(statement)) bootstrapProblems.push('role identity grants SUPERUSER')
+    // CREATEROLE: forbidden for every role the identity source creates EXCEPT
+    // the installer, and the exemption is narrow enough to name.
     //
     // E-02, measured on PG 17.6. uellix_migrator is the principal every
     // generated elevation names — `GRANT <role> TO uellix_migrator; SET ROLE
@@ -264,13 +309,30 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
     // three capability roles. Every other role, and every other attribute on
     // this one, is still refused — including SUPERUSER and BYPASSRLS above.
     if (/(?<!NO)CREATEROLE/.test(statement) && !/\buellix_migrator\b/.test(statement)) {
-      bootstrapProblems.push('grants CREATEROLE')
+      bootstrapProblems.push('role identity grants CREATEROLE')
     }
+  }
+
+  // SINGLE SOURCE OF TRUTH. HPO-ODS-W2-03's whole point was moving role
+  // definition OUT of 0001; a role statement reappearing there — however
+  // correct in isolation — means identity now has two sources that can drift
+  // against each other, which is exactly the class of defect a closed-world
+  // registry (see db/hosted/global-catalog-seeds.ts, HPO-ODS-W2-04, the same
+  // discipline applied to a different closed world) exists to prevent.
+  const postBaselineRoleStatements = bootstrapStatements.match(ROLE_STATEMENT) ?? []
+  if (postBaselineRoleStatements.length > 0) {
+    bootstrapProblems.push(
+      `stella_hosted_0001 contains ${postBaselineRoleStatements.length} executable role-definition statement(s) (${postBaselineRoleStatements.join(' | ')}) — role identity must have exactly one source, stella_hosted_0000`,
+    )
   }
 
   // `service_role` as a GRANTEE. `TO ... service_role` is the shape that matters;
   // naming it in a comment that says it is deliberately excluded is not a use.
-  if (/\bGRANT\b[^;]*\bTO\b[^;]*\bservice_role\b/i.test(bootstrapStatements)) {
+  // Checked over BOTH sources: either could in principle name it.
+  if (
+    /\bGRANT\b[^;]*\bTO\b[^;]*\bservice_role\b/i.test(bootstrapStatements) ||
+    /\bGRANT\b[^;]*\bTO\b[^;]*\bservice_role\b/i.test(roleIdentityStatements)
+  ) {
     bootstrapProblems.push('uses service_role as a grantee')
   }
   if (
@@ -280,15 +342,20 @@ export function evaluateHostedGates(evidence: HostedGateEvidence): HostedGate[] 
   ) {
     bootstrapProblems.push('no longer refuses a superuser installer (it must defer to stella_0004)')
   }
+  // Creation is now a STATEMENT-level fact about the identity source, not a
+  // substring anywhere in 0001 — 0001 legitimately still mentions every role
+  // name in its own §0 (E0) assertions, so a bare `.includes(role)` would have
+  // kept passing throughout the entire vacuity window this authority closes.
   for (const role of ['uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor']) {
-    if (!evidence.bootstrapSql.includes(role)) bootstrapProblems.push(`does not create ${role}`)
+    const creates = roleStatements.some((s) => new RegExp(`\\bCREATE\\s+ROLE\\s+${role}\\b`, 'i').test(s))
+    if (!creates) bootstrapProblems.push(`role identity source does not create ${role}`)
   }
   gates.push({
     id: 'managed-role-bootstrap-ready',
     passed: bootstrapProblems.length === 0,
     detail:
       bootstrapProblems.length === 0
-        ? 'the bootstrap creates the five separated roles with NOSUPERUSER/NOBYPASSRLS/NOCREATEROLE, never names service_role as a grantee, and refuses to run where a superuser exists so the stronger stella_0004 model is not silently replaced'
+        ? 'stella_hosted_0000 creates the five separated roles with NOSUPERUSER/NOBYPASSRLS/NOCREATEROLE, stella_hosted_0001 defines no role of its own and still refuses to run where a superuser exists, and neither source names service_role as a grantee'
         : `bootstrap violates: ${bootstrapProblems.join('; ')}`,
   })
 
