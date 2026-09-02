@@ -1,0 +1,567 @@
+{
+ "package_id": "W2_B3_COMPLETENESS_AUTHORITY",
+ "version": "1.0.0",
+ "artifact_id": "W2_B3_COMPLETENESS_AUTHORITY_v1.0.0",
+ "authority_class": "SUCCESSOR_COMPLETENESS_AUTHORITY",
+ "supersedes": null,
+ "append_only": true,
+ "purpose": "Freeze the six HPO dispositions (AG-B3-1..AG-B3-6) that remedy the B3 completeness findings (FIBIU-11=PARTIAL, FIBIU-12=INCOMPLETE, FIBIU-13=PARTIAL; B3-BLK-1..5), pin the PG-12 empirical fact measured in the canonical disposable PostgreSQL harness, and freeze the EXACT successor surface (runtime files, UI domains, downstream ratio consumers, migration/journal/baseline surfaces, tests) a bounded cross-layer remediation may touch. This artifact rewrites nothing: docs/ops/wave2/W2_B3_TEST_MANIFEST.json, the historical B3 commits (2579c9b..36e26d0), W2 B1/B2 authority, sealed FIB/PC-01B/IM-01B authority and sealed migrations 0057/0058/0059 are all immutable inputs. It does NOT authorize W2-B4, does NOT implement or authorize the FIBIU-19 composite approval/eligibility barrier, and does NOT itself declare W2_B3 complete or closed.",
+ "identity": {
+  "task": "W2-B3-COMPLETENESS-AUTHORITY-AND-REMEDIATION-R1",
+  "mission": "W2-B3-COMPLETENESS",
+  "class": "A",
+  "mode": "COMPOUND_READ_ONLY_EMPIRICAL_GATE -> SUCCESSOR_AUTHORITY -> TEST_CONTRACT_V2 -> BOUNDED_CROSS_LAYER_REMEDIATION -> REAL_POSTGRESQL -> CANDIDATE_FOR_ONE_FOCUSED_AUDIT",
+  "branch": "codex/w2-methodology-objects-r1",
+  "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-wave2",
+  "mission_base_head": "fd6e252099b1a2f761e52a136b832c873feed293",
+  "mission_base_tree": "43c6ce91a9ed460318acd8331ddc05540c5d3c98",
+  "prestate": {
+   "ODS_PRESTATE": "PASS",
+   "AUTHORITY_SEAL_VERIFY": "PASS",
+   "GEMINI_API_KEY_PRESENT_IN_CURRENT_PROCESS": false
+  }
+ },
+ "predecessor_artifacts": {
+  "historical_b3_test_manifest": {
+   "path": "docs/ops/wave2/W2_B3_TEST_MANIFEST.json",
+   "sha256": "b442b655109b9e795f1bc46e290ee1c69239ff5ac7aff2d450d810bdd4ce0de9",
+   "blob": "2b695ccf9769b0ef2debb02572be4c4bd1cd36df",
+   "modified_by_this_artifact": false,
+   "disposition": "IMMUTABLE_HISTORICAL_EVIDENCE — narrowed during implementation (P-2/N-1 at 6571741, P-5/N-3/M-3 at b588e88, P-3/P-4/N-2/M-2 at 4337441); not acceptable as independent closure evidence (B3-BLK-5). Superseded as a test contract by docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json, never rewritten."
+  },
+  "wave2_execution_mapping": {
+   "path": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json",
+   "sha256": "5c6c396df9d1778a9352f42132a4da98acf5543ecd9cda10707ec09276060850",
+   "modified_by_this_artifact": false
+  },
+  "b2_closure_authority": {
+   "path": "docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json",
+   "sha256": "21720ca6545e10feacbf539ad6fae833a0ac61b11d9607b523f8a88c424181bd",
+   "modified_by_this_artifact": false,
+   "previous_gate": "W2_B2=CLOSED (W2-B2-R4 delta closure audit, 75a385f)"
+  },
+  "sealed_fib_authority": {
+   "path": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+   "ranges_relied_on": [
+    "109-118 (FIBC-015/016/017)",
+    "297-299 (FIBDB-008/009/010)",
+    "369 (FIBDB-045)",
+    "757-764 (FIBIU-11/12/13)"
+   ],
+   "modified_by_this_artifact": false
+  },
+  "sealed_migrations": {
+   "0057": {
+    "path": "db/migrations/0057_fib_outcome_materiality_classification.sql",
+    "sha256": "2baf675c70d35b8aa8b8fc65e4fc6c1d669c1c714d0db23d080c80a8f8531f2c",
+    "immutable": true
+   },
+   "0058": {
+    "path": "db/migrations/0058_fib_filter_set_justification_columns.sql",
+    "sha256": "4de23a6717d628abd4a605344934e1d3beb74adafe046c9e1df07a0421681b00",
+    "immutable": true
+   },
+   "0059": {
+    "path": "db/migrations/0059_fib_outcome_monetization_dispositions.sql",
+    "sha256": "a6d64e7f30f6fa321040936c79e84339ff9130d13fd79c738bb7bde773ea8a01",
+    "immutable": true,
+    "note": "AG-B3-6: never edited; the UPDATE policy and the approved-run guard land in a SUCCESSOR migration (ordinal 0060)."
+   }
+  }
+ },
+ "completeness_findings_remedied": {
+  "source": "Independent read-only completeness adjudication of W2-B3 (accepted as input; not re-derived — current repository facts have not materially changed, verified by prestate at fd6e252).",
+  "unit_status_at_base": {
+   "FIBIU-11": "PARTIAL",
+   "FIBIU-12": "INCOMPLETE",
+   "FIBIU-13": "PARTIAL"
+  },
+  "blockers": {
+   "B3-BLK-1": "outcome_monetization_dispositions RLS has no UPDATE policy while recordOutcomeMonetizationDisposition executes db.update — empirically confirmed by PG-12 below (0 rows matched, service read-back returns the unchanged row: silent-success hazard).",
+   "B3-BLK-2": "FIBIU-12 exit gate unmet: no-ratio path missing; coverage not visible before approval.",
+   "B3-BLK-3": "no real PostgreSQL proof for migrations 0057/0058/0059 — remedied by the canonical disposable harness (PG-1..PG-16, this mission).",
+   "B3-BLK-4": "required UI changes absent for FIBIU-11/12/13.",
+   "B3-BLK-5": "historical W2_B3_TEST_MANIFEST narrowed during implementation; superseded by TEST_MANIFEST v2."
+  }
+ },
+ "hpo_dispositions": {
+  "AG-B3-1": {
+   "title": "NOT_MATERIAL EXCLUSION",
+   "status": "FROZEN",
+   "disposition_verbatim": "FIBIU-11 owns the FIBC-015 requirement that not_material outcomes do not contribute to the authoritative SROI numerator. The prior derived implementation surface was too narrow. Authorize the exact required sroi-calculation surface for this purpose. Rules: material: may contribute if all other methodology conditions permit. not_material: must never contribute to the authoritative numerator. unclassified: must not silently contribute to an authoritative persisted numerator. It remains visible in methodology/evidence state. FIBIU-19 remains owner of the composed approval/eligibility barrier and MATERIALITY_UNCLASSIFIED reason codes. Do NOT implement the FIBIU-19 composite gate here.",
+   "materialization": {
+    "surface": [
+     "lib/pipeline/sroi-calculation.ts (loadCalculationData + runDeterministicCalc + calculateAndPersistSroiRun snapshot)"
+    ],
+    "not_material": "An active assignment whose outcome carries materiality_classification = 'not_material' is EXCLUDED from assignmentData before the engine runs; it is itemized as a SkippedAssignment with reason 'not_material' (retained in traceability with its exclusion reason, FIBC-015) in preview and in the persisted snapshot; it contributes exactly zero to grossSocialValue/netSocialValue/sroiRatio.",
+    "unclassified": "An outcome with materiality_classification = NULL (pending) MAY contribute — FIBC-015 permits preliminary work while classification is pending and FIBIU-19 owns the approval block — but NEVER silently: every unclassified outcome that contributed is itemized in CalcResult.materialityUnclassifiedOutcomeIds, in the preview payload, and in the persisted snapshot (snapshotJson.materialityUnclassifiedOutcomeIds) so it remains visible in methodology state. Removing that itemization is a frozen mutation control (M-MAT-1b). MATERIALITY_UNCLASSIFIED as an eligibility rejection code is NOT emitted here (FIBIU-19).",
+    "no_stella_classification": "No Stella path reads, writes, or infers materiality_classification; the classification action is a human server action only."
+   }
+  },
+  "AG-B3-2": {
+   "title": "FIBC-016 NO-RATIO DOWNSTREAM SURFACE",
+   "status": "FROZEN",
+   "disposition_verbatim": "FIBC-016 is mandatory now and owned by FIBIU-12. If no outcome has defensible monetization: NO SROI ratio is emitted or persisted as a valid numeric ratio. Results reporting remains permitted. Downstream consumers may NOT fabricate a ratio from NULL/absence. At minimum inspect and, if still applicable, authorize: lib/portfolios/analytics.ts, lib/stella/context/build-composer-context.ts, app/(public)/verify/[hash]/page.tsx. Mechanically derive the exact remaining downstream consumers necessary to make the no-ratio state coherent across: Portfolio, Stella context, reporting, public verification, calculation results UI. Do NOT authorize broad lib/** or app/** wildcards. Freeze an exact literal/file-or-bounded-domain list in successor authority. Forbidden downstream behavior includes: NULL -> 0, NULL -> net/investment recomputation, NULL rendered as ':1', fabricated fallback SROI ratio, Stella receiving 0.0 when no ratio exists.",
+   "materialization": {
+    "engine_rule": "Defensible monetization at calculation time == at least one computed line item (approved live proxy AND approved bound version with USD value, positive quantity/value, outcome not not_material, filters known on the authoritative path). If the engine produces ZERO line items, CalcResult.sroiRatio = null, sroiRatioExact = null, noRatioReason = 'NO_DEFENSIBLE_MONETIZATION', fundersBreakdown = [] (no per-funder ratio is fabricated either), and sroi_calculation_runs.sroi_ratio is persisted as NULL with snapshotJson.sroiRatio = null and snapshotJson.noRatioReason set. totalInvestment/gross/net/lineItems/skippedAssignments/investments remain reported (results reporting permitted).",
+    "numeric_when_defensible": "With >= 1 line item the ratio is emitted exactly as today (netSocialValue / totalInvestment, RATIO_DP = 6) — golden pins unchanged.",
+    "disposition_engine_consistency": "recordOutcomeMonetizationDisposition refuses (named error, fail closed) a 'monetized' disposition for an outcome the run did not monetize (no line item for that outcome in that run) and a 'not_monetized' disposition for an outcome the run DID monetize; the human disposition attests and justifies the run's own exclusions — it can never fabricate coverage the immutable run does not carry.",
+    "downstream_exact_list": "See authorized_surfaces.downstream_ratio_consumers and downstream_ratio_consumer_classification below."
+   }
+  },
+  "AG-B3-3": {
+   "title": "FIBIU-11 OUTCOMES UI",
+   "status": "FROZEN",
+   "disposition_verbatim": "The baseline FIB authority prevails over the narrower derived B3 mapping. Explicitly authorize: app/app/projects/[projectId]/pipeline/outcomes/** for the FIBIU-11 UI requirements only. Required product behavior: human materiality classification action; material / not_material / unclassified state; justification; legacy score visibly labelled as non-determinative; no Stella auto-classification.",
+   "materialization": {
+    "surface": [
+     "app/app/projects/[projectId]/pipeline/outcomes/page.tsx"
+    ],
+    "note": "The classification server action is defined inline in page.tsx ('use server'), calling lib/pipeline/outcomes.ts setOutcomeMaterialityClassification (already implemented at 56ab26f, unchanged). app/app/projects/[projectId]/pipeline/outcomes.actions.ts is OUTSIDE outcomes/** and is not touched."
+   }
+  },
+  "AG-B3-4": {
+   "title": "NULL FILTER SEMANTICS",
+   "status": "FROZEN",
+   "disposition_verbatim": "calculateAndPersistSroiRun is part of the authoritative persisted path for FIBDB-010. Therefore: NULL / unknown != 0. Explicit 0 + justification: valid zero. NULL/unknown: must not be silently coerced to zero in a persisted/reportable authoritative result. A preliminary/non-authoritative preview may only use separate semantics if the product explicitly labels it preliminary and no persisted/reportable authoritative ratio is created from the coercion. For this B3 remediation: if a required filter value is unknown/null, preserve the unknown state and do not emit an authoritative numeric ratio based on an invented zero. FIBIU-19 still owns final approval eligibility composition.",
+   "materialization": {
+    "engine_rule": "runDeterministicCalc takes an explicit filterSemantics option with NO default: 'authoritative' (calculateAndPersistSroiRun) throws a named FILTER_VALUE_UNKNOWN error identifying the assignment and filter when any of deadweight/attribution/displacement/dropoff/duration is NULL/blank — no run row, no line item, no ratio is persisted from an invented zero; 'preliminary' (calculateSroiPreview, calculateSroiScenarios — both rendered under the existing 'Cálculo preliminar' label) keeps the legacy coercion but itemizes every coerced filter in CalcResult.preliminaryFilterAssumptions so the preview is never silent either.",
+    "parseNum": "parseNum(null) -> 0 is retained ONLY as the display/validation helper pinned by tests/sroi-parse-num.test.ts; it is no longer reachable on the authoritative filter path (M-FILTER-1).",
+    "schema": "FIBDB-010 unchanged: no NOT NULL, no presence CHECK; legacy shared justification column retained; five discrete justification columns from 0058 unchanged."
+   }
+  },
+  "AG-B3-5": {
+   "title": "POSTGRES HARNESS",
+   "status": "RESOLVED",
+   "disposition_verbatim": "The active branch now contains the governed runtime: pnpm db:audit:disposable. Use it. No alternative local stack is needed unless this canonical harness itself fails for a measured reason. Never staging. Never production. Never canonical persistent DB.",
+   "materialization": {
+    "harness": "scripts/db-audit-disposable.ts via pnpm db:audit:disposable (postgres:16-alpine default image, 127.0.0.1 ephemeral port, no bind mounts, teardown verified)",
+    "setup": "tests/postgres/b3-completeness-harness.ts emits the {statements} setup manifest from db/hosted/baseline-manifest.ts BASELINE_UNITS at run time (role topology mirrored from db/baseline/stella_g2_roles.sql, scripts/rehearsal/local-supabase-shim.sql, the G2 prerequisite shim, every baseline unit in manifest order, hosted-fidelity block, two-tenant fixture); probes in tests/postgres/b3-completeness.probes.json; committed vitest wrapper tests/postgres/b3-completeness.pg.test.ts gated by UELLIX_PG_TESTS=1 (skipped, never silently passed, otherwise)."
+   }
+  },
+  "AG-B3-6": {
+   "title": "APPROVED-RUN IMMUTABILITY",
+   "status": "FROZEN",
+   "disposition_verbatim": "FIBDB-009 'immutable once the run is approved' requires race-safe database enforcement. A service-only read status -> check -> update is insufficient because it has a TOCTOU window. Authorize a successor migration implementing DB-enforced refusal of UPDATE/DELETE after the associated run is approved. Do NOT edit sealed migration 0059. The mechanism may be trigger/policy/constraint-equivalent if mechanically proven correct. Before selecting the exact RLS remediation, PG-12 below is a HARD empirical gate.",
+   "materialization": "See successor_migration_contract."
+  }
+ },
+ "pg12_measured_fact": {
+  "gate": "PG-12 (HARD, executed BEFORE this artifact was authored — Phase 1, read-only w.r.t. the repository)",
+  "harness": "pnpm db:audit:disposable -- --setup <generated> --probe <generated> --json",
+  "image": "postgres:16-alpine",
+  "setup": "role prelude + scripts/rehearsal/local-supabase-shim.sql + G2 prerequisite shim + 72/72 BASELINE_UNITS in manifest order (0000..0059, applied clean) + hosted-fidelity block (auth.uid() hosted semantics verbatim from db/baseline/stella_g2_schema.sql:486-494; public.* OWNER TO uellix_owner as measured in the G2 dump; USAGE/EXECUTE reachability per stella_0004 §6b-bis; stella_0004 §6b operational-class grant on outcome_monetization_dispositions to uellix_writer) + two-tenant fixture (org A analyst uA / viewer uV, org B analyst uB; runs rA1 pre-approved, rA2 approved via sroi_run_reviews.status='approved', rB1; dispositions dA1/dA2/dB1)",
+  "runtime_equivalent_identity": "session role uellix_app (LOGIN NOINHERIT NOBYPASSRLS, member of uellix_writer WITH INHERIT TRUE) + set_config('request.jwt.claims', '{\"sub\":<user>,\"role\":\"authenticated\"}', true) inside a transaction — exactly db/identity-context.ts:172-176; no SET ROLE to authenticated is ever issued by the runtime",
+  "harness_outcome": {
+   "HARNESS_STATUS": "SUCCESS",
+   "TARGET_KIND": "local_loopback",
+   "TARGET_LOCALITY": "LOCAL",
+   "SETUP_STATUS": "SUCCESS",
+   "PROBE_STATUS": "ALL_PASSED",
+   "PROBE_COUNT": 16,
+   "PROBE_FAILURE_COUNT": 0,
+   "TEARDOWN_STATUS": "SUCCESS",
+   "LEFTOVER_DATABASE_COUNT": 0,
+   "LIFECYCLE_STATE": "VERIFIED_GONE"
+  },
+  "probes": [
+   {
+    "id": "PG12-F0-fixture-present-and-auth-uid-resolves-under-runtime-claims",
+    "ok": true
+   },
+   {
+    "id": "PG12-F1-ROW_SECURITY_ENABLED=true-FORCE_ROW_SECURITY=false",
+    "ok": true
+   },
+   {
+    "id": "PG12-F2-UPDATE_POLICY_PRESENT=false-(policies=select,insert-only)",
+    "ok": true
+   },
+   {
+    "id": "PG12-F3-TABLE_OWNER=uellix_owner-RUNTIME_DB_ROLE=uellix_app-not-owner-NOBYPASSRLS-NOSUPER",
+    "ok": true
+   },
+   {
+    "id": "PG12-F4-runtime-holds-UPDATE-privilege-via-writer-(grant-layer-is-not-the-barrier)",
+    "ok": true
+   },
+   {
+    "id": "PG12-F5-identity-positive-same-tenant-SELECT-sees-own-row",
+    "ok": true
+   },
+   {
+    "id": "PG12-F6-identity-negative-cross-tenant-SELECT-sees-0-rows",
+    "ok": true
+   },
+   {
+    "id": "PG12-F7-CORE-same-tenant-analyst-preapproved-UPDATE-ROWS_MATCHED=0-committed",
+    "ok": true
+   },
+   {
+    "id": "PG12-F8-cross-tenant-UPDATE-ROWS_MATCHED=0",
+    "ok": true
+   },
+   {
+    "id": "PG12-F9-unauthorized-role-viewer-same-tenant-UPDATE-ROWS_MATCHED=0",
+    "ok": true
+   },
+   {
+    "id": "PG12-F10-owner-bypass-control-uellix_owner-UPDATE-ROWS=1-(rolled-back)",
+    "ok": true
+   },
+   {
+    "id": "PG12-F11-service-shape-zero-row-UPDATE-then-SELECT-returns-unchanged-row-(silent-success-hazard)",
+    "ok": true
+   },
+   {
+    "id": "PG13-baseline-same-tenant-DELETE-ROWS_MATCHED=0",
+    "ok": true
+   },
+   {
+    "id": "PG11-INSERT-positive-analyst-created_by=auth.uid()-1-row-(rolled-back)",
+    "ok": true
+   },
+   {
+    "id": "PG11-INSERT-negative-created_by-mismatch-rejected-by-RLS-42501",
+    "ok": true
+   },
+   {
+    "id": "PG11-INSERT-negative-viewer-role-rejected-by-RLS-42501",
+    "ok": true
+   }
+  ],
+  "facts": {
+   "TABLE_OWNER": "uellix_owner (modeled from the G2 dump; the runtime role is never the owner)",
+   "RUNTIME_DB_ROLE": "uellix_app",
+   "ROW_SECURITY_ENABLED": true,
+   "FORCE_ROW_SECURITY": false,
+   "AUTHENTICATED_RUNTIME_ROLE": "uellix_app (JWT claim role 'authenticated' is a claim, not a SET ROLE)",
+   "UPDATE_POLICY_PRESENT": false,
+   "policies_present": [
+    "outcome_monetization_dispositions_select (SELECT)",
+    "outcome_monetization_dispositions_insert (INSERT)"
+   ],
+   "runtime_holds_UPDATE_privilege_via_writer": true,
+   "same_tenant_analyst_preapproved_UPDATE": {
+    "rows_matched": 0,
+    "rows_updated": 0,
+    "stored_row_before": "justification='before'",
+    "stored_row_after": "justification='before'"
+   },
+   "cross_tenant_UPDATE": {
+    "rows_matched": 0,
+    "rows_updated": 0
+   },
+   "unauthorized_role_viewer_UPDATE": {
+    "rows_matched": 0
+   },
+   "owner_bypass_control": "uellix_owner UPDATE matches 1 row (rolled back) — the owner bypasses RLS as PostgreSQL defines; the runtime role does not",
+   "service_shape_hazard": "a zero-row UPDATE followed by the service's SELECT read-back returns the unchanged row — recordOutcomeMonetizationDisposition would log an audit event and append a domain_object_versions row describing a mutation that never happened (B3-BLK-1 consequence; remedied by SERVICE_ZERO_ROW_FAIL_CLOSED below)",
+   "identity_wiring_controls": "same-tenant SELECT sees its row (1) and cross-tenant SELECT sees 0 — the zero-row UPDATE is RLS, not a broken fixture",
+   "DELETE_baseline": "same-tenant DELETE matches 0 rows (no DELETE policy)",
+   "INSERT_baseline": "analyst INSERT with created_by = auth.uid() succeeds; created_by mismatch and viewer role are rejected with SQLSTATE 42501"
+  },
+  "PG12_RESULT": "RLS_ENFORCED_UPDATE_DENIED_OR_ZERO",
+  "RUNTIME_RLS_BYPASS": "NO",
+  "SECURITY_AUTHORITY_REQUIRED": "NO",
+  "POSTGRES_LEFTOVERS_AFTER_PG12": 0,
+  "consequence": "The static blocker B3-BLK-1 is empirically confirmed. Successor authority MAY authorize a new same-tenant analyst+ UPDATE policy plus the approved-run DB guard (AG-B3-6). No redundant policy is added: UPDATE is currently impossible for the runtime by construction."
+ },
+ "successor_migration_contract": {
+  "ordinal": "0060 (next canonical drizzle ordinal after 0059; generated with drizzle-kit generate --custom so meta/_journal.json and meta/0060_snapshot.json are produced by the canonical tool)",
+  "file": "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+  "schema_ts_change": "NONE — no column, no CHECK, no NOT NULL is added (FIBDB-009/010 frozen shapes untouched)",
+  "required_content": {
+   "update_policy": "CREATE POLICY outcome_monetization_dispositions_update FOR UPDATE USING (organization_id = ANY(current_user_org_ids()) AND (current_user_role_in_org(organization_id) IN ('super_admin','organization_admin','impact_manager','analyst') OR current_user_is_super_admin())) WITH CHECK (same predicate) — the same analyst+ floor the 0059 INSERT policy uses; tenant isolation unchanged (org-scoped on both sides); guarded by DROP POLICY IF EXISTS.",
+   "delete_policy": "NONE added — DELETE stays RLS-denied for the runtime (PG-13); the guard trigger below also refuses DELETE after approval at the DB level for any role.",
+   "approved_run_guard": "SECURITY DEFINER trigger function (SET search_path = public) fired BEFORE INSERT OR UPDATE OR DELETE FOR EACH ROW on outcome_monetization_dispositions: (1) takes pg_advisory_xact_lock_shared(60, hashtext(calculation_run_id::text)); (2) refuses (RAISE ... ERRCODE insufficient_privilege) when EXISTS sroi_run_reviews WHERE calculation_run_id = <run> AND status = 'approved'; (3) on UPDATE refuses any change to id/organization_id/outcome_id/calculation_run_id/created_by/created_at (identity columns are immutable — a re-tenanting UPDATE is impossible).",
+   "approval_side_lock": "BEFORE INSERT OR UPDATE FOR EACH ROW trigger on sroi_run_reviews: when NEW.status = 'approved' (INSERT, or UPDATE from a non-approved status) takes pg_advisory_xact_lock(60, hashtext(NEW.calculation_run_id::text)) (exclusive). Together with the shared lock above this closes the TOCTOU window: an approval in flight blocks every disposition write on that run until it commits, after which the guard's fresh READ COMMITTED snapshot sees the approved review and refuses; a disposition write in flight blocks the approval until it commits. Advisory locks need no table privilege, so the protocol does not depend on hosted GRANT posture (FOR UPDATE would require UPDATE on the append-only sroi_calculation_runs).",
+   "lock_key_namespace": "int4 key1 = 60 (this migration's ordinal) in the two-int advisory-lock space — disjoint from the one-int8 space grounding_0005 uses (hashtextextended(evidence_id, 0)).",
+   "idempotency": "CREATE OR REPLACE FUNCTION + DROP TRIGGER IF EXISTS + DROP POLICY IF EXISTS — reapply converges (PG-15)."
+  },
+  "registration": [
+   "db/migrations/meta/_journal.json (drizzle-kit)",
+   "db/migrations/meta/0060_snapshot.json (drizzle-kit)",
+   "db/hosted/baseline-manifest.ts unit 73 with sha256 and expect derived by db/hosted/baseline-scanner.ts (never hand-pinned)",
+   "db/prepared/journal/* regenerated by pnpm journal:generate",
+   "tests/hosted/baseline-manifest.test.ts + tests/hosted/baseline-journal-wrapper.test.ts unit-count pins (currently 69, already failing at base against 72 — the historical B3 commits never updated them) corrected to the true count"
+  ],
+  "protected_grant": {
+   "PROTECTED_GRANT_REQUIRED": false,
+   "authority_id": "HPO-ODS-W2-01",
+   "reason": "The existing grant (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.1.json) is scoped to this exact branch and to db/migrations/** and db/prepared/journal/**, and its stated purpose is FIB Wave 2 governed migration and journal materialization — B3 is Wave 2. Its negative controls live in tests/ods/ods-scope.test.ts and are unchanged.",
+   "not_touched": [
+    "db/baseline/**",
+    "db/prepared/** outside journal/",
+    "docs/ops/fib/**",
+    "docs/ops/pc01b/**",
+    "docs/ops/im01b/**",
+    "docs/ops/ods/ODS_V1_AUTHORITY_v1.0.0.json"
+   ]
+  }
+ },
+ "service_contracts": {
+  "SERVICE_ZERO_ROW_FAIL_CLOSED": "recordOutcomeMonetizationDisposition performs db.update(...).returning(); if zero rows return it throws a named error and emits NO audit event and NO domain_object_versions row (the fictional-mutation record PG-12 F11 exposed is impossible). The pre-write approved-review check is retained as the early, user-facing refusal; the DB guard is the authoritative one.",
+  "COVERAGE_COMPLETENESS": "getRunMonetizationCoverage(run) represents EVERY outcome the run's line items monetized AND every outcome that carries a disposition for the run AND every active-assignment outcome of the project at coverage time; an outcome with no disposition is bucketed 'missing_disposition' (visible, never dropped); not_monetized reasons stay distinct per governed vocabulary (no_defensible_proxy / proxy_not_approved / insufficient_evidence / not_material / not_yet_eligible / superseded_version / other_governed_reason) — the historical getMonetizationCoverage bucket collapse of four reasons into 'not_yet_eligible' is superseded by per-reason buckets; hasDefensibleMonetization == run has >= 1 line item.",
+  "NO_RATIO_STATE": "sroiRatio null is a first-class state: engine, preview payload, persisted row/snapshot, run list, run detail, compare, portfolio, Stella contexts/prompts/guards, public verification and PDF all carry it without conversion to 0, ':1' or net/investment.",
+  "FILTER_UNKNOWN_STATE": "See AG-B3-4 materialization.",
+  "STELLA": "Stella never classifies materiality, never decides monetization disposition, never receives a fabricated ratio; the composer/reviewer/validator prompts receive sroiRatio: null and the numeric guard authorizes no ratio when none exists."
+ },
+ "authorized_surfaces": {
+  "db_exact": [
+   "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+   "db/migrations/meta/_journal.json",
+   "db/migrations/meta/0060_snapshot.json",
+   "db/hosted/baseline-manifest.ts"
+  ],
+  "journal_wrappers_exact_generated": [
+   "db/prepared/journal/000_journal_bootstrap.sql",
+   "db/prepared/journal/001_0000_quick_husk.sql",
+   "db/prepared/journal/002_0001_noisy_chameleon.sql",
+   "db/prepared/journal/003_0002_huge_namorita.sql",
+   "db/prepared/journal/004_0003_curvy_tempest.sql",
+   "db/prepared/journal/005_0004_thick_mentor.sql",
+   "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+   "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+   "db/prepared/journal/008_0007_black_imperial_guard.sql",
+   "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+   "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+   "db/prepared/journal/011_0010_crazy_warhawk.sql",
+   "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+   "db/prepared/journal/013_0012_stella_interactions.sql",
+   "db/prepared/journal/014_0013_performance_indexes.sql",
+   "db/prepared/journal/015_0014_fine_blade.sql",
+   "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+   "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+   "db/prepared/journal/018_0017_striped_legion.sql",
+   "db/prepared/journal/019_0018_redundant_firebird.sql",
+   "db/prepared/journal/020_0019_lazy_overlord.sql",
+   "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+   "db/prepared/journal/022_0021_glorious_sandman.sql",
+   "db/prepared/journal/023_0022_abandoned_karma.sql",
+   "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+   "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+   "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+   "db/prepared/journal/027_0026_violet_selene.sql",
+   "db/prepared/journal/028_0027_little_midnight.sql",
+   "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+   "db/prepared/journal/030_0029_integrity.sql",
+   "db/prepared/journal/031_0030_immutability.sql",
+   "db/prepared/journal/032_0031_rls_core.sql",
+   "db/prepared/journal/033_0032_rls_specialized.sql",
+   "db/prepared/journal/034_0033_public_api_grants.sql",
+   "db/prepared/journal/035_0034_phase3_white_label.sql",
+   "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+   "db/prepared/journal/037_0036_phase2_onboarding.sql",
+   "db/prepared/journal/038_0037_phase1_stripe.sql",
+   "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+   "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+   "db/prepared/journal/041_20260716000001_storage_policies.sql",
+   "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+   "db/prepared/journal/043_001_initial_auth_rls.sql",
+   "db/prepared/journal/044_002_stella_interactions_rls.sql",
+   "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+   "db/prepared/journal/046_004_fx_tables_rls.sql",
+   "db/prepared/journal/047_005_theory_of_change_rls.sql",
+   "db/prepared/journal/048_006_methodology_review_rls.sql",
+   "db/prepared/journal/049_007_taxonomy_rls.sql",
+   "db/prepared/journal/050_008_marketing_leads_rls.sql",
+   "db/prepared/journal/051_0040_governed_model_registry.sql",
+   "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+   "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+   "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+   "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+   "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+   "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+   "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+   "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+   "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+   "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+   "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+   "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+   "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql",
+   "db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql",
+   "db/prepared/journal/066_0054_fib_proxy_rubric_constraints.sql",
+   "db/prepared/journal/067_0055_fib_proxy_material_change_registry.sql",
+   "db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql",
+   "db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql",
+   "db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql",
+   "db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql",
+   "db/prepared/journal/072_0059_fib_outcome_monetization_dispositions.sql",
+   "db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql"
+  ],
+  "runtime_exact": [
+   "lib/pipeline/sroi-calculation.ts",
+   "lib/portfolios/analytics.ts",
+   "lib/pipeline/sroi-results.ts",
+   "lib/stella/context/types.ts",
+   "lib/stella/context/build-composer-context.ts",
+   "lib/stella/context/build-advisor-context.ts",
+   "lib/stella/context/build-validator-context.ts",
+   "lib/stella/prompts/composer-system.ts",
+   "lib/stella/prompts/reviewer-system.ts",
+   "lib/stella/prompts/validator-system.ts",
+   "lib/stella/schemas/composer-numeric-guard.ts",
+   "app/actions/stella/composer.ts"
+  ],
+  "ui_exact": [
+   "app/app/projects/[projectId]/pipeline/outcomes/page.tsx",
+   "app/app/projects/[projectId]/pipeline/calculation/page.tsx",
+   "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx",
+   "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts",
+   "app/app/projects/[projectId]/pipeline/calculation/compare/page.tsx",
+   "app/(public)/verify/[hash]/page.tsx"
+  ],
+  "downstream_ratio_consumers": [
+   "lib/portfolios/analytics.ts",
+   "lib/stella/context/build-composer-context.ts",
+   "lib/stella/context/build-advisor-context.ts",
+   "lib/stella/context/build-validator-context.ts",
+   "lib/stella/context/types.ts",
+   "lib/stella/prompts/composer-system.ts",
+   "lib/stella/prompts/reviewer-system.ts",
+   "lib/stella/prompts/validator-system.ts",
+   "lib/stella/schemas/composer-numeric-guard.ts",
+   "app/actions/stella/composer.ts",
+   "lib/pipeline/sroi-results.ts",
+   "app/(public)/verify/[hash]/page.tsx",
+   "app/app/projects/[projectId]/pipeline/calculation/page.tsx",
+   "app/app/projects/[projectId]/pipeline/calculation/compare/page.tsx",
+   "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx"
+  ],
+  "tests_exact": [
+   "tests/sroi-calculation.golden.test.ts",
+   "tests/sroi-parse-num.test.ts",
+   "tests/sroi-calculation.service.test.ts",
+   "tests/outcomes.service.test.ts",
+   "tests/sroi-results.service.test.ts",
+   "lib/portfolios/analytics.test.ts",
+   "lib/stella/context/__tests__/build-composer-context.test.ts",
+   "lib/stella/context/__tests__/build-advisor-context.parity.test.ts",
+   "lib/stella/context/__tests__/build-validator-context.test.ts",
+   "lib/stella/prompts/composer-system.test.ts",
+   "lib/stella/prompts/reviewer-system.test.ts",
+   "lib/stella/schemas/composer-numeric-guard.test.ts",
+   "app/actions/stella/__tests__/composer.test.ts",
+   "tests/hosted/baseline-manifest.test.ts",
+   "tests/hosted/baseline-journal-wrapper.test.ts",
+   "tests/b3-completeness.no-ratio.test.ts",
+   "tests/b3-completeness.ui.test.tsx",
+   "tests/postgres/b3-completeness-harness.ts",
+   "tests/postgres/b3-completeness.probes.json",
+   "tests/postgres/b3-completeness.pg.test.ts"
+  ],
+  "docs_exact": [
+   "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json",
+   "docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json"
+  ],
+  "tooling_registry_exact": [
+   "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json (append unit W2-B3 — operational metadata only, per the registry's own purpose text; not an authority act)"
+  ],
+  "wildcard_count": 0
+ },
+ "downstream_ratio_consumer_classification": {
+  "MUST_CHANGE": {
+   "lib/portfolios/analytics.ts": "toNumberOrNull(run.sroiRatio) ?? (investment > 0 ? net / investment : 0) fabricates NULL -> net/investment -> 0; a project whose latest run carries no ratio is EXCLUDED with reason 'no_sroi_ratio' (never summed as a zero-return project).",
+   "lib/stella/context/build-composer-context.ts": "parseFloat(pinnedRun.sroiRatio ?? '0') -> null-preserving.",
+   "lib/stella/context/build-advisor-context.ts": "parseFloat(latestRun.sroiRatio ?? '0') -> null-preserving.",
+   "lib/stella/context/build-validator-context.ts": "parseFloat(latestRun.sroiRatio ?? '0') -> null-preserving.",
+   "lib/stella/context/types.ts": "CalculationSnapshot.sroiRatio: number | null.",
+   "lib/stella/prompts/composer-system.ts": "calc.sroiRatio.toFixed(2) -> null-safe.",
+   "lib/stella/prompts/reviewer-system.ts": "calculationSnapshot.sroiRatio.toFixed(2) -> null-safe.",
+   "lib/stella/prompts/validator-system.ts": "calculationSnapshot.sroiRatio.toFixed(2) -> null-safe.",
+   "lib/stella/schemas/composer-numeric-guard.ts": "CalculationSnapshotLike.sroiRatio / AuthorizedNumbers.ratio accept null (no ratio is authorized when none exists).",
+   "app/actions/stella/composer.ts": "sroiRatios list must not include a null ratio.",
+   "lib/pipeline/sroi-results.ts": "compareCalculationRuns parseFloat(run.sroiRatio || '0') fabricates a delta from NULL -> delta is null when either run has no ratio.",
+   "app/(public)/verify/[hash]/page.tsx": "{run.sroiRatio}:1 renders 'null:1' -> explicit 'Sin ratio SROI' state.",
+   "app/app/projects/[projectId]/pipeline/calculation/page.tsx": "preview parseFloat(sroiRatio.toString()) (NaN/crash on null), run list NULL -> '0.00:1', scenarios sroiRatioExact -> explicit no-ratio state; plus FIBIU-13 UI.",
+   "app/app/projects/[projectId]/pipeline/calculation/compare/page.tsx": "runA.sroiRatio ? parseFloat : 0 in the comparison table -> null-preserving.",
+   "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx": "KPI '—' -> explicit no-ratio state; hosts the FIBIU-12 disposition + coverage UI."
+  },
+  "ALREADY_FAIL_CLOSED": {
+   "lib/stella/context/build-context-hash.ts": "context.calculationSnapshot?.sroiRatio ?? null",
+   "lib/reports/pdf/ReportPdfDocument.tsx": "fmtRatio(null) -> '—' (no ':1')",
+   "lib/reports/pdf/report-data.ts": "asString(null) -> row dropped; empty breakdown -> null",
+   "app/(public)/verify/[hash]/pdf/route.ts": "passes nullable sroiRatio to fmtRatio",
+   "app/app/projects/[projectId]/report/[reportId]/pdf/route.ts": "passes nullable sroiRatio to fmtRatio",
+   "app/app/projects/[projectId]/report/[reportId]/print/page.tsx": "run.sroiRatio ? ... : '—'",
+   "app/app/projects/[projectId]/report/page.tsx": "r.sroiRatio ? ' — SROI x:1' : ''",
+   "components/calculation-results/CalculationResultsCard.tsx": "returns null without a funder breakdown (the no-ratio engine state emits none); its ratio cell is '—' when absent",
+   "components/calculation-results/FunderBreakdownTable.tsx": "only rendered with a non-empty breakdown",
+   "app/components/report-sections/FunderBreakdown.tsx": "only rendered with a non-empty breakdown",
+   "lib/pipeline/sroi-results.ts (getReportNumericAuthority)": "buildReportNumericAuthority drops null via canonicalAuthorityDecimal",
+   "db/schema.ts": "sroi_calculation_runs.sroi_ratio is already nullable numeric(20,6) — no schema change"
+  },
+  "TEST_ONLY": [
+   "lib/portfolios/analytics.test.ts",
+   "lib/stella/context/__tests__/*",
+   "lib/stella/prompts/*.test.ts",
+   "lib/stella/schemas/composer-numeric-guard.test.ts",
+   "app/actions/stella/__tests__/*",
+   "components/report/ReportSectionRenderer.test.tsx",
+   "app/components/report-sections/FunderBreakdown.test.tsx",
+   "lib/reports/pdf/*.test.ts",
+   "tests/calculation-results.test.tsx",
+   "tests/run-detail-page.sufficiency-reachability.test.tsx",
+   "tests/sroi-*.test.ts",
+   "tests/manual-migration-003-classification.test.ts",
+   "tests/e2e/g04-governed-evidence-journey.e2e.test.ts",
+   "tests/eval/**/cases.ts",
+   "tests/helpers/capability-gates.ts"
+  ],
+  "UNRELATED": [
+   "components/marketing/SroiDemoCalculator.tsx (marketing demo, never persisted)",
+   "components/stella/source-field-label.ts (label table)",
+   "lib/pipeline/sroi-funders.ts (pure per-funder math; not invoked in the no-ratio state)",
+   "lib/pipeline/sroi-results.ts getRunList (passes the nullable column through unchanged)"
+  ],
+  "NEEDS_AUTHORITY_REVIEW": {
+   "hosted_table_acl_for_0059_table": "stella_hosted_0007_runtime_table_acl_contract.sql enumerates the pre-Wave-2 table set; no package in the repository grants uellix_writer any privilege on outcome_monetization_dispositions (or on the other Wave-1/2 tables born after it). On a hosted target the runtime would receive 42501 before RLS is even evaluated. This is a deploy-stage (hosted ACL) matter orthogonal to the B3 RLS/service contract (the PG-12 harness models the stella_0004 §6b operational class explicitly) — recorded as MATERIAL_NON_BLOCKING for HPO review, NOT remedied here (no hosted package is in this mission's surface)."
+  }
+ },
+ "explicit_exclusions": {
+  "FIBIU-19": "The composed approval/eligibility barrier, MATERIALITY_UNCLASSIFIED / FILTER_* eligibility reason codes as APPROVAL blockers, and any change to assertRunMethodologyApprovalAllowed are OUT of scope. The primitives this mission ships (materialityUnclassifiedOutcomeIds, getFilterJustificationIssues, getRunMonetizationCoverage.hasDefensibleMonetization) are what FIBIU-19 will compose.",
+  "W2-B4": "NOT authorized. READY_FOR_B4 remains NO regardless of this mission's outcome.",
+  "stella_decision_authority": "None granted: Stella neither classifies, decides, nor receives fabricated numbers.",
+  "sealed_migrations": "0057, 0058, 0059 are never edited; a successor ordinal carries every DB change.",
+  "historical_artifacts": "docs/ops/wave2/W2_B3_TEST_MANIFEST.json, the B3 commits 2579c9b/6571741/56ab26f/b588e88/d0dd4ca/4337441/36e26d0, commit 0bf01f4, and all B1/B2 authority are immutable; no amend, rebase, reset or rewrite.",
+  "broad_wildcards": "No lib/**, app/**, tests/** or components/** wildcard is authorized; every authorized file is literal (journal wrappers are enumerated literally above).",
+  "schema": "db/schema.ts is not changed."
+ },
+ "test_contract": {
+  "v2_manifest": "docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json — frozen and committed BEFORE any implementation commit, validated against docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json, never narrowed afterwards; a frozen control that becomes impossible STOPS the mission for adjudication.",
+  "required_control_families": [
+   "MATERIALITY P-MAT-1 / N-MAT-1 / N-MAT-2 / M-MAT-1",
+   "NO-RATIO P-RATIO-1 / N-RATIO-1..4 / M-RATIO-1",
+   "COVERAGE distinct reasons + missing disposition visible",
+   "FILTERS P-FILTER-1 / N-FILTER-1 / M-FILTER-1",
+   "UI FIBIU-11 classification, FIBIU-12 disposition + coverage before approval + explicit no-ratio, FIBIU-13 five justification fields + supported-0 vs unknown",
+   "POSTGRES PG-1..PG-16 + mutation controls (UPDATE policy removal, guard removal, cross-tenant predicate removal)",
+   "GOLDEN + PARSE-NUM",
+   "SENTINELS (B2 canonical mapping/coupling, FIBIU-09, MNB-1, B1, tenant boundary, auth)"
+  ]
+ },
+ "closure_rule": {
+  "this_artifact_declares_complete": false,
+  "required_next_gate": "W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT",
+  "focused_audit_must_verify": [
+   "every AG-B3-1..6 materialization matches its frozen disposition",
+   "PG-1..PG-16 PASS with POSTGRES_FAILURES=0 and POSTGRES_LEFTOVERS=0 in the canonical harness",
+   "TEST_MANIFEST v2 satisfied 1:1 and never narrowed",
+   "no fabricated ratio survives in any authorized consumer",
+   "NULL filter never coerced on the authoritative path",
+   "not_material never contributes; unclassified never silent",
+   "approved-run immutability is DB-enforced and race-safe",
+   "SERVICE_ZERO_ROW_FAIL_CLOSED",
+   "B1/B2 sentinels not reopened",
+   "audit purity: no historical commit amended, no sealed authority or sealed migration edited",
+   "FIBIU-19 not implemented"
+  ],
+  "b4_authorization": "NOT AUTHORIZED."
+ },
+ "source_audit_state": {
+  "verdict": "PENDING_FOCUSED_AUDIT",
+  "note": "Read by docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B3 (audit dimension). Only the focused adversarial closure audit may change this to ACCEPTED — never this mission."
+ },
+ "final_state": "W2_B3_COMPLETENESS_AUTHORITY_FROZEN_READY_FOR_TEST_MANIFEST_V2"
+}
