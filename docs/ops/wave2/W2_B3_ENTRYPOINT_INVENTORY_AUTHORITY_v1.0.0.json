@@ -1,0 +1,80 @@
+{
+ "package_id": "W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY",
+ "version": "1.0.0",
+ "artifact_id": "W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0",
+ "authority_class": "SUCCESSOR_MECHANICAL_REGISTRATION_AUTHORITY",
+ "supersedes": null,
+ "append_only": true,
+ "purpose": "Register one already-existing, already-audited database-reaching server action in the governed AST-layer entrypoint inventory, and correct the regex-layer pinned tuple in the same test file to match. This artifact authorizes NO runtime, product, or database semantic change. It exists solely because W2-B3-FOCUSED-ADVERSARIAL-CLOSURE-AUDIT found exactly one blocker (B3-BLK-A): a correctly-contextualized new action missing from tests/database-entrypoint-inventory.json.",
+ "identity": {
+  "task": "W2-B3-ENTRYPOINT-INVENTORY-REGISTRATION-R1",
+  "class": "C",
+  "mode": "SUCCESSOR_AUTHORITY -> MECHANICAL_INVENTORY_REGISTRATION -> TARGETED_REGRESSION -> DELTA_CANDIDATE",
+  "branch": "codex/w2-methodology-objects-r1",
+  "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-wave2",
+  "expected_head": "5273eb722c1fb88e2bf37aedb861d2635333eb00",
+  "expected_tree": "7f50479c700c7a43dbbb1c942609c9bda98b37f0"
+ },
+ "source_audit": {
+  "task": "W2-B3-FOCUSED-ADVERSARIAL-CLOSURE-AUDIT",
+  "result": "FAIL",
+  "only_blocker": "B3-BLK-A",
+  "blocker_summary": "A new DB-reaching server action is correctly contextualized but missing from the governed database-entrypoint inventory.",
+  "action": "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts",
+  "measured_at_this_authority": {
+   "reproduced_failures": [
+    "AST scanner — the versioned inventory stays reconciled > every scanned module is in the inventory with the same classification: recordOutcomeMonetizationDisposition.action.ts scanned=contextualized inventory=MISSING",
+    "AST scanner — the versioned inventory stays reconciled > the derived totals in the inventory header match the map: expected 130 to be 131",
+    "regex-layer pinned tuple: expected {inventoried:129, reaching:104, contextualized:88, allowlisted:16}, measured {inventoried:130, reaching:105, contextualized:89, allowlisted:16}"
+   ],
+   "root_cause_unchanged": true,
+   "count_delta": "+1 inventoried, +1 reaching, +1 contextualized, +0 allowlisted (both layers)"
+  }
+ },
+ "predecessor_artifacts": {
+  "inventory_before": {"path": "tests/database-entrypoint-inventory.json", "sha256": "c5b1839688ad38fdd4f074dab8b2626788b90b5bc00be788197ec7ee8892a2e6", "modified_by_this_artifact": false},
+  "test_before": {"path": "tests/database-runtime-entrypoints.test.ts", "sha256": "f2f195cf5df2e91bb824ad426f884429d1062e383e0aa14b07d3749f12206a58", "modified_by_this_artifact": false},
+  "action_under_registration": {"path": "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts", "sha256": "757dca2d3f4fd57b562dcaeffa496e94bf5a645d4d551db78708bf26eda255f8", "modified_by_this_artifact": false, "registration_only": true, "edit_authorized": false}
+ },
+ "classification_verification": {
+  "method": "read the action's full source (34 lines) and its context-opening call",
+  "identity_context": "runWithOrganizationAccess(() => recordOutcomeMonetizationDisposition(...)) — the exact pattern its siblings in the same directory (createSroiRunReview.action.ts, recordEvidenceSufficiencyDetermination.action.ts, updateSroiRunReview.action.ts, upsertSroiRunReviewItem.action.ts) already use and are already registered `contextualized` for.",
+  "db_reaching": true,
+  "entry_point": true,
+  "classification": "contextualized",
+  "allowlist_entry_required": false,
+  "new_security_exception_required": false
+ },
+ "authorized_implementation_paths": [
+  "tests/database-entrypoint-inventory.json",
+  "tests/database-runtime-entrypoints.test.ts"
+ ],
+ "wildcard_count": 0,
+ "prohibited": {
+  "action_file": "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts must not be edited by this mission — registration only.",
+  "db_migrations": "No db/migrations/**, db/prepared/**, or db/schema.ts change.",
+  "fibiu_semantics": "No FIBIU-11/12/13 product or calculation semantic change.",
+  "b4": "Not authorized. Not addressed by this artifact.",
+  "allowlist": "The action must NOT be added to ALLOWLIST — it is contextualized, not allowlisted.",
+  "test_weakening": "No assertion in tests/database-runtime-entrypoints.test.ts may be weakened, skipped, or removed to obtain a PASS — only the pinned tuple/header values that must change with a new deliberately-registered row."
+ },
+ "required_edits": {
+  "inventory_json": {
+   "add_row": {"app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts": "contextualized"},
+   "header_before": {"checkedModules": 130, "databaseReaching": 107},
+   "header_after": {"checkedModules": 131, "databaseReaching": 108}
+  },
+  "test_pinned_tuple": {
+   "before": {"inventoried": 129, "reaching": 104, "contextualized": 88, "allowlisted": 16},
+   "after": {"inventoried": 130, "reaching": 105, "contextualized": 89, "allowlisted": 16},
+   "comment_precedent": "Follows the exact style of the W2-B1-R4 / W2-B2 comment blocks immediately above the pinned tuple (128 -> 129 / 103 -> 104 / contextualized 87 -> 88 ...): names the mission, the file, the identity-context pattern, and the classification reasoning."
+  }
+ },
+ "non_vacuous_controls_required": ["P1", "N1", "N2", "N3", "M1"],
+ "closure_rule": {
+  "this_artifact_declares_complete": false,
+  "required_next_gate": "W2_B3_ENTRYPOINT_DELTA_CLOSURE_AUDIT",
+  "b4_authorization": "NOT AUTHORIZED"
+ },
+ "final_state": "W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_FROZEN_READY_FOR_MECHANICAL_REGISTRATION"
+}
