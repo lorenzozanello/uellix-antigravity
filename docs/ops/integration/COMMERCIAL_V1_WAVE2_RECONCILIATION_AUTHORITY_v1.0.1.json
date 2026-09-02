@@ -1,0 +1,174 @@
+{
+  "artifact_id": "COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1",
+  "version": "1.0.1",
+  "authority_class": "CROSS_LINEAGE_RECONCILIATION_AUTHORITY_SUCCESSOR",
+  "hpo_mission_id": "COMMERCIAL-V1-WAVE2-RECONCILIATION-SUCCESSOR-REMEDIATION-R2",
+  "materialization_step": "HPO-ODS-W2-09",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "supersedes": null,
+  "refines": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json",
+  "purpose": "Append-only successor of v1.0.0. After the governed reconciliation attempt stopped (STOP_FOR_AUTHORITY_ADJUDICATION, evidence sha256 26cbf6c8e9aa151dad695d3bebbcb879d2286c0a8a90ee9a9db6d1f66e63b5e1) on BLK-1 (B0-17 fails on the 0060 functions), BLK-2 (72 no-explicit-any lint errors in five Wave2 test files) and BLK-3 (derived hosted-a1-status stale by unit count), the independent HPO adjudication returned PASS_FOR_SUCCESSOR_REMEDIATION: B0-17 applies to the 0060 functions, editing closed 0060 is NOT allowed, and the remediation is a successor migration 0061 revoking EXECUTE from PUBLIC on the two functions. The R1 preflight then proved (read-only) that adding 0061 as canonical baseline unit ordinal 74 mechanically re-derives six companion test files. This artifact freezes exactly those paths and nothing else.",
+  "hpo_decisions_frozen": {
+    "AUDIT_RESULT": "PASS_FOR_SUCCESSOR_REMEDIATION",
+    "B0_17_APPLICABLE_TO_0060_FUNCTIONS": true,
+    "EDIT_CLOSED_MIGRATION_0060_ALLOWED": false,
+    "HPO_SECURITY_DECISION": "SUCCESSOR_MIGRATION_REVOKE_REQUIRED",
+    "HIGHEST_EXISTING_MIGRATION": "0060",
+    "NEXT_COLLISION_FREE_MIGRATION_ID": "0061",
+    "EXACT_REMEDIATION_OPERATIONS": [
+      "REVOKE EXECUTE ON FUNCTION public.uellix_guard_disposition_run_approval() FROM PUBLIC;",
+      "REVOKE EXECUTE ON FUNCTION public.uellix_lock_run_dispositions_on_approval() FROM PUBLIC;"
+    ],
+    "EXACT_GRANTEES": [
+      "PUBLIC"
+    ],
+    "TRIGGER_BEHAVIOR_PRESERVED": true,
+    "WAVE2_CLOSURE_INVALIDATED": false,
+    "WAVE2_REOPEN_REQUIRED": false,
+    "BLK2_TEST_PATH_COUNT": 5,
+    "BLK2_ERROR_COUNT": 72,
+    "BLK2_TYPING_REMEDIATION_SAFE": true,
+    "HOSTED_A1_STATUS_REGENERATION_REQUIRED": true,
+    "HISTORICAL_EVIDENCE_REWRITE": false,
+    "MECHANICAL_COMPANION_DELTA_ADJUDICATION": "The six companion test paths below are mechanical consequences of adding baseline unit ordinal 74; no new semantic adjudication required (R2 frozen input)."
+  },
+  "pins": {
+    "PREDECESSOR_AUTHORITY_COMMIT": "c2bfdb799d7e63c1f77cadc773cbf11e25f409de",
+    "PRODUCT_INTEGRATED_BASE": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "WAVE2_SOURCE": "102a75cc044fb3e2c61249854f7f403cb066cab0",
+    "MERGE_BASE": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "MAIN_HEAD": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "PREVIOUS_RECONCILED_TREE": "140c6dbc38a83304d3791b906beadd1e4f57521c",
+    "PREVIOUS_RECONCILED_TREE_WITH_EVIDENCE": "ed115678cb1a1901e1929a0a47f24a8faad51c41",
+    "PREVIOUS_STOP_EVIDENCE_SHA256": "26cbf6c8e9aa151dad695d3bebbcb879d2286c0a8a90ee9a9db6d1f66e63b5e1",
+    "MIGRATION_TAG": "0061_fib_disposition_governance_function_execute_revocation",
+    "MIGRATION_0060_WAVE2_BLOB": "600a8f0777198d07ed50070b2abd8a50a4a267e5",
+    "ODS_GRANT": "HPO-ODS-W2-09",
+    "SUCCESSOR_BRANCH": "codex/commercial-v1-wave2-reconciliation-r1"
+  },
+  "frozen_count_semantics": {
+    "BEFORE_0061": {
+      "BASELINE_UNITS": 73,
+      "DRIZZLE_MIGRATION_UNITS": 61,
+      "hosted_release_gate_steps": 74,
+      "manifestOk_unitCount": 73
+    },
+    "AFTER_0061": {
+      "FINAL_CANONICAL_BASELINE_UNIT_COUNT": 74,
+      "FINAL_DRIZZLE_MIGRATION_UNIT_COUNT": 62,
+      "hosted_release_gate_steps": 75,
+      "manifestOk_unitCount": 74
+    },
+    "HISTORICALLY_CORROBORATED_UNIT_COUNT": 50,
+    "FINAL_EXPECTED_MISSING_UNIT_COUNT": 24,
+    "rule": "Every literal is re-derived from BASELINE_ORDER, the manifest unit classification and the hosted release-gate source logic before it is pinned; a derivation that disagrees with these expectations is a STOP, never a substituted literal."
+  },
+  "replay_rule": "The merge is re-entered with git merge --no-ff --no-commit origin/codex/w2-methodology-objects-r1; the actual conflict set must equal the 77 paths of v1.0.0 exactly; each conflict path and each v1.0.0 semantic_reconciliation_path (db/hosted/global-catalog-seeds.ts, tests/hosted/global-catalog-seeds.test.ts, tests/hosted/baseline-postconditions.test.ts, tests/hosted/checkpoint-b0.test.ts, db/prepared/checkpoint-b0/observation.sql) is restored from tree 140c6dbc38a83304d3791b906beadd1e4f57521c as the deterministic oracle and verified blob-equal; no blanket ours/theirs, no whole-tree replacement. Paths of the previous attempt that are NOT restored: the never-committed TEST_MANIFEST_v1.0.0/EVIDENCE_v1.0.0 (superseded by v1.0.1) and artifacts/baseline-rehearsal/latest.json (re-executed against the 74-unit manifest).",
+  "authorized_implementation_paths": [
+    "db/migrations/0061_fib_disposition_governance_function_execute_revocation.sql",
+    "db/migrations/meta/0061_snapshot.json",
+    "db/migrations/meta/_journal.json",
+    "db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql",
+    "db/hosted/baseline-manifest.ts",
+    "scripts/ods-scope.ts"
+  ],
+  "authorized_derived_paths": [
+    "artifacts/hosted-a1-status.json",
+    "artifacts/baseline-rehearsal/latest.json"
+  ],
+  "authorized_blk2_test_paths": [
+    "tests/financial-proxy-rubric.service.test.ts",
+    "tests/proxy-material-categories.service.test.ts",
+    "tests/proxy-editorial-noop.service.test.ts",
+    "tests/proxy-material-change.service.test.ts",
+    "tests/financial-proxy-versions.service.test.ts"
+  ],
+  "authorized_mechanical_companion_test_paths": [
+    {
+      "path": "tests/ods/ods-scope.test.ts",
+      "scope": "PROTECTED_GRANTS closed-world enumeration 5 -> 6 and the exact HPO-ODS-W2-09 expectation; no existing assertion changed"
+    },
+    {
+      "path": "tests/hosted/baseline-manifest.test.ts",
+      "scope": "unit count 73 -> 74, Drizzle 61 -> 62, ordinals 1..74 — only if derived from BASELINE_UNITS"
+    },
+    {
+      "path": "tests/hosted/baseline-journal-wrapper.test.ts",
+      "scope": "BASELINE_UNITS/BASELINE_ORDER length 73 -> 74"
+    },
+    {
+      "path": "tests/hosted/operator-runner.test.ts",
+      "scope": "BASELINE_UNITS length 73 -> 74"
+    },
+    {
+      "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "scope": "unitCount/superuserFreeUnits 73 -> 74; DML units and literal row sources unchanged (0061 carries no DML)"
+    },
+    {
+      "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "scope": "firstProvisioning steps 74 -> 75 (BASELINE_ORDER.length + the journal bootstrap step) and manifestOk unitCount 73 -> 74; rehearsal detail text 73 -> 74 units"
+    }
+  ],
+  "authorized_governance_paths": [
+    "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json",
+    "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.1.json",
+    "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json"
+  ],
+  "migration_0061_contract": {
+    "tag": "0061_fib_disposition_governance_function_execute_revocation",
+    "generator": "drizzle-kit generate --custom --name=0061_fib_disposition_governance_function_execute_revocation (repository-native; produces the empty SQL file, the 0061 snapshot chained to 0060 with no schema delta, and journal idx 61)",
+    "semantic_payload_only": [
+      "REVOKE EXECUTE ON FUNCTION public.uellix_guard_disposition_run_approval() FROM PUBLIC;",
+      "REVOKE EXECUTE ON FUNCTION public.uellix_lock_run_dispositions_on_approval() FROM PUBLIC;"
+    ],
+    "prohibited_in_0061": [
+      "GRANT",
+      "new function",
+      "table/schema/RLS change",
+      "runtime behaviour change",
+      "any edit to 0060"
+    ],
+    "baseline_unit": {
+      "ordinal": 74,
+      "kind": "drizzle-migration",
+      "dml": "none",
+      "reapply": "idempotent",
+      "dependsOn": [
+        "0060_fib_outcome_monetization_dispositions_governance.sql"
+      ],
+      "expect": "derived by the scanner (REVOKE is neither a role statement nor a superuser dependency; no policy/function/trigger/DML created)"
+    },
+    "invariant": "B0-17-function-execute-grants PASSES on a disposable rehearsal of the 74-unit corpus; trigger firing needs no EXECUTE for the invoking role (CREATE TRIGGER needed it for the creator only), so Wave2 approved-run immutability is unchanged."
+  },
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-09",
+    "branch": "codex/commercial-v1-wave2-reconciliation-r1",
+    "semantics": "Exactly the four protected literal paths the 0061 security successor materializes on this branch. Additive to HPO-ODS-W2-08 (unchanged). No glob; does not authorize any other db/migrations/**, db/prepared/**, db/baseline/** or frozen-authority path.",
+    "pattern_count": 4,
+    "patterns": [
+      "db/migrations/0061_fib_disposition_governance_function_execute_revocation.sql",
+      "db/migrations/meta/0061_snapshot.json",
+      "db/migrations/meta/_journal.json",
+      "db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql"
+    ]
+  },
+  "does_not_authorize": [
+    "any edit to db/migrations/0000..0060, historical snapshots 0000..0060, prepared wrappers 001..073",
+    "any edit under docs/ops/wave2, docs/ops/reeng, docs/ops/ods, docs/ops/fib, docs/ops/pc01b, docs/ops/im01b, or to AUTHORITY_v1.0.0",
+    "any edit to artifacts/hosted-a1-corroboration.json, artifacts/hosted-b0-observation.json, artifacts/hosted-b0-status.json (hosted-b0-status divergence is separate, pre-existing governance debt — out of scope)",
+    "eslint.config.mjs changes, eslint-disable, ts-ignore, ts-nocheck, test exclusion, assertion removal, CI weakening",
+    "semantic redesign of any companion test; values other than those mechanically derived",
+    "force push, rebase, squash, amend, merge into integration/commercial-v1 or main, production promotion, Wave2 B4"
+  ],
+  "expected_gates": [
+    "exact conflict replay (77) blob-equal to 140c6dbc…; 0060 blob 600a8f07… unchanged",
+    "pnpm journal:verify, baseline:verify (74 units), b0:observation:verify, a1:status:verify (24 missing), hosted/storage/boundary/apply/probe verify",
+    "pnpm baseline:rehearsal:local: 74/74 applied, B0 18/18 incl. B0-17; SEC-1..SEC-7 on disposable PostgreSQL only (negative control: transient GRANT EXECUTE TO PUBLIC must make B0-17 fail, rolled back)",
+    "UELLIX_PG_TESTS=1: b2 23/23, b3 24/24",
+    "pnpm lint 72 -> 0 with zero suppressions; it/expect counts preserved per file",
+    "full CI-equivalent (secrets, seal, lint, typecheck, verifiers, test:unit, build via short-path mapping of the SAME worktree if MAX_PATH bites); RECONCILIATION_INTRODUCED=0, UNKNOWN=0",
+    "ods:scope / ods:poststate with --protected-authority HPO-ODS-W2-09 (and W2-08 for the replayed surface) against the first parent; 0 violations, 0 unauthorized",
+    "two-parent merge commit (parent 1 = this authority commit, parent 2 = 102a75cc…); push of the candidate branch only; sources unchanged"
+  ]
+}
