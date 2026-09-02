@@ -28,6 +28,7 @@ import {
   parseB0Observation,
 } from '@/db/hosted/checkpoint-b0'
 import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
+import { GLOBAL_CATALOG_SEED_SPECS } from '@/db/hosted/global-catalog-seeds'
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..')
 const readSql = (file: string): string | null => {
@@ -67,7 +68,11 @@ const conforming = () => ({
   // HPO-ODS-W2-03: the five identities exist at CHECKPOINT B0 — they precede unit 1.
   roles: ['postgres', 'anon', 'authenticated', 'service_role', 'uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor'],
   grants: [],
-  rowCounts: Object.fromEntries(EXPECTED.tables.map((t) => [t, 0])),
+  // HPO-ODS-W2-04: a trustworthy observation is zero everywhere except the
+  // governed global-catalog seed, which holds exactly its declared count.
+  rowCounts: Object.fromEntries(
+    EXPECTED.tables.map((t) => [t, GLOBAL_CATALOG_SEED_SPECS.find((s) => s.table === t)?.expectedRowCount ?? 0]),
+  ),
   extensions: ['pgcrypto'],
   storageBuckets: ['uellix-evidence'],
   storagePolicies: [

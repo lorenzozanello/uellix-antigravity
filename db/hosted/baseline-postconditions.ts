@@ -32,6 +32,7 @@ import { BASELINE_ORDER, BASELINE_UNITS } from './baseline-manifest'
 import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from './target-identity'
 import { scanBaselineSql } from './baseline-scanner'
 import { classifyUellixRoles } from './managed-role-identities'
+import { GLOBAL_CATALOG_SEED_SPECS, expectedRowCountsFromClosedWorld, validateGlobalCatalogClosedWorld } from './global-catalog-seeds'
 
 /**
  * A read-only picture of the database after the baseline.
@@ -557,7 +558,14 @@ export const BASELINE_POSTCONDITIONS: readonly BaselinePostcondition[] = [
   },
   {
     id: 'B0-11-zero-production-data',
-    requirement: 'Every probed table holds zero rows. The baseline creates schema, not tenants.',
+    requirement:
+      'No tenant, user, transactional or application-production data exists. Every probed table holds ' +
+      'zero rows, EXCEPT a table named by an explicitly governed global-catalog seed specification ' +
+      '(HPO-ODS-W2-04), which must hold EXACTLY its declared row count — never more, never fewer. The ' +
+      'exception is closed-world: a manifest unit classified dml=\'global-catalog\' with no seed spec, or ' +
+      'a seed spec whose unit is absent or no longer classified global-catalog, or whose migration has ' +
+      'drifted from the hash the spec was reviewed against, fails this postcondition before a single row ' +
+      'is even compared.',
     // count(*), NOT n_live_tup.
     //
     // Adversarial review A found this file contradicting its own rehearsal:
@@ -583,9 +591,21 @@ UNION ALL SELECT 'public.organizations', count(*) FROM public.organizations
 -- … one arm per table in the derived expectation; see the comment above.
 ORDER BY 1;`,
     check(observed, expected) {
-      // COVERAGE FIRST. Reviewer B's attack on the runner's probe set applies
-      // here identically: a partially-restored production copy whose tenancy
-      // tables are empty passes any check that only looks at the tables it was
+      // THE CLOSED-WORLD CONTRACT FIRST. Before a single row is compared: the
+      // manifest's OWN classification is consulted LIVE (never assumed), so an
+      // unregistered global-catalog unit or an orphaned/drifted seed spec fails
+      // here rather than silently widening what "zero" means.
+      const closedWorld = validateGlobalCatalogClosedWorld()
+      if (!closedWorld.ok) {
+        return {
+          passed: false,
+          detail: `global-catalog closed-world contract violated: ${closedWorld.violations.map((v) => `[${v.kind}] ${v.detail}`).join(' | ')}`,
+        }
+      }
+
+      // COVERAGE. Reviewer B's attack on the runner's probe set applies here
+      // identically: a partially-restored production copy whose tenancy tables
+      // are empty passes any check that only looks at the tables it was
       // handed. So the requirement is every table the corpus creates, and a
       // missing one is a failure rather than a smaller sample.
       const unmeasured = expected.tables.filter((t) => typeof observed.rowCounts[t] !== 'number')
@@ -595,10 +615,25 @@ ORDER BY 1;`,
           detail: `${unmeasured.length} of ${expected.tables.length} baseline tables were not counted: ${unmeasured.slice(0, 6).join(', ')}${unmeasured.length > 6 ? ' …' : ''}. "Not measured" is not "empty", and a subset-restore of production would pass a partial probe.`,
         }
       }
-      const populated = Object.entries(observed.rowCounts).filter(([, n]) => n !== 0)
-      return populated.length === 0
-        ? { passed: true, detail: `all ${expected.tables.length} baseline tables counted, all zero` }
-        : { passed: false, detail: `${populated.map(([t, n]) => `${t}=${n}`).join(', ')}. 0018 is the baseline's only DML and it is a SELECT-driven backfill: on an empty database it writes nothing. Rows here did not come from the baseline.` }
+
+      // THE COMPARISON. Exact, both directions: an extra row on the governed
+      // seed's own table is exactly as much a failure as a missing one, and
+      // every table not named by a seed spec must still be exactly zero.
+      const expectedCounts = expectedRowCountsFromClosedWorld(expected.tables)
+      const mismatched = Object.entries(observed.rowCounts).filter(([t, n]) => n !== (expectedCounts.get(t) ?? 0))
+      if (mismatched.length > 0) {
+        return {
+          passed: false,
+          detail: `${mismatched.map(([t, n]) => `${t}=${n} (expected ${expectedCounts.get(t) ?? 0})`).join(', ')}. Only the explicitly governed global-catalog seed(s) may hold rows, and only at their exact declared count; every other table must be empty.`,
+        }
+      }
+      return {
+        passed: true,
+        detail:
+          GLOBAL_CATALOG_SEED_SPECS.length === 0
+            ? `all ${expected.tables.length} baseline tables counted, all zero`
+            : `all ${expected.tables.length} baseline tables counted; zero everywhere except the ${GLOBAL_CATALOG_SEED_SPECS.length} governed global-catalog seed(s): ${GLOBAL_CATALOG_SEED_SPECS.map((s) => `${s.table}=${s.expectedRowCount}`).join(', ')}`,
+      }
     },
     negativeControl: {
       description: 'one row in public.organizations must fail B0-11',

@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest'
 import { BASELINE_UNITS } from '@/db/hosted/baseline-manifest'
 import { BASELINE_ORDER } from '@/db/hosted/baseline-manifest'
 import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
+import { GLOBAL_CATALOG_SEED_SPECS, validateGlobalCatalogClosedWorld } from '@/db/hosted/global-catalog-seeds'
 import {
   BASELINE_POSTCONDITIONS,
   deriveExpectedBaselineState,
@@ -67,7 +68,11 @@ function conforming(): BaselineObservation {
     // HPO-ODS-W2-03: the five identities exist at CHECKPOINT B0 — they precede unit 1.
     roles: ['postgres', 'anon', 'authenticated', 'service_role', 'supabase_auth_admin', 'uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor'],
     grants: ['authenticated:SELECT:public.users', 'service_role:INSERT:public.audit_logs'],
-    rowCounts: Object.fromEntries(EXPECTED.tables.map((t) => [t, 0])),
+    // HPO-ODS-W2-04: a conforming database is zero everywhere EXCEPT the
+    // governed global-catalog seed(s), which hold exactly their declared count.
+    rowCounts: Object.fromEntries(
+      EXPECTED.tables.map((t) => [t, GLOBAL_CATALOG_SEED_SPECS.find((s) => s.table === t)?.expectedRowCount ?? 0]),
+    ),
     extensions: ['pgcrypto', 'uuid-ossp', 'pg_graphql', 'pg_stat_statements'],
     storageBuckets: ['uellix-evidence'],
 
@@ -215,13 +220,103 @@ describe('NEGATIVE CONTROLS — every postcondition fails against its own mutati
 })
 
 describe('the postconditions that carry the Phase 5 and Phase 6 claims', () => {
-  it('B0-11 refuses a database with any row at all', () => {
+  const b0_11 = () => BASELINE_POSTCONDITIONS.find((p) => p.id === 'B0-11-zero-production-data')!
+
+  it('B0-11 refuses a row on any table OTHER than the governed global-catalog seed', () => {
     const o = conforming()
-    const check = BASELINE_POSTCONDITIONS.find((p) => p.id === 'B0-11-zero-production-data')!
+    const check = b0_11()
     expect(check.check(o, EXPECTED).passed).toBe(true)
     expect(check.check({ ...o, rowCounts: { ...o.rowCounts, 'public.users': 1 } }, EXPECTED).passed).toBe(false)
     // "Not measured" must not read as "empty".
     expect(check.check({ ...o, rowCounts: {} }, EXPECTED).passed).toBe(false)
+  })
+
+  // HPO-ODS-W2-04 — P1/P2/P3 and N1/N2/N3/N4/N5/N6.
+  describe('HPO-ODS-W2-04 — the governed global-catalog seed exception, closed-world', () => {
+    const seed = GLOBAL_CATALOG_SEED_SPECS[0]!
+
+    it('P1: the exact governed seed count PASSES', () => {
+      const o = conforming()
+      expect(o.rowCounts[seed.table]).toBe(seed.expectedRowCount)
+      expect(b0_11().check(o, EXPECTED).passed).toBe(true)
+    })
+
+    it('P2: every other baseline table at zero, alongside the seed, PASSES', () => {
+      const o = conforming()
+      const others = EXPECTED.tables.filter((t) => t !== seed.table)
+      expect(others.every((t) => o.rowCounts[t] === 0)).toBe(true)
+    })
+
+    it('N1: one EXTRA row on the governed seed table FAILS', () => {
+      const o = conforming()
+      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [seed.table]: seed.expectedRowCount + 1 } }, EXPECTED)
+      expect(result.passed).toBe(false)
+      expect(result.detail).toContain(seed.table)
+    })
+
+    it('N2: one MISSING row on the governed seed table FAILS (not just "greater than zero")', () => {
+      const o = conforming()
+      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [seed.table]: seed.expectedRowCount - 1 } }, EXPECTED)
+      expect(result.passed).toBe(false)
+      expect(result.detail).toContain(seed.table)
+    })
+
+    it('N3: a row on an unrelated governed-zero table FAILS — the exception never widens', () => {
+      const o = conforming()
+      for (const table of ['public.organizations', 'public.projects', 'public.users', 'public.evidence_items']) {
+        const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [table]: 1 } }, EXPECTED)
+        expect(result.passed, table).toBe(false)
+      }
+    })
+
+    it('N4: a manifest unit classified global-catalog with no seed spec FAILS the closed-world contract', () => {
+      const units = BASELINE_UNITS.map((u) => (u.id === '0041_pc01b_regime_boundary_backfill.sql' ? { ...u, dml: 'global-catalog' as const } : u))
+      const result = validateGlobalCatalogClosedWorld(units, GLOBAL_CATALOG_SEED_SPECS)
+      expect(result.ok).toBe(false)
+      expect(result.violations.map((v) => v.kind)).toContain('UNREGISTERED_GLOBAL_CATALOG_UNIT')
+    })
+
+    it('N5: a seed spec whose unit is not (or no longer) global-catalog FAILS the closed-world contract', () => {
+      const drifted = BASELINE_UNITS.map((u) => (u.id === seed.unitId ? { ...u, dml: 'none' as const } : u))
+      const result = validateGlobalCatalogClosedWorld(drifted, GLOBAL_CATALOG_SEED_SPECS)
+      expect(result.ok).toBe(false)
+      expect(result.violations.map((v) => v.kind)).toContain('SEED_SPEC_UNIT_NOT_GLOBAL_CATALOG')
+
+      const absent = BASELINE_UNITS.filter((u) => u.id !== seed.unitId)
+      const result2 = validateGlobalCatalogClosedWorld(absent, GLOBAL_CATALOG_SEED_SPECS)
+      expect(result2.ok).toBe(false)
+      expect(result2.violations.map((v) => v.kind)).toContain('ORPHANED_SEED_SPEC')
+    })
+
+    it('N6: a seed spec whose pinned migration hash disagrees with the manifest FAILS the closed-world contract', () => {
+      const rehashed = BASELINE_UNITS.map((u) => (u.id === seed.unitId ? { ...u, sha256: 'deadbeef'.repeat(8) } : u))
+      const result = validateGlobalCatalogClosedWorld(rehashed, GLOBAL_CATALOG_SEED_SPECS)
+      expect(result.ok).toBe(false)
+      expect(result.violations.map((v) => v.kind)).toContain('SEED_SPEC_HASH_DRIFT')
+    })
+
+    it('P3: the CURRENT manifest and seed registry satisfy the closed-world bijection exactly', () => {
+      const result = validateGlobalCatalogClosedWorld()
+      expect(result.violations, JSON.stringify(result.violations)).toEqual([])
+      expect(result.ok).toBe(true)
+    })
+
+    it('M1: reverting to flat zero-row semantics would fail the CURRENT legitimate catalog state', () => {
+      // Proves the old check was enforcing something real, and this is a
+      // deliberate, narrow relaxation — not a check that never did anything.
+      const o = conforming()
+      const populated = Object.entries(o.rowCounts).filter(([, n]) => n !== 0)
+      expect(populated).toEqual([[seed.table, seed.expectedRowCount]])
+    })
+
+    it("M2: a bare 'this table may hold rows' allowance would NOT be caught by anything but N1 — assert N1 still fails an over-broad implementation shape", () => {
+      // If B0-11 only asserted `rowCounts[seed.table] >= 0` (any count allowed),
+      // this exact assertion — an extra row failing — is what would go green
+      // when it must not. Re-run N1 here as the mutation's own witness.
+      const o = conforming()
+      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [seed.table]: seed.expectedRowCount + 5 } }, EXPECTED)
+      expect(result.passed).toBe(false)
+    })
   })
 
   it('B0-10 is the check that keeps policy 008 inert', () => {
