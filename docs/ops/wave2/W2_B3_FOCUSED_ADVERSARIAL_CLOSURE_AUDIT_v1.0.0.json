@@ -1,0 +1,171 @@
+{
+  "package_id": "W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT",
+  "version": "1.0.0",
+  "artifact_id": "W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0",
+  "authority_class": "INDEPENDENT_AUDIT_EVIDENCE",
+  "append_only": true,
+  "supersedes": null,
+  "purpose": "Repository evidence for the two independent, strictly read-only audits that adjudicated W2-B3. Audit 1 (focused adversarial closure, at 5273eb7) found the three FIBIU contracts substantively closed but returned FAIL on exactly one blocker, B3-BLK-A. Audit 2 (entrypoint delta closure, at 3f67b47) verified the bounded remediation of that blocker and returned PASS. This artifact records what those audits measured; it authorizes no implementation, no schema change, and no W2-B4 work. It is the reference for source_audit_state.verdict=ACCEPTED in docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json.",
+
+  "audited_authority": {
+    "path": "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json",
+    "artifact_id": "W2_B3_COMPLETENESS_AUTHORITY_v1.0.0",
+    "sha256_as_audited_pre_acceptance": "3e51954ccb8bbd4fd956c9fd73b236cd42890a2db7d224434bc39d0fd324d368",
+    "sha256_pin_note": "This is the hash of the authority AS AUDITED, i.e. before source_audit_state.verdict was set to ACCEPTED. Recording that acceptance necessarily changes the file, so the current hash differs by construction and this pin must not be compared against the live file. It is also the value embedded in docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json, which was frozen against the same pre-acceptance content.",
+    "test_contract": "docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json"
+  },
+
+  "audit_1_focused_adversarial_closure": {
+    "task": "W2-B3-FOCUSED-ADVERSARIAL-CLOSURE-AUDIT",
+    "mode": "STRICT_READ_ONLY_FOCUSED_CLOSURE",
+    "branch": "codex/w2-methodology-objects-r1",
+    "focused_audit_base": "fd6e252099b1a2f761e52a136b832c873feed293",
+    "focused_audit_head": "5273eb722c1fb88e2bf37aedb861d2635333eb00",
+    "focused_audit_tree": "7f50479c700c7a43dbbb1c942609c9bda98b37f0",
+    "focused_audit_initial_result": "FAIL_NARROW",
+    "focused_audit_only_blocker": "B3-BLK-A",
+    "substantive_findings": {
+      "FIBIU_11": "CLOSED",
+      "FIBIU_12": "CLOSED",
+      "FIBIU_13": "CLOSED"
+    },
+    "blocker_B3_BLK_A": {
+      "id": "B3-BLK-A",
+      "summary": "A new database-reaching server action was correctly contextualized but absent from the governed AST-layer entrypoint inventory.",
+      "action": "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts",
+      "measured": "tests/database-runtime-entrypoints.test.ts 3 failed / 209 passed (212) at 5273eb7; 211/211 at fd6e252; deterministic on isolated rerun. Scanner reported 'scanned=contextualized inventory=MISSING'; regex-layer tuple measured {inventoried:130, reaching:105, contextualized:89, allowlisted:16} against pinned {129, 104, 88, 16}.",
+      "security_impact": "NONE — the scanner classified the action `contextualized` (it wraps its governed write in runWithOrganizationAccess) and `allowlisted` stayed at 16. The governed register was stale, not the identity guard.",
+      "precedent": "W2-B1-R4 registered its three new actions and W2-B2 registered two (evaluateProxyRubric.action.ts, updateFinancialProxy.action.ts) in the same ledger; B3 was the first wave to add an action without registering it."
+    },
+    "verified_pass": {
+      "prestate": "branch/HEAD/TREE/clean exact; base ancestry confirmed; 5 expected commits in expected order",
+      "sealed_artifacts": "db/migrations/0057, 0058, 0059 unchanged; the 72 modified db/prepared/journal wrappers differ only in the generated 'Unit N/72'->'N/73' header line (72 additions, 72 deletions, zero non-header changed lines)",
+      "authority_conformance": "wildcard_count=0; changed-vs-authorized set difference produced 0 unauthorized paths",
+      "test_manifest_v2": "frozen before implementation (beb1c0b 21:23:56 < dc0806c 21:39:14) and byte-identical to HEAD; its embedded authority sha256 still matches, so the freeze is hash-bound",
+      "postgres": "PG-1..PG-16 (including PG-14b, PG-14c) plus MUT-PG-1..3 independently re-executed in the canonical disposable harness (postgres:16-alpine), 21 probes / 24 assertions, 85.67s, POSTGRES_FAILURES=0, POSTGRES_LEFTOVERS=0, lifecycle VERIFIED_GONE",
+      "rls_semantics": "0059's SELECT policy is strictly broader than 0060's new UPDATE policy, so effective updatability equals the UPDATE predicate; MUT-PG-3 decomposes the layers in two phases (UPDATE-only relaxation still yields 0 rows cross-tenant; relaxing SELECT as well yields 1), proving neither layer is vacuous",
+      "toctou": "PG-14c closes the approved-run race with two real sessions over dblink: 55P03 while the approval is in flight, 42501 after it commits, stored row unchanged",
+      "machine_gates": "typecheck PASS; secrets PASS; authority:seal:verify PASS; journal:verify PASS (74 wrappers regenerate byte-identically); baseline:verify PASS (73 units); build PASS; ods:scope PASS (76 protected paths authorized under HPO-ODS-W2-01, 0 violations, 0 unauthorized); ods:poststate raw PASS",
+      "program_state_at_audit": "AUTHORITY_STATUS=CLOSED, IMPLEMENTATION_STATUS=CLOSED, AUDIT_STATUS=OPEN — the mission did not self-accept",
+      "non_regression": "all 8 B3 suites 201/201; 9 sentinel suites green (75 passed / 26 live-DB-gated skips); B1_REOPENED=NO, B2_REOPENED=NO"
+    },
+    "adjudications": {
+      "UNCLASSIFIED_NUMERATOR_BEHAVIOR": "ITEMIZED_INCLUSION_CONFORMS",
+      "unclassified_reasoning": "Derived from baseline FIB authority, not from the remediation prompt. FIBC-015 scopes numerator exclusion to `not_material` only and states that preliminary work is permitted while classification is pending. MATERIALITY_UNCLASSIFIED is one of FIBC-023's 24 enumerated non-eligibility reasons whose OWNING UNIT is FIBIU-19, and FIBC-023's PRELIMINARY state ('calculated but >= 1 eligibility condition unmet') explicitly contemplates a persisted run in that state. Excluding unclassified outcomes from the numerator would contradict FIBC-015 and pre-empt FIBIU-19.",
+      "HOSTED_WRITER_PRIVILEGE_CLASSIFICATION": "DEPLOYMENT_PHASE_DEBT",
+      "hosted_writer_reasoning": "The finding is real: on a hosted target the runtime would receive 42501 before RLS is evaluated. It is not B3-specific — stella_hosted_0007 is a closed enumerated ACL predating the FIB era, and financial_proxy_versions, proxy_material_fields_registry, evidence_sufficiency_determinations, fib_audit_log and domain_object_versions are equally ungranted while belonging to already-closed B1/B2. No ALTER DEFAULT PRIVILEGES covers schema public for the runtime roles. DEFAULT_PROTECTED_PATTERNS protects db/prepared/** while HPO-ODS-W2-01 grants only db/prepared/journal/**, so B3 was structurally barred from touching the hosted package. The defect fails closed (denies access) and is therefore not a security blocker."
+    },
+    "audit_purity": {
+      "FILES_WRITTEN": 0,
+      "COMMITS_CREATED": 0,
+      "head_unchanged": true,
+      "tree_unchanged": true
+    }
+  },
+
+  "audit_2_entrypoint_delta_closure": {
+    "task": "W2-B3-ENTRYPOINT-DELTA-CLOSURE-AUDIT",
+    "mode": "STRICT_READ_ONLY_DELTA_AUDIT",
+    "delta_audit_base": "5273eb722c1fb88e2bf37aedb861d2635333eb00",
+    "delta_remediation_head": "3f67b47ebbe67ef9a9b5f380aa778d98f2ed9ae1",
+    "delta_remediation_tree": "47a2897816f13d861686fb7d3a88b968bbb73662",
+    "delta_closure_result": "PASS",
+    "remediation_authority": "docs/ops/wave2/W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0.json",
+    "delta_surface": {
+      "file_count": 3,
+      "insertions": 93,
+      "deletions": 3,
+      "files": [
+        "docs/ops/wave2/W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0.json",
+        "tests/database-entrypoint-inventory.json",
+        "tests/database-runtime-entrypoints.test.ts"
+      ],
+      "unexpected_runtime_files_changed": 0,
+      "verification": "git diff --name-only 5273eb7..3f67b47 -- app lib db components scripts package.json docs/ops/fib docs/ops/pc01b docs/ops/im01b docs/ops/ods returned empty"
+    },
+    "verified": {
+      "action_unmodified": "sha256 757dca2d3f4fd57b562dcaeffa496e94bf5a645d4d551db78708bf26eda255f8 identical at 5273eb7 and 3f67b47; the remediation authority sets edit_authorized=false for that file",
+      "inventory_row": "present exactly once, classified `contextualized`, alphabetically placed; ALLOWLIST not touched",
+      "pinned_counts": {"inventoried": 130, "reaching": 105, "contextualized": 89, "allowlisted": 16},
+      "secondary_inventory_counts": {"checkedModules": "130 -> 131", "databaseReaching": "107 -> 108", "map_size": 108, "classes": "92 contextualized + 16 allowlisted = 108"},
+      "prior_blocker_test": "tests/database-runtime-entrypoints.test.ts 212 passed / 212 in isolation (was 3 failed / 209 at 5273eb7)",
+      "non_vacuous_controls": "P1, N1, N2, N3, M1 all executed and non-vacuous, plus a vacuity guard confirming no predicate fires on the unmutated committed state. N1 reproduced the original B3-BLK-A message exactly. The assertions are set- and equality-derived from the live scan, not hardcoded counts.",
+      "test_diff": "real non-empty BASE and HEAD captures over the 9 suites present at both refs: base 336 assertions (310 passed / 0 failed / 26 skipped) at fd6e252, head 337 assertions (311 passed / 0 failed / 26 skipped) at 3f67b47. BASE_FAILURE_COUNT=0, HEAD_FAILURE_COUNT=0, NEW_FAILURE_COUNT=0, UNKNOWN_COUNT=0, NO_NEW_FAILURES=true. The +1 head assertion is the newly registered module's own it.each row.",
+      "machine_gates": "typecheck PASS; secrets PASS; authority:seal:verify PASS; ods:scope PASS (3 changed, 0 protected, 0 unauthorized); ods:poststate raw PASS (6/6 sub-steps)",
+      "non_regression": "B3 suites 9 files / 177 tests PASS; B2, B1 and tenant/auth sentinels PASS; B1_REOPENED=NO, B2_REOPENED=NO"
+    },
+    "counters": {
+      "BLOCKING_FINDINGS": 0,
+      "NEW_AUTHORITY_GAPS": 0,
+      "NEW_DETERMINISTIC_FAILURES": 0,
+      "UNKNOWN_FAILURES": 0
+    },
+    "audit_purity": {
+      "FILES_WRITTEN": 0,
+      "COMMITS_CREATED": 0,
+      "head_unchanged": true,
+      "tree_unchanged": true
+    }
+  },
+
+  "inherited_non_blocking_findings": [
+    {
+      "id": "MNB-1",
+      "status": "OPEN",
+      "classification": "DEPLOYMENT_PHASE_DEBT",
+      "summary": "No hosted package grants uellix_writer any privilege on tables created after stella_hosted_0007, including outcome_monetization_dispositions. On a hosted target the runtime would receive 42501 before RLS is evaluated.",
+      "scope": "Program-wide, not B3-specific: the same gap covers Wave-1/Wave-2 tables owned by already-closed B1/B2. Fails closed. Owned by the hosted provisioning lineage (db/prepared/stella_hosted_*), outside every Wave-2 batch surface.",
+      "blocks_b3": false
+    },
+    {
+      "id": "MNB-2",
+      "status": "OPEN",
+      "summary": "Report and PDF surfaces render the no-ratio state as a bare em dash via fmtRatio(null) rather than an affirmative no-ratio declaration. No fabricated ratio is emitted, so FIBC-016's core prohibition holds, but the in-app surfaces are more explicit than the report path.",
+      "blocks_b3": false
+    },
+    {
+      "id": "MNB-3",
+      "status": "OPEN",
+      "classification": "PRE_EXISTING",
+      "summary": "Pre-existing display defects on the calculation compare page: the 'Valor Social Neto' row reads totalInvestment, and the side columns for 'Valor Social Bruto' and 'Items de linea' are hardcoded to 0. Present unchanged at fd6e252; not introduced by B3.",
+      "blocks_b3": false
+    },
+    {
+      "id": "MNB-4",
+      "status": "OPEN",
+      "classification": "TEST_INFRASTRUCTURE",
+      "summary": "The full suite is unstable under full-parallel execution on the development host: 69 of 72 raw new failures measured against base were artifacts (pnpm-spawning tests/ods/** buckling under load, and '(stack reachable)' suites flipping skip->fail because an unrelated worktree's local Supabase stack changed reachability between runs). Every candidate failure must be re-run in isolation before being called deterministic. This noise is what allowed B3-BLK-A to go unnoticed until a real BASE capture was produced.",
+      "blocks_b3": false
+    },
+    {
+      "id": "MNB-5",
+      "status": "OPEN",
+      "classification": "THEORETICAL",
+      "summary": "parseNum on a non-blank, non-numeric filter value would return 0 on the authoritative path. Unreachable in practice because the five governed filter columns are numeric, so PostgreSQL guarantees numeric-parseable text.",
+      "blocks_b3": false
+    },
+    {
+      "id": "MNB-6",
+      "status": "OPEN",
+      "classification": "AUTHORITY_HYGIENE",
+      "summary": "W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0.json lists non_vacuous_controls_required ['P1','N1','N2','N3','M1'] without defining those labels, and that mission shipped no test manifest. Not counted as an authority gap: required_edits specified the work exactly, the contract is fully pinned by the test file itself, and all five controls proved non-vacuous under the natural mapping.",
+      "blocks_b3": false
+    }
+  ],
+
+  "closure": {
+    "FIBIU_11": "CLOSED",
+    "FIBIU_12": "CLOSED",
+    "FIBIU_13": "CLOSED",
+    "W2_B3": "CLOSED",
+    "READY_FOR_B4": "YES",
+    "BLOCKING_FINDINGS": 0,
+    "NEW_AUTHORITY_GAPS": 0,
+    "NEW_DETERMINISTIC_FAILURES": 0,
+    "UNKNOWN_FAILURES": 0,
+    "b4_authorization": "READY_FOR_B4=YES records audit readiness only. W2-B4 implementation still requires its own authority artifact; this audit grants none.",
+    "next_gate": "PR_TOPOLOGY_AND_DIFF_FORENSICS"
+  },
+
+  "final_state": "W2_B3_FORMALLY_CLOSED_READY_FOR_PR_BOUNDARY_AND_B4"
+}

@@ -560,8 +560,8 @@
   "b4_authorization": "NOT AUTHORIZED."
  },
  "source_audit_state": {
-  "verdict": "PENDING_FOCUSED_AUDIT",
-  "note": "Read by docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B3 (audit dimension). Only the focused adversarial closure audit may change this to ACCEPTED — never this mission."
+  "verdict": "ACCEPTED",
+  "note": "Read by docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json unit W2-B3 (audit dimension). Only the focused adversarial closure audit may change this to ACCEPTED — never the remediation mission. Set to ACCEPTED by that audit; evidence: docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json (audit 1 at 5273eb7 = FAIL_NARROW on the single blocker B3-BLK-A; audit 2 at 3f67b47 = PASS after the bounded entrypoint-inventory remediation)."
  },
  "final_state": "W2_B3_COMPLETENESS_AUTHORITY_FROZEN_READY_FOR_TEST_MANIFEST_V2"
 }
