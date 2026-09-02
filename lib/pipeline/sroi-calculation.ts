@@ -68,6 +68,14 @@ export const FilterSetSchema = z.object({
   dropoffPct: z.string().optional(),
   durationYears: z.number().int().optional(),
   justification: z.string().optional(),
+  // FIBIU-13 (FIBC-017/FIBDB-010) — one discrete justification per filter,
+  // independent of the legacy shared `justification` column above and never
+  // auto-distributed from it (NPDD-03).
+  deadweightJustification: z.string().optional(),
+  attributionJustification: z.string().optional(),
+  displacementJustification: z.string().optional(),
+  dropoffJustification: z.string().optional(),
+  durationJustification: z.string().optional(),
 })
 export type FilterSetInput = z.infer<typeof FilterSetSchema>
 
@@ -333,6 +341,66 @@ export async function upsertSroiFilterSet(projectId: string, assignmentId: strin
     afterJson: inserted[0] as unknown as Record<string, unknown>,
   })
   return inserted[0]
+}
+
+/** One of V-01's five gated filters (discount_rate_pct is deliberately excluded). */
+export type FilterName = 'deadweight' | 'attribution' | 'displacement' | 'dropoff' | 'duration'
+export type FilterJustificationIssueCode = 'FILTER_VALUE_MISSING' | 'FILTER_JUSTIFICATION_MISSING'
+export interface FilterJustificationIssue {
+  filter: FilterName
+  issue: FilterJustificationIssueCode
+}
+
+/**
+ * FIBIU-13 (FIBC-017, FIBDB-010) — pure composable primitive for the
+ * approval-eligibility/report-lock gate: for each of the five filters,
+ * reports FILTER_VALUE_MISSING when the value itself is absent, or
+ * FILTER_JUSTIFICATION_MISSING when a value is present but its own discrete
+ * justification is not — `0` is a valid, present value and never exempts
+ * justification. Deliberately checks null/undefined/empty BEFORE any
+ * parseNum call, so an unset filter is never indistinguishable from a
+ * justified `0` (the parseNum(null) -> 0 coercion this replaces on the
+ * authoritative path).
+ *
+ * Not wired into getSroiCalculationReadiness()/canCalculate: FIBC-017
+ * explicitly permits preliminary calculation with unjustified filters, and
+ * this unit's own FILES_OR_DOMAINS does not reach the eligibility
+ * composition (FIBIU-19, Wave 3, composes over FIBIU-06/09/11/12/13/14/15/
+ * 16/17/18) — the same boundary already drawn for FIBIU-11's materiality
+ * classification.
+ */
+export function getFilterJustificationIssues(
+  filterSet: Pick<
+    typeof sroiFilterSets.$inferSelect,
+    | 'deadweightPct' | 'attributionPct' | 'displacementPct' | 'dropoffPct' | 'durationYears'
+    | 'deadweightJustification' | 'attributionJustification' | 'displacementJustification'
+    | 'dropoffJustification' | 'durationJustification'
+  > | null | undefined,
+): FilterJustificationIssue[] {
+  if (!filterSet) {
+    return (['deadweight', 'attribution', 'displacement', 'dropoff', 'duration'] as const)
+      .map((filter) => ({ filter, issue: 'FILTER_VALUE_MISSING' as const }))
+  }
+
+  const isBlank = (v: string | number | null | undefined) => v === null || v === undefined || v === ''
+
+  const checks: { filter: FilterName; value: string | number | null | undefined; justification: string | null | undefined }[] = [
+    { filter: 'deadweight', value: filterSet.deadweightPct, justification: filterSet.deadweightJustification },
+    { filter: 'attribution', value: filterSet.attributionPct, justification: filterSet.attributionJustification },
+    { filter: 'displacement', value: filterSet.displacementPct, justification: filterSet.displacementJustification },
+    { filter: 'dropoff', value: filterSet.dropoffPct, justification: filterSet.dropoffJustification },
+    { filter: 'duration', value: filterSet.durationYears, justification: filterSet.durationJustification },
+  ]
+
+  const issues: FilterJustificationIssue[] = []
+  for (const { filter, value, justification } of checks) {
+    if (isBlank(value)) {
+      issues.push({ filter, issue: 'FILTER_VALUE_MISSING' })
+    } else if (isBlank(justification)) {
+      issues.push({ filter, issue: 'FILTER_JUSTIFICATION_MISSING' })
+    }
+  }
+  return issues
 }
 
 // ─── Internal data loader for calculation ───────────────────────────────────

@@ -1123,6 +1123,26 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'independent and this unit touches neither the score column nor its CHECK.',
     expect: {},
   },
+  {
+    ordinal: 71,
+    id: '0058_fib_filter_set_justification_columns.sql',
+    kind: D,
+    file: 'db/migrations/0058_fib_filter_set_justification_columns.sql',
+    sha256: '4de23a6717d628abd4a605344934e1d3beb74adafe046c9e1df07a0421681b00',
+    dependsOn: ['0057_fib_outcome_materiality_classification.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-13 (FIBC-017/FIBDB-010, implementation form frozen at R1, superseding FIB-01A\'s ' +
+      'originally declared NEW_CONSTRAINT). ADD COLUMN deadweight_justification, ' +
+      'attribution_justification, displacement_justification, dropoff_justification, and ' +
+      'duration_justification (all NULLable text) on sroi_filter_sets, one per filter, so ' +
+      'FILTER_JUSTIFICATION_MISSING is verifiable independently per filter instead of degenerating ' +
+      'to "the shared justification column is non-empty". Deliberately no NOT NULL, no presence ' +
+      'CHECK, and no new percentage-range CHECK: the four existing per-filter range CHECKs and the ' +
+      'legacy shared justification column are untouched. discount_rate_pct lives on projects, not ' +
+      'this table, and is out of scope for this unit.',
+    expect: {},
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

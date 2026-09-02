@@ -778,7 +778,21 @@ export const sroiFilterSets = pgTable('sroi_filter_sets', {
   attributionPct: varchar('attribution_pct', { length: 255 }),
   dropoffPct: varchar('dropoff_pct', { length: 255 }),
   durationYears: integer('duration_years'),
+  // Legacy shared column — retained as free text, never auto-distributed
+  // across the five discrete columns below (NPDD-03).
   justification: text('justification'),
+  // FIBIU-13 (FIBC-017, FIBDB-010 — implementation form frozen at R1,
+  // superseding FIB-01A's NEW_CONSTRAINT). Five discrete nullable
+  // justification columns, one per filter, so FILTER_JUSTIFICATION_MISSING
+  // can be verified independently per filter instead of degenerating to
+  // "the shared column is non-empty". Deliberately no NOT NULL / presence
+  // CHECK here: unjustified filters remain legitimate for preliminary work;
+  // obligatoriness lives exclusively in the eligibility composition (FIBC-023).
+  deadweightJustification: text('deadweight_justification'),
+  attributionJustification: text('attribution_justification'),
+  displacementJustification: text('displacement_justification'),
+  dropoffJustification: text('dropoff_justification'),
+  durationJustification: text('duration_justification'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

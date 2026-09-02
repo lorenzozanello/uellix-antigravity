@@ -158,6 +158,8 @@ import {
   detectRunInputDrift,
   upsertProjectInvestment,
   upsertSroiAssignmentInput,
+  upsertSroiFilterSet,
+  getFilterJustificationIssues,
 } from '@/lib/pipeline/sroi-calculation';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -358,6 +360,84 @@ describe('Duration and dropoff handling', () => {
     expect(li.adjustedValue).toBeCloseTo(expectedAdjusted);
     expect(preview.result!.netSocialValue).toBeCloseTo(expectedAdjusted);
     expect(preview.result!.sroiRatio).toBeCloseTo(expectedAdjusted / 1000);
+  });
+});
+
+describe('FIBIU-13 (FIBC-017) — filter justification gate', () => {
+  describe('getFilterJustificationIssues (pure)', () => {
+    it('P-5: a justified 0 on every filter is accepted -- no issues', () => {
+      const issues = getFilterJustificationIssues({
+        deadweightPct: '0', attributionPct: '0', displacementPct: '0', dropoffPct: '0', durationYears: 0,
+        deadweightJustification: 'No deadweight observed in the comparison group.',
+        attributionJustification: 'Sole funder, full attribution.',
+        displacementJustification: 'No displacement identified.',
+        dropoffJustification: 'No decay modelled for this horizon.',
+        durationJustification: 'Single-year outcome window.',
+      });
+      expect(issues).toEqual([]);
+    });
+
+    it('N-3: a present value with no justification reports FILTER_JUSTIFICATION_MISSING, naming the filter', () => {
+      const issues = getFilterJustificationIssues({
+        deadweightPct: '25', attributionPct: null, displacementPct: null, dropoffPct: null, durationYears: null,
+        deadweightJustification: null,
+        attributionJustification: null, displacementJustification: null, dropoffJustification: null, durationJustification: null,
+      });
+      expect(issues).toContainEqual({ filter: 'deadweight', issue: 'FILTER_JUSTIFICATION_MISSING' });
+    });
+
+    it('N-3 / M-3: a NULL value reports FILTER_VALUE_MISSING, never silently treated as a justified 0', () => {
+      const issues = getFilterJustificationIssues({
+        deadweightPct: null, attributionPct: null, displacementPct: null, dropoffPct: null, durationYears: null,
+        deadweightJustification: 'This would be irrelevant -- the value itself is unset.',
+        attributionJustification: null, displacementJustification: null, dropoffJustification: null, durationJustification: null,
+      });
+      expect(issues).toContainEqual({ filter: 'deadweight', issue: 'FILTER_VALUE_MISSING' });
+      // Presence of a justification does not paper over a missing value --
+      // proves the null check runs before any parseNum-style coercion, not
+      // after (a reintroduced parseNum(null) -> 0 would make this a
+      // FILTER_JUSTIFICATION_MISSING-only outcome, or no issue at all).
+      expect(issues.find((i) => i.filter === 'deadweight')?.issue).toBe('FILTER_VALUE_MISSING');
+    });
+
+    it('an empty-string value is treated as missing, the same as NULL', () => {
+      const issues = getFilterJustificationIssues({
+        deadweightPct: '', attributionPct: null, displacementPct: null, dropoffPct: null, durationYears: null,
+        deadweightJustification: null, attributionJustification: null, displacementJustification: null, dropoffJustification: null, durationJustification: null,
+      });
+      expect(issues).toContainEqual({ filter: 'deadweight', issue: 'FILTER_VALUE_MISSING' });
+    });
+
+    it('a fully unset filter set reports FILTER_VALUE_MISSING for all five filters', () => {
+      const issues = getFilterJustificationIssues(null);
+      expect(issues).toHaveLength(5);
+      expect(issues.every((i) => i.issue === 'FILTER_VALUE_MISSING')).toBe(true);
+      expect(issues.map((i) => i.filter).sort()).toEqual(['attribution', 'deadweight', 'displacement', 'dropoff', 'duration']);
+    });
+
+    it('N-4: discount_rate_pct is not one of the five gated filters (structurally out of scope)', () => {
+      const issues = getFilterJustificationIssues({
+        deadweightPct: '0', attributionPct: '0', displacementPct: '0', dropoffPct: '0', durationYears: 1,
+        deadweightJustification: 'x', attributionJustification: 'x', displacementJustification: 'x', dropoffJustification: 'x', durationJustification: 'x',
+      });
+      expect(issues.map((i) => i.filter)).not.toContain('discount_rate');
+      expect(issues).toEqual([]);
+    });
+  });
+
+  describe('upsertSroiFilterSet persistence', () => {
+    it('persists all five discrete justification columns independently of the legacy shared column', async () => {
+      seedHappyData();
+      const saved = await upsertSroiFilterSet(PROJECT_ID, ASSIGNMENT_ID, {
+        deadweightPct: '15',
+        deadweightJustification: 'Comparison-group evidence.',
+        justification: 'legacy free text, unrelated',
+      } as any);
+      expect(saved.deadweightJustification).toBe('Comparison-group evidence.');
+      expect(saved.justification).toBe('legacy free text, unrelated');
+      // The legacy column is never auto-distributed into the discrete ones.
+      expect(saved.attributionJustification ?? null).toBeNull();
+    });
   });
 });
 
@@ -1104,6 +1184,17 @@ describe('Action validation delegation', () => {
     formData.set('deadweightPct', '10');
     const result = await upsertSroiFilterSetAction(formData);
     expect(result.deadweightPct).toBe('10');
+  });
+
+  it('upsertSroiFilterSetAction passes through the five discrete justification fields (FIBIU-13)', async () => {
+    seedHappyData();
+    const formData = new FormData();
+    formData.set('projectId', PROJECT_ID);
+    formData.set('assignmentId', ASSIGNMENT_ID);
+    formData.set('deadweightPct', '10');
+    formData.set('deadweightJustification', 'Benchmarked against a matched comparison group.');
+    const result = await upsertSroiFilterSetAction(formData);
+    expect(result.deadweightJustification).toBe('Benchmarked against a matched comparison group.');
   });
 
   it('calculateSroiRunAction delegates to persisting run', async () => {

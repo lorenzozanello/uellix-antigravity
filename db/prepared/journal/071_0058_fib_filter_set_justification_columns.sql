@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 54/71: 0043_fib_audit_project_id_fk.sql
+-- GENERATED — DO NOT EDIT. Unit 71/71: 0058_fib_filter_set_justification_columns.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0043_fib_audit_project_id_fk.sql
--- Source SHA256: 6c063adbf293b60fda8c143b44ff2386975c37a8273e1dbc59da75beacf06907
+-- Includes:      db/migrations/0058_fib_filter_set_justification_columns.sql
+-- Source SHA256: 4de23a6717d628abd4a605344934e1d3beb74adafe046c9e1df07a0421681b00
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/054_0043_fib_audit_project_id_fk.sql
+--        -f db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0043_fib_audit_project_id_fk.sql
+\ir ../../../db/migrations/0058_fib_filter_set_justification_columns.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0043_fib_audit_project_id_fk.sql', 'PHASE_BASELINE',
-   '6c063adbf293b60fda8c143b44ff2386975c37a8273e1dbc59da75beacf06907', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0058_fib_filter_set_justification_columns.sql', 'PHASE_BASELINE',
+   '4de23a6717d628abd4a605344934e1d3beb74adafe046c9e1df07a0421681b00', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

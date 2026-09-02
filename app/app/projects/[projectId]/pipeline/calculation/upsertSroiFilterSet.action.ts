@@ -15,6 +15,12 @@ const FilterSetSchema = z.object({
   dropoffPct: z.string().optional(),
   durationYears: z.number().int().optional(),
   justification: z.string().optional(),
+  // FIBIU-13 (FIBC-017/FIBDB-010) — one discrete justification per filter.
+  deadweightJustification: z.string().optional(),
+  attributionJustification: z.string().optional(),
+  displacementJustification: z.string().optional(),
+  dropoffJustification: z.string().optional(),
+  durationJustification: z.string().optional(),
 });
 
 export async function upsertSroiFilterSetAction(formData: FormData) {
@@ -26,6 +32,11 @@ export async function upsertSroiFilterSetAction(formData: FormData) {
     dropoffPct: (formData.get('dropoffPct') as string | null) || undefined,
     durationYears: formData.get('durationYears') ? Number(formData.get('durationYears')) : undefined,
     justification: (formData.get('justification') as string | null) || undefined,
+    deadweightJustification: (formData.get('deadweightJustification') as string | null) || undefined,
+    attributionJustification: (formData.get('attributionJustification') as string | null) || undefined,
+    displacementJustification: (formData.get('displacementJustification') as string | null) || undefined,
+    dropoffJustification: (formData.get('dropoffJustification') as string | null) || undefined,
+    durationJustification: (formData.get('durationJustification') as string | null) || undefined,
   };
 
   const parsed = FilterSetSchema.parse(raw);

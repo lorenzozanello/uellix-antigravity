@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 9/70: 0008_bored_pretty_boy.sql
+-- GENERATED — DO NOT EDIT. Unit 9/71: 0008_bored_pretty_boy.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0008_bored_pretty_boy.sql
