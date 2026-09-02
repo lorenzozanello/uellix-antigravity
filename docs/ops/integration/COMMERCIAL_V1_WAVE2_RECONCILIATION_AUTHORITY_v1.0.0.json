@@ -1,0 +1,2140 @@
+{
+  "artifact_id": "COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0",
+  "version": "1.0.0",
+  "authority_class": "CROSS_LINEAGE_RECONCILIATION_AUTHORITY",
+  "hpo_mission_id": "COMMERCIAL-V1-WAVE2-RECONCILIATION-R1",
+  "materialization_step": "HPO-ODS-W2-08",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "supersedes": null,
+  "refines": null,
+  "purpose": "Govern, BEFORE the merge is attempted, the reconciliation of the closed Wave2 B2/B3 methodology lineage (codex/w2-methodology-objects-r1 @ 102a75cc) into the already-integrated Commercial V1 Product lineage (integration/commercial-v1 @ d56d44a3) on the candidate branch codex/commercial-v1-wave2-reconciliation-r1. It pins the exact conflict set established by read-only git merge-tree, the semantic requirement of each side per path, the mandatory preservation criteria, the prohibited shortcuts, and the exact protected-path grant the ODS scope gate may resolve on this branch. It authorizes reconciliation ONLY of the paths it lists.",
+  "scope_note": "APPEND-ONLY. Does not rewrite, supersede, reinterpret or restate ODS_V1_AUTHORITY_v1.0.0.json, ODS_V1_MAINTENANCE_ADDENDUM v1.0.1..v1.0.8, any FIB/PC-01B/IM-01B artifact, docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json or any other Wave2 closure artifact, or the accepted Product integration audit (PR #48). HPO-ODS-W2-01 through W2-07 are FROZEN_UNCHANGED. The materialization step id HPO-ODS-W2-08 is the next sequential HPO-ODS-W2 identifier after the seven already frozen (W2-01..W2-07); it is bound to the HPO mission COMMERCIAL-V1-WAVE2-RECONCILIATION-R1, which is the human authorization for this artifact. Registering the grant in scripts/ods-scope.ts PROTECTED_GRANTS and extending the closed-world enumeration in tests/ods/ods-scope.test.ts (total count 4 -> 5, every existing assertion preserved byte-for-byte) is the established mechanical companion of every protected-path authority since HPO-ODS-W2-01 and is not a widening of that mechanism.",
+  "pins": {
+    "PRODUCT_INTEGRATED_BASE": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "PRODUCT_INTEGRATED_TREE": "a65f71a0e086eb17bcac038cc4d601591c5cca1a",
+    "PRODUCT_INTEGRATED_BRANCH": "integration/commercial-v1",
+    "PRODUCT_FIRST_PARENT_PREDECESSOR": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "PRODUCT_PARENT": "2474487faba0cfd4775af0cd6f4f5e3188101b04",
+    "WAVE2_SOURCE": "102a75cc044fb3e2c61249854f7f403cb066cab0",
+    "WAVE2_TREE": "c205b31700a944b7d5c673fa07ffaaeddb54a24c",
+    "WAVE2_BRANCH": "codex/w2-methodology-objects-r1",
+    "REMOTE_WAVE2_HEAD": "102a75cc044fb3e2c61249854f7f403cb066cab0",
+    "MERGE_BASE": "ba2f5fd2abb120885b3dce21c476203da1f1f151",
+    "MERGE_BASE_SUBJECT": "docs(ods): register final maintenance carry-forward",
+    "MAIN_HEAD": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "SUCCESSOR_BRANCH": "codex/commercial-v1-wave2-reconciliation-r1",
+    "SUCCESSOR_BASE": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "PREDICTED_AUTO_MERGE_TREE": "af20bdb5effd153797dff2afc14371e9978ae34e",
+    "forensics_method": "git merge-base; git diff-tree -r --name-status <merge-base> <side>; blob-id comparison per overlapping path (git rev-parse <side>:<path>); git merge-tree --write-tree --name-only <A> <B> (read-only, no merge state entered)."
+  },
+  "forensics": {
+    "A_CHANGED_FILES": 244,
+    "B_CHANGED_FILES": 230,
+    "A_ONLY_CHANGED_FILES": 120,
+    "B_ONLY_CHANGED_FILES": 106,
+    "OVERLAPPING_CHANGED_FILES": 124,
+    "OVERLAPPING_IDENTICAL_BLOB_FILES": 39,
+    "OVERLAPPING_CONTENT_DIFFERENT_FILES": 85,
+    "PREDICTED_CONFLICT_COUNT": 77,
+    "overlapping_content_different_but_auto_merged": [
+      "app/app/projects/[projectId]/pipeline/calculation/page.tsx",
+      "db/schema.ts",
+      "lib/audit/logger.ts",
+      "lib/pipeline/sroi-calculation.ts",
+      "lib/pipeline/sroi-results.ts",
+      "lib/stella/context/build-advisor-context.ts",
+      "lib/stella/context/build-composer-context.ts",
+      "lib/stella/context/build-validator-context.ts"
+    ],
+    "overlapping_identical_blob_files": [
+      "app/app/projects/[projectId]/pipeline/calculation/runs/__tests__/recordEvidenceSufficiencyDetermination.action.test.ts",
+      "app/app/projects/[projectId]/pipeline/calculation/runs/recordEvidenceSufficiencyDetermination.action.ts",
+      "app/app/projects/[projectId]/pipeline/evidence/__tests__/classifyEvidenceSensitivity.action.test.ts",
+      "app/app/projects/[projectId]/pipeline/evidence/__tests__/requestEvidenceErasure.action.test.ts",
+      "app/app/projects/[projectId]/pipeline/evidence/classifyEvidenceSensitivity.action.ts",
+      "app/app/projects/[projectId]/pipeline/evidence/page.tsx",
+      "app/app/projects/[projectId]/pipeline/evidence/requestEvidenceErasure.action.ts",
+      "app/app/projects/[projectId]/report/[reportId]/pdf/route.ts",
+      "app/app/projects/[projectId]/report/[reportId]/print/page.tsx",
+      "db/migrations/0048_fib_evidence_versions.sql",
+      "db/migrations/0049_fib_evidence_sensitivity_vocabulary.sql",
+      "db/migrations/0050_fib_evidence_sufficiency_determinations.sql",
+      "db/migrations/0051_fib_evidence_erasure_substrate.sql",
+      "db/migrations/0052_fib_evidence_sufficiency_run_binding.sql",
+      "db/migrations/meta/0048_snapshot.json",
+      "db/migrations/meta/0049_snapshot.json",
+      "db/migrations/meta/0050_snapshot.json",
+      "db/migrations/meta/0051_snapshot.json",
+      "db/migrations/meta/0052_snapshot.json",
+      "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json",
+      "lib/pipeline/confidence-score.ts",
+      "lib/pipeline/evidence-sufficiency.ts",
+      "lib/pipeline/evidence-versions.ts",
+      "lib/pipeline/evidence.ts",
+      "lib/reports/public-verify.ts",
+      "lib/stella/context/__tests__/build-advisor-context.parity.test.ts",
+      "lib/stella/context/__tests__/build-advisor-context.test.ts",
+      "lib/stella/context/__tests__/build-composer-context.test.ts",
+      "lib/stella/context/__tests__/build-reviewer-context.test.ts",
+      "lib/stella/context/__tests__/build-validator-context.test.ts",
+      "lib/stella/context/build-reviewer-context.ts",
+      "tests/evidence-page.sensitivity-erasure-reachability.test.tsx",
+      "tests/evidence-sufficiency.service.test.ts",
+      "tests/evidence-upload-compensation.test.ts",
+      "tests/evidence.service.test.ts",
+      "tests/public-verify.service.test.ts",
+      "tests/report-pdf-route.evidence-sensitivity.test.ts",
+      "tests/report-print-page.evidence-sensitivity.test.ts"
+    ],
+    "a_only_changed_files": [
+      "app/(authenticated)/app/onboarding/page.tsx",
+      "app/(public)/demo/page.tsx",
+      "app/(public)/layout.tsx",
+      "app/(public)/privacidad/page.tsx",
+      "app/(public)/privacy/page.tsx",
+      "app/(public)/terminos/page.tsx",
+      "app/(public)/terms/page.tsx",
+      "app/__tests__/not-found.test.tsx",
+      "app/actions/onboarding.ts",
+      "app/actions/stella/__tests__/advisor.test.ts",
+      "app/actions/stella/__tests__/composer.test.ts",
+      "app/actions/stella/__tests__/contextual-advisor.test.ts",
+      "app/actions/stella/__tests__/validator.test.ts",
+      "app/app/__tests__/loading.test.tsx",
+      "app/app/layout.tsx",
+      "app/app/loading.tsx",
+      "app/app/organization/onboarding/page.tsx",
+      "app/app/organization/settings/settings-form.tsx",
+      "app/app/projects/[projectId]/pipeline/StellaGroundedQuerySection.tsx",
+      "app/components/fx-sub-form/FxSubForm.tsx",
+      "app/components/investment-form/InvestmentRow.tsx",
+      "app/globals.css",
+      "app/layout.tsx",
+      "app/not-found.tsx",
+      "artifacts/baseline-rehearsal/latest.json",
+      "artifacts/hosted-a1-status.json",
+      "components/layout/Breadcrumbs.tsx",
+      "components/layout/MobileNav.tsx",
+      "components/layout/Sidebar.tsx",
+      "components/layout/__tests__/authenticated-shell-accessibility.test.ts",
+      "components/layout/__tests__/breadcrumbs.test.tsx",
+      "components/layout/__tests__/nav-links.test.ts",
+      "components/layout/__tests__/navigation-reachability.test.tsx",
+      "components/layout/nav-links.ts",
+      "components/marketing/DemoRequestForm.tsx",
+      "components/marketing/PipelineSection.tsx",
+      "components/marketing/ProblemSection.tsx",
+      "components/marketing/ProductPreviewSection.tsx",
+      "components/marketing/SocialProofSection.tsx",
+      "components/marketing/SroiDemoCalculator.tsx",
+      "components/marketing/TrustLayerSection.tsx",
+      "components/marketing/UseCasesSection.tsx",
+      "components/marketing/visuals/EvidenceDossier.tsx",
+      "components/onboarding/OrganizationOnboardingBlocked.tsx",
+      "components/onboarding/OrganizationOnboardingForm.tsx",
+      "components/states/ErrorState.tsx",
+      "components/stella/StellaContextualAdvisorPanel.tsx",
+      "components/stella/StellaGroundedQueryPanel.tsx",
+      "components/stella/__tests__/NarrativePage.contextual.integration.test.tsx",
+      "components/stella/__tests__/StellaContextualAdvisorPanel.test.tsx",
+      "components/stella/__tests__/StellaGroundedQueryPanel.test.tsx",
+      "components/stella/__tests__/StellaValidatorPanel.test.tsx",
+      "components/ui/card.tsx",
+      "db/hosted/baseline-postconditions.ts",
+      "db/hosted/baseline-recovery.ts",
+      "db/hosted/bootstrap-postconditions.ts",
+      "db/hosted/global-catalog-seeds.ts",
+      "db/hosted/hosted-package-manifest.ts",
+      "db/hosted/hosted-provisioning-runner.ts",
+      "db/hosted/managed-role-identities.ts",
+      "db/migrations/0044_fib_audit_hardening_supersession.sql",
+      "db/prepared/README.md",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql",
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+      "db/prepared/stella_hosted_0000_rollback.sql",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+      "db/prepared/stella_hosted_0001_rollback.sql",
+      "docs/ops/CREDENTIAL_HYGIENE.md",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.3.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.5.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.6.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.7.json",
+      "docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json",
+      "docs/ops/reeng/RE_SAFE_NOW_CLOSURE_v1.0.0.json",
+      "docs/ops/reeng/RE_U0_DELTA_RECONCILIATION_v1.0.0.json",
+      "docs/ops/reeng/RE_U1_UX_UI_DELTA_AUDIT_v1.0.0.json",
+      "docs/ops/reeng/RE_U3_INFORMATION_ARCHITECTURE_DELTA_v1.0.0.json",
+      "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.0.json",
+      "docs/ops/reeng/RE_U4_COMMERCIAL_V1_JOURNEY_DELTA_v1.0.1_ADDENDUM.json",
+      "lib/email/templates/invitation.ts",
+      "lib/pipeline/sroi-remediation-destinations.test.ts",
+      "lib/reports/pdf/ReportPdfDocument.tsx",
+      "lib/stella/__tests__/anti-regression.test.ts",
+      "scripts/baseline-rehearsal-local.ts",
+      "scripts/ods-scope.ts",
+      "scripts/rehearsal/local-supabase-shim.sql",
+      "tests/auth/onboarding-escape-path.test.tsx",
+      "tests/auth/phase2-onboarding-trap.test.tsx",
+      "tests/cross-workstream/multicategory-quota.test.ts",
+      "tests/database-insert-policy-scope.test.ts",
+      "tests/database-role-safety.test.ts",
+      "tests/design-system/form-accessibility.test.tsx",
+      "tests/design-system/governed-typography.test.ts",
+      "tests/design-system/navy-token.test.ts",
+      "tests/design-system/stella-copy-and-color.test.ts",
+      "tests/e2e/g04-governed-evidence-journey.e2e.test.ts",
+      "tests/e2e/stella-multicategory-quota.e2e.test.ts",
+      "tests/e2e/stella-ticket-journey.e2e.test.ts",
+      "tests/eval/stella-release/hosted-release-gate.test.ts",
+      "tests/eval/stella-release/hosted-release-gate.ts",
+      "tests/fib-audit-migrations.test.ts",
+      "tests/hosted/baseline-postconditions.test.ts",
+      "tests/hosted/baseline-recovery.test.ts",
+      "tests/hosted/chain-evidence.test.ts",
+      "tests/hosted/checkpoint-a1.test.ts",
+      "tests/hosted/checkpoint-b0.test.ts",
+      "tests/hosted/global-catalog-seeds.test.ts",
+      "tests/hosted/hosted-managed-role-attributes.test.ts",
+      "tests/hosted/hosted-package-manifest.test.ts",
+      "tests/hosted/hosted-provisioning-runner.test.ts",
+      "tests/hosted/managed-compatibility.test.ts",
+      "tests/hosted/managed-role-identities.test.ts",
+      "tests/ods/ods-scope.test.ts",
+      "tests/onboarding-complete-action.test.ts",
+      "tests/onboarding-page.test.tsx",
+      "tests/prepared-stella-sql.test.ts",
+      "tests/scan-secrets.test.ts",
+      "tests/security/sec-dev-01-secret-assertion-safety.test.ts"
+    ],
+    "b_only_changed_files": [
+      ".claude/skills/uellix-focused-reaudit/SKILL.md",
+      ".claude/skills/uellix-golden-e2e/SKILL.md",
+      ".claude/skills/uellix-mission-loop/SKILL.md",
+      ".claude/skills/uellix-preflight/SKILL.md",
+      ".claude/skills/uellix-product-vertical/SKILL.md",
+      ".claude/skills/uellix-test-manifest/SKILL.md",
+      "app/(public)/verify/[hash]/page.tsx",
+      "app/actions/stella/composer.ts",
+      "app/admin/proxies/actions.ts",
+      "app/admin/proxies/page.tsx",
+      "app/api/proxies/[id]/suggest/route.ts",
+      "app/app/projects/[projectId]/pipeline/calculation/compare/page.tsx",
+      "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts",
+      "app/app/projects/[projectId]/pipeline/calculation/upsertSroiFilterSet.action.ts",
+      "app/app/projects/[projectId]/pipeline/outcomes/page.tsx",
+      "app/app/projects/[projectId]/pipeline/proxies/createFinancialProxy.action.ts",
+      "app/app/projects/[projectId]/pipeline/proxies/evaluateProxyRubric.action.ts",
+      "app/app/projects/[projectId]/pipeline/proxies/page.tsx",
+      "app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxy.action.ts",
+      "db/migrations/0053_fib_proxy_versions_provenance.sql",
+      "db/migrations/0054_fib_proxy_rubric_constraints.sql",
+      "db/migrations/0055_fib_proxy_material_change_registry.sql",
+      "db/migrations/0056_fib_proxy_material_fields_editability.sql",
+      "db/migrations/0057_fib_outcome_materiality_classification.sql",
+      "db/migrations/0058_fib_filter_set_justification_columns.sql",
+      "db/migrations/0059_fib_outcome_monetization_dispositions.sql",
+      "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+      "db/migrations/meta/0053_snapshot.json",
+      "db/migrations/meta/0054_snapshot.json",
+      "db/migrations/meta/0055_snapshot.json",
+      "db/migrations/meta/0056_snapshot.json",
+      "db/migrations/meta/0057_snapshot.json",
+      "db/migrations/meta/0058_snapshot.json",
+      "db/migrations/meta/0059_snapshot.json",
+      "db/migrations/meta/0060_snapshot.json",
+      "db/policies/010_proxy_material_fields_registry_rls.sql",
+      "db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql",
+      "db/prepared/journal/066_0054_fib_proxy_rubric_constraints.sql",
+      "db/prepared/journal/067_0055_fib_proxy_material_change_registry.sql",
+      "db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql",
+      "db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql",
+      "db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql",
+      "db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql",
+      "db/prepared/journal/072_0059_fib_outcome_monetization_dispositions.sql",
+      "db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql",
+      "db/safety/disposable-audit-target.ts",
+      "docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json",
+      "docs/ops/ods/ODS_PROGRAM_STATE_REGISTRY_v1.0.0.json",
+      "docs/ops/ods/UELLIX_DEV_OS_OPERATING_MODEL_v1.0.0.md",
+      "docs/ops/ods/UELLIX_DEV_OS_PROMPT_EXAMPLES_v1.0.0.md",
+      "docs/ops/ods/UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0.json",
+      "docs/ops/ods/UELLIX_TEST_MANIFEST_TEMPLATE_v1.0.0.json",
+      "docs/ops/wave2/W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0.json",
+      "docs/ops/wave2/W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0.json",
+      "docs/ops/wave2/W2_B3_FOCUSED_ADVERSARIAL_CLOSURE_AUDIT_v1.0.0.json",
+      "docs/ops/wave2/W2_B3_TEST_MANIFEST.json",
+      "docs/ops/wave2/W2_B3_TEST_MANIFEST_v2.json",
+      "lib/admin/proxies.ts",
+      "lib/auth/permissions.ts",
+      "lib/pipeline/financial-proxy-rubric.ts",
+      "lib/pipeline/financial-proxy-versions.ts",
+      "lib/pipeline/governed-model-registry.test.ts",
+      "lib/pipeline/governed-model-registry.ts",
+      "lib/pipeline/outcomes.ts",
+      "lib/pipeline/proxies.ts",
+      "lib/pipeline/proxy-material-change.ts",
+      "lib/portfolios/analytics.test.ts",
+      "lib/portfolios/analytics.ts",
+      "lib/stella/context/types.ts",
+      "lib/stella/prompts/composer-system.ts",
+      "lib/stella/prompts/reviewer-system.ts",
+      "lib/stella/prompts/validator-system.ts",
+      "lib/stella/schemas/composer-numeric-guard.ts",
+      "package.json",
+      "scripts/audit-batch.ts",
+      "scripts/db-audit-disposable.ts",
+      "scripts/ods-integration-plan.ts",
+      "scripts/ods-program-state.ts",
+      "scripts/ods-test-diff.ts",
+      "tests/admin-proxies-page.reachability.test.tsx",
+      "tests/admin-proxies.service.test.ts",
+      "tests/assignment-version-immutability.test.ts",
+      "tests/b2-remediation-sentinels.test.ts",
+      "tests/b3-completeness.no-ratio.test.ts",
+      "tests/b3-completeness.ui.test.tsx",
+      "tests/financial-proxy-rubric.service.test.ts",
+      "tests/financial-proxy-versions.service.test.ts",
+      "tests/org-proxies-page.reachability.test.tsx",
+      "tests/outcomes.service.test.ts",
+      "tests/postgres/b2-remediation.pg.test.ts",
+      "tests/postgres/b3-completeness-harness.ts",
+      "tests/postgres/b3-completeness.pg.test.ts",
+      "tests/postgres/b3-completeness.probes.json",
+      "tests/postgres/disposable-db.ts",
+      "tests/proxies.service.test.ts",
+      "tests/proxy-approval-race.service.test.ts",
+      "tests/proxy-editorial-noop.service.test.ts",
+      "tests/proxy-material-categories.service.test.ts",
+      "tests/proxy-material-change.service.test.ts",
+      "tests/proxy-material-fields-registry.test.ts",
+      "tests/proxy-suggest-route.test.ts",
+      "tests/review-status-mapping.test.ts",
+      "tests/sroi-calculation.golden.test.ts",
+      "tests/sroi-calculation.service.test.ts"
+    ],
+    "lineage_note": "The Product-integrated line already carries the closed Wave2 B1 state (migrations 0048-0052, evidence services, W2_B1 authority) as identical blobs — HPO-ODS-W2-02 transported it. Wave2 B2/B3 (0053-0060, proxies, materiality, dispositions, filter justification) exists only on the Wave2 line. The Product line alone carries the main security closeout (f7bbba4 / PR #47), HPO-ODS-W2-03..W2-07 (0044 guard, managed role identities, global-catalog closed world, release-gate repoint, B0 probe regeneration), the Commercial V1 product/onboarding/design work and the post-audit B0/CI fixes."
+  },
+  "reconciliation_policy": {
+    "A": "Production security closeout from main (f7bbba4, PR #47) must survive.",
+    "B": "Accepted Product integration semantics (PR #48) and its post-audit B0/CI fixes must survive.",
+    "C": "Closed Wave2 B2/B3 methodology semantics must be incorporated intact.",
+    "D": "A path changed independently on both lines is NEVER resolved by choosing a whole side without semantic comparison; a whole-side blob is taken only where read-only forensics proved it a strict superset of the other side (recorded per path below).",
+    "E": "Migrations already closed in Wave2 (0053-0060 and policy 010) are preserved exactly, numbering intact; the Product line added no migration after 0052, so no numbering collision exists. Any collision discovered at merge time is a STOP.",
+    "F": "Calculation control: the system calculates; Stella may analyze/explain but never becomes calculation authority.",
+    "G": "NULL/unknown != 0 (AG-B3-2 no-ratio null, AG-B3-4 FILTER_VALUE_UNKNOWN on the authoritative path).",
+    "H": "Historical evidence cannot be rewritten: every docs/ops/wave2/**, docs/ops/reeng/**, docs/ops/ods/** artifact of either side lands as its own exact blob.",
+    "I": "Human approval boundaries cannot be weakened (evidence sufficiency at approval, approved-run disposition immutability, analyst+/impact_manager+/organization_admin+ floors).",
+    "J": "Tenant isolation and authorization cannot regress (org-scoped predicates, RLS policies 0048-0060/010, database entry-point identity contexts; allowlisted entry points stay at 16)."
+  },
+  "high_risk_paths": [
+    {
+      "path": "lib/pipeline/sroi-calculation.ts",
+      "conflicted": false,
+      "status": "AUTO_MERGED_VERIFIED_READ_ONLY",
+      "note": "Extracted from the predicted auto-merge tree and diffed against the Wave2 blob: the only difference is the Product-side pure extraction buildReadinessIssues (RE-U1 U1-F04 / RE-U4 sroi_remediation_matrix) with project-scoped CTAs; every Wave2 B2/B3 semantic (bound-version monetary resolution, FIBIU-08 version approval double-assertion, materiality exclusion, FILTER_VALUE_UNKNOWN authoritative semantics, null no-ratio, itemized skips, dispositions, coverage) is byte-identical to Wave2. No duplicated definitions. Must still be audited function-by-function after the merge (Phase 7) and covered by tests/sroi-calculation.golden.test.ts, tests/sroi-calculation.service.test.ts, tests/b3-completeness.no-ratio.test.ts, lib/pipeline/sroi-remediation-destinations.test.ts."
+    },
+    {
+      "path": "lib/pipeline/sroi-results.ts",
+      "conflicted": false,
+      "status": "AUTO_MERGED",
+      "note": "Both sides carry the identical B1 assertEvidenceSufficiencyForApproval; Wave2 adds the null-safe compareCalculationRuns ratio delta."
+    },
+    {
+      "path": "db/schema.ts",
+      "conflicted": false,
+      "status": "AUTO_MERGED",
+      "note": "Both sides carry the identical B1 tables; Wave2 adds B2/B3 tables/columns."
+    },
+    {
+      "path": "lib/audit/logger.ts",
+      "conflicted": false,
+      "status": "AUTO_MERGED",
+      "note": "Both sides add the B1 actions identically; Wave2 adds B2/B3 actions."
+    },
+    {
+      "path": "lib/stella/context/build-*-context.ts",
+      "conflicted": false,
+      "status": "AUTO_MERGED",
+      "note": "Both sides carry the identical B1 sensitivity governance; Wave2 adds B3 context types. Stella remains explanatory, never calculation authority (policy F)."
+    }
+  ],
+  "conflict_paths": [
+    {
+      "path": "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx",
+      "domain": "PRODUCT_UI/ACTIONS",
+      "conflict_kind": "content",
+      "product_side_requirement": "W2-B1-R4 evidence-sufficiency panel bound to THIS run (recordEvidenceSufficiencyDetermination, canDetermineEvidenceSufficiency), run-unambiguous monetizedOutcomeIds from immutable line items.",
+      "wave2_side_requirement": "Everything on the Product side PLUS FIBIU-12/W2-B3 completeness: monetization coverage panel rendered BEFORE approval, per-outcome disposition (analyst+ floor, read-only once approved), explicit no-ratio state (\"Sin ratio SROI\", never \"—\" and never 0.00:1).",
+      "mandatory_preservation": "Read-only forensics measured git diff A..B on this path as strictly additive except three lines B expands (two import lines, the sroiRatio display). Resolution takes the Wave2 blob only because it is a verified superset of the Product blob; the sufficiency panel, its hidden run binding and the canDetermineEvidenceSufficiency gate must remain byte-identical to the Product side.",
+      "prohibited_shortcuts": [
+        "taking the Product blob (would drop closed B3 coverage/no-ratio semantics)",
+        "editing either panel's semantics"
+      ],
+      "expected_verification": [
+        "tests/run-detail-page.sufficiency-reachability.test.tsx",
+        "tests/b3-completeness.ui.test.tsx",
+        "tests/b3-completeness.no-ratio.test.ts",
+        "pnpm typecheck",
+        "pnpm build"
+      ]
+    },
+    {
+      "path": "db/hosted/baseline-manifest.ts",
+      "domain": "DATABASE_SCHEMA/MIGRATIONS",
+      "conflict_kind": "content",
+      "product_side_requirement": "HPO-ODS-W2-03: unit 0044 re-pinned to sha256 bf9023f06f697422ba50a70c1482ab159e1989b910dd3d0ddf9d18671fe80510 with expect.triggersCreatedCount 5 and the guarded-pair managedNote/rollback text; units 60-64 (0048-0052) appended.",
+      "wave2_side_requirement": "Units 60-64 (0048-0052, identical to Product) plus units 65-73 (0053, 0054, 0055[dml global-catalog], 0056[dml global-catalog, 2 seeds], policy 010, 0057, 0058, 0059, 0060) with their closed managedNote/expect/dependsOn.",
+      "mandatory_preservation": "Product 0044 hunk (hash, expect, note, rollback) kept verbatim; Wave2 units 60-73 kept verbatim and in order; ordinals 1..73 contiguous; no unit renumbered; BASELINE_ORDER derived. Verified by diffing the resolution against each parent: vs Wave2 only the 0044 hunk differs, vs Product only the appended 65-73 block differs.",
+      "prohibited_shortcuts": [
+        "whole-file ours/theirs",
+        "renumbering",
+        "reclassifying dml of any unit",
+        "editing sha256 pins by hand except restoring A's 0044 pin"
+      ],
+      "expected_verification": [
+        "pnpm baseline:verify",
+        "tests/hosted/baseline-manifest.test.ts",
+        "tests/hosted/managed-compatibility.test.ts",
+        "tests/hosted/global-catalog-seeds.test.ts"
+      ]
+    },
+    {
+      "path": "db/migrations/meta/_journal.json",
+      "domain": "DATABASE_SCHEMA/MIGRATIONS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Drizzle journal entries idx 48-52 (0048-0052).",
+      "wave2_side_requirement": "Drizzle journal entries idx 48-60 (0048-0060); 48-52 byte-identical to Product.",
+      "mandatory_preservation": "The Wave2 entry list is an exact superset (identical prefix) of the Product list, measured read-only. Resolution keeps idx 0-60 exactly as Wave2 pins them; no idx renumbered, no `when` timestamp altered, 0057-0060 present exactly once.",
+      "prohibited_shortcuts": [
+        "renumbering a closed migration",
+        "dropping or reordering an entry"
+      ],
+      "expected_verification": [
+        "tests/fib-audit-migrations.test.ts",
+        "tests/hosted/baseline-manifest.test.ts (Drizzle discovery equals manifest)",
+        "pnpm baseline:verify"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/001_0000_quick_husk.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/002_0001_noisy_chameleon.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/003_0002_huge_namorita.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/004_0003_curvy_tempest.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/005_0004_thick_mentor.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/008_0007_black_imperial_guard.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/011_0010_crazy_warhawk.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/013_0012_stella_interactions.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/014_0013_performance_indexes.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/015_0014_fine_blade.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/018_0017_striped_legion.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/019_0018_redundant_firebird.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/020_0019_lazy_overlord.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/022_0021_glorious_sandman.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/023_0022_abandoned_karma.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/027_0026_violet_selene.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/028_0027_little_midnight.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/030_0029_integrity.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/031_0030_immutability.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/032_0031_rls_core.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/033_0032_rls_specialized.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/034_0033_public_api_grants.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/035_0034_phase3_white_label.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/037_0036_phase2_onboarding.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/038_0037_phase1_stripe.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/041_20260716000001_storage_policies.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/043_001_initial_auth_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/044_002_stella_interactions_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/046_004_fx_tables_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/047_005_theory_of_change_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/048_006_methodology_review_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/049_007_taxonomy_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/050_008_marketing_leads_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/051_0040_governed_model_registry.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Generated by scripts/journal-artifacts.ts from the 64-unit Product-integrated manifest (header \"Unit N/64\"); unit 055 embeds the HPO-ODS-W2-03 0044 to_regclass-guarded content and its re-pinned sha256.",
+      "wave2_side_requirement": "Generated from the 73-unit Wave2 manifest (header \"Unit N/73\"); unit 055 embeds the pre-HPO-ODS-W2-03 0044 content.",
+      "mandatory_preservation": "The wrapper is NEVER hand-edited. It is regenerated by the canonical generator (pnpm journal:generate) from the reconciled manifest (73 units, A's 0044 content) and verified byte-for-byte by pnpm journal:verify; the resulting header reads \"Unit N/73\" and unit 055 embeds A's guarded 0044.",
+      "prohibited_shortcuts": [
+        "whole-file ours",
+        "whole-file theirs",
+        "hand-editing the generated header",
+        "skipping journal:verify"
+      ],
+      "expected_verification": [
+        "pnpm journal:verify",
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "tests/audit-action-contract.test.ts",
+      "domain": "TESTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "FIBIU-05 content-modifying sites (evidence.sensitivity_classified / treatment_recorded).",
+      "wave2_side_requirement": "The same FIBIU-05 sites PLUS the lib/admin correspondence scan root (MNB-1) and the FIBIU-12 content-modifying site in lib/pipeline/sroi-calculation.ts.",
+      "mandatory_preservation": "Union: Wave2 blob is a verified superset of the Product blob; take it unchanged. No site removed, no scan root removed.",
+      "prohibited_shortcuts": [
+        "dropping any CONTENT_MODIFYING_SITES row",
+        "dropping the lib/admin scan root"
+      ],
+      "expected_verification": [
+        "tests/audit-action-contract.test.ts",
+        "tests/b2-remediation-sentinels.test.ts"
+      ]
+    },
+    {
+      "path": "tests/database-entrypoint-inventory.json",
+      "domain": "SECURITY",
+      "conflict_kind": "content",
+      "product_side_requirement": "Registers app/app/organization/onboarding/page.tsx (contextualized) plus the three W2-B1 actions; checkedModules 130 / databaseReaching 106.",
+      "wave2_side_requirement": "Registers the three W2-B1 actions plus recordOutcomeMonetizationDisposition, evaluateProxyRubric, updateFinancialProxy (all contextualized); checkedModules 131 / databaseReaching 108.",
+      "mandatory_preservation": "Union of module rows (every row from both sides, all `contextualized`, no allowlist row added). The two counters are RE-MEASURED by the AST scanner in tests/database-runtime-entrypoints.test.ts on the merged tree, never summed by hand; the deliberate-registration invariant (a new database-reaching module must be inventoried) is not weakened.",
+      "prohibited_shortcuts": [
+        "adding an allowlist row",
+        "hand-summing counters",
+        "deleting a row"
+      ],
+      "expected_verification": [
+        "tests/database-runtime-entrypoints.test.ts",
+        "tests/database-entrypoint-safety.test.ts",
+        "tests/database-role-safety.test.ts"
+      ]
+    },
+    {
+      "path": "tests/database-runtime-entrypoints.test.ts",
+      "domain": "SECURITY",
+      "conflict_kind": "content",
+      "product_side_requirement": "Pins {inventoried 128, reaching 103, contextualized 87, allowlisted 16} with the organization/onboarding derivation comment.",
+      "wave2_side_requirement": "Pins {inventoried 130, reaching 105, contextualized 89, allowlisted 16} with the B2/B3 derivation comments.",
+      "mandatory_preservation": "Both derivation comments preserved; the pinned figures re-derived by measurement on the merged tree (expected 131/106/90/16 — one Product page + three Wave2 actions on top of the shared B1 base; allowlisted MUST remain 16). Any other measured value is a STOP, not a pin adjustment.",
+      "prohibited_shortcuts": [
+        "loosening to >=",
+        "raising allowlisted",
+        "skipping the assertion"
+      ],
+      "expected_verification": [
+        "tests/database-runtime-entrypoints.test.ts (positive: pinned figures; negative: allowlisted unchanged at 16)"
+      ]
+    },
+    {
+      "path": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "domain": "TESTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "unitCount 64, dmlUnits through 0048, literalRowSources 1.",
+      "wave2_side_requirement": "unitCount 69 (stale vs Wave2's own 73-unit corpus, a Wave2 known condition), dmlUnits through 0056, literalRowSources 4.",
+      "mandatory_preservation": "Re-derived against the RECONCILED corpus by measurement: 73 units, 73 superuser-free, dmlUnits [0018, 0040, 0041, 0047, 0048, 0055, 0056], literalRowSources 4, serviceRoleGranters [0033] only, mustNotRunUnits []. All six gates must PASS (rehearsal re-executed on a disposable cluster against the reconciled manifest digest).",
+      "prohibited_shortcuts": [
+        "registering the rehearsal-stale failure as a known condition instead of re-running the rehearsal",
+        "loosening any expectation"
+      ],
+      "expected_verification": [
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "pnpm baseline:rehearsal:local (disposable Docker cluster, pinned image)"
+      ]
+    },
+    {
+      "path": "tests/eval/stella-release/hosted-baseline-gate.ts",
+      "domain": "TESTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "HPO-ODS-W2-03 uellixRoles probe (MANAGED_ROLE_IDENTITIES) in the first-provisioning plan; 65 steps; manifestOk === 64; EXPECTED_DML_UNITS through 0048; literalRowSources === 1.",
+      "wave2_side_requirement": "70 steps; manifestOk === 69; EXPECTED_DML_UNITS through 0056; literalRowSources === 4.",
+      "mandatory_preservation": "Product's uellixRoles probe import and field are kept verbatim (security/provisioning closeout). Counts re-derived against the reconciled corpus: 74 steps (73 units + journal bootstrap), manifestOk === 73, EXPECTED_DML_UNITS [0018, 0040, 0041, 0047, 0048, 0055, 0056], literalRowSources === 4, detail strings updated to describe seven DML units and the 73-unit rehearsal.",
+      "prohibited_shortcuts": [
+        "dropping the uellixRoles probe",
+        "loosening a count to >="
+      ],
+      "expected_verification": [
+        "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+        "tests/hosted/hosted-provisioning-runner.test.ts"
+      ]
+    },
+    {
+      "path": "tests/evidence-erasure-multiversion.service.test.ts",
+      "domain": "TESTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Post-audit CI hardening (5f17b98): mock helpers typed without `any` (DrizzleTableRef, DrizzleConditionNode, ResultChain, OrganizationContext cast).",
+      "wave2_side_requirement": "Same test bodies with `any`-typed mock helpers.",
+      "mandatory_preservation": "git diff A..B is type annotations only (no assertion differs). Resolution takes the Product blob: identical test semantics, lint-hardened.",
+      "prohibited_shortcuts": [
+        "reintroducing `any`",
+        "dropping any test case"
+      ],
+      "expected_verification": [
+        "tests/evidence-erasure-multiversion.service.test.ts",
+        "pnpm lint"
+      ]
+    },
+    {
+      "path": "tests/hosted/baseline-journal-wrapper.test.ts",
+      "domain": "TESTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "BASELINE_UNITS/BASELINE_ORDER length 64.",
+      "wave2_side_requirement": "Length 73 with the B2/B3 derivation comment.",
+      "mandatory_preservation": "Wave2 blob (73 = the reconciled corpus; the Wave2 comment already carries the 64 derivation). Re-measured on the merged tree.",
+      "prohibited_shortcuts": [
+        "loosening"
+      ],
+      "expected_verification": [
+        "tests/hosted/baseline-journal-wrapper.test.ts",
+        "pnpm journal:verify"
+      ]
+    },
+    {
+      "path": "tests/hosted/baseline-manifest.test.ts",
+      "domain": "TESTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "64 units: 53 Drizzle, 2 Supabase, 9 policies; DML whitelist through 0048; ordinals 1..64.",
+      "wave2_side_requirement": "73 units: 61 Drizzle, 2 Supabase, 10 policies; novel policies 008/009/010; DML whitelist [0018, 0040, 0041, 0047, 0048, 0055, 0056]; ordinals 1..73.",
+      "mandatory_preservation": "Wave2 blob describes the reconciled corpus exactly (Product added no unit, only re-pinned 0044). Take it; every count is re-measured by the test itself against the checked-in files.",
+      "prohibited_shortcuts": [
+        "loosening",
+        "removing a DML-whitelist assertion"
+      ],
+      "expected_verification": [
+        "tests/hosted/baseline-manifest.test.ts",
+        "pnpm baseline:verify"
+      ]
+    },
+    {
+      "path": "tests/hosted/operator-runner.test.ts",
+      "domain": "TESTS",
+      "conflict_kind": "content",
+      "product_side_requirement": "BASELINE_UNITS length 64.",
+      "wave2_side_requirement": "Length 69 (stale vs Wave2's 73-unit corpus).",
+      "mandatory_preservation": "Re-derived to 73 by measurement of the reconciled manifest, carrying both derivation comments.",
+      "prohibited_shortcuts": [
+        "loosening"
+      ],
+      "expected_verification": [
+        "tests/hosted/operator-runner.test.ts"
+      ]
+    },
+    {
+      "path": "tests/run-detail-page.sufficiency-reachability.test.tsx",
+      "domain": "TESTS",
+      "conflict_kind": "add/add",
+      "product_side_requirement": "Sufficiency-panel reachability suite with the sroi-calculation mock exposing detectRunInputDrift.",
+      "wave2_side_requirement": "Same suite; the mock additionally exposes getRunMonetizationCoverage (empty coverage) and MONETIZATION_REASON_VALUES because the page now renders the coverage panel.",
+      "mandatory_preservation": "git diff A..B is purely additive (mock members). Take the Wave2 blob; every Product assertion is preserved.",
+      "prohibited_shortcuts": [
+        "dropping an assertion"
+      ],
+      "expected_verification": [
+        "tests/run-detail-page.sufficiency-reachability.test.tsx"
+      ]
+    }
+  ],
+  "semantic_reconciliation_paths": [
+    {
+      "path": "db/hosted/global-catalog-seeds.ts",
+      "domain": "AUTHORITY/GOVERNANCE",
+      "reason": "HPO-ODS-W2-04 closed-world registry (Product) vs Wave2 units 0055 and 0056 classified dml=global-catalog. The registry must gain one spec per (unit, table) seed, derived from the migration text: 0055 -> public.proxy_material_fields_registry 39 rows (registry_version 1.0.0); 0056 -> public.proxy_material_fields_registry 70 rows (registry_version 1.1.0) and public.governed_model_registry 1 row (governed model append). expectedRowCountsFromClosedWorld must SUM per table (governed_model_registry 8+1=9, proxy_material_fields_registry 39+70=109) and the duplicate check must key on (unit, table). Hash pins are the manifest's own sha256 for 0055/0056, re-derived from the files on disk.",
+      "prohibited": [
+        "reclassifying dml",
+        "a table-name allowlist",
+        "a >0 expectation"
+      ],
+      "verification": [
+        "tests/hosted/global-catalog-seeds.test.ts",
+        "tests/hosted/baseline-postconditions.test.ts",
+        "tests/hosted/checkpoint-b0.test.ts",
+        "pnpm baseline:rehearsal:local (B0-11 zero-production-data measured live)"
+      ]
+    },
+    {
+      "path": "tests/hosted/global-catalog-seeds.test.ts",
+      "domain": "TESTS",
+      "reason": "Re-derive the closed-world assertions for three specs (0040, 0055, 0056x2); keep every negative control (N4, N5a, N5b, N6, file mismatch) and add the same shape for the new specs; the independent tuple-count scan runs per spec."
+    },
+    {
+      "path": "tests/hosted/baseline-postconditions.test.ts",
+      "domain": "TESTS",
+      "reason": "Its B0-11 fixtures assume one spec per table (GLOBAL_CATALOG_SEED_SPECS.find by table); re-derive to the summed per-table expectation; every negative control (+1/-1/+5 rows, row on a non-seed table) is preserved and extended to every seeded table."
+    },
+    {
+      "path": "tests/hosted/checkpoint-b0.test.ts",
+      "domain": "TESTS",
+      "reason": "Same single-spec-per-table fixture assumption; re-derive to the summed expectation; the committed observation SQL must equal the regenerated SQL."
+    },
+    {
+      "path": "db/prepared/checkpoint-b0/observation.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Regenerated ONLY by the canonical generator (pnpm b0:observation:generate) because 0053-0060 add tables to the corpus deriveExpectedBaselineState enumerates; verified by pnpm b0:observation:verify. Protected path — covered by the grant below."
+    },
+    {
+      "path": "artifacts/baseline-rehearsal/latest.json",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Re-executed by pnpm baseline:rehearsal:local on a disposable Docker cluster (pinned image, --network none) against the reconciled 73-unit manifest digest, so hosted-baseline-rehearsal-ready measures the reconciled corpus (rehearsalFresh=true, appliedAll, B0 postconditions clean). No hosted database is touched."
+    },
+    {
+      "path": "db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Wave2-only wrapper; expected byte-identical after regeneration (73-unit corpus unchanged in count)."
+    },
+    {
+      "path": "db/prepared/journal/066_0054_fib_proxy_rubric_constraints.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/067_0055_fib_proxy_material_change_registry.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/072_0059_fib_outcome_monetization_dispositions.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql",
+      "domain": "GENERATED_ARTIFACTS",
+      "reason": "Same as 065."
+    },
+    {
+      "path": "scripts/ods-scope.ts",
+      "domain": "AUTHORITY/GOVERNANCE",
+      "reason": "Register the HPO-ODS-W2-08 grant below in PROTECTED_GRANTS (additive entry; no existing grant modified)."
+    },
+    {
+      "path": "tests/ods/ods-scope.test.ts",
+      "domain": "TESTS",
+      "reason": "Extend the closed-world grant enumeration (4 -> 5) mirroring the existing per-grant assertion shape; no existing assertion changed."
+    },
+    {
+      "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json",
+      "domain": "AUTHORITY/GOVERNANCE",
+      "reason": "This artifact (committed before the merge)."
+    },
+    {
+      "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.0.json",
+      "domain": "AUTHORITY/GOVERNANCE",
+      "reason": "Successor integration test manifest (Phase 10), committed before the merge commit; it pins the actual conflict set, changed high-risk paths and controls R1..R16."
+    },
+    {
+      "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.0.json",
+      "domain": "AUTHORITY/GOVERNANCE",
+      "reason": "Successor evidence artifact (gate outputs, measured figures, resolution records). Integration evidence is a successor artifact — never a rewrite of Wave2 or Product audit conclusions."
+    }
+  ],
+  "contingency": "If the merge produces any conflict path not listed in conflict_paths, or validation requires touching a path not listed in conflict_paths or semantic_reconciliation_paths, the pending merge is ABORTED (git merge --abort), the finding is recorded, and an append-only successor authority (v1.0.1) is committed BEFORE the merge is re-attempted. No path is ever added to this artifact after the fact.",
+  "protected_grant": {
+    "authorityId": "HPO-ODS-W2-08",
+    "branch": "codex/commercial-v1-wave2-reconciliation-r1",
+    "semantics": "Exact literal protected paths by which the reconciliation merge commit differs from EITHER parent (first parent: the successor pre-merge lineage on codex/commercial-v1-wave2-reconciliation-r1; second parent: 102a75cc044fb3e2c61249854f7f403cb066cab0). Wave2-side entries are the closed B2/B3 migrations, snapshots, journal and wrappers landing on this branch; Product-side entries are HPO-ODS-W2-03/W2-07 protected paths landing relative to the Wave2 parent; the single reconciliation-generated protected path is db/prepared/checkpoint-b0/observation.sql (regeneration). No glob. Does not authorize any other db/migrations/**, db/prepared/**, db/baseline/** or frozen-authority path, any new migration, or any hand edit of a generated file.",
+    "pattern_count": 98,
+    "patterns": [
+      "db/migrations/0044_fib_audit_hardening_supersession.sql",
+      "db/migrations/0053_fib_proxy_versions_provenance.sql",
+      "db/migrations/0054_fib_proxy_rubric_constraints.sql",
+      "db/migrations/0055_fib_proxy_material_change_registry.sql",
+      "db/migrations/0056_fib_proxy_material_fields_editability.sql",
+      "db/migrations/0057_fib_outcome_materiality_classification.sql",
+      "db/migrations/0058_fib_filter_set_justification_columns.sql",
+      "db/migrations/0059_fib_outcome_monetization_dispositions.sql",
+      "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+      "db/migrations/meta/0053_snapshot.json",
+      "db/migrations/meta/0054_snapshot.json",
+      "db/migrations/meta/0055_snapshot.json",
+      "db/migrations/meta/0056_snapshot.json",
+      "db/migrations/meta/0057_snapshot.json",
+      "db/migrations/meta/0058_snapshot.json",
+      "db/migrations/meta/0059_snapshot.json",
+      "db/migrations/meta/0060_snapshot.json",
+      "db/migrations/meta/_journal.json",
+      "db/prepared/README.md",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql",
+      "db/prepared/journal/001_0000_quick_husk.sql",
+      "db/prepared/journal/002_0001_noisy_chameleon.sql",
+      "db/prepared/journal/003_0002_huge_namorita.sql",
+      "db/prepared/journal/004_0003_curvy_tempest.sql",
+      "db/prepared/journal/005_0004_thick_mentor.sql",
+      "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+      "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+      "db/prepared/journal/008_0007_black_imperial_guard.sql",
+      "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+      "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+      "db/prepared/journal/011_0010_crazy_warhawk.sql",
+      "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+      "db/prepared/journal/013_0012_stella_interactions.sql",
+      "db/prepared/journal/014_0013_performance_indexes.sql",
+      "db/prepared/journal/015_0014_fine_blade.sql",
+      "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+      "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+      "db/prepared/journal/018_0017_striped_legion.sql",
+      "db/prepared/journal/019_0018_redundant_firebird.sql",
+      "db/prepared/journal/020_0019_lazy_overlord.sql",
+      "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+      "db/prepared/journal/022_0021_glorious_sandman.sql",
+      "db/prepared/journal/023_0022_abandoned_karma.sql",
+      "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+      "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+      "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+      "db/prepared/journal/027_0026_violet_selene.sql",
+      "db/prepared/journal/028_0027_little_midnight.sql",
+      "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+      "db/prepared/journal/030_0029_integrity.sql",
+      "db/prepared/journal/031_0030_immutability.sql",
+      "db/prepared/journal/032_0031_rls_core.sql",
+      "db/prepared/journal/033_0032_rls_specialized.sql",
+      "db/prepared/journal/034_0033_public_api_grants.sql",
+      "db/prepared/journal/035_0034_phase3_white_label.sql",
+      "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+      "db/prepared/journal/037_0036_phase2_onboarding.sql",
+      "db/prepared/journal/038_0037_phase1_stripe.sql",
+      "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+      "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+      "db/prepared/journal/041_20260716000001_storage_policies.sql",
+      "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+      "db/prepared/journal/043_001_initial_auth_rls.sql",
+      "db/prepared/journal/044_002_stella_interactions_rls.sql",
+      "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+      "db/prepared/journal/046_004_fx_tables_rls.sql",
+      "db/prepared/journal/047_005_theory_of_change_rls.sql",
+      "db/prepared/journal/048_006_methodology_review_rls.sql",
+      "db/prepared/journal/049_007_taxonomy_rls.sql",
+      "db/prepared/journal/050_008_marketing_leads_rls.sql",
+      "db/prepared/journal/051_0040_governed_model_registry.sql",
+      "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+      "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+      "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+      "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+      "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+      "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+      "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+      "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+      "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+      "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+      "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+      "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+      "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql",
+      "db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql",
+      "db/prepared/journal/066_0054_fib_proxy_rubric_constraints.sql",
+      "db/prepared/journal/067_0055_fib_proxy_material_change_registry.sql",
+      "db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql",
+      "db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql",
+      "db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql",
+      "db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql",
+      "db/prepared/journal/072_0059_fib_outcome_monetization_dispositions.sql",
+      "db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql",
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+      "db/prepared/stella_hosted_0000_rollback.sql",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+      "db/prepared/stella_hosted_0001_rollback.sql"
+    ],
+    "product_side_subset": [
+      "db/migrations/0044_fib_audit_hardening_supersession.sql",
+      "db/prepared/README.md",
+      "db/prepared/checkpoint-b0/observation.sql",
+      "db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql",
+      "db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql",
+      "db/prepared/stella_hosted_0000_rollback.sql",
+      "db/prepared/stella_hosted_0001_managed_role_bootstrap.sql",
+      "db/prepared/stella_hosted_0001_rollback.sql"
+    ],
+    "wave2_side_subset": [
+      "db/migrations/0053_fib_proxy_versions_provenance.sql",
+      "db/migrations/0054_fib_proxy_rubric_constraints.sql",
+      "db/migrations/0055_fib_proxy_material_change_registry.sql",
+      "db/migrations/0056_fib_proxy_material_fields_editability.sql",
+      "db/migrations/0057_fib_outcome_materiality_classification.sql",
+      "db/migrations/0058_fib_filter_set_justification_columns.sql",
+      "db/migrations/0059_fib_outcome_monetization_dispositions.sql",
+      "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+      "db/migrations/meta/0053_snapshot.json",
+      "db/migrations/meta/0054_snapshot.json",
+      "db/migrations/meta/0055_snapshot.json",
+      "db/migrations/meta/0056_snapshot.json",
+      "db/migrations/meta/0057_snapshot.json",
+      "db/migrations/meta/0058_snapshot.json",
+      "db/migrations/meta/0059_snapshot.json",
+      "db/migrations/meta/0060_snapshot.json",
+      "db/migrations/meta/_journal.json",
+      "db/prepared/journal/001_0000_quick_husk.sql",
+      "db/prepared/journal/002_0001_noisy_chameleon.sql",
+      "db/prepared/journal/003_0002_huge_namorita.sql",
+      "db/prepared/journal/004_0003_curvy_tempest.sql",
+      "db/prepared/journal/005_0004_thick_mentor.sql",
+      "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+      "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+      "db/prepared/journal/008_0007_black_imperial_guard.sql",
+      "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+      "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+      "db/prepared/journal/011_0010_crazy_warhawk.sql",
+      "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+      "db/prepared/journal/013_0012_stella_interactions.sql",
+      "db/prepared/journal/014_0013_performance_indexes.sql",
+      "db/prepared/journal/015_0014_fine_blade.sql",
+      "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+      "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+      "db/prepared/journal/018_0017_striped_legion.sql",
+      "db/prepared/journal/019_0018_redundant_firebird.sql",
+      "db/prepared/journal/020_0019_lazy_overlord.sql",
+      "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+      "db/prepared/journal/022_0021_glorious_sandman.sql",
+      "db/prepared/journal/023_0022_abandoned_karma.sql",
+      "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+      "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+      "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+      "db/prepared/journal/027_0026_violet_selene.sql",
+      "db/prepared/journal/028_0027_little_midnight.sql",
+      "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+      "db/prepared/journal/030_0029_integrity.sql",
+      "db/prepared/journal/031_0030_immutability.sql",
+      "db/prepared/journal/032_0031_rls_core.sql",
+      "db/prepared/journal/033_0032_rls_specialized.sql",
+      "db/prepared/journal/034_0033_public_api_grants.sql",
+      "db/prepared/journal/035_0034_phase3_white_label.sql",
+      "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+      "db/prepared/journal/037_0036_phase2_onboarding.sql",
+      "db/prepared/journal/038_0037_phase1_stripe.sql",
+      "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+      "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+      "db/prepared/journal/041_20260716000001_storage_policies.sql",
+      "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+      "db/prepared/journal/043_001_initial_auth_rls.sql",
+      "db/prepared/journal/044_002_stella_interactions_rls.sql",
+      "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+      "db/prepared/journal/046_004_fx_tables_rls.sql",
+      "db/prepared/journal/047_005_theory_of_change_rls.sql",
+      "db/prepared/journal/048_006_methodology_review_rls.sql",
+      "db/prepared/journal/049_007_taxonomy_rls.sql",
+      "db/prepared/journal/050_008_marketing_leads_rls.sql",
+      "db/prepared/journal/051_0040_governed_model_registry.sql",
+      "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+      "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+      "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+      "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+      "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+      "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+      "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+      "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+      "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+      "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+      "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+      "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+      "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql",
+      "db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql",
+      "db/prepared/journal/066_0054_fib_proxy_rubric_constraints.sql",
+      "db/prepared/journal/067_0055_fib_proxy_material_change_registry.sql",
+      "db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql",
+      "db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql",
+      "db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql",
+      "db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql",
+      "db/prepared/journal/072_0059_fib_outcome_monetization_dispositions.sql",
+      "db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql"
+    ]
+  },
+  "does_not_authorize": [
+    "new product behavior or product semantics outside reconciliation",
+    "new migration semantics, renumbering or editing any closed migration",
+    "broad runtime refactor",
+    "security weakening or tenant-isolation regression",
+    "test or gate weakening (no loosened expectation, no skipped assertion, no known-condition registration in lieu of re-running a gate)",
+    "editing any historical evidence/audit artifact",
+    "merge into integration/commercial-v1 or main, Vercel Production promotion, uellix.com replacement, Wave2 B4 implementation",
+    "force push, rebase, squash or amend of any lineage"
+  ],
+  "expected_gates": [
+    "pnpm ods:prestate on the successor (branch/HEAD/tree exact, clean) before the merge",
+    "actual conflict set == conflict_paths (77) — any deviation is STOP",
+    "pnpm baseline:verify, hosted:verify, storage:verify, journal:verify, boundary:status:verify, apply:status:verify, probe:status:verify, b0:observation:verify",
+    "targeted suites per COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.0.json (FIBIU-08..13, MNB-1, B0, entry points, SROI, dispositions, evidence, security, migrations, ODS)",
+    "UELLIX_PG_TESTS=1 real disposable PostgreSQL suites (tests/postgres/b2-remediation.pg.test.ts, tests/postgres/b3-completeness.pg.test.ts) and pnpm baseline:rehearsal:local",
+    "full CI-equivalent: pnpm install --frozen-lockfile, secrets:scan, authority:seal:verify, lint, typecheck, generated-artefact verification, test:unit, build",
+    "pnpm ods:scope / ods:poststate with --protected-authority HPO-ODS-W2-08 against the first-parent base, and ods:scope additionally against the Wave2 parent",
+    "post-merge: origin/main, origin/integration/commercial-v1 and origin/codex/w2-methodology-objects-r1 unchanged"
+  ]
+}
