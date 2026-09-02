@@ -23,8 +23,8 @@
     },
     {
       "id": "P-2",
-      "description": "FIBIU-11: a 'not_material' outcome is excluded from the authoritative SROI calculation numerator but remains listed/traceable with its exclusion reason.",
-      "test_file": "tests/sroi-calculation.service.test.ts"
+      "description": "FIBIU-11 (scope-corrected during mission-loop cycle 1 — FIBIU-11's own FILES_OR_DOMAINS registry entry names only db/schema.ts, lib/pipeline/outcomes.ts, and app/app/projects/[projectId]/pipeline/outcomes/**, not lib/pipeline/sroi-calculation.ts; numerator-exclusion wiring is FIBIU-19's eligibility composition, Wave 3): a 'not_material' classification (with justification) persists and is returned unchanged by listOutcomesForProject/getOutcomeByIdForProject, exactly like a 'material' one -- the value is never dropped, nulled, or specially filtered by the read path itself, so it remains available for later eligibility composition to consume.",
+      "test_file": "tests/outcomes.service.test.ts"
     },
     {
       "id": "P-3",
@@ -45,7 +45,7 @@
   "negative_controls": [
     {
       "id": "N-1",
-      "description": "FIBIU-11: an outcome with only the legacy 1-5 materialityScore set (materiality_classification still NULL) triggers MATERIALITY_UNCLASSIFIED at the eligibility gate; the score is never auto-converted into a classification.",
+      "description": "FIBIU-11 (scope-corrected during mission-loop cycle 1 -- MATERIALITY_UNCLASSIFIED as an enforced eligibility-gate rejection is FIBIU-19's job, Wave 3, out of FIBIU-11's FILES_OR_DOMAINS): an outcome created or updated with only the legacy 1-5 materialityScore set never has materiality_classification silently populated by that write -- no code path in lib/pipeline/outcomes.ts derives/infers materiality_classification from materialityScore; the two fields are written by entirely separate, independently-invoked functions.",
       "test_file": "tests/outcomes.service.test.ts"
     },
     {
