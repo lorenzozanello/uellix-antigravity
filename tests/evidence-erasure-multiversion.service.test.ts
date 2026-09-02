@@ -72,33 +72,57 @@ const mockDbData: {
   evidenceTombstones: [],
 };
 
-function tableNameOf(table: any): string {
-  return table?._?.name || table?.[Symbol.for('drizzle:Name')];
+/** The subset of Drizzle's internal table shape this mock's name-lookup reads. */
+interface DrizzleTableRef {
+  readonly _?: { readonly name?: string }
+  readonly [key: symbol]: unknown
+}
+
+function tableNameOf(table: unknown): string {
+  const t = table as DrizzleTableRef | undefined;
+  return t?._?.name || (t?.[Symbol.for('drizzle:Name')] as string | undefined) || '';
+}
+
+/** Drizzle's eq()/and()/inArray() condition tree, as walked structurally by extractEqValues. */
+interface DrizzleConditionNode {
+  readonly value?: unknown
+  readonly right?: unknown
+  readonly left?: unknown
+  readonly conditions?: readonly unknown[]
+  readonly queryChunks?: readonly unknown[]
 }
 
 /** Walks Drizzle's eq()/and()/inArray() condition objects to extract the
  * literal comparison values actually being filtered on — so this mock's
  * WHERE clauses are real, not decorative. */
-function extractEqValues(val: any): string[] {
+function extractEqValues(val: unknown): string[] {
   if (!val) return [];
   if (typeof val === 'string') return [val];
   if (Array.isArray(val)) return val.flatMap(extractEqValues);
+  const node = val as DrizzleConditionNode;
   const res: string[] = [];
-  if (val.value !== undefined) {
-    if (typeof val.value === 'string') res.push(val.value);
-    else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues));
-    else res.push(...extractEqValues(val.value));
+  if (node.value !== undefined) {
+    if (typeof node.value === 'string') res.push(node.value);
+    else if (Array.isArray(node.value)) res.push(...node.value.flatMap(extractEqValues));
+    else res.push(...extractEqValues(node.value));
   }
-  if (val.right !== undefined) res.push(...extractEqValues(val.right));
-  if (val.left !== undefined) res.push(...extractEqValues(val.left));
-  if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues));
-  if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues));
+  if (node.right !== undefined) res.push(...extractEqValues(node.right));
+  if (node.left !== undefined) res.push(...extractEqValues(node.left));
+  if (Array.isArray(node.conditions)) res.push(...node.conditions.flatMap(extractEqValues));
+  if (Array.isArray(node.queryChunks)) res.push(...node.queryChunks.flatMap(extractEqValues));
   return res;
+}
+
+/** The chainable shape `db.select().from(table).where(...)` mocks return. */
+interface ResultChain {
+  orderBy(): ResultChain
+  limit(n: number): ResultChain
+  then(cb: (rows: Row[]) => unknown): Promise<unknown>
 }
 
 function makeResultChain(getRows: () => Row[]) {
   let ordered = getRows();
-  const chain: any = {
+  const chain: ResultChain = {
     orderBy: vi.fn().mockImplementation(() => {
       ordered = [...ordered]; // ordering value itself is irrelevant to these tests
       return chain;
@@ -115,7 +139,7 @@ function makeResultChain(getRows: () => Row[]) {
 vi.mock('@/db/client', () => ({
   db: {
     select: vi.fn().mockImplementation(() => ({
-      from: vi.fn().mockImplementation((table: any) => {
+      from: vi.fn().mockImplementation((table: unknown) => {
         const name = tableNameOf(table);
         if (name === 'projects') {
           return { where: vi.fn().mockImplementation(() => makeResultChain(() => (mockDbData.project ? [mockDbData.project] : []))) };
@@ -125,7 +149,7 @@ vi.mock('@/db/client', () => ({
         }
         if (name === 'evidence_versions') {
           return {
-            where: vi.fn().mockImplementation((cond: any) => {
+            where: vi.fn().mockImplementation((cond: unknown) => {
               const wanted = extractEqValues(cond);
               // listEvidenceVersions filters by evidenceId; getLatestEvidenceVersion
               // (used elsewhere in this module) does the same. Real scoping, not a
@@ -144,10 +168,10 @@ vi.mock('@/db/client', () => ({
         return { where: vi.fn().mockImplementation(() => makeResultChain(() => [])) };
       }),
     })),
-    insert: vi.fn().mockImplementation((table: any) => {
+    insert: vi.fn().mockImplementation((table: unknown) => {
       const name = tableNameOf(table);
       return {
-        values: vi.fn().mockImplementation((vals: any) => ({
+        values: vi.fn().mockImplementation((vals: Record<string, unknown>) => ({
           returning: vi.fn().mockImplementation(() => {
             if (name === 'evidence_tombstones') {
               const row = { id: `tomb-${mockDbData.evidenceTombstones.length + 1}`, createdAt: new Date(), ...vals };
@@ -159,11 +183,11 @@ vi.mock('@/db/client', () => ({
         })),
       };
     }),
-    update: vi.fn().mockImplementation((table: any) => {
+    update: vi.fn().mockImplementation((table: unknown) => {
       const name = tableNameOf(table);
       return {
-        set: vi.fn().mockImplementation((patch: any) => ({
-          where: vi.fn().mockImplementation((cond: any) => {
+        set: vi.fn().mockImplementation((patch: Record<string, unknown>) => ({
+          where: vi.fn().mockImplementation((cond: unknown) => {
             const ids = extractEqValues(cond);
             let targets: Row[] = [];
             if (name === 'evidence_versions') {
@@ -189,6 +213,7 @@ vi.mock('@/db/client', () => ({
 
 import { requestGovernedEvidenceErasure } from '@/lib/pipeline/evidence';
 import { requireOrganizationAccess } from '@/lib/auth/session';
+import type { OrganizationContext } from '@/lib/auth/session';
 import { canEraseEvidenceContent } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
 
@@ -226,7 +251,7 @@ beforeEach(() => {
   mockDbData.evidenceTombstones = [];
   vi.mocked(requireOrganizationAccess).mockResolvedValue({
     user: { id: 'u1' }, organization: { id: 'org-1' }, membership: { role: 'organization_admin' },
-  } as any);
+  } as unknown as OrganizationContext);
   vi.mocked(canEraseEvidenceContent).mockReturnValue(true);
 });
 
