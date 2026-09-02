@@ -920,7 +920,12 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
               <div className="rounded-md border border-border bg-muted/30 p-4">
                 <p className="text-xs font-medium text-muted-foreground">Ratio SROI preliminar</p>
                 <p className="mt-1 text-2xl font-bold text-foreground tabular-nums font-ibm-plex-mono">
-                  {parseFloat(preview.result.sroiRatio.toString()).toFixed(2)}:1
+                  {preview.result.sroiRatio === null ? (
+                    // FIBIU-12 (FIBC-016, AG-B3-2) — explicit no-ratio state, never '—' alone and never 0.00:1.
+                    <span className="text-base font-semibold text-amber-800" data-testid="preview-no-ratio">Sin ratio SROI</span>
+                  ) : (
+                    `${preview.result.sroiRatio.toFixed(2)}:1`
+                  )}
                 </p>
               </div>
               <div className="rounded-md border border-border bg-muted/30 p-4">
@@ -1066,7 +1071,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                   <div key={s.scenario} className={`rounded-md border p-4 ${meta.border}`}>
                     <p className="text-xs font-medium text-muted-foreground">{meta.label}</p>
                     <p className="mt-1 text-2xl font-bold text-foreground tabular-nums font-ibm-plex-mono">
-                      {parseFloat(s.sroiRatioExact).toFixed(2)}:1
+                      {s.sroiRatioExact === null ? 'Sin ratio SROI' : `${parseFloat(s.sroiRatioExact).toFixed(2)}:1`}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       Valor neto {parseFloat(s.netSocialValueExact).toLocaleString()} {s.currency}
@@ -1133,7 +1138,8 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-bold text-foreground tabular-nums font-ibm-plex-mono">
-                          {run.sroiRatio ? parseFloat(run.sroiRatio).toFixed(2) : '0.00'}:1
+                          {/* FIBIU-12 (FIBC-016, AG-B3-2) — a run persisted with sroi_ratio NULL has NO ratio: never rendered as 0.00:1. */}
+                          {run.sroiRatio ? `${parseFloat(run.sroiRatio).toFixed(2)}:1` : 'Sin ratio SROI'}
                         </span>
                       </TableCell>
                       <TableCell>

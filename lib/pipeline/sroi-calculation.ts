@@ -407,10 +407,11 @@ export function getFilterJustificationIssues(
 
 // ─── Monetization disposition ───────────────────────────────────────────────
 
-const MONETIZATION_REASON_VALUES = [
+export const MONETIZATION_REASON_VALUES = [
   'no_defensible_proxy', 'proxy_not_approved', 'insufficient_evidence',
   'not_material', 'not_yet_eligible', 'superseded_version', 'other_governed_reason',
 ] as const
+export type MonetizationReason = (typeof MONETIZATION_REASON_VALUES)[number]
 
 export const OutcomeMonetizationDispositionSchema = z.object({
   disposition: z.enum(['monetized', 'not_monetized']),
@@ -449,9 +450,31 @@ export async function recordOutcomeMonetizationDisposition(
   const runRows = await db.select().from(sroiCalculationRuns).where(and(eq(sroiCalculationRuns.id, calculationRunId), eq(sroiCalculationRuns.projectId, projectId)))
   if (runRows.length === 0) throw new Error('Calculation run not found for project')
 
+  // Early, user-facing refusal. The AUTHORITATIVE refusal is the database
+  // guard installed by 0060 (race-safe through advisory locks — see
+  // W2_B3_COMPLETENESS_AUTHORITY AG-B3-6); this check only spares the user a
+  // round trip and is never the reason the invariant holds.
   const approvedReview = await db.select().from(sroiRunReviews).where(and(eq(sroiRunReviews.calculationRunId, calculationRunId), eq(sroiRunReviews.status, 'approved')))
   if (approvedReview.length > 0) {
     throw new Error('Cannot record monetization disposition: this calculation run is already approved')
+  }
+
+  // W2-B3 completeness (AG-B3-2, disposition/engine consistency): the human
+  // disposition attests and justifies what the IMMUTABLE run actually did.
+  // 'monetized' for an outcome the run carries no line item for would
+  // fabricate coverage the run does not have; 'not_monetized' for an outcome
+  // the run DID monetize would contradict the persisted numerator. Both are
+  // refused with a named error — a different disposition needs a new run.
+  const runLineItems = await db
+    .select({ outcomeId: sroiCalculationLineItems.outcomeId })
+    .from(sroiCalculationLineItems)
+    .where(eq(sroiCalculationLineItems.runId, calculationRunId))
+  const engineMonetized = runLineItems.some((li) => li.outcomeId === outcomeId)
+  if (validated.disposition === 'monetized' && !engineMonetized) {
+    throw new Error(`Cannot record 'monetized': calculation run ${calculationRunId} carries no line item for outcome ${outcomeId} (FIBC-016 — a disposition never fabricates coverage the run does not have)`)
+  }
+  if (validated.disposition === 'not_monetized' && engineMonetized) {
+    throw new Error(`Cannot record 'not_monetized': calculation run ${calculationRunId} monetized outcome ${outcomeId} in its line items (FIBC-016 — exclude it from a NEW run instead of contradicting this one)`)
   }
 
   const payload = {
@@ -464,8 +487,20 @@ export async function recordOutcomeMonetizationDisposition(
 
   let saved: typeof outcomeMonetizationDispositions.$inferSelect
   if (existing.length > 0) {
-    await db.update(outcomeMonetizationDispositions).set(payload).where(eq(outcomeMonetizationDispositions.id, existing[0].id))
-    saved = await db.select().from(outcomeMonetizationDispositions).where(eq(outcomeMonetizationDispositions.id, existing[0].id)).then((r) => r[0])
+    // SERVICE_ZERO_ROW_FAIL_CLOSED (W2-B3 completeness, PG-12 F11): the UPDATE
+    // must return the row it changed. Zero rows means row-level security or
+    // the 0060 approved-run guard refused the write — recording an audit
+    // event and a version row for a mutation that never happened is exactly
+    // the fictional-success hazard PG-12 measured, so nothing is recorded.
+    const updated = await db
+      .update(outcomeMonetizationDispositions)
+      .set(payload)
+      .where(eq(outcomeMonetizationDispositions.id, existing[0].id))
+      .returning()
+    if (updated.length === 0) {
+      throw new Error('Monetization disposition update affected no row (refused by row-level security or the approved-run guard) — nothing was recorded')
+    }
+    saved = updated[0]
     await logAuditAction({
       organizationId: ctx.organization.id,
       projectId,
@@ -508,59 +543,141 @@ export async function recordOutcomeMonetizationDisposition(
   return saved
 }
 
-export type MonetizationCoverageCategory = 'monetized' | 'material_not_monetized' | 'not_yet_eligible' | 'other_excluded'
-export interface MonetizationCoverageBucket {
-  category: MonetizationCoverageCategory
-  outcomeIds: string[]
+/**
+ * W2-B3 completeness (AG-B3-2, COVERAGE_COMPLETENESS) — one row per outcome
+ * in the run's coverage view. `bucket` is the distinct governed state:
+ * 'monetized', 'missing_disposition', or `not_monetized:<reason>` with the
+ * reason kept verbatim — the seven governed reasons are NEVER collapsed into
+ * a generic omission category (FIBC-016). `material` and `engineMonetized`
+ * are carried alongside so "material not monetized" is a derived, visible
+ * view rather than a bucket that would hide the reason.
+ */
+export type MonetizationCoverageBucket = 'monetized' | 'missing_disposition' | `not_monetized:${MonetizationReason}`
+export interface MonetizationCoverageOutcome {
+  outcomeId: string
+  bucket: MonetizationCoverageBucket
+  /** FIBIU-11 classification: 'material' | 'not_material' | null (pending). */
+  materialityClassification: string | null
+  /** True when the immutable run carries >= 1 line item for this outcome. */
+  engineMonetized: boolean
+  disposition: Pick<typeof outcomeMonetizationDispositions.$inferSelect, 'disposition' | 'reason' | 'justification'> | null
 }
 export interface MonetizationCoverage {
-  buckets: MonetizationCoverageBucket[]
+  outcomes: MonetizationCoverageOutcome[]
+  monetizedOutcomeIds: string[]
+  missingDispositionOutcomeIds: string[]
+  /** Per governed reason, the outcomes recorded not_monetized for it — every key present, empty or not. */
+  notMonetizedByReason: Record<MonetizationReason, string[]>
+  /** Outcomes classified 'material' that the run did not monetize (derived view; their reason stays in notMonetizedByReason / bucket). */
+  materialNotMonetizedOutcomeIds: string[]
+  /** Outcomes whose FIBIU-11 classification is still pending — visible, never dropped. */
+  unclassifiedOutcomeIds: string[]
   // FIBC-016 — "if no outcome has defensible monetization, no SROI ratio is
-  // emitted": the pure signal a caller can act on before deciding whether
-  // to compute/display a ratio, without this function reaching into the
-  // calculation engine itself.
+  // emitted": true iff the immutable run carries >= 1 line item. This is the
+  // engine's own truth; a disposition can never fabricate it.
   hasDefensibleMonetization: boolean
 }
 
 /**
- * FIBIU-12 (FIBC-016) — pure aggregation of a run's recorded dispositions
- * into the pre-approval coverage view required before an approval decision:
- * monetized / material-not-monetized / not-yet-eligible / other exclusion,
- * each outcome counted exactly once and never collapsed into one generic
- * omission category (every row keeps its own `reason`, callers can read it
- * off the bucketed dispositions). `materialityByOutcome` is supplied by the
- * caller (FIBIU-11's outcomes.materialityClassification) rather than loaded
- * here, keeping this function pure and independently testable.
+ * FIBIU-12 (FIBC-016) — pure coverage aggregation. Every outcome in
+ * `candidateOutcomeIds` (run line-item outcomes ∪ outcomes with a disposition
+ * for the run ∪ the project's active-assignment outcomes at coverage time) is
+ * represented exactly once; an outcome without a disposition is bucketed
+ * 'missing_disposition' — visible, never silently dropped. Pure so it is
+ * independently testable; getRunMonetizationCoverage is the DB-backed caller.
  */
 export function getMonetizationCoverage(
-  dispositions: Pick<typeof outcomeMonetizationDispositions.$inferSelect, 'outcomeId' | 'disposition' | 'reason'>[],
+  dispositions: Pick<typeof outcomeMonetizationDispositions.$inferSelect, 'outcomeId' | 'disposition' | 'reason' | 'justification'>[],
   materialityByOutcome: Map<string, string | null>,
+  engineMonetizedOutcomeIds: readonly string[],
+  candidateOutcomeIds: readonly string[] = [],
 ): MonetizationCoverage {
-  const buckets: Record<MonetizationCoverageCategory, string[]> = {
-    monetized: [],
-    material_not_monetized: [],
-    not_yet_eligible: [],
-    other_excluded: [],
-  }
+  const engineMonetized = new Set(engineMonetizedOutcomeIds)
+  const dispositionByOutcome = new Map(dispositions.map((d) => [d.outcomeId, d]))
+  const allOutcomeIds = [...new Set([...engineMonetizedOutcomeIds, ...dispositions.map((d) => d.outcomeId), ...candidateOutcomeIds])]
 
-  for (const d of dispositions) {
-    if (d.disposition === 'monetized') {
-      buckets.monetized.push(d.outcomeId)
-      continue
-    }
-    if (materialityByOutcome.get(d.outcomeId) === 'material') {
-      buckets.material_not_monetized.push(d.outcomeId)
-    } else if (d.reason === 'not_yet_eligible' || d.reason === 'no_defensible_proxy' || d.reason === 'proxy_not_approved' || d.reason === 'insufficient_evidence') {
-      buckets.not_yet_eligible.push(d.outcomeId)
+  const notMonetizedByReason = Object.fromEntries(MONETIZATION_REASON_VALUES.map((r) => [r, [] as string[]])) as Record<MonetizationReason, string[]>
+  const outcomes: MonetizationCoverageOutcome[] = []
+  const monetizedOutcomeIds: string[] = []
+  const missingDispositionOutcomeIds: string[] = []
+  const materialNotMonetizedOutcomeIds: string[] = []
+  const unclassifiedOutcomeIds: string[] = []
+
+  for (const outcomeId of allOutcomeIds) {
+    const d = dispositionByOutcome.get(outcomeId) ?? null
+    const materialityClassification = materialityByOutcome.get(outcomeId) ?? null
+    const isEngineMonetized = engineMonetized.has(outcomeId)
+    let bucket: MonetizationCoverageBucket
+    if (!d) {
+      bucket = 'missing_disposition'
+      missingDispositionOutcomeIds.push(outcomeId)
+    } else if (d.disposition === 'monetized') {
+      bucket = 'monetized'
+      monetizedOutcomeIds.push(outcomeId)
     } else {
-      buckets.other_excluded.push(d.outcomeId)
+      // The DB CHECK (0059) guarantees a governed reason on every not_monetized row.
+      const reason = (d.reason ?? 'other_governed_reason') as MonetizationReason
+      bucket = `not_monetized:${reason}`
+      notMonetizedByReason[reason].push(outcomeId)
     }
+    if (materialityClassification === 'material' && !isEngineMonetized) materialNotMonetizedOutcomeIds.push(outcomeId)
+    if (materialityClassification === null) unclassifiedOutcomeIds.push(outcomeId)
+    outcomes.push({
+      outcomeId,
+      bucket,
+      materialityClassification,
+      engineMonetized: isEngineMonetized,
+      disposition: d ? { disposition: d.disposition, reason: d.reason, justification: d.justification } : null,
+    })
   }
 
   return {
-    buckets: (Object.keys(buckets) as MonetizationCoverageCategory[]).map((category) => ({ category, outcomeIds: buckets[category] })),
-    hasDefensibleMonetization: buckets.monetized.length > 0,
+    outcomes,
+    monetizedOutcomeIds,
+    missingDispositionOutcomeIds,
+    notMonetizedByReason,
+    materialNotMonetizedOutcomeIds,
+    unclassifiedOutcomeIds,
+    hasDefensibleMonetization: engineMonetized.size > 0,
   }
+}
+
+/** FIBIU-12 — the recorded dispositions of one run (org-scoped, run must belong to the project). */
+export async function listOutcomeMonetizationDispositionsForRun(projectId: string, calculationRunId: string) {
+  const ctx = await authorize(projectId)
+  const runRows = await db.select({ id: sroiCalculationRuns.id }).from(sroiCalculationRuns).where(and(eq(sroiCalculationRuns.id, calculationRunId), eq(sroiCalculationRuns.projectId, projectId), eq(sroiCalculationRuns.organizationId, ctx.organization.id)))
+  if (runRows.length === 0) throw new Error('Calculation run not found for project')
+  return db
+    .select()
+    .from(outcomeMonetizationDispositions)
+    .where(and(eq(outcomeMonetizationDispositions.calculationRunId, calculationRunId), eq(outcomeMonetizationDispositions.organizationId, ctx.organization.id)))
+}
+
+/**
+ * FIBIU-12 (FIBC-016) — the coverage view a reviewer must see BEFORE
+ * approving a run: composed from the run's own immutable line items (engine
+ * truth), the dispositions recorded for the run, the project's active
+ * assignment outcomes, and FIBIU-11's classification per outcome.
+ */
+export async function getRunMonetizationCoverage(projectId: string, calculationRunId: string): Promise<MonetizationCoverage> {
+  const ctx = await authorize(projectId)
+  const runRows = await db.select({ id: sroiCalculationRuns.id }).from(sroiCalculationRuns).where(and(eq(sroiCalculationRuns.id, calculationRunId), eq(sroiCalculationRuns.projectId, projectId), eq(sroiCalculationRuns.organizationId, ctx.organization.id)))
+  if (runRows.length === 0) throw new Error('Calculation run not found for project')
+
+  const [lineItems, dispositions, activeAssignments, outcomeRows] = await Promise.all([
+    db.select({ outcomeId: sroiCalculationLineItems.outcomeId }).from(sroiCalculationLineItems).where(eq(sroiCalculationLineItems.runId, calculationRunId)),
+    db.select().from(outcomeMonetizationDispositions).where(and(eq(outcomeMonetizationDispositions.calculationRunId, calculationRunId), eq(outcomeMonetizationDispositions.organizationId, ctx.organization.id))),
+    db.select({ outcomeId: outcomeProxyAssignments.outcomeId }).from(outcomeProxyAssignments).where(and(eq(outcomeProxyAssignments.projectId, projectId), eq(outcomeProxyAssignments.organizationId, ctx.organization.id), eq(outcomeProxyAssignments.assignmentStatus, 'active'))),
+    db.select({ id: outcomes.id, materialityClassification: outcomes.materialityClassification }).from(outcomes).where(eq(outcomes.projectId, projectId)),
+  ])
+
+  const materialityByOutcome = new Map(outcomeRows.map((o) => [o.id, o.materialityClassification ?? null]))
+  return getMonetizationCoverage(
+    dispositions,
+    materialityByOutcome,
+    [...new Set(lineItems.map((li) => li.outcomeId).filter((id): id is string => !!id))],
+    activeAssignments.map((a) => a.outcomeId),
+  )
 }
 
 // ─── Internal data loader for calculation ───────────────────────────────────
@@ -1066,7 +1183,38 @@ export interface SkippedAssignment {
     | 'missing_filter_set'
     | 'missing_proxy'
     | 'missing_outcome'
+    // W2-B3 completeness (AG-B3-1, FIBC-015) — a 'not_material' outcome is
+    // excluded from the authoritative numerator and RETAINED here with its
+    // exclusion reason (traceability), never silently dropped.
+    | 'not_material'
 }
+
+/**
+ * W2-B3 completeness (AG-B3-4, FIBC-017/FIBDB-010) — which filter semantics
+ * the engine runs under. There is deliberately NO default: every caller
+ * names the path it is on.
+ *
+ *   'authoritative' — calculateAndPersistSroiRun. A NULL/blank value for any
+ *                     of the five governed filters is UNKNOWN, never zero:
+ *                     the engine throws FILTER_VALUE_UNKNOWN and nothing is
+ *                     computed or persisted from an invented zero.
+ *   'preliminary'   — calculateSroiPreview / calculateSroiScenarios, both
+ *                     rendered under the product's "Cálculo preliminar"
+ *                     label. A NULL filter is coerced as before AND every
+ *                     coercion is itemized in preliminaryFilterAssumptions,
+ *                     so the preview is labelled and never silent.
+ */
+export type FilterSemantics = 'authoritative' | 'preliminary'
+export interface EngineOptions {
+  filterSemantics: FilterSemantics
+}
+export interface PreliminaryFilterAssumption {
+  assignmentId: string
+  outcomeId: string
+  filter: FilterName
+  assumedValue: number
+}
+export const NO_RATIO_REASON = 'NO_DEFENSIBLE_MONETIZATION' as const
 
 export interface CalcResult {
   // currency is always 'USD' post Fase 1b — all inputs are normalized first.
@@ -1074,17 +1222,58 @@ export interface CalcResult {
   totalInvestment: number
   grossSocialValue: number
   netSocialValue: number
-  sroiRatio: number
+  // W2-B3 completeness (AG-B3-2, FIBC-016) — null when no outcome has
+  // defensible monetization (zero line items): NO ratio exists, and no
+  // consumer may fabricate one from this null (not 0, not net/investment).
+  sroiRatio: number | null
   totalInvestmentExact: string
   grossSocialValueExact: string
   netSocialValueExact: string
-  sroiRatioExact: string
+  sroiRatioExact: string | null
+  noRatioReason?: typeof NO_RATIO_REASON
   lineItems: LineItemCalc[]
   fundersBreakdown: FunderBreakdownRow[]
   unattributedNsvUsd: string
   // Additive (non-breaking): existing callers that destructure named fields
   // are unaffected; new consumers can verify nothing was silently excluded.
   skippedAssignments: SkippedAssignment[]
+  /** Outcomes with >= 1 computed line item — the engine's own "defensibly monetized" set. */
+  monetizedOutcomeIds: string[]
+  /** AG-B3-1 — unclassified (NULL) outcomes that contributed: itemized, never silent. */
+  materialityUnclassifiedOutcomeIds: string[]
+  /** AG-B3-4 — every NULL filter the 'preliminary' path coerced (always empty on 'authoritative'). */
+  preliminaryFilterAssumptions: PreliminaryFilterAssumption[]
+}
+
+export interface MaterialityExclusion {
+  included: AssignmentData[]
+  skipped: SkippedAssignment[]
+  materialityUnclassifiedOutcomeIds: string[]
+}
+
+/**
+ * W2-B3 completeness (AG-B3-1, FIBC-015) — pure materiality gate applied
+ * before any value is computed. 'not_material' assignments are excluded and
+ * itemized with their reason; 'material' assignments pass; an unclassified
+ * (NULL) outcome passes — FIBC-015 permits preliminary work while
+ * classification is pending and FIBIU-19 owns the approval block — but is
+ * itemized so it can never contribute silently. The legacy 1-5 score is
+ * never read here (NPDD-03).
+ */
+export function applyMaterialityExclusion(assignmentData: AssignmentData[]): MaterialityExclusion {
+  const included: AssignmentData[] = []
+  const skipped: SkippedAssignment[] = []
+  const unclassified = new Set<string>()
+  for (const d of assignmentData) {
+    const classification = d.outcome?.materialityClassification ?? null
+    if (classification === 'not_material') {
+      skipped.push({ outcomeId: d.assignment.outcomeId, reason: 'not_material' })
+      continue
+    }
+    if (classification === null) unclassified.add(d.assignment.outcomeId)
+    included.push(d)
+  }
+  return { included, skipped, materialityUnclassifiedOutcomeIds: [...unclassified] }
 }
 
 // Precision of the numeric DB columns (see manual-migration 003). Money and
@@ -1110,6 +1299,7 @@ export function runDeterministicCalc(
   allocations: (typeof outcomeFunderAllocations.$inferSelect)[],
   fundersList: (typeof funders.$inferSelect)[],
   discountRatePct: string | null,
+  options: EngineOptions,
 ): CalcResult {
   // All contributions are normalized to USD (amount_usd, frozen at save time);
   // readiness guarantees every active contribution has one.
@@ -1129,8 +1319,28 @@ export function runDeterministicCalc(
   const outcomeNsv = new Map<string, Decimal>()
   const lineItems: LineItemCalc[] = []
   const skippedAssignments: SkippedAssignment[] = []
+  const preliminaryFilterAssumptions: PreliminaryFilterAssumption[] = []
 
-  for (const { assignment, input, filterSet, proxy, proxyVersion } of assignmentData) {
+  // AG-B3-1 — materiality gate first: not_material never reaches the sum.
+  const materiality = applyMaterialityExclusion(assignmentData)
+  skippedAssignments.push(...materiality.skipped)
+
+  // AG-B3-4 — a filter value is resolved through ONE function that knows
+  // which path it is on. isBlank mirrors getFilterJustificationIssues so the
+  // two can never disagree on what "unknown" means.
+  const isBlank = (v: string | number | null | undefined) => v === null || v === undefined || v === ''
+  const resolveFilter = (filter: FilterName, raw: string | number | null | undefined, assignmentId: string, outcomeId: string, assumedValue: number): number => {
+    if (!isBlank(raw)) return typeof raw === 'number' ? raw : parseNum(raw)
+    if (options.filterSemantics === 'authoritative') {
+      throw new Error(
+        `FILTER_VALUE_UNKNOWN: assignment ${assignmentId} (outcome ${outcomeId}) has no ${filter} value — refusing to compute an authoritative line from an invented ${assumedValue} (FIBC-017 / FIBDB-010, AG-B3-4)`
+      )
+    }
+    preliminaryFilterAssumptions.push({ assignmentId, outcomeId, filter, assumedValue })
+    return assumedValue
+  }
+
+  for (const { assignment, input, filterSet, proxy, proxyVersion } of materiality.included) {
     const quantity = dec(input.quantity)
     // W2-B2-R1 / R-B2-05 (AG-B2-1, VERSION_BOUND_MONETARY_RESOLUTION_REQUIRED):
     // the bound financial_proxy_versions row is the SOLE monetary source for
@@ -1162,11 +1372,11 @@ export function runDeterministicCalc(
       continue
     }
 
-    const deadweightPct = clamp(parseNum(filterSet.deadweightPct), 0, 100)
-    const attributionPct = clamp(parseNum(filterSet.attributionPct), 0, 100)
-    const displacementPct = clamp(parseNum(filterSet.displacementPct), 0, 100)
-    const dropoffPct = clamp(parseNum(filterSet.dropoffPct), 0, 100)
-    const durationYears = Math.min(Math.max(filterSet.durationYears ?? 1, 1), 50)
+    const deadweightPct = clamp(resolveFilter('deadweight', filterSet.deadweightPct, assignment.id, assignment.outcomeId, 0), 0, 100)
+    const attributionPct = clamp(resolveFilter('attribution', filterSet.attributionPct, assignment.id, assignment.outcomeId, 0), 0, 100)
+    const displacementPct = clamp(resolveFilter('displacement', filterSet.displacementPct, assignment.id, assignment.outcomeId, 0), 0, 100)
+    const dropoffPct = clamp(resolveFilter('dropoff', filterSet.dropoffPct, assignment.id, assignment.outcomeId, 0), 0, 100)
+    const durationYears = Math.min(Math.max(resolveFilter('duration', filterSet.durationYears, assignment.id, assignment.outcomeId, 1), 1), 50)
 
     const baseGrossValue = quantity.mul(proxyValue)
     const baseAdjustmentFactor = new Decimal(1).minus(dec(deadweightPct).div(100))
@@ -1208,6 +1418,35 @@ export function runDeterministicCalc(
     })
   }
 
+  const monetizedOutcomeIds = [...new Set(lineItems.map((li) => li.outcomeId))]
+
+  // W2-B3 completeness (AG-B3-2, FIBC-016) — "if no outcome has defensible
+  // monetization, no SROI ratio is emitted": zero line items means the
+  // division below would only ever produce a fabricated 0.000000. The ratio
+  // is ABSENT (null), the per-funder ratios are not fabricated either, and
+  // the totals/skips stay reported so results reporting remains available.
+  if (lineItems.length === 0) {
+    return {
+      currency,
+      totalInvestment: totalInvestment.toNumber(),
+      grossSocialValue: grossSocialValue.toNumber(),
+      netSocialValue: netSocialValue.toNumber(),
+      sroiRatio: null,
+      totalInvestmentExact: totalInvestment.toFixed(MONEY_DP),
+      grossSocialValueExact: grossSocialValue.toFixed(MONEY_DP),
+      netSocialValueExact: netSocialValue.toFixed(MONEY_DP),
+      sroiRatioExact: null,
+      noRatioReason: NO_RATIO_REASON,
+      lineItems,
+      fundersBreakdown: [],
+      unattributedNsvUsd: new Decimal(0).toFixed(MONEY_DP),
+      skippedAssignments,
+      monetizedOutcomeIds,
+      materialityUnclassifiedOutcomeIds: materiality.materialityUnclassifiedOutcomeIds,
+      preliminaryFilterAssumptions,
+    }
+  }
+
   const sroiRatio = netSocialValue.div(totalInvestment)
 
   // Per-funder attribution (all in USD, 4dp — consistent with the money model).
@@ -1235,6 +1474,9 @@ export function runDeterministicCalc(
     fundersBreakdown,
     unattributedNsvUsd,
     skippedAssignments,
+    monetizedOutcomeIds,
+    materialityUnclassifiedOutcomeIds: materiality.materialityUnclassifiedOutcomeIds,
+    preliminaryFilterAssumptions,
   }
 }
 
@@ -1251,7 +1493,9 @@ export async function calculateSroiPreview(projectId: string) {
   const { investments, assignmentData, allocations, fundersList, discountRatePct, loadSkipped } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
-  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
+  // AG-B3-4 — the preview is the product's labelled "Cálculo preliminar":
+  // unknown filters are coerced AND itemized (preliminaryFilterAssumptions).
+  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct, { filterSemantics: 'preliminary' })
 
   return {
     canCalculate: true,
@@ -1261,7 +1505,14 @@ export async function calculateSroiPreview(projectId: string) {
       totalInvestment: result.totalInvestment,
       grossSocialValue: result.grossSocialValue,
       netSocialValue: result.netSocialValue,
+      // AG-B3-2 — null when nothing is defensibly monetized; never 0.
       sroiRatio: result.sroiRatio,
+      noRatioReason: result.noRatioReason ?? null,
+      hasDefensibleMonetization: result.sroiRatio !== null,
+      monetizedOutcomeIds: result.monetizedOutcomeIds,
+      // AG-B3-1 — unclassified contributions are visible, never silent.
+      materialityUnclassifiedOutcomeIds: result.materialityUnclassifiedOutcomeIds,
+      preliminaryFilterAssumptions: result.preliminaryFilterAssumptions,
       lineItems: result.lineItems,
       fundersBreakdown: result.fundersBreakdown,
       unattributedNsvUsd: result.unattributedNsvUsd,
@@ -1284,8 +1535,9 @@ export interface SroiScenarioResult {
   currency: string
   netSocialValue: number
   netSocialValueExact: string
-  sroiRatio: number
-  sroiRatioExact: string
+  // AG-B3-2 — null in the no-ratio state (same engine, same rule).
+  sroiRatio: number | null
+  sroiRatioExact: string | null
 }
 
 // Non-persisted sensitivity band: re-runs the deterministic engine with every
@@ -1302,18 +1554,22 @@ export async function calculateSroiScenarios(projectId: string, deltaPp: number 
   const { investments, assignmentData, allocations, fundersList, discountRatePct } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
+  // AG-B3-4 — an unknown (NULL) filter stays unknown through the shift so the
+  // preliminary engine path itemizes it, instead of being silently read as 0
+  // here and shifted from that invented zero.
+  const shift = (raw: string | null, sc: Scenario) => (raw === null || raw === '' ? raw : String(scenarioFilterPct(parseNum(raw), sc, deltaPp)))
   const scenarios: SroiScenarioResult[] = (['conservative', 'base', 'optimistic'] as const).map((sc) => {
     const adjusted: AssignmentData[] = assignmentData.map((d) => ({
       ...d,
       filterSet: {
         ...d.filterSet,
-        deadweightPct: String(scenarioFilterPct(parseNum(d.filterSet.deadweightPct), sc, deltaPp)),
-        attributionPct: String(scenarioFilterPct(parseNum(d.filterSet.attributionPct), sc, deltaPp)),
-        displacementPct: String(scenarioFilterPct(parseNum(d.filterSet.displacementPct), sc, deltaPp)),
-        dropoffPct: String(scenarioFilterPct(parseNum(d.filterSet.dropoffPct), sc, deltaPp)),
+        deadweightPct: shift(d.filterSet.deadweightPct, sc),
+        attributionPct: shift(d.filterSet.attributionPct, sc),
+        displacementPct: shift(d.filterSet.displacementPct, sc),
+        dropoffPct: shift(d.filterSet.dropoffPct, sc),
       },
     }))
-    const result = runDeterministicCalc(investments, adjusted, allocations, fundersList, discountRatePct)
+    const result = runDeterministicCalc(investments, adjusted, allocations, fundersList, discountRatePct, { filterSemantics: 'preliminary' })
     return {
       scenario: sc,
       currency: result.currency,
@@ -1422,7 +1678,11 @@ export async function calculateAndPersistSroiRun(projectId: string) {
   const { investments, assignmentData, allocations, fundersList, discountRatePct, loadSkipped } = await loadCalculationData(projectId, ctx.organization.id, true)
   if (investments.length === 0) throw new Error('Investment disappeared after readiness check')
 
-  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct)
+  // AG-B3-4 — THE authoritative persisted path (FIBDB-010): an unknown filter
+  // throws FILTER_VALUE_UNKNOWN here, before any DB write. AG-B3-1/AG-B3-2:
+  // not_material is excluded and itemized; zero defensibly monetized lines
+  // persist sroi_ratio NULL — never a fabricated 0.
+  const result = runDeterministicCalc(investments, assignmentData, allocations, fundersList, discountRatePct, { filterSemantics: 'authoritative' })
   // FIBIU-12 (FIBC-016) — merged once here; every downstream use (snapshot,
   // audit log) reads this single itemized list.
   const allSkippedAssignments = [...loadSkipped, ...result.skippedAssignments]
@@ -1470,7 +1730,14 @@ export async function calculateAndPersistSroiRun(projectId: string) {
       totalInvestment: result.totalInvestmentExact,
       grossSocialValue: result.grossSocialValueExact,
       netSocialValue: result.netSocialValueExact,
+      // AG-B3-2 — null (not '0.000000') when no outcome has defensible
+      // monetization; the reason travels with it.
       sroiRatio: result.sroiRatioExact,
+      noRatioReason: result.noRatioReason ?? null,
+      monetizedOutcomeIds: result.monetizedOutcomeIds,
+      // AG-B3-1 — unclassified contributions are recorded in the immutable
+      // snapshot so they are visible in methodology state, never silent.
+      materialityUnclassifiedOutcomeIds: result.materialityUnclassifiedOutcomeIds,
       investments: investments.map(inv => ({
         id: inv.id,
         funderId: inv.funderId,
@@ -1570,7 +1837,7 @@ export async function calculateAndPersistSroiRun(projectId: string) {
     entityType: 'sroi_calculation_run',
     entityId: run.id,
     action: AUDIT_ACTIONS.SROI_CALCULATION_RUN_CALCULATED,
-    afterJson: { runId: run.id, version: run.version, sroiRatio: result.sroiRatio } as Record<string, unknown>,
+    afterJson: { runId: run.id, version: run.version, sroiRatio: result.sroiRatio, noRatioReason: result.noRatioReason ?? null } as Record<string, unknown>,
   })
 
   return { run, lineItems: lineItemRows }

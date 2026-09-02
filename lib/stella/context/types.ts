@@ -62,7 +62,10 @@ export interface CalculationSnapshot {
   totalInvestment: number
   grossSocialValue: number
   netSocialValue: number
-  sroiRatio: number
+  // W2-B3 completeness (AG-B3-2, FIBC-016) — null when the run persisted no
+  // SROI ratio (no defensibly monetized outcome). Stella never receives 0.0
+  // in that state; every prompt/guard consumer handles null explicitly.
+  sroiRatio: number | null
   currency: string
   lineItemCount: number
   version: number
