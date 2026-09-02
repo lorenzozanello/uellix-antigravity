@@ -924,11 +924,19 @@ describe('the status is derived, and an edited one fails verification', () => {
       // The alternative — adding a tenth observation to the artefact so the old
       // verdict held — would have been a fabricated measurement: an operator
       // session, dated before grounding_0005 existed, reporting it absent.
+      //
+      // The BASELINE corpus (db/hosted/baseline-manifest.ts) has since grown to
+      // 64 units, and this corroboration was never re-measured against the new
+      // ones either. planProvisioningPhase now refuses at the EARLIER,
+      // more-fundamental PROVISIONING_BASELINE_INCOMPLETE gate before it ever
+      // reaches the grounding_0005/grounding_0002 supersession check the
+      // narrative above describes — a stricter, not weaker, refusal. The
+      // checkpoint's verdict (checkpointPassed) is unchanged: false either way.
       expect(recorded.packageCount).toBe(A1_OBSERVED_CHAIN.length)
       expect(recorded.partialPackages).toEqual([])
       expect(recorded.checkpointPassed).toBe(false)
-      expect((recorded.blockers as string[]).join(' ')).toContain('HOSTED_PROBE_MISSING')
-      expect((recorded.blockers as string[]).join(' ')).toContain('grounding_0005_claim_advisory_lock')
+      expect((recorded.blockers as string[]).join(' ')).toContain('PROVISIONING_BASELINE_INCOMPLETE')
+      expect((recorded.blockers as string[]).join(' ')).toContain('0040_governed_model_registry.sql')
       expect((recorded.warnings as string[]).join(' ')).toContain('did not exist when it was measured')
 
       // And the STALENESS is a fact about coverage, not about the target: every

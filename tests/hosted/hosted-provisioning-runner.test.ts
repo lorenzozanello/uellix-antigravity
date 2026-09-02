@@ -171,13 +171,15 @@ describe('the three phases, in sequence', () => {
     ])
   })
 
-  it('PHASE_BASELINE plans unit ZERO then all 50 units in manifest order, and permits no writes', () => {
+  it('PHASE_BASELINE plans unit ZERO then all baseline units in manifest order, and permits no writes', () => {
     const result = plan(planProvisioningPhase(request()))
     // UNIT ZERO IS A STEP, NOT SETUP. The ledger table must exist before unit 1
     // can INSERT its row, and a prerequisite nobody plans is one somebody skips.
     expect(result.steps[0].id).toBe('000_journal_bootstrap')
     expect(result.steps.slice(1).map((s) => s.id)).toEqual([...BASELINE_ORDER])
-    expect(result.steps).toHaveLength(51)
+    // Derived from the canonical manifest (BASELINE_ORDER), not a duplicated
+    // count: journal bootstrap + every baseline unit.
+    expect(result.steps).toHaveLength(BASELINE_ORDER.length + 1)
     expect(result.writesPermitted).toBe(false)
     expect(result.sequenceComplete).toBe(false)
     expect(result.nextAction).toMatch(/CHECKPOINT B0/)
@@ -287,7 +289,7 @@ describe('the three phases, in sequence', () => {
       planProvisioningPhase(request({ production: { hosts: ['app.uellix.com'], projectRefs: [] } })),
     )
     expect(p.writesPermitted).toBe(false)
-    expect(p.steps).toHaveLength(51)
+    expect(p.steps).toHaveLength(BASELINE_ORDER.length + 1)
   })
 
   it('apply mode requires a confirmation minted for THIS project', () => {
@@ -777,7 +779,7 @@ describe('ATTACK 14 — a class-C privilege the platform may not grant (adversar
         }),
       ),
     )
-    expect(p.steps).toHaveLength(51)
+    expect(p.steps).toHaveLength(BASELINE_ORDER.length + 1)
     expect(p.writesPermitted).toBe(false)
   })
 
@@ -790,7 +792,7 @@ describe('ATTACK 14 — a class-C privilege the platform may not grant (adversar
         request({ state: { ...VIRGIN, privileges: { ...PRIVILEGES_OK, evidenceBucketExists: false } } }),
       ),
     )
-    expect(p.steps).toHaveLength(51)
+    expect(p.steps).toHaveLength(BASELINE_ORDER.length + 1)
 
     // …and it is still caught, twice: by CHECKPOINT B0 and by the apply gate.
     expect(BASELINE_POSTCONDITIONS.some((c) => c.id === 'B0-15-evidence-bucket-exists')).toBe(true)
@@ -1030,9 +1032,9 @@ describe('PHASE_BASELINE is plannable over the connection the operator actually 
   // refused the pooler host outright — so the authorisation pointed at a
   // connection the planner would not accept. Fail-closed, and still useless: an
   // authorisation nobody can act on authorises nothing.
-  it('plans the same 51 steps over the Session Pooler as over a direct host', () => {
+  it('plans the same steps over the Session Pooler as over a direct host', () => {
     const p = plan(planProvisioningPhase(viaPooler()))
-    expect(p.steps).toHaveLength(51)
+    expect(p.steps).toHaveLength(BASELINE_ORDER.length + 1)
     expect(p.steps[0].id).toBe('000_journal_bootstrap')
     expect(p.writesPermitted).toBe(false)
     // Neither mechanism is privileged: same plan, same order, either way in.

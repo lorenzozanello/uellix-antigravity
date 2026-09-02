@@ -44,6 +44,7 @@ import {
   type ChainEvidenceEntry,
 } from '@/db/hosted/chain-evidence'
 import { A1_CORROBORATION_ARTEFACT, A1_STATUS_ARTEFACT } from '@/db/hosted/checkpoint-a1'
+import { BASELINE_ORDER } from '@/db/hosted/baseline-manifest'
 import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
 import { PACKAGE_WITNESSES, WITNESSED_PACKAGES, witnessKey } from '@/db/hosted/package-witnesses'
 import { STELLA_FEATURE_FLAGS, planProvisioningPhase } from '@/db/hosted/hosted-provisioning-runner'
@@ -140,12 +141,15 @@ function corroboration(
   )
 }
 
-const JOURNAL_UNITS = (() => {
-  const raw = readRepo(A1_CORROBORATION_ARTEFACT)
-  if (raw === null) return []
-  const parsed = JSON.parse(raw) as { observation: { baselineJournal: { units: unknown[] } } }
-  return parsed.observation.baselineJournal.units
-})()
+// Derived from the CANONICAL baseline manifest (db/hosted/baseline-manifest.ts),
+// not from the real, historically-dated artifacts/hosted-a1-corroboration.json —
+// that file is a point-in-time operator MEASUREMENT and goes stale the moment
+// the canonical baseline grows past what it recorded (it did: 50 -> 64 units).
+// These fixtures are synthetic ("what a healthy chain's evidence would look
+// like"), matching this file's own header ("NOTHING IN THIS FILE TOUCHES
+// artifacts/**"); pinning them to a real measurement's snapshot was the one
+// place that promise did not hold, and it broke exactly when the corpus grew.
+const JOURNAL_UNITS = BASELINE_ORDER.map((packageId) => ({ status: 'APPLIED', packageId }))
 
 /** An in-memory artefact store keyed by the registry's REAL paths. No disk. */
 function store(entries: Record<string, string>): (rel: string) => string | null {
@@ -906,9 +910,12 @@ describe('what one applyConfirmation actually authorises', () => {
       applyConfirmation,
       target,
       state: {
-        baselineUnitsInstalled: a1.observation.baselineJournal.units
-          .filter((u) => ['APPLIED', 'MANUAL_BOUNDARY_VERIFIED'].includes(u.status))
-          .map((u) => u.packageId),
+        // Canonical baseline (db/hosted/baseline-manifest.ts), not the real
+        // corroboration's historically-dated snapshot — see JOURNAL_UNITS
+        // above. This describe block is about applyConfirmation/chain-step
+        // gating, which assumes baseline-complete as a controlled precondition,
+        // not the thing under test.
+        baselineUnitsInstalled: [...BASELINE_ORDER],
         bootstrapSchemaPresent: true,
         sentinel: target.sentinel,
         stellaPackagesInstalled: {
