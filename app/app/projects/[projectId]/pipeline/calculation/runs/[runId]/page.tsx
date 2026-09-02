@@ -1,16 +1,21 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { runWithOrganizationAccess } from '@/lib/auth/session';
-import { isInReviewSet, canDetermineEvidenceSufficiency } from '@/lib/auth/permissions';
+import { isInReviewSet, canDetermineEvidenceSufficiency, hasRole } from '@/lib/auth/permissions';
 import {
   getCalculationRunDetail,
   listSroiRunReviews,
 } from '@/lib/pipeline/sroi-results';
-import { detectRunInputDrift } from '@/lib/pipeline/sroi-calculation';
+import {
+  detectRunInputDrift,
+  getRunMonetizationCoverage,
+  MONETIZATION_REASON_VALUES,
+} from '@/lib/pipeline/sroi-calculation';
 import { getLatestSufficiencyDeterminationsByOutcomeIds } from '@/lib/pipeline/evidence-sufficiency';
 import { fetchOutcomes } from '@/app/app/projects/[projectId]/pipeline/outcomes.actions';
 import { createSroiRunReviewAction } from '../createSroiRunReview.action';
 import { recordEvidenceSufficiencyDeterminationAction } from '../recordEvidenceSufficiencyDetermination.action';
+import { recordOutcomeMonetizationDispositionAction } from '../recordOutcomeMonetizationDisposition.action';
 import { revalidatePath } from 'next/cache';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,6 +62,23 @@ const SUFFICIENCY_BADGE: Record<string, { variant: 'success' | 'danger' | 'neutr
   insufficient: { variant: 'danger', label: 'Insuficiente' },
 };
 
+// FIBIU-12 (FIBC-016) — the seven governed not_monetized reasons, each with
+// its own label: never collapsed into one generic omission category.
+const MONETIZATION_REASON_LABEL: Record<string, string> = {
+  no_defensible_proxy: 'Sin proxy defendible',
+  proxy_not_approved: 'Proxy no aprobado',
+  insufficient_evidence: 'Evidencia insuficiente',
+  not_material: 'No material',
+  not_yet_eligible: 'Aún no elegible',
+  superseded_version: 'Versión superada',
+  other_governed_reason: 'Otra razón gobernada',
+};
+
+const MATERIALITY_LABEL: Record<string, string> = {
+  material: 'Material',
+  not_material: 'No material',
+};
+
 export default async function RunDetailPage({
   params,
 }: {
@@ -96,6 +118,15 @@ export default async function RunDetailPage({
       monetizedOutcomeIds,
       outcomes: await fetchOutcomes(projectId),
       sufficiencyByOutcome: await getLatestSufficiencyDeterminationsByOutcomeIds(monetizedOutcomeIds, runId),
+      // FIBIU-12 (FIBC-016, W2-B3 completeness) — the coverage view a reviewer
+      // must see BEFORE approving: composed from this run's own immutable
+      // line items, the dispositions recorded for it, the project's active
+      // assignment outcomes, and FIBIU-11's classification per outcome.
+      coverage: await getRunMonetizationCoverage(projectId, runId),
+      // The same analyst+ floor the service (authorize) and the 0059/0060
+      // policies enforce; the service and the database remain authoritative.
+      canRecordDisposition: hasRole(ctx.membership.role, 'analyst'),
+      runApproved: (await listSroiRunReviews(projectId, runId)).some((r) => r.status === 'approved'),
     };
   });
 
@@ -110,10 +141,29 @@ export default async function RunDetailPage({
     monetizedOutcomeIds,
     outcomes,
     sufficiencyByOutcome,
+    coverage,
+    canRecordDisposition,
+    runApproved,
   } = loaded;
 
   const { run, lineItems, snapshotJson } = detail;
   const outcomeTitleById = new Map((outcomes ?? []).map((o) => [o.id, o.title]));
+  const noRatioReason = (snapshotJson as { noRatioReason?: string | null } | null)?.noRatioReason ?? null;
+  const hasRatio = run.sroiRatio !== null && run.sroiRatio !== undefined;
+
+  async function handleRecordDisposition(formData: FormData) {
+    'use server';
+    const outcomeId = formData.get('outcomeId') as string;
+    const disposition = formData.get('disposition') as string;
+    const reason = (formData.get('reason') as string) || undefined;
+    const justification = (formData.get('justification') as string) || undefined;
+    await recordOutcomeMonetizationDispositionAction(projectId, outcomeId, runId, {
+      disposition,
+      reason: disposition === 'not_monetized' ? reason : undefined,
+      justification: disposition === 'not_monetized' ? justification : undefined,
+    });
+    revalidatePath(`/app/projects/${projectId}/pipeline/calculation/runs/${runId}`);
+  }
 
   async function handleRecordSufficiency(formData: FormData) {
     'use server';
@@ -206,8 +256,20 @@ export default async function RunDetailPage({
             className="mt-1 text-2xl font-bold text-foreground tabular-nums"
             style={{ fontFamily: 'var(--font-ibm-plex-mono)' }}
           >
-            {run.sroiRatio ? `${parseFloat(run.sroiRatio).toFixed(2)}:1` : '—'}
+            {/* FIBIU-12 (FIBC-016, AG-B3-2) — an explicit no-ratio state, never '—' alone and never 0.00:1. */}
+            {hasRatio ? (
+              `${parseFloat(run.sroiRatio!).toFixed(2)}:1`
+            ) : (
+              <span className="text-base font-semibold text-amber-800" data-testid="run-no-ratio">Sin ratio SROI</span>
+            )}
           </p>
+          {!hasRatio && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {noRatioReason === 'NO_DEFENSIBLE_MONETIZATION'
+                ? 'Ningún resultado tiene monetización defendible en esta corrida (FIBC-016). Los resultados se reportan sin ratio.'
+                : 'Esta corrida no persistió un ratio SROI.'}
+            </p>
+          )}
         </div>
         <div className="rounded-md border border-border bg-muted/30 p-4">
           <p className="text-xs font-medium text-muted-foreground">Valor Social Neto</p>
@@ -504,6 +566,173 @@ export default async function RunDetailPage({
           </CardContent>
         </Card>
       )}
+
+      {/* Monetization coverage + per-outcome disposition (FIBIU-12 / FIBC-016 /
+          FIBDB-009) — rendered BEFORE the review/approval form, so coverage is
+          visible before any approval decision. Every outcome the run touched
+          or the project actively assigns appears exactly once; an outcome
+          without a disposition is shown as missing, never dropped; each
+          not_monetized reason keeps its own governed label. The disposition
+          is a HUMAN act bound to THIS run by a hidden field the user cannot
+          edit; the run is read-only once approved (0060 DB guard). */}
+      <section data-testid="monetization-coverage" aria-label="Cobertura de monetización">
+      <Card>
+        <CardHeader>
+          <CardTitle>Cobertura de Monetización (antes de aprobar)</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Disposición humana por resultado para esta corrida: monetizado o no monetizado con razón gobernada y
+            justificación. El ratio SROI cubre únicamente los resultados con monetización defendible. Stella explica
+            exclusiones; nunca decide qué excluir.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <span className="text-muted-foreground block text-xs">Monetización defendible</span>
+              <span className="font-medium text-foreground" data-testid="coverage-defensible">
+                {coverage.hasDefensibleMonetization ? 'Sí — ratio emitido' : 'No — sin ratio SROI'}
+              </span>
+            </div>
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <span className="text-muted-foreground block text-xs">Monetizados</span>
+              <span className="font-medium text-foreground">{coverage.monetizedOutcomeIds.length}</span>
+            </div>
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <span className="text-muted-foreground block text-xs">Materiales no monetizados</span>
+              <span className="font-medium text-foreground">{coverage.materialNotMonetizedOutcomeIds.length}</span>
+            </div>
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+              <span className="text-amber-900 block text-xs">Sin disposición registrada</span>
+              <span className="font-medium text-amber-900" data-testid="coverage-missing-count">
+                {coverage.missingDispositionOutcomeIds.length}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium text-foreground mb-1">No monetizados por razón gobernada</p>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs text-muted-foreground" data-testid="coverage-by-reason">
+              {MONETIZATION_REASON_VALUES.map((reason) => (
+                <li key={reason} className="flex justify-between rounded border border-border/60 px-2 py-1">
+                  <span>{MONETIZATION_REASON_LABEL[reason] ?? reason}</span>
+                  <span className="tabular-nums text-foreground" data-testid={`coverage-reason-${reason}`}>
+                    {coverage.notMonetizedByReason[reason].length}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {coverage.outcomes.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">Esta corrida no tiene resultados que cubrir.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Resultado</TableHead>
+                  <TableHead>Materialidad</TableHead>
+                  <TableHead>Motor</TableHead>
+                  <TableHead>Disposición actual</TableHead>
+                  {canRecordDisposition && !runApproved && <TableHead>Registrar disposición</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {coverage.outcomes.map((o) => {
+                  const dispositionSelectId = `disposition-${o.outcomeId}`;
+                  const reasonSelectId = `disposition-reason-${o.outcomeId}`;
+                  const justificationId = `disposition-justification-${o.outcomeId}`;
+                  return (
+                    <TableRow key={o.outcomeId} data-testid={`coverage-row-${o.outcomeId}`}>
+                      <TableCell className="font-medium text-foreground max-w-[220px]">
+                        <span className="line-clamp-1">{outcomeTitleById.get(o.outcomeId) ?? o.outcomeId}</span>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {o.materialityClassification === null ? (
+                          <span className="text-amber-800">Sin clasificar</span>
+                        ) : (
+                          MATERIALITY_LABEL[o.materialityClassification] ?? o.materialityClassification
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {o.engineMonetized ? 'Monetizado en esta corrida' : 'Sin línea en esta corrida'}
+                      </TableCell>
+                      <TableCell>
+                        {o.bucket === 'missing_disposition' ? (
+                          <Badge variant="warning">Sin disposición</Badge>
+                        ) : o.bucket === 'monetized' ? (
+                          <Badge variant="success">Monetizado</Badge>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="neutral">
+                              No monetizado — {MONETIZATION_REASON_LABEL[o.disposition?.reason ?? ''] ?? o.disposition?.reason}
+                            </Badge>
+                            {o.disposition?.justification && (
+                              <span className="text-[10px] text-muted-foreground">{o.disposition.justification}</span>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                      {canRecordDisposition && !runApproved && (
+                        <TableCell>
+                          <form action={handleRecordDisposition} className="flex flex-col gap-1.5 max-w-xs">
+                            <input type="hidden" name="outcomeId" value={o.outcomeId} />
+                            <label htmlFor={dispositionSelectId} className="sr-only">
+                              Disposición de monetización
+                            </label>
+                            <Select
+                              id={dispositionSelectId}
+                              name="disposition"
+                              defaultValue={o.engineMonetized ? 'monetized' : 'not_monetized'}
+                              required
+                              className="h-7 text-xs"
+                            >
+                              <option value="monetized">Monetizado</option>
+                              <option value="not_monetized">No monetizado</option>
+                            </Select>
+                            <label htmlFor={reasonSelectId} className="sr-only">
+                              Razón gobernada
+                            </label>
+                            <Select id={reasonSelectId} name="reason" defaultValue="" className="h-7 text-xs">
+                              <option value="">Razón (requerida si no monetizado)…</option>
+                              {MONETIZATION_REASON_VALUES.map((reason) => (
+                                <option key={reason} value={reason}>
+                                  {MONETIZATION_REASON_LABEL[reason] ?? reason}
+                                </option>
+                              ))}
+                            </Select>
+                            <label htmlFor={justificationId} className="sr-only">
+                              Justificación de la disposición
+                            </label>
+                            <textarea
+                              id={justificationId}
+                              name="justification"
+                              rows={2}
+                              placeholder="Justificación (requerida si no monetizado)"
+                              className={TEXTAREA_CLASS}
+                            />
+                            <button
+                              type="submit"
+                              className="inline-flex items-center justify-center rounded border border-border bg-background px-2 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              Guardar disposición
+                            </button>
+                          </form>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+          {runApproved && (
+            <p className="text-xs text-muted-foreground italic">
+              Corrida aprobada: las disposiciones son inmutables (FIBDB-009, aplicado por la base de datos).
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      </section>
 
       {/* Reviews */}
       <Card>

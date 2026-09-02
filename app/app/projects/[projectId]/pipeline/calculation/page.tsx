@@ -27,6 +27,7 @@ import {
   getSroiCalculationReadiness,
   calculateSroiPreview,
   calculateSroiScenarios,
+  type FilterName,
 } from '@/lib/pipeline/sroi-calculation'
 import { listFundersForCurrentOrganization, FUNDER_TYPES } from '@/lib/pipeline/funders'
 import { listAllocationsForProject, sumPct } from '@/lib/pipeline/allocations'
@@ -58,6 +59,51 @@ const RUN_STATUS: Record<string, { variant: 'success' | 'warning' | 'danger' | '
 
 const INPUT_CLASS =
   'mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+
+// FIBIU-13 (FIBC-017 / FIBDB-010) — the five governed filters, each with its
+// own value column and its own discrete justification column (0058).
+type FilterSetRow = { deadweightPct: string | null; attributionPct: string | null; displacementPct: string | null; dropoffPct: string | null; durationYears: number | null; justification: string | null; deadweightJustification: string | null; attributionJustification: string | null; displacementJustification: string | null; dropoffJustification: string | null; durationJustification: string | null }
+const FILTER_FIELDS: {
+  name: FilterName
+  label: string
+  shortLabel: string
+  idPrefix: string
+  valueKey: 'deadweightPct' | 'attributionPct' | 'displacementPct' | 'dropoffPct' | 'durationYears'
+  justificationKey: 'deadweightJustification' | 'attributionJustification' | 'displacementJustification' | 'dropoffJustification' | 'durationJustification'
+  inputType: 'text' | 'number'
+  placeholder: string
+  help: string
+}[] = [
+  { name: 'deadweight', label: 'Deadweight %', shortLabel: 'deadweight', idPrefix: 'dw', valueKey: 'deadweightPct', justificationKey: 'deadweightJustification', inputType: 'text', placeholder: 'Sin definir', help: '% que habría ocurrido sin la intervención' },
+  { name: 'attribution', label: 'Atribución %', shortLabel: 'atribución', idPrefix: 'at', valueKey: 'attributionPct', justificationKey: 'attributionJustification', inputType: 'text', placeholder: 'Sin definir', help: '% atribuible a otros actores' },
+  { name: 'displacement', label: 'Desplazamiento %', shortLabel: 'desplazamiento', idPrefix: 'dp', valueKey: 'displacementPct', justificationKey: 'displacementJustification', inputType: 'text', placeholder: 'Sin definir', help: '% de efectos positivos desplazados a otro lugar' },
+  { name: 'dropoff', label: 'Decaimiento %', shortLabel: 'decaimiento', idPrefix: 'do', valueKey: 'dropoffPct', justificationKey: 'dropoffJustification', inputType: 'text', placeholder: 'Sin definir', help: '% de reducción anual del impacto después del año 1' },
+  { name: 'duration', label: 'Duración (años)', shortLabel: 'duración', idPrefix: 'dur', valueKey: 'durationYears', justificationKey: 'durationJustification', inputType: 'number', placeholder: 'Sin definir', help: 'Años durante los que persiste el resultado (1-50)' },
+]
+type FilterUiState = 'unknown' | 'zero_supported' | 'value_supported' | 'value_unjustified'
+// Mirrors getFilterJustificationIssues' blank test (lib/pipeline/sroi-calculation.ts):
+// an unset value is UNKNOWN — never read as 0 — and a justified 0 is a supported value.
+function filterState(value: string | number | null | undefined, justification: string | null | undefined): FilterUiState {
+  const blank = (v: string | number | null | undefined) => v === null || v === undefined || v === ''
+  if (blank(value)) return 'unknown'
+  if (blank(justification)) return 'value_unjustified'
+  return Number(value) === 0 ? 'zero_supported' : 'value_supported'
+}
+const FILTER_STATE_META: Record<FilterUiState, { label: string; className: string }> = {
+  unknown: { label: 'Desconocido / sin definir — no es 0', className: 'bg-amber-100 text-amber-900' },
+  zero_supported: { label: '0 justificado (valor explícito)', className: 'bg-emerald-100 text-emerald-900' },
+  value_supported: { label: 'Valor justificado', className: 'bg-emerald-100 text-emerald-900' },
+  value_unjustified: { label: 'Valor sin justificación', className: 'bg-red-100 text-red-900' },
+}
+const SKIP_REASON_LABEL: Record<string, string> = {
+  non_positive_quantity: 'cantidad no positiva',
+  non_positive_proxy_value: 'valor de proxy no positivo',
+  missing_input: 'sin insumo',
+  missing_filter_set: 'sin filtros',
+  missing_proxy: 'sin proxy',
+  missing_outcome: 'sin resultado',
+  not_material: 'clasificado no material (FIBC-015)',
+}
 
 const SCENARIO_META: Record<string, { label: string; border: string }> = {
   conservative: { label: 'Conservador', border: 'border-amber-300 bg-amber-50' },
@@ -178,7 +224,7 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
   const investment = investments[0] ?? null
 
   const inputMap     = new Map(inputs.map((i) => [i.assignmentId, i]))
-  const filterSetMap = new Map(filterSets.map((f) => [f.assignmentId, f]))
+  const filterSetMap = new Map<string, FilterSetRow>(filterSets.map((f) => [f.assignmentId, f as FilterSetRow]))
 
   // Outcomes that actually feed the calculation (unique, in assignment order).
   const calcOutcomes = Array.from(
@@ -766,106 +812,68 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                         <input type="hidden" name="projectId" value={projectId} />
                         <input type="hidden" name="assignmentId" value={assignment.id} />
 
+                        {/* FIBIU-13 (FIBC-017 / FIBDB-010, W2-B3 completeness AG-B3-4) — each
+                            of the five governed filters carries its own value AND its own
+                            discrete justification; 0 does not exempt justification. An unset
+                            value is UNKNOWN, never a silent 0: the input no longer defaults to
+                            '0' and the state chip distinguishes "0 justificado" from
+                            "desconocido". The authoritative run refuses an unknown filter; the
+                            preview (labelled preliminar) assumes and itemizes it. */}
                         <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label
-                              htmlFor={`dw-${assignment.id}`}
-                              className="block text-xs font-medium text-foreground"
-                            >
-                              Deadweight %
-                            </label>
-                            <input
-                              id={`dw-${assignment.id}`}
-                              name="deadweightPct"
-                              type="text"
-                              disabled={!canEdit}
-                              defaultValue={currentFilter?.deadweightPct ?? '0'}
-                              className={INPUT_CLASS}
-                            />
-                            <p className="mt-0.5 text-[10px] text-muted-foreground">
-                              % que habría ocurrido sin la intervención
-                            </p>
-                          </div>
-                          <div>
-                            <label
-                              htmlFor={`at-${assignment.id}`}
-                              className="block text-xs font-medium text-foreground"
-                            >
-                              Atribución %
-                            </label>
-                            <input
-                              id={`at-${assignment.id}`}
-                              name="attributionPct"
-                              type="text"
-                              disabled={!canEdit}
-                              defaultValue={currentFilter?.attributionPct ?? '0'}
-                              className={INPUT_CLASS}
-                            />
-                            <p className="mt-0.5 text-[10px] text-muted-foreground">
-                              % atribuible a otros actores
-                            </p>
-                          </div>
-                          <div>
-                            <label
-                              htmlFor={`dp-${assignment.id}`}
-                              className="block text-xs font-medium text-foreground"
-                            >
-                              Desplazamiento %
-                            </label>
-                            <input
-                              id={`dp-${assignment.id}`}
-                              name="displacementPct"
-                              type="text"
-                              disabled={!canEdit}
-                              defaultValue={currentFilter?.displacementPct ?? '0'}
-                              className={INPUT_CLASS}
-                            />
-                            <p className="mt-0.5 text-[10px] text-muted-foreground">
-                              % de efectos positivos desplazados a otro lugar
-                            </p>
-                          </div>
-                          <div>
-                            <label
-                              htmlFor={`do-${assignment.id}`}
-                              className="block text-xs font-medium text-foreground"
-                            >
-                              Decaimiento %
-                            </label>
-                            <input
-                              id={`do-${assignment.id}`}
-                              name="dropoffPct"
-                              type="text"
-                              disabled={!canEdit}
-                              defaultValue={currentFilter?.dropoffPct ?? '0'}
-                              className={INPUT_CLASS}
-                            />
-                            <p className="mt-0.5 text-[10px] text-muted-foreground">
-                              % de reducción anual del impacto después del año 1
-                            </p>
-                          </div>
-                          <div>
-                            <label
-                              htmlFor={`dur-${assignment.id}`}
-                              className="block text-xs font-medium text-foreground"
-                            >
-                              Duración (años)
-                            </label>
-                            <input
-                              id={`dur-${assignment.id}`}
-                              name="durationYears"
-                              type="number"
-                              disabled={!canEdit}
-                              defaultValue={currentFilter?.durationYears ?? 1}
-                              className={INPUT_CLASS}
-                            />
-                          </div>
-                          <div>
+                          {FILTER_FIELDS.map((f) => {
+                            const rawValue = currentFilter ? currentFilter[f.valueKey] : null
+                            const rawJustification = currentFilter ? currentFilter[f.justificationKey] : null
+                            const state = filterState(rawValue, rawJustification)
+                            const meta = FILTER_STATE_META[state]
+                            return (
+                              <div key={f.name} className="rounded-md border border-border/60 p-2" data-testid={`filter-${f.name}-${assignment.id}`}>
+                                <label
+                                  htmlFor={`${f.idPrefix}-${assignment.id}`}
+                                  className="block text-xs font-medium text-foreground"
+                                >
+                                  {f.label}
+                                </label>
+                                <input
+                                  id={`${f.idPrefix}-${assignment.id}`}
+                                  name={f.valueKey}
+                                  type={f.inputType}
+                                  disabled={!canEdit}
+                                  defaultValue={rawValue === null || rawValue === undefined ? '' : String(rawValue)}
+                                  placeholder={f.placeholder}
+                                  className={INPUT_CLASS}
+                                />
+                                <p className="mt-0.5 text-[10px] text-muted-foreground">{f.help}</p>
+                                <span
+                                  className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${meta.className}`}
+                                  data-testid={`filter-state-${f.name}-${assignment.id}`}
+                                >
+                                  {meta.label}
+                                </span>
+                                <label
+                                  htmlFor={`${f.idPrefix}-just-${assignment.id}`}
+                                  className="mt-2 block text-[11px] font-medium text-foreground"
+                                >
+                                  Justificación de {f.shortLabel}
+                                </label>
+                                <input
+                                  id={`${f.idPrefix}-just-${assignment.id}`}
+                                  name={f.justificationKey}
+                                  type="text"
+                                  disabled={!canEdit}
+                                  defaultValue={rawJustification ?? ''}
+                                  placeholder="Requerida para elegibilidad (también con 0)"
+                                  className={INPUT_CLASS}
+                                />
+                              </div>
+                            )
+                          })}
+                          <div className="col-span-2">
                             <label
                               htmlFor={`just-${assignment.id}`}
                               className="block text-xs font-medium text-foreground"
                             >
-                              Justificación
-                              <span className="ml-1 text-[10px] text-muted-foreground font-normal">(opcional)</span>
+                              Justificación general (texto libre heredado)
+                              <span className="ml-1 text-[10px] text-muted-foreground font-normal">(opcional — no sustituye las cinco anteriores)</span>
                             </label>
                             <input
                               id={`just-${assignment.id}`}
@@ -950,6 +958,56 @@ export default async function CalculationPage({ params }: { params: Promise<{ pr
                 </p>
               </div>
             </div>
+
+            {/* W2-B3 completeness — FIBC-015/016/017 visibility: explicit no-ratio
+                state, unclassified contributions, preliminary filter assumptions and
+                every itemized exclusion (incl. not_material), never silent. */}
+            {preview.result.noRatioReason && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" data-testid="preview-no-ratio-notice">
+                <p className="font-medium">Sin ratio SROI: ningún resultado tiene monetización defendible en este cálculo.</p>
+                <p className="mt-1 text-xs">
+                  Los totales y las exclusiones se reportan igualmente (FIBC-016); no se emite ni se persistirá un ratio.
+                </p>
+              </div>
+            )}
+            {preview.result.materialityUnclassifiedOutcomeIds.length > 0 && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" data-testid="preview-unclassified-notice">
+                <p className="font-medium">
+                  {preview.result.materialityUnclassifiedOutcomeIds.length} resultado(s) sin clasificación de materialidad contribuyen a este cálculo preliminar.
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-xs">
+                  {preview.result.materialityUnclassifiedOutcomeIds.map((id) => (
+                    <li key={id}>{outcomeLookup.get(id)?.title ?? id}</li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-xs">La clasificación es humana y se registra en el paso Resultados (FIBC-015).</p>
+              </div>
+            )}
+            {preview.result.preliminaryFilterAssumptions.length > 0 && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" data-testid="preview-filter-assumptions">
+                <p className="font-medium">Cálculo preliminar: filtros desconocidos asumidos provisionalmente.</p>
+                <ul className="mt-1 list-disc pl-5 text-xs">
+                  {preview.result.preliminaryFilterAssumptions.map((a) => (
+                    <li key={`${a.assignmentId}-${a.filter}`}>
+                      {assignmentLookup.get(a.assignmentId)?.outcomeName ?? a.assignmentId}: {a.filter} asumido como {a.assumedValue}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-xs">La corrida autoritativa se negará hasta que estos valores estén definidos (FIBC-017).</p>
+              </div>
+            )}
+            {preview.result.skippedAssignments.length > 0 && (
+              <div className="rounded-md border border-border bg-muted/30 p-4 text-sm" data-testid="preview-skipped">
+                <p className="font-medium text-foreground">Exclusiones itemizadas ({preview.result.skippedAssignments.length})</p>
+                <ul className="mt-1 list-disc pl-5 text-xs text-muted-foreground">
+                  {preview.result.skippedAssignments.map((sk, i) => (
+                    <li key={`${sk.outcomeId}-${sk.reason}-${i}`}>
+                      {outcomeLookup.get(sk.outcomeId)?.title ?? sk.outcomeId}: {SKIP_REASON_LABEL[sk.reason] ?? sk.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Line items breakdown */}
             <div>
