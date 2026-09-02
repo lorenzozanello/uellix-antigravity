@@ -312,8 +312,13 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 grant', () => {
-    expect(PROTECTED_GRANTS.length).toBe(2)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants', () => {
+    expect(PROTECTED_GRANTS.length).toBe(3)
+    const w2_03 = PROTECTED_GRANTS[2]
+    expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
+    expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
+    expect(w2_03.patterns.length).toBe(8)
+    expect(w2_03.patterns.every((p) => !p.includes('*'))).toBe(true)
     expect(PROTECTED_GRANTS[0]).toEqual({
       authorityId: 'HPO-ODS-W2-01',
       branch: AUTHORIZED_BRANCH,
@@ -1052,5 +1057,164 @@ describe('ods:scope --protected-authority HPO-ODS-W2-02 — real CLI, temporary-
 
     expect(status).toBe(1)
     expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// HPO-ODS-W2-03 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json).
+//
+// The baseline provisioning repair: eight exact literal protected paths on
+// codex/u0-u9-reengineering-resume-r1. Every control below is a real CLI run
+// against a temporary repository — nothing reads the real working tree.
+// ---------------------------------------------------------------------------
+
+describe('ods:scope --protected-authority HPO-ODS-W2-03 — real CLI, temporary-repo fixtures', () => {
+  let dir: string
+
+  afterEach(() => {
+    if (dir) cleanupTempGitRepo(dir)
+  })
+
+  const w2_03 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-03')!
+  const TARGET_BRANCH = 'codex/u0-u9-reengineering-resume-r1'
+
+  function runRealCli(cwd: string, args: string[]): { status: number | null; stdout: string } {
+    const tsxCli = require.resolve('tsx/cli')
+    const scriptAbsolutePath = path.join(REPO_ROOT, 'scripts', 'ods-scope.ts')
+    const res = spawnSync(process.execPath, [tsxCli, scriptAbsolutePath, ...args], { cwd, encoding: 'utf8' })
+    return { status: res.status, stdout: res.stdout }
+  }
+
+  function makeTargetBranchRepo(): { dir: string; base: string } {
+    const d = makeTempGitRepo()
+    const base = commitFile(d, 'README.md', 'seed\n')
+    git(d, ['checkout', '-b', TARGET_BRANCH])
+    return { dir: d, base }
+  }
+
+  /** Writes every granted path as a fixture and commits them in one commit. */
+  function materializeGrantedPaths(d: string): void {
+    for (const p of w2_03.patterns) {
+      mkdirSync(path.join(d, path.dirname(p)), { recursive: true })
+      writeFileSync(path.join(d, p), `-- fixture for ${p}\n`)
+    }
+    git(d, ['add', '-A'])
+    git(d, ['commit', '-q', '-m', 'materialize the eight W2-03 fixture paths'])
+  }
+
+  it('sanity: the grant is exactly eight literal paths, each under db/migrations/ or db/prepared/, with no glob', () => {
+    expect(w2_03.patterns).toEqual([
+      'db/migrations/0044_fib_audit_hardening_supersession.sql',
+      'db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql',
+      'db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql',
+      'db/prepared/stella_hosted_0000_rollback.sql',
+      'db/prepared/stella_hosted_0001_managed_role_bootstrap.sql',
+      'db/prepared/stella_hosted_0001_rollback.sql',
+      'db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql',
+      'db/prepared/README.md',
+    ])
+    for (const p of w2_03.patterns) expect(p.includes('*')).toBe(false)
+  })
+
+  it('POSITIVE: the eight granted paths, changed together on the target branch, PASS under HPO-ODS-W2-03', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    materializeGrantedPaths(dir)
+
+    const args = ['--base', g.base, '--protected-authority', 'HPO-ODS-W2-03']
+    for (const p of w2_03.patterns) args.push('--allow', p)
+    const { status, stdout } = runRealCli(dir, args)
+
+    expect(status).toBe(0)
+    expect(stdout).toContain('PROTECTED_AUTHORITY=HPO-ODS-W2-03')
+    expect(stdout).toContain('CHANGED_FILE_COUNT=8')
+    expect(stdout).toContain('PROTECTED_AUTHORIZED_PATH_COUNT=8')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=0')
+    expect(stdout).toContain('ODS_SCOPE=PASS')
+  })
+
+  it('NEGATIVE (wrong branch): HPO-ODS-W2-03 on any other branch FAILs even for a granted path', () => {
+    dir = makeTempGitRepo()
+    const base = commitFile(dir, 'README.md', 'seed\n')
+    mkdirSync(path.join(dir, 'db', 'migrations'), { recursive: true })
+    commitFile(dir, 'db/migrations/0044_fib_audit_hardening_supersession.sql', '-- x\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', base,
+      '--allow', 'db/migrations/0044_fib_audit_hardening_supersession.sql',
+      '--protected-authority', 'HPO-ODS-W2-03',
+    ])
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+  })
+
+  it.each([
+    ['unlisted migration sibling', 'db/migrations/0043_fib_audit_project_id_fk.sql'],
+    ['0042 — explicitly NOT authorized by D3', 'db/migrations/0042_fib_audit_insert_policy.sql'],
+    ['0045 — explicitly NOT authorized by D3', 'db/migrations/0045_fib_domain_object_version_lineage.sql'],
+    ['unlisted prepared sibling (stella_0003 is a stop condition)', 'db/prepared/stella_0003_suggestion_decisions.sql'],
+    ['unlisted journal wrapper sibling', 'db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql'],
+    ['unlisted hosted artefact sibling', 'db/prepared/hosted/stella_0013_grounded_query_quota.hosted.sql'],
+    ['future migration', 'db/migrations/0053_fib_future.sql'],
+    ['db/baseline path', 'db/baseline/stella_g2_schema.sql'],
+  ])('NEGATIVE (%s): %s FAILs under HPO-ODS-W2-03 even when named in --allow', (_label, p) => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, path.dirname(p)), { recursive: true })
+    commitFile(dir, p, '-- x\n')
+
+    const { status, stdout } = runRealCli(dir, ['--base', g.base, '--allow', p, '--protected-authority', 'HPO-ODS-W2-03'])
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain(`PROTECTED_PATH_VIOLATION=${p}`)
+  })
+
+  it('NEGATIVE (wildcard attempt): a glob in ordinary --allow cannot widen the grant to an unlisted protected sibling', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    materializeGrantedPaths(dir)
+    // One extra protected sibling next to the eight, and a --allow glob that
+    // covers all of db/prepared/**. The grant is literal, so the sibling is
+    // still a violation and the eight are still authorized.
+    commitFile(dir, 'db/prepared/journal/054_0043_fib_audit_project_id_fk.sql', '-- sibling\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', g.base,
+      '--allow', 'db/prepared/**',
+      '--allow', 'db/migrations/0044_fib_audit_hardening_supersession.sql',
+      '--protected-authority', 'HPO-ODS-W2-03',
+    ])
+    expect(status).toBe(1)
+    expect(stdout).toContain('ODS_SCOPE=FAIL')
+    expect(stdout).toContain('PROTECTED_AUTHORIZED_PATH_COUNT=8')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATION=db/prepared/journal/054_0043_fib_audit_project_id_fk.sql')
+    expect(stdout).toContain('PROTECTED_PATH_VIOLATIONS=1')
+  })
+
+  it('NEGATIVE (noncanonical casing): a case variant of a granted path FAILs unconditionally', () => {
+    const g = makeTargetBranchRepo()
+    dir = g.dir
+    mkdirSync(path.join(dir, 'DB', 'migrations'), { recursive: true })
+    commitFile(dir, 'DB/migrations/0044_fib_audit_hardening_supersession.sql', '-- x\n')
+
+    const { status, stdout } = runRealCli(dir, [
+      '--base', g.base,
+      '--allow', 'DB/migrations/0044_fib_audit_hardening_supersession.sql',
+      '--protected-authority', 'HPO-ODS-W2-03',
+    ])
+    expect(status).toBe(1)
+    expect(stdout).toContain('NON_CANONICAL_PROTECTED_PATH=DB/migrations/0044_fib_audit_hardening_supersession.sql')
+  })
+
+  it('REGRESSION: HPO-ODS-W2-02 still resolves on the same branch, and its 75 paths are untouched by the W2-03 registration', () => {
+    const w2_02 = PROTECTED_GRANTS.find((g) => g.authorityId === 'HPO-ODS-W2-02')!
+    expect(w2_02.branch).toBe(TARGET_BRANCH)
+    expect(w2_02.patterns.length).toBe(75)
+    // The two grants overlap on EXACTLY one path: the 0044 journal wrapper,
+    // which the closed-B1 integration also carried because B1 regenerated
+    // every wrapper. Pinned as a set so a widened overlap is a failure, not a
+    // surprise. Each grant stays independently bound to its own purpose.
+    const overlap = w2_03.patterns.filter((p) => w2_02.patterns.includes(p))
+    expect(overlap).toEqual(['db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql'])
   })
 })

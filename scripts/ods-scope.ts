@@ -271,6 +271,28 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql',
     ],
   },
+  // HPO-ODS-W2-03 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.4.json):
+  // the baseline provisioning repair. Exactly the eight literal protected
+  // paths that repair touches: the 0044 conditional-trigger correction and
+  // its regenerated journal wrapper, the new pre-baseline managed-role
+  // identity unit (+ rollback), the refactored post-baseline bootstrap
+  // (+ rollback), its regenerated native-hosted artefact, and the prepared
+  // registry README. No glob. Not 0042/0045, not 0048..0052, not
+  // db/baseline/**, not stella_0003, not any other journal wrapper.
+  {
+    authorityId: 'HPO-ODS-W2-03',
+    branch: 'codex/u0-u9-reengineering-resume-r1',
+    patterns: [
+      'db/migrations/0044_fib_audit_hardening_supersession.sql',
+      'db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql',
+      'db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql',
+      'db/prepared/stella_hosted_0000_rollback.sql',
+      'db/prepared/stella_hosted_0001_managed_role_bootstrap.sql',
+      'db/prepared/stella_hosted_0001_rollback.sql',
+      'db/prepared/hosted/stella_hosted_0001_managed_role_bootstrap.hosted.sql',
+      'db/prepared/README.md',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {
