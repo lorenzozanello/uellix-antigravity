@@ -90,13 +90,23 @@ SELECT jsonb_pretty(jsonb_build_object(
   'rowCounts', (SELECT coalesce(jsonb_object_agg(t, n), '{}'::jsonb) FROM (
     SELECT 'public.audit_logs' AS t, count(*) AS n FROM "public"."audit_logs"
     UNION ALL
+    SELECT 'public.domain_object_versions' AS t, count(*) AS n FROM "public"."domain_object_versions"
+    UNION ALL
     SELECT 'public.evidence_items' AS t, count(*) AS n FROM "public"."evidence_items"
+    UNION ALL
+    SELECT 'public.evidence_sufficiency_determinations' AS t, count(*) AS n FROM "public"."evidence_sufficiency_determinations"
+    UNION ALL
+    SELECT 'public.evidence_tombstones' AS t, count(*) AS n FROM "public"."evidence_tombstones"
+    UNION ALL
+    SELECT 'public.evidence_versions' AS t, count(*) AS n FROM "public"."evidence_versions"
     UNION ALL
     SELECT 'public.financial_proxies' AS t, count(*) AS n FROM "public"."financial_proxies"
     UNION ALL
     SELECT 'public.funders' AS t, count(*) AS n FROM "public"."funders"
     UNION ALL
     SELECT 'public.fx_rates' AS t, count(*) AS n FROM "public"."fx_rates"
+    UNION ALL
+    SELECT 'public.governed_model_registry' AS t, count(*) AS n FROM "public"."governed_model_registry"
     UNION ALL
     SELECT 'public.impact_narratives' AS t, count(*) AS n FROM "public"."impact_narratives"
     UNION ALL

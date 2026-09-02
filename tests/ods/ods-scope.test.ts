@@ -312,8 +312,8 @@ describe('ods:scope — real CLI, self-contained temporary-repo fixtures (decoup
 describe('resolveProtectedGrant — pure', () => {
   const AUTHORIZED_BRANCH = 'codex/w2-methodology-objects-r1'
 
-  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants', () => {
-    expect(PROTECTED_GRANTS.length).toBe(3)
+  it('the frozen registry contains exactly the HPO-ODS-W2-01 grant, unchanged, plus the successor HPO-ODS-W2-02 and HPO-ODS-W2-03 grants, plus the HPO-ODS-W2-07 checkpoint-b0 probe grant', () => {
+    expect(PROTECTED_GRANTS.length).toBe(4)
     const w2_03 = PROTECTED_GRANTS[2]
     expect(w2_03.authorityId).toBe('HPO-ODS-W2-03')
     expect(w2_03.branch).toBe('codex/u0-u9-reengineering-resume-r1')
@@ -330,6 +330,14 @@ describe('resolveProtectedGrant — pure', () => {
     expect(w2_02.patterns.length).toBe(75)
     // No glob syntax anywhere in the W2-02 grant — every entry is an exact literal path.
     expect(w2_02.patterns.every((p) => !p.includes('*'))).toBe(true)
+    // HPO-ODS-W2-07 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json): the
+    // checkpoint-b0 observation probe canonical-regeneration grant, on the
+    // Product PR-candidate successor branch. One exact literal path, no glob.
+    expect(PROTECTED_GRANTS[3]).toEqual({
+      authorityId: 'HPO-ODS-W2-07',
+      branch: 'codex/product-commercial-v1-pr-r1',
+      patterns: ['db/prepared/checkpoint-b0/observation.sql'],
+    })
   })
 
   it('resolves the known authority on its granted branch', () => {

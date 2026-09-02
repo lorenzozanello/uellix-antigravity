@@ -293,6 +293,16 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/README.md',
     ],
   },
+  // HPO-ODS-W2-07 (docs/ops/ods/ODS_V1_MAINTENANCE_ADDENDUM_v1.0.8.json):
+  // canonical-generator regeneration of the checkpoint-b0 observation probe
+  // on the Product PR-candidate successor branch, after migration 0045 added
+  // public.domain_object_versions to the corpus without a probe refresh.
+  // Exactly the one generated artifact — no glob, no other prepared SQL.
+  {
+    authorityId: 'HPO-ODS-W2-07',
+    branch: 'codex/product-commercial-v1-pr-r1',
+    patterns: ['db/prepared/checkpoint-b0/observation.sql'],
+  },
 ]
 
 export interface ProtectedGrantResolution {
