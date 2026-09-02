@@ -90,6 +90,12 @@ o una clave se ignoran sólo cuando:
   `not-a-real`, `placeholder`, `example`, `fake`, `synthetic`, `dummy`; o
 - **(b)** la línea lleva una anotación `secret-scan-ok: <motivo>` explícita.
 
+El código llega a esta integración ya con la polaridad corregida en los dos
+padres: ni la rama Product ni `main` conservan una versión que decida por el
+host. En la rama de staging donde se detectó el defecto original hubo que
+migrar 18 fixtures que vivían de esa exención; el barrido de ninguno de los dos
+árboles que se integran aquí encontró ninguno.
+
 El host se sigue parseando y `isSyntheticHost()` sigue existiendo, pero **sólo
 para etiquetar** el hallazgo (`host cannot resolve`) y acelerar el triaje. Nunca
 para excusarlo. Un host no reconocido tampoco es un aprobado: el host del 6 de
@@ -260,9 +266,13 @@ decisión, sino la clasificación de la exposición:
    rewrite dejaría de existir, rompiendo el vínculo entre «qué está desplegado» y
    «qué hay en el repositorio». Esto sigue siendo el argumento decisivo, y es
    operativo, no contable.
-5. **Los anclajes de la evidencia gobernada siguen intactos por diseño.** La
-   cadena T1–T10 y sus certificaciones anclan SHAs concretos y varias releen el
-   `GIT_DIR` del snapshot.
+5. **Los anclajes de la evidencia gobernada siguen intactos por diseño, y una
+   reescritura los rompería más allá de esta rama.** La cadena T1–T10 y sus
+   certificaciones anclan SHAs concretos y varias releen el `GIT_DIR` del
+   snapshot. Una reescritura no es una operación de una sola rama: reescribe el
+   repositorio entero. Las ramas de trabajo en curso —incluida ésta— anclan
+   evidencia de auditoría en SHAs concretos, y el coste se pagaría en todas
+   ellas para no ganar nada en ninguna.
 
 **Clasificación resultante:**
 
@@ -289,11 +299,19 @@ la hizo la rotación.
 
 ## 6. GH013: el rechazo de GitHub Push Protection (2026-08-15)
 
-**Qué pasó.** El push de `codex/stella-staging` fue rechazado con
-`GH013 / GITHUB PUSH PROTECTION`. **Ninguna referencia remota se actualizó.**
-GitHub clasificó varios literales de `tests/hosted/target-identity.test.ts` como
-*Supabase Personal Access Token*, y los detectó tanto en el tip como en commits
-históricos (`7ae6a5e`, `7e1730a`).
+**Qué pasó.** El push de `codex/stella-staging` —otra rama de trabajo, ni ésta
+ni `main`— fue rechazado con `GH013 / GITHUB PUSH PROTECTION`. **Ninguna
+referencia remota se actualizó.** GitHub clasificó varios literales de
+`tests/hosted/target-identity.test.ts` como *Supabase Personal Access Token*, y
+los detectó tanto en el tip de esa rama como en commits históricos (`7ae6a5e`,
+`7e1730a`).
+
+**Por qué figura aquí.** Los literales señalados no existen en ninguno de los
+dos árboles que se integran en esta rama —el barrido de ambos encontró **cero**
+valores con prefijo `sbp_` reales—, pero la lección sí se hereda: el gate no
+tenía detector para esa clase, y el primero en avisar fue el servidor. Este
+documento registra el hallazgo y el detector viaja con él, de modo que el
+primer token que alguien escriba aquí se rechace en local y no en el push.
 
 **Qué demostró.** Que un control remoto atrapó una clase que el gate local no
 tenía. Eso es la polaridad equivocada para un gate cuyo trabajo es fallar
@@ -307,10 +325,12 @@ del servidor.
 | `8246ef07a213` | `tests/hosted/target-identity.test.ts`, 8 blobs históricos | `sbp_` + 40 hex | **Sintético.** Su cuerpo es la secuencia hex ascendente `0123456789abcdef` repetida; entropía 3,97 b/carácter. Ningún emisor produce eso. |
 | `2f54b13e0163` | `tests/hosted/checkpoint-b0.test.ts`, 1 blob | `sbp_` + 32 hex | **Sintético**, misma construcción. |
 
-Un barrido independiente sobre **todos** los blobs de la historia no encontró
-ningún otro literal con prefijo `sbp_`. **Ninguno es una credencial viva**, y
-ninguno fue emitido jamás por Supabase. Ambos estaban en el árbol actual además
-de en la historia.
+Un barrido independiente sobre **todos** los blobs de la historia del
+repositorio no encontró ningún otro literal con prefijo `sbp_`. **Ninguno es
+una credencial viva**, y ninguno fue emitido jamás por Supabase. Ambos estaban
+en el árbol de `codex/stella-staging` en el momento del hallazgo, además de en
+su historia; ninguno de los dos padres que se integran en esta rama los
+conserva en su tip.
 
 **Qué se hizo.**
 
@@ -319,7 +339,7 @@ de en la historia.
    exactamente 40 hex— para que una copia truncada, recapitalizada o partida por
    separadores siga siendo un hallazgo. Sin exención por directorio: `tests/` no
    está exento, y `tests/hosted/target-identity.test.ts` tampoco.
-2. Se retiraron del **tip** los fixtures con forma de PAT, sustituidos por
+2. En la rama donde existían, los fixtures con forma de PAT se sustituyeron por
    valores que se delatan (`sbp_notARealPersonalAccessToken00`), que los
    validadores y el redactor siguen reconociendo como credencial-shaped.
 3. La suite del gate construye su fixture con forma de PAT **en tiempo de
@@ -328,11 +348,11 @@ de en la historia.
 
 **Las detecciones históricas no se resuelven reescribiendo la historia.** Son
 material de fixture, sintético y confirmado como tal arriba. La vía prevista es,
-en este orden: retirar las formas PAT del tip (hecho); confirmar de forma
-independiente que las detecciones históricas son sintéticas (hecho); y sólo si
-hiciera falta para desbloquear el push, usar el bypass de Push Protection con el
-motivo **«used in tests»**, que es exactamente lo que son. Nunca un rebase
-interactivo ni un `filter-repo`, por las razones de §5.
+en este orden: retirar las formas PAT del tip de la rama afectada (hecho);
+confirmar de forma independiente que las detecciones históricas son sintéticas
+(hecho); y sólo si hiciera falta para desbloquear ese push, usar el bypass de
+Push Protection con el motivo **«used in tests»**, que es exactamente lo que
+son. Nunca un rebase interactivo ni un `filter-repo`, por las razones de §5.
 
 ## 7. Si encuentra una credencial
 

@@ -187,6 +187,14 @@ describe('scanText — Supabase personal access tokens, the GH013 parity gap', (
     expect(scanText(`key ${truncated}`, 'docs/x.md')).toHaveLength(1)
   })
 
+  it('does not exempt a path merely for being a test', () => {
+    // The rule the GH013 rejection turned on: the flagged literals were in a
+    // test file, and a directory-wide exemption would have hidden them.
+    expect(
+      scanText(`const t = '${PAT_SHAPED}'`, 'tests/hosted/target-identity.test.ts')
+    ).toHaveLength(1)
+  })
+
   it('permits a deliberate fixture carrying a reason', () => {
     const line = `const token = '${PAT_SHAPED}' // secret-scan-ok: synthetic, feeds the redactor`
 
