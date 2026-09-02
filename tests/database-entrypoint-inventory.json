@@ -1,7 +1,7 @@
 {
   "description": "Versioned inventory of every checked server module that can reach the database, classified by tests/database-runtime-entrypoints.test.ts (AST scanner section). A new database-reaching module must be added here DELIBERATELY after wiring its identity context (or allowlisting it with a reason in the test).",
-  "checkedModules": 130,
-  "databaseReaching": 107,
+  "checkedModules": 131,
+  "databaseReaching": 108,
   "modules": {
     "app/(authenticated)/app/onboarding/actions.ts": "contextualized",
     "app/(authenticated)/app/onboarding/page.tsx": "allowlisted",
@@ -61,6 +61,7 @@
     "app/app/projects/[projectId]/pipeline/calculation/runs/[runId]/page.tsx": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/createSroiRunReview.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/recordEvidenceSufficiencyDetermination.action.ts": "contextualized",
+    "app/app/projects/[projectId]/pipeline/calculation/runs/recordOutcomeMonetizationDisposition.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/updateSroiRunReview.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/runs/upsertSroiRunReviewItem.action.ts": "contextualized",
     "app/app/projects/[projectId]/pipeline/calculation/setDiscountRate.action.ts": "contextualized",

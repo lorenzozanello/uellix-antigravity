@@ -721,7 +721,16 @@ describe('every entry point that can reach the database opens an identity contex
     // entry point — updateFinancialProxy.action.ts, under pipeline/proxies/.
     // Same runWithOrganizationAccess pattern as its siblings, so
     // `contextualized`, not allowlisted.
-    }).toEqual({ inventoried: 129, reaching: 104, contextualized: 88, allowlisted: 16 })
+    //
+    // 129 -> 130 / 104 -> 105 / contextualized 88 -> 89, allowlisted
+    // UNCHANGED at 16: W2-B3 (FIBIU-12/FIBC-016) adds one new .action.ts
+    // entry point — calculation/runs/recordOutcomeMonetizationDisposition.action.ts.
+    // It calls runWithOrganizationAccess around its one governed write,
+    // exactly like its siblings in the same directory
+    // (createSroiRunReview.action.ts, recordEvidenceSufficiencyDetermination.action.ts),
+    // so it is `contextualized`, not allowlisted. Registered under
+    // docs/ops/wave2/W2_B3_ENTRYPOINT_INVENTORY_AUTHORITY_v1.0.0.json.
+    }).toEqual({ inventoried: 130, reaching: 105, contextualized: 89, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {
