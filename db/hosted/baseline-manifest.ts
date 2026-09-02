@@ -1175,6 +1175,42 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: 'b478a797ff4da24bae5a65dafa196892d14b636c420e016c29c2cbaafb358c0e',
     },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B3 completeness (FIBIU-12 stage B, AG-B3-6 / PG-12 —                 *
+   * docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json).               *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 73,
+    id: '0060_fib_outcome_monetization_dispositions_governance.sql',
+    kind: D,
+    file: 'db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql',
+    sha256: '9456eb0d93c34e49ed7333a9a306f22992f55a031b94fa2fd807e7d5e567a2bb',
+    dependsOn: ['0059_fib_outcome_monetization_dispositions.sql', '0031_rls_core.sql', '0030_immutability.sql'],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'idempotent',
+    managedNote:
+      'FIBIU-12 stage B (FIBDB-009/045), successor to sealed 0059 (never edited). Adds the same-tenant ' +
+      'analyst+ UPDATE policy 0059 lacked (PG-12 measured RLS_ENFORCED_UPDATE_DENIED_OR_ZERO under the ' +
+      'runtime identity) and DB-enforced, race-safe approved-run immutability: a SECURITY DEFINER guard ' +
+      '(BEFORE INSERT/UPDATE/DELETE) refusing writes once sroi_run_reviews carries an approved review for ' +
+      'the run and freezing the identity columns, coordinated with an approval-side trigger on ' +
+      'sroi_run_reviews through transaction-scoped advisory locks (60, hashtext(run_id)) — no table ' +
+      'privilege is needed for advisory locks, so the protocol is independent of the hosted GRANT posture. ' +
+      'Uses only 0031 helpers on schema public; no auth./storage. reference.',
+    rollback:
+      'Fully guarded: DROP POLICY IF EXISTS / CREATE OR REPLACE FUNCTION / DROP TRIGGER IF EXISTS before ' +
+      'each CREATE. Converges on reapply; applied with psql -1 so a failure rolls the unit back whole.',
+    expect: {
+      policiesCreatedCount: 1,
+      functionsCreatedCount: 2,
+      securityDefinerCount: 1,
+      searchPathSettings: ['public', 'public'],
+      triggersCreatedCount: 2,
+      securitySurfaceDigest: '857695d664847e2d10f686d57b50d93f13d0f07490ef3693058f437a08d89a00',
+    },
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

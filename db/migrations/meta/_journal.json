@@ -421,6 +421,13 @@
       "when": 1788311723754,
       "tag": "0059_fib_outcome_monetization_dispositions",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1788315850014,
+      "tag": "0060_fib_outcome_monetization_dispositions_governance",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 40/72: 20260716000000_auth_trigger.sql
+-- GENERATED — DO NOT EDIT. Unit 40/73: 20260716000000_auth_trigger.sql
 -- ============================================================================
 --
 -- Includes:      supabase/migrations/20260716000000_auth_trigger.sql

@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 42/73: 0039_grant_rls_helper_execution.sql
+-- GENERATED — DO NOT EDIT. Unit 73/73: 0060_fib_outcome_monetization_dispositions_governance.sql
 -- ============================================================================
 --
--- Includes:      db/migrations/0039_grant_rls_helper_execution.sql
--- Source SHA256: 69e20347c387033fa17af952ff104371122cb7a12d0cd1007ddc79157dd320ab
+-- Includes:      db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql
+-- Source SHA256: 9456eb0d93c34e49ed7333a9a306f22992f55a031b94fa2fd807e7d5e567a2bb
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/042_0039_grant_rls_helper_execution.sql
+--        -f db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/migrations/0039_grant_rls_helper_execution.sql
+\ir ../../../db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '0039_grant_rls_helper_execution.sql', 'PHASE_BASELINE',
-   '69e20347c387033fa17af952ff104371122cb7a12d0cd1007ddc79157dd320ab', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0060_fib_outcome_monetization_dispositions_governance.sql', 'PHASE_BASELINE',
+   '9456eb0d93c34e49ed7333a9a306f22992f55a031b94fa2fd807e7d5e567a2bb', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

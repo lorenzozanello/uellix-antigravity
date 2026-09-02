@@ -84,20 +84,24 @@ describe('the baseline manifest describes the corpus that is actually checked in
   // policy counts unchanged (R-B2-07 adds policy 010 next).
   // W2-B2-R1 (R-B2-07) — + policies unit 010 (registry RLS, AG-B2-2) = 69
   // units, 10 policies.
-  it('has 69 units: 57 Drizzle, 2 Supabase, 10 policies', () => {
-    expect(BASELINE_UNITS).toHaveLength(69)
+  // W2-B3 (FIBIU-11/12/13, 56ab26f/d0dd4ca/36e26d0) — + 0057/0058/0059 = 72 units, 60 Drizzle
+  // (those commits never updated this pin, so it failed against 72 at the B3
+  // completeness base fd6e252). W2-B3 completeness — + 0060 (successor to 0059:
+  // UPDATE policy + approved-run guard) = 73 units, 61 Drizzle.
+  it('has 73 units: 61 Drizzle, 2 Supabase, 10 policies', () => {
+    expect(BASELINE_UNITS).toHaveLength(73)
     const byKind = (k: string) => BASELINE_UNITS.filter((u) => u.kind === k).length
-    expect(byKind('drizzle-migration')).toBe(57)
+    expect(byKind('drizzle-migration')).toBe(61)
     expect(byKind('supabase-migration')).toBe(2)
     expect(byKind('policy')).toBe(10)
   })
 
-  it('numbers ordinals 1..69 contiguously, and BASELINE_ORDER is derived from them', () => {
+  it('numbers ordinals 1..73 contiguously, and BASELINE_ORDER is derived from them', () => {
     expect(BASELINE_UNITS.map((u) => u.ordinal)).toEqual(
-      Array.from({ length: 69 }, (_, i) => i + 1),
+      Array.from({ length: 73 }, (_, i) => i + 1),
     )
     expect(BASELINE_ORDER).toEqual(BASELINE_UNITS.map((u) => u.id))
-    expect(new Set(BASELINE_ORDER).size).toBe(69)
+    expect(new Set(BASELINE_ORDER).size).toBe(73)
   })
 
   it('throws on an unknown unit rather than returning undefined', () => {

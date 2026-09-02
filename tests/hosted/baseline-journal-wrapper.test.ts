@@ -462,8 +462,10 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
     // derivation, independently re-verified there.
     // W2-B2-R1 (R-B2-03): + 0056_fib_proxy_material_fields_editability.sql = 68;
     // (R-B2-07): + 010_proxy_material_fields_registry_rls.sql = 69.
-    expect(BASELINE_UNITS).toHaveLength(69)
-    expect(BASELINE_ORDER).toHaveLength(69)
+    // W2-B3: + 0057/0058/0059 = 72 (pin left stale by those commits);
+    // W2-B3 completeness: + 0060 = 73.
+    expect(BASELINE_UNITS).toHaveLength(73)
+    expect(BASELINE_ORDER).toHaveLength(73)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {
