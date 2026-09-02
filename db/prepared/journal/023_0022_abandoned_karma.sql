@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 23/69: 0022_abandoned_karma.sql
+-- GENERATED — DO NOT EDIT. Unit 23/70: 0022_abandoned_karma.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0022_abandoned_karma.sql

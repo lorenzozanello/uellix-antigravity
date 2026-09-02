@@ -1101,6 +1101,28 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       securitySurfaceDigest: 'a1122391d6d558216fdf7ce14398c6e06ed504b818b7d5b1964d5845eb276785',
     },
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B3 (FIBIU-11, Wave 2 batch B3: Outcome and filters).                 *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 70,
+    id: '0057_fib_outcome_materiality_classification.sql',
+    kind: D,
+    file: 'db/migrations/0057_fib_outcome_materiality_classification.sql',
+    sha256: '2baf675c70d35b8aa8b8fc65e4fc6c1d669c1c714d0db23d080c80a8f8531f2c',
+    dependsOn: ['0056_fib_proxy_material_fields_editability.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-11 (FIBC-015/FIBDB-008/FIBDB-045). ADD COLUMN materiality_classification ' +
+      '(NULLable varchar(20), CHECK material/not_material) and ' +
+      'materiality_classification_justification (NULLable text) on outcomes, plus the pair CHECK ' +
+      'requiring both set or both NULL. Deliberately distinct from the pre-existing ' +
+      'materiality_score/materiality_rationale columns and their own pair CHECK: FIBC-015 forbids ' +
+      'auto-converting the 1-5 score into this classification (NPDD-03), so the two column pairs are ' +
+      'independent and this unit touches neither the score column nor its CHECK.',
+    expect: {},
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

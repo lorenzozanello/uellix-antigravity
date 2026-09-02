@@ -243,6 +243,12 @@ export const outcomes = pgTable('outcomes', {
   materialityNotes: text('materiality_notes'),
   materialityScore: integer('materiality_score'),
   materialityRationale: text('materiality_rationale'),
+  // FIBIU-11 (FIBC-015, FIBDB-008/045) — the explicit human classification
+  // V-03 requires. Deliberately distinct from materialityScore/Rationale
+  // above: that 1-5 score remains supporting structure only and is never
+  // auto-converted into this classification (NPDD-03). NULL = pending.
+  materialityClassification: varchar('materiality_classification', { length: 20 }),
+  materialityClassificationJustification: text('materiality_classification_justification'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -250,6 +256,8 @@ export const outcomes = pgTable('outcomes', {
 }, (table) => [
   check('outcomes_materiality_score_check', sql`${table.materialityScore} IS NULL OR (${table.materialityScore} >= 1 AND ${table.materialityScore} <= 5)`),
   check('outcomes_materiality_pair_check', sql`(${table.materialityScore} IS NULL AND ${table.materialityRationale} IS NULL) OR (${table.materialityScore} IS NOT NULL AND ${table.materialityRationale} IS NOT NULL)`),
+  check('outcomes_materiality_classification_check', sql`${table.materialityClassification} IS NULL OR ${table.materialityClassification} IN ('material', 'not_material')`),
+  check('outcomes_materiality_classification_pair_check', sql`(${table.materialityClassification} IS NULL AND ${table.materialityClassificationJustification} IS NULL) OR (${table.materialityClassification} IS NOT NULL AND ${table.materialityClassificationJustification} IS NOT NULL)`),
   index('idx_outcomes_project_id').on(table.projectId),
   index('idx_outcomes_stakeholder_group_id').on(table.stakeholderGroupId),
 ])

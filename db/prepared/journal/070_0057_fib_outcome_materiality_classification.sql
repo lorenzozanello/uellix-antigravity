@@ -1,9 +1,9 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 47/70: 005_theory_of_change_rls.sql
+-- GENERATED — DO NOT EDIT. Unit 70/70: 0057_fib_outcome_materiality_classification.sql
 -- ============================================================================
 --
--- Includes:      db/policies/005_theory_of_change_rls.sql
--- Source SHA256: 703aa74bf1b579c237391af9520ee649605ab6953dcac739ab2bd8636cf04b30
+-- Includes:      db/migrations/0057_fib_outcome_materiality_classification.sql
+-- Source SHA256: 2baf675c70d35b8aa8b8fc65e4fc6c1d669c1c714d0db23d080c80a8f8531f2c
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -11,7 +11,7 @@
 -- copied here — it is included, so this file cannot drift from it.
 --
 --   psql -1 -v ON_ERROR_STOP=1 -v uellix_project_ref=<staging-ref> \
---        -f db/prepared/journal/047_005_theory_of_change_rls.sql
+--        -f db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql
 --
 -- ============================================================================
 \set ON_ERROR_STOP on
@@ -45,15 +45,15 @@ BEGIN
   END IF;
 END $guard$;
 
-\ir ../../../db/policies/005_theory_of_change_rls.sql
+\ir ../../../db/migrations/0057_fib_outcome_materiality_classification.sql
 
 -- The journal row. INSIDE this transaction, by construction.
 INSERT INTO uellix_provisioning.applied_units
   (environment, project_ref, package_id, phase,
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
-  ('staging', :'uellix_project_ref', '005_theory_of_change_rls.sql', 'PHASE_BASELINE',
-   '703aa74bf1b579c237391af9520ee649605ab6953dcac739ab2bd8636cf04b30', NULL, NULL, 'APPLIED');
+  ('staging', :'uellix_project_ref', '0057_fib_outcome_materiality_classification.sql', 'PHASE_BASELINE',
+   '2baf675c70d35b8aa8b8fc65e4fc6c1d669c1c714d0db23d080c80a8f8531f2c', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

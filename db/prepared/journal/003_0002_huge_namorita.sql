@@ -1,5 +1,5 @@
 -- ============================================================================
--- GENERATED — DO NOT EDIT. Unit 3/69: 0002_huge_namorita.sql
+-- GENERATED — DO NOT EDIT. Unit 3/70: 0002_huge_namorita.sql
 -- ============================================================================
 --
 -- Includes:      db/migrations/0002_huge_namorita.sql

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // tests/outcomes.service.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createOutcome, listOutcomes, setOutcomeMateriality } from '@/lib/pipeline/outcomes';
+import { createOutcome, listOutcomes, getOutcome, setOutcomeMateriality, setOutcomeMaterialityClassification } from '@/lib/pipeline/outcomes';
 import { getCurrentOrganizationContext } from '@/lib/auth/session';
 import { hasRole } from '@/lib/auth/permissions';
 import { logAuditAction } from '@/lib/audit/logger';
@@ -19,6 +19,7 @@ vi.mock('@/lib/audit/logger', () => ({
     ORGANIZATION_CREATED: 'organization_created',
     OUTCOME_CREATED: 'outcome.created',
     OUTCOME_MATERIALITY_UPDATED: 'outcome.materiality_updated',
+    OUTCOME_MATERIALITY_CLASSIFIED: 'outcome.materiality_classified',
   },
 }));
 
@@ -417,6 +418,162 @@ describe('Outcome service', () => {
 
     await expect(
       setOutcomeMateriality('proj-1', 'out-1', { materialityScore: 3, materialityRationale: 'x' })
+    ).rejects.toThrow('Outcome not found for project');
+  });
+
+  // -------------------------------------------------------------------
+  // FIBIU-11 (FIBC-015) — explicit materiality classification, distinct
+  // from the legacy 1-5 materialityScore exercised above.
+  // -------------------------------------------------------------------
+
+  it('P-1: persists a materiality classification + justification via setOutcomeMaterialityClassification', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityClassification: null, materialityClassificationJustification: null };
+    mockDbData.useOutcomeLookup = true;
+
+    const result = await setOutcomeMaterialityClassification('proj-1', 'out-1', {
+      materialityClassification: 'material',
+      materialityClassificationJustification: 'Directly tied to the primary funder mandate.',
+    });
+
+    expect(result?.materialityClassification).toBe('material');
+    expect(result?.materialityClassificationJustification).toBe('Directly tied to the primary funder mandate.');
+    expect(logAuditAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentModifying: true,
+        beforeJson: { materialityClassification: null, materialityClassificationJustification: null },
+        afterJson: { materialityClassification: 'material', materialityClassificationJustification: 'Directly tied to the primary funder mandate.' },
+      })
+    );
+    expect(createDomainObjectVersion).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: 'org-1', objectType: 'outcome', objectId: 'out-1', actorId: 'u1' })
+    );
+  });
+
+  it('P-2: a not_material classification persists and reads back exactly like a material one (never dropped or filtered by the read path)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityClassification: null, materialityClassificationJustification: null };
+    mockDbData.useOutcomeLookup = true;
+
+    const result = await setOutcomeMaterialityClassification('proj-1', 'out-1', {
+      materialityClassification: 'not_material',
+      materialityClassificationJustification: 'Outside the scope of the analysed change.',
+    });
+
+    expect(result?.materialityClassification).toBe('not_material');
+    expect(result?.materialityClassificationJustification).toBe('Outside the scope of the analysed change.');
+
+    const fetched = await getOutcome('proj-1', 'out-1');
+    expect(fetched?.materialityClassification).toBe('not_material');
+  });
+
+  it('N-1: creating/updating an outcome with only the legacy materialityScore set never populates materialityClassification', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+
+    const input = {
+      title: 'Score-only outcome',
+      stakeholderGroupId: '550e8400-e29b-41d4-a716-446655440000',
+      materialityScore: 4,
+      materialityRationale: 'Scored but not yet classified.',
+    };
+    const result = await createOutcome('proj-1', input);
+    // createOutcomeForProject never sets materialityClassification/justification at all —
+    // no code path in this function derives it from materialityScore.
+    expect(result).not.toHaveProperty('materialityClassification');
+    expect(result).not.toHaveProperty('materialityClassificationJustification');
+  });
+
+  it('clears both classification fields when materialityClassification is null, ignoring any justification passed', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityClassification: 'material', materialityClassificationJustification: 'Old justification' };
+    mockDbData.useOutcomeLookup = true;
+
+    const result = await setOutcomeMaterialityClassification('proj-1', 'out-1', {
+      materialityClassification: null,
+      materialityClassificationJustification: 'This text should be ignored',
+    } as any);
+
+    expect(result?.materialityClassification).toBeNull();
+    expect(result?.materialityClassificationJustification).toBeNull();
+  });
+
+  it('rejects setOutcomeMaterialityClassification with a classification but no justification', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityClassification: null, materialityClassificationJustification: null };
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMaterialityClassification('proj-1', 'out-1', { materialityClassification: 'material' } as any)
+    ).rejects.toThrow();
+  });
+
+  it('rejects an unrecognized materiality classification value', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityClassification: null, materialityClassificationJustification: null };
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMaterialityClassification('proj-1', 'out-1', { materialityClassification: 'somewhat_material', materialityClassificationJustification: 'x' } as any)
+    ).rejects.toThrow();
+  });
+
+  it('rejects setOutcomeMaterialityClassification for an unauthorized role', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u2' },
+      organization: { id: 'org-1' },
+      membership: { role: 'viewer' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(false);
+    mockDbData.outcome = { id: 'out-1', projectId: 'proj-1', materialityClassification: null, materialityClassificationJustification: null };
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMaterialityClassification('proj-1', 'out-1', { materialityClassification: 'material', materialityClassificationJustification: 'x' })
+    ).rejects.toThrow('Insufficient permissions');
+  });
+
+  it('rejects setOutcomeMaterialityClassification when the outcome does not belong to the project (IDOR regression)', async () => {
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({
+      user: { id: 'u1' },
+      organization: { id: 'org-1' },
+      membership: { role: 'impact_manager' },
+    } as any);
+    vi.mocked(hasRole).mockReturnValue(true);
+    mockDbData.outcome = null;
+    mockDbData.useOutcomeLookup = true;
+
+    await expect(
+      setOutcomeMaterialityClassification('proj-1', 'out-1', { materialityClassification: 'material', materialityClassificationJustification: 'x' })
     ).rejects.toThrow('Outcome not found for project');
   });
 });
