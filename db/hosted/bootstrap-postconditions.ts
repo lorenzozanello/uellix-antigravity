@@ -29,6 +29,7 @@
 // defect found five times and named in db/hosted/checkpoint-b0.ts.
 
 import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from './target-identity'
+import { MANAGED_ROLE_IDENTITIES } from './managed-role-identities'
 
 // ---------------------------------------------------------------------------
 // THE EVIDENCE REGISTRY — two historical facts, not two versions of one
@@ -260,14 +261,15 @@ export const SENTINEL_BOOTSTRAP_VERSION = 'stella_hosted_0001'
 export const SENTINEL_OWNER_SEPARATION =
   'auditable-obstacle: RR-02 applies, postgres retains ADMIN OPTION over uellix_owner'
 
-/** The five roles, in the order the package creates them. */
-export const BOOTSTRAP_ROLES = [
-  'uellix_owner',
-  'uellix_migrator',
-  'uellix_app',
-  'uellix_writer',
-  'uellix_auditor',
-] as const
+/**
+ * The five roles, in the order the identity package creates them.
+ *
+ * HPO-ODS-W2-03: created by stella_hosted_0000 BEFORE the baseline and
+ * asserted (not created) by stella_hosted_0001. One list, owned by
+ * db/hosted/managed-role-identities.ts, re-exported here so the S1
+ * postconditions keep their name without a second copy of the five.
+ */
+export const BOOTSTRAP_ROLES = MANAGED_ROLE_IDENTITIES
 
 /** The three functions, with the EXECUTE holders the contract allows each. */
 export const BOOTSTRAP_FUNCTIONS = [

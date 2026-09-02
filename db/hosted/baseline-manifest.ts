@@ -724,7 +724,8 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
     id: '0044_fib_audit_hardening_supersession.sql',
     kind: D,
     file: 'db/migrations/0044_fib_audit_hardening_supersession.sql',
-    sha256: '14149207639bb976105481db045b36ff0e8979a7d11cbf259210ac87929fdf4b',
+    // Re-pinned for HPO-ODS-W2-03 (the to_regclass guard around the sixth pair).
+    sha256: 'bf9023f06f697422ba50a70c1482ab159e1989b910dd3d0ddf9d18671fe80510',
     // Stage E after stage B of the same FIBIU-28 unit, plus the function it reuses.
     dependsOn: ['0030_immutability.sql', '0043_fib_audit_project_id_fk.sql'],
     dml: 'none',
@@ -736,9 +737,13 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'public.uellix_forbid_mutation() from 0030_immutability.sql unchanged — no new function, no ' +
       'privileged surface. MEASURED STATE CORRECTION: supersedes trigger objects already applied in G2 ' +
       'by the retired prepared units stella_0002 / stella_0002b (and, for one trigger, stella_0003, ' +
-      'which itself remains NO_COLLISION and untouched).',
-    rollback: 'Six DROP TRIGGER IF EXISTS ahead of six CREATE TRIGGER. Converges; dropping is safe.',
-    expect: { triggersCreatedCount: 6 },
+      'which itself remains NO_COLLISION and untouched). HPO-ODS-W2-03: the stella_suggestion_decisions ' +
+      'pair is guarded on to_regclass — that table is gate-managed (stella_0003) and absent from a ' +
+      'baseline target, where even DROP TRIGGER IF EXISTS raised 42P01. Five pairs are unconditional ' +
+      'statements the scanner counts; the sixth lives inside a DO block and is installed only when the ' +
+      'relation exists. The migration never creates the table.',
+    rollback: 'Six DROP TRIGGER IF EXISTS ahead of six CREATE TRIGGER (the sixth pair conditional on its relation). Converges; dropping is safe.',
+    expect: { triggersCreatedCount: 5 },
   },
   {
     ordinal: 56,

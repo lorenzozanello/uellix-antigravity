@@ -24,6 +24,11 @@
 
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS storage;
+-- HPO-ODS-W2-03: the managed-role identity package (stella_hosted_0000 §0 E1)
+-- checks that the three Supabase schemas exist before it creates a role. On a
+-- real project `extensions` is provided by the platform; a fresh database in
+-- the disposable cluster has none of the three, so the shim provides it too.
+CREATE SCHEMA IF NOT EXISTS extensions;
 
 -- auth.users — referenced by the two triggers in 20260716000000.
 CREATE TABLE IF NOT EXISTS auth.users (

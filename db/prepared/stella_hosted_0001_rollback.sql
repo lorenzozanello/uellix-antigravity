@@ -97,25 +97,15 @@ DROP FUNCTION IF EXISTS uellix_bootstrap.hosted_capability_report();
 DROP TABLE IF EXISTS uellix_bootstrap.staging_sentinel;
 DROP SCHEMA IF EXISTS uellix_bootstrap;
 
--- Memberships first: PostgreSQL refuses to drop a role that is still granted.
-DO $$
-BEGIN
-  IF to_regrole('uellix_owner') IS NOT NULL AND to_regrole('uellix_migrator') IS NOT NULL THEN
-    REVOKE uellix_owner FROM uellix_migrator;
-  END IF;
-  IF to_regrole('uellix_writer') IS NOT NULL AND to_regrole('uellix_app') IS NOT NULL THEN
-    REVOKE uellix_writer FROM uellix_app;
-  END IF;
-END $$;
-
--- Schema privileges next, and this is load-bearing rather than tidiness.
+-- Schema privileges, and this is load-bearing rather than tidiness.
 -- PostgreSQL refuses to drop a role that still holds one: measured on
 -- PostgreSQL 17.6, `DROP ROLE uellix_owner` fails with `role "uellix_owner"
 -- cannot be dropped because some objects depend on it / DETAIL: privileges for
 -- schema public`. stella_hosted_0001 §2b-bis grants USAGE to all five and
--- CREATE to the owner, so without this the rollback becomes inapplicable — and
--- that would only be discovered while trying to undo a half-built staging,
--- which is the worst moment to learn it.
+-- CREATE to the owner, so this file revokes what its forward package granted —
+-- otherwise stella_hosted_0000_rollback (which owns the DROP ROLEs) becomes
+-- inapplicable, and that would only be discovered while trying to undo a
+-- half-built staging, which is the worst moment to learn it.
 --
 -- The grants on schema uellix_bootstrap, its sentinel and the auth shim need no
 -- counterpart: those objects were dropped above, and an ACL does not outlive
@@ -129,11 +119,13 @@ BEGIN
   IF to_regrole('uellix_auditor')  IS NOT NULL THEN REVOKE ALL ON SCHEMA public FROM uellix_auditor;  END IF;
 END $$;
 
-DROP ROLE IF EXISTS uellix_app;
-DROP ROLE IF EXISTS uellix_writer;
-DROP ROLE IF EXISTS uellix_auditor;
-DROP ROLE IF EXISTS uellix_migrator;
-DROP ROLE IF EXISTS uellix_owner;
+-- THE FIVE ROLES ARE DELIBERATELY NOT DROPPED HERE (HPO-ODS-W2-03). They are
+-- IDENTITY, established by stella_hosted_0000 BEFORE the baseline, and the
+-- baseline's own policies (0042, 0045) name uellix_app. Dropping them from the
+-- bootstrap's rollback would leave a baseline whose policies reference a
+-- missing role. Their removal, and the membership revocations that precede it,
+-- belong to db/prepared/stella_hosted_0000_rollback.sql, which refuses while
+-- this schema, any owned object or any schema-public privilege remains.
 
 -- ============================================================
 -- 2. Postconditions
@@ -142,12 +134,12 @@ DO $$
 DECLARE
   v_left text;
 BEGIN
-  SELECT string_agg(rolname, ', ' ORDER BY rolname) INTO v_left
-  FROM pg_roles
-  WHERE rolname IN ('uellix_owner','uellix_migrator','uellix_app','uellix_writer','uellix_auditor');
+  SELECT string_agg(r.name, ', ' ORDER BY r.name) INTO v_left
+  FROM (VALUES ('uellix_owner'),('uellix_migrator'),('uellix_app'),('uellix_writer'),('uellix_auditor')) AS r(name)
+  WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.name);
 
   IF v_left IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_hosted_0001_rollback FAILED: role(s) % survived. A partial rollback is worse than none: the chain would find some of its roles and not others.', v_left;
+    RAISE EXCEPTION 'stella_hosted_0001_rollback FAILED: role identit(ies) % are missing. This file never drops a role; if they are gone, something outside the governed sequence removed them and the baseline underneath is now inconsistent.', v_left;
   END IF;
 
   IF to_regnamespace('uellix_bootstrap') IS NOT NULL THEN
@@ -161,5 +153,5 @@ BEGIN
   -- NOT reverted, and deliberately: nothing this package granted to
   -- `authenticated`, `anon` or `service_role` needs undoing, because it granted
   -- them nothing. The baseline surface is exactly as it was.
-  RAISE NOTICE 'stella_hosted_0001_rollback: complete — 5 roles dropped, bootstrap schema and shim removed, no residue. The baseline Supabase grants were never touched and are unchanged.';
+  RAISE NOTICE 'stella_hosted_0001_rollback: complete — bootstrap schema and shim removed, schema-public privileges revoked, no residue of this package. The 5 role identities remain (stella_hosted_0000_rollback owns them). The baseline Supabase grants were never touched and are unchanged.';
 END $$;

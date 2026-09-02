@@ -378,6 +378,13 @@ describe('every prepared stella_* script — cross-cutting EXECUTE invariants', 
       // `postgres` cannot issue (RR-09). It is a `stella_*` script and is swept
       // by every cross-cutting invariant below — including the one that refuses
       // dynamic EXECUTE, which caught its first draft's `format()` loop.
+      // HPO-ODS-W2-03. The PRE-BASELINE managed-role IDENTITY bootstrap: the
+      // five CREATE/ALTER ROLE blocks, the RR-02 grant and the two memberships
+      // that stella_hosted_0001 used to carry, moved verbatim so that baseline
+      // units 0042/0045 (`CREATE POLICY … TO uellix_app`) find their role. It
+      // references no application table and is swept by every invariant below.
+      'stella_hosted_0000_managed_role_identity_bootstrap.sql',
+      'stella_hosted_0000_rollback.sql',
       'stella_hosted_0001_managed_role_bootstrap.sql',
       'stella_hosted_0001_rollback.sql',
       // COMMIT 5.2. The forward-only prechain remediation, and it has NO

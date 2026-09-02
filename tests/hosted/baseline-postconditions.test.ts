@@ -64,7 +64,8 @@ function conforming(): BaselineObservation {
     triggers: [...EXPECTED.triggers],
     rlsEnabledTables: [...EXPECTED.rlsEnabledTables],
     policies: [...EXPECTED.policies],
-    roles: ['postgres', 'anon', 'authenticated', 'service_role', 'supabase_auth_admin'],
+    // HPO-ODS-W2-03: the five identities exist at CHECKPOINT B0 — they precede unit 1.
+    roles: ['postgres', 'anon', 'authenticated', 'service_role', 'supabase_auth_admin', 'uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor'],
     grants: ['authenticated:SELECT:public.users', 'service_role:INSERT:public.audit_logs'],
     rowCounts: Object.fromEntries(EXPECTED.tables.map((t) => [t, 0])),
     extensions: ['pgcrypto', 'uuid-ossp', 'pg_graphql', 'pg_stat_statements'],

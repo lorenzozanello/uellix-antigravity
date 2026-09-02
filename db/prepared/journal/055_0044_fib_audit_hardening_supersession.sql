@@ -3,7 +3,7 @@
 -- ============================================================================
 --
 -- Includes:      db/migrations/0044_fib_audit_hardening_supersession.sql
--- Source SHA256: 14149207639bb976105481db045b36ff0e8979a7d11cbf259210ac87929fdf4b
+-- Source SHA256: bf9023f06f697422ba50a70c1482ab159e1989b910dd3d0ddf9d18671fe80510
 --
 -- This wrapper exists so the journal row and the unit COMMIT TOGETHER. psql
 -- -1 wraps the whole invocation in one transaction and \ir splices the unit
@@ -53,7 +53,7 @@ INSERT INTO uellix_provisioning.applied_units
    source_sha256, derived_sha256, security_surface_digest, status)
 VALUES
   ('staging', :'uellix_project_ref', '0044_fib_audit_hardening_supersession.sql', 'PHASE_BASELINE',
-   '14149207639bb976105481db045b36ff0e8979a7d11cbf259210ac87929fdf4b', NULL, NULL, 'APPLIED');
+   'bf9023f06f697422ba50a70c1482ab159e1989b910dd3d0ddf9d18671fe80510', NULL, NULL, 'APPLIED');
 
 \else
 \echo 'REFUSED: -v uellix_project_ref=<ref> was not supplied.'

@@ -314,7 +314,11 @@ describe('the bootstrap ROLLBACK is pinned too', () => {
   // on schema public, and PostgreSQL refuses to DROP a role that still holds a
   // schema privilege — so the rollback had to learn to REVOKE before it drops,
   // or it would have become inapplicable exactly when it was needed.
-  const ROLLBACK_SHA = 'f5a86826fa72f6a488ae6ef0ee9c464a3f1bba2b053e97eb55405ae2c4aedc65'
+  // Re-pinned for HPO-ODS-W2-03. The rollback no longer drops the five roles
+  // (they belong to stella_hosted_0000_rollback, which refuses while this
+  // package's schema, any owned object or any schema-public privilege remains);
+  // it still revokes the schema-public privileges its forward package granted.
+  const ROLLBACK_SHA = 'b6541dce9199acedac7994470d35a681849f14e255e65d253d2ddfc8b58d2497'
 
   it('has a SHA that a reviewer signed off — a drift here is a drift in the destructive half', () => {
     const actual = sha256OfSql(readCanonical('stella_hosted_0001_rollback.sql'))

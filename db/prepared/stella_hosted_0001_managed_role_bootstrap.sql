@@ -47,6 +47,23 @@
 --
 -- The session setting is MANDATORY and has no default. An operator who forgets
 -- it gets a refusal, not a guess — see section 0 (E4).
+--
+-- ----------------------------------------------------------------------------
+-- HPO-ODS-W2-03 — ROLE IDENTITY NO LONGER LIVES HERE
+-- ----------------------------------------------------------------------------
+-- The five CREATE ROLE / ALTER ROLE blocks, the RR-02 grant, the COMMENT ON
+-- ROLE statements and the two membership GRANTs this package used to carry as
+-- its §2 / §2b now live, verbatim, in
+-- db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql, which
+-- runs BEFORE PHASE_BASELINE (PHASE_MANAGED_ROLE_IDENTITIES). Baseline units
+-- 0042 and 0045 write `CREATE POLICY … TO uellix_app`, so the identities have
+-- to exist before unit 1 — and this package cannot run before unit 1: its §0
+-- E5 needs the helpers 0031/0039 create, its §2c moves a table 0012 creates,
+-- and its §5d grants on objects the baseline creates.
+--
+-- This package therefore ASSERTS the identity state (§0 E0) and stays what it
+-- always was after that: the post-baseline ownership/grant/shim/sentinel/
+-- capability bootstrap. It defines no role. Nothing else about it changed.
 -- ============================================================================
 
 SET search_path = public;
@@ -119,6 +136,48 @@ BEGIN
     RAISE EXCEPTION 'stella_hosted_0001 aborted: uellix.bootstrap_environment must be exactly ''staging'' (got %). Set it in the SAME session: psql -c "SET uellix.bootstrap_environment = ''staging''" -f <this file>. There is no default: an unset environment is an ambiguous environment, and this package refuses those.', coalesce(quote_literal(v_declared_env), '<unset>');
   END IF;
 
+  -- (E0) THE FIVE ROLE IDENTITIES MUST ALREADY EXIST, WITH THE CANONICAL SHAPE.
+  --      HPO-ODS-W2-03: they are created by stella_hosted_0000 before
+  --      PHASE_BASELINE. This package no longer creates or alters a role; it
+  --      refuses if the identity package has not run, and it refuses if the
+  --      identities have drifted — attributes and memberships alike — because
+  --      everything below (the owner window, the ledger transfer, the E-01
+  --      grants) assumes exactly that shape.
+  SELECT string_agg(r.name, ', ' ORDER BY r.name) INTO v_missing
+  FROM (VALUES ('uellix_owner'),('uellix_migrator'),('uellix_app'),('uellix_writer'),('uellix_auditor')) AS r(name)
+  WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.name);
+
+  IF v_missing IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_hosted_0001 aborted: managed role identit(ies) % are absent. Apply db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql BEFORE PHASE_BASELINE (PHASE_MANAGED_ROLE_IDENTITIES); this package defines no role.', v_missing;
+  END IF;
+
+  SELECT string_agg(rolname, ', ' ORDER BY rolname) INTO v_missing
+  FROM pg_roles
+  WHERE rolname IN ('uellix_owner','uellix_migrator','uellix_app','uellix_writer','uellix_auditor')
+    AND (rolsuper OR rolbypassrls OR rolcreatedb OR rolreplication
+         OR (rolcreaterole AND rolname <> 'uellix_migrator')
+         OR (NOT rolcreaterole AND rolname = 'uellix_migrator')
+         OR (rolcanlogin AND rolname IN ('uellix_owner','uellix_writer'))
+         OR (NOT rolcanlogin AND rolname IN ('uellix_migrator','uellix_app','uellix_auditor')));
+
+  IF v_missing IS NOT NULL THEN
+    RAISE EXCEPTION 'stella_hosted_0001 aborted: role identit(ies) % do not carry the canonical attributes stella_hosted_0000 establishes (owner/writer NOLOGIN; migrator/app/auditor LOGIN; only migrator CREATEROLE; nobody SUPERUSER/BYPASSRLS/CREATEDB/REPLICATION). Re-apply stella_hosted_0000 — it is convergent — rather than patching by hand.', v_missing;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    JOIN pg_roles r ON r.oid = m.roleid JOIN pg_roles g ON g.oid = m.member
+    WHERE r.rolname = 'uellix_owner' AND g.rolname = 'uellix_migrator'
+      AND m.set_option AND NOT m.inherit_option
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_auth_members m
+    JOIN pg_roles r ON r.oid = m.roleid JOIN pg_roles g ON g.oid = m.member
+    WHERE r.rolname = 'uellix_writer' AND g.rolname = 'uellix_app'
+      AND m.inherit_option AND NOT m.set_option
+  ) THEN
+    RAISE EXCEPTION 'stella_hosted_0001 aborted: the canonical memberships are missing or drifted (uellix_migrator must hold uellix_owner WITH SET TRUE, INHERIT FALSE; uellix_app must hold uellix_writer WITH INHERIT TRUE, SET FALSE). Re-apply stella_hosted_0000.';
+  END IF;
+
   -- (E5) The identity path must exist and must be reachable. Without the RLS
   --      helpers there is nothing for the capability roles to call, and without
   --      auth.uid() there is no session actor to derive.
@@ -174,132 +233,28 @@ COMMENT ON SCHEMA uellix_bootstrap IS
   'Train 5B: the managed-Supabase compatibility surface. Holds the capability assertion every derived hosted package calls, the read-only capability report, and the staging sentinel. Never holds business data.';
 
 -- ============================================================
--- 2. The five roles
+-- 2. The five roles — RETIRED HERE (HPO-ODS-W2-03)
 -- ============================================================
--- Same five names, same shape and the same membership graph as stella_0004, so
--- that one role model documents both environments. What differs is stated in
--- section 6 and recorded in the sentinel, not smoothed over here.
---
--- NOLOGIN for owner and writer: neither is ever an endpoint of a connection.
--- NOBYPASSRLS everywhere, without exception and including the owner — the
--- instruction's "NO otorgues BYPASSRLS a roles runtime" is implemented as "no
--- role this package creates ever has it", which is strictly broader and cannot
--- drift when somebody later reclassifies a role as runtime.
--- EVERY STATEMENT IS A LITERAL, and the repetition is the point.
---
--- A `FOR ... LOOP` with `EXECUTE format('CREATE ROLE %I ...')` would be shorter
--- and is what this block looked like first. It was rejected by
--- `tests/prepared-stella-sql.test.ts`, whose cross-cutting invariant is that
--- nothing dynamic is EXECUTEd in a prepared package — the same rule
--- `stella_0013` section 3 states as "a composed ALTER would be a statement no
--- gate can judge". Five literal blocks can be read by a static contract; one
--- loop cannot, and the roles being created are the security boundary of the
--- whole hosted chain.
---
--- Each block is convergent and NARROWING ONLY: re-application strips dangerous
--- attributes somebody may have added by hand, and never adds LOGIN to a role
--- found without it — a role that lost LOGIN lost it for a reason this package
--- cannot see.
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_owner') THEN
-    CREATE ROLE uellix_owner WITH NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-    RAISE NOTICE 'stella_hosted_0001: created role uellix_owner';
-  ELSE
-    ALTER ROLE uellix_owner WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-  END IF;
-
-  -- E-02, measured on PostgreSQL 17.6. CREATEROLE, and it is the ONE attribute
-  -- in this block that is not narrowing.
-  --
-  -- uellix_migrator is the principal every temporary elevation the governed
-  -- chain emits names — `GRANT <role> TO uellix_migrator; SET ROLE <role>` —
-  -- so the chain can only be applied BY it. Six of the nine packages create a
-  -- capability role, and `assert_hosted_capabilities` (C1) requires CREATEROLE
-  -- for exactly that reason. Created NOCREATEROLE, this role fails its own
-  -- chain's first statement, and `postgres` — which does hold CREATEROLE —
-  -- fails at the first capability window because the grant named somebody
-  -- else. That was E-02: no session could apply the chain.
-  --
-  -- `postgres` cannot be the named installer instead. It is a PROVIDER role,
-  -- and the authority model refuses any membership statement that names one
-  -- (AUTHORITY_UNKNOWN_ROLE) — the chain's temporary rows are told apart from
-  -- the provider's by grantor (lab M2/M3a), and naming a provider principal
-  -- would destroy that distinction.
-  --
-  -- WHAT THIS COSTS, stated rather than discovered later. On PostgreSQL 16+
-  -- CREATEROLE is no longer the near-superuser it was: a CREATEROLE role may
-  -- only administer roles it created, cannot grant itself SUPERUSER, and — with
-  -- createrole_self_grant empty, which §0 does not check and the prechain
-  -- observation measures — does not even receive SET on what it creates
-  -- (measured: pg_has_role(migrator, cap, 'SET') = false immediately after
-  -- CREATE ROLE). It buys exactly the ability to create the three capability
-  -- roles, which is the thing the chain does and nothing else.
-  --
-  -- Measured, this image: a NOSUPERUSER CREATEROLE role CAN set this attribute
-  -- on a role it administers, so no superuser is needed to apply it.
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_migrator') THEN
-    CREATE ROLE uellix_migrator WITH LOGIN NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-    RAISE NOTICE 'stella_hosted_0001: created role uellix_migrator';
-  ELSE
-    ALTER ROLE uellix_migrator WITH NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-  END IF;
-
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_app') THEN
-    CREATE ROLE uellix_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-    RAISE NOTICE 'stella_hosted_0001: created role uellix_app';
-  ELSE
-    ALTER ROLE uellix_app WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-  END IF;
-
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_writer') THEN
-    CREATE ROLE uellix_writer WITH NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-    RAISE NOTICE 'stella_hosted_0001: created role uellix_writer';
-  ELSE
-    ALTER ROLE uellix_writer WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-  END IF;
-
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uellix_auditor') THEN
-    CREATE ROLE uellix_auditor WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-    RAISE NOTICE 'stella_hosted_0001: created role uellix_auditor';
-  ELSE
-    ALTER ROLE uellix_auditor WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
-  END IF;
-END $$;
+-- The five literal CREATE ROLE / ALTER ROLE blocks that used to live here are
+-- now, verbatim, §1 of
+-- db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql, which
+-- runs before PHASE_BASELINE. §0 (E0) above refuses if they are absent or
+-- drifted. Everything said there about literals, convergence and E-02
+-- (uellix_migrator CREATEROLE) still holds — it is simply said once, in the
+-- package that owns the definition. This package defines no role.
 
 -- ------------------------------------------------------------
 -- 2b. The installer must be able to BECOME the owner
 -- ------------------------------------------------------------
--- Found by adversarial review A, and it would have stopped the chain halfway
--- through a real provisioning.
---
--- When a NON-superuser with CREATEROLE creates a role, PostgreSQL 16+ grants it
--- membership with `admin_option = true, inherit_option = false,
--- **set_option = false**` — measured on this stack and recorded in
--- `docs/ops/DATABASE_ROLE_MODEL.md` section 5.2. ADMIN OPTION is not the right
--- to SET ROLE. So the installer can create `uellix_owner` and then CANNOT
--- `SET ROLE uellix_owner` — which seven of the nine chain packages do, and which
--- `CREATE SCHEMA ... AUTHORIZATION uellix_owner` and every `ALTER ... OWNER TO`
--- also require.
---
--- The grant below is the RR-02 gesture performed DELIBERATELY, once, in a
--- reviewed package, instead of being discovered as an undocumented manual step
--- with staging half built. It changes nothing about the residual risk — the
--- installer already held ADMIN OPTION and could always have issued it — but it
--- makes the crossing explicit and auditable rather than improvised.
---
--- Written as a literal for `postgres` because that is the managed-Supabase
--- installer. Any other identity gets an actionable refusal naming the exact
--- statement, rather than a dynamic GRANT no static contract can read.
+-- The RR-02 grant itself (GRANT uellix_owner TO postgres WITH INHERIT FALSE,
+-- SET TRUE) moved to stella_hosted_0000 §2 with the roles: it is a membership
+-- statement about roles, and it needs no table. What stays here is the
+-- ASSERTION, because seven of the nine chain packages — and §2c below —
+-- open an owner window, and this is the last point where a refusal is cheap.
 DO $$
 BEGIN
-  IF current_user = 'postgres' AND NOT pg_has_role('postgres', 'uellix_owner', 'SET') THEN
-    GRANT uellix_owner TO postgres WITH INHERIT FALSE, SET TRUE;
-    RAISE NOTICE 'stella_hosted_0001: granted postgres SET on uellix_owner (RR-02, deliberate and audited).';
-  END IF;
-
   IF NOT pg_has_role(current_user, 'uellix_owner', 'SET') THEN
-    RAISE EXCEPTION 'stella_hosted_0001 aborted: % cannot SET ROLE uellix_owner, and seven of the nine chain packages open an owner window. On PostgreSQL 16+ a non-superuser CREATEROLE receives ADMIN OPTION but NOT set_option when it creates a role. Run, as a role holding ADMIN OPTION on uellix_owner: GRANT uellix_owner TO %I WITH INHERIT FALSE, SET TRUE; then re-run this package.', current_user, current_user;
+    RAISE EXCEPTION 'stella_hosted_0001 aborted: % cannot SET ROLE uellix_owner, and seven of the nine chain packages open an owner window. On PostgreSQL 16+ a non-superuser CREATEROLE receives ADMIN OPTION but NOT set_option when it creates a role. stella_hosted_0000 §2 grants it to postgres; for any other installer run, as a role holding ADMIN OPTION on uellix_owner: GRANT uellix_owner TO %I WITH INHERIT FALSE, SET TRUE; then re-run this package.', current_user, current_user;
   END IF;
 END $$;
 
@@ -401,38 +356,9 @@ BEGIN
   END IF;
 END $$;
 
-COMMENT ON ROLE uellix_owner    IS 'stella_hosted_0001: object owner. NOLOGIN, NOBYPASSRLS, NOCREATEROLE. On managed Supabase postgres retains ADMIN OPTION over it (RR-02) — an auditable obstacle, not a barrier.';
-COMMENT ON ROLE uellix_migrator IS 'stella_hosted_0001: the only LOGIN role that reaches uellix_owner, and only by explicit SET ROLE.';
-COMMENT ON ROLE uellix_app      IS 'stella_hosted_0001: application runtime. NOBYPASSRLS — every product query is governed by RLS.';
-COMMENT ON ROLE uellix_writer   IS 'stella_hosted_0001: governed write surface, reached by uellix_app through inheritance. stella_0017 revokes its INSERT on the ledger.';
-COMMENT ON ROLE uellix_auditor  IS 'stella_hosted_0001: read-only auditor.';
-
--- Membership. SET is granted ONLY where a role must be able to become another;
--- INHERIT only where privileges must flow without an explicit statement.
-DO $$
-BEGIN
-  -- migrator -> owner: SET yes, INHERIT no. The migrator must ANNOUNCE that it
-  -- is acting as the owner; inheriting would make every migrator statement an
-  -- owner statement, which is how a migration tool silently gains DDL rights
-  -- over objects it was only meant to read.
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_auth_members m
-    JOIN pg_roles r ON r.oid = m.roleid JOIN pg_roles g ON g.oid = m.member
-    WHERE r.rolname = 'uellix_owner' AND g.rolname = 'uellix_migrator'
-  ) THEN
-    GRANT uellix_owner TO uellix_migrator WITH INHERIT FALSE, SET TRUE;
-  END IF;
-
-  -- app -> writer: INHERIT yes, SET no. The runtime must not be able to shed
-  -- its own identity.
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_auth_members m
-    JOIN pg_roles r ON r.oid = m.roleid JOIN pg_roles g ON g.oid = m.member
-    WHERE r.rolname = 'uellix_writer' AND g.rolname = 'uellix_app'
-  ) THEN
-    GRANT uellix_writer TO uellix_app WITH INHERIT TRUE, SET FALSE;
-  END IF;
-END $$;
+-- The role comments and the two memberships (migrator -> owner SET-only,
+-- app -> writer INHERIT-only) are established by stella_hosted_0000 §3/§4 and
+-- asserted by §0 (E0) above. Not restated here: one definition, one owner.
 
 -- ============================================================
 -- 3. The auth shim (the whole reason a hosted variant is possible)
@@ -1033,7 +959,7 @@ BEGIN
   WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.name);
 
   IF v_problem IS NOT NULL THEN
-    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: role(s) % were not created.', v_problem;
+    RAISE EXCEPTION 'stella_hosted_0001 FAILED verification: role(s) % are absent — stella_hosted_0000 establishes them and §0 (E0) should have refused already.', v_problem;
   END IF;
 
   -- (2) THE RUNTIME CANNOT BECOME THE OWNER. This is the property the whole

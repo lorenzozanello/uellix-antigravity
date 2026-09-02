@@ -160,15 +160,46 @@ cadena.
    salvaguardas de la ADR). **No es un parse de Postgres** — la validación real
    contra una base es parte del checklist G2.
 
+### HPO-ODS-W2-03 — identidad de roles gestionados ANTES del baseline (`stella_hosted_0000`)
+
+**Estado: DISEÑO. No aplicado a ninguna base hosted.** Ensayado en clúster
+PostgreSQL desechable aislado (`pnpm baseline:rehearsal:local`).
+
+Las unidades del baseline `0042_fib_audit_insert_policy.sql` (ordinal 53) y
+`0045_fib_domain_object_version_lineage.sql` (ordinal 56) escriben
+`CREATE POLICY … TO uellix_app`, así que los cinco roles tienen que existir
+**antes de la unidad 1**. `stella_hosted_0001` no puede correr antes: su §0 E5
+exige los helpers RLS de `0031`/`0039`, su §2c transfiere una tabla que crea
+`0012` y su §5d concede sobre objetos del baseline. Por eso la **identidad**
+(roles, atributos y las membresías que no necesitan tabla) se separa aquí y
+`stella_hosted_0001` pasa a **afirmarla** (§0 E0) en vez de crearla.
+
+Secuencia autoritativa: `PLATFORM_SUBSTRATE` → **`PHASE_MANAGED_ROLE_IDENTITIES`**
+(`stella_hosted_0000`) → `PHASE_BASELINE` (64 unidades) → `PHASE_STELLA_BOOTSTRAP`
+(`stella_hosted_0001`) → `PHASE_STELLA_CHAIN`. Modelo TypeScript único:
+`db/hosted/managed-role-identities.ts` (pin SHA-256 del paquete, atributos,
+membresías, comando de aplicación).
+
+| Script | Rollback | Gate | Objetos que crea/altera | Estado |
+|---|---|---|---|---|
+| `stella_hosted_0000_managed_role_identity_bootstrap.sql` | `stella_hosted_0000_rollback.sql` | `PHASE_MANAGED_ROLE_IDENTITIES` (`db/hosted/hosted-provisioning-runner.ts`); exige clúster **sin ningún rol `uellix_*`** | Los **5** roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`) con los mismos atributos literales que antes tenía `stella_hosted_0001` §2 (sólo `migrator` con `CREATEROLE`, nadie con `SUPERUSER`/`BYPASSRLS`/`CREATEDB`/`REPLICATION`); la concesión RR-02 (`uellix_owner` a `postgres` con `SET`); `COMMENT ON ROLE` ×5; las **2** membresías (`migrator → owner` SET-only, `app → writer` INHERIT-only). **No referencia ninguna tabla de aplicación, no transfiere propiedad, no concede privilegios de tabla/esquema, no depende de helpers RLS ni de migraciones.** Nada dinámico | **DISEÑO — ensayado en clúster desechable** |
+
+> **Su rollback** revoca las dos membresías y elimina los cinco roles, y **se
+> niega** mientras exista `uellix_bootstrap`, mientras cualquier rol posea un
+> objeto o mientras conserve privilegios sobre `public` — es decir, hasta que
+> `stella_hosted_0001_rollback` haya corrido antes.
+
 ### Train 5B — bootstrap de Supabase gestionado (`stella_hosted_0001`)
 
 **Estado: DISEÑO. No aplicado a ninguna base. Ninguna bandera habilitada.**
 Cierra el bloqueador B1 del Train 5A: los diez paquetes de la cadena hosted
 abortaban sin `rolsuper`, y Supabase gestionado no expone superusuario.
+**HPO-ODS-W2-03:** ya **no define ningún rol** — afirma en §0 (E0) que los
+cinco de `stella_hosted_0000` existen con la forma canónica y se niega si no.
 
 | Script | Rollback | Gate | Objetos que crea/altera | Estado |
 |---|---|---|---|---|
-| `stella_hosted_0001_managed_role_bootstrap.sql` | `stella_hosted_0001_rollback.sql` | **G11/G12 propuestos** (`docs/ops/staging/STELLA_STAGING_GATE_PLAN.md`) | Los **5** roles (`uellix_owner`/`migrator`/`app`/`writer`/`auditor`) sin ningún atributo peligroso; esquema `uellix_bootstrap`; `assert_hosted_capabilities(text)` (la precondición que sustituye a la guarda `rolsuper`); `hosted_capability_report()` (sólo lectura); tabla `staging_sentinel` (**fila no insertada** — la escribe el aprovisionamiento); `public.uellix_auth_uid()`, el shim `SECURITY DEFINER` que expone el actor de sesión a los roles de capacidad sin `USAGE ON SCHEMA auth` (RR-09) | **DISEÑO — no aplicado** |
+| `stella_hosted_0001_managed_role_bootstrap.sql` | `stella_hosted_0001_rollback.sql` | **G11/G12 propuestos** (`docs/ops/staging/STELLA_STAGING_GATE_PLAN.md`); exige `stella_hosted_0000` aplicado y el baseline completo | **Afirma** (no crea) los 5 roles de `stella_hosted_0000`; esquema `uellix_bootstrap`; `USAGE`/`CREATE` sobre `public` (§2b-bis); propiedad de `public.stella_interactions` → `uellix_owner` (§2c); `assert_hosted_capabilities(text)` (la precondición que sustituye a la guarda `rolsuper`); `hosted_capability_report()` (sólo lectura); tabla `staging_sentinel` (**fila no insertada** — la escribe el aprovisionamiento); `public.uellix_auth_uid()`, el shim `SECURITY DEFINER` que expone el actor de sesión a los roles de capacidad sin `USAGE ON SCHEMA auth` (RR-09); contrato de autoridad prechain E-01 (§5d). Su rollback ya **no elimina roles**: revoca los privilegios de esquema que concedió y deja los cinco a `stella_hosted_0000_rollback` | **DISEÑO — no aplicado** |
 
 ### Train 5B — remediación prechain forward-only (`stella_hosted_0002`)
 
@@ -1253,7 +1284,8 @@ contenedor desechable y por las dos certificaciones canónicas.
 > reintentar no puede dañar no necesita un mecanismo cuyo único fin es impedir
 > el reintento.
 
-> **Orden prechain (completo):** baseline (50 unidades) → `stella_hosted_0001` →
+> **Orden prechain (completo):** `stella_hosted_0000` (identidad de roles,
+> HPO-ODS-W2-03) → baseline (64 unidades) → `stella_hosted_0001` →
 > [`stella_hosted_0002` si el proyecto ya estaba bootstrapeado] →
 > **`stella_hosted_0003`** → **`stella_hosted_0004`** → **`stella_hosted_0005`**
 > → sentinel → `HOSTED_CHAIN` T1…T11.

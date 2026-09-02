@@ -17,11 +17,21 @@
 // either a refusal or the ordered steps of exactly one phase.
 //
 // ---------------------------------------------------------------------------
-// THE THREE PHASES, AND WHY THE EVIDENCE DIFFERS BETWEEN THEM
+// THE FOUR PHASES, AND WHY THE EVIDENCE DIFFERS BETWEEN THEM
 // ---------------------------------------------------------------------------
-//   PHASE_BASELINE          50 units. The sentinel's table cannot exist. The
+//   PHASE_MANAGED_ROLE_IDENTITIES
+//                           1 package (stella_hosted_0000). HPO-ODS-W2-03:
+//                           baseline units 0042/0045 write CREATE POLICY … TO
+//                           uellix_app, so the five managed roles must exist
+//                           before unit 1 — and stella_hosted_0001 cannot run
+//                           before unit 1. The compensating control is ROLE
+//                           PRISTINITY: roles are CLUSTER-scoped, so the probe
+//                           is pg_roles, and it must show ZERO uellix_* roles.
+//
+//   PHASE_BASELINE          64 units. The sentinel's table cannot exist. The
 //                           compensating control is VIRGINITY: no baseline unit
-//                           installed, no Uellix schema, no ledger.
+//                           installed, no Uellix schema, no ledger — AND exactly
+//                           the five identities, no other uellix_* role.
 //
 //   PHASE_STELLA_BOOTSTRAP  1 package. The sentinel's table still cannot exist —
 //                           this is the package that creates it. Virginity is
@@ -53,6 +63,13 @@ import {
   wrapperPathFor,
 } from './baseline-journal-wrapper'
 import { HOSTED_CHAIN } from './hosted-package-manifest'
+import {
+  MANAGED_ROLE_IDENTITIES,
+  MANAGED_ROLE_IDENTITY_PACKAGE,
+  applyCommandForRoleIdentities,
+  classifyUellixRoles,
+  verifyRoleIdentityPackage,
+} from './managed-role-identities'
 import { planHostedApply, type HostedApplyStep } from './hosted-migrator'
 import { resolveOperationalApplyTarget } from './governed-artefact'
 import { CHAIN_WRITE_ORDER, authorizeChainWrite } from './fresh-observation'
@@ -72,12 +89,14 @@ import {
 } from './target-identity'
 
 export type ProvisioningPhase =
+  | 'PHASE_MANAGED_ROLE_IDENTITIES'
   | 'PHASE_BASELINE'
   | 'PHASE_STELLA_BOOTSTRAP'
   | 'PHASE_STELLA_CHAIN'
 
 /** The phases in the only order they may occur. */
 export const PROVISIONING_PHASES: readonly ProvisioningPhase[] = [
+  'PHASE_MANAGED_ROLE_IDENTITIES',
   'PHASE_BASELINE',
   'PHASE_STELLA_BOOTSTRAP',
   'PHASE_STELLA_CHAIN',
@@ -89,6 +108,16 @@ export type ProvisioningFailureCode =
   | 'PROVISIONING_BASELINE_INCOMPLETE'
   | 'PROVISIONING_BASELINE_MANIFEST_INVALID'
   | 'PROVISIONING_TARGET_NOT_VIRGIN'
+  /** HPO-ODS-W2-03. The uellix_* role probe was not supplied. */
+  | 'PROVISIONING_ROLE_PROBE_MISSING'
+  /** HPO-ODS-W2-03. The cluster already carries uellix_* roles that are not the five identities. */
+  | 'PROVISIONING_ROLE_IDENTITIES_PRESENT'
+  /** HPO-ODS-W2-03. PHASE_BASELINE requires all five identities. */
+  | 'PROVISIONING_ROLE_IDENTITIES_INCOMPLETE'
+  /** HPO-ODS-W2-03. PHASE_BASELINE refuses any uellix_* role beyond the five. */
+  | 'PROVISIONING_ROLE_IDENTITIES_UNEXPECTED'
+  /** HPO-ODS-W2-03. The identity package cannot be read or drifted from its pin. */
+  | 'PROVISIONING_ROLE_PACKAGE_INVALID'
   | 'PROVISIONING_EMPTINESS_PROBE_MISSING'
   | 'PROVISIONING_TARGET_NOT_EMPTY'
   | 'PROVISIONING_SENTINEL_IS_NOT_A_MIGRATION'
@@ -456,6 +485,18 @@ export interface TargetStateProbe {
    * Absent = unknown = refused, like every other probe here.
    */
   readonly storageUnitState?: StorageUnitState
+  /**
+   * HPO-ODS-W2-03. Every `pg_roles.rolname LIKE 'uellix\_%'` on the CLUSTER.
+   *
+   *   SELECT rolname FROM pg_roles WHERE rolname LIKE 'uellix\_%' ORDER BY 1
+   *
+   * Roles are cluster-scoped, which is the whole reason this is a separate
+   * probe rather than a column of the database picture. Absent or null =
+   * not measured = refused by PHASE_MANAGED_ROLE_IDENTITIES (which needs it
+   * EMPTY) and by PHASE_BASELINE (which needs it to be EXACTLY the five
+   * identities). The later phases do not consult it.
+   */
+  readonly uellixRoles?: readonly string[] | null
 }
 
 export interface ProvisioningRequest {
@@ -623,6 +664,8 @@ export function planProvisioningPhase(request: ProvisioningRequest): Provisionin
   }
 
   switch (request.phase) {
+    case 'PHASE_MANAGED_ROLE_IDENTITIES':
+      return planManagedRoleIdentitiesPhase(request)
     case 'PHASE_BASELINE':
       return planBaselinePhase(request)
     case 'PHASE_STELLA_BOOTSTRAP':
@@ -630,6 +673,87 @@ export function planProvisioningPhase(request: ProvisioningRequest): Provisionin
     case 'PHASE_STELLA_CHAIN':
       return planChainPhase(request)
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* PHASE_MANAGED_ROLE_IDENTITIES  (HPO-ODS-W2-03)                             */
+/* -------------------------------------------------------------------------- */
+
+/** The uellix_* role probe, or the refusal for not having supplied it. */
+function requireRoleProbe(state: TargetStateProbe, phase: ProvisioningPhase): readonly string[] | ProvisioningPlan {
+  if (state.uellixRoles === undefined || state.uellixRoles === null) {
+    return refuse(
+      'PROVISIONING_ROLE_PROBE_MISSING',
+      `refused: ${phase} needs the cluster's uellix_* role inventory and none was supplied. Run ` +
+        `SELECT rolname FROM pg_roles WHERE rolname LIKE 'uellix\\_%' ORDER BY 1 and pass the list — an ` +
+        `EMPTY list is a measurement; an absent one is not. Roles are cluster-scoped, so a fresh ` +
+        `database proves nothing about them.`,
+    )
+  }
+  return state.uellixRoles
+}
+
+function planManagedRoleIdentitiesPhase(request: ProvisioningRequest): ProvisioningPlan {
+  // Identity with the sentinel deferred — three phases away.
+  const identity = verifyStagingTarget(request.target, request.production, 'deferred-until-bootstrap')
+  if (!identity.ok) return refuse(identity.code, identity.message)
+
+  const state = request.state
+
+  // VIRGINITY of the database picture, same rule as PHASE_BASELINE.
+  if (state.baselineUnitsInstalled.length > 0 || state.bootstrapSchemaPresent || state.sentinel !== null) {
+    return refuse(
+      'PROVISIONING_TARGET_NOT_VIRGIN',
+      `refused: PHASE_MANAGED_ROLE_IDENTITIES runs against a database with nothing of Uellix in it, and ` +
+        `this one reports ${state.baselineUnitsInstalled.length} baseline unit(s) applied, ` +
+        `bootstrapSchemaPresent=${state.bootstrapSchemaPresent}, sentinel=${state.sentinel ? 'present' : 'absent'}.`,
+    )
+  }
+
+  // ROLE PRISTINITY — the compensating control of THIS phase.
+  const probe = requireRoleProbe(state, 'PHASE_MANAGED_ROLE_IDENTITIES')
+  if (!Array.isArray(probe)) return probe as ProvisioningPlan
+  const roles = classifyUellixRoles(probe)
+  if (roles.canonicalPresent.length === MANAGED_ROLE_IDENTITIES.length && roles.unexpected.length === 0) {
+    return refuse(
+      'PROVISIONING_PHASE_OUT_OF_SEQUENCE',
+      `refused: all five managed role identities already exist, so PHASE_MANAGED_ROLE_IDENTITIES is ` +
+        `complete. Proceed to PHASE_BASELINE.`,
+    )
+  }
+  if (roles.canonicalPresent.length > 0 || roles.unexpected.length > 0) {
+    return refuse(
+      'PROVISIONING_ROLE_IDENTITIES_PRESENT',
+      `refused: the cluster already carries uellix_* role(s) ` +
+        `(${[...roles.canonicalPresent, ...roles.unexpected].join(', ')}) and this is neither a pristine ` +
+        `cluster nor a complete identity set. A partial set cannot come from stella_hosted_0000 under ` +
+        `psql -1; residue from another provisioning is not something this runner repairs. Roles are ` +
+        `cluster-scoped: recreate the project (DESTROY_AND_REPROVISION) rather than a database.`,
+    )
+  }
+
+  // THE PACKAGE, against its pin. Read through the same reader as the
+  // baseline corpus so the plan names the bytes it verified.
+  const pin = verifyRoleIdentityPackage(request.readBaselineSql(MANAGED_ROLE_IDENTITY_PACKAGE.file))
+  if (!pin.ok) return refuse('PROVISIONING_ROLE_PACKAGE_INVALID', `refused: ${pin.detail}`)
+
+  const steps: ProvisioningStep[] = [
+    {
+      ordinal: 1,
+      id: MANAGED_ROLE_IDENTITY_PACKAGE.id,
+      file: MANAGED_ROLE_IDENTITY_PACKAGE.file,
+      sha256: MANAGED_ROLE_IDENTITY_PACKAGE.sourceSha256,
+      command: applyCommandForRoleIdentities(),
+    },
+  ]
+
+  return finish(request, identity.projectRef, 'PHASE_MANAGED_ROLE_IDENTITIES', steps, [
+    `sentinel DEFERRED; compensating control satisfied: cluster reports zero uellix_* roles, target ` +
+      `reports zero baseline units, no uellix_bootstrap schema and no sentinel row`,
+    `1 identity package planned as ${MANAGED_ROLE_IDENTITY_PACKAGE.id} (five roles, attributes, ` +
+      `memberships; no application table)`,
+  ],
+  `re-probe pg_roles (exactly the five identities, nothing else uellix_*), then PHASE_BASELINE`)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -660,6 +784,30 @@ function planBaselinePhase(request: ProvisioningRequest): ProvisioningPlan {
         `is not empty has neither the sentinel nor the thing standing in for it. If the baseline is ` +
         `genuinely half-applied, the recovery is DESTROY_AND_REPROVISION — see ` +
         `docs/ops/staging/STELLA_STAGING_MIGRATION_PLAN.md.`,
+    )
+  }
+
+  // THE FIVE IDENTITIES, EXACTLY (HPO-ODS-W2-03). Units 53 and 56 write
+  // `CREATE POLICY … TO uellix_app`; without the identities the phase stops
+  // there with 42704. Anything uellix_* beyond the five means the chain, or
+  // another stack, has been here — and virginity above cannot see roles.
+  const probe = requireRoleProbe(state, 'PHASE_BASELINE')
+  if (!Array.isArray(probe)) return probe as ProvisioningPlan
+  const roles = classifyUellixRoles(probe)
+  if (roles.canonicalMissing.length > 0) {
+    return refuse(
+      'PROVISIONING_ROLE_IDENTITIES_INCOMPLETE',
+      `refused: managed role identit(ies) ${roles.canonicalMissing.join(', ')} are absent. Run ` +
+        `PHASE_MANAGED_ROLE_IDENTITIES first — 0042_fib_audit_insert_policy.sql and ` +
+        `0045_fib_domain_object_version_lineage.sql name uellix_app and would raise 42704.`,
+    )
+  }
+  if (roles.unexpected.length > 0) {
+    return refuse(
+      'PROVISIONING_ROLE_IDENTITIES_UNEXPECTED',
+      `refused: uellix_* role(s) ${roles.unexpected.join(', ')} exist beyond the five identities. The ` +
+        `baseline creates no roles and no capability role may precede the chain; this cluster is not ` +
+        `the pristine one the identity phase established.`,
     )
   }
 
@@ -718,6 +866,7 @@ function planBaselinePhase(request: ProvisioningRequest): ProvisioningPlan {
   return finish(request, identity.projectRef, 'PHASE_BASELINE', steps, [
     `sentinel DEFERRED; compensating control satisfied: target reports zero baseline units, no ` +
       `uellix_bootstrap schema and no sentinel row`,
+    `managed role identities present: exactly ${MANAGED_ROLE_IDENTITIES.join(', ')}; no other uellix_* role`,
     `${steps.length} baseline units planned in manifest order`,
     `${BASELINE_UNITS.filter((u) => u.reapply !== 'idempotent').length} of them refuse a second ` +
       `application; a failure mid-phase is recovered by DESTROY_AND_REPROVISION, not by re-running`,

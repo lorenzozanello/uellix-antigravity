@@ -112,7 +112,12 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
     //   E-04 §5e installs assert_capability_membership_topology, which the new
     //        `capability-member-count` rewrite rule calls in five packages.
     // The rewrite counts stay NO_REWRITES: all of it is native-hosted SQL.
-    sourceSha256: '74b4a879de0e4d47d2263218c9ca257041fddbde53068731b4a4e1367e6e0aa6',
+    // Re-pinned a fourth time for HPO-ODS-W2-03: role IDENTITY (the five
+    // CREATE/ALTER ROLE blocks, the RR-02 grant, COMMENT ON ROLE and the two
+    // memberships) moved verbatim to stella_hosted_0000, which runs BEFORE
+    // PHASE_BASELINE; this package now ASSERTS that state in §0 (E0) and
+    // defines no role. Still native-hosted, still NO_REWRITES.
+    sourceSha256: 'cfe6777f7561ede2c89270a5efef6668603cc344d69e45c692e24fac561477c8',
     expectedRewrites: NO_REWRITES,
     dependsOn: [],
     expectedObjects: [
@@ -121,11 +126,13 @@ export const HOSTED_PACKAGE_MANIFEST: readonly HostedManifestEntry[] = [
       'function uellix_bootstrap.hosted_capability_report()',
       'table uellix_bootstrap.staging_sentinel',
       'function public.uellix_auth_uid()',
-      'role uellix_owner',
-      'role uellix_migrator',
-      'role uellix_app',
-      'role uellix_writer',
-      'role uellix_auditor',
+      // HPO-ODS-W2-03: the five roles are ASSERTED by §0 (E0), not created —
+      // stella_hosted_0000 establishes them before PHASE_BASELINE.
+      'role uellix_owner (asserted present; created by stella_hosted_0000)',
+      'role uellix_migrator (asserted present; created by stella_hosted_0000)',
+      'role uellix_app (asserted present; created by stella_hosted_0000)',
+      'role uellix_writer (asserted present; created by stella_hosted_0000)',
+      'role uellix_auditor (asserted present; created by stella_hosted_0000)',
     ],
     expectedOwners: [
       'uellix_owner owns schema uellix_bootstrap',

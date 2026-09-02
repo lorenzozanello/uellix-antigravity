@@ -36,6 +36,12 @@ const ROLLBACK = readFileSync(
   path.join(process.cwd(), 'db', 'prepared', 'stella_hosted_0001_rollback.sql'),
   'utf8',
 ).replace(/\r\n?/g, '\n')
+// HPO-ODS-W2-03: role IDENTITY (the five CREATE/ALTER ROLE blocks) lives in
+// the pre-baseline package; the bootstrap asserts it and defines no role.
+const IDENTITY = readFileSync(
+  path.join(process.cwd(), 'db', 'prepared', 'stella_hosted_0000_managed_role_identity_bootstrap.sql'),
+  'utf8',
+).replace(/\r\n?/g, '\n')
 
 /** Executable lines only — comments and string literals are prose, not SQL. */
 function executableLines(sql: string): string[] {
@@ -100,16 +106,28 @@ describe('Phase 11 — no hosted artefact depends on rolsuper', () => {
 })
 
 describe('Phase 11 — no runtime role gains BYPASSRLS or service_role anywhere', () => {
-  it('the bootstrap creates every role NOBYPASSRLS', () => {
-    const statements = BOOTSTRAP.match(/\b(CREATE|ALTER)\s+ROLE\b[^;]*/gi) ?? []
+  it('the identity package creates every role NOBYPASSRLS', () => {
+    const statements = IDENTITY.match(/\b(CREATE|ALTER)\s+ROLE\b[^;]*/gi) ?? []
     expect(statements.length).toBeGreaterThan(0)
     for (const statement of statements) {
       expect(statement).not.toMatch(/(?<!NO)BYPASSRLS/)
     }
   })
 
-  it('the bootstrap format() role template itself pins NOBYPASSRLS and NOSUPERUSER', () => {
-    expect(BOOTSTRAP).toContain('NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT')
+  it('the identity package role template itself pins NOBYPASSRLS and NOSUPERUSER', () => {
+    expect(IDENTITY).toContain('NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT')
+  })
+
+  it('the post-baseline bootstrap defines NO role — identity has one source (HPO-ODS-W2-03)', () => {
+    // Comments AND single-quoted literals removed: the §2b refusal legitimately
+    // QUOTES the GRANT an operator must run, and prose is not a statement.
+    const executable = executableLines(BOOTSTRAP).join('\n').replace(/'(?:[^']|'')*'/g, "''")
+    expect(executable).not.toMatch(/\bCREATE\s+ROLE\b/i)
+    expect(executable).not.toMatch(/\bALTER\s+ROLE\b/i)
+    expect(executable).not.toMatch(/\bCOMMENT\s+ON\s+ROLE\b/i)
+    expect(executable).not.toMatch(/\bGRANT\s+uellix_(owner|writer)\s+TO\b/i)
+    // …and it ASSERTS the identities instead, naming the package that owns them.
+    expect(BOOTSTRAP).toMatch(/Apply db\/prepared\/stella_hosted_0000_managed_role_identity_bootstrap\.sql BEFORE PHASE_BASELINE/)
   })
 
   it('no artefact grants anything TO service_role', () => {
@@ -416,23 +434,32 @@ describe('S1-DEFECT-001 — uellix_owner can own and create in schema public', (
   })
 })
 
-describe('S1-DEFECT-001 — the rollback still drops the roles it created', () => {
-  it('revokes the schema privileges before DROP ROLE', () => {
-    // Measured on PostgreSQL 17.6: DROP ROLE fails with
-    // `role "x" cannot be dropped because some objects depend on it /
-    //  DETAIL: privileges for schema public` while any such grant survives.
-    // Adding the grant without this makes the rollback inapplicable, which
-    // would only be discovered while trying to undo a half-built staging.
-    const dropIndex = ROLLBACK.indexOf('DROP ROLE IF EXISTS uellix_app;')
+describe('S1-DEFECT-001 — the rollbacks still clear the schema privileges before any role is dropped', () => {
+  // HPO-ODS-W2-03 split the roles out: stella_hosted_0001_rollback no longer
+  // drops them, stella_hosted_0000_rollback does. The measured property is
+  // unchanged — DROP ROLE fails with `privileges for schema public` while any
+  // such grant survives — so it is asserted across the two files in order.
+  const IDENTITY_ROLLBACK = readFileSync(
+    path.join(process.cwd(), 'db', 'prepared', 'stella_hosted_0000_rollback.sql'),
+    'utf8',
+  ).replace(/\r\n?/g, '\n')
+
+  it('the bootstrap rollback drops no role and revokes the schema privileges its forward package granted', () => {
+    expect(executableLines(ROLLBACK).join('\n')).not.toMatch(/\bDROP\s+ROLE\b/i)
+    expect(ROLLBACK).toContain('REVOKE ALL ON SCHEMA public FROM')
+  })
+
+  it('the identity rollback refuses while any schema-public privilege remains, then revokes memberships before DROP ROLE', () => {
+    expect(IDENTITY_ROLLBACK).toMatch(/still hold privileges on schema public/)
+    const dropIndex = IDENTITY_ROLLBACK.indexOf('DROP ROLE IF EXISTS uellix_app;')
     expect(dropIndex).toBeGreaterThan(-1)
-    expect(ROLLBACK.slice(0, dropIndex)).toContain('REVOKE ALL ON SCHEMA public FROM')
+    expect(IDENTITY_ROLLBACK.slice(0, dropIndex)).toContain('REVOKE uellix_owner FROM uellix_migrator;')
+    expect(IDENTITY_ROLLBACK.slice(0, dropIndex)).toContain('REVOKE uellix_writer FROM uellix_app;')
   })
 
   it('names every role the package granted on, so none blocks its own DROP', () => {
-    const dropIndex = ROLLBACK.indexOf('DROP ROLE IF EXISTS uellix_app;')
-    const before = ROLLBACK.slice(0, dropIndex)
     for (const role of ['uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor']) {
-      expect(before, `${role} must be revoked before it is dropped`).toMatch(
+      expect(ROLLBACK, `${role} must be revoked before it can be dropped`).toMatch(
         new RegExp(`REVOKE ALL ON SCHEMA public FROM[^;]*${role}`),
       )
     }

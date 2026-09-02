@@ -39,6 +39,8 @@
 // hosted chain regressed.
 
 import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { buildHostedArtefacts } from '@/db/hosted/artefacts'
@@ -297,10 +299,16 @@ describe('the corpus carries no privileged role statement a managed installer ca
    * provisions a project where these role names already exist — it fails, and
    * this test is where the reason is written down.
    */
-  it('KNOWN LATENT DEFECT: the bootstrap ELSE branch is unexecutable on managed Supabase', () => {
-    const bootstrap = buildHostedArtefacts().find(
-      (a) => a.fileName === 'stella_hosted_0001_managed_role_bootstrap.hosted.sql',
-    )!
+  it('KNOWN LATENT DEFECT: the identity package ELSE branch is unexecutable on managed Supabase', () => {
+    // HPO-ODS-W2-03: the five CREATE/ALTER ROLE blocks moved, verbatim, from
+    // stella_hosted_0001 to the pre-baseline identity package. The latent
+    // defect moved with them and is pinned where it now lives.
+    const bootstrap = {
+      sql: readFileSync(
+        path.join(process.cwd(), 'db', 'prepared', 'stella_hosted_0000_managed_role_identity_bootstrap.sql'),
+        'utf8',
+      ).replace(/\r\n?/g, '\n'),
+    }
     const offenders = bootstrap.sql
       .split('\n')
       .map((l) => l.trim())

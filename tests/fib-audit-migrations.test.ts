@@ -100,14 +100,43 @@ describe('FIBDB-034 — append-only + no-truncate trigger supersession (stage E,
     expect(usages).toHaveLength(6)
   })
 
-  it('never truncates or drops data — every statement is DROP TRIGGER / CREATE TRIGGER only', () => {
+  it('never truncates or drops data — every statement is DROP TRIGGER / CREATE TRIGGER, or the relation guard around the sixth pair', () => {
     const statements = sql
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l && !l.startsWith('--'))
     for (const line of statements) {
-      expect(line).toMatch(/^(DROP TRIGGER|CREATE TRIGGER|BEFORE|FOR EACH)/)
+      // HPO-ODS-W2-03: the stella_suggestion_decisions pair sits inside a DO
+      // block guarded on to_regclass. The guard's tokens are admitted by NAME;
+      // nothing else is — no CREATE TABLE, no TRUNCATE, no DELETE.
+      expect(line).toMatch(
+        /^(DROP TRIGGER|CREATE TRIGGER|BEFORE|FOR EACH|DO \$\$$|BEGIN$|IF to_regclass\('public\.stella_suggestion_decisions'\) IS NOT NULL THEN$|ELSE$|RAISE NOTICE '0044_fib_audit_hardening_supersession: |END IF;$|END \$\$;$)/,
+      )
     }
+  })
+
+  // HPO-ODS-W2-03 — FIBDB-034 applicability correction.
+  it('guards ONLY the stella_suggestion_decisions pair on the relation existing — the other five stay unconditional', () => {
+    const guardStart = sql.indexOf("IF to_regclass('public.stella_suggestion_decisions') IS NOT NULL THEN")
+    const guardEnd = sql.indexOf('END $$;', guardStart)
+    expect(guardStart).toBeGreaterThan(0)
+    expect(guardEnd).toBeGreaterThan(guardStart)
+    const guarded = sql.slice(guardStart, guardEnd)
+    const outside = sql.slice(0, guardStart) + sql.slice(guardEnd)
+
+    expect(guarded).toContain('DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_no_truncate ON stella_suggestion_decisions')
+    expect(guarded).toContain('CREATE TRIGGER trg_stella_suggestion_decisions_no_truncate')
+    for (const t of TRIGGERS.filter((x) => x.name !== 'trg_stella_suggestion_decisions_no_truncate')) {
+      expect(guarded).not.toContain(`CREATE TRIGGER ${t.name}`)
+      expect(outside.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n')).toContain(`CREATE TRIGGER ${t.name}`)
+    }
+  })
+
+  it('skips deterministically with a NOTICE when the relation is absent, and never creates the table', () => {
+    expect(sql).toMatch(/ELSE\s+RAISE NOTICE '0044_fib_audit_hardening_supersession: public\.stella_suggestion_decisions is absent/)
+    const executable = sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n')
+    expect(executable).not.toMatch(/CREATE\s+TABLE/i)
+    expect(executable).not.toMatch(/ALTER\s+TABLE/i)
   })
 })
 

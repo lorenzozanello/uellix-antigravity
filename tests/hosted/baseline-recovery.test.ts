@@ -112,6 +112,7 @@ describe('the uncertainty gradient', () => {
       { failureKind: 'indeterminate' },
       { singleTransaction: false },
       { holdsIrreplaceableData: true },
+      { phase: 'PHASE_MANAGED_ROLE_IDENTITIES', failedUnit: 'stella_hosted_0000_managed_role_identity_bootstrap' },
       { phase: 'PHASE_STELLA_BOOTSTRAP', failedUnit: 'stella_hosted_0001_managed_role_bootstrap' },
       { phase: 'PHASE_STELLA_CHAIN', failedUnit: 'stella_0016_reserved_quota_semantics' },
     ]
@@ -125,6 +126,14 @@ describe('the uncertainty gradient', () => {
 })
 
 describe('the Stella phases answer differently, and for a stated reason', () => {
+  it('HPO-ODS-W2-03: an identity-package failure retries — §0 refuses before any CREATE ROLE and roles are cluster-scoped', () => {
+    const d = at({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', failedUnit: 'stella_hosted_0000_managed_role_identity_bootstrap' })
+    expect(d.strategy).toBe('RETRY_UNIT')
+    expect(d.steps.join(' ')).toContain("rolname LIKE 'uellix\\_%'")
+    expect(d.steps.join(' ')).toContain('stella_hosted_0000_managed_role_identity_bootstrap.sql')
+    expect(d.revisitIf.join(' ')).toContain('DESTROY_AND_REPROVISION')
+  })
+
   it('a bootstrap failure reprovisions: its rollback refuses while the chain is installed', () => {
     const d = at({ phase: 'PHASE_STELLA_BOOTSTRAP', failedUnit: 'stella_hosted_0001_managed_role_bootstrap' })
     expect(d.strategy).toBe('DESTROY_AND_REPROVISION')

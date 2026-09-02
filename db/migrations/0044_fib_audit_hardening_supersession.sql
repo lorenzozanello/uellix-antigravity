@@ -64,7 +64,24 @@ CREATE TRIGGER trg_stella_interactions_no_truncate
   BEFORE TRUNCATE ON stella_interactions
   FOR EACH STATEMENT EXECUTE FUNCTION uellix_forbid_mutation();
 
-DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_no_truncate ON stella_suggestion_decisions;
-CREATE TRIGGER trg_stella_suggestion_decisions_no_truncate
-  BEFORE TRUNCATE ON stella_suggestion_decisions
-  FOR EACH STATEMENT EXECUTE FUNCTION uellix_forbid_mutation();
+-- HPO-ODS-W2-03 — FIBDB-034 APPLICABILITY CORRECTION for the sixth pair.
+-- stella_suggestion_decisions is a gate-managed table created by the prepared
+-- unit stella_0003, which is NOT part of PHASE_BASELINE; on a Drizzle-only /
+-- baseline target the relation is legitimately absent. Measured on PostgreSQL
+-- 17.6: even DROP TRIGGER IF EXISTS requires the TABLE to exist and raises
+-- 42P01 when it does not, which stopped the 64-unit rehearsal at this unit.
+-- So this ONE pair is guarded on the relation: present -> the original
+-- protection is installed exactly as before; absent -> skipped with a NOTICE,
+-- and nothing is created. This migration never creates the table, and the
+-- five pairs above are unchanged.
+DO $$
+BEGIN
+  IF to_regclass('public.stella_suggestion_decisions') IS NOT NULL THEN
+    DROP TRIGGER IF EXISTS trg_stella_suggestion_decisions_no_truncate ON stella_suggestion_decisions;
+    CREATE TRIGGER trg_stella_suggestion_decisions_no_truncate
+      BEFORE TRUNCATE ON stella_suggestion_decisions
+      FOR EACH STATEMENT EXECUTE FUNCTION uellix_forbid_mutation();
+  ELSE
+    RAISE NOTICE '0044_fib_audit_hardening_supersession: public.stella_suggestion_decisions is absent (gate-managed, stella_0003 not applied here) - its no-truncate protection is skipped; nothing was created';
+  END IF;
+END $$;

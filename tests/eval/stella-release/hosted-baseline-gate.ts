@@ -41,6 +41,7 @@ import {
   UNIT_042_GRANTED_FUNCTIONS,
 } from '@/db/hosted/baseline-postconditions'
 import { decideRecovery } from '@/db/hosted/baseline-recovery'
+import { MANAGED_ROLE_IDENTITIES } from '@/db/hosted/managed-role-identities'
 import { KNOWN_STAGING_PROJECT_REF } from '@/db/hosted/target-identity'
 import { planProvisioningPhase, type TargetStateProbe } from '@/db/hosted/hosted-provisioning-runner'
 import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
@@ -270,6 +271,9 @@ export function buildHostedBaselineGateEvidence(
     sentinel: null,
     stellaPackagesInstalled: {},
     businessRowCounts: null,
+    // HPO-ODS-W2-03: PHASE_BASELINE is plannable only once the five managed
+    // role identities exist on the cluster (0042/0045 name uellix_app).
+    uellixRoles: [...MANAGED_ROLE_IDENTITIES],
     // All three class-C probes affirmative. The gate is measuring whether a
     // first provisioning is PLANNABLE, not whether this machine's fictional
     // target has the privileges; the refusals for a missing or false probe are

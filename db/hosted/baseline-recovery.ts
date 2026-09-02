@@ -181,6 +181,33 @@ export function decideRecovery(situation: RecoverySituation): RecoveryDecision {
     }
   }
 
+  // (3b) A statement error in PHASE_MANAGED_ROLE_IDENTITIES (HPO-ODS-W2-03).
+  //      The identity package is ONE transaction whose §0 guards run before
+  //      any CREATE ROLE, and whose role blocks are convergent (IF NOT EXISTS /
+  //      narrowing ALTER). A statement error therefore leaves the CLUSTER —
+  //      roles are cluster-scoped — exactly as it was, and the fix is to the
+  //      platform precondition the refusal names, not to the target.
+  if (situation.phase === 'PHASE_MANAGED_ROLE_IDENTITIES') {
+    return {
+      strategy: 'RETRY_UNIT',
+      rationale:
+        'stella_hosted_0000 refuses in §0 before it creates anything (Supabase-shaped substrate, ' +
+        'non-superuser installer with CREATEROLE, declared environment) and is convergent afterwards, so ' +
+        'under psql -1 a failure leaves zero uellix_* roles and the target untouched. Re-running the same ' +
+        'package after fixing the named precondition is the first application, not a second one.',
+      steps: [
+        'Read the refusal: it names the missing precondition (a platform role/schema, CREATEROLE, or uellix.bootstrap_environment).',
+        "Re-probe read-only: SELECT rolname FROM pg_roles WHERE rolname LIKE 'uellix\\_%' must return ZERO rows. Roles are cluster-scoped; a partial set here is not something psql -1 can produce.",
+        'Fix the precondition in the SESSION (declare the environment) or on the PROJECT (installer profile), never by editing the package.',
+        'Re-run exactly: psql -1 -v ON_ERROR_STOP=1 -c "SET uellix.bootstrap_environment = \'staging\'" -f db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql',
+      ],
+      revisitIf: [
+        'the re-probe shows a PARTIAL subset of the five identities, which under psql -1 should be impossible and therefore means -1 was not used — then HALT_AND_ESCALATE',
+        'the re-probe shows uellix_* roles that are NOT the five identities — residue from another provisioning; the cluster is not pristine and DESTROY_AND_REPROVISION applies',
+      ],
+    }
+  }
+
   // (4) A statement error in PHASE_BASELINE. The main line of this whole module.
   if (situation.phase === 'PHASE_BASELINE') {
     const position = BASELINE_ORDER.indexOf(situation.failedUnit)

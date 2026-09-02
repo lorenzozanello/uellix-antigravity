@@ -64,7 +64,8 @@ const conforming = () => ({
   triggers: [...EXPECTED.triggers],
   rlsEnabledTables: [...EXPECTED.rlsEnabledTables],
   policies: [...EXPECTED.policies],
-  roles: ['postgres', 'anon', 'authenticated', 'service_role'],
+  // HPO-ODS-W2-03: the five identities exist at CHECKPOINT B0 — they precede unit 1.
+  roles: ['postgres', 'anon', 'authenticated', 'service_role', 'uellix_owner', 'uellix_migrator', 'uellix_app', 'uellix_writer', 'uellix_auditor'],
   grants: [],
   rowCounts: Object.fromEntries(EXPECTED.tables.map((t) => [t, 0])),
   extensions: ['pgcrypto'],

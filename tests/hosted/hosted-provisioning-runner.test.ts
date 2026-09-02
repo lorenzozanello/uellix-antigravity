@@ -12,7 +12,7 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { BASELINE_ORDER, BASELINE_UNITS, verifyBaselineOrder } from '@/db/hosted/baseline-manifest'
-import { HOSTED_CHAIN } from '@/db/hosted/hosted-package-manifest'
+import { HOSTED_CHAIN, sha256OfSql } from '@/db/hosted/hosted-package-manifest'
 import { planHostedApply } from '@/db/hosted/hosted-migrator'
 import { wrapperPathFor } from '@/db/hosted/baseline-journal-wrapper'
 import { BASELINE_POSTCONDITIONS } from '@/db/hosted/baseline-postconditions'
@@ -25,6 +25,10 @@ import {
   type ProvisioningRequest,
   type TargetStateProbe,
 } from '@/db/hosted/hosted-provisioning-runner'
+import {
+  MANAGED_ROLE_IDENTITIES,
+  MANAGED_ROLE_IDENTITY_PACKAGE,
+} from '@/db/hosted/managed-role-identities'
 
 const ROOT = process.cwd()
 // THE REAL STAGING REF, not a placeholder.
@@ -84,6 +88,8 @@ const PRIVILEGES_OK = {
   setLocalRoleDemonstrated: true,
 } as const
 
+// HPO-ODS-W2-03. "Virgin" for PHASE_BASELINE now means: nothing of Uellix in
+// the DATABASE, and exactly the five managed role identities on the CLUSTER.
 const VIRGIN: TargetStateProbe = {
   baselineUnitsInstalled: [],
   bootstrapSchemaPresent: false,
@@ -91,7 +97,11 @@ const VIRGIN: TargetStateProbe = {
   stellaPackagesInstalled: {},
   businessRowCounts: null,
   privileges: PRIVILEGES_OK,
+  uellixRoles: [...MANAGED_ROLE_IDENTITIES],
 }
+
+/** Before the identity phase: the same database picture and ZERO uellix_* roles. */
+const PRISTINE: TargetStateProbe = { ...VIRGIN, uellixRoles: [] }
 
 /** Every table the fifty units create, all at zero. Derived, never hand-listed. */
 const PROBED_TABLES = deriveEmptinessProbes(readBaselineSql)
@@ -154,6 +164,7 @@ const plan = (r: ReturnType<typeof planProvisioningPhase>) => {
 describe('the three phases, in sequence', () => {
   it('exposes them in the only order they may occur', () => {
     expect(PROVISIONING_PHASES).toEqual([
+      'PHASE_MANAGED_ROLE_IDENTITIES',
       'PHASE_BASELINE',
       'PHASE_STELLA_BOOTSTRAP',
       'PHASE_STELLA_CHAIN',
@@ -298,6 +309,101 @@ describe('the three phases, in sequence', () => {
 /* ========================================================================== */
 /* Phase 12 — the attack matrix                                              */
 /* ========================================================================== */
+
+/* ========================================================================== */
+/* HPO-ODS-W2-03 — PHASE_MANAGED_ROLE_IDENTITIES, and what PHASE_BASELINE      */
+/* now requires of the cluster                                                 */
+/* ========================================================================== */
+
+describe('PHASE_MANAGED_ROLE_IDENTITIES — the phase before unit 1', () => {
+  it('plans exactly the identity package, pinned, applied in one transaction with the environment declared', () => {
+    const result = plan(planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: PRISTINE })))
+    expect(result.steps.map((s) => s.id)).toEqual([MANAGED_ROLE_IDENTITY_PACKAGE.id])
+    expect(result.steps[0].file).toBe('db/prepared/stella_hosted_0000_managed_role_identity_bootstrap.sql')
+    expect(result.steps[0].sha256).toBe(MANAGED_ROLE_IDENTITY_PACKAGE.sourceSha256)
+    expect(result.steps[0].command).toContain('psql -1 -v ON_ERROR_STOP=1')
+    expect(result.steps[0].command).toContain("SET uellix.bootstrap_environment = 'staging'")
+    expect(result.writesPermitted).toBe(false)
+    expect(result.nextAction).toMatch(/PHASE_BASELINE/)
+  })
+
+  it('the pin in the plan is the pin of the bytes on disk', () => {
+    const result = plan(planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: PRISTINE })))
+    expect(result.steps[0].sha256).toBe(sha256OfSql(readFileSync(path.join(ROOT, result.steps[0].file), 'utf8')))
+  })
+
+  it('refuses when the role probe was not supplied — an absent probe is not an empty cluster', () => {
+    const { uellixRoles: _omitted, ...withoutProbe } = PRISTINE
+    const r = refusal(planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: withoutProbe })))
+    expect(r.code).toBe('PROVISIONING_ROLE_PROBE_MISSING')
+    expect(r.message).toContain('cluster-scoped')
+  })
+
+  it('refuses a cluster that already carries the five identities — the phase is complete, move on', () => {
+    const r = refusal(planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: VIRGIN })))
+    expect(r.code).toBe('PROVISIONING_PHASE_OUT_OF_SEQUENCE')
+    expect(r.message).toContain('PHASE_BASELINE')
+  })
+
+  it('N3: refuses residual uellix_* roles — a partial set or a foreign one is not a pristine cluster', () => {
+    for (const residue of [['uellix_app'], ['uellix_cap_grounding'], ['uellix_owner', 'uellix_migrator']]) {
+      const r = refusal(planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: { ...PRISTINE, uellixRoles: residue } })))
+      expect(r.code, residue.join(',')).toBe('PROVISIONING_ROLE_IDENTITIES_PRESENT')
+      expect(r.message).toContain('DESTROY_AND_REPROVISION')
+    }
+  })
+
+  it('refuses a database that is not virgin, even with a pristine cluster', () => {
+    const r = refusal(
+      planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: { ...PRISTINE, baselineUnitsInstalled: ['0000_quick_husk.sql'] } })),
+    )
+    expect(r.code).toBe('PROVISIONING_TARGET_NOT_VIRGIN')
+  })
+
+  it('refuses when the identity package drifted from its pin', () => {
+    const drifted = (file: string) => (file === MANAGED_ROLE_IDENTITY_PACKAGE.file ? `${readBaselineSql(file)}\n-- drift\n` : readBaselineSql(file))
+    const r = refusal(planProvisioningPhase(request({ phase: 'PHASE_MANAGED_ROLE_IDENTITIES', state: PRISTINE, readBaselineSql: drifted })))
+    expect(r.code).toBe('PROVISIONING_ROLE_PACKAGE_INVALID')
+  })
+})
+
+describe('PHASE_BASELINE requires EXACTLY the five identities on the cluster (HPO-ODS-W2-03)', () => {
+  it('plans with the five present (the positive case every test above relied on)', () => {
+    const result = plan(planProvisioningPhase(request()))
+    expect(result.log.join('\n')).toContain('managed role identities present')
+  })
+
+  it('N1 at plan time: refuses without the identities, naming 0042/0045 and 42704', () => {
+    const r = refusal(planProvisioningPhase(request({ state: PRISTINE })))
+    expect(r.code).toBe('PROVISIONING_ROLE_IDENTITIES_INCOMPLETE')
+    expect(r.message).toContain('0042_fib_audit_insert_policy.sql')
+    expect(r.message).toContain('42704')
+  })
+
+  it('refuses a partial identity set, naming what is missing', () => {
+    const r = refusal(planProvisioningPhase(request({ state: { ...VIRGIN, uellixRoles: ['uellix_owner', 'uellix_migrator'] } })))
+    expect(r.code).toBe('PROVISIONING_ROLE_IDENTITIES_INCOMPLETE')
+    expect(r.message).toContain('uellix_app')
+  })
+
+  it('refuses any uellix_* role beyond the five — a capability role means the chain has been here', () => {
+    const r = refusal(planProvisioningPhase(request({ state: { ...VIRGIN, uellixRoles: [...MANAGED_ROLE_IDENTITIES, 'uellix_cap_stella_quota'] } })))
+    expect(r.code).toBe('PROVISIONING_ROLE_IDENTITIES_UNEXPECTED')
+    expect(r.message).toContain('uellix_cap_stella_quota')
+  })
+
+  it('refuses when the role probe was not supplied', () => {
+    const { uellixRoles: _omitted, ...withoutProbe } = VIRGIN
+    const r = refusal(planProvisioningPhase(request({ state: withoutProbe })))
+    expect(r.code).toBe('PROVISIONING_ROLE_PROBE_MISSING')
+  })
+
+  it('the later phases do not consult the role probe — it is a prerequisite of unit 1, not of the chain', () => {
+    const { uellixRoles: _omitted, ...bootstrapWithoutProbe } = BASELINE_DONE
+    const result = plan(planProvisioningPhase(request({ phase: 'PHASE_STELLA_BOOTSTRAP', state: bootstrapWithoutProbe })))
+    expect(result.steps.map((s) => s.id)).toEqual(['stella_hosted_0001_managed_role_bootstrap'])
+  })
+})
 
 describe('ATTACK 1 — Stella without a complete baseline', () => {
   it('refuses the bootstrap when one unit is missing', () => {
@@ -462,7 +568,8 @@ describe('ATTACK 10 — production as the target', () => {
     ['uellix-antigravity.vercel.app', 'the hardcoded fallback origin'],
   ])('refuses %s (%s) in every phase', (host) => {
     for (const phase of PROVISIONING_PHASES) {
-      const state = phase === 'PHASE_BASELINE' ? VIRGIN : phase === 'PHASE_STELLA_BOOTSTRAP' ? BASELINE_DONE : BOOTSTRAPPED
+      const state =
+        phase === 'PHASE_MANAGED_ROLE_IDENTITIES' ? PRISTINE : phase === 'PHASE_BASELINE' ? VIRGIN : phase === 'PHASE_STELLA_BOOTSTRAP' ? BASELINE_DONE : BOOTSTRAPPED
       const r = refusal(
         planProvisioningPhase(request({ phase, state, target: { ...target, connectionHost: host } })),
       )

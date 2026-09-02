@@ -31,6 +31,7 @@
 import { BASELINE_ORDER, BASELINE_UNITS } from './baseline-manifest'
 import { KNOWN_PRODUCTION_IDENTIFIERS, KNOWN_STAGING_PROJECT_REF } from './target-identity'
 import { scanBaselineSql } from './baseline-scanner'
+import { classifyUellixRoles } from './managed-role-identities'
 
 /**
  * A read-only picture of the database after the baseline.
@@ -369,8 +370,11 @@ export const BASELINE_POSTCONDITIONS: readonly BaselinePostcondition[] = [
   {
     id: 'B0-09-roles',
     requirement:
-      'anon / authenticated / service_role exist because Supabase creates them. NO uellix_* role exists: ' +
-      'the baseline creates none, and stella_hosted_0001 has not run.',
+      'anon / authenticated / service_role exist because Supabase creates them. EXACTLY the five managed ' +
+      'role identities exist (uellix_owner, uellix_migrator, uellix_app, uellix_writer, uellix_auditor) — ' +
+      'established by PHASE_MANAGED_ROLE_IDENTITIES before unit 1, because 0042 and 0045 name uellix_app ' +
+      '(HPO-ODS-W2-03) — and NO other uellix_* role: the baseline creates none, and stella_hosted_0001 ' +
+      'and the chain have not run.',
     probeSql: `SELECT rolname FROM pg_roles ORDER BY 1;`,
     check(observed) {
       const required = ['anon', 'authenticated', 'service_role']
@@ -378,14 +382,22 @@ export const BASELINE_POSTCONDITIONS: readonly BaselinePostcondition[] = [
       if (missing.length > 0) {
         return { passed: false, detail: `Supabase roles absent: ${missing.join(', ')}. 0033 grants to all three and would have raised 42704.` }
       }
-      const premature = observed.roles.filter((r) => r.startsWith('uellix_'))
-      return premature.length === 0
-        ? { passed: true, detail: 'the three Supabase roles exist; no uellix_* role exists yet' }
-        : { passed: false, detail: `uellix role(s) already present: ${premature.join(', ')}. The baseline creates no roles — verified by BASELINE_GLOBAL_INVARIANTS.roleStatements === 0.` }
+      const roles = classifyUellixRoles(observed.roles)
+      if (roles.canonicalMissing.length > 0) {
+        return {
+          passed: false,
+          detail:
+            `managed role identit(ies) absent: ${roles.canonicalMissing.join(', ')}. ` +
+            `PHASE_MANAGED_ROLE_IDENTITIES (stella_hosted_0000) must run before unit 1 — 0042/0045 CREATE POLICY … TO uellix_app.`,
+        }
+      }
+      return roles.unexpected.length === 0
+        ? { passed: true, detail: 'the three Supabase roles and exactly the five managed role identities exist; no other uellix_* role' }
+        : { passed: false, detail: `unexpected uellix role(s) present: ${roles.unexpected.join(', ')}. The baseline creates no roles — verified by BASELINE_GLOBAL_INVARIANTS.roleStatements === 0 — and no capability role may exist before the chain.` }
     },
     negativeControl: {
-      description: 'uellix_owner existing after the baseline must fail B0-09',
-      mutate: (o) => ({ ...o, roles: [...o.roles, 'uellix_owner'] }),
+      description: 'a capability role (uellix_cap_grounding) existing after the baseline must fail B0-09',
+      mutate: (o) => ({ ...o, roles: [...o.roles, 'uellix_cap_grounding'] }),
     },
   },
   {
