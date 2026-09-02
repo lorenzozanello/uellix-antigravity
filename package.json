@@ -26,6 +26,7 @@
     "db:guard:local-reset": "tsx scripts/guard-local-reset.ts",
     "db:reset:local": "pnpm db:guard:local-reset && pnpm supabase stop --no-backup && pnpm supabase start && pnpm db:setup:local",
     "db:audit:readonly": "tsx scripts/db-audit-readonly.ts",
+    "db:audit:disposable": "tsx scripts/db-audit-disposable.ts",
     "db:seed:local": "tsx scripts/seed-local.ts",
     "db:seed:stella-local": "tsx scripts/seed-stella-local.ts",
     "db:seed:local:proxies": "tsx scripts/seed-proxies.ts",
@@ -104,7 +105,11 @@
     "authority:seal:verify": "tsx scripts/authority-seal-verify.ts",
     "ods:prestate": "tsx scripts/ods-prestate.ts",
     "ods:scope": "tsx scripts/ods-scope.ts",
-    "ods:poststate": "tsx scripts/ods-poststate.ts"
+    "ods:poststate": "tsx scripts/ods-poststate.ts",
+    "ops:program-state": "tsx scripts/ods-program-state.ts",
+    "ops:integration-plan": "tsx scripts/ods-integration-plan.ts",
+    "ops:test-diff": "tsx scripts/ods-test-diff.ts",
+    "audit:batch": "tsx scripts/audit-batch.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

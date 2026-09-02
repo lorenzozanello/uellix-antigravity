@@ -1,0 +1,56 @@
+{
+  "registry_id": "ODS_KNOWN_TEST_CONDITIONS",
+  "version": "1.0.0",
+  "purpose": "Operational metadata for scripts/ods-test-diff.ts (ODS-ACCEL-02, NODE 1). This registry is NOT an ignore list, a skip list, an allowlist for failures, or authority to accept a failure. It only records previously adjudicated test conditions, together with enough structured identifying evidence (test identity + a comparable failure signature) to let the classifier tell THE SAME CONDITION apart from A DIFFERENT/NEW FAILURE. A condition entry never causes a test to be skipped, and it never converts a failing test into a passing one — scripts/ods-test-diff.ts only reports what it observes.",
+
+  "conditions": [
+    {
+      "condition_id": "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+      "status": "PRE_EXISTING_DEFERRED",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "test_id": "the six baseline gates all pass",
+      "semantic_category": "HOSTED_BASELINE_REHEARSAL_FRESHNESS",
+      "first_known_base_ref": "8ae297cd228a79d3fd7f598532e43e456f0aef5e",
+      "evidence_artifact": "artifacts/baseline-rehearsal/latest.json",
+      "expected_failure_signature": "AssertionError: expected [ Array(1) ] to deeply equal []",
+      "cause_fingerprint": {
+        "root_cause": "The hosted-baseline-rehearsal-ready gate fails because the recorded local rehearsal artefact predates the current baseline manifest.",
+        "gate_id": "hosted-baseline-rehearsal-ready",
+        "rehearsalFresh": false,
+        "reproducedDefect": true,
+        "appliedAll": false,
+        "postconditionsClean": true,
+        "firstProvisioningPlannable": true,
+        "phaseSkipRefused": true,
+        "manifestApplied": 50,
+        "manifestDigest": "8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a"
+      },
+      "authority_or_closure_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json#hosted_baseline_deferral (hosted_baseline_gate_failure_count=2, hosted_baseline_gate_failure_identity=UNCHANGED_PREEXISTING_FRESHNESS_ONLY, new_hosted_baseline_failures=0)",
+      "notes": "Independently re-measured at commit d058b36007e584f48d8f3f860c532924229c636a (2026-09-01): this test still fails with the identical signature, and artifacts/baseline-rehearsal/latest.json is byte-identical (git blob 42a68ccd5cf701189ebb85e65330ebfeb361467f) across the authority commit, the wave1-closure audited head, the W2-B2 remediation base/head, and the current tree — the underlying cause (a rehearsal recorded against a 50-unit-era manifest, never rerun against the current 59-unit manifest) has not changed since W1-07 adjudicated it as pre-existing and deferred."
+    },
+    {
+      "condition_id": "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02",
+      "status": "PRE_EXISTING_DEFERRED",
+      "test_file": "tests/eval/stella-release/hosted-baseline-gate.test.ts",
+      "test_id": "the four words this report may not say reports baselineApplied, stagingApplied, hostedReady and providerReady as false — unconditionally",
+      "semantic_category": "HOSTED_BASELINE_REHEARSAL_FRESHNESS",
+      "first_known_base_ref": "8ae297cd228a79d3fd7f598532e43e456f0aef5e",
+      "evidence_artifact": "artifacts/baseline-rehearsal/latest.json",
+      "expected_failure_signature": "AssertionError: expected false to be true // Object.is equality",
+      "cause_fingerprint": {
+        "root_cause": "The hosted-baseline-rehearsal-ready gate fails because the recorded local rehearsal artefact predates the current baseline manifest.",
+        "gate_id": "hosted-baseline-rehearsal-ready",
+        "rehearsalFresh": false,
+        "reproducedDefect": true,
+        "appliedAll": false,
+        "postconditionsClean": true,
+        "firstProvisioningPlannable": true,
+        "phaseSkipRefused": true,
+        "manifestApplied": 50,
+        "manifestDigest": "8f754f275d280e14130746b3271566d9073e4f3653b7780d47c943b60a7f050a"
+      },
+      "authority_or_closure_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json#hosted_baseline_deferral (hosted_baseline_gate_failure_count=2, hosted_baseline_gate_failure_identity=UNCHANGED_PREEXISTING_FRESHNESS_ONLY, new_hosted_baseline_failures=0)",
+      "notes": "Same underlying gate failure as KTC-HOSTED-BASELINE-REHEARSAL-STALE-01, asserted from computeHostedBaselineGateReport(evidence).gates.every(passed) rather than the raw gate list — a second symptom of the identical cause, not a second defect. Kept as a separate condition entry because it is a separate test_id with its own failure signature; see the SAME-CONDITION comparison rule (test_file + test_id, never filename alone)."
+    }
+  ]
+}
