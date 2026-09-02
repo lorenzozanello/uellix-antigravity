@@ -1,0 +1,102 @@
+{
+  "artifact_id": "COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.1",
+  "version": "1.0.1",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-CI-COMPANION-REMEDIATION-R1",
+  "materialization_date": "2026-09-02",
+  "status": "SUCCESSOR_CANDIDATE_WAITING_FOR_EXACT_LINUX_GATES",
+  "predecessor": {
+    "authority": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json",
+    "test_manifest": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.0.json",
+    "evidence": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.0.json",
+    "candidate_head": "ad9c305eb2dc44016d450ecc3b036ad66c7aa953",
+    "candidate_tree": "29f6f18136500f08b743c2208a52da28049c2d53",
+    "note": "None of these predecessor artifacts were modified. They remain historical, describing the v1.0.0 candidate exactly as it was — including its Linux CI dispatch, which is now known to have failed before reaching real Postgres (see failed_p1a below). That fact is recorded HERE, in the successor, not retrofitted into the predecessor."
+  },
+  "authority": {
+    "path": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1.json",
+    "commit": "5a403799bcad7b27d05855c50387ba0834e7b944"
+  },
+  "test_manifest": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.1.json",
+  "failed_p1a": {
+    "run_id": "33681916900",
+    "head_sha": "ad9c305eb2dc44016d450ecc3b036ad66c7aa953",
+    "workflow": "P1A Validation",
+    "conclusion": "failure",
+    "failed_step": "Database target safety suite",
+    "exact_deterministic_failures": [
+      "tests/database-entrypoint-safety.test.ts > the integration suites cannot be run ungated > the INTEGRATION config still collects both integration files (expected 2 files, actual collection additionally contained tests/integration/function-execute-acl-guard.test.ts)",
+      "tests/database-entrypoint-safety.test.ts > the integration suites cannot be run ungated > the integration suite still collects its 49 tests — zero collection is a failure (expected 49, actual 53)"
+    ],
+    "cause": "STALE_CLOSED_WORLD_INTEGRATION_TEST_INVENTORY",
+    "downstream_steps_skipped": ["Start Supabase Local", "Export Supabase Local Env Vars", "Run Drizzle Local Migrations", "Run Drizzle Local Seed", "Run Integration Tests", "Run RLS Tests", "Run Lint", "Run Typecheck", "Run Unit Tests", "Build Project"],
+    "P1A_REACHED_REAL_PG_INTEGRATION_BEFORE_REMEDIATION": false,
+    "verification_method": "gh run view 33681916900 --json headSha,workflowName,conclusion,status,jobs; gh run view 33681916900 --log --job <id> (read-only, this session)"
+  },
+  "remediation": {
+    "companion_path": "tests/database-entrypoint-safety.test.ts",
+    "integration_file_count_before": 2,
+    "integration_file_count_after": 3,
+    "integration_test_count_before": 49,
+    "integration_test_count_after": 53,
+    "new_test_in_exact_inventory": true,
+    "new_test_guard_first_enforced": true,
+    "closed_world_preserved": true,
+    "assertions_removed": 0,
+    "derivation_method": "vitest list --filesOnly --config vitest.integration.config.ts and vitest list --config vitest.integration.config.ts, both with CI=true and the same synthetic UELLIX_RUNTIME_DATABASE_URL the existing test already uses — run directly in this session before editing anything, then re-run after editing to confirm the assertions match reality",
+    "m1_m2_m3_implementation_files_touched": 0
+  },
+  "targeted_tests": {
+    "tests/database-target-safety.test.ts + tests/database-entrypoint-safety.test.ts": "262/262 PASS (261 pre-remediation baseline + 1 new it.each case from extending the guard-first invariant to a third file)",
+    "tests/ods/ods-scope.test.ts + tests/ods/ods-poststate.test.ts": "171/171 PASS (M1 implementation untouched; confirms no regression)"
+  },
+  "ci_equivalent": {
+    "secrets_scan": "PASS",
+    "authority_seal_verify": "PASS",
+    "lint": "PASS (0 errors, 63 pre-existing warnings, 0 new)",
+    "typecheck": "PASS",
+    "m2_disposable_mutation_proof_rerun": false,
+    "m2_rerun_justification": "M2 implementation (tests/integration/function-execute-acl-guard.test.ts) did not change in this remediation; only its participation in an unrelated closed-world inventory list changed. Per authority instruction, the expensive disposable-PostgreSQL mutation proof from EVIDENCE_v1.0.0.json is not re-run here."
+  },
+  "new_deterministic_failures": 0,
+  "unknown_failures": 0,
+  "audit_batch": {
+    "command": "pnpm audit:batch -- --base 94f0923c01f8863a71e1b8f991a3e4073aba2747 --head HEAD --target-branch integration/commercial-v1 --json",
+    "run_against": "HEAD 732913f0f32f7ea2729e2d922f3b4a94501e7f78 (companion test fix committed; this evidence artifact and the v1.0.1 test manifest not yet committed at the moment audit:batch ran)",
+    "changed_file_count": 11,
+    "protected_file_count": 0,
+    "protected_authority_disposition": "NOT_APPLICABLE",
+    "typecheck": "PASS",
+    "secrets_scan": "PASS",
+    "authority_seal_verify": "PASS",
+    "journal_verify": "PASS",
+    "baseline_verify": "PASS",
+    "ods_scope": "PASS",
+    "ods_poststate_raw": "PASS",
+    "new_failure_count": 0,
+    "audit_packet_status": "PARTIAL",
+    "partial_reason_honest_record": "testDiff.status=UNREADABLE only — no pre-captured base/head vitest JSON output was supplied to audit-batch.ts, and the tool deliberately never checks out an arbitrary historical ref on its own. Every OTHER measured gate (typecheck/secrets/authority/journal/baseline/scope/poststate) is a definitive PASS; nothing was skipped due to an actual failure. This PARTIAL is recorded honestly, not upgraded to PASS."
+  },
+  "unauthorized_delta_paths": 0,
+  "exact_delta_check": {
+    "relative_to_predecessor_candidate": "ad9c305eb2dc44016d450ecc3b036ad66c7aa953",
+    "changed_paths": [
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.1.json",
+      "tests/database-entrypoint-safety.test.ts",
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_TEST_MANIFEST_v1.0.1.json",
+      "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.1.json"
+    ],
+    "exact_match_to_authorized_delta_set": true
+  },
+  "successor_linux_ci_state": "DISPATCH_PENDING",
+  "main_freeze": {
+    "MAIN_HEAD": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "MAIN_UNCHANGED": true
+  },
+  "integration_freeze": {
+    "INTEGRATION_HEAD": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "INTEGRATION_UNCHANGED": true
+  },
+  "production_promotion": { "authorized": false, "performed": false },
+  "shared_local_stack": "untouched since the predecessor mission's own disposition (still running, still not used for any evidence in this remediation)",
+  "next_authorized_action": "Push codex/commercial-v1-post-integration-maintenance-r1 (non-force); dispatch both ci.yml and p1a-validation.yml via workflow_dispatch against the successor candidate head; confirm P1A gets past 'Database target safety suite' and reaches 'Start Supabase Local' / 'Run Integration Tests'. The independent focused audit may consume GitHub's final run directly rather than wait on this artifact to be updated again."
+}
