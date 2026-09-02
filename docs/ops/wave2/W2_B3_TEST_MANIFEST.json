@@ -1,0 +1,99 @@
+{
+  "manifest_id": "W2-B3",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:109-118 (FIBC-015/016/017), :268-269 (FIBC-044), :297-299,369 (FIBDB-009/010/045; FIBDB-008 at :295), :757-764 (FIBIU-11/12/13); docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json (recommended_implementation_batches[batch_id=B3], targeted_test_map, database_migration_map)",
+  "dependencies": [
+    "FIBIU-03",
+    "W2-B1",
+    "W2-B2"
+  ],
+  "protected_surfaces": [
+    "db/migrations/**",
+    "db/prepared/journal/**"
+  ],
+  "protected_authority": "HPO-ODS-W2-01",
+  "postgres_requirements": null,
+  "sentinels": [],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-1",
+      "description": "FIBIU-11: an outcome can be explicitly classified materiality_classification='material' with justification, distinct from and independent of the legacy 1-5 materialityScore; the classification persists and is readable back.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "P-2",
+      "description": "FIBIU-11: a 'not_material' outcome is excluded from the authoritative SROI calculation numerator but remains listed/traceable with its exclusion reason.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-3",
+      "description": "FIBIU-12: recording disposition='monetized' for an outcome on a run-version persists and is readable; recording disposition='not_monetized' requires and persists reason + justification, and the outcome retains materiality/evidence/traceability without contributing to the numerator.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-4",
+      "description": "FIBIU-12: the coverage view (monetized / material-not-monetized / not-yet-eligible / other, each with a distinct reason) is computable and visible before run approval.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "P-5",
+      "description": "FIBIU-13: each of deadweight/attribution/displacement/drop_off/duration accepts an explicit value of 0 together with its own discrete justification column and is accepted as eligible (0 does not exempt justification, and a justified 0 is not treated as missing).",
+      "test_file": "tests/sroi-parse-num.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "FIBIU-11: an outcome with only the legacy 1-5 materialityScore set (materiality_classification still NULL) triggers MATERIALITY_UNCLASSIFIED at the eligibility gate; the score is never auto-converted into a classification.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "N-2",
+      "description": "FIBIU-12: when no outcome on a run has a defensible/monetized disposition, no SROI ratio is emitted (the no-ratio path), while results reporting remains permitted; upstream silent-drop paths (loadCalculationData discarding an assignment lacking input/filter/proxy/outcome) are itemized as a distinct exclusion reason rather than silently vanishing.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "N-3",
+      "description": "FIBIU-13: an unjustified filter (value present, justification NULL, or vice versa) blocks approval/lock eligibility and names the specific filter; NULL is never coerced to 0 on the authoritative calculation path (parseNum(null) -> 0 removed from that path).",
+      "test_file": "tests/sroi-parse-num.test.ts"
+    },
+    {
+      "id": "N-4",
+      "description": "FIBIU-13: discount_rate_pct is deliberately excluded from the five-filter justification gate and never blocks eligibility for missing justification.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-5",
+      "description": "Audit action verb/object correspondence (FIBC-040): every new logAuditAction call this batch introduces (outcome.materiality_classified or equivalent, outcome_monetization_disposition.recorded) has an entityType whose prefix matches the governed action object, verified by the existing static scan.",
+      "test_file": "tests/audit-action-contract.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-1",
+      "description": "Deleting the outcomes_materiality_pair-style guard that keeps materiality_classification and its justification atomic (both NULL or both set) is caught: a write with one set and the other NULL fails.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "M-2",
+      "description": "Deleting the 'reason NOT NULL when disposition=not_monetized' / 'justification NOT NULL with reason' guard on outcome_monetization_dispositions is caught: a not_monetized row missing reason or justification fails to persist.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "M-3",
+      "description": "Reintroducing parseNum(null) -> 0 on the authoritative filter path is caught: a NULL filter value would silently pass eligibility instead of triggering FILTER_VALUE_MISSING.",
+      "test_file": "tests/sroi-parse-num.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "targeted_tests"
+  ]
+}
