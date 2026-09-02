@@ -1,7 +1,7 @@
 {
   "description": "Versioned inventory of every checked server module that can reach the database, classified by tests/database-runtime-entrypoints.test.ts (AST scanner section). A new database-reaching module must be added here DELIBERATELY after wiring its identity context (or allowlisting it with a reason in the test).",
-  "checkedModules": 128,
-  "databaseReaching": 105,
+  "checkedModules": 130,
+  "databaseReaching": 106,
   "modules": {
     "app/(authenticated)/app/onboarding/actions.ts": "contextualized",
     "app/(authenticated)/app/onboarding/page.tsx": "allowlisted",
@@ -47,6 +47,7 @@
     "app/app/organization/billing/page.tsx": "contextualized",
     "app/app/organization/members/actions.ts": "contextualized",
     "app/app/organization/members/page.tsx": "contextualized",
+    "app/app/organization/onboarding/page.tsx": "contextualized",
     "app/app/organization/settings/page.tsx": "contextualized",
     "app/app/portfolios/[portfolioId]/page.tsx": "contextualized",
     "app/app/portfolios/new/page.tsx": "contextualized",

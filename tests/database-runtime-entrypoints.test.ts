@@ -708,7 +708,17 @@ describe('every entry point that can reach the database opens an identity contex
     // three call runWithOrganizationAccess around their one governed write,
     // exactly like their sibling actions in the same directories, so all
     // three are `contextualized`, not allowlisted.
-    }).toEqual({ inventoried: 127, reaching: 102, contextualized: 86, allowlisted: 16 })
+    //
+    // 127 -> 128, 102 -> 103, contextualized 86 -> 87, allowlisted UNCHANGED
+    // at 16: app/app/organization/onboarding/page.tsx — already noted as
+    // "already unregistered in the shared inventory at the common base" in
+    // 72c6024's own commit message, i.e. a pre-existing gap this pinning
+    // never closed. ca30c2d rewrote it from a 'use client' form-only page
+    // into an async server component that calls requireOrganizationAccess()
+    // directly around its one read (membership.role); it is `contextualized`
+    // like its siblings, not allowlisted. Figures re-measured fresh against
+    // the current tree, matching the AST-layer inventory update below.
+    }).toEqual({ inventoried: 128, reaching: 103, contextualized: 87, allowlisted: 16 })
   })
 
   it.each(databaseReaching)('%s', (file) => {

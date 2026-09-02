@@ -179,8 +179,14 @@ describe('U1-F20 — orphan colors consolidated only where a governed token is d
     // organization/onboarding hover: calibrated against the OLD #0F172A Navy;
     // no frozen "Navy hover" token exists (unlike Orange's orange-strong), so
     // recalibrating it against the new canonical Navy would be a new design
-    // decision, not a token consolidation. Deferred.
-    expect(read(path.join('app', 'app', 'organization', 'onboarding', 'page.tsx'))).toMatch(/#1E293B/)
+    // decision, not a token consolidation. Deferred. Relocated from
+    // app/app/organization/onboarding/page.tsx into
+    // components/onboarding/OrganizationOnboardingForm.tsx by ca30c2d's
+    // server-component extraction — same button, same literal, same
+    // rationale, new home.
+    expect(
+      read(path.join('components', 'onboarding', 'OrganizationOnboardingForm.tsx'))
+    ).toMatch(/#1E293B/)
     // FAQSection: a contrast-calibrated dark-mode border against a near-black
     // background, on a marketing surface under the Q5 hold. Deferred.
     expect(read(path.join('components', 'marketing', 'FAQSection.tsx'))).toMatch(/#1E293B/)
