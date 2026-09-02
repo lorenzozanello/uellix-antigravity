@@ -3,17 +3,56 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// FIBIU-09 — assertRubricApprovable requires all 13 factors rated before
+// approval. All-high-confidence/no-risk so these pre-existing approval tests
+// (written for FIBIU-08's gate) don't also trip the exceptional-
+// determination requirement, which is tested separately.
+// R-B2-02 — assertApprovableProvenance gates FIBC-010's ten items; every
+// approval fixture carries all of them.
+const FULL_PROVENANCE = {
+  value: '100',
+  unit: 'unit',
+  currency: 'USD',
+  referenceYear: 2023,
+  sourceId: '550e8400-e29b-41d4-a716-446655440002',
+  geographicContextualScope: 'Nacional',
+  linkedOutcomeContext: 'Ingreso',
+  recoverableReference: 'https://example.org/proof',
+  relevanceJustification: 'Misma población',
+  documentedTransformations: 'none',
+};
+
+const FULL_RUBRIC = {
+  c1SourceQualityVerifiability: 3,
+  c2OutcomeCorrespondence: 3,
+  c3StakeholderPopulationFit: 3,
+  c4GeographicContextFit: 3,
+  c5TemporalFit: 3,
+  c6MethodologicalUnitComparability: 3,
+  r1ProvenanceRisk: 0,
+  r2SourceLimitationRisk: 0,
+  r3ConceptualFitRisk: 0,
+  r4GeographicPopulationTransferRisk: 0,
+  r5TemporalObsolescenceRisk: 0,
+  r6TransformationRisk: 0,
+  r7MethodologicalUncertaintyRisk: 0,
+};
+
 // Use vi.hoisted to define mockDbData before vi.mock hoisting
 const mockDbData = vi.hoisted(() => ({
   proxySources: [] as any[],
   financialProxies: [] as any[],
+  financialProxyVersions: [] as any[],
   outcomeProxyAssignments: [] as any[],
   projects: [] as any[],
   outcomes: [] as any[],
   inserted: {} as any,
+  insertedVersion: { id: 'version-1', recoverableReference: 'https://example.org/proof' } as any,
   updated: {} as any,
+  updatedVersion: { id: 'version-1' } as any,
   lastInsertValues: null as any,
   lastUpdateValues: null as any,
+  lastVersionUpdateValues: null as any,
 }));
 
 // Mock authentication/session utilities
@@ -28,15 +67,10 @@ vi.mock('@/lib/auth/permissions', () => ({
 }));
 
 // Mock audit logger
-vi.mock('@/lib/audit/logger', () => ({
-  logAuditAction: vi.fn(),
-  AUDIT_ACTIONS: {
-    ORGANIZATION_UPDATED: 'organization_updated',
-    FINANCIAL_PROXY_CREATED: 'financial_proxy_created',
-    FINANCIAL_PROXY_UPDATED: 'financial_proxy_updated',
-    FINANCIAL_PROXY_REVIEW_STATUS_CHANGED: 'financial_proxy_review_status_changed',
-  },
-}));
+vi.mock('@/lib/audit/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audit/logger')>()
+  return { ...actual, logAuditAction: vi.fn() }
+});
 
 // Mock DB client using robust builder
 vi.mock('@/db/client', () => {
@@ -48,46 +82,111 @@ vi.mock('@/db/client', () => {
           let dataToReturn: any[] = [];
           if (tableName === 'proxy_sources') dataToReturn = mockDbData.proxySources;
           else if (tableName === 'financial_proxies') dataToReturn = mockDbData.financialProxies;
+          else if (tableName === 'financial_proxy_versions') dataToReturn = mockDbData.financialProxyVersions;
           else if (tableName === 'outcome_proxy_assignments') dataToReturn = mockDbData.outcomeProxyAssignments;
           else if (tableName === 'projects') dataToReturn = mockDbData.projects;
           else if (tableName === 'outcomes') dataToReturn = mockDbData.outcomes;
 
+          // Recursively extract the literal comparison values a Drizzle
+          // eq()/and()/inArray() condition embeds — same proven technique as
+          // tests/financial-proxy-versions.service.test.ts — so the version
+          // table's WHERE (proxy id + review_status) and ORDER BY (desc
+          // ordinal) actually filter, instead of being decorative no-ops.
+          // R-B2-05: getCurrentApprovedFinancialProxyVersion depends on both.
+          const extractEqValues = (val: any): string[] => {
+            if (!val) return [];
+            if (typeof val === 'string') return [val];
+            if (Array.isArray(val)) return val.flatMap(extractEqValues);
+            const res: string[] = [];
+            if (val.value !== undefined) {
+              if (typeof val.value === 'string') res.push(val.value);
+              else if (Array.isArray(val.value)) res.push(...val.value.flatMap(extractEqValues));
+              else res.push(...extractEqValues(val.value));
+            }
+            if (val.right !== undefined) res.push(...extractEqValues(val.right));
+            if (val.left !== undefined) res.push(...extractEqValues(val.left));
+            if (Array.isArray(val.conditions)) res.push(...val.conditions.flatMap(extractEqValues));
+            if (Array.isArray(val.queryChunks)) res.push(...val.queryChunks.flatMap(extractEqValues));
+            return res;
+          };
+          const VERSION_STATUS_TOKENS = ['draft', 'under_review', 'approved', 'rejected', 'archived'];
+          let rows: any[] = dataToReturn;
           const fromObj: any = {
-            where: vi.fn().mockImplementation(() => {
-              const whereObj: any = {
-                then: vi.fn().mockImplementation((callback) => {
-                  return Promise.resolve(callback(dataToReturn));
-                }),
-              };
-              whereObj.for = vi.fn().mockImplementation(() => whereObj);
-              return whereObj;
+            where: vi.fn().mockImplementation((cond: any) => {
+              if (tableName === 'financial_proxy_versions') {
+                const wanted = extractEqValues(cond);
+                const statusFilter = wanted.filter((w) => VERSION_STATUS_TOKENS.includes(w));
+                rows = dataToReturn.filter((r) =>
+                  (wanted.includes(r.financialProxyId) || wanted.includes(r.id)) &&
+                  (statusFilter.length === 0 || statusFilter.includes(r.reviewStatus))
+                );
+              }
+              // R-B2-08 / NC-10 — listFinancialProxies' consumer visibility:
+              // `or(and(isNull(org), eq(status,'approved')), eq(org, caller))`.
+              // Emulated only when the condition carries the 'approved' token
+              // (the listing shape); id lookups keep returning all rows.
+              if (tableName === 'financial_proxies') {
+                const wanted = extractEqValues(cond);
+                if (wanted.includes('approved')) {
+                  const orgs = wanted.filter((w) => w !== 'approved');
+                  rows = dataToReturn.filter((r) =>
+                    (r.organizationId == null && r.reviewStatus === 'approved') ||
+                    (r.organizationId != null && orgs.includes(r.organizationId))
+                  );
+                }
+              }
+              return fromObj;
             }),
+            orderBy: vi.fn().mockImplementation((orderExpr: any) => {
+              if (tableName === 'financial_proxy_versions') {
+                const isDesc = orderExpr?.queryChunks?.some((c: any) => c?.value?.[0] === ' desc');
+                rows = [...rows].sort((a, b) => (isDesc ? (b.ordinal ?? 0) - (a.ordinal ?? 0) : (a.ordinal ?? 0) - (b.ordinal ?? 0)));
+              }
+              return fromObj;
+            }),
+            limit: vi.fn().mockImplementation(() => fromObj),
             then: vi.fn().mockImplementation((callback) => {
-              return Promise.resolve(callback(dataToReturn));
+              return Promise.resolve(callback(rows));
             }),
           };
           fromObj.for = vi.fn().mockImplementation(() => fromObj);
           return fromObj;
         }),
       })),
-      insert: vi.fn().mockImplementation(() => ({
-        values: vi.fn().mockImplementation((values) => {
-          mockDbData.lastInsertValues = values;
-          return {
-            returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.inserted])),
-          };
-        }),
-      })),
-      update: vi.fn().mockImplementation(() => ({
+      insert: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
+        return {
+          values: vi.fn().mockImplementation((values) => {
+            mockDbData.lastInsertValues = values;
+            return {
+              // A real RETURNING echoes the written values (R-B2-01's
+              // coupling assertion reads the written reviewStatus back).
+              returning: vi.fn().mockImplementation(() =>
+                Promise.resolve([tableName === 'financial_proxy_versions' ? { ...mockDbData.insertedVersion, ...values } : mockDbData.inserted])
+              ),
+            };
+          }),
+        };
+      }),
+      update: vi.fn().mockImplementation((table) => {
+        const tableName = table?._?.name || table?.[Symbol.for('drizzle:Name')];
+        return {
         set: vi.fn().mockImplementation((values) => {
-          mockDbData.lastUpdateValues = values;
+          if (tableName === 'financial_proxy_versions') {
+            mockDbData.lastVersionUpdateValues = values;
+          } else {
+            mockDbData.lastUpdateValues = values;
+          }
           return {
             where: vi.fn().mockImplementation(() => ({
-              returning: vi.fn().mockImplementation(() => Promise.resolve([mockDbData.updated])),
+              returning: vi.fn().mockImplementation(() =>
+                Promise.resolve([tableName === 'financial_proxy_versions' ? { ...mockDbData.updatedVersion, ...values } : mockDbData.updated])
+              ),
             })),
           };
         }),
-      })),
+        };
+      }),
   };
   return { db: database };
 });
@@ -101,6 +200,7 @@ import {
   createOrganizationFinancialProxy,
   updateOrganizationFinancialProxy,
   updateFinancialProxyReviewStatus,
+  archiveFinancialProxy,
   fingerprintFinancialProxyApprovalState,
   assignProxyToOutcome,
   archiveOutcomeProxyAssignment,
@@ -132,13 +232,17 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockDbData.proxySources = [];
   mockDbData.financialProxies = [];
+  mockDbData.financialProxyVersions = [];
   mockDbData.outcomeProxyAssignments = [];
   mockDbData.projects = [];
   mockDbData.outcomes = [];
   mockDbData.inserted = {};
+  mockDbData.insertedVersion = { id: 'version-1', recoverableReference: 'https://example.org/proof' };
   mockDbData.updated = {};
+  mockDbData.updatedVersion = { id: 'version-1' };
   mockDbData.lastInsertValues = null;
   mockDbData.lastUpdateValues = null;
+  mockDbData.lastVersionUpdateValues = null;
 });
 
 /*** Proxy Sources ***/
@@ -219,6 +323,22 @@ describe('Financial Proxies Service', () => {
     mockDbData.financialProxies = [];
     const result = await listFinancialProxies();
     expect(result).toEqual([]);
+  });
+
+  // R-B2-08 / NC-10 — a promoted global clone is created 'suggested' and is
+  // NOT listed to consumers until an administrator independently rates and
+  // approves it; an approved global proxy and the caller's own proxies are.
+  it('NC-10: a suggested (freshly promoted) global proxy is invisible to consumers; approved global and own-org proxies are listed', async () => {
+    const { getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue({ organization: { id: 'org-consumer' }, user: { id: 'u' } } as any);
+    mockDbData.financialProxies = [
+      { id: 'global-suggested', organizationId: null, reviewStatus: 'suggested' },
+      { id: 'global-approved', organizationId: null, reviewStatus: 'approved' },
+      { id: 'own-draft', organizationId: 'org-consumer', reviewStatus: 'suggested' },
+      { id: 'other-org-approved', organizationId: 'org-other', reviewStatus: 'approved' },
+    ];
+    const listed = (await listFinancialProxies()).map((p: any) => p.id).sort();
+    expect(listed).toEqual(['global-approved', 'own-draft']);
   });
 
   it('createOrganizationFinancialProxy sets status to suggested and logs audit', async () => {
@@ -366,6 +486,20 @@ describe('Financial Proxies Service', () => {
       name: 'Proxy U',
       sourceId: SOURCE_UUID,
     };
+    // FIBIU-10 — the fork-on-material-change decision reads the VERSION's
+    // reviewStatus (getLatestFinancialProxyVersion), not the live row's; a
+    // test that wants the "approved -> fork" path exercised must seed this.
+    const approvedVersion = {
+      id: 'version-approved-1',
+      financialProxyId: PROXY_UUID,
+      ordinal: 1,
+      reviewStatus: 'approved',
+      sourceId: SOURCE_UUID,
+      value: '100',
+      currency: 'USD',
+      unit: 'units',
+      referenceYear: 2023,
+    };
 
     async function asCallerOrg() {
       const { requireOrganizationAccess } = await import('@/lib/auth/session');
@@ -391,8 +525,11 @@ describe('Financial Proxies Service', () => {
     it('rejects re-pointing at another organisation\'s source (RC-12 applies on update, not only on create)', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
-      mockDbData.proxySources = [{ id: SOURCE_UUID, organizationId: 'other-org', status: 'active' }];
-      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: SOURCE_UUID }))
+      // R-B2-06 — a re-point is a semantic CHANGE of sourceId; re-submitting
+      // the current source is a no-op and never reaches the gate.
+      const foreignSourceId = '550e8400-e29b-41d4-a716-446655440077';
+      mockDbData.proxySources = [{ id: foreignSourceId, organizationId: 'other-org', status: 'active' }];
+      await expect(updateOrganizationFinancialProxy(PROXY_UUID, { sourceId: foreignSourceId }))
         .rejects.toThrow('Source not found');
       // The refusal happens BEFORE any write.
       expect(mockDbData.lastUpdateValues).toBeNull();
@@ -411,6 +548,7 @@ describe('Financial Proxies Service', () => {
       await asCallerOrg();
       const replacementSourceId = '550e8400-e29b-41d4-a716-446655440099';
       mockDbData.financialProxies = [approvedProxy];
+      mockDbData.financialProxyVersions = [{ ...approvedVersion }];
       mockDbData.proxySources = [{ id: replacementSourceId, organizationId: null, status: 'active' }];
       mockDbData.updated = { ...approvedProxy, sourceId: replacementSourceId, reviewStatus: 'pending_review' };
 
@@ -422,6 +560,7 @@ describe('Financial Proxies Service', () => {
     it('resets an APPROVED proxy to pending_review when a material field changes', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
+      mockDbData.financialProxyVersions = [{ ...approvedVersion }];
       mockDbData.updated = { ...approvedProxy, value: '250', reviewStatus: 'pending_review' };
 
       await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
@@ -430,7 +569,7 @@ describe('Financial Proxies Service', () => {
       const { logAuditAction } = await import('@/lib/audit/logger');
       expect(logAuditAction).toHaveBeenCalledWith(
         expect.objectContaining({
-          action: 'financial_proxy_review_status_changed',
+          action: 'financial_proxy.review_status_changed',
           reason: expect.stringContaining('Approval reset'),
         })
       );
@@ -446,7 +585,7 @@ describe('Financial Proxies Service', () => {
       expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
       const { logAuditAction } = await import('@/lib/audit/logger');
       expect(logAuditAction).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'financial_proxy_updated' })
+        expect.objectContaining({ action: 'financial_proxy.updated' })
       );
     });
 
@@ -467,19 +606,32 @@ describe('Financial Proxies Service', () => {
 
       await updateOrganizationFinancialProxy(PROXY_UUID, { value: '100', referenceYear: 2023 });
 
-      expect(mockDbData.lastUpdateValues.reviewStatus).toBeUndefined();
+      // R-B2-06 — a semantic no-op writes NOTHING: no reset, no row update.
+      expect(mockDbData.lastUpdateValues).toBeNull();
     });
 
-    it('a client-supplied organizationId cannot move the row to another tenant', async () => {
+    it('a client-supplied organizationId cannot move the row to another tenant — REJECTED by name, never silently dropped (R-B2-06 / AG-B2-3-DERIVED)', async () => {
       await asCallerOrg();
       mockDbData.financialProxies = [approvedProxy];
       mockDbData.updated = { ...approvedProxy };
 
-      // Not in the Zod schema — partial().parse() drops it, so it never
-      // reaches the SET clause.
-      await updateOrganizationFinancialProxy(PROXY_UUID, { name: 'X', organizationId: 'attacker-org' });
+      // organization_id is a registered system_sealed column: a patch that
+      // NAMES it is refused before parsing could strip it, so the attempt
+      // is visible rather than silently ignored.
+      await expect(
+        updateOrganizationFinancialProxy(PROXY_UUID, { name: 'X', organizationId: 'attacker-org' })
+      ).rejects.toThrow(/"organizationId" \(financial_proxies\.organization_id\) is system_sealed/);
 
-      expect(mockDbData.lastUpdateValues.organizationId).toBeUndefined();
+      expect(mockDbData.lastUpdateValues).toBeNull();
+    });
+
+    it('a patch naming reviewStatus / reviewerId / reviewedAt / valueUsd is rejected by name (NC-7, service layer)', async () => {
+      await asCallerOrg();
+      mockDbData.financialProxies = [approvedProxy];
+      for (const [key, editability] of [['reviewStatus', 'system_sealed'], ['reviewerId', 'system_sealed'], ['reviewedAt', 'system_sealed'], ['valueUsd', 'system_derived']] as const) {
+        await expect(updateOrganizationFinancialProxy(PROXY_UUID, { [key]: 'x' })).rejects.toThrow(new RegExp(`"${key}" .* is ${editability}`));
+      }
+      expect(mockDbData.lastUpdateValues).toBeNull();
     });
 
     // -------------------------------------------------------------------------
@@ -502,6 +654,7 @@ describe('Financial Proxies Service', () => {
       it('a `value` edit invalidates the frozen valueUsd and fxRateId', async () => {
         await asCallerOrg();
         mockDbData.financialProxies = [{ ...frozenProxy, fxRateId: 'fx-1' }];
+        mockDbData.financialProxyVersions = [{ ...approvedVersion, value: '100', currency: 'USD' }];
         mockDbData.updated = { ...frozenProxy, value: '250', reviewStatus: 'pending_review', valueUsd: null, fxRateId: null };
 
         await updateOrganizationFinancialProxy(PROXY_UUID, { value: '250' });
@@ -537,6 +690,7 @@ describe('Financial Proxies Service', () => {
       it('a `unit`-only edit does NOT invalidate valueUsd — unit does not feed the FX derivation', async () => {
         await asCallerOrg();
         mockDbData.financialProxies = [frozenProxy];
+        mockDbData.financialProxyVersions = [{ ...approvedVersion, value: '100', currency: 'USD', unit: frozenProxy.unit }];
         mockDbData.updated = { ...frozenProxy, unit: 'per household', reviewStatus: 'pending_review' };
 
         await updateOrganizationFinancialProxy(PROXY_UUID, { unit: 'per household' });
@@ -555,8 +709,8 @@ describe('Financial Proxies Service', () => {
 
         await updateOrganizationFinancialProxy(PROXY_UUID, { value: '100', currency: 'USD', referenceYear: 2023 });
 
-        expect(mockDbData.lastUpdateValues.valueUsd).toBeUndefined();
-        expect(mockDbData.lastUpdateValues.fxRateId).toBeUndefined();
+        // R-B2-06 — a semantic no-op writes NOTHING, so valueUsd/fxRateId cannot be nulled.
+        expect(mockDbData.lastUpdateValues).toBeNull();
       });
     });
 
@@ -582,6 +736,9 @@ describe('Financial Proxies Service', () => {
           valueUsd: null, fxRateId: null,
         };
         mockDbData.financialProxies = [editedProxy];
+        mockDbData.financialProxyVersions = [
+          { id: 'version-1', financialProxyId: PROXY_UUID, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
+        ];
         mockDbData.updated = { ...editedProxy, reviewStatus: 'approved', valueUsd: '250' };
 
         await updateFinancialProxyReviewStatus(
@@ -604,6 +761,9 @@ describe('Financial Proxies Service', () => {
     vi.mocked(canApproveProxy).mockReturnValue(true);
     const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
     mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-1', financialProxyId: PROXY_UUID, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
+    ];
 
     const updated = { ...proxy, reviewStatus: 'approved' };
     mockDbData.updated = updated;
@@ -686,6 +846,9 @@ describe('Financial Proxies Service', () => {
     it('approves only when the current locked state matches the reviewed fingerprint', async () => {
       await asApprover();
       mockDbData.financialProxies = [approvalProxy];
+      mockDbData.financialProxyVersions = [
+        { id: 'version-1', financialProxyId: PROXY_UUID, reviewStatus: 'under_review', ...FULL_PROVENANCE, ...FULL_RUBRIC },
+      ];
       mockDbData.updated = { ...approvalProxy, reviewStatus: 'approved', reviewerId: 'reviewer-1' };
 
       const result = await updateFinancialProxyReviewStatus(
@@ -741,6 +904,50 @@ describe('Financial Proxies Service', () => {
   });
 });
 
+/*** R-B2-01 — archive is the fourth transition site ***/
+describe('archiveFinancialProxy — LIVE_VERSION_STATUS_COUPLING at the archive site (R-B2-01)', () => {
+  it('transitions the CURRENT version to archived in the same transaction as the live row, through the mapping', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: 'org-3' }, user: { id: 'user-3' }, membership: { role: 'organization_admin' } } as any);
+    const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'approved', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [{ id: 'version-1', financialProxyId: PROXY_UUID, ordinal: 1, reviewStatus: 'approved' }];
+    mockDbData.updated = { ...proxy, reviewStatus: 'archived' };
+    mockDbData.updatedVersion = { id: 'version-1', reviewStatus: 'archived' };
+
+    await archiveFinancialProxy(PROXY_UUID);
+
+    expect(mockDbData.lastUpdateValues.reviewStatus).toBe('archived');
+    // The version is written 'archived' — the mapped image — never left 'approved'.
+    expect(mockDbData.lastVersionUpdateValues.reviewStatus).toBe('archived');
+    const { logAuditAction } = await import('@/lib/audit/logger');
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'financial_proxy_version.review_status_changed' }));
+    expect(logAuditAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'financial_proxy.archived' }));
+  });
+
+  it('IDOR: refuses to archive a proxy owned by another organization', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: 'org-99' }, user: { id: 'user-99' }, membership: { role: 'organization_admin' } } as any);
+    mockDbData.financialProxies = [{ id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'approved' }];
+
+    await expect(archiveFinancialProxy(PROXY_UUID)).rejects.toThrow('Forbidden');
+    expect(mockDbData.lastUpdateValues).toBeNull();
+  });
+
+  it('a never-versioned legacy proxy still archives its live row (no version to couple to)', async () => {
+    const { requireOrganizationAccess } = await import('@/lib/auth/session');
+    vi.mocked(requireOrganizationAccess).mockResolvedValue({ organization: { id: 'org-3' }, user: { id: 'user-3' }, membership: { role: 'organization_admin' } } as any);
+    const proxy = { id: PROXY_UUID, organizationId: 'org-3', reviewStatus: 'approved' };
+    mockDbData.financialProxies = [proxy];
+    mockDbData.financialProxyVersions = [];
+    mockDbData.updated = { ...proxy, reviewStatus: 'archived' };
+
+    const result = await archiveFinancialProxy(PROXY_UUID);
+    expect(result.reviewStatus).toBe('archived');
+    expect(mockDbData.lastVersionUpdateValues).toBeNull();
+  });
+});
+
 /*** Proxy Assignments ***/
 describe('Proxy Assignment Service', () => {
   it('assignProxyToOutcome validates project, outcome and proxy visibility', async () => {
@@ -756,6 +963,8 @@ describe('Proxy Assignment Service', () => {
     mockDbData.projects = [project];
     mockDbData.outcomes = [outcome];
     mockDbData.financialProxies = [proxy];
+    // R-B2-05 — an assignment binds the current APPROVED version and refuses otherwise.
+    mockDbData.financialProxyVersions = [{ id: 'version-approved', financialProxyId: PROXY_UUID, ordinal: 1, reviewStatus: 'approved' }];
 
     const inserted = { id: ASSIGNMENT_UUID, projectId: PROJECT_UUID, outcomeId: OUTCOME_UUID, proxyId: PROXY_UUID };
     mockDbData.inserted = inserted;
@@ -765,6 +974,73 @@ describe('Proxy Assignment Service', () => {
     expect(result).toMatchObject(inserted);
     const { logAuditAction } = await import('@/lib/audit/logger');
     expect(logAuditAction).toHaveBeenCalled();
+  });
+
+  // FIBIU-08 (FIBDB-039) / R-B2-05 (M7-DERIVED) — an assignment binds the
+  // current APPROVED version at assignment time (FIBC-012: "eligibility
+  // binds to the exact approved version"), never the latest version
+  // regardless of status, and never NULL or a draft.
+  it('binds financialProxyVersionId to the proxy\'s current APPROVED version at assignment time', async () => {
+    const { requireOrganizationAccess, getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-4' }, user: { id: 'user-4' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctx);
+
+    mockDbData.projects = [{ id: PROJECT_UUID, organizationId: 'org-4' }];
+    mockDbData.outcomes = [{ id: OUTCOME_UUID, projectId: PROJECT_UUID }];
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: null, reviewStatus: 'approved', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 },
+    ];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-current', financialProxyId: PROXY_UUID, ordinal: 3, reviewStatus: 'approved' },
+    ];
+
+    const input = { outcomeId: OUTCOME_UUID, proxyId: PROXY_UUID, justification: 'test' };
+    await assignProxyToOutcome(PROJECT_UUID, input);
+
+    expect(mockDbData.lastInsertValues.financialProxyVersionId).toBe('version-current');
+  });
+
+  it('M7-DERIVED: when an approved V1 has a later under_review fork V2, a new assignment binds V1 (the approved one), not V2', async () => {
+    const { requireOrganizationAccess, getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-4' }, user: { id: 'user-4' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctx);
+
+    mockDbData.projects = [{ id: PROJECT_UUID, organizationId: 'org-4' }];
+    mockDbData.outcomes = [{ id: OUTCOME_UUID, projectId: PROJECT_UUID }];
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: null, reviewStatus: 'approved', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 },
+    ];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-v1-approved', financialProxyId: PROXY_UUID, ordinal: 1, reviewStatus: 'approved' },
+      { id: 'version-v2-fork', financialProxyId: PROXY_UUID, ordinal: 2, reviewStatus: 'under_review' },
+    ];
+
+    await assignProxyToOutcome(PROJECT_UUID, { outcomeId: OUTCOME_UUID, proxyId: PROXY_UUID, justification: 'test' });
+
+    expect(mockDbData.lastInsertValues.financialProxyVersionId).toBe('version-v1-approved');
+  });
+
+  it('REFUSES to assign when the proxy has no approved version — never binds NULL, never binds a draft', async () => {
+    const { requireOrganizationAccess, getCurrentOrganizationContext } = await import('@/lib/auth/session');
+    const ctx = { organization: { id: 'org-4' }, user: { id: 'user-4' } } as any;
+    vi.mocked(requireOrganizationAccess).mockResolvedValue(ctx);
+    vi.mocked(getCurrentOrganizationContext).mockResolvedValue(ctx);
+
+    mockDbData.projects = [{ id: PROJECT_UUID, organizationId: 'org-4' }];
+    mockDbData.outcomes = [{ id: OUTCOME_UUID, projectId: PROJECT_UUID }];
+    mockDbData.financialProxies = [
+      { id: PROXY_UUID, organizationId: 'org-4', reviewStatus: 'suggested', value: '100', currency: 'USD', unit: 'unit', referenceYear: 2023 },
+    ];
+    mockDbData.financialProxyVersions = [
+      { id: 'version-draft', financialProxyId: PROXY_UUID, ordinal: 1, reviewStatus: 'draft' },
+    ];
+
+    await expect(
+      assignProxyToOutcome(PROJECT_UUID, { outcomeId: OUTCOME_UUID, proxyId: PROXY_UUID, justification: 'test' })
+    ).rejects.toThrow('no approved version to bind');
+    expect(mockDbData.lastInsertValues).toBeNull();
   });
 
   it('archiveOutcomeProxyAssignment performs logical archive', async () => {

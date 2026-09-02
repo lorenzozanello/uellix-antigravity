@@ -334,7 +334,9 @@ export async function buildComposerContext(
       totalInvestment: parseFloat(pinnedRun.totalInvestment ?? '0'),
       grossSocialValue: parseFloat(pinnedRun.grossSocialValue ?? '0'),
       netSocialValue: parseFloat(pinnedRun.netSocialValue ?? '0'),
-      sroiRatio: parseFloat(pinnedRun.sroiRatio ?? '0'),
+      // AG-B3-2 — NULL stays null; the historical `?? '0'` handed Stella a
+      // fabricated 0.0 ratio for a run that emitted none.
+      sroiRatio: pinnedRun.sroiRatio === null ? null : parseFloat(pinnedRun.sroiRatio),
       currency: pinnedRun.currency ?? 'USD',
       lineItemCount: lineItems.length,
       version: pinnedRun.version,

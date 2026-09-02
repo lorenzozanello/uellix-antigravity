@@ -70,8 +70,10 @@ function conforming(): BaselineObservation {
     grants: ['authenticated:SELECT:public.users', 'service_role:INSERT:public.audit_logs'],
     // HPO-ODS-W2-04: a conforming database is zero everywhere EXCEPT the
     // governed global-catalog seed(s), which hold exactly their declared count.
+    // HPO-ODS-W2-08: a table seeded by more than one unit holds the SUM —
+    // computed here independently of expectedRowCountsFromClosedWorld.
     rowCounts: Object.fromEntries(
-      EXPECTED.tables.map((t) => [t, GLOBAL_CATALOG_SEED_SPECS.find((s) => s.table === t)?.expectedRowCount ?? 0]),
+      EXPECTED.tables.map((t) => [t, GLOBAL_CATALOG_SEED_SPECS.filter((s) => s.table === t).reduce((n, s) => n + s.expectedRowCount, 0)]),
     ),
     extensions: ['pgcrypto', 'uuid-ossp', 'pg_graphql', 'pg_stat_statements'],
     storageBuckets: ['uellix-evidence'],
@@ -234,31 +236,50 @@ describe('the postconditions that carry the Phase 5 and Phase 6 claims', () => {
   // HPO-ODS-W2-04 — P1/P2/P3 and N1/N2/N3/N4/N5/N6.
   describe('HPO-ODS-W2-04 — the governed global-catalog seed exception, closed-world', () => {
     const seed = GLOBAL_CATALOG_SEED_SPECS[0]!
+    // HPO-ODS-W2-08: the seeded tables and their SUMMED expectations
+    // (governed_model_registry 8 + 1 = 9; proxy_material_fields_registry
+    // 39 + 70 = 109), derived here independently of the module under test.
+    const seededTables = [...new Set(GLOBAL_CATALOG_SEED_SPECS.map((s) => s.table))].sort()
+    const expectedFor = (table: string) => GLOBAL_CATALOG_SEED_SPECS.filter((s) => s.table === table).reduce((n, s) => n + s.expectedRowCount, 0)
+
+    it('the reconciled closed world seeds exactly two tables, at 9 and 109 rows', () => {
+      expect(seededTables).toEqual(['public.governed_model_registry', 'public.proxy_material_fields_registry'])
+      expect(expectedFor('public.governed_model_registry')).toBe(9)
+      expect(expectedFor('public.proxy_material_fields_registry')).toBe(109)
+    })
 
     it('P1: the exact governed seed count PASSES', () => {
       const o = conforming()
-      expect(o.rowCounts[seed.table]).toBe(seed.expectedRowCount)
+      for (const table of seededTables) expect(o.rowCounts[table], table).toBe(expectedFor(table))
       expect(b0_11().check(o, EXPECTED).passed).toBe(true)
     })
 
-    it('P2: every other baseline table at zero, alongside the seed, PASSES', () => {
+    it('P2: every other baseline table at zero, alongside the seeds, PASSES', () => {
       const o = conforming()
-      const others = EXPECTED.tables.filter((t) => t !== seed.table)
+      const others = EXPECTED.tables.filter((t) => !seededTables.includes(t))
       expect(others.every((t) => o.rowCounts[t] === 0)).toBe(true)
     })
 
-    it('N1: one EXTRA row on the governed seed table FAILS', () => {
+    it.each(seededTables)('N1: one EXTRA row on the governed seed table %s FAILS', (table) => {
       const o = conforming()
-      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [seed.table]: seed.expectedRowCount + 1 } }, EXPECTED)
+      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [table]: expectedFor(table) + 1 } }, EXPECTED)
       expect(result.passed).toBe(false)
-      expect(result.detail).toContain(seed.table)
+      expect(result.detail).toContain(table)
     })
 
-    it('N2: one MISSING row on the governed seed table FAILS (not just "greater than zero")', () => {
+    it.each(seededTables)('N2: one MISSING row on the governed seed table %s FAILS (not just "greater than zero")', (table) => {
       const o = conforming()
-      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [seed.table]: seed.expectedRowCount - 1 } }, EXPECTED)
+      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [table]: expectedFor(table) - 1 } }, EXPECTED)
       expect(result.passed).toBe(false)
-      expect(result.detail).toContain(seed.table)
+      expect(result.detail).toContain(table)
+    })
+
+    it('N2b: a shared table holding only ONE of its two seeds (last-writer-wins, the pre-reconciliation shape) FAILS', () => {
+      const o = conforming()
+      for (const [table, partial] of [['public.governed_model_registry', 8], ['public.governed_model_registry', 1], ['public.proxy_material_fields_registry', 39], ['public.proxy_material_fields_registry', 70]] as const) {
+        const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [table]: partial } }, EXPECTED)
+        expect(result.passed, `${table}=${partial}`).toBe(false)
+      }
     })
 
     it('N3: a row on an unrelated governed-zero table FAILS — the exception never widens', () => {
@@ -305,8 +326,8 @@ describe('the postconditions that carry the Phase 5 and Phase 6 claims', () => {
       // Proves the old check was enforcing something real, and this is a
       // deliberate, narrow relaxation — not a check that never did anything.
       const o = conforming()
-      const populated = Object.entries(o.rowCounts).filter(([, n]) => n !== 0)
-      expect(populated).toEqual([[seed.table, seed.expectedRowCount]])
+      const populated = Object.entries(o.rowCounts).filter(([, n]) => n !== 0).sort(([a], [b]) => a.localeCompare(b))
+      expect(populated).toEqual(seededTables.map((table) => [table, expectedFor(table)]))
     })
 
     it("M2: a bare 'this table may hold rows' allowance would NOT be caught by anything but N1 — assert N1 still fails an over-broad implementation shape", () => {
@@ -314,8 +335,12 @@ describe('the postconditions that carry the Phase 5 and Phase 6 claims', () => {
       // this exact assertion — an extra row failing — is what would go green
       // when it must not. Re-run N1 here as the mutation's own witness.
       const o = conforming()
-      const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [seed.table]: seed.expectedRowCount + 5 } }, EXPECTED)
-      expect(result.passed).toBe(false)
+      for (const table of seededTables) {
+        const result = b0_11().check({ ...o, rowCounts: { ...o.rowCounts, [table]: expectedFor(table) + 5 } }, EXPECTED)
+        expect(result.passed, table).toBe(false)
+      }
+      // seed (spec 0, 0040) is still exercised by N5/N6 above.
+      expect(seed.unitId).toBe('0040_governed_model_registry.sql')
     })
   })
 

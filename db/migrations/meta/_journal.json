@@ -372,6 +372,69 @@
       "when": 1788270743733,
       "tag": "0052_fib_evidence_sufficiency_run_binding",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788279703850,
+      "tag": "0053_fib_proxy_versions_provenance",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788281657191,
+      "tag": "0054_fib_proxy_rubric_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1788283820236,
+      "tag": "0055_fib_proxy_material_change_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1788294184119,
+      "tag": "0056_fib_proxy_material_fields_editability",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1788310560305,
+      "tag": "0057_fib_outcome_materiality_classification",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1788311205711,
+      "tag": "0058_fib_filter_set_justification_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1788311723754,
+      "tag": "0059_fib_outcome_monetization_dispositions",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1788315850014,
+      "tag": "0060_fib_outcome_monetization_dispositions_governance",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1788370349425,
+      "tag": "0061_fib_disposition_governance_function_execute_revocation",
+      "breakpoints": true
     }
   ]
 }

@@ -73,6 +73,18 @@ export function canApproveProxy(role: Role): boolean {
   return hasRole(role, 'impact_manager')
 }
 
+/**
+ * Can the user rate a financial proxy's defendibility rubric (FIBIU-09,
+ * FIBC-011)? Distinct from `canApproveProxy` — rating the thirteen factors
+ * is the governed HUMAN step that precedes and feeds approval, not the
+ * approval decision itself, mirroring FIBIU-29's one-permission-per-
+ * governed-action pattern (canClassifyEvidenceSensitivity vs
+ * canDetermineEvidenceSufficiency).
+ */
+export function canEvaluateProxyRubric(role: Role): boolean {
+  return hasRole(role, 'impact_manager')
+}
+
 /** Can the user generate an impact report? */
 export function canGenerateReport(role: Role): boolean {
   return hasRole(role, 'impact_manager')

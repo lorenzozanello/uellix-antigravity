@@ -1,0 +1,936 @@
+{
+ "package_id": "W2_B2_REMEDIATION_AUTHORITY",
+ "version": "1.0.0",
+ "artifact_id": "W2_B2_REMEDIATION_AUTHORITY_v1.0.0",
+ "authority_class": "SUCCESSOR_REMEDIATION_AUTHORITY",
+ "supersedes": null,
+ "purpose": "Freeze the minimum complete remediation authority required for Wave 2 batch B2 (FIBIU-08 / FIBIU-09 / FIBIU-10) to become closable, in response to the independent W2-B2 adversarial review verdict FAIL. This artifact reconciles every reported finding against the sealed FIB/FIBC/FIBDB contracts rather than adopting the auditor's suggested fixes, adjudicates the authority gaps AG-B2-1 and AG-B2-2, and freezes decisions R-B2-01..09 with their dependencies, authorized surfaces, negative controls and exit gates. It does NOT implement runtime fixes, does NOT amend historical B2 commits, does NOT modify sealed FIB authority or the W2 execution mapping, and does NOT authorize W2-B3.",
+ "identity": {
+  "task": "W2-B2-R0",
+  "class": "A",
+  "mode": "AUTHORITY_RECONCILIATION_AND_REMEDIATION_FREEZE",
+  "branch": "codex/w2-methodology-objects-r1",
+  "audited_b2_head": "63bfbf95252c8e62fa6bb9e857e2dcca1a5f36c0",
+  "audited_b2_tree": "22a1836dbf685f8885ae46939e3beefc6f350b97",
+  "b2_base_sha": "d058b36007e584f48d8f3f860c532924229c636a",
+  "b2_base_tree": "40d4f43a0b57b9344556b596e375d0fe18dd44c1",
+  "b2_implementation_commits": [
+   "852cdf3",
+   "4da9fee",
+   "63bfbf9"
+  ],
+  "predecessor_task": "W2-B2-AR (independent adversarial review of B2)",
+  "source_execution_mapping": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json",
+  "sibling_authority": "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json"
+ },
+ "prestate_gate": {
+  "current_branch": "codex/w2-methodology-objects-r1",
+  "current_head": "63bfbf95252c8e62fa6bb9e857e2dcca1a5f36c0",
+  "current_tree": "22a1836dbf685f8885ae46939e3beefc6f350b97",
+  "prestate_branch": "PASS",
+  "prestate_head": "PASS",
+  "prestate_tree": "PASS",
+  "prestate_clean": "PASS",
+  "ods_prestate": "PASS",
+  "authority_seal_verify": "PASS",
+  "protected_corpus_count": 9,
+  "transitive_attestation_count": 4,
+  "gemini_api_key_present_in_current_process": "NO",
+  "gemini_api_key_note": "Presence-only check via shell parameter-expansion test. The value was never read, printed or transmitted. NO is the expected state after a fresh Windows session."
+ },
+ "authority_references": {
+  "sealed_baseline": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md",
+  "sealed_index": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.index.json",
+  "contracts_consumed": [
+   "FIBC-002",
+   "FIBC-010",
+   "FIBC-011",
+   "FIBC-012",
+   "FIBC-013"
+  ],
+  "db_items_consumed": [
+   "FIBDB-006",
+   "FIBDB-007",
+   "FIBDB-039",
+   "FIBDB-044"
+  ],
+  "units_consumed": [
+   "FIBIU-08",
+   "FIBIU-09",
+   "FIBIU-10"
+  ],
+  "unit_status_at_freeze": {
+   "FIBIU-08": "OPEN",
+   "FIBIU-09": "CLOSED",
+   "FIBIU-10": "OPEN",
+   "MNB-1": "CLOSED"
+  },
+  "inherited_frozen_precedent": {
+   "id": "R-B1-01",
+   "source": "docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json",
+   "content_relied_upon": "FILES_OR_DOMAINS is an implementation locator and minimum expected surface list, not an exhaustive waiver. Implementation may touch additional concrete surfaces demonstrably required to satisfy the contract, each enumerated with its causal relation.",
+   "used_by": [
+    "R-B2-02",
+    "R-B2-05"
+   ],
+   "why": "Both nodes require surfaces the abbreviated FIBIU-08 FILES_OR_DOMAINS line ranges do not name. Rather than inventing a new interpretive principle, this artifact reuses the already-frozen B1 adjudication of exactly that question."
+  }
+ },
+ "finding_classification_scheme": {
+  "IMPLEMENTATION_DEFECT": "Sealed authority is unambiguous and the delivered code contradicts it.",
+  "AUTHORITY_GAP": "Sealed authority does not determine the answer; this artifact adjudicates and freezes it.",
+  "TEST_COVERAGE_GAP": "Behaviour may be correct but is not durably proven; a committed test is required.",
+  "NON_BLOCKING_CARRY_FORWARD": "Real but not a B2 closure condition; recorded and carried forward.",
+  "NO_CHANGE_REQUIRED": "Reconciliation shows the delivered behaviour already satisfies sealed authority."
+ },
+ "blocking_findings": {
+  "B2-AR-B1": {
+   "title": "REVIEW-STATUS VOCABULARY DIVERGENCE BETWEEN LIVE ROW AND VERSION",
+   "classification": "IMPLEMENTATION_DEFECT",
+   "also": [
+    "TEST_COVERAGE_GAP"
+   ],
+   "confirmed": true,
+   "measured_evidence": [
+    "db/schema.ts:471 - financial_proxies.review_status CHECK IN ('suggested','pending_review','approved','rejected','archived').",
+    "db/schema.ts:564 - financial_proxy_versions.review_status CHECK IN ('draft','under_review','approved','rejected','archived').",
+    "lib/pipeline/proxies.ts:610-618 - updateFinancialProxyReviewStatus passes the LIVE vocabulary token straight into updateCurrentFinancialProxyVersion({ reviewStatus: newStatus }); newStatus is validated against the LIVE allowlist at proxies.ts:578.",
+    "lib/admin/proxies.ts:236-240 - updateGlobalProxyReviewStatus repeats the same verbatim copy.",
+    "Consequence in real PostgreSQL: newStatus 'suggested' or 'pending_review' violates financial_proxy_versions_review_status_check. The committed suite is DB-free, so no existing test can observe it.",
+    "lib/pipeline/proxies.ts:524 vs lib/pipeline/proxy-material-change.ts - a material-change fork sets the live row to 'pending_review' while opening the version as 'draft'; the two are not images of one another under any consistent mapping.",
+    "lib/pipeline/proxies.ts:658 - archiveFinancialProxy sets the live row to 'archived' and never touches the current version, which remains 'approved'.",
+    "Consistent counter-example: creation already pairs live 'suggested' with version 'draft' (proxies.ts:372/400; admin/proxies.ts:153/180). The mapping exists in the code but is applied at only one of four transition sites."
+   ],
+   "reconciliation": "The version vocabulary is authority-derived, not invented: FIBC-013 and FIBIU-10 both name a new 'draft'/'under_review' version literally. The live vocabulary is pre-existing legacy that no sealed contract asks B2 to change. Two vocabularies are therefore legitimate; what is missing is the explicit total mapping between them and the invariant that binds them.",
+   "closed_by": [
+    "R-B2-01"
+   ]
+  },
+  "B2-AR-B2": {
+   "title": "ORGANIZATION PROVENANCE UNREACHABLE AND ORGANIZATION APPROVAL DEADLOCKED",
+   "classification": "IMPLEMENTATION_DEFECT",
+   "also": [
+    "TEST_COVERAGE_GAP"
+   ],
+   "confirmed": true,
+   "severity_note": "Materially worse than the auditor's framing. This is not a missing input field: it is a closed loop in which no organization-scoped proxy can ever reach 'approved'.",
+   "measured_evidence": [
+    "app/app/projects/[projectId]/pipeline/proxies/createFinancialProxy.action.ts - the org create schema has 14 keys and NONE of the five FIBC-010 provenance fields (geographicContextualScope, linkedOutcomeContext, recoverableReference, relevanceJustification, documentedTransformations), nor consultationDate.",
+    "app/app/projects/[projectId]/pipeline/proxies/updateFinancialProxy.action.ts - the org patch schema accepts exactly the five legacy keys (sourceId, value, currency, unit, referenceYear); no provenance field is patchable.",
+    "app/app/projects/[projectId]/pipeline/proxies/page.tsx - zero occurrences of any of the six provenance field names; the org route/component tree renders no control for them.",
+    "lib/pipeline/proxies.ts:592-596 - the org approval path calls assertApprovableProvenance, which hard-requires a non-empty recoverableReference.",
+    "DEADLOCK: recoverableReference is required to approve, is written only by createFinancialProxyVersion/applyMaterialChange from an input the org surface never supplies, and is not patchable on the org surface. updateFinancialProxyReviewStatus(proxyId,'approved') therefore throws unconditionally for every org proxy.",
+    "app/admin/proxies/page.tsx does expose recoverableReference, so the field is reachable ONLY on the global/admin surface - which at lib/pipeline/proxies.ts:585 explicitly refuses to govern org proxies."
+   ],
+   "reconciliation": "FIBIU-08 UI_CHANGES says 'a full-provenance form' without qualifying it to the admin surface, and its EXIT_GATE and SERVICE_CHANGES speak of approval generally. FIBC-010 enumerates eleven items required to reach 'approved'. The delivered approval gate checks one of the eleven and the delivered org UI reaches zero of the six new ones. Both halves must move: the gate widened to FIBC-010's actual list, and the org surface made genuinely reachable through the running route/component tree.",
+   "closed_by": [
+    "R-B2-02"
+   ]
+  },
+  "B2-AR-B3": {
+   "title": "MANUAL FX MUTATES MONETARY STATE WITHOUT THE ATOMIC MATERIAL-CHANGE PRIMITIVE",
+   "classification": "IMPLEMENTATION_DEFECT",
+   "also": [
+    "TEST_COVERAGE_GAP"
+   ],
+   "confirmed": true,
+   "measured_evidence": [
+    "lib/admin/proxies.ts:286-344 - setGlobalProxyManualFxRate inserts an fx_rates row, computes valueUsd, and UPDATEs financial_proxies.value_usd / fx_rate_id directly.",
+    "It resets only the LIVE row ('approved' -> 'pending_review', line 324) and never calls getLatestFinancialProxyVersion, applyMaterialChange, or updateCurrentFinancialProxyVersion.",
+    "Net effect: the approved version V1 keeps its stale value_usd/fx_rate_id and its 'approved' review_status while the live row silently acquires a different monetary value. No fork is opened, no version superseded, no FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE audit event emitted.",
+    "By contrast lib/pipeline/proxies.ts:480-490 routes every org-side material edit through applyMaterialChange, and lib/pipeline/proxy-material-change.ts nulls valueUsd/fxRateId on the fork exactly as FIBC-013 requires."
+   ],
+   "reconciliation": "FIBC-013 is unambiguous that a material change atomically preserves the approved version and opens a successor, that no window may exist in which 'approved' survives a material change, and that a stale value_usd must never outlive the parameters that produced it. A manual FX entry changes both the monetary value and its documented transformation. The delivered path leaves an approved version carrying a value_usd its own live row has already contradicted - precisely the state FIBC-013 forbids.",
+   "closed_by": [
+    "R-B2-04"
+   ],
+   "depends_on_adjudication": [
+    "value_usd and fx_rate_id material category ownership - see R-B2-03"
+   ]
+  }
+ },
+ "material_findings": {
+  "M2": {
+   "title": "EDITORIAL / NO-OP PATCH INVALIDATES AN APPROVED VERSION",
+   "classification": "IMPLEMENTATION_DEFECT",
+   "also": [
+    "TEST_COVERAGE_GAP"
+   ],
+   "confirmed": true,
+   "measured_evidence": [
+    "MEASURED PROBE against this repository's installed zod 4.4.3: z.object({...}).partial().parse({value: undefined, currency: undefined}) returns an object whose Object.keys() is ['value','currency']. JSON.stringify of that same object is '{}' - the keys are present but invisible to any JSON-based inspection.",
+    "lib/pipeline/proxies.ts:462 - touchedCategories = materialCategoriesTouched(Object.keys(data)). Key PRESENCE alone marks a category as touched; no value is ever compared.",
+    "app/app/projects/[projectId]/pipeline/proxies/page.tsx:242-247 - the server action always transmits all four keys, using 'value || undefined' for blanks. An all-blank submission therefore sends four explicitly-undefined keys.",
+    "Chain: blank submit -> 4 keys present -> isMaterial true -> applyMaterialChange forks the approved version -> live row to 'pending_review' -> value_usd/fx_rate_id nulled. An approval is destroyed by a form submission that changed nothing.",
+    "Second, broader case: re-submitting IDENTICAL values forks too, because no comparison against persisted state is ever performed.",
+    "The adjacent usdDerivationChange test at proxies.ts:517-519 does compare values, but via String(...) equality, which reports '100' and '100.0000' as different. proxies.ts already contains canonicalDecimal (used by the approval fingerprint at line 59) and does not reuse it here."
+   ],
+   "reconciliation": "FIBIU-10's own TESTS clause names 'an editorial change does not invalidate' as a required test, and FIBC-013 defines materiality in terms of the proxy's persisted semantic content. A key that carries no value changes nothing semantic. FIBC-013's 'ambiguous => material' is a rule about which FIELD a change belongs to, not a licence to treat a non-change as a change.",
+   "closed_by": [
+    "R-B2-06"
+   ]
+  },
+  "M4": {
+   "title": "MATERIAL FIELD REGISTRY IS NOT EXHAUSTIVE OVER PERSISTED PROXY FIELDS",
+   "classification": "IMPLEMENTATION_DEFECT",
+   "also": [
+    "AUTHORITY_GAP"
+   ],
+   "confirmed": true,
+   "measured_evidence": [
+    "Deterministic census over db/schema.ts against the registry_version '1.0.0' seed in db/migrations/0055_fib_proxy_material_change_registry.sql:",
+    "financial_proxies: 24 persisted columns, 5 registered, 19 UNCLASSIFIED - id, organization_id, source_id, country, territory, currency, value, value_usd, fx_rate_id, unit, reference_year, thematic_area, methodology, review_status, reviewer_id, reviewed_at, created_by, created_at, updated_at.",
+    "financial_proxy_versions: 46 persisted columns, 34 registered, 12 UNCLASSIFIED - id, organization_id, financial_proxy_id, ordinal, value_usd, fx_rate_id, review_status, reviewer_id, reviewed_at, supersedes_version_id, created_by, created_at.",
+    "TOTALS: 70 persisted columns, 39 registry rows, 31 UNCLASSIFIED.",
+    "The auditor named five omissions (value_usd, fx_rate_id, review_status, reviewer_id, reviewed_at). The measured gap is 31."
+   ],
+   "reconciliation": "FIBC-013 requires that a versioned technical registry map EVERY persisted proxy field to its category and that a new field be classified BEFORE joining the model. A hand-written 39-row seed against a 70-column surface cannot hold that property and cannot keep holding it as the schema evolves; exhaustiveness must be enforced by a reflective test over the Drizzle table definitions, not by a static list. Separately, FIBC-013's 'audit/approval metadata are never editable non-material' cannot be expressed by the delivered vocabulary - see AG-B2-3-DERIVED.",
+   "closed_by": [
+    "R-B2-03"
+   ]
+  },
+  "M5": {
+   "title": "HIGH-RISK COVERAGE IS NOT COMMITTED",
+   "classification": "TEST_COVERAGE_GAP",
+   "confirmed": true,
+   "measured_evidence": [
+    "Committed proxy suites at the audited HEAD: financial-proxy-rubric.service.test.ts (29 cases), proxy-fx-conversion.test.ts (40), proxy-material-change.service.test.ts (13), financial-proxy-versions.service.test.ts (12), proxy-approval-race.service.test.ts (4), proxy-security.test.ts (3).",
+    "FIBIU-10 carries RISK: HIGH and appears on the FIB's exhaustive wave-level OPUS-review list (FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:901). FIBIU-09 is likewise HIGH.",
+    "No committed test exercises a real PostgreSQL CHECK constraint; the suite is DB-free by construction, which is exactly why B2-AR-B1 survived to the audit."
+   ],
+   "closed_by": [
+    "R-B2-09"
+   ]
+  },
+  "M6": {
+   "title": "GLOBAL PROMOTION CARRIES ORGANIZATION GOVERNANCE INTO THE GLOBAL REFERENCE",
+   "classification": "AUTHORITY_GAP",
+   "also": [
+    "IMPLEMENTATION_DEFECT"
+   ],
+   "confirmed": true,
+   "measured_evidence": [
+    "lib/admin/proxies.ts:423-476 - promoteProxyToGlobal creates the global clone's version 1 copying all thirteen rubric factors, the derived scores and levels, rubric_version, and exceptionalDefendibilityDetermination from the source ORGANIZATION's version.",
+    "lib/admin/proxies.ts:468 and 410-419 - the clone version and the clone live row are both sealed reviewStatus 'approved' with reviewerId = admin.id and reviewedAt = now, at creation.",
+    "Net effect: ratings authored by an organization reviewer are attributed in the global catalog to the promoting administrator, and an organization-authored free-text exceptional determination becomes readable by every tenant."
+   ],
+   "closed_by": [
+    "R-B2-08"
+   ]
+  },
+  "M7-DERIVED": {
+   "title": "ASSIGNMENT BINDS THE LATEST VERSION, NOT THE APPROVED ONE",
+   "classification": "IMPLEMENTATION_DEFECT",
+   "confirmed": true,
+   "origin": "Not reported by the auditor; found while reconciling AG-B2-1.",
+   "measured_evidence": [
+    "lib/pipeline/proxies.ts:718 - assignProxyToOutcome binds getLatestFinancialProxyVersion(data.proxyId), which returns the highest-ordinal version regardless of its review_status.",
+    "If an approved V1 has a later draft V2, a new assignment binds V2 and is permanently ineligible at lib/pipeline/sroi-calculation.ts:443-446 even though the proxy is, and appears, approved."
+   ],
+   "reconciliation": "FIBC-012 states literally: 'Eligibility binds to the exact approved version.' Binding the latest version fails closed rather than open, so this is not a correctness hole - but it diverges from the sealed text and creates a silent trap. Folded into R-B2-05 as a bounded sub-item rather than raised to blocking.",
+   "closed_by": [
+    "R-B2-05"
+   ]
+  }
+ },
+ "authority_gap_adjudications": {
+  "AG-B2-1": {
+   "title": "MONETARY AUTHORITY OF PROJECT USE",
+   "status": "ADJUDICATED_AND_FROZEN",
+   "terminology_binding": "ProjectUse, as used in the W2-B2 review and in this artifact, denotes a row of outcome_proxy_assignments. There is no table, type or identifier named ProjectUse anywhere in the repository (verified by exhaustive search). outcome_proxy_assignments is the assignment of one financial proxy to one outcome within one project, and it is the object FIBDB-039 binds to a version.",
+   "measured_evidence": [
+    "lib/pipeline/sroi-calculation.ts:393-419 - the loader fetches the bound version rows and builds proxyVersionById; AssignmentData carries proxyVersion.",
+    "lib/pipeline/sroi-calculation.ts:437-447 - eligibility is double-asserted: the LIVE row must be 'approved' AND the BOUND version must be 'approved'.",
+    "lib/pipeline/sroi-calculation.ts:877 - the calculation then destructures { assignment, input, filterSet, proxy } WITHOUT proxyVersion, and reads dec(proxy.valueUsd ?? '0') from the mutable live row.",
+    "lib/pipeline/sroi-calculation.ts:559 - the USD-presence readiness check also reads the live row's valueUsd.",
+    "The version is therefore loaded, gated on, and then discarded for the one read that determines the SROI ratio."
+   ],
+   "reconciliation": [
+    "FIBC-012: 'Eligibility binds to the exact approved version.'",
+    "FIBC-013: 'Historical runs keep their exact version.' and 'a stale value_usd must never outlive the value/currency/year/parameters that produced it.'",
+    "FIBDB-039: 'IMMUTABILITY: immutable per run.'",
+    "FIBIU-08 TESTS: 'a historical run keeps its exact version.'",
+    "FIBIU-10 REPORT_CHANGES: 'historical runs keep their exact version and are never retroactively invalidated.'",
+    "Reading eligibility from the version while reading VALUE from the live row makes 'keeps its exact version' decorative: the number that produces the ratio comes from mutable state the bound version does not control. Under B2-AR-B3's manual-FX path this is not hypothetical - the live row's value_usd can change while V1 stays approved."
+   ],
+   "disposition": "VERSION_BOUND_MONETARY_RESOLUTION_REQUIRED",
+   "frozen_semantics": {
+    "source_of_truth": "The bound financial_proxy_versions row identified by outcome_proxy_assignments.financial_proxy_version_id is the SOLE authoritative source of monetary state (value, currency, unit, reference_year, value_usd, fx_rate_id) for deterministic calculation.",
+    "live_row_role": "financial_proxies remains the governance and discovery surface and retains its role in the existing double-assertion eligibility guard. It is NEVER a monetary source for a run.",
+    "v1_after_v2": "YES. An assignment bound to approved V1 MUST calculate using V1's monetary state after V2 becomes current. Mandatory, not preferential.",
+    "null_value_usd_on_approved_version": "FAIL CLOSED. A bound version that is 'approved' but carries a NULL value_usd must abort the calculation with a named error, mirroring the existing proxiesMissingUsd treatment. It must NOT degrade to '?? 0' and be reported as a non_positive_proxy_value skip, which would silently drop a line item the engine was required to monetise."
+   },
+   "surface_authorization": {
+    "authorized": true,
+    "basis": "FIBIU-08 FILES_OR_DOMAINS names lib/pipeline/sroi-calculation.ts with the abbreviated range :329-333. The required change is in the SAME named file, at the calculation and readiness reads. Authorized under the frozen R-B1-01 precedent, with the causal relation enumerated: FIBC-012's version binding cannot be satisfied by a loader alone if the consumer bypasses the binding.",
+    "limits": "Confined to monetary-source resolution and its fail-closed guard. It does NOT authorize changing the calculation formula, filter semantics, discounting, funder attribution, or the skip vocabulary."
+   },
+   "lineitem_provenance_disposition": {
+    "decision": "EXISTING_RELATIONSHIP_SUFFICIENT_NO_NEW_COLUMN",
+    "chain": "sroi_line_items.assignment_id (NOT NULL FK) -> outcome_proxy_assignments.financial_proxy_version_id (FIBDB-039, immutable per run)",
+    "measured_basis": [
+     "db/schema.ts:810 - sroi_line_items.assignment_id is NOT NULL, so every line item resolves to exactly one assignment.",
+     "lib/pipeline/proxies.ts:720-729 - financial_proxy_version_id is written once, at INSERT. No UPDATE path in the repository writes that column; archiveOutcomeProxyAssignment mutates only assignment_status/archived_by/archived_at."
+    ],
+    "why_not_denormalize": "FIBDB-039 IS the declared binding for this contract. Adding financial_proxy_version_id to sroi_line_items would create a persisted DB change no FIBDB item declares - an undeclared authority expansion - and would introduce a second source of truth that could disagree with the first. The existing relationship already provides immutable traceability.",
+    "conditional_on": "The immutability is presently upheld by convention, not by a constraint. This disposition is valid ONLY with the durable negative control required by R-B2-05: a committed test proving no code path updates outcome_proxy_assignments.financial_proxy_version_id."
+   }
+  },
+  "AG-B2-2": {
+   "title": "MATERIAL REGISTRY RLS",
+   "status": "ADJUDICATED_AND_FROZEN",
+   "measured_evidence": [
+    "db/migrations/0055_fib_proxy_material_change_registry.sql:42 - GRANT SELECT ON public.proxy_material_fields_registry TO authenticated. No ALTER TABLE ... ENABLE ROW LEVEL SECURITY, no CREATE POLICY.",
+    "db/hosted/baseline-manifest.ts:1031-1037 - the delivered manifest note states: 'No RLS enabled yet ... a dedicated RLS-policy unit (mirroring unit 58 for governed_model_registry) is stage-B/E hardening, deferred.'",
+    "FIB index: FIBDB-007 migration_stage == ['A']. There is NO stage B and NO stage E declared for this item. Compare FIBDB-006, whose migration_stage is ['A','E'].",
+    "FIBDB-007 sealed text: 'RLS: read-all members.' The contract declares an RLS semantic explicitly.",
+    "The cited precedent points the other way: db/policies/009_governed_model_registry_rls.sql EXISTS and DOES enable RLS on governed_model_registry with a read-for-any-authenticated-user policy and no write policies. The implementation cited unit 51's grant while omitting unit 58, which is the half that supplies the RLS.",
+    "db/hosted/baseline-postconditions.ts:335-347 - gate B0-07 asserts 'every table the corpus switches RLS on has it on'. It is an inclusion check against a declared expectation list, not a universal sweep, so no existing gate would ever notice this table."
+   ],
+   "reconciliation": "The deferral is to a stage that does not exist for FIBDB-007, so 'deferred' means 'never'. The global-reference-catalog precedent the implementation invoked is itself RLS-enabled by a dedicated policies unit. And because B0-07 is an inclusion check, an unlisted table is invisible to the posture gate, so the absence would never surface downstream. Per CLAUDE.md section 5, an undeclared stage is not a place to park a declared requirement.",
+   "disposition": "A_RLS_REQUIRED_IN_STAGE_A",
+   "frozen_semantics": {
+    "enable": "ALTER TABLE proxy_material_fields_registry ENABLE ROW LEVEL SECURITY.",
+    "force": "MUST NOT use FORCE ROW LEVEL SECURITY. The seed is migration-owner DML; FORCE would subject the owner to policy and break both the 1.0.0 seed on reprovision and every future registry_version seed.",
+    "select_policy": "CREATE POLICY proxy_material_fields_registry_select FOR SELECT USING (auth.uid() IS NOT NULL) - the literal 'read-all members' semantic of FIBDB-007, structurally identical to db/policies/009's treatment of the same shape. There is no organization_id on this table to scope by.",
+    "write_policies": "NONE. No INSERT, UPDATE or DELETE policy is created. With RLS enabled and no write policy, rows are structurally immutable to every non-owner role, which is how FIBDB-007's 'immutable per version' becomes enforced rather than merely asserted.",
+    "grants": "The existing GRANT SELECT TO authenticated is retained unchanged. No new grant.",
+    "idempotence": "DROP POLICY IF EXISTS ahead of CREATE POLICY, mirroring db/policies/009.",
+    "gate_coverage": "The table and its policy MUST be added to the baseline manifest expectation sets so gates B0-07 and B0-08 actually measure them. Enabling RLS without registering it in the expectation moves the same blind spot rather than closing it."
+   },
+   "stage_e_note": "This disposition does NOT open a stage E for FIBDB-007 and does not imply one exists."
+  },
+  "AG-B2-3-DERIVED": {
+   "title": "REGISTRY CANNOT EXPRESS 'NEVER EDITABLE NON-MATERIAL'",
+   "status": "ADJUDICATED_AND_FROZEN",
+   "origin": "Derived while reconciling M4; not raised by the auditor.",
+   "problem": "FIBC-013 requires that audit/approval metadata never be classed as editable non-material. The delivered vocabulary offers exactly eleven values: the ten sealed material categories plus non_material. review_status, reviewer_id and reviewed_at belong to none of the ten - they are the governance transition itself, not methodological content - yet classifying them non_material without further qualification is precisely what FIBC-013 forbids. Classifying them material is self-defeating: an approval write would then fork the version it is approving, an infinite regress.",
+   "rejected_option": "Adding an eleventh or twelfth MATERIAL CATEGORY. FIBC-013 seals TEN mandatory material categories; extending that enumeration would be authority expansion, and this artifact has no standing to expand a sealed contract.",
+   "disposition": "ORTHOGONAL_EDITABILITY_DIMENSION",
+   "frozen_semantics": {
+    "category_vocabulary": "UNCHANGED. The ten sealed FIBC-013 categories plus non_material remain exactly as delivered. The category CHECK constraint is NOT modified.",
+    "new_dimension": "proxy_material_fields_registry gains one column, editability, with CHECK IN ('user_editable','system_derived','system_sealed'). Materiality and editability are orthogonal, which is the actual shape of the domain: value_usd is material AND not user-entered; review_status is non-material AND not user-editable at all.",
+    "user_editable": "Fields a human supplies through a governed form. ONLY these may appear in any patch schema.",
+    "system_derived": "Persisted, material, but computed by the server from other fields - value_usd, fx_rate_id, confidence_score, confidence_level, methodological_risk_score, methodological_risk.",
+    "system_sealed": "Never user-supplied and never patchable - review_status, reviewer_id, reviewed_at, created_by, created_at, updated_at, id, organization_id, financial_proxy_id, ordinal, supersedes_version_id.",
+    "fibc_013_compliance": "Approval and audit metadata carry category non_material AND editability system_sealed. They are therefore never 'editable non-material': no patch path can reach them, and the service layer MUST REJECT - not silently ignore - any attempt to patch a field whose editability is not user_editable.",
+    "historical_rows": "The column is added NULLable with no default. registry_version '1.0.0' rows keep NULL, which is historically accurate: that version never classified this dimension. Existing rows are NOT updated, so FIBDB-007's 'immutable per version' is preserved."
+   }
+  }
+ },
+ "live_to_version_review_status_mapping": {
+  "status": "FROZEN",
+  "direction": "financial_proxies.review_status -> financial_proxy_versions.review_status",
+  "map": {
+   "suggested": "draft",
+   "pending_review": "under_review",
+   "approved": "approved",
+   "rejected": "rejected",
+   "archived": "archived"
+  },
+  "candidate_mapping_adjudication": "The candidate mapping supplied for adjudication is ACCEPTED UNCHANGED. It is total (5 of 5 live tokens mapped), injective, and onto the 5-token version vocabulary, so it is a bijection and admits a well-defined inverse. It preserves the Candidate -> Reference lifecycle exactly: 'suggested' and 'draft' are both the pre-submission candidate state; 'pending_review' and 'under_review' are both the submitted-awaiting-adjudication state; the three terminal tokens are already lexically identical. No lifecycle stage is collapsed, added, or reordered.",
+  "independent_corroboration": "The implementation already applies exactly this mapping at both creation sites (lib/pipeline/proxies.ts:372/400 and lib/admin/proxies.ts:153/180), which were written before the mapping was ever stated. The mapping is therefore recovered from the delivered code, not imposed on it.",
+  "coupling_invariant": {
+   "id": "LIVE_VERSION_STATUS_COUPLING",
+   "statement": "At every transaction commit boundary, financial_proxies.review_status MUST equal the inverse image of the CURRENT (highest-ordinal) financial_proxy_versions.review_status under this mapping. Superseded versions retain their own sealed status and are NOT constrained by this invariant - that is what makes an approved V1 survivable beside a pending V2.",
+   "consequence_for_fork": "A material-change fork MUST open the successor as 'under_review', not 'draft', because every delivered fork site sets the live row to 'pending_review' and 'under_review' is that token's image. FIBC-013 and FIBIU-10 permit either token ('a new draft/under_review version'), so selecting 'under_review' is an authority-permitted choice, not an invention - and it is the choice that preserves the pre-existing 're-enters the review queue' semantics of the legacy reset the FIB does not ask B2 to change.",
+   "consequence_for_archive": "archiveFinancialProxy MUST also transition the current version to 'archived' in the same transaction. Leaving the version 'approved' under an archived live row breaks the invariant and leaves an approved version reachable by binding."
+  },
+  "prohibition": "No transition path may pass a live-vocabulary token into a version write, or a version-vocabulary token into a live write. Every crossing MUST go through the single named mapping function; verbatim copying is prohibited even where the two tokens happen to coincide (approved, rejected, archived), because a coincidental match is not a mapping and would silently break if either vocabulary changed."
+ },
+ "organization_provenance_requirements": {
+  "status": "FROZEN",
+  "basis": "FIBC-010 enumerates eleven items required to reach 'approved'. FIBIU-08 SERVICE_CHANGES restates the same list.",
+  "the_eleven": {
+   "1_value": {
+    "column": "financial_proxy_versions.value",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "2_unit": {
+    "column": "financial_proxy_versions.unit",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "3_currency": {
+    "column": "financial_proxy_versions.currency",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "4_reference_year": {
+    "column": "financial_proxy_versions.reference_year",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "5_geographic_contextual_scope": {
+    "column": "financial_proxy_versions.geographic_contextual_scope",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "6_linked_outcome": {
+    "column": "financial_proxy_versions.linked_outcome_context",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "7_identifiable_source": {
+    "column": "financial_proxy_versions.source_id",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED",
+    "note": "Already NOT NULL at the schema level; FIBC-010's fail-closed clause 'a bare institution name or domain is insufficient' is why item 9 exists separately."
+   },
+   "8_consultation_date": {
+    "column": "financial_proxy_versions.consultation_date",
+    "recordable": true,
+    "approval_blocking": false,
+    "actor": "USER_ENTERED",
+    "note": "The ONLY item FIBC-010 qualifies, with 'where relevant'. It is therefore RECORDABLE-REQUIRED but NOT approval-blocking. No machine condition for 'relevant' is invented; the field must be present on the form and displayed on the approval surface so its absence is a visible human decision rather than a silent one."
+   },
+   "9_recoverable_reference": {
+    "column": "financial_proxy_versions.recoverable_reference",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED",
+    "note": "Already enforced by assertApprovableProvenance; the only one of the eleven that is."
+   },
+   "10_relevance_justification": {
+    "column": "financial_proxy_versions.relevance_justification",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED"
+   },
+   "11_documented_transformations": {
+    "column": "financial_proxy_versions.documented_transformations",
+    "recordable": true,
+    "approval_blocking": true,
+    "actor": "USER_ENTERED",
+    "note": "Required as a recorded statement. An explicit 'none' is a valid recorded value; NULL is not."
+   }
+  },
+  "must_be_recordable": "ALL ELEVEN, on the organization surface, through the running route/component tree.",
+  "must_be_present_before_review": "NO ADDITIONAL AUTHORITY-MANDATED PRE-REVIEW GATE. FIBC-010 conditions its list on reaching 'approved', not on entering review, and no sealed contract imposes a draft -> under_review precondition. Inventing one here would be authority expansion. The only pre-review constraints are the existing NOT NULL columns. This is a deliberate finding, not an omission.",
+  "must_be_present_before_approval": "The ten approval-blocking items above. consultation_date is excluded on the literal 'where relevant' qualifier.",
+  "optional": "None of the eleven is optional. consultation_date is conditional, which is not the same as optional.",
+  "system_recorded_not_user_entered": {
+   "reviewer_id": "Sealed from the session actor (ctx.user.id) at the approval transition. Never user-supplied, never patchable.",
+   "reviewed_at": "Sealed from server time at the approval transition. Never user-supplied, never patchable.",
+   "value_usd": "Derived by deriveApprovedProxyAuthority at approval. system_derived.",
+   "fx_rate_id": "Derived alongside value_usd, or supplied by the governed manual-FX transition. system_derived.",
+   "ordinal, supersedes_version_id, created_by, created_at": "Lineage and audit metadata written by the version primitives. system_sealed."
+  },
+  "reachability_definition": "A governed UI action counts as reachable ONLY if it is rendered by a component actually mounted on a route in the running application and reaches the server action that persists the field. A zod schema that accepts a field no rendered control supplies does NOT satisfy this requirement, and neither does an admin-only surface that the org approval path refuses to serve."
+ },
+ "manual_fx_material_change_disposition": {
+  "status": "FROZEN",
+  "value_usd": {
+   "persisted_material_field": true,
+   "owning_category": "identity_economic_value (FIBC-013 category 1)",
+   "basis": "FIBC-013 names it directly: 'a stale value_usd must never outlive the value/currency/year/parameters that produced it'. It is the economic value the deterministic engine consumes, so it belongs to the identity/economic-value category and to no other.",
+   "editability": "system_derived"
+  },
+  "fx_rate_id": {
+   "persisted_material_field": true,
+   "owning_category": "transformations (FIBC-013 category 7)",
+   "basis": "FIBC-010 enumerates transformations as 'FX, inflation, PPP, temporal/geographic/methodological adaptation'. fx_rate_id IS the documented FX transformation parameter, so it belongs to the transformations category, not to identity/economic value.",
+   "editability": "system_derived"
+  },
+  "required_transition_semantics": {
+   "statement": "A manual FX or inflation or PPP transformation applied to a proxy whose CURRENT version is 'approved' MUST execute as one atomic material change through the same primitive every other material change uses.",
+   "sequence": [
+    "approved V1 exists and is bound by zero or more assignments",
+    "manual monetary transformation is requested",
+    "in ONE transaction: applyMaterialChange forks V1 -> V2 with reviewStatus 'under_review', supersedesVersionId = V1.id",
+    "V2 carries the new fx_rate_id and the newly computed value_usd",
+    "V1 is NOT written to - it remains 'approved' with its original value_usd, fx_rate_id, reviewer_id and reviewed_at",
+    "the live row is updated with the new value_usd/fx_rate_id and review_status 'pending_review' (the mapped image of V2's 'under_review')",
+    "the two audit events already emitted by the org-side path (VERSION_INVALIDATED_BY_MATERIAL_CHANGE on V1, VERSION_CREATED on V2) are emitted here too",
+    "every historical assignment bound to V1 continues to resolve V1's monetary state, unchanged"
+   ],
+   "prohibited": "No path may mutate an approved version in place, and no path may leave an approved version carrying monetary state its own live row has already contradicted.",
+   "primitive": "lib/pipeline/proxy-material-change.ts applyMaterialChange, or a proven equivalent that commits the seal-old / open-new / update-live triad in ONE transaction. If an equivalent is used instead of the shared primitive, the equivalence must be demonstrated by test, not asserted in a comment. Preference is explicitly for the shared primitive.",
+   "not_yet_approved_case": "If the current version is not 'approved', no fork occurs and the version is updated in place, exactly as applyMaterialChange already behaves. The manual-FX path must not special-case this."
+  },
+  "invariant_confirmation": "The expected invariant supplied for adjudication is CONFIRMED by sealed authority and is not contradicted anywhere in FIBC-010, FIBC-012, FIBC-013, FIBDB-006 or FIBDB-039."
+ },
+ "global_promotion_exceptional_determination_disposition": {
+  "status": "FROZEN",
+  "decision": "RESET_GLOBAL_GOVERNANCE_AND_REQUIRE_NEW_DETERMINATION",
+  "in_b2_remediation_scope": true,
+  "reasoning": [
+   "TENANT ROOT. The organization is the tenant root. Rubric ratings are made by an organization actor, in that organization's context, about an organization-scoped proxy. The global reference catalog is a different governance domain, consumed by every tenant.",
+   "THE FACTORS ARE CONTEXT-SPECIFIC BY CONSTRUCTION. C3_stakeholder_population_fit and C4_geographic_context_fit are literally population-fit and geography-fit judgements, and R4_geographic_population_transfer_risk is literally a transfer risk. Their values cannot be true of an arbitrary other tenant, so copying them asserts something the copier has no basis to assert.",
+   "TENANT KNOWLEDGE PRIVACY. exceptional_defendibility_determination is free text authored by an organization reviewer, which will routinely describe that organization's own context. Copying it into a globally readable row exposes tenant-authored content to every other tenant. This holds independently of the methodological argument.",
+   "PROVENANCE FALSIFICATION. FIBC-011 requires that 'ratings are human with rationale and references'. The delivered clone seals reviewer_id = admin.id over ratings the admin never made, so the global catalog's audit trail attributes an organization reviewer's judgement to an administrator.",
+   "DOWNSTREAM CONSEQUENCE. FIBC-011 provides that an approved low/high propagates to review, readiness, sensitivity, report limitations and the snapshot. An inherited determination therefore propagates a foreign organization's judgement into every consuming tenant's report."
+  ],
+  "frozen_semantics": {
+   "provenance_copied": "The FACTUAL provenance of the source figure IS copied, because it is a property of the figure and not a governance judgement: value, currency, unit, reference_year, country, territory, thematic_area, methodology, geographic_contextual_scope, linked_outcome_context, recoverable_reference, relevance_justification, documented_transformations, consultation_date.",
+   "governance_reset": "The global clone's version 1 MUST start with all thirteen rubric factors NULL, confidence_score / confidence_level / methodological_risk_score / methodological_risk NULL, rubric_version NULL, exceptional_defendibility_determination NULL, reviewer_id NULL, reviewed_at NULL, and review_status 'draft'.",
+   "clone_live_row": "The global clone's financial_proxies row MUST therefore be created with review_status 'suggested' - the mapped image of 'draft' - NOT 'approved', and with reviewer_id/reviewed_at NULL. It becomes an approved global reference only after an administrator independently rates it and approves it through the existing updateGlobalProxyReviewStatus path, which already enforces assertApprovableProvenance and assertRubricApprovable.",
+   "no_visibility_leak": "lib/pipeline/proxies.ts:306-310 already restricts global proxy listing to review_status 'approved', so an unrated global clone is invisible to consumers until it has been governed. No new visibility control is required.",
+   "source_proxy_untouched": "The promotion's effect on the ORIGINAL organization proxy is out of scope for this disposition and is not changed. It is pre-existing measured behaviour that no B2 finding names."
+  }
+ },
+ "editorial_noop_patch_disposition": {
+  "status": "FROZEN",
+  "rule": "A field counts as materially changed if and only if the AUTHORITATIVE PERSISTED SEMANTIC VALUE of that field actually changes. Key presence in a patch payload is not evidence of change.",
+  "state_semantics": {
+   "ABSENT": "Key not present in the payload. NOT a change. No comparison performed.",
+   "UNDEFINED": "Key present with value undefined. NOT a change. This is 'no value supplied', never a request to clear the field. Note that Object.keys() reports such keys while JSON.stringify hides them, which is the exact mechanism of M2.",
+   "NULL": "Key present with an explicit null. A CHANGE if and only if the persisted value is not already semantically absent. This is the only payload form that may clear a field.",
+   "EMPTY_STRING": "For a nullable text or varchar field, '' and NULL denote the same semantic absence; '' against a persisted NULL is NOT a change. For a field whose schema forbids empty (min length 1), the payload is rejected by validation before materiality is ever evaluated.",
+   "UNCHANGED_VALUE": "Key present with a value equal to the persisted value after canonicalisation. NOT a change.",
+   "CHANGED_VALUE": "Key present with a value that differs after canonicalisation. A CHANGE, material or not according to the registry."
+  },
+  "canonicalisation": {
+   "numeric": "Compared by decimal value, not string identity. MUST reuse the existing canonicalDecimal helper in lib/pipeline/proxies.ts (already used by the approval fingerprint at line 59) so that '100' and '100.0000' compare equal. The current String(...) comparison at proxies.ts:517-519 must be brought onto the same helper.",
+   "integer": "Compared by numeric value.",
+   "date": "Compared by instant, not by string form.",
+   "text": "Compared exactly, after the EMPTY_STRING/NULL equivalence above. No trimming, case-folding, or whitespace normalisation is authorized - that would make a real edit invisible."
+  },
+  "comparison_target": "Each field is compared against the row that authoritatively persists it, as named by the registry's own table_name column: version-mirrored fields against the CURRENT financial_proxy_versions row, live-only fields against the financial_proxies row. Comparing a version-mirrored field against the live row would be wrong wherever the two legitimately diverge.",
+  "fail_closed_preserved": "FIBC-013's 'ambiguous => material' is preserved and unchanged. It governs WHICH CATEGORY a changed field belongs to, and an unclassified field remains an error rather than a silent non-material default. It has never governed whether a change occurred.",
+  "rejection_rule": "A patch that names a field whose registry editability is not 'user_editable' MUST be rejected with a named error. Silently dropping such a key would let an approval-metadata write attempt pass unnoticed, which is the failure mode FIBC-013's 'audit/approval metadata are never editable non-material' exists to prevent."
+ },
+ "material_registry_exhaustiveness_disposition": {
+  "status": "FROZEN",
+  "requirement": "proxy_material_fields_registry MUST classify EVERY persisted column of financial_proxies and financial_proxy_versions at its current registry_version - 70 columns as measured at the audited HEAD - with zero omissions, on both the category and the editability dimensions.",
+  "enforcement": "By a committed test that REFLECTS over the Drizzle table definitions in db/schema.ts and asserts that the set of persisted columns and the set of registry rows for the current version are EQUAL - not merely that the registry is a subset. A static expected-list test would rot the moment a column is added, which is precisely the failure FIBC-013's 'a new field must be classified before joining the model' is written to prevent. The test must fail on an unregistered column AND on a registry row naming a column that no longer exists.",
+  "versioning": {
+   "new_version": "1.1.0",
+   "why": "FIBDB-007 declares 'IMMUTABILITY: immutable per version'. Adding rows to registry_version '1.0.0' would change what that version means. The complete classification is therefore seeded as a NEW registry_version 1.1.0; 1.0.0 is preserved untouched as historical record.",
+   "governed_model_registry_ripple": "governed_model_registry currently holds ('PROXY_MATERIAL_FIELDS','1.0.0', <hash>) from db/migrations/0040_governed_model_registry.sql:39, mirrored by the GOVERNED_MODELS constant in lib/pipeline/governed-model-registry.ts:44. A 1.1.0 row MUST be added in both places, by the same append-only convention, so getCurrentGovernedModelVersion resolves the new version. The 1.0.0 row is NOT modified."
+  },
+  "adjudicated_omissions": {
+   "value_usd": "financial_proxies AND financial_proxy_versions: category identity_economic_value, editability system_derived.",
+   "fx_rate_id": "financial_proxies AND financial_proxy_versions: category transformations, editability system_derived.",
+   "review_status": "Both tables: category non_material, editability system_sealed. Material classification is impossible here - an approval write would fork the version it is approving.",
+   "reviewer_id": "Both tables: category non_material, editability system_sealed.",
+   "reviewed_at": "Both tables: category non_material, editability system_sealed.",
+   "further_26_omissions_found_by_census": "financial_proxies: id, organization_id, source_id, country, territory, currency, value, unit, reference_year, thematic_area, methodology, created_by, created_at, updated_at. financial_proxy_versions: id, organization_id, financial_proxy_id, ordinal, supersedes_version_id, created_by, created_at. Structural and lineage columns take editability system_sealed; the financial_proxies mirrors of version-material fields take the SAME category as their version counterparts, so the two tables cannot disagree about what a field means."
+  },
+  "audit_metadata_guard": "No approval or audit metadata column may carry editability 'user_editable'. A committed test MUST assert this over the registry directly, so the guarantee survives any future reseed."
+ },
+ "historical_projectuse_version_stability": {
+  "status": "FROZEN",
+  "closure_invariant": "An assignment (ProjectUse) bound to approved version V1 MUST NEVER silently consume material or monetary state from V2 or from the current live financial_proxies row. Its bound version changes only when a user explicitly changes the assignment under the governed lifecycle - which, in the delivered model, means archiving the assignment and creating a new one, since financial_proxy_version_id is written once at INSERT and never updated.",
+  "mandatory_b2_closure_condition": true,
+  "may_remain_partial_at_closure": false,
+  "basis": "FIBC-013 'Historical runs keep their exact version'; FIBIU-10 REPORT_CHANGES 'historical runs keep their exact version and are never retroactively invalidated'; FIBIU-08 TESTS 'a historical run keeps its exact version'; FIBDB-039 'IMMUTABILITY: immutable per run'. Four sealed clauses state it. It cannot be a partial at closure.",
+  "depends_on": [
+   "R-B2-04",
+   "R-B2-05"
+  ],
+  "note": "The invariant is presently UNSATISFIED for monetary state (AG-B2-1) and UNSATISFIED under manual FX (B2-AR-B3). It becomes satisfiable only once both are closed, which is why it is not a standalone node."
+ },
+ "remediation_nodes": {
+  "R-B2-01": {
+   "title": "REVIEW-STATUS VOCABULARY MAPPING AND LIVE/VERSION COUPLING",
+   "status": "FROZEN",
+   "severity": "BLOCKING",
+   "closes": [
+    "B2-AR-B1"
+   ],
+   "depends_on": [],
+   "authority_supported": true,
+   "authority": "FIBC-012 (approval sealed on the version), FIBC-013 and FIBIU-10 (a new draft/under_review version), FIBDB-006. The mapping and the coupling invariant are frozen in live_to_version_review_status_mapping.",
+   "required_changes": [
+    "Introduce ONE named total mapping function (and its inverse) as the single crossing point between the two vocabularies. No call site may pass a token across the boundary by any other means.",
+    "lib/pipeline/proxies.ts updateFinancialProxyReviewStatus - map before writing the version.",
+    "lib/admin/proxies.ts updateGlobalProxyReviewStatus - map before writing the version.",
+    "lib/pipeline/proxy-material-change.ts applyMaterialChange - open the successor as 'under_review', not 'draft', per the coupling consequence.",
+    "lib/pipeline/proxies.ts archiveFinancialProxy - transition the current version to 'archived' in the SAME transaction as the live row, restoring the coupling invariant at the one site that currently abandons it.",
+    "Assert the coupling invariant at every transition site rather than trusting call-site discipline."
+   ],
+   "exit_gate": "No live-vocabulary token can reach a version write and no version-vocabulary token can reach a live write, on any path; the coupling invariant holds at all four transition sites (create, review-status change, material-change fork, archive); and the version CHECK constraint is validated against a real PostgreSQL instance."
+  },
+  "R-B2-02": {
+   "title": "ORGANIZATION PROVENANCE REACHABILITY AND FIBC-010 APPROVAL GATE",
+   "status": "FROZEN",
+   "severity": "BLOCKING",
+   "closes": [
+    "B2-AR-B2"
+   ],
+   "depends_on": [],
+   "authority_supported": true,
+   "authority": "FIBC-010 (the eleven items), FIBC-012, FIBIU-08 SERVICE_CHANGES / UI_CHANGES / EXIT_GATE. Surface authorization for the org route tree rests on the frozen R-B1-01 precedent: FIBIU-08 UI_CHANGES names 'a full-provenance form' without restricting it to the admin surface, and the org surface is the only one the org approval path will serve.",
+   "required_changes": [
+    "Widen assertApprovableProvenance from the single recoverableReference check to the ten approval-blocking items frozen in organization_provenance_requirements, each with its own named error so a rejection says which item is missing.",
+    "Extend the org create action schema and the org update action schema to accept all eleven items.",
+    "Render controls for all eleven on the organization proxy route, mounted in the running component tree - not merely accepted by a schema.",
+    "Display the sealed approval actor and moment, and the recorded provenance, on the organization surface as the admin surface already does.",
+    "consultation_date is rendered and recordable but MUST NOT be added to the approval gate."
+   ],
+   "explicit_scope_note": "This node deliberately does NOT stop at the literal recoverableReference blocker. Closing only that would leave nine of the eleven FIBC-010 items unenforced and five of the six new ones unreachable, and would satisfy the auditor's finding while leaving the sealed contract unmet.",
+   "exit_gate": "An organization-scoped proxy can be created with full FIBC-010 provenance, edited, and driven to 'approved' end to end through the organization route tree; and approval is refused, with a field-naming error, when any one of the ten approval-blocking items is absent."
+  },
+  "R-B2-03": {
+   "title": "EXHAUSTIVE PERSISTED-FIELD REGISTRY AND EDITABILITY DIMENSION",
+   "status": "FROZEN",
+   "severity": "MATERIAL",
+   "closes": [
+    "M4",
+    "AG-B2-3-DERIVED"
+   ],
+   "depends_on": [],
+   "authority_supported": true,
+   "authority": "FIBC-013 (every persisted field classified; audit/approval metadata never editable non-material), FIBDB-007 (versioned, immutable per version).",
+   "required_changes": [
+    "New migration 0056: ALTER TABLE proxy_material_fields_registry ADD COLUMN editability varchar(20) NULL, with CHECK (editability IS NULL OR editability IN ('user_editable','system_derived','system_sealed')).",
+    "Seed registry_version '1.1.0' with one row per persisted column of both tables - 70 rows - each carrying category and editability. registry_version '1.0.0' rows are NOT modified.",
+    "Append ('PROXY_MATERIAL_FIELDS','1.1.0', <hash>) to governed_model_registry and to the GOVERNED_MODELS constant in lib/pipeline/governed-model-registry.ts. The 1.0.0 row is NOT modified.",
+    "Mirror the complete classification in lib/pipeline/proxy-material-change.ts, and make classifyMaterialField reject any key whose editability is not 'user_editable'.",
+    "db/schema.ts: add the editability column to the Drizzle definition.",
+    "Register unit 0056 in db/hosted/baseline-manifest.ts.",
+    "The category CHECK constraint is NOT modified. The ten sealed FIBC-013 categories are not extended."
+   ],
+   "exit_gate": "A reflective test proves set equality between persisted columns and current-version registry rows in both directions; no approval or audit metadata column carries editability 'user_editable'; and registry_version 1.0.0 is byte-unchanged."
+  },
+  "R-B2-04": {
+   "title": "MANUAL FX AS AN ATOMIC MATERIAL CHANGE",
+   "status": "FROZEN",
+   "severity": "BLOCKING",
+   "closes": [
+    "B2-AR-B3"
+   ],
+   "depends_on": [
+    "R-B2-01",
+    "R-B2-03"
+   ],
+   "dependency_rationale": "R-B2-01 supplies the mapped status the fork and the live row must both take. R-B2-03 supplies the adjudicated category ownership of value_usd and fx_rate_id, without which the fork cannot name the material category it invalidates in its audit reason.",
+   "authority_supported": true,
+   "authority": "FIBC-010 (transformations are recorded provenance), FIBC-013 (atomic invalidation, no surviving window, no stale value_usd), FIBDB-006.",
+   "required_changes": [
+    "lib/admin/proxies.ts setGlobalProxyManualFxRate must route through applyMaterialChange, or a proven-equivalent single-transaction triad, exactly as lib/pipeline/proxies.ts:480-490 already does.",
+    "The successor version carries the new fx_rate_id and value_usd; the superseded approved version is never written to.",
+    "Emit the same two version audit events the org-side path emits.",
+    "No migration. Service-layer only."
+   ],
+   "exit_gate": "No path exists by which a manual monetary transformation mutates an approved version in place or leaves an approved version carrying monetary state its live row contradicts; and a durable test proves V1 is byte-unchanged across the transformation."
+  },
+  "R-B2-05": {
+   "title": "VERSION-BOUND DETERMINISTIC MONETARY RESOLUTION AND HISTORICAL STABILITY",
+   "status": "FROZEN",
+   "severity": "BLOCKING",
+   "closes": [
+    "AG-B2-1",
+    "M7-DERIVED"
+   ],
+   "depends_on": [
+    "R-B2-01"
+   ],
+   "dependency_rationale": "Binding to the approved version presupposes that version status is written through the mapping and is therefore trustworthy.",
+   "authority_supported": true,
+   "authority": "FIBC-012, FIBC-013, FIBDB-039, FIBIU-08 TESTS, FIBIU-10 REPORT_CHANGES. Surface expansion within lib/pipeline/sroi-calculation.ts authorized under R-B1-01, per AG-B2-1 surface_authorization.",
+   "required_changes": [
+    "lib/pipeline/sroi-calculation.ts: the per-assignment monetary read must resolve from the BOUND version, not from the live financial_proxies row.",
+    "The readiness USD-presence check must likewise consult the bound version.",
+    "An approved bound version with NULL value_usd must fail the calculation closed with a named error, never degrade to zero and be reported as a non_positive_proxy_value skip.",
+    "lib/pipeline/proxies.ts assignProxyToOutcome must bind the current APPROVED version per FIBC-012's literal text, and must refuse - rather than bind NULL or bind a draft - when no approved version exists.",
+    "The existing double-assertion eligibility guard is PRESERVED, not replaced."
+   ],
+   "exit_gate": "An assignment bound to approved V1 produces identical monetary results before and after V2 becomes current and after the live row's value_usd changes; a NULL value_usd on an approved bound version fails closed; and no code path updates outcome_proxy_assignments.financial_proxy_version_id."
+  },
+  "R-B2-06": {
+   "title": "SEMANTIC NO-OP AND EDITORIAL PATCH BEHAVIOUR",
+   "status": "FROZEN",
+   "severity": "MATERIAL",
+   "closes": [
+    "M2"
+   ],
+   "depends_on": [
+    "R-B2-03"
+   ],
+   "dependency_rationale": "The rejection rule for non-user_editable keys is defined by the registry's editability dimension, which R-B2-03 introduces.",
+   "authority_supported": true,
+   "authority": "FIBC-013 (materiality is a property of persisted semantic content; audit/approval metadata never editable non-material), FIBIU-10 TESTS ('an editorial change does not invalidate').",
+   "required_changes": [
+    "Replace key-presence detection at lib/pipeline/proxies.ts:462 with semantic comparison against the authoritative persisted row, per editorial_noop_patch_disposition.",
+    "Reuse canonicalDecimal for numeric comparison and bring proxies.ts:517-519's String(...) comparison onto the same helper.",
+    "Reject a patch naming any field whose editability is not 'user_editable', with a named error.",
+    "The fail-closed 'ambiguous => material' category rule and the unclassified-field error are preserved unchanged."
+   ],
+   "exit_gate": "An empty or no-op form submission against an approved proxy produces no fork, no new version, no status change, no value_usd null-out and no invalidation audit event; a resubmission of identical values does the same; and a genuine one-field material edit still forks."
+  },
+  "R-B2-07": {
+   "title": "MATERIAL REGISTRY RLS, STAGE A",
+   "status": "FROZEN",
+   "severity": "MATERIAL",
+   "closes": [
+    "AG-B2-2"
+   ],
+   "depends_on": [
+    "R-B2-03"
+   ],
+   "dependency_rationale": "Serial DB ownership: 0056 must land before the policies unit so migration and policy ordering stay monotone in the baseline manifest.",
+   "authority_supported": true,
+   "authority": "FIBDB-007 ('RLS: read-all members', migration_stage ['A']). Precedent: db/policies/009_governed_model_registry_rls.sql.",
+   "required_changes": [
+    "New policies unit db/policies/010_proxy_material_fields_registry_rls.sql implementing exactly the frozen semantics in AG-B2-2: ENABLE (never FORCE) row level security, one SELECT policy USING (auth.uid() IS NOT NULL), no write policies, guarded DROP POLICY IF EXISTS for idempotence.",
+    "Register the unit in db/hosted/baseline-manifest.ts and add the table and policy to the expectation sets that gates B0-07 and B0-08 measure.",
+    "Correct the managedNote of the existing 0055 manifest entry, which asserts a deferral to a stage FIBDB-007 does not declare. This is a description-only edit; the entry's sha256 hashes the SQL file, not the note, so no hash changes and the applied migration is untouched."
+   ],
+   "prohibition": "db/migrations/0055_fib_proxy_material_change_registry.sql itself MUST NOT be edited. It is journaled and hashed; RLS arrives as a new policies unit, exactly as it did for governed_model_registry.",
+   "exit_gate": "RLS is enabled with the read-all-members SELECT policy and no write policy, the seed still applies on a clean provision, and gates B0-07 and B0-08 measure the new table and policy."
+  },
+  "R-B2-08": {
+   "title": "GLOBAL PROMOTION GOVERNANCE RESET",
+   "status": "FROZEN",
+   "severity": "MATERIAL",
+   "closes": [
+    "M6"
+   ],
+   "depends_on": [
+    "R-B2-01"
+   ],
+   "dependency_rationale": "The clone's live row must be created with the mapped image of its version status, which R-B2-01 defines.",
+   "authority_supported": true,
+   "authority": "FIBC-011 (human ratings with rationale and references; context-specific factors; propagation of an approved low/high), tenant-root and tenant-knowledge-privacy invariants.",
+   "required_changes": [
+    "lib/admin/proxies.ts promoteProxyToGlobal: copy factual provenance into the clone's version 1; reset all thirteen rubric factors, the four derived score/level fields, rubric_version and exceptional_defendibility_determination to NULL; create the clone version as 'draft' with NULL reviewer_id/reviewed_at.",
+    "Create the clone's financial_proxies row with review_status 'suggested' and NULL reviewer_id/reviewed_at, not 'approved'.",
+    "No change to the promotion's effect on the source organization proxy."
+   ],
+   "exit_gate": "A promoted global proxy carries no rubric rating, no derived classification and no exceptional determination inherited from the source organization; it is not listed to consumers until an administrator independently rates and approves it."
+  },
+  "R-B2-09": {
+   "title": "INTEGRATED HIGH-RISK COMMITTED TEST COVERAGE",
+   "status": "FROZEN",
+   "severity": "BLOCKING_FOR_CLOSURE",
+   "closes": [
+    "M5"
+   ],
+   "depends_on": [
+    "R-B2-01",
+    "R-B2-02",
+    "R-B2-03",
+    "R-B2-04",
+    "R-B2-05",
+    "R-B2-06",
+    "R-B2-07",
+    "R-B2-08"
+   ],
+   "authority_supported": true,
+   "authority": "FIBIU-09 and FIBIU-10 both carry RISK: HIGH; FIBIU-10 is on the FIB's exhaustive wave-level OPUS-review list. FIBIU-08/09/10 TESTS clauses.",
+   "required_coverage": [
+    "All ten FIBC-013 material categories, parameterised exhaustively - one case per category proving a change in that category forks an approved version.",
+    "Approved-version immutability: a superseded version is byte-unchanged across every fork path.",
+    "Successor approval reset: the fork inherits neither approved, reviewer, timestamp, rubric evaluation, nor exceptional determination.",
+    "Manual FX fork (R-B2-04).",
+    "Review-status vocabulary against a REAL PostgreSQL instance, including negative controls that prove the CHECK constraints actually reject the unmapped tokens.",
+    "Organization provenance reachability, exercised through the org action layer, plus a refusal case per approval-blocking item.",
+    "No-op and editorial update negative controls (R-B2-06).",
+    "Audit and approval metadata classification: no registry row carries editability 'user_editable' for approval or audit metadata.",
+    "Historical assignment version stability across V2 creation, approval, and a live-row value change.",
+    "Registry exhaustiveness by reflection, in both directions.",
+    "Sentinel tests pinning FIBIU-09's rubric derivation and MNB-1's audit verbs, so neither can regress unnoticed under this remediation."
+   ],
+   "insufficient": "Audit-only probes, one-off scripts, and assertions written into commit messages or comments are NOT coverage. Every item above must be a committed, repeatably-executed test.",
+   "postgres_requirement": "The review-status vocabulary item and the registry RLS item require execution against a real PostgreSQL instance. The repository's suite is DB-free, so this node must introduce a gated DB-backed path rather than assert constraint behaviour statically. A static-only substitute does NOT satisfy this node - that substitution is exactly what allowed B2-AR-B1 to reach the audit.",
+   "exit_gate": "Every listed item is covered by a committed test, and the two PostgreSQL-dependent items are proven against a real instance with negative controls."
+  }
+ },
+ "remediation_node_count": 9,
+ "remediation_dag": {
+  "edges": [
+   "R-B2-01 -> R-B2-04",
+   "R-B2-01 -> R-B2-05",
+   "R-B2-01 -> R-B2-08",
+   "R-B2-03 -> R-B2-04",
+   "R-B2-03 -> R-B2-06",
+   "R-B2-03 -> R-B2-07",
+   "R-B2-01 -> R-B2-09",
+   "R-B2-02 -> R-B2-09",
+   "R-B2-03 -> R-B2-09",
+   "R-B2-04 -> R-B2-09",
+   "R-B2-05 -> R-B2-09",
+   "R-B2-06 -> R-B2-09",
+   "R-B2-07 -> R-B2-09",
+   "R-B2-08 -> R-B2-09"
+  ],
+  "roots": [
+   "R-B2-01",
+   "R-B2-02",
+   "R-B2-03"
+  ],
+  "sink": "R-B2-09",
+  "acyclic": true,
+  "topological_levels": {
+   "L0": [
+    "R-B2-01",
+    "R-B2-02",
+    "R-B2-03"
+   ],
+   "L1": [
+    "R-B2-04",
+    "R-B2-05",
+    "R-B2-06",
+    "R-B2-07",
+    "R-B2-08"
+   ],
+   "L2": [
+    "R-B2-09"
+   ]
+  },
+  "critical_path": [
+   "R-B2-03",
+   "R-B2-04",
+   "R-B2-09"
+  ],
+  "serial_db_ownership_order": [
+   "R-B2-03 (migration 0056)",
+   "R-B2-07 (policies unit 010)"
+  ],
+  "parallelisable_note": "L0 nodes are mutually independent and L1 nodes are mutually independent, but the frozen implementation model below requires SERIAL execution in one worktree because R-B2-03 and R-B2-07 both mutate database ownership artefacts and because each node must pass its own machine gate before the next begins."
+ },
+ "authorized_remediation_surfaces": {
+  "db": [
+   "db/schema.ts - proxy_material_fields_registry editability column only.",
+   "db/migrations/0056_* (new) - registry editability column and registry_version 1.1.0 seed, plus the governed_model_registry 1.1.0 append.",
+   "db/policies/010_proxy_material_fields_registry_rls.sql (new).",
+   "db/hosted/baseline-manifest.ts - new unit entries, expectation sets, and the 0055 managedNote correction."
+  ],
+  "service": [
+   "lib/pipeline/proxies.ts",
+   "lib/pipeline/proxy-material-change.ts",
+   "lib/pipeline/financial-proxy-versions.ts",
+   "lib/pipeline/governed-model-registry.ts (1.1.0 append only)",
+   "lib/admin/proxies.ts",
+   "lib/pipeline/sroi-calculation.ts (monetary-source resolution and its fail-closed guard only, per AG-B2-1 surface_authorization)"
+  ],
+  "ui": [
+   "app/app/projects/[projectId]/pipeline/proxies/** - provenance form, patch schema, display.",
+   "app/admin/proxies/** - only where a shared primitive changes shape."
+  ],
+  "tests": [
+   "tests/** - additions and extensions per R-B2-09."
+  ]
+ },
+ "explicitly_prohibited_surfaces": {
+  "sealed_authority": "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** - no edits of any kind.",
+  "historical_wave2_authority": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json and docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json - not modified by this artifact or by the remediation it authorizes.",
+  "applied_migrations": "db/migrations/0053, 0054, 0055 - journaled and hashed; forward-only correction by new units.",
+  "history": "No amendment, rebase, or force-push of 852cdf3, 4da9fee, 63bfbf9 or any earlier commit.",
+  "fibiu_09": "The rubric derivation math and its SQL constraints - see preserved_closed_surfaces.",
+  "b3": "No FIBIU or FIBDB item belonging to W2-B3 may be touched.",
+  "gates": "No test may be weakened and no gate relaxed to obtain a PASS."
+ },
+ "preserved_closed_surfaces": {
+  "FIBIU-09": {
+   "status": "CLOSED",
+   "preserved": true,
+   "basis": "Independently validated: 4096 confidence combinations, 16384 risk combinations, real PostgreSQL validation, 0 mismatches.",
+   "permitted_interaction": "R-B2-01's mapping function and R-B2-03's registry classification touch the same rows the rubric writes. Only a strictly bounded integration change is permitted - never a redesign of the derivation, the ceilings, the floors, or the CHECK constraints.",
+   "sentinel": "A sentinel test MUST pin the rubric derivation so any regression under this remediation is caught immediately."
+  },
+  "MNB-1": {
+   "status": "CLOSED",
+   "preserved": true,
+   "basis": "The four measured sites plus the fifth (promoteProxyToGlobal) were corrected to existing audit verbs, and the correspondence scan was extended to lib/admin.",
+   "risk_under_this_remediation": "R-B2-04 and R-B2-08 both edit lib/admin/proxies.ts, the module MNB-1 closed.",
+   "sentinel": "A sentinel test MUST pin the audit verbs of every write site in lib/admin/proxies.ts, and the CORRESPONDENCE_SCAN_ROOTS coverage of lib/admin MUST NOT be narrowed."
+  },
+  "no_evidence_to_reopen": "No independent authority evidence found during this reconciliation makes preserving either closure impossible. Both remain CLOSED."
+ },
+ "required_negative_controls": [
+  "NC-1 - An empty or no-op submission of the organization proxy edit form against an APPROVED proxy: no fork, no new version row, review_status unchanged, value_usd unchanged, and no FINANCIAL_PROXY_VERSION_INVALIDATED_BY_MATERIAL_CHANGE audit event. Durable and committed.",
+  "NC-2 - Resubmission of byte-identical values, including numerically-equal-but-differently-formatted decimals ('100' against a persisted '100.0000'): treated as unchanged.",
+  "NC-3 - Real PostgreSQL: an attempt to write 'suggested' or 'pending_review' into financial_proxy_versions.review_status is REJECTED by the CHECK constraint. This control must fail if the constraint is dropped.",
+  "NC-4 - Manual FX against an approved proxy: V1 is byte-unchanged and still 'approved'; V2 exists, carries the new fx_rate_id/value_usd and is 'under_review'.",
+  "NC-5 - Historical stability: an assignment bound to V1 yields identical monetary output after V2 is created, after V2 is approved, and after the live row's value_usd is changed by any authorized path.",
+  "NC-6 - Approval refusal: for each of the ten approval-blocking FIBC-010 items, its absence refuses approval with an error naming that item.",
+  "NC-7 - Registry: no row carries editability 'user_editable' for any approval or audit metadata column; a patch naming such a field is rejected, not silently dropped.",
+  "NC-8 - Registry exhaustiveness: adding a column to either table without a corresponding registry row FAILS the reflective test; a registry row naming a non-existent column also FAILS.",
+  "NC-9 - RLS: with RLS enabled and no write policy, a non-owner role cannot INSERT, UPDATE or DELETE registry rows, while SELECT still succeeds for an authenticated user.",
+  "NC-10 - Promotion: a promoted global proxy carries NULL for all thirteen rubric factors and for exceptional_defendibility_determination, and does not appear in the consumer-facing global proxy listing.",
+  "NC-11 - Sentinels: FIBIU-09 rubric derivation and MNB-1 audit verbs unchanged."
+ ],
+ "implementation_model": {
+  "status": "FROZEN",
+  "authorized_pattern": "SINGLE_BOUNDED_MISSION_LOOP_WITH_SEPARATELY_GATED_COMMITS",
+  "worktree": "One worktree only: C:\\Users\\Lorenzo\\Documents\\uellix-stella-wave2, branch codex/w2-methodology-objects-r1.",
+  "db_ownership": "SERIAL. Exactly one node at a time may hold database or schema ownership. R-B2-03 (migration 0056) must complete before R-B2-07 (policies unit 010).",
+  "commits": "One logical commit per remediation node. No node may be folded into another's commit.",
+  "gating": "The machine gate sequence (ods:prestate, authority:seal:verify, ods:scope, ods:poststate with the node's own allowlist and tests) MUST run and PASS after EACH node, not once at the end.",
+  "integration": "After the last node, an integrated candidate is produced and the full suite plus typecheck, secrets:scan, journal:verify and baseline:verify must pass.",
+  "post_remediation_audit": {
+   "required": true,
+   "model": "OPUS",
+   "independence": "A clean conversation with no inherited context from the remediation loop, per CLAUDE.md section 7.",
+   "basis": "FIBIU-10 is on the FIB's exhaustive wave-level OPUS-review list; FIBIU-09 and FIBIU-10 both carry RISK: HIGH; and the B2 implementation has already failed one adversarial review.",
+   "scope": "Base-versus-head diff over the full remediation range, every node exit gate, every negative control, and both preserved closed surfaces."
+  },
+  "b3_authorization": "NOT AUTHORIZED. W2-B3 may not begin before the post-remediation audit returns PASS."
+ },
+ "carry_forwards_and_out_of_scope": {
+  "not_consumed": [
+   "B1 carry-forwards",
+   "BK-1..BK-4",
+   "W2-GAP-2",
+   "Stage-E FIBDB-032/033",
+   "all W2-B3 work"
+  ],
+  "basis": "None is required by any B2 finding or by any node above. Consuming them would expand scope without authority need.",
+  "stage_e": "FIBDB-006's declared stage E (post-approval immutability enforced at the database) remains deferred and is NOT a B2 closure condition. R-B2-04 and R-B2-05 enforce the equivalent guarantee at the service layer for stage A, which is what FIBIU-08 and FIBIU-10's exit gates actually require.",
+  "mnb_fr_bookkeeping": {
+   "items": "MNB-FR-1..6",
+   "status": "NOT_REPOSITORY_RESOLVABLE",
+   "disposition": "Recorded as a Wave-2 closure bookkeeping note only. No repository history is invented for them, no remediation node consumes them, and their unresolved state does NOT block B2 closure."
+  }
+ },
+ "exit_gates_summary": {
+  "b2_closable_when": [
+   "All three blocking findings closed: B2-AR-B1 by R-B2-01, B2-AR-B2 by R-B2-02, B2-AR-B3 by R-B2-04.",
+   "Both authority gaps closed: AG-B2-1 by R-B2-05, AG-B2-2 by R-B2-07.",
+   "All material findings closed: M2 by R-B2-06, M4 by R-B2-03, M5 by R-B2-09, M6 by R-B2-08, M7-DERIVED by R-B2-05.",
+   "HISTORICAL_PROJECTUSE_VERSION_STABILITY is SATISFIED, not PARTIAL.",
+   "FIBIU-08 EXIT_GATE met: approval is sealed on the version with actor and moment, reachable on the organization surface.",
+   "FIBIU-10 EXIT_GATE met: atomic invalidation proven with no window of surviving approved, across every category and every write path including manual FX.",
+   "FIBIU-09 remains CLOSED and MNB-1 remains CLOSED, both proven by sentinel.",
+   "Every node's machine gate PASSED at its own commit.",
+   "Independent OPUS post-remediation audit returns PASS."
+  ],
+  "not_closure_conditions": [
+   "Hosted deployment or staging rehearsal - wave closure and deploy stage are orthogonal axes.",
+   "Stage-E database-level immutability for FIBDB-006.",
+   "MNB-FR-1..6."
+  ]
+ },
+ "no_implementation_validation": "This task produced NO runtime change. No test, build, typecheck or migration was executed as part of it, and none was required: the artifact is authority, not implementation. Every factual claim in it is anchored to a file path with a line reference, a git object, a sealed contract quotation, or a measured probe recorded inline.",
+ "state_after_this_artifact": {
+  "b2_ar_verdict": "ACCEPTED_WITH_EXPANDED_SCOPE",
+  "expansion_note": "Three of the auditor's findings were confirmed as reported. B2-AR-B2 was found materially worse than reported (a closed approval deadlock, not a missing field). M4 was found materially worse than reported (31 unclassified columns, not 5). One further defect, M7-DERIVED, was found during reconciliation and was not in the audit. One further authority gap, AG-B2-3-DERIVED, was raised and adjudicated.",
+  "decisions_frozen": [
+   "R-B2-01",
+   "R-B2-02",
+   "R-B2-03",
+   "R-B2-04",
+   "R-B2-05",
+   "R-B2-06",
+   "R-B2-07",
+   "R-B2-08",
+   "R-B2-09"
+  ],
+  "blocking_findings_to_remediate": 3,
+  "material_findings_to_remediate": 5,
+  "authority_gaps_adjudicated": 3,
+  "fibiu_08": "OPEN",
+  "fibiu_09": "CLOSED",
+  "fibiu_10": "OPEN",
+  "mnb1": "CLOSED",
+  "sealed_authority_modified": false,
+  "historical_b2_commits_modified": false,
+  "stage_e_remains_deferred": true,
+  "ready_for_b2_remediation_implementation": true,
+  "ready_for_w2_b3": false,
+  "post_remediation_audit_required": true,
+  "next_gate": "W2_B2_REMEDIATION_IMPLEMENTATION"
+ },
+ "final_state": "B2_REMEDIATION_AUTHORITY_FROZEN_READY_FOR_IMPLEMENTATION"
+}

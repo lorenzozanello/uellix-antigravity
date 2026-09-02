@@ -200,6 +200,89 @@ export async function setOutcomeMateriality(projectId: string, outcomeId: string
   return after
 }
 
+const setMaterialityClassificationSchema = z.object({
+  materialityClassification: z.enum(['material', 'not_material']).nullable(),
+  materialityClassificationJustification: z.string().min(1).optional(),
+}).refine(
+  (data) => data.materialityClassification === null ||
+    (data.materialityClassificationJustification !== undefined && data.materialityClassificationJustification.length > 0),
+  { message: 'materialityClassificationJustification is required when materialityClassification is set', path: ['materialityClassificationJustification'] },
+);
+type SetMaterialityClassificationInput = z.infer<typeof setMaterialityClassificationSchema>;
+
+/**
+ * FIBIU-11 (FIBC-015) — assign or clear an outcome's explicit materiality
+ * classification + justification. Deliberately a separate write path from
+ * setOutcomeMateriality above: the legacy 1-5 score/rationale pair is never
+ * read, derived from, or written by this function, and this function never
+ * touches the score/rationale pair — per NPDD-03, the score is never
+ * auto-converted into a classification.
+ */
+export async function setOutcomeMaterialityClassification(
+  projectId: string,
+  outcomeId: string,
+  input: SetMaterialityClassificationInput,
+) {
+  const ctx = await verifyProjectAccess(projectId);
+  if (!hasRole(ctx.membership.role, 'analyst')) {
+    throw new Error('Insufficient permissions to set outcome materiality classification');
+  }
+  const parsed = setMaterialityClassificationSchema.parse(input);
+
+  const before = await db
+    .select()
+    .from(outcomes)
+    .where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+    .then((rows) => rows[0] ?? null);
+  if (!before) throw new Error('Outcome not found for project');
+
+  const previousClassification = before.materialityClassification;
+  const previousJustification = before.materialityClassificationJustification;
+
+  // Clearing the classification always clears its justification too,
+  // regardless of what the caller passed for it — the atomic pair can never
+  // be broken from this single write path (mirrors setOutcomeMateriality).
+  const finalClassification = parsed.materialityClassification;
+  const finalJustification = finalClassification === null ? null : parsed.materialityClassificationJustification ?? null;
+
+  await db
+    .update(outcomes)
+    .set({ materialityClassification: finalClassification, materialityClassificationJustification: finalJustification, updatedAt: new Date() })
+    .where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+
+  const after = await db
+    .select()
+    .from(outcomes)
+    .where(and(eq(outcomes.id, outcomeId), eq(outcomes.projectId, projectId)))
+    .then((rows) => rows[0] ?? null)
+
+  await logAuditAction({
+    organizationId: ctx.organization.id,
+    projectId,
+    actorUserId: ctx.user.id,
+    entityType: 'outcome',
+    entityId: outcomeId,
+    action: AUDIT_ACTIONS.OUTCOME_MATERIALITY_CLASSIFIED,
+    contentModifying: true,
+    beforeJson: { materialityClassification: previousClassification, materialityClassificationJustification: previousJustification },
+    afterJson: { materialityClassification: after?.materialityClassification ?? null, materialityClassificationJustification: after?.materialityClassificationJustification ?? null },
+  })
+
+  // FIBIU-03 (FIBC-002/FIBC-045) — a classification change is a new version
+  // of the object, appended, never rewritten in place.
+  if (after) {
+    await createDomainObjectVersion({
+      organizationId: ctx.organization.id,
+      objectType: 'outcome',
+      objectId: outcomeId,
+      payload: after as unknown as Record<string, unknown>,
+      actorId: ctx.user.id,
+    })
+  }
+
+  return after
+}
+
 // Alias exports for test compatibility
 export const listOutcomes = listOutcomesForProject;
 export const createOutcome = createOutcomeForProject;

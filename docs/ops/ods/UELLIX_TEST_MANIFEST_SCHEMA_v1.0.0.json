@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "UELLIX_TEST_MANIFEST_SCHEMA_v1.0.0",
+  "title": "Uellix node/batch test manifest",
+  "description": "Frozen BEFORE implementation, by the uellix-test-manifest skill. A manifest is a commitment, not a report — it declares what will be proven, not what already passed. Unknown/absent required evidence in a filled manifest must be represented explicitly (e.g. \"UNKNOWN\") rather than omitted, so a validator can fail closed instead of treating a missing key as satisfied.",
+  "type": "object",
+  "required": ["manifest_id", "node_or_batch", "exit_gates", "positive_controls", "negative_controls"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_id": { "type": "string", "minLength": 1, "description": "Stable identifier for this node/batch, e.g. \"W3-B1\" or \"FIBIU-42\"." },
+    "node_or_batch": { "type": "string", "enum": ["node", "batch"] },
+    "authority_reference": {
+      "type": "string",
+      "description": "Path or identifier of the frozen authority this manifest is scoped under. Required whenever the node touches anything FIB/PC-01B/IM-01B governs."
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other manifest_ids or authority ids this node's test contract assumes are already CLOSED. Checked via pnpm ops:program-state, never assumed from memory.",
+      "items": { "type": "string" }
+    },
+    "protected_surfaces": {
+      "type": "array",
+      "description": "Repo-relative glob patterns this node's diff is expected to touch that fall under ods-scope's DEFAULT_PROTECTED_PATTERNS. Empty array is a valid, explicit \"none expected\" — never omit the key to mean the same thing.",
+      "items": { "type": "string" }
+    },
+    "protected_authority": {
+      "type": ["string", "null"],
+      "description": "The --protected-authority id (e.g. HPO-ODS-W2-01) this node claims, if any. null when no protected surface is touched."
+    },
+    "postgres_requirements": {
+      "type": "object",
+      "description": "Present only if this node needs a real PostgreSQL probe. Always via pnpm db:audit:disposable — never staging/production/the canonical local stack.",
+      "additionalProperties": false,
+      "properties": {
+        "setup_manifest": { "type": "string", "description": "Repo-relative path to the disposable-harness setup manifest." },
+        "probe_manifest": { "type": "string", "description": "Repo-relative path to the disposable-harness probe manifest." },
+        "rationale": { "type": "string" }
+      },
+      "required": ["probe_manifest", "rationale"]
+    },
+    "sentinels": {
+      "type": "array",
+      "description": "Synthetic marker values (fictional secrets, canary strings) this node's tests plant to prove a security/redaction property — e.g. \"a generated password never appears in tool output\". Never a real credential.",
+      "items": {
+        "type": "object",
+        "required": ["id", "purpose"],
+        "properties": {
+          "id": { "type": "string" },
+          "purpose": { "type": "string" }
+        }
+      }
+    },
+    "known_conditions": {
+      "type": "array",
+      "description": "condition_ids from docs/ops/ods/KNOWN_TEST_CONDITIONS_v1.0.0.json this node's baseline is expected to still carry. Verified via pnpm ops:test-diff, never re-adjudicated by prose.",
+      "items": { "type": "string" }
+    },
+    "positive_controls": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The happy-path proofs this node's implementation must satisfy.",
+      "items": { "$ref": "#/definitions/control" }
+    },
+    "negative_controls": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Deliberate proofs that an unauthorized/incorrect input is REFUSED. A manifest with zero negative controls is incomplete by definition — every new deterministic gate needs one (see the shared operating model, section 3).",
+      "items": { "$ref": "#/definitions/control" }
+    },
+    "mutation_controls": {
+      "type": "array",
+      "description": "Proofs that removing a specific safety guarantee (e.g. a finally-block teardown, a fail-closed branch) is CAUGHT by the test suite — i.e. the test would fail if that guarantee were deleted. Not literal mutation-testing tooling; a regression test framed this way is sufficient.",
+      "items": { "$ref": "#/definitions/control" }
+    },
+    "exit_gates": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The machine gates this node must pass before commit. Each entry names an existing command — never prose describing what a gate \"should\" do.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "typecheck",
+          "secrets_scan",
+          "authority_seal_verify",
+          "ods_scope",
+          "ods_poststate",
+          "journal_verify",
+          "baseline_verify",
+          "postgres_disposable_probe",
+          "targeted_tests"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "control": {
+      "type": "object",
+      "required": ["id", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "test_file": { "type": "string", "description": "Repo-relative path once written. May be \"UNKNOWN\" while the manifest is still a pre-implementation commitment." }
+      }
+    }
+  }
+}

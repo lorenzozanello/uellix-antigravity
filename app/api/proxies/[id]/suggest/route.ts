@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/db/client'
-import { financialProxies } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
 import { getCurrentOrganizationContext } from '@/lib/auth/session'
 import {
   AuthContextError,
   authContextErrorStatus,
   withOrganizationDatabaseContext,
 } from '@/lib/auth/database-context'
+import { updateFinancialProxyReviewStatusForContext } from '@/lib/pipeline/proxies'
 
 export async function POST(
   request: NextRequest,
@@ -20,33 +18,45 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { organization } = ctx
     const proxyId = params.id
 
-    // Check-then-update in ONE transaction: between a separate read and write
-    // the proxy could be promoted by an admin, and the update would then
-    // silently regress an approved proxy to pending_review.
+    // W2-B2-R3-NARROW-REMEDIATION / R-B2-10 — this was the fifth reachable
+    // live/version transition site: it used to write financial_proxies
+    // directly, leaving the current financial_proxy_versions row uncoupled
+    // (LIVE_VERSION_STATUS_COUPLING violated) and bypassing the same
+    // canApproveProxy gate every other transition site enforces. It now
+    // delegates to the canonical governed primitive — the exact function the
+    // organisation UI's own "submit for review" action already calls for
+    // this transition — inside the SAME locked transaction as the read, so a
+    // concurrent status change (e.g. an approval) cannot race the precondition
+    // check the way a separate read-then-write would.
+    //
+    // W2-B2-R4-404-CONTRACT-CORRECTION — this route's own frozen contract is
+    // that a proxy id outside the caller's organisation must read exactly
+    // like an unknown id (404), never a 403 that would confirm the id
+    // belongs to someone else's tenant. `hideCrossTenantAsNotFound: true` is
+    // a literal here, never derived from the request, and scopes the
+    // primitive's row lock to this session's own organisation so a
+    // cross-tenant (or global/system) proxy is never observed to exist.
     const outcome = await withOrganizationDatabaseContext(async () => {
-      // Ownership is still asserted in the predicate. RLS scopes the row to
-      // organisations this session belongs to; this pins it to THE one.
-      const existing = await db.select().from(financialProxies).where(
-        and(
-          eq(financialProxies.id, proxyId),
-          eq(financialProxies.organizationId, organization.id)
+      try {
+        await updateFinancialProxyReviewStatusForContext(
+          ctx,
+          proxyId,
+          'pending_review',
+          undefined,
+          'suggested',
+          true,
         )
-      ).limit(1)
-
-      if (!existing.length) return 'not_found' as const
-
-      // Validate if it can be suggested
-      if (existing[0].reviewStatus !== 'suggested') return 'already_submitted' as const
-
-      // Update status to pending_review
-      await db.update(financialProxies)
-        .set({ reviewStatus: 'pending_review', updatedAt: new Date() })
-        .where(eq(financialProxies.id, proxyId))
-
-      return 'ok' as const
+        return 'ok' as const
+      } catch (err) {
+        if (err instanceof Error) {
+          if (err.message === 'Proxy not found') return 'not_found' as const
+          if (err.message === 'Unexpected current status') return 'already_submitted' as const
+          if (err.message === 'Forbidden') return 'forbidden' as const
+        }
+        throw err
+      }
     })
 
     if (outcome === 'not_found') {
@@ -54,6 +64,9 @@ export async function POST(
     }
     if (outcome === 'already_submitted') {
       return NextResponse.json({ error: 'Proxy is already submitted or approved' }, { status: 400 })
+    }
+    if (outcome === 'forbidden') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     return NextResponse.json({ success: true })

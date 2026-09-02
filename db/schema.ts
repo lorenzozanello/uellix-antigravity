@@ -243,6 +243,12 @@ export const outcomes = pgTable('outcomes', {
   materialityNotes: text('materiality_notes'),
   materialityScore: integer('materiality_score'),
   materialityRationale: text('materiality_rationale'),
+  // FIBIU-11 (FIBC-015, FIBDB-008/045) — the explicit human classification
+  // V-03 requires. Deliberately distinct from materialityScore/Rationale
+  // above: that 1-5 score remains supporting structure only and is never
+  // auto-converted into this classification (NPDD-03). NULL = pending.
+  materialityClassification: varchar('materiality_classification', { length: 20 }),
+  materialityClassificationJustification: text('materiality_classification_justification'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -250,6 +256,8 @@ export const outcomes = pgTable('outcomes', {
 }, (table) => [
   check('outcomes_materiality_score_check', sql`${table.materialityScore} IS NULL OR (${table.materialityScore} >= 1 AND ${table.materialityScore} <= 5)`),
   check('outcomes_materiality_pair_check', sql`(${table.materialityScore} IS NULL AND ${table.materialityRationale} IS NULL) OR (${table.materialityScore} IS NOT NULL AND ${table.materialityRationale} IS NOT NULL)`),
+  check('outcomes_materiality_classification_check', sql`${table.materialityClassification} IS NULL OR ${table.materialityClassification} IN ('material', 'not_material')`),
+  check('outcomes_materiality_classification_pair_check', sql`(${table.materialityClassification} IS NULL AND ${table.materialityClassificationJustification} IS NULL) OR (${table.materialityClassification} IS NOT NULL AND ${table.materialityClassificationJustification} IS NOT NULL)`),
   index('idx_outcomes_project_id').on(table.projectId),
   index('idx_outcomes_stakeholder_group_id').on(table.stakeholderGroupId),
 ])
@@ -480,12 +488,225 @@ export const financialProxies = pgTable('financial_proxies', {
   index('idx_financial_proxies_source_id').on(table.sourceId),
 ])
 
+// FIBIU-08 — proxy version lineage (FIBDB-006/FIBC-002/FIBC-010/FIBC-012),
+// the dedicated FIBC-002 specialization for financial proxies, following the
+// same ordinal + supersedes_version_id lineage shape as evidence_versions/
+// domain_object_versions. Approval is sealed HERE (reviewer_id/reviewed_at),
+// on the version — not only on the live financial_proxies row — per FIBC-012:
+// "Approval is sealed on the proxy version with approver identity and
+// timestamp." Full provenance (FIBC-010) lives here too: geographic/
+// contextual scope, linked-outcome context, a recoverable reference distinct
+// from the bare proxy_sources link, relevance justification, and documented
+// transformations — none of which financial_proxies itself ever carried.
+//
+// Rubric factors (C1-C6/R1-R7) and derived confidence/risk scores are FIBDB-
+// 006 field-list items (OWNING UNIT: FIBIU-08) and land as columns now; their
+// FIBDB-044 range/derived-consistency CHECK constraints are FIBIU-09's own
+// migration — substrate now, hardening owned by the unit whose contract it
+// is. rubric_version is a value-reference to governed_model_registry
+// (modelId='PROXY_DEFENDIBILITY_RUBRIC'), the same varchar-not-FK convention
+// sroi_calculation_runs.methodologyVersion already uses, since the registry
+// is keyed by (model_id, version), not a single-column id.
+//
+// Stage A: mutable in place for status/provenance-sealing transitions on the
+// CURRENT version, matching evidence_versions' stage-A/stage-E split — true
+// post-approval immutability is FIBDB-006's declared hardening stage E, not
+// enforced here.
+export const financialProxyVersions = pgTable('financial_proxy_versions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
+  financialProxyId: uuid('financial_proxy_id').references(() => financialProxies.id).notNull(),
+  ordinal: integer('ordinal').notNull(),
+  // Material provenance snapshot (FIBC-010) — present at every version.
+  sourceId: uuid('source_id').references(() => proxySources.id).notNull(),
+  value: numeric('value', { precision: 20, scale: 4 }),
+  currency: varchar('currency', { length: 10 }),
+  unit: varchar('unit', { length: 50 }),
+  referenceYear: integer('reference_year'),
+  valueUsd: numeric('value_usd', { precision: 20, scale: 4 }),
+  fxRateId: uuid('fx_rate_id').references(() => fxRates.id),
+  country: varchar('country', { length: 2 }),
+  territory: varchar('territory', { length: 255 }),
+  thematicArea: varchar('thematic_area', { length: 255 }),
+  methodology: text('methodology'),
+  // FIBC-010 fields no prior table ever persisted.
+  geographicContextualScope: text('geographic_contextual_scope'),
+  linkedOutcomeContext: text('linked_outcome_context'),
+  recoverableReference: text('recoverable_reference'),
+  relevanceJustification: text('relevance_justification'),
+  documentedTransformations: text('documented_transformations'),
+  consultationDate: timestamp('consultation_date'),
+  // FIBC-011/FIBDB-044 rubric factors — columns owned by FIBIU-08 (FIBDB-006
+  // field list), CHECK constraints owned by FIBIU-09 (FIBDB-044).
+  c1SourceQualityVerifiability: integer('c1_source_quality_verifiability'),
+  c2OutcomeCorrespondence: integer('c2_outcome_correspondence'),
+  c3StakeholderPopulationFit: integer('c3_stakeholder_population_fit'),
+  c4GeographicContextFit: integer('c4_geographic_context_fit'),
+  c5TemporalFit: integer('c5_temporal_fit'),
+  c6MethodologicalUnitComparability: integer('c6_methodological_unit_comparability'),
+  r1ProvenanceRisk: integer('r1_provenance_risk'),
+  r2SourceLimitationRisk: integer('r2_source_limitation_risk'),
+  r3ConceptualFitRisk: integer('r3_conceptual_fit_risk'),
+  r4GeographicPopulationTransferRisk: integer('r4_geographic_population_transfer_risk'),
+  r5TemporalObsolescenceRisk: integer('r5_temporal_obsolescence_risk'),
+  r6TransformationRisk: integer('r6_transformation_risk'),
+  r7MethodologicalUncertaintyRisk: integer('r7_methodological_uncertainty_risk'),
+  confidenceScore: integer('confidence_score'),
+  confidenceLevel: varchar('confidence_level', { length: 20 }),
+  methodologicalRiskScore: integer('methodological_risk_score'),
+  methodologicalRisk: varchar('methodological_risk', { length: 20 }),
+  rubricVersion: varchar('rubric_version', { length: 20 }),
+  exceptionalDefendibilityDetermination: text('exceptional_defendibility_determination'),
+  // FIBC-012 approval sealing — the actual fix this unit exists to make.
+  reviewStatus: varchar('review_status', { length: 50 }).default('draft').notNull(),
+  reviewerId: uuid('reviewer_id').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  supersedesVersionId: uuid('supersedes_version_id'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('financial_proxy_versions_proxy_ordinal_unique').on(table.financialProxyId, table.ordinal),
+  check('financial_proxy_versions_review_status_check', sql`${table.reviewStatus} IN ('draft', 'under_review', 'approved', 'rejected', 'archived')`),
+  check('financial_proxy_versions_confidence_level_check', sql`${table.confidenceLevel} IS NULL OR ${table.confidenceLevel} IN ('high', 'medium', 'low')`),
+  check('financial_proxy_versions_methodological_risk_check', sql`${table.methodologicalRisk} IS NULL OR ${table.methodologicalRisk} IN ('low', 'medium', 'high')`),
+  // FIBIU-09 (FIBC-011/FIBDB-044). These five constraints are best-effort,
+  // defense-in-depth SQL — they cannot reconstruct the full base-score
+  // threshold logic (that would require the ROUND(100*sum/N) computation to
+  // agree bit-for-bit with lib/pipeline/financial-proxy-rubric.ts's
+  // deriveRubricClassification, which is the sole AUTHORITATIVE
+  // implementation and is fully unit-tested). They catch range violations,
+  // derivation-formula mismatches, and ceiling/floor implication breaches,
+  // but have never been executed against a live Postgres instance in this
+  // DB-free-test repository — flagged here explicitly for adversarial
+  // review rather than claimed as proven.
+  check(
+    'financial_proxy_versions_rubric_factor_range_check',
+    sql`(${table.c1SourceQualityVerifiability} IS NULL OR ${table.c1SourceQualityVerifiability} BETWEEN 0 AND 3)
+      AND (${table.c2OutcomeCorrespondence} IS NULL OR ${table.c2OutcomeCorrespondence} BETWEEN 0 AND 3)
+      AND (${table.c3StakeholderPopulationFit} IS NULL OR ${table.c3StakeholderPopulationFit} BETWEEN 0 AND 3)
+      AND (${table.c4GeographicContextFit} IS NULL OR ${table.c4GeographicContextFit} BETWEEN 0 AND 3)
+      AND (${table.c5TemporalFit} IS NULL OR ${table.c5TemporalFit} BETWEEN 0 AND 3)
+      AND (${table.c6MethodologicalUnitComparability} IS NULL OR ${table.c6MethodologicalUnitComparability} BETWEEN 0 AND 3)
+      AND (${table.r1ProvenanceRisk} IS NULL OR ${table.r1ProvenanceRisk} BETWEEN 0 AND 3)
+      AND (${table.r2SourceLimitationRisk} IS NULL OR ${table.r2SourceLimitationRisk} BETWEEN 0 AND 3)
+      AND (${table.r3ConceptualFitRisk} IS NULL OR ${table.r3ConceptualFitRisk} BETWEEN 0 AND 3)
+      AND (${table.r4GeographicPopulationTransferRisk} IS NULL OR ${table.r4GeographicPopulationTransferRisk} BETWEEN 0 AND 3)
+      AND (${table.r5TemporalObsolescenceRisk} IS NULL OR ${table.r5TemporalObsolescenceRisk} BETWEEN 0 AND 3)
+      AND (${table.r6TransformationRisk} IS NULL OR ${table.r6TransformationRisk} BETWEEN 0 AND 3)
+      AND (${table.r7MethodologicalUncertaintyRisk} IS NULL OR ${table.r7MethodologicalUncertaintyRisk} BETWEEN 0 AND 3)`
+  ),
+  check(
+    'financial_proxy_versions_confidence_derivation_check',
+    sql`${table.confidenceScore} IS NULL OR (
+      ${table.c1SourceQualityVerifiability} IS NOT NULL AND ${table.c2OutcomeCorrespondence} IS NOT NULL
+      AND ${table.c3StakeholderPopulationFit} IS NOT NULL AND ${table.c4GeographicContextFit} IS NOT NULL
+      AND ${table.c5TemporalFit} IS NOT NULL AND ${table.c6MethodologicalUnitComparability} IS NOT NULL
+      AND ${table.confidenceScore} = ROUND(100.0 * (
+        ${table.c1SourceQualityVerifiability} + ${table.c2OutcomeCorrespondence} + ${table.c3StakeholderPopulationFit}
+        + ${table.c4GeographicContextFit} + ${table.c5TemporalFit} + ${table.c6MethodologicalUnitComparability}
+      ) / 18)
+    )`
+  ),
+  check(
+    'financial_proxy_versions_risk_derivation_check',
+    sql`${table.methodologicalRiskScore} IS NULL OR (
+      ${table.r1ProvenanceRisk} IS NOT NULL AND ${table.r2SourceLimitationRisk} IS NOT NULL
+      AND ${table.r3ConceptualFitRisk} IS NOT NULL AND ${table.r4GeographicPopulationTransferRisk} IS NOT NULL
+      AND ${table.r5TemporalObsolescenceRisk} IS NOT NULL AND ${table.r6TransformationRisk} IS NOT NULL
+      AND ${table.r7MethodologicalUncertaintyRisk} IS NOT NULL
+      AND ${table.methodologicalRiskScore} = ROUND(100.0 * (
+        ${table.r1ProvenanceRisk} + ${table.r2SourceLimitationRisk} + ${table.r3ConceptualFitRisk}
+        + ${table.r4GeographicPopulationTransferRisk} + ${table.r5TemporalObsolescenceRisk}
+        + ${table.r6TransformationRisk} + ${table.r7MethodologicalUncertaintyRisk}
+      ) / 21)
+    )`
+  ),
+  // Ceiling: C1=0 OR C2=0 forces 'low' (stronger); any Ci=0 forbids 'high'.
+  check(
+    'financial_proxy_versions_confidence_ceiling_check',
+    sql`${table.confidenceLevel} IS NULL OR (
+      (NOT (${table.c1SourceQualityVerifiability} = 0 OR ${table.c2OutcomeCorrespondence} = 0) OR ${table.confidenceLevel} = 'low')
+      AND (NOT (
+        ${table.c1SourceQualityVerifiability} = 0 OR ${table.c2OutcomeCorrespondence} = 0 OR ${table.c3StakeholderPopulationFit} = 0
+        OR ${table.c4GeographicContextFit} = 0 OR ${table.c5TemporalFit} = 0 OR ${table.c6MethodologicalUnitComparability} = 0
+      ) OR ${table.confidenceLevel} != 'high')
+    )`
+  ),
+  // Floor: any Ri=3 forces 'high' (stronger); any Ri>=2 forbids 'low'.
+  check(
+    'financial_proxy_versions_risk_floor_check',
+    sql`${table.methodologicalRisk} IS NULL OR (
+      (NOT (
+        ${table.r1ProvenanceRisk} = 3 OR ${table.r2SourceLimitationRisk} = 3 OR ${table.r3ConceptualFitRisk} = 3
+        OR ${table.r4GeographicPopulationTransferRisk} = 3 OR ${table.r5TemporalObsolescenceRisk} = 3
+        OR ${table.r6TransformationRisk} = 3 OR ${table.r7MethodologicalUncertaintyRisk} = 3
+      ) OR ${table.methodologicalRisk} = 'high')
+      AND (NOT (
+        ${table.r1ProvenanceRisk} >= 2 OR ${table.r2SourceLimitationRisk} >= 2 OR ${table.r3ConceptualFitRisk} >= 2
+        OR ${table.r4GeographicPopulationTransferRisk} >= 2 OR ${table.r5TemporalObsolescenceRisk} >= 2
+        OR ${table.r6TransformationRisk} >= 2 OR ${table.r7MethodologicalUncertaintyRisk} >= 2
+      ) OR ${table.methodologicalRisk} != 'low')
+    )`
+  ),
+  index('idx_financial_proxy_versions_proxy_id').on(table.financialProxyId),
+  index('idx_financial_proxy_versions_organization_id').on(table.organizationId),
+])
+
+// FIBIU-10 (FIBC-013/FIBDB-007) — the versioned field->category map
+// PROXY_MATERIAL_FIELDS references (via getCurrentGovernedModelVersion) to
+// know its own current registryVersion. Read-only reference data, seeded by
+// migration DML exactly like governed_model_registry — immutable per
+// version, so there is no UPDATE/DELETE path, only INSERT ... ON CONFLICT
+// DO NOTHING at seed time. tableName disambiguates the two tables that
+// happen to share a column name (financial_proxies.methodological_risk, the
+// pre-FIBIU-09 legacy field, vs financial_proxy_versions.methodological_risk,
+// the FIBC-011 system-derived one).
+export const proxyMaterialFieldsRegistry = pgTable('proxy_material_fields_registry', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  registryVersion: varchar('registry_version', { length: 20 }).notNull(),
+  tableName: varchar('table_name', { length: 60 }).notNull(),
+  fieldName: varchar('field_name', { length: 100 }).notNull(),
+  category: varchar('category', { length: 60 }).notNull(),
+  // W2-B2-R1 / R-B2-03 (AG-B2-3-DERIVED, ORTHOGONAL_EDITABILITY_DIMENSION):
+  // materiality and editability are orthogonal. NULLable with no default so
+  // registry_version 1.0.0 rows keep NULL — that version never classified
+  // this dimension, and FIBDB-007's "immutable per version" forbids
+  // rewriting it. The ten sealed FIBC-013 categories are NOT extended.
+  editability: varchar('editability', { length: 20 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  unique('proxy_material_fields_registry_version_table_field_unique').on(
+    table.registryVersion, table.tableName, table.fieldName
+  ),
+  check(
+    'proxy_material_fields_registry_editability_check',
+    sql`${table.editability} IS NULL OR ${table.editability} IN ('user_editable','system_derived','system_sealed')`
+  ),
+  check(
+    'proxy_material_fields_registry_category_check',
+    sql`${table.category} IN (
+      'identity_economic_value','source_provenance','outcome_stakeholder_correspondence',
+      'geographic_institutional_context','temporal_context','methodology_comparability',
+      'transformations','provenance_rationale','rubric_ratings_derivations',
+      'exceptional_defendibility_determination','non_material'
+    )`
+  ),
+  index('idx_proxy_material_fields_registry_version').on(table.registryVersion),
+])
+
 export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
   outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
   proxyId: uuid('proxy_id').references(() => financialProxies.id).notNull(),
+  // FIBIU-08 (FIBDB-039) — binds this assignment to the exact proxy VERSION
+  // in effect when it was made. Immutable per run: never repointed to a
+  // later version by this module. NULL means "no version was ever bound"
+  // (legacy assignments predating this column, or a defensive gap) and is
+  // read as ineligible for the calculation engine, never as "use whatever
+  // the live proxy currently says" — see lib/pipeline/sroi-calculation.ts.
+  financialProxyVersionId: uuid('financial_proxy_version_id').references(() => financialProxyVersions.id),
   justification: text('justification'),
   territorialAdjustmentNotes: text('territorial_adjustment_notes'),
   assignedBy: uuid('assigned_by').references(() => users.id).notNull(),
@@ -498,6 +719,7 @@ export const outcomeProxyAssignments = pgTable('outcome_proxy_assignments', {
   index('idx_opa_organization_id').on(table.organizationId),
   index('idx_opa_outcome_id').on(table.outcomeId),
   index('idx_opa_proxy_id').on(table.proxyId),
+  index('idx_opa_proxy_version_id').on(table.financialProxyVersionId),
 ])
 
 export const projectInvestments = pgTable('project_investments', {
@@ -556,7 +778,21 @@ export const sroiFilterSets = pgTable('sroi_filter_sets', {
   attributionPct: varchar('attribution_pct', { length: 255 }),
   dropoffPct: varchar('dropoff_pct', { length: 255 }),
   durationYears: integer('duration_years'),
+  // Legacy shared column — retained as free text, never auto-distributed
+  // across the five discrete columns below (NPDD-03).
   justification: text('justification'),
+  // FIBIU-13 (FIBC-017, FIBDB-010 — implementation form frozen at R1,
+  // superseding FIB-01A's NEW_CONSTRAINT). Five discrete nullable
+  // justification columns, one per filter, so FILTER_JUSTIFICATION_MISSING
+  // can be verified independently per filter instead of degenerating to
+  // "the shared column is non-empty". Deliberately no NOT NULL / presence
+  // CHECK here: unjustified filters remain legitimate for preliminary work;
+  // obligatoriness lives exclusively in the eligibility composition (FIBC-023).
+  deadweightJustification: text('deadweight_justification'),
+  attributionJustification: text('attribution_justification'),
+  displacementJustification: text('displacement_justification'),
+  dropoffJustification: text('dropoff_justification'),
+  durationJustification: text('duration_justification'),
   status: varchar('status', { length: 50 }).default('active').notNull(),
   createdBy: uuid('created_by').references(() => users.id).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -622,6 +858,31 @@ export const sroiCalculationLineItems = pgTable('sroi_calculation_line_items', {
 }, (table) => [
   index('idx_sroi_line_items_run_id').on(table.runId),
   index('idx_sroi_line_items_assignment_id').on(table.assignmentId),
+])
+
+// FIBIU-12 (FIBC-016, FIBDB-009/045). One disposition per (outcome, run):
+// monetized | not_monetized, with reason + justification required when
+// not_monetized. Snapshot-bound to the calculation run it was recorded
+// against, like sroi_calculation_line_items above — written once, never
+// updated (IMMUTABILITY: "immutable once the run is approved" is satisfied
+// trivially since no update path exists at all).
+export const outcomeMonetizationDispositions = pgTable('outcome_monetization_dispositions', {
+  id: uuid('id').primaryKey().defaultRandom().notNull(),
+  organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+  outcomeId: uuid('outcome_id').references(() => outcomes.id).notNull(),
+  calculationRunId: uuid('calculation_run_id').references(() => sroiCalculationRuns.id).notNull(),
+  disposition: varchar('disposition', { length: 20 }).notNull(),
+  reason: varchar('reason', { length: 40 }),
+  justification: text('justification'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  check('outcome_monetization_dispositions_disposition_check', sql`${table.disposition} IN ('monetized', 'not_monetized')`),
+  check('outcome_monetization_dispositions_reason_check', sql`${table.reason} IS NULL OR ${table.reason} IN ('no_defensible_proxy', 'proxy_not_approved', 'insufficient_evidence', 'not_material', 'not_yet_eligible', 'superseded_version', 'other_governed_reason')`),
+  check('outcome_monetization_dispositions_reason_required_check', sql`${table.disposition} <> 'not_monetized' OR ${table.reason} IS NOT NULL`),
+  check('outcome_monetization_dispositions_justification_pair_check', sql`${table.reason} IS NULL OR ${table.justification} IS NOT NULL`),
+  uniqueIndex('uq_outcome_monetization_dispositions_outcome_run').on(table.outcomeId, table.calculationRunId),
+  index('idx_outcome_monetization_dispositions_run_id').on(table.calculationRunId),
 ])
 
 export const sroiRunReviews = pgTable('sroi_run_reviews', {

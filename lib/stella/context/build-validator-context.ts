@@ -299,7 +299,8 @@ export async function buildValidatorContext(
       totalInvestment: parseFloat(latestRun.totalInvestment ?? '0'),
       grossSocialValue: parseFloat(latestRun.grossSocialValue ?? '0'),
       netSocialValue: parseFloat(latestRun.netSocialValue ?? '0'),
-      sroiRatio: parseFloat(latestRun.sroiRatio ?? '0'),
+      // AG-B3-2 — NULL stays null (no fabricated 0.0 for a run without a ratio).
+      sroiRatio: latestRun.sroiRatio === null ? null : parseFloat(latestRun.sroiRatio),
       currency: latestRun.currency ?? 'USD',
       lineItemCount: lineItems.length,
       version: latestRun.version,

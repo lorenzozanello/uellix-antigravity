@@ -453,15 +453,22 @@ describe('operational steps = unit ZERO + every manifest unit', () => {
   const generated = buildAllJournalWrappers(read)
 
   it('the manifest is the source of order', () => {
-    // W2-B1-R1/R3 (R-B1-03/R-B1-04) — re-derived alongside every other 59-
-    // pin this repository carries: FIB Wave 2 B1 (FIBIU-04/05/06/07) added
-    // four migrations (0048-0051), and W2-B1-R3's run-binding remediation
-    // added one more (0052). 59+4+1=64 — see
+    // W2-B2 (FIBIU-08/09/10) — re-derived: FIB Wave 2 B1 closure left 64
+    // units; this batch adds three more (0053_fib_proxy_versions_
+    // provenance.sql, 0054_fib_proxy_rubric_constraints.sql,
+    // 0055_fib_proxy_material_change_registry.sql). 64+3=67 — see
     // tests/hosted/baseline-manifest.test.ts and
     // tests/eval/stella-release/hosted-baseline-gate.test.ts for the same
     // derivation, independently re-verified there.
-    expect(BASELINE_UNITS).toHaveLength(64)
-    expect(BASELINE_ORDER).toHaveLength(64)
+    // W2-B2-R1 (R-B2-03): + 0056_fib_proxy_material_fields_editability.sql = 68;
+    // (R-B2-07): + 010_proxy_material_fields_registry_rls.sql = 69.
+    // W2-B3: + 0057/0058/0059 = 72 (pin left stale by those commits);
+    // W2-B3 completeness: + 0060 = 73.
+    // HPO-ODS-W2-09 (COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation):
+    // + 0061_fib_disposition_governance_function_execute_revocation.sql (the
+    // B0-17 security successor to sealed 0060, REVOKE-only, no DML) = 74.
+    expect(BASELINE_UNITS).toHaveLength(74)
+    expect(BASELINE_ORDER).toHaveLength(74)
   })
 
   it('emits one bootstrap command plus one per manifest unit', () => {

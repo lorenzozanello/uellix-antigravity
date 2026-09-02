@@ -42,14 +42,26 @@ describe('the six baseline gates', () => {
     expect(evidence.firstProvisioningPlannable).toBe(true)
   })
 
-  // W2-B1-R1/R3 (R-B1-03/R-B1-04) — re-derived: FIB Wave 2 B1 (FIBIU-04/05/
-  // 06/07) added exactly four Drizzle migrations (0048-0051); 0048 alone
-  // carries genuine DML (its stage-B evidence-version backfill), verified
-  // independently in tests/hosted/baseline-manifest.test.ts. W2-B1-R3's
-  // run-binding remediation added one more (0052), no DML. 59+4+1=64.
+  // W2-B2 (FIBIU-08/09/10) — re-derived: FIB Wave 2 B1 closure left 64
+  // units; this batch adds three Drizzle migrations (0053_fib_proxy_versions_
+  // provenance.sql, 0054_fib_proxy_rubric_constraints.sql, no DML;
+  // 0055_fib_proxy_material_change_registry.sql, one literal-row-source
+  // seed INSERT — mirroring 0040_governed_model_registry.sql's own
+  // treatment). 64+3=67.
   it('measures the corpus rather than restating the manifest', () => {
-    expect(evidence.unitCount).toBe(64)
-    expect(evidence.superuserFreeUnits).toBe(64)
+    // W2-B2-R1 (R-B2-03): + 0056 (two literal global-catalog seeds) = 68 units,
+    // 4 literal row sources (0040:1, 0055:1, 0056:2).
+    // (R-B2-07): + policies unit 010 (registry RLS) = 69.
+    // COMMERCIAL-V1-WAVE2-RECONCILIATION-R1 (HPO-ODS-W2-08) — re-derived on the
+    // reconciled corpus: + 0057/0058/0059 (W2-B3) = 72; + 0060 (W2-B3
+    // completeness) = 73. The Product line added no unit. DML units and the
+    // four literal row sources are unchanged from the W2-B2-R1 derivation
+    // (0057..0060 carry no DML), re-measured by tests/hosted/baseline-manifest.test.ts.
+    // HPO-ODS-W2-09 (COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation):
+    // + 0061_fib_disposition_governance_function_execute_revocation.sql (the
+    // B0-17 security successor to sealed 0060, REVOKE-only, no DML) = 74; still no DML, still four literal row sources.
+    expect(evidence.unitCount).toBe(74)
+    expect(evidence.superuserFreeUnits).toBe(74)
     expect(evidence.serviceRoleGranters).toEqual(['0033_public_api_grants.sql'])
     expect(evidence.dmlUnits).toEqual([
       '0018_redundant_firebird.sql',
@@ -57,8 +69,10 @@ describe('the six baseline gates', () => {
       '0041_pc01b_regime_boundary_backfill.sql',
       '0047_fib_taxonomy_mapping_governance_regime.sql',
       '0048_fib_evidence_versions.sql',
+      '0055_fib_proxy_material_change_registry.sql',
+      '0056_fib_proxy_material_fields_editability.sql',
     ])
-    expect(evidence.literalRowSources).toBe(1)
+    expect(evidence.literalRowSources).toBe(4)
     expect(evidence.mustNotRunUnits).toEqual([])
   })
 })

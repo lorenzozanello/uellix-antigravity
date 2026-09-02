@@ -1,0 +1,27 @@
+{
+  "manifest_id": "REPLACE-WITH-NODE-OR-BATCH-ID",
+  "node_or_batch": "node",
+  "authority_reference": "docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:LINE-RANGE",
+  "dependencies": [],
+  "protected_surfaces": [],
+  "protected_authority": null,
+  "postgres_requirements": null,
+  "sentinels": [],
+  "known_conditions": [],
+  "positive_controls": [
+    {
+      "id": "P-1",
+      "description": "UNKNOWN — name the primary happy-path proof before implementation begins.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-1",
+      "description": "UNKNOWN — name the specific refusal this node must prove before implementation begins.",
+      "test_file": "UNKNOWN"
+    }
+  ],
+  "mutation_controls": [],
+  "exit_gates": ["typecheck", "secrets_scan", "authority_seal_verify", "ods_scope", "ods_poststate", "targeted_tests"]
+}

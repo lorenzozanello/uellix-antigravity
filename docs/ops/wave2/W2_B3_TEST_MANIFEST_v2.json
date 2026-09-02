@@ -1,0 +1,476 @@
+{
+  "manifest_id": "W2-B3-COMPLETENESS",
+  "node_or_batch": "batch",
+  "authority_reference": "docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json (sha256 3e51954ccb8bbd4fd956c9fd73b236cd42890a2db7d224434bc39d0fd324d368, commit 441447d) hpo_dispositions AG-B3-1..6, pg12_measured_fact, successor_migration_contract, service_contracts, authorized_surfaces; docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.md:109-118 (FIBC-015/016/017), :297-299 (FIBDB-008/009/010), :369 (FIBDB-045), :757-764 (FIBIU-11/12/13); docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json recommended_implementation_batches[batch_id=B3]. Historical docs/ops/wave2/W2_B3_TEST_MANIFEST.json (sha256 b442b655109b9e795f1bc46e290ee1c69239ff5ac7aff2d450d810bdd4ce0de9) is immutable evidence and is NOT a contract this v2 inherits.",
+  "dependencies": [
+    "W2-B1",
+    "W2-B2",
+    "FIBIU-03"
+  ],
+  "protected_surfaces": [
+    "db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql",
+    "db/migrations/meta/_journal.json",
+    "db/migrations/meta/0060_snapshot.json",
+    "db/prepared/journal/000_journal_bootstrap.sql",
+    "db/prepared/journal/001_0000_quick_husk.sql",
+    "db/prepared/journal/002_0001_noisy_chameleon.sql",
+    "db/prepared/journal/003_0002_huge_namorita.sql",
+    "db/prepared/journal/004_0003_curvy_tempest.sql",
+    "db/prepared/journal/005_0004_thick_mentor.sql",
+    "db/prepared/journal/006_0005_daffy_dreaming_celestial.sql",
+    "db/prepared/journal/007_0006_outstanding_vindicator.sql",
+    "db/prepared/journal/008_0007_black_imperial_guard.sql",
+    "db/prepared/journal/009_0008_bored_pretty_boy.sql",
+    "db/prepared/journal/010_0009_motionless_peter_parker.sql",
+    "db/prepared/journal/011_0010_crazy_warhawk.sql",
+    "db/prepared/journal/012_0011_sroi_results_report_foundation.sql",
+    "db/prepared/journal/013_0012_stella_interactions.sql",
+    "db/prepared/journal/014_0013_performance_indexes.sql",
+    "db/prepared/journal/015_0014_fine_blade.sql",
+    "db/prepared/journal/016_0015_misty_lorna_dane.sql",
+    "db/prepared/journal/017_0016_fat_mac_gargan.sql",
+    "db/prepared/journal/018_0017_striped_legion.sql",
+    "db/prepared/journal/019_0018_redundant_firebird.sql",
+    "db/prepared/journal/020_0019_lazy_overlord.sql",
+    "db/prepared/journal/021_0020_long_squadron_supreme.sql",
+    "db/prepared/journal/022_0021_glorious_sandman.sql",
+    "db/prepared/journal/023_0022_abandoned_karma.sql",
+    "db/prepared/journal/024_0023_faulty_silver_sable.sql",
+    "db/prepared/journal/025_0024_outstanding_enchantress.sql",
+    "db/prepared/journal/026_0025_shallow_mattie_franklin.sql",
+    "db/prepared/journal/027_0026_violet_selene.sql",
+    "db/prepared/journal/028_0027_little_midnight.sql",
+    "db/prepared/journal/029_0028_keen_iron_patriot.sql",
+    "db/prepared/journal/030_0029_integrity.sql",
+    "db/prepared/journal/031_0030_immutability.sql",
+    "db/prepared/journal/032_0031_rls_core.sql",
+    "db/prepared/journal/033_0032_rls_specialized.sql",
+    "db/prepared/journal/034_0033_public_api_grants.sql",
+    "db/prepared/journal/035_0034_phase3_white_label.sql",
+    "db/prepared/journal/036_0035_phase5_marketing_leads.sql",
+    "db/prepared/journal/037_0036_phase2_onboarding.sql",
+    "db/prepared/journal/038_0037_phase1_stripe.sql",
+    "db/prepared/journal/039_0038_sprint_a_gdpr_users.sql",
+    "db/prepared/journal/040_20260716000000_auth_trigger.sql",
+    "db/prepared/journal/041_20260716000001_storage_policies.sql",
+    "db/prepared/journal/042_0039_grant_rls_helper_execution.sql",
+    "db/prepared/journal/043_001_initial_auth_rls.sql",
+    "db/prepared/journal/044_002_stella_interactions_rls.sql",
+    "db/prepared/journal/045_003_signup_allowlist_rls.sql",
+    "db/prepared/journal/046_004_fx_tables_rls.sql",
+    "db/prepared/journal/047_005_theory_of_change_rls.sql",
+    "db/prepared/journal/048_006_methodology_review_rls.sql",
+    "db/prepared/journal/049_007_taxonomy_rls.sql",
+    "db/prepared/journal/050_008_marketing_leads_rls.sql",
+    "db/prepared/journal/051_0040_governed_model_registry.sql",
+    "db/prepared/journal/052_0041_pc01b_regime_boundary_backfill.sql",
+    "db/prepared/journal/053_0042_fib_audit_insert_policy.sql",
+    "db/prepared/journal/054_0043_fib_audit_project_id_fk.sql",
+    "db/prepared/journal/055_0044_fib_audit_hardening_supersession.sql",
+    "db/prepared/journal/056_0045_fib_domain_object_version_lineage.sql",
+    "db/prepared/journal/057_0046_fib_run_version_identity.sql",
+    "db/prepared/journal/058_009_governed_model_registry_rls.sql",
+    "db/prepared/journal/059_0047_fib_taxonomy_mapping_governance_regime.sql",
+    "db/prepared/journal/060_0048_fib_evidence_versions.sql",
+    "db/prepared/journal/061_0049_fib_evidence_sensitivity_vocabulary.sql",
+    "db/prepared/journal/062_0050_fib_evidence_sufficiency_determinations.sql",
+    "db/prepared/journal/063_0051_fib_evidence_erasure_substrate.sql",
+    "db/prepared/journal/064_0052_fib_evidence_sufficiency_run_binding.sql",
+    "db/prepared/journal/065_0053_fib_proxy_versions_provenance.sql",
+    "db/prepared/journal/066_0054_fib_proxy_rubric_constraints.sql",
+    "db/prepared/journal/067_0055_fib_proxy_material_change_registry.sql",
+    "db/prepared/journal/068_0056_fib_proxy_material_fields_editability.sql",
+    "db/prepared/journal/069_010_proxy_material_fields_registry_rls.sql",
+    "db/prepared/journal/070_0057_fib_outcome_materiality_classification.sql",
+    "db/prepared/journal/071_0058_fib_filter_set_justification_columns.sql",
+    "db/prepared/journal/072_0059_fib_outcome_monetization_dispositions.sql",
+    "db/prepared/journal/073_0060_fib_outcome_monetization_dispositions_governance.sql"
+  ],
+  "protected_authority": "HPO-ODS-W2-01",
+  "postgres_requirements": {
+    "setup_manifest": "tests/postgres/b3-completeness-harness.ts (generator: emits the {statements} setup JSON at run time from db/hosted/baseline-manifest.ts BASELINE_UNITS — role topology mirrored from db/baseline/stella_g2_roles.sql, scripts/rehearsal/local-supabase-shim.sql, the G2 prerequisite shim, every baseline unit in manifest order incl. 0060 once registered, hosted-fidelity block, two-tenant fixture; run via `pnpm exec tsx tests/postgres/b3-completeness-harness.ts <out.json>`)",
+    "probe_manifest": "tests/postgres/b3-completeness.probes.json",
+    "rationale": "B3-BLK-3: no real PostgreSQL proof existed for 0057/0058/0059 and the committed suite is DB-free by construction (no mock observes a CHECK, an RLS policy, a trigger or an advisory lock). PG-1..PG-16 + MUT-PG-1..3 run ONLY through pnpm db:audit:disposable (scripts/db-audit-disposable.ts: throwaway postgres:16-alpine container on 127.0.0.1, ephemeral port, no bind mounts, teardown in finally, leftover check) — never staging, never production, never the canonical local stack. tests/postgres/b3-completeness.pg.test.ts wraps the same generator + probes for vitest, gated by UELLIX_PG_TESTS=1 (skipped, never silently passed, otherwise). Dependency note: W2-B1 measured CLOSED via pnpm ops:program-state -- --unit W2-B1 (authority/implementation/audit CLOSED at d058b36); W2-B2 has no program-state unit — its closure is taken from the mission input PREVIOUS_GATE=W2_B2=CLOSED (W2-B2-R4 delta closure audit at 75a385f) and is recorded here as MISSION_INPUT, not machine-measured; FIBIU-03 is Wave 1 (closed per docs/ops/fib/FIB_IMPLEMENTATION_BASELINE_v1.0.0.wave1-closure.json, quoted, not re-measured)."
+  },
+  "sentinels": [
+    {
+      "id": "SENT-B2-COUPLING",
+      "purpose": "B2 canonical live/version review-status mapping and coupling invariant are not reopened: tests/review-status-mapping.test.ts and tests/proxy-suggest-route.test.ts stay green with no change to lib/pipeline/financial-proxy-versions.ts or lib/pipeline/proxies.ts."
+    },
+    {
+      "id": "SENT-FIBIU-09",
+      "purpose": "FIBIU-09 rubric derivation digest (20480 combinations, SHA-256 pinned in tests/b2-remediation-sentinels.test.ts) is unchanged."
+    },
+    {
+      "id": "SENT-MNB-1",
+      "purpose": "MNB-1 audit verb/object correspondence: tests/b2-remediation-sentinels.test.ts (lib/admin pairs) and tests/audit-action-contract.test.ts (static scan over lib/pipeline + lib/admin) stay green; the new getRunMonetizationCoverage/disposition code adds no mismatched (entityType, action) pair."
+    },
+    {
+      "id": "SENT-B1",
+      "purpose": "B1 surfaces untouched: tests/evidence-sufficiency.service.test.ts, tests/evidence-erasure-multiversion.service.test.ts, tests/report-pdf-route.evidence-sensitivity.test.ts and tests/report-print-page.evidence-sensitivity.test.ts stay green; no B1 file (lib/pipeline/evidence*.ts, lib/pipeline/evidence-sufficiency.ts, the B1 actions) appears in the diff."
+    },
+    {
+      "id": "SENT-TENANT",
+      "purpose": "Tenant boundary: IDOR regressions in tests/outcomes.service.test.ts and the cross-tenant 404 contract in tests/proxy-suggest-route.test.ts stay green; every new query in the authorized files carries the organization/project predicate."
+    },
+    {
+      "id": "SENT-AUTH",
+      "purpose": "Auth/identity: tests/authenticated-database-context.test.ts and tests/database-runtime-rls.test.ts stay green; the PG harness never sets a session-scoped claim and never issues SET ROLE authenticated (mirrors db/identity-context.ts exactly)."
+    },
+    {
+      "id": "SENT-SECRETS",
+      "purpose": "The disposable harness's generated password never appears in any captured stdout/JSON/test output (redaction contract of scripts/db-audit-disposable.ts) — pnpm secrets:scan PASS on every commit."
+    }
+  ],
+  "known_conditions": [
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-01",
+    "KTC-HOSTED-BASELINE-REHEARSAL-STALE-02"
+  ],
+  "positive_controls": [
+    {
+      "id": "P-MAT-1",
+      "description": "MATERIALITY (AG-B3-1): an outcome classified 'material' with an otherwise eligible assignment contributes to gross/net/sroiRatio exactly as before (pure applyMaterialityExclusion + runDeterministicCalc; golden pins unchanged).",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "P-RATIO-1",
+      "description": "NO-RATIO (AG-B3-2): with >= 1 defensibly monetized line item the engine emits the numeric ratio exactly as today (sroiRatio number, sroiRatioExact 6dp string, noRatioReason absent) — every pre-existing golden string stays identical.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "P-RATIO-2",
+      "description": "NO-RATIO persisted: calculateAndPersistSroiRun with >= 1 line item persists a numeric sroi_ratio and snapshotJson.sroiRatio exactly as before (no regression on the numeric path).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-COV-1",
+      "description": "COVERAGE: getRunMonetizationCoverage represents every outcome (run line-item outcomes, outcomes with a disposition for the run, project active-assignment outcomes) exactly once, with hasDefensibleMonetization == run has >= 1 line item, and each not_monetized reason kept in its own governed bucket.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-COV-2",
+      "description": "COVERAGE consistency: recordOutcomeMonetizationDisposition accepts 'monetized' for an outcome the run monetized and 'not_monetized' + governed reason + justification for an outcome the run excluded; re-recording updates the existing row via UPDATE ... RETURNING (REUSE_EXISTING_VERSIONING) and appends a domain_object_versions row.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-FILTER-1",
+      "description": "FILTERS (AG-B3-4): explicit '0' for each of deadweight/attribution/displacement/dropoff and duration 1 under filterSemantics 'authoritative' yields exactly the same pinned strings as the legacy engine — explicit 0 + justification remains exactly 0.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "P-FILTER-2",
+      "description": "FILTERS preliminary: under filterSemantics 'preliminary' a NULL filter is coerced as before AND every coerced filter is itemized in CalcResult.preliminaryFilterAssumptions (assignmentId + filter) — preview is labelled preliminary and never silent.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "P-UI-11-1",
+      "description": "FIBIU-11 UI: the outcomes page renders, per outcome, the human classification form (select material / not_material / unclassified, justification field, current classification state) whose action calls setOutcomeMaterialityClassification, and labels the legacy 1-5 score as 'no determinante'.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "P-UI-12-1",
+      "description": "FIBIU-12 UI: the run detail page renders, per outcome, a monetization disposition form (disposition, governed reason select with the seven distinct reasons, justification) bound to THIS run by a hidden field the user cannot edit.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "P-UI-12-2",
+      "description": "FIBIU-12 UI: the run detail page renders the coverage panel ABOVE the review/approval form, with distinct buckets (monetized / material not monetized / per-reason not monetized / missing disposition) and the explicit hasDefensibleMonetization signal, before any approval action is offered.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "P-UI-12-3",
+      "description": "FIBIU-12 UI: preview, run list, run detail KPI and compare page render an explicit 'Sin ratio SROI' state (never '—' alone, never '0.00:1') when sroiRatio is null.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "P-UI-13-1",
+      "description": "FIBIU-13 UI: the calculation page renders one discrete justification field per governed filter (deadweight, attribution, displacement, dropoff, duration) wired to upsertSroiFilterSetAction's existing *Justification fields, plus the legacy shared justification field unchanged.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "P-UI-13-2",
+      "description": "FIBIU-13 UI: each filter shows a visible state distinguishing 'valor 0 justificado' from 'valor desconocido / sin definir' (derived from getFilterJustificationIssues + raw NULL), and the filter inputs no longer default an unset value to '0'.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "P-SVC-1",
+      "description": "SERVICE_ZERO_ROW_FAIL_CLOSED positive: when the UPDATE returns the row, the audit event and the version row are recorded exactly once with the returned row as afterJson.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "P-REG-1",
+      "description": "REGISTRATION: unit 73 (0060) is registered in db/hosted/baseline-manifest.ts with sha256 and expect derived by the scanner; the unit-count pins in the hosted tests (69 at base, already failing against 72) are corrected to the true count (73 units, 61 Drizzle, 2 Supabase, 10 policies) so both tests pass — RESOLVED classification expected in ops:test-diff.",
+      "test_file": "tests/hosted/baseline-manifest.test.ts"
+    },
+    {
+      "id": "P-REG-2",
+      "description": "REGISTRATION: journal wrappers regenerate byte-identically (pnpm journal:verify) with 73 unit wrappers + bootstrap, and the wrapper test's count pin is corrected to the true count.",
+      "test_file": "tests/hosted/baseline-journal-wrapper.test.ts"
+    },
+    {
+      "id": "P-PARSE-1",
+      "description": "PARSE-NUM: every characterization pin in tests/sroi-parse-num.test.ts stays green — parseNum is unchanged as the display/validation helper (parseNum(null) === 0 remains its documented contract).",
+      "test_file": "tests/sroi-parse-num.test.ts"
+    },
+    {
+      "id": "P-STELLA-1",
+      "description": "STELLA no-ratio propagation positive: with a pinned run carrying a numeric ratio the composer/advisor/validator contexts, prompts and the numeric guard behave exactly as today (parity tests unchanged).",
+      "test_file": "tests/b3-completeness.no-ratio.test.ts"
+    },
+    {
+      "id": "PG-1",
+      "description": "0057 applies on the real baseline (all 72 prior units + 0057 apply clean in the canonical disposable harness; probe asserts outcomes.materiality_classification and _justification columns and the two CHECK constraints exist).",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-2",
+      "description": "0058 applies (probe asserts the five discrete justification columns exist on sroi_filter_sets, nullable, no CHECK — FIBDB-010 shape).",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-3",
+      "description": "0059 applies (probe asserts outcome_monetization_dispositions exists with its four CHECKs, unique index, RLS enabled, select+insert policies).",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-9",
+      "description": "unique (outcome_id, calculation_run_id) disposition constraint: a second disposition for the same pair is rejected with uq_outcome_monetization_dispositions_outcome_run.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-10",
+      "description": "RLS SELECT: same-tenant runtime identity sees its disposition row; cross-tenant identity sees 0 rows.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-11",
+      "description": "RLS INSERT: analyst with created_by = auth.uid() inserts (1 row); created_by mismatch and viewer role are rejected with SQLSTATE 42501.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-12",
+      "description": "Pre-approved UPDATE with the runtime-equivalent identity AFTER 0060: same-tenant analyst UPDATE matches and updates exactly 1 row and the stored row changes (ROWS_UPDATED=1); cross-tenant UPDATE matches 0; viewer UPDATE matches 0; identity columns (organization_id/outcome_id/calculation_run_id/created_by) cannot be changed by UPDATE (guard raises).",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-15",
+      "description": "Successor migration rollback/reapply safety: 0060 applied inside a transaction then ROLLBACK leaves no update policy, no guard trigger and no approval-lock trigger; applying 0060 twice converges (idempotent).",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-16",
+      "description": "Baseline/journal reconciliation against applied PG state: pg_policies on outcome_monetization_dispositions == {select, insert, update} (0059 expect 2 policies + 0060 expect 1), pg_trigger carries the two 0060 triggers, relrowsecurity true / relforcerowsecurity false — matching db/hosted/baseline-manifest.ts unit 72/73 expectations; pnpm baseline:verify and pnpm journal:verify PASS on the same tree.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "N-MAT-1",
+      "description": "MATERIALITY: a 'not_material' outcome with a positive, approved, bound line contributes exactly zero — gross/net/sroiRatio equal the result computed without it, and it is itemized as SkippedAssignment reason 'not_material' (never silently dropped).",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "N-MAT-2",
+      "description": "MATERIALITY: an unclassified (NULL) outcome never enters the numerator silently — it is itemized in CalcResult.materialityUnclassifiedOutcomeIds, in the preview payload and in the persisted snapshotJson.materialityUnclassifiedOutcomeIds; no MATERIALITY_UNCLASSIFIED eligibility code is emitted (FIBIU-19).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-MAT-3",
+      "description": "MATERIALITY persisted: calculateAndPersistSroiRun with a not_material outcome persists a run whose line items exclude it and whose snapshot itemizes the exclusion with reason 'not_material'.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-RATIO-1",
+      "description": "NO-RATIO engine: when every assignment is excluded (not_material) the engine emits sroiRatio null, sroiRatioExact null, noRatioReason 'NO_DEFENSIBLE_MONETIZATION', fundersBreakdown [] and unattributedNsvUsd '0.0000', while totalInvestment/gross/net/skippedAssignments are still reported.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "N-RATIO-1b",
+      "description": "NO-RATIO persisted: calculateAndPersistSroiRun in the no-ratio state persists sroi_ratio NULL (never '0.000000'), snapshotJson.sroiRatio null and snapshotJson.noRatioReason set, and still persists the run row (results reporting permitted).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-RATIO-2",
+      "description": "NO-RATIO portfolio: a project whose latest run has sroiRatio null is EXCLUDED with reason 'no_sroi_ratio' — never summed as investment with zero net (no NULL -> net/investment, no NULL -> 0); the pure aggregate and the summary mapper both refuse to fabricate.",
+      "test_file": "lib/portfolios/analytics.test.ts"
+    },
+    {
+      "id": "N-RATIO-3",
+      "description": "NO-RATIO Stella: build-composer-context (pinned run), build-advisor-context and build-validator-context (latest run) with sroi_ratio NULL produce calculationSnapshot.sroiRatio === null (never 0); composer/reviewer/validator prompts serialize sroiRatio null; authorizedNumbersFromSnapshot authorizes no ratio and app/actions/stella/composer.ts passes no null into sroiRatios.",
+      "test_file": "tests/b3-completeness.no-ratio.test.ts"
+    },
+    {
+      "id": "N-RATIO-4",
+      "description": "NO-RATIO public verification: app/(public)/verify/[hash]/page.tsx renders 'Sin ratio SROI' for a locked report whose run has sroi_ratio NULL and never renders 'null:1', '0:1' or '0.00:1'.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "N-RATIO-5",
+      "description": "NO-RATIO comparison: compareCalculationRuns returns sroiRatio delta null when either run carries no ratio (never parseFloat(null || '0')), and the compare page renders the null delta as 'Sin ratio SROI' — never 0.",
+      "test_file": "tests/sroi-results.service.test.ts"
+    },
+    {
+      "id": "N-COV-1",
+      "description": "COVERAGE distinctness: no_defensible_proxy, proxy_not_approved, insufficient_evidence, not_yet_eligible, not_material, superseded_version and other_governed_reason each land in their own bucket — never collapsed into one generic bucket.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-COV-2",
+      "description": "COVERAGE missing disposition: an outcome monetized by the run (or active in the project) with no recorded disposition appears in the 'missing_disposition' bucket — it never silently disappears.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-COV-3",
+      "description": "COVERAGE consistency refusal: recording 'monetized' for an outcome the run did NOT monetize is refused with a named error (no fabricated coverage); recording 'not_monetized' for an outcome the run DID monetize is refused with a named error.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-FILTER-1",
+      "description": "FILTERS authoritative: a NULL/blank value for any of the five governed filters under filterSemantics 'authoritative' throws a named FILTER_VALUE_UNKNOWN error identifying assignment and filter — no line item and no ratio is computed from an invented zero.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "N-FILTER-2",
+      "description": "FILTERS persisted: calculateAndPersistSroiRun with a NULL filter throws before any insert — no run row, no line items, no audit event.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-SVC-1",
+      "description": "SERVICE_ZERO_ROW_FAIL_CLOSED: when db.update(...).returning() yields zero rows, recordOutcomeMonetizationDisposition throws a named error and records NO audit event and NO domain_object_versions row.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-SVC-2",
+      "description": "APPROVED refusal (service layer, early): recordOutcomeMonetizationDisposition refuses insert and update once an approved review exists for the run (the DB guard remains the authoritative refusal — PG-14).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "N-UI-11-1",
+      "description": "FIBIU-11 UI: no Stella control classifies materiality — the classification form has no Stella-driven default/prefill and the only write path is the human server action; the legacy score select never writes the classification.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "N-UI-12-1",
+      "description": "FIBIU-12 UI: the run list never renders '0.00:1' for a run without a ratio; the preview never crashes or renders NaN when sroiRatio is null.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "N-UI-13-1",
+      "description": "FIBIU-13 UI: an unset filter renders as unknown (not as '0'), and a justified 0 renders as supported — the two states are visually and textually distinct.",
+      "test_file": "tests/b3-completeness.ui.test.tsx"
+    },
+    {
+      "id": "N-AUDIT-1",
+      "description": "Audit verb/object correspondence (FIBC-040, MNB-1 sentinel): every logAuditAction call in the authorized lib/pipeline files keeps an action whose object prefix matches its entityType — verified by the existing static scan.",
+      "test_file": "tests/audit-action-contract.test.ts"
+    },
+    {
+      "id": "N-TENANT-1",
+      "description": "Tenant boundary sentinel: outcomes/calculation services keep refusing cross-organization project ids (IDOR regressions) — existing negative tests stay green.",
+      "test_file": "tests/outcomes.service.test.ts"
+    },
+    {
+      "id": "PG-4",
+      "description": "0057 materiality vocabulary CHECK: 'material' and 'not_material' accepted; 'unclassified', 'MATERIAL', '' rejected by outcomes_materiality_classification_check.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-5",
+      "description": "0057 pair CHECK: classification without justification and justification without classification are rejected by outcomes_materiality_classification_pair_check; both NULL and both set are accepted.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-6",
+      "description": "0059 disposition/reason vocabulary CHECK: 'monetized'/'not_monetized' accepted, 'excluded' rejected; each of the seven governed reasons accepted, 'no_reason' rejected.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-7",
+      "description": "0059 not_monetized requires reason: disposition 'not_monetized' with reason NULL is rejected by outcome_monetization_dispositions_reason_required_check.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-8",
+      "description": "0059 reason/justification pair CHECK: a reason with justification NULL is rejected by outcome_monetization_dispositions_justification_pair_check.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-13",
+      "description": "DELETE after 0060: same-tenant runtime DELETE still matches 0 rows (no DELETE policy is added); the owner's DELETE of a pre-approved row succeeds (rolled back) proving the refusal is RLS, not the guard, on the pre-approved path.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "PG-14",
+      "description": "Approved-run DB immutability after 0060: UPDATE and DELETE of a disposition whose run has an approved review are rejected with SQLSTATE 42501 by the guard trigger for the runtime identity AND for the table owner (DB-level, not RLS-level); INSERT of a new disposition for an approved run is rejected too; the approval-side trigger takes the exclusive advisory lock (60, hashtext(run_id)) and the guard takes the shared one (measured in pg_locks), and a second session holding the approval lock blocks a disposition UPDATE (lock_timeout) until it commits, after which the UPDATE is refused as approved (TOCTOU closed).",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    }
+  ],
+  "mutation_controls": [
+    {
+      "id": "M-MAT-1",
+      "description": "Removing the materiality exclusion (treating not_material like material) makes N-MAT-1 fail: the not_material line would add value to gross/net and change sroiRatio, and the 'not_material' skip entry would be absent.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "M-MAT-2",
+      "description": "Removing the unclassified itemization makes N-MAT-2 fail: materialityUnclassifiedOutcomeIds would be missing/empty for a contributing unclassified outcome.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "M-RATIO-1",
+      "description": "Removing the no-ratio guard (letting netSocialValue.div(totalInvestment) run with zero line items) makes N-RATIO-1/N-RATIO-1b fail: sroiRatio would be 0 instead of null and noRatioReason absent.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "M-RATIO-2",
+      "description": "Restoring the portfolio fallback (?? net/investment or ?? 0) makes N-RATIO-2 fail: the project would be included with ratio 0 instead of excluded with reason 'no_sroi_ratio'.",
+      "test_file": "lib/portfolios/analytics.test.ts"
+    },
+    {
+      "id": "M-RATIO-3",
+      "description": "Restoring parseFloat(sroiRatio ?? '0') in any Stella context builder makes N-RATIO-3 fail (snapshot ratio 0 instead of null).",
+      "test_file": "tests/b3-completeness.no-ratio.test.ts"
+    },
+    {
+      "id": "M-COV-1",
+      "description": "Collapsing the per-reason buckets back into a generic 'not_yet_eligible'/'other' bucket makes N-COV-1 fail; dropping outcomes without a disposition makes N-COV-2 fail.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "M-FILTER-1",
+      "description": "Restoring parseNum(null) -> 0 coercion on the authoritative path (removing the FILTER_VALUE_UNKNOWN refusal) makes N-FILTER-1 and N-FILTER-2 fail: a NULL filter would compute a line at 0% instead of refusing.",
+      "test_file": "tests/sroi-calculation.golden.test.ts"
+    },
+    {
+      "id": "M-SVC-1",
+      "description": "Removing .returning()/the zero-row check from the update branch makes N-SVC-1 fail: an audit event and a version row would be recorded for a mutation that never happened.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
+    },
+    {
+      "id": "MUT-PG-1",
+      "description": "UPDATE policy removal: inside a rolled-back transaction, DROP POLICY outcome_monetization_dispositions_update makes the PG-12 same-tenant UPDATE match 0 rows again — proving PG-12's positive control is sensitive to the policy.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "MUT-PG-2",
+      "description": "Approved-run guard removal: inside a rolled-back transaction, DROP TRIGGER trg_outcome_monetization_dispositions_approval_guard lets the owner UPDATE an approved-run disposition (1 row) — proving PG-14 is enforced by the guard and would be caught if removed.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    },
+    {
+      "id": "MUT-PG-3",
+      "description": "Cross-tenant predicate removal: inside a rolled-back transaction, replacing the update policy's predicate with USING (true) WITH CHECK (true) makes the cross-tenant UPDATE match 1 row — proving PG-12's negative control is sensitive to the tenant predicate.",
+      "test_file": "tests/postgres/b3-completeness.pg.test.ts"
+    }
+  ],
+  "exit_gates": [
+    "typecheck",
+    "secrets_scan",
+    "authority_seal_verify",
+    "ods_scope",
+    "ods_poststate",
+    "journal_verify",
+    "baseline_verify",
+    "postgres_disposable_probe",
+    "targeted_tests"
+  ]
+}

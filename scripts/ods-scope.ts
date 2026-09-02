@@ -421,6 +421,24 @@ export const PROTECTED_GRANTS: ProtectedGrant[] = [
       'db/prepared/stella_hosted_0001_rollback.sql',
     ],
   },
+  // HPO-ODS-W2-09 (docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json,
+  // HPO mission COMMERCIAL-V1-WAVE2-RECONCILIATION-SUCCESSOR-REMEDIATION-R2):
+  // the security successor migration 0061 that revokes EXECUTE FROM PUBLIC on
+  // the two functions closed Wave2 unit 0060 created (B0-17), as canonical
+  // baseline unit ordinal 74. Exactly the four literal protected paths that
+  // successor materializes: the migration, its Drizzle snapshot, the journal
+  // entry and the regenerated wrapper. Additive to HPO-ODS-W2-08 (unchanged).
+  // No glob. Not 0060, not any other migration, snapshot or wrapper.
+  {
+    authorityId: 'HPO-ODS-W2-09',
+    branch: 'codex/commercial-v1-wave2-reconciliation-r1',
+    patterns: [
+      'db/migrations/0061_fib_disposition_governance_function_execute_revocation.sql',
+      'db/migrations/meta/0061_snapshot.json',
+      'db/migrations/meta/_journal.json',
+      'db/prepared/journal/074_0061_fib_disposition_governance_function_execute_revocation.sql',
+    ],
+  },
 ]
 
 export interface ProtectedGrantResolution {

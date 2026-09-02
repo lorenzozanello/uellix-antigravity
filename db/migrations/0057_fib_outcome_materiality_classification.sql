@@ -1,0 +1,4 @@
+ALTER TABLE "outcomes" ADD COLUMN "materiality_classification" varchar(20);--> statement-breakpoint
+ALTER TABLE "outcomes" ADD COLUMN "materiality_classification_justification" text;--> statement-breakpoint
+ALTER TABLE "outcomes" ADD CONSTRAINT "outcomes_materiality_classification_check" CHECK ("outcomes"."materiality_classification" IS NULL OR "outcomes"."materiality_classification" IN ('material', 'not_material'));--> statement-breakpoint
+ALTER TABLE "outcomes" ADD CONSTRAINT "outcomes_materiality_classification_pair_check" CHECK (("outcomes"."materiality_classification" IS NULL AND "outcomes"."materiality_classification_justification" IS NULL) OR ("outcomes"."materiality_classification" IS NOT NULL AND "outcomes"."materiality_classification_justification" IS NOT NULL));

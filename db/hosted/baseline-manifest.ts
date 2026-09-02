@@ -972,6 +972,276 @@ export const BASELINE_UNITS: readonly BaselineUnit[] = [
       'historical row to violate the new constraint.',
     expect: {},
   },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B2 (FIBIU-08). Proxy batch, following the same append convention     *
+   * unit 64 (W2-B1-R3) established.                                         *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 65,
+    id: '0053_fib_proxy_versions_provenance.sql',
+    kind: D,
+    file: 'db/migrations/0053_fib_proxy_versions_provenance.sql',
+    sha256: '5778f649a09b48092436385c9642cefbf6e2f6773d357a361489f8a6c17836c5',
+    dependsOn: ['0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-08 stage A (FIBC-010/FIBC-012/FIBDB-006/FIBDB-039). CREATE TABLE financial_proxy_versions ' +
+      '(the FIBC-002 specialization for proxies, mirroring evidence_versions\' treatment) plus ' +
+      'outcome_proxy_assignments.financial_proxy_version_id. Rubric factor columns (FIBDB-006 field ' +
+      'list) land here with no CHECK yet — FIBDB-044\'s range/derived-consistency CHECKs are FIBIU-09\'s ' +
+      'own migration. RLS mirrors financial_proxies exactly: org-scoped or approved-global SELECT, ' +
+      'INSERT/UPDATE at the same role floor as financial_proxies/proxy_sources, no DELETE policy.',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing three policies are guarded but do not change the unit\'s overall class. No reverse ' +
+      'script — forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 3,
+      securitySurfaceDigest: '1fb6e2415a9a69dd82c9763caf068039a631b0e7f708d1b9d824ff2e92a7d901',
+    },
+  },
+  {
+    ordinal: 66,
+    id: '0054_fib_proxy_rubric_constraints.sql',
+    kind: D,
+    file: 'db/migrations/0054_fib_proxy_rubric_constraints.sql',
+    sha256: '2237b3247cdb22f792f30e83b24edfc202abfd9b59918be272116014ffa67ae7',
+    dependsOn: ['0053_fib_proxy_versions_provenance.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-09 (FIBC-011/FIBDB-044). Five ADD CONSTRAINT CHECKs on financial_proxy_versions: rubric ' +
+      'factor range (0-3), confidence/risk derived-score-formula consistency, and confidence-ceiling/ ' +
+      'risk-floor implications. Defense-in-depth only — lib/pipeline/financial-proxy-rubric.ts\'s ' +
+      'deriveRubricClassification() is the sole AUTHORITATIVE, fully-tested derivation; these five ' +
+      'CHECKs have never been executed against a live Postgres instance in this DB-free-test ' +
+      'repository and are flagged here for adversarial review rather than claimed as proven.',
+    expect: {},
+  },
+  {
+    ordinal: 67,
+    id: '0055_fib_proxy_material_change_registry.sql',
+    kind: D,
+    file: 'db/migrations/0055_fib_proxy_material_change_registry.sql',
+    sha256: '58924853da26b4c1fcd5ac0af00bade9a8fa5d3fe4977d84b7032e8c4e7ea0ce',
+    dependsOn: ['0053_fib_proxy_versions_provenance.sql'],
+    dml: 'global-catalog',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-10 stage A (FIBC-013/FIBDB-007). CREATE TABLE proxy_material_fields_registry, GRANT SELECT ' +
+      'to authenticated (requires that role to exist, hence B not A — same reasoning as unit 51\'s ' +
+      'governed_model_registry), and an idempotent ON CONFLICT DO NOTHING seed of 39 literal field-> ' +
+      'category rows (universal reference data, not tenant data) for registry_version 1.0.0, matching ' +
+      'the PROXY_MATERIAL_FIELDS row already seeded in governed_model_registry (unit 51). RLS is NOT ' +
+      'enabled by this unit; it arrives as policies unit 69 (010_proxy_material_fields_registry_rls.sql), ' +
+      'exactly as unit 58 supplies it for governed_model_registry. CORRECTION (W2-B2-R1 / R-B2-07, ' +
+      'AG-B2-2): an earlier form of this note called that a stage-B/E deferral — FIBDB-007 declares ' +
+      'migration_stage [A] only and "RLS: read-all members", so RLS is a stage-A requirement, not a ' +
+      'deferrable one. Description-only edit; the SQL file and its sha256 are untouched.',
+    rollback:
+      'Applied with psql -1; a mid-unit failure rolls back whole. The seed INSERT is idempotent ' +
+      '(ON CONFLICT DO NOTHING); the CREATE TABLE is not, so a partial re-apply after a table already ' +
+      'exists fails loudly rather than silently diverging. No reverse script — forward-only, recovered ' +
+      'by DESTROY_AND_REPROVISION.',
+    expect: { usesAuthenticated: true, dmlStatementCount: 1, literalRowSourceCount: 1 },
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B2-R1 (B2 remediation, W2_B2_REMEDIATION_AUTHORITY_v1.0.0).          *
+   * Forward-only correction units; 0053/0054/0055 are journaled, hashed and  *
+   * untouched.                                                               *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 68,
+    id: '0056_fib_proxy_material_fields_editability.sql',
+    kind: D,
+    file: 'db/migrations/0056_fib_proxy_material_fields_editability.sql',
+    sha256: '86d7d22347425aa02678a7aeb1ebf185f0febcd014bc994d238df88bd9f34557',
+    dependsOn: ['0055_fib_proxy_material_change_registry.sql', '0040_governed_model_registry.sql'],
+    dml: 'global-catalog',
+    managed: 'A-hosted-compatible',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'R-B2-03 (FIBC-013/FIBDB-007; closes M4 and AG-B2-3-DERIVED). ADD COLUMN editability (NULLable, ' +
+      'no default, CHECK over user_editable/system_derived/system_sealed) on proxy_material_fields_registry; ' +
+      'an idempotent ON CONFLICT DO NOTHING seed of 70 literal rows — one per persisted column of ' +
+      'financial_proxies (24) and financial_proxy_versions (46) — as NEW registry_version 1.1.0 (the 39 ' +
+      'rows of 1.0.0 are historical record, untouched: FIBDB-007 immutable per version); and the ' +
+      'append-only governed_model_registry row (PROXY_MATERIAL_FIELDS, 1.1.0), same convention as unit 51. ' +
+      'Universal reference data, not tenant data. No grant, no RLS change (RLS for this table is unit 69).',
+    rollback:
+      'Applied with psql -1; a mid-unit failure rolls back whole. Both INSERTs are idempotent; ADD ' +
+      'COLUMN / ADD CONSTRAINT are not, so a partial re-apply fails loudly. No reverse script — ' +
+      'forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: { dmlStatementCount: 2, literalRowSourceCount: 2 },
+  },
+  {
+    ordinal: 69,
+    id: '010_proxy_material_fields_registry_rls.sql',
+    kind: P,
+    file: 'db/policies/010_proxy_material_fields_registry_rls.sql',
+    sha256: '1778707b22e83dad7046ae013bb58bf8c5f3faadd1d0183bcbd1d41799b43c03',
+    dependsOn: ['0056_fib_proxy_material_fields_editability.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'idempotent',
+    managedNote:
+      'R-B2-07 (AG-B2-2 A_RLS_REQUIRED_IN_STAGE_A; FIBDB-007 "RLS: read-all members", migration_stage [A] ' +
+      'only). RLS for proxy_material_fields_registry: ENABLE (never FORCE — the seed is migration-owner ' +
+      'DML), one SELECT policy USING auth.uid() IS NOT NULL, no INSERT/UPDATE/DELETE policy, so rows are ' +
+      'structurally immutable to every non-owner role. Same shape as unit 58 for governed_model_registry. ' +
+      'The 0055 GRANT SELECT TO authenticated is retained unchanged; no new grant.',
+    rollback:
+      'One guarded DROP POLICY IF EXISTS ahead of one CREATE POLICY; ENABLE ROW LEVEL SECURITY is a ' +
+      'no-op when already on. Converges.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 1,
+      securitySurfaceDigest: 'a1122391d6d558216fdf7ce14398c6e06ed504b818b7d5b1964d5845eb276785',
+    },
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B3 (FIBIU-11, Wave 2 batch B3: Outcome and filters).                 *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 70,
+    id: '0057_fib_outcome_materiality_classification.sql',
+    kind: D,
+    file: 'db/migrations/0057_fib_outcome_materiality_classification.sql',
+    sha256: '2baf675c70d35b8aa8b8fc65e4fc6c1d669c1c714d0db23d080c80a8f8531f2c',
+    dependsOn: ['0056_fib_proxy_material_fields_editability.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-11 (FIBC-015/FIBDB-008/FIBDB-045). ADD COLUMN materiality_classification ' +
+      '(NULLable varchar(20), CHECK material/not_material) and ' +
+      'materiality_classification_justification (NULLable text) on outcomes, plus the pair CHECK ' +
+      'requiring both set or both NULL. Deliberately distinct from the pre-existing ' +
+      'materiality_score/materiality_rationale columns and their own pair CHECK: FIBC-015 forbids ' +
+      'auto-converting the 1-5 score into this classification (NPDD-03), so the two column pairs are ' +
+      'independent and this unit touches neither the score column nor its CHECK.',
+    expect: {},
+  },
+  {
+    ordinal: 71,
+    id: '0058_fib_filter_set_justification_columns.sql',
+    kind: D,
+    file: 'db/migrations/0058_fib_filter_set_justification_columns.sql',
+    sha256: '4de23a6717d628abd4a605344934e1d3beb74adafe046c9e1df07a0421681b00',
+    dependsOn: ['0057_fib_outcome_materiality_classification.sql'],
+    ...PLAIN_DDL,
+    managedNote:
+      'FIBIU-13 (FIBC-017/FIBDB-010, implementation form frozen at R1, superseding FIB-01A\'s ' +
+      'originally declared NEW_CONSTRAINT). ADD COLUMN deadweight_justification, ' +
+      'attribution_justification, displacement_justification, dropoff_justification, and ' +
+      'duration_justification (all NULLable text) on sroi_filter_sets, one per filter, so ' +
+      'FILTER_JUSTIFICATION_MISSING is verifiable independently per filter instead of degenerating ' +
+      'to "the shared justification column is non-empty". Deliberately no NOT NULL, no presence ' +
+      'CHECK, and no new percentage-range CHECK: the four existing per-filter range CHECKs and the ' +
+      'legacy shared justification column are untouched. discount_rate_pct lives on projects, not ' +
+      'this table, and is out of scope for this unit.',
+    expect: {},
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B3 (FIBIU-12, Wave 2 batch B3: Outcome and filters).                 *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 72,
+    id: '0059_fib_outcome_monetization_dispositions.sql',
+    kind: D,
+    file: 'db/migrations/0059_fib_outcome_monetization_dispositions.sql',
+    sha256: 'a6d64e7f30f6fa321040936c79e84339ff9130d13fd79c738bb7bde773ea8a01',
+    dependsOn: ['0058_fib_filter_set_justification_columns.sql', '0031_rls_core.sql'],
+    dml: 'none',
+    managed: 'B-hosted-compatible-given-supabase',
+    reapply: 'destructive-on-reapply',
+    managedNote:
+      'FIBIU-12 stage A (FIBC-016/FIBDB-009/045). CREATE TABLE outcome_monetization_dispositions — ' +
+      'one append-only row per (outcome, calculation_run): disposition monetized/not_monetized, reason ' +
+      '(one of 7 governed values, required when not_monetized), justification (required whenever ' +
+      'reason is set). RLS: org-scoped SELECT, INSERT restricted to the same analyst+ floor ' +
+      'upsertSroiFilterSet/outcomes.ts already use for this pipeline (created_by = auth.uid()), no ' +
+      'UPDATE/DELETE policy — matches the evidence_sufficiency_determinations pattern (unit 62).',
+    rollback:
+      'The CREATE TABLE / ADD CONSTRAINT / CREATE INDEX statements have no IF NOT EXISTS guard; the ' +
+      'trailing two policies are guarded but do not change the unit\'s overall class. No reverse script ' +
+      '— forward-only, recovered by DESTROY_AND_REPROVISION.',
+    expect: {
+      referencesAuthSchema: true,
+      rlsEnabledTableCount: 1,
+      policiesCreatedCount: 2,
+      securitySurfaceDigest: 'b478a797ff4da24bae5a65dafa196892d14b636c420e016c29c2cbaafb358c0e',
+    },
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * W2-B3 completeness (FIBIU-12 stage B, AG-B3-6 / PG-12 —                 *
+   * docs/ops/wave2/W2_B3_COMPLETENESS_AUTHORITY_v1.0.0.json).               *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 73,
+    id: '0060_fib_outcome_monetization_dispositions_governance.sql',
+    kind: D,
+    file: 'db/migrations/0060_fib_outcome_monetization_dispositions_governance.sql',
+    sha256: '9456eb0d93c34e49ed7333a9a306f22992f55a031b94fa2fd807e7d5e567a2bb',
+    dependsOn: ['0059_fib_outcome_monetization_dispositions.sql', '0031_rls_core.sql', '0030_immutability.sql'],
+    dml: 'none',
+    managed: 'A-hosted-compatible',
+    reapply: 'idempotent',
+    managedNote:
+      'FIBIU-12 stage B (FIBDB-009/045), successor to sealed 0059 (never edited). Adds the same-tenant ' +
+      'analyst+ UPDATE policy 0059 lacked (PG-12 measured RLS_ENFORCED_UPDATE_DENIED_OR_ZERO under the ' +
+      'runtime identity) and DB-enforced, race-safe approved-run immutability: a SECURITY DEFINER guard ' +
+      '(BEFORE INSERT/UPDATE/DELETE) refusing writes once sroi_run_reviews carries an approved review for ' +
+      'the run and freezing the identity columns, coordinated with an approval-side trigger on ' +
+      'sroi_run_reviews through transaction-scoped advisory locks (60, hashtext(run_id)) — no table ' +
+      'privilege is needed for advisory locks, so the protocol is independent of the hosted GRANT posture. ' +
+      'Uses only 0031 helpers on schema public; no auth./storage. reference.',
+    rollback:
+      'Fully guarded: DROP POLICY IF EXISTS / CREATE OR REPLACE FUNCTION / DROP TRIGGER IF EXISTS before ' +
+      'each CREATE. Converges on reapply; applied with psql -1 so a failure rolls the unit back whole.',
+    expect: {
+      policiesCreatedCount: 1,
+      functionsCreatedCount: 2,
+      securityDefinerCount: 1,
+      searchPathSettings: ['public', 'public'],
+      triggersCreatedCount: 2,
+      securitySurfaceDigest: '857695d664847e2d10f686d57b50d93f13d0f07490ef3693058f437a08d89a00',
+    },
+  },
+
+  /* ---------------------------------------------------------------------- *
+   * COMMERCIAL-V1-WAVE2-RECONCILIATION successor remediation (HPO-ODS-W2-09, *
+   * docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1 *
+   * .json). Appended after the closed Wave2 B3 corpus, same convention.     *
+   * ---------------------------------------------------------------------- */
+  {
+    ordinal: 74,
+    id: '0061_fib_disposition_governance_function_execute_revocation.sql',
+    kind: D,
+    file: 'db/migrations/0061_fib_disposition_governance_function_execute_revocation.sql',
+    sha256: '3aeb49965697bee70b14fb59f8f5ff43cd3e15279c39d12575fe703867b646e7',
+    dependsOn: ['0060_fib_outcome_monetization_dispositions_governance.sql'],
+    ...PLAIN_DDL,
+    // REVOKE of a privilege not held is a no-op: the unit converges on reapply.
+    reapply: 'idempotent',
+    rollback: 'Two REVOKE EXECUTE … FROM PUBLIC statements; re-running them is a no-op. Reverting would re-expose the functions to PUBLIC and re-fail B0-17 — never done.',
+    managedNote:
+      'B0-17 security successor to sealed 0060 (never edited). Exactly two REVOKE EXECUTE … FROM PUBLIC ' +
+      'statements on the two functions 0060 created in schema public (uellix_guard_disposition_run_approval, ' +
+      'uellix_lock_run_dispositions_on_approval), re-applying the 0033/042 discipline (no function in public ' +
+      'EXECUTE-able by anon or PUBLIC) that no unit after 0033 had needed until 0060. Trigger firing does not ' +
+      'depend on the invoking role\'s EXECUTE, so the approved-run guard and the approval-side lock behave ' +
+      'exactly as 0060 installed them. No GRANT, no DDL, no DML, no policy, no auth./storage. reference.',
+    expect: {},
+  },
 ]
 
 /** The order, derived so the two cannot disagree. */

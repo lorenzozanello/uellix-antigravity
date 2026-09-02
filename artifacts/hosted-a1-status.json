@@ -66,7 +66,7 @@
   "chainPlan": {
     "ok": false,
     "code": "PROVISIONING_BASELINE_INCOMPLETE",
-    "message": "refused: 14 baseline unit(s) missing, starting with 0040_governed_model_registry.sql. Phases do not overlap and they do not get skipped.",
+    "message": "refused: 24 baseline unit(s) missing, starting with 0040_governed_model_registry.sql. Phases do not overlap and they do not get skipped.",
     "stepCount": 0,
     "steps": [],
     "writesPermitted": false,
@@ -74,7 +74,7 @@
     "nextAction": null
   },
   "blockers": [
-    "PROVISIONING_BASELINE_INCOMPLETE: refused: 14 baseline unit(s) missing, starting with 0040_governed_model_registry.sql. Phases do not overlap and they do not get skipped."
+    "PROVISIONING_BASELINE_INCOMPLETE: refused: 24 baseline unit(s) missing, starting with 0040_governed_model_registry.sql. Phases do not overlap and they do not get skipped."
   ],
   "warnings": [
     "this corroboration covers 9 of 11 chain packages; grounding_0005_claim_advisory_lock, stella_0019_storage_write_roles did not exist when it was measured and is therefore NOT covered by this verdict — unmeasured, which is not the same as absent. Re-measure the target to extend A1_OBSERVED_CHAIN; nothing here may extend it by inference"

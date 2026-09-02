@@ -1,0 +1,179 @@
+{
+ "package_id": "W2_B2_AUTHORITY_GAP_DISPOSITION",
+ "version": "1.0.0",
+ "artifact_id": "W2_B2_AUTHORITY_GAP_DISPOSITION_v1.0.0",
+ "authority_class": "SUCCESSOR_AUTHORITY_GAP_DISPOSITION",
+ "supersedes": null,
+ "purpose": "Dispose the two authority gaps (GAP-A, GAP-B) discovered by the independent adversarial re-audit W2-B2-R2-AR of the B2 remediation. This artifact does NOT rewrite W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json, does NOT implement any runtime fix, and does NOT authorize W2-B3. It freezes a new narrow remediation node, R-B2-10, and the closure rule that governs it.",
+ "identity": {
+  "task": "W2-B2-R3-AUTH",
+  "class": "A",
+  "mode": "SUCCESSOR_AUTHORITY_MATERIALIZATION",
+  "branch": "codex/w2-methodology-objects-r1",
+  "worktree": "C:\\Users\\Lorenzo\\Documents\\uellix-stella-wave2"
+ },
+ "predecessor_authority": {
+  "path": "docs/ops/wave2/W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json",
+  "artifact_id": "W2_B2_REMEDIATION_AUTHORITY_v1.0.0",
+  "sha256": "6f961e13904e5249bc4ba07b2e9bdb96e9f71be788f3eb5cee50dc102a994782",
+  "modified_by_this_artifact": false
+ },
+ "source_reaudit": {
+  "task": "W2-B2-R2-AR",
+  "mode": "INDEPENDENT_ADVERSARIAL_REAUDIT",
+  "audited_remediation_head": "a52139f9c5d3a635b321b8d1d726c3fb91a7a9a7",
+  "audited_remediation_tree": "216b394ffdff6017179a5cee73f624ddd4f1aea1",
+  "remediation_base_sha": "8db02b3",
+  "verdict": "0_BLOCKING_0_DETERMINISTIC_REGRESSIONS_2_NEW_AUTHORITY_GAPS",
+  "note": "The re-audit confirmed all 9 remediation nodes (R-B2-01..09) 1:1 by diff against the source authority and found all frozen exit gates satisfied. It also found two items the predecessor authority did not adjudicate, named GAP-A and GAP-B below. Neither is an implementation defect in a remediation node; both are gaps in the predecessor authority's scope statement."
+ },
+ "gap_a": {
+  "identity": "app/api/proxies/[id]/suggest/route.ts",
+  "measured_current_behavior": {
+   "reachable": true,
+   "method": "POST",
+   "auth": "authenticated organization member via getCurrentOrganizationContext",
+   "effect": "writes financial_proxies.review_status from 'suggested' to 'pending_review' directly via db.update(financialProxies), inside withOrganizationDatabaseContext, with no read or write of the current financial_proxy_versions row",
+   "blob_at_audited_head": "b9b41a5794f3dcf8143c4f208f3c3843ebbd8041",
+   "blob_at_remediation_base_8db02b3": "b9b41a5794f3dcf8143c4f208f3c3843ebbd8041",
+   "byte_identical_to_base": true,
+   "preexisting": true,
+   "note": "This route was not touched by any of the 9 remediation commits (852cdf3, 4da9fee, 63bfbf9 and successors through a52139f). It predates R-B2-01 and was not among the 'four transition sites' R-B2-01's authority text enumerated (create, review-status change via updateFinancialProxyReviewStatus, material-change fork, archive)."
+  },
+  "disposition": "MUST_REMEDIATE",
+  "authoritative_interpretation": {
+   "controlling_invariant": "LIVE_VERSION_STATUS_COUPLING, frozen in W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json live_to_version_review_status_mapping.coupling_invariant, stated as: 'At every transaction commit boundary, financial_proxies.review_status MUST equal the inverse image of the CURRENT ... financial_proxy_versions.review_status under this mapping.'",
+   "precedence_ruling": "R-B2-01's own exit_gate text ('the coupling invariant holds at all four transition sites') is an incomplete enumeration of the sites known when R-B2-01 was authored. It does not create an exception for a fifth reachable mutation path, and it cannot narrow the universal 'every transaction commit boundary' text that precedes it in the same frozen artifact. The universal invariant controls. This is an internal inconsistency in the predecessor authority's own drafting, not a defect in the delivered remediation.",
+   "scope_conclusion": "Every reachable HTTP/API/service transaction boundary that changes financial_proxies.review_status is in scope for the coupling invariant, independent of whether the predecessor authority's four-site enumeration named it."
+  },
+  "authorized_remediation_node": "R-B2-10",
+  "authorized_surfaces": {
+   "service": [
+    "app/api/proxies/[id]/suggest/route.ts"
+   ],
+   "reused_primitive": "lib/pipeline/proxies.ts updateFinancialProxyReviewStatus — the existing canonical governed transition primitive that already performs: mapping the live token to the version token via toVersionReviewStatus, writing financial_proxy_versions through updateCurrentFinancialProxyVersion, and calling assertLiveVersionStatusCoupling in the same transaction. No second status-transition implementation may be created if this primitive can be reused; if it cannot be reused for a structural reason (e.g. its authorization/role checks are incompatible with the suggest route's caller), the exact incompatibility must be named and the minimum required adaptation to the primitive itself is IN scope, not a hand-rolled parallel implementation.",
+   "tests": [
+    "tests/** — additions only, scoped to the suggest route transition"
+   ]
+  },
+  "prohibited_surfaces_for_r_b2_10": [
+   "db/migrations/**",
+   "db/schema.ts",
+   "lib/pipeline/financial-proxy-rubric.ts (FIBIU-09 rubric math/constraints — see gap_b)",
+   "any B1 surface",
+   "any W2-B3 / U7 / U8 surface",
+   "product integration outside the suggest route and the reused primitive"
+  ],
+  "required_behavior": {
+   "transition": "suggested (live) -> pending_review (live) MUST correspond, atomically within the same transaction, to draft (version) -> under_review (version) per the frozen canonical mapping.",
+   "atomicity": "No transaction may commit a state where the live row shows 'pending_review' while the current version does not show 'under_review', or vice versa.",
+   "preserve": [
+    "authentication (getCurrentOrganizationContext / withOrganizationDatabaseContext)",
+    "organization/tenant boundary (the existing ownership predicate)",
+    "existing route request/response contract (200/{success:true}, 401, 404, 400 'already_submitted')",
+    "existing audit behavior for this transition",
+    "Candidate -> Reference lifecycle ordering",
+    "FIBIU-09 closed status (no rubric interaction from this route)",
+    "MNB-1 closed status (audit verb correspondence)"
+   ],
+   "stop_condition": "If the route cannot safely perform the governed transition under existing authority (e.g. the reused primitive's role/authorization model cannot admit this route's caller without weakening a check), implementation MUST STOP and raise a new authority gap rather than deleting/disabling the endpoint or inventing an unauthorized parallel transition path. Disabling the endpoint is authorized ONLY if existing authority is separately shown to require it — no such showing exists today."
+  },
+  "required_committed_coverage": [
+   "1. The reachable suggest-route transition produces coupled live/version state (live 'pending_review' with current version 'under_review'), proven by a committed test.",
+   "2. The canonical mapping/primitive is used — verified by the test asserting the version row actually transitions, not merely the live row.",
+   "3. Transaction atomicity: no partial live-only commit is observable, including under a simulated failure after the live write and before the version write (or the reverse), proven by the transaction wrapping both writes.",
+   "4. An unauthenticated or non-member actor is refused (401), verified by a negative test.",
+   "5. A cross-tenant actor (member of a different organization) attempting to mutate another organization's proxy is refused (404, per the existing not_found branch driven by the ownership predicate), verified by a negative test.",
+   "6. A deliberate negative/mutation control that proves the test suite would actually detect a live-only divergence — e.g. temporarily reverting the version write and confirming the coupling assertion or the dedicated test fails — demonstrating the test is not vacuously passing.",
+   "7. Real PostgreSQL is required where needed to observe the financial_proxy_versions.review_status CHECK constraint and the transaction-boundary behavior, consistent with R-B2-09's postgres_requirement in the predecessor authority."
+  ]
+ },
+ "gap_b": {
+  "identity": "lib/pipeline/financial-proxy-rubric.ts",
+  "disposition": "RATIFY_EXACT_EXISTING_CHANGE_AS_AUTHORIZED_INTEGRATION_SURFACE",
+  "why_a_gap": "R-B2-01's required_changes necessarily introduced use of the canonical status mapping and the live/version coupling assertion at every site that forks a version and touches the live row's review_status, including recordProxyRubricEvaluation in this file. The predecessor authority's authorized_remediation_surfaces.service list omitted this file, even though the change was both required by R-B2-01 and already delivered and audited.",
+  "exact_diff_identity": {
+   "commit": "b7072bf326e003b2540675a79b5db654f6bdc3f5",
+   "commit_title": "fix(fib): reset governance on global promotion, copy only factual provenance",
+   "file": "lib/pipeline/financial-proxy-rubric.ts",
+   "blob_before": "500efd83b02da4fb7149e32ace29791c38b047c0",
+   "blob_before_ref": "8db02b3:lib/pipeline/financial-proxy-rubric.ts",
+   "blob_after": "5b5678d57a1a0f1318f8c78f3700bf6156129a67",
+   "blob_after_ref": "a52139f9c5d3a635b321b8d1d726c3fb91a7a9a7:lib/pipeline/financial-proxy-rubric.ts",
+   "diff_summary": "Import toLiveReviewStatus and assertLiveVersionStatusCoupling from lib/pipeline/financial-proxy-versions. In recordProxyRubricEvaluation, when applyMaterialChange forks the version, set the live row's reviewStatus via toLiveReviewStatus(result.version.reviewStatus) instead of the literal 'pending_review', and call assertLiveVersionStatusCoupling(liveReviewStatus, updated.reviewStatus) after the version write, inside the same transaction. No other line in the file changed."
+  },
+  "ratification_scope": {
+   "authorized": "Exactly the diff identified above, blob_before -> blob_after, and no more.",
+   "not_authorized": [
+    "rubric mathematics changes",
+    "factor changes",
+    "weight changes",
+    "threshold changes",
+    "confidence/risk derivation changes",
+    "SQL rubric constraints",
+    "new FIBIU-09 semantics",
+    "any future arbitrary edit to lib/pipeline/financial-proxy-rubric.ts beyond this exact ratified diff"
+   ]
+  },
+  "fibiu_09_status": "CLOSED. Not reopened by this ratification. The ratified diff touches only the review-status integration path (a bounded consumer of R-B2-01's mapping), never the rubric derivation, its ceilings/floors, or its CHECK constraints — consistent with W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json preserved_closed_surfaces.FIBIU-09.permitted_interaction.",
+  "implementation_change_required": false,
+  "stop_condition": "If materialization of this artifact detects that the diff at blob_after exceeds this exact narrow scope (i.e. the file differs from blob_after, or the diff touches lines beyond the seven described above), implementation MUST STOP and this ratification does not apply to the divergent state."
+ },
+ "remediation_nodes": {
+  "R-B2-10": {
+   "title": "SUGGEST-ROUTE LIVE/VERSION COUPLING (FIFTH TRANSITION SITE)",
+   "status": "FROZEN",
+   "severity": "BLOCKING_FOR_B2_CLOSURE",
+   "closes": [
+    "GAP-A"
+   ],
+   "depends_on": [],
+   "authority_supported": true,
+   "authority": "LIVE_VERSION_STATUS_COUPLING (W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json live_to_version_review_status_mapping.coupling_invariant), reused via lib/pipeline/proxies.ts updateFinancialProxyReviewStatus.",
+   "authorized_surfaces": "See gap_a.authorized_surfaces above.",
+   "prohibited_surfaces": "See gap_a.prohibited_surfaces_for_r_b2_10 above.",
+   "required_changes": [
+    "app/api/proxies/[id]/suggest/route.ts: replace the raw db.update(financialProxies).set({reviewStatus:'pending_review'...}) with a call that routes through the same coupling-safe transition the rest of B2 uses — preferably updateFinancialProxyReviewStatus(proxyId, 'pending_review'), adapted only if a structural incompatibility is found and named.",
+    "Preserve the existing ownership/not-found/already-submitted response contract."
+   ],
+   "exit_gate": "The suggest route's committed live/version transition is coupled per the frozen invariant, proven in a real PostgreSQL instance with the negative and mutation controls listed in gap_a.required_committed_coverage."
+  }
+ },
+ "authorized_remediation_surfaces": {
+  "service": [
+   "app/api/proxies/[id]/suggest/route.ts",
+   "lib/pipeline/proxies.ts (only if updateFinancialProxyReviewStatus requires a narrowly-scoped adaptation to be callable from the suggest route; no unrelated change)"
+  ],
+  "tests": [
+   "tests/** — additions only, scoped to R-B2-10's required_committed_coverage"
+  ]
+ },
+ "prohibited_surfaces": {
+  "sealed_authority": "docs/ops/fib/**, docs/ops/pc01b/**, docs/ops/im01b/** — no edits of any kind.",
+  "historical_wave2_authority": "docs/ops/wave2/W2_EXECUTION_MAPPING_v1.0.0.json, docs/ops/wave2/W2_B1_REMEDIATION_AUTHORITY_v1.0.0.json, docs/ops/wave2/W2_B2_REMEDIATION_AUTHORITY_v1.0.0.json — none rewritten by this artifact or by R-B2-10.",
+  "db": "No DB migration is authorized by this artifact. If R-B2-10 implementation discovers one is genuinely required, it MUST STOP and raise a new authority gap rather than assume authorization.",
+  "rubric": "lib/pipeline/financial-proxy-rubric.ts beyond the already-ratified exact diff in gap_b — see gap_b.ratification_scope.not_authorized.",
+  "b3": "No FIBIU or FIBDB item belonging to W2-B3, U7, or U8 may be touched.",
+  "gates": "No test may be weakened and no gate relaxed to obtain a PASS."
+ },
+ "closure_rule": {
+  "b2_not_yet_closed": true,
+  "required_next_gate": "W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT",
+  "focused_audit_must_verify": [
+   "GAP-A remediation (R-B2-10) satisfies its exit_gate and required_committed_coverage",
+   "GAP-B exact-scope ratification holds (no drift beyond blob_after)",
+   "canonical mapping reuse (no second status-transition implementation)",
+   "transaction coupling atomicity",
+   "FIBIU-09 non-regression (sentinel)",
+   "MNB-1 non-regression (sentinel)",
+   "B1 sentinel (no B1 surface touched)",
+   "targeted PostgreSQL validation where applicable",
+   "machine gates (prestate, authority:seal:verify, ods:scope, ods:poststate)",
+   "audit purity (no historical commit amended, no sealed authority edited)"
+  ],
+  "closure_condition": "If W2_B2_R3_FOCUSED_ADVERSARIAL_REAUDIT returns BLOCKING_FINDINGS=0 and NEW_AUTHORITY_GAPS=0, it may declare W2_B2=CLOSED and READY_FOR_W2_B3=YES. This artifact does not itself make that declaration.",
+  "b3_authorization": "NOT AUTHORIZED by this artifact. READY_FOR_W2_B3 remains NO until the focused re-audit passes."
+ },
+ "no_implementation_performed": "This task produced no runtime change. R-B2-10 is authorized but NOT implemented by this artifact. No test, build, typecheck, or migration was executed to validate runtime behavior — only to validate this artifact's own JSON structure, references, and the pre-existing gate suite.",
+ "final_state": "B2_AUTHORITY_GAPS_DISPOSED_READY_FOR_NARROW_REMEDIATION"
+}

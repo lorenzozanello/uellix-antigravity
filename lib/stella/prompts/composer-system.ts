@@ -89,7 +89,8 @@ export function buildComposerUserMessage(
       estimatedSocialValue: calc
         ? { currency: calc.currency, netSocialValue: Number(calc.netSocialValue.toFixed(2)) }
         : null,
-      sroiRatio: calc ? Number(calc.sroiRatio.toFixed(2)) : null,
+      // AG-B3-2 — a run without a ratio reaches the model as null, never 0.
+      sroiRatio: calc && calc.sroiRatio !== null ? Number(calc.sroiRatio.toFixed(2)) : null,
       approvedEvidenceItems: context.evidenceMetadata.filter((e) => e.status === 'approved').length,
       proxiesAssigned: context.proxySummary.length,
     },

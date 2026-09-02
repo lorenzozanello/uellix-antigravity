@@ -19,6 +19,17 @@ const financialProxySchema = z.object({
   methodology: z.string().optional(),
   confidenceLevel: z.enum(['high', 'medium', 'low']).optional(),
   methodologicalRisk: z.enum(['low', 'medium', 'high']).optional(),
+  // W2-B2-R1 / R-B2-02 (B2-AR-B2) — the FIBC-010 provenance items are
+  // recordable on the ORGANIZATION surface from creation. Optional here
+  // because FIBC-010 conditions them on reaching 'approved', not on
+  // creation or on entering review (organization_provenance_requirements
+  // .must_be_present_before_review: no additional pre-review gate).
+  geographicContextualScope: z.string().optional(),
+  linkedOutcomeContext: z.string().optional(),
+  recoverableReference: z.string().optional(),
+  relevanceJustification: z.string().optional(),
+  documentedTransformations: z.string().optional(),
+  consultationDate: z.string().optional(),
 });
 
 export async function createFinancialProxyAction(projectId: string, input: unknown) {

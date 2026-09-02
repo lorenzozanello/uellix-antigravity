@@ -46,6 +46,25 @@ export const GOVERNED_MODEL_REGISTRY_SEED: readonly GovernedModelSeed[] = [
   { modelId: 'SROI_CALCULATION_ENGINE', version: '1.0.0', definitionHash: computeGovernedModelIdentityHash('SROI_CALCULATION_ENGINE', '1.0.0') },
 ]
 
+/**
+ * W2-B2-R1 / R-B2-03 — versions registered AFTER the 0040 seed, by the same
+ * append-only convention: each entry mirrors exactly one later migration's
+ * INSERT and a test cross-checks the two never drift apart. The 0040 seed
+ * above is NOT modified (FIBC-003: a new version is a new row, never an
+ * in-place mutation), which is also why this is a sibling constant rather
+ * than an extension of GOVERNED_MODEL_REGISTRY_SEED — that constant is
+ * pinned to 0040's eight 1.0.0 rows by lib/pipeline/governed-model-registry
+ * .test.ts and must keep meaning exactly that.
+ */
+export const GOVERNED_MODEL_REGISTRY_APPENDS: readonly (GovernedModelSeed & { migration: string })[] = [
+  {
+    modelId: 'PROXY_MATERIAL_FIELDS',
+    version: '1.1.0',
+    definitionHash: computeGovernedModelIdentityHash('PROXY_MATERIAL_FIELDS', '1.1.0'),
+    migration: 'db/migrations/0056_fib_proxy_material_fields_editability.sql',
+  },
+]
+
 /** Read the full governed model registry. */
 export async function listGovernedModels() {
   return db.select().from(governedModelRegistry)

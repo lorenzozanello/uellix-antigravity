@@ -63,6 +63,25 @@ vi.mock('@/lib/pipeline/sroi-results', () => ({
 
 vi.mock('@/lib/pipeline/sroi-calculation', () => ({
   detectRunInputDrift: vi.fn().mockResolvedValue({ hasDrift: false, driftedObjects: [] }),
+  // W2-B3 completeness (FIBIU-12) — the run detail page now also renders the
+  // monetization coverage panel; an empty coverage keeps this suite focused
+  // on the sufficiency panel it pins.
+  getRunMonetizationCoverage: vi.fn().mockResolvedValue({
+    outcomes: [],
+    monetizedOutcomeIds: [],
+    missingDispositionOutcomeIds: [],
+    notMonetizedByReason: {
+      no_defensible_proxy: [], proxy_not_approved: [], insufficient_evidence: [], not_material: [],
+      not_yet_eligible: [], superseded_version: [], other_governed_reason: [],
+    },
+    materialNotMonetizedOutcomeIds: [],
+    unclassifiedOutcomeIds: [],
+    hasDefensibleMonetization: true,
+  }),
+  MONETIZATION_REASON_VALUES: [
+    'no_defensible_proxy', 'proxy_not_approved', 'insufficient_evidence',
+    'not_material', 'not_yet_eligible', 'superseded_version', 'other_governed_reason',
+  ],
 }))
 
 const mockGetLatestSufficiencyDeterminationsByOutcomeIds = vi.hoisted(() => vi.fn())

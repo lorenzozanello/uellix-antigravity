@@ -87,3 +87,54 @@ describe('aggregatePortfolioSroi', () => {
     expect(result.portfolioSroiRatio).toBe(1)
   })
 })
+
+// ── W2-B3 completeness (AG-B3-2, FIBC-016) — N-RATIO-2 / M-RATIO-2 ────────────
+// A project whose latest run carries no SROI ratio is never summed as a
+// zero-return project and never recomputed as net/investment.
+
+import { toProjectRunSummaryRun } from './analytics'
+
+describe('W2-B3 no-ratio (N-RATIO-2 / M-RATIO-2)', () => {
+  it('N-RATIO-2: a run with sroiRatio null is EXCLUDED with reason no_sroi_ratio — its investment never enters the denominator', () => {
+    const noRatio: ProjectRunSummary = {
+      projectId: 'B',
+      projectName: 'B',
+      run: { currency: 'USD', totalInvestment: 900, netSocialValue: 0, sroiRatio: null },
+      readinessScore: 50,
+    }
+    const result = aggregatePortfolioSroi([usdRun('A', 100, 300), noRatio])
+    expect(result.includedCount).toBe(1)
+    expect(result.excluded).toEqual([{ projectId: 'B', projectName: 'B', reason: 'no_sroi_ratio' }])
+    // M-RATIO-2: had B been summed with a fabricated 0 return, the ratio would be 300/1000 = 0.3.
+    expect(result.totalInvestmentUsd).toBe(100)
+    expect(result.portfolioSroiRatio).toBe(3)
+    expect(result.portfolioSroiRatio).not.toBe(0.3)
+    // Its readiness is not averaged in either (it is not an included project).
+    expect(result.readinessCoverage).toBe(0)
+  })
+
+  it('a portfolio whose only project has no ratio yields a null portfolio ratio, never 0', () => {
+    const result = aggregatePortfolioSroi([
+      { projectId: 'B', projectName: 'B', run: { currency: 'USD', totalInvestment: 900, netSocialValue: 0, sroiRatio: null }, readinessScore: null },
+    ])
+    expect(result.portfolioSroiRatio).toBeNull()
+    expect(result.includedCount).toBe(0)
+  })
+
+  it('toProjectRunSummaryRun keeps NULL null — no net/investment recomputation, no 0 fallback (the historical `?? (net / investment)` is gone)', () => {
+    expect(toProjectRunSummaryRun({ currency: 'USD', totalInvestment: '900.0000', netSocialValue: '0.0000', sroiRatio: null })).toEqual({
+      currency: 'USD',
+      totalInvestment: 900,
+      netSocialValue: 0,
+      sroiRatio: null,
+    })
+    expect(toProjectRunSummaryRun({ currency: 'USD', totalInvestment: '100.0000', netSocialValue: '300.0000', sroiRatio: '3.000000' })).toEqual({
+      currency: 'USD',
+      totalInvestment: 100,
+      netSocialValue: 300,
+      sroiRatio: 3,
+    })
+    // A run without valid totals is still "no run".
+    expect(toProjectRunSummaryRun({ currency: 'USD', totalInvestment: null, netSocialValue: '1', sroiRatio: '1' })).toBeNull()
+  })
+})
