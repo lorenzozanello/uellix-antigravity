@@ -1,0 +1,92 @@
+{
+  "artifact_id": "COMMERCIAL_V1_WAVE2_POST_MERGE_CLOSURE_v1.0.0",
+  "version": "1.0.0",
+  "authority_class": "APPEND_ONLY_POST_MERGE_CLOSURE_EVIDENCE",
+  "hpo_mission_id": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-IMPLEMENTATION-R1",
+  "governed_by": "docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_AUTHORITY_v1.0.0.json",
+  "materialization_date": "2026-09-02",
+  "append_only": true,
+  "purpose": "Closes the gap COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json itself records: post_merge:{} and ODS_POSTSTATE:'see post_merge (run after the merge commit)'. This artifact is purely additive — it neither rewrites nor supersedes any predecessor authority or evidence file. It materializes, using the canonical multi-grant ODS capability introduced by M1 of the governing authority above (HPO-ODS-W2-08 + HPO-ODS-W2-09 in ONE invocation, not the historical two-run workaround), the post-merge machine record that was outstanding.",
+  "predecessor_artifacts_immutable": [
+    { "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.0.json", "commit": "c2bfdb799d7e63c1f77cadc773cbf11e25f409de" },
+    { "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_AUTHORITY_v1.0.1.json", "commit": "9d90f9bde9dd98ab2cd9d2aa8490ac7d7a2a7b1f" },
+    { "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_TEST_MANIFEST_v1.0.1.json" },
+    { "path": "docs/ops/integration/COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json" }
+  ],
+  "merge_facts": {
+    "PR_NUMBER": 49,
+    "PR_URL": "https://github.com/lorenzozanello/uellix-antigravity/pull/49",
+    "PR_TITLE": "Integrate closed Wave2 methodology into Commercial V1",
+    "PR_STATE": "MERGED",
+    "PR_BASE_REF": "integration/commercial-v1",
+    "PR_HEAD_REF": "codex/commercial-v1-wave2-reconciliation-r1",
+    "PR_MERGED_AT": "2026-09-02T19:20:44Z",
+    "PR_MERGED_BY": "lorenzozanello",
+    "verification_method": "gh pr view 49 --json number,title,mergeCommit,mergedAt,mergedBy,baseRefName,headRefName,state,url (read-only, this session)",
+    "INTEGRATION_MERGE_COMMIT": "94f0923c01f8863a71e1b8f991a3e4073aba2747",
+    "INTEGRATION_TREE": "186f424db07270e71b4edf3880b90e3d262a2981",
+    "MERGE_PARENT_1": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "MERGE_PARENT_2": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+    "CANDIDATE_SHA": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+    "WAVE2_SOURCE": "102a75cc044fb3e2c61249854f7f403cb066cab0",
+    "MAIN_FROZEN": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "MERGE_COMMIT_PARENTS_VERIFIED": "git rev-parse 94f0923c^1 94f0923c^2 (this session) == d56d44a3 and 9d73dbf6 exactly"
+  },
+  "ci_runs": {
+    "note": "Both referenced runs are the 'CI' workflow (.github/workflows/ci.yml) on headSha 9d73dbf6 — NOT the P1A Validation workflow. p1a-validation.yml (the real-Postgres integration-test workflow M2 targets) was not dispatched for this PR; its trigger is pull_request:branches:[main] only, plus workflow_dispatch, and neither fired here since this PR targeted integration/commercial-v1. This is stated plainly rather than assumed, per gh run view (read-only, this session).",
+    "manual_dispatch_run": {
+      "id": "33665788571",
+      "workflow": "CI",
+      "event": "workflow_dispatch",
+      "head_branch": "codex/commercial-v1-wave2-reconciliation-r1",
+      "head_sha": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+      "conclusion": "success",
+      "url": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/33665788571"
+    },
+    "pr_triggered_run": {
+      "id": "33671009026",
+      "workflow": "CI",
+      "event": "pull_request",
+      "head_branch": "codex/commercial-v1-wave2-reconciliation-r1",
+      "head_sha": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+      "conclusion": "success",
+      "url": "https://github.com/lorenzozanello/uellix-antigravity/actions/runs/33671009026"
+    }
+  },
+  "independent_audit": {
+    "asserted_by": "COMMERCIAL-V1-POST-INTEGRATION-MAINTENANCE-PREFLIGHT-R1 mission context: 'The independent Opus audit discharged that evidence externally.'",
+    "discoverable_reference_found_in_pr49": false,
+    "note": "No PR #49 comment, review, or check run referencing an independent audit was found via `gh pr view 49 --json comments,reviews` in this session. This field records the assertion as given rather than inventing a citation for it — CLAUDE.md's fail-closed rule (§5) applies: unverifiable claims are recorded as unverifiable, not silently upgraded to verified."
+  },
+  "preview_deployment": {
+    "provider": "Vercel",
+    "project": "uellix-antigravity",
+    "status": "Ready",
+    "preview_url": "https://uellix-antigravity-git-cod-dae4c3-lorenzozanello-5040s-projects.vercel.app",
+    "inspector_url": "https://vercel.com/lorenzozanello-5040s-projects/uellix-antigravity/DeDZpdZ6Dk5M6M4MP81oFGLRjkzm",
+    "source": "Vercel bot comment on PR #49, 2026-09-02T19:03:38Z (read-only, this session)",
+    "TARGET_IS_PRODUCTION": false,
+    "verification": "preview_url host is a *.vercel.app preview subdomain, distinct from the production domain; PRODUCTION_PROMOTION was not authorized or performed by this or the reconciliation mission"
+  },
+  "production_freeze_invariant": {
+    "MAIN_HEAD_AT_MATERIALIZATION": "067e8c2f3ac9b5e843de3a35575182907b4365d4",
+    "verification": "git rev-parse origin/main (this session, post-fetch) == 067e8c2f3ac9b5e843de3a35575182907b4365d4 exactly; unchanged since the reconciliation mission's own final_freeze block",
+    "PRODUCTION_PROMOTION_AUTHORIZED": false,
+    "PRODUCTION_PROMOTION_PERFORMED": false
+  },
+  "ods_composition_result": {
+    "note": "This is the outstanding proof M1 of the governing authority exists to make possible: the exact HPO-ODS-W2-08 + HPO-ODS-W2-09 authority composition, in ONE invocation, against the REAL historical diff between the two merge parents — not the historical two-run workaround recorded in COMMERCIAL_V1_WAVE2_RECONCILIATION_EVIDENCE_v1.0.1.json gates.ODS_SCOPE.",
+    "method": "resolveProtectedGrants(['HPO-ODS-W2-08','HPO-ODS-W2-09'], 'codex/commercial-v1-wave2-reconciliation-r1') + classifyPaths(...) called directly as a library (scripts/ods-scope.ts, this worktree's M1 implementation) against `git diff --name-status --find-renames -z <BASE> <HEAD>` between the two real merge parents. Logically identical to what the CLI's main() does with the same two flags in one invocation; called as a library rather than the CLI subprocess ONLY because resolveProtectedGrant's branch check requires the current checkout to be codex/commercial-v1-wave2-reconciliation-r1, which is already checked out in a separate, untouched worktree and cannot be checked out a second time in this one — see docs/ops/integration/COMMERCIAL_V1_POST_INTEGRATION_MAINTENANCE_EVIDENCE_v1.0.0.json for the full method note.",
+    "BASE": "d56d44a370abaafb105bf8e1169edea418aef913",
+    "HEAD": "9d73dbf6f92d7a1a9314dd9ec35997146bcba693",
+    "PROTECTED_AUTHORITY": "HPO-ODS-W2-08,HPO-ODS-W2-09",
+    "CHANGED_FILE_COUNT": 206,
+    "PROTECTED_AUTHORIZED_PATH_COUNT": 94,
+    "PROTECTED_PATH_VIOLATIONS": 0,
+    "NON_CANONICAL_PROTECTED_PATHS": 0,
+    "ODS_SCOPE_PROTECTED_SURFACE_RESULT": "PASS",
+    "reconciliation_with_v1_0_1_two_run_evidence": "v1.0.1 gates.ODS_SCOPE recorded run_W2_08 (91 authorized, 3 violations, all inside W2-09) + run_W2_09 (4 authorized, 90 violations, all inside W2-08) = 94 total protected paths, 0 outside the union. This one-invocation union run independently reproduces that exact total (94 authorized, 0 violations) — corroborating both the historical two-run result and the new M1 mechanism in a single number.",
+    "scope_disclaimer": "This result proves the PROTECTED-SURFACE portion of ods:scope specifically — the thing M1 changes. It does not re-run or re-derive the full ORDINARY --allow task allowlist (203+ non-protected files) the original reconciliation mission already governed and audited under v1.0.1; that full allowlist was never recorded verbatim in the v1.0.1 evidence (only counts), so it is not reproduced here. Re-deriving it is out of scope for this closure."
+  },
+  "final_state": "COMMERCIAL_V1_WAVE2_RECONCILIATION_POST_MERGE_CLOSED"
+}
