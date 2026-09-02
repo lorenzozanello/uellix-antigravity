@@ -74,12 +74,42 @@ describe('stella_0005c — the prepared script and its rollback exist and match'
   )
 
   it('rescopes only the two stella_0005 policies and preserves the canonical decision policy', () => {
-    expect(forward.match(/FOR INSERT\s+TO uellix_app/g)).toHaveLength(2)
+    // §0/§3 each create-then-drop a disposable stella_decision_canonical_insert_probe
+    // policy (same-session pg_get_expr comparison, MSC-07B/R9T) that ALSO
+    // reads "FOR INSERT\n    TO uellix_app" — so the raw occurrence count is
+    // (real policies) + (probe creations), not real policies alone. Verify
+    // the probe count independently (POSITIVE control below), then subtract
+    // it algebraically — an unnamed/arbitrarily-named rogue policy still
+    // inflates the raw total without inflating the probe count, so it is
+    // still caught (NEGATIVE control below), unlike a fixed name allowlist.
+    const totalForInsertToUellixApp = (forward.match(/FOR INSERT\s+TO uellix_app/g) ?? []).length
+    const probeCreateCount = (forward.match(/CREATE POLICY stella_decision_canonical_insert_probe/g) ?? []).length
+    const probeDropCount = (forward.match(/DROP POLICY stella_decision_canonical_insert_probe/g) ?? []).length
+    // POSITIVE: the governed self-verification probe is present exactly
+    // twice (§0 precondition, §3 postcondition), each created and dropped
+    // in the same DO block — not a stray leftover.
+    expect(probeCreateCount).toBe(2)
+    expect(probeDropCount).toBe(2)
+    expect(totalForInsertToUellixApp - probeCreateCount).toBe(2)
     expect(forward).not.toMatch(/DROP POLICY IF EXISTS stella_suggestion_decisions_insert_member_or_admin/)
     expect(forward).not.toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin/)
     expect(decisions).toMatch(/CREATE POLICY stella_suggestion_decisions_insert_member_or_admin[\s\S]*FOR INSERT\s+TO uellix_app/)
     expect(decisions).toMatch(/current_setting\('app\.organization_id', true\)::uuid/)
     expect(decisions).toMatch(/decided_by = auth\.uid\(\)/)
+  })
+
+  it('NEGATIVE — an unauthorized additional INSERT policy is caught, not absorbed by the probe allowance', () => {
+    // Proves the subtraction above is not vacuously true: an in-memory copy
+    // with one extra, ARBITRARILY-named "FOR INSERT TO uellix_app" policy
+    // spliced in must raise (total - probeCreateCount) to 3, even though its
+    // name is not in any allowlist. No file on disk is touched.
+    const mutated =
+      forward +
+      '\nCREATE POLICY rogue_insert_policy ON public.stella_suggestion_decisions FOR INSERT TO uellix_app WITH CHECK (true);\n'
+    const totalForInsertToUellixApp = (mutated.match(/FOR INSERT\s+TO uellix_app/g) ?? []).length
+    const probeCreateCount = (mutated.match(/CREATE POLICY stella_decision_canonical_insert_probe/g) ?? []).length
+    expect(probeCreateCount).toBe(2)
+    expect(totalForInsertToUellixApp - probeCreateCount).toBe(3)
   })
 
   it('requires the unmodified decision contract before and after stella_0005', () => {

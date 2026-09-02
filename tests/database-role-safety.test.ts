@@ -292,11 +292,41 @@ describe('stella_0004 forward: allowlist integrity', () => {
     expect(forwardCode).not.toMatch(/FORCE\s+ROW\s+LEVEL\s+SECURITY/i)
   })
 
-  it('creates no policy and no trigger', () => {
-    expect(forwardCode).not.toMatch(/CREATE\s+POLICY/i)
-    expect(forwardCode).not.toMatch(/DROP\s+POLICY/i)
+  it('creates no persisted policy or trigger — only the disposable same-session verification probe', () => {
+    // stella_0004 verifies the canonical stella_suggestion_decisions INSERT
+    // policy's WITH CHECK text live (pg_get_expr against a same-session
+    // probe, MSC-07B remediation of R9S-X root cause B — a handwritten
+    // predicted deparse literal was never validated against a real
+    // PostgreSQL deparser) rather than trusting a prediction. That probe
+    // CREATEs and DROPs a disposable policy in sections 0 and 9 — the only
+    // CREATE/DROP POLICY this script may contain. No trigger is ever
+    // created or dropped.
+    const createPolicies = forwardCode.match(/CREATE\s+POLICY\s+\S+/gi) ?? []
+    const dropPolicies = forwardCode.match(/DROP\s+POLICY\s+\S+/gi) ?? []
+    expect(createPolicies).toEqual([
+      'CREATE POLICY stella_decision_canonical_insert_probe',
+      'CREATE POLICY stella_decision_canonical_insert_probe',
+    ])
+    expect(dropPolicies).toEqual([
+      'DROP POLICY stella_decision_canonical_insert_probe',
+      'DROP POLICY stella_decision_canonical_insert_probe',
+    ])
     expect(forwardCode).not.toMatch(/CREATE\s+TRIGGER/i)
     expect(forwardCode).not.toMatch(/DROP\s+TRIGGER/i)
+  })
+
+  it('NEGATIVE — an unauthorized additional policy creation is caught, not absorbed by the probe allowance', () => {
+    // Proves the assertion above is not vacuously true: an in-memory copy
+    // with one extra, unauthorized CREATE POLICY spliced in must fail the
+    // same exact-match check the real script passes. No file on disk is
+    // touched — this mutates only a local string copy.
+    const mutated = forwardCode + '\nCREATE POLICY rogue_insert_policy ON public.audit_logs FOR INSERT TO uellix_app WITH CHECK (true);\n'
+    const createPolicies = mutated.match(/CREATE\s+POLICY\s+\S+/gi) ?? []
+    expect(createPolicies).not.toEqual([
+      'CREATE POLICY stella_decision_canonical_insert_probe',
+      'CREATE POLICY stella_decision_canonical_insert_probe',
+    ])
+    expect(createPolicies).toHaveLength(3)
   })
 
   it('sets no password on any role it creates', () => {
