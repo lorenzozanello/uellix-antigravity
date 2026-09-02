@@ -38,8 +38,8 @@
     },
     {
       "id": "P-5",
-      "description": "FIBIU-13: each of deadweight/attribution/displacement/drop_off/duration accepts an explicit value of 0 together with its own discrete justification column and is accepted as eligible (0 does not exempt justification, and a justified 0 is not treated as missing).",
-      "test_file": "tests/sroi-parse-num.test.ts"
+      "description": "FIBIU-13: getFilterJustificationIssues() reports no issue for a filter set where each of deadweight/attribution/displacement/drop_off/duration has an explicit value of 0 together with its own discrete justification column (0 does not exempt justification, and a justified 0 is not treated as missing).",
+      "test_file": "tests/sroi-calculation.service.test.ts"
     }
   ],
   "negative_controls": [
@@ -55,8 +55,8 @@
     },
     {
       "id": "N-3",
-      "description": "FIBIU-13: an unjustified filter (value present, justification NULL, or vice versa) blocks approval/lock eligibility and names the specific filter; NULL is never coerced to 0 on the authoritative calculation path (parseNum(null) -> 0 removed from that path).",
-      "test_file": "tests/sroi-parse-num.test.ts"
+      "description": "FIBIU-13 (scope-corrected during mission-loop cycle 2 -- wiring this into an actual approval/lock BLOCK is FIBIU-19's eligibility composition, Wave 3, out of FIBIU-13's own FILES_OR_DOMAINS, mirroring the FIBIU-11 P-2/N-1 correction above): getFilterJustificationIssues() reports FILTER_JUSTIFICATION_MISSING naming the specific filter when a value is present with no justification, and FILTER_VALUE_MISSING when the value itself is NULL -- the null check runs before any numeric coercion, so a NULL value is never silently read as a justified 0 on this function's path.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
     },
     {
       "id": "N-4",
@@ -82,8 +82,8 @@
     },
     {
       "id": "M-3",
-      "description": "Reintroducing parseNum(null) -> 0 on the authoritative filter path is caught: a NULL filter value would silently pass eligibility instead of triggering FILTER_VALUE_MISSING.",
-      "test_file": "tests/sroi-parse-num.test.ts"
+      "description": "Reintroducing a parseNum(null)-style coercion inside getFilterJustificationIssues (checking the value with parseNum instead of an explicit null/undefined/empty-string test) is caught: a NULL filter value would silently report no issue or FILTER_JUSTIFICATION_MISSING-only instead of FILTER_VALUE_MISSING.",
+      "test_file": "tests/sroi-calculation.service.test.ts"
     }
   ],
   "exit_gates": [
